@@ -156,39 +156,82 @@ internal static class Program
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
-    // PAY-0717: The native journal test server MUST return a valid keyed
-    // ACK bound to the exact pending request; raw COMMIT/REPLAY text is unsafe.
-    // Uses only test fixture keys, NOT customer provisioning/server trust.
-    private static void VerifyNativeAck(Snapshot state, Pending pending,
-        string reply, string keyHex)
+    // PAY-0718: strictly local, private, synthetic trust registry. HMAC key
+    // differs from the controller command key and is selected by a versioned
+    // ACKV2 key ID. This is NOT real server identity provisioning or public
+    // verification. Never import this registry into customer SoftTimer.
+    private static byte[] ReadServerAckKey(string root, string controller,
+        string keyId)
     {
-        if (!Hex.IsMatch(keyHex))
-            throw new InvalidOperationException("missing synthetic ACK key");
-        var fields = reply.Split('\t');
-        if (fields.Length != 7 || fields[0] != "ACKV1" ||
-            fields[1] is not ("COMMIT" or "REPLAY") ||
-            fields[2] != state.Controller ||
-            fields[3] != Number(pending.Sequence) ||
-            !Canonical(fields[5], 0, 2_000_000_000) ||
-            !Hex.IsMatch(fields[4]) || !Hex.IsMatch(fields[6]))
-            throw new InvalidOperationException("noncanonical journal response");
-        string eventId = state.Controller + ":" + Number(pending.Sequence);
+        string path = Path.Combine(root, "trusted-server-ack-keys.tsv");
+        if (!File.Exists(path) || IsLink(path))
+            throw new InvalidOperationException("unprovisioned server ACK trust");
+        if (!OperatingSystem.IsWindows())
+        {
+            var mode = File.GetUnixFileMode(path);
+            if ((mode & (UnixFileMode.GroupRead | UnixFileMode.GroupWrite |
+                UnixFileMode.GroupExecute | UnixFileMode.OtherRead |
+                UnixFileMode.OtherWrite | UnixFileMode.OtherExecute)) != 0)
+                throw new InvalidOperationException("unprivate server trust");
+        }
+        byte[] data = File.ReadAllBytes(path);
+        if (data.Length == 0 || data.Length > 16384 || data[^1] != 10 ||
+            data.Any(c => c == 0 || c == 13 || c > 127))
+            throw new InvalidOperationException("invalid server trust framing");
+        string[] rows = Encoding.ASCII.GetString(data)
+            .Split('\n', StringSplitOptions.None);
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+        var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+        int activeForController = 0;
+        string? selected = null;
+        foreach (var line in rows[..^1])
+        {
+            var parts = line.Split('\t');
+            if (parts.Length != 4 || !Id.IsMatch(parts[0]) ||
+                !Id.IsMatch(parts[1]) || parts[2] is not ("active" or "revoked") ||
+                !Hex.IsMatch(parts[3]) ||
+                !seenIds.Add(parts[0]) || !seenKeys.Add(parts[3]) ||
+                parts[3] == new string('0', 64))
+                throw new InvalidOperationException("invalid server trust registry");
+            if (parts[1] == controller && parts[2] == "active")
+            {
+                activeForController++;
+                if (parts[0] == keyId) selected = parts[3];
+            }
+        }
+        if (activeForController != 1 || selected is null)
+            throw new InvalidOperationException("unknown/revoked/rotated server ACK key");
+        return Convert.FromHexString(selected);
+    }
+
+    private static void VerifyNativeServerAck(string root, Snapshot state,
+        Pending pending, string reply)
+    {
+        string[] f = reply.Split('\t');
+        if (f.Length != 8 || f[0] != "ACKV2" ||
+            f[1] is not ("COMMIT" or "REPLAY") ||
+            f[2] != state.Controller ||
+            f[3] != Number(pending.Sequence) ||
+            !Canonical(f[5], 0, 2_000_000_000) ||
+            !Hex.IsMatch(f[4]) || !Id.IsMatch(f[6]) || !Hex.IsMatch(f[7]))
+            throw new InvalidOperationException("noncanonical server ACK");
         string fingerprint = Sha(string.Join("|", state.Controller,
-            Number(pending.Sequence), eventId, pending.Op,
-            pending.Subject, pending.Target, Number(pending.Units),
+            Number(pending.Sequence), state.Controller + ":" + Number(pending.Sequence),
+            pending.Op, pending.Subject, pending.Target, Number(pending.Units),
             Number(pending.Now), "v2"));
-        if (!string.Equals(fingerprint, fields[4], StringComparison.Ordinal))
-            throw new InvalidOperationException("journal ACK is not for pending request");
-        string body = string.Join("\t", "BLAZE-V2-ACK-FIXTURE/1",
-            state.Controller, Number(pending.Sequence), fingerprint,
-            fields[5], fields[1]) + "\n";
-        byte[] key = Convert.FromHexString(keyHex);
+        if (fingerprint != f[4])
+            throw new InvalidOperationException("server ACK not bound to pending");
+        byte[] key = ReadServerAckKey(root, state.Controller, f[6]);
         try
         {
-            byte[] observed = Convert.FromHexString(fields[6]);
-            byte[] expected = HMACSHA256.HashData(key, Encoding.ASCII.GetBytes(body));
+            string body = string.Join("\t", "BLAZE-V2-SERVER-ACK-FIXTURE/1",
+                f[6], state.Controller, Number(pending.Sequence), fingerprint,
+                f[5], f[1]) + "\n";
+            byte[] expected = HMACSHA256.HashData(key,
+                Encoding.ASCII.GetBytes(body));
+            byte[] observed = Convert.FromHexString(f[7]);
             if (!CryptographicOperations.FixedTimeEquals(observed, expected))
-                throw new InvalidOperationException("journal ACK MAC mismatch");
+                throw new InvalidOperationException("server ACK signature mismatch");
         }
         finally { CryptographicOperations.ZeroMemory(key); }
     }
@@ -236,7 +279,7 @@ internal static class Program
             Write(root, s with { Floor = p.Sequence, Pending = p });
             return p.Arguments(s.Controller);
         }
-        if (action == "--ack-auth" && a.Length == 10)
+        if (action == "--ack-server" && a.Length == 9)
         {
             var p = s.Pending ?? throw new InvalidOperationException("no pending event");
             int seq = ParseInt(a[2], 1, MaxSeq);
@@ -246,7 +289,7 @@ internal static class Program
                 p.Subject != a[4] || p.Target != a[5] || p.Units != units ||
                 Number(p.Now) != a[7])
                 throw new InvalidOperationException("ACK differs from pending event");
-            VerifyNativeAck(s, p, a[8], a[9]);
+            VerifyNativeServerAck(root, s, p, a[8]);
             Write(root, s with { Pending = null });
             return "ACKED";
         }
@@ -259,6 +302,18 @@ internal static class Program
             or UnauthorizedAccessException or ArgumentException)
         {
             // Never print state, key, ID, balance, raw exception or a v1 fallback.
+            if (Environment.GetEnvironmentVariable("BLAZE_V2_LAB_DIAG") == "synthetic-only"
+                && ex is InvalidOperationException
+                && (ex.Message is "noncanonical server ACK"
+                    or "server ACK not bound to pending"
+                    or "unprovisioned server ACK trust"
+                    or "unprivate server trust"
+                    or "invalid server trust framing"
+                    or "invalid server trust registry"
+                    or "unknown/revoked/rotated server ACK key"
+                    or "server ACK signature mismatch"
+                    or "ACK differs from pending event"))
+                Console.Error.WriteLine("PAY-0718 LAB REASON: " + ex.Message);
             Console.Error.WriteLine("PAY-0716 DENIED: pending authority invalid or uncertain (LAB ONLY)");
             return 8;
         }

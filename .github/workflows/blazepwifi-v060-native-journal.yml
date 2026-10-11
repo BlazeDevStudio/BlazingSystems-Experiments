@@ -48,7 +48,7 @@ jobs:
           dotnet-version: '8.0.425'
       - name: PAY-0715 actual SoftTimer .NET → native HMAC/fsync journal cross-language contract
         run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh
-      - name: PAY-0717 MAC-authenticated native ACK, pending restart, forged reply rejection
+      - name: PAY-0718 independently keyed ACKV2, revoked/rotated server ID and pending restart
         run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh
       - name: Safety boundary
         run: |

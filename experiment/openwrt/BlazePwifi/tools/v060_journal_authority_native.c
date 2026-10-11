@@ -249,6 +249,50 @@ static void getkey(const char *wanted,unsigned char key[32]) {
     OPENSSL_cleanse(data,n);free(data);
     if(seen!=1)die("unknown controller key");
 }
+/* PAY-0718: synthetic server ACK identity is separate from controller MAC.
+ * One active key per controller. Revoked IDs stay explicit; duplicate key
+ * identifiers/material, zero keys and command-key reuse all fail closed.
+ * This HMAC test registry is NOT production server key provisioning. */
+static void get_server_ack_key(const char *controller,
+    const unsigned char commandkey[32],char kid[33],
+    unsigned char ackkey[32]) {
+    size_t n;char *data=readfile("server-ack-keys.tsv",16384,&n);
+    char *p=data,*e=data+n,*v[5];
+    char ids[MAX_CTL][33];
+    unsigned char keys[MAX_CTL][32],decoded[32];
+    int total=0,active=0,i,j,nonzero;
+    while(p<e) {
+        char *nl=memchr(p,'\n',(size_t)(e-p));
+        if(!nl)die("incomplete server ACK registry row");
+        *nl=0;
+        if(parts(p,v,5)!=4 || !valid_id(v[0]) ||
+           !valid_id(v[1]) || !hex64(v[3]) ||
+           (strcmp(v[2],"active") && strcmp(v[2],"revoked")) ||
+           total>=MAX_CTL)die("invalid server ACK registry");
+        unhex(v[3],decoded,32);
+        nonzero=0;
+        for(j=0;j<32;j++)if(decoded[j])nonzero=1;
+        if(!nonzero || CRYPTO_memcmp(decoded,commandkey,32)==0)
+            die("server ACK secret weak or reuses command key");
+        for(i=0;i<total;i++)
+            if(!strcmp(ids[i],v[0]) ||
+               CRYPTO_memcmp(keys[i],decoded,32)==0)
+                die("duplicate server ACK identity or secret");
+        strcpy(ids[total],v[0]);
+        memcpy(keys[total],decoded,32);
+        total++;
+        if(!strcmp(v[1],controller) && !strcmp(v[2],"active")) {
+            strcpy(kid,v[0]);
+            memcpy(ackkey,decoded,32);
+            active++;
+        }
+        p=nl+1;
+    }
+    OPENSSL_cleanse(decoded,sizeof(decoded));
+    OPENSSL_cleanse(keys,sizeof(keys));
+    OPENSSL_cleanse(data,n);free(data);
+    if(active!=1)die("server ACK active key absent or ambiguous");
+}
 static void fault(const char *checkpoint) {
     const char *s=getenv("BLAZE_V2_NATIVE_TEST_FAULT");
     if(s && strcmp(s,checkpoint)==0){
@@ -272,10 +316,27 @@ static void write_all(int fd,const char *buf,size_t size) {
  * prevents a signed request being mistaken for a server ACK. */
 static void emit_receipt(const char *outcome,const char *id,
     unsigned long long seq,const char *fingerprint,
-    unsigned long long result,const unsigned char key[32],int signed_ack) {
+    unsigned long long result,const unsigned char key[32],int signed_ack,
+    const char *ack_kid,const unsigned char serverkey[32]) {
     char message[400],signature[65];
     unsigned char mac[EVP_MAX_MD_SIZE];unsigned int count=0;int size;
     if(!signed_ack){printf("%s\t%llu\n",outcome,result);return;}
+    if(signed_ack==2) {
+        size=snprintf(message,sizeof(message),
+          "BLAZE-V2-SERVER-ACK-FIXTURE/1\t%s\t%s\t%llu\t%s\t%llu\t%s\n",
+          ack_kid,id,seq,fingerprint,result,outcome);
+        if(size<0 || (size_t)size>=sizeof(message))
+            die("server ACK canonical payload overflow");
+        if(!HMAC(EVP_sha256(),serverkey,32,(unsigned char*)message,
+                 (size_t)size,mac,&count) || count!=32)
+            die("independent server ACK MAC generation failed");
+        hexout(mac,32,signature);
+        OPENSSL_cleanse(mac,sizeof(mac));
+        printf("ACKV2\t%s\t%s\t%llu\t%s\t%llu\t%s\t%s\n",
+            outcome,id,seq,fingerprint,result,ack_kid,signature);
+        OPENSSL_cleanse(message,sizeof(message));
+        return;
+    }
     size=snprintf(message,sizeof(message),
       "BLAZE-V2-ACK-FIXTURE/1\t%s\t%llu\t%s\t%llu\t%s\n",
       id,seq,fingerprint,result,outcome);
@@ -326,15 +387,17 @@ static void commit(void) {
 int main(int argc,char **argv) {
     const char *root,*id,*event,*op,*src,*dst,*hmac;
     unsigned long long seq,units,now,answer=0,high=0,base=0;
-    unsigned char key[32],mac[EVP_MAX_MD_SIZE],sig[32],dig[32];
+    unsigned char key[32],ack_key[32]={0},mac[EVP_MAX_MD_SIZE],sig[32],dig[32];
+    char ack_kid[33]={0};
     unsigned int maclen=0;char signed_msg[400],digest_input[400],fingerprint[65];
     size_t n;char *data;struct stat st;
     struct item *floor,*x,*to;
     int i,valid_opcode=0,authenticated_ack=0;
-    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack]");
+    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack|--server-ack-v2]");
     if(argc==12){
-        if(strcmp(argv[11],"--authenticated-ack"))die("unknown response mode");
-        authenticated_ack=1;
+        if(!strcmp(argv[11],"--authenticated-ack"))authenticated_ack=1;
+        else if(!strcmp(argv[11],"--server-ack-v2"))authenticated_ack=2;
+        else die("unknown response mode");
     }
     root=argv[1];id=argv[2];event=argv[4];op=argv[5];
     src=argv[6];dst=argv[7];hmac=argv[10];
@@ -382,6 +445,10 @@ int main(int argc,char **argv) {
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
          CRYPTO_memcmp(sig,mac,32)!=0)
        die("signed controller envelope mismatch");
+    /* Refuse a financial commit unless the independently configured server
+       ACK signing identity is validated BEFORE any journal mutation. */
+    if(authenticated_ack==2)
+        get_server_ack_key(id,key,ack_kid,ack_key);
     if(snprintf(digest_input,sizeof(digest_input),
          "%s|%llu|%s|%s|%s|%s|%llu|%llu|v2",
          id,seq,event,op,src,dst,units,now)<0)
@@ -401,8 +468,10 @@ int main(int argc,char **argv) {
         {unsigned long long saved=0;
          if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
              die("replay receipt amount malformed");
-         emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack);
+         emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
+                      ack_kid,ack_key);
          OPENSSL_cleanse(key,sizeof(key));
+         OPENSSL_cleanse(ack_key,sizeof(ack_key));
         }
         return 0;
     }
@@ -448,7 +517,9 @@ int main(int argc,char **argv) {
      snprintf(entry->result,sizeof(entry->result),"%llu",answer);
     }
     commit();
-    emit_receipt("COMMIT",id,seq,fingerprint,answer,key,authenticated_ack);
+    emit_receipt("COMMIT",id,seq,fingerprint,answer,key,authenticated_ack,
+                 ack_kid,ack_key);
     OPENSSL_cleanse(key,sizeof(key));
+         OPENSSL_cleanse(ack_key,sizeof(ack_key));
     return 0;
 }

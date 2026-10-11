@@ -109,6 +109,37 @@ internal static class Program
         finally { CryptographicOperations.ZeroMemory(key); }
     }
 
+    // PAY-0718 off-device independent server ACK key. The key ID, subject
+    // request digest and result/outcome are MAC-bound. This is a symmetric
+    // synthetic registry fixture, not deployed public-key server identity.
+    private static string ServerAckFixture(Command command, string outcome,
+        string result, string keyId, string serverKeyHex)
+    {
+        if (!Identifier.IsMatch(keyId) ||
+            outcome is not ("COMMIT" or "REPLAY") ||
+            !ulong.TryParse(result, NumberStyles.None,
+                CultureInfo.InvariantCulture, out var amount) ||
+            amount > 2_000_000_000 ||
+            result != amount.ToString(CultureInfo.InvariantCulture) ||
+            !Secret.IsMatch(serverKeyHex))
+            throw new ArgumentException("noncanonical server ACK fixture");
+        var fp = Fingerprint(command);
+        var body = string.Join("\t", "BLAZE-V2-SERVER-ACK-FIXTURE/1",
+            keyId, command.Controller,
+            command.Sequence.ToString(CultureInfo.InvariantCulture),
+            fp, result, outcome) + "\n";
+        byte[] key = Convert.FromHexString(serverKeyHex);
+        try
+        {
+            var mac = Convert.ToHexString(HMACSHA256.HashData(key,
+                Encoding.ASCII.GetBytes(body))).ToLowerInvariant();
+            return string.Join("\t", "ACKV2", outcome, command.Controller,
+                command.Sequence.ToString(CultureInfo.InvariantCulture),
+                fp, result, keyId, mac);
+        }
+        finally { CryptographicOperations.ZeroMemory(key); }
+    }
+
     private static void ExpectReject(Action action)
     {
         try { action(); }
@@ -154,6 +185,16 @@ internal static class Program
             throw new Exception("authenticated ACK lacks separation or request binding");
         ExpectReject(() => AckFixture(a, "OK", "140", k1));
         ExpectReject(() => AckFixture(a, "COMMIT", "0140", k1));
+        var independent = ServerAckFixture(a, "COMMIT", "140", "serverA",
+            new string('5', 64));
+        if (!independent.StartsWith("ACKV2\tCOMMIT\tctrlOne\t1\t", StringComparison.Ordinal)
+            || independent.Split('\t').Length != 8
+            || independent == ServerAckFixture(a, "COMMIT", "140", "serverB", new string('5', 64))
+            || independent == ServerAckFixture(a, "COMMIT", "140", "serverA", k1)
+            || independent == ServerAckFixture(a, "REPLAY", "140", "serverA", new string('5', 64)))
+            throw new Exception("independent server ACK key ID binding mismatch");
+        ExpectReject(() => ServerAckFixture(a, "COMMIT", "140", "bad key", new string('5', 64)));
+        ExpectReject(() => ServerAckFixture(a, "COMMIT", "0140", "serverA", new string('5', 64)));
         if (Sign(Create("ctrlOne", "1", "AM", "alice", "-", "41", "1000"), k1) == Sign(a, k1)
             || Sign(Create("ctrlOne", "1", "AM", "bob", "-", "40", "1000"), k1) == Sign(a, k1)
             || Sign(Create("ctrlOne", "1", "AM", "alice", "-", "40", "1001"), k1) == Sign(a, k1))
@@ -175,6 +216,14 @@ internal static class Program
                 var expected = Create(args[1], args[2], args[3], args[4],
                     args[5], args[6], args[7]);
                 Console.WriteLine(AckFixture(expected, args[8], args[9], args[10]));
+                return 0;
+            }
+            if (args.Length == 12 && args[0] == "--server-ack-fixture")
+            {
+                var expected = Create(args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7]);
+                Console.WriteLine(ServerAckFixture(expected, args[8], args[9],
+                    args[10], args[11]));
                 return 0;
             }
             if (args.Length != 9 || args[0] != "--emit")
