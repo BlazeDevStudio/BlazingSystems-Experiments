@@ -1,3 +1,11 @@
+## PAY-0720 CI handover freshness failure and additional OpenWrt trust gate — 2026-10-11 Asia/Manila
+
+- **INTEGRITY GATE FAILED, NOT BYPASSED.** PR #58 recent source HEAD `f2bfbd27581c104bbb60b607930bd4fd482f98fe` changed tests/CI after root handover. [Windows #38111086489](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38111086489) FAILED at handover freshness with exact message `source/workflow changes newer than PROJECT_HANDOVER.md`, no binary compilation occurred. Old [Windows #38110910872](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38110910872) had PAY-0720 compiled verifier step SUCCESS but was CANCELLED on branch movement; unusable as full acceptance.
+- **New source since prior checkpoint:** off-device OpenWrt source trust/no-ACK readiness test `a6d31dec3166977d3a92cf13bc43a1d2448c1410`, POSIX validator correction `93a129f0c24fdcc7d0f52f138bdd4cdac8cf01e7`, Full job `f2bfbd27581c104bbb60b607930bd4fd482f98fe`. Checked existing authenticated controller signature precedes `member_v2_*` fail-close and precedes paid mutation; no `ACKP1` nor private key in installable Vendo rootfs. Read-only target package manifest shows openssl-util only for x86/SBC, Ruijie signing not proven. This is a safety contract, **not** a working signer.
+- **Fix:** synchronized CURRENT_STATE then this append-only ledger and root PROJECT_HANDOVER last. Keep draft PR isolated, request fresh exact head Windows and Full. No restored CI evidence is inferred from failed/cancelled runs. P0 #31/#32/#34/#43 open, VERSION 0.5.3, production release/migration blocked.
+
+---
+
 ## PAY-0720 — production-compiled Windows public-only P-256 ACK verifier, isolated source — 2026-10-11 Asia/Manila
 
 - **P0 #31, IMPLEMENTED_UNTESTED, NO PRODUCTION AUTHORIZATION**; isolated `feat/pay-0720-public-v2-server-ack-verification` from dev `e4aed05d09eaba59752729a3b6d4f0b9f0d188a1`. PAY-0719 source `f6507799b7ee9642bfca4952163bcd122a55d362` had all required Full/Windows/SDK/native/sealed/P0 staged workflows success; 6 subsequent dev commits were docs-only.
