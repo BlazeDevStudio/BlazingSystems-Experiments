@@ -99,6 +99,11 @@ public sealed class AppConfig
     // has been authorized. When true, all legacy signed member calls are denied.
     // Defaults false for existing v1 installations; no automatic migration.
     public bool BlazePwifiRequireV2MemberProtocol { get; set; }
+    // PAY-0720: provision out-of-band only; server public verification key,
+    // NEVER a private key and NEVER learned from an untrusted HTTP response.
+    // These pins alone DO NOT authorize a v2 financial transaction.
+    public string BlazePwifiV2ServerKeyId { get; set; } = string.Empty;
+    public string BlazePwifiV2ServerPublicKeySpkiBase64 { get; set; } = string.Empty;
     public bool BlazePwifiAllowCachedMemberLogin { get; set; } = false;
     public int BlazePwifiMemberSyncSeconds { get; set; } = 15;
 
