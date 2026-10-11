@@ -33,7 +33,7 @@ done
 # Do not accept a host PC, guessed OS, unknown version, or a live system
 # silently. Operators must separately attest real test-device isolation.
 if [ ! -r /etc/openwrt_release ] ||
-   ! grep -Eq '^DISTRIB_RELEASE=.25\.12\.[0-9]+.' /etc/openwrt_release; then
+   ! grep -Eq "^DISTRIB_RELEASE='25[.]12[.][0-9]+'$" /etc/openwrt_release; then
   echo 'PAY-0722 BLOCKED: OpenWrt 25.12 isolated target is not proven'
   echo 'PRODUCTION_SIGNER_AVAILABLE=0'
   exit 4
