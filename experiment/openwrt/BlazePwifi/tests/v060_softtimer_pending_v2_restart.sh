@@ -69,15 +69,35 @@ set -- $req
 signed="$(dotnet "$EMIT" --emit "$@" "$key")"
 set -- $signed
 [ "$#" -eq 9 ]
-native_ack="$("$N/native" "$N" "$@")"
-[ "$native_ack" = "$(printf 'COMMIT\t140')" ]
+native_ack="$("$N/native" "$N" "$@" --authenticated-ack)"
+expected_ack="$(dotnet "$EMIT" --ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 "$key")"
+[ "$native_ack" = "$expected_ack" ]
+[ "$(printf '%s' "$native_ack" | awk -F '\t' '{print NF}')" -eq 7 ]
 [ "$(balance alice)" = 140 ]
-# Bad ACK never consumes the pending event.
-deny lab --ack "$T" 1 AM alice - 41 1000 "$native_ack"
-deny lab --ack "$T" 2 AM alice - 40 1000 "$native_ack"
-deny lab --ack "$T" 1 AM alice - 40 1000 "OK"
+# PAY-0717: raw/fabricated/journal-replayed response MUST NOT clear pending.
+deny lab --ack "$T" 1 AM alice - 40 1000 "$(printf 'COMMIT\t140')"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$(printf 'COMMIT\t140')" "$key"
+deny lab --ack-auth "$T" 1 AM alice - 41 1000 "$native_ack" "$key"
+deny lab --ack-auth "$T" 2 AM alice - 40 1000 "$native_ack" "$key"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$native_ack" \
+  4444444444444444444444444444444444444444444444444444444444444444
+fake_other="$(dotnet "$EMIT" --ack-fixture ctrlOther 1 AM alice - 40 1000 COMMIT 140 "$key")"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_other" "$key"
+fake_amount="$(dotnet "$EMIT" --ack-fixture ctrlOne 1 AM alice - 41 1000 COMMIT 140 "$key")"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_amount" "$key"
+fake_target="$(dotnet "$EMIT" --ack-fixture ctrlOne 1 TM alice bob 40 1000 COMMIT 140 "$key")"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_target" "$key"
+fake_timestamp="$(dotnet "$EMIT" --ack-fixture ctrlOne 1 AM alice - 40 1001 COMMIT 140 "$key")"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_timestamp" "$key"
+fake_result="$(printf '%s' "$native_ack" | sed 's/\t140\t/\t141\t/')"
+[ "$fake_result" != "$native_ack" ]
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_result" "$key"
+fake_outcome="$(printf '%s' "$native_ack" | sed 's/ACKV1\tCOMMIT\t/ACKV1\tREPLAY\t/')"
+[ "$fake_outcome" != "$native_ack" ]
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "$fake_outcome" "$key"
+deny lab --ack-auth "$T" 1 AM alice - 40 1000 "OK" "$key"
 [ "$reserved" = "$(hash_state)" ]
-[ "$(lab --ack "$T" 1 AM alice - 40 1000 "$native_ack")" = ACKED ]
+[ "$(lab --ack-auth "$T" 1 AM alice - 40 1000 "$native_ack" "$key")" = ACKED ]
 [ "$(lab --pending "$T")" = EMPTY ]
 req="$(lab --reserve "$T" TM alice bob 30 1000)"
 [ "$req" = 'ctrlOne 2 TM alice bob 30 1000' ]
@@ -86,7 +106,7 @@ signed="$(dotnet "$EMIT" --emit "$@" "$key")"
 set -- $signed
 # Journal post-rename but pre-dir-fsync uncertainty: NO ACK.
 if BLAZE_V2_NATIVE_TEST_FAULT=after-rename-before-dir-fsync \
-     "$N/native" "$N" "$@" >"$T/native-ack" 2>"$T/native-error"; then
+     "$N/native" "$N" "$@" --authenticated-ack >"$T/native-ack" 2>"$T/native-error"; then
   echo 'PAY-0716 uncertain journal incorrectly ACKed transfer' >&2; exit 1
 fi
 [ ! -s "$T/native-ack" ]
@@ -94,9 +114,12 @@ grep -Fq UNCERTAIN "$T/native-error"
 [ "$(balance alice):$(balance bob)" = 110:230 ]
 [ "$(lab --pending "$T")" = "$req" ]
 [ "$(lab --reserve "$T" TM alice bob 30 1000)" = "$req" ]
-native_ack="$("$N/native" "$N" "$@")"
-[ "$native_ack" = "$(printf 'REPLAY\t110')" ]
-[ "$(lab --ack "$T" 2 TM alice bob 30 1000 "$native_ack")" = ACKED ]
+native_ack="$("$N/native" "$N" "$@" --authenticated-ack)"
+expected_ack="$(dotnet "$EMIT" --ack-fixture ctrlOne 2 TM alice bob 30 1000 REPLAY 110 "$key")"
+[ "$native_ack" = "$expected_ack" ]
+# A recorded receipt from the earlier transaction cannot ACK this transfer.
+deny lab --ack-auth "$T" 2 TM alice bob 30 1000 "$fake_outcome" "$key"
+[ "$(lab --ack-auth "$T" 2 TM alice bob 30 1000 "$native_ack" "$key")" = ACKED ]
 [ "$(lab --pending "$T")" = EMPTY ]
 [ "$(( $(balance alice) + $(balance bob) ))" -eq 340 ]
 [ "$(lab --reserve "$T" AM alice - 5 1000)" = 'ctrlOne 3 AM alice - 5 1000' ]
@@ -113,5 +136,5 @@ deny lab --pending "$T"
 mv "$T/hidden-marker" "$T/.blaze-v2-pending-synthetic-only"
 [ "$(lab --pending "$T")" = 'ctrlOne 3 AM alice - 5 1000' ]
 [ ! -e "$ROOT/openwrt/rootfs/usr/bin/V2PendingSequenceLab" ]
-echo 'PAY-0716 PASS: cross-process monotonic reserve, pending signed identity, C journal lost ACK/replay, collision, corruption and no reset'
-echo 'NOT PRODUCTION: no flash powercut, trusted ACK, Windows directory fsync, independent rollback witness or shipped v2 sender'
+echo 'PAY-0716/PAY-0717 PASS: cross-process monotonic reserve, pending signed identity, C journal lost ACK/replay, collision, corruption and no reset'
+echo 'NOT PRODUCTION: no provisioned production server ACK identity, flash powercut, Windows directory fsync, independent rollback witness or shipped v2 sender'
