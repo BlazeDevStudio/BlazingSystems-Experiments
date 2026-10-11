@@ -81,6 +81,19 @@ command -v sha256sum >/dev/null 2>&1 || {
   echo 'PAY-0722 BLOCKED: SHA256 unavailable'
   echo 'PRODUCTION_SIGNER_AVAILABLE=0'; exit 4;
 }
+command -v stat >/dev/null 2>&1 || {
+  echo 'PAY-0722 BLOCKED: private-file metadata validation unavailable'
+  echo 'PRODUCTION_SIGNER_AVAILABLE=0'; exit 4;
+}
+owner="$(id -u)" || exit 4
+mode_owner="$(stat -c '%a:%h:%u' "$candidate" 2>/dev/null)" || {
+  echo 'PAY-0722 BLOCKED: candidate metadata unreadable'
+  echo 'PRODUCTION_SIGNER_AVAILABLE=0'; exit 4;
+}
+[ "$mode_owner" = "500:1:$owner" ] || {
+  echo 'PAY-0722 BLOCKED: candidate must be owner-only 0500, single-link, same uid'
+  echo 'PRODUCTION_SIGNER_AVAILABLE=0'; exit 4;
+}
 observed="$(sha256sum "$candidate" | cut -d' ' -f1)" || {
   echo 'PAY-0722 BLOCKED: candidate hash unreadable'
   echo 'PRODUCTION_SIGNER_AVAILABLE=0'; exit 4;
