@@ -31,6 +31,7 @@ define Build/Prepare
 	$(RM) -r $(PKG_BUILD_DIR)
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
 	$(CP) ./src/v060_journal_authority_native.c $(PKG_BUILD_DIR)/
+	$(CP) ./src/v060_p256_target_capability_probe.c $(PKG_BUILD_DIR)/
 endef
 
 define Build/Configure
@@ -42,11 +43,17 @@ define Build/Compile
 		-DBLAZE_FIXTURE_ONLY $(PKG_BUILD_DIR)/v060_journal_authority_native.c \
 		-o $(PKG_BUILD_DIR)/v2-native-fixture \
 		$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib -lcrypto
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) \
+		-I$(STAGING_DIR)/usr/include -std=c11 -Wall -Wextra -Werror -O2 \
+		-DBLAZE_V2_P256_CAPABILITY_LAB_ONLY $(PKG_BUILD_DIR)/v060_p256_target_capability_probe.c \
+		-o $(PKG_BUILD_DIR)/p256-primitive-probe \
+		$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib -lcrypto
 endef
 
 define Package/blazepwifi-v2-native-lab/install
 	$(INSTALL_DIR) $(1)/usr/libexec/blazepwifi-lab
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/v2-native-fixture $(1)/usr/libexec/blazepwifi-lab/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/p256-primitive-probe $(1)/usr/libexec/blazepwifi-lab/
 endef
 
 $(eval $(call BuildPackage,blazepwifi-v2-native-lab))

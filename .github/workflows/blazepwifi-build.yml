@@ -127,6 +127,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh
       - name: PAY-0720 real Vendo public ACK signer unavailable and Ruijie target crypto gap
         run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_public_ack_runtime_boundary.sh
+      - name: PAY-0721 host EVP P256 ephemeral sign/public verify and unshipped signer boundary
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh
       - name: PAY-0713 synthetic member atomic authority bridge (not production)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_v2_atomic_bridge.sh
       - name: BlazePwifi v0.6 member receipt EIO quarantine

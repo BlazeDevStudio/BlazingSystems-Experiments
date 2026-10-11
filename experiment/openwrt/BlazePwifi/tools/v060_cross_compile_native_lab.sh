@@ -59,6 +59,10 @@ DEST="$SDK/package/blazepwifi-v2-native-lab"
 mkdir -p "$DEST/src"
 cp "$ROOT/openwrt/lab-native/Makefile" "$DEST/Makefile"
 cp "$ROOT/tools/v060_journal_authority_native.c" "$DEST/src/"
+cp "$ROOT/tools/v060_p256_target_capability_probe.c" "$DEST/src/"
+# PAY-0721: use actual target libcrypto EVP EC APIs; no server key material.
+grep -Fq '#ifndef BLAZE_V2_P256_CAPABILITY_LAB_ONLY' "$DEST/src/v060_p256_target_capability_probe.c"
+grep -Fq -- '-DBLAZE_V2_P256_CAPABILITY_LAB_ONLY' "$DEST/Makefile"
 # Assert the test-only macro is compile time mandatory and source never gets
 # installed into production rootfs/images by this workflow.
 grep -Fq '#ifndef BLAZE_FIXTURE_ONLY' "$DEST/src/v060_journal_authority_native.c"
@@ -134,6 +138,20 @@ grep -Fq "$MACHINE" elf-header.txt || {
   cat elf-header.txt >&2
   exit 9
 }
+# PAY-0721 SDK evidence: independently compiled P-256 EVP sign and
+# public-only verify calls are linked for THIS target architecture. We do
+# NOT run the target ELF here or claim physical runtime/secure key custody.
+P256_ELF="$(find "$SDK/build_dir" -type f -name p256-primitive-probe -print -quit)"
+[ -n "$P256_ELF" ] && [ -s "$P256_ELF" ] || {
+  echo 'PAY-0721 BLOCKED: target SDK did not build P-256 primitive probe' >&2; exit 9;
+}
+readelf -h "$P256_ELF" > p256-elf-header.txt
+grep -Fq "$MACHINE" p256-elf-header.txt || {
+  echo "PAY-0721 BLOCKED: wrong target ELF architecture ($TARGET)" >&2; exit 9;
+}
+readelf -d "$P256_ELF" | grep -Eq 'Shared library: \[libcrypto\.so\.' || {
+  echo 'PAY-0721 BLOCKED: crosscompiled ELF lacks target libcrypto dependency' >&2; exit 9;
+}
 # Require actual OpenWrt SDK package; no fake artifact or host binary.
 APK="$(find "$SDK/bin" -type f -name 'blazepwifi-v2-native-lab*.apk' -print -quit)"
 [ -n "$APK" ] && [ -s "$APK" ] || {
@@ -142,6 +160,8 @@ APK="$(find "$SDK/bin" -type f -name 'blazepwifi-v2-native-lab*.apk' -print -qui
 OUT="$ROOT/dist/v060-native-sdk-lab/$TARGET"
 mkdir -p "$OUT"
 cp "$ELF" "$OUT/v2-native-fixture-$TARGET"
+cp "$P256_ELF" "$OUT/p256-primitive-probe-$TARGET"
+cp p256-elf-header.txt "$OUT/P256-ELF-HEADER.txt"
 cp "$APK" "$OUT/"
 cp elf-header.txt "$OUT/ELF-HEADER.txt"
 {
@@ -155,6 +175,17 @@ cp elf-header.txt "$OUT/ELF-HEADER.txt"
   printf 'production_released=0\ncustomer_install_authorized=0\n'
   printf 'openwrt_rootfs_integration=0\npaid_migration_authorized=0\n'
   printf 'hardware_powercut_verified=0\n'
+  printf 'p256_sdk_evpec_crosscompiled=1\n'
+  printf 'p256_sdk_linked_target_libcrypto=1\n'
+  printf 'p256_target_hardware_executed=0\n'
+  printf 'p256_server_private_key_custody_verified=0\n'
+  printf 'p256_production_ack_issuer_available=0\n'
+  # Requested package closure is NOT an installed/signing capability.
+  case "$TARGET" in
+    ruijie) printf 'customer_image_openssl_util_requested=0\n' ;;
+    *) printf 'customer_image_openssl_util_requested=1\n' ;;
+  esac
 } >"$OUT/MANIFEST.txt"
-(cd "$OUT" && sha256sum v2-native-fixture-* ./*.apk > SHA256SUMS)
+(cd "$OUT" && sha256sum v2-native-fixture-* p256-primitive-probe-* ./*.apk > SHA256SUMS)
 printf 'V2TARGET-0670 SDK COMPILE PASS: %s (%s) — LAB ONLY\n' "$TARGET" "$MACHINE"
+printf 'PAY-0721 P256 SDK LINK PASS: %s — target crypto primitive only, NO live signer or paid ACK\n' "$TARGET"
