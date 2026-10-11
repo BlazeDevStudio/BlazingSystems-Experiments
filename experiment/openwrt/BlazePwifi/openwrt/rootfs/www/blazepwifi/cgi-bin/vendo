@@ -24,6 +24,14 @@ printf '%s' "$nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid nonce"
 [ -n "$pulses" ] || pulses=0
 bp_check_vendo_sig "$action" "$id" "$nonce" "$pulses" "$target" "$sig" || bp_fail "bad signature"
 
+# PAY-0719: v2 financial transactions have no deployed authority/trust
+# or migration approval. Verify the normal controller signature first, then
+# fail closed BEFORE heartbeat or ANY financial mutation. Never downgrade a
+# v2-prefixed action into the legacy member_bank/restore/transfer handlers.
+case "$action" in
+  member_v2_*) bp_fail "member v2 authority unavailable; no v1 fallback" ;;
+esac
+
 now="$(bp_now)"
 ipaddr="${REMOTE_ADDR:-0.0.0.0}"
 
