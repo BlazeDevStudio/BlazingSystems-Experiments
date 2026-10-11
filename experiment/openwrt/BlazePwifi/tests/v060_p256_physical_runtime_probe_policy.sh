@@ -37,6 +37,8 @@ if [ ! -e /etc/openwrt_release ]; then
 fi
 # The script is off-device, not an installer or a private-key template. It
 # explicitly keeps each production-critical acceptance item unavailable.
+grep -Fq 'stat -c' "$PROBE"
+grep -Fq '500:1:$owner' "$PROBE"
 grep -Fq 'TARGET_SIGNING_KEY_CUSTODY=UNVERIFIED' "$PROBE"
 grep -Fq 'INDEPENDENT_ROLLBACK_WITNESS=UNVERIFIED' "$PROBE"
 grep -Fq 'TARGET_POWER_CUT=UNVERIFIED' "$PROBE"
