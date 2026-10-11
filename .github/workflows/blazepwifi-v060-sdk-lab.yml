@@ -8,12 +8,16 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_cross_compile_native_lab.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_cross_compile_native_lab.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
 
@@ -58,6 +62,8 @@ jobs:
             libncurses-dev zlib1g-dev python3 wget pkg-config
       - name: Verify current host fixture independently
         run: sh experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh
+      - name: PAY-0721 host in-memory P-256 ECDSA sign/public-only verification probe
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh
       - name: Verified official SDK native lab cross-compile (never production)
         run: sh experiment/openwrt/BlazePwifi/tools/v060_cross_compile_native_lab.sh "${{ matrix.target }}"
       - name: Upload target-verified laboratory artifacts only
@@ -70,4 +76,5 @@ jobs:
       - name: Mandatory no-customer-publishing declaration
         run: |
           test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/libexec/blazepwifi-lab/v2-native-fixture
+          test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/libexec/blazepwifi-lab/p256-primitive-probe
           echo "LAB ONLY: cross-compiled binary is never installed or published as v0.6.0 production"
