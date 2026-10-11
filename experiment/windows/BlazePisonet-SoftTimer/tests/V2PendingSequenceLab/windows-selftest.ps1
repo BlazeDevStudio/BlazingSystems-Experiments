@@ -66,6 +66,8 @@ try {
   [IO.File]::WriteAllText($trust, "serverA`tctrlOne`tactive`t$serverKey`nserverNew`tctrlOne`tactive`t$rotatedKey`n", [Text.Encoding]::ASCII)
   Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)
   [IO.File]::WriteAllText($trust, $registry, [Text.Encoding]::ASCII)
+  # Temporary synthetic-only reason categories; never print key or raw ACK.
+  $env:BLAZE_V2_LAB_DIAG = 'synthetic-only'
   $before = (Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash
   if ((Run -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)) -ne 'ACKED') { throw 'independent server ACK result' }
   if ((Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash -eq $before) { throw 'ACK did not update state' }
@@ -79,5 +81,6 @@ try {
 }
 finally {
   Remove-Item Env:BLAZE_V2_PENDING_FAULT -ErrorAction SilentlyContinue
+  Remove-Item Env:BLAZE_V2_LAB_DIAG -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
 }
