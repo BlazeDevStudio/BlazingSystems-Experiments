@@ -90,6 +90,15 @@ jobs:
           dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: PAY-0719 compiled SoftTimer V2-required protocol no-downgrade (no network)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $binary=Join-Path $env:PROJECT_DIR 'src/BlazePisonet.SoftTimer/bin/Release/net8.0-windows/win-x64/BlazePisonet.SoftTimer.exe'
+          if (-not (Test-Path $binary)) { throw 'Compiled SoftTimer EXE missing for V2 policy test' }
+          $p=Start-Process -FilePath (Resolve-Path $binary).Path -ArgumentList @('--verify-v2-member-protocol-gate') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "V2-required member protocol downgrade guard failed: $($p.ExitCode)" }
+
       - name: Verify monotonic billing timer (60-minute simulation)
         shell: pwsh
         run: |

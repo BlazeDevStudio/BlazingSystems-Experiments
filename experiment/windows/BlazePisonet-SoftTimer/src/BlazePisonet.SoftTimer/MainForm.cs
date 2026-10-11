@@ -284,7 +284,10 @@ public sealed class MainForm : Form
             if (ok && _controller.Config.BlazePwifiMemberAuthorityEnabled)
                 await _controller.BlazePwifi.SyncMembersAsync();
             RefreshMembers();
-            MessageBox.Show(ok ? "BlazePwifi connection succeeded." : "BlazePwifi connection failed.", "SoftTimer");
+            var v2Required = _controller.Config.BlazePwifiRequireV2MemberProtocol;
+            MessageBox.Show(ok && v2Required
+                ? "Controller reachable. V2 member authority is not authorized or available; all legacy member transactions are blocked. Connection is NOT a money migration approval."
+                : (ok ? "BlazePwifi connection succeeded." : "BlazePwifi connection failed."), "SoftTimer");
         }));
         row.Controls.Add(Button("SYNC MEMBERS", async (_, _) =>
         {

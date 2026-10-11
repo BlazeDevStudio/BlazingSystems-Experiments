@@ -46,6 +46,25 @@ transfer="$(call member_transfer 'alice>bob:0123456789abcdeb:placeholder' 30 333
 printf '%s' "$transfer" | grep -q '"replayed":true'
 [ "$(sha256sum "$BP_STATE/members.tsv" "$BP_STATE/member-events.tsv")" = "$before" ]
 
+# PAY-0719: the installed Vendo CGI verifies signatures but must NOT turn
+# any v2-prefixed financial request into legacy v1 member/receipt mutations.
+# This is an explicit "not deployed" handshake, not a v2 financial ACK.
+v2_before="$(sha256sum "$BP_STATE/members.tsv" "$BP_STATE/member-events.tsv" "$BP_STATE/member-revision" "$BP_RUN/vendos.tsv")"
+for op in member_v2_negotiate member_v2_commit member_v2_transfer; do
+  rejected="$(call "$op" 'alice:0123456789abcdef:placeholder' 60 88888888)"
+  printf '%s' "$rejected" | grep -q '"ok":false' || { echo "PAY-0719 v2 action accepted: $op" >&2; exit 1; }
+  printf '%s' "$rejected" | grep -q 'member v2 authority unavailable; no v1 fallback' || exit 1
+  ! printf '%s' "$rejected" | grep -q '"replayed":true' || exit 1
+  [ "$v2_before" = "$(sha256sum "$BP_STATE/members.tsv" "$BP_STATE/member-events.tsv" "$BP_STATE/member-revision" "$BP_RUN/vendos.tsv")" ] || {
+    echo "PAY-0719 v2 reject changed paid state or heartbeat: $op" >&2; exit 1;
+  }
+done
+bad_signed="$(printf 'action=member_v2_commit&id=vendo-01&nonce=99999999&pulses=60&target=alice:placeholder&sig=%064d' 0 | sh "$VENDO")"
+printf '%s' "$bad_signed" | grep -q '"ok":false' || exit 1
+printf '%s' "$bad_signed" | grep -q 'bad signature' || exit 1
+[ "$v2_before" = "$(sha256sum "$BP_STATE/members.tsv" "$BP_STATE/member-events.tsv" "$BP_STATE/member-revision" "$BP_RUN/vendos.tsv")" ] || exit 1
+echo 'PAY-0719 PASS: signed V2-prefixed commands denied before money/heartbeat, no v1 fallback'
+
 # PAY-0712: old signed receipt alone does not prove the current member
 # read model is trustworthy. A missing/corrupt/duplicated row or revision
 # must never yield ok:true with fabricated zero balance. All data synthetic.

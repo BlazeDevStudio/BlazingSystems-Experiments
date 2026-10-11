@@ -8,6 +8,8 @@ internal static class Program
         // Safe headless regression mode. Runs before mutex/UI/setup/device access.
         if (args.Any(a => string.Equals(a, "--verify-timer-math", StringComparison.OrdinalIgnoreCase)))
             return TimerEngine.VerifyTimerMath();
+        if (args.Any(a => string.Equals(a, "--verify-v2-member-protocol-gate", StringComparison.OrdinalIgnoreCase)))
+            return BlazePwifiClient.VerifyV2MemberProtocolGate();
         if (args.Any(a => string.Equals(a, "--install-system-integration", StringComparison.OrdinalIgnoreCase)))
             return SystemIntegration.Install();
         if (args.Any(a => string.Equals(a, "--uninstall-system-integration", StringComparison.OrdinalIgnoreCase)))
