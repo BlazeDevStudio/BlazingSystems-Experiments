@@ -17,30 +17,30 @@ try {
     $null = & dotnet $dll @items 2>$null
     if ($LASTEXITCODE -eq 0) { throw 'PAY-0716 Windows unexpectedly accepted invalid authority' }
   }
-  Reject @('--pending', $temp)
-  if ((Run @('--init', $temp, 'ctrlOne')) -ne 'INITIALIZED') { throw 'init' }
-  Reject @('--init', $temp, 'ctrlOne')
+  Reject -items @('--pending', $temp)
+  if ((Run -items @('--init', $temp, 'ctrlOne')) -ne 'INITIALIZED') { throw 'init' }
+  Reject -items @('--init', $temp, 'ctrlOne')
   $initial = (Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash
   $env:BLAZE_V2_PENDING_FAULT = 'before-rename'
-  Reject @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')
+  Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')
   Remove-Item Env:BLAZE_V2_PENDING_FAULT
   if ((Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash -ne $initial) { throw 'precommit mutated authority' }
   $env:BLAZE_V2_PENDING_FAULT = 'after-rename'
-  Reject @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')
+  Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')
   Remove-Item Env:BLAZE_V2_PENDING_FAULT
   $command = 'ctrlOne 1 AM alice - 40 1000'
-  if ((Run @('--pending', $temp)) -ne $command) { throw 'restart pending identity' }
-  if ((Run @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')) -ne $command) { throw 'duplicate seq' }
-  Reject @('--reserve', $temp, 'AM', 'alice', '-', '41', '1000')
-  Reject @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', 'OK')
+  if ((Run -items @('--pending', $temp)) -ne $command) { throw 'restart pending identity' }
+  if ((Run -items @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')) -ne $command) { throw 'duplicate seq' }
+  Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '41', '1000')
+  Reject -items @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', 'OK')
   $reply = 'COMMIT' + [char]9 + '140'
-  if ((Run @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)) -ne 'ACKED') { throw 'ack result' }
-  if ((Run @('--pending', $temp)) -ne 'EMPTY') { throw 'cleared pending' }
-  if ((Run @('--reserve', $temp, 'TM', 'alice', 'bob', '30', '1000')) -ne 'ctrlOne 2 TM alice bob 30 1000') { throw 'sequence reuse' }
+  if ((Run -items @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)) -ne 'ACKED') { throw 'ack result' }
+  if ((Run -items @('--pending', $temp)) -ne 'EMPTY') { throw 'cleared pending' }
+  if ((Run -items @('--reserve', $temp, 'TM', 'alice', 'bob', '30', '1000')) -ne 'ctrlOne 2 TM alice bob 30 1000') { throw 'sequence reuse' }
   $file = Join-Path $temp 'sequence.state'
   [IO.File]::AppendAllText($file, 'TAMPER' + [char]10)
-  Reject @('--pending', $temp)
-  Reject @('--reserve', $temp, 'AM', 'alice', '-', '3', '1000')
+  Reject -items @('--pending', $temp)
+  Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '3', '1000')
   Write-Output 'PAY-0716 Windows process-restart/reservation/fail-closed fixture PASS (not production)'
 }
 finally {
