@@ -156,6 +156,43 @@ internal static class Program
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
+    // PAY-0717: The native journal test server MUST return a valid keyed
+    // ACK bound to the exact pending request; raw COMMIT/REPLAY text is unsafe.
+    // Uses only test fixture keys, NOT customer provisioning/server trust.
+    private static void VerifyNativeAck(Snapshot state, Pending pending,
+        string reply, string keyHex)
+    {
+        if (!Hex.IsMatch(keyHex))
+            throw new InvalidOperationException("missing synthetic ACK key");
+        var fields = reply.Split('\t');
+        if (fields.Length != 7 || fields[0] != "ACKV1" ||
+            fields[1] is not ("COMMIT" or "REPLAY") ||
+            fields[2] != state.Controller ||
+            fields[3] != Number(pending.Sequence) ||
+            !Canonical(fields[5], 0, 2_000_000_000) ||
+            !Hex.IsMatch(fields[4]) || !Hex.IsMatch(fields[6]))
+            throw new InvalidOperationException("noncanonical journal response");
+        string eventId = state.Controller + ":" + Number(pending.Sequence);
+        string fingerprint = Sha(string.Join("|", state.Controller,
+            Number(pending.Sequence), eventId, pending.Op,
+            pending.Subject, pending.Target, Number(pending.Units),
+            Number(pending.Now), "v2"));
+        if (!string.Equals(fingerprint, fields[4], StringComparison.Ordinal))
+            throw new InvalidOperationException("journal ACK is not for pending request");
+        string body = string.Join("\t", "BLAZE-V2-ACK-FIXTURE/1",
+            state.Controller, Number(pending.Sequence), fingerprint,
+            fields[5], fields[1]) + "\n";
+        byte[] key = Convert.FromHexString(keyHex);
+        try
+        {
+            byte[] observed = Convert.FromHexString(fields[6]);
+            byte[] expected = HMACSHA256.HashData(key, Encoding.ASCII.GetBytes(body));
+            if (!CryptographicOperations.FixedTimeEquals(observed, expected))
+                throw new InvalidOperationException("journal ACK MAC mismatch");
+        }
+        finally { CryptographicOperations.ZeroMemory(key); }
+    }
+
     private static string Execute(string[] a)
     {
         if (a.Length < 2) throw new InvalidOperationException("missing lab command");
@@ -199,7 +236,7 @@ internal static class Program
             Write(root, s with { Floor = p.Sequence, Pending = p });
             return p.Arguments(s.Controller);
         }
-        if (action == "--ack" && a.Length == 9)
+        if (action == "--ack-auth" && a.Length == 10)
         {
             var p = s.Pending ?? throw new InvalidOperationException("no pending event");
             int seq = ParseInt(a[2], 1, MaxSeq);
@@ -209,11 +246,7 @@ internal static class Program
                 p.Subject != a[4] || p.Target != a[5] || p.Units != units ||
                 Number(p.Now) != a[7])
                 throw new InvalidOperationException("ACK differs from pending event");
-            // Response is a synthetic native journal fixture result, NOT an
-            // authenticated production ACK. No v1 fallback and no guesswork.
-            if (!Regex.IsMatch(a[8], @"\A(COMMIT|REPLAY)\t(0|[1-9][0-9]*)\z") ||
-                !Canonical(a[8].Split('\t')[1], 0, int.MaxValue))
-                throw new InvalidOperationException("uncorroborated synthetic response");
+            VerifyNativeAck(s, p, a[8], a[9]);
             Write(root, s with { Pending = null });
             return "ACKED";
         }

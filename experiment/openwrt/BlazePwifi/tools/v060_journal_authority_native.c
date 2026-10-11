@@ -266,7 +266,29 @@ static void write_all(int fd,const char *buf,size_t size) {
         pos+=(size_t)z;
     }
 }
-static void commit(unsigned long long answer) {
+/* PAY-0717 OFF-DEVICE ONLY: signed committed-result receipt. Never emit
+ * this receipt until replay is corroborated by the authoritative journal or
+ * fsync of the renamed parent directory has succeeded. Domain separation
+ * prevents a signed request being mistaken for a server ACK. */
+static void emit_receipt(const char *outcome,const char *id,
+    unsigned long long seq,const char *fingerprint,
+    unsigned long long result,const unsigned char key[32],int signed_ack) {
+    char message[400],signature[65];
+    unsigned char mac[EVP_MAX_MD_SIZE];unsigned int count=0;int size;
+    if(!signed_ack){printf("%s\t%llu\n",outcome,result);return;}
+    size=snprintf(message,sizeof(message),
+      "BLAZE-V2-ACK-FIXTURE/1\t%s\t%llu\t%s\t%llu\t%s\n",
+      id,seq,fingerprint,result,outcome);
+    if(size<0 || (size_t)size>=sizeof(message))die("ACK canonical payload overflow");
+    if(!HMAC(EVP_sha256(),key,32,(unsigned char*)message,(size_t)size,
+         mac,&count) || count!=32)die("ACK MAC generation failed");
+    hexout(mac,32,signature);
+    OPENSSL_cleanse(mac,sizeof(mac));
+    printf("ACKV1\t%s\t%s\t%llu\t%s\t%llu\t%s\n",
+      outcome,id,seq,fingerprint,result,signature);
+    OPENSSL_cleanse(message,sizeof(message));
+}
+static void commit(void) {
     char *data=NULL,*all=NULL,checksum[65];
     size_t len=0,total;unsigned char hash[32];
     FILE *ms=open_memstream(&data,&len);int fd,i;
@@ -299,7 +321,7 @@ static void commit(unsigned long long answer) {
     fault("after-rename-before-dir-fsync");
     if(fsync(dirfd)!=0)die("UNCERTAIN parent directory fsync failed");
     fault("after-dir-fsync-before-ack");
-    printf("COMMIT\t%llu\n",answer);
+
 }
 int main(int argc,char **argv) {
     const char *root,*id,*event,*op,*src,*dst,*hmac;
@@ -308,8 +330,12 @@ int main(int argc,char **argv) {
     unsigned int maclen=0;char signed_msg[400],digest_input[400],fingerprint[65];
     size_t n;char *data;struct stat st;
     struct item *floor,*x,*to;
-    int i,valid_opcode=0;
-    if(argc!=11)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC");
+    int i,valid_opcode=0,authenticated_ack=0;
+    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack]");
+    if(argc==12){
+        if(strcmp(argv[11],"--authenticated-ack"))die("unknown response mode");
+        authenticated_ack=1;
+    }
     root=argv[1];id=argv[2];event=argv[4];op=argv[5];
     src=argv[6];dst=argv[7];hmac=argv[10];
     if(strncmp(root,ROOT_PREFIX,strlen(ROOT_PREFIX)) ||
@@ -356,7 +382,6 @@ int main(int argc,char **argv) {
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
          CRYPTO_memcmp(sig,mac,32)!=0)
        die("signed controller envelope mismatch");
-    OPENSSL_cleanse(key,sizeof(key));
     if(snprintf(digest_input,sizeof(digest_input),
          "%s|%llu|%s|%s|%s|%s|%llu|%llu|v2",
          id,seq,event,op,src,dst,units,now)<0)
@@ -373,7 +398,12 @@ int main(int argc,char **argv) {
         if(strcmp(receipts[i].event,event) ||
            CRYPTO_memcmp(receipts[i].digest,fingerprint,64)!=0)
             die("controller sequence payload collision");
-        printf("REPLAY\t%s\n",receipts[i].result);
+        {unsigned long long saved=0;
+         if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
+             die("replay receipt amount malformed");
+         emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack);
+         OPENSSL_cleanse(key,sizeof(key));
+        }
         return 0;
     }
     if(seq<=high)die("stale controller sequence");
@@ -417,6 +447,8 @@ int main(int argc,char **argv) {
      strcpy(entry->digest,fingerprint);
      snprintf(entry->result,sizeof(entry->result),"%llu",answer);
     }
-    commit(answer);
+    commit();
+    emit_receipt("COMMIT",id,seq,fingerprint,answer,key,authenticated_ack);
+    OPENSSL_cleanse(key,sizeof(key));
     return 0;
 }

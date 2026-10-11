@@ -62,13 +62,13 @@ jobs:
           dotnet --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: PAY-0715 signed v2 .NET protocol contract (lab only)
+      - name: PAY-0717 signed request and domain-separated response MAC contract (lab only)
         shell: pwsh
         run: |
           dotnet run --project "$env:PROJECT_DIR/tests/V2NativeEnvelopeContract/V2NativeEnvelopeContract.csproj" -c Release -- --selftest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: PAY-0716 off-device durable pending v2 controller sequence test
+      - name: PAY-0717 Windows pending sequence only cleared by authenticated synthetic journal ACK
         shell: pwsh
         run: |
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"

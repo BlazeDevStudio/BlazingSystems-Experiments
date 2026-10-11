@@ -9,6 +9,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
+      - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2PendingSequenceLab/**'
       - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2NativeEnvelopeContract/**'
       - '.github/workflows/blazepwifi-v060-native-journal.yml'
   pull_request:
@@ -16,6 +18,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
+      - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2PendingSequenceLab/**'
       - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2NativeEnvelopeContract/**'
       - '.github/workflows/blazepwifi-v060-native-journal.yml'
 
@@ -44,7 +48,7 @@ jobs:
           dotnet-version: '8.0.425'
       - name: PAY-0715 actual SoftTimer .NET → native HMAC/fsync journal cross-language contract
         run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh
-      - name: PAY-0716 off-device pending SoftTimer controller restart and C journal lost ACK
+      - name: PAY-0717 MAC-authenticated native ACK, pending restart, forged reply rejection
         run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh
       - name: Safety boundary
         run: |
