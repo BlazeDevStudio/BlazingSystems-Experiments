@@ -95,6 +95,10 @@ public sealed class AppConfig
     public string BlazePwifiVendoKey { get; set; } = string.Empty;
     public bool MirrorLocalCoinsToBlazePwifi { get; set; }
     public bool BlazePwifiMemberAuthorityEnabled { get; set; }
+    // PAY-0719: opt-in fail-closed policy. No v2 customer financial protocol
+    // has been authorized. When true, all legacy signed member calls are denied.
+    // Defaults false for existing v1 installations; no automatic migration.
+    public bool BlazePwifiRequireV2MemberProtocol { get; set; }
     public bool BlazePwifiAllowCachedMemberLogin { get; set; } = false;
     public int BlazePwifiMemberSyncSeconds { get; set; } = 15;
 
