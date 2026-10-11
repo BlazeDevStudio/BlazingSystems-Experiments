@@ -26,6 +26,16 @@ public sealed class BlazePwifiClient : IDisposable
     public event Action<BlazePwifiMemberSnapshot>? MembersReceived;
     public bool InsertWindow => _insertWindow;
 
+    // PAY-0720: compiled Windows path for publicly verifiable server ACKs.
+    // NOT called from legacy v1 or pending-money clearance: the remote v2
+    // authority is still denied on OpenWrt. Consumers must supply the exact
+    // immutable signed pending-request fingerprint from their durable queue.
+    internal bool TryVerifyV2MemberServerAck(string envelope, long sequence,
+        string pendingRequestSha256, out VerifiedV2MemberServerAck? verified) =>
+        V2MemberServerAckVerifier.TryVerify(_config, envelope,
+            Storage.NormalizeId(_config.BlazePwifiControllerId), sequence,
+            pendingRequestSha256, out verified);
+
     // PAY-0719: this is a *deny* gate, not a v2 implementation or feature flag
     // that authorizes migration. A required v2 protocol MUST never send an
     // unsigned/legacy member request or accept a v1 money acknowledgment.

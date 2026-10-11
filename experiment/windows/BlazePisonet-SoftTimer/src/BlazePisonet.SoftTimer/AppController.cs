@@ -92,6 +92,7 @@ public sealed class AppController : IDisposable
                 !updated.BlazePwifiEnabled
                 || !updated.BlazePwifiMemberAuthorityEnabled
                 || updated.BlazePwifiRequireV2MemberProtocol != Config.BlazePwifiRequireV2MemberProtocol
+                || !V2MemberServerAckVerifier.SameTrustAnchor(updated, Config)
                 || !string.Equals(updated.BlazePwifiVendoUrl, Config.BlazePwifiVendoUrl, StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(updated.BlazePwifiVendoKey, Config.BlazePwifiVendoKey, StringComparison.Ordinal)
                 || !Storage.NormalizeId(updated.BlazePwifiControllerId)
