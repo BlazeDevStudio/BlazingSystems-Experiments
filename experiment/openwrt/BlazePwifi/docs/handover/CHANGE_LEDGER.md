@@ -1,3 +1,10 @@
+## PAY-0722 — premerge private candidate-file check; previous PASS superseded — 2026-10-12 Asia/Manila
+
+- **P0 #31 / UPDATED_SOURCE_UNTESTED.** PR [#60](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/60), branch `lab/pay-0722-target-signer-admission`. First CI [Full #38174734106](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38174734106) confirmed named PAY-0722 host negative check success at earlier un-hardened branch SHA; it does not certify later code. Read-only review found an operator-supplied /tmp ELF should not be writable or multiply linked / owned by another UID even if a supplied digest matches. Hardening `0e92299bae5a0d7bc559bb13e4b3d8d23ecd5437` checks `stat -c '%a:%h:%u'` is exactly `500:1:<invoking UID>` before hash/execution, requiring a private single-link nonsymlink ELF. CI test `f39e013954c2a3acef676e80196f8b64036c0b4d` asserts contract; decision doc `19efde8b53fe66d506d778d9e68db3f5c6c0b56d` clarifies owner-run steps and same-UID compromise limitation. No rootfs, paid state, private keys, signer or stable release changed.
+- **CURRENT STATUS:** must re-run exact-HEAD Full and inspect named PAY-0722; until then `IMPLEMENTED_UNTESTED`; P0 #31/#32/#34/#43 OPEN, production signer 0. Earlier CI failures or cancellations must be preserved, not promoted to passes. **NEXT:** exact-head PR CI, then if green guarded development merge + postmerge evidence and three handover updates.
+
+---
+
 ## PAY-0722 — Physical target signer admission and protected custody decision — 2026-10-12 Asia/Manila
 
 - **P0 #31 / IMPLEMENTED_UNTESTED**, branch `lab/pay-0722-target-signer-admission` based on docs HEAD `16387ac9cd357b902871f42bb313c94d351212e7` (prior PAY-0721 code `7f26bb01de3732093517568a2023e4c51e9e16c2`; source Full #38113173804, Windows #38113173815, SDK #38113173822, native #38113173803, sealed #38113173861 all SUCCESS). No concurrent latest source changes when branched.
