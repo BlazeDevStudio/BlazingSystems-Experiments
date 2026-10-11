@@ -1,3 +1,10 @@
+## PAY-0716 first CI failure / corrected .NET API — 2026-10-11 Asia/Manila
+
+- **Status FAILED / FIX_COMMITTED_RETEST_PENDING.** [PR #54](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/54) first head `7ae51f3f6484f508e1e993da0da528a2ea64589c`: native journal [#38099902895](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38099902895) and Windows [#38099902887](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38099902887) compiler FAILED with `CS0117 Directory.GetUnixFileMode not defined` at off-device fixture Program.cs:59; no PAY-0716 behavior passed. Scoped commit `570cb42b5d8897f30c72e97adbcdb19a1b359450` replaces this with `File.GetUnixFileMode` while preserving Unix privacy checking. Native/Windows exact new head retest required; no merge or release claim.
+- **NEXT:** inspect exact new SHA native/Windows runner, repair further failures if any. P0 #31/#32/#34/#43 remain open.
+
+---
+
 ## PAY-0716 — actual off-device SoftTimer pending controller sequence authority fixture — 2026-10-11 Asia/Manila
 
 - **P0 #31 IMPLEMENTED_UNTESTED.** Branch `feat/pay-0716-controller-pending-sequence` based on verified development docs SHA `554000fcf109f44603d64e9bcb263af347a111c1`. No customer/production code modification. Dedicated .NET8 `tests/V2PendingSequenceLab` project `ad39112f396a168f8c2950a0c42bfa54e0347276` and `Program.cs` `49e399562e81f53944bacf1edd3ef11809a87b34`: private marker-gated temporary state; persisted monotonic per-controller sequence and one immutable pending canonical operation, exclusive file lock and staged `Flush(true)`/rename, no default reset from missing/corrupt file, fail closed on different operation during unacknowledged payment, explicit fixture-only `--ack`. Fault knobs before rename and after rename, no ACK on uncertainty.
