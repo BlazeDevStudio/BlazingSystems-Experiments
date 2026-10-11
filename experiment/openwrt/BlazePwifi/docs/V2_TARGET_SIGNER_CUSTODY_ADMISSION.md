@@ -25,6 +25,8 @@ TPM2-PKCS11 is an example of an interface to an **actual TPM 2.0**, not evidence
 
 New **off-device source only**: `tools/v060_p256_physical_runtime_probe.sh`. It is never installed by BlazePwifi firmware. The operator must use an owner-controlled, isolated, **noncustomer** OpenWrt 25.12 target and manually choose and copy the correct official-SDK `p256-primitive-probe-TARGET` ELF from the checked build artifacts. Verify the artifact using its SHA256 manifest **and trusted workflow/source commit context**. An unsigned checksum by itself cannot prove publisher identity.
 
+After the operator verifies the source/run digest, the isolated test target copy must be owned by the invoking UID, a **single-link regular nonsymlink file with chmod 0500 (read/execute owner only)**. The wrapper validates this before execution. Run only on an owner-isolated machine with trusted root operators; even this guard and matching checksum are not cryptographic artifact provenance or a defense against compromise by the same privileged owner.
+
 After placing the selected LAB binary at a private isolated `/tmp/blaze-v2-p256-probe-UNIQUE` location and arranging execution permission, the operator may run:
 
 ```sh
