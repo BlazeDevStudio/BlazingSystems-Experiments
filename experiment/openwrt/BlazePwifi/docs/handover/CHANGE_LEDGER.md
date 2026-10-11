@@ -1,3 +1,19 @@
+## PAY-0716 first CI failure / corrected .NET API — 2026-10-11 Asia/Manila
+
+- **Status FAILED / FIX_COMMITTED_RETEST_PENDING.** [PR #54](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/54) first head `7ae51f3f6484f508e1e993da0da528a2ea64589c`: native journal [#38099902895](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38099902895) and Windows [#38099902887](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38099902887) compiler FAILED with `CS0117 Directory.GetUnixFileMode not defined` at off-device fixture Program.cs:59; no PAY-0716 behavior passed. Scoped commit `570cb42b5d8897f30c72e97adbcdb19a1b359450` replaces this with `File.GetUnixFileMode` while preserving Unix privacy checking. Native/Windows exact new head retest required; no merge or release claim.
+- **NEXT:** inspect exact new SHA native/Windows runner, repair further failures if any. P0 #31/#32/#34/#43 remain open.
+
+---
+
+## PAY-0716 — actual off-device SoftTimer pending controller sequence authority fixture — 2026-10-11 Asia/Manila
+
+- **P0 #31 IMPLEMENTED_UNTESTED.** Branch `feat/pay-0716-controller-pending-sequence` based on verified development docs SHA `554000fcf109f44603d64e9bcb263af347a111c1`. No customer/production code modification. Dedicated .NET8 `tests/V2PendingSequenceLab` project `ad39112f396a168f8c2950a0c42bfa54e0347276` and `Program.cs` `49e399562e81f53944bacf1edd3ef11809a87b34`: private marker-gated temporary state; persisted monotonic per-controller sequence and one immutable pending canonical operation, exclusive file lock and staged `Flush(true)`/rename, no default reset from missing/corrupt file, fail closed on different operation during unacknowledged payment, explicit fixture-only `--ack`. Fault knobs before rename and after rename, no ACK on uncertainty.
+- **Regression:** shell native C# to C journal process-restart path `bf6c026ac68b106a1c859db31b3d3c5a52e5da66`, Windows `windows-selftest.ps1` `2412e687c74048bf016b44af0ff3605a52e5da66` (corrected PowerShell named-args `655cdb1e11e06a6ba5583cd0450268e26ee7a46c`). Adds named gates to native `0272a77b3802fc83923296feb89342c881c73f0b` and Windows `6bd7884d3631be744196f200d2b0f0e871ddd15e`; implementation constraints README `d45c00b61c77a6cc8473a03f9787f2efb20b2fa6`.
+- **Risk:** This local file is not independently antirollback (#43); Unix/Linux and Windows process restart are not physical flash/powercut (#34). Native fixture returns **unauthenticated text ACK** and its CLI receipt acceptance is test-only; no authorized live v2 sender, provisioned HMAC keys, deployed OpenWrt journal, v1 migration, or customer billing. No production installer/code includes the fixture; do not confuse successful fixture tests with #31 acceptance. Original v1 live member money+receipt remain separate.
+- **NEXT:** open draft PR and execute exact-source Windows/native/Full CI; fix real failures, update handover and only then consider dev merge. P0 #31/#32/#34/#43 stay OPEN. No release.
+
+---
+
 ## PAY-0715 — C# SoftTimer ↔ native C signed journal cross-language contract VERIFIED — 2026-10-11 Asia/Manila
 
 - **Scope and commit:** [PR #53](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/53) guarded merged development **only** at `92863184b8c32e2d3b58937319245da511c5caa5`, source unchanged since premerge head `e49ee48ff30a51d72d922eae8ff00c8213497d60`; no production/customer code route added. Off-device .NET8 signer and native source fsync+renameat+dir fsync fixture use identical signed ASCII canonical v2 controller/event/seq/op/subject/target/units/now. Fixed HMAC and replay fingerprints are verified independently, with strict malformed input refusal and no v1 fallback.
