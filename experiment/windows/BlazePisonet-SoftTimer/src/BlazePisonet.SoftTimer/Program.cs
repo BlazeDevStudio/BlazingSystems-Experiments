@@ -10,6 +10,32 @@ internal static class Program
             return TimerEngine.VerifyTimerMath();
         if (args.Any(a => string.Equals(a, "--verify-v2-member-protocol-gate", StringComparison.OrdinalIgnoreCase)))
             return BlazePwifiClient.VerifyV2MemberProtocolGate();
+        // PAY-0720: exercise the SAME shipped WinExe verifier with externally
+        // generated public-only ACK fixtures. Never reads a private signing
+        // key, connects to a router, clears pending time or writes config.
+        if (args.Length == 4 && args[0] == "--verify-v2-server-ack-files")
+        {
+            try
+            {
+                var context = File.ReadAllLines(args[3]);
+                if (context.Length != 4 ||
+                    !long.TryParse(context[2], System.Globalization.NumberStyles.None,
+                        System.Globalization.CultureInfo.InvariantCulture, out var sequence))
+                    return 80;
+                var config = new AppConfig
+                {
+                    BlazePwifiRequireV2MemberProtocol = true,
+                    BlazePwifiControllerId = context[1],
+                    BlazePwifiV2ServerKeyId = context[0],
+                    BlazePwifiV2ServerPublicKeySpkiBase64 =
+                        File.ReadAllText(args[1]).TrimEnd('\r', '\n')
+                };
+                using var client = new BlazePwifiClient(config);
+                return client.TryVerifyV2MemberServerAck(File.ReadAllText(args[2]),
+                    sequence, context[3], out _) ? 0 : 79;
+            }
+            catch (Exception) { return 80; }
+        }
         if (args.Any(a => string.Equals(a, "--install-system-integration", StringComparison.OrdinalIgnoreCase)))
             return SystemIntegration.Install();
         if (args.Any(a => string.Equals(a, "--uninstall-system-integration", StringComparison.OrdinalIgnoreCase)))
