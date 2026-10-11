@@ -302,6 +302,18 @@ internal static class Program
             or UnauthorizedAccessException or ArgumentException)
         {
             // Never print state, key, ID, balance, raw exception or a v1 fallback.
+            if (Environment.GetEnvironmentVariable("BLAZE_V2_LAB_DIAG") == "synthetic-only"
+                && ex is InvalidOperationException
+                && (ex.Message is "noncanonical server ACK"
+                    or "server ACK not bound to pending"
+                    or "unprovisioned server ACK trust"
+                    or "unprivate server trust"
+                    or "invalid server trust framing"
+                    or "invalid server trust registry"
+                    or "unknown/revoked/rotated server ACK key"
+                    or "server ACK signature mismatch"
+                    or "ACK differs from pending event"))
+                Console.Error.WriteLine("PAY-0718 LAB REASON: " + ex.Message);
             Console.Error.WriteLine("PAY-0716 DENIED: pending authority invalid or uncertain (LAB ONLY)");
             return 8;
         }
