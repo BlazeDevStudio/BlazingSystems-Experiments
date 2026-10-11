@@ -486,13 +486,31 @@ bp_rental_apply_coin() {
   # refuse an ambiguous ACK, never re-credit or auto-migrate such records.
   old="$(awk -F '\t' -v e="$event" '$1==e {found++; print} END {if(found>1) exit 5}' "$BP_RENTAL_EVENTS")" || return 5
   if [ -n "$old" ]; then
+    # RENT-0723: a signed old receipt cannot ACK during another paid writer.
+    # Re-read its immutable identity under the shared global paid lock;
+    # an optimistic lookup before this lock is never authorization to ACK.
+    bp_paid_replay_read_lock || return 9
+    old="$(awk -F '\t' -v e="$event" '$1==e {found++; print} END {if(found>1) exit 5}' "$BP_RENTAL_EVENTS")" || {
+      bp_paid_replay_read_unlock; return 5;
+    }
+    [ -n "$old" ] || { bp_paid_replay_read_unlock; return 8; }
+    locked_line="$(bp_rental_device_line "$did")"
+    [ -n "$locked_line" ] || { bp_paid_replay_read_unlock; return 8; }
+    locked_lease="$(printf '%s' "$locked_line" | cut -f3)"
+    bp_rental_safe_seconds "$locked_lease" 2147483647 || {
+      bp_paid_replay_read_unlock; return 8;
+    }
     old_did="$(printf '%s' "$old" | cut -f2)"
     old_lease="$(printf '%s' "$old" | cut -f3)"
     old_pulses="$(printf '%s' "$old" | cut -f5)"
-    [ "$old_did" = "$did" ] && [ "$old_pulses" = "p:$pulses" ] || return 5
-    bp_rental_safe_seconds "$old_lease" 2147483647 || return 5
+    if [ "$old_did" != "$did" ] || [ "$old_pulses" != "p:$pulses" ] ||
+       ! bp_rental_safe_seconds "$old_lease" 2147483647; then
+      bp_paid_replay_read_unlock; return 5
+    fi
     printf 'duplicate\t%s\n' "$old_lease"
-    return 0
+    replay_rc=$?
+    bp_paid_replay_read_unlock
+    return "$replay_rc"
   fi
   per="$(bp_cfg rental_seconds_per_pulse)"
   [ -n "$per" ] || per=600
@@ -507,6 +525,21 @@ bp_rental_apply_coin() {
   # If a receipt append fails, no success ACK is sent and all subsequent
   # financial mutation must halt for operator reconciliation (not auto-reset).
   bp_paid_begin || return 9
+  # RENT-0723: optimistic device/receipt reads were BEFORE the writer lock.
+  # Another successful coin payment could have changed paid time meanwhile.
+  # Do not overwrite its later lease or record a duplicate receipt with a
+  # stale base. No money was changed by this attempt, so bp_paid_commit can
+  # safely clear ONLY our newly created pending marker before returning a
+  # retryable failure. Any cancellation sync error stays uncertain.
+  locked_line="$(bp_rental_device_line "$did")"
+  locked_old="$(awk -F '\t' -v e="$event" '$1==e {found++; print} END {if(found>1) exit 5}' "$BP_RENTAL_EVENTS")" || {
+    bp_paid_commit || return 8
+    return 5
+  }
+  if [ "$locked_line" != "$line" ] || [ -n "$locked_old" ]; then
+    bp_paid_commit || return 8
+    return 8
+  fi
   if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
     bp_paid_abort; return 8
   fi
