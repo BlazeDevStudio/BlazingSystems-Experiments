@@ -12,9 +12,11 @@ BUILD="$ROOT/build/build-openwrt-image.sh"
 signature_line="$(grep -nF 'bp_check_vendo_sig "$action"' "$CGI" | head -n1 | cut -d: -f1)"
 denial_line="$(grep -nF 'member_v2_*) bp_fail "member v2 authority unavailable; no v1 fallback"' "$CGI" | head -n1 | cut -d: -f1)"
 heartbeat_line="$(grep -nF 'heartbeat() {' "$CGI" | head -n1 | cut -d: -f1)"
-case "$signature_line:$denial_line:$heartbeat_line" in
-  *[!0-9:]*|::*|:*:|:*|:) echo 'PAY-0720 source trust gate missing' >&2; exit 1;;
-esac
+for line in "$signature_line" "$denial_line" "$heartbeat_line"; do
+  case "$line" in ''|*[!0-9]*)
+    echo 'PAY-0720 source trust gate missing' >&2; exit 1;;
+  esac
+done
 [ "$signature_line" -lt "$denial_line" ] &&
   [ "$denial_line" -lt "$heartbeat_line" ] || {
   echo 'PAY-0720 v2 signed denial moved after paid heartbeat or before signature' >&2
