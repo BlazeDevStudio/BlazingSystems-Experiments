@@ -56,7 +56,7 @@ internal static class Program
             throw new InvalidOperationException("refuse missing synthetic marker");
         if (!OperatingSystem.IsWindows())
         {
-            var dirMode = Directory.GetUnixFileMode(absolute);
+            var dirMode = File.GetUnixFileMode(absolute);
             var markMode = File.GetUnixFileMode(marker);
             if ((dirMode & (UnixFileMode.GroupRead | UnixFileMode.GroupWrite |
                      UnixFileMode.GroupExecute | UnixFileMode.OtherRead |
