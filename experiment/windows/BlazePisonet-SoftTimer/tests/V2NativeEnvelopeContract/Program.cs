@@ -80,6 +80,35 @@ internal static class Program
         finally { CryptographicOperations.ZeroMemory(key); }
     }
 
+    // PAY-0717: OFF-DEVICE ONLY. Test-native C emits the identical HMAC
+    // response AFTER committed journal data has been verified/durably staged.
+    // This signing oracle is a test harness, never a deployable server key.
+    private static string AckFixture(Command command, string outcome,
+        string result, string keyHex)
+    {
+        if (outcome is not ("COMMIT" or "REPLAY")
+            || !ulong.TryParse(result, NumberStyles.None,
+                CultureInfo.InvariantCulture, out var amount)
+            || amount > 2_000_000_000
+            || !string.Equals(result, amount.ToString(CultureInfo.InvariantCulture),
+                StringComparison.Ordinal) || !Secret.IsMatch(keyHex))
+            throw new ArgumentException("noncanonical authenticated synthetic receipt");
+        string fingerprint = Fingerprint(command);
+        string body = string.Join("\t", "BLAZE-V2-ACK-FIXTURE/1",
+            command.Controller, command.Sequence.ToString(CultureInfo.InvariantCulture),
+            fingerprint, result, outcome) + "\n";
+        byte[] key = Convert.FromHexString(keyHex);
+        try
+        {
+            string mac = Convert.ToHexString(HMACSHA256.HashData(key,
+                Encoding.ASCII.GetBytes(body))).ToLowerInvariant();
+            return string.Join("\t", "ACKV1", outcome, command.Controller,
+                command.Sequence.ToString(CultureInfo.InvariantCulture),
+                fingerprint, result, mac);
+        }
+        finally { CryptographicOperations.ZeroMemory(key); }
+    }
+
     private static void ExpectReject(Action action)
     {
         try { action(); }
@@ -115,6 +144,16 @@ internal static class Program
         ExpectReject(() => Create("ctrlOne", "1", "AM", "alice", "-", "1", "2000000001"));
         ExpectReject(() => Sign(a, new string('0', 63)));
         ExpectReject(() => Sign(a, new string('F', 64)));
+        var receipt = AckFixture(a, "COMMIT", "140", k1);
+        if (!receipt.StartsWith("ACKV1\tCOMMIT\tctrlOne\t1\t", StringComparison.Ordinal)
+            || receipt.Split('\t').Length != 7
+            || receipt == AckFixture(a, "REPLAY", "140", k1)
+            || receipt == AckFixture(a, "COMMIT", "141", k1)
+            || receipt == AckFixture(b, "COMMIT", "140", k1)
+            || receipt == AckFixture(a, "COMMIT", "140", k2))
+            throw new Exception("authenticated ACK lacks separation or request binding");
+        ExpectReject(() => AckFixture(a, "OK", "140", k1));
+        ExpectReject(() => AckFixture(a, "COMMIT", "0140", k1));
         if (Sign(Create("ctrlOne", "1", "AM", "alice", "-", "41", "1000"), k1) == Sign(a, k1)
             || Sign(Create("ctrlOne", "1", "AM", "bob", "-", "40", "1000"), k1) == Sign(a, k1)
             || Sign(Create("ctrlOne", "1", "AM", "alice", "-", "40", "1001"), k1) == Sign(a, k1))
@@ -131,9 +170,16 @@ internal static class Program
                 SelfTest();
                 return 0;
             }
+            if (args.Length == 11 && args[0] == "--ack-fixture")
+            {
+                var expected = Create(args[1], args[2], args[3], args[4],
+                    args[5], args[6], args[7]);
+                Console.WriteLine(AckFixture(expected, args[8], args[9], args[10]));
+                return 0;
+            }
             if (args.Length != 9 || args[0] != "--emit")
                 throw new ArgumentException(
-                    "test-only usage: --selftest | --emit CTRL SEQ OP SUBJECT TARGET UNITS NOW SYNTHETIC_HEX_KEY");
+                    "test-only usage: --emit CTRL SEQ OP SUBJECT TARGET UNITS NOW KEY | --ack-fixture CTRL SEQ OP SUBJECT TARGET UNITS NOW OUTCOME RESULT KEY");
             var command = Create(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
             var signature = Sign(command, args[8]);
             Console.WriteLine(string.Join(" ", command.Controller,
