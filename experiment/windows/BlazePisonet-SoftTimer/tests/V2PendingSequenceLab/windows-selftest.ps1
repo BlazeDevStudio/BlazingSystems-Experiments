@@ -32,27 +32,42 @@ try {
   if ((Run -items @('--pending', $temp)) -ne $command) { throw 'restart pending identity' }
   if ((Run -items @('--reserve', $temp, 'AM', 'alice', '-', '40', '1000')) -ne $command) { throw 'duplicate seq' }
   Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '41', '1000')
-  # PAY-0717: Retire bare textual ACK entirely, even in this fixture.
-  $key = '3333333333333333333333333333333333333333333333333333333333333333'
-  $wrongKey = '4444444444444444444444444444444444444444444444444444444444444444'
+  # PAY-0718: separate fixture server ACK trust, no controller-key fallback.
+  $controllerKey = '3333333333333333333333333333333333333333333333333333333333333333'
+  $serverKey = '5555555555555555555555555555555555555555555555555555555555555555'
+  $revokedKey = '6666666666666666666666666666666666666666666666666666666666'
+  $rotatedKey = '7777777777777777777777777777777777777777777777777777777777'
   $signer = Join-Path $PSScriptRoot '../V2NativeEnvelopeContract/V2NativeEnvelopeContract.csproj'
   dotnet build $signer -c Release -warnaserror --nologo
-  if ($LASTEXITCODE -ne 0) { throw 'PAY-0717 fixture signer build' }
+  if ($LASTEXITCODE -ne 0) { throw 'PAY-0718 signer fixture build' }
   $signerDll = Join-Path $PSScriptRoot '../V2NativeEnvelopeContract/bin/Release/net8.0/V2NativeEnvelopeContract.dll'
-  $reply = & dotnet $signerDll --ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 $key
-  if ($LASTEXITCODE -ne 0) { throw 'PAY-0717 signed fixture ACK generation' }
-  Reject -items @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', ('COMMIT' + [char]9 + '140'))
-  Reject -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', ('COMMIT' + [char]9 + '140'), $key)
-  Reject -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply, $wrongKey)
-  Reject -items @('--ack-auth', $temp, '2', 'AM', 'alice', '-', '40', '1000', $reply, $key)
-  $other = & dotnet $signerDll --ack-fixture ctrlOther 1 AM alice - 40 1000 COMMIT 140 $key
-  if ($LASTEXITCODE -ne 0) { throw 'PAY-0717 wrong controller fixture' }
-  Reject -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', $other, $key)
-  $wrongAmount = & dotnet $signerDll --ack-fixture ctrlOne 1 AM alice - 41 1000 COMMIT 140 $key
-  if ($LASTEXITCODE -ne 0) { throw 'PAY-0717 amount collision fixture' }
-  Reject -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', $wrongAmount, $key)
+  $trust = Join-Path $temp 'trusted-server-ack-keys.tsv'
+  $registry = "serverA`tctrlOne`tactive`t$serverKey`nserverOld`tctrlOne`trevoked`t$revokedKey`n"
+  [IO.File]::WriteAllText($trust, $registry, [Text.Encoding]::ASCII)
+  $reply = & dotnet $signerDll --server-ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 serverA $serverKey
+  if ($LASTEXITCODE -ne 0) { throw 'PAY-0718 server ACK fixture generation' }
+  $legacy = & dotnet $signerDll --ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 $controllerKey
+  Reject -items @('--ack', $temp, '1', 'AM', 'alice', '-', '40', '1000', ("COMMIT`t140"))
+  Reject -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', $legacy, $controllerKey)
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $legacy)
+  $forged = & dotnet $signerDll --server-ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 serverA $controllerKey
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $forged)
+  Reject -items @('--ack-server', $temp, '2', 'AM', 'alice', '-', '40', '1000', $reply)
+  $other = & dotnet $signerDll --server-ack-fixture ctrlOther 1 AM alice - 40 1000 COMMIT 140 serverA $serverKey
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $other)
+  $wrongAmount = & dotnet $signerDll --server-ack-fixture ctrlOne 1 AM alice - 41 1000 COMMIT 140 serverA $serverKey
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $wrongAmount)
+  $revoked = & dotnet $signerDll --server-ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 serverOld $revokedKey
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $revoked)
+  $unknown = & dotnet $signerDll --server-ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 serverMissing $serverKey
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $unknown)
+  [IO.File]::WriteAllText($trust, "serverA`tctrlOne`trevoked`t$serverKey`nserverNew`tctrlOne`tactive`t$rotatedKey`n", [Text.Encoding]::ASCII)
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)
+  [IO.File]::WriteAllText($trust, "serverA`tctrlOne`tactive`t$serverKey`nserverNew`tctrlOne`tactive`t$rotatedKey`n", [Text.Encoding]::ASCII)
+  Reject -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)
+  [IO.File]::WriteAllText($trust, $registry, [Text.Encoding]::ASCII)
   $before = (Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash
-  if ((Run -items @('--ack-auth', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply, $key)) -ne 'ACKED') { throw 'authenticated ack result' }
+  if ((Run -items @('--ack-server', $temp, '1', 'AM', 'alice', '-', '40', '1000', $reply)) -ne 'ACKED') { throw 'independent server ACK result' }
   if ((Get-FileHash (Join-Path $temp 'sequence.state') -Algorithm SHA256).Hash -eq $before) { throw 'ACK did not update state' }
   if ((Run -items @('--pending', $temp)) -ne 'EMPTY') { throw 'cleared pending' }
   if ((Run -items @('--reserve', $temp, 'TM', 'alice', 'bob', '30', '1000')) -ne 'ctrlOne 2 TM alice bob 30 1000') { throw 'sequence reuse' }
@@ -60,7 +75,7 @@ try {
   [IO.File]::AppendAllText($file, 'TAMPER' + [char]10)
   Reject -items @('--pending', $temp)
   Reject -items @('--reserve', $temp, 'AM', 'alice', '-', '3', '1000')
-  Write-Output 'PAY-0716/PAY-0717 Windows authenticated ACK + process-restart fixture PASS (not production)'
+  Write-Output 'PAY-0718 Windows independent server ACK rotation/revocation + restart fixture PASS (not production)'
 }
 finally {
   Remove-Item Env:BLAZE_V2_PENDING_FAULT -ErrorAction SilentlyContinue
