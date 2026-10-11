@@ -81,7 +81,8 @@ set -- $signed
 native_ack="$("$N/native" "$N" "$@" --server-ack-v2)"
 expected_ack="$(dotnet "$EMIT" --server-ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 serverA "$server_key")"
 [ "$native_ack" = "$expected_ack" ]
-[ "$(printf '%s' "$native_ack" | awk -F '\t' '{print NF}')" -eq 7 ]
+# ACKV2 adds server KEY_ID, hence eight canonical fields (not ACKV1 seven).
+[ "$(printf '%s' "$native_ack" | awk -F '\t' '{print NF}')" -eq 8 ]
 [ "$(balance alice)" = 140 ]
 # PAY-0718: no unsigned or controller-key ACK fallback is accepted.
 legacy="$(dotnet "$EMIT" --ack-fixture ctrlOne 1 AM alice - 40 1000 COMMIT 140 "$key")"
