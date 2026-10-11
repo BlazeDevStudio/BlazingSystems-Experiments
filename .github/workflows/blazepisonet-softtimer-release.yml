@@ -68,6 +68,12 @@ jobs:
           dotnet run --project "$env:PROJECT_DIR/tests/V2NativeEnvelopeContract/V2NativeEnvelopeContract.csproj" -c Release -- --selftest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: PAY-0716 off-device durable pending v2 controller sequence test
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Restore win-x64
         shell: pwsh
         run: |
