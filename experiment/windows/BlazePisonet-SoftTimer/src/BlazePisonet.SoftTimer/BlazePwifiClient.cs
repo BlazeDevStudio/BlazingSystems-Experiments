@@ -25,6 +25,49 @@ public sealed class BlazePwifiClient : IDisposable
     public event Action<string>? StatusChanged;
     public event Action<BlazePwifiMemberSnapshot>? MembersReceived;
     public bool InsertWindow => _insertWindow;
+
+    // PAY-0719: this is a *deny* gate, not a v2 implementation or feature flag
+    // that authorizes migration. A required v2 protocol MUST never send an
+    // unsigned/legacy member request or accept a v1 money acknowledgment.
+    public static bool LegacyMemberWireAllowed(AppConfig config, string action) =>
+        !config.BlazePwifiRequireV2MemberProtocol
+        || !action.StartsWith("member_", StringComparison.Ordinal);
+
+    // Headless compiled-product regression: no network, UI, hardware or money.
+    public static int VerifyV2MemberProtocolGate()
+    {
+        var config = new AppConfig
+        {
+            BlazePwifiEnabled = true,
+            BlazePwifiMemberAuthorityEnabled = true,
+            BlazePwifiRequireV2MemberProtocol = true
+        };
+        foreach (var action in new[]
+        {
+            "member_snapshot", "member_auth", "member_bank",
+            "member_restore", "member_transfer", "member_v2_negotiate"
+        })
+            if (LegacyMemberWireAllowed(config, action)) return 21;
+        if (!LegacyMemberWireAllowed(config, "poll")
+            || !LegacyMemberWireAllowed(config, "ping")) return 22;
+        using (var client = new BlazePwifiClient(config))
+        {
+            if (client.SyncMembersAsync().GetAwaiter().GetResult() is not null) return 23;
+            var syntheticMember = new MemberAccount
+            {
+                Username = "fixture", Enabled = true, PasswordScheme = "sha256i"
+            };
+            if (client.BankMemberAsync(syntheticMember, "", 60).GetAwaiter().GetResult() is not null)
+                return 24;
+            if (client.RestoreMemberAsync(syntheticMember, "").GetAwaiter().GetResult() is not null)
+                return 25;
+        }
+        config.BlazePwifiRequireV2MemberProtocol = false;
+        foreach (var action in new[] { "member_snapshot", "member_auth", "member_bank",
+            "member_restore", "member_transfer" })
+            if (!LegacyMemberWireAllowed(config, action)) return 26;
+        return 0;
+    }
     public string TargetNonce => _targetNonce;
 
     public BlazePwifiClient(AppConfig config)
@@ -62,6 +105,7 @@ public sealed class BlazePwifiClient : IDisposable
 
             var status = _insertWindow ? "BlazePwifi connected · coin window active" : "BlazePwifi connected";
             if (_config.BlazePwifiMemberAuthorityEnabled
+                && !_config.BlazePwifiRequireV2MemberProtocol
                 && DateTimeOffset.UtcNow - _lastMemberSync >= TimeSpan.FromSeconds(Math.Clamp(_config.BlazePwifiMemberSyncSeconds, 5, 300)))
             {
                 var snapshot = await SyncMembersCoreAsync();
@@ -71,6 +115,8 @@ public sealed class BlazePwifiClient : IDisposable
                     status += $" · members r{snapshot.Revision}";
                 }
             }
+            if (_config.BlazePwifiRequireV2MemberProtocol)
+                status += " · V2 member authority unavailable: legacy member operations BLOCKED";
             StatusChanged?.Invoke(status);
         }
         catch (Exception ex) { StatusChanged?.Invoke("BlazePwifi error: " + ex.Message); }
@@ -92,7 +138,8 @@ public sealed class BlazePwifiClient : IDisposable
 
     public async Task<BlazePwifiMemberSnapshot?> SyncMembersAsync()
     {
-        if (!_config.BlazePwifiEnabled || !_config.BlazePwifiMemberAuthorityEnabled) return null;
+        if (!_config.BlazePwifiEnabled || !_config.BlazePwifiMemberAuthorityEnabled
+            || !LegacyMemberWireAllowed(_config, "member_snapshot")) return null;
         var snapshot = await SyncMembersCoreAsync();
         if (snapshot is not null) _lastMemberSync = DateTimeOffset.UtcNow;
         return snapshot;
@@ -100,6 +147,7 @@ public sealed class BlazePwifiClient : IDisposable
 
     private async Task<BlazePwifiMemberSnapshot?> SyncMembersCoreAsync()
     {
+        if (!LegacyMemberWireAllowed(_config, "member_snapshot")) return null;
         var call = await CallDetailed("member_snapshot", 0, string.Empty);
         if (call is null) return null;
 
@@ -177,6 +225,7 @@ public sealed class BlazePwifiClient : IDisposable
     {
         if (!_config.BlazePwifiEnabled
             || !_config.BlazePwifiMemberAuthorityEnabled
+            || !LegacyMemberWireAllowed(_config, action)
             || !member.Enabled
             || !member.PasswordScheme.Equals("sha256i", StringComparison.OrdinalIgnoreCase)
             || seconds < 0
@@ -234,7 +283,8 @@ public sealed class BlazePwifiClient : IDisposable
 
     public async Task<BlazePwifiMemberMutationResult?> ReplayMemberOperationAsync(PendingMemberOperation pending)
     {
-        if (!_config.BlazePwifiEnabled || !_config.BlazePwifiMemberAuthorityEnabled)
+        if (!_config.BlazePwifiEnabled || !_config.BlazePwifiMemberAuthorityEnabled
+            || !LegacyMemberWireAllowed(_config, pending.Action))
             return null;
 
         var balanceField = pending.Action == "member_transfer"
@@ -306,6 +356,9 @@ public sealed class BlazePwifiClient : IDisposable
 
     private async Task<CallResult?> CallDetailedWithNonce(string action, int pulses, string target, string? nonceOverride)
     {
+        // Final dispatch boundary: even a future caller bypassing the public
+        // method guards cannot downgrade a v2-required member transaction.
+        if (!LegacyMemberWireAllowed(_config, action)) return null;
         if (string.IsNullOrWhiteSpace(_config.BlazePwifiVendoUrl)
             || string.IsNullOrWhiteSpace(_config.BlazePwifiVendoKey))
             return null;
