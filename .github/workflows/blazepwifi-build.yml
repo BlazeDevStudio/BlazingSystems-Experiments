@@ -139,6 +139,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh
       - name: BlazePwifi v0.6 rental receipt EIO after lease rename
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh
+      - name: RENT-0723 reject rental paid replay ACK under writer lock and stale lease overwrite
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_replay_race.sh
       - name: Refuse altered-pulse and cross-device rental coin receipt duplicate ACKs
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_identity.sh
       - name: BlazePwifi v0.6 synthetic crash-atomic member transfer
