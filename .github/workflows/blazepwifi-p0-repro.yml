@@ -23,6 +23,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_paid_replay_race.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh'
@@ -149,6 +150,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_quarantine_replay.sh
       - name: PAY-0713 synthetic member atomic authority bridge (not production)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_v2_atomic_bridge.sh
+      - name: RENT-0723 real rental writer lease and replay serialization
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_replay_race.sh
       - name: Reject deletion of remaining member credit and quarantine interrupted admin writes
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_delete_safety.sh
       - name: Reject partial member database copies and false admin success
