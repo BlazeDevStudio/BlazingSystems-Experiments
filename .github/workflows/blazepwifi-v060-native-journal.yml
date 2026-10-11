@@ -44,6 +44,8 @@ jobs:
           dotnet-version: '8.0.425'
       - name: PAY-0715 actual SoftTimer .NET → native HMAC/fsync journal cross-language contract
         run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh
+      - name: PAY-0716 off-device pending SoftTimer controller restart and C journal lost ACK
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh
       - name: Safety boundary
         run: |
           test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/bin/v2-native-fixture
