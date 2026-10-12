@@ -44,6 +44,42 @@ printf '%s' "$orig" | grep -Fq '"duplicate":false'
 again="$(send_coin 0102030405060708 2)"
 printf '%s' "$again" | grep -Fq '"duplicate":true'
 [ "$(credit)" = 300 ]
+# PAY-0733: the same authenticated controller nonce+target must never ACK
+# another device when an operator reselects the live target entry.
+# Every fault below is synthetic and must leave the paid account bytes intact.
+deny_old_receipt() {
+  tag="$1"
+  before="$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)"
+  reply="$(send_coin 0102030405060708 2)"
+  printf '%s' "$reply" | grep -Fq '"ok":false' || {
+    echo "PAY-0733 false success ACK: $tag: $reply" >&2; exit 1
+  }
+  [ "$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)" = "$before" ] || {
+    echo "PAY-0733 changed paid balance/receipt during $tag" >&2; exit 1
+  }
+}
+OTHER=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+cp "$BP_STATE/targets/vendo-01.tsv" "$T/target-good"
+cp "$BP_STATE/accounts.tsv" "$T/accounts-good"
+printf '%s\t0\t0\t0\t0\t0\taa:bb:cc:dd:ee:00\t10.0.0.10\t\n' "$OTHER" >> "$BP_STATE/accounts.tsv"
+printf '%s\taa:bb:cc:dd:ee:00\t%s\t%s\tvendo-01\thotspot\n' "$OTHER" "$TARGET" "$((NOW+600))" > "$BP_STATE/targets/vendo-01.tsv"
+deny_old_receipt reselected-window-different-device
+cp "$T/target-good" "$BP_STATE/targets/vendo-01.tsv"
+# A corrupt unrelated account, duplicate account identity, duplicated receipt
+# or malformed credited balance cannot become a success ACK via first-match.
+printf 'corrupt-row\n' >> "$BP_STATE/accounts.tsv"
+deny_old_receipt corrupt-unrelated-account
+cp "$T/accounts-good" "$BP_STATE/accounts.tsv"
+cat "$T/accounts-good" >> "$BP_STATE/accounts.tsv"
+deny_old_receipt duplicated-paid-account
+cp "$T/accounts-good" "$BP_STATE/accounts.tsv"
+printf '%s\t0\t0\t0\t0\t0\taa:bb:cc:dd:ee:00\t10.0.0.10\t%s\n' "$OTHER" "$(events)" >> "$BP_STATE/accounts.tsv"
+deny_old_receipt duplicate-receipt-on-other-account
+cp "$T/accounts-good" "$BP_STATE/accounts.tsv"
+sed 's/\t300\t/\tNaN\t/' "$T/accounts-good" > "$BP_STATE/accounts.tsv"
+deny_old_receipt malformed-credit-on-receipt-owner
+cp "$T/accounts-good" "$BP_STATE/accounts.tsv"
+[ "$(send_coin 0102030405060708 2 | grep -o '"duplicate":true')" = '"duplicate":true' ]
 changed="$(send_coin 0102030405060708 3)"
 printf '%s' "$changed" | grep -Fq '"ok":false'
 printf '%s' "$changed" | grep -Fq 'coin pulse payload collision'
@@ -69,4 +105,5 @@ done
 replay="$(send_coin 1111111111111101 1)"
 printf '%s' "$replay" | grep -Fq '"duplicate":true'
 echo 'PAY-0732 PASS: signed ordinary coin original pulses bound to same paid account row; changed replay denied, old legacy ambiguous ACK denied, active window retained'
+echo 'PAY-0733 PASS: signed coin old receipts cannot ACK a reselected device, duplicate/invalid account rows, duplicated receipts or malformed paid balance'
 echo 'NOT v2: real authenticated atomic witness-gated journal, physical hardware, P-256 and release still blocked'

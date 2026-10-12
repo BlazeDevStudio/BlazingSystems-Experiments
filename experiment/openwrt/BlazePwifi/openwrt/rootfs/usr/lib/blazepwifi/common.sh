@@ -430,21 +430,34 @@ bp_find_event_device() {
 # Return immutable 1..20 original pulses for the same stable nonce identity.
 # A pre-PAY-0732 unsuffixed old coin receipt is unverifiable: return 8 and
 # NEVER acknowledge it or silently treat it as a fresh purchase.
+# PAY-0733: the nonce receipt's OWNER is the paid account selected by
+# the CURRENT signed controller window. A historical receipt belonging to
+# another device cannot prove this window's purchase or reveal its balance.
+# Validate the entire authoritative account snapshot under the caller's
+# global paid replay lock; no first-match, malformed-balance or duplicate-row
+# shortcut may ever justify a success ACK.
 bp_coin_receipt_original_pulses() {
-	base="$1"
+	base="$1"; intended_device="$2"
+	[ -n "$base" ] && [ -n "$intended_device" ] || return 8
 	[ -f "$BP_ACCOUNTS" ] && [ ! -L "$BP_ACCOUNTS" ] || return 8
-	awk -F '\t' -v base="$base" '
+	awk -F '\t' -v base="$base" -v owner="$intended_device" '
 	  {
+	    if (NF!=9 || $1 !~ /^[A-Za-z0-9_.:-]+$/ ||
+	        length($1)<2 || length($1)>96 || ++seen[$1]>1 ||
+	        $2 !~ /^(0|[1-9][0-9]*)$/ || length($2)>10 ||
+	        $2+0>2147483647 ||
+	        $3 !~ /^[0-9]+$/ || $4 !~ /^[0-9]+$/ ||
+	        $5 !~ /^(0|1)$/ || $6 !~ /^[0-9]+$/) bad=1
 	    n=split($9, a, ",")
 	    for (i=1;i<=n;i++) {
 	      if (a[i]==base) {bad=1; found++}
 	      else if (index(a[i],base "!")==1) {
 	        found++; orig=substr(a[i],length(base)+2)
-	        if (orig !~ /^([1-9]|1[0-9]|20)$/) bad=1
+	        if (orig !~ /^([1-9]|1[0-9]|20)$/ || $1!=owner) bad=1
 	      }
 	    }
 	  }
-	  END { if (bad || found>1) exit 8; if(found) print orig }
+	  END { if (bad || found!=1) exit 8; print orig }
 	' "$BP_ACCOUNTS"
 }
 
