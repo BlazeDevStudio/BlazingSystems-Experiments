@@ -109,6 +109,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh
       - name: RENT-0725 synthetic rental lease and coin receipt single-authority bridge (not production)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
+      - name: RENT-0726 reject signed rental-v2 protocol downgrade before heartbeat or credit
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_v2_no_downgrade.sh
       - name: Refuse corrupt or incomplete prepaid rental leases
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh
       - name: Refuse revoking active paid rental time or false ACK after failed removal
