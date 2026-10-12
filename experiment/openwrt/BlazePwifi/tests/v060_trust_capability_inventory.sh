@@ -96,6 +96,32 @@ mkdir "$ROOT/sys/class/block/mmcblk0rpmb"
 run_blocked 'RPMB advertised' orangepi
 grep -Fq '"rpmb_candidate":true' "$TMP/out"
 
+# A symlinked RPMB node must not appear as genuine fixture capability.
+rmdir "$ROOT/sys/class/block/mmcblk0rpmb"
+ln -s /tmp "$ROOT/sys/class/block/mmcblk0rpmb"
+run_blocked 'symlinked RPMB entry' orangepi
+grep -Fq '"rpmb_candidate":false' "$TMP/out"
+rm "$ROOT/sys/class/block/mmcblk0rpmb"
+
+# An honest leaf check still follows a symlinked parent. Refuse the fixture.
+mv "$ROOT/dev" "$ROOT/dev-original"
+ln -s "$TMP" "$ROOT/dev"
+refuse_fixture 'symlinked dev ancestry' --fixture-root "$ROOT" x86_64
+rm "$ROOT/dev"
+mv "$ROOT/dev-original" "$ROOT/dev"
+
+mv "$ROOT/sys/class/block" "$ROOT/sys/class/block-original"
+ln -s "$ROOT/sys/class/block-original" "$ROOT/sys/class/block"
+refuse_fixture 'symlinked RPMB parent' --fixture-root "$ROOT" orangepi
+rm "$ROOT/sys/class/block"
+mv "$ROOT/sys/class/block-original" "$ROOT/sys/class/block"
+
+mv "$ROOT/sys/class/tpm" "$ROOT/sys/class/tpm-original"
+ln -s "$ROOT/sys/class/tpm-original" "$ROOT/sys/class/tpm"
+refuse_fixture 'symlinked TPM parent' --fixture-root "$ROOT" x86_64
+rm "$ROOT/sys/class/tpm"
+mv "$ROOT/sys/class/tpm-original" "$ROOT/sys/class/tpm"
+
 # Synthetic mode is NEVER allowed to point at a real system root or symlink.
 refuse_fixture 'system root' --fixture-root / generic
 refuse_fixture 'device path' --fixture-root /dev x86_64
@@ -125,5 +151,5 @@ sh "$SCANNER" unknown-device >"$TMP/out" 2>"$TMP/err" || rc=$?
     echo 'TRUST-0695 unknown target accepted' >&2; exit 1
 }
 
-echo 'TRUST-0695 PASS: isolated synthetic fixture guard, matched TPM indices, false positives and paid-authority refusal'
+echo 'TRUST-0695 / TRUST-0728 PASS: synthetic ancestor and RPMB symlink refusal, TPM indices and paid-authority denial'
 echo 'PHYSICAL_POWER_CUT_VERIFIED=0 CUSTOMER_INSTALL_AUTHORIZED=0'
