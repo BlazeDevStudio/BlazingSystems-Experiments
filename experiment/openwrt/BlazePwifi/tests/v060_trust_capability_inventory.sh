@@ -104,11 +104,11 @@ grep -Fq '"rpmb_candidate":false' "$TMP/out"
 rm "$ROOT/sys/class/block/mmcblk0rpmb"
 
 # An honest leaf check still follows a symlinked parent. Refuse the fixture.
-rmdir "$ROOT/dev"
+mv "$ROOT/dev" "$ROOT/dev-original"
 ln -s "$TMP" "$ROOT/dev"
 refuse_fixture 'symlinked dev ancestry' --fixture-root "$ROOT" x86_64
 rm "$ROOT/dev"
-mkdir "$ROOT/dev"
+mv "$ROOT/dev-original" "$ROOT/dev"
 
 mv "$ROOT/sys/class/block" "$ROOT/sys/class/block-original"
 ln -s "$ROOT/sys/class/block-original" "$ROOT/sys/class/block"
