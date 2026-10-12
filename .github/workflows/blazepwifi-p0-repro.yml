@@ -24,6 +24,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py'
+      - 'experiment/openwrt/BlazePwifi/tests/fixtures/rental_v2_atomic.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh'
@@ -105,6 +107,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
       - name: RENT-0724 prevent stale admin rental add and unauthorized forfeit across writer lock
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh
+      - name: RENT-0725 synthetic rental lease and coin receipt single-authority bridge (not production)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
       - name: Refuse corrupt or incomplete prepaid rental leases
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh
       - name: Refuse revoking active paid rental time or false ACK after failed removal
