@@ -121,6 +121,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_replay_lock.sh
       - name: PAY-0732 signed ordinary coin receipts bind original pulses and deny old ambiguous ACK
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_pulse_replay.sh
+      - name: PAY-0733 deny signed coin receipt ACK for reassigned target device on both replay paths
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_target_affinity.sh
       - name: Retain paid coin replay IDs throughout the full live target window
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_replay_window.sh
       - name: Reject member paid replay ACK during global uncertainty quarantine
