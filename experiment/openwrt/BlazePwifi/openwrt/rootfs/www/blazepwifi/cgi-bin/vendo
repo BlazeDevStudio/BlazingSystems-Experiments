@@ -369,6 +369,11 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
+      # PAY-0733: the signed nonce/target is an immutable receipt for ONE
+      # account. An active coin window may be reassigned to another device,
+      # but must never reuse an old receipt as a success ACK for that device.
+      [ "$duplicate_device" = "$device" ] ||
+        bp_fail "coin receipt belongs to a different device; no credit ACK"
       original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
         bp_fail "coin original receipt ambiguous; operator reconciliation required"
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
@@ -388,6 +393,11 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
+      # PAY-0733: the signed nonce/target is an immutable receipt for ONE
+      # account. An active coin window may be reassigned to another device,
+      # but must never reuse an old receipt as a success ACK for that device.
+      [ "$duplicate_device" = "$device" ] ||
+        bp_fail "coin receipt belongs to a different device; no credit ACK"
       original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
         bp_fail "coin original receipt ambiguous; operator reconciliation required"
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
