@@ -30,6 +30,7 @@ bp_check_vendo_sig "$action" "$id" "$nonce" "$pulses" "$target" "$sig" || bp_fai
 # v2-prefixed action into the legacy member_bank/restore/transfer handlers.
 case "$action" in
   member_v2_*) bp_fail "member v2 authority unavailable; no v1 fallback" ;;
+  rental_v2_*) bp_fail "rental v2 authority unavailable; no v1 fallback" ;;
 esac
 
 now="$(bp_now)"
