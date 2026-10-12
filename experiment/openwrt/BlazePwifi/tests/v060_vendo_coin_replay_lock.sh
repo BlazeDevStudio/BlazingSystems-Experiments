@@ -110,7 +110,7 @@ bp_find_event_device() {
   event="$1"
   awk -F '\t' -v e="$event" '{
     n=split($9,a,",")
-    for(i=1;i<=n;i++) if(a[i]==e){print $1;exit}
+    for(i=1;i<=n;i++) if(a[i]==e || index(a[i],e "!")==1){print $1;exit}
   }' "$BP_ACCOUNTS"
 }
 bp_lock() {
