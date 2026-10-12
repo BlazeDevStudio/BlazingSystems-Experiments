@@ -362,6 +362,14 @@ bp_coin_event_is_live() {
 	coin_body="${1#c:}"
 	coin_window="${coin_body%%.*}"
 	coin_digest="${coin_body#*.}"
+	# PAY-0732 new atomically stored original pulse count. Legacy unsuffixed
+	# receipts remain recognizable but are NOT safe to replay as paid ACKs.
+	case "$coin_digest" in
+	  *'!'*) coin_pulses="${coin_digest#*!}"; coin_digest="${coin_digest%%!*}"
+	    case "$coin_pulses" in ''|*[!0-9]*) return 1;; esac
+	    [ "$coin_pulses" -ge 1 ] 2>/dev/null &&
+	      [ "$coin_pulses" -le 20 ] 2>/dev/null || return 1 ;;
+	esac
 	printf '%s' "$coin_window" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || return 1
 	printf '%s' "$coin_digest" | grep -Eq '^[a-f0-9]{64}$' || return 1
 	for coin_target_file in "$BP_TARGET_DIR"/*.tsv; do
@@ -414,8 +422,30 @@ bp_find_event_device() {
 	event="$1"
 	awk -F '\t' -v e="$event" '{
 		n=split($9,a,",");
-		for(i=1;i<=n;i++) if(a[i]==e){print $1; exit}
+		for(i=1;i<=n;i++) if(a[i]==e || index(a[i],e "!")==1){print $1; exit}
 	}' "$BP_ACCOUNTS"
+}
+
+# PAY-0732: receipt is part of the SAME account row as paid balance.
+# Return immutable 1..20 original pulses for the same stable nonce identity.
+# A pre-PAY-0732 unsuffixed old coin receipt is unverifiable: return 8 and
+# NEVER acknowledge it or silently treat it as a fresh purchase.
+bp_coin_receipt_original_pulses() {
+	base="$1"
+	[ -f "$BP_ACCOUNTS" ] && [ ! -L "$BP_ACCOUNTS" ] || return 8
+	awk -F '\t' -v base="$base" '
+	  {
+	    n=split($9, a, ",")
+	    for (i=1;i<=n;i++) {
+	      if (a[i]==base) {bad=1; found++}
+	      else if (index(a[i],base "!")==1) {
+	        found++; orig=substr(a[i],length(base)+2)
+	        if (orig !~ /^([1-9]|1[0-9]|20)$/) bad=1
+	      }
+	    }
+	  }
+	  END { if (bad || found>1) exit 8; if(found) print orig }
+	' "$BP_ACCOUNTS"
 }
 
 bp_rate_seconds() {
