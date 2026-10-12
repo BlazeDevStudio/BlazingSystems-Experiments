@@ -371,6 +371,7 @@ bp_rental_lease_expire() {
     bp_paid_replay_read_unlock; return "$rc"
   fi
   lease="$(printf '%s' "$line" | cut -f3)"
+  original_confirmed_lease="$lease"
   if [ "$lease" -gt "$now" ] && [ "$confirm" != CONFIRM_FORFEIT ]; then
     bp_paid_replay_read_unlock; return 6
   fi
@@ -385,6 +386,11 @@ bp_rental_lease_expire() {
   now="$(bp_now)"
   bp_rental_safe_seconds "$now" 2147483647 ||
     { bp_rental_admin_unmodified_reject 8; return $?; }
+  # Even an explicit CONFIRM_FORFEIT was consent for the observed amount,
+  # never a blank cheque to erase credit added after the confirmation.
+  if [ "$confirm" = CONFIRM_FORFEIT ] && [ "$lease" != "$original_confirmed_lease" ]; then
+    bp_rental_admin_unmodified_reject 6; return $?
+  fi
   # Old ordinary expiry approval is not consent to forfeit a new paid lease.
   if [ "$lease" -gt "$now" ] && [ "$confirm" != CONFIRM_FORFEIT ]; then
     bp_rental_admin_unmodified_reject 6; return $?
