@@ -38,6 +38,10 @@ function observeDNS(old, lines, now, limit) {
  for(let key,b in old.bindings || {}) if(b.expires>now) {if(!bindings[key])bindings[key]=b;else for(let d in keys(b.domains))bindings[key].domains[d]=true;}
  let order=sort(keys(observations),(a,b)=>observations[b].last-observations[a].last);
  for(let n=limit;n<length(order);n++)delete observations[order[n]];
+ // Bound retained IP associations independently of DNS query volume. Dropping
+ // whole bindings leaves traffic unknown instead of inventing a unique match.
+ let addresses=sort(keys(bindings),(a,b)=>bindings[b].expires-bindings[a].expires);
+ for(let n=limit;n<length(addresses);n++)delete bindings[addresses[n]];
  return {observations,bindings};
 }
 function attribution(dns, client, remote, now) {
@@ -77,7 +81,7 @@ function advance(old, sample, cfg) {
   if(d){d.download+=down;d.upload+=up;d.download_bps+=(same?down*8/dt:0);d.upload_bps+=(same?up*8/dt:0);add(bucket.devices,d.id,down,up);}
   let a=cfg.domains?attribution(sample.dns,f.client,f.remote,sample.time):{domain:'Other/Unknown',app:'Unknown applications',confidence:'Domain observation disabled'};
   add(bucket.domains,a.domain,down,up);add(bucket.apps,a.app,down,up);
-  if(cfg.domains && a.domain!='Other/Unknown') {let info=state.domains[a.domain] || {first:sample.time,clients:{},download:0,upload:0};info.last=sample.time;info.download+=down;info.upload+=up;info.confidence=a.confidence;if(d)info.clients[d.id]=true;state.domains[a.domain]=info;}
+  if(count>0 && cfg.domains && a.domain!='Other/Unknown') {let info=state.domains[a.domain] || {first:sample.time,clients:{},download:0,upload:0};info.last=sample.time;info.download+=down;info.upload+=up;info.confidence=a.confidence;if(d && (info.clients[d.id] || length(keys(info.clients))<cfg.limit))info.clients[d.id]=true;state.domains[a.domain]=info;}
  }
  let order=sort(keys(state.days),(a,b)=>int(b)-int(a));for(let i=cfg.retention;i<length(order);i++)delete state.days[order[i]];
  for(let key in keys(state.recent))if(int(key)<int(slot)-288)delete state.recent[key];

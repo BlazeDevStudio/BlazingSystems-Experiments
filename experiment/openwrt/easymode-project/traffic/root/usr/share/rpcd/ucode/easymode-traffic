@@ -11,9 +11,9 @@ function configure(p){
   else die('Unsupported setting');
  }
  // Domain logging consent is explicit in the authenticated settings request.
- if(!u.commit('easymode_traffic'))die('Configuration could not be saved');writefile('/tmp/easymode-traffic-reconfigure','1');return {ok:true};
+ if(!u.commit('easymode_traffic'))die('Configuration could not be saved');writefile('/tmp/easymode-traffic/reconfigure','1');return {ok:true};
 }
-function action(req){try{if(length(req.payload)>4096)die('Request too large');let p=json(req.payload || '{}');if(req.action=='configure')return configure(p);if(req.action=='delete_history'){writefile('/tmp/easymode-traffic-delete','1');return {ok:true,pending:true};}if(req.action=='alias'){if(!match(p.mac || '',/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/)||type(p.name)!='string'||length(p.name)>64||match(p.name,/[\x00-\x1f\x7f]/))die('Invalid device name');let aliases=readJSON('/etc/easymode-traffic/aliases.json',{});if(length(keys(aliases))>=256&&!aliases[p.mac])die('Name limit reached');aliases[p.mac]=p.name;atomic('/etc/easymode-traffic/aliases.json',aliases);return {ok:true};}die('Unknown action');}catch(e){return {ok:false,error:''+e};}}
+function action(req){try{if(length(req.payload)>4096)die('Request too large');let p=json(req.payload || '{}');if(req.action=='configure')return configure(p);if(req.action=='delete_history'){writefile('/tmp/easymode-traffic/delete','1');return {ok:true,pending:true};}if(req.action=='alias'){if(!match(p.mac || '',/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/)||type(p.name)!='string'||length(p.name)>64||match(p.name,/[\x00-\x1f\x7f]/))die('Invalid device name');let aliases=readJSON('/etc/easymode-traffic/aliases.json',{});if(length(keys(aliases))>=256&&!aliases[p.mac])die('Name limit reached');aliases[p.mac]=p.name;atomic('/etc/easymode-traffic/aliases.json',aliases);return {ok:true};}die('Unknown action');}catch(e){return {ok:false,error:''+e};}}
 // rpcd/ubus enforces ACL before calling either method. Browser requests carry the
 // session bearer in a JSON POST body; no ambient cookies or public history files.
 return { 'easymode.traffic': { snapshot:{call:()=>snapshot()}, action:{args:{action:'',payload:''},call:req=>action(req.args)} } };

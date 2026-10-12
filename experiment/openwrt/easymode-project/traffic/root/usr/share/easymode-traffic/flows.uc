@@ -15,7 +15,8 @@ function ensureFlows(wans,lans,limit,allowed) {
  if(!text){if(existing)command('nft delete table inet easymode_traffic 2>/dev/null');unlink('/tmp/easymode-traffic/flow.json');return {available:false,generation:'',data:[]};}
  if(!existing||marker.rules!=text){let script=(existing?'delete table inet easymode_traffic\n':'')+text;writefile('/tmp/easymode-traffic/rules.nft',script);command('nft -f /tmp/easymode-traffic/rules.nft 2>/dev/null');existing=command('nft -j list table inet easymode_traffic 2>/dev/null');if(!existing)return {available:false,generation:'',data:[]};marker={rules:text,generation:trim(readfile('/proc/sys/kernel/random/uuid'))};atomic('/tmp/easymode-traffic/flow.json',marker);}
  let data=[];try{data=json(existing).nftables || [];}catch(e){}
- return {available:true,generation:marker.generation,data};
+ let peak=0;for(let entry in data)if(entry.set)peak=max(peak,length(entry.set.elem || []));
+ return {available:true,generation:marker.generation,data,peak,capacity:limit,limited:peak>=limit};
 }
 function parseFlows(data,identities) {
  let flows=[];

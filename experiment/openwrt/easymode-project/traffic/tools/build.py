@@ -9,6 +9,12 @@ def tar(files):
  out=io.BytesIO()
  with gzip.GzipFile(fileobj=out,mode='wb',mtime=0,filename='') as gz:
   with tarfile.open(fileobj=gz,mode='w',format=tarfile.GNU_FORMAT) as t:
+   # opkg does not create missing parents for regular members itself.
+   directories=set()
+   for name in files:
+    directories.update(str(p) for p in pathlib.PurePosixPath(name).parents if str(p)!='.')
+   for name in sorted(directories,key=lambda n:(n.count('/'),n)):
+    item=tarfile.TarInfo('./'+name+'/');item.type=tarfile.DIRTYPE;item.mode=0o755;item.uid=item.gid=0;item.mtime=0;t.addfile(item)
    for name,(data,mode) in sorted(files.items()):
     item=tarfile.TarInfo('./'+name);item.size=len(data);item.mode=mode;item.uid=item.gid=0;item.mtime=0;t.addfile(item,io.BytesIO(data))
  return out.getvalue()
@@ -49,7 +55,7 @@ exit 0
   name=f'EasyMode-v{VERSION}-{edition.title()}-all.ipk';(out/name).write_bytes(data)
   bundle={core_name:(core,0o644),name:(data,0o644),'install.sh':((BASE/'traffic/tools/install.sh').read_bytes(),0o755),'README.md':((BASE/'traffic/README.md').read_bytes(),0o644),'Update-EasyMode.ps1':((BASE/'traffic/tools/Update-EasyMode.ps1').read_bytes(),0o644),'Update-EasyMode.bat':(b'@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Update-EasyMode.ps1"\r\npause\r\n',0o644)}
   (out/f'EasyMode-v{VERSION}-{edition.title()}-offline.tar.gz').write_bytes(tar(bundle))
- manifest={'version':VERSION,'package_architecture':'all','format':'OpenWrt opkg IPK','runtime':'OpenWrt 24.10, ucode/rpcd','editions':EDITIONS,'hardware_tests':'NOT HARDWARE VERIFIED as an installed package; isolated R281 runtime tests only','files':[]}
+ manifest={'version':VERSION,'package_architecture':'all','format':'OpenWrt opkg IPK','runtime':'OpenWrt 24.10, ucode/rpcd','editions':EDITIONS,'hardware_tests':'R281 OpenWrt 24.10.8 preview installation and live API/browser checks passed; other hardware NOT HARDWARE VERIFIED; see TEST-REPORT.md','files':[]}
  for p in sorted(out.glob('*')):
   if p.is_file() and p.name not in ['SHA256SUMS','BUILD-MANIFEST.json']:manifest['files'].append({'name':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
  (out/'BUILD-MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')

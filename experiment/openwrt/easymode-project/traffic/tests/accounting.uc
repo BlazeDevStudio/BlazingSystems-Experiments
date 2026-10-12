@@ -18,4 +18,7 @@ equal(next.days['1'].domains,{},'disabled domain history remains empty');
 equal(length(keys(next.recent)),1,'short-window aggregate exists');
 s.monotonic+=500;s.time+=500;s.wan[0].rx+=999;let gap=advance(next,s,cfg);equal(gap.live[-1].download_bps,0,'large collection gap is not a live rate');
 let many={};for(let k=1;k<40;k++)many[''+k]={wan:{},devices:{},domains:{},apps:{}};gap.days=many;s.monotonic+=15;s.time=40*86400;let retained=advance(gap,s,cfg);equal(length(keys(retained.days)),7,'history retention bound');
+let many={observations:{},bindings:{}};for(let j=0;j<12;j++)many.bindings['client|'+j]={domains:{'example.com':true},expires:100+j};
+let bounded=observeDNS(many,[],100,4);equal(length(keys(bounded.bindings)),4,'DNS association memory stays bounded');
+equal(attribution(bounded,'client','0',100).domain,'Other/Unknown','discarded DNS association remains unknown');
 print('PASS: '+n+' accounting/attribution assertions\n');

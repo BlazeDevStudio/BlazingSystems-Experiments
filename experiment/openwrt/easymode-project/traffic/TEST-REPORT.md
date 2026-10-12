@@ -11,3 +11,13 @@
 
 ## Pending acceptance evidence
 GitHub VM installation/upgrade/uninstall; private RPC/CSRF tests; real forwarded counters; DNS lifecycle; corruption recovery; BIOS/UEFI boot; UI mobile/live/error behavior; uploaded checksum verification. Physical hardware deployment remains NOT HARDWARE VERIFIED. No v7 release is published at this checkpoint.
+
+
+## 2026-10-12 physical preview checkpoint (supersedes earlier deployment status)
+- R281 OpenWrt 24.10.8: real Core/Cellular IPK installation succeeded after fixing missing tar directory entries. Management UI retained; monitoring /traffic/ returns its assets with correct MIME types.
+- Real HTTP API: unauthenticated snapshot denied; administrator authentication returns fresh data. Service enabled and running; no current collector error.
+- Real browser: signed in; Overview, WiFi, Internet Data, Devices, Websites, Apps, Reports and Settings render; no console errors observed. Destructive settings actions were not exercised on the user's live network.
+- Real forwarded per-device counters and domain estimates populated. Laptop counters increased during actual traffic. Controlled 1 MiB test endpoint returned HTTP 403; a smaller OpenWrt download succeeded, but background traffic prevents exact-byte attribution validation. Do not describe this as an isolated throughput accuracy test.
+- 29 accounting assertions pass in R281 ucode; modified collector compiles; JS syntax check passes.
+- Physical reboot, factory reset, exact byte accuracy, exhaustive IPv6/VLAN/offload testing and long-term memory stability are still NOT VERIFIED.
+- GitHub run 38079512294: package/image builds pass; VM SSH connection fails before integration tests. Production release gate remains failed. No v7 release is published.

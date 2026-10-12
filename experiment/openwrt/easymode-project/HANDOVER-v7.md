@@ -36,3 +36,16 @@ Implement pure accounting and attribution tests, collector, supervised service a
 - Added real VM browser tests and controlled DNS/forwarding attribution tests. Changed browser module extension to .js for uhttpd MIME compatibility.
 - Added bounded five-minute WAN rollups, all-time aggregate counters, explicit unavailable device values, DHCP identity-reuse protection, structural state validation and unknown WAN attribution.
 - Next: complete BIOS/UEFI and package integration checks; document exact results before publication. Physical R281 remains unchanged.
+
+
+## Checkpoint 4 - physical R281 preview delivered (2026-10-12)
+- Supersedes the earlier statements that the R281 is unchanged: core and Cellular v7.0.0-1 IPKs are installed on the physical R281, OpenWrt 24.10.8. URL: http://192.168.1.1/traffic/. Original management remains at /. No firmware flash or reboot performed.
+- IPK tar creation lacked directory entries. Real opkg installation exposed missing parent directories; fixed the builder and successfully reinstalled. Never use the earlier package artifacts.
+- Current device configuration has aggregate, detailed flow and DNS collection enabled, interval 30 seconds, retention 31 days, entity limit 64. Detailed/DNS options were already enabled when this continuation connected; preserve the administrator's choices.
+- Verified fresh live WAN/device counters, bounded DNS observations, actual nft JSON parsing, private authenticated RPC and denial without authentication. All eight views render on the actual router; browser console reported no errors. Live counters grow during real laptop traffic; concurrent usage prevents a byte-exact isolated transfer assertion.
+- Applied hardening to the physical router: bounded DNS bindings, bounded domain client identities, avoid advancing domain timestamps for zero-byte flows, disclose saturated flow counters. No network, DNS, firewall service restart required for this file update.
+- 29 accounting/attribution assertions pass on real R281 ucode; collector compiles. Available RAM observed around 22-27 MB; no current collector error. This is a sample, not a memory-leak or long-term stability certification.
+- Private router backups and observations remain outside Git under C:/Users/Blaze/Documents/Codex/2026-09-29/con/outputs/R281-v7-preview-20261011-033222. Never publish that folder.
+- Source branch: easymode-v7-production. Last remote before this checkpoint: 23d52a7d26f13587d0cba4e36a6050271799eb89.
+- Release remains blocked: latest CI 38079512294 built x86 BIOS/UEFI images but its VM SSH setup failed before integration assertions. Improved failure reporting; actual root cause still needs console evidence. No v7.0.0 release/tag published; reset-proof firmware and physical reboot tests remain unverified.
+- Next exact action: inspect the next CI VM console diagnostics, resolve virtual networking/SSH setup, complete installation/upgrade/security/firmware tests, then publish verified assets. Keep on-router work incremental and resource-conscious.

@@ -3,24 +3,22 @@ umask 077
 mkdir -p /tmp/easymode-traffic /etc/easymode-traffic
 chmod 700 /tmp/easymode-traffic /etc/easymode-traffic
 ucode /usr/share/easymode-traffic/dns.uc
-trap 'ucode /usr/share/easymode-traffic/dns.uc stop; nft delete table inet easymode_traffic 2>/dev/null; exit 0' TERM INT
+trap 'ucode /usr/share/easymode-traffic/checkpoint.uc; ucode /usr/share/easymode-traffic/dns.uc stop; nft delete table inet easymode_traffic 2>/dev/null; exit 0' TERM INT
 while :; do
- if [ -f /tmp/easymode-traffic-reconfigure ]; then
-  rm -f /tmp/easymode-traffic-reconfigure
+ if [ -f /tmp/easymode-traffic/reconfigure ]; then
+  rm -f /tmp/easymode-traffic/reconfigure
+  ucode -e 'import {resetBaseline} from "/usr/share/easymode-traffic/runtime.uc"; resetBaseline();'
   ucode /usr/share/easymode-traffic/dns.uc
   nft delete table inet easymode_traffic 2>/dev/null
  fi
- if [ -f /tmp/easymode-traffic-delete ]; then
-  rm -f /tmp/easymode-traffic-delete
+ if [ -f /tmp/easymode-traffic/delete ]; then
+  rm -f /tmp/easymode-traffic/delete
   ucode -e 'import {eraseHistory} from "/usr/share/easymode-traffic/runtime.uc"; eraseHistory();'
   nft delete table inet easymode_traffic 2>/dev/null
  fi
  if ! ucode /usr/share/easymode-traffic/collect.uc 2>/tmp/easymode-traffic/error; then
   logger -t easymode-traffic 'Collection failed; private diagnostic in /tmp/easymode-traffic/error'
  fi
- # Bound DNS output even after a collector failure; observation gaps remain unknown.
- size=$(wc -c </tmp/easymode-traffic/dns.log 2>/dev/null || echo 0)
- [ "$size" -lt 262144 ] 2>/dev/null || : >/tmp/easymode-traffic/dns.log
  interval=$(uci -q get easymode_traffic.main.interval)
  case "$interval" in 5|15|30|60) ;; *) interval=15 ;; esac
  mem=$(awk '/MemTotal:/ {print $2}' /proc/meminfo)

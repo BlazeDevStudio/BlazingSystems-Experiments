@@ -11,4 +11,4 @@ start_service() {
  procd_close_instance
 }
 service_triggers() { procd_add_reload_trigger easymode_traffic; }
-reload_service() { touch /tmp/easymode-traffic-reconfigure; }
+reload_service() { touch /tmp/easymode-traffic/reconfigure; }

@@ -50,19 +50,21 @@ with tempfile.TemporaryDirectory() as tmp:
   ssh=paramiko.SSHClient();ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   for attempt in range(15):
    try:ssh.connect('192.168.77.1',username='root',password=password,timeout=5,look_for_keys=False,allow_agent=False);break
-   except (OSError,paramiko.SSHException):time.sleep(2)
+   except (OSError,paramiko.SSHException) as error:
+    last_connect_error=error;time.sleep(2)
+  else:raise RuntimeError('VM SSH unavailable after network setup: '+str(last_connect_error))
   def run(command):
    i,o,e=ssh.exec_command(command,timeout=90);out=o.read().decode();err=e.read().decode();rc=o.channel.recv_exit_status()
    if rc:raise RuntimeError(f'VM command failed ({rc}): {command}\n{out}\n{err}')
    return out
   check('24.10.8' in run('cat /etc/openwrt_release'),'official OpenWrt 24.10.8 boots')
-  check(rpc('snapshot').get('result',[None])[0]==6,'unauthenticated API rejected')
+  check((rpc('snapshot').get('error',{}).get('code')==-32002 or rpc('snapshot').get('result',[None])[0]==6),'unauthenticated API rejected')
   token=rpc('login',{'username':'root','password':password},obj='session')['result'][1]['ubus_rpc_session']
   def snapshot():return rpc('snapshot',token=token)['result'][1]
   time.sleep(16);s=snapshot();check(s['version']=='7.0.0' and s['fresh'],'supervised collection and authenticated API')
   if UEFI:
    (DIST/'VM-UEFI-TEST-RESULTS.json').write_text(json.dumps({'hardware':'QEMU x86_64 UEFI; NOT PHYSICAL HARDWARE VERIFIED','checks':results},indent=2)+'\n');sys.exit(0)
-  check(rpc('action',{'action':'configure','payload':'{"enabled":false}'}).get('result',[None])[0]==6,'unauthenticated mutation rejected')
+  check((lambda r:r.get('error',{}).get('code')==-32002 or r.get('result',[None])[0]==6)(rpc('action',{'action':'configure','payload':'{"enabled":false}'})),'unauthenticated mutation rejected')
   invalid=rpc('action',{'action':'configure','payload':'{"wan":["wan;touch /tmp/injected"]}'},token)['result'][1];check(not invalid['ok'] and run('test ! -e /tmp/injected && echo safe').strip()=='safe','input injection rejected')
   check(run('stat -c %a /tmp/easymode-traffic/state.json').strip()=='600','history file is private')
   # Install real opkg artifacts, then repeat the same install as an upgrade.
@@ -102,6 +104,12 @@ with tempfile.TemporaryDirectory() as tmp:
   run('opkg remove easymode-pc easymode-traffic');check(run('test ! -f /usr/libexec/easymode-traffic-worker && echo removed').strip()=='removed','uninstall removes collector')
   server.shutdown()
   print('PASS: virtual integration checks complete',flush=True)
+ except Exception:
+  if ssh and ssh.get_transport() and ssh.get_transport().is_active():
+   try:print('VM diagnostics (synthetic network only):\n'+run('cat /tmp/easymode-traffic/error 2>/dev/null; nft -j list table inet easymode_traffic 2>/dev/null; ubus list easymode.traffic; true')[:10000],flush=True)
+   except Exception:pass
+  else:print('VM console tail:\n'+str(vm.before)[-4000:],flush=True)
+  raise
  finally:
   if ssh:ssh.close()
   vm.close(force=True)

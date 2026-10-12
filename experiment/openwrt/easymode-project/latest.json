@@ -1,14 +1,14 @@
 {
   "stable_baseline": "4.1.4",
-  "development": "5.0.0-alpha.1",
-  "status": "Installed R281 is the functional reference; universal installer parity unfinished",
+  "development": "7.0.0",
+  "status": "Traffic Intelligence implementation; integration validation pending",
   "path": "releases/v4.2.6-r281-consolidated/",
   "installed_reference": "4.2.6",
   "installed_reference_kind": "consolidated R281 application source; not firmware",
   "source_layers": [
     "releases/v4.2.6-r281-consolidated/"
   ],
-  "development_path": ".",
+  "development_path": "traffic/",
   "version_policy": "Identifiers, not feature rankings",
-  "handoff": "releases/v4.2.6-r281-consolidated/HANDOFF-6.0.md"
+  "handoff": "HANDOVER-v7.md"
 }
