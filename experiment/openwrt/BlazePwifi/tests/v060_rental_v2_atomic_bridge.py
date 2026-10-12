@@ -47,6 +47,13 @@ def env(**overrides):
 def call(*args, **overrides):
     script = """
       . "$1"; . "$2"; shift 2
+      # Source first: common.sh deliberately pins derived path variables.
+      # Inject only after sourcing to test the *actual runtime guard*.
+      case "${RENT_TEST_OVERRIDE_KEY:-}" in
+        BP_RENTAL_DEVICES) BP_RENTAL_DEVICES="$RENT_TEST_OVERRIDE_VALUE"; export BP_RENTAL_DEVICES ;;
+        BP_RENTAL_EVENTS) BP_RENTAL_EVENTS="$RENT_TEST_OVERRIDE_VALUE"; export BP_RENTAL_EVENTS ;;
+        BP_PAID_UNCERTAIN) BP_PAID_UNCERTAIN="$RENT_TEST_OVERRIDE_VALUE"; export BP_PAID_UNCERTAIN ;;
+      esac
       bp_init_dirs() { :; }
       bp_cfg() { [ "$1" = rental_seconds_per_pulse ] && printf 600 || printf ''; }
       bp_now() { printf 123456; }
@@ -174,7 +181,8 @@ try:
     file(BASE / "external-sentinel", "UNCHANGED\n")
     for key in ("BP_RENTAL_DEVICES", "BP_RENTAL_EVENTS", "BP_PAID_UNCERTAIN"):
         check(call("dev01", "ctrlA", "nonce4", "targetA", "1",
-                   **{key: str(BASE / "external-sentinel")}), code=9)
+                   RENT_TEST_OVERRIDE_KEY=key,
+                   RENT_TEST_OVERRIDE_VALUE=str(BASE / "external-sentinel")), code=9)
         assert (BASE / "external-sentinel").read_text() == "UNCHANGED\n"
     check(call("dev01", "ctrlA", "nonce4", "targetA", "1",
                BP_STATE="/etc/blazepwifi/state"), code=9)
