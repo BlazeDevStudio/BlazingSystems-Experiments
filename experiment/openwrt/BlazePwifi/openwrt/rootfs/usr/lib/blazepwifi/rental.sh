@@ -463,50 +463,116 @@ bp_rental_safe_seconds() {
   [ "$1" -le "$2" ] 2>/dev/null
 }
 
+# RENT-0723: paid device+receipt snapshots must be read under the global
+# financial lock. A returned receipt can never justify a success ACK while a
+# different controller/admin financial writer is in flight. Read-only helpers.
+bp_rental_paid_device_snapshot() {
+  [ -f "$BP_RENTAL_DEVICES" ] && [ ! -L "$BP_RENTAL_DEVICES" ] || return 8
+  awk -F '\t' -v d="$1" '
+    NF!=5 || $1 !~ /^[A-Za-z0-9_.:-]+$/ ||
+      length($1)<2 || length($1)>96 || length($2)==0 ||
+      $3 !~ /^(0|[1-9][0-9]*)$/ || length($3)>10 ||
+      $3+0>2147483647 || $5 !~ /^[0-9]+$/ {bad=1}
+    {if (++seen[$1]>1) bad=1; if ($1==d) {found++; row=$0}}
+    END {if(bad) exit 8; if(found!=1) exit 2; print row}
+  ' "$BP_RENTAL_DEVICES"
+}
+bp_rental_paid_receipt_snapshot() {
+  [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
+  awk -F '\t' -v e="$1" '
+    $1==e {found++; if(NF!=5) bad=1; receipt=$0}
+    END {if(bad || found>1) exit 5; if(found==1)print receipt}
+  ' "$BP_RENTAL_EVENTS"
+}
+bp_rental_paid_receipt_match() {
+  receipt="$1"; expected_did="$2"; expected_pulses="$3"
+  old_did="$(printf '%s' "$receipt" | cut -f2)"
+  old_lease="$(printf '%s' "$receipt" | cut -f3)"
+  old_pulses="$(printf '%s' "$receipt" | cut -f5)"
+  [ "$old_did" = "$expected_did" ] &&
+    [ "$old_pulses" = "p:$expected_pulses" ] &&
+    bp_rental_safe_seconds "$old_lease" 2147483647 || return 5
+  printf 'duplicate\t%s\n' "$old_lease"
+}
+
 bp_rental_apply_coin() {
   did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
-  # Internal callers must not be able to mint negative/zero/overflowing paid
-  # leases even when bypassing the external Vendo CGI parameter checks.
   bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
   bp_rental_safe_seconds "$now" 2147483647 || return 8
-  # Refuse invalid receipt storage before touching a prepaid lease, and never
-  # clear an operator-reconcilable uncertainty marker on an ordinary retry.
-  [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
-  [ ! -e "$BP_STATE/paid-state-uncertain" ] || return 9
-  # Read stored paid time BEFORE a duplicate receipt could issue an ACK.
-  line="$(bp_rental_device_line "$did")"
-  [ -n "$line" ] || return 2
-  secret="$(printf '%s' "$line" | cut -f2)"
-  lease="$(printf '%s' "$line" | cut -f3)"
-  label="$(printf '%s' "$line" | cut -f4)"
-  bp_rental_safe_seconds "$lease" 2147483647 || return 8
-  event="r:$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)"
-  # Reject duplicate/corrupt event IDs rather than trusting the first row.
-  # Legacy 4-column coin receipts cannot prove the original pulse quantity:
-  # refuse an ambiguous ACK, never re-credit or auto-migrate such records.
-  old="$(awk -F '\t' -v e="$event" '$1==e {found++; print} END {if(found>1) exit 5}' "$BP_RENTAL_EVENTS")" || return 5
-  if [ -n "$old" ]; then
-    old_did="$(printf '%s' "$old" | cut -f2)"
-    old_lease="$(printf '%s' "$old" | cut -f3)"
-    old_pulses="$(printf '%s' "$old" | cut -f5)"
-    [ "$old_did" = "$did" ] && [ "$old_pulses" = "p:$pulses" ] || return 5
-    bp_rental_safe_seconds "$old_lease" 2147483647 || return 5
-    printf 'duplicate\t%s\n' "$old_lease"
-    return 0
+  # PAY-0711 shared lock holds across the entire duplicate receipt ACK. If
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
   fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  event="r:$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)"
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  bp_paid_replay_read_unlock
   per="$(bp_cfg rental_seconds_per_pulse)"
   [ -n "$per" ] || per=600
   bp_rental_safe_seconds "$per" 86400 && [ "$per" -ge 1 ] || return 8
+  delta=$((per * pulses))
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
   base="$lease"
   [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
-  delta=$((per * pulses))
-  # Reject before signed integer overflow on 32-bit BusyBox/ash targets.
-  [ "$base" -le $((2147483647-delta)) ] || return 8
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
   newlease=$((base + delta))
-  # A write-ahead halt marker is persisted before the first money-state write.
-  # If a receipt append fails, no success ACK is sent and all subsequent
-  # financial mutation must halt for operator reconciliation (not auto-reset).
-  bp_paid_begin || return 9
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
   if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
     bp_paid_abort; return 8
   fi
