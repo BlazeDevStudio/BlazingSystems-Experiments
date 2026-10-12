@@ -359,6 +359,9 @@ case "$action" in
     # Scope v0.6 receipts to the live coin window; expired targets may
     # be history-trimmed, but valid ACK retries may never be evicted.
     event="c:$target.$(bp_event_hash "coin|$id|$nonce|$target")"
+    # Stable controller nonce identity; pulse count is immutable metadata in
+    # the SAME atomically replaced account row (never a side receipt file).
+    receipt_event="$event!$pulses"
     # PAY-0731: the first ordinary-coin duplicate shortcut used to bypass
     # the global financial writer lock. A signed old receipt does not prove
     # it is safe to ACK while another payment is being committed, before its
@@ -366,6 +369,10 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
+      original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
+        bp_fail "coin original receipt ambiguous; operator reconciliation required"
+      [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
+        bp_fail "coin pulse payload collision; original credit unchanged"
       credit="$(bp_get_credit "$duplicate_device")"
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
       # Keep paid-financial.lock held through the duplicate response/exit.
@@ -381,6 +388,10 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
+      original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
+        bp_fail "coin original receipt ambiguous; operator reconciliation required"
+      [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
+        bp_fail "coin pulse payload collision; original credit unchanged"
       credit="$(bp_get_credit "$duplicate_device")"
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
       bp_json "$body"
@@ -402,7 +413,7 @@ case "$action" in
     [ -n "$unit" ] || unit=100
     add=$((unit*pulses))
     newcredit=$((credit+add))
-    if ! newevents="$(bp_events_push "$events" "$event")"; then
+    if ! newevents="$(bp_events_push "$events" "$receipt_event")"; then
       bp_unlock
       bp_fail "coin receipt retention full; operator reconciliation required"
     fi
