@@ -1,3 +1,10 @@
+## RENT-0724 CI initial workflow failures and correction — 2026-10-12 Asia/Manila
+
+- **STATUS FAILED_WORKFLOW_CONFIG → FIX_COMMITTED_RETEST_PENDING**, draft PR #63, initial exact SHA `650f0faf869beb50978c6bfae06801e5e7f121a9`. [Full #38247678637](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38247678637) and [staged P0 #38247679769](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38247679769): GitHub recorded completed failure with **zero jobs** due to invalid YAML, so no application tests ran. Bad insertion placed RENT-0724 `- name` directly after RENT-0723 `- name` and before RENT-0723 `run`, leaving duplicate `run`. Correction Full `7c2bb69f543c3c33a185b2f779df0a6236c228e8`, staged `60b511665d0557625b61a95e1e8afbbf03a5f893` restores distinct pairs and retains existing test. Did not suppress CI, financial source unchanged `e8b847fa0796ab8c674ff468777445e918effe7b`. No target/customer/paid-data changes, no production permission.
+- **NEXT:** exact new PR-head Full and staged workflow runs, inspect named RENT-0724 admin race and previous signed coin RENT-0723, numeric P0-0710, RENT-0648; correct any runtime failures, then guarded merge only if accepted. #32 true single durable lease+receipt transaction outstanding.
+
+---
+
 ## RENT-0724 — Admin rental lease stale read/write lock race / P0 #32 — 2026-10-12 Asia/Manila
 
 - **STATUS IMPLEMENTED_UNTESTED; #32 REMAINS OPEN.** Branch `fix/rent-0724-admin-lease-writer-recheck` from latest verified docs HEAD `ed75e4c31bab33ca0f1473da1de79d0e218aeddd`. Distinct from signed coin-side RENT-0723: existing authenticated admin `rental.sh:bp_rental_lease_add` and `bp_rental_lease_expire` read lease/authorization **before** entering global financial writer lock, permitting concurrent coin paid lease advance to be overwritten or forfeited via old ordinary expire click. This is v1 concurrency containment, not a crash-atomic journal.
