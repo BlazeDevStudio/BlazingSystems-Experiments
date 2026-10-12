@@ -53,6 +53,15 @@ reject_rc 6 bp_rental_lease_expire dev01
 [ "$(lease)" = 130000 ]
 [ "$before_events" = "$(sha256sum "$BP_RENTAL_EVENTS")" ]
 [ ! -e "$BP_PAID_UNCERTAIN" ]
+# Even explicit forfeiture was approved for the originally observed lease.
+# If a new payment extends it during the writer handoff, the confirmation
+# becomes stale and must not erase the later customer's credit.
+bp_rental_device_write dev01 fake-secret 130000 'Synthetic Device' 0
+competing_lease=130600
+reject_rc 6 bp_rental_lease_expire dev01 CONFIRM_FORFEIT
+[ "$(lease)" = 130600 ]
+[ "$before_events" = "$(sha256sum "$BP_RENTAL_EVENTS")" ]
+[ ! -e "$BP_PAID_UNCERTAIN" ]
 # If the competing writer created a value too close to signed-32-bit max,
 # reject AFTER lock but clear only our own unmodified pending marker.
 bp_rental_device_write dev01 fake-secret 120000 'Synthetic Device' 0
