@@ -135,6 +135,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_v2_atomic_bridge.sh
       - name: PAY-0729 refuse corrupted paid member revisions and failed revision allocation
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_revision_integrity.sh
+      - name: PAY-0730 block v1 financial writes and paid replay during v2 cutover
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_paid_v2_cutover_interlock.sh
       - name: BlazePwifi v0.6 member receipt EIO quarantine
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_receipt_failure_repro.sh
       - name: BlazePwifi v0.6 rental receipt EIO before mutation

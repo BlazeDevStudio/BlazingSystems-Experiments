@@ -56,11 +56,20 @@ bp_durable_sync() {
 # Keep the marker if balance/receipt commit is ambiguous; never auto-clear it
 # after reboot or upon an unrelated successful operation.
 BP_PAID_UNCERTAIN="$BP_STATE/paid-state-uncertain"
+# PAY-0730: a future operator-controlled v1->v2 cutover intent halts ALL
+# legacy paid writes and replay ACKs. No live process installs this marker,
+# and it must never be treated as an independent antirollback witness.
+# A dangling symlink or directory also blocks, rather than being ignored.
+BP_PAID_V2_CUTOVER="$BP_STATE/paid-v2-cutover-intent"
+bp_paid_v2_cutover_pending() {
+	[ -e "$BP_PAID_V2_CUTOVER" ] || [ -L "$BP_PAID_V2_CUTOVER" ]
+}
 bp_paid_begin() {
 	mkdir -p "$BP_STATE" "$BP_RUN" || return 8
 	exec 6>"$BP_RUN/paid-financial.lock" || return 8
 	if ! flock -n 6; then exec 6>&-; return 8; fi
-	if [ -e "$BP_PAID_UNCERTAIN" ] || [ -L "$BP_PAID_UNCERTAIN" ]; then
+	if bp_paid_v2_cutover_pending ||
+	   [ -e "$BP_PAID_UNCERTAIN" ] || [ -L "$BP_PAID_UNCERTAIN" ]; then
 		flock -u 6 2>/dev/null || true; exec 6>&-; return 9
 	fi
 	bp_paid_temp="$BP_STATE/.paid-pending-$"
@@ -82,6 +91,12 @@ bp_paid_abort() {
 	return 0
 }
 bp_paid_commit() {
+	# A late cutover marker means an in-flight v1 write is ambiguous: never
+	# ACK it or clear paid-state-uncertain. Migration must reconcile first.
+	if bp_paid_v2_cutover_pending; then
+		bp_paid_abort
+		return 9
+	fi
 	# Paid balance and receipt must reach the filesystem before clearing halt.
 	# A device-power-cut/fsync contract is still outstanding for release.
 	if ! sync || ! rm -f "$BP_PAID_UNCERTAIN" || ! sync; then
@@ -105,7 +120,8 @@ bp_paid_replay_read_lock() {
 		exec 6>&-
 		return 8
 	fi
-	if [ -e "$BP_PAID_UNCERTAIN" ] || [ -L "$BP_PAID_UNCERTAIN" ]; then
+	if bp_paid_v2_cutover_pending ||
+	   [ -e "$BP_PAID_UNCERTAIN" ] || [ -L "$BP_PAID_UNCERTAIN" ]; then
 		bp_paid_replay_read_unlock
 		return 9
 	fi
