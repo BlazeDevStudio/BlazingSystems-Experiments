@@ -145,6 +145,8 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
       - name: RENT-0726 reject signed rental-v2 protocol downgrade before heartbeat or credit
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_v2_no_downgrade.sh
+      - name: RENT-0727 synthetic rental controller HMAC journal and independent ACKV2 contract (not production)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py
       - name: BlazePwifi v0.6 rental receipt EIO after lease rename
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh
       - name: Refuse altered-pulse and cross-device rental coin receipt duplicate ACKs
