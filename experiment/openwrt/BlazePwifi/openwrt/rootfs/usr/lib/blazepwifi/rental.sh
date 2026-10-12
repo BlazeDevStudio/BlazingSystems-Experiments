@@ -528,11 +528,23 @@ bp_rental_apply_coin() {
     bp_paid_replay_read_unlock
     return "$rc"
   fi
-  bp_paid_replay_read_unlock
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
   per="$(bp_cfg rental_seconds_per_pulse)"
   [ -n "$per" ] || per=600
-  bp_rental_safe_seconds "$per" 86400 && [ "$per" -ge 1 ] || return 8
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
   delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
   # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
   # both the receipt and current lease under that writer lock; another
   # authenticated admin/client may have committed between these steps.
