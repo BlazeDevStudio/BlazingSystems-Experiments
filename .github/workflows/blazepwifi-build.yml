@@ -133,6 +133,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_p256_physical_runtime_probe_policy.sh
       - name: PAY-0713 synthetic member atomic authority bridge (not production)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_v2_atomic_bridge.sh
+      - name: PAY-0729 refuse corrupted paid member revisions and failed revision allocation
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_revision_integrity.sh
       - name: BlazePwifi v0.6 member receipt EIO quarantine
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_receipt_failure_repro.sh
       - name: BlazePwifi v0.6 rental receipt EIO before mutation

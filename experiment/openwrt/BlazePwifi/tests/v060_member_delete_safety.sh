@@ -32,6 +32,9 @@ member_row invalid abc >> "$BP_MEMBERS"
 member_row carol 0 >> "$BP_MEMBERS"
 member_row dan 0 >> "$BP_MEMBERS"
 chmod 600 "$BP_MEMBERS"
+# PAY-0729: seeded member rows have revision 1; global must match.
+# The old fixture's global=0 was inconsistent with its own paid records.
+printf '1\n' > "$BP_MEMBER_REVISION"
 pre="$(sha256sum "$BP_MEMBERS" | cut -d' ' -f1)"
 revision_before="$(cat "$BP_MEMBER_REVISION")"
 set +e
@@ -53,10 +56,10 @@ set -e
 [ ! -e "$BP_PAID_UNCERTAIN" ]
 
 result="$(bp_member_delete bob 'admin:synthetic')"
-[ "$result" = 1 ] || { echo "valid empty account deletion failed" >&2; exit 1; }
+[ "$result" = 2 ] || { echo "valid empty account deletion failed" >&2; exit 1; }
 [ -z "$(bp_member_line bob)" ]
-[ "$(cat "$BP_MEMBER_REVISION")" = 1 ]
-grep -Fq "$(printf 'admin:1:bob\t')" "$BP_MEMBER_EVENTS"
+[ "$(cat "$BP_MEMBER_REVISION")" = 2 ]
+grep -Fq "$(printf 'admin:2:bob\t')" "$BP_MEMBER_EVENTS"
 [ ! -e "$BP_PAID_UNCERTAIN" ]
 
 # Inject a failure of the actual member-row atomic replacement after

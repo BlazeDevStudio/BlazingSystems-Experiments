@@ -7,10 +7,17 @@ BP_MEMBER_EVENTS=${BP_MEMBER_EVENTS:-$BP_STATE/member-events.tsv}
 BP_MEMBER_REVISION=${BP_MEMBER_REVISION:-$BP_STATE/member-revision}
 
 bp_member_init() {
-  bp_init_dirs
-  touch "$BP_MEMBERS" "$BP_MEMBER_EVENTS"
-  [ -f "$BP_MEMBER_REVISION" ] || printf '0\n' > "$BP_MEMBER_REVISION"
-  chmod 600 "$BP_MEMBERS" "$BP_MEMBER_EVENTS" "$BP_MEMBER_REVISION"
+  bp_init_dirs || return 8
+  # PAY-0729: a missing global revision with existing member/receipt data
+  # may be an interrupted write or restore. Never silently reset it to 0.
+  [ ! -L "$BP_MEMBERS" ] && [ ! -L "$BP_MEMBER_EVENTS" ] &&
+    [ ! -L "$BP_MEMBER_REVISION" ] || return 8
+  if [ ! -f "$BP_MEMBER_REVISION" ]; then
+    [ ! -s "$BP_MEMBERS" ] && [ ! -s "$BP_MEMBER_EVENTS" ] || return 8
+    printf '0\n' > "$BP_MEMBER_REVISION" || return 8
+  fi
+  touch "$BP_MEMBERS" "$BP_MEMBER_EVENTS" || return 8
+  chmod 600 "$BP_MEMBERS" "$BP_MEMBER_EVENTS" "$BP_MEMBER_REVISION" || return 8
 }
 
 bp_member_lock() {
@@ -41,8 +48,27 @@ bp_member_global_revision() {
   printf '%s' "$v"
 }
 
+# PAY-0729: revision 0 is only legitimate for a genuinely fresh store.
+# Malformed/missing revision and member rows ahead of the global revision
+# require reconciliation, NOT replacement by a plausible zero.
+bp_member_revision_strict() {
+  [ -f "$BP_MEMBER_REVISION" ] && [ ! -L "$BP_MEMBER_REVISION" ] &&
+    [ -f "$BP_MEMBERS" ] && [ ! -L "$BP_MEMBERS" ] || return 8
+  old="$(cat "$BP_MEMBER_REVISION" 2>/dev/null)" || return 8
+  bp_member_safe_seconds "$old" 2147483646 || return 8
+  # Detect a lost/reset global revision against existing member revisions.
+  # This is a v1 consistency guard, not an independent antirollback witness.
+  awk -F '\t' -v revision="$old" '
+    NF!=11 || $9 !~ /^(0|[1-9][0-9]*)$/ ||
+    length($9)>10 || $9+0>revision {bad=1}
+    {if(++seen[$1]>1) bad=1}
+    END {if(bad) exit 8}
+  ' "$BP_MEMBERS" || return 8
+  printf '%s' "$old"
+}
+
 bp_member_next_revision() {
-  old="$(bp_member_global_revision)"
+  old="$(bp_member_revision_strict)" || return 8
   next=$((old+1))
   printf '%s\n' "$next" > "$BP_MEMBER_REVISION" || return 8
   chmod 600 "$BP_MEMBER_REVISION" || return 8
@@ -283,6 +309,9 @@ bp_member_replay_snapshot_ok() (
 # This cap is a fail-closed bridge for legacy random v1 event IDs, NOT a
 # substitute for an authenticated v2 sequence journal or lost-ACK recovery.
 bp_member_financial_receipt_capacity_ok() {
+  # This executes before any v1 replay ACK as well as fresh money writes.
+  # A corrupt revision cannot be acknowledged as a successful old event.
+  bp_member_revision_strict >/dev/null || return 1
   [ ! -e "$BP_STATE/paid-state-uncertain" ] || return 1
   [ -f "$BP_MEMBER_EVENTS" ] && [ ! -L "$BP_MEMBER_EVENTS" ] || return 1
   case "$BP_MEMBER_EVENTS" in /dev/*) return 1;; esac
@@ -393,7 +422,8 @@ bp_member_balance_change() {
   # This protects retries by halting payments; real crash-atomic v2 WAL is
   # still required before public release.
   bp_paid_begin || return 9
-  rev="$(bp_member_next_revision)"; now="$(bp_now)"
+  rev="$(bp_member_next_revision)" || { bp_paid_abort; return 8; }
+  now="$(bp_now)"
   if ! bp_member_write "$user" "$label" "$enabled" "$scheme" "$salt" "$hash" "$rounds" "$new" "$rev" "$now" "$source"; then
     bp_paid_abort; return 8
   fi
@@ -454,7 +484,8 @@ bp_member_transfer() {
   [ "$tbank" -le $((2147483647-seconds)) ] || return 8
 
   bp_paid_begin || return 9
-  rev="$(bp_member_next_revision)"; now="$(bp_now)"
+  rev="$(bp_member_next_revision)" || { bp_paid_abort; return 8; }
+  now="$(bp_now)"
   newf=$((fbank-seconds)); newt=$((tbank+seconds))
 
   # A transfer must never expose a half-debited member file. Build both
