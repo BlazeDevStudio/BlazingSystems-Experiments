@@ -8,6 +8,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
       - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2PendingSequenceLab/**'
@@ -17,6 +18,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
       - 'experiment/windows/BlazePisonet-SoftTimer/tests/V2PendingSequenceLab/**'
@@ -43,6 +45,8 @@ jobs:
           pkg-config --exists libcrypto
       - name: Compile and fault-test signed synthetic prepaid journal
         run: sh experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh
+      - name: RENT-0727 independently keyed rental ACKV2 native journal fixture (not production)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.425'
