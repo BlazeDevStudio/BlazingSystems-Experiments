@@ -31,6 +31,7 @@ bp_now() { printf '123456'; }
 bp_member_init
 bp_rental_init
 printf 'alice\tAlice\t1\tsha256i\tsalt\thash\t4096\t100\t1\t123456\tfixture\n' > "$BP_MEMBERS"
+printf 'bob\tBob\t1\tsha256i\tsalt\thash\t4096\t200\t1\t123456\tfixture\n' >> "$BP_MEMBERS"
 printf '1\n' > "$BP_MEMBER_REVISION"
 printf 'dev01\tfixture-key\t0\tFixture Device\t0\n' > "$BP_RENTAL_DEVICES"
 chmod 600 "$BP_MEMBERS" "$BP_MEMBER_REVISION" "$BP_RENTAL_DEVICES"
