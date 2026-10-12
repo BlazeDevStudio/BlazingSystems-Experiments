@@ -28,6 +28,12 @@ elif [ "$#" -eq 3 ] && [ "$1" = "--fixture-root" ]; then
     [ -f "$marker" ] && [ ! -L "$marker" ] || usage
     IFS= read -r proof < "$marker" || proof=
     [ "$proof" = 'BLAZE-TRUST-SYNTHETIC-ONLY' ] || usage
+    # No synthetic device/sysfs ancestry may resolve outside the fixture.
+    # A single leaf -L check is insufficient when its parent is a link.
+    for parent in "$root/dev" "$root/sys" "$root/sys/class" \
+        "$root/sys/class/tpm" "$root/sys/class/block" "$root/sys/block"; do
+        [ ! -L "$parent" ] || usage
+    done
 else
     usage
 fi
@@ -75,6 +81,11 @@ done
 # A sysfs RPMB class path is only a candidate: no proof that a key, usable
 # monotonic write counter, separate rollback domain or kernel API is available.
 for entry in "$root"/sys/class/block/mmcblk*rpmb "$root"/sys/block/mmcblk*rpmb; do
+    if [ "$mode" = synthetic ]; then
+        # A link to a live/foreign RPMB directory is not fixture evidence.
+        [ ! -L "$entry" ] || continue
+        { [ -d "$entry" ] || [ -f "$entry" ]; } || continue
+    fi
     if [ -e "$entry" ]; then
         rpmb_candidate=true
         break
