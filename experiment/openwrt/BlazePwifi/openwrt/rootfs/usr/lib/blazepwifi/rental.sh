@@ -311,17 +311,48 @@ bp_rental_device_rename() {
   bp_rental_event_log rename "$did" "$new_label"
 }
 
+# RENT-0724: unwind the pending marker only for a read-only failure that
+# happened *after* bp_paid_begin, before any balance/receipt write. A failed
+# marker clear itself must remain a closed financial gate.
+bp_rental_admin_unmodified_reject() {
+  reject_rc="$1"
+  bp_paid_commit || return 8
+  return "$reject_rc"
+}
+
 bp_rental_lease_add() {
   did="$1"; seconds="$2"; now="$(bp_now)"
-  case "$seconds" in ''|*[!0-9]*) return 2;; esac
-  [ "$seconds" -le 2592000 ] 2>/dev/null || return 2
-  [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || return 9
-  line="$(bp_rental_device_line "$did")"; [ -n "$line" ] || return 1
-  secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
-  case "$lease" in ''|*[!0-9]*) return 8;; esac
-  base="$lease"; [ "$base" -ge "$now" ] 2>/dev/null || base="$now"
-  newlease=$((base+seconds))
+  bp_rental_safe_seconds "$seconds" 2592000 || return 2
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  # Validate canonical lease and overflow under the global paid read lock
+  # BEFORE marking a financial operation. Writer side repeats all checks.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock; return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  base="$lease"; [ "$base" -ge "$now" ] || base="$now"
+  if [ "$base" -gt $((2147483647-seconds)) ]; then
+    bp_paid_replay_read_unlock; return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Nonrecursive PAY-0711 paid lock: drop read side and re-read under writer.
   bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  [ "$rc" -eq 0 ] || { bp_rental_admin_unmodified_reject "$rc"; return $?; }
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  last="$(printf '%s' "$line" | cut -f5)"
+  now="$(bp_now)"
+  bp_rental_safe_seconds "$now" 2147483647 ||
+    { bp_rental_admin_unmodified_reject 8; return $?; }
+  base="$lease"; [ "$base" -ge "$now" ] || base="$now"
+  [ "$base" -le $((2147483647-seconds)) ] ||
+    { bp_rental_admin_unmodified_reject 8; return $?; }
+  newlease=$((base+seconds))
+  # V1 paid lease and event receipt are still separate durable file writes.
   if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$last" ||
      ! bp_rental_event_log lease_add "$did" "$seconds"; then
     bp_paid_abort
@@ -333,20 +364,35 @@ bp_rental_lease_add() {
 
 bp_rental_lease_expire() {
   did="$1"; confirm="${2:-}"; now="$(bp_now)"
-  [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || return 9
-  line="$(bp_rental_device_line "$did")"; [ -n "$line" ] || return 1
-  secret="$(printf '%s' "$line" | cut -f2)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock; return "$rc"
+  fi
   lease="$(printf '%s' "$line" | cut -f3)"
-  case "$lease" in ''|*[!0-9]*) return 8;; esac
-  # Removing still-paid time requires a second, explicit admin operation,
-  # never an ordinary expire/close or an accidental stale UI action.
-  [ "$lease" -le "$now" ] 2>/dev/null ||
-    [ "$confirm" = CONFIRM_FORFEIT ] || return 6
-  detail="expired"
-  if [ "$lease" -gt "$now" ] 2>/dev/null; then
+  if [ "$lease" -gt "$now" ] && [ "$confirm" != CONFIRM_FORFEIT ]; then
+    bp_paid_replay_read_unlock; return 6
+  fi
+  bp_paid_replay_read_unlock
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  [ "$rc" -eq 0 ] || { bp_rental_admin_unmodified_reject "$rc"; return $?; }
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  last="$(printf '%s' "$line" | cut -f5)"
+  now="$(bp_now)"
+  bp_rental_safe_seconds "$now" 2147483647 ||
+    { bp_rental_admin_unmodified_reject 8; return $?; }
+  # Old ordinary expiry approval is not consent to forfeit a new paid lease.
+  if [ "$lease" -gt "$now" ] && [ "$confirm" != CONFIRM_FORFEIT ]; then
+    bp_rental_admin_unmodified_reject 6; return $?
+  fi
+  detail=expired
+  if [ "$lease" -gt "$now" ]; then
     detail="confirmed_forfeit_seconds:$((lease-now))"
   fi
-  bp_paid_begin || return 9
   if ! bp_rental_device_write "$did" "$secret" "$now" "$label" "$last" ||
      ! bp_rental_event_log expire "$did" "$detail"; then
     bp_paid_abort
