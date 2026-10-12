@@ -24,6 +24,9 @@ row() { printf '%s\t%s\t1\tsha256i\tsalt\thash\t4096\t%s\t1\t123\tfiction\n' "$1
 row alice 100 > "$BP_MEMBERS"
 row bob 900 >> "$BP_MEMBERS"
 chmod 600 "$BP_MEMBERS"
+# PAY-0729: the existing accounts carry revision 1. Seed matching global
+# revision; global 0 with rows at 1 is an invalid paid snapshot.
+printf '1\n' > "$BP_MEMBER_REVISION"
 baseline="$(sha256sum "$BP_MEMBERS" | cut -d' ' -f1)"
 bob_bank() { awk -F '\t' '$1=="bob" {print $8;exit}' "$BP_MEMBERS"; }
 test_write() {
