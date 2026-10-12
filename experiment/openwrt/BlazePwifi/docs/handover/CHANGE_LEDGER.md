@@ -1,3 +1,12 @@
+## RENT-0723 failed P0-0710 numeric guard, corrected source retest pending — 2026-10-12 Asia/Manila
+
+- **P0 #32 / FAILED → FIX_COMMITTED_RETEST_PENDING.** Draft PR #62 first exact head `bcc0def89cb828f3347ffbb363649c762017b76c`, [Full #38243074962](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38243074962) `validate` FAIL at `P0-0710 reject malformed or overflowing paid balances and rental leases` with `P0-0710 RED: rental accepted unsafe Fixture A (rc=9)`. Named new RENT-0723 was SUCCESS, prior rental EIO/identity tests preceding numeric guard passed; not a green entire run.
+- **Cause and correction:** P0-0710 tests require rejection of malformed rate and arithmetic overflow BEFORE financial mutation marker / `bp_paid_begin`. Initial lock-race rewrite postponed that check until after writer acquisition. `rental.sh` `de11e31882e1ac36322a0d387c62e744431f1c7c` performs canonical rate/delta/base/overflow checks **under read lock before dropping it**, rejects invalid inputs with no financial marker, while retaining the required authoritative re-read and overflow verification under writer lock (never trusts earlier lease after concurrency gap). No test contract suppression.
+- **Still unverified:** exact new PR HEAD source and P0 workflow must PASS static, RENT-0723 signed replay race, P0-0710 numeric tests, rental late EIO/identity, accounting stress and x86/Android. No deployment, version, target firmware, keys, stable tag, Standalone Rental, or money files modified. P0 #31/#32/#34/#43 still open and production v0.6 blocked.
+- **NEXT EXACT ACTION:** inspect actual new Full CI and staged P0 at post-doc SHA; fix any errors; only then guarded dev merge.
+
+---
+
 ## RENT-0723 — lock rental paid replay and re-read lease after writer lock — 2026-10-12 Asia/Manila
 
 - **Priority P0 / issue #32 / status IMPLEMENTED_UNTESTED.** Branch `fix/rent-0723-lease-replay-serialization`, parent verified PAY-0722 dev head `ad21855077773898be22fc5ef4f8170c4b78e189`. No production release, schema, real paid records, signer, or Standalone Rental source changed.
