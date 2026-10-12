@@ -129,6 +129,8 @@ bp_rental_seen_get() {
 }
 
 bp_rental_device_write() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   id="$1"; secret="$2"; lease="$3"; label="$4"; last="$5"
   # This is authoritative paid rental time plus private device identity.
   # Never rename an incomplete/corrupt source snapshot over other leases.
@@ -291,6 +293,8 @@ bp_rental_inventory_get() {
 }
 
 bp_rental_event_log() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   kind="$(bp_rental_clean "$1")"; did="$(bp_rental_clean "$2")"; detail="$(bp_rental_clean "$3")"; now="$(bp_now)"
   event="a:$now:$(bp_tmp_suffix)"
   [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
@@ -321,6 +325,8 @@ bp_rental_admin_unmodified_reject() {
 }
 
 bp_rental_lease_add() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   did="$1"; seconds="$2"; now="$(bp_now)"
   bp_rental_safe_seconds "$seconds" 2592000 || return 2
   bp_rental_safe_seconds "$now" 2147483647 || return 8
@@ -363,6 +369,8 @@ bp_rental_lease_add() {
 }
 
 bp_rental_lease_expire() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   did="$1"; confirm="${2:-}"; now="$(bp_now)"
   bp_rental_safe_seconds "$now" 2147483647 || return 8
   bp_paid_replay_read_lock || return $?
@@ -409,6 +417,8 @@ bp_rental_lease_expire() {
 }
 
 bp_rental_device_revoke() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   did="$1"
   printf '%s\n' "$did" | LC_ALL=C grep -Eq '^[A-Za-z0-9_.:-]{2,96}$' || return 2
   # After a previous interrupted revoke the device record may be missing;
@@ -497,6 +507,8 @@ bp_rental_events_json() {
 
 # Keep receipt append independently mockable for fault-injection tests.
 bp_rental_append_paid_receipt() {
+  # No v1 financial/admin writes may fork the synthetic v2 lease authority.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   # Keep legacy fields 1-4 stable; column 5 binds the signed pulse
   # quantity to this immutable receipt, so altered retries never false-ACK.
   printf '%s\t%s\t%s\t%s\tp:%s\n' "$1" "$2" "$3" "$4" "$5" >> "$BP_RENTAL_EVENTS" || return 8
@@ -547,7 +559,39 @@ bp_rental_paid_receipt_match() {
   printf 'duplicate\t%s\n' "$old_lease"
 }
 
+# RENT-0725: the rental coin+receipt authority exists OFF DEVICE in
+# tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
+# can call it; no default runtime helper or customer migration exists.
+bp_rental_v2_lab_dispatch() {
+  [ "${BP_RENTAL_V2_LAB:-0}" = 1 ] || return 9
+  case "$BP_STATE" in /tmp/blaze-v2-rental-*/state) ;; *) return 9;; esac
+  root="${BP_STATE%/state}"
+  suffix="${root#/tmp/blaze-v2-rental-}"
+  case "$suffix" in ''|*/*|*..*|*[!A-Za-z0-9]*) return 9;; esac
+  [ "$BP_RUN" = "$root/run" ] &&
+    [ "$BP_RENTAL_DEVICES" = "$BP_STATE/rental-devices.tsv" ] &&
+    [ "$BP_RENTAL_EVENTS" = "$BP_STATE/rental-events.tsv" ] &&
+    [ "$BP_PAID_UNCERTAIN" = "$BP_STATE/paid-state-uncertain" ] || return 9
+  [ -d "$root" ] && [ ! -L "$root" ] &&
+    [ -f "$root/.blaze-v2-rental-synthetic-only" ] &&
+    [ ! -L "$root/.blaze-v2-rental-synthetic-only" ] || return 9
+  [ "$(cat "$root/.blaze-v2-rental-synthetic-only" 2>/dev/null)" = BLAZE-V2-RENTAL-SYNTHETIC-ONLY ] || return 9
+  helper="${BP_RENTAL_V2_LAB_HELPER:-}"
+  [ -n "$helper" ] || return 9
+  case "$helper" in /*) ;; *) return 9;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 9
+  command -v python3 >/dev/null 2>&1 || return 9
+  now="$(bp_now)" || return 9
+  rate="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$rate" ] || rate=600
+  BP_RENTAL_V2_LAB_NOW="$now" BP_RENTAL_V2_LAB_SECONDS_PER_PULSE="$rate" \
+    python3 "$helper" coin "$@"
+}
+
 bp_rental_apply_coin() {
+  if [ "${BP_RENTAL_V2_LAB:-0}" = 1 ]; then
+    bp_rental_v2_lab_dispatch "$@"; return $?
+  fi
   did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
   bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
   bp_rental_safe_seconds "$now" 2147483647 || return 8
