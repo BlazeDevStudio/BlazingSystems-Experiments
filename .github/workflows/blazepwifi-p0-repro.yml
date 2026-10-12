@@ -23,6 +23,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh'
@@ -101,6 +102,8 @@ jobs:
       - name: Refuse duplicate paid Wi-Fi account rows and truncated source copy
         run: sh experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh
       - name: RENT-0723 protect signed rental replay ACKs and writer lock handoffs
+      - name: RENT-0724 prevent stale admin rental add and unauthorized forfeit across writer lock
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
       - name: Refuse corrupt or incomplete prepaid rental leases
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh
