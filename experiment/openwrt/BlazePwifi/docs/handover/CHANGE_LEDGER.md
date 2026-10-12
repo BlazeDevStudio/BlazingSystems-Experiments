@@ -1906,3 +1906,10 @@
 - **Proof:** exact source committed; `CI_UNTESTED` at record time, no fabricated success. Future CI run/HEAD must be recorded; development merge only after verified complete.
 - **Limit:** It refuses ambiguous v1 writes and replay but does **not** make 3 v1 paid files crash-atomic; cannot prove independent antirollback, protected P-256 signer or physical powercut/24h acceptance. #31/#32/#34/#43 remain OPEN. `VERSION=0.5.3`, `PRODUCTION_v0.6.0_RELEASED=0`, `CUSTOMER_INSTALL_AUTHORIZED=0`.
 - **Rollback:** revert isolated member/test/workflow and canonical docs, no physical/customer changes. **NEXT:** open draft PR, verify exact-head targeted PAY-0729 plus full CI and log outcome/fixes; do not bypass or relabel production.
+
+## 2026-10-13 PAY-0729 first Full CI FAILED at preexisting invalid fixture; corrected for rerun
+
+- **Exact run:** [Full #38294697844](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38294697844) at `ea53455a05ca54d94489f0994a28b527abbbbf01`: new PAY-0729 regression `COMPLETED SUCCESS`, `validate` FAILURE in `Refuse deleting existing paid member seconds and false admin ACK` (job `114962920842`, underlying shell rc8). Other jobs may continue but Full result must be recorded FAILED, not attributed to new money defect.
+- **Reproduction diagnosis:** existing test `tests/v060_member_delete_safety.sh` called `bp_member_init` (global revision 0) then seeded existing member rows revision 1. Strict global revision guard properly rejected this impossible bookkeeping state; fixture had not represented a consistent preexisting ledger.
+- **Change:** test-fixture-only commit `1fd7cc6cc916f59375fa5cde55188f590ed0ca06` seeds global 1 matching member rows; healthy delete now expected revision 2 and `admin:2:bob`. Real `member.sh` guard commit `320e900c` untouched. Do not suppress or skip test.
+- **Status:** `FIXED_FIXTURE_RETEST_PENDING`. Rerun exact newest PR HEAD mandatory full CI. If other old fixtures contain inconsistent global/member revisions, fix test-owned synthetic initialization rather than relaxing live paid-state validation. P0 #31/#32/#34/#43 remain OPEN, `CUSTOMER_INSTALL_AUTHORIZED=0`.
