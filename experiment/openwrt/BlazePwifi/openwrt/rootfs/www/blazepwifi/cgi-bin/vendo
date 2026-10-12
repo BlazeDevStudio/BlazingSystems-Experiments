@@ -359,23 +359,34 @@ case "$action" in
     # Scope v0.6 receipts to the live coin window; expired targets may
     # be history-trimmed, but valid ACK retries may never be evicted.
     event="c:$target.$(bp_event_hash "coin|$id|$nonce|$target")"
+    # PAY-0731: the first ordinary-coin duplicate shortcut used to bypass
+    # the global financial writer lock. A signed old receipt does not prove
+    # it is safe to ACK while another payment is being committed, before its
+    # pending quarantine marker is written, or during a v2 cutover.
+    member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
       credit="$(bp_get_credit "$duplicate_device")"
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
+      # Keep paid-financial.lock held through the duplicate response/exit.
       bp_json "$body"
       exit 0
     fi
+    bp_paid_replay_read_unlock
 
     bp_lock || bp_fail "accounting busy"
+    # Another writer may commit the same event after our first lock handoff.
+    # Re-read the duplicate under BOTH the account and paid financial lock;
+    # release paid read lock only before attempting a fresh money writer.
+    member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
       credit="$(bp_get_credit "$duplicate_device")"
-      bp_unlock
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
       bp_json "$body"
       exit 0
     fi
+    bp_paid_replay_read_unlock
 
     line="$(bp_account_line "$device")"
     [ -n "$line" ] || { bp_unlock; bp_fail "target account not found"; }
