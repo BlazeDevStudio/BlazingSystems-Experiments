@@ -100,6 +100,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh
       - name: Refuse duplicate paid Wi-Fi account rows and truncated source copy
         run: sh experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh
+      - name: RENT-0723 protect signed rental replay ACKs and writer lock handoffs
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
       - name: Refuse corrupt or incomplete prepaid rental leases
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh
       - name: Refuse revoking active paid rental time or false ACK after failed removal
