@@ -309,6 +309,9 @@ bp_member_replay_snapshot_ok() (
 # This cap is a fail-closed bridge for legacy random v1 event IDs, NOT a
 # substitute for an authenticated v2 sequence journal or lost-ACK recovery.
 bp_member_financial_receipt_capacity_ok() {
+  # PAY-0730: no direct member replay ACK or fresh credit may bypass a
+  # pending v2 authority cutover, even outside the signed Vendo CGI lock.
+  bp_paid_v2_cutover_pending && return 1
   # This executes before any v1 replay ACK as well as fresh money writes.
   # A corrupt revision cannot be acknowledged as a successful old event.
   bp_member_revision_strict >/dev/null || return 1
