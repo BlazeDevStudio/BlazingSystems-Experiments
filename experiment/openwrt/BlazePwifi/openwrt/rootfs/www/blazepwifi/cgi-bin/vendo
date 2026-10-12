@@ -369,7 +369,7 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
-      original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
+      original_pulses="$(bp_coin_receipt_original_pulses "$event" "$device")" ||
         bp_fail "coin original receipt ambiguous; operator reconciliation required"
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
         bp_fail "coin pulse payload collision; original credit unchanged"
@@ -388,7 +388,7 @@ case "$action" in
     member_replay_lock_or_fail
     duplicate_device="$(bp_find_event_device "$event")"
     if [ -n "$duplicate_device" ]; then
-      original_pulses="$(bp_coin_receipt_original_pulses "$event")" ||
+      original_pulses="$(bp_coin_receipt_original_pulses "$event" "$device")" ||
         bp_fail "coin original receipt ambiguous; operator reconciliation required"
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
         bp_fail "coin pulse payload collision; original credit unchanged"
