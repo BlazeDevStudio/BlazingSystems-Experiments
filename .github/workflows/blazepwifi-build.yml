@@ -117,6 +117,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_state_fixture.sh
       - name: Verify ordinary coin ACK refusal and persistent paid quarantine
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh
+      - name: PAY-0731 guard both signed ordinary coin duplicate receipt ACK shortcuts
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_replay_lock.sh
       - name: Retain paid coin replay IDs throughout the full live target window
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_replay_window.sh
       - name: Reject member paid replay ACK during global uncertainty quarantine
