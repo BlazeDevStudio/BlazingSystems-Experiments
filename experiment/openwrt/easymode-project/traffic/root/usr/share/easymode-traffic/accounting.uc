@@ -54,6 +54,13 @@ function advance(old, sample, cfg) {
  let dt=sample.monotonic-int(old.monotonic || 0), same=old.boot==sample.boot && dt>0 && dt<=max(120,cfg.interval*4), day=''+int(sample.time/86400);
  let state={schema:1,boot:sample.boot,time:sample.time,monotonic:sample.monotonic,started:old.started || sample.time,checkpoint:old.checkpoint || 0,previous:{},flows:{},days:old.days || {},devices:old.devices || {},domains:old.domains || {},events:old.events || [],live:old.live || [],wan:[],wifi:sample.wifi || [],system:sample.system || {},capabilities:sample.capabilities || {},dns:sample.dns || {observations:{},bindings:{}},coverage:'Observed counters; collection gaps are not backfilled',interval:cfg.interval};
  state.totals=old.totals || {wan:{}};state.recent=old.recent || {};let slot=''+int(sample.time/300);if(!state.recent[slot])state.recent[slot]={wan:{}};
+ state.activity=old.activity || {};
+ function activity(client,domain,kind,stamp){
+  if(!client || domain=='Other/Unknown')return;
+  let key=client+'|'+domain,a=state.activity[key] || {client_id:client,domain,app:appFor(domain),first:stamp,last_dns:0,last_flow:0};
+  a[kind]=max(a[kind] || 0,stamp);state.activity[key]=a;
+ }
+ if(cfg.domains)for(let o in values(sample.dns?.observations || {}))if(o.client_id)activity(o.client_id,o.domain,'last_dns',o.last);
  if(!state.days[day])state.days[day]={wan:{},devices:{},domains:{},apps:{}};
  let bucket=state.days[day], download=0,upload=0;
  for(let w in sample.wan || []) {
@@ -81,16 +88,19 @@ function advance(old, sample, cfg) {
   if(d){d.download+=down;d.upload+=up;d.download_bps+=(same?down*8/dt:0);d.upload_bps+=(same?up*8/dt:0);add(bucket.devices,d.id,down,up);}
   let a=cfg.domains?attribution(sample.dns,f.client,f.remote,sample.time):{domain:'Other/Unknown',app:'Unknown applications',confidence:'Domain observation disabled'};
   add(bucket.domains,a.domain,down,up);add(bucket.apps,a.app,down,up);
+  if(count>0 && cfg.domains)activity(f.client_id,a.domain,'last_flow',sample.time);
   if(count>0 && cfg.domains && a.domain!='Other/Unknown') {let info=state.domains[a.domain] || {first:sample.time,clients:{},download:0,upload:0};info.last=sample.time;info.download+=down;info.upload+=up;info.confidence=a.confidence;if(d && (info.clients[d.id] || length(keys(info.clients))<cfg.limit))info.clients[d.id]=true;state.domains[a.domain]=info;}
  }
  let order=sort(keys(state.days),(a,b)=>int(b)-int(a));for(let i=cfg.retention;i<length(order);i++)delete state.days[order[i]];
  for(let key in keys(state.recent))if(int(key)<int(slot)-288)delete state.recent[key];
  for(let kind in ['devices','domains']) {let ids=sort(keys(state[kind]),(a,b)=>int(state[kind][b].last_seen || state[kind][b].last)-int(state[kind][a].last_seen || state[kind][a].last));for(let i=0;i<length(ids);i++)if(i>=cfg.limit||int(state[kind][ids[i]].last_seen || state[kind][ids[i]].last)<sample.time-cfg.retention*86400)delete state[kind][ids[i]];}
  for(let key,o in state.dns.observations || {})if(o.last<sample.time-cfg.retention*86400)delete state.dns.observations[key];
+ let recentActivity=sort(keys(state.activity),(a,b)=>max(state.activity[b].last_dns,state.activity[b].last_flow)-max(state.activity[a].last_dns,state.activity[a].last_flow));
+ for(let i=0;i<length(recentActivity);i++){let key=recentActivity[i],a=state.activity[key];if(i>=cfg.limit*2 || max(a.last_dns,a.last_flow)<sample.time-cfg.retention*86400)delete state.activity[key];}
  for(let b in values(state.days))for(let kind in ['devices','domains','apps']){let ids=sort(keys(b[kind]),(a,z)=>b[kind][z].download+b[kind][z].upload-b[kind][a].download-b[kind][a].upload);for(let i=cfg.limit;i<length(ids);i++){let id=ids[i];if(id=='Other/Unknown')continue;add(b[kind],'Other/Unknown',b[kind][id].download,b[kind][id].upload);delete b[kind][id];}}
  for(let d in values(state.devices)){d.live=d.live || [];push(d.live,{time:sample.time,download_bps:d.download_bps || 0,upload_bps:d.upload_bps || 0});d.live=slice(d.live,-30);}
  push(state.live,{time:sample.time,download_bps:same?download*8/dt:0,upload_bps:same?upload*8/dt:0});state.live=slice(state.live,-120);
- if(!cfg.domains){state.dns={observations:{},bindings:{}};state.domains={};for(let b in values(state.days)){b.domains={};b.apps={};}}
+ if(!cfg.domains){state.activity={};state.dns={observations:{},bindings:{}};state.domains={};for(let b in values(state.days)){b.domains={};b.apps={};}}
  return state;
 }
 

@@ -21,4 +21,12 @@ let many={};for(let k=1;k<40;k++)many[''+k]={wan:{},devices:{},domains:{},apps:{
 let many={observations:{},bindings:{}};for(let j=0;j<12;j++)many.bindings['client|'+j]={domains:{'example.com':true},expires:100+j};
 let bounded=observeDNS(many,[],100,4);equal(length(keys(bounded.bindings)),4,'DNS association memory stays bounded');
 equal(attribution(bounded,'client','0',100).domain,'Other/Unknown','discarded DNS association remains unknown');
+
+let acfg={interval:30,retention:7,limit:16,domains:true};
+let asample={boot:'activity',time:200,monotonic:100,wan:[],clients:[],flows:[],dns:{observations:{a:{client_id:'device-one',domain:'youtube.com',last:199}},bindings:{}},capabilities:{}};
+let ast=advance({},asample,acfg);equal(ast.activity['device-one|youtube.com'].last_dns,199,'per-device DNS timestamp');
+equal(ast.activity['device-one|youtube.com'].last_flow,0,'DNS does not invent traffic timestamp');
+asample.dns.observations={b:{client_id:'device-two',domain:'youtube.com',last:210}};asample.time=210;asample.monotonic=110;
+let ast2=advance(ast,asample,acfg);equal(ast2.activity['device-one|youtube.com'].last_dns,199,'identity-specific activity retained');equal(ast2.activity['device-two|youtube.com'].last_dns,210,'second identity gets its own activity');
+acfg.domains=false;equal(advance(ast2,asample,acfg).activity,{},'disabled domain tracking clears activity');
 print('PASS: '+n+' accounting/attribution assertions\n');

@@ -36,6 +36,8 @@ if(cfg.domains){
  for(let i=0;i<length(lines);i++)if(lines[i]==last)index=i;
  let fresh=old.boot==boot && old.capabilities?.domains?(index>=0?slice(lines,index+1):lines):[];
  dns=observeDNS(old.dns || {},fresh,now,cfg.limit*2);dns.last_line=lines[-1] || '';
+ // Resolve identity at observation time; never map old IP history to a new DHCP owner.
+ for(let o in values(dns.observations))if(o.last==now)o.client_id=identities[o.client] || ''; 
 }
 let mem=readfile('/proc/meminfo') || '',total=int(match(mem,/MemTotal:\s+(\d+)/)?.[1]),available=int(match(mem,/MemAvailable:\s+(\d+)/)?.[1]);
 if(total<131072)cfg.interval=max(15,cfg.interval);

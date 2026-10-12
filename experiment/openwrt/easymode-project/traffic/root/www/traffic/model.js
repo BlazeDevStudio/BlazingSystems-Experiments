@@ -7,3 +7,7 @@ export function aggregate(days,kind,start,end){const rows={};for(const [day,buck
 export function total(rows){return rows.reduce((a,v)=>({download:a.download+(v.download||0),upload:a.upload+(v.upload||0)}),{download:0,upload:0});}
 export function csv(rows){const cell=v=>{let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};if(!rows.length)return '';const keys=Object.keys(rows[0]);return [keys,...rows.map(r=>keys.map(k=>typeof r[k]==='object'?JSON.stringify(r[k]):r[k]))].map(r=>r.map(cell).join(',')).join('\r\n');}
 export function billingRange(day,now=Date.now()){const d=new Date(now),start=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),day);const previous=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()-1,day);const next=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,day);return {start:Math.floor((now<start?previous:start)/86400000),end:Math.floor((now<start?start:next)/86400000)-1};}
+
+export function activityRows(data,clientId=null){return Object.values(data.activity||{}).filter(a=>!clientId||a.client_id===clientId).map(a=>({...a,last:Math.max(a.last_dns||0,a.last_flow||0)})).sort((a,b)=>b.last-a.last);}
+export function activityStatus(row,fresh,now=Date.now()/1000,interval=30){const last=Math.max(row.last_dns||0,row.last_flow||0);if(!last)return 'No timestamp yet';if(!fresh||now-last>Math.max(60,interval*2)||now<last)return 'Earlier observation';return row.last_flow>=row.last_dns?'Recent traffic estimate':'Recent DNS observation';}
+export function visibleRows(rows,expanded=false){return expanded?rows:rows.slice(0,10);}

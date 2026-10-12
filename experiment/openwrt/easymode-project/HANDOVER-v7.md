@@ -49,3 +49,14 @@ Implement pure accounting and attribution tests, collector, supervised service a
 - Source branch: easymode-v7-production. Last remote before this checkpoint: 23d52a7d26f13587d0cba4e36a6050271799eb89.
 - Release remains blocked: latest CI 38079512294 built x86 BIOS/UEFI images but its VM SSH setup failed before integration assertions. Improved failure reporting; actual root cause still needs console evidence. No v7.0.0 release/tag published; reset-proof firmware and physical reboot tests remain unverified.
 - Next exact action: inspect the next CI VM console diagnostics, resolve virtual networking/SSH setup, complete installation/upgrade/security/firmware tests, then publish verified assets. Keep on-router work incremental and resource-conscious.
+
+
+## Checkpoint 5 - timestamped site activity (2026-10-13)
+- Added bounded per-network-identity domain activity (at most twice configured device capacity), separate DNS/estimated-flow timestamps, local-time UI formatting and recent observation labels. Resolve DNS identity at observation time; do not map retained IP history to a future DHCP owner.
+- Site/app lists and per-device associated domains default to the ten most recent rows, with Show all / Show 10. Search and sorting happen before limiting. Expansion persists across refresh and resets on navigation.
+- Timestamps are approximate collector observation times, not packet timestamps or proof of an open page. Latest retained activity is independent of the traffic usage-period filter. Per-device timestamps begin with this update; no invented historical backfill.
+- Source paths: traffic/root/usr/share/easymode-traffic/{accounting,collect}.uc and traffic/root/www/traffic/{app,model}.js, index.html. Updated browser asset version to avoid stale cached modules.
+- Deployed to physical R281 without reboot; private pre-update archive beside previous backups. 34 ucode accounting assertions and 8 Node model tests PASS; collector compiles. Live API has fresh per-device DNS activity, two identities, empty error log.
+- Packages rebuilt for all six editions. Full firmware release still pending existing VM integration blocker; this change does not claim reset-proof installation.
+
+- Live browser verification: site table showed 10 rows, Show all expanded to 132 retained rows, Show 10 restored 10. Per-device page displayed 7 identity-specific timestamped domains. Apps displayed timestamp columns and 3 rows. No browser console errors. Browser cache version fix verified.

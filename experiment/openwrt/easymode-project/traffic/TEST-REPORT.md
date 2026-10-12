@@ -21,3 +21,11 @@ GitHub VM installation/upgrade/uninstall; private RPC/CSRF tests; real forwarded
 - 29 accounting assertions pass in R281 ucode; modified collector compiles; JS syntax check passes.
 - Physical reboot, factory reset, exact byte accuracy, exhaustive IPv6/VLAN/offload testing and long-term memory stability are still NOT VERIFIED.
 - GitHub run 38079512294: package/image builds pass; VM SSH connection fails before integration tests. Production release gate remains failed. No v7 release is published.
+
+
+## 2026-10-13 activity timestamps
+- 34 ucode assertions PASS including separate per-device DNS timestamps and opt-out cleanup; 8 Node tests PASS including ten-row expansion, identity isolation, timestamp ordering and stale/recent classification.
+- Installed backend/UI on R281, collector compile passes, live API returns fresh activity for two identities with no collector error.
+- Timestamps reflect sample observation time; not precise request time. Historical per-device timestamps are not reconstructed.
+
+- Live browser verification: site table showed 10 rows, Show all expanded to 132 retained rows, Show 10 restored 10. Per-device page displayed 7 identity-specific timestamped domains. Apps displayed timestamp columns and 3 rows. No browser console errors. Browser cache version fix verified.
