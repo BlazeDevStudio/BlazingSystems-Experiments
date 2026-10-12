@@ -1,3 +1,10 @@
+## RENT-0725 first Full CI failure — derived-file override injection repaired, 2026-10-12 Asia/Manila
+
+- **Status FAILED_TEST_INJECTION → FIX_COMMITTED_UNTESTED**, isolated draft [PR #64](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/64), head at failure `cca29f61a8d4682a3eae4b457c1ca81b26d74bfe`, [Full #38264891224](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38264891224). Static, RENT-0723, RENT-0724 passed; new RENT-0725 synthetic Python failure `line 176: expected rc9, got rc0 / credited 126456`. The attempted bad derived file override was specified only through subprocess environment, but sourced `common.sh` assigns `BP_RENTAL_DEVICES/EVENTS/PAID_UNCERTAIN` to canonical paths, so no invalid path reached guards. **Test-only fix** `f7e0af31c171d02bc5b7c43e59c25a35a2e0d6fb` inserts an explicit override in the test shell AFTER both source files are loaded and exports the selected path; keeps existing no-mutation sentinel assertions. Runtime code unchanged. Previous run cannot count as success and no current-head CI known.
+- **NEXT:** exact-HEAD Full RENT-0725 and staged P0, fix any remaining failures, then guarded dev merge only if successful. Prod v0.6 release and customer migration denied, #31/#32/#43/#34 remain OPEN.
+
+---
+
 ## RENT-0725 — Real rental coin entrypoint lab-only lease+receipt atomic authority bridge, 2026-10-12 Asia/Manila
 
 - **P0 #32 / IMPLEMENTED_UNTESTED**, `feat/rent-0725-atomic-coin-fixture` from dev `fcc44689a6adfb39f66b92aae61478e9fa8b9b4a`. Existing P0 RENT-0724 PR #63 source SHA `225c2eb1dbdff2ca28ec4d289f603117645f4300` post-merge Full #38249151769/#38249146334, Windows #38249151760, SDK #38249151671, native #38249151691, sealed #38249151717, staged #38249146357 and lab policy #38249146274 all **COMPLETED SUCCESS**. No fresh PAY-0725 CI result yet.
