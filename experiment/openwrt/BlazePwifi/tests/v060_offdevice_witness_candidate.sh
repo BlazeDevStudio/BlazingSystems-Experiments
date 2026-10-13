@@ -28,28 +28,37 @@ run() {
   python3 "$SRC" "$LAB" "$cmd" "$@" "$auth"
 }
 assert_json() {
-  expected="$1"
+  expected="$1"; shift
+  # WITNESS-0740: independently verify ALL candidate transaction replies
+  # against their exact request; preserve merged WITNESS-0739 STATUS/1 MAC.
   python3 -c '
 import json,sys,hashlib,hmac
 j=json.loads(sys.stdin.read())
-expected=sys.argv[1]
+expected,command=sys.argv[1:3]
+args=sys.argv[3:]
 assert j["state"]==expected,(j,expected)
 assert j["schema"]=="BLAZE-WITNESS-CANDIDATE/1"
-# WITNESS-0739 independent status-response verifier; no positive ACK.
-if expected in ("OBSERVED_CANDIDATE_ONLY", "PENDING_RECONCILIATION"):
-    assert j["response_challenge"] == "cccccccccccccccccccccccccccccccc"
-    mac = j.pop("response_mac")
-    serialized = json.dumps(j, sort_keys=True, separators=(",", ":")).encode("ascii")
-    expected_mac = hmac.new(bytes.fromhex("11"*32),
-        b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n"
-        + serialized + b"\n", hashlib.sha256).hexdigest()
-    assert hmac.compare_digest(mac, expected_mac), "unauthenticated status result"
+request=("BLAZE-WITNESS-CANDIDATE/1\t"+command+"\t"+"\t".join(args)+"\n").encode("ascii")
+request_hash=hashlib.sha256(request).hexdigest()
+assert j["request_sha256"]==request_hash,"response not bound to request"
+mac=j.pop("response_mac")
+serialized=json.dumps(j,sort_keys=True,separators=(",",":")).encode("ascii")
+key=bytes.fromhex("11"*32)
+if command=="status":
+    assert j["reply_schema"]=="BLAZE-WITNESS-CANDIDATE-STATUS/1"
+    assert j["response_challenge"]==args[1],"stale status challenge"
+    payload=b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n"+serialized+b"\n"
 else:
-    assert "response_mac" not in j
-for key in ("paid_ack_authorized","independent_monotonic_witness_verified",
-            "financial_migration_authorized","customer_install_authorized"):
-    assert j[key] is False,(key,j)
-' "$expected"
+    assert j["reply_schema"]=="BLAZE-WITNESS-CANDIDATE-TRANSACTION-REPLY/1"
+    assert "response_challenge" not in j
+    payload=(b"BLAZE-WITNESS-CANDIDATE-TRANSACTION-REPLY/1\t"+
+             request_hash.encode("ascii")+b"\t"+serialized+b"\n")
+expected_mac=hmac.new(key,payload,hashlib.sha256).hexdigest()
+assert hmac.compare_digest(mac,expected_mac),"unauthenticated transaction reply"
+for field in ("paid_ack_authorized","independent_monotonic_witness_verified",
+              "financial_migration_authorized","customer_install_authorized"):
+    assert j[field] is False,(field,j)
+' "$expected" "$@"
 }
 deny() {
   name="$1"; shift
@@ -68,9 +77,9 @@ crash() {
     echo "WITNESS-0738 FAIL: fault $stage did not crash safely (rc=$rc)" >&2; exit 1
   }
 }
-run init device01 1 1 "$A" | assert_json GENESIS_CANDIDATE_ONLY
+run init device01 1 1 "$A" | assert_json GENESIS_CANDIDATE_ONLY init device01 1 1 "$A"
 deny genesis-reset run init device01 1 1 "$A"
-run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY
+run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 # A captured authenticated status is NOT valid for another challenge; a
 # tampered paid gate or floor is NOT protected by the original MAC.
 run status device01 "$N1" > "$LAB/status-first.json"
@@ -93,26 +102,26 @@ for key,bad in (("witness_revision",999),("paid_ack_authorized",True),
     altered=dict(old); altered[key]=bad
     assert not check(altered,sys.argv[2]),f"tampered {key} accepted"
 PY
-run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json PREPARED_NOT_COMMITTED
-run status device01 "$N3" | assert_json PENDING_RECONCILIATION
+run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 1 "$A" 2 "$B" "$N1"
+run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
 deny conflicting-prepare run prepare device01 1 1 "$A" 2 "$C" "$N2"
 deny mismatched-finalize run finalize device01 1 2 "$B" "$N2"
 crash before_finalize_commit finalize device01 1 2 "$B" "$N1"
-run status device01 "$N3" | assert_json PENDING_RECONCILIATION
-run finalize device01 1 2 "$B" "$N1" | assert_json FINALIZED_CANDIDATE_NO_PAID_ACK
-run finalize device01 1 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK
+run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
+run finalize device01 1 2 "$B" "$N1" | assert_json FINALIZED_CANDIDATE_NO_PAID_ACK finalize device01 1 2 "$B" "$N1"
+run finalize device01 1 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 2 "$B" "$N1"
 # A post-commit lost reply is NOT permission for an arbitrary second advance.
-run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK
+run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK prepare device01 1 1 "$A" 2 "$B" "$N1"
 deny rollback-with-wrong-digest run prepare device01 1 1 "$A" 2 "$C" "$N2"
 cp "$LAB/witness.sqlite3" "$LAB/saved-old-sqlite"
 crash before_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
-run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY
+run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 crash after_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
-run status device01 "$N3" | assert_json PENDING_RECONCILIATION
-run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED
+run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
+run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 2 "$B" 3 "$C" "$N2"
 crash after_finalize_commit finalize device01 1 3 "$C" "$N2"
-run finalize device01 1 3 "$C" "$N2" | assert_json ALREADY_FINALIZED_NO_PAID_ACK
-run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY
+run finalize device01 1 3 "$C" "$N2" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 3 "$C" "$N2"
+run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 deny old-revision run prepare device01 1 2 "$B" 3 "$A" "$N3"
 deny other-epoch run prepare device01 2 3 "$C" 4 "$A" "$N3"
 deny bad-auth python3 "$SRC" "$LAB" status device01 "$N3" "$A"
@@ -121,7 +130,7 @@ deny bad-auth python3 "$SRC" "$LAB" status device01 "$N3" "$A"
 # backup cannot result in a *positive* witness/paid admission.
 cp "$LAB/saved-old-sqlite" "$LAB/witness.sqlite3"
 chmod 600 "$LAB/witness.sqlite3"
-run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY
+run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 # Deny privileged input and symlink redirection, rather than following it.
 chmod 644 "$LAB/secret.hex"
 deny publicly-readable-secret run status device01 "$N3"
