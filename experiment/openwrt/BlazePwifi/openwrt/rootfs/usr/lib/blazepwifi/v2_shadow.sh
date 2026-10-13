@@ -19,6 +19,8 @@ if [ "${BLAZE_V2_SHADOW_FIXTURE:-}" = 1 ]; then
       ;;
     *) echo 'SHADOW BLOCKED: synthetic fixture path required' >&2; exit 2;;
   esac
+  # Read only the fixture's pre-existing synthetic money lock.
+  run="$state/run"
   marker="$state/.blaze-shadow-fixture-only"
   [ -d "$state" ] && [ ! -L "$state" ] &&
     [ -f "$marker" ] && [ ! -L "$marker" ] &&
@@ -37,6 +39,7 @@ else
   [ "$(uci -q get blazepwifi.main.v2_shadow_diagnostics 2>/dev/null || true)" = 1 ] ||
     { echo 'SHADOW DISABLED: explicit UCI opt-in required' >&2; exit 3; }
   state=/etc/blazepwifi/state
+  run=/tmp/blazepwifi
 fi
 
 # Unlike bp_init_dirs, this utility must NEVER touch, chmod, repair, create,
@@ -55,6 +58,43 @@ source_uid="$(id -u)" || exit 8
 [ ! -e "$state/paid-state-uncertain" ] && [ ! -L "$state/paid-state-uncertain" ] || {
   echo 'SHADOW BLOCKED: paid-state uncertainty requires operator reconciliation' >&2; exit 9;
 }
+# MIG-0735: a two-pass fingerprint alone does NOT make this a stable
+# source read. All installed v1 paid mutation/replay paths share this lock.
+# Never create or chmod any lock/state file: if no existing safe descriptor
+# can be held, diagnostics must fail closed rather than claim quiescence.
+[ ! -e "$state/paid-v2-cutover-intent" ] &&
+  [ ! -L "$state/paid-v2-cutover-intent" ] || {
+  echo 'SHADOW BLOCKED: paid authority cutover marker present' >&2; exit 9;
+}
+[ -d "$run" ] && [ ! -L "$run" ] &&
+  [ "$(stat -c '%a:%u' "$run" 2>/dev/null)" = "700:$source_uid" ] || {
+  echo 'SHADOW BLOCKED: private paid-lock directory missing/unsafe' >&2; exit 8;
+}
+money_lock="$run/paid-financial.lock"
+[ -f "$money_lock" ] && [ ! -L "$money_lock" ] || {
+  echo 'SHADOW BLOCKED: paid writer lock file missing/linked' >&2; exit 8;
+}
+lock_identity="$(stat -c '%d:%i:%h:%u:%a' "$money_lock" 2>/dev/null)" || {
+  echo 'SHADOW BLOCKED: paid writer lock metadata unreadable' >&2; exit 8;
+}
+# Legacy bp_paid_begin creates this file with its process umask (commonly
+# 0644); the containing run directory MUST be 0700, file has exactly
+# one link, belongs to this operator and cannot be writable by peers.
+case "$lock_identity" in
+  *":1:$source_uid:400"|*":1:$source_uid:440"|*":1:$source_uid:444"|
+  *":1:$source_uid:600"|*":1:$source_uid:640"|*":1:$source_uid:644") ;;
+  *) echo 'SHADOW BLOCKED: unsafe paid writer lock inode/permissions' >&2; exit 8;;
+esac
+exec 7< "$money_lock" || {
+  echo 'SHADOW BLOCKED: paid writer lock cannot be opened read-only' >&2; exit 8;
+}
+command -v flock >/dev/null 2>&1 && flock -n 7 || {
+  echo 'SHADOW BLOCKED: paid financial writer active or no flock' >&2; exit 9;
+}
+[ "$lock_identity" = "$(stat -c '%d:%i:%h:%u:%a' "$money_lock" 2>/dev/null)" ] || {
+  echo 'SHADOW BLOCKED: paid lock inode replaced during acquisition' >&2; exit 8;
+}
+
 # All three authoritative v1 sources must be independently well-formed.
 for name in accounts.tsv members.tsv rental-devices.tsv; do
   f="$state/$name"
@@ -114,7 +154,11 @@ after="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-dev
   echo 'SHADOW BLOCKED: source reread failed' >&2; exit 8;
 }
 [ "$before" = "$after" ] || {
-  echo 'SHADOW BLOCKED: source changed during a nontransactional diagnostic' >&2; exit 8;
+  echo 'SHADOW BLOCKED: source changed during a protected diagnostic' >&2; exit 8;
+}
+# Keep fd7 locked until the observer has finished all metadata and counts.
+[ "$lock_identity" = "$(stat -c '%d:%i:%h:%u:%a' "$money_lock" 2>/dev/null)" ] || {
+  echo 'SHADOW BLOCKED: paid lock inode changed while reading sources' >&2; exit 8;
 }
 printf 'BLAZE_V2_SHADOW_V1\n'
 printf 'status=NON_AUTHORITATIVE_READ_ONLY\n'
