@@ -41,7 +41,7 @@ if expected in ("OBSERVED_CANDIDATE_ONLY", "PENDING_RECONCILIATION"):
     mac = j.pop("response_mac")
     serialized = json.dumps(j, sort_keys=True, separators=(",", ":")).encode("ascii")
     expected_mac = hmac.new(bytes.fromhex("11"*32),
-        b"BLAZE-WITNESS-CANDIDATE-STATUS/1\\n".replace(b"\\n", b"\n")
+        b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n"
         + serialized + b"\n", hashlib.sha256).hexdigest()
     assert hmac.compare_digest(mac, expected_mac), "unauthenticated status result"
 else:
