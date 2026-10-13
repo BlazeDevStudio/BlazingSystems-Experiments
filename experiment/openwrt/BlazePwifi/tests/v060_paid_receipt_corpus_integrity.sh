@@ -56,9 +56,41 @@ refuse() {
 cp "$BP_MEMBER_EVENTS" "$T/member-ok"
 cp "$BP_RENTAL_EVENTS" "$T/rental-ok"
 
+# PAY-0742: the real Vendo CGI invokes these exact signed replay/snapshot
+# helpers while holding bp_paid_replay_read_lock. Test both the healthy
+# signed paths and unrelated corruption without HTTP/key mocks.
+VENDO="$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
+grep -Fq 'bp_member_replay_snapshot_ok "$event_id" "$user" add' "$VENDO"
+grep -Fq 'bp_member_replay_snapshot_ok "$event_id" "$user" restore_all' "$VENDO"
+grep -Fq 'bp_member_replay_snapshot_ok "$event_id" "$from" transfer' "$VENDO"
+grep -Fq 'bp_member_signed_read_integrity' "$VENDO"
+bp_paid_replay_read_lock
+bp_member_replay_snapshot_ok member-good alice add softtimer:fixture 10 ""
+bp_member_signed_read_integrity
+bp_paid_replay_read_unlock
+refuse_signed() {
+  name="$1"; shift
+  before="$(files_snapshot)"
+  bp_paid_replay_read_lock || {
+    echo "PAY-0742 FAIL: cannot get signed financial replay reader lock" >&2
+    exit 1
+  }
+  rc=0
+  "$@" >"$T/out" 2>"$T/err" || rc=$?
+  bp_paid_replay_read_unlock
+  [ "$rc" -ne 0 ] && [ ! -s "$T/out" ] &&
+    [ "$before" = "$(files_snapshot)" ] &&
+    [ ! -e "$BP_PAID_UNCERTAIN" ] || {
+    echo "PAY-0742 FAIL: $name signed reply accepted/mutated corrupt member receipt (rc=$rc)" >&2
+    exit 1
+  }
+}
+
 # Duplicate another valid member receipt ID must close fresh, replay and
 # transfer paths (not just lookup of that particular duplicate ID).
 cat "$T/member-ok" >>"$BP_MEMBER_EVENTS"
+refuse_signed member-duplicate-signed-replay bp_member_replay_snapshot_ok member-good alice add softtimer:fixture 10 ""
+refuse_signed member-duplicate-signed-snapshot bp_member_signed_read_integrity
 refuse member-duplicate-other-new bp_member_balance_change bob add 1 softtimer:fixture member-new
 refuse member-duplicate-other-old bp_member_balance_change alice add 10 softtimer:fixture member-good
 refuse member-duplicate-other-transfer bp_member_transfer alice bob 1 softtimer:fixture member-transfer
@@ -66,9 +98,13 @@ cp "$T/member-ok" "$BP_MEMBER_EVENTS"
 # A wrong-schema unrelated receipt must not permit new credit merely
 # because its event ID is different from the requested one.
 printf 'unrelated\t123\talice\tadd\t1\n' >>"$BP_MEMBER_EVENTS"
+refuse_signed member-truncated-signed-replay bp_member_replay_snapshot_ok member-good alice add softtimer:fixture 10 ""
+refuse_signed member-truncated-signed-snapshot bp_member_signed_read_integrity
 refuse member-partial-row bp_member_balance_change bob add 1 softtimer:fixture member-new
 cp "$T/member-ok" "$BP_MEMBER_EVENTS"
 printf 'unrelated\t123\talice\tadd\tbad\t1\tsofttimer:fixture\t1\n' >>"$BP_MEMBER_EVENTS"
+refuse_signed member-malformed-signed-replay bp_member_replay_snapshot_ok member-good alice add softtimer:fixture 10 ""
+refuse_signed member-malformed-signed-snapshot bp_member_signed_read_integrity
 refuse member-malformed-amount bp_member_balance_change bob add 1 softtimer:fixture member-new
 cp "$T/member-ok" "$BP_MEMBER_EVENTS"
 
@@ -87,9 +123,13 @@ printf 'legacy-other\tdev01\t100\t123456\n' >>"$BP_RENTAL_EVENTS"
 refuse rental-partial-unrelated bp_rental_apply_coin dev01 controller03 nonce03 target03 1
 cp "$T/rental-ok" "$BP_RENTAL_EVENTS"
 
-# A sound, fully restored corpus must not be incorrectly quarantined.
+# A sound, fully restored corpus must sign safe member reads/replays.
+bp_paid_replay_read_lock
+bp_member_replay_snapshot_ok member-good alice add softtimer:fixture 10 ""
+bp_member_signed_read_integrity
+bp_paid_replay_read_unlock
 [ "$(bp_member_balance_change bob add 1 softtimer:fixture member-new)" = "$(printf '1\t3')" ]
 [ "$(bp_rental_apply_coin dev01 controller03 nonce03 target03 1)" = "$(printf 'credited\t124656')" ]
 [ ! -e "$BP_STATE/paid-state-uncertain" ]
-echo 'PAY-0740 PASS: unrelated malformed/duplicated member+rental receipts block all new/replayed v1 paid ACKs without mutation; healthy stores still credit.'
+echo 'PAY-0740/0742 PASS: unrelated corrupted/duplicate member+rental corpus blocks direct and PUBLIC signed replay/snapshot ACKs, with healthy signed reads intact.'
 echo 'NOT ATOMIC: v1 still separates paid balance, receipt, revision/lease; no independent witness, hardware fsync or production v0.6 admission.'
