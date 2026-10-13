@@ -25,6 +25,10 @@ import sys
 from pathlib import Path
 
 DOMAIN = "BLAZE-WITNESS-CANDIDATE/1"
+# Preserve WITNESS-0739's already-integrated status response protocol.
+STATUS_DOMAIN = "BLAZE-WITNESS-CANDIDATE-STATUS/1"
+# WITNESS-0740 authenticates non-status candidate transaction receipts too.
+TRANSACTION_REPLY_DOMAIN = "BLAZE-WITNESS-CANDIDATE-TRANSACTION-REPLY/1"
 MARKER = "BLAZE-WITNESS-CANDIDATE-NOT-HARDWARE-ATTESTED\n"
 HEX64 = re.compile(r"[a-f0-9]{64}\Z")
 HEX32 = re.compile(r"[a-f0-9]{32,64}\Z")
@@ -142,31 +146,40 @@ def open_store(root, initialize):
     con.executescript(SCHEMA)
     return con
 
-def reply(state, floor, pending=False, *, challenge=None, key=None):
-    # Never emit a positive payment admission even on successful finalize.
+def reply(state, floor, pending=False, *, challenge=None, key=None,
+          request_sha256=None):
+    # Candidate only. NO positive paid ACK or independently attested witness.
+    # All replies must be authenticated to the exact inbound request.
+    if key is None or request_sha256 is None:
+        refuse("candidate response authentication unavailable")
+    status = challenge is not None
     result = {
       "schema": DOMAIN, "state": state,
       "witness_revision": floor[2], "witness_epoch": floor[1],
       "witness_digest": floor[3],
       "pending_reconciliation": bool(pending),
+      # Matching PREPARE tuple is necessary for manual ambiguous recovery.
+      # Authentication does NOT independently prove the target's fsync.
+      "pending_revision": floor[4] if pending else None,
+      "pending_digest": floor[5] if pending else None,
+      "pending_nonce": floor[6] if pending else None,
+      "request_sha256": request_sha256,
+      "reply_schema": STATUS_DOMAIN if status else TRANSACTION_REPLY_DOMAIN,
       "independent_monotonic_witness_verified": False,
       "financial_migration_authorized": False,
       "paid_ack_authorized": False,
       "customer_install_authorized": False
     }
-    if challenge is not None:
-        # WITNESS-0739: a successful authenticated STATUS *request* alone
-        # does not authenticate its reply. Bind the complete observed state
-        # to the requester's fresh challenge, including every NO-ACK gate.
-        # This is candidate HMAC evidence, not a hardware-signed witness.
-        if key is None:
-            refuse("status response authentication unavailable")
+    if status:
+        # Keep merged PR #79 STATUS/1 response_challenge and response_mac
+        # formatting; its existing independent verifier must remain valid.
         result["response_challenge"] = challenge
-        canonical = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("ascii")
-        result["response_mac"] = hmac.new(
-            key, b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n" + canonical + b"\n",
-            hashlib.sha256
-        ).hexdigest()
+    canonical_reply = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("ascii")
+    if status:
+        envelope = STATUS_DOMAIN.encode("ascii") + b"\n" + canonical_reply + b"\n"
+    else:
+        envelope = (TRANSACTION_REPLY_DOMAIN + "\t" + request_sha256 + "\t").encode("ascii") + canonical_reply + b"\n"
+    result["response_mac"] = hmac.new(key, envelope, hashlib.sha256).hexdigest()
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
 
 def fault(stage, fixture):
@@ -174,6 +187,12 @@ def fault(stage, fixture):
         os._exit(73)
 
 def operate(con, command, args, fixture, key):
+    # The authenticated response is bound to every original request field.
+    # STATUS includes caller-generated fresh challenge in this exact hash.
+    request_sha = hashlib.sha256(canonical(command, args)).hexdigest()
+    def bound_reply(state, floor, pending=False, *, challenge=None):
+        reply(state, floor, pending, challenge=challenge, key=key,
+              request_sha256=request_sha)
     device = args[0]
     con.execute("BEGIN IMMEDIATE")
     row = con.execute(
@@ -188,13 +207,13 @@ def operate(con, command, args, fixture, key):
         fault("before_init_commit", fixture)
         con.commit()
         fault("after_init_commit", fixture)
-        reply("GENESIS_CANDIDATE_ONLY", row)
+        bound_reply("GENESIS_CANDIDATE_ONLY", row)
         return
     if row is None: refuse("unknown witness device")
     if command == "status":
         con.commit()
-        reply("PENDING_RECONCILIATION" if row[4] is not None else "OBSERVED_CANDIDATE_ONLY",
-              row, row[4] is not None, challenge=args[1], key=key)
+        bound_reply("PENDING_RECONCILIATION" if row[4] is not None else "OBSERVED_CANDIDATE_ONLY",
+              row, row[4] is not None, challenge=args[1])
         return
     epoch, revision, digest = int(args[1]), int(args[2]), args[3]
     if epoch != row[1]: refuse("wrong migration epoch")
@@ -205,7 +224,7 @@ def operate(con, command, args, fixture, key):
             if row[4] != int(new_rev) or row[5] != new_digest or row[6] != nonce:
                 refuse("conflicting pending operation; reconcile before mutation")
             con.commit()
-            reply("PREPARED_NOT_COMMITTED", row, True)
+            bound_reply("PREPARED_NOT_COMMITTED", row, True)
             return
         old = con.execute(
           "SELECT nonce,digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
@@ -213,7 +232,7 @@ def operate(con, command, args, fixture, key):
         if old:
             if old != (nonce, new_digest): refuse("finalized revision collision")
             con.commit()
-            reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
+            bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
             return
         if row[2] != int(old_rev) or row[3] != old_digest:
             refuse("stale/rolled-back local base snapshot")
@@ -224,7 +243,7 @@ def operate(con, command, args, fixture, key):
         fault("before_prepare_commit", fixture)
         con.commit()
         fault("after_prepare_commit", fixture)
-        reply("PREPARED_NOT_COMMITTED", row, True)
+        bound_reply("PREPARED_NOT_COMMITTED", row, True)
         return
     # FINALIZE: authenticated target claims local fsync completed, but this
     # *candidate* cannot verify hardware fsync or monotonic external storage.
@@ -237,7 +256,7 @@ def operate(con, command, args, fixture, key):
         if old != (nonce, digest):
             refuse("not prepared or disputed replay")
         con.commit()
-        reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
+        bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
         return
     if row[4] != revision or row[5] != digest or row[6] != nonce:
         refuse("mismatched pending finalize")
@@ -253,7 +272,7 @@ def operate(con, command, args, fixture, key):
     fault("before_finalize_commit", fixture)
     con.commit()
     fault("after_finalize_commit", fixture)
-    reply("FINALIZED_CANDIDATE_NO_PAID_ACK", row)
+    bound_reply("FINALIZED_CANDIDATE_NO_PAID_ACK", row)
 
 def main():
     if len(sys.argv) < 5: refuse("usage: ROOT {init|prepare|finalize|status} ...")
