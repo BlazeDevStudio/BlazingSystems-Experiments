@@ -298,7 +298,7 @@ case "$action" in
     ;;
   coin)
     bp_time_sane "$now" || bp_fail "router clock not synchronized"
-    case "$pulses" in ''|*[!0-9]*) bp_fail "invalid pulse count";; esac
+    bp_money_decimal_u31 "$pulses" || bp_fail "invalid canonical pulse count"
     [ "$pulses" -ge 1 ] && [ "$pulses" -le 20 ] || bp_fail "pulse count out of range"
     printf '%s' "$target" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid coin target"
 
@@ -327,14 +327,27 @@ case "$action" in
         bp_unlock
         bp_fail "rental progress unreadable; no coin credited"
       }
-      case "$received_pulses" in
-        ''|*[!0-9]*)
-          bp_unlock
-          bp_fail "rental progress invalid; no coin credited" ;;
-      esac
+      bp_money_decimal_u31 "$received_pulses" || {
+        bp_unlock
+        bp_fail "rental progress malformed; no coin credited"
+      }
       [ "$received_pulses" -le 1000000 ] 2>/dev/null || {
         bp_unlock
         bp_fail "rental progress out of range; no coin credited"
+      }
+      # Rate, prior counter, future counter and total display cents must
+      # be safe BEFORE a real rental lease/payment is committed. Otherwise
+      # CGI could fail on an octal/overflow after paid credit was granted.
+      unit="$(bp_cfg pulse_value_centavos)"; [ -n "$unit" ] || unit=100
+      bp_money_decimal_u31 "$unit" && [ "$unit" -gt 0 ] || {
+        bp_unlock
+        bp_fail "rental coin price invalid; no coin credited"
+      }
+      future_pulses=$((received_pulses+pulses))
+      [ "$future_pulses" -le 1000000 ] &&
+        [ "$unit" -le $((2147483647/future_pulses)) ] || {
+        bp_unlock
+        bp_fail "rental coin accounting overflow; no coin credited"
       }
       result="$(bp_rental_apply_coin "$device" "$id" "$nonce" "$target" "$pulses")"
       rc=$?
@@ -360,8 +373,7 @@ case "$action" in
         fi
       fi
       bp_unlock
-      unit="$(bp_cfg pulse_value_centavos)"; [ -n "$unit" ] || unit=100
-      case "$unit" in ''|*[!0-9]*) unit=100;; esac
+      # Unit is validated before the paid mutation, including display math.
       received_cents=$((unit*received_pulses))
       [ "$state" = duplicate ] && duplicate=true || duplicate=false
       body="$(printf '{"ok":true,"duplicate":%s,"rental":true,"lease_until":%s,"received_pulses":%s,"received_cents":%s,"target_nonce":"%s"}' "$duplicate" "$lease" "$received_pulses" "$received_cents" "$(bp_json_escape "$target")")"
@@ -387,6 +399,7 @@ case "$action" in
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
         bp_fail "coin pulse payload collision; original credit unchanged"
       credit="$(bp_get_credit "$duplicate_device")"
+      bp_money_decimal_u31 "$credit" || bp_fail "coin paid account credit invalid"
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
       # Keep paid-financial.lock held through the duplicate response/exit.
       bp_json "$body"
@@ -406,6 +419,7 @@ case "$action" in
       [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
         bp_fail "coin pulse payload collision; original credit unchanged"
       credit="$(bp_get_credit "$duplicate_device")"
+      bp_money_decimal_u31 "$credit" || bp_fail "coin paid account credit invalid"
       body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
       bp_json "$body"
       exit 0
@@ -422,9 +436,22 @@ case "$action" in
     account_mac="$(printf '%s' "$line" | cut -f7)"
     account_ip="$(printf '%s' "$line" | cut -f8)"
     events="$(printf '%s' "$line" | cut -f9)"
+    # All arithmetic is bounded to canonical signed-32-bit cents so ash
+    # cannot wrap or interpret a leading-zero amount as octal. Reject
+    # BEFORE paid-state marker, receipt append or account rename.
+    bp_money_decimal_u31 "$credit" || { bp_unlock; bp_fail "coin account credit invalid"; }
     unit="$(bp_cfg pulse_value_centavos)"
     [ -n "$unit" ] || unit=100
+    bp_money_decimal_u31 "$unit" && [ "$unit" -gt 0 ] || {
+      bp_unlock; bp_fail "coin price invalid; no coin credited"
+    }
+    [ "$unit" -le $((2147483647/pulses)) ] || {
+      bp_unlock; bp_fail "coin price overflow; no coin credited"
+    }
     add=$((unit*pulses))
+    [ "$credit" -le $((2147483647-add)) ] || {
+      bp_unlock; bp_fail "coin balance overflow; no coin credited"
+    }
     newcredit=$((credit+add))
     if ! newevents="$(bp_events_push "$events" "$receipt_event")"; then
       bp_unlock
