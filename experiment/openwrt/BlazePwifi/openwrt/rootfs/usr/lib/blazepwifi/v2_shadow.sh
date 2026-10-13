@@ -81,8 +81,7 @@ lock_identity="$(stat -c '%d:%i:%h:%u:%a' "$money_lock" 2>/dev/null)" || {
 # 0644); the containing run directory MUST be 0700, file has exactly
 # one link, belongs to this operator and cannot be writable by peers.
 case "$lock_identity" in
-  *":1:$source_uid:400"|*":1:$source_uid:440"|*":1:$source_uid:444"|
-  *":1:$source_uid:600"|*":1:$source_uid:640"|*":1:$source_uid:644") ;;
+  *":1:$source_uid:400"|*":1:$source_uid:440"|*":1:$source_uid:444"|*":1:$source_uid:600"|*":1:$source_uid:640"|*":1:$source_uid:644") ;;
   *) echo 'SHADOW BLOCKED: unsafe paid writer lock inode/permissions' >&2; exit 8;;
 esac
 exec 7< "$money_lock" || {
