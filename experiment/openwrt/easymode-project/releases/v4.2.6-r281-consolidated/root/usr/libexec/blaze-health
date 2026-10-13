@@ -68,7 +68,12 @@ set_routes() {
   if [ "$MODE" = balance ] && [ "$S" = wifi ] && [ "$WIFI_PROBE" = local-link-internet-unchecked ];then continue;fi
   case "$S" in sim) OK=$SIM_OK;; wired) OK=$WIRED_OK;; wifi) OK=$WIFI_OK;; *) OK=0;; esac; [ "$OK" = 1 ] && { HEALTHY="$HEALTHY $S";COUNT=$((COUNT+1)); }; done
  HEALTHY="$(echo "$HEALTHY" | xargs)"
- [ "$COUNT" -gt 0 ] || { ip route replace unreachable default proto 99 metric 5 2>/dev/null || true; ACTIVE=none; EFFECTIVE=none; ROUTE_ERROR=''; return; }
+ if [ "$COUNT" -eq 0 ];then
+  # Probe failure is not proof that all client traffic is unusable. Keep an
+  # addressed uplink routable while recovery runs; prefer verified backups above.
+  for S in $ORDER;do if source_info "$S" && route_one "$S";then ACTIVE="$S";EFFECTIVE=degraded;ROUTE_ERROR='Internet checks failed; retaining the addressed uplink while recovery evaluates it.';return;fi;done
+  ip route replace unreachable default proto 99 metric 5 2>/dev/null || true;ACTIVE=none;EFFECTIVE=none;ROUTE_ERROR='';return
+ fi
  FIRST="${HEALTHY%% *}";[ -n "$FIRST" ] || FIRST="$HEALTHY"
  if [ "$MODE" = balance ] && [ "$COUNT" -ge 2 ]; then
   echo 1 >/proc/sys/net/ipv4/fib_multipath_hash_policy
@@ -87,7 +92,11 @@ recover_source() {
   wifi) FAIL=$WIFI_FAIL;LAST=$WIFI_LAST_REC;ATT=$WIFI_ATTEMPTS;;
   *) return 0;;
  esac
- [ "$FAIL" -ge "$THRESH" ] || return 0; [ $((NOW-LAST)) -ge 300 ] || return 0
+ [ "$FAIL" -ge "$THRESH" ] || return 0
+ COOLDOWN=300;[ "$ATT" -lt 2 ] || COOLDOWN=600;[ "$ATT" -lt 4 ] || COOLDOWN=1200
+ [ $((NOW-LAST)) -ge "$COOLDOWN" ] || return 0
+ # Confirm again immediately before a disruptive reconnect.
+ if probe_source "$S";then case "$S" in sim) SIM_FAIL=0;;wired) WIRED_FAIL=0;;wifi) WIFI_FAIL=0;;esac;return 0;fi
  /usr/libexec/blaze-outage-snapshot >/dev/null 2>&1 || true
  case "$S" in
   sim) KIND=reconnect;[ "$ATT" -gt 0 ] && KIND=radio-reconnect;;

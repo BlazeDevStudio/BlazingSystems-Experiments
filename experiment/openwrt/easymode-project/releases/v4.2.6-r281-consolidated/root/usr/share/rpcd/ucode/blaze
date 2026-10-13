@@ -1,3 +1,4 @@
+import {bindings,ssidProfile} from '/usr/share/blaze/ssid.uc';
 import {ledSettings,ledProfile} from '/usr/share/blaze/leds.uc';
 import {repeaterSettings,repeaterProfile} from '/usr/share/blaze/repeater.uc';
 import {readfile,writefile} from 'fs';
@@ -18,15 +19,16 @@ function detectMyNumber(){
  writefile('/tmp/blaze-msisdn.json',sprintf('%J',{number:n,time:time()}));return n;
 }
 function cfg(){
- let u=config(),w=[],piso=[],sta={};
+ let u=config(),w=[],piso=[],sta={},ssids=[];
  u.foreach('wireless','wifi-iface',s=>{
   let x={section:s['.name'],device:s.device,ssid:s.ssid||'',disabled:s.disabled=='1',encryption:s.encryption||'none',network:s.network||'',mode:s.mode||'',bssid:s.bssid||''};
+  if(s.mode=='ap')push(ssids,x);
   if(s.mode=='ap'&&s.network=='lan')push(w,x);
   else if(s.mode=='ap'&&s.network=='piso')push(piso,x);
   else if(s.mode=='sta'&&s.network=='wifiwan')sta=x;
  });
  let settings={...(u.get_all('blaze','main')||{}),sms_storage:u.get('sms_tool_js','@sms_tool_js[0]','storage')||'ME'};
- return {access:readjson('/etc/blaze/access.json',{mode:'off',scope:'all',macs:[]}),leds:ledSettings(u),wifi:w,piso_wifi:piso,wifi_sta:sta,repeater:repeaterSettings(u),apn:u.get('network','wwan','apn'),hostname:u.get('system','@system[0]','hostname'),settings};
+ return {access:readjson('/etc/blaze/access.json',{mode:'off',scope:'all',macs:[]}),leds:ledSettings(u),wifi:w,wifi_ssids:ssids,wifi_bindings:bindings(u),piso_wifi:piso,wifi_sta:sta,repeater:repeaterSettings(u),apn:u.get('network','wwan','apn'),hostname:u.get('system','@system[0]','hostname'),settings};
 }
 function clientSessions(clients){
  let t=readjson('/tmp/blaze-clients.json',{}),up=int(split(readfile('/proc/uptime')||'0',' ')[0]);
@@ -80,6 +82,7 @@ function mutate(action,p){
  if(action=='confirm_mode'){let pending=trim(readfile('/tmp/blaze-mode-token')||'');if(!pending||p.token!=pending)die('No matching network transaction.');writefile('/tmp/blaze-mode-confirm',pending);return {ok:true};}
  if(action=='bands'){let rat=p.rat||'lte',bands=bandSelection(rat,p.bands);if(p.requireCA)p.test=true;return launch('bands',rat,bands,(p.test?'trial'+(p.requireCA?'-ca':''):'apply'));}
  if(action=='reconnect')return launch('reconnect');
+ if(action=='ssid'){let v=ssidProfile(u,p);return launch('ssid',sprintf('%J',{...p,kind:'ssid'}));}
  if(action=='wifi'){
   if(type(p.ssid)!='string'||length(p.ssid)<1||length(p.ssid)>32||hasControl(p.ssid,true))die('SSID must be 1–32 characters.');
   if(p.password&&(length(p.password)<8||length(p.password)>63||hasControl(p.password,true)))die('Wi-Fi password must be 8–63 characters.');

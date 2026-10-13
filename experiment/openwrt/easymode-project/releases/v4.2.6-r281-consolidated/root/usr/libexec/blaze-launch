@@ -2,7 +2,7 @@
 set -e
 umask 077
 . /usr/share/libubox/jshn.sh
-case "${1:-}" in leds|repeater-ap|restore-wifi|bands|restore-bands|restore-mode|radio-reconnect|reconnect|reconnect-wifi|reconnect-wired|apn|wifi|piso-wifi|wifi-sta|modes|antenna) ;; *) echo 'Unsupported operation'; exit 2;; esac
+case "${1:-}" in ssid|leds|repeater-ap|restore-wifi|bands|restore-bands|restore-mode|radio-reconnect|reconnect|reconnect-wifi|reconnect-wired|apn|wifi|piso-wifi|wifi-sta|modes|antenna) ;; *) echo 'Unsupported operation'; exit 2;; esac
 /usr/libexec/blaze-lock-claim job "$$"
 RECOVERY=0
 if [ -s /etc/blaze/mode-pending ] && [ "$1" != restore-mode ];then set -- restore-mode;RECOVERY=1

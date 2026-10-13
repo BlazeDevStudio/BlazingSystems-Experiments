@@ -103,6 +103,20 @@ case "$1" in
  antenna)
   state applying 'Applying R281 antenna selection.';OLD_ANT=$(uci -q get blaze.main.antenna || echo auto);if ! /usr/libexec/blaze-antenna "$2";then state failed 'Antenna change rejected. Check external antenna detection.';exit 1;fi;sleep 5;if wait_online;then uci set blaze.main.antenna="$2";uci commit blaze;state complete 'Antenna selection applied; cellular internet verified.';else /usr/libexec/blaze-antenna "$OLD_ANT";state reverted 'Antenna selection reverted after the connectivity check failed.';fi
   ;;
+ ssid)
+  mkdir -p /etc/blaze;for f in network wireless firewall dhcp blaze;do cp /etc/config/$f /etc/blaze/$f-wifi-sta-before || exit 1;done
+  touch /etc/blaze/wifi-pending;WIFI_PENDING=1
+  state applying 'Saving SSID and network binding. Wi-Fi clients may briefly reconnect.'
+  printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc
+  rm -f /tmp/blaze-mode-confirm;MODE_TOKEN=$(cat /proc/sys/kernel/random/uuid);echo "$MODE_TOKEN" >/tmp/blaze-mode-token
+  wifi reload
+  READY=0;for N in 1 2 3 4 5 6 7 8 9 10;do if ucode /usr/share/blaze/ssid-check.uc;then READY=1;break;fi;sleep 3;done
+  [ "$READY" = 1 ] || { state failed 'The radio did not activate the SSID; restoring previous Wi-Fi.';exit 1; }
+  state checking 'SSID applied. Reconnect if needed and leave EasyMode open; rollback is armed for 90 seconds.'
+  N=0;while [ "$N" -lt 45 ];do [ "$(cat /tmp/blaze-mode-confirm 2>/dev/null)" = "$MODE_TOKEN" ] && break;sleep 2;N=$((N+1));done
+  if [ "$N" -ge 45 ];then restore_wifi_sta;state reverted 'Management did not reconnect; previous SSIDs restored.';else state complete 'SSID and network binding saved; management access verified.';fi
+  WIFI_PENDING=0;rm -f /etc/blaze/wifi-pending /tmp/blaze-mode-token /tmp/blaze-mode-confirm
+  ;;
  wifi) state applying 'Applying home Wi-Fi settings.';printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc;wifi reload;state complete 'Home Wi-Fi updated.';;
  piso-wifi) state applying 'Applying PisoWiFi names and radio status.';printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc;wifi reload;state complete 'PisoWiFi wireless settings updated.';;
  leds)

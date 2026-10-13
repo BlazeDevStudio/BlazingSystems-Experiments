@@ -9,12 +9,12 @@ probe_link() {
  N=0
  for T in $TARGETS; do
   case "$T" in ''|*[!A-Za-z0-9._:-]*) continue;; esac
-  ping -I "$1" -c1 -W1 "$T" >/dev/null 2>&1 && { BLAZE_PROBE="icmp:$T"; return 0; }
+  ping -I "$1" -c1 -W2 "$T" >/dev/null 2>&1 && { BLAZE_PROBE="icmp:$T"; return 0; }
   N=$((N+1)); [ "$N" -ge 4 ] && break
  done
  URL="$(uci -q get blaze.main.watchdog_url || true)"
  [ -n "$URL" ] || URL='https://www.gstatic.com/generate_204'
- CODE=$(curl -4 --interface "$1" --noproxy '*' --connect-timeout 2 --max-time 4 --silent -o /dev/null -w '%{http_code}' "$URL" 2>/dev/null || true)
+ CODE=$(curl -4 --interface "$1" --noproxy '*' --connect-timeout 3 --max-time 8 --silent -o /dev/null -w '%{http_code}' "$URL" 2>/dev/null || true)
  case "$CODE" in 200|204|301|302) BLAZE_PROBE="http:$CODE";return 0;;esac
  BLAZE_PROBE=unreachable
  return 1

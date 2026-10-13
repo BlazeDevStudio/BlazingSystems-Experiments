@@ -1,10 +1,13 @@
+import {writefile} from 'fs';
+import {applySSID} from '/usr/share/blaze/ssid.uc';
 import {saveRepeater,configureRepeater} from '/usr/share/blaze/repeater.uc';
 import {applyUplink} from '/usr/share/blaze/uplink.uc';
 import {config,checked,readjson} from '/usr/share/blaze/common.uc';
 let p=readjson('/tmp/blaze-settings-request.json',{}),u=config();
-if(p.kind=='wifi'){
+if(p.kind=='ssid'){writefile('/tmp/blaze-ssid-section',applySSID(u,p));}
+else if(p.kind=='wifi'){
  let count=0;
- u.foreach('wireless','wifi-iface',s=>{if(s.mode=='ap'&&s.network=='lan'){
+ u.foreach('wireless','wifi-iface',s=>{if(s.mode=='ap'&&s.network=='lan'&&!match(s['.name'],/^blaze_ssid_/)){
   let id=s['.name'];u.set('wireless',id,'ssid',p.ssid);if(p.password){u.set('wireless',id,'key',p.password);u.set('wireless',id,'encryption','psk2');}u.set('wireless',id,'disabled',p.enabled?'0':'1');count++;
  }});
  if(count!=2)die('Expected two home Wi-Fi interfaces. No settings committed.');

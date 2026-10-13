@@ -29,3 +29,10 @@ GitHub VM installation/upgrade/uninstall; private RPC/CSRF tests; real forwarded
 - Timestamps reflect sample observation time; not precise request time. Historical per-device timestamps are not reconstructed.
 
 - Live browser verification: site table showed 10 rows, Show all expanded to 132 retained rows, Show 10 restored 10. Per-device page displayed 7 identity-specific timestamped domains. Apps displayed timestamp columns and 3 rows. No browser console errors. Browser cache version fix verified.
+
+## 2026-10-13 WiFi management / reconnection
+- R281 isolated UCI: 13 SSID assertions PASS. Live validated RPC rejects WAN and unconfigured Piso binding; wireless/network/blaze hashes remain unchanged. Existing AP readiness check PASS.
+- Two routing scenarios PASS against actual health functions with route writes mocked: retain addressed uplink if probes fail; prefer verified wired backup. Backend compile, shell and browser JavaScript syntax checks PASS.
+- Live browser verifies existing SSID list, add/edit forms, disabled unavailable binding, repeater portal link and Traffic WiFi management link. No new live SSID or radio reload test.
+- Physical cellular probes pass after application update. Repeater phone obtains upstream address and return route; its DNS/HTTP packets leave upstream but no IP replies return. Router-originated portal request returns HTTP 302. Separate portal behavior remains unresolved; no shared-login change made.
+- Package builder produces 13 updated traffic artifacts; narrow R281 management archive separately verified for content, modes, checksums and installer check-only compatibility. No archive apply/rollback, reboot, factory reset or long-term outage test claimed.
