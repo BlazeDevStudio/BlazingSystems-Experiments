@@ -13,6 +13,18 @@ if [ "${REQUEST_METHOD:-GET}" = POST ]; then IFS= read -r BP_POST_BODY; fi
 
 bp_cfg() { uci -q get "blazepwifi.main.$1"; }
 bp_now() { date +%s; }
+# PAY-0741: canonical nonnegative decimal within signed 32-bit range.
+# Before v1 paid CGI shell arithmetic: no octal, exponent, negative, wrap,
+# malformed TSV state or corrupt UCI rate can become a false monetary ACK.
+# This helper is validation only; it creates no files or payment authority.
+bp_money_decimal_u31() {
+	case "$1" in
+	  0) ;;
+	  [1-9]*) case "$1" in *[!0-9]*) return 1;; esac ;;
+	  *) return 1 ;;
+	esac
+	[ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
+}
 bp_time_sane() {
 	now="${1:-$(bp_now)}"
 	[ "$now" -ge 1700000000 ] 2>/dev/null
