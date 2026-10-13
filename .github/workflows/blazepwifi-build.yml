@@ -167,9 +167,7 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ledger_model.py
       - name: BlazePwifi v0.6 synthetic POSIX receipt and balance journal
         run: sh experiment/openwrt/BlazePwifi/tests/v060_journal_native_fixture.sh
-      - name: MIG-0735 verify pre-existing global paid writer lock quiesces read-only v1 preflight
-        run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_shadow_readonly.sh
-      - name: Verify disabled-by-default installed v2 shadow financial read-only probe
+      - name: MIG-0735 / SHADOW-0666 verify strict read-only preflight under global paid writer lock
         run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_shadow_readonly.sh
       - name: BlazePwifi v0.6 synthetic HMAC authenticated controller journal
         run: sh experiment/openwrt/BlazePwifi/tests/v060_journal_auth_fixture.sh
