@@ -176,9 +176,9 @@ def reply(state, floor, pending=False, *, challenge=None, key=None,
         result["response_challenge"] = challenge
     canonical_reply = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("ascii")
     if status:
-        envelope = STATUS_DOMAIN.encode("ascii") + b"\\n" + canonical_reply + b"\\n"
+        envelope = STATUS_DOMAIN.encode("ascii") + b"\n" + canonical_reply + b"\n"
     else:
-        envelope = (TRANSACTION_REPLY_DOMAIN + "\\t" + request_sha256 + "\\t").encode("ascii") + canonical_reply + b"\\n"
+        envelope = (TRANSACTION_REPLY_DOMAIN + "\t" + request_sha256 + "\t").encode("ascii") + canonical_reply + b"\n"
     result["response_mac"] = hmac.new(key, envelope, hashlib.sha256).hexdigest()
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
 
