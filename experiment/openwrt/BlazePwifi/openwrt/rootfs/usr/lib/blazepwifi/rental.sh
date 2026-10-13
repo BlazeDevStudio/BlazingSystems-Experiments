@@ -543,9 +543,24 @@ bp_rental_paid_device_snapshot() {
 }
 bp_rental_paid_receipt_snapshot() {
   [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
-  awk -F '\t' -v e="$1" '
-    $1==e {found++; if(NF!=5) bad=1; receipt=$0}
-    END {if(bad || found>1) exit 5; if(found==1)print receipt}
+  # PAY-0740: the WHOLE signed paid receipt corpus is an authority input;
+  # checking only the currently retried ID misses malformed/duplicated paid
+  # rows for other events, and may permit a fresh false credit later.
+  bytes="$(wc -c < "$BP_RENTAL_EVENTS" 2>/dev/null)" || return 8
+  case "$bytes" in ''|*[!0-9]*) return 8;; esac
+  [ "$bytes" -le 4190208 ] 2>/dev/null || return 8
+  LC_ALL=C awk -F '\t' -v e="$1" '
+    NF!=5 || $1=="" || ++seen[$1]>1 {bad=1}
+    $1 ~ /^r:/ {
+      token=substr($1,3)
+      if (length(token)!=64 || token ~ /[^0-9a-f]/ ||
+          $2 !~ /^[A-Za-z0-9_.:-]+$/ || $3 !~ /^(0|[1-9][0-9]*)$/ ||
+          length($3)>10 || $3+0>2147483647 ||
+          $4 !~ /^[0-9]+$/ || $5 !~ /^p:([1-9]|1[0-9]|20)$/)
+        bad=1
+    }
+    $1==e {found++; receipt=$0}
+    END {if(bad) exit 8; if(found>1) exit 5; if(found==1)print receipt}
   ' "$BP_RENTAL_EVENTS"
 }
 bp_rental_paid_receipt_match() {

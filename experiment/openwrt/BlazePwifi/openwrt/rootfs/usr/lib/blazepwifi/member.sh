@@ -340,6 +340,20 @@ bp_member_financial_receipt_capacity_ok() {
   case "$bytes" in ''|*[!0-9]*) return 1;; esac
   # Keep headroom for an appended record and a future defensive snapshot.
   [ "$bytes" -le 4190208 ] 2>/dev/null || return 1
+  # PAY-0740: a correct-ID receipt lookup is not enough. Corruption or
+  # duplicate IDs elsewhere in this authoritative v1 replay corpus may hide
+  # previously paid events and allow them to be credited again. Refuse ALL
+  # new/replayed money before touching a balance; bounded scan, no trimming.
+  LC_ALL=C awk -F '\t' '
+    NF!=8 || $1=="" || ++seen[$1]>1 {bad=1}
+    $4=="add" || $4=="subtract" || $4=="set" ||
+    $4=="restore_all" || $4=="transfer" {
+      if ($2 !~ /^[0-9]+$/ || $3=="" || $5 !~ /^-?[0-9]+$/ ||
+          $6 !~ /^[0-9]+$/ || $7=="") bad=1
+    }
+    END {if (bad) exit 8}
+  ' "$BP_MEMBER_EVENTS" || return 1
+  return 0
 }
 
 bp_member_financial_kind() {

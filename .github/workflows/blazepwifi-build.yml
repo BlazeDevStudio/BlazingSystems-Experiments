@@ -161,6 +161,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh
       - name: Refuse altered-pulse and cross-device rental coin receipt duplicate ACKs
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_identity.sh
+      - name: PAY-0740 reject unrelated malformed or duplicate v1 member and rental receipt corpus before ACK
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_paid_receipt_corpus_integrity.sh
       - name: BlazePwifi v0.6 synthetic crash-atomic member transfer
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_transfer_crash_repro.sh
       - name: P0-0710 reject malformed or overflowing paid balances and rental leases
