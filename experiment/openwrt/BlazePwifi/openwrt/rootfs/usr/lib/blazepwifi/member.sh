@@ -67,6 +67,24 @@ bp_member_revision_strict() {
   printf '%s' "$old"
 }
 
+# PAY-0737: a signed controller snapshot is financial authority input.
+# The caller MUST hold the global paid replay lock while validating and
+# serializing it, even though this helper itself never mutates balances.
+# Refuse malformed/duplicate rows and invalid/missing money data rather than
+# signing invented zero values. This does not prove independent freshness.
+bp_member_signed_read_integrity() {
+  bp_member_revision_strict >/dev/null || return 8
+  awk -F '\t' '
+    NF!=11 || $1 !~ /^[A-Za-z0-9_.-]+$/ ||
+    $3 !~ /^(0|1)$/ || $7 !~ /^[0-9]+$/ ||
+    $8 !~ /^(0|[1-9][0-9]*)$/ ||
+    length($8)>10 || $8+0>2147483647 ||
+    $10 !~ /^[0-9]+$/ {bad=1}
+    END {if(bad) exit 8}
+  ' "$BP_MEMBERS" || return 8
+  return 0
+}
+
 bp_member_next_revision() {
   old="$(bp_member_revision_strict)" || return 8
   next=$((old+1))
