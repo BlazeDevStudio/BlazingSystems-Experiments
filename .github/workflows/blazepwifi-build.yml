@@ -121,6 +121,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_replay_lock.sh
       - name: PAY-0732/0733 signed coin original pulses, device ownership and corrupt-account fail-closed
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_pulse_replay.sh
+      - name: PAY-0737 refuse signed member balance snapshot during financial uncertainty
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_signed_read_guard.sh
       - name: Retain paid coin replay IDs throughout the full live target window
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_replay_window.sh
       - name: Reject member paid replay ACK during global uncertainty quarantine

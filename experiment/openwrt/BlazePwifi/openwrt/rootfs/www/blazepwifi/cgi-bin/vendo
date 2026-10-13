@@ -119,7 +119,13 @@ case "$action" in
     ;;
   member_snapshot)
     bp_time_sane "$now" || bp_fail "router clock not synchronized"
-    revision="$(bp_member_global_revision)"
+    # PAY-0737: protect both signed content and signed global revision under
+    # the SAME global paid writer lock. Never sign invented zero on EIO.
+    member_replay_lock_or_fail
+    bp_member_signed_read_integrity ||
+      bp_fail "member financial snapshot inconsistent; operator reconciliation required"
+    revision="$(bp_member_revision_strict)" ||
+      bp_fail "member global revision invalid; operator reconciliation required"
     members="$(bp_member_snapshot_json)"
     payload_hash="$(printf '%s' "$members" | bp_sha256)"
     response_sig="$(member_snapshot_sig "$revision" "$payload_hash")"
@@ -128,16 +134,23 @@ case "$action" in
     ;;
   member_auth)
     bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    # PAY-0737: member login returns signed paid seconds and must never
+    # succeed while a writer/quarantine/cutover or broken revision is visible.
+    member_replay_lock_or_fail
+    bp_member_signed_read_integrity ||
+      bp_fail "member financial snapshot inconsistent; operator reconciliation required"
     user="$(printf '%s' "$target" | cut -d: -f1)"
     proof="$(printf '%s' "$target" | cut -d: -f2)"
     user="$(bp_member_norm "$user")" || bp_fail "invalid member"
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
     line="$(bp_member_line "$user")"
+    [ -n "$line" ] || bp_fail "member account unavailable"
     banked="$(printf '%s' "$line" | cut -f8)"
     revision="$(printf '%s' "$line" | cut -f9)"
-    [ -n "$banked" ] || banked=0
-    [ -n "$revision" ] || revision=0
+    bp_member_safe_seconds "$banked" 2147483647 &&
+      bp_member_safe_seconds "$revision" 2147483646 ||
+      bp_fail "member paid result corrupt; operator reconciliation required"
     response_sig="$(member_auth_sig "$user" "$revision" "$banked")"
     bp_json "$(printf '{"ok":true,"username":"%s","banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$(bp_json_escape "$user")" "$banked" "$revision" "$response_sig")"
     ;;
