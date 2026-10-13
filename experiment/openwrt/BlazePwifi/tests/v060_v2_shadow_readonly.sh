@@ -25,8 +25,13 @@ printf '%s\t180\t0\t0\t0\t0\tbb:bb:cc:dd:ee:ff\t10.1.1.3\tsecretReceipt2\n' \
 printf 'alice\tAlice\t1\tsha256i\tPrivateSalt\tPrivateHash\t4096\t200\t1\t100\tfixture\n' > "$T/members.tsv"
 printf 'bob\tBob\t1\tsha256i\tPrivateSalt2\tPrivateHash2\t4096\t0\t1\t100\tfixture\n' >> "$T/members.tsv"
 printf 'dev01\tPrivateDeviceSecret\t999999\tTerminal 1\t100\n' > "$T/rental-devices.tsv"
-chmod 600 "$T/"*.tsv
-snapshot() { sha256sum "$T/accounts.tsv" "$T/members.tsv" "$T/rental-devices.tsv"; }
+# MIG-0736: the paid financial source set must include the global revision
+# and BOTH receipt histories; original observer examined only balances.
+printf '1\n' > "$T/member-revision"
+printf 'fixture:event:1\t100\talice\tadd\t10\t10\tfixture\t\n' > "$T/member-events.tsv"
+printf 'r:fixture01\tdev01\t999999\t100\tp:2\n' > "$T/rental-events.tsv"
+chmod 600 "$T/"*.tsv "$T/member-revision"
+snapshot() { sha256sum "$T/accounts.tsv" "$T/members.tsv" "$T/rental-devices.tsv" "$T/member-revision" "$T/member-events.tsv" "$T/rental-events.tsv"; }
 baseline="$(snapshot)"
 fixture() { BLAZE_V2_SHADOW_FIXTURE=1 BP_V2_SHADOW_TEST_ROOT="$T" sh "$SCRIPT" "$@"; }
 refuse() {
@@ -111,7 +116,7 @@ fi
 # SHADOW-0667: fail closed for source inode aliasing or permissions that
 # would compromise the reliability/private handling of v1 financial data.
 # All mutations in this section are disposable fixture metadata only.
-for name in accounts.tsv members.tsv rental-devices.tsv; do
+for name in accounts.tsv members.tsv rental-devices.tsv member-revision member-events.tsv rental-events.tsv; do
   ln "$T/$name" "$T/linked-source"
   refuse "hardlinked-$name"
   rm "$T/linked-source"
@@ -149,6 +154,43 @@ printf 'dev02\tOtherSecret\tbogus\tinvalid-lease\t10\n' >> "$T/rental-devices.ts
 refuse invalid-rental
 cp -p "$T/r.good" "$T/rental-devices.tsv"
 
+# MIG-0736: these files cannot silently disappear from a purportedly
+# safe migration source. Every case must refuse without altering balances,
+# leases, member receipts, controller event history or account identifiers.
+for name in member-revision member-events.tsv rental-events.tsv; do
+  mv "$T/$name" "$T/$name.saved"
+  refuse "missing-$name"
+  mv "$T/$name.saved" "$T/$name"
+done
+
+printf 'bogus\n' > "$T/member-revision"
+refuse corrupted-global-member-revision
+printf '0\n' > "$T/member-revision"
+refuse member-row-ahead-of-global
+printf '2147483647\n' > "$T/member-revision"
+refuse overflowing-member-revision
+printf '1\n' > "$T/member-revision"
+
+cp -p "$T/member-events.tsv" "$T/events.good"
+printf 'bad\t100\talice\tadd\t10\n' >> "$T/member-events.tsv"
+refuse truncated-member-event
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:event:1\t100\talice\tadd\t10\t10\tfixture\t\n' >> "$T/member-events.tsv"
+refuse duplicate-member-event
+cp -p "$T/events.good" "$T/member-events.tsv"
+
+cp -p "$T/rental-events.tsv" "$T/rental-events.good"
+printf 'r:fixture02\tdev01\t999999\t100\t\n' >> "$T/rental-events.tsv"
+refuse unbound-paid-rental-receipt
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:fixture01\tdev01\t999999\t100\tp:2\n' >> "$T/rental-events.tsv"
+refuse duplicate-paid-rental-receipt
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:fixture03\tdev01\t999999\tnot-time\tp:2\n' >> "$T/rental-events.tsv"
+refuse invalid-rental-receipt-timestamp
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+[ "$(snapshot)" = "$baseline" ]
+
 mv "$T/accounts.tsv" "$T/old-accounts"
 ln -s "$T/old-accounts" "$T/accounts.tsv"
 refuse symlink-money-store
@@ -164,5 +206,5 @@ refuse missing-marker
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
 echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
-echo 'SHADOW-0666 PASS: installed read-only diagnostic opted out by default; 3 paid stores validated without mutation, no IDs or secrets leaked, corrupt/duplicate/uncertain/symlink/hardlink/unsafe-mode refused'
+echo 'MIG-0736 PASS: installed read-only observer validates six-file v1 money+revision+receipts; rejects absent/corrupt/duplicate/unbound events and invalid revision without changing money or leaking IDs'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'
