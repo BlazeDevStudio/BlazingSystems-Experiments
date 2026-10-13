@@ -28,7 +28,7 @@ function cfg(){
   else if(s.mode=='sta'&&s.network=='wifiwan')sta=x;
  });
  let settings={...(u.get_all('blaze','main')||{}),sms_storage:u.get('sms_tool_js','@sms_tool_js[0]','storage')||'ME'};
- return {access:readjson('/etc/blaze/access.json',{mode:'off',scope:'all',macs:[]}),leds:ledSettings(u),wifi:w,wifi_ssids:ssids,wifi_bindings:bindings(u),piso_wifi:piso,wifi_sta:sta,repeater:repeaterSettings(u),apn:u.get('network','wwan','apn'),hostname:u.get('system','@system[0]','hostname'),settings};
+ return {sites:readjson('/etc/blaze/sites.json',{enabled:false,mode:'off',domains:[],devices:[]}),sites_status:readjson('/tmp/blaze-sites-status.json',{}),sites_coverage:readjson('/tmp/blaze-sites-coverage.json',{}),access:readjson('/etc/blaze/access.json',{mode:'off',scope:'all',macs:[]}),leds:ledSettings(u),wifi:w,wifi_ssids:ssids,wifi_bindings:bindings(u),piso_wifi:piso,wifi_sta:sta,repeater:repeaterSettings(u),apn:u.get('network','wwan','apn'),hostname:u.get('system','@system[0]','hostname'),settings};
 }
 function clientSessions(clients){
  let t=readjson('/tmp/blaze-clients.json',{}),up=int(split(readfile('/proc/uptime')||'0',' ')[0]);
@@ -76,6 +76,7 @@ function validateTarget(v){v=trim(''+v);if(!match(v,/^[A-Za-z0-9._:-]{1,253}$/))
 function validateUrl(v){v=trim(''+v);if(length(v)<8||length(v)>320||!match(v,/^https?:\/\/[^[:space:]]+$/)||hasControl(v,true))die('Enter a valid HTTP or HTTPS URL.');return v;}
 function mutate(action,p){
  let u=config();
+ if(action=='sites'){checked('/usr/libexec/blaze-sites-apply '+quote(sprintf('%J',p)));return {ok:true,message:'Site DNS policy saved.'};}
  if(action=='access'){checked('/usr/libexec/blaze-access-apply '+quote(sprintf('%J',p)));return {ok:true,message:'System-wide internet access policy saved. Local router access remains available.'};}
  if(action=='leds'){let v=ledProfile(p);return launch('leds',sprintf('%J',v));}
  if(action=='antenna'){if(!(p.mode in ['auto','internal','external']))die('Invalid antenna mode.');return launch('antenna',p.mode);}

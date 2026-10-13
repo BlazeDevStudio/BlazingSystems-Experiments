@@ -19,8 +19,20 @@ To restore, extract the printed backup path into `/` as administrator, then rest
 - Physical R281: application deployed, hashes compared, API lists current SSIDs and rejects unavailable bindings, active AP readiness passes; no live network configuration modified by validation.
 - 13 isolated UCI checks cover binding, validation and identity restrictions; two mocked routing scenarios exercise actual health functions.
 - Browser: SSID add/edit controls and portal link render. Cellular checks and upstream portal respond.
-- Archive payload and hashes verified. Installer dry-run tested; the archive's apply/rollback path is **not independently hardware exercised** (deployment used a backed-up direct file update).
+- Archive payload and hashes verified. Latest combined archive --check and --apply tested on the R281. An initial compile-check failure restored previous files before the corrected installer passed.
 - A phone later associated: upstream DHCP and learned return routes worked; its DNS/HTTP requests were observed leaving the upstream station but no IP replies returned. Gateway ARP replies and router-originated HTTP worked. This isolates the failure beyond the local forwarding path, but does not establish the upstream policy. Separate-identity portal access remains **UNRESOLVED**; no shared-login substitution was applied.
 - New AP radio reload/timeout rollback, reboot/reset persistence and long-term cellular stability remain **NOT HARDWARE VERIFIED**.
 
 Build with `python traffic/tools/build-r281-update.py`. Traffic Intelligence packages are rebuilt separately with `python traffic/tools/build.py`; they preserve the existing management application.
+
+## 2026-10-14: Advanced site blocker
+
+Settings → Site blocker adds default deny-list / allow-only DNS policies and up to 32 per-MAC overrides, with subdomain matching. A device override replaces the default. Filtering is OFF on first installation. No browsing history is retained. Existing device internet-access control remains separate.
+
+Dependencies must already be installed: `ucode-mod-socket` and the **exact running kernel's** `kmod-nft-bridge` from matching official OpenWrt feeds. This small application archive does not include dependency packages or firmware. It preserves existing site policies. Use --check before --apply.
+
+Actual R281 checks: 14 policy/parser assertions; 7 routed UDP/TCP DNS enforcement checks; isolated on-device software bridge baseline and blocked DNS tests for IPv4 and IPv6. Browser add/edit/save/remove controls checked. Physical phone AP traffic, hardware-switch-only forwarding, reboot and factory reset are NOT VERIFIED. This overlay installation is NOT factory-reset persistent.
+
+Limits: ordinary port-53 DNS only. DoH/DoT, VPNs, cached/direct IP connections, hardwired switch bypass and MAC changes can evade filtering. Allow-only DNS is not an allow-only internet firewall. CDN/login dependencies may need extra domains. IPv6 interception fails closed if no management IPv6 address exists. Existing offloading must be explicitly disabled by the administrator; the installer does not change it. Removing/reordering device overrides can temporarily reject old DNS flows until conntrack expires; cross-device old mappings fail closed. Bridge tests use isolated virtual clients on the physical R281, not a claim of full physical AP testing.
+
+To remove filtering immediately: disable it in Settings, or stop `/etc/init.d/blaze-sites`. For application rollback, stop/disable that service, restore the printed private backup, then restart rpcd and blaze-health. Do not publish backups.
