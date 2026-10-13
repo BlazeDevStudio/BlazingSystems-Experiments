@@ -82,6 +82,46 @@ Every successful response explicitly includes
 and `customer_install_authorized=false`. Failed commands return nonzero
 and never print a positive response.
 
+### WITNESS-0739: authenticated, challenge-bound response envelope (candidate only)
+
+All successful `init`, `prepare`, `finalize`, idempotent replay and
+`status` responses now contain `reply_schema` =
+`BLAZE-WITNESS-CANDIDATE-REPLY/1`, `request_sha256` and
+`response_mac`. Compute `request_sha256` as lowercase SHA-256 of the
+**exact canonical authenticated request bytes** described above, excluding
+the inbound request HMAC. Thus a caller-generated fresh `status` challenge
+nonce, device ID, command type and every digest/revision are implicitly
+bound to the response. The symmetric HMAC reply envelope is:
+
+```text
+HMAC-SHA256(operator-secret,
+    ASCII("BLAZE-WITNESS-CANDIDATE-REPLY/1") + TAB +
+    lowercase_hex_SHA256(canonical_request) + TAB +
+    canonical_reply_json_excluding_response_mac + LF)
+```
+
+Here `canonical_reply_json_excluding_response_mac` is UTF-8 JSON produced
+with sorted keys and compact comma/colon separators (Python
+`json.dumps(..., sort_keys=True, separators=(",", ":"))`). A consumer
+MUST recompute the hash of the **request it actually sent**, compare it with
+the included `request_sha256`, validate the `reply_schema`, and
+constant-time compare the response MAC **before trusting any returned floor
+or pending tuple**. Responses also include protected
+`pending_revision`, `pending_digest` and `pending_nonce` (or JSON null
+when not pending) for later operator reconciliation. Caller-supplied status
+challenge nonces must be fresh and never reused, or replayed old replies to
+that same challenge remain possible.
+
+An independently implemented negative verifier test
+`tests/v060_offdevice_witness_reply_auth.py` checks old-challenge replay,
+cross-device/command substitution, floor and pending-tuple tampering,
+forged `paid_ack_authorized=true`, and incorrect reply keys. The candidate
+itself is **not** a deployed network client, socket service or authenticated
+independent hardware counter. A compromise of the HMAC key, a full
+database/key snapshot restore, or fabricated target fsync still defeats
+production freshness guarantees; the response HMAC is NOT P-256 signing,
+hardware attestation, ACKP1, or an installation/migration permission.
+
 Only marker-validated `/tmp/blaze-witness0738-*/` fixture roots can trigger
 intentional `BLAZE_WITNESS0738_TEST_FAULT` process exits. Real operator
 paths never enable that switch. The tests use ephemeral generated fixture
