@@ -10,6 +10,11 @@ trap 'rm -rf "$T"' EXIT HUP INT TERM
 printf 'BLAZE-SHADOW-READ-ONLY-FIXTURE\n' > "$T/.blaze-shadow-fixture-only"
 chmod 700 "$T"
 chmod 600 "$T/.blaze-shadow-fixture-only"
+# Existing synthetic equivalent of the installed global financial lock. The
+# read-only observer MUST NOT create its own file or make unsafe lock usable.
+mkdir -m 700 "$T/run"
+: > "$T/run/paid-financial.lock"
+chmod 600 "$T/run/paid-financial.lock"
 [ "$(grep -c "option v2_shadow_diagnostics '0'" "$CONFIG")" -eq 1 ]
 # Synthetic identities and secrets are intentionally sensitive test markers:
 # none may appear in operator-visible diagnostics, successful or failed.
@@ -41,6 +46,56 @@ printf '%s\n' "$result" | grep -Fqx 'member_accounts=2'
 printf '%s\n' "$result" | grep -Fqx 'rental_devices=1'
 printf '%s\n' "$result" | grep -Fqx 'payment_write_authorized=0'
 printf '%s\n' "$result" | grep -Fqx 'migration_authorized=0'
+[ "$(snapshot)" = "$baseline" ]
+# MIG-0735: no fake quiescence when a real paid writer holds this lock.
+# This exercises the exact installed lock pathname, a separate process, and
+# denial with zero balances/leases modified and no partial status output.
+(
+  exec 9< "$T/run/paid-financial.lock"
+  flock -x 9 || exit 1
+  : > "$T/writer-held"
+  while [ ! -f "$T/release-writer" ]; do sleep 0.05; done
+) &
+writer_pid=$!
+tries=0
+while [ ! -f "$T/writer-held" ] && [ "$tries" -lt 100 ]; do
+  sleep 0.05
+  tries=$((tries+1))
+done
+[ -f "$T/writer-held" ] || { echo 'MIG-0735 lock holder failed' >&2; exit 1; }
+refuse active-financial-writer
+: > "$T/release-writer"
+wait "$writer_pid"
+rm "$T/writer-held" "$T/release-writer"
+
+# No creation/repair: missing, linked, aliased, broad-mode and unsafe
+# parent directory all fail closed without leaking paid identifiers.
+mv "$T/run/paid-financial.lock" "$T/lock.saved"
+refuse absent-global-money-lock
+[ ! -e "$T/run/paid-financial.lock" ]
+mv "$T/lock.saved" "$T/run/paid-financial.lock"
+ln -s "$T/run/paid-financial.lock" "$T/run/link-alias"
+mv "$T/run/paid-financial.lock" "$T/lock.saved"
+mv "$T/run/link-alias" "$T/run/paid-financial.lock"
+refuse symlink-global-money-lock
+rm "$T/run/paid-financial.lock"
+mv "$T/lock.saved" "$T/run/paid-financial.lock"
+ln "$T/run/paid-financial.lock" "$T/hardlink-alias"
+refuse hardlinked-global-money-lock
+rm "$T/hardlink-alias"
+chmod 666 "$T/run/paid-financial.lock"
+refuse world-writable-global-money-lock
+chmod 600 "$T/run/paid-financial.lock"
+chmod 750 "$T/run"
+refuse insecure-lock-parent-directory
+chmod 700 "$T/run"
+printf 'PENDING\n' > "$T/paid-v2-cutover-intent"
+refuse staged-v2-financial-cutover
+rm "$T/paid-v2-cutover-intent"
+ln -s "$T/missing-cutover" "$T/paid-v2-cutover-intent"
+refuse dangling-v2-cutover-intent
+rm "$T/paid-v2-cutover-intent"
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
 [ "$(snapshot)" = "$baseline" ]
 if printf '%s\n' "$result" | grep -Eiq 'Private|secretReceipt|alice|dev01|aaaaaaaa'; then
  echo 'SHADOW LEAK: financial identities or key material in diagnostics' >&2;exit 1
@@ -108,5 +163,6 @@ refuse missing-marker
   echo 'v2 shadow diagnostics unexpectedly changed final paid records' >&2; exit 1
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
+echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
 echo 'SHADOW-0666 PASS: installed read-only diagnostic opted out by default; 3 paid stores validated without mutation, no IDs or secrets leaked, corrupt/duplicate/uncertain/symlink/hardlink/unsafe-mode refused'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'
