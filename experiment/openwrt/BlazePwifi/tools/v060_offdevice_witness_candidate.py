@@ -153,6 +153,12 @@ def reply(state, floor, key, request_sha256, pending=False):
       "witness_revision": floor[2], "witness_epoch": floor[1],
       "witness_digest": floor[3],
       "pending_reconciliation": bool(pending),
+      # Required for operator-side ambiguous PREPARE recovery. These fields
+      # are response-authenticated too; they are NOT a paid admission.
+      "pending_revision": floor[4] if pending else None,
+      "pending_digest": floor[5] if pending else None,
+      "pending_nonce": floor[6] if pending else None,
+      "reply_schema": REPLY_DOMAIN,
       "independent_monotonic_witness_verified": False,
       "financial_migration_authorized": False,
       "paid_ack_authorized": False,
