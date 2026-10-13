@@ -30,11 +30,22 @@ run() {
 assert_json() {
   expected="$1"
   python3 -c '
-import json,sys
+import json,sys,hashlib,hmac
 j=json.loads(sys.stdin.read())
 expected=sys.argv[1]
 assert j["state"]==expected,(j,expected)
 assert j["schema"]=="BLAZE-WITNESS-CANDIDATE/1"
+# WITNESS-0739 independent status-response verifier; no positive ACK.
+if expected in ("OBSERVED_CANDIDATE_ONLY", "PENDING_RECONCILIATION"):
+    assert j["response_challenge"] == "cccccccccccccccccccccccccccccccc"
+    mac = j.pop("response_mac")
+    serialized = json.dumps(j, sort_keys=True, separators=(",", ":")).encode("ascii")
+    expected_mac = hmac.new(bytes.fromhex("11"*32),
+        b"BLAZE-WITNESS-CANDIDATE-STATUS/1\\n".replace(b"\\n", b"\n")
+        + serialized + b"\n", hashlib.sha256).hexdigest()
+    assert hmac.compare_digest(mac, expected_mac), "unauthenticated status result"
+else:
+    assert "response_mac" not in j
 for key in ("paid_ack_authorized","independent_monotonic_witness_verified",
             "financial_migration_authorized","customer_install_authorized"):
     assert j[key] is False,(key,j)
@@ -60,6 +71,28 @@ crash() {
 run init device01 1 1 "$A" | assert_json GENESIS_CANDIDATE_ONLY
 deny genesis-reset run init device01 1 1 "$A"
 run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY
+# A captured authenticated status is NOT valid for another challenge; a
+# tampered paid gate or floor is NOT protected by the original MAC.
+run status device01 "$N1" > "$LAB/status-first.json"
+python3 - "$LAB/status-first.json" "$N1" "$N3" <<'PY'
+import json,sys,hashlib,hmac
+old=json.load(open(sys.argv[1],encoding="utf8"))
+def check(reply, nonce):
+    if reply.get("response_challenge") != nonce:
+        return False
+    supplied=reply.get("response_mac")
+    body={k:v for k,v in reply.items() if k!="response_mac"}
+    msg=(b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n" +
+         json.dumps(body,sort_keys=True,separators=(",",":")).encode() + b"\n")
+    return isinstance(supplied,str) and hmac.compare_digest(
+        supplied,hmac.new(bytes.fromhex("11"*32),msg,hashlib.sha256).hexdigest())
+assert check(old,sys.argv[2]),"fresh authenticated response rejected"
+assert not check(old,sys.argv[3]),"replayed challenge accepted"
+for key,bad in (("witness_revision",999),("paid_ack_authorized",True),
+                ("pending_reconciliation",True),("witness_digest","0"*64)):
+    altered=dict(old); altered[key]=bad
+    assert not check(altered,sys.argv[2]),f"tampered {key} accepted"
+PY
 run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json PREPARED_NOT_COMMITTED
 run status device01 "$N3" | assert_json PENDING_RECONCILIATION
 deny conflicting-prepare run prepare device01 1 1 "$A" 2 "$C" "$N2"
@@ -98,5 +131,5 @@ ln -s "$LAB/marker-real" "$LAB/.witness-candidate-only"
 deny linked-operator-marker run status device01 "$N3"
 rm "$LAB/.witness-candidate-only"
 mv "$LAB/marker-real" "$LAB/.witness-candidate-only"
-echo 'WITNESS-0738 PASS: authenticated SQLite durable prepare/finalize across process crashes, idempotent lost-ACK recovery, stale/duplicate/epoch conflict denial and owner-only files'
+echo 'WITNESS-0739 PASS: challenge-authenticated no-ACK status; WITNESS-0738 SQLite durable prepare/finalize across process crashes, idempotent lost-ACK recovery, stale/duplicate/epoch conflict denial and owner-only files'
 echo 'NOT AN INDEPENDENT WITNESS: restoring a whole old database is possible. Witness root, P-256 signing, hardware powercut, real paid authority and v0.6 release NOT authorized.'
