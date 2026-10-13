@@ -31,7 +31,17 @@ printf '1\n' > "$T/member-revision"
 printf 'fixture:event:1\t100\talice\tadd\t10\t10\tfixture\t\n' > "$T/member-events.tsv"
 printf 'r:fixture01\tdev01\t999999\t100\tp:2\n' > "$T/rental-events.tsv"
 chmod 600 "$T/"*.tsv "$T/member-revision"
-snapshot() { sha256sum "$T/accounts.tsv" "$T/members.tsv" "$T/rental-devices.tsv" "$T/member-revision" "$T/member-events.tsv" "$T/rental-events.tsv"; }
+# The negative missing-file cases need a deterministic snapshot sentinel; a
+# bare sha256sum would itself exit 1 before proving fail-closed behavior.
+snapshot() {
+  for name in accounts.tsv members.tsv rental-devices.tsv member-revision member-events.tsv rental-events.tsv; do
+    if [ -f "$T/$name" ]; then
+      sha256sum "$T/$name"
+    else
+      printf 'MISSING\t%s\n' "$name"
+    fi
+  done
+}
 baseline="$(snapshot)"
 fixture() { BLAZE_V2_SHADOW_FIXTURE=1 BP_V2_SHADOW_TEST_ROOT="$T" sh "$SCRIPT" "$@"; }
 refuse() {
