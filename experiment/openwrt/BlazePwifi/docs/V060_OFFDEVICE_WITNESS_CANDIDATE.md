@@ -102,7 +102,47 @@ attacker with the shared key, a restored SQLite/key snapshot, or a compromised
 candidate host may still forge plausible past state. There remains no
 network transport or secure production key custody. Client admission continues
 to require independent physical monotonicity and hardware acceptance.
-Non-`status` candidate replies are unchanged and remain NON-AUTHORITATIVE.
+All candidate replies remain non-authoritative for payments. The original
+`STATUS/1` response MAC contract remains compatible after WITNESS-0740;
+the complete new response fields are covered by that existing MAC.
+
+### WITNESS-0740: challenge-bound signed transaction replies and pending tuple
+
+The original authenticated `status` response (`response_challenge` and
+`response_mac` using `BLAZE-WITNESS-CANDIDATE-STATUS/1`) is **preserved**.
+Every successful `init`, `prepare`, `finalize` and idempotent-replay
+result now also has a `response_mac` over the entire reply using the
+separate `BLAZE-WITNESS-CANDIDATE-TRANSACTION-REPLY/1` domain:
+
+```text
+request_sha256 = lowercase_hex_SHA256(exact_original_canonical_request)
+payload = sorted_key_compact_json(reply_with_response_mac_removed)
+response_mac = HMAC_SHA256(operator_secret,
+    ASCII("BLAZE-WITNESS-CANDIDATE-TRANSACTION-REPLY/1") + TAB +
+    ASCII(request_sha256) + TAB + UTF8(payload) + LF)
+```
+
+All replies include `request_sha256` and `reply_schema`, which is
+`BLAZE-WITNESS-CANDIDATE-STATUS/1` for status or the transaction reply
+domain for other commands. A consumer MUST recompute `request_sha256`
+from the exact command/device/epoch/digest/nonce it actually sent; validate
+the domain and constant-time compare `response_mac` over all remaining
+fields. A fresh caller-generated `status` challenge is essential.
+Replies also include authenticated `pending_revision`, `pending_digest`
+and `pending_nonce` (JSON null if no pending transaction), allowing
+operator-side reconciliation of the exact disputed staging tuple.
+
+`tests/v060_offdevice_witness_reply_auth.py` independently recomputes both
+versioned reply formats and rejects tampered floors, changed pending
+digests, replayed old status under a fresh challenge, cross-device/command
+substitutions, wrong keys and any forged `paid_ack_authorized=true`.
+Existing WITNESS-0739 status tests must continue passing unchanged.
+
+These are **HMAC-protected candidate responses**, not a hardware-backed
+antirollback witness, trusted network transport, verified target fsync,
+protected P-256 signature, or customer ACKP1. Restoring SQLite + the
+operator key together still rewinds the candidate; no true paid admission
+or customer migration is allowed.
 
 Every successful response explicitly includes
 `independent_monotonic_witness_verified=false`,

@@ -193,6 +193,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_witness_proof_native.sh
       - name: WITNESS-0738 SQLite FULL-sync off-device witness candidate crash/replay (NO PAID ACK)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_offdevice_witness_candidate.sh
+      - name: WITNESS-0740 sign INIT PREPARE FINALIZE and STATUS candidate responses (NO PAID ACK)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_offdevice_witness_reply_auth.py
       - name: ROLLBACK-0691 EXPECTED UNSAFE old-ledger replay repro (NOT production approval)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_snapshot_rollback_repro.sh
       - name: WITNESS-0692 hypothetical off-device trusted freshness protocol model (LAB ONLY)
