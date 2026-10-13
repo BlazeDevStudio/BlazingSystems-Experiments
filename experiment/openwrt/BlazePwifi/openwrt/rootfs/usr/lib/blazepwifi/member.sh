@@ -74,6 +74,11 @@ bp_member_revision_strict() {
 # signing invented zero values. This does not prove independent freshness.
 bp_member_signed_read_integrity() {
   bp_member_revision_strict >/dev/null || return 8
+  # PAY-0742: Vendo member_snapshot/member_auth sign a public financial
+  # read model. Do not sign plausible balances when ANY paid receipt (even
+  # unrelated) is corrupt/duplicated or the global cutover is quarantined.
+  # Caller holds the PAY-0711 global financial read lock.
+  bp_member_financial_receipt_capacity_ok || return 8
   awk -F '\t' '
     NF!=11 || $1 !~ /^[A-Za-z0-9_.-]+$/ ||
     $3 !~ /^(0|1)$/ || $7 !~ /^[0-9]+$/ ||
@@ -258,6 +263,12 @@ bp_member_set_password() {
 bp_member_replay_snapshot_ok() (
   event_id="$1"; expected_user="$2"; expected_kind="$3"
   expected_source="$4"; expected_seconds="$5"; expected_to="${6:-}"
+  # PAY-0742: real signed Vendo member_bank, member_restore and
+  # member_transfer replay their ORIGINAL paid receipt directly through
+  # this function, bypassing the direct member_balance_change path. A valid
+  # current event must not ACK while some OTHER paid event is malformed.
+  # Scan the entire bounded corpus under the existing financial read lock.
+  bp_member_financial_receipt_capacity_ok || exit 1
   [ -f "$BP_MEMBER_EVENTS" ] && [ ! -L "$BP_MEMBER_EVENTS" ] || exit 1
   [ -f "$BP_MEMBERS" ] && [ ! -L "$BP_MEMBERS" ] || exit 1
   [ -f "$BP_MEMBER_REVISION" ] && [ ! -L "$BP_MEMBER_REVISION" ] || exit 1
