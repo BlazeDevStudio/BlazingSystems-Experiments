@@ -94,8 +94,10 @@ command -v flock >/dev/null 2>&1 && flock -n 7 || {
   echo 'SHADOW BLOCKED: paid lock inode replaced during acquisition' >&2; exit 8;
 }
 
-# All three authoritative v1 sources must be independently well-formed.
-for name in accounts.tsv members.tsv rental-devices.tsv; do
+# MIG-0736: a monetary source is NOT just the three materialized balances.
+# The revision floor and both replay/receipt stores are indispensable for
+# detecting disputed paid time during any future cutover. No repair/create.
+for name in accounts.tsv members.tsv rental-devices.tsv member-revision member-events.tsv rental-events.tsv; do
   f="$state/$name"
   [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || {
     echo "SHADOW BLOCKED: missing/unsafe $name" >&2; exit 8;
@@ -107,10 +109,10 @@ for name in accounts.tsv members.tsv rental-devices.tsv; do
   }
 done
 # No PII, HMAC/private key, device identifiers or full file digest is printed.
-# A two-pass fingerprint detects most concurrent source changes, but cannot
-# prove a transaction-consistent snapshot across three independently written
-# v1 files. Never use these results to create/migrate actual paid balances.
-before="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" 2>/dev/null)" || {
+# A two-pass fingerprint detects concurrent source changes, but cannot prove
+# a crash-atomic migration or independent replay freshness. Keep all six v1
+# monetary source files inside the SAME two-pass observation and lock.
+before="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" "$state/member-revision" "$state/member-events.tsv" "$state/rental-events.tsv" 2>/dev/null)" || {
   echo 'SHADOW BLOCKED: source fingerprint read failed' >&2; exit 8;
 }
 account_count="$(awk -F '\t' '
@@ -149,7 +151,67 @@ rental_count="$(awk -F '\t' '
 ' "$state/rental-devices.tsv")" || {
   echo 'SHADOW BLOCKED: invalid/duplicate paid rental lease row' >&2; exit 8;
 }
-after="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" 2>/dev/null)" || {
+# Member revision and receipts are financial data, not optional UI metadata.
+# A missing global counter while paid records exist must NEVER be treated as 0.
+[ "$(stat -c '%s' "$state/member-revision" 2>/dev/null)" -le 12 ] 2>/dev/null || {
+  echo 'SHADOW BLOCKED: global member revision size invalid' >&2; exit 8;
+}
+global_rev="$(cat "$state/member-revision" 2>/dev/null)" || {
+  echo 'SHADOW BLOCKED: global member revision unreadable' >&2; exit 8;
+}
+case "$global_rev" in
+  0) ;;
+  [1-9]*) case "$global_rev" in *[!0-9]*) 
+    echo 'SHADOW BLOCKED: invalid global member revision' >&2; exit 8;; esac ;;
+  *) echo 'SHADOW BLOCKED: invalid global member revision' >&2; exit 8 ;;
+esac
+[ "${#global_rev}" -le 10 ] && [ "$global_rev" -le 2147483646 ] 2>/dev/null || {
+  echo 'SHADOW BLOCKED: out-of-range member revision' >&2; exit 8;
+}
+# Pay receipts are capped during normal member operations. Reject implausibly
+# large/unreadable files before parsing, instead of hiding an allocation DoS.
+for audit_file in member-events.tsv rental-events.tsv; do
+  file_size="$(stat -c '%s' "$state/$audit_file" 2>/dev/null)" || exit 8
+  [ "$file_size" -le 16777216 ] 2>/dev/null || {
+    echo "SHADOW BLOCKED: $audit_file exceeds readonly inspection cap" >&2; exit 8;
+  }
+done
+# Revalidate every account revision against the actual global floor; a
+# checksum-consistent, separately restored OLD member-revision is unsafe.
+awk -F '\t' -v floor="$global_rev" '
+  NF!=11 || $9 !~ /^(0|[1-9][0-9]*)$/ ||
+    length($9)>10 || $9+0>floor {bad=1}
+  END {if (bad) exit 8}
+' "$state/members.tsv" || {
+  echo 'SHADOW BLOCKED: member revision exceeds global counter' >&2; exit 8;
+}
+# Legacy financial event format: id, time, username, kind, signed delta,
+# result, source, detail (trailing empty detail allowed).
+# Reject duplicate IDs and truncated/ambiguous financial payloads.
+awk -F '\t' '
+  NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ ||
+    $3=="" || $4=="" || $5 !~ /^-?[0-9]+$/ ||
+    $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
+  {if (++seen[$1]>1) bad=1}
+  END {if (bad) exit 8}
+' "$state/member-events.tsv" || {
+  echo 'SHADOW BLOCKED: invalid or duplicate member receipt' >&2; exit 8;
+}
+# Five columns: event, device, detail/lease, time, audit kind or p:pulses.
+# Paid r:* receipts require an immutable 1..20 pulse quantity in column 5;
+# a legacy amount-unbound paid receipt cannot support safe v2 migration.
+awk -F '\t' '
+  NF!=5 || $1=="" || $4 !~ /^[0-9]+$/ {bad=1}
+  $1 ~ /^r:/ {
+    if ($2=="" || $3 !~ /^(0|[1-9][0-9]*)$/ ||
+        $5 !~ /^p:([1-9]|1[0-9]|20)$/) bad=1
+  }
+  {if (++seen[$1]>1) bad=1}
+  END {if (bad) exit 8}
+' "$state/rental-events.tsv" || {
+  echo 'SHADOW BLOCKED: invalid or duplicate rental receipt' >&2; exit 8;
+}
+after="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" "$state/member-revision" "$state/member-events.tsv" "$state/rental-events.tsv" 2>/dev/null)" || {
   echo 'SHADOW BLOCKED: source reread failed' >&2; exit 8;
 }
 [ "$before" = "$after" ] || {
