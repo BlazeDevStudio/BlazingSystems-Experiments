@@ -45,6 +45,10 @@ for val in 08 000100 -7 0 bad 2147483648 1073741824; do
   printf '%s\n' "$val" > "$PAY0741_UNIT_FILE"
   deny_no_credit "hotspot-rate-$val" 9999999999999901 2
 done
+# Individually in-range 2147483647 cents still overflows when
+# added to an existing positive bank balance (1 signed pulse).
+printf '2147483647\n' > "$PAY0741_UNIT_FILE"
+deny_no_credit hotspot-addition-overflow 9999999999999907 1
 printf '100\n' > "$PAY0741_UNIT_FILE"
 for bad in 08 01 00 21 0000000001; do
   deny_no_credit "hotspot-pulses-$bad" 9999999999999902 "$bad"
