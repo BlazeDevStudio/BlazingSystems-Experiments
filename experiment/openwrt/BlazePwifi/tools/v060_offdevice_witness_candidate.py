@@ -142,7 +142,7 @@ def open_store(root, initialize):
     con.executescript(SCHEMA)
     return con
 
-def reply(state, floor, pending=False):
+def reply(state, floor, pending=False, *, challenge=None, key=None):
     # Never emit a positive payment admission even on successful finalize.
     result = {
       "schema": DOMAIN, "state": state,
@@ -154,13 +154,26 @@ def reply(state, floor, pending=False):
       "paid_ack_authorized": False,
       "customer_install_authorized": False
     }
+    if challenge is not None:
+        # WITNESS-0739: a successful authenticated STATUS *request* alone
+        # does not authenticate its reply. Bind the complete observed state
+        # to the requester's fresh challenge, including every NO-ACK gate.
+        # This is candidate HMAC evidence, not a hardware-signed witness.
+        if key is None:
+            refuse("status response authentication unavailable")
+        result["response_challenge"] = challenge
+        canonical = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("ascii")
+        result["response_mac"] = hmac.new(
+            key, b"BLAZE-WITNESS-CANDIDATE-STATUS/1\n" + canonical + b"\n",
+            hashlib.sha256
+        ).hexdigest()
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
 
 def fault(stage, fixture):
     if fixture and os.environ.get("BLAZE_WITNESS0738_TEST_FAULT") == stage:
         os._exit(73)
 
-def operate(con, command, args, fixture):
+def operate(con, command, args, fixture, key):
     device = args[0]
     con.execute("BEGIN IMMEDIATE")
     row = con.execute(
@@ -181,7 +194,7 @@ def operate(con, command, args, fixture):
     if command == "status":
         con.commit()
         reply("PENDING_RECONCILIATION" if row[4] is not None else "OBSERVED_CANDIDATE_ONLY",
-              row, row[4] is not None)
+              row, row[4] is not None, challenge=args[1], key=key)
         return
     epoch, revision, digest = int(args[1]), int(args[2]), args[3]
     if epoch != row[1]: refuse("wrong migration epoch")
@@ -260,7 +273,7 @@ def main():
     try:
         con = open_store(root, command == "init")
         try:
-            operate(con, command, args, fixture)
+            operate(con, command, args, fixture, key)
         finally:
             con.close()
     except (sqlite3.Error, OSError, ValueError) as exc:
