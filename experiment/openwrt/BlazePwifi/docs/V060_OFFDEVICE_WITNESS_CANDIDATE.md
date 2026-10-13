@@ -76,6 +76,34 @@ Operations are serialized by SQLite transactions:
    timeout or after reboot. Recovery requires comparison against an
    independently verified real target state (currently unavailable).
 
+### WITNESS-0739: challenge-authenticated candidate STATUS
+
+The `status` request was already protected by a request HMAC, but its JSON reply
+had no integrity protection. A requester checking an untrusted relay MUST
+verify the newly returned `response_challenge` equals its unpredictable
+fresh 32–64-character lowercase hex request nonce and independently verify
+`response_mac`. Verify over a sorted-key, compact JSON serialization
+of the complete reply **with `response_mac` removed**, encoded in UTF-8,
+using HMAC-SHA256 with the existing operator-provisioned candidate secret:
+
+```text
+HMAC_SHA256(key, b"BLAZE-WITNESS-CANDIDATE-STATUS/1\\n" +
+            canonical_reply_without_response_mac + b"\\n")
+```
+
+The MAC binds revision, epoch, digest, pending status, nonce and **all
+authorization-false flags**. The test rejects changed floor, pending or paid
+authorization, altered digest, and replay of a captured reply under a different
+challenge. A response using an old/reused nonce is not fresh; callers
+must generate and independently track unique challenges.
+
+**This is NOT a hardware-backed signature or antirollback counter.** An
+attacker with the shared key, a restored SQLite/key snapshot, or a compromised
+candidate host may still forge plausible past state. There remains no
+network transport or secure production key custody. Client admission continues
+to require independent physical monotonicity and hardware acceptance.
+Non-`status` candidate replies are unchanged and remain NON-AUTHORITATIVE.
+
 Every successful response explicitly includes
 `independent_monotonic_witness_verified=false`,
 `financial_migration_authorized=false`, `paid_ack_authorized=false`,
