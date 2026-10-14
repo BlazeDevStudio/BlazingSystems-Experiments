@@ -11,6 +11,9 @@ static class Program {
             if(!args.Contains("--synthetic-argument"))return 12;
             Directory.CreateDirectory(data);
             File.WriteAllText(Path.Combine(data,"test-result.txt"),File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")));
+            File.WriteAllText(Path.Combine(data,"profile-roots.txt"),
+                (Environment.GetEnvironmentVariable("APPDATA")??"")+"\n"+
+                (Environment.GetEnvironmentVariable("LOCALAPPDATA")??""));
             using var child=Process.Start(new ProcessStartInfo(Environment.ProcessPath!,"--child"){UseShellExecute=false});
             if(child==null)return 14;
             child.WaitForExit();if(child.ExitCode!=0)return 15;
