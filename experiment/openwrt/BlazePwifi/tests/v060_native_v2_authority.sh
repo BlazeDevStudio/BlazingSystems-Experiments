@@ -79,7 +79,7 @@ if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 7 1000 "$fixture_sig" \
   echo 'runtime profile accepted fixture request domain' >&2; exit 1
 fi
 [ ! -s "$T/runtime-fixture-domain" ] &&
-  [ "$(runtime_digest)" = "$runtime_committed" ]
+  [ "$(runtime_digest)" = "$runtime_before" ]
 # Both unsigned mode and the software HMAC fixture mode remain unavailable in
 # the deployable profile. Missing a response signer must fail before commit.
 signed="$(sign ctrlOne 3 ctrlOne:3 AM alice - 10 1000)"
