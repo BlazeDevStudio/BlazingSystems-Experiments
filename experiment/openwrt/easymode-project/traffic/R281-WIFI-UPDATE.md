@@ -1,4 +1,4 @@
-# R281 SSID management and recovery update
+# R281 EasyMode application update
 
 For **notion,r281, OpenWrt 24.10.8, existing EasyMode 4.2.6** only. This is an application update, not firmware and not factory-reset persistent.
 
@@ -41,3 +41,11 @@ To remove filtering immediately: disable it in Settings, or stop `/etc/init.d/bl
 ## 2026-10-14: Login permissions and Management settings
 
 The update installer now restores a normal umask before copying web assets, so `/www/easy/app.js` remains readable by uhttpd (0644). A restrictive umask had left it 0600 and caused HTTP 403, which stopped EasyMode JavaScript and made login appear broken. Management settings is the last Settings item and links to LuCI's account page to change the shared OpenWrt root password. That password is used by EasyMode, LuCI and SSH. A separately authenticated vendor portal is outside this root-account change.
+
+## 2026-10-15: SMS sync, unread threads, and backup
+
+Messages automatically refresh the modem inbox every 30 seconds while the EasyMode Messages screen is visible. Incoming messages not yet opened are highlighted and carry an unread count. Thread read markers and contact names are stored in that browser's local storage. SMS settings can export or restore an EasyMode JSON backup containing contacts and available inbox/sent messages; restored messages are local snapshots and are never re-sent. Backups contain private message text and phone numbers. This update does not delete messages from SIM/modem storage.
+
+The browser backup is limited to 1,000 incoming and 1,000 sent messages and 500 contacts. Import validates the JSON and stores the restored history only in the browser. It cannot restore data to a replacement SIM or modem; use the modem's own storage for that. Automatic refresh queries the configured ME or SM storage and does not guarantee carrier delivery/read receipts.
+
+No voice call or SMS test was performed while building this archive. The router was not reachable from the development laptop during this update. The implementation and archive are therefore not live-installed or hardware-verified.

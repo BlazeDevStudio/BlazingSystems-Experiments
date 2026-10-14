@@ -23,3 +23,5 @@
 
 /* EasyMode 4.1 backend/frontend compatibility warning */
 .compat-banner{margin:0;padding:12px 30px;background:rgba(204,72,72,.11);border-bottom:1px solid rgba(204,72,72,.35);color:var(--text);font-size:.92rem;line-height:1.5}.compat-banner b{color:#c44949}.compat-banner[hidden]{display:none!important}@media(max-width:760px){.compat-banner{padding:10px 20px;font-size:.86rem}}
+
+.sms-thread.unread{background:color-mix(in srgb,var(--accent) 9%,var(--panel));border-left:3px solid var(--accent);padding-left:12px}.sms-thread.unread .sms-thread-top b{font-weight:800;color:var(--text)}.sms-thread.unread .sms-preview{color:var(--text);font-weight:600}.sms-unread-badge{flex:0 0 auto;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:var(--accent);color:#06232e;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}.sms-import-label{display:inline-flex;align-items:center;cursor:pointer}.sms-import-label:hover{filter:brightness(1.08)}

@@ -108,3 +108,13 @@ Added Management settings as the last Settings section. It links to LuCI /cgi-bi
 Artifact rebuilt: dist-v7/EasyMode-R281-4.2.6-SSID-Sites-Recovery-20261014.tar.gz plus SHA256 sidecar. install.sh --check and --apply succeeded on the target notion,r281 / OpenWrt 24.10.8. Existing private rollback archive created at /root/easymode-before-sites-20261014-225924.tar.gz. Previous source and config contents preserved by installer.
 
 Remaining: verify installer mode fix on a second clean-like run only if needed; no password-change operation should be automated. Resume upstream AP WDS configuration only with upstream administrator access and then test a phone end to end.
+
+## 2026-10-15 — SMS experience update (source and package)
+
+Updated the established R281 application at `releases/v4.2.6-r281-consolidated/root`. SMS inbox polling is now scheduled every 30 seconds only while EasyMode → Messages is visible; it stops on other tabs or while the document is hidden and resumes on visibility. Incoming messages in an unopened thread receive a count badge and accent highlight; read state is kept in browser local storage using hashes of message identity rather than storing message text a second time. Removed automatic desktop selection of the newest thread so unread counts remain visible until the administrator opens it.
+
+Added a Contacts subpage with browser-local names and message shortcuts. SMS settings can download/restore JSON backups of contacts and available incoming/outgoing message history. Restored messages remain local snapshots and are never re-sent. The backup contains private message text and numbers; import limits are 1,000 messages per direction, 500 contacts, and a 2 MB file. No modem messages are deleted.
+
+Changed `traffic/tools/build-r281-update.py` to include `www/easy/style.css` and emit `dist-v7/EasyMode-R281-4.2.6-SMS-20261015.tar.gz`; installer cache keys now refresh both app.js and style.css. Archive structure, modes and SHA-256 manifest passed the builder's validation. JavaScript syntax check passed.
+
+Live SSH could not be opened from this laptop: the stored 192.168.1.12/192.168.1.184 interface addresses are not assigned to active local adapters. The update was not installed on the router. No SMS or call was sent, and no modem voice capability was tested. Remaining work: install and browser-check when the R281 management network is reachable; run a read-only modem voice-capability query; if that confirms support, use the user's explicit one-time test authorization to send one SMS and place one call to the provided recipient, without retrying; evaluate call termination and data reconnection afterward.
