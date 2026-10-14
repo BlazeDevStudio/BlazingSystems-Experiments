@@ -25,8 +25,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#ifndef BLAZE_FIXTURE_ONLY
-#error "Native authority must not be built without LAB-ONLY fixture guard"
+#if !defined(BLAZE_FIXTURE_ONLY) && !defined(BLAZE_RUNTIME_AUTHORITY)
+#error "Build only as a synthetic fixture or the installed runtime package"
+#endif
+#if defined(BLAZE_FIXTURE_ONLY) && defined(BLAZE_RUNTIME_AUTHORITY)
+#error "Select one authority build profile"
 #endif
 #define ROOT_PREFIX "/tmp/blaze-v2-native-"
 #define MAX_LEDGER 2097152
@@ -294,12 +297,16 @@ static void get_server_ack_key(const char *controller,
     if(active!=1)die("server ACK active key absent or ambiguous");
 }
 static void fault(const char *checkpoint) {
+#ifdef BLAZE_FIXTURE_ONLY
     const char *s=getenv("BLAZE_V2_NATIVE_TEST_FAULT");
     if(s && strcmp(s,checkpoint)==0){
         fprintf(stderr,"V2NATIVE-0668 %s fault%s (no ACK)\n",
                 checkpoint,renamed?" UNCERTAIN":"");
         exit(73);
     }
+#else
+    (void)checkpoint;
+#endif
 }
 static void write_all(int fd,const char *buf,size_t size) {
     size_t pos=0;
@@ -399,13 +406,31 @@ int main(int argc,char **argv) {
         else if(!strcmp(argv[11],"--server-ack-v2"))authenticated_ack=2;
         else die("unknown response mode");
     }
+#ifdef BLAZE_RUNTIME_AUTHORITY
+    /* Production responses must be signed by the separately admitted target
+       identity. The fixture HMAC ACK formats are never production ACKs. */
+    if(authenticated_ack)die("fixture ACK mode unavailable in runtime build");
+#endif
     root=argv[1];id=argv[2];event=argv[4];op=argv[5];
     src=argv[6];dst=argv[7];hmac=argv[10];
+#ifdef BLAZE_RUNTIME_AUTHORITY
+#ifdef BLAZE_RUNTIME_TEST_ROOT_OVERRIDE
+    if(strncmp(root,ROOT_PREFIX,strlen(ROOT_PREFIX)) ||
+       !root[strlen(ROOT_PREFIX)] ||
+       strchr(root+strlen(ROOT_PREFIX),'/') ||
+       strstr(root+strlen(ROOT_PREFIX),".."))
+       die("not a strict runtime test root");
+#else
+    if(strcmp(root,"/etc/blazepwifi/state"))
+       die("runtime authority is bound to the installed financial state path");
+#endif
+#else
     if(strncmp(root,ROOT_PREFIX,strlen(ROOT_PREFIX)) ||
        !root[strlen(ROOT_PREFIX)] ||
        strchr(root+strlen(ROOT_PREFIX),'/') ||
        strstr(root+strlen(ROOT_PREFIX),".."))
        die("not a strict synthetic fixture root");
+#endif
     if(!valid_id(id)||!valid_id(src)||
        !(valid_id(dst)||!strcmp(dst,"-"))||
        !hex64(hmac)||!parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
@@ -425,11 +450,13 @@ int main(int argc,char **argv) {
     if(dirfd<0 || fstat(dirfd,&st)!=0 || !S_ISDIR(st.st_mode) ||
        st.st_uid!=geteuid() || (st.st_mode&0777)!=0700)
         die("private fixture directory validation failed");
+#if !defined(BLAZE_RUNTIME_AUTHORITY) || defined(BLAZE_RUNTIME_TEST_ROOT_OVERRIDE)
     data=readfile(".blaze-v2-fixture-only",80,&n);
     if(n!=strlen("BLAZE-V2-SYNTHETIC-ONLY\n") ||
        memcmp(data,"BLAZE-V2-SYNTHETIC-ONLY\n",n))
        die("synthetic marker required");
     free(data);
+#endif
     lockfd=openat(dirfd,".v2-native-lock",
                   O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
     if(lockfd<0 || !private_fd(lockfd,0600) ||

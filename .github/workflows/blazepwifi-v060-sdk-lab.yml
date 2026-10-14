@@ -11,6 +11,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
+      - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
+      - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
 
 permissions:

@@ -3,8 +3,12 @@
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/tools/v060_journal_authority_native.c"
+cmp -s "$SRC" "$ROOT/openwrt/paid-authority/src/v060_journal_authority.c" || {
+  echo 'paid authority package source diverges from tested journal source' >&2; exit 1;
+}
 T="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
-trap 'rm -rf "$T"' EXIT HUP INT TERM
+RT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
+trap 'rm -rf "$T" "$RT"' EXIT HUP INT TERM
 umask 077
 chmod 700 "$T"
 command -v cc >/dev/null || { echo 'C compiler missing';exit 1; }
@@ -15,6 +19,11 @@ if cc -std=c11 -Wall -Wextra -Werror -O2 "$SRC" -lcrypto -o "$T/unguarded" 2>"$T
 fi
 cc -std=c11 -Wall -Wextra -Werror -O2 -DBLAZE_FIXTURE_ONLY "$SRC" \
   -lcrypto -o "$T/native"
+# Build the production profile too. The test-only root override keeps this
+# process confined to a marked disposable /tmp tree; production has no such
+# override and is bound to /etc/blazepwifi/state.
+cc -std=c11 -Wall -Wextra -Werror -O2 -DBLAZE_RUNTIME_AUTHORITY \
+  -DBLAZE_RUNTIME_TEST_ROOT_OVERRIDE "$SRC" -lcrypto -o "$T/runtime"
 printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$T/.blaze-v2-fixture-only"
 key=3333333333333333333333333333333333333333333333333333333333333333
 key2=4444444444444444444444444444444444444444444444444444444444444444
@@ -33,6 +42,37 @@ sign() {
     "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" |
     openssl dgst -sha256 -mac HMAC -macopt "hexkey:$controller_key" -r | awk '{print $1}'
 }
+printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RT/.blaze-v2-fixture-only"
+printf 'ctrlOne\t%s\nctrlTwo\t%s\n' "$key" "$key2" > "$RT/controller-keys.tsv"
+printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$RT/ledger.tsv"
+base="$(sha256sum "$RT/ledger.tsv" | cut -d' ' -f1)"
+printf 'H\t%s\n' "$base" >>"$RT/ledger.tsv"
+chmod 600 "$RT/.blaze-v2-fixture-only" "$RT/controller-keys.tsv" "$RT/ledger.tsv"
+runtime_run() {
+  signed="$(sign "$@")"
+  "$T/runtime" "$RT" "$@" "$signed"
+}
+runtime_digest() { sha256sum "$RT/ledger.tsv" | cut -d' ' -f1; }
+runtime_before="$(runtime_digest)"
+[ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'COMMIT\t140')" ]
+runtime_committed="$(runtime_digest)"
+[ "$runtime_committed" != "$runtime_before" ]
+[ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'REPLAY\t140')" ]
+[ "$(runtime_digest)" = "$runtime_committed" ]
+# Production binaries must not emit either fixture HMAC ACK format.
+signed="$(sign ctrlOne 2 ctrlOne:2 AM alice - 10 1000)"
+if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 10 1000 "$signed" \
+    --authenticated-ack >"$T/runtime-ack" 2>"$T/runtime-ack-error"; then
+  echo 'runtime profile accepted fixture ACK mode' >&2; exit 1
+fi
+[ ! -s "$T/runtime-ack" ] && [ "$(runtime_digest)" = "$runtime_committed" ]
+# Corrupt financial state is never repaired or acknowledged by the runtime.
+printf 'corrupt\n' >>"$RT/ledger.tsv"
+corrupt_digest="$(runtime_digest)"
+if runtime_run ctrlOne 2 ctrlOne:2 AM alice - 10 1000 >"$T/runtime-corrupt" 2>&1; then
+  echo 'runtime profile accepted corrupted authority state' >&2; exit 1
+fi
+[ "$(runtime_digest)" = "$corrupt_digest" ]
 run() {
   signed="$(sign "$@")"
   "$T/native" "$T" "$@" "$signed"
