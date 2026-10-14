@@ -2224,3 +2224,11 @@
 - **Change:** fixture profile uses `BLAZE-V2-AUTH-FIXTURE/1`; runtime profile uses `BLAZE-V2-AUTH/1`. Runtime-profile regression signs the same candidate transaction with the fixture domain and requires nonzero exit, empty stdout, and byte-identical journal before a production-domain request succeeds.
 - **Evidence:** source commit diff is available at https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/a78d4b672315f6b6696d9f780fea6ee901933a10; tests not yet run. No real key or trust witness was introduced. Rollback is a source revert; package stays `DEFAULT:=n` and is not in customer images.
 - **NEXT ACTION:** run `tests/v060_native_v2_authority.sh` and `tests/v060_sdk_lab_guard.sh` in the canonical checkout, fix only demonstrated failures, then run exact-head Full CI after handover refresh.
+
+
+## PAY-0744 validation update — 2026-10-14 Asia/Manila
+
+- **Status:** `validated`, source SHA `a78d4b672315f6b6696d9f780fea6ee901933a10`, exact tested handover head `588f00dd0b56cd91986899c86144d9e4847a9fa8`.
+- **Results:** native #38578666761 SUCCESS, SDK #38578666901 SUCCESS (Ruijie, x86_64, Orange Pi), Full #38578666858 SUCCESS including handover freshness. Native runtime-profile test rejected a fixture-domain signature before mutation, then accepted the production-domain test envelope; all were synthetic keys/data only.
+- **Remaining:** no callsite integration, controller sequence sender, protected target signer, independent antirollback witness or reversible migration; no hardware evidence.
+- **NEXT ACTION:** add durable per-controller sequence persistence to ESP8266/ESP32 Vendo pending coin requests and corresponding strict CGI verification; retain v1 behavior, keep v2 mutation disabled, then run focused firmware/API negative tests. Do not claim production cutover.
