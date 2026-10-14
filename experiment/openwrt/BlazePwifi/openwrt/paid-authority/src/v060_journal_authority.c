@@ -40,7 +40,7 @@
 #define MAX_LEASE 512
 #define MAX_CTL 128
 #define MAX_RECEIPT 1024
-struct item { char name[33]; unsigned long long value; };
+struct item { char name[97]; unsigned long long value; };
 struct receipt {
     char ctl[33], event[48], digest[65], result[32];
     unsigned long long seq;
@@ -63,15 +63,22 @@ static int valid_id(const char *p) {
        p[i]=='_' || p[i]=='-' || p[i]=='.')) return 0;
     return 1;
 }
-/* Existing member names may start with a digit or punctuation, and rental
-   device IDs are hexadecimal. Keep controller IDs on the stricter grammar. */
-static int valid_subject_id(const char *p) {
+/* Keep v1 member and rental identities distinct; controller IDs have their
+   own stricter grammar. Rental device IDs may include ':' and reach 96 bytes. */
+static int valid_subject_id(const char *p,size_t limit,int rental) {
     size_t i,n=p?strlen(p):0;
-    if(n<2 || n>32) return 0;
+    if(n<2 || n>limit) return 0;
     for(i=0;i<n;i++) if(!((p[i]>='A'&&p[i]<='Z') ||
       (p[i]>='a'&&p[i]<='z') || (p[i]>='0'&&p[i]<='9') ||
-       p[i]=='_' || p[i]=='-' || p[i]=='.')) return 0;
+       p[i]=='_' || p[i]=='-' || p[i]=='.' ||
+       (rental && p[i]==':'))) return 0;
     return 1;
+}
+static int valid_member_id(const char *p) {
+    return valid_subject_id(p,32,0);
+}
+static int valid_rental_id(const char *p) {
+    return valid_subject_id(p,96,1);
 }
 static int hex64(const char *s) {
     size_t i;
@@ -185,12 +192,12 @@ static void parseledger(char *s,size_t len) {
             return;
         } else if(n==3 && !strcmp(v[0],"A")){
             unsigned long long z;
-            if(!valid_subject_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_member_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
                nb>=MAX_BANK||find(bank,nb,v[1]))die("malformed/duplicate bank");
             strcpy(bank[nb].name,v[1]);bank[nb++].value=z;
         } else if(n==3 && !strcmp(v[0],"L")){
             unsigned long long z;
-            if(!valid_subject_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_rental_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
                nl>=MAX_LEASE||find(lease,nl,v[1]))die("malformed/duplicate lease");
             strcpy(lease[nl].name,v[1]);lease[nl++].value=z;
         } else if(n==3 && !strcmp(v[0],"C")){
@@ -445,9 +452,8 @@ int main(int argc,char **argv) {
        strstr(root+strlen(ROOT_PREFIX),".."))
        die("not a strict synthetic fixture root");
 #endif
-    if(!valid_id(id)||!valid_subject_id(src)||
-       !(valid_subject_id(dst)||!strcmp(dst,"-"))||
-       !hex64(hmac)||!parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
+    if(!valid_id(id)||!hex64(hmac)||
+       !parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
        !parse_uint(argv[8],31536000ULL,&units)||units==0 ||
        !parse_uint(argv[9],2000000000ULL,&now))
        die("malformed controller envelope");
@@ -456,8 +462,9 @@ int main(int argc,char **argv) {
     {char expected[64];
      snprintf(expected,sizeof(expected),"%s:%llu",id,seq);
      if(!valid_opcode || strcmp(event,expected) ||
-        (!strcmp(op,"TM") && (!strcmp(dst,"-")||!strcmp(src,dst))) ||
-        (strcmp(op,"TM") && strcmp(dst,"-")))
+        (!strcmp(op,"LR") ? !valid_rental_id(src) : !valid_member_id(src)) ||
+        (!strcmp(op,"TM") ? (!valid_member_id(dst)||!strcmp(src,dst)) :
+                            strcmp(dst,"-")))
         die("signed event/operation mismatched");
     }
     dirfd=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
@@ -483,9 +490,10 @@ int main(int argc,char **argv) {
     }
     getkey(id,key);
     unhex(hmac,sig,32);
-    if(snprintf(signed_msg,sizeof(signed_msg),
+    i=snprintf(signed_msg,sizeof(signed_msg),
       V2_REQUEST_DOMAIN "\t%s\t%llu\t%s\t%s\t%s\t%s\t%llu\t%llu\n",
-      id,seq,event,op,src,dst,units,now)<0)
+      id,seq,event,op,src,dst,units,now);
+    if(i<0 || (size_t)i>=sizeof(signed_msg))
        die("envelope format failed");
     if(!HMAC(EVP_sha256(),key,32,(unsigned char*)signed_msg,
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
@@ -503,9 +511,10 @@ int main(int argc,char **argv) {
        ACK signing identity is validated BEFORE any journal mutation. */
     if(authenticated_ack==2)
         get_server_ack_key(id,key,ack_kid,ack_key);
-    if(snprintf(digest_input,sizeof(digest_input),
+    i=snprintf(digest_input,sizeof(digest_input),
          "%s|%llu|%s|%s|%s|%s|%llu|%llu|v2",
-         id,seq,event,op,src,dst,units,now)<0)
+         id,seq,event,op,src,dst,units,now);
+    if(i<0 || (size_t)i>=sizeof(digest_input))
        die("fingerprint format failed");
     SHA256((unsigned char*)digest_input,strlen(digest_input),dig);
     hexout(dig,32,fingerprint);
