@@ -1,4 +1,13 @@
 # Changelog
+
+## Unreleased — Roblox station isolation
+- Remove the blanket Roblox analyzer, builder, and launcher block.
+- Force Roblox packages into per-station local executable caching and private APPDATA / LOCALAPPDATA roots.
+- Add a station ID override via `BLAZE_STATION_ID`; default to the Windows computer name.
+- Create station-local snapshots for legacy packages without a bundled file manifest.
+- Add synthetic checks for separate station roots and app-data environment redirection.
+- Real two-PC Roblox account testing is still required; this is not included in CI.
+
 ## 1.1.0 (Experimental — diskless isolation / session safety)
 - Per-client copy of application binaries into local client cache before process launch, content-addressed by bundled SHA256 manifest; separated per machine and Windows user.
 - New manifest generated and verified; failures fail closed and clean incomplete staging.
