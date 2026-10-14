@@ -1,3 +1,10 @@
+## PAY-0745 validation failure — Arduino external include path, 2026-10-14 Asia/Manila
+
+- Exact source head `3b7bfa7009ac8da9755a5191df6732dda37c9dee`; Native workflow [#38582496866](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496866) SUCCESS, including compiled sequence-state test. Firmware workflow [#38582496821](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496821) failed ESP8266 step `Compile BlazePwifi Vendo`: `fatal error: ../../common/v060_pending_sequence.h: No such file or directory`. Exact job log shows Arduino CLI compiles a staged sketch, excluding the outside relative path. Root cause: shared header not packaged as an Arduino library. SDK workflow [#38582496768](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496768) was pending at time of entry.
+- **Next:** move header under a local Arduino library and pass its parent with `--libraries` to ESP8266/ESP32 compile; add source-contract check; rerun all affected exact-head CI. No release or hardware claim.
+
+---
+
 ## PAY-0745 — Installed Vendo crash-recoverable sequence state, 2026-10-14 Asia/Manila
 
 - **Status committed_untested, P0 #31/#32.** Source commit `046c7e59f449cd0c4bcf8430947079e4a1445d03` on PR #89 branch `pay-0743-installed-v2-authority`.
