@@ -5,12 +5,14 @@ public static class PackageBuilder {
         var src=Path.GetFullPath(options.SourceExecutable);
         if(!File.Exists(src))throw new FileNotFoundException("Application EXE missing",src);
         var root=Path.GetDirectoryName(src)!;var destination=Path.GetFullPath(options.Destination);
-        DisklessSafety.RejectUnverifiedRoblox(src);
-        if(Directory.EnumerateFiles(root,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any())
-            throw new NotSupportedException("Roblox files detected. Portable Roblox multi-PC sessions are unverified and blocked.");
-        if(options.DataMode==DataMode.FullyLocal && DisklessSafety.IsNetworkPath(destination))
+        var isRoblox=DisklessSafety.RequiresStationIsolation(src)
+            ||DisklessSafety.RequiresStationIsolation(root)
+            ||Directory.EnumerateFiles(root,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any();
+        var dataMode=isRoblox?DataMode.PerClientWritable:options.DataMode;
+        var isolate=options.IsolateExecutablePerClient||isRoblox;
+        if(dataMode==DataMode.FullyLocal && DisklessSafety.IsNetworkPath(destination))
             throw new InvalidOperationException("FullyLocal data mode cannot write directly into a shared network package.");
-        if(options.DataMode==DataMode.PerClientWritable && !options.IsolateExecutablePerClient && DisklessSafety.IsNetworkPath(destination))
+        if(dataMode==DataMode.PerClientWritable && !isolate && DisklessSafety.IsNetworkPath(destination))
             throw new InvalidOperationException("Shared network execution requires the isolated per-client local application cache.");
         if(Paths.IsWithin(destination,root)||Paths.IsWithin(root,destination))
             throw new InvalidOperationException("Source and destination directories must not overlap.");
@@ -65,10 +67,10 @@ public static class PackageBuilder {
             File.Copy(compiledLauncher,launch);
             var config=new PortableConfig{
                 DisplayName=name,Executable=Path.GetRelativePath(root,src).Replace('\\','/'),
-                Arguments=options.Arguments,DataMode=options.DataMode,RedirectEnvironmentFolders=options.RedirectEnvironmentFolders,
+                Arguments=options.Arguments,DataMode=dataMode,RedirectEnvironmentFolders=options.RedirectEnvironmentFolders||isRoblox,
                 WorkingDirectory=".",RequiredFiles=new(){Path.GetRelativePath(root,src).Replace('\\','/')}
             };
-            config.IsolateExecutablePerClient=options.IsolateExecutablePerClient;
+            config.IsolateExecutablePerClient=isolate;
             config.Save(Path.Combine(staging,"PortableConfig.json"));
             manifest.Save(Path.Combine(staging,"FileManifest.json"));
             File.WriteAllText(Path.Combine(staging,"PACKAGE_INFO.txt"),"Created by Blaze Gen2 Portable Studio v1.1.0 (experimental). Portability not guaranteed.");
