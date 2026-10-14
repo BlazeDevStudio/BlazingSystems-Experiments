@@ -1,3 +1,13 @@
+## PAY-0745 source fix — package shared sequence logic as an Arduino library, 2026-10-14 Asia/Manila
+
+- **Status committed_untested, P0 #31/#32.** Source commit `241adf1580345e08cb3c1325bd5edc6b288aad8b` on PR #89 branch `pay-0743-installed-v2-authority`.
+- **Change:** moved shared helper to `esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h`, added Arduino library metadata, changed both sketches to use the packaged library, and passed the local library root to both Arduino CLI builds. Updated CI path filters and native contract include.
+- **Root cause addressed:** exact ESP8266 failure in Full #38582496821 was `fatal error: ../../common/v060_pending_sequence.h: No such file or directory`; Arduino stages sketches in a temporary directory, so external relative includes are unavailable. That exact run is documented as failed. No source fix yet validated.
+- **Evidence:** source-contract Python check and diff check pass locally. Native #38582496866 success applies to previous source SHA `046c7e59...`, not this fix. Exact current-head native, ESP8266/ESP32 builds, SDK matrix and Full CI pending. Do not infer success from previous runs.
+- **Next:** validate exact docs checkpoint CI at this source SHA, fix demonstrated failures, then continue authenticated CGI/native rental route only with trusted credentials, independent witness, protected signer and migration admission. No release.
+
+---
+
 ## PAY-0745 validation failure — Arduino external include path, 2026-10-14 Asia/Manila
 
 - Exact source head `3b7bfa7009ac8da9755a5191df6732dda37c9dee`; Native workflow [#38582496866](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496866) SUCCESS, including compiled sequence-state test. Firmware workflow [#38582496821](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496821) failed ESP8266 step `Compile BlazePwifi Vendo`: `fatal error: ../../common/v060_pending_sequence.h: No such file or directory`. Exact job log shows Arduino CLI compiles a staged sketch, excluding the outside relative path. Root cause: shared header not packaged as an Arduino library. SDK workflow [#38582496768](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38582496768) was pending at time of entry.
