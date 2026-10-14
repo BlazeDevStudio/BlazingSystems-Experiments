@@ -156,8 +156,9 @@ class Tests {
                 if(!stationTwo.WaitForExit(60000)){stationTwo.Kill(true);throw new TimeoutException("Station two timed out");}
                 Check(stationOne.ExitCode==0 && stationTwo.ExitCode==0,"Two Roblox-named station clients launch simultaneously");
             }
-            var stationOneData=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-01",Path.Combine(home,"Station A LocalAppData"));
-            var stationTwoData=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-02",Path.Combine(home,"Station B LocalAppData"));
+            var runnerLocalAppData=Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var stationOneData=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-01",runnerLocalAppData);
+            var stationTwoData=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-02",runnerLocalAppData);
             Check(File.Exists(Path.Combine(stationOneData,"profile-roots.txt")) &&
                 File.Exists(Path.Combine(stationTwoData,"profile-roots.txt")) &&
                 !File.ReadAllText(Path.Combine(stationOneData,"profile-roots.txt")).Equals(
