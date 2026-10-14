@@ -126,6 +126,17 @@ class Tests {
             Check(robloxConfig.IsolateExecutablePerClient,"Roblox package forces client-local application files");
             Check(robloxConfig.RedirectEnvironmentFolders,"Roblox package forces private app-data environment roots");
             Check(Run(robloxLaunch)==0,"Roblox-named official-client fixture starts without a product block");
+            var robloxData=DisklessSafety.ClientDataRoot(robloxConfig);
+            var profileRoots=File.ReadAllLines(Path.Combine(robloxData,"profile-roots.txt"));
+            Check(profileRoots.Length==2 &&
+                Path.GetFullPath(profileRoots[0])==Path.GetFullPath(DisklessSafety.ProfileAppData(robloxData,"Roaming")) &&
+                Path.GetFullPath(profileRoots[1])==Path.GetFullPath(DisklessSafety.ProfileAppData(robloxData,"Local")),
+                "Roblox client receives station-private APPDATA and LOCALAPPDATA");
+            var stationA=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-01",Path.Combine(home,"Station A LocalAppData"));
+            var stationB=DisklessSafety.ClientDataRoot(robloxConfig,"PISONET-PC-02",Path.Combine(home,"Station B LocalAppData"));
+            Check(stationA!=stationB &&
+                DisklessSafety.ProfileAppData(stationA,"Local")!=DisklessSafety.ProfileAppData(stationB,"Local"),
+                "Distinct station identities produce separate persistent profile roots");
             Check(File.Exists(mockRoblox),"Packaging retains the original Roblox client source");
             Console.WriteLine("ALL "+successes+" CHECKS PASSED");
         } finally {try{Directory.Delete(home,true);}catch(IOException){}}
