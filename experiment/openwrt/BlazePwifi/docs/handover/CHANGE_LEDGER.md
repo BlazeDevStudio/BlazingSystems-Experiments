@@ -31,6 +31,13 @@
 - **Safety / impact:** no runtime source, payment state, keys, Stable/main, tags or customer devices changed. Installed member/rental paid v2 remains denied. No release attempted.
 - **Next exact action:** when the owner supplies/provisions an isolated approved target, controller identity procedure, independently administered witness endpoint/protocol, and target-protected signer interface, run the existing lab probe and then implement real authenticated CGI/native member/rental integration and reversible migration against those interfaces. Until then, keep v2 denied; do not claim a production release.
 
+## PAY-0750 — exact CI validated on external-dependency checkpoint (2026-10-15 Asia/Manila)
+
+- **Status / priority:** validated exact checkpoint, production integration still blocked; P0 financial authority. Branch `pay-0743-installed-v2-authority`, PR #89, source/handover SHA `7726559ce85d0f2d7bb282329781eb8b0ff5d6db`.
+- **Exact results:** Full [#38600693129](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38600693129) SUCCESS (26 successful jobs, four production signing/release jobs skipped); OpenWrt SDK [#38600693347](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38600693347) SUCCESS for Ruijie, x86_64 and Orange Pi Zero3; native [#38600693820](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38600693820) SUCCESS. No failed jobs.
+- **Current boundary:** no source implementation or customer mutation occurred in this handover checkpoint. The user has no approved lab target or provisioned witness/signer/controller interfaces. CI runners cannot qualify hardware durability or independent witness custody. Installed member/rental v2 operations remain denied, and no release was created.
+- **Next exact action:** resume v2 integration only when the owner makes an isolated approved lab target and the independently administered witness, protected signer and controller identity procedure available. Run the documented probe, implement the real authenticated runtime bridge and reversible migration, and then satisfy the physical acceptance gates.
+
 ## Pisonet diskless feature deferral — user direction, 2026-10-15 Asia/Manila
 
 - User requested Windows clients, deferred feature implementation until the P0/release work progresses, and directed that the eventual feature be feature-rich and adaptive with the best choice as default; do not ask the user to scope it again.
