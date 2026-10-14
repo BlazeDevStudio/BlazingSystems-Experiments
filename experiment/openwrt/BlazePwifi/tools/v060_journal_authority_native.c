@@ -475,6 +475,13 @@ int main(int argc,char **argv) {
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
          CRYPTO_memcmp(sig,mac,32)!=0)
        die("signed controller envelope mismatch");
+#ifdef BLAZE_RUNTIME_AUTHORITY
+    /* The current package has no admitted independent antirollback witness
+       or protected target P-256 ACK signer. Never mutate or replay-ACK paid
+       state from this profile until both real adapters are implemented and
+       admitted. The fixture build remains available for transaction tests. */
+    die("runtime witness and protected P-256 signer adapters unavailable");
+#endif
     /* Refuse a financial commit unless the independently configured server
        ACK signing identity is validated BEFORE any journal mutation. */
     if(authenticated_ack==2)
