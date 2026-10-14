@@ -8,7 +8,8 @@ cmp -s "$SRC" "$ROOT/openwrt/paid-authority/src/v060_journal_authority.c" || {
 }
 T="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 RT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
-trap 'rm -rf "$T" "$RT"' EXIT HUP INT TERM
+NUM="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
+trap 'rm -rf "$T" "$RT" "$NUM"' EXIT HUP INT TERM
 umask 077
 chmod 700 "$T"
 command -v cc >/dev/null || { echo 'C compiler missing';exit 1; }
@@ -45,6 +46,28 @@ sign_domain() {
 }
 sign() { sign_domain 'BLAZE-V2-AUTH-FIXTURE/1' "$@"; }
 sign_runtime() { sign_domain 'BLAZE-V2-AUTH/1' "$@"; }
+# PAY-0753: v1 permits numeric-leading member IDs and generated rental IDs
+# are hexadecimal. A v2 authority must preserve those exact identities.
+printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$NUM/.blaze-v2-fixture-only"
+printf 'ctrlOne\t%s\n' "$key" >"$NUM/controller-keys.tsv"
+printf 'V\t2\nA\t7alice\t100\nA\t_bob\t20\nL\t3dev01\t0\n' >"$NUM/ledger.tsv"
+num_base="$(sha256sum "$NUM/ledger.tsv" | cut -d' ' -f1)"
+printf 'H\t%s\n' "$num_base" >>"$NUM/ledger.tsv"
+chmod 600 "$NUM/.blaze-v2-fixture-only" "$NUM/controller-keys.tsv" "$NUM/ledger.tsv"
+num_run() { num_signed="$(sign "$@")"; "$T/native" "$NUM" "$@" "$num_signed"; }
+[ "$(num_run ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000)" = "$(printf 'COMMIT\t140')" ] || {
+  echo 'PAY-0753 numeric-leading member identity rejected' >&2; exit 1;
+}
+[ "$(num_run ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000)" = "$(printf 'REPLAY\t140')" ]
+[ "$(num_run ctrlOne 2 ctrlOne:2 TM 7alice _bob 10 1000)" = "$(printf 'COMMIT\t130')" ]
+[ "$(num_run ctrlOne 3 ctrlOne:3 LR 3dev01 - 600 1000)" = "$(printf 'COMMIT\t1600')" ]
+num_digest="$(sha256sum "$NUM/ledger.tsv" | cut -d' ' -f1)"
+num_signed="$(sign ctrlOne 4 ctrlOne:4 AM 7alice:bad - 1 1000)"
+if "$T/native" "$NUM" ctrlOne 4 ctrlOne:4 AM 7alice:bad - 1 1000 "$num_signed" >"$NUM/bad-out" 2>"$NUM/bad-error"; then
+  echo 'PAY-0753 delimiter-bearing subject accepted' >&2; exit 1;
+fi
+[ ! -s "$NUM/bad-out" ] &&
+  [ "$(sha256sum "$NUM/ledger.tsv" | cut -d' ' -f1)" = "$num_digest" ]
 printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RT/.blaze-v2-fixture-only"
 printf 'ctrlOne\t%s\nctrlTwo\t%s\n' "$key" "$key2" > "$RT/controller-keys.tsv"
 printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$RT/ledger.tsv"
