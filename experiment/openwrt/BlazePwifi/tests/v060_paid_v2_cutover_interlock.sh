@@ -89,11 +89,11 @@ rm "$BP_PAID_V2_CUTOVER"
 # v1 cutover intent must NEVER reactivate the legacy money/receipt writer.
 # Test the actual installed member/rental new, replay and transfer entrypoints,
 # not a mock of bp_paid_v2_cutover_pending.
-printf 'NOT-AN-AUTHORITY\\n' > "$BP_PAID_V2_AUTHORITY"
+printf 'NOT-AN-AUTHORITY\n' > "$BP_PAID_V2_AUTHORITY"
 deny_all authority-regular-file
 rm "$BP_PAID_V2_AUTHORITY"
 mkdir "$BP_PAID_V2_AUTHORITY"
-printf 'V\\t2\\n' > "$BP_PAID_V2_AUTHORITY/ledger.tsv"
+printf 'V\t2\n' > "$BP_PAID_V2_AUTHORITY/ledger.tsv"
 deny_all authority-namespace-with-unverified-ledger
 rm "$BP_PAID_V2_AUTHORITY/ledger.tsv"
 rmdir "$BP_PAID_V2_AUTHORITY"
