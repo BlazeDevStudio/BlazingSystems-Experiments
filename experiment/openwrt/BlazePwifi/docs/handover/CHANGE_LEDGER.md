@@ -2214,3 +2214,13 @@
 - **Negative coverage:** journal transaction interruptions before/after snapshot rename and directory sync, uncertain/lost acknowledgement retry, idempotent replay, corrupt state fail-closed, unsafe runtime root refusal, and runtime rejection of fixture ACK wire modes. Native/Full and all SDK target checks pass for the validated head above.
 - **Unresolved:** installed money callsites do not route through this package; current Vendo requests lack the signed monotonic sequence consumed by the journal; no admitted independent antirollback witness, protected target response signer, controller identity/key provisioning, or reversible v1 migration. The package is not selected into customer images and creates no credentials, ledger, migration marker, or cutover state. No production cutover or physical power-loss validation.
 - **Next exact implementation step:** define and admit the signed monotonic sequence contract; provision controller identity, independent witness and protected response signer; integrate both member and rental handlers behind admission; implement reversible v1→v2 migration; then prove durability on approved hardware before any production activation.
+
+
+## PAY-0744 — runtime request domain separation, 2026-10-14 Asia/Manila
+
+- **Scope / priority:** P0 #31/#32; isolate production-profile controller request authentication from the synthetic fixture protocol.
+- **Status:** `committed_untested`. Source SHA `a78d4b672315f6b6696d9f780fea6ee901933a10` on isolated branch `pay-0743-installed-v2-authority`, PR #89.
+- **Files:** `tools/v060_journal_authority_native.c`, `openwrt/paid-authority/src/v060_journal_authority.c`, `tests/v060_native_v2_authority.sh`, `tests/v060_sdk_lab_guard.sh`.
+- **Change:** fixture profile uses `BLAZE-V2-AUTH-FIXTURE/1`; runtime profile uses `BLAZE-V2-AUTH/1`. Runtime-profile regression signs the same candidate transaction with the fixture domain and requires nonzero exit, empty stdout, and byte-identical journal before a production-domain request succeeds.
+- **Evidence:** source commit diff is available at https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/a78d4b672315f6b6696d9f780fea6ee901933a10; tests not yet run. No real key or trust witness was introduced. Rollback is a source revert; package stays `DEFAULT:=n` and is not in customer images.
+- **NEXT ACTION:** run `tests/v060_native_v2_authority.sh` and `tests/v060_sdk_lab_guard.sh` in the canonical checkout, fix only demonstrated failures, then run exact-head Full CI after handover refresh.
