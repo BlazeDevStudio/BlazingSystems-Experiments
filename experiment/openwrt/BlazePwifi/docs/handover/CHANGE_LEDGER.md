@@ -1,3 +1,15 @@
+## PAY-0745 — Installed Vendo crash-recoverable sequence state, 2026-10-14 Asia/Manila
+
+- **Status committed_untested, P0 #31/#32.** Source commit `046c7e59f449cd0c4bcf8430947079e4a1445d03` on PR #89 branch `pay-0743-installed-v2-authority`.
+- **Paths:** shared `esp/common/v060_pending_sequence.h`; ESP8266 and ESP32 Vendo pending journal sources; new transition/source-contract tests and native workflow coverage.
+- **Change:** versioned checksummed record keeps controller sequence + event nonce/target/pulse count together. Retry reservation preserves sequence; only a success response advances local highwater; known terminal rejection releases the reservation. Existing Vendo record formats are recovered/migrated. Corruption or mount failure disables coin acceptance; automatic filesystem format was removed. Existing v1 request wire format stays unchanged; no v2 dispatch or member/rental runtime cutover.
+- **Evidence:** local `v060_vendo_sequence_contract.py` and `git diff --check` passed on exact source contents. C compiler unavailable in local environment. New compiled state-transition contract and native fault suite, both ESP cross-compiles and exact-head Full CI are pending; do not claim green.
+- **Risk / rollback:** sequence state is local, CRC-protected, and rollbackable; it is NOT an independent antirollback witness. It cannot authorize v2 money writes. Roll back by reverting this isolated source commit; do not deploy. Legacy record recovery is included; physical LittleFS power-loss behavior remains unproven. No customer data, keys, deployed equipment, tags, Stable or main changed.
+- **Dependencies:** authenticated sequence envelope/CGI-to-runtime rental route; provisioned controller identity; independently admitted antirollback witness #43; protected target P-256 response signer; reversible v1 migration; physical power-cut and soak acceptance #34.
+- **NEXT ACTION:** test exact PR head after the handover checkpoint; fix actual failures, then connect the signed sequence to CGI/native rental credit without enabling unauthenticated ACK or bypassing witness/migration gates.
+
+---
+
 ## RENT-0727 — VERIFIED native rental HMAC signed sequence → committed lease+receipt → independently keyed ACKV2 TEST-ONLY contract, 2026-10-13 Asia/Manila
 
 - **Status IMPLEMENTED_AND_VERIFIED, P0 #32 remains OPEN.** Scoped [PR #66](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/66) merge SHA `20d409e9428faba2c923d1b3fa1333f8427bcda0`, previous development docs-head `a3c755b732f5582c8f2dee1d9dce40c6cda23034`. Runtime, rootfs, shipped APK/EXE and customer financial balances unchanged. Only off-device test `tests/v060_rental_native_ack_contract.py` `201c3d045be9468d14287df2cdec9b7c461ec558`, Full/staged/native CI and 3 canonical handovers.
