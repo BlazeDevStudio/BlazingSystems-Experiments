@@ -36,3 +36,8 @@ Actual R281 checks: 14 policy/parser assertions; 7 routed UDP/TCP DNS enforcemen
 Limits: ordinary port-53 DNS only. DoH/DoT, VPNs, cached/direct IP connections, hardwired switch bypass and MAC changes can evade filtering. Allow-only DNS is not an allow-only internet firewall. CDN/login dependencies may need extra domains. IPv6 interception fails closed if no management IPv6 address exists. Existing offloading must be explicitly disabled by the administrator; the installer does not change it. Removing/reordering device overrides can temporarily reject old DNS flows until conntrack expires; cross-device old mappings fail closed. Bridge tests use isolated virtual clients on the physical R281, not a claim of full physical AP testing.
 
 To remove filtering immediately: disable it in Settings, or stop `/etc/init.d/blaze-sites`. For application rollback, stop/disable that service, restore the printed private backup, then restart rpcd and blaze-health. Do not publish backups.
+
+
+## 2026-10-14: Login permissions and Management settings
+
+The update installer now restores a normal umask before copying web assets, so `/www/easy/app.js` remains readable by uhttpd (0644). A restrictive umask had left it 0600 and caused HTTP 403, which stopped EasyMode JavaScript and made login appear broken. Management settings is the last Settings item and links to LuCI's account page to change the shared OpenWrt root password. That password is used by EasyMode, LuCI and SSH. A separately authenticated vendor portal is outside this root-account change.

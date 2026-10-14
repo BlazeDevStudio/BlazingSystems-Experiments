@@ -40,6 +40,7 @@ finish() {
 }
 trap finish EXIT
 tar -czf "$backup" -C / -T "$list"
+umask 022
 for path in $(find root -type f);do
  target="/${path#root/}";mkdir -p "$(dirname "$target")"
  cp "$path" "$target.sites-new";mv "$target.sites-new" "$target"
@@ -53,8 +54,9 @@ fw4 check
 /etc/init.d/firewall reload
 /etc/init.d/blaze-sites enable
 /etc/init.d/blaze-sites restart
-sed 's|/easy/app.js?v=[^" ]*|/easy/app.js?v=4.2.6-sites1|' /www/index.html >/www/index.html.sites-new
+sed 's|/easy/app.js?v=[^" ]*|/easy/app.js?v=4.2.6-mgmt1|' /www/index.html >/www/index.html.sites-new
 chmod 644 /www/index.html.sites-new
 mv /www/index.html.sites-new /www/index.html
+chmod 644 /www/easy/app.js /www/index.html
 ok=1
 echo "Installed. Backup: $backup. No reboot or Wi-Fi reload."
