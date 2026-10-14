@@ -1,3 +1,11 @@
+## PAY-0745 docs-checkpoint CI retry, 2026-10-14 Asia/Manila
+
+- On exact docs checkpoint head `168d7e88e7152619d33dc6a46b39021adcef134d`: native #38585367424 SUCCESS; SDK #38585367462 SUCCESS; Full #38585367546 concluded SUCCESS after retry attempt 2.
+- Full #38585367546 attempt 1 failed only `v04_android_emulator`: `sdkmanager --install emulator` reported `Archive is not a ZIP archive`; cleanup then had no emulator on port 5554. No application/test assertion or source build failed. Reran only failed job `v04_android_emulator`; retry job #115928710748 SUCCESS. Record the initial environmental failure and retry; do not call attempt 1 green.
+- PAY-0745 source exact head `b14141c9061681a979cde5d660c82bd1b2fa46dc` remains fully validated by native #38584028059, SDK #38584028013, Full PR #38584028029 and Full push #38584017231, all success.
+- Next remains authenticated CGI/native rental route with admitted witness/signer/key provisioning and reversible migration. Production release remains blocked; no customer hardware, data, keys, release tag, Stable or main changed.
+
+---
 ## PAY-0745 validated — durable local Vendo sequence state, 2026-10-14 Asia/Manila
 
 - **Status validated on exact source; P0 #31/#32 remain OPEN.** Source SHA `241adf1580345e08cb3c1325bd5edc6b288aad8b`; exact tested PR source head `b14141c9061681a979cde5d660c82bd1b2fa46dc`.
