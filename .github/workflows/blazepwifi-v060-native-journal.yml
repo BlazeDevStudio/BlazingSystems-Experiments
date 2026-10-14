@@ -8,6 +8,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh'
       - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
@@ -23,6 +24,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh'
       - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
@@ -55,6 +57,8 @@ jobs:
           pkg-config --exists libcrypto
       - name: Compile and fault-test signed synthetic prepaid journal
         run: sh experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh
+      - name: PAY-0751 signed CGI native envelope verification remains payment-denied
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh
       - name: PAY-0745 durable Vendo pending sequence and corruption contract
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
       - name: RENT-0727 independently keyed rental ACKV2 native journal fixture (not production)

@@ -57,6 +57,23 @@ runtime_run() {
 }
 runtime_digest() { sha256sum "$RT/ledger.tsv" | cut -d' ' -f1; }
 runtime_before="$(runtime_digest)"
+# CGI authentication is deliberately read only, even with a correct
+# production-domain envelope. It creates no lock and never reads the ledger.
+verify_sig="$(sign_runtime ctrlOne 1 ctrlOne:1 AM alice - 40 1000)"
+verify_before="$(find "$RT" -maxdepth 1 -type f -printf '%f %s\n' | sort)"
+[ -z "$("$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 AM alice - 40 1000 \
+  "$verify_sig" --verify-envelope-only)" ] || {
+  echo 'runtime envelope verifier emitted an ACK' >&2; exit 1;
+}
+[ "$(find "$RT" -maxdepth 1 -type f -printf '%f %s\n' | sort)" = "$verify_before" ] &&
+  [ "$(runtime_digest)" = "$runtime_before" ] || {
+  echo 'runtime envelope verifier changed financial state' >&2; exit 1;
+}
+if "$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 AM alice - 41 1000 \
+  "$verify_sig" --verify-envelope-only >"$T/verify-tamper" 2>"$T/verify-tamper-error"; then
+  echo 'runtime verifier accepted altered paid quantity' >&2; exit 1;
+fi
+[ ! -s "$T/verify-tamper" ] && [ "$(runtime_digest)" = "$runtime_before" ]
 # A deployable profile without admitted independent freshness and a protected
 # response signer must not ACK or mutate, including when a request is replayed.
 runtime_refuse() {

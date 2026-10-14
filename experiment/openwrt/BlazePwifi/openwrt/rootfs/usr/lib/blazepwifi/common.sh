@@ -513,3 +513,11 @@ bp_check_vendo_sig() {
 	exp="$(bp_vendo_sig_expected "$action" "$id" "$nonce" "$pulses" "$target")"
 	[ "$got" = "$exp" ]
 }
+
+# PAY-0751: only verify the production-domain controller envelope at the
+# installed native boundary. This helper cannot commit money or return an ACK;
+# witness, protected signer and migration admission remain outstanding.
+bp_v2_verify_envelope() {
+	/usr/sbin/blazepwifi-paid-authority "$BP_STATE" "$@" \
+		--verify-envelope-only >/dev/null 2>&1
+}

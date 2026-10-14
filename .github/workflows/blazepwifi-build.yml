@@ -189,6 +189,8 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_physical_evidence_contract.py
       - name: BlazePwifi v0.6 native private HMAC and fsync synthetic journal authority
         run: sh experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh
+      - name: PAY-0751 signed CGI to native v2 envelope verification stays payment-denied
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh
       - name: WITNESS-0734 strict native P-256 nonce-bound external ledger proof (read-only, no ACK)
         run: sh experiment/openwrt/BlazePwifi/tests/v060_witness_proof_native.sh
       - name: WITNESS-0738 SQLite FULL-sync off-device witness candidate crash/replay (NO PAID ACK)

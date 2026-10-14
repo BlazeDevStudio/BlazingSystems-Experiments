@@ -402,11 +402,12 @@ int main(int argc,char **argv) {
     unsigned int maclen=0;char signed_msg[400],digest_input[400],fingerprint[65];
     size_t n;char *data;struct stat st;
     struct item *floor,*x,*to;
-    int i,valid_opcode=0,authenticated_ack=0;
-    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack|--server-ack-v2]");
+    int i,valid_opcode=0,authenticated_ack=0,verify_only=0;
+    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack|--server-ack-v2|--verify-envelope-only]");
     if(argc==12){
         if(!strcmp(argv[11],"--authenticated-ack"))authenticated_ack=1;
         else if(!strcmp(argv[11],"--server-ack-v2"))authenticated_ack=2;
+        else if(!strcmp(argv[11],"--verify-envelope-only"))verify_only=1;
         else die("unknown response mode");
     }
 #ifdef BLAZE_RUNTIME_AUTHORITY
@@ -460,11 +461,16 @@ int main(int argc,char **argv) {
        die("synthetic marker required");
     free(data);
 #endif
-    lockfd=openat(dirfd,".v2-native-lock",
-                  O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
-    if(lockfd<0 || !private_fd(lockfd,0600) ||
-       flock(lockfd,LOCK_EX|LOCK_NB)!=0)
-       die("unsafe/busy v2 native writer lock");
+    /* CGI may authenticate the complete runtime envelope before any payment
+       route is admitted. This mode never creates a lock, reads the ledger,
+       emits an ACK, or reaches a financial write. It is not a commit gate. */
+    if(!verify_only){
+        lockfd=openat(dirfd,".v2-native-lock",
+                      O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
+        if(lockfd<0 || !private_fd(lockfd,0600) ||
+           flock(lockfd,LOCK_EX|LOCK_NB)!=0)
+           die("unsafe/busy v2 native writer lock");
+    }
     getkey(id,key);
     unhex(hmac,sig,32);
     if(snprintf(signed_msg,sizeof(signed_msg),
@@ -475,6 +481,7 @@ int main(int argc,char **argv) {
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
          CRYPTO_memcmp(sig,mac,32)!=0)
        die("signed controller envelope mismatch");
+    if(verify_only)return 0;
 #ifdef BLAZE_RUNTIME_AUTHORITY
     /* The current package has no admitted independent antirollback witness
        or protected target P-256 ACK signer. Never mutate or replay-ACK paid
