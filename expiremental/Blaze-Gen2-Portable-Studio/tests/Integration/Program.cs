@@ -130,7 +130,7 @@ class Tests {
             Check(robloxConfig.IsolateExecutablePerClient&&robloxConfig.DataMode==DataMode.PerClientWritable,
                 "Roblox packages force per-station local binaries and data");
             Check(robloxConfig.RedirectEnvironmentFolders,"Roblox packages isolate APPDATA and LOCALAPPDATA by station");
-            robloxConfig.Environment["BLAZE_TEST_HOLD"]="1";
+            robloxConfig.Arguments="--hold";
             robloxConfig.Save(Path.Combine(robloxPackage,"PortableConfig.json"));
             string ClientRoot(string id) {
                 var prior=Environment.GetEnvironmentVariable("BLAZE_STATION_ID");

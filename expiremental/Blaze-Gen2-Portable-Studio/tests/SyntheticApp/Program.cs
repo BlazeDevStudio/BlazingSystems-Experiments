@@ -5,12 +5,9 @@ static class Program {
             if(args.Contains("--child")) {
                 File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA")!,"child.txt"),"ok");return 0;
             }
-            var data=Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA");
-            if(string.IsNullOrWhiteSpace(data))return 11;
-            if(!File.Exists(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")))return 10;
-            if(!args.Contains("--synthetic-argument"))return 12;
-            Directory.CreateDirectory(data);
-            if(Environment.GetEnvironmentVariable("BLAZE_TEST_HOLD")=="1") {
+            if(args.Contains("--hold")) {
+                var data=Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA");
+                if(string.IsNullOrWhiteSpace(data))return 11;
                 var running=Path.Combine(data,"Concurrent");Directory.CreateDirectory(running);
                 var station=Environment.GetEnvironmentVariable("BLAZE_STATION_ID")??"unknown";
                 var ready=Path.Combine(running,station+"-"+Environment.ProcessId+".ready");
@@ -19,6 +16,11 @@ static class Program {
                 File.Delete(ready);
                 return 0;
             }
+            var data=Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA");
+            if(string.IsNullOrWhiteSpace(data))return 11;
+            if(!File.Exists(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")))return 10;
+            if(!args.Contains("--synthetic-argument"))return 12;
+            Directory.CreateDirectory(data);
             File.WriteAllText(Path.Combine(data,"test-result.txt"),File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")));
             using var child=Process.Start(new ProcessStartInfo(Environment.ProcessPath!,"--child"){UseShellExecute=false});
             if(child==null)return 14;
