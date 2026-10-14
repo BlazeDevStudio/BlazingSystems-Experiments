@@ -6,9 +6,9 @@ static class Program {
                 File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA")!,"child.txt"),"ok");return 0;
             }
             if(args.Contains("--hold")) {
-                var data=Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA");
-                if(string.IsNullOrWhiteSpace(data))return 11;
-                var running=Path.Combine(data,"Concurrent");Directory.CreateDirectory(running);
+                var holdData=Environment.GetEnvironmentVariable("BLAZE_PORTABLE_DATA");
+                if(string.IsNullOrWhiteSpace(holdData))return 11;
+                var running=Path.Combine(holdData,"Concurrent");Directory.CreateDirectory(running);
                 var station=Environment.GetEnvironmentVariable("BLAZE_STATION_ID")??"unknown";
                 var ready=Path.Combine(running,station+"-"+Environment.ProcessId+".ready");
                 File.WriteAllText(ready,Environment.GetEnvironmentVariable("APPDATA")+"\n"+Environment.GetEnvironmentVariable("LOCALAPPDATA"));
