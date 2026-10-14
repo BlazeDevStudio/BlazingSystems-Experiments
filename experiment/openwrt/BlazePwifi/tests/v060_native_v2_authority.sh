@@ -84,6 +84,11 @@ runtime_before="$(runtime_digest)"
 # production-domain envelope. It creates no lock and never reads the ledger.
 verify_sig="$(sign_runtime ctrlOne 1 ctrlOne:1 AM alice - 40 1000)"
 verify_before="$(find "$RT" -maxdepth 1 -type f -printf '%f %s\n' | sort)"
+[ -z "$("$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000 \
+  "$(sign_runtime ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000)" \
+  --verify-envelope-only)" ] || {
+  echo 'PAY-0753 runtime envelope rejected numeric-leading member identity' >&2; exit 1;
+}
 [ -z "$("$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 AM alice - 40 1000 \
   "$verify_sig" --verify-envelope-only)" ] || {
   echo 'runtime envelope verifier emitted an ACK' >&2; exit 1;

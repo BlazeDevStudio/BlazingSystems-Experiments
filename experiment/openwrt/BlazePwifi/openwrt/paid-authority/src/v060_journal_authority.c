@@ -63,6 +63,16 @@ static int valid_id(const char *p) {
        p[i]=='_' || p[i]=='-' || p[i]=='.')) return 0;
     return 1;
 }
+/* Existing member names may start with a digit or punctuation, and rental
+   device IDs are hexadecimal. Keep controller IDs on the stricter grammar. */
+static int valid_subject_id(const char *p) {
+    size_t i,n=p?strlen(p):0;
+    if(n<2 || n>32) return 0;
+    for(i=0;i<n;i++) if(!((p[i]>='A'&&p[i]<='Z') ||
+      (p[i]>='a'&&p[i]<='z') || (p[i]>='0'&&p[i]<='9') ||
+       p[i]=='_' || p[i]=='-' || p[i]=='.')) return 0;
+    return 1;
+}
 static int hex64(const char *s) {
     size_t i;
     if (!s || strlen(s)!=64) return 0;
@@ -175,12 +185,12 @@ static void parseledger(char *s,size_t len) {
             return;
         } else if(n==3 && !strcmp(v[0],"A")){
             unsigned long long z;
-            if(!valid_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_subject_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
                nb>=MAX_BANK||find(bank,nb,v[1]))die("malformed/duplicate bank");
             strcpy(bank[nb].name,v[1]);bank[nb++].value=z;
         } else if(n==3 && !strcmp(v[0],"L")){
             unsigned long long z;
-            if(!valid_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_subject_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
                nl>=MAX_LEASE||find(lease,nl,v[1]))die("malformed/duplicate lease");
             strcpy(lease[nl].name,v[1]);lease[nl++].value=z;
         } else if(n==3 && !strcmp(v[0],"C")){
@@ -435,8 +445,8 @@ int main(int argc,char **argv) {
        strstr(root+strlen(ROOT_PREFIX),".."))
        die("not a strict synthetic fixture root");
 #endif
-    if(!valid_id(id)||!valid_id(src)||
-       !(valid_id(dst)||!strcmp(dst,"-"))||
+    if(!valid_id(id)||!valid_subject_id(src)||
+       !(valid_subject_id(dst)||!strcmp(dst,"-"))||
        !hex64(hmac)||!parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
        !parse_uint(argv[8],31536000ULL,&units)||units==0 ||
        !parse_uint(argv[9],2000000000ULL,&now))
