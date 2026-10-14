@@ -9,7 +9,8 @@ cmp -s "$SRC" "$ROOT/openwrt/paid-authority/src/v060_journal_authority.c" || {
 T="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 RT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 NUM="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
-trap 'rm -rf "$T" "$RT" "$NUM"' EXIT HUP INT TERM
+RENT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
+trap 'rm -rf "$T" "$RT" "$NUM" "$RENT"' EXIT HUP INT TERM
 umask 077
 chmod 700 "$T"
 command -v cc >/dev/null || { echo 'C compiler missing';exit 1; }
@@ -68,6 +69,29 @@ if "$T/native" "$NUM" ctrlOne 4 ctrlOne:4 AM 7alice:bad - 1 1000 "$num_signed" >
 fi
 [ ! -s "$NUM/bad-out" ] &&
   [ "$(sha256sum "$NUM/ledger.tsv" | cut -d' ' -f1)" = "$num_digest" ]
+# PAY-0754: installed rental IDs allow colon and up to 96 characters. A
+# valid existing paid lease must survive the v2 parser and exact replay.
+rental_id="3zone:$(printf '%090d' 0)"
+[ "${#rental_id}" -eq 96 ]
+printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RENT/.blaze-v2-fixture-only"
+printf 'ctrlOne\t%s\n' "$key" >"$RENT/controller-keys.tsv"
+printf 'V\t2\nL\t%s\t0\n' "$rental_id" >"$RENT/ledger.tsv"
+rental_base="$(sha256sum "$RENT/ledger.tsv" | cut -d' ' -f1)"
+printf 'H\t%s\n' "$rental_base" >>"$RENT/ledger.tsv"
+chmod 600 "$RENT/.blaze-v2-fixture-only" "$RENT/controller-keys.tsv" "$RENT/ledger.tsv"
+rent_run() { rent_signed="$(sign "$@")"; "$T/native" "$RENT" "$@" "$rent_signed"; }
+[ "$(rent_run ctrlOne 1 ctrlOne:1 LR "$rental_id" - 600 1000)" = "$(printf 'COMMIT\t1600')" ] || {
+  echo 'PAY-0754 valid long colon rental identity rejected' >&2; exit 1;
+}
+[ "$(rent_run ctrlOne 1 ctrlOne:1 LR "$rental_id" - 600 1000)" = "$(printf 'REPLAY\t1600')" ]
+rental_digest="$(sha256sum "$RENT/ledger.tsv" | cut -d' ' -f1)"
+overlong_id="${rental_id}0"
+overlong_sig="$(sign ctrlOne 2 ctrlOne:2 LR "$overlong_id" - 1 1000)"
+if "$T/native" "$RENT" ctrlOne 2 ctrlOne:2 LR "$overlong_id" - 1 1000 "$overlong_sig" >"$RENT/overlong-out" 2>"$RENT/overlong-error"; then
+  echo 'PAY-0754 overlong rental identity accepted' >&2; exit 1;
+fi
+[ ! -s "$RENT/overlong-out" ] &&
+  [ "$(sha256sum "$RENT/ledger.tsv" | cut -d' ' -f1)" = "$rental_digest" ]
 printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RT/.blaze-v2-fixture-only"
 printf 'ctrlOne\t%s\nctrlTwo\t%s\n' "$key" "$key2" > "$RT/controller-keys.tsv"
 printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$RT/ledger.tsv"
@@ -84,6 +108,11 @@ runtime_before="$(runtime_digest)"
 # production-domain envelope. It creates no lock and never reads the ledger.
 verify_sig="$(sign_runtime ctrlOne 1 ctrlOne:1 AM alice - 40 1000)"
 verify_before="$(find "$RT" -maxdepth 1 -type f -printf '%f %s\n' | sort)"
+[ -z "$("$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 LR "$rental_id" - 600 1000 \
+  "$(sign_runtime ctrlOne 1 ctrlOne:1 LR "$rental_id" - 600 1000)" \
+  --verify-envelope-only)" ] || {
+  echo 'PAY-0754 runtime envelope rejected valid long rental identity' >&2; exit 1;
+}
 [ -z "$("$T/runtime" "$RT" ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000 \
   "$(sign_runtime ctrlOne 1 ctrlOne:1 AM 7alice - 40 1000)" \
   --verify-envelope-only)" ] || {
