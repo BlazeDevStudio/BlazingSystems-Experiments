@@ -111,6 +111,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v052_update.sh
       - name: BlazePwifi v0.6 migration preflight and 0.5 rollback safety
         run: sh experiment/openwrt/BlazePwifi/tests/v060_migration_guard.sh
+      - name: PAY-0755 installed v1 financial migration preflight
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh
       - name: Verify safe tar extraction and manifest target policy
         run: sh experiment/openwrt/BlazePwifi/tests/v060_update_archive_security.sh
       - name: BlazePwifi v0.6 synthetic state backup/restore integrity prototype
