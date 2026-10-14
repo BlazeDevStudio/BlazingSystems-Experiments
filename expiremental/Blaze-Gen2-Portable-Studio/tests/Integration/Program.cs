@@ -125,7 +125,8 @@ class Tests {
             var robloxConfig=PortableConfig.Load(Path.Combine(robloxPackage,"PortableConfig.json"));
             Check(robloxConfig.IsolateExecutablePerClient,"Roblox package forces client-local application files");
             Check(robloxConfig.RedirectEnvironmentFolders,"Roblox package forces private app-data environment roots");
-            Check(Run(robloxLaunch)==0,"Roblox-named official-client fixture starts without a product block");
+            File.Delete(Path.Combine(robloxPackage,"FileManifest.json"));
+            Check(Run(robloxLaunch)==0,"Roblox-named legacy package starts from a station-local snapshot without a product block");
             var robloxData=DisklessSafety.ClientDataRoot(robloxConfig);
             var profileRoots=File.ReadAllLines(Path.Combine(robloxData,"profile-roots.txt"));
             Check(profileRoots.Length==2 &&
