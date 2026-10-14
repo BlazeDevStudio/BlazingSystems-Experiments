@@ -151,11 +151,16 @@ public sealed class StudioWindow:Window {
         _body.Children.Add(T("Writable data location",14));
         var mode=new ComboBox{Background=Panel2,Foreground=Ink,Padding=new Thickness(10),Margin=new Thickness(0,5,0,10),ItemsSource=Enum.GetValues<DataMode>(),SelectedItem=_mode};
         _body.Children.Add(mode);
-        var redirect=new CheckBox{Foreground=Muted,Content="Opt-in APPDATA / LOCALAPPDATA environment overrides (not universal)",IsChecked=_redirect,Margin=new Thickness(0,8,0,12)};
+        var isRoblox=DisklessSafety.RequiresStationIsolation(_source);
+        var redirect=new CheckBox{Foreground=Muted,
+            Content=isRoblox?"Roblox station profile: use private APPDATA / LOCALAPPDATA roots":"Opt-in APPDATA / LOCALAPPDATA environment overrides",
+            IsChecked=_redirect||isRoblox,IsEnabled=!isRoblox,Margin=new Thickness(0,8,0,12)};
         _body.Children.Add(redirect);
-        var isolate=new CheckBox{Foreground=Muted,Content="Diskless safety: run copied application from this PC's local cache (recommended)",IsChecked=true,Margin=new Thickness(0,8,0,12)};
+        var isolate=new CheckBox{Foreground=Muted,
+            Content=isRoblox?"Roblox station isolation: keep a private local client copy":"Diskless safety: run copied application from this PC's local cache",
+            IsChecked=true,IsEnabled=!isRoblox,Margin=new Thickness(0,8,0,12)};
         _body.Children.Add(isolate);
-        _body.Children.Add(T("Roblox is blocked in this experimental release. Official Roblox account sessions cannot be isolated by this generator.",12,Muted));
+        if(isRoblox)_body.Children.Add(T("Roblox stays available. Each station needs a unique Windows profile, local writable overlay, BLAZE_STATION_ID or computer name, and a different Roblox account. Blaze isolates client files and app-data variables; it does not create accounts or virtualize the Windows registry.",12,Muted));
         Buttons(B("Generate portable package",async()=>{
             _destination=dest.Text.Trim();_arguments=args.Text;_mode=(DataMode)mode.SelectedItem;_redirect=redirect.IsChecked==true;_isolate=isolate.IsChecked==true;
             await BuildPackage();
