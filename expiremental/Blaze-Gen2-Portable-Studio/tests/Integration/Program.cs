@@ -123,7 +123,7 @@ class Tests {
             Check(rb.Warnings.Any(w=>w.Contains("Roblox",StringComparison.OrdinalIgnoreCase)),"Roblox portability limitations remain visible");
             var robloxPackage=Path.Combine(home,"Roblox Concurrent Package");
             var robloxLaunch=await PackageBuilder.BuildAsync(new ConversionOptions{
-                SourceExecutable=mockRoblox,Destination=robloxPackage,DataMode=DataMode.PerClientWritable,
+                SourceExecutable=mockRoblox,Destination=robloxPackage,Arguments="--synthetic-argument",DataMode=DataMode.PerClientWritable,
                 IsolateExecutablePerClient=false
             },args[1]);
             var robloxConfig=PortableConfig.Load(Path.Combine(robloxPackage,"PortableConfig.json"));
