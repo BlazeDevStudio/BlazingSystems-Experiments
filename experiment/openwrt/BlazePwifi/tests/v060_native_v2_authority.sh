@@ -59,17 +59,29 @@ runtime_committed="$(runtime_digest)"
 [ "$runtime_committed" != "$runtime_before" ]
 [ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'REPLAY\t140')" ]
 [ "$(runtime_digest)" = "$runtime_committed" ]
+# Model a response lost after the authority has committed: drop the first
+# response, then retry the identical signed request and require a replay.
+runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000 >"$T/runtime-lost-ack"
+runtime_after_lost_ack="$(runtime_digest)"
+[ "$(runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000)" = "$(printf 'REPLAY\t147')" ]
+[ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
 # Production binaries must not emit either fixture HMAC ACK format.
-signed="$(sign ctrlOne 2 ctrlOne:2 AM alice - 10 1000)"
-if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 10 1000 "$signed" \
+signed="$(sign ctrlOne 3 ctrlOne:3 AM alice - 10 1000)"
+if "$T/runtime" "$RT" ctrlOne 3 ctrlOne:3 AM alice - 10 1000 "$signed" \
     --authenticated-ack >"$T/runtime-ack" 2>"$T/runtime-ack-error"; then
   echo 'runtime profile accepted fixture ACK mode' >&2; exit 1
 fi
-[ ! -s "$T/runtime-ack" ] && [ "$(runtime_digest)" = "$runtime_committed" ]
+[ ! -s "$T/runtime-ack" ] && [ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
+# Production authority builds are path-bound and cannot target arbitrary data.
+if "$T/runtime" /etc ctrlOne 3 ctrlOne:3 AM alice - 10 1000 "$signed" \
+    >"$T/runtime-external" 2>&1; then
+  echo 'runtime profile accepted a non-authority state path' >&2; exit 1
+fi
+[ ! -s "$T/runtime-external" ] && [ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
 # Corrupt financial state is never repaired or acknowledged by the runtime.
 printf 'corrupt\n' >>"$RT/ledger.tsv"
 corrupt_digest="$(runtime_digest)"
-if runtime_run ctrlOne 2 ctrlOne:2 AM alice - 10 1000 >"$T/runtime-corrupt" 2>&1; then
+if runtime_run ctrlOne 3 ctrlOne:3 AM alice - 10 1000 >"$T/runtime-corrupt" 2>&1; then
   echo 'runtime profile accepted corrupted authority state' >&2; exit 1
 fi
 [ "$(runtime_digest)" = "$corrupt_digest" ]

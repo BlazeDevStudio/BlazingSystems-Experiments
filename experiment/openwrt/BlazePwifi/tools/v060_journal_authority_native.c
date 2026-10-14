@@ -1,13 +1,11 @@
 /*
- * V2NATIVE-0668: synthetic, native controller-authenticated prepaid journal.
- * LAB-ONLY, never installed in OpenWrt rootfs, no live payment endpoint.
- * Build: cc -std=c11 -Wall -Wextra -Werror -O2 -DBLAZE_FIXTURE_ONLY
- *        tools/v060_journal_authority_native.c -lcrypto -o v2-native-fixture
- * Usage: v2-native-fixture /tmp/blaze-v2-native-XXXXXX
- *        CONTROLLER SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC_SHA256
- * Requires private marker, private key registry, private ledger.
- * This does not implement production v1 migration, target power-loss proof,
- * key rotation, or encrypted backup. No flags can enable customer operation.
+ * PAY-0743: shared native prepaid journal engine for member and rental state.
+ * BLAZE_FIXTURE_ONLY builds are synthetic and restricted to marked /tmp roots.
+ * BLAZE_RUNTIME_AUTHORITY builds are packaged for /etc/blazepwifi/state and
+ * require externally provisioned controller keys and an existing ledger.
+ * The runtime package does not enable cutover, provide a response signer or
+ * antirollback witness, migrate v1 data, or prove device power-loss behavior.
+ * Neither build creates credentials or silently initializes financial state.
  */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
