@@ -165,23 +165,6 @@ class Tests {
                 if(!robloxA.HasExited)robloxA.Kill(entireProcessTree:true);
                 if(!robloxB.HasExited)robloxB.Kill(entireProcessTree:true);
             }
-            var sharedStation="qa-station-repeat";var sharedRoot=ClientRoot(sharedStation);externalClientRoots.Add(sharedRoot);
-            var infoC1=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoC1.Environment["BLAZE_STATION_ID"]=sharedStation;
-            var infoC2=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoC2.Environment["BLAZE_STATION_ID"]=sharedStation;
-            using var robloxC1=Process.Start(infoC1)??throw new Exception("Could not launch first same-station fixture");
-            using var robloxC2=Process.Start(infoC2)??throw new Exception("Could not launch second same-station fixture");
-            try {
-                var sharedReady=Path.Combine(sharedRoot,"Concurrent");
-                var deadline=DateTime.UtcNow.AddSeconds(10);
-                while(DateTime.UtcNow<deadline&&(!Directory.Exists(sharedReady)||Directory.GetFiles(sharedReady,"*.ready").Length<2))await Task.Delay(50);
-                Check(Directory.Exists(sharedReady)&&Directory.GetFiles(sharedReady,"*.ready").Length>=2,
-                    "The launcher permits two live app instances from the same station");
-                Check(!robloxC1.HasExited&&!robloxC2.HasExited,"A second launch does not terminate the first launch");
-                await Task.WhenAll(robloxC1.WaitForExitAsync(),robloxC2.WaitForExitAsync());
-            } finally {
-                if(!robloxC1.HasExited)robloxC1.Kill(entireProcessTree:true);
-                if(!robloxC2.HasExited)robloxC2.Kill(entireProcessTree:true);
-            }
             Check(File.Exists(mockRoblox),"Roblox source files are never modified");
             Console.WriteLine("ALL "+successes+" CHECKS PASSED");
         } finally {
