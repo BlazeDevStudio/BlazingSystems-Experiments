@@ -1,3 +1,15 @@
+## PAY-0745 validated — durable local Vendo sequence state, 2026-10-14 Asia/Manila
+
+- **Status validated on exact source; P0 #31/#32 remain OPEN.** Source SHA `241adf1580345e08cb3c1325bd5edc6b288aad8b`; exact tested PR source head `b14141c9061681a979cde5d660c82bd1b2fa46dc`.
+- **Source:** shared Arduino library `esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h`, ESP8266 and ESP32 pending journals, C transition contract, source-contract test, workflow coverage.
+- **Native** [#38584028059](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38584028059) **SUCCESS** on exact head, including PAY-0745 reservation/commit/abandon/lost-ACK retry/checksum-corruption test and existing native partial-write/replay/corrupt-financial-state suite.
+- **SDK** [#38584028013](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38584028013) **SUCCESS** on exact head: Ruijie, x86_64, Orange Pi Zero3.
+- **Full PR** [#38584028029](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38584028029) **SUCCESS**, exact head; **Full push** [#38584017231](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38584017231) **SUCCESS**, exact head. Both ESP8266/ESP32 builds and the handover freshness gate passed. Local Python source-contract + diff checks passed.
+- **Failure and fix retained:** Full #38582496821 failed ESP8266 due Arduino CLI staging the sketch without the external relative header. PAY-0745 fix packages the header as an Arduino library and passes `--libraries` to both compiles. Failure is superseded, not erased.
+- **Limit:** this is client-side sequence runtime groundwork. Existing v1 requests remain unchanged; v2 is not emitted or dispatched; actual member/rental writes still use v1. Local sequence is rollbackable and provides no independent witness. No production customer data, keys, hardware, release tag, Stable or main changed. PR #89 open/unmerged; production v0.6.0 not released.
+- **Dependencies / next:** authenticated CGI-to-native rental routing and member routing; provisioned controller identity; independently admitted witness #43; protected target P-256 response signer; reversible v1→v2 migration; hardware power-cut and soak #34. Next implement that operation path only with trust gates in place, then validate on approved physical targets. No release until all mandatory gates pass.
+
+---
 ## PAY-0745 source fix — package shared sequence logic as an Arduino library, 2026-10-14 Asia/Manila
 
 - **Status committed_untested, P0 #31/#32.** Source commit `241adf1580345e08cb3c1325bd5edc6b288aad8b` on PR #89 branch `pay-0743-installed-v2-authority`.
