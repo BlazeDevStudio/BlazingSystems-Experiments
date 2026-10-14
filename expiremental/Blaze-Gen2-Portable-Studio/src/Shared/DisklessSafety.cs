@@ -112,15 +112,24 @@ public static class ClientIsolation {
     static PackageManifest CreateManifest(string appRoot) {
         // Legacy packages have no builder manifest. Snapshot and hash their files before making a station-local copy.
         var manifest=new PackageManifest();
-        foreach(var file in Directory.EnumerateFiles(appRoot,"*",SearchOption.AllDirectories)
-            .OrderBy(x=>Path.GetRelativePath(appRoot,x),StringComparer.OrdinalIgnoreCase)) {
-            if(Paths.IsLink(file))throw new IOException("Application contains a linked file: "+file);
-            using var input=File.OpenRead(file);
-            manifest.Files.Add(new FileManifestEntry{
-                RelativePath=Path.GetRelativePath(appRoot,file).Replace('\\','/'),
-                Size=input.Length,Sha256=Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant()
-            });
+        var dirs=new Stack<string>();dirs.Push(appRoot);
+        while(dirs.Count>0) {
+            var dir=dirs.Pop();
+            if(Paths.IsLink(dir))throw new IOException("Application contains a linked directory: "+dir);
+            foreach(var sub in Directory.EnumerateDirectories(dir)) {
+                if(Paths.IsLink(sub))throw new IOException("Application contains a linked directory: "+sub);
+                dirs.Push(sub);
+            }
+            foreach(var file in Directory.EnumerateFiles(dir)) {
+                if(Paths.IsLink(file))throw new IOException("Application contains a linked file: "+file);
+                using var input=File.OpenRead(file);
+                manifest.Files.Add(new FileManifestEntry{
+                    RelativePath=Path.GetRelativePath(appRoot,file).Replace('\\','/'),
+                    Size=input.Length,Sha256=Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant()
+                });
+            }
         }
+        manifest.Files=manifest.Files.OrderBy(x=>x.RelativePath,StringComparer.OrdinalIgnoreCase).ToList();
         return manifest;
     }
 }
