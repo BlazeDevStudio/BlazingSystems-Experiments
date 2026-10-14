@@ -32,16 +32,19 @@ printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$T/ledger.tsv"
 base="$(sha256sum "$T/ledger.tsv" | cut -d' ' -f1)"
 printf 'H\t%s\n' "$base" >>"$T/ledger.tsv"
 chmod 600 "$T/.blaze-v2-fixture-only" "$T/controller-keys.tsv" "$T/ledger.tsv"
-sign() {
+sign_domain() {
+  domain="$1"; shift
   case "$1" in
     ctrlOne) controller_key="$key" ;;
     ctrlTwo) controller_key="$key2" ;;
     *) echo "unknown synthetic controller" >&2; return 1 ;;
   esac
-  printf 'BLAZE-V2-AUTH-FIXTURE/1\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" |
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$domain" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" |
     openssl dgst -sha256 -mac HMAC -macopt "hexkey:$controller_key" -r | awk '{print $1}'
 }
+sign() { sign_domain 'BLAZE-V2-AUTH-FIXTURE/1' "$@"; }
+sign_runtime() { sign_domain 'BLAZE-V2-AUTH/1' "$@"; }
 printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RT/.blaze-v2-fixture-only"
 printf 'ctrlOne\t%s\nctrlTwo\t%s\n' "$key" "$key2" > "$RT/controller-keys.tsv"
 printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$RT/ledger.tsv"
@@ -49,7 +52,7 @@ base="$(sha256sum "$RT/ledger.tsv" | cut -d' ' -f1)"
 printf 'H\t%s\n' "$base" >>"$RT/ledger.tsv"
 chmod 600 "$RT/.blaze-v2-fixture-only" "$RT/controller-keys.tsv" "$RT/ledger.tsv"
 runtime_run() {
-  signed="$(sign "$@")"
+  signed="$(sign_runtime "$@")"
   "$T/runtime" "$RT" "$@" "$signed"
 }
 runtime_digest() { sha256sum "$RT/ledger.tsv" | cut -d' ' -f1; }
@@ -59,8 +62,17 @@ runtime_committed="$(runtime_digest)"
 [ "$runtime_committed" != "$runtime_before" ]
 [ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'REPLAY\t140')" ]
 [ "$(runtime_digest)" = "$runtime_committed" ]
+# Fixture-domain controller signatures must never enter the installed
+# runtime request namespace, even when every other field is identical.
+fixture_sig="$(sign ctrlOne 2 ctrlOne:2 AM alice - 7 1000)"
+if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 7 1000 "$fixture_sig" \
+    >"$T/runtime-fixture-domain" 2>"$T/runtime-fixture-domain-error"; then
+  echo 'runtime profile accepted fixture request domain' >&2; exit 1
+fi
+[ ! -s "$T/runtime-fixture-domain" ] &&
+  [ "$(runtime_digest)" = "$runtime_committed" ]
 # Model a response lost after the authority has committed: drop the first
-# response, then retry the identical signed request and require a replay.
+# response, then retry the identical production-domain signed request.
 runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000 >"$T/runtime-lost-ack"
 runtime_after_lost_ack="$(runtime_digest)"
 [ "$(runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000)" = "$(printf 'REPLAY\t147')" ]

@@ -29,6 +29,11 @@
 #if defined(BLAZE_FIXTURE_ONLY) && defined(BLAZE_RUNTIME_AUTHORITY)
 #error "Select one authority build profile"
 #endif
+#if defined(BLAZE_RUNTIME_AUTHORITY)
+#define V2_REQUEST_DOMAIN "BLAZE-V2-AUTH/1"
+#else
+#define V2_REQUEST_DOMAIN "BLAZE-V2-AUTH-FIXTURE/1"
+#endif
 #define ROOT_PREFIX "/tmp/blaze-v2-native-"
 #define MAX_LEDGER 2097152
 #define MAX_BANK 512
@@ -463,7 +468,7 @@ int main(int argc,char **argv) {
     getkey(id,key);
     unhex(hmac,sig,32);
     if(snprintf(signed_msg,sizeof(signed_msg),
-      "BLAZE-V2-AUTH-FIXTURE/1\t%s\t%llu\t%s\t%s\t%s\t%s\t%llu\t%llu\n",
+      V2_REQUEST_DOMAIN "\t%s\t%llu\t%s\t%s\t%s\t%s\t%llu\t%llu\n",
       id,seq,event,op,src,dst,units,now)<0)
        die("envelope format failed");
     if(!HMAC(EVP_sha256(),key,32,(unsigned char*)signed_msg,
