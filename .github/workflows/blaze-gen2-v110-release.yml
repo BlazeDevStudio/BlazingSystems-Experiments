@@ -2,7 +2,7 @@ name: Blaze Gen2 Portable Studio v1.1.0 Windows build and release
 
 on:
   push:
-    branches: [main]
+    branches: [main, blaze-gen2-roblox-station-isolation]
     paths:
       - 'expiremental/Blaze-Gen2-Portable-Studio/**'
       - '!expiremental/Blaze-Gen2-Portable-Studio/PROJECT_HANDOVER.md'
