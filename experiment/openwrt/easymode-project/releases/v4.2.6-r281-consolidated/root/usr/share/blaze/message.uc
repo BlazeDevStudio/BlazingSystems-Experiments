@@ -9,13 +9,16 @@ function archiveSent(number,text,when,id){
 }
 let result={id,pending:false,ok:false};
 try {
- let port=detectPort(),command='flock -x /var/lock/blaze-modem.lock /usr/bin/sms_tool -d '+quote(port)+' ';
- if(p.kind=='inbox')command+='-s '+quote(p.storage)+' -f '+quote('%Y-%m-%d %H:%M:%S')+' -j recv';
- else if(p.kind=='send')command+='send '+quote(p.number)+' '+quote(p.text);
- else if(p.kind=='ussd')command+=(p.raw?'-R ':'')+(p.raw_output?'-r ':'')+'ussd '+quote(p.code);
- else die('Unknown message operation');
+	let port=detectPort(),command='';
+	if(p.kind=='inbox')command='/usr/bin/flock -x /var/lock/blaze-modem.lock /usr/bin/ucode /usr/share/blaze/sms-inbox-archive.uc';
+	else {
+		command='flock -x /var/lock/blaze-modem.lock /usr/bin/sms_tool -d '+quote(port)+' ';
+		if(p.kind=='send')command+='send '+quote(p.number)+' '+quote(p.text);
+		else if(p.kind=='ussd')command+=(p.raw?'-R ':'')+(p.raw_output?'-r ':'')+'ussd '+quote(p.code);
+		else die('Unknown message operation');
+	}
  let r=exec(command+' 2>/tmp/blaze-message.stderr'),error=trim(readfile('/tmp/blaze-message.stderr')||'');result.ok=r.rc==0;result.port=port;
- if(p.kind=='inbox'){
+  if(p.kind=='inbox'){
   if(r.rc)die(error||r.out||'Could not read modem storage.');let data=json(r.out);if(type(data.msg)!='array')die('Unexpected modem inbox format.');result.data=data;
  }else if(p.kind=='send'){
   result.ok=r.rc==0&&!!match(r.out,/sms sent suc{1,2}essfully/i);result.number=p.number;result.message=result.ok?'Modem accepted SMS to '+p.number+'. '+trim(r.out):'Send not confirmed. Do not retry automatically. '+trim(r.out+' '+error);

@@ -10,7 +10,7 @@ Repeater AP includes a direct upstream HTTP portal link. Automatic phone captive
 
 ## Install or recover
 
-Copy the archive to the router, extract it into a new directory, and run `sh install.sh --check`. Review compatibility, then run `sh install.sh --apply`. It backs up the affected installation and configuration to a private archive under `/root`, installs application files, refreshes rpcd and the health service, and preserves current configuration. It performs no firmware flash, reboot or WiFi restart. Actual later SSID saves reload WiFi.
+Copy the archive to the router, extract it into a new directory, and run `sh install.sh --check`. Review compatibility, then run `sh install.sh --apply`. It backs up the affected application files to a private archive under `/root`, installs the SMS archive service and EasyMode UI, and refreshes rpcd. It performs no firmware flash, reboot, WiFi restart or firewall reload. Other existing EasyMode configuration is preserved.
 
 To restore, extract the printed backup path into `/` as administrator, then restart rpcd and blaze-health. Restore from a wired LAN connection. Preserve that private backup off the router; never upload it publicly.
 
@@ -23,7 +23,7 @@ To restore, extract the printed backup path into `/` as administrator, then rest
 - A phone later associated: upstream DHCP and learned return routes worked; its DNS/HTTP requests were observed leaving the upstream station but no IP replies returned. Gateway ARP replies and router-originated HTTP worked. This isolates the failure beyond the local forwarding path, but does not establish the upstream policy. Separate-identity portal access remains **UNRESOLVED**; no shared-login substitution was applied.
 - New AP radio reload/timeout rollback, reboot/reset persistence and long-term cellular stability remain **NOT HARDWARE VERIFIED**.
 
-Build with `python traffic/tools/build-r281-update.py`. Traffic Intelligence packages are rebuilt separately with `python traffic/tools/build.py`; they preserve the existing management application.
+Build with `python traffic/tools/build-r281-update.py`. The R281 SMS update and SHA-256 file are written to `releases/v4.2.6-r281-consolidated/openwrt/`. Traffic Intelligence packages are rebuilt separately with `python traffic/tools/build.py`; they preserve the existing management application.
 
 ## 2026-10-14: Advanced site blocker
 
@@ -48,4 +48,12 @@ Messages automatically refresh the modem inbox every 30 seconds while the EasyMo
 
 The browser backup is limited to 1,000 incoming and 1,000 sent messages and 500 contacts. Import validates the JSON and stores the restored history only in the browser. It cannot restore data to a replacement SIM or modem; use the modem's own storage for that. Automatic refresh queries the configured ME or SM storage and does not guarantee carrier delivery/read receipts.
 
-No voice call or SMS test was performed while building this archive. The router was not reachable from the development laptop during this update. The implementation and archive are therefore not live-installed or hardware-verified.
+The earlier SMS-sync update did not send a voice call or SMS. At the time of that separate update, the router was not reachable from the development laptop.
+
+## 2026-10-15: Persistent SMS inbox archive
+
+The R281 SMS page uses the SIM store supported by this modem and exposes router-archived messages in the same conversations, with a visible “Router archive” marker. A background service checks once per minute, independent of the page being open. When 30 of 35 slots are used, it saves all returned modem messages to `/etc/blaze/sms-inbox-archive.json`, rereads and compares the complete archive, then clears the selected SIM store and verifies it is empty. If archive verification or cleanup fails, EasyMode reports a warning and does not treat modem messages as discarded. Archive data is root-only, survives reboot, and is removed by factory reset or firmware replacement unless separately backed up.
+
+EasyMode keeps the newest 100 bubbles rendered per conversation and offers “Load earlier messages” in 100-message batches, up to the bounded router archive limit of 5,000 messages / 1 MiB. This keeps the page responsive while allowing older messages to remain searchable, exportable, and replyable. User backups remain local browser downloads and can include up to 6,000 messages per direction. If router archive storage reaches its limit, the service leaves modem messages in place and displays a warning.
+
+The archive-core suite passed eight checks on the physical R281, and the Ucode worker, message handler, and rpcd module passed device compile checks. After install, authenticated EasyMode inbox RPC returned 43 messages: 35 archived messages plus 8 still stored on the SIM (8/35 slots). The router archive is mode 0600 under a mode 0700 directory, the background service is running, and an Internet connectivity probe passed. No SMS was sent. Threshold-triggered clearing was not exercised against a populated live SIM; the live check verified the below-threshold path and confirmed those eight messages remain on the SIM. Package payload, permissions and checksums passed verification. No reboot, Wi-Fi reload, or firewall reload was performed.

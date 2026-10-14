@@ -29,13 +29,13 @@ export function mergeInboxMessages(data){
     const reference=String(raw.reference??raw.ref??raw.concat_ref??raw.concat_reference??'');
     if(total>1){
       const key=reference?`${sender}\u0000ref:${reference}\u0000${total}`:`${sender}\u0000${timestamp}\u0000${total}`;
-      let g=groups.get(key);if(!g){g={sender,timestamp,total,parts:{},indexes:[]};groups.set(key,g);}
+      let g=groups.get(key);if(!g){g={sender,timestamp,total,parts:{},indexes:[],archived:raw.archived===true};groups.set(key,g);}
       g.parts[part||Object.keys(g.parts).length+1]=text;if(index)g.indexes.push(index);
-    }else plain.push({direction:'in',peer:sender,text,timestamp,time:smsTimeValue(timestamp),index,status:raw.status||raw.state||''});
+    }else plain.push({direction:'in',peer:sender,text,timestamp,time:smsTimeValue(timestamp),index,status:raw.status||raw.state||'',archived:raw.archived===true});
   }
   for(const g of groups.values()){
     const text=Object.keys(g.parts).map(Number).sort((a,b)=>a-b).map(k=>g.parts[k]).join('');
-    plain.push({direction:'in',peer:g.sender,text,timestamp:g.timestamp,time:smsTimeValue(g.timestamp),index:g.indexes.join('-'),status:''});
+    plain.push({direction:'in',peer:g.sender,text,timestamp:g.timestamp,time:smsTimeValue(g.timestamp),index:g.indexes.join('-'),status:'',archived:g.archived});
   }
   return plain.sort((a,b)=>a.time-b.time);
 }
