@@ -47,7 +47,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           if (!(Select-String -Path 'src/Studio/StudioWindow.cs' -Pattern 'case "DONATE"' -Quiet)) { throw 'Donation navigation missing' }
           if (!(Select-String -Path 'src/Studio/DonationQr.cs' -Pattern 'AEBWES36GX9K2' -Quiet)) { throw 'PayPal QR payload missing' }
-          if (!(Select-String -Path 'src/Shared/DisklessSafety.cs' -Pattern 'RejectUnverifiedRoblox' -Quiet)) { throw 'Roblox fail-closed policy missing' }
+          if (Select-String -Path 'src/Shared/DisklessSafety.cs','src/PortableLauncher/Program.cs','src/PackageBuilder/PackageBuilder.cs' -Pattern 'RejectUnverifiedRoblox|Roblox.*blocked|Roblox.*Unsupported' -Quiet) { throw 'Roblox must remain available' }
+          if (!(Select-String -Path 'src/Shared/DisklessSafety.cs' -Pattern 'ProfileAppData' -Quiet)) { throw 'Station-private app-data roots missing' }
           if (!(Select-String -Path 'src/PortableLauncher/Program.cs' -Pattern 'ClientIsolation.Prepare' -Quiet)) { throw 'Client-local execution missing' }
       - name: Stage binaries documentation resources and integrity checks
         run: |
