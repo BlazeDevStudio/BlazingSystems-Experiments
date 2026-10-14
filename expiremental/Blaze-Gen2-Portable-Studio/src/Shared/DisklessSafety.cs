@@ -13,14 +13,6 @@ public static class DisklessSafety {
            ||p.StartsWith("RobloxPlayer",StringComparison.OrdinalIgnoreCase)
            ||p.StartsWith("RobloxStudio",StringComparison.OrdinalIgnoreCase));
     }
-    public static void RejectUnverifiedRoblox(string path) {
-        if(IsRoblox(path))throw new NotSupportedException(
-            "Roblox is not validated for portable multi-PC deployment. " +
-            "Shared Roblox installations or account/session state may affect other clients. " +
-            "Use the official Roblox client with separate per-PC writable Windows user profiles " +
-            "and separate Roblox accounts for simultaneous play. " +
-            "Blaze Gen2 will not package or launch Roblox in experimental v1.1.0.");
-    }
     public static bool IsNetworkPath(string path) {
         var full=Path.GetFullPath(path);
         if(full.StartsWith(@"\\",StringComparison.Ordinal))return true;
@@ -33,12 +25,19 @@ public static class DisklessSafety {
         var name=new string(Environment.MachineName.Where(c=>char.IsLetterOrDigit(c)||c=='-'||c=='_').ToArray());
         return string.IsNullOrWhiteSpace(name)?"UnknownMachine":name;
     }
+    public static string SafeStationId() {
+        var configured=Environment.GetEnvironmentVariable("BLAZE_STATION_ID");
+        var value=string.IsNullOrWhiteSpace(configured)?Environment.MachineName:configured.Trim();
+        var safe=new string(value.Where(c=>char.IsLetterOrDigit(c)||c=='-'||c=='_').Take(64).ToArray());
+        return string.IsNullOrWhiteSpace(safe)?"UnknownStation":safe;
+    }
     public static string ClientDataRoot(PortableConfig config) {
         var local=Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if(string.IsNullOrWhiteSpace(local)||IsNetworkPath(local))
             throw new IOException("Client LOCALAPPDATA must be on a local writable disk; a shared user profile is not safe.");
-        // Machine namespace prevents reuse of shared identity when usernames are identical on multiple PCs.
-        return Path.Combine(local,"BlazeGen2","Clients",SafeMachineName(),config.PackageId);
+        // Diskless boot managers can provide a stable unique station ID even when cloned
+        // images share a computer name or profile. The machine name remains a namespace.
+        return Path.Combine(local,"BlazeGen2","Clients",SafeMachineName(),SafeStationId(),config.PackageId);
     }
 }
 public sealed class FileManifestEntry {
@@ -67,7 +66,7 @@ public static class ClientIsolation {
         var fingerprint=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(manifestFile))).ToLowerInvariant();
         var cacheBase=Path.Combine(localData,"AppCache");
         Directory.CreateDirectory(cacheBase);
-        // FileShare.None: only one launcher in this Windows user/machine sandbox at a time.
+        // FileShare.None serializes cache population only; it is released before app launch.
         var lockFile=Path.Combine(cacheBase,"copy.lock");
         using var copyLock=new FileStream(lockFile,FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None);
         var final=Path.Combine(cacheBase,fingerprint);

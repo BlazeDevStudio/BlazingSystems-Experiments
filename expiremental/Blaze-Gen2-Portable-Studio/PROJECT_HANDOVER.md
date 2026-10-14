@@ -1,5 +1,18 @@
 # PROJECT_HANDOVER — Blaze Gen2 Portable Studio
 
+## Current work — v1.2.0 Roblox concurrent station candidate (2026-10-14)
+
+The published/verified v1.1.0 release is unchanged. This working branch targets the reported Roblox cross-station account/state collision and concurrent-launch rejection:
+
+- Roblox is no longer rejected by the analyzer, builder, or launcher; compatibility warnings remain, and the UI permits continuing past all warning classifications.
+- Roblox packages default to per-client writable data, a local verified executable cache, and station-private APPDATA / LOCALAPPDATA overrides.
+- `BLAZE_STATION_ID` adds a unique per-diskless-station namespace, falling back to the computer name. Diskless provisioning must set a unique stable value when cloned machines share names.
+- The launcher no longer keeps an exclusive `session.lock` while the game is running. This removes Blaze's same-package single-launch restriction.
+- Regression tests use a Roblox-named synthetic executable; they do not launch the real Roblox client or validate account/service behavior. No Roblox accounts were created for this code-level test.
+- Windows registry/profile APIs and Roblox's server-side session rules remain outside launcher control. Use distinct Roblox accounts and Windows profiles per station. This does not bypass Roblox Error 264.
+
+The candidate source and integration tests still require a successful .NET 10 Windows build and actual two-client diskless validation before release. Do not overwrite or relabel the verified v1.1.0 release.
+
 **Version:** 1.0.0 — Experimental  
 **Repository:** https://github.com/BlazingSystems/BlazingSystems-Experiments  
 **Project source:** `expiremental/Blaze-Gen2-Portable-Studio/` (intentional spelling)  

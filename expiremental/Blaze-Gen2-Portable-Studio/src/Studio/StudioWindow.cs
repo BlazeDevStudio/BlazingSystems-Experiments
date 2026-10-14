@@ -18,7 +18,7 @@ public sealed class StudioWindow:Window {
     DataMode _mode=DataMode.PerClientWritable;
     bool _redirect=false;bool _isolate=true;
     public StudioWindow() {
-        Title="Blaze Gen2 Portable Studio • 1.1.0 Experimental";Width=1150;Height=760;MinWidth=950;MinHeight=600;
+        Title="Blaze Gen2 Portable Studio • 1.2.0 Experimental";Width=1150;Height=760;MinWidth=950;MinHeight=600;
         Background=Back;Foreground=Ink;WindowStartupLocation=WindowStartupLocation.CenterScreen;
         var root=new DockPanel();
         var status=new Border{Background=Panel,Child=_status};DockPanel.SetDock(status,Dock.Bottom);root.Children.Add(status);
@@ -73,14 +73,14 @@ public sealed class StudioWindow:Window {
             case "SETTINGS":Settings();break;
             case "DIAGNOSTICS":Diagnostics();break;
             case "ABOUT":
-                Heading("About Blaze Gen2","Blaze Gen2 Portable Studio / version 1.1.0 / experimental.");
+                Heading("About Blaze Gen2","Blaze Gen2 Portable Studio / version 1.2.0 candidate / experimental.");
                 _body.Children.Add(Card(Box(T("Purpose",18,Accent),T("Convert applications you have permission to copy into best-effort portable packages. Created for legitimate diskless deployments.",14),
                     T("Static checks do not prove portability. Services, licensed products, drivers, anti-cheat, and machine-tied configuration may prevent relocation.",13,Muted))));break;
         }
     }
     void Source(string path) {
         if(!File.Exists(path)){MessageBox.Show("Selected executable does not exist.");return;}
-        _source=path;_report=null;Status("Selected "+path);Navigate("APPLICATION ANALYZER");
+        _source=path;_report=null;_redirect=DisklessSafety.IsRoblox(path);Status("Selected "+path);Navigate("APPLICATION ANALYZER");
     }
     void Discovery() {
         Heading("Application discovery","Choose your source. The selected application's entire containing directory is copied during build.");
@@ -149,13 +149,16 @@ public sealed class StudioWindow:Window {
         },false));
         _body.Children.Add(T("Arguments (optional)",14));var args=Input(_arguments);_body.Children.Add(args);
         _body.Children.Add(T("Writable data location",14));
-        var mode=new ComboBox{Background=Panel2,Foreground=Ink,Padding=new Thickness(10),Margin=new Thickness(0,5,0,10),ItemsSource=Enum.GetValues<DataMode>(),SelectedItem=_mode};
+        var isRoblox=DisklessSafety.IsRoblox(_source);
+        if(isRoblox)_mode=DataMode.PerClientWritable;
+        var mode=new ComboBox{Background=Panel2,Foreground=Ink,Padding=new Thickness(10),Margin=new Thickness(0,5,0,10),ItemsSource=Enum.GetValues<DataMode>(),SelectedItem=_mode,IsEnabled=!isRoblox};
+        if(isRoblox)_body.Children.Add(T("Roblox uses per-station local data and executable copies automatically.",12,Muted));
         _body.Children.Add(mode);
-        var redirect=new CheckBox{Foreground=Muted,Content="Opt-in APPDATA / LOCALAPPDATA environment overrides (not universal)",IsChecked=_redirect,Margin=new Thickness(0,8,0,12)};
+        var redirect=new CheckBox{Foreground=Muted,Content="Set APPDATA / LOCALAPPDATA to station-private writable folders (best effort)",IsChecked=_redirect,IsEnabled=!isRoblox,Margin=new Thickness(0,8,0,12)};
         _body.Children.Add(redirect);
-        var isolate=new CheckBox{Foreground=Muted,Content="Diskless safety: run copied application from this PC's local cache (recommended)",IsChecked=true,Margin=new Thickness(0,8,0,12)};
+        var isolate=new CheckBox{Foreground=Muted,Content="Diskless mode: run a verified application copy from this station's local cache",IsChecked=true,IsEnabled=!isRoblox,Margin=new Thickness(0,8,0,12)};
         _body.Children.Add(isolate);
-        _body.Children.Add(T("Roblox is blocked in this experimental release. Official Roblox account sessions cannot be isolated by this generator.",12,Muted));
+        if(isRoblox)_body.Children.Add(T("Use a different Roblox account and persistent Windows/diskless profile for each station. Blaze does not change Roblox account rules or isolate Windows registry/profile APIs.",12,Muted));
         Buttons(B("Generate portable package",async()=>{
             _destination=dest.Text.Trim();_arguments=args.Text;_mode=(DataMode)mode.SelectedItem;_redirect=redirect.IsChecked==true;_isolate=isolate.IsChecked==true;
             await BuildPackage();
@@ -163,18 +166,17 @@ public sealed class StudioWindow:Window {
     }
     async Task BuildPackage(){
         if(_report==null){MessageBox.Show("Run the application analyzer first.");return;}
-        if(_report.Classification==CompatibilityLevel.HighRiskManualConfiguration||_report.Classification==CompatibilityLevel.Unsupported) {
-            MessageBox.Show("This application has high-risk or unsupported dependencies. The automated builder is blocked.", "Compatibility warning");return;
-        }
         if(MessageBox.Show("Copy the entire source application directory into a new package?\n\nCompatibility: "+_report.Classification+
-            "\n\nThe source is never changed. Output is experimental.","Confirm conversion",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;
+            "\n\nThe source is never changed. Output is experimental and warnings do not guarantee the app will run.","Confirm conversion",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;
         _job?.Cancel();_job=new CancellationTokenSource();
         var bar=new ProgressBar{Minimum=0,Maximum=100,Height=22,Margin=new Thickness(0,8,0,12)};
         _body.Children.Add(bar);var progress=new Progress<int>(v=>{bar.Value=v;Status("Copying and verifying: "+v+"%");});
         try {
             var launcher=Path.Combine(AppContext.BaseDirectory,"BlazePortableLauncher.exe");
             var output=await Task.Run(()=>PackageBuilder.BuildAsync(
-                new ConversionOptions{SourceExecutable=_source,Destination=_destination,Arguments=_arguments,DataMode=_mode,RedirectEnvironmentFolders=_redirect,IsolateExecutablePerClient=_isolate && _mode==DataMode.PerClientWritable},
+                new ConversionOptions{SourceExecutable=_source,Destination=_destination,Arguments=_arguments,DataMode=_mode,
+                    RedirectEnvironmentFolders=_redirect||DisklessSafety.IsRoblox(_source),
+                    IsolateExecutablePerClient=(_isolate||DisklessSafety.IsRoblox(_source)) && _mode==DataMode.PerClientWritable},
                 launcher,progress,_job.Token));
             Status("Complete: "+output);MessageBox.Show("Portable launcher created:\n"+output+"\n\nTest on a clean client before production use.","Build complete");
         }catch(OperationCanceledException){Status("Build cancelled; staging removed.");MessageBox.Show("Build cancelled safely.");}
@@ -227,7 +229,7 @@ public sealed class StudioWindow:Window {
     void Diagnostics(){
         Heading("Diagnostics","Application analysis and build errors appear in the status bar or message dialogs.");
         _body.Children.Add(Card(Box(T("Launcher diagnostics",16,Accent),
-            T("Client logs: %LOCALAPPDATA%\\BlazeGen2\\Packages\\<PackageId>\\Logs\\launcher.log",13,Muted),
+            T("Client logs: %LOCALAPPDATA%\\BlazeGen2\\Clients\\<Computer>\\<Station>\\<PackageId>\\Logs\\launcher.log",13,Muted),
             T("Launcher failure log: %LOCALAPPDATA%\\BlazeGen2\\Errors\\launcher-errors.log",13,Muted))));
     }
     void Error(Exception e){Status("Error: "+e.Message);MessageBox.Show(e.ToString(),"Blaze Gen2 error",MessageBoxButton.OK,MessageBoxImage.Error);}

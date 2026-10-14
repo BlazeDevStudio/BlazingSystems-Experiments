@@ -1,6 +1,6 @@
 # Blaze Gen2 Portable Studio
 
-**v1.1.0 • Experimental • Windows 10/11 x64**
+**v1.2.0 • Experimental candidate • Windows 10/11 x64**
 
 A native Windows desktop utility that builds **best-effort portable copies** of legitimately owned Windows applications. Built for portable utilities, extracted games, and diskless-client deployment experiments.
 
@@ -45,11 +45,11 @@ ExamplePortable/
 
 The Windows GitHub Actions workflow compiles on `windows-2025` using the .NET 10 LTS SDK. See [BUILD.md](BUILD.md) and [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md).
 
-## v1.1.0 diskless safety debug fix
+## Diskless and concurrent launch behavior
 
-The v1.0.0 launcher ran directly from the shared packaged application directory. The v1.1.0 builder defaults **PerClientWritable** packages to client-local execution: each Windows computer/user gets a content-addressed local cache of packaged files verified against FileManifest.json, while the source on the server remains unchanged. The local cache needs enough writable disk space. Files are cached until the package manifest changes; this is not a game updater. No per-client account migration or shared app-state changes are performed.
+The v1.0.0 launcher ran directly from the shared packaged application directory. PerClientWritable packages use a content-addressed local cache of packaged files verified against FileManifest.json, while the source on the server remains unchanged. Roblox packages automatically enable the local cache and station-private APPDATA / LOCALAPPDATA overrides. The local cache needs enough writable disk space and is not a game updater. The launcher no longer holds a package lock for the duration of the game, so a second launch will not be rejected by Blaze or close the first launcher process.
 
-**Roblox is blocked for portable conversion and execution in this experimental release.** Roblox documents [Error 264](https://en.help.roblox.com/hc/en-us/articles/36665660855700-Error-Code-264-Same-account-launched-experience-from-different-devices): the same account cannot enter the same game from multiple devices simultaneously. No generator-side data redirection can disable that service rule. Use the official Roblox client, distinct Roblox accounts and separate Windows profiles per gaming PC. Stop using any old v1.0 portable Roblox packages; v1.1 cannot retroactively protect their launchers.
+**Roblox packaging and launch are enabled as an experiment.** Each diskless client should receive a unique, stable `BLAZE_STATION_ID` from its boot/session manager, a persistent local writable overlay, a separate Windows profile, and a different Roblox account. With `BLAZE_STATION_ID` unset, the computer name is used as the station ID. Blaze copies package files locally and redirects APPDATA / LOCALAPPDATA for Roblox packages; it does not isolate Windows registry hives, Windows Known Folder APIs, browser sign-ins, or Roblox's server-side session rules. Roblox documents [Error 264](https://en.help.roblox.com/hc/en-us/articles/36665660855700-Error-Code-264-Same-account-launched-experience-from-different-devices) for using the same account on multiple devices. Separate accounts and profiles are still required. No actual Roblox client or two-PC diskless test has verified this candidate.
 
 ## Support development
 
@@ -57,7 +57,7 @@ PayPal donation is completely optional. A **DONATE** section is clearly visible 
 
 ## Caveats
 
-This is not an application virtualization engine. It does not capture runtime registry changes, system services, drivers, hidden update dependencies, COM registrations, protected game assets, installers, or universal Known Folder writes. Anti-cheat, activation, licensing, or cloud-dependent applications can fail. Read [COMPATIBILITY.md](COMPATIBILITY.md).
+This is not an application virtualization engine. It does not capture runtime registry changes, system services, drivers, hidden update dependencies, COM registrations, protected game assets, installers, or universal Known Folder writes. Compatibility warnings do not block package creation, but anti-cheat, activation, licensing, or cloud-dependent applications can still fail. Read [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Layout
 

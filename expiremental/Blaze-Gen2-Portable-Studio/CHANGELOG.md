@@ -1,4 +1,12 @@
 # Changelog
+## Unreleased 1.2.0 (Roblox concurrent station launch)
+- Roblox is no longer rejected by analysis, package generation, or the launcher. Compatibility warnings remain visible; unsupported dependencies no longer prevent the user from building a package.
+- Roblox packages automatically use per-client writable state, a verified local executable cache, and station-private APPDATA / LOCALAPPDATA overrides.
+- Client writable data paths now include `BLAZE_STATION_ID` (fallback: computer name), allowing diskless boot managers to assign stable unique station identities to cloned images.
+- Removed the exclusive lock held for the entire application lifetime. Launching a second instance no longer makes Blaze refuse to run it or close the first instance.
+- Added Windows integration coverage for two simultaneous Roblox-named fixtures, independent station folders, and concurrent instances from the same station.
+- Real Roblox service behavior, Windows registry/profile isolation, and two physical diskless PCs remain unverified; Blaze does not bypass Roblox account/session policy.
+
 ## 1.1.0 (Experimental — diskless isolation / session safety)
 - Per-client copy of application binaries into local client cache before process launch, content-addressed by bundled SHA256 manifest; separated per machine and Windows user.
 - New manifest generated and verified; failures fail closed and clean incomplete staging.

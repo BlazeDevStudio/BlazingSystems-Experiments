@@ -18,6 +18,7 @@ class Tests {
         if(args.Length!=3)throw new ArgumentException("Pass SyntheticApp.exe, BlazePortableLauncher.exe, Create.exe");
         foreach(var file in args)Pe(file);
         var home=Path.Combine(Path.GetTempPath(),"Blaze Gen2 QA "+Guid.NewGuid().ToString("N"));
+        var externalClientRoots=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var source=Path.Combine(home,"Program with spaces ü");var release=Path.Combine(home,"Portable Test Package");
         Directory.CreateDirectory(source);
         try {
@@ -113,18 +114,80 @@ class Tests {
                 "Failed local mirror cleanup removes staging");
             var robloxRoot=Path.Combine(home,"Roblox");
             Directory.CreateDirectory(robloxRoot);
+            var robloxResources=Path.Combine(robloxRoot,"Resources");Directory.CreateDirectory(robloxResources);
+            File.WriteAllText(Path.Combine(robloxResources,"test.txt"),"synthetic Roblox fixture");
             var mockRoblox=Path.Combine(robloxRoot,"RobloxPlayerBeta.exe");
             File.Copy(args[0],mockRoblox);
             var rb=Analyzer.Analyze(mockRoblox);
-            Check(rb.Classification==CompatibilityLevel.Unsupported,"Roblox candidate explicitly classified unsupported");
-            var blocked=false;var shouldNotExist=Path.Combine(home,"Rejected Roblox Package");
+            Check(rb.Classification!=CompatibilityLevel.Unsupported,"Roblox can proceed with a compatibility warning");
+            Check(rb.Warnings.Any(w=>w.Contains("Roblox",StringComparison.OrdinalIgnoreCase)),"Roblox portability limitations remain visible");
+            var robloxPackage=Path.Combine(home,"Roblox Concurrent Package");
+            var robloxLaunch=await PackageBuilder.BuildAsync(new ConversionOptions{
+                SourceExecutable=mockRoblox,Destination=robloxPackage,DataMode=DataMode.PerClientWritable,
+                IsolateExecutablePerClient=false
+            },args[1]);
+            var robloxConfig=PortableConfig.Load(Path.Combine(robloxPackage,"PortableConfig.json"));
+            Check(robloxConfig.IsolateExecutablePerClient&&robloxConfig.DataMode==DataMode.PerClientWritable,
+                "Roblox packages force per-station local binaries and data");
+            Check(robloxConfig.RedirectEnvironmentFolders,"Roblox packages isolate APPDATA and LOCALAPPDATA by station");
+            robloxConfig.Environment["BLAZE_TEST_HOLD"]="1";
+            robloxConfig.Save(Path.Combine(robloxPackage,"PortableConfig.json"));
+            string ClientRoot(string id) {
+                var prior=Environment.GetEnvironmentVariable("BLAZE_STATION_ID");
+                try {Environment.SetEnvironmentVariable("BLAZE_STATION_ID",id);return DisklessSafety.ClientDataRoot(robloxConfig);}
+                finally {Environment.SetEnvironmentVariable("BLAZE_STATION_ID",prior);}
+            }
+            var stationA="qa-station-a";var stationB="qa-station-b";
+            var stateA=ClientRoot(stationA);var stateB=ClientRoot(stationB);
+            externalClientRoots.Add(stateA);externalClientRoots.Add(stateB);
+            Check(stateA!=stateB,"Diskless station IDs produce separate Roblox data roots");
+            var infoA=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoA.Environment["BLAZE_STATION_ID"]=stationA;
+            var infoB=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoB.Environment["BLAZE_STATION_ID"]=stationB;
+            using var robloxA=Process.Start(infoA)??throw new Exception("Could not launch station A fixture");
+            using var robloxB=Process.Start(infoB)??throw new Exception("Could not launch station B fixture");
             try {
-                await PackageBuilder.BuildAsync(new ConversionOptions{SourceExecutable=mockRoblox,Destination=shouldNotExist},args[1]);
-            }catch(NotSupportedException){blocked=true;}
-            Check(blocked&&!Directory.Exists(shouldNotExist),"Roblox multi-PC portable packaging safely blocked");
-            Check(File.Exists(mockRoblox),"Blocked Roblox source is never modified");
+                var runningA=Path.Combine(stateA,"Concurrent");var runningB=Path.Combine(stateB,"Concurrent");
+                var deadline=DateTime.UtcNow.AddSeconds(10);
+                while(DateTime.UtcNow<deadline&&(!Directory.Exists(runningA)||!Directory.GetFiles(runningA,stationA+"-*.ready").Any()||
+                    !Directory.Exists(runningB)||!Directory.GetFiles(runningB,stationB+"-*.ready").Any()))await Task.Delay(50);
+                Check(Directory.Exists(runningA)&&Directory.GetFiles(runningA,stationA+"-*.ready").Any()&&
+                    Directory.Exists(runningB)&&Directory.GetFiles(runningB,stationB+"-*.ready").Any(),
+                    "Two Roblox package instances start simultaneously with separate station state");
+                Check(!robloxA.HasExited&&!robloxB.HasExited,"Launching station B does not close station A");
+                var readyA=Directory.GetFiles(runningA,stationA+"-*.ready").Single();
+                var readyB=Directory.GetFiles(runningB,stationB+"-*.ready").Single();
+                var envA=File.ReadAllLines(readyA);var envB=File.ReadAllLines(readyB);
+                Check(envA.Length==2&&envB.Length==2&&envA[0]!=envB[0]&&envA[1]!=envB[1],
+                    "Roblox process environment folders are isolated per station");
+                await Task.WhenAll(robloxA.WaitForExitAsync(),robloxB.WaitForExitAsync());
+                Check(robloxA.ExitCode==0&&robloxB.ExitCode==0,"Both concurrent Roblox fixtures exit normally");
+            } finally {
+                if(!robloxA.HasExited)robloxA.Kill(entireProcessTree:true);
+                if(!robloxB.HasExited)robloxB.Kill(entireProcessTree:true);
+            }
+            var sharedStation="qa-station-repeat";var sharedRoot=ClientRoot(sharedStation);externalClientRoots.Add(sharedRoot);
+            var infoC1=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoC1.Environment["BLAZE_STATION_ID"]=sharedStation;
+            var infoC2=new ProcessStartInfo(robloxLaunch){UseShellExecute=false};infoC2.Environment["BLAZE_STATION_ID"]=sharedStation;
+            using var robloxC1=Process.Start(infoC1)??throw new Exception("Could not launch first same-station fixture");
+            using var robloxC2=Process.Start(infoC2)??throw new Exception("Could not launch second same-station fixture");
+            try {
+                var sharedReady=Path.Combine(sharedRoot,"Concurrent");
+                var deadline=DateTime.UtcNow.AddSeconds(10);
+                while(DateTime.UtcNow<deadline&&(!Directory.Exists(sharedReady)||Directory.GetFiles(sharedReady,"*.ready").Length<2))await Task.Delay(50);
+                Check(Directory.Exists(sharedReady)&&Directory.GetFiles(sharedReady,"*.ready").Length>=2,
+                    "The launcher permits two live app instances from the same station");
+                Check(!robloxC1.HasExited&&!robloxC2.HasExited,"A second launch does not terminate the first launch");
+                await Task.WhenAll(robloxC1.WaitForExitAsync(),robloxC2.WaitForExitAsync());
+            } finally {
+                if(!robloxC1.HasExited)robloxC1.Kill(entireProcessTree:true);
+                if(!robloxC2.HasExited)robloxC2.Kill(entireProcessTree:true);
+            }
+            Check(File.Exists(mockRoblox),"Roblox source files are never modified");
             Console.WriteLine("ALL "+successes+" CHECKS PASSED");
-        } finally {try{Directory.Delete(home,true);}catch(IOException){}}
+        } finally {
+            foreach(var clientRoot in externalClientRoots)try{if(Directory.Exists(clientRoot))Directory.Delete(clientRoot,true);}catch(IOException){}
+            try{Directory.Delete(home,true);}catch(IOException){}
+        }
     }
 }
 

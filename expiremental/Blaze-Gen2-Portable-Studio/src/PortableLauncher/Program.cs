@@ -11,9 +11,6 @@ static class Program {
             var app=Paths.Inside(baseDir,config.AppDirectory);
             if(!Directory.Exists(app))throw new DirectoryNotFoundException("Packaged application directory missing.");
             var executable=ChooseExecutable(app,config);
-            DisklessSafety.RejectUnverifiedRoblox(executable);
-            if(Directory.EnumerateFiles(app,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any())
-                throw new NotSupportedException("Roblox game client detected; use official per-client installation.");
             if(!File.Exists(executable))throw new FileNotFoundException("Target executable missing",executable);
             foreach(var file in config.RequiredFiles)if(!File.Exists(Paths.Inside(app,file)))throw new FileNotFoundException("Required file missing",file);
             string data;
@@ -42,28 +39,30 @@ static class Program {
                 app=localApp;
                 if(!File.Exists(executable))throw new FileNotFoundException("Local isolated executable missing",executable);
             }
-            // Per-PC user-specific lock; other clients on the server cannot interfere with this handle.
-            using var sessionLock=new FileStream(Path.Combine(data,"session.lock"),FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None);
             var work=Path.GetDirectoryName(executable)!;
             if(config.VersionStrategy==VersionStrategy.FixedExecutable && config.WorkingDirectory!=".")
                 work=Paths.Inside(app,config.WorkingDirectory);
             if(!Directory.Exists(work))throw new DirectoryNotFoundException("Working directory missing: "+work);
             var start=new ProcessStartInfo(executable){WorkingDirectory=work,UseShellExecute=false,Arguments=config.Arguments};
-            start.Environment["BLAZE_PORTABLE_DATA"]=data;
-            if(config.RedirectEnvironmentFolders) {
-                var roam=Path.Combine(data,"Roaming");var local=Path.Combine(data,"Local");Directory.CreateDirectory(roam);Directory.CreateDirectory(local);
-                start.Environment["APPDATA"]=roam;start.Environment["LOCALAPPDATA"]=local;
-            }
             foreach(var kv in config.Environment) {
                 if(string.IsNullOrWhiteSpace(kv.Key)||kv.Key.Contains('=')||kv.Key.Contains('\0'))throw new InvalidDataException("Invalid environment variable name.");
                 start.Environment[kv.Key]=kv.Value.Replace("{DATA}",data).Replace("{APP}",app);
+            }
+            // These launcher-managed station paths override package custom variables so
+            // diskless clients cannot accidentally re-share Roblox's writable folders.
+            start.Environment["BLAZE_PORTABLE_DATA"]=data;
+            start.Environment["BLAZE_STATION_ID"]=DisklessSafety.SafeStationId();
+            if(config.RedirectEnvironmentFolders) {
+                var roam=Path.Combine(data,"Roaming");var local=Path.Combine(data,"Local");Directory.CreateDirectory(roam);Directory.CreateDirectory(local);
+                start.Environment["APPDATA"]=roam;start.Environment["LOCALAPPDATA"]=local;
             }
             File.AppendAllText(log,DateTimeOffset.UtcNow.ToString("O")+" starting "+executable+Environment.NewLine);
             using var process=Process.Start(start)??throw new InvalidOperationException("Process did not start.");
             process.WaitForExit();var exit=process.ExitCode;
             File.AppendAllText(log,DateTimeOffset.UtcNow.ToString("O")+" exit "+exit+Environment.NewLine);
-            // Temporary directories may be held by child processes: do not delete live state.
-            // Session lock is disposed at method exit; cleanup is best-effort only.
+            // The launcher intentionally does not hold an exclusive per-package lock while
+            // the app runs: separate station sessions must be able to launch concurrently.
+            // Temporary directories may be held by child processes, so cleanup is deferred.
             return exit;
         } catch(Exception e) {
             try {

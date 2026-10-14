@@ -10,6 +10,15 @@ static class Program {
             if(!File.Exists(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")))return 10;
             if(!args.Contains("--synthetic-argument"))return 12;
             Directory.CreateDirectory(data);
+            if(Environment.GetEnvironmentVariable("BLAZE_TEST_HOLD")=="1") {
+                var running=Path.Combine(data,"Concurrent");Directory.CreateDirectory(running);
+                var station=Environment.GetEnvironmentVariable("BLAZE_STATION_ID")??"unknown";
+                var ready=Path.Combine(running,station+"-"+Environment.ProcessId+".ready");
+                File.WriteAllText(ready,Environment.GetEnvironmentVariable("APPDATA")+"\n"+Environment.GetEnvironmentVariable("LOCALAPPDATA"));
+                Thread.Sleep(4000);
+                File.Delete(ready);
+                return 0;
+            }
             File.WriteAllText(Path.Combine(data,"test-result.txt"),File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Resources","test.txt")));
             using var child=Process.Start(new ProcessStartInfo(Environment.ProcessPath!,"--child"){UseShellExecute=false});
             if(child==null)return 14;
