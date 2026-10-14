@@ -4,7 +4,11 @@ The static assessment has five classification values. **FullyPortableCandidate**
 
 ## v1.1 network-session advisory
 
-On diskless clients, v1.1 can copy executable files into a per-client local cache before launch, and uses local per-machine/user writable data rather than a server-wide shared Data directory. This addresses file-level cross-client interference for ordinary applications that are portable with this mechanism. It **does not** isolate third-party online accounts, system registry state, machine services, browser login, Windows Known Folder APIs, or backend account sessions. Explicitly block untested Roblox portable launches. Roblox [official Error 264 documentation](https://en.help.roblox.com/hc/en-us/articles/36665660855700-Error-Code-264-Same-account-launched-experience-from-different-devices) explains simultaneous same-account use.
+On diskless clients, this development branch copies executable files into a per-station local cache and redirects child-process APPDATA / LOCALAPPDATA to per-station roots. Roblox is allowed through the builder, with automatic isolation and a warning. This is experimental source behavior; the published v1.1.0 binaries still block Roblox, and synthetic fixtures do not establish real Roblox compatibility.
+
+A deployment must assign each physical PC a unique Windows computer name or `BLAZE_STATION_ID`, and persist its own local Windows profile overlay across reboots. The user profile and HKCU hive must not be shared between PCs. Sign in to a different Roblox account at each station. Roblox documents [Error 264](https://en.help.roblox.com/hc/en-us/articles/36665660855700-Error-Code-264-Same-account-launched-experience-from-different-devices) when the same account joins the same game from multiple devices.
+
+These launcher settings only provide environment-variable redirection and a private client copy. They do not virtualize the Windows registry, intercept every Known Folder API, or guarantee account isolation if the diskless system shares profile state.
 
 ## In scope (experimental)
 Files copied from one selected application subtree; directly imported DLL names where PE import directory is parseable; opt-in environment variables; relative launch paths; per-user writable data paths; version-directory selection by parseable numeric version folders and presence of executable.
