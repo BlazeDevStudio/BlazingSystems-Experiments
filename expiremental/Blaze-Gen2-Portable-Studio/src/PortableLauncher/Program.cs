@@ -11,10 +11,17 @@ static class Program {
             var app=Paths.Inside(baseDir,config.AppDirectory);
             if(!Directory.Exists(app))throw new DirectoryNotFoundException("Packaged application directory missing.");
             var executable=ChooseExecutable(app,config);
-            DisklessSafety.RejectUnverifiedRoblox(executable);
-            if(Directory.EnumerateFiles(app,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any())
-                throw new NotSupportedException("Roblox game client detected; use official per-client installation.");
             if(!File.Exists(executable))throw new FileNotFoundException("Target executable missing",executable);
+            var roblox=DisklessSafety.RequiresStationIsolation(executable)
+                ||DisklessSafety.RequiresStationIsolation(app)
+                ||Directory.EnumerateFiles(app,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any();
+            if(roblox) {
+                // Never reuse package-level writable state for Roblox. Each station gets its own app-data root and cache.
+                config.IsolateExecutablePerClient=true;
+                config.RedirectEnvironmentFolders=true;
+                config.DataMode=DataMode.PerClientWritable;
+                config.WritableDataRoot=null;
+            }
             foreach(var file in config.RequiredFiles)if(!File.Exists(Paths.Inside(app,file)))throw new FileNotFoundException("Required file missing",file);
             string data;
             switch(config.DataMode) {
@@ -51,13 +58,16 @@ static class Program {
             var start=new ProcessStartInfo(executable){WorkingDirectory=work,UseShellExecute=false,Arguments=config.Arguments};
             start.Environment["BLAZE_PORTABLE_DATA"]=data;
             if(config.RedirectEnvironmentFolders) {
-                var roam=Path.Combine(data,"Roaming");var local=Path.Combine(data,"Local");Directory.CreateDirectory(roam);Directory.CreateDirectory(local);
+                var roam=DisklessSafety.ProfileAppData(data,"Roaming");
+                var local=DisklessSafety.ProfileAppData(data,"Local");
+                Directory.CreateDirectory(roam);Directory.CreateDirectory(local);
                 start.Environment["APPDATA"]=roam;start.Environment["LOCALAPPDATA"]=local;
             }
             foreach(var kv in config.Environment) {
                 if(string.IsNullOrWhiteSpace(kv.Key)||kv.Key.Contains('=')||kv.Key.Contains('\0'))throw new InvalidDataException("Invalid environment variable name.");
                 start.Environment[kv.Key]=kv.Value.Replace("{DATA}",data).Replace("{APP}",app);
             }
+            if(roblox)File.AppendAllText(log,DateTimeOffset.UtcNow.ToString("O")+" Roblox station isolation active; use a separate Roblox account on this station."+Environment.NewLine);
             File.AppendAllText(log,DateTimeOffset.UtcNow.ToString("O")+" starting "+executable+Environment.NewLine);
             using var process=Process.Start(start)??throw new InvalidOperationException("Process did not start.");
             process.WaitForExit();var exit=process.ExitCode;
