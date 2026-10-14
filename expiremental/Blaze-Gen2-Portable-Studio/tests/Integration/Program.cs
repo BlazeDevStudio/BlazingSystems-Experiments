@@ -116,13 +116,17 @@ class Tests {
             var mockRoblox=Path.Combine(robloxRoot,"RobloxPlayerBeta.exe");
             File.Copy(args[0],mockRoblox);
             var rb=Analyzer.Analyze(mockRoblox);
-            Check(rb.Classification==CompatibilityLevel.Unsupported,"Roblox candidate explicitly classified unsupported");
-            var blocked=false;var shouldNotExist=Path.Combine(home,"Rejected Roblox Package");
-            try {
-                await PackageBuilder.BuildAsync(new ConversionOptions{SourceExecutable=mockRoblox,Destination=shouldNotExist},args[1]);
-            }catch(NotSupportedException){blocked=true;}
-            Check(blocked&&!Directory.Exists(shouldNotExist),"Roblox multi-PC portable packaging safely blocked");
-            Check(File.Exists(mockRoblox),"Blocked Roblox source is never modified");
+            Check(rb.Classification!=CompatibilityLevel.Unsupported,"Roblox candidate remains available with an isolation warning");
+            var robloxPackage=Path.Combine(home,"Roblox Station Package");
+            var robloxLaunch=await PackageBuilder.BuildAsync(new ConversionOptions{
+                SourceExecutable=mockRoblox,Destination=robloxPackage,Arguments="--synthetic-argument",
+                DataMode=DataMode.PerClientWritable,IsolateExecutablePerClient=true
+            },args[1]);
+            var robloxConfig=PortableConfig.Load(Path.Combine(robloxPackage,"PortableConfig.json"));
+            Check(robloxConfig.IsolateExecutablePerClient,"Roblox package forces client-local application files");
+            Check(robloxConfig.RedirectEnvironmentFolders,"Roblox package forces private app-data environment roots");
+            Check(Run(robloxLaunch)==0,"Roblox-named official-client fixture starts without a product block");
+            Check(File.Exists(mockRoblox),"Packaging retains the original Roblox client source");
             Console.WriteLine("ALL "+successes+" CHECKS PASSED");
         } finally {try{Directory.Delete(home,true);}catch(IOException){}}
     }
