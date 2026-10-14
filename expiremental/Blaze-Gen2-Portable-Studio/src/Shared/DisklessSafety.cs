@@ -63,14 +63,17 @@ public sealed class PackageManifest {
 public static class ClientIsolation {
     /// <summary>Creates or reuses a local, content-addressed, per-user-per-PC copy of package files.</summary>
     public static string Prepare(string packageRoot,string appRoot,PortableConfig cfg,string localData) {
-        if(!cfg.IsolateExecutablePerClient)return appRoot;
+        var roblox=DisklessSafety.RequiresStationIsolation(appRoot)
+            ||Directory.EnumerateFiles(appRoot,"RobloxPlayer*.exe",SearchOption.AllDirectories).Any();
+        if(!cfg.IsolateExecutablePerClient&&!roblox)return appRoot;
         if(DisklessSafety.IsNetworkPath(localData))
             throw new IOException("Client data folder must be physically local, not SMB/UNC.");
         var manifestFile=Path.Combine(packageRoot,"FileManifest.json");
-        if(!File.Exists(manifestFile))throw new InvalidDataException("Client-local execution needs FileManifest.json.");
-        var manifest=PackageManifest.Load(manifestFile);
+        var hasManifest=File.Exists(manifestFile);
+        var manifest=hasManifest?PackageManifest.Load(manifestFile):CreateManifest(appRoot);
         if(manifest.SchemaVersion!=1||manifest.Files.Count<1)throw new InvalidDataException("Invalid manifest.");
-        var fingerprint=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(manifestFile))).ToLowerInvariant();
+        var manifestBytes=hasManifest?File.ReadAllBytes(manifestFile):JsonSerializer.SerializeToUtf8Bytes(manifest);
+        var fingerprint=Convert.ToHexString(SHA256.HashData(manifestBytes)).ToLowerInvariant();
         var cacheBase=Path.Combine(localData,"AppCache");
         Directory.CreateDirectory(cacheBase);
         // FileShare.None: only one launcher in this Windows user/machine sandbox at a time.
@@ -105,6 +108,20 @@ public static class ClientIsolation {
         } finally {
             if(Directory.Exists(staging))Directory.Delete(staging,true);
         }
+    }
+    static PackageManifest CreateManifest(string appRoot) {
+        // Legacy packages have no builder manifest. Snapshot and hash their files before making a station-local copy.
+        var manifest=new PackageManifest();
+        foreach(var file in Directory.EnumerateFiles(appRoot,"*",SearchOption.AllDirectories)
+            .OrderBy(x=>Path.GetRelativePath(appRoot,x),StringComparer.OrdinalIgnoreCase)) {
+            if(Paths.IsLink(file))throw new IOException("Application contains a linked file: "+file);
+            using var input=File.OpenRead(file);
+            manifest.Files.Add(new FileManifestEntry{
+                RelativePath=Path.GetRelativePath(appRoot,file).Replace('\\','/'),
+                Size=input.Length,Sha256=Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant()
+            });
+        }
+        return manifest;
     }
 }
 
