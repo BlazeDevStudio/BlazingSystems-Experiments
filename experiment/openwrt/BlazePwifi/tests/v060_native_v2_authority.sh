@@ -57,11 +57,20 @@ runtime_run() {
 }
 runtime_digest() { sha256sum "$RT/ledger.tsv" | cut -d' ' -f1; }
 runtime_before="$(runtime_digest)"
-[ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'COMMIT\t140')" ]
-runtime_committed="$(runtime_digest)"
-[ "$runtime_committed" != "$runtime_before" ]
-[ "$(runtime_run ctrlOne 1 ctrlOne:1 AM alice - 40 1000)" = "$(printf 'REPLAY\t140')" ]
-[ "$(runtime_digest)" = "$runtime_committed" ]
+# A deployable profile without admitted independent freshness and a protected
+# response signer must not ACK or mutate, including when a request is replayed.
+runtime_refuse() {
+  before="$(runtime_digest)"
+  if runtime_run "$@" >"$T/runtime-refused" 2>"$T/runtime-refused-error"; then
+    echo 'runtime authority committed without admitted trust adapters' >&2; exit 1
+  fi
+  [ ! -s "$T/runtime-refused" ] && [ "$(runtime_digest)" = "$before" ] || {
+    echo 'runtime authority ACKed or mutated without admitted trust adapters' >&2; exit 1;
+  }
+}
+runtime_refuse ctrlOne 1 ctrlOne:1 AM alice - 40 1000
+runtime_refuse ctrlOne 1 ctrlOne:1 AM alice - 40 1000
+[ "$(runtime_digest)" = "$runtime_before" ]
 # Fixture-domain controller signatures must never enter the installed
 # runtime request namespace, even when every other field is identical.
 fixture_sig="$(sign ctrlOne 2 ctrlOne:2 AM alice - 7 1000)"
@@ -71,25 +80,26 @@ if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 7 1000 "$fixture_sig" \
 fi
 [ ! -s "$T/runtime-fixture-domain" ] &&
   [ "$(runtime_digest)" = "$runtime_committed" ]
-# Model a response lost after the authority has committed: drop the first
-# response, then retry the identical production-domain signed request.
-runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000 >"$T/runtime-lost-ack"
-runtime_after_lost_ack="$(runtime_digest)"
-[ "$(runtime_run ctrlOne 2 ctrlOne:2 AM alice - 7 1000)" = "$(printf 'REPLAY\t147')" ]
-[ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
-# Production binaries must not emit either fixture HMAC ACK format.
+# Both unsigned mode and the software HMAC fixture mode remain unavailable in
+# the deployable profile. Missing a response signer must fail before commit.
 signed="$(sign ctrlOne 3 ctrlOne:3 AM alice - 10 1000)"
 if "$T/runtime" "$RT" ctrlOne 3 ctrlOne:3 AM alice - 10 1000 "$signed" \
     --authenticated-ack >"$T/runtime-ack" 2>"$T/runtime-ack-error"; then
   echo 'runtime profile accepted fixture ACK mode' >&2; exit 1
 fi
-[ ! -s "$T/runtime-ack" ] && [ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
+[ ! -s "$T/runtime-ack" ] && [ "$(runtime_digest)" = "$runtime_before" ]
+signed="$(sign_runtime ctrlOne 2 ctrlOne:2 AM alice - 7 1000)"
+if "$T/runtime" "$RT" ctrlOne 2 ctrlOne:2 AM alice - 7 1000 "$signed" \
+    --server-ack-v2 >"$T/runtime-server-ack" 2>"$T/runtime-server-ack-error"; then
+  echo 'runtime profile committed using an unprotected software ACK key' >&2; exit 1
+fi
+[ ! -s "$T/runtime-server-ack" ] && [ "$(runtime_digest)" = "$runtime_before" ]
 # Production authority builds are path-bound and cannot target arbitrary data.
 if "$T/runtime" /etc ctrlOne 3 ctrlOne:3 AM alice - 10 1000 "$signed" \
     >"$T/runtime-external" 2>&1; then
   echo 'runtime profile accepted a non-authority state path' >&2; exit 1
 fi
-[ ! -s "$T/runtime-external" ] && [ "$(runtime_digest)" = "$runtime_after_lost_ack" ]
+[ ! -s "$T/runtime-external" ] && [ "$(runtime_digest)" = "$runtime_before" ]
 # Corrupt financial state is never repaired or acknowledged by the runtime.
 printf 'corrupt\n' >>"$RT/ledger.tsv"
 corrupt_digest="$(runtime_digest)"

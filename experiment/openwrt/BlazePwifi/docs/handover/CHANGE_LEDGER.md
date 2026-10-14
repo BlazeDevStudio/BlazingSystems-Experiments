@@ -1,3 +1,12 @@
+## PAY-0746 — runtime profile admission interlock, 2026-10-14 Asia/Manila
+
+- **Status:** in_progress; P0 #31/#32. Isolated PR #89 branch `pay-0743-installed-v2-authority`; start HEAD `6338658b34c8af3473fad518810d5b75af4f8cb8`.
+- **Confirmed source gap:** `BLAZE_RUNTIME_AUTHORITY` accepted authenticated transactions and committed with plain `COMMIT/REPLAY`; `--server-ack-v2` used a software HMAC response in `BLAZE-V2-SERVER-ACK-FIXTURE/1`. No production independent freshness witness or protected P-256 response signer is called by the runtime. Vendo CGI still denies v2 actions before financial mutation.
+- **Files:** test-first regression in `tests/v060_native_v2_authority.sh`; implementation pending in `tools/v060_journal_authority_native.c` and its byte-identical package copy `openwrt/paid-authority/src/v060_journal_authority.c`.
+- **Test plan:** deployable runtime profile must refuse both a fresh request and its replay with no stdout ACK and identical ledger SHA; no signer mode may commit. Existing fixture profile retains positive commit/replay, partial-write, lost-ACK, replay, and corruption cases. Exact CI results pending. Local Windows host lacks Bash, C compiler and OpenSSL, so cannot claim local executable test; use focused GitHub native-journal workflow and inspect exact commit SHA.
+- **Limit/rollback:** this closes an unsafe admission path but does not implement witness or P-256 adapters, route installed member/rental operations, provide physical durability, migrate v1, or authorize production. Revert only these isolated source/tests if required; never modify customer state. No release action.
+- **NEXT ACTION:** run the changed native authority regression on exact source SHA; only after observing the expected pre-fix red, add a runtime-profile guard before reading/mutating the ledger and verify fixture-positive coverage remains green.
+
 ## PAY-0745 docs-checkpoint CI retry, 2026-10-14 Asia/Manila
 
 - On exact docs checkpoint head `168d7e88e7152619d33dc6a46b39021adcef134d`: native #38585367424 SUCCESS; SDK #38585367462 SUCCESS; Full #38585367546 concluded SUCCESS after retry attempt 2.
