@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "../esp/common/v060_pending_sequence.h"
+#include "../esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h"
 
 int main(void) {
     BpPendingSequence s;

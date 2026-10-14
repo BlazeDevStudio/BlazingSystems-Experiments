@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADER = (ROOT / "esp/common/v060_pending_sequence.h").read_text(encoding="utf-8")
+HEADER = (ROOT / "esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h").read_text(encoding="utf-8")
 FIRMWARE = [
     ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
     ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
@@ -9,7 +9,7 @@ FIRMWARE = [
 
 for source in FIRMWARE:
     text = source.read_text(encoding="utf-8")
-    assert '#include "../../common/v060_pending_sequence.h"' in text
+    assert "#include <v060_pending_sequence.h>" in text
     assert "BpPendingSequence pendingSequenceState;" in text
     assert "bp_pending_sequence_reserve" in text
     assert "bp_pending_sequence_commit" in text

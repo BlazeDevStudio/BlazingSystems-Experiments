@@ -4,7 +4,7 @@
 #include <EEPROM.h>
 #include <LittleFS.h>
 #include <bearssl/bearssl_hash.h>
-#include "../../common/v060_pending_sequence.h"
+#include <v060_pending_sequence.h>
 
 struct ConfigV1 {
   uint32_t magic;

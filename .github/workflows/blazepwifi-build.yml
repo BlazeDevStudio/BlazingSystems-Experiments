@@ -387,7 +387,7 @@ jobs:
       - name: Compile BlazePwifi Vendo
         run: |
           mkdir -p experiment/openwrt/BlazePwifi/dist/esp8266
-          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
           cp experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino experiment/openwrt/BlazePwifi/dist/esp8266/
           (cd experiment/openwrt/BlazePwifi/dist/esp8266 && sha256sum * > SHA256SUMS)
       - uses: actions/upload-artifact@v4
@@ -434,7 +434,7 @@ jobs:
       - name: Compile BlazePwifi Vendo ESP32
         run: |
           mkdir -p experiment/openwrt/BlazePwifi/dist/esp32
-          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
           cp experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino experiment/openwrt/BlazePwifi/dist/esp32/
           (cd experiment/openwrt/BlazePwifi/dist/esp32 && sha256sum * > SHA256SUMS)
       - uses: actions/upload-artifact@v4

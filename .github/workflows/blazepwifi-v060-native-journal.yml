@@ -8,7 +8,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
-      - 'experiment/openwrt/BlazePwifi/esp/common/v060_pending_sequence.h'
+      - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.*'
@@ -23,7 +23,7 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
-      - 'experiment/openwrt/BlazePwifi/esp/common/v060_pending_sequence.h'
+      - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.*'

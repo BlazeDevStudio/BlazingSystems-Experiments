@@ -5,7 +5,7 @@
 #include <LittleFS.h>
 #include <mbedtls/sha256.h>
 #include <esp_system.h>
-#include "../../common/v060_pending_sequence.h"
+#include <v060_pending_sequence.h>
 
 struct Config {
   String ssid, pass, server, key, id, apPass;
