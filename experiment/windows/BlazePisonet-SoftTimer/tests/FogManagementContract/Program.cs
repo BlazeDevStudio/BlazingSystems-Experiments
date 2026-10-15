@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using BlazePisonet.SoftTimer;
 
 static void Check(bool value, string name)
@@ -76,7 +77,7 @@ using (var fog = new FogManagementClient("https://fog.example",
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
     Check(legacy.PairRequests == 5 && legacy.BearerRequests == 0, "legacy token pair and active task preflight");
-    Check(legacy.LastBody.Contains("\"taskType\":\"1\""), "FOG 1.5 deploy body");
+    Check(legacy.LastBody.Contains("\"taskTypeID\":\"1\""), "FOG 1.5 deploy body");
 }
 
 var unknown = new FakeFog { Version = "unknown" };
@@ -201,6 +202,11 @@ sealed class FakeFog : HttpMessageHandler
         if (request.Method == HttpMethod.Post && path == "/fog/host/7/task")
         {
             LastBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            using var body = JsonDocument.Parse(LastBody);
+            if (!body.RootElement.TryGetProperty("taskTypeID", out var taskType) ||
+                taskType.ValueKind != JsonValueKind.String || taskType.GetString() != "1" ||
+                body.RootElement.EnumerateObject().Count() != 1)
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
             Deployments++;
             if (LostDeploymentResponse)
             {

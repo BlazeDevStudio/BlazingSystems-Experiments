@@ -100,8 +100,7 @@ public sealed class FogManagementClient : IDisposable
         var info = await GetServerInfoAsync(cancellationToken);
         string property = info.Major switch
         {
-            1 when info.Minor >= 6 => "taskTypeID",
-            1 when info.Minor == 5 => "taskType",
+            1 when info.Minor >= 5 => "taskTypeID",
             _ => throw new InvalidOperationException("FOG version is unknown; deployment is disabled.")
         };
         await EnsureNoActiveTaskAsync(hostId, cancellationToken);

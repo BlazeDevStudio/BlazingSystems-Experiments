@@ -18,7 +18,7 @@ This is an imaging manager, not proof of live diskless Windows boot. Diskless cl
 
 The Diskless page can generate a per-client DHCP option 017 iSCSI root path and an iPXE `sanboot` script with a distinct initiator IQN. It validates the target address and IQNs and performs no DHCP, PXE, iSCSI, or Windows configuration. The operator must provision a dedicated writable target, bind its access controls to the intended client, and validate actual boot and recovery on approved hardware. The generated profile is a configuration aid, not a claim that diskless boot works on an untested Windows client.
 
-Primary references: [FOG 1.6 API](https://docs.fogproject.org/en/latest/1.6/kb/integrations/api/), [FOG 1.5 API](https://docs.fogproject.org/en/stable/development/api.html), [Microsoft iSCSI boot](https://learn.microsoft.com/en-us/windows-server/storage/iscsi/iscsi-boot-overview), [iPXE WDS and iSCSI](https://ipxe.org/howto/wds_iscsi), [iPXE `sanboot`](https://ipxe.org/cmd/sanboot), [iPXE initiator IQN](https://ipxe.org/cfg/initiator-iqn).
+Primary references: [FOG 1.6 API](https://docs.fogproject.org/en/latest/1.6/kb/integrations/api/), [FOG 1.5 API](https://docs.fogproject.org/en/latest/1.5/kb/integrations/api/), [Microsoft iSCSI boot](https://learn.microsoft.com/en-us/windows-server/storage/iscsi/iscsi-boot-overview), [iPXE WDS and iSCSI](https://ipxe.org/howto/wds_iscsi), [iPXE `sanboot`](https://ipxe.org/cmd/sanboot), [iPXE initiator IQN](https://ipxe.org/cfg/initiator-iqn). Both documented FOG versions require the `taskTypeID` deployment body key; the fake-server contract rejects any other key.
 
 ## Core operating modes
 
