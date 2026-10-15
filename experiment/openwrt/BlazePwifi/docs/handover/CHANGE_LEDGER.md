@@ -2314,3 +2314,8 @@
 
 - Current [FOG 1.5 API](https://docs.fogproject.org/en/latest/1.5/kb/integrations/api/) explicitly requires JSON 	askTypeID on /fog/host/<id>/task and reports that 	askType yields 404. Existing preview used the wrong 1.5 key, despite a permissive fake-server test.
 - Candidate changes the adapter to 	askTypeID for supported 1.5 and 1.6, makes the fake server reject wrong fields without counting a deployment, and updates the primary reference. No customer FOG or storage server contacted. Exact merge head d8e197a43a60101a717bf18c8929f307184fa0bb Windows #38737579237 SUCCESS; Full #38738006528 SUCCESS. Candidate uncommitted and CI unverified. Next: finish merge-head Full, commit/push scoped change, verify exact Windows CI and leave PR #90 open.
+
+## PISONET-0005 verified source CI — 2026-10-15 Asia/Manila
+
+- Exact source+test+three handovers 72c1210982a09b4a3b0ac48ffdebeed9c9c3109: [Windows #38739066634](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38739066634) completed SUCCESS; strict FOG API contract, build, NSIS installer smoke and preview artifact upload passed; public publish skipped. Merge parent d8e197a4 exact Windows #38737579237 and Full #38738006528 both SUCCESS. The current docs-only head needs its own classification.
+- Remaining: no approved FOG/iSCSI/PXE/Windows client lab to verify real server protocol, target ACL, per-client writable LUN, DHCP/PXE and boot/recovery. No customer hosts/storage touched. PR #90 stays open and v0.5.0-preview.1; production release denied. Next: approved lab protocol and physical boot, then server-side provisioning only against verified APIs.
