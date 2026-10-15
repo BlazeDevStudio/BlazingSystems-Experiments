@@ -21,8 +21,8 @@ concurrency:
 
 env:
   PROJECT_DIR: experiment/windows/BlazePisonet-SoftTimer
-  VERSION: 0.4.0
-  TAG: softtimer-v0.4.0
+  VERSION: 0.5.0-preview.1
+  TAG: softtimer-v0.5.0-preview.1
 
 jobs:
   handover:
@@ -72,6 +72,12 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: PISONET-0001 FOG management API and deployment guard contract
+        shell: pwsh
+        run: |
+          dotnet run --project "$env:PROJECT_DIR/tests/FogManagementContract/FogManagementContract.csproj" -c Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Restore win-x64
@@ -214,7 +220,7 @@ jobs:
           Copy-Item out/bundle/BlazePisonet.SoftTimer.exe portable/ -Force
           Copy-Item out/bundle/BlazePisonet.SoftTimer.Watchdog.exe portable/ -Force
           Copy-Item "$env:PROJECT_DIR/README.md" portable/README.md -Force
-          Copy-Item "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" portable/RELEASE_NOTES.md -Force
+          Copy-Item "$env:PROJECT_DIR/RELEASE_NOTES_v0.5.0-preview.1.md" portable/RELEASE_NOTES.md -Force
           New-Item -ItemType Directory -Force portable/docs | Out-Null
           Copy-Item "$env:PROJECT_DIR/docs/*" portable/docs/ -Recurse -Force
 
@@ -236,17 +242,16 @@ jobs:
       - name: Upload validated release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: BlazePisonet-SoftTimer-v0.4.0-win-x64
+          name: BlazePisonet-SoftTimer-v0.5.0-preview.1-win-x64
           path: |
-            release/BlazePisonet-SoftTimer-Setup-v0.4.0.exe
-            BlazePisonet-SoftTimer-v0.4.0-portable-win-x64.zip
+            release/BlazePisonet-SoftTimer-Setup-v0.5.0-preview.1.exe
+            BlazePisonet-SoftTimer-v0.5.0-preview.1-portable-win-x64.zip
             SHA256SUMS
           if-no-files-found: error
 
       - name: Publish GitHub Release
-        # Never mutate the frozen v0.4.0 release from later development code.
-        # A version/tag bump and explicit new candidate are mandatory first.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0'
+        # Preview candidate only; hardware and explicit release approval are outstanding.
+        if: false
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -260,5 +265,5 @@ jobs:
           if (gh release view $env:TAG *> $null) {
             throw "Immutable release tag $env:TAG already exists. Refusing asset replacement; bump version and TAG with a new candidate."
           }
-          gh release create $env:TAG $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" --target $releaseTarget
+          gh release create $env:TAG $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file "$env:PROJECT_DIR/RELEASE_NOTES_v0.5.0-preview.1.md" --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

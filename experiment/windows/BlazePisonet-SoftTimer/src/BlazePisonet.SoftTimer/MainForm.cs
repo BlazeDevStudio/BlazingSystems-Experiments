@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace BlazePisonet.SoftTimer;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private readonly AppController _controller;
     private readonly Panel _content = new() { Dock = DockStyle.Fill, Padding = new Padding(22), AutoScroll = true };
@@ -134,7 +134,7 @@ public sealed class MainForm : Form
         var navPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(0, 8, 0, 0) };
         side.Controls.Add(navPanel);
         navPanel.BringToFront();
-        foreach (var name in new[] { "Dashboard", "Hardware", "Centralized", "BlazePwifi", "Members", "Schedules", "Security", "Appearance", "Diagnostics" })
+        foreach (var name in new[] { "Dashboard", "Hardware", "Centralized", "BlazePwifi", "Diskless", "Members", "Schedules", "Security", "Appearance", "Diagnostics" })
         {
             var b = new Button { Text = name, Width = 185, Height = 42, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(2), FlatStyle = FlatStyle.Flat, BackColor = BlazeTheme.Panel2, ForeColor = BlazeTheme.Text };
             b.FlatAppearance.BorderSize = 0;
@@ -142,7 +142,7 @@ public sealed class MainForm : Form
             navPanel.Controls.Add(b);
             _nav[name] = b;
         }
-        var footer = new Label { Text = "v0.4.0\nASApp clean-room successor", ForeColor = BlazeTheme.Muted, Dock = DockStyle.Bottom, Height = 48, TextAlign = ContentAlignment.BottomLeft };
+        var footer = new Label { Text = "v0.5.0-preview.1\nASApp clean-room successor", ForeColor = BlazeTheme.Muted, Dock = DockStyle.Bottom, Height = 48, TextAlign = ContentAlignment.BottomLeft };
         side.Controls.Add(footer);
     }
 
@@ -152,6 +152,7 @@ public sealed class MainForm : Form
         BuildHardware();
         BuildCentralized();
         BuildBlazePwifi();
+        BuildDiskless();
         BuildMembers();
         BuildSchedules();
         BuildSecurity();
@@ -509,6 +510,7 @@ public sealed class MainForm : Form
         _pwifiUrl.Text = c.BlazePwifiVendoUrl;
         _pwifiId.Text = c.BlazePwifiControllerId;
         _pwifiKey.Text = c.BlazePwifiVendoKey;
+        _fogUrl.Text = c.FogServerUrl;
         _blockTaskMgr.Checked = c.BlockTaskManager;
         _blockRegedit.Checked = c.BlockRegistryTools;
         _disableLogoff.Checked = c.DisableLogoff;
@@ -571,6 +573,7 @@ public sealed class MainForm : Form
         c.BlazePwifiVendoUrl = _pwifiUrl.Text.Trim();
         c.BlazePwifiControllerId = Storage.NormalizeId(_pwifiId.Text);
         c.BlazePwifiVendoKey = _pwifiKey.Text.Trim();
+        c.FogServerUrl = _fogUrl.Text.Trim();
         c.BlockTaskManager = _blockTaskMgr.Checked;
         c.BlockRegistryTools = _blockRegedit.Checked;
         c.DisableLogoff = _disableLogoff.Checked;

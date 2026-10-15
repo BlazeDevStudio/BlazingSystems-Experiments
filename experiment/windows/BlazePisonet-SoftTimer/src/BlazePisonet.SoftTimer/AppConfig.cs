@@ -36,7 +36,7 @@ public enum ModemSignal
 
 public sealed class AppConfig
 {
-    public string Version { get; set; } = "0.4.0";
+    public string Version { get; set; } = "0.5.0-preview.1";
     public bool Enabled { get; set; }
     public string ShopName { get; set; } = "BlazePisonet";
     public string PcName { get; set; } = Environment.MachineName;
@@ -93,6 +93,8 @@ public sealed class AppConfig
     public string BlazePwifiVendoUrl { get; set; } = "http://192.168.1.1:4455/cgi-bin/vendo";
     public string BlazePwifiControllerId { get; set; } = string.Empty;
     public string BlazePwifiVendoKey { get; set; } = string.Empty;
+    // FOG credentials are deliberately session-only and never serialized.
+    public string FogServerUrl { get; set; } = string.Empty;
     public bool MirrorLocalCoinsToBlazePwifi { get; set; }
     public bool BlazePwifiMemberAuthorityEnabled { get; set; }
     // PAY-0719: opt-in fail-closed policy. No v2 customer financial protocol

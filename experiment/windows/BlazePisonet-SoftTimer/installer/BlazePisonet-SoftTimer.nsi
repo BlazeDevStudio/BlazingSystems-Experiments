@@ -2,18 +2,18 @@ Unicode True
 RequestExecutionLevel admin
 ManifestDPIAware true
 Name "BlazePisonet SoftTimer"
-OutFile "..\..\..\..\release\BlazePisonet-SoftTimer-Setup-v0.4.0.exe"
+OutFile "..\..\..\..\release\BlazePisonet-SoftTimer-Setup-v0.5.0-preview.1.exe"
 InstallDir "$PROGRAMFILES64\BlazeSystems\BlazePisonet SoftTimer"
 InstallDirRegKey HKLM "Software\BlazeSystems\BlazePisonet SoftTimer" "InstallDir"
 SetCompressor /SOLID lzma
 SetCompressorDictSize 64
 BrandingText "BlazeSystems · BlazePisonet SoftTimer"
-VIProductVersion "0.4.0.0"
+VIProductVersion "0.5.0.1"
 VIAddVersionKey /LANG=1033 "ProductName" "BlazePisonet SoftTimer"
-VIAddVersionKey /LANG=1033 "ProductVersion" "0.4.0"
+VIAddVersionKey /LANG=1033 "ProductVersion" "0.5.0-preview.1"
 VIAddVersionKey /LANG=1033 "CompanyName" "BlazeSystems"
 VIAddVersionKey /LANG=1033 "FileDescription" "BlazePisonet SoftTimer Setup"
-VIAddVersionKey /LANG=1033 "FileVersion" "0.4.0.0"
+VIAddVersionKey /LANG=1033 "FileVersion" "0.5.0.1"
 VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright © 2026 BlazeSystems"
 
 !include "MUI2.nsh"
@@ -74,7 +74,7 @@ Section "BlazePisonet SoftTimer" SEC_MAIN
 
   WriteRegStr HKLM "Software\BlazeSystems\BlazePisonet SoftTimer" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayName" "BlazePisonet SoftTimer"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayVersion" "0.4.0"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayVersion" "0.5.0-preview.1"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "Publisher" "BlazeSystems"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayIcon" "$INSTDIR\BlazePisonet.SoftTimer.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'

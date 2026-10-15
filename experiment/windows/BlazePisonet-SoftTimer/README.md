@@ -6,9 +6,17 @@ SoftTimer does **not** contain or redistribute the original ASApp binaries, sour
 
 ## Release line
 
-Current: **v0.4.0**
+Current published production line: **v0.4.0**. This branch is an unreleased **v0.5.0-preview.1** candidate.
 
 Primary target: Windows 10/11 x64.
+
+## Windows imaging and diskless management preview
+
+The admin **Diskless** page connects to a self-hosted FOG server over HTTPS. It lists registered Windows hosts and images, and can queue a deployment only after the host has an enabled assigned image and an administrator confirms the disk overwrite. FOG 1.6 Bearer tokens are preferred; older FOG installations can use the global and user API token pair. Tokens are kept only in the running admin session.
+
+This is an imaging manager, not proof of live diskless Windows boot. Diskless clients require separately provisioned iSCSI target storage, PXE/iPXE boot, per-client writable state, network isolation and approved hardware tests. No deployment is queued automatically. The preview has fake-server API tests and build CI; it is not a production release.
+
+Primary references: [FOG 1.6 API](https://docs.fogproject.org/en/latest/1.6/kb/integrations/api/), [FOG 1.5 API](https://docs.fogproject.org/en/stable/development/api.html), [Microsoft iSCSI boot](https://learn.microsoft.com/en-us/windows-server/storage/iscsi/iscsi-boot-overview).
 
 ## Core operating modes
 
