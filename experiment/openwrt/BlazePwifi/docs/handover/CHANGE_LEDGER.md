@@ -2426,3 +2426,11 @@
 - **Scope/proof:** `openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh`, `tests/v060_installed_migration_preflight.sh`, native/Full CI. Add test fixtures for nonempty voucher, credits, sessions, target TSV/progress and special files; require financial stores remain byte-identical and no v2 ledger/ACK. Source should reject unresolved state, never zero or delete it.
 - **Hazard/rollback:** value-bearing sidecars may have unknown historical schemas. Fail closed on nonempty or special entries until an exact import/reconciliation contract exists; do not assert that empty-sidecar pass authorizes migration. Revert isolated PAY-0757 change if coverage breaks installed v1 behavior.
 - **NEXT ACTION:** write failing sidecar fixtures, then implement rootfs checks and run focused/native/Full/SDK exact-head CI.
+
+## PAY-0757 test-only sidecar fixture — 2026-10-15 Asia/Manila
+
+- **Status/priority:** `committed_untested`, P0 #31/#32, exact test commit `c71e0ad3642c0d6e7c8c2bc08c50bbf83f696b4a`, isolated PR #89. Rootfs behavior unchanged.
+- **Why/paths:** `tests/v060_installed_migration_preflight.sh` now preserves a baseline empty voucher/targets family and checks rejection, financial-byte preservation and no v2 ledger creation for outstanding voucher, legacy credits/sessions, live coin target, progress sidecar, unknown target entry, voucher symlink and target directory symlink. Current installed preflight ignores those, so focused red is expected.
+- **Evidence:** test-only SHA not yet run. Previous PAY-0756 exact `bbd00f47841ddd9b4af79bebc37d64b997b1f569` Full #38667573081, native #38667573056, SDK #38667573039 all SUCCESS for the narrower source; not proof of PAY-0757.
+- **Risk/rollback:** no runtime/customer money changes. Tests use disposable fixture paths. Revert `c71e0ad` if fixture misstates installed schema. No production gate relaxed.
+- **NEXT ACTION:** push test-only handover, inspect named Linux preflight red; add fail-closed rootfs checks and retest exact head.
