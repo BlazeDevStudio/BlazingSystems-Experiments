@@ -2396,3 +2396,11 @@
 - **Scope/proof:** both identical `tools/v060_journal_authority_native.c` and `openwrt/paid-authority/src/v060_journal_authority.c`, installed `openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh`, focused native/preflight edge tests. Test canonical 2,147,483,647 acceptance, 2,147,483,648 rejection, overflow refusal and no ACK/mutation on rejected requests. Full/native/SDK exact-head CI required.
 - **Hazard/rollback:** preserve strict canonical decimal parsing and 32-bit arithmetic safety; no production gate relaxed, no v1 migration triggered. Revert isolated source commit if tests fail. External witness/signer/controller provisioning/physical acceptance remain unresolved.
 - **NEXT ACTION:** write failing signed-32 boundary test fixture, verify failure, then update native and preflight bounds consistently and rerun focused plus Full/SDK CI.
+
+## PAY-0756 test-only boundary fixture — 2026-10-15 Asia/Manila
+
+- **Status/priority:** `committed_untested`, P0 #31/#32, exact test commit `7b6908625e9b2c1a9fb84cd68c4c856f2f9dc27f`, isolated branch/PR #89. No source behavior changed.
+- **Why/paths:** `tests/v060_native_v2_authority.sh` now seeds existing bank and lease values near 2,147,483,647, checks native commit/replay to the ceiling and rejection above it without ledger mutation; `tests/v060_installed_migration_preflight.sh` checks v1 account/member/rental rows at the same ceiling and rejects 2,147,483,648. Current code caps 2,000,000,000, so red focused CI is expected.
+- **Evidence:** test-only SHA not yet pushed or run. Prior PAY-0755 `0d683659da4064324ec55e44f29da501577bc2fb` Full #38619939064 26/4/0, native #38619939200 and SDK #38619939211 all completed SUCCESS, and does not prove PAY-0756.
+- **Risk/rollback:** test fixture only, no real customer data or runtime/payment gate changed. Revert this test commit if it misstates v1 bounds. No release or merge.
+- **NEXT ACTION:** push test-only handover checkpoint and inspect exact native red cause; then implement signed-32 bound in both C copies and installed preflight, preserving no-ACK on overflow.
