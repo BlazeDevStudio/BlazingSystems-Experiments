@@ -23,13 +23,13 @@ pass() {
   grep -q 'READ_ONLY_PASS; paid_ack_authorized=0; migration_authorized=0' "$T/output"
 }
 reject() {
-  immutable_before="$(sha256sum "$BP_STATE"/*.tsv "$BP_STATE/member-revision")"
+  immutable_before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
   if sh "$PREFLIGHT" > "$T/output" 2>&1; then
     echo "FAIL: $1 admitted" >&2; exit 1
   fi
   grep -q 'paid_ack_authorized=0' "$T/output" || { cat "$T/output" >&2; exit 1; }
   [ ! -e "$BP_STATE/ledger.tsv" ] || { echo 'FAIL: preflight initialized v2 ledger' >&2; exit 1; }
-  [ "$immutable_before" = "$(sha256sum "$BP_STATE"/*.tsv "$BP_STATE/member-revision")" ] || {
+  [ "$immutable_before" = "$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)" ] || {
     echo "FAIL: $1 changed a financial store" >&2; exit 1;
   }
 }

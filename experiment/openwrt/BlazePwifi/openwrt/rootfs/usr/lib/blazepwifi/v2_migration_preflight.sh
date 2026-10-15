@@ -10,6 +10,27 @@ complete() {
   [ ! -s "$1" ] && return 0
   [ "$(tail -c 1 "$1" | od -An -tu1 | tr -d '[:space:]')" = 10 ]
 }
+sidecars_clear() {
+  # Vouchers and legacy MAC balances are value, even when no account row
+  # references them. A target or progress file may be an unacknowledged coin
+  # window. None has an admitted v2 import/replay representation yet.
+  regular "$BP_STATE/vouchers.tsv" || reject voucher_missing_or_special
+  [ ! -s "$BP_STATE/vouchers.tsv" ] || reject vouchers_need_import
+  for name in credits.tsv sessions.tsv; do
+    path="$BP_STATE/$name"
+    if [ -e "$path" ] || [ -L "$path" ]; then
+      regular "$path" || reject legacy_special
+      [ ! -s "$path" ] || reject legacy_money_need_import
+    fi
+  done
+  target_dir="$BP_STATE/targets"
+  [ -d "$target_dir" ] && [ ! -L "$target_dir" ] || reject target_directory
+  for path in "$target_dir"/* "$target_dir"/.[!.]* "$target_dir"/..?*; do
+    if [ -e "$path" ] || [ -L "$path" ]; then
+      reject unresolved_coin_window
+    fi
+  done
+}
 
 [ -d "$BP_STATE" ] && [ ! -L "$BP_STATE" ] || reject state_directory
 [ -d "$BP_RUN" ] && [ ! -L "$BP_RUN" ] || reject runtime_directory
@@ -19,6 +40,7 @@ regular "$BP_STATE/paid-v2-cutover-intent" || reject quiescence_marker
 regular "$BP_RUN/paid-financial.lock" || reject writer_lock
 exec 6<"$BP_RUN/paid-financial.lock" || reject writer_lock
 flock -n 6 || reject writer_busy
+sidecars_clear
 
 # An absent feature store is legitimate only when its entire family is absent.
 regular "$BP_STATE/accounts.tsv" || reject accounts_missing_or_special
@@ -44,7 +66,9 @@ if [ -e "$BP_STATE/controllers.tsv" ] || [ -L "$BP_STATE/controllers.tsv" ]; the
   regular "$BP_STATE/controllers.tsv" || reject controller_special
 fi
 
-set -- "$BP_STATE/accounts.tsv"
+set -- "$BP_STATE/accounts.tsv" "$BP_STATE/vouchers.tsv"
+[ ! -e "$BP_STATE/credits.tsv" ] || set -- "$@" "$BP_STATE/credits.tsv"
+[ ! -e "$BP_STATE/sessions.tsv" ] || set -- "$@" "$BP_STATE/sessions.tsv"
 [ "$member_present" -eq 0 ] || set -- "$@" "$BP_STATE/members.tsv" "$BP_STATE/member-events.tsv" "$BP_STATE/member-revision"
 [ "$rental_present" -eq 0 ] || set -- "$@" "$BP_STATE/rental-devices.tsv" "$BP_STATE/rental-events.tsv"
 [ ! -e "$BP_STATE/controllers.tsv" ] || set -- "$@" "$BP_STATE/controllers.tsv"
@@ -109,4 +133,8 @@ fi
 
 after="$(sha256sum "$@")" || reject source_digest
 [ "$before" = "$after" ] || reject concurrent_source_change
+regular "$BP_STATE/paid-v2-cutover-intent" || reject quiescence_marker_changed
+[ ! -e "$BP_STATE/paid-state-uncertain" ] &&
+  [ ! -L "$BP_STATE/paid-state-uncertain" ] || reject unresolved_paid_write
+sidecars_clear
 printf 'V2-MIGRATION-PREFLIGHT READ_ONLY_PASS; paid_ack_authorized=0; migration_authorized=0\n'
