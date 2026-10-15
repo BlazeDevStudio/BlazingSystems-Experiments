@@ -79,20 +79,71 @@ public sealed class FogManagementClient : IDisposable
 
     public async Task<IReadOnlyList<FogHost>> GetHostsAsync(CancellationToken cancellationToken = default)
     {
-        using var json = await GetJsonAsync("host", cancellationToken);
-        var rows = Array(json.RootElement, "hosts");
-        return rows.Select(x => new FogHost(ReadId(x, "id"), ReadText(x, "name"), ReadId(x, "imageID")))
-            .Where(x => x.Id > 0 && x.Name.Length > 0).ToArray();
+        var rows = await GetInventoryAsync("host", "hosts", cancellationToken);
+        var hosts = rows.Select(x => new FogHost(ReadId(x, "id"), ReadText(x, "name"), ReadId(x, "imageID"))).ToArray();
+        if (hosts.Any(x => x.Id <= 0 || x.Name.Length == 0) ||
+            hosts.Select(x => x.Id).Distinct().Count() != hosts.Length)
+            throw new InvalidOperationException("FOG host inventory has missing or duplicate identities.");
+        return hosts;
     }
 
     public async Task<IReadOnlyList<FogImage>> GetImagesAsync(CancellationToken cancellationToken = default)
     {
-        using var json = await GetJsonAsync("image", cancellationToken);
-        var rows = Array(json.RootElement, "images");
-        return rows.Select(x => new FogImage(ReadId(x, "id"), ReadText(x, "name"),
+        var rows = await GetInventoryAsync("image", "images", cancellationToken);
+        var images = rows.Select(x => new FogImage(ReadId(x, "id"), ReadText(x, "name"),
                 ReadBool(x, "isEnabled",
-                    ReadBool(x, "imageEnabled", ReadBool(x, "enabled", false)))))
-            .Where(x => x.Id > 0 && x.Name.Length > 0).ToArray();
+                    ReadBool(x, "imageEnabled", ReadBool(x, "enabled", false))))).ToArray();
+        if (images.Any(x => x.Id <= 0 || x.Name.Length == 0) ||
+            images.Select(x => x.Id).Distinct().Count() != images.Length)
+            throw new InvalidOperationException("FOG image inventory has missing or duplicate identities.");
+        return images;
+    }
+
+    private async Task<IReadOnlyList<JsonElement>> GetInventoryAsync(string resource,
+        string legacyName, CancellationToken cancellationToken)
+    {
+        var info = await GetServerInfoAsync(cancellationToken);
+        if (info.Major != 1 || info.Minor < 5)
+            throw new InvalidOperationException("FOG version is unknown; inventory is disabled.");
+        if (info.Minor == 5)
+        {
+            using var legacy = await GetJsonAsync(resource, cancellationToken);
+            return Array(legacy.RootElement, legacyName).Select(x => x.Clone()).ToArray();
+        }
+
+        const int pageSize = 100;
+        const int maxInventory = 10_000;
+        var result = new List<JsonElement>();
+        int? expectedTotal = null;
+        int? expectedFiltered = null;
+        while (true)
+        {
+            using var page = await GetJsonAsync($"{resource}?length={pageSize}&start={result.Count}", cancellationToken);
+            var root = page.RootElement;
+            if (root.ValueKind != JsonValueKind.Object ||
+                !TryProperty(root, "data", out var data) || data.ValueKind != JsonValueKind.Array ||
+                !TryCount(root, "recordsTotal", out var total) ||
+                !TryCount(root, "recordsFiltered", out var filtered) ||
+                !TryCount(root, "recordsReturned", out var returned) ||
+                filtered > total || filtered > maxInventory ||
+                (expectedTotal is not null && expectedTotal != total) ||
+                (expectedFiltered is not null && expectedFiltered != filtered) ||
+                returned != data.GetArrayLength() || returned > pageSize ||
+                result.Count + returned > filtered ||
+                (returned == 0 && result.Count < filtered))
+                throw new InvalidOperationException("FOG inventory page is incomplete or inconsistent.");
+            expectedTotal = total;
+            expectedFiltered = filtered;
+            result.AddRange(data.EnumerateArray().Select(x => x.Clone()));
+            if (result.Count == filtered) return result;
+        }
+    }
+
+    private static bool TryCount(JsonElement root, string name, out int value)
+    {
+        value = 0;
+        return TryProperty(root, name, out var field) &&
+            int.TryParse(field.ToString(), out value) && value >= 0;
     }
 
     public async Task QueueDeploymentAsync(int hostId, int imageId, string confirmation,

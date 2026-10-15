@@ -85,7 +85,7 @@ using (var fog = new FogManagementClient("https://fog.example/fog",
     var images = await fog.GetImagesAsync();
     Check(hosts.Count == 1 && hosts[0].Name == "pc-01" && hosts[0].ImageId == 5, "host inventory");
     Check(images.Count == 1 && images[0].Enabled, "image inventory");
-    Check(fake.BearerRequests == 3 && fake.PairRequests == 0, "Bearer preferred");
+    Check(fake.BearerRequests == 5 && fake.PairRequests == 0, "Bearer preferred");
     await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-02 Win11"), "wrong confirmation");
     Check(fake.Deployments == 0, "wrong confirmation no POST");
     fake.HostImageId = 6;
@@ -101,7 +101,7 @@ using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("", "global", "user"), legacy))
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
-    Check(legacy.PairRequests == 5 && legacy.BearerRequests == 0, "legacy token pair and active task preflight");
+    Check(legacy.PairRequests == 7 && legacy.BearerRequests == 0, "legacy token pair and active task preflight");
     Check(legacy.LastBody.Contains("\"taskTypeID\":\"1\""), "FOG 1.5 deploy body");
 }
 
@@ -135,6 +135,24 @@ var redirect = new FakeFog { Redirect = true };
 using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("fog_test", "", ""), redirect))
     await Reject(() => fog.GetHostsAsync(), "redirect to alternate origin");
+
+var large = new FakeFog { PagedHostCount = 101 };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), large))
+{
+    var hosts = await fog.GetHostsAsync();
+    Check(hosts.Count == 101 && hosts[0].Id == 7 && hosts[^1].Id == 200,
+        "FOG 1.6 inventory walks all bounded pages");
+    Check(large.HostPages == 2, "FOG 1.6 paged rather than unbounded response");
+}
+foreach (var fault in new[] { "empty", "count", "duplicate", "changing-total" })
+{
+    var broken = new FakeFog { PagedHostCount = 101, PageFault = fault };
+    using var fog = new FogManagementClient("https://fog.example",
+        new FogCredentials("fog_test", "", ""), broken);
+    await Reject(() => fog.GetHostsAsync(), "FOG 1.6 " + fault + " inventory page");
+    Check(broken.Deployments == 0, fault + " inventory never deploys");
+}
 
 foreach (var (tasks, name) in new[]
 {
@@ -207,6 +225,9 @@ sealed class FakeFog : HttpMessageHandler
     public string ActiveTasksJson { get; set; } = "{\"count\":0,\"tasks\":[]}";
     public HttpStatusCode ActiveTaskStatus { get; set; } = HttpStatusCode.OK;
     public bool LostDeploymentResponse { get; set; }
+    public int PagedHostCount { get; set; } = 1;
+    public string PageFault { get; set; } = "";
+    public int HostPages { get; private set; }
     public int BearerRequests { get; private set; }
     public int PairRequests { get; private set; }
     public int Deployments { get; private set; }
@@ -234,10 +255,35 @@ sealed class FakeFog : HttpMessageHandler
         if (request.Method == HttpMethod.Get && path == "/fog/system/info")
             return Json("{\"version\":\"" + Version + "\"}");
         if (request.Method == HttpMethod.Get && path == "/fog/host")
-            return Json("{\"hosts\":[{\"id\":\"7\",\"name\":\"pc-01\",\"imageID\":\"" + HostImageId + "\"}]}");
+        {
+            if (Version.StartsWith("1.5", StringComparison.Ordinal))
+                return Json("{\"hosts\":[{\"id\":\"7\",\"name\":\"pc-01\",\"imageID\":\"" + HostImageId + "\"}]}");
+            HostPages++;
+            var query = uri.Query.TrimStart('?').Split('&')
+                .Select(part => part.Split('=', 2))
+                .ToDictionary(part => part[0], part => part.Length == 2 ? part[1] : "");
+            var start = int.Parse(query.GetValueOrDefault("start", "-1"));
+            var length = int.Parse(query.GetValueOrDefault("length", "-1"));
+            if (length != 100 || start < 0 || start >= PagedHostCount)
+                throw new Exception("FOG contract failed: bounded host page request");
+            var rows = Enumerable.Range(start, Math.Min(length, PagedHostCount - start))
+                .Select(i => new { id = PageFault == "duplicate" && i == 100 ? 7 :
+                    i == 0 ? 7 : 100 + i,
+                    name = i == 0 ? "pc-01" : "pc-" + i, imageID = HostImageId }).ToArray();
+            if (PageFault == "empty" && start == 0) rows = rows.Take(0).ToArray();
+            return Json(JsonSerializer.Serialize(new { recordsTotal = PagedHostCount +
+                    (PageFault == "changing-total" && start > 0 ? 1 : 0),
+                recordsFiltered = PagedHostCount,
+                recordsReturned = rows.Length + (PageFault == "count" ? 1 : 0), data = rows }));
+        }
         if (request.Method == HttpMethod.Get && path == "/fog/image")
-            return Json("{\"images\":[{\"id\":\"5\",\"name\":\"Win11\"" +
-                (IncludeImageEnabled ? ",\"isEnabled\":\"" + ImageEnabledRaw + "\"" : "") + "}]}");
+        {
+            var row = "{\"id\":\"5\",\"name\":\"Win11\"" +
+                (IncludeImageEnabled ? ",\"isEnabled\":\"" + ImageEnabledRaw + "\"" : "") + "}";
+            return Version.StartsWith("1.5", StringComparison.Ordinal) ?
+                Json("{\"images\":[" + row + "]}") :
+                Json("{\"recordsTotal\":1,\"recordsFiltered\":1,\"recordsReturned\":1,\"data\":[" + row + "]}");
+        }
         if (request.Method == HttpMethod.Get && path == "/fog/task/active")
             return ActiveTaskStatus == HttpStatusCode.OK ? Json(ActiveTasksJson) :
                 new HttpResponseMessage(ActiveTaskStatus);
