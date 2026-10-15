@@ -125,10 +125,21 @@ fi
 
 if [ -e "$BP_STATE/controllers.tsv" ]; then
   LC_ALL=C awk -F '\t' '
+    function uint(v, min, max) {
+      if (v !~ /^[0-9]+$/ || length(v)>10) return 0
+      return v+0>=min && v+0<=max
+    }
+    function flag(v) {return v=="0" || v=="1"}
+    function pin(v) {return v=="-1" || uint(v,0,63)}
     NF!=15 || length($1)<1 || length($1)>32 ||
-    $1 !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ || ++seen[$1]>1 {bad=1}
+    $1 !~ /^[A-Za-z][A-Za-z0-9_.-]*$/ || ++seen[$1]>1 ||
+    !flag($2) || !flag($3) || !flag($4) || !flag($5) ||
+    !pin($6) || !pin($7) || !pin($8) ||
+    !flag($9) || !flag($10) || !flag($11) ||
+    !uint($12,1,2000) || !uint($13,10,10000) ||
+    !uint($14,1,60) || !uint($15,1,2147483647) {bad=1}
     END {if (bad) exit 8}
-  ' "$BP_STATE/controllers.tsv" || reject controller_identity_incompatible
+  ' "$BP_STATE/controllers.tsv" || reject controller_record_incompatible
 fi
 
 after="$(sha256sum "$@")" || reject source_digest
