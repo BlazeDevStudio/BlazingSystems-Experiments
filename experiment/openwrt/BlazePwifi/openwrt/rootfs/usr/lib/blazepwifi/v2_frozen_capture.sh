@@ -46,20 +46,30 @@ mkdir "$tmp" || reject capture_directory
 # every prepaid balance, receipt, member, lease, or coin sidecar.
 before="$(cd "$state_dir" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject source_digest
 before_dirs="$(cd "$state_dir" && find . -type d -print | LC_ALL=C sort)" || reject source_scan
+# File bytes alone cannot recover safe permissions, owner IDs or private
+# directories. Preserve metadata as part of the capture admission contract.
+before_meta="$(cd "$state_dir" && find . \( -type f -o -type d \) -exec stat -c '%a:%u:%g:%n' {} + | LC_ALL=C sort)" || reject source_metadata
 tar -cf "$tmp/state.tar" -C "$state_dir" . || reject archive_copy_uncertain
 regular "$tmp/state.tar" || reject archive_special
 mkdir "$tmp/verification" || reject archive_verify_directory
-tar -xf "$tmp/state.tar" -C "$tmp/verification" || reject archive_extract_uncertain
+# GNU/BusyBox tar normally applies the process umask on extraction.
+# Unmask permissions ONLY inside the existing private (0700) stage so that
+# comparison checks the archive's actual metadata, not our shell umask.
+(umask 000; tar -xf "$tmp/state.tar" -C "$tmp/verification") || reject archive_extract_uncertain
 archive_special="$(find "$tmp/verification" ! -type f ! -type d -print)" || reject archive_scan
 [ -z "$archive_special" ] || reject archive_special_entry
 archive_dirs="$(cd "$tmp/verification" && find . -type d -print | LC_ALL=C sort)" || reject archive_scan
 [ "$archive_dirs" = "$before_dirs" ] || reject archive_directory_mismatch
 archive_files="$(cd "$tmp/verification" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject archive_digest
 [ "$archive_files" = "$before" ] || reject archive_file_mismatch
+archive_meta="$(cd "$tmp/verification" && find . \( -type f -o -type d \) -exec stat -c '%a:%u:%g:%n' {} + | LC_ALL=C sort)" || reject archive_metadata
+[ "$archive_meta" = "$before_meta" ] || reject archive_metadata_mismatch
 rm -rf "$tmp/verification" || reject archive_verify_cleanup
 (cd "$tmp" && sha256sum state.tar > SHA256SUMS && sha256sum -c SHA256SUMS >/dev/null) || reject archive_digest
 after="$(cd "$state_dir" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject source_digest
 after_dirs="$(cd "$state_dir" && find . -type d -print | LC_ALL=C sort)" || reject source_scan
+after_meta="$(cd "$state_dir" && find . \( -type f -o -type d \) -exec stat -c '%a:%u:%g:%n' {} + | LC_ALL=C sort)" || reject source_metadata
+[ "$before_meta" = "$after_meta" ] || reject concurrent_source_metadata_change
 [ "$after_dirs" = "$before_dirs" ] || reject concurrent_source_directory_change
 [ "$before" = "$after" ] || reject concurrent_source_change
 special="$(find "$state_dir" ! -type f ! -type d -print)" || reject source_scan

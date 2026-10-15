@@ -14,6 +14,7 @@ printf 'a:b\t20\t1800000000\t0\t0\t0\t\t\tp:old-receipt\n' > "$BP_STATE/accounts
 printf 'm:old\t1700000000\tmember1\tadd\t20\t20\tVendo1\t1\n' > "$BP_STATE/member-events.tsv"
 printf 'r:old\ta:b\t20\t1700000000\tp:1\n' > "$BP_STATE/rental-events.tsv"
 printf 'PENDING\t2\n' > "$BP_STATE/targets/Vendo1.progress"
+chmod 0600 "$BP_STATE/accounts.tsv"
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
 
 reject() {
@@ -73,6 +74,19 @@ grep -q 'archive_directory_mismatch' "$T/out" || { cat "$T/out" >&2; exit 1; }
 rm -rf "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp"
 rm "$T/bin/tar"
 rmdir "$BP_STATE/targets/empty-state"
+
+# A checksum-perfect archive can still have unsafe recovery metadata:
+# a successful tar may change an account to world-readable. Reject it even
+# when all original file bytes and directory names are present.
+printf '#!/bin/sh\nif [ "$1" = "-cf" ]; then\n  stage="$(mktemp -d)" || exit 1\n  "%s" -cf "$2" -C "$4" . || exit 1\n  "%s" -xf "$2" -C "$stage" || exit 1\n  chmod 0777 "$stage/accounts.tsv" || exit 1\n  "%s" -cf "$2" -C "$stage" . || exit 1\n  rm -rf "$stage" || exit 1\n  exit 0\nfi\nexec "%s" "$@"\n' "$real_tar" "$real_tar" "$real_tar" "$real_tar" > "$T/bin/tar"
+chmod +x "$T/bin/tar"
+PATH="$T/bin:$PATH" reject silently_weakened_account_permissions
+grep -q 'archive_metadata_mismatch' "$T/out" || { cat "$T/out" >&2; exit 1; }
+[ "$(stat -c '%a' "$BP_STATE/accounts.tsv")" = 600 ] || exit 1
+[ -d "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp" ] || exit 1
+[ ! -e "$BP_SNAPSHOT_ROOT/v1-frozen-snapshot" ] || exit 1
+rm -rf "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp"
+rm "$T/bin/tar"
 
 # A short write or sync failure leaves an incomplete capture and no success.
 printf '#!/bin/sh\nprintf partial > "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp/state.tar"\nexit 1\n' > "$T/bin/tar"
