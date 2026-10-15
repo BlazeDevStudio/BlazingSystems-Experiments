@@ -10,7 +10,8 @@ T="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 RT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 NUM="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
 RENT="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
-trap 'rm -rf "$T" "$RT" "$NUM" "$RENT"' EXIT HUP INT TERM
+BOUND="$(mktemp -d /tmp/blaze-v2-native-XXXXXX)"
+trap 'rm -rf "$T" "$RT" "$NUM" "$RENT" "$BOUND"' EXIT HUP INT TERM
 umask 077
 chmod 700 "$T"
 command -v cc >/dev/null || { echo 'C compiler missing';exit 1; }
@@ -92,6 +93,35 @@ if "$T/native" "$RENT" ctrlOne 2 ctrlOne:2 LR "$overlong_id" - 1 1000 "$overlong
 fi
 [ ! -s "$RENT/overlong-out" ] &&
   [ "$(sha256sum "$RENT/ledger.tsv" | cut -d' ' -f1)" = "$rental_digest" ]
+# PAY-0756: imported v1 money/time may reach the signed-32 ceiling. The
+# native parser, arithmetic, durable receipt and replay must agree there.
+printf 'BLAZE-V2-SYNTHETIC-ONLY\n' > "$BOUND/.blaze-v2-fixture-only"
+printf 'ctrlOne\t%s\n' "$key" > "$BOUND/controller-keys.tsv"
+printf 'V\t2\nA\talice\t2147483647\nA\tbob\t0\nL\tdev01\t2147483646\n' > "$BOUND/ledger.tsv"
+bound_base="$(sha256sum "$BOUND/ledger.tsv" | cut -d' ' -f1)"
+printf 'H\t%s\n' "$bound_base" >> "$BOUND/ledger.tsv"
+chmod 600 "$BOUND/.blaze-v2-fixture-only" "$BOUND/controller-keys.tsv" "$BOUND/ledger.tsv"
+bound_run() { bound_signed="$(sign "$@")"; "$T/native" "$BOUND" "$@" "$bound_signed"; }
+[ "$(bound_run ctrlOne 1 ctrlOne:1 SM alice - 1 2147483645)" = "$(printf 'COMMIT\t2147483646')" ] || {
+  echo 'PAY-0756 valid v1 maximum bank rejected' >&2; exit 1;
+}
+[ "$(bound_run ctrlOne 1 ctrlOne:1 SM alice - 1 2147483645)" = "$(printf 'REPLAY\t2147483646')" ]
+[ "$(bound_run ctrlOne 2 ctrlOne:2 AM alice - 1 2147483645)" = "$(printf 'COMMIT\t2147483647')" ]
+[ "$(bound_run ctrlOne 3 ctrlOne:3 LR dev01 - 1 2147483646)" = "$(printf 'COMMIT\t2147483647')" ]
+[ "$(bound_run ctrlOne 3 ctrlOne:3 LR dev01 - 1 2147483646)" = "$(printf 'REPLAY\t2147483647')" ]
+bound_digest="$(sha256sum "$BOUND/ledger.tsv" | cut -d' ' -f1)"
+for spec in '4 ctrlOne:4 AM alice - 1 2147483647' \
+            '4 ctrlOne:4 LR dev01 - 1 2147483647' \
+            '4 ctrlOne:4 AM bob - 1 2147483648'; do
+  # These requests exceed the bank/lease/time ceiling or carry invalid now.
+  set -- $spec
+  bound_signed="$(sign ctrlOne "$@")"
+  if "$T/native" "$BOUND" ctrlOne "$@" "$bound_signed" > "$BOUND/refused-out" 2> "$BOUND/refused-error"; then
+    echo 'PAY-0756 signed-32 overflow accepted' >&2; exit 1;
+  fi
+  [ ! -s "$BOUND/refused-out" ] &&
+    [ "$(sha256sum "$BOUND/ledger.tsv" | cut -d' ' -f1)" = "$bound_digest" ] || exit 1
+done
 printf 'BLAZE-V2-SYNTHETIC-ONLY\n' >"$RT/.blaze-v2-fixture-only"
 printf 'ctrlOne\t%s\nctrlTwo\t%s\n' "$key" "$key2" > "$RT/controller-keys.tsv"
 printf 'V\t2\nA\talice\t100\nA\tbob\t200\nL\tdev01\t0\n' >"$RT/ledger.tsv"

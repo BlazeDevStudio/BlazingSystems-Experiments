@@ -55,12 +55,12 @@ touch "$BP_STATE/paid-state-uncertain"; reject unresolved_partial_write; rm "$BP
 rm "$BP_STATE/member-events.tsv"; reject partial_member_family; restore
 printf 'bad\t10' >> "$BP_STATE/accounts.tsv"; reject partial_row; restore
 cat "$T/accounts" >> "$BP_STATE/accounts.tsv"; reject duplicate_account; restore
-sed 's/\t10\t/\t2000000001\t/' "$T/accounts" > "$BP_STATE/accounts.tsv"; reject high_account; restore
+sed 's/\t10\t/\t2147483648\t/' "$T/accounts" > "$BP_STATE/accounts.tsv"; reject high_account; restore
 printf 'a:b\t10\t1800000000\t0\t0\t0\t\t\tv:old-receipt\n' > "$BP_STATE/accounts.tsv"; reject account_receipt; restore
-sed 's/\t10\t1\t/\t2000000001\t1\t/' "$T/members" > "$BP_STATE/members.tsv"; reject high_member; restore
+sed 's/\t10\t1\t/\t2147483648\t1\t/' "$T/members" > "$BP_STATE/members.tsv"; reject high_member; restore
 cat "$T/members" >> "$BP_STATE/members.tsv"; reject duplicate_member; restore
 printf 'm:old\t1700000000\t2member\tadd\t10\t10\tcontroller\t10\n' > "$BP_STATE/member-events.tsv"; reject member_receipt; restore
-sed 's/1900000000/2000000001/' "$T/rental" > "$BP_STATE/rental-devices.tsv"; reject high_rental_lease; restore
+sed 's/1900000000/2147483648/' "$T/rental" > "$BP_STATE/rental-devices.tsv"; reject high_rental_lease; restore
 cat "$T/rental" >> "$BP_STATE/rental-devices.tsv"; reject duplicate_rental; restore
 printf 'r:old\ta:b\t10\t1700000000\tp:1\n' > "$BP_STATE/rental-events.tsv"; reject rental_receipt; restore
 sed 's/Vendo1/1Vendo/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject incompatible_controller; restore
@@ -71,4 +71,9 @@ reject writer_busy
 flock -u 9
 exec 9<&-
 pass
+printf 'a:b\t2147483647\t2147483647\t2147483647\t0\t2147483647\t\t\t\n' > "$BP_STATE/accounts.tsv"
+printf '2member\tlabel\t1\tsha256i\tsalt\thash\t4096\t2147483647\t1\t2147483647\tadmin\n' > "$BP_STATE/members.tsv"
+printf 'a:b\tsecret\t2147483647\tlabel\t2147483647\n' > "$BP_STATE/rental-devices.tsv"
+pass || { echo 'PAY-0756 valid signed-32 v1 state rejected' >&2; exit 1; }
+restore
 echo 'PAY-0755 installed migration preflight: valid read-only scan; partial, replay, corrupt and incompatible state denied'
