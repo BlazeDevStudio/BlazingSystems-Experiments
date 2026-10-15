@@ -58,9 +58,9 @@ LC_ALL=C awk -F '\t' '
   }
   NF!=9 || length($1)<2 || length($1)>96 ||
   $1 !~ /^[A-Za-z0-9_.:-]+$/ || ++seen[$1]>1 ||
-  !num($2,2000000000) || !num($3,2000000000) ||
-  !num($4,2000000000) || $5 !~ /^(0|1)$/ ||
-  !num($6,2000000000) {bad=1}
+  !num($2,2147483647) || !num($3,2147483647) ||
+  !num($4,2147483647) || $5 !~ /^(0|1)$/ ||
+  !num($6,2147483647) {bad=1}
   $9!="" {receipts=1}
   END {if (bad) exit 8; if (receipts) exit 9}
 ' "$BP_STATE/accounts.tsv" || reject account_corrupt_or_unresolved_receipts
@@ -69,7 +69,7 @@ if [ "$member_present" -eq 3 ]; then
   revision="$(cat "$BP_STATE/member-revision")" || reject member_revision
   case "$revision" in 0|[1-9]*) ;; *) reject member_revision;; esac
   case "$revision" in *[!0-9]*) reject member_revision;; esac
-  [ "${#revision}" -le 10 ] && [ "$revision" -le 2000000000 ] 2>/dev/null || reject member_revision
+  [ "${#revision}" -le 10 ] && [ "$revision" -le 2147483647 ] 2>/dev/null || reject member_revision
   LC_ALL=C awk -F '\t' -v rev="$revision" '
     function num(v, max) {
       if (v !~ /^(0|[1-9][0-9]*)$/ || length(v)>10) return 0
@@ -78,8 +78,8 @@ if [ "$member_present" -eq 3 ]; then
     NF!=11 || length($1)<2 || length($1)>32 ||
     $1 !~ /^[A-Za-z0-9_.-]+$/ || ++seen[$1]>1 ||
     $3 !~ /^(0|1)$/ || !num($7,20000) ||
-    !num($8,2000000000) || !num($9,rev) ||
-    !num($10,2000000000) {bad=1}
+    !num($8,2147483647) || !num($9,rev) ||
+    !num($10,2147483647) {bad=1}
     END {if (bad) exit 8}
   ' "$BP_STATE/members.tsv" || reject member_corrupt_or_out_of_range
   [ ! -s "$BP_STATE/member-events.tsv" ] || reject member_receipts_need_import
@@ -89,7 +89,7 @@ if [ "$rental_present" -eq 2 ]; then
   LC_ALL=C awk -F '\t' '
     function num(v) {
       if (v !~ /^(0|[1-9][0-9]*)$/ || length(v)>10) return 0
-      return v+0<=2000000000
+      return v+0<=2147483647
     }
     NF!=5 || length($1)<2 || length($1)>96 ||
     $1 !~ /^[A-Za-z0-9_.:-]+$/ || ++seen[$1]>1 ||

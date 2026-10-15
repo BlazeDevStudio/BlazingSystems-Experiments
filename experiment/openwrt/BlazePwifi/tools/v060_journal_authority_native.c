@@ -38,6 +38,7 @@
 #define MAX_LEDGER 2097152
 #define MAX_BANK 512
 #define MAX_LEASE 512
+#define MAX_FINANCIAL_VALUE 2147483647ULL
 #define MAX_CTL 128
 #define MAX_RECEIPT 1024
 struct item { char name[97]; unsigned long long value; };
@@ -192,12 +193,12 @@ static void parseledger(char *s,size_t len) {
             return;
         } else if(n==3 && !strcmp(v[0],"A")){
             unsigned long long z;
-            if(!valid_member_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_member_id(v[1])||!parse_uint(v[2],MAX_FINANCIAL_VALUE,&z) ||
                nb>=MAX_BANK||find(bank,nb,v[1]))die("malformed/duplicate bank");
             strcpy(bank[nb].name,v[1]);bank[nb++].value=z;
         } else if(n==3 && !strcmp(v[0],"L")){
             unsigned long long z;
-            if(!valid_rental_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_rental_id(v[1])||!parse_uint(v[2],MAX_FINANCIAL_VALUE,&z) ||
                nl>=MAX_LEASE||find(lease,nl,v[1]))die("malformed/duplicate lease");
             strcpy(lease[nl].name,v[1]);lease[nl++].value=z;
         } else if(n==3 && !strcmp(v[0],"C")){
@@ -211,7 +212,7 @@ static void parseledger(char *s,size_t len) {
             if(nr>=MAX_RECEIPT||!valid_id(v[1])||
                !parse_uint(v[2],100000000ULL,&z)||z==0||
                strlen(v[3])>=sizeof(receipts[0].event)||
-               !hex64(v[4])||!parse_uint(v[5],2000000000ULL,&res))
+               !hex64(v[4])||!parse_uint(v[5],MAX_FINANCIAL_VALUE,&res))
                 die("malformed receipt");
             a=&receipts[nr++];strcpy(a->ctl,v[1]);a->seq=z;
             strcpy(a->event,v[3]);strcpy(a->digest,v[4]);
@@ -455,7 +456,7 @@ int main(int argc,char **argv) {
     if(!valid_id(id)||!hex64(hmac)||
        !parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
        !parse_uint(argv[8],31536000ULL,&units)||units==0 ||
-       !parse_uint(argv[9],2000000000ULL,&now))
+       !parse_uint(argv[9],MAX_FINANCIAL_VALUE,&now))
        die("malformed controller envelope");
     valid_opcode=(!strcmp(op,"AM")||!strcmp(op,"SM")||
                   !strcmp(op,"TM")||!strcmp(op,"LR"));
@@ -529,7 +530,7 @@ int main(int argc,char **argv) {
            CRYPTO_memcmp(receipts[i].digest,fingerprint,64)!=0)
             die("controller sequence payload collision");
         {unsigned long long saved=0;
-         if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
+         if(!parse_uint(receipts[i].result,MAX_FINANCIAL_VALUE,&saved))
              die("replay receipt amount malformed");
          emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
                       ack_kid,ack_key);
@@ -545,13 +546,13 @@ int main(int argc,char **argv) {
         x=find(lease,nl,src);
         if(!x)die("unknown rental lease");
         base=(x->value>now?x->value:now);
-        if(base>2000000000ULL-units)die("rental lease overflow");
+        if(base>MAX_FINANCIAL_VALUE-units)die("rental lease overflow");
         x->value=base+units;answer=x->value;
     }else{
         x=find(bank,nb,src);
         if(!x)die("unknown member bank");
         if(!strcmp(op,"AM")){
-            if(x->value>2000000000ULL-units)die("member credit overflow");
+            if(x->value>MAX_FINANCIAL_VALUE-units)die("member credit overflow");
             x->value+=units;
         }else if(!strcmp(op,"SM")){
             if(x->value<units)die("insufficient time");
@@ -559,7 +560,7 @@ int main(int argc,char **argv) {
         }else{
             to=find(bank,nb,dst);
             if(!to||x->value<units||
-               to->value>2000000000ULL-units)
+               to->value>MAX_FINANCIAL_VALUE-units)
                die("invalid prepaid transfer");
             x->value-=units;to->value+=units;
         }
