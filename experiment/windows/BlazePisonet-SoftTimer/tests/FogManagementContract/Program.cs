@@ -173,8 +173,25 @@ var lostAck = new FakeFog { LostDeploymentResponse = true };
 using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("fog_test", "", ""), lostAck))
 {
-    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "lost deployment response");
-    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "retry after lost response");
+    try
+    {
+        await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
+        throw new Exception("FOG contract admitted lost deployment response");
+    }
+    catch (FogDeploymentUncertainException ex)
+    {
+        Check(ex.Message.Contains("Inspect its active tasks"), "lost response demands task inspection");
+    }
+    try
+    {
+        await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
+        throw new Exception("FOG contract admitted retry after lost response");
+    }
+    catch (FogDeploymentUncertainException)
+    {
+        throw new Exception("preflight refusal misclassified as an uncertain POST");
+    }
+    catch (InvalidOperationException) { }
     Check(lostAck.Deployments == 1, "lost response never schedules twice");
 }
 

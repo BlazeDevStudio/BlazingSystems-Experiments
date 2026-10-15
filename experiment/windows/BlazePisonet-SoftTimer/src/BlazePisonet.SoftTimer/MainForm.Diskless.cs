@@ -215,6 +215,10 @@ public sealed partial class MainForm
             await fog.QueueDeploymentAsync(host.Id, image.Id, $"DEPLOY {host.Name} {image.Name}");
             _fogStatus.Text = $"FOG deployment queued for {host.Name}. Check FOG active tasks before booting that client.";
         }
+        catch (FogDeploymentUncertainException ex)
+        {
+            _fogStatus.Text = "Deployment outcome uncertain. " + ex.Message;
+        }
         catch (Exception ex)
         {
             _fogStatus.Text = "Deployment was not queued: " + ex.Message;

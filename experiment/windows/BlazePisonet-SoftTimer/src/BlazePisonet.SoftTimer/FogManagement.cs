@@ -32,6 +32,14 @@ public sealed record FogServerInfo(string Version)
     public int Minor => Version.Split('.').Length > 1 && int.TryParse(Version.Split('.')[1], out var value) ? value : -1;
 }
 
+// A POST can be accepted even when its response is lost. Callers must check
+// FOG's active tasks before retrying or assuming the client's disk is safe.
+public sealed class FogDeploymentUncertainException : InvalidOperationException
+{
+    public FogDeploymentUncertainException(Exception cause)
+        : base("FOG may have accepted the deployment. Inspect its active tasks before retrying or booting the client.", cause) { }
+}
+
 // Management API only. FOG imaging is not a live Windows diskless boot service.
 public sealed class FogManagementClient : IDisposable
 {
@@ -107,8 +115,15 @@ public sealed class FogManagementClient : IDisposable
         using var request = NewRequest(HttpMethod.Post, $"host/{hostId}/task");
         request.Content = new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> { [property] = "1" }),
             Encoding.UTF8, "application/json");
-        using var response = await _http.SendAsync(request, cancellationToken);
-        EnsureResponse(response);
+        try
+        {
+            using var response = await _http.SendAsync(request, cancellationToken);
+            EnsureResponse(response);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or InvalidOperationException)
+        {
+            throw new FogDeploymentUncertainException(ex);
+        }
     }
 
     private async Task EnsureNoActiveTaskAsync(int hostId, CancellationToken cancellationToken)
