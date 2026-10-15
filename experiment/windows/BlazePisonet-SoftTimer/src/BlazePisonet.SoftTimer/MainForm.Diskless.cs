@@ -9,6 +9,16 @@ public sealed partial class MainForm
     private readonly ListBox _fogHosts = new() { Height = 190, Width = 850 };
     private readonly ListBox _fogImages = new() { Height = 155, Width = 850 };
     private readonly Label _fogStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
+    private readonly TextBox _disklessClient = NewText();
+    private readonly TextBox _disklessTargetIp = NewText();
+    private readonly TextBox _disklessTargetIqn = NewText();
+    private readonly TextBox _disklessInitiatorIqn = NewText();
+    private readonly TextBox _disklessRootPath = new() { ReadOnly = true, Width = 850 };
+    private readonly TextBox _disklessScript = new()
+    {
+        ReadOnly = true, Multiline = true, Width = 850, Height = 105, ScrollBars = ScrollBars.Vertical
+    };
+    private readonly Label _disklessProfileStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
 
     private void BuildDiskless()
     {
@@ -38,12 +48,41 @@ public sealed partial class MainForm
             ForeColor = BlazeTheme.Muted,
             AutoSize = true
         });
+        readiness.Controls.Add(Field("Client label", _disklessClient));
+        readiness.Controls.Add(Field("iSCSI target IPv4 address", _disklessTargetIp));
+        readiness.Controls.Add(Field("Per-client target IQN", _disklessTargetIqn));
+        readiness.Controls.Add(Field("Per-client initiator IQN", _disklessInitiatorIqn));
+        readiness.Controls.Add(Button("GENERATE iPXE BOOT PROFILE", (_, _) => GenerateDisklessProfile()));
+        readiness.Controls.Add(Field("DHCP option 017 root path", _disklessRootPath));
+        readiness.Controls.Add(Field("iPXE boot script", _disklessScript));
+        readiness.Controls.Add(_disklessProfileStatus);
         root.Controls.Add(readiness);
         _pages["Diskless"] = root;
     }
 
     private FogManagementClient NewFogClient() => new(_fogUrl.Text.Trim(),
         new FogCredentials(_fogBearer.Text, _fogGlobal.Text, _fogUser.Text));
+
+    private void GenerateDisklessProfile()
+    {
+        _disklessRootPath.Clear();
+        _disklessScript.Clear();
+        try
+        {
+            var profile = DisklessBootProfile.Create(_disklessClient.Text.Trim(),
+                _disklessTargetIp.Text.Trim(), _disklessTargetIqn.Text.Trim(),
+                _disklessInitiatorIqn.Text.Trim());
+            _disklessRootPath.Text = profile.DhcpRootPath;
+            _disklessScript.Text = profile.IpxeScript;
+            _disklessProfileStatus.Text =
+                "Profile generated for " + profile.ClientLabel +
+                ". Configure target ACLs, a dedicated writable disk and DHCP/PXE separately; boot remains unverified.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            _disklessProfileStatus.Text = "Boot profile refused: " + ex.Message;
+        }
+    }
 
     private async Task RefreshFogAsync()
     {

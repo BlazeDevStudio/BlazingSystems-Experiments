@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../src/BlazePisonet.SoftTimer/FogManagement.cs" Link="FogManagement.cs" />
+    <Compile Include="../../src/BlazePisonet.SoftTimer/DisklessBootProfile.cs" Link="DisklessBootProfile.cs" />
   </ItemGroup>
 </Project>
