@@ -25,6 +25,11 @@ on:
       - '.github/workflows/blazepwifi-build.yml'
       - '.github/workflows/blazepwifi-v053-release.yml'
       - '.github/workflows/blazerental-v053-lineage2-sign.yml'
+      # PAY-0762: PR docs synchronization must reach CI-0701's
+      # authenticated previous-Full guard; source unverified => Full, not skip.
+      - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

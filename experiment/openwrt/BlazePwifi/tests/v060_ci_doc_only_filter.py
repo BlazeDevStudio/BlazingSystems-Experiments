@@ -75,8 +75,17 @@ for event in ("push", "pull_request"):
         root + "AUDIT.md",
         root + "README.md",
     ]
+    # Push still ignores documentation-only changes. On PR synchronize,
+    # canonical handover edits must reach CI-0701. That classifier alone
+    # decides whether prior exact-source Full proof makes a rebuild redundant.
+    # Unknown, failed or changed source always runs Full; this selector may
+    # never itself bypass validation.
+    canonical = set(documents[:3])
     for doc in documents:
-        assert not selected(patterns, [doc]), f"{event}: documentation caused full firmware build: {doc}"
+        expected = event == "pull_request" and doc in canonical
+        assert selected(patterns, [doc]) == expected, (
+            f"{event}: unexpected documentation trigger for {doc}"
+        )
     source_paths = [
         root + "VERSION",
         root + "tests/v060_ci_doc_only_filter.py",
@@ -90,5 +99,7 @@ for event in ("push", "pull_request"):
         assert selected(patterns, [code]), f"{event}: source or workflow build wrongly excluded: {code}"
     for doc in documents:
         assert selected(patterns, [doc, source_paths[2]]), f"{event}: source+docs skipped: {doc}"
-    assert not selected(patterns, documents), f"{event}: all-docs pull/push still schedules builds"
-print("HND-0700 PASS: docs-only ignored; money/source/tests/workflow and mixed changes retain full validation")
+    assert selected(patterns, documents) == (event == "pull_request"), (
+        f"{event}: canonical handover synchronization dispatch mismatch"
+    )
+print("HND-0700 PASS: docs-only push ignored; canonical PR handover runs guarded classifier; source always validated")
