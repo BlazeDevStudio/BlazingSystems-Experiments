@@ -49,6 +49,18 @@ ln -s "$BP_SNAPSHOT_ROOT" "$T/link-captures"
 BP_SNAPSHOT_ROOT="$T/link-captures" reject symlink_destination
 rm "$T/link-captures"
 
+# A tar process can exit zero despite omitting a financial file. The
+# archive itself may checksum correctly, but it is not a complete recovery.
+real_tar="$(command -v tar)"
+printf '#!/bin/sh\nif [ "$1" = "-cf" ]; then\n  exec "%s" --exclude=./accounts.tsv -cf "$2" -C "$4" .\nfi\nexec "%s" "$@"\n' "$real_tar" "$real_tar" > "$T/bin/tar"
+chmod +x "$T/bin/tar"
+PATH="$T/bin:$PATH" reject silently_missing_account
+grep -q 'archive_file_mismatch' "$T/out" || { cat "$T/out" >&2; exit 1; }
+[ -d "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp" ] || exit 1
+[ ! -e "$BP_SNAPSHOT_ROOT/v1-frozen-snapshot" ] || exit 1
+rm -rf "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp"
+rm "$T/bin/tar"
+
 # A short write or sync failure leaves an incomplete capture and no success.
 printf '#!/bin/sh\nprintf partial > "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp/state.tar"\nexit 1\n' > "$T/bin/tar"
 chmod +x "$T/bin/tar"
