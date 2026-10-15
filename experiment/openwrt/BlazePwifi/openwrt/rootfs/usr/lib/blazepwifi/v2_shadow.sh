@@ -185,31 +185,47 @@ awk -F '\t' -v floor="$global_rev" '
 ' "$state/members.tsv" || {
   echo 'SHADOW BLOCKED: member revision exceeds global counter' >&2; exit 8;
 }
-# Legacy financial event format: id, time, username, kind, signed delta,
-# result, source, detail (trailing empty detail allowed).
-# Reject duplicate IDs and truncated/ambiguous financial payloads.
+# MIG-0743: an eventual v2 financial migration cannot trust a merely
+# well-formed TSV row. Check canonical/32-bit-bounded paid quantities in
+# the WHOLE retained member receipt corpus; a malicious overflow may pass
+# a generic digit regex and corrupt later replay or imported balances.
+# This is readonly *source admission*, not migration authorization.
 awk -F '\t' '
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ ||
     $3=="" || $4=="" || $5 !~ /^-?[0-9]+$/ ||
     $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
   {if (++seen[$1]>1) bad=1}
+  $4=="add" || $4=="subtract" || $4=="set" ||
+  $4=="restore_all" || $4=="transfer" {
+    d=$5; if (substr(d,1,1)=="-") d=substr(d,2)
+    if (length(d)>10 || d+0>2147483647 ||
+        length($6)>10 || $6+0>2147483647) bad=1
+  }
   END {if (bad) exit 8}
 ' "$state/member-events.tsv" || {
-  echo 'SHADOW BLOCKED: invalid or duplicate member receipt' >&2; exit 8;
+  echo 'SHADOW BLOCKED: invalid, overflowing or duplicate member receipt' >&2; exit 8;
 }
 # Five columns: event, device, detail/lease, time, audit kind or p:pulses.
-# Paid r:* receipts require an immutable 1..20 pulse quantity in column 5;
-# a legacy amount-unbound paid receipt cannot support safe v2 migration.
+# Current installed rental paid events use SHA256-lowercase r:<64-hex>.
+# Under a private global money lock require a referenced, extant device and
+# a canonical bounded lease, timestamp and 1..20 pulses for migration source
+# admission. An orphaned device MUST require operator reconciliation rather
+# than a fictitious imported active lease. Nonpaid audit rows are unchanged.
 awk -F '\t' '
+  FILENAME==ARGV[1] {device[$1]=1; next}
   NF!=5 || $1=="" || $4 !~ /^[0-9]+$/ {bad=1}
   $1 ~ /^r:/ {
-    if ($2=="" || $3 !~ /^(0|[1-9][0-9]*)$/ ||
+    digest=substr($1,3)
+    if (length(digest)!=64 || digest ~ /[^0-9a-f]/ ||
+        !($2 in device) || $3 !~ /^(0|[1-9][0-9]*)$/ ||
+        length($3)>10 || $3+0>2147483647 ||
+        length($4)>10 || $4+0>2147483647 ||
         $5 !~ /^p:([1-9]|1[0-9]|20)$/) bad=1
   }
   {if (++seen[$1]>1) bad=1}
   END {if (bad) exit 8}
-' "$state/rental-events.tsv" || {
-  echo 'SHADOW BLOCKED: invalid or duplicate rental receipt' >&2; exit 8;
+' "$state/rental-devices.tsv" "$state/rental-events.tsv" || {
+  echo 'SHADOW BLOCKED: invalid, orphaned, overflowing or duplicate paid rental receipt' >&2; exit 8;
 }
 after="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" "$state/member-revision" "$state/member-events.tsv" "$state/rental-events.tsv" 2>/dev/null)" || {
   echo 'SHADOW BLOCKED: source reread failed' >&2; exit 8;
