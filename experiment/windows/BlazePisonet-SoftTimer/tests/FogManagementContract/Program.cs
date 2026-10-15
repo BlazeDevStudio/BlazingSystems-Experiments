@@ -53,7 +53,7 @@ using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("", "global", "user"), legacy))
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
-    Check(legacy.PairRequests == 4 && legacy.BearerRequests == 0, "legacy token pair");
+    Check(legacy.PairRequests == 5 && legacy.BearerRequests == 0, "legacy token pair and active task preflight");
     Check(legacy.LastBody.Contains("\"taskType\":\"1\""), "FOG 1.5 deploy body");
 }
 
@@ -88,7 +88,39 @@ using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("fog_test", "", ""), redirect))
     await Reject(() => fog.GetHostsAsync(), "redirect to alternate origin");
 
-Console.WriteLine("PISONET-0001 FOG API: auth, inventory, no-cleartext, redirect and guarded deployment PASS");
+foreach (var (tasks, name) in new[]
+{
+    ("{\"count\":1,\"tasks\":[{\"hostID\":\"7\"}]}", "active task on selected host"),
+    ("{\"count\":1,\"tasks\":[{}]}", "active task with unknown host"),
+    ("{\"count\":2,\"tasks\":[{\"hostID\":\"8\"}]}", "incomplete active task list"),
+    ("{\"tasks\":{}}", "malformed active task list")
+})
+{
+    var guarded = new FakeFog { ActiveTasksJson = tasks };
+    using var fog = new FogManagementClient("https://fog.example",
+        new FogCredentials("fog_test", "", ""), guarded);
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), name);
+    Check(guarded.Deployments == 0, name + " no POST");
+}
+
+var otherTask = new FakeFog { ActiveTasksJson = "{\"count\":1,\"tasks\":[{\"host\":{\"id\":\"8\"}]}" };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), otherTask))
+{
+    await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
+    Check(otherTask.Deployments == 1, "other host task permits deployment");
+}
+
+var lostAck = new FakeFog { LostDeploymentResponse = true };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), lostAck))
+{
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "lost deployment response");
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "retry after lost response");
+    Check(lostAck.Deployments == 1, "lost response never schedules twice");
+}
+
+Console.WriteLine("PISONET-0003 FOG API: auth, inventory, active-task and lost-response deployment guard PASS");
 
 sealed class FakeFog : HttpMessageHandler
 {
@@ -97,6 +129,8 @@ sealed class FakeFog : HttpMessageHandler
     public string ImageEnabledRaw { get; set; } = "1";
     public bool IncludeImageEnabled { get; set; } = true;
     public bool Redirect { get; set; }
+    public string ActiveTasksJson { get; set; } = "{\"count\":0,\"tasks\":[]}";
+    public bool LostDeploymentResponse { get; set; }
     public int BearerRequests { get; private set; }
     public int PairRequests { get; private set; }
     public int Deployments { get; private set; }
@@ -128,10 +162,17 @@ sealed class FakeFog : HttpMessageHandler
         if (request.Method == HttpMethod.Get && path == "/fog/image")
             return Json("{\"images\":[{\"id\":\"5\",\"name\":\"Win11\"" +
                 (IncludeImageEnabled ? ",\"isEnabled\":\"" + ImageEnabledRaw + "\"" : "") + "}]}");
+        if (request.Method == HttpMethod.Get && path == "/fog/task/active")
+            return Json(ActiveTasksJson);
         if (request.Method == HttpMethod.Post && path == "/fog/host/7/task")
         {
             LastBody = await request.Content!.ReadAsStringAsync(cancellationToken);
             Deployments++;
+            if (LostDeploymentResponse)
+            {
+                ActiveTasksJson = "{\"count\":1,\"tasks\":[{\"hostID\":\"7\"}]}";
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
             return Json("\"\"");
         }
         throw new Exception("unexpected FOG route " + request.Method + " " + path);
