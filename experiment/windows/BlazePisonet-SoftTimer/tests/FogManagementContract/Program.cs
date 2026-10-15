@@ -105,7 +105,7 @@ foreach (var (tasks, name) in new[]
     Check(guarded.Deployments == 0, name + " no POST");
 }
 
-var otherTask = new FakeFog { ActiveTasksJson = "{\"count\":1,\"tasks\":[{\"host\":{\"id\":\"8\"}]}" };
+var otherTask = new FakeFog { ActiveTasksJson = "{\"count\":1,\"tasks\":[{\"host\":{\"id\":\"8\"}}]}" };
 using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("fog_test", "", ""), otherTask))
 {
