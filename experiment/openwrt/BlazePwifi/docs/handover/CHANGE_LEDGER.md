@@ -2228,3 +2228,15 @@
 - **Evidence / expectation:** prior source head `86451b52be201e8255c8964454c078441f49bb9c` Windows #38671618764 SUCCESS, but fixture used noncanonical `imageEnabled`. Current adapter ignores `isEnabled` and defaults to true, so focused contract should fail. Exact test-only Windows CI pending.
 - **Risk / rollback:** no live host or task touched. The negative fixture protects deployment against disabled/malformed images. Revert only this isolated test if the official API schema evidence is disproved; published v0.4.0 and financial PR #89 unchanged.
 - **NEXT ACTION:** observe red on named FOG contract, change adapter to recognize `isEnabled` and fail closed when absent, then rerun exact Windows CI.
+## PISONET-0002 — test-only red confirmed, 2026-10-15 Asia/Manila
+
+- **Status / priority:** `failed` expected P1 deployment guard test, PR #90. Test-only head `9d46f26ae5f512c18b4c3dbdec16c1a6fa3ce3b0` includes test commit `1a965879fe681b5b2e14d14f80eda98b327c22bd`.
+- **Evidence:** [Windows #38672366054](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38672366054) FAILURE at named PISONET-0001 FOG contract, `FOG contract failed: FOG isEnabled=0 must be disabled` at Program.cs:72. Handover job SUCCESS; build and installer skipped after intentional red. This shows current adapter incorrectly accepts a disabled official FOG image field.
+- **Impact / rollback:** no live FOG server, image task or client touched; test-only change is isolated. No production release, financial source, Stable/main or tag changed.
+- **NEXT ACTION:** fix `FogManagement.cs` image enablement to use canonical `isEnabled` with fail-closed missing-field behavior, then rerun exact Windows contract/build/installer CI.
+## PISONET-0002 — official FOG image flag fix committed, 2026-10-15 Asia/Manila
+
+- **Status / priority:** `committed_untested`, P1 deployment safety. Source `abe927da374af6c1b3f76dd9fa8a5fa97e932b21` changes only SoftTimer `FogManagement.cs` on isolated PR #90.
+- **Proof so far:** exact test-only head `9d46f26ae5f512c18b4c3dbdec16c1a6fa3ce3b0` Windows #38672366054 failed at intended disabled-image assertion. Source now prioritizes canonical FOG `isEnabled`; absent/unknown flags default disabled. Staged diff check passed; exact fix Windows CI pending.
+- **Risk / rollback:** prevents deployment of disabled or unknown images, but real server behavior still unverified. No customer host, token, financial state, Stable/main, release tag or hardware touched. Revert isolated fix if a real schema test contradicts it.
+- **NEXT ACTION:** push synchronized handover and run/fix exact Windows FOG contract, warnings-as-errors build, installer smoke and artifact checks; retain no-release flag.
