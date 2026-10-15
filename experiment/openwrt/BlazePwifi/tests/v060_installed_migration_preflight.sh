@@ -69,6 +69,13 @@ sed 's/1900000000/2147483648/' "$T/rental" > "$BP_STATE/rental-devices.tsv"; rej
 cat "$T/rental" >> "$BP_STATE/rental-devices.tsv"; reject duplicate_rental; restore
 printf 'r:old\ta:b\t10\t1700000000\tp:1\n' > "$BP_STATE/rental-events.tsv"; reject rental_receipt; restore
 sed 's/Vendo1/1Vendo/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject incompatible_controller; restore
+sed 's/Vendo1\t1\t1/Vendo1\t2\t1/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_enabled; restore
+sed 's/\t-1\t-1\t-1\t/\t64\t-1\t-1\t/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_pin; restore
+sed 's/\t40\t400\t6\t1/\t0\t400\t6\t1/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_debounce; restore
+sed 's/\t40\t400\t6\t1/\t40\t10001\t6\t1/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_group; restore
+sed 's/\t40\t400\t6\t1/\t40\t400\t61\t1/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_retries; restore
+sed 's/\t40\t400\t6\t1/\t40\t400\t6\t0/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject invalid_controller_revision; restore
+cat "$T/controllers" >> "$BP_STATE/controllers.tsv"; reject duplicate_controller; restore
 printf '0\n' > "$BP_STATE/member-revision"; reject rolled_back_member_revision; restore
 printf 'UNUSED-CODE\t100\n' > "$BP_STATE/vouchers.tsv"; reject outstanding_voucher; restore
 printf 'aa:bb:cc:dd:ee:ff\t12\n' > "$BP_STATE/credits.tsv"; reject legacy_credit; restore
