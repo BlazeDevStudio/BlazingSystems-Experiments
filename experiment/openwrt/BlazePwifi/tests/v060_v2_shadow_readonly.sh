@@ -29,7 +29,8 @@ printf 'dev01\tPrivateDeviceSecret\t999999\tTerminal 1\t100\n' > "$T/rental-devi
 # and BOTH receipt histories; original observer examined only balances.
 printf '1\n' > "$T/member-revision"
 printf 'fixture:event:1\t100\talice\tadd\t10\t10\tfixture\t\n' > "$T/member-events.tsv"
-printf 'r:fixture01\tdev01\t999999\t100\tp:2\n' > "$T/rental-events.tsv"
+paid_rental_event="r:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+printf '%s\tdev01\t999999\t100\tp:2\n' "$paid_rental_event" > "$T/rental-events.tsv"
 chmod 600 "$T/"*.tsv "$T/member-revision"
 # The negative missing-file cases need a deterministic snapshot sentinel; a
 # bare sha256sum would itself exit 1 before proving fail-closed behavior.
@@ -188,16 +189,42 @@ cp -p "$T/events.good" "$T/member-events.tsv"
 printf 'fixture:event:1\t100\talice\tadd\t10\t10\tfixture\t\n' >> "$T/member-events.tsv"
 refuse duplicate-member-event
 cp -p "$T/events.good" "$T/member-events.tsv"
+# MIG-0743: a 10-digit paid amount may exceed signed 32-bit bounds even
+# though earlier read-only source parsing accepted it as digits.
+printf 'tampered:event:2\t100\talice\tadd\t2147483648\t2147483648\tfixture\t\n' >> "$T/member-events.tsv"
+refuse overflow-member-paid-receipt
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'tampered:event:2\t100\talice\ttransfer\t-2147483648\t10\tfixture\t100:bob:0\n' >> "$T/member-events.tsv"
+refuse underflow-member-paid-delta
+cp -p "$T/events.good" "$T/member-events.tsv"
 
 cp -p "$T/rental-events.tsv" "$T/rental-events.good"
 printf 'r:fixture02\tdev01\t999999\t100\t\n' >> "$T/rental-events.tsv"
 refuse unbound-paid-rental-receipt
 cp -p "$T/rental-events.good" "$T/rental-events.tsv"
-printf 'r:fixture01\tdev01\t999999\t100\tp:2\n' >> "$T/rental-events.tsv"
+printf '%s\tdev01\t999999\t100\tp:2\n' "$paid_rental_event" >> "$T/rental-events.tsv"
 refuse duplicate-paid-rental-receipt
 cp -p "$T/rental-events.good" "$T/rental-events.tsv"
 printf 'r:fixture03\tdev01\t999999\tnot-time\tp:2\n' >> "$T/rental-events.tsv"
 refuse invalid-rental-receipt-timestamp
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+# Current signed rental receipts are SHA256-lowercase, fixed 64 hex, and
+# tied to an existing paid device. Readonly migration cannot import orphan
+# or over-INT32 leases as apparently valid historic customer time.
+printf 'r:short\tdev01\t999999\t100\tp:2\n' >> "$T/rental-events.tsv"
+refuse short-rental-paid-event-identity
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\tdev01\t999999\t100\tp:2\n' >> "$T/rental-events.tsv"
+refuse noncanonical-uppercase-rental-event-identity
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\tmissing-device\t999999\t100\tp:2\n' >> "$T/rental-events.tsv"
+refuse orphan-paid-rental-device
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\tdev01\t2147483648\t100\tp:2\n' >> "$T/rental-events.tsv"
+refuse over-int32-paid-rental-lease
+cp -p "$T/rental-events.good" "$T/rental-events.tsv"
+printf 'r:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\tdev01\t999999\t2147483648\tp:2\n' >> "$T/rental-events.tsv"
+refuse over-int32-paid-rental-timestamp
 cp -p "$T/rental-events.good" "$T/rental-events.tsv"
 [ "$(snapshot)" = "$baseline" ]
 
@@ -216,5 +243,5 @@ refuse missing-marker
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
 echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
-echo 'MIG-0736 PASS: installed read-only observer validates six-file v1 money+revision+receipts; rejects absent/corrupt/duplicate/unbound events and invalid revision without changing money or leaking IDs'
+echo 'MIG-0736/0743 PASS: installed read-only six-file monetary observer also rejects orphan, noncanonical and oversized paid member/rental receipts without touching sources'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'
