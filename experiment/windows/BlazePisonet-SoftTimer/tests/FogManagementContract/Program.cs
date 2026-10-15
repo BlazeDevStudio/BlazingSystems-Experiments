@@ -65,6 +65,24 @@ using (var fog = new FogManagementClient("https://fog.example",
     Check(unknown.Deployments == 0, "unknown version no POST");
 }
 
+var disabled = new FakeFog { ImageEnabledRaw = "0" };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), disabled))
+{
+    Check(!(await fog.GetImagesAsync())[0].Enabled, "FOG isEnabled=0 must be disabled");
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "disabled image");
+    Check(disabled.Deployments == 0, "disabled image no POST");
+}
+
+var missing = new FakeFog { IncludeImageEnabled = false };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), missing))
+{
+    Check(!(await fog.GetImagesAsync())[0].Enabled, "missing image enablement fails closed");
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "unknown enablement");
+    Check(missing.Deployments == 0, "unknown enablement no POST");
+}
+
 var redirect = new FakeFog { Redirect = true };
 using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("fog_test", "", ""), redirect))
@@ -76,6 +94,8 @@ sealed class FakeFog : HttpMessageHandler
 {
     public string Version { get; set; } = "1.6.0";
     public int HostImageId { get; set; } = 5;
+    public string ImageEnabledRaw { get; set; } = "1";
+    public bool IncludeImageEnabled { get; set; } = true;
     public bool Redirect { get; set; }
     public int BearerRequests { get; private set; }
     public int PairRequests { get; private set; }
@@ -106,7 +126,8 @@ sealed class FakeFog : HttpMessageHandler
         if (request.Method == HttpMethod.Get && path == "/fog/host")
             return Json("{\"hosts\":[{\"id\":\"7\",\"name\":\"pc-01\",\"imageID\":\"" + HostImageId + "\"}]}");
         if (request.Method == HttpMethod.Get && path == "/fog/image")
-            return Json("{\"images\":[{\"id\":\"5\",\"name\":\"Win11\",\"imageEnabled\":\"1\"}]}");
+            return Json("{\"images\":[{\"id\":\"5\",\"name\":\"Win11\"" +
+                (IncludeImageEnabled ? ",\"isEnabled\":\"" + ImageEnabledRaw + "\"" : "") + "}]}");
         if (request.Method == HttpMethod.Post && path == "/fog/host/7/task")
         {
             LastBody = await request.Content!.ReadAsStringAsync(cancellationToken);
