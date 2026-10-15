@@ -113,6 +113,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_migration_guard.sh
       - name: PAY-0755 installed v1 financial migration preflight
         run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh
+      - name: PAY-0758 installed maintenance freeze and paid-write denial
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh
       - name: Verify safe tar extraction and manifest target policy
         run: sh experiment/openwrt/BlazePwifi/tests/v060_update_archive_security.sh
       - name: BlazePwifi v0.6 synthetic state backup/restore integrity prototype
