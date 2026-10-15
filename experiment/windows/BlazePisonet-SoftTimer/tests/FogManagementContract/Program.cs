@@ -92,6 +92,8 @@ foreach (var (tasks, name) in new[]
 {
     ("{\"count\":1,\"tasks\":[{\"hostID\":\"7\"}]}", "active task on selected host"),
     ("{\"count\":1,\"tasks\":[{}]}", "active task with unknown host"),
+    ("{\"count\":1,\"tasks\":[{\"hostID\":\"bad\",\"host\":{\"id\":\"8\"}}]}", "invalid active task host"),
+    ("{\"count\":1,\"tasks\":[{\"hostID\":\"7\",\"host\":{\"id\":\"8\"}}]}", "conflicting active task host"),
     ("{\"count\":2,\"tasks\":[{\"hostID\":\"8\"}]}", "incomplete active task list"),
     ("{\"tasks\":{}}", "malformed active task list")
 })
@@ -109,6 +111,14 @@ using (var fog = new FogManagementClient("https://fog.example",
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
     Check(otherTask.Deployments == 1, "other host task permits deployment");
+}
+
+var activeForbidden = new FakeFog { ActiveTaskStatus = HttpStatusCode.Forbidden };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), activeForbidden))
+{
+    await Reject(() => fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11"), "active task permission denied");
+    Check(activeForbidden.Deployments == 0, "active task permission no POST");
 }
 
 var lostAck = new FakeFog { LostDeploymentResponse = true };
@@ -130,6 +140,7 @@ sealed class FakeFog : HttpMessageHandler
     public bool IncludeImageEnabled { get; set; } = true;
     public bool Redirect { get; set; }
     public string ActiveTasksJson { get; set; } = "{\"count\":0,\"tasks\":[]}";
+    public HttpStatusCode ActiveTaskStatus { get; set; } = HttpStatusCode.OK;
     public bool LostDeploymentResponse { get; set; }
     public int BearerRequests { get; private set; }
     public int PairRequests { get; private set; }
@@ -163,7 +174,8 @@ sealed class FakeFog : HttpMessageHandler
             return Json("{\"images\":[{\"id\":\"5\",\"name\":\"Win11\"" +
                 (IncludeImageEnabled ? ",\"isEnabled\":\"" + ImageEnabledRaw + "\"" : "") + "}]}");
         if (request.Method == HttpMethod.Get && path == "/fog/task/active")
-            return Json(ActiveTasksJson);
+            return ActiveTaskStatus == HttpStatusCode.OK ? Json(ActiveTasksJson) :
+                new HttpResponseMessage(ActiveTaskStatus);
         if (request.Method == HttpMethod.Post && path == "/fog/host/7/task")
         {
             LastBody = await request.Content!.ReadAsStringAsync(cancellationToken);

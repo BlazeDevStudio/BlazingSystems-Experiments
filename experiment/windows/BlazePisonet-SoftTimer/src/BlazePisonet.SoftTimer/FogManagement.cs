@@ -104,11 +104,49 @@ public sealed class FogManagementClient : IDisposable
             1 when info.Minor == 5 => "taskType",
             _ => throw new InvalidOperationException("FOG version is unknown; deployment is disabled.")
         };
+        await EnsureNoActiveTaskAsync(hostId, cancellationToken);
         using var request = NewRequest(HttpMethod.Post, $"host/{hostId}/task");
         request.Content = new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> { [property] = "1" }),
             Encoding.UTF8, "application/json");
         using var response = await _http.SendAsync(request, cancellationToken);
         EnsureResponse(response);
+    }
+
+    private async Task EnsureNoActiveTaskAsync(int hostId, CancellationToken cancellationToken)
+    {
+        using var json = await GetJsonAsync("task/active", cancellationToken);
+        var root = json.RootElement;
+        var tasks = Array(root, "tasks").ToArray();
+        if (root.ValueKind == JsonValueKind.Object &&
+            (!TryProperty(root, "count", out var countValue) ||
+             !int.TryParse(countValue.ToString(), out var count) ||
+             count != tasks.Length))
+            throw new InvalidOperationException("FOG active task list is incomplete; deployment is disabled.");
+
+        foreach (var task in tasks)
+        {
+            if (task.ValueKind != JsonValueKind.Object)
+                throw new InvalidOperationException("FOG active task is malformed.");
+            var ids = new List<int>();
+            foreach (var field in task.EnumerateObject())
+                if (field.Name.Equals("hostID", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!int.TryParse(field.Value.ToString(), out var id) || id <= 0)
+                        throw new InvalidOperationException("FOG active task has an invalid host identity.");
+                    ids.Add(id);
+                }
+            if (TryProperty(task, "host", out var host))
+            {
+                var nestedId = ReadId(host, "id");
+                if (nestedId <= 0)
+                    throw new InvalidOperationException("FOG active task has an invalid host identity.");
+                ids.Add(nestedId);
+            }
+            if (ids.Count == 0 || ids.Any(id => id != ids[0]))
+                throw new InvalidOperationException("FOG active task host identity is missing or inconsistent.");
+            if (ids[0] == hostId)
+                throw new InvalidOperationException("FOG already has an active task for this host.");
+        }
     }
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)
