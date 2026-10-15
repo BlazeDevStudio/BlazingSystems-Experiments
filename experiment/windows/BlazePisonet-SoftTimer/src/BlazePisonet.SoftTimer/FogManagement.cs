@@ -82,7 +82,8 @@ public sealed class FogManagementClient : IDisposable
         using var json = await GetJsonAsync("image", cancellationToken);
         var rows = Array(json.RootElement, "images");
         return rows.Select(x => new FogImage(ReadId(x, "id"), ReadText(x, "name"),
-                ReadBool(x, "imageEnabled", ReadBool(x, "enabled", true))))
+                ReadBool(x, "isEnabled",
+                    ReadBool(x, "imageEnabled", ReadBool(x, "enabled", false)))))
             .Where(x => x.Id > 0 && x.Name.Length > 0).ToArray();
     }
 
