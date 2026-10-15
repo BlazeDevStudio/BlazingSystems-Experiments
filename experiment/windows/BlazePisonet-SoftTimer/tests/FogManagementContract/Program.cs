@@ -27,6 +27,28 @@ await Reject(() =>
     return Task.CompletedTask;
 }, "missing credential");
 
+var boot = DisklessBootProfile.Create("pc-01", "10.20.30.40",
+    "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01");
+Check(boot.DhcpRootPath == "iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01",
+    "per-client DHCP option 017 root path");
+Check(boot.IpxeScript == "#!ipxe\nset initiator-iqn iqn.2026-10.local.blaze:pc-01\n" +
+    "sanboot iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01\n",
+    "per-client iPXE SAN boot script");
+foreach (var (label, address, target, initiator, name) in new[]
+{
+    ("pc-01\nboot", "10.20.30.40", "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01", "label injection"),
+    ("pc-01", "10.20.30.40; reboot", "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01", "address injection"),
+    ("pc-01", "224.0.0.1", "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01", "multicast target"),
+    ("pc-01", "127.0.0.1", "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01", "loopback target"),
+    ("pc-01", "10.20.30.40", "iqn.2026-10.local.blaze:target-pc-01${bad}", "iqn.2026-10.local.blaze:pc-01", "IQN script injection"),
+    ("pc-01", "10.20.30.40", "iqn.2026-10.local.blaze:pc-01", "iqn.2026-10.local.blaze:pc-01", "same target and initiator")
+})
+    await Reject(() =>
+    {
+        DisklessBootProfile.Create(label, address, target, initiator);
+        return Task.CompletedTask;
+    }, name);
+
 var fake = new FakeFog();
 using (var fog = new FogManagementClient("https://fog.example/fog",
            new FogCredentials("fog_test", "", ""), fake))
