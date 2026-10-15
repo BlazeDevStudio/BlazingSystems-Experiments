@@ -61,6 +61,19 @@ grep -q 'archive_file_mismatch' "$T/out" || { cat "$T/out" >&2; exit 1; }
 rm -rf "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp"
 rm "$T/bin/tar"
 
+# Empty financial-state directories must also be captured; a checksum of
+# the incomplete tar and an unchanged file-only manifest are insufficient.
+mkdir "$BP_STATE/targets/empty-state"
+printf '#!/bin/sh\nif [ "$1" = "-cf" ]; then\n  exec "%s" --exclude=./targets/empty-state -cf "$2" -C "$4" .\nfi\nexec "%s" "$@"\n' "$real_tar" "$real_tar" > "$T/bin/tar"
+chmod +x "$T/bin/tar"
+PATH="$T/bin:$PATH" reject silently_missing_empty_directory
+grep -q 'archive_directory_mismatch' "$T/out" || { cat "$T/out" >&2; exit 1; }
+[ -d "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp" ] || exit 1
+[ ! -e "$BP_SNAPSHOT_ROOT/v1-frozen-snapshot" ] || exit 1
+rm -rf "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp"
+rm "$T/bin/tar"
+rmdir "$BP_STATE/targets/empty-state"
+
 # A short write or sync failure leaves an incomplete capture and no success.
 printf '#!/bin/sh\nprintf partial > "$BP_SNAPSHOT_ROOT/.v1-frozen-capture.tmp/state.tar"\nexit 1\n' > "$T/bin/tar"
 chmod +x "$T/bin/tar"
