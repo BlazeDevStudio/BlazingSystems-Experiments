@@ -7,7 +7,9 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT INT TERM
 export BP_STATE="$T/state" BP_RUN="$T/run"
 mkdir -p "$BP_STATE" "$BP_RUN"
+mkdir -p "$BP_STATE/targets"
 touch "$BP_RUN/paid-financial.lock" "$BP_STATE/paid-v2-cutover-intent"
+touch "$BP_STATE/vouchers.tsv"
 printf 'a:b\t10\t1800000000\t0\t0\t0\t\t\t\n' > "$BP_STATE/accounts.tsv"
 printf '1\n' > "$BP_STATE/member-revision"
 printf '2member\tlabel\t1\tsha256i\tsalt\thash\t4096\t10\t1\t1700000000\tadmin\n' > "$BP_STATE/members.tsv"
@@ -38,6 +40,9 @@ restore() {
   cp "$T/controllers" "$BP_STATE/controllers.tsv"
   : > "$BP_STATE/member-events.tsv"
   : > "$BP_STATE/rental-events.tsv"
+  : > "$BP_STATE/vouchers.tsv"
+  rm -f "$BP_STATE/credits.tsv" "$BP_STATE/sessions.tsv"
+  rm -f "$BP_STATE/targets/"* 2>/dev/null || true
   printf '1\n' > "$BP_STATE/member-revision"
 }
 cp "$BP_STATE/accounts.tsv" "$T/accounts"
@@ -65,6 +70,14 @@ cat "$T/rental" >> "$BP_STATE/rental-devices.tsv"; reject duplicate_rental; rest
 printf 'r:old\ta:b\t10\t1700000000\tp:1\n' > "$BP_STATE/rental-events.tsv"; reject rental_receipt; restore
 sed 's/Vendo1/1Vendo/' "$T/controllers" > "$BP_STATE/controllers.tsv"; reject incompatible_controller; restore
 printf '0\n' > "$BP_STATE/member-revision"; reject rolled_back_member_revision; restore
+printf 'UNUSED-CODE\t100\n' > "$BP_STATE/vouchers.tsv"; reject outstanding_voucher; restore
+printf 'aa:bb:cc:dd:ee:ff\t12\n' > "$BP_STATE/credits.tsv"; reject legacy_credit; restore
+printf 'aa:bb:cc:dd:ee:ff\t12\n' > "$BP_STATE/sessions.tsv"; reject legacy_session; restore
+printf 'a:b\taa:bb:cc:dd:ee:ff\t1122334455667788\t1900000000\tVendo1\thotspot\n' > "$BP_STATE/targets/Vendo1.tsv"; reject live_coin_target; restore
+printf 'PENDING\t3\n' > "$BP_STATE/targets/Vendo1.progress"; reject partial_coin_window; restore
+touch "$BP_STATE/targets/unknown"; reject unknown_target_sidecar; restore
+rm "$BP_STATE/vouchers.tsv"; ln -s accounts.tsv "$BP_STATE/vouchers.tsv"; reject voucher_symlink; rm "$BP_STATE/vouchers.tsv"; restore
+mv "$BP_STATE/targets" "$BP_STATE/targets-safe"; ln -s targets-safe "$BP_STATE/targets"; reject target_directory_symlink; rm "$BP_STATE/targets"; mv "$BP_STATE/targets-safe" "$BP_STATE/targets"
 exec 9<"$BP_RUN/paid-financial.lock"
 flock -n 9 || exit 1
 reject writer_busy
