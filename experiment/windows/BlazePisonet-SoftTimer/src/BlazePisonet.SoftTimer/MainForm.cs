@@ -511,6 +511,7 @@ public sealed partial class MainForm : Form
         _pwifiId.Text = c.BlazePwifiControllerId;
         _pwifiKey.Text = c.BlazePwifiVendoKey;
         _fogUrl.Text = c.FogServerUrl;
+        RefreshDisklessProfiles();
         _blockTaskMgr.Checked = c.BlockTaskManager;
         _blockRegedit.Checked = c.BlockRegistryTools;
         _disableLogoff.Checked = c.DisableLogoff;

@@ -95,6 +95,8 @@ public sealed class AppConfig
     public string BlazePwifiVendoKey { get; set; } = string.Empty;
     // FOG credentials are deliberately session-only and never serialized.
     public string FogServerUrl { get; set; } = string.Empty;
+    // Non-secret local mappings. Never treated as proof of target ACLs or boot.
+    public List<DisklessClientAssignment> DisklessProfiles { get; set; } = new();
     public bool MirrorLocalCoinsToBlazePwifi { get; set; }
     public bool BlazePwifiMemberAuthorityEnabled { get; set; }
     // PAY-0719: opt-in fail-closed policy. No v2 customer financial protocol

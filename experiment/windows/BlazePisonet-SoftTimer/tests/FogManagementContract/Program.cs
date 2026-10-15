@@ -50,6 +50,31 @@ foreach (var (label, address, target, initiator, name) in new[]
         return Task.CompletedTask;
     }, name);
 
+var first = new DisklessClientAssignment("pc-01", "10.20.30.40",
+    "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01");
+var second = new DisklessClientAssignment("pc-02", "10.20.30.40",
+    "iqn.2026-10.local.blaze:target-pc-02", "iqn.2026-10.local.blaze:pc-02");
+var emptyProfiles = new List<DisklessClientAssignment>();
+var saved = DisklessProfileRegistry.Add(DisklessProfileRegistry.Add(emptyProfiles, first), second);
+Check(saved.Count == 2 && emptyProfiles.Count == 0, "client registry addition does not mutate prior config");
+var restored = JsonSerializer.Deserialize<List<DisklessClientAssignment>>(JsonSerializer.Serialize(saved));
+Check(DisklessProfileRegistry.Validate(restored).Count == 2, "saved client registry round trip");
+Check(saved[1].BootProfile().IpxeScript.Contains("target-pc-02"), "saved profile produces boot text");
+foreach (var (candidate, name) in new[]
+{
+    (first with { ClientLabel = "PC-01", TargetIqn = "iqn.2026-10.local.blaze:new-target", InitiatorIqn = "iqn.2026-10.local.blaze:new-client" }, "duplicate client label"),
+    (first with { ClientLabel = "pc-03", TargetIp = "10.20.30.41", InitiatorIqn = "iqn.2026-10.local.blaze:pc-03" }, "duplicate target IQN"),
+    (first with { ClientLabel = "pc-03", TargetIqn = "iqn.2026-10.local.blaze:target-pc-03" }, "duplicate initiator IQN")
+})
+    await Reject(() => { DisklessProfileRegistry.Add(saved, candidate); return Task.CompletedTask; }, name);
+Check(saved.Count == 2, "rejected duplicate does not mutate saved profiles");
+await Reject(() => { DisklessProfileRegistry.Validate(null); return Task.CompletedTask; }, "missing saved registry");
+await Reject(() => { DisklessProfileRegistry.Add(new[] { first with { TargetIqn = null! } }, second); return Task.CompletedTask; }, "corrupt saved record");
+await Reject(() => { DisklessProfileRegistry.Remove(saved, "missing"); return Task.CompletedTask; }, "remove unknown client");
+var removed = DisklessProfileRegistry.Remove(saved, "PC-01");
+Check(removed.Count == 1 && removed[0].ClientLabel == "pc-02" && saved.Count == 2,
+    "local removal preserves previous registry");
+
 var fake = new FakeFog();
 using (var fog = new FogManagementClient("https://fog.example/fog",
            new FogCredentials("fog_test", "", ""), fake))
