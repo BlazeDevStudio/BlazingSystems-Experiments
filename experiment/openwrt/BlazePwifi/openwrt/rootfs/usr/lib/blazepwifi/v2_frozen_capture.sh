@@ -41,13 +41,26 @@ final="$snapshot_dir/v1-frozen-snapshot"
 
 umask 077
 mkdir "$tmp" || reject capture_directory
-before="$(find "$state_dir" -type f -exec sha256sum {} +)" || reject source_digest
-before="$(printf '%s\n' "$before" | LC_ALL=C sort)" || reject source_digest
+# Compare the original tree to a fresh, private extraction of the staged
+# archive. A valid checksum of state.tar alone cannot prove that tar included
+# every prepaid balance, receipt, member, lease, or coin sidecar.
+before="$(cd "$state_dir" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject source_digest
+before_dirs="$(cd "$state_dir" && find . -type d -print | LC_ALL=C sort)" || reject source_scan
 tar -cf "$tmp/state.tar" -C "$state_dir" . || reject archive_copy_uncertain
 regular "$tmp/state.tar" || reject archive_special
+mkdir "$tmp/verification" || reject archive_verify_directory
+tar -xf "$tmp/state.tar" -C "$tmp/verification" || reject archive_extract_uncertain
+archive_special="$(find "$tmp/verification" ! -type f ! -type d -print)" || reject archive_scan
+[ -z "$archive_special" ] || reject archive_special_entry
+archive_dirs="$(cd "$tmp/verification" && find . -type d -print | LC_ALL=C sort)" || reject archive_scan
+[ "$archive_dirs" = "$before_dirs" ] || reject archive_directory_mismatch
+archive_files="$(cd "$tmp/verification" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject archive_digest
+[ "$archive_files" = "$before" ] || reject archive_file_mismatch
+rm -rf "$tmp/verification" || reject archive_verify_cleanup
 (cd "$tmp" && sha256sum state.tar > SHA256SUMS && sha256sum -c SHA256SUMS >/dev/null) || reject archive_digest
-after="$(find "$state_dir" -type f -exec sha256sum {} +)" || reject source_digest
-after="$(printf '%s\n' "$after" | LC_ALL=C sort)" || reject source_digest
+after="$(cd "$state_dir" && find . -type f -exec sha256sum {} + | LC_ALL=C sort)" || reject source_digest
+after_dirs="$(cd "$state_dir" && find . -type d -print | LC_ALL=C sort)" || reject source_scan
+[ "$after_dirs" = "$before_dirs" ] || reject concurrent_source_directory_change
 [ "$before" = "$after" ] || reject concurrent_source_change
 special="$(find "$state_dir" ! -type f ! -type d -print)" || reject source_scan
 [ -z "$special" ] || reject special_source_changed
