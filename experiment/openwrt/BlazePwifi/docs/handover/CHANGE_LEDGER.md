@@ -1,3 +1,8 @@
+## PISONET-0017 - exact source Windows CI green, 2026-10-17 Asia/Manila
+- **Status:** validated source on exact CI, docs sync pending classifier; **priority:** P1; PR #90. Source/test 2bb66c9a21d85f6e1fe551de57c8a3d3a48d8ddc, synchronized 1bb642d1db4ef86ab224029cdbfeac57fb0c3f67.
+- **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38929077933 COMPLETED SUCCESS at exact synchronized SHA. FOG/targetd contract, strict build, timer/config/state guards, NSIS Setup EXE install/uninstall and preview upload passed. Artifact 12057953370 API ZIP digest sha256:a5d6630121dfc100343582f726877faee6fc6f5a750cf65dcd2545c9f768fa37; public Release SKIPPED.
+- **Limits/next:** read-only server-reported mapping cannot prove target IQN, CHAP/ACL, dedicated writable storage or Windows PXE/iSCSI boot. Financial PR #89 still denies paid v2. Verify docs-head classifier; then use approved noncustomer targetd/iSCSI/PXE and Windows clients for real acceptance. No production release.
+
 ## PISONET-0017 - source committed, 2026-10-17 Asia/Manila
 - **Status:** committed_untested; **priority:** P1; isolated branch pisonet-diskless-manager, PR #90, exact source/test 2bb66c9a21d85f6e1fe551de57c8a3d3a48d8ddc.
 - **Files:** TargetdInspection.cs, MainForm.Diskless.cs and FogManagementContract/Program.cs in experiment/windows/BlazePisonet-SoftTimer. Added selected-client read-only mapping assessment and 60-second monotonic report age; no targetd write or saved credential.
