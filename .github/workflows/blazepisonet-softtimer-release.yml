@@ -125,6 +125,15 @@ jobs:
           $p=Start-Process -FilePath (Resolve-Path $binary).Path -ArgumentList @('--verify-timer-math') -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "Timer cadence self-check failed with exit code $($p.ExitCode)" }
 
+      - name: Reject corrupt existing SoftTimer config without replacing it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $binary=Join-Path $env:PROJECT_DIR 'src/BlazePisonet.SoftTimer/bin/Release/net8.0-windows/win-x64/BlazePisonet.SoftTimer.exe'
+          if (-not (Test-Path $binary)) { throw 'Compiled SoftTimer EXE missing for config corruption guard' }
+          $p=Start-Process -FilePath (Resolve-Path $binary).Path -ArgumentList @('--verify-config-corruption-guard') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Config corruption guard failed with exit code $($p.ExitCode)" }
+
       - name: Publish self-contained Windows x64 EXEs
         shell: pwsh
         run: |

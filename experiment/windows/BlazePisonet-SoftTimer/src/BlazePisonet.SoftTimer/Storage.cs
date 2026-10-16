@@ -60,23 +60,26 @@ public static class Storage
     public static string LogPath => Path.Combine(RootDirectory, "softtimer.log");
     public static string MaintenancePath => Path.Combine(RootDirectory, "maintenance.until");
 
-    public static AppConfig LoadConfig()
+    public static AppConfig LoadConfig() => LoadConfigAtPath(ConfigPath);
+
+    internal static AppConfig LoadConfigAtPath(string path)
     {
-        Directory.CreateDirectory(RootDirectory);
-        if (!File.Exists(ConfigPath))
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        if (!File.Exists(path))
         {
             var cfg = new AppConfig
             {
                 CentralSharedKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant(),
                 BlazePwifiControllerId = "softtimer-" + NormalizeId(Environment.MachineName)
             };
-            SaveConfig(cfg);
+            AtomicWrite(path, JsonSerializer.Serialize(cfg, JsonOptions));
             return cfg;
         }
 
         try
         {
-            var cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(ConfigPath), JsonOptions) ?? new AppConfig();
+            var cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path), JsonOptions)
+                ?? throw new InvalidDataException("Configuration JSON is null.");
             if (string.IsNullOrWhiteSpace(cfg.CentralSharedKey))
                 cfg.CentralSharedKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(cfg.BlazePwifiControllerId))
@@ -87,12 +90,41 @@ public static class Storage
         }
         catch (Exception ex)
         {
-            Log("Config load failed: " + ex.Message);
-            return new AppConfig
+            throw new InvalidDataException(
+                "Existing SoftTimer configuration cannot be read. The original file was preserved; restore a known-good backup before starting.", ex);
+        }
+    }
+
+    // Runs in the compiled EXE before mutex/UI/device setup; uses only a disposable
+    // temp directory and never opens the installed shop configuration.
+    public static int VerifyConfigCorruptionGuard()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "blaze-config-guard-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "config.json");
+        try
+        {
+            Directory.CreateDirectory(root);
+            const string valid = "{\"Version\":\"0.5.0-preview.1\",\"CentralSharedKey\":\"known-key\",\"BlazePwifiControllerId\":\"known-id\"}";
+            File.WriteAllText(path, valid);
+            var loaded = LoadConfigAtPath(path);
+            if (loaded.CentralSharedKey != "known-key" || loaded.BlazePwifiControllerId != "known-id") return 71;
+            foreach (var bad in new[] { "{\"Version\":", "null" })
             {
-                CentralSharedKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant(),
-                BlazePwifiControllerId = "softtimer-" + NormalizeId(Environment.MachineName)
-            };
+                File.WriteAllText(path, bad);
+                try { LoadConfigAtPath(path); return 72; }
+                catch (InvalidDataException) { }
+                if (File.ReadAllText(path) != bad || File.Exists(path + ".tmp") || File.Exists(path + ".bak"))
+                    return 73;
+            }
+            File.Delete(path);
+            loaded = LoadConfigAtPath(path);
+            return File.Exists(path) && !string.IsNullOrWhiteSpace(loaded.CentralSharedKey) ? 0 : 74;
+        }
+        catch { return 75; }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, true); }
+            catch { }
         }
     }
 
