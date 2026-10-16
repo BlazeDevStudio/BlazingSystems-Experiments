@@ -159,15 +159,21 @@ public static class Storage
         }
     }
 
-    public static RuntimeState LoadState()
+    public static RuntimeState LoadState() => LoadStateAtPath(StatePath);
+
+    internal static RuntimeState LoadStateAtPath(string path)
     {
-        Directory.CreateDirectory(RootDirectory);
-        if (!File.Exists(StatePath)) return new RuntimeState();
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        if (!File.Exists(path)) return new RuntimeState();
         try
         {
-            var state = JsonSerializer.Deserialize<RuntimeState>(File.ReadAllText(StatePath), JsonOptions) ?? new RuntimeState();
-            state.Members ??= new Dictionary<string, MemberAccount>(StringComparer.OrdinalIgnoreCase);
-            state.RemoteMembers ??= new Dictionary<string, MemberAccount>(StringComparer.OrdinalIgnoreCase);
+            var json = File.ReadAllText(path);
+            using var document = JsonDocument.Parse(json);
+            RequirePaidStateCore(document.RootElement);
+            var state = JsonSerializer.Deserialize<RuntimeState>(json, JsonOptions)
+                ?? throw new InvalidDataException("Runtime state JSON is null.");
+            if (state.RemoteMembers is null)
+                throw new InvalidDataException("Remote member state is null.");
             if (state.TimerRunning && state.RemainingSeconds > 0 && state.PendingMemberOperation is null)
             {
                 var elapsed = Math.Max(0, (long)(DateTimeOffset.UtcNow - state.UpdatedUtc).TotalSeconds);
@@ -183,8 +189,74 @@ public static class Storage
         }
         catch (Exception ex)
         {
-            Log("State load failed: " + ex.Message);
-            return new RuntimeState();
+            throw new InvalidDataException(
+                "Existing SoftTimer paid state cannot be read. The original file was preserved; reconcile it before starting.", ex);
+        }
+    }
+
+    private static void RequirePaidStateCore(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new InvalidDataException("Runtime state must be an object.");
+        var fields = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in root.EnumerateObject())
+            if (!fields.TryAdd(field.Name, field.Value))
+                throw new InvalidDataException("Runtime state has duplicate fields.");
+        if (!fields.TryGetValue(nameof(RuntimeState.RemainingSeconds), out var remaining) ||
+            remaining.ValueKind != JsonValueKind.Number || !remaining.TryGetInt64(out var seconds) || seconds < 0 ||
+            !fields.TryGetValue(nameof(RuntimeState.TimerRunning), out var running) ||
+            running.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ||
+            !fields.TryGetValue(nameof(RuntimeState.UpdatedUtc), out var updated) ||
+            updated.ValueKind != JsonValueKind.String ||
+            !fields.TryGetValue(nameof(RuntimeState.SalesPulseCount), out var sales) ||
+            sales.ValueKind != JsonValueKind.Number || !sales.TryGetInt64(out var count) || count < 0 ||
+            !fields.TryGetValue(nameof(RuntimeState.AppliedEventIds), out var events) ||
+            events.ValueKind != JsonValueKind.Array ||
+            !fields.TryGetValue(nameof(RuntimeState.Members), out var members) ||
+            members.ValueKind != JsonValueKind.Object)
+            throw new InvalidDataException("Runtime state is missing or corrupt paid fields.");
+    }
+
+    // Compiled-EXE regression uses only a private disposable path; it never
+    // reads or writes the shop's state.json or its recovery backup.
+    public static int VerifyStateCorruptionGuard()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "blaze-state-guard-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "state.json");
+        try
+        {
+            Directory.CreateDirectory(root);
+            const string valid = "{\"RemainingSeconds\":600,\"TimerRunning\":false,\"UpdatedUtc\":\"2026-10-16T08:00:00+00:00\",\"SalesPulseCount\":2,\"AppliedEventIds\":[],\"Members\":{}}";
+            File.WriteAllText(path, valid);
+            var state = LoadStateAtPath(path);
+            if (state.RemainingSeconds != 600 || state.SalesPulseCount != 2) return 81;
+            foreach (var bad in new[]
+            {
+                "{\"RemainingSeconds\":", "null", "{}",
+                valid.Replace("\"RemainingSeconds\":600,", ""),
+                valid.Replace("\"Members\":{}", "\"Members\":null"),
+                valid.Replace("\"RemainingSeconds\":600", "\"RemainingSeconds\":-1"),
+                valid.Replace("\"SalesPulseCount\":2", "\"SalesPulseCount\":-1"),
+                valid.Replace("\"RemainingSeconds\":600", "\"RemainingSeconds\":\"600\""),
+                valid.Replace("\"RemainingSeconds\":600", "\"RemainingSeconds\":600,\"remainingseconds\":0"),
+                valid.Replace("\"Members\":{}", "\"Members\":{},\"RemoteMembers\":null")
+            })
+            {
+                File.WriteAllText(path, bad);
+                try { LoadStateAtPath(path); return 82; }
+                catch (InvalidDataException) { }
+                if (File.ReadAllText(path) != bad || File.Exists(path + ".tmp") || File.Exists(path + ".bak"))
+                    return 83;
+            }
+            File.Delete(path);
+            state = LoadStateAtPath(path);
+            return !File.Exists(path) && state.RemainingSeconds == 0 ? 0 : 84;
+        }
+        catch { return 85; }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, true); }
+            catch { }
         }
     }
 

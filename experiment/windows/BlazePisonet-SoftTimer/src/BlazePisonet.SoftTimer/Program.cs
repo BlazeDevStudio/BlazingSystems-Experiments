@@ -10,6 +10,8 @@ internal static class Program
             return TimerEngine.VerifyTimerMath();
         if (args.Any(a => string.Equals(a, "--verify-config-corruption-guard", StringComparison.OrdinalIgnoreCase)))
             return Storage.VerifyConfigCorruptionGuard();
+        if (args.Any(a => string.Equals(a, "--verify-state-corruption-guard", StringComparison.OrdinalIgnoreCase)))
+            return Storage.VerifyStateCorruptionGuard();
         if (args.Any(a => string.Equals(a, "--verify-v2-member-protocol-gate", StringComparison.OrdinalIgnoreCase)))
             return BlazePwifiClient.VerifyV2MemberProtocolGate();
         // PAY-0720: exercise the SAME shipped WinExe verifier with externally
