@@ -1,3 +1,8 @@
+## CI-0021 - final status-head classifier result, 2026-10-17 Asia/Manila
+- **Status:** prior head validated; PR #90 preview. Prior status head `c8a773f55a4255a6cf363c05a459d8b0868cf64f`.
+- **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38972624894 COMPLETED SUCCESS for handover, Linux LIO contract and Windows contracts/build/NSIS, with literal checked-out SHA assertion. Artifact 12077024409 GitHub API digest sha256:6a522c4dcabee5a794c08191ee423d5bc295640b64e58bccb97dbd03b75f3ddc; public publish SKIPPED.
+- **Limit/next:** this new documentation-only checkpoint has no exact CI yet. No live LIO/CHAP/ACL refusal, storage isolation, unattended Windows PXE/iSCSI boot or physical acceptance. Financial paid v2 remains denied. Continue only with authenticated noncustomer management and approved live acceptance; no production release.
+
 ## CI-0021 - docs-head literal CI result, 2026-10-17 Asia/Manila
 - **Status:** validated prior docs head; PR #90 preview. Exact prior head `1e364ca5712ad190f90805d3660ba1795d4aa09f`.
 - **Evidence:** workflow dispatch https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38972089136 COMPLETED SUCCESS at prior head: handover, 17 Ubuntu LIO negative tests, Windows contracts/build/NSIS installer and preview upload, with literal checkout SHA assertions. Artifact 12076524189 GitHub API digest sha256:ba8034b70cb33e239c8f22a8922cd240bdbab691922b540472e7779dd7063898. Public publish SKIPPED.
