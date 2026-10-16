@@ -40,7 +40,7 @@ reject() {
     unsupported_wifi_money) expected=unsupported_or_corrupt_wifi_money;;
     unsupported_voucher_money|unresolved_coin_window) expected="$1";;
     missing_freeze) expected=frozen_marker_required;;
-    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
+    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|bad_detail_format|bad_add_post_balance|bad_subtract_previous_overflow|bad_set_post_balance|bad_restore_post_balance|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
     concurrent_writer) expected=writer_busy;;
@@ -108,6 +108,18 @@ printf 'm:transfer:dest\t100\talice\ttransfer\t-4\t4\tVendo1\t116:bob:3\n' >> "$
 stage_member_refuse bad_transfer_target_underflow
 printf 'm:transfer:sender\t100\talice\ttransfer\t-4\t4\tVendo1\t2147483647:bob:4\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse bad_transfer_sender_overflow
+# PAY-0769: reject only when an optional nontransfer v1 receipt detail
+# is PRESENT and inconsistent; legacy blank-detail history remains valid.
+printf 'm:detail:fmt\t100\talice\tadd\t5\t5\tVendo1\twrong\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_detail_format
+printf 'm:detail:add\t100\talice\tadd\t5\t5\tVendo1\t4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_add_post_balance
+printf 'm:detail:sub\t100\talice\tsubtract\t-5\t5\tVendo1\t2147483647\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_subtract_previous_overflow
+printf 'm:detail:set\t100\talice\tset\t-5\t5\tVendo1\t4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_set_post_balance
+printf 'm:detail:restore\t100\talice\trestore_all\t-5\t5\tVendo1\t1\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_restore_post_balance
 printf 'admin:2:alice\t101\talice\tdelete\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse recreated_member_epoch
@@ -165,6 +177,9 @@ PATH="$T/bin:$PATH" reject sync_failure
 rm -rf "$BP_SNAPSHOT_ROOT/.v1-v2-candidate.tmp"
 rm "$T/bin/sync"
 
+# For the positive staged candidate, real v1 nonempty add detail says
+# alice rose from 100 to 120; a later transfer of 4 leaves 116.
+printf 'm:1\t100\talice\tadd\t20\t20\tVendo1\t120\n' > "$BP_STATE/member-events.tsv"
 # Healthy distinct source/recipient transfer receipts remain acceptable.
 printf 'm:healthy:2\t100\talice\ttransfer\t-4\t4\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
 refresh_archive
