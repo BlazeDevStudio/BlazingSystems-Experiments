@@ -198,6 +198,30 @@ printf 'tampered:event:2\t100\talice\ttransfer\t-2147483648\t10\tfixture\t100:bo
 refuse underflow-member-paid-delta
 cp -p "$T/events.good" "$T/member-events.tsv"
 
+# MIG-0744: this is the actual member-transfer receipt layout emitted by
+# installed member.sh: from_balance:recipient:to_balance. A historical paid
+# event for a deleted user/unknown transfer recipient is not safely
+# importable from the six-file source set, even if its 8 TSV columns and
+# amount are otherwise valid. Healthy legacy transfer remains admissible.
+printf 'fixture:transfer:valid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:4\n' >> "$T/member-events.tsv"
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:orphan:credit\t100\tmissinguser\tadd\t10\t10\tfixture\t10\n' >> "$T/member-events.tsv"
+refuse orphan-paid-member-credit
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:orphan:transfer\t100\tmissinguser\ttransfer\t-4\t4\tfixture\t196:bob:4\n' >> "$T/member-events.tsv"
+refuse orphan-transfer-source
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:missing\t100\talice\ttransfer\t-4\t4\tfixture\t196:missinguser:4\n' >> "$T/member-events.tsv"
+refuse orphan-transfer-destination
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:invalid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:2147483648\n' >> "$T/member-events.tsv"
+refuse overflow-transfer-receipt-detail
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:invalid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:bogus\n' >> "$T/member-events.tsv"
+refuse malformed-transfer-balance
+cp -p "$T/events.good" "$T/member-events.tsv"
+
 cp -p "$T/rental-events.tsv" "$T/rental-events.good"
 printf 'r:fixture02\tdev01\t999999\t100\t\n' >> "$T/rental-events.tsv"
 refuse unbound-paid-rental-receipt
@@ -243,5 +267,5 @@ refuse missing-marker
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
 echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
-echo 'MIG-0736/0743 PASS: installed read-only six-file monetary observer also rejects orphan, noncanonical and oversized paid member/rental receipts without touching sources'
+echo 'MIG-0736/0743/0744 PASS: installed read-only six-file monetary observer also rejects orphan, noncanonical and oversized paid member/rental receipts without touching sources'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'
