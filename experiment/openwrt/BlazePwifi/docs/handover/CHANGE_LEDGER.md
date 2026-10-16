@@ -1,3 +1,10 @@
+## CI-0022 - financial literal PR checkout provenance, 2026-10-17 Asia/Manila
+- **Status:** committed_untested; **priority:** P0 release evidence; isolated PR #89. In-progress handover `93c35827`; workflow source `d6af99545fa70173fe0a69deb3afec7515908f55`.
+- **Files:** `.github/workflows/blazepwifi-build.yml`, `blazepwifi-v060-native-journal.yml`, `blazepwifi-v060-sdk-lab.yml`. All 22 repository checkouts explicitly use `github.event.pull_request.head.sha || github.sha` and assert `git rev-parse HEAD` before work. Full jobs include firmware, ESP, Android and packaging; native and SDK gates cover installed financial source/targets. No payment authorization or signer change.
+- **Evidence:** focused checkout/assert counts 20/20 Full, 1/1 native, 1/1 SDK; `git diff --check` PASS. Exact GitHub Actions YAML and jobs PENDING. Existing green runs must be described by their actual checkout (PR proposed merge if default), not merely API head_sha.
+- **Risk/rollback:** workflow context/checkout compatibility and YAML must be proven in Actions. Revert workflow source `d6af9954` if incompatible. No customer equipment, keys, money or data touched. Paid v2 remains denied.
+- **NEXT ACTION:** push synchronized handover, verify Full/native/SDK checked-out SHA and results, fix demonstrated failures; real witness/signer/controller provisioning and physical acceptance still required before release.
+
 ## PAY-0765 - docs-only exact CI checkpoint, 2026-10-16 Asia/Manila
 - **Status:** validated evidence, current synchronization awaiting its own classifier; **priority:** P0 #31/#32; isolated PR #89. No new source change. Prior exact head `013ee87ef9f270026642b8ee03d565039e27c0f2`.
 - **Evidence:** Full https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38910155117 SUCCESS, native https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38910156849 SUCCESS, SDK https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38910155275 SUCCESS; every run reports prior exact head. This record is not physical proof.
