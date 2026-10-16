@@ -1,3 +1,11 @@
+## PISONET-0015 - read-only installed FOG task view, 2026-10-16 Asia/Manila
+
+- **Status:** COMMITTED_UNTESTED, P1, isolated PR #90. Source/test `851b1bc11ebc3d1f5bcc4b35653b1d22e8e4ae66`. Files: `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/FogManagement.cs`, `MainForm.Diskless.cs`, and `tests/FogManagementContract/Program.cs`.
+- **Behavior:** the actual Diskless page can inspect FOG's active task host IDs without issuing a deployment. Connection edits clear the view; stale and overlapping responses are discarded. Parser rejects incomplete or malformed task lists. Official FOG API docs: https://docs.fogproject.org/en/latest/1.5/kb/integrations/api/ .
+- **Evidence/limit:** `git diff --check` PASS. Local .NET SDK unavailable. Exact Windows CI pending. A host ID list does not establish task type, task origin, disk write, iSCSI/PXE Windows boot, target ACL or storage isolation. No live FOG, customer data/device, key or production release touched.
+- **Rollback/next:** revert `851b1bc1` if needed. Push synchronized handover, run exact Windows FOG contract/build/installer workflow, fix actual failures and update PR #90. Financial PR #89 paid v2 remains denied pending independent witness, protected signer, reversible receipt migration and hardware acceptance.
+
+---
 ## PISONET-0014 - exact source Windows proof, 2026-10-16 Asia/Manila
 
 - **Status:** VALIDATED_SCOPED, P1. Source/test `0fcea6c5cf80c89ec70d8369579f1de0d976eb68`, synchronized `225a1c70f73c2de3ff7746668449fd7c00bbc5f9`, PR #90. [Windows #38900506524](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38900506524) COMPLETED SUCCESS at exact head: FOG contract, strict build, config/state guards, timer, portable EXEs, Setup EXE install/uninstall, preview upload; public release SKIPPED. Artifact `12046110675`, ZIP `sha256:0e60a411f54d37d6e70bc975d31930ba8a8311bf2c15e095790efdca7361c081`.
