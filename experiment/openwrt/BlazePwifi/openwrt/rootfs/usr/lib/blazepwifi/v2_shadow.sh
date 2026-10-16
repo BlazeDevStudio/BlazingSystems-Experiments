@@ -115,12 +115,20 @@ done
 before="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" "$state/member-revision" "$state/member-events.tsv" "$state/rental-events.tsv" 2>/dev/null)" || {
   echo 'SHADOW BLOCKED: source fingerprint read failed' >&2; exit 8;
 }
+# MIG-0746: the v1 paid credit, lease and paused-time fields are
+# migration-critical arithmetic, not merely strings of digits.  Accept
+# canonical zero or positive signed-32-bit values only.  Do not guess
+# balance zero, wrap numeric conversions, or approve an unsafe cutover.
 account_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=9 || $1 !~ /^[A-Za-z0-9_.:-]+$/ || length($1)>96 ||
-        $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ ||
-        $4 !~ /^[0-9]+$/ || $5 !~ /^(0|1)$/ ||
-        $6 !~ /^[0-9]+$/ || ++seen[$1]>1) bad=1
+        !paid32($2) || !paid32($3) ||
+        !paid32($4) || $5 !~ /^(0|1)$/ ||
+        !paid32($6) || ++seen[$1]>1) bad=1
     count++
   }
   END {if (bad) exit 8; print count+0}
@@ -128,11 +136,15 @@ account_count="$(awk -F '\t' '
   echo 'SHADOW BLOCKED: invalid/duplicate Wi-Fi paid account row' >&2; exit 8;
 }
 member_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=11 || $1 !~ /^[A-Za-z0-9_.-]+$/ || length($1)>32 ||
         $3 !~ /^(0|1)$/ || $7 !~ /^[0-9]+$/ ||
-        $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
-        $10 !~ /^[0-9]+$/ || ++seen[$1]>1) bad=1
+        !paid32($8) || $9 !~ /^[0-9]+$/ ||
+        !paid32($10) || ++seen[$1]>1) bad=1
     count++
   }
   END {if (bad) exit 8; print count+0}
@@ -140,10 +152,14 @@ member_count="$(awk -F '\t' '
   echo 'SHADOW BLOCKED: invalid/duplicate paid member row' >&2; exit 8;
 }
 rental_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=5 || $1 !~ /^[A-Za-z0-9_.:-]+$/ ||
         length($1)>96 || length($2)==0 ||
-        $3 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ ||
+        !paid32($3) || !paid32($5) ||
         ++seen[$1]>1) bad=1
     count++
   }
