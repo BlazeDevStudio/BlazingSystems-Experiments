@@ -2372,3 +2372,10 @@
 - **Why/paths:** PISONET-0009 rejected malformed JSON, but valid `{}` and missing/blank identity fields still generated new `CentralSharedKey` or `BlazePwifiControllerId` from an existing file. `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/Storage.cs` now refuses them and expands the installed-EXE negative verifier. Original file must remain untouched; missing first-run config still generates identity.
 - **Evidence/limits:** `git diff --check` PASS. Local .NET SDK unavailable, exact Windows run ID/conclusion pending. Prior PISONET-0009 final head `d9dfa1bdfccec7abe5ca2884c21c559469167d3f` Windows #38861430698 SUCCESS. No customer config/device or live FOG contacted. Revert source commit on PR #90 if needed. Financial PR #89 paid v2 still denied pending witness, signer, migration and hardware acceptance.
 - **Next:** commit synchronized three handovers, push PR #90, run exact-head Windows contract/build/installer CI and record result before PR update.
+
+## PISONET-0010 exact Windows CI result — 2026-10-16 Asia/Manila
+
+- **Status/priority:** validated at exact source+handover SHA `8da107147adb4c18a2add1d0c9ad89765a938992`, P1, PR #90 open/unmerged; source SHA `6312ab945e449d794413cd67f712e6feb4c84cce`.
+- **Evidence:** [Windows #38866294927](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38866294927) COMPLETED SUCCESS, including compiled-EXE malformed/empty/missing-identity refusal, valid/first-run controls, FOG contract, strict build, timer, NSIS Setup EXE install/uninstall, portable/checksums and preview upload. Public publish SKIPPED. Artifact id `12031841046`, ZIP `sha256:71df5f25fdec1b18023a492f29d6c8fc3bae18a0675ce88e86fef88df899f698`.
+- **Limit/rollback:** no customer config/device, live FOG/iSCSI/PXE Windows boot or paid v2 financial acceptance. Revert source commit if needed. New status-only docs SHA requires CI classification.
+- **Next:** push docs checkpoint, verify exact Windows run, update PR #90; maintain paid v2 denial until independent witness, protected signer, reversible migration and hardware acceptance are real.
