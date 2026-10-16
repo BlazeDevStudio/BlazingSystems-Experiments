@@ -1,3 +1,14 @@
+## PISONET-0017 - source committed, 2026-10-17 Asia/Manila
+- **Status:** committed_untested; **priority:** P1; isolated branch pisonet-diskless-manager, PR #90, exact source/test 2bb66c9a21d85f6e1fe551de57c8a3d3a48d8ddc.
+- **Files:** TargetdInspection.cs, MainForm.Diskless.cs and FogManagementContract/Program.cs in experiment/windows/BlazePisonet-SoftTimer. Added selected-client read-only mapping assessment and 60-second monotonic report age; no targetd write or saved credential.
+- **Proof:** local focused dotnet run failed before compilation because no SDK installed. git diff --check PASS. CI pending. Official source: https://github.com/open-iscsi/targetd/blob/main/API.md and https://ipxe.org/sanuri (blank LUN selects 0).
+- **Limit:** no target IQN, CHAP/ACL enforcement, writable isolation or Windows boot evidence. Financial PR #89 remains fail-closed; no production release. **Next:** exact Windows contract/build/installer CI, fix demonstrated failures.
+
+## PISONET-0017 - saved client mapping consistency, 2026-10-17 Asia/Manila
+- **Status:** in_progress; **priority:** P1 diskless storage safety; branch `pisonet-diskless-manager`, PR #90; source commit not yet made.
+- **Scope:** installed SoftTimer targetd inventory and saved profile UI/contract, read-only. The official targetd API identifies export initiators, LUNs, volumes and access-group mappings but does not prove target IQN, CHAP/ACL enforcement or Windows boot: https://github.com/open-iscsi/targetd/blob/main/API.md .
+- **Next:** implement selected-profile mapping consistency with missing/ambiguous/shared/stale negatives, run exact Windows build/installer CI; keep production publish skipped.
+
 ## PISONET-0016 - exact source Windows proof, 2026-10-16 Asia/Manila
 - **Status:** validated by Windows simulation/build, not physical; **priority:** P1. Source `5a81a6fd10ce070c717bacef48de3104339880b7`; synchronized `c8ba5a899537c0b253767cf149fb674d184449b5`; PR #90.
 - **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38905938517 COMPLETED SUCCESS at exact `c8ba5a899537c0b253767cf149fb674d184449b5`. Targetd/FOG fake contracts, strict build, timer/config/state guards, NSIS install/uninstall, preview upload passed; GitHub Release SKIPPED. Artifact id `12048317616`, API ZIP digest `sha256:954f27fbbc0748178c08fb0ce4b80d787658fd1a5cd03ae349c1b786baf899b0`. Current docs-only checkpoint requires its own exact CI.
