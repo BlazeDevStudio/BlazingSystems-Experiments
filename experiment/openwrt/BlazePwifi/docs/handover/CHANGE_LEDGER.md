@@ -2688,3 +2688,12 @@
 - **Regression:** `tests/v060_installed_migration_stage.sh` [`6b665694`](https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/6b66569442d07c9e9740f8868223f318978f1e48) preserves all four PR #102 marker negatives and full native-positive stage while incorporating five PR #101 detail negatives and a valid nonempty paid add and transfer. New combined branch has **NO VERIFIED CI YET**; no hardware or customer claim.
 - **Security/reversibility:** frozen snapshot, no-write/no-ACK and v0.6 NO-GO gates enforced, discard new branch on failure. Remaining #31/#32/#43/#34: independent physically monotonic witness, owner protected signer, installed truly crash-atomic member+rental commit/receipt, irreversible authenticated ACK, audited reversible migration, approved physical power cuts and device soak absent.
 - **NEXT:** open isolated draft PR to owner-gated candidate PR #89 branch, test exact Full named PAY-0765/native and 3-target LAB SDK, fix actual red only, guarded-merge only when all success and base unchanged; update all three canonical handovers. Keep `VERSION=0.5.3`, `CUSTOMER_INSTALL_AUTHORIZED=0`, `PRODUCTION_v0.6.0_RELEASED=0`.
+
+
+## PAY-0771 2026-10-17 Manila — test proof integrity, committed_untested
+
+- PRE-CODE handover 57518912a79b3d23eaa9ca050ab2bec5f69b185a; fixture correction 5d27e92884024ca7acc1ea0c1aaeb68908783e53. Changed only tests/v060_installed_migration_stage.sh on isolated PR #103 branch fix/pay-0770-optional-receipt-detail-reconcile.
+- Root cause: old positive asserted transfer receipt 116:bob:4 yet current member rows were Alice=120 and Bob=0; invalid healthy example could conceal a migration inconsistency. Change disposable source rows to 116 and 4 after receipt setup, assert both opening ledger rows and native +1 COMMIT/REPLAY117. Existing five receipt detail and four frozen marker negative cases preserved.
+- PRIOR CI HEAD 8a2c4f3777eafe27c7b273624217707729b76bbf: native #38964663831 success; Full #38964663662 and SDK #38964663653 unfinished when source changed. No new head acceptance yet, no customer or production change.
+- Rollback revert test-only 5d27e92884024ca7acc1ea0c1aaeb68908783e53. Remaining open gates #31/#32/#43/#34; VERSION=0.5.3 CUSTOMER_INSTALL_AUTHORIZED=0 PRODUCTION_v0.6.0_RELEASED=0.
+- NEXT: exact current HEAD Full PAY-0765, native and LAB SDK must complete success before guarded PR #103 merge into owner-gated candidate only, never PR #89 into active development.
