@@ -36,6 +36,14 @@ jobs:
       - name: Verify stale and partial handovers are rejected
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate_regression.sh
 
+  test-linux-lio:
+    needs: handover
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PISONET-0019 disabled LIO preparation and uncertain recovery contract
+        run: python3 -m unittest discover -s experiment/windows/BlazePisonet-SoftTimer/linux-server -p 'test_*.py' -v
+
   build-windows:
     needs: handover
     runs-on: windows-latest
