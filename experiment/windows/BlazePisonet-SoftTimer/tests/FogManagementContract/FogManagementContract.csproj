@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../src/BlazePisonet.SoftTimer/FogManagement.cs" Link="FogManagement.cs" />
+    <Compile Include="../../src/BlazePisonet.SoftTimer/FogInventoryBinding.cs" Link="FogInventoryBinding.cs" />
     <Compile Include="../../src/BlazePisonet.SoftTimer/DisklessBootProfile.cs" Link="DisklessBootProfile.cs" />
     <Compile Include="../../src/BlazePisonet.SoftTimer/DisklessProfileRegistry.cs" Link="DisklessProfileRegistry.cs" />
   </ItemGroup>

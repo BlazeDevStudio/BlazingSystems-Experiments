@@ -9,6 +9,7 @@ public sealed partial class MainForm
     private readonly ListBox _fogHosts = new() { Height = 190, Width = 850 };
     private readonly ListBox _fogImages = new() { Height = 155, Width = 850 };
     private readonly Label _fogStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
+    private readonly FogInventoryBinding _fogInventoryBinding = new();
     private readonly TextBox _disklessClient = NewText();
     private readonly TextBox _disklessTargetIp = NewText();
     private readonly TextBox _disklessTargetIqn = NewText();
@@ -23,6 +24,8 @@ public sealed partial class MainForm
 
     private void BuildDiskless()
     {
+        foreach (var field in new[] { _fogUrl, _fogBearer, _fogGlobal, _fogUser })
+            field.TextChanged += (_, _) => InvalidateFogInventory();
         var root = NewPage("Diskless & Imaging",
             "Manage Windows client images through a self-hosted FOG server. Live diskless boot requires separately validated iSCSI and PXE infrastructure.");
         var connection = Card("FOG connection",
@@ -66,6 +69,14 @@ public sealed partial class MainForm
 
     private FogManagementClient NewFogClient() => new(_fogUrl.Text.Trim(),
         new FogCredentials(_fogBearer.Text, _fogGlobal.Text, _fogUser.Text));
+
+    private void InvalidateFogInventory()
+    {
+        _fogInventoryBinding.ConnectionEdited();
+        _fogHosts.Items.Clear();
+        _fogImages.Items.Clear();
+        _fogStatus.Text = "FOG connection changed. Refresh inventory before scheduling a deployment.";
+    }
 
     private void RefreshDisklessProfiles()
     {
@@ -171,6 +182,9 @@ public sealed partial class MainForm
 
     private async Task RefreshFogAsync()
     {
+        var generation = _fogInventoryBinding.BeginRefresh();
+        _fogHosts.Items.Clear();
+        _fogImages.Items.Clear();
         try
         {
             _fogStatus.Text = "Connecting to FOG...";
@@ -178,14 +192,15 @@ public sealed partial class MainForm
             var info = await fog.GetServerInfoAsync();
             var hosts = await fog.GetHostsAsync();
             var images = await fog.GetImagesAsync();
-            _fogHosts.Items.Clear();
-            _fogImages.Items.Clear();
+            if (!_fogInventoryBinding.CompleteRefresh(generation)) return;
             _fogHosts.Items.AddRange(hosts.Cast<object>().ToArray());
             _fogImages.Items.AddRange(images.Cast<object>().ToArray());
             _fogStatus.Text = $"FOG {info.Version} · {hosts.Count} hosts · {images.Count} images · imaging management ready";
         }
         catch (Exception ex)
         {
+            if (_fogInventoryBinding.Generation != generation) return;
+            _fogInventoryBinding.ConnectionEdited();
             _fogHosts.Items.Clear();
             _fogImages.Items.Clear();
             _fogStatus.Text = "FOG connection failed: " + ex.Message;
@@ -194,6 +209,12 @@ public sealed partial class MainForm
 
     private async Task DeployFogAsync()
     {
+        var generation = _fogInventoryBinding.Generation;
+        if (!_fogInventoryBinding.ReadyFor(generation))
+        {
+            _fogStatus.Text = "Refresh the current FOG connection before scheduling a deployment.";
+            return;
+        }
         if (_fogHosts.SelectedItem is not FogHost host || _fogImages.SelectedItem is not FogImage image)
         {
             _fogStatus.Text = "Select one host and one image first.";
@@ -209,15 +230,21 @@ public sealed partial class MainForm
             "Confirm FOG deployment", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2);
         if (answer != DialogResult.Yes) return;
+        if (!_fogInventoryBinding.ReadyFor(generation))
+        {
+            _fogStatus.Text = "FOG connection or inventory changed. Refresh before scheduling a deployment.";
+            return;
+        }
+        var serverUrl = _fogUrl.Text.Trim();
         try
         {
             using var fog = NewFogClient();
             await fog.QueueDeploymentAsync(host.Id, image.Id, $"DEPLOY {host.Name} {image.Name}");
-            _fogStatus.Text = $"FOG deployment queued for {host.Name}. Check FOG active tasks before booting that client.";
+            _fogStatus.Text = $"FOG deployment queued for {host.Name} on {serverUrl}. Check FOG active tasks before booting that client.";
         }
         catch (FogDeploymentUncertainException ex)
         {
-            _fogStatus.Text = "Deployment outcome uncertain. " + ex.Message;
+            _fogStatus.Text = $"Deployment outcome uncertain on {serverUrl}. " + ex.Message;
         }
         catch (Exception ex)
         {

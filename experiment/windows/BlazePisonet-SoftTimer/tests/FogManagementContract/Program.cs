@@ -15,6 +15,19 @@ static async Task Reject(Func<Task> action, string name)
     throw new Exception("FOG contract admitted: " + name);
 }
 
+var binding = new FogInventoryBinding();
+Check(!binding.ReadyFor(binding.Generation), "no inventory before a refresh");
+var firstRefresh = binding.BeginRefresh();
+binding.ConnectionEdited();
+Check(!binding.CompleteRefresh(firstRefresh), "connection edit discards in-flight inventory");
+var olderRefresh = binding.BeginRefresh();
+var latestRefresh = binding.BeginRefresh();
+Check(!binding.CompleteRefresh(olderRefresh), "later refresh supersedes earlier response");
+Check(binding.CompleteRefresh(latestRefresh) && binding.ReadyFor(latestRefresh),
+    "current connection inventory admitted");
+binding.ConnectionEdited();
+Check(!binding.ReadyFor(latestRefresh), "connection edit prevents stale deployment");
+
 await Reject(() =>
 {
     using var _ = new FogManagementClient("http://shop.example/fog",
