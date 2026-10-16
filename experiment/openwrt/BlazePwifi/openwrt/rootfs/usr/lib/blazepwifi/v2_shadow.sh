@@ -185,12 +185,17 @@ awk -F '\t' -v floor="$global_rev" '
 ' "$state/members.tsv" || {
   echo 'SHADOW BLOCKED: member revision exceeds global counter' >&2; exit 8;
 }
-# MIG-0743: an eventual v2 financial migration cannot trust a merely
-# well-formed TSV row. Check canonical/32-bit-bounded paid quantities in
-# the WHOLE retained member receipt corpus; a malicious overflow may pass
-# a generic digit regex and corrupt later replay or imported balances.
-# This is readonly *source admission*, not migration authorization.
+# MIG-0743/0744: an eventual v2 financial migration cannot trust a
+# merely well-formed receipt. Validate the WHOLE retained member corpus
+# against existing paid members, not just numeric formatting. An orphaned
+# paid source or transfer destination requires operator reconciliation,
+# never a guessed balance or synthesized missing member. Historical member
+# deletion is valid in v1, but its money receipts cannot be silently
+# imported into a v2 read model without an explicit mapping decision.
+# Both files are protected by the SAME pre-existing global paid writer lock.
+# Readonly SOURCE admission only: no payment, repair, or migration permitted.
 awk -F '\t' '
+  FILENAME==ARGV[1] {members[$1]=1; next}
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ ||
     $3=="" || $4=="" || $5 !~ /^-?[0-9]+$/ ||
     $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
@@ -199,11 +204,24 @@ awk -F '\t' '
   $4=="restore_all" || $4=="transfer" {
     d=$5; if (substr(d,1,1)=="-") d=substr(d,2)
     if (length(d)>10 || d+0>2147483647 ||
-        length($6)>10 || $6+0>2147483647) bad=1
+        length($6)>10 || $6+0>2147483647 ||
+        !($3 in members)) bad=1
+    if ($4=="transfer") {
+      n=split($8,p,":")
+      if (n!=3 || !(p[2] in members) || p[2]==$3 ||
+          p[1] !~ /^(0|[1-9][0-9]*)$/ ||
+          p[3] !~ /^(0|[1-9][0-9]*)$/ ||
+          length(p[1])>10 || length(p[3])>10 ||
+          p[1]+0>2147483647 || p[3]+0>2147483647)
+        bad=1
+    } else if ($8 !~ /^(0|[1-9][0-9]*)$/ ||
+               length($8)>10 || $8+0>2147483647) {
+      bad=1
+    }
   }
   END {if (bad) exit 8}
-' "$state/member-events.tsv" || {
-  echo 'SHADOW BLOCKED: invalid, overflowing or duplicate member receipt' >&2; exit 8;
+' "$state/members.tsv" "$state/member-events.tsv" || {
+  echo 'SHADOW BLOCKED: invalid, orphaned, overflowing or duplicate member receipt' >&2; exit 8;
 }
 # Five columns: event, device, detail/lease, time, audit kind or p:pulses.
 # Current installed rental paid events use SHA256-lowercase r:<64-hex>.
