@@ -20,6 +20,9 @@ public sealed partial class MainForm
     private readonly ListBox _targetdMaps = new() { Height = 95, Width = 850 };
     private readonly Label _targetdStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
     private readonly FogInventoryBinding _targetdBinding = new();
+    private TargetdSnapshot? _targetdSnapshot;
+    private long _targetdSnapshotGeneration = -1;
+    private long _targetdSnapshotTick = -1;
     private readonly TextBox _disklessClient = NewText();
     private readonly TextBox _disklessTargetIp = NewText();
     private readonly TextBox _disklessTargetIqn = NewText();
@@ -69,6 +72,7 @@ public sealed partial class MainForm
         storage.Controls.Add(Field("targetd username", _targetdUser));
         storage.Controls.Add(Field("targetd password", _targetdPassword));
         storage.Controls.Add(Button("INSPECT STORAGE MAPPINGS", async (_, _) => await InspectTargetdAsync()));
+        storage.Controls.Add(Button("CHECK SELECTED CLIENT MAPPING", (_, _) => CheckSelectedTargetdMapping()));
         storage.Controls.Add(_targetdExports);
         storage.Controls.Add(_targetdMaps);
         storage.Controls.Add(_targetdStatus);
@@ -103,6 +107,9 @@ public sealed partial class MainForm
     private void InvalidateTargetdInspection()
     {
         _targetdBinding.ConnectionEdited();
+        _targetdSnapshot = null;
+        _targetdSnapshotGeneration = -1;
+        _targetdSnapshotTick = -1;
         _targetdExports.Items.Clear();
         _targetdMaps.Items.Clear();
         _targetdStatus.Text = "Storage connection changed. Inspect this server again.";
@@ -111,6 +118,9 @@ public sealed partial class MainForm
     private async Task InspectTargetdAsync()
     {
         var generation = _targetdBinding.BeginRefresh();
+        _targetdSnapshot = null;
+        _targetdSnapshotGeneration = -1;
+        _targetdSnapshotTick = -1;
         _targetdExports.Items.Clear();
         _targetdMaps.Items.Clear();
         _targetdStatus.Text = "Reading targetd inventory...";
@@ -120,6 +130,9 @@ public sealed partial class MainForm
                 _targetdUser.Text, _targetdPassword.Text);
             var snapshot = await targetd.InspectAsync();
             if (!_targetdBinding.CompleteRefresh(generation)) return;
+            _targetdSnapshot = snapshot;
+            _targetdSnapshotGeneration = generation;
+            _targetdSnapshotTick = Environment.TickCount64;
             foreach (var export in snapshot.Exports)
                 _targetdExports.Items.Add(export);
             foreach (var map in snapshot.Maps)
@@ -131,10 +144,28 @@ public sealed partial class MainForm
         catch (Exception ex)
         {
             if (_targetdBinding.Generation != generation) return;
-            _targetdBinding.ConnectionEdited();
-            _targetdExports.Items.Clear();
-            _targetdMaps.Items.Clear();
+            InvalidateTargetdInspection();
             _targetdStatus.Text = "Storage inspection failed: " + ex.Message;
+        }
+    }
+
+    private void CheckSelectedTargetdMapping()
+    {
+        try
+        {
+            if (_targetdSnapshot is null || !_targetdBinding.ReadyFor(_targetdSnapshotGeneration) ||
+                !TargetdSnapshotAge.IsRecent(_targetdSnapshotTick, Environment.TickCount64))
+                throw new InvalidOperationException("Inspect the current targetd server before checking a client.");
+            var saved = DisklessProfileRegistry.Validate(_controller.Config.DisklessProfiles);
+            if (_disklessProfiles.SelectedItem is not DisklessClientAssignment assignment ||
+                !saved.Contains(assignment))
+                throw new InvalidOperationException("Select a currently saved client profile.");
+            var result = TargetdProfileMappingCheck.Assess(assignment, _targetdSnapshot);
+            _targetdStatus.Text = $"{assignment.ClientLabel}: {result.Status}. {result.Detail}";
+        }
+        catch (InvalidOperationException ex)
+        {
+            _targetdStatus.Text = "Client mapping check refused: " + ex.Message;
         }
     }
 

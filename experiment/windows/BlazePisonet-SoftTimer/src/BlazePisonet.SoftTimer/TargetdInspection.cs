@@ -15,6 +15,67 @@ public sealed record TargetdAccessMap(string Group, int Lun, string Pool, string
 public sealed record TargetdSnapshot(IReadOnlyList<TargetdExport> Exports,
     IReadOnlyList<TargetdAccessGroup> Groups, IReadOnlyList<TargetdAccessMap> Maps);
 
+public static class TargetdSnapshotAge
+{
+    public static bool IsRecent(long sampledTick, long nowTick) =>
+        sampledTick >= 0 && nowTick >= sampledTick && nowTick - sampledTick <= 60_000;
+}
+
+public enum TargetdMappingStatus { Missing, Ambiguous, Shared, WrongLun, ReportedSingleClient }
+
+public sealed record TargetdProfileMapping(TargetdMappingStatus Status, string Detail)
+{
+    public bool ReportedSingleClient => Status == TargetdMappingStatus.ReportedSingleClient;
+}
+
+// A server inventory can expose a reported mapping conflict, but cannot prove
+// target IQN, authentication, ACL enforcement, writable isolation or boot.
+public static class TargetdProfileMappingCheck
+{
+    private sealed record Path(int Lun, string Pool, string Volume);
+
+    public static TargetdProfileMapping Assess(DisklessClientAssignment profile, TargetdSnapshot snapshot)
+    {
+        if (profile is null || snapshot is null) throw new ArgumentNullException(
+            profile is null ? nameof(profile) : nameof(snapshot));
+        profile.BootProfile(); // Refuse corrupt saved identities before comparing server output.
+        var initiator = profile.InitiatorIqn;
+        var direct = snapshot.Exports.Where(x => Eq(x.InitiatorIqn, initiator))
+            .Select(x => new Path(x.Lun, x.Pool, x.Volume));
+        var groups = snapshot.Groups.Where(g => g.Initiators.Any(i => Eq(i, initiator)))
+            .Select(g => g.Name).ToHashSet(StringComparer.Ordinal);
+        var mapped = snapshot.Maps.Where(x => groups.Contains(x.Group))
+            .Select(x => new Path(x.Lun, x.Pool, x.Volume));
+        var paths = direct.Concat(mapped).ToArray();
+        if (paths.Length == 0)
+            return new(TargetdMappingStatus.Missing, "No export or access-group volume is reported for this initiator.");
+        if (paths.Length != 1)
+            return new(TargetdMappingStatus.Ambiguous,
+                $"{paths.Length} access paths are reported for this initiator; one boot disk is required.");
+        var path = paths[0];
+        var exposedToOther = snapshot.Exports.Any(x => SameVolume(x.Pool, x.Volume, path) &&
+                !Eq(x.InitiatorIqn, initiator)) ||
+            snapshot.Groups.Any(g => g.Initiators.Any(i => !Eq(i, initiator)) &&
+                snapshot.Maps.Any(m => m.Group == g.Name && SameVolume(m.Pool, m.Volume, path)));
+        if (exposedToOther)
+            return new(TargetdMappingStatus.Shared,
+                $"{path.Pool}/{path.Volume} is also reported to another initiator; do not boot a shared writable disk.");
+        // The generated iPXE/DHCP SAN URI leaves its LUN blank, which iPXE
+        // defines as LUN 0. A different reported LUN cannot match that URI.
+        if (path.Lun != 0)
+            return new(TargetdMappingStatus.WrongLun,
+                $"{path.Pool}/{path.Volume} is LUN {path.Lun}; the saved boot URI selects LUN 0.");
+        return new(TargetdMappingStatus.ReportedSingleClient,
+            $"One LUN 0 volume ({path.Pool}/{path.Volume}) is reported for this initiator only. " +
+            "Target IQN, CHAP, ACL enforcement, writable isolation and Windows boot remain unverified.");
+    }
+
+    private static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+    private static bool SameVolume(string pool, string volume, Path path) =>
+        string.Equals(pool, path.Pool, StringComparison.Ordinal) &&
+        string.Equals(volume, path.Volume, StringComparison.Ordinal);
+}
+
 // targetd has powerful write methods. This adapter deliberately exposes only
 // three inventory methods, and does not infer that the target ACLs or boot work.
 public sealed class TargetdInspectionClient : IDisposable

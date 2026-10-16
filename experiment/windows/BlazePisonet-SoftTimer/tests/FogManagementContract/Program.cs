@@ -305,8 +305,52 @@ var supersededStorage = targetBinding.BeginRefresh();
 var latestStorage = targetBinding.BeginRefresh();
 Check(!targetBinding.CompleteRefresh(supersededStorage) && targetBinding.CompleteRefresh(latestStorage),
     "targetd later inspection supersedes earlier response");
+var clientExport = new TargetdExport(first.InitiatorIqn, 0, "pool1", "pc01", "uuid-pc01");
+var uniqueDirect = new TargetdSnapshot(new[] { clientExport },
+    Array.Empty<TargetdAccessGroup>(), Array.Empty<TargetdAccessMap>());
+Check(TargetdProfileMappingCheck.Assess(first, uniqueDirect).Status ==
+    TargetdMappingStatus.ReportedSingleClient, "one reported dedicated LUN 0 export");
+Check(TargetdProfileMappingCheck.Assess(first, new TargetdSnapshot(
+    Array.Empty<TargetdExport>(), Array.Empty<TargetdAccessGroup>(),
+    Array.Empty<TargetdAccessMap>())).Status == TargetdMappingStatus.Missing,
+    "missing initiator mapping is not reported ready");
+Check(TargetdProfileMappingCheck.Assess(first, uniqueDirect with
+{
+    Exports = new[] { clientExport, clientExport with { Lun = 1, Volume = "other" } }
+}).Status == TargetdMappingStatus.Ambiguous,
+    "multiple client LUNs are ambiguous");
+Check(TargetdProfileMappingCheck.Assess(first, uniqueDirect with
+{
+    Exports = new[] { clientExport, clientExport with { InitiatorIqn = second.InitiatorIqn } }
+}).Status == TargetdMappingStatus.Shared,
+    "another initiator's export of same writable volume is refused");
+Check(TargetdProfileMappingCheck.Assess(first, uniqueDirect with
+{
+    Exports = new[] { clientExport with { Lun = 1 } }
+}).Status == TargetdMappingStatus.WrongLun,
+    "saved blank-LUN SAN URI selects LUN 0");
+var groupOnly = new TargetdSnapshot(Array.Empty<TargetdExport>(),
+    new[] { new TargetdAccessGroup("pc01", new[] { first.InitiatorIqn }) },
+    new[] { new TargetdAccessMap("pc01", 0, "pool1", "pc01") });
+Check(TargetdProfileMappingCheck.Assess(first, groupOnly).Status ==
+    TargetdMappingStatus.ReportedSingleClient, "single access-group map supported");
+Check(TargetdProfileMappingCheck.Assess(first, groupOnly with
+{
+    Groups = new[] { new TargetdAccessGroup("pc01", new[] { first.InitiatorIqn, second.InitiatorIqn }) }
+}).Status == TargetdMappingStatus.Shared,
+    "access-group volume shared with another initiator is refused");
+Check(TargetdProfileMappingCheck.Assess(first, new TargetdSnapshot(
+    new[] { clientExport }, groupOnly.Groups, groupOnly.Maps)).Status ==
+    TargetdMappingStatus.Ambiguous, "direct and group map ambiguity is refused");
+targetBinding.ConnectionEdited();
+Check(!targetBinding.ReadyFor(latestStorage), "server edit invalidates selected client mapping");
+Check(TargetdSnapshotAge.IsRecent(1_000, 61_000) &&
+    !TargetdSnapshotAge.IsRecent(1_000, 61_001) &&
+    !TargetdSnapshotAge.IsRecent(-1, 2_000) &&
+    !TargetdSnapshotAge.IsRecent(2_000, 1_000),
+    "expired or uncertain targetd report is refused");
 
-Console.WriteLine("PISONET-0016 FOG and targetd contracts: auth, inventory, strict read-only RPC and failures PASS");
+Console.WriteLine("PISONET-0017 FOG, targetd and saved-client mapping contracts PASS");
 
 sealed class FakeFog : HttpMessageHandler
 {
