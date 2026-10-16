@@ -79,6 +79,17 @@ fi
 grep -Fq UNCERTAIN "$T/err"
 unset BLAZE_V2_NATIVE_TEST_FAULT
 [ "$(bank alice):$(bank bob)" = '110:230' ]
+# PAY-0745: the prior rename was visible, but its parent directory was NOT
+# fsync-confirmed. Reject even an authentic same-payload replay when that
+# recovery durability barrier faults. No ACK and no balance mutation.
+recovery_sha="$(digest)"
+export BLAZE_V2_NATIVE_TEST_FAULT=before-replay-dir-fsync
+if run ctrlOne 2 ctrlOne:2 TM alice bob 30 1000 >"$T/out" 2>"$T/err"; then
+  echo 'unsynced replay returned payment ACK' >&2; exit 1
+fi
+[ ! -s "$T/out" ] && [ "$(digest)" = "$recovery_sha" ]
+grep -Fq 'before-replay-dir-fsync fault' "$T/err"
+unset BLAZE_V2_NATIVE_TEST_FAULT
 [ "$(run ctrlOne 2 ctrlOne:2 TM alice bob 30 1000)" = "$(printf 'REPLAY\t110')" ]
 [ "$(( $(bank alice) + $(bank bob) ))" -eq 340 ]
 # Lease/receipt/highwater all share the same fsync'd snapshot.

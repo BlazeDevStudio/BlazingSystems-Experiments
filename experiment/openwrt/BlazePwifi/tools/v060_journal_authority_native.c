@@ -468,6 +468,13 @@ int main(int argc,char **argv) {
         {unsigned long long saved=0;
          if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
              die("replay receipt amount malformed");
+         /* PAY-0745: an earlier writer may have crashed after renameat but
+          * BEFORE fsync(dirfd). A newly opened ledger can be visible in the
+          * page cache without the directory entry being durable. Refuse any
+          * normal or signed REPLAY ACK until this parent directory is synced.
+          * This is still LAB-ONLY and is NOT an independent rollback witness. */
+         fault("before-replay-dir-fsync");
+         if(fsync(dirfd)!=0)die("UNCERTAIN replay parent directory fsync failed");
          emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
                       ack_kid,ack_key);
          OPENSSL_cleanse(key,sizeof(key));
