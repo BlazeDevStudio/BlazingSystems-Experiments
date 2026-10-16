@@ -38,6 +38,19 @@ exec 6<"$lock" || reject writer_lock
 flock -n 6 || reject writer_busy
 marker="$state/paid-v2-cutover-intent"
 regular "$marker" || reject frozen_marker_required
+# PAY-0769: the freeze producer creates exactly one private FROZEN<TAB>epoch
+# line. A mere marker pathname does not establish an operator freeze, and
+# a hardlink or broadly readable marker is not admissible capture provenance.
+[ "$(stat -c '%a:%h:%u' "$marker" 2>/dev/null)" = "600:1:$uid" ] ||
+  reject frozen_marker_metadata
+complete "$marker" || reject frozen_marker_invalid
+awk -F '\t' '
+  NF!=2 || $1!="FROZEN" || $2 !~ /^[1-9][0-9]*$/ ||
+    length($2)>10 || $2+0>2147483647 {bad=1}
+  END {if (bad || NR!=1) exit 8}
+' "$marker" || reject frozen_marker_invalid
+frozen_marker_sha="$(sha256sum "$marker" | awk '{print $1}')" ||
+  reject frozen_marker_digest
 [ ! -e "$state/paid-state-uncertain" ] &&
   [ ! -L "$state/paid-state-uncertain" ] || reject unresolved_paid_write
 archive_dir="$dest/v1-frozen-snapshot"
@@ -77,6 +90,15 @@ for name in $required; do set -- "$@" "$state/$name"; done
 before="$(sha256sum "$@")" || reject source_digest
 umask 077
 mkdir "$tmp" || reject stage_directory
+# The capture contains the original freeze marker. Never stage an opening
+# against a different/current marker with otherwise matching money rows.
+# Check archive entry using the same operator-captured source, then remove
+# the temporary extracted copy before writing any candidate ledger.
+tar -xOf "$archive" ./paid-v2-cutover-intent > "$tmp/frozen-marker" ||
+  reject frozen_archive_marker_missing
+cmp -s "$marker" "$tmp/frozen-marker" ||
+  reject frozen_archive_marker_mismatch
+rm "$tmp/frozen-marker" || reject frozen_archive_marker_cleanup
 for name in $required; do
   tar -xOf "$archive" "./$name" > "$tmp/$name" || reject archive_member_missing
   cmp -s "$state/$name" "$tmp/$name" || reject archive_source_mismatch
@@ -196,6 +218,10 @@ printf '%s  %s\n' "$(sha256sum "$ledger" | awk '{print $1}')" ledger.tsv >> "$tm
 after="$(sha256sum "$@")" || reject source_digest
 [ "$before" = "$after" ] || reject concurrent_source_change
 regular "$marker" || reject frozen_marker_changed
+[ "$(stat -c '%a:%h:%u' "$marker" 2>/dev/null)" = "600:1:$uid" ] ||
+  reject frozen_marker_changed
+[ "$(sha256sum "$marker" | awk '{print $1}')" = "$frozen_marker_sha" ] ||
+  reject frozen_marker_changed
 [ ! -e "$state/paid-state-uncertain" ] &&
   [ ! -L "$state/paid-state-uncertain" ] || reject unresolved_paid_write
 [ "$(sha256sum "$archive" | awk '{print $1}')" = "$archive_hash" ] || reject archive_changed
