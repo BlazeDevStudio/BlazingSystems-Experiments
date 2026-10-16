@@ -40,6 +40,9 @@ reject() {
     unsupported_wifi_money) expected=unsupported_or_corrupt_wifi_money;;
     unsupported_voucher_money|unresolved_coin_window) expected="$1";;
     missing_freeze) expected=frozen_marker_required;;
+    malformed_frozen_marker|incomplete_frozen_marker) expected=frozen_marker_invalid;;
+    hardlinked_frozen_marker) expected=frozen_marker_metadata;;
+    changed_frozen_archive_marker) expected=frozen_archive_marker_mismatch;;
     overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
@@ -58,6 +61,34 @@ reject() {
   esac
 }
 if sh "$STAGE" > "$T/out" 2> "$T/err"; then echo 'implicit stage admitted' >&2; exit 1; fi
+
+# PAY-0769: producer writes a private, canonical FROZEN<TAB>epoch marker.
+# A valid money snapshot is not admissible with a fabricated freeze marker.
+marker="$BP_STATE/paid-v2-cutover-intent"
+printf 'PENDING\t1700000000\n' > "$marker"
+refresh_archive
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+reject malformed_frozen_marker
+printf 'FROZEN\t1700000000' > "$marker"
+refresh_archive
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+reject incomplete_frozen_marker
+printf 'FROZEN\t1700000000\n' > "$marker"
+refresh_archive
+ln "$marker" "$T/hardlinked-marker"
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+reject hardlinked_frozen_marker
+rm "$T/hardlinked-marker"
+# Fresh syntactically valid freeze marker, but state.tar was captured under
+# another freeze epoch. Reject rather than pair old archived receipts with
+# a different current cutover proof.
+printf 'FROZEN\t1700000001\n' > "$marker"
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+reject changed_frozen_archive_marker
+printf 'FROZEN\t1700000000\n' > "$marker"
+refresh_archive
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+
 printf 'wifi01\t1\t0\t0\t0\t0\t\t\t\n' > "$BP_STATE/accounts.tsv"
 refresh_archive
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
@@ -212,4 +243,4 @@ if "$T/native" "$native_root" ctrlOne 1 ctrlOne:1 AM alice - 1 1000 "$signed" > 
   echo 'malformed provenance admitted' >&2; exit 1
 fi
 [ ! -s "$T/out" ] && [ "$(sha256sum "$native_root/ledger.tsv" | awk '{print $1}')" = "$tampered" ]
-echo 'PAY-0765/0766 installed inactive candidate: member identities and transfer recipients checked; frozen receipts preserved; partial/replay/corrupt states denied'
+echo 'PAY-0765/0766/0767/0769 installed inactive candidate: freeze marker provenance, member identities and transfer arithmetic checked; frozen receipts preserved; partial/replay/corrupt states denied'
