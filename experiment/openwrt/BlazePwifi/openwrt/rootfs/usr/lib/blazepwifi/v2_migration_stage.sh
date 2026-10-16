@@ -138,6 +138,17 @@ awk -F '\t' '
         $5 !~ /^-?[0-9]+$/ || $6 !~ /^(0|[1-9][0-9]*)$/ ||
         length($6)>10 || $6+0>2147483647 ||
         !($3 in members)) bad=1
+    # PAY-0767: a signed old receipt's reported result is not proof
+    # that its delta and kind are consistent with the actual v1 writer.
+    # Reject contradictory money before preparing any inactive opening.
+    if ($4=="add" &&
+        ($5 !~ /^(0|[1-9][0-9]*)$/ || $5+0!=$6+0)) bad=1
+    if (($4=="subtract" || $4=="restore_all" || $4=="transfer") &&
+        ($5 !~ /^-(0|[1-9][0-9]*)$/ ||
+         -($5+0)!=$6+0 || ($4=="transfer" && $6+0==0))) bad=1
+    if ($4=="set" &&
+        ($5 !~ /^-?(0|[1-9][0-9]*)$/ ||
+         $6+0-($5+0)<0 || $6+0-($5+0)>2147483647)) bad=1
     if ($4=="transfer") {
       n=split($8,p,":")
       if (n==3) paid_ref[p[2]]=1
