@@ -1,3 +1,8 @@
+## CI-0021 - docs-head literal CI result, 2026-10-17 Asia/Manila
+- **Status:** validated prior docs head; PR #90 preview. Exact prior head `1e364ca5712ad190f90805d3660ba1795d4aa09f`.
+- **Evidence:** workflow dispatch https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38972089136 COMPLETED SUCCESS at prior head: handover, 17 Ubuntu LIO negative tests, Windows contracts/build/NSIS installer and preview upload, with literal checkout SHA assertions. Artifact 12076524189 GitHub API digest sha256:ba8034b70cb33e239c8f22a8922cd240bdbab691922b540472e7779dd7063898. Public publish SKIPPED.
+- **Limit/next:** new status-only checkpoint needs its own classifier. No live LIO/configfs, CHAP/ACL refusal, per-client writable isolation, unattended Windows PXE/iSCSI boot or physical durability evidence. PR #89 paid v2 remains denied. Continue authenticated management and approved noncustomer acceptance; no production release.
+
 ## CI-0021 - literal PR head CI verified, 2026-10-17 Asia/Manila
 - **Status:** validated source and exact checkout; P1 release evidence; PR #90. Source `2fedb0ad03230197bb1fc4a355c0b4e4fa4a582f`, synchronized head `9a774e4c035b975b5943ae38c9dd0226f930c6e6`.
 - **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38940186697 COMPLETED SUCCESS. Handover, Ubuntu LIO (17 negative tests) and Windows build/NSIS jobs checked literal PR head with a SHA assertion before work. Artifact 12067699031 GitHub API digest sha256:fb54e4c8d406f2a5eedae082283ad299c736bca8c932e1e25c16eabb6e17eb43; public Release SKIPPED. Earlier green PR workflow runs used proposed merge checkout and should not be called literal head runs.
