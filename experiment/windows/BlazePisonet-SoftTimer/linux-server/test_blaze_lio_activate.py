@@ -165,9 +165,23 @@ class ActivationTests(unittest.TestCase):
             storage_objects = [store]
             sessions = []
 
+            def dump(self):
+                return {"storage_objects": [{"plugin": store.plugin,
+                                             "name": store.name,
+                                             "dev": store.udev_path,
+                                             "write_back": store.write_back}],
+                        "targets": [{"wwn": target.wwn,
+                                     "tpgs": [{"enable": tpg.enable,
+                                               "attributes": dict(tpg.attributes),
+                                               "luns": [{"storage_object": store.path}],
+                                               "portals": [{"ip_address": portal.ip_address,
+                                                            "port": portal.port}],
+                                               "node_acls": [{"node_wwn": acl.node_wwn,
+                                                              "chap_userid": acl.chap_userid,
+                                                              "chap_password": acl.chap_password}]}]}]}
+
             def save_to_file(self, path):
-                path.write_text(json.dumps({"targets": [{"wwn": target.wwn,
-                                                           "tpgs": [{"enable": tpg.enable}]}]}))
+                path.write_text(json.dumps(self.dump()))
                 path.chmod(0o600)
 
         root = Root()
@@ -199,12 +213,40 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaises(preparation.Refused):
             backend.inspect_prepared(self.data, secret)
         tpg.node_acls.pop()
+        pristine = saved.read_text()
+        for path, changed in ((("storage_objects", 0, "dev"), "/other.img"),
+                              (("targets", 0, "tpgs", 0, "attributes", "authentication"), "0"),
+                              (("targets", 0, "tpgs", 0, "portals", 0, "ip_address"), "192.168.77.3"),
+                              (("targets", 0, "tpgs", 0, "node_acls", 0, "chap_password"), "wrong")):
+            corrupt = json.loads(pristine)
+            node = corrupt
+            for part in path[:-1]:
+                node = node[part]
+            node[path[-1]] = changed
+            saved.write_text(json.dumps(corrupt))
+            with self.assertRaisesRegex(preparation.Refused, "saved LIO configuration differs"):
+                backend.inspect_prepared(self.data, secret)
+        saved.write_text('{"targets": [')
+        with self.assertRaisesRegex(preparation.Refused, "malformed"):
+            backend.inspect_prepared(self.data, secret)
+        saved.write_text(pristine)
         backend.activate(self.data, secret, image_stat)
         self.assertTrue(tpg.enable)
         self.assertTrue(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
         backend.quarantine(self.data)
         self.assertFalse(tpg.enable)
         self.assertFalse(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
+        complete_save = root.save_to_file
+
+        def partial_active_save(path):
+            complete_save(path)
+            record = json.loads(path.read_text())
+            record["targets"][0]["tpgs"][0]["node_acls"][0]["chap_password"] = "wrong"
+            path.write_text(json.dumps(record))
+
+        with mock.patch.object(root, "save_to_file", side_effect=partial_active_save):
+            with self.assertRaisesRegex(preparation.Refused, "not persisted"):
+                backend.activate(self.data, secret, image_stat)
 
 
 if __name__ == "__main__":

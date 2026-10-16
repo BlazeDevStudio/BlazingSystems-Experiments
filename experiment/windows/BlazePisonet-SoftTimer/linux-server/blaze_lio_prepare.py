@@ -226,11 +226,11 @@ class LioBackend:
             raise Refused("saved LIO configuration too large")
         try:
             saved = json.loads(self.save_path.read_bytes(), object_pairs_hook=unique_object)
-            saved_targets = saved["targets"]
-            if (len(saved_targets) != 1 or saved_targets[0]["wwn"] != spec["target_iqn"] or
-                    len(saved_targets[0]["tpgs"]) != 1 or
-                    saved_targets[0]["tpgs"][0]["enable"] is not False):
-                raise Refused("saved LIO configuration is not disabled")
+            # save_to_file serializes RTSRoot.dump(). Compare the entire saved
+            # restore state, including storage, portals, ACLs and CHAP. A
+            # disabled flag alone cannot make a reboot safe.
+            if saved != root.dump():
+                raise Refused("saved LIO configuration differs from live target")
         except (KeyError, TypeError, ValueError, UnicodeError) as error:
             raise Refused("saved LIO configuration malformed") from error
         return root, tpg
@@ -243,10 +243,7 @@ class LioBackend:
         root.save_to_file(self.save_path)
         private_regular(self.save_path, os.geteuid())
         saved = json.loads(self.save_path.read_bytes(), object_pairs_hook=unique_object)
-        targets = saved.get("targets", [])
-        if (len(targets) != 1 or targets[0].get("wwn") != spec["target_iqn"] or
-                len(targets[0].get("tpgs", [])) != 1 or
-                targets[0]["tpgs"][0].get("enable") is not True):
+        if saved != root.dump():
             raise Refused("enabled LIO configuration was not persisted")
         dfd = os.open(self.save_path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
