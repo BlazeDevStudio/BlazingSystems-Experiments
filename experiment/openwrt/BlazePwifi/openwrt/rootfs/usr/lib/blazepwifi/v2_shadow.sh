@@ -193,21 +193,33 @@ awk -F '\t' -v floor="$global_rev" '
 # deletion is valid in v1, but its money receipts cannot be silently
 # imported into a v2 read model without an explicit mapping decision.
 # Both files are protected by the SAME pre-existing global paid writer lock.
+# MIG-0745: usernames are NOT durable paid identities. A delete + recreate
+# can rebind old retained paid receipts to a different member epoch, even if
+# the username currently exists. The legacy 8-column create/delete audits
+# are nonfinancial and may be trimmed. Refuse detectable ambiguity; do not
+# assert that absence of such audit rows proves a safe identity migration.
 # Readonly SOURCE admission only: no payment, repair, or migration permitted.
 awk -F '\t' '
   FILENAME==ARGV[1] {members[$1]=1; next}
+  $4=="create" {
+    if ($3 in paid_ref) bad=1
+    if (++creates[$3]>1) reused[$3]=1
+  }
+  $4=="delete" {deleted[$3]=1}
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ ||
     $3=="" || $4=="" || $5 !~ /^-?[0-9]+$/ ||
     $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
   {if (++seen[$1]>1) bad=1}
   $4=="add" || $4=="subtract" || $4=="set" ||
   $4=="restore_all" || $4=="transfer" {
+    paid_ref[$3]=1
     d=$5; if (substr(d,1,1)=="-") d=substr(d,2)
     if (length(d)>10 || d+0>2147483647 ||
         length($6)>10 || $6+0>2147483647 ||
         !($3 in members)) bad=1
     if ($4=="transfer") {
       n=split($8,p,":")
+      if (n==3) paid_ref[p[2]]=1
       if (n!=3 || !(p[2] in members) || p[2]==$3 ||
           p[1] !~ /^(0|[1-9][0-9]*)$/ ||
           p[3] !~ /^(0|[1-9][0-9]*)$/ ||
@@ -219,7 +231,11 @@ awk -F '\t' '
     # preserve the old 8-column empty-final-field format for migration
     # diagnostics rather than imposing a new false receipt failure.
   }
-  END {if (bad) exit 8}
+  END {
+    for (u in paid_ref)
+      if ((u in deleted) || (u in reused)) bad=1
+    if (bad) exit 8
+  }
 ' "$state/members.tsv" "$state/member-events.tsv" || {
   echo 'SHADOW BLOCKED: invalid, orphaned, overflowing or duplicate member receipt' >&2; exit 8;
 }
