@@ -40,7 +40,7 @@ reject() {
     unsupported_wifi_money) expected=unsupported_or_corrupt_wifi_money;;
     unsupported_voucher_money|unresolved_coin_window) expected="$1";;
     missing_freeze) expected=frozen_marker_required;;
-    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
+    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
     concurrent_writer) expected=writer_busy;;
@@ -93,6 +93,21 @@ printf 'm:self:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:alice:4\n' >> "$BP_
 stage_member_refuse same_transfer_recipient
 printf 'm:bad:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:2147483648\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse bad_transfer_balance
+# PAY-0767: a well-formed receipt can still contradict the actual v1
+# writer's kind/delta/result contract. Such history must never become a
+# staged A-opening without an explicit owner reconciliation.
+printf 'm:add:broken\t100\talice\tadd\t5\t4\tVendo1\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_add_amount
+printf 'm:sub:broken\t100\talice\tsubtract\t5\t5\tVendo1\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_subtract_amount
+printf 'm:set:broken\t100\talice\tset\t1\t0\tVendo1\t0\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_set_origin
+printf 'm:transfer:wrong\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_transfer_amount
+printf 'm:transfer:dest\t100\talice\ttransfer\t-4\t4\tVendo1\t116:bob:3\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_transfer_target_underflow
+printf 'm:transfer:sender\t100\talice\ttransfer\t-4\t4\tVendo1\t2147483647:bob:4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_transfer_sender_overflow
 printf 'admin:2:alice\t101\talice\tdelete\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse recreated_member_epoch
@@ -151,7 +166,7 @@ rm -rf "$BP_SNAPSHOT_ROOT/.v1-v2-candidate.tmp"
 rm "$T/bin/sync"
 
 # Healthy distinct source/recipient transfer receipts remain acceptable.
-printf 'm:healthy:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
+printf 'm:healthy:2\t100\talice\ttransfer\t-4\t4\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
 refresh_archive
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
 result="$(stage)"
