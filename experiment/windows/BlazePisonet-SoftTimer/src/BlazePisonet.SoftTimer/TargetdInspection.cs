@@ -21,7 +21,10 @@ public static class TargetdSnapshotAge
         sampledTick >= 0 && nowTick >= sampledTick && nowTick - sampledTick <= 60_000;
 }
 
-public enum TargetdMappingStatus { Missing, Ambiguous, Shared, WrongLun, ReportedSingleClient }
+public enum TargetdMappingStatus
+{
+    Missing, Ambiguous, Shared, WrongLun, UnverifiableGroupMap, ReportedSingleClient
+}
 
 public sealed record TargetdProfileMapping(TargetdMappingStatus Status, string Detail)
 {
@@ -32,7 +35,7 @@ public sealed record TargetdProfileMapping(TargetdMappingStatus Status, string D
 // target IQN, authentication, ACL enforcement, writable isolation or boot.
 public static class TargetdProfileMappingCheck
 {
-    private sealed record Path(int Lun, string Pool, string Volume);
+    private sealed record Path(int Lun, string Pool, string Volume, bool HasVolumeUuid);
 
     public static TargetdProfileMapping Assess(DisklessClientAssignment profile, TargetdSnapshot snapshot)
     {
@@ -41,11 +44,11 @@ public static class TargetdProfileMappingCheck
         profile.BootProfile(); // Refuse corrupt saved identities before comparing server output.
         var initiator = profile.InitiatorIqn;
         var direct = snapshot.Exports.Where(x => Eq(x.InitiatorIqn, initiator))
-            .Select(x => new Path(x.Lun, x.Pool, x.Volume));
+            .Select(x => new Path(x.Lun, x.Pool, x.Volume, true));
         var groups = snapshot.Groups.Where(g => g.Initiators.Any(i => Eq(i, initiator)))
             .Select(g => g.Name).ToHashSet(StringComparer.Ordinal);
         var mapped = snapshot.Maps.Where(x => groups.Contains(x.Group))
-            .Select(x => new Path(x.Lun, x.Pool, x.Volume));
+            .Select(x => new Path(x.Lun, x.Pool, x.Volume, false));
         var paths = direct.Concat(mapped).ToArray();
         if (paths.Length == 0)
             return new(TargetdMappingStatus.Missing, "No export or access-group volume is reported for this initiator.");
@@ -65,6 +68,10 @@ public static class TargetdProfileMappingCheck
         if (path.Lun != 0)
             return new(TargetdMappingStatus.WrongLun,
                 $"{path.Pool}/{path.Volume} is LUN {path.Lun}; the saved boot URI selects LUN 0.");
+        if (!path.HasVolumeUuid)
+            return new(TargetdMappingStatus.UnverifiableGroupMap,
+                $"Access group reports {path.Pool}/{path.Volume} at LUN 0 without a volume UUID. " +
+                "targetd can retain this map after same-name volume replacement; verify the actual target before boot.");
         return new(TargetdMappingStatus.ReportedSingleClient,
             $"One LUN 0 volume ({path.Pool}/{path.Volume}) is reported for this initiator only. " +
             "Target IQN, CHAP, ACL enforcement, writable isolation and Windows boot remain unverified.");

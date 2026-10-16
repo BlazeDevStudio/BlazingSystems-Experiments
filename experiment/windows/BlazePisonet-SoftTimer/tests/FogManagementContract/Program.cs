@@ -333,7 +333,8 @@ var groupOnly = new TargetdSnapshot(Array.Empty<TargetdExport>(),
     new[] { new TargetdAccessGroup("pc01", new[] { first.InitiatorIqn }) },
     new[] { new TargetdAccessMap("pc01", 0, "pool1", "pc01") });
 Check(TargetdProfileMappingCheck.Assess(first, groupOnly).Status ==
-    TargetdMappingStatus.ReportedSingleClient, "single access-group map supported");
+    TargetdMappingStatus.UnverifiableGroupMap,
+    "group-only map lacks volume UUID and cannot prove same-name replacement identity");
 Check(TargetdProfileMappingCheck.Assess(first, groupOnly with
 {
     Groups = new[] { new TargetdAccessGroup("pc01", new[] { first.InitiatorIqn, second.InitiatorIqn }) }
