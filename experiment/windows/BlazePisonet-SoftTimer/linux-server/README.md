@@ -3,7 +3,7 @@
 `blaze_lio_prepare.py` prepares one **disabled** Linux LIO iSCSI target for one
 pre-existing Windows disk image and one initiator. It writes actual configfs
 objects through `rtslib-fb`; it is not a simulator. It does not create or alter
-the image, enable the target, configure DHCP/PXE, or claim that Windows booted.
+the image, configure DHCP/PXE, or claim that Windows booted.
 
 Use only on a dedicated, approved noncustomer Linux host with `rtslib-fb`,
 mounted `configfs`, and an empty LIO configuration. Run as root. Prepare a
@@ -37,6 +37,15 @@ configuration even if its success response was lost.
 The saved config can contain the CHAP secret and is restricted to `0600`.
 The command does not install a boot-time restore service. Verify that the
 actual target remains disabled across reboot before any live acceptance.
+For a dedicated **noncustomer lab only**, `blaze_lio_activate.py` with the same
+spec, secret and state directory plus `--confirm-lab-activation` inspects the
+live LIO target, backing image, ACL/CHAP, LUN mapping, portal and disabled
+saved configuration before enabling the target. It writes an `activating`
+intent before the enable call. A partial write, crash or lost result refuses
+retry; the command attempts to disable the target on ordinary errors, but a
+crash can leave it live. An operator must inspect the target and intent before
+any recovery. `ACTIVE_LAB_TARGET` means only that the target enable and saved
+configuration calls completed; it is not a boot, isolation or hardware pass.
 CHAP, initiator ACL and target exclusivity require independent tests from
 the intended Windows client and a second unauthorized initiator. FOG imaging,
 DHCP/PXE, per-client writable isolation, restore behavior, Windows boot,

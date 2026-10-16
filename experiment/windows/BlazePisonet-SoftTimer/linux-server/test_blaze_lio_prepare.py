@@ -93,6 +93,16 @@ class PreparationTests(unittest.TestCase):
             self.run_prepare(Backend(fail_preflight=True))
         self.assertEqual(self.markers(), [])
 
+    def test_partial_intent_write_refuses_prepare_and_retry(self):
+        backend = Backend()
+        with mock.patch.object(lio.os, "write", return_value=0):
+            with self.assertRaisesRegex(OSError, "short intent write"):
+                self.run_prepare(backend)
+        self.assertEqual(backend.calls, ["preflight"])
+        self.assertEqual(len(self.markers()), 1)
+        with self.assertRaisesRegex(lio.Refused, "prior or incomplete"):
+            self.run_prepare(Backend())
+
     def test_lost_response_after_lio_write_denies_retry(self):
         real_write = lio.write_record
 
