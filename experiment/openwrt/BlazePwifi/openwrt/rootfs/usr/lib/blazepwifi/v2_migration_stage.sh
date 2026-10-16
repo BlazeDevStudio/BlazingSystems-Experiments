@@ -171,6 +171,17 @@ awk -F '\t' '
     if ($4=="set" &&
         ($5 !~ /^-?(0|[1-9][0-9]*)$/ ||
          $6+0-($5+0)<0 || $6+0-($5+0)>2147483647)) bad=1
+    # PAY-0770: v1 nontransfer receipts may have empty legacy detail.
+    # If populated, the real writer records post-balance in this field.
+    if (($4=="add" || $4=="subtract" || $4=="set" ||
+         $4=="restore_all") && $8!="") {
+      if ($8 !~ /^(0|[1-9][0-9]*)$/ ||
+          length($8)>10 || $8+0>2147483647) bad=1
+      else if (($4=="add" && $8+0<$6+0) ||
+               ($4=="subtract" && $8+0+$6+0>2147483647) ||
+               ($4=="set" && $8+0!=$6+0) ||
+               ($4=="restore_all" && $8!="0")) bad=1
+    }
     if ($4=="transfer") {
       n=split($8,p,":")
       if (n==3) paid_ref[p[2]]=1
