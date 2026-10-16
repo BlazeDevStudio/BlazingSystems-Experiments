@@ -190,7 +190,13 @@ public sealed class FogManagementClient : IDisposable
         }
     }
 
-    private async Task<bool> HasActiveTaskAsync(int hostId, CancellationToken cancellationToken)
+    private async Task<bool> HasActiveTaskAsync(int hostId, CancellationToken cancellationToken) =>
+        (await GetActiveTaskHostIdsAsync(cancellationToken)).Contains(hostId);
+
+    // Read-only view for operators reconciling an uncertain POST. FOG's list
+    // exposes task hosts, but does not prove which request created a task.
+    public async Task<IReadOnlyList<int>> GetActiveTaskHostIdsAsync(
+        CancellationToken cancellationToken = default)
     {
         using var json = await GetJsonAsync("task/active", cancellationToken);
         var root = json.RootElement;
@@ -201,7 +207,7 @@ public sealed class FogManagementClient : IDisposable
              count != tasks.Length))
             throw new InvalidOperationException("FOG active task list is incomplete; deployment is disabled.");
 
-        var found = false;
+        var hostIds = new List<int>();
         foreach (var task in tasks)
         {
             if (task.ValueKind != JsonValueKind.Object)
@@ -223,10 +229,9 @@ public sealed class FogManagementClient : IDisposable
             }
             if (ids.Count == 0 || ids.Any(id => id != ids[0]))
                 throw new InvalidOperationException("FOG active task host identity is missing or inconsistent.");
-            if (ids[0] == hostId)
-                found = true;
+            hostIds.Add(ids[0]);
         }
-        return found;
+        return hostIds;
     }
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)

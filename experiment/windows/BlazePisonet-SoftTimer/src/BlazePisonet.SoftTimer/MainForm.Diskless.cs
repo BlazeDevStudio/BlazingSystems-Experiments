@@ -9,7 +9,10 @@ public sealed partial class MainForm
     private readonly ListBox _fogHosts = new() { Height = 190, Width = 850 };
     private readonly ListBox _fogImages = new() { Height = 155, Width = 850 };
     private readonly Label _fogStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
+    private readonly ListBox _fogTaskHosts = new() { Height = 100, Width = 850 };
+    private readonly Label _fogTaskStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
     private readonly FogInventoryBinding _fogInventoryBinding = new();
+    private readonly FogInventoryBinding _fogTaskBinding = new();
     private readonly TextBox _disklessClient = NewText();
     private readonly TextBox _disklessTargetIp = NewText();
     private readonly TextBox _disklessTargetIqn = NewText();
@@ -44,6 +47,13 @@ public sealed partial class MainForm
         inventory.Controls.Add(PrimaryButton("SCHEDULE SELECTED IMAGE DEPLOYMENT", async (_, _) => await DeployFogAsync()));
         root.Controls.Add(inventory);
 
+        var tasks = Card("Active FOG task inspection",
+            "Read-only task hosts from this server. Use after an uncertain deployment response; confirm the task type and client in FOG before retrying or booting.");
+        tasks.Controls.Add(Button("INSPECT ACTIVE TASKS", async (_, _) => await InspectFogTasksAsync()));
+        tasks.Controls.Add(_fogTaskHosts);
+        tasks.Controls.Add(_fogTaskStatus);
+        root.Controls.Add(tasks);
+
         var readiness = Card("Live diskless boot readiness",
             "FOG deployment writes an image to a client disk. True diskless Windows boot needs an iSCSI target, per-client writable image, PXE/iPXE boot, network isolation and real client validation.");
         readiness.Controls.Add(new Label
@@ -75,7 +85,34 @@ public sealed partial class MainForm
         _fogInventoryBinding.ConnectionEdited();
         _fogHosts.Items.Clear();
         _fogImages.Items.Clear();
+        _fogTaskBinding.ConnectionEdited();
+        _fogTaskHosts.Items.Clear();
+        _fogTaskStatus.Text = "FOG connection changed. Inspect this server's tasks again.";
         _fogStatus.Text = "FOG connection changed. Refresh inventory before scheduling a deployment.";
+    }
+
+    private async Task InspectFogTasksAsync()
+    {
+        var requestGeneration = _fogTaskBinding.BeginRefresh();
+        _fogTaskHosts.Items.Clear();
+        _fogTaskStatus.Text = "Reading active FOG tasks...";
+        try
+        {
+            using var fog = NewFogClient();
+            var hostIds = await fog.GetActiveTaskHostIdsAsync();
+            if (!_fogTaskBinding.CompleteRefresh(requestGeneration)) return;
+            foreach (var hostId in hostIds)
+                _fogTaskHosts.Items.Add($"host #{hostId}");
+            _fogTaskStatus.Text = $"{hostIds.Count} active task(s) shown for {_fogUrl.Text.Trim()}. " +
+                "Task type and disk outcome require confirmation in FOG.";
+        }
+        catch (Exception ex)
+        {
+            if (_fogTaskBinding.Generation != requestGeneration) return;
+            _fogTaskBinding.ConnectionEdited();
+            _fogTaskHosts.Items.Clear();
+            _fogTaskStatus.Text = "FOG task inspection failed: " + ex.Message;
+        }
     }
 
     private void RefreshDisklessProfiles()

@@ -27,6 +27,14 @@ Check(binding.CompleteRefresh(latestRefresh) && binding.ReadyFor(latestRefresh),
     "current connection inventory admitted");
 binding.ConnectionEdited();
 Check(!binding.ReadyFor(latestRefresh), "connection edit prevents stale deployment");
+var taskBinding = new FogInventoryBinding();
+var staleTaskView = taskBinding.BeginRefresh();
+taskBinding.ConnectionEdited();
+Check(!taskBinding.CompleteRefresh(staleTaskView), "connection edit discards in-flight task view");
+var olderTaskView = taskBinding.BeginRefresh();
+var currentTaskView = taskBinding.BeginRefresh();
+Check(!taskBinding.CompleteRefresh(olderTaskView) && taskBinding.CompleteRefresh(currentTaskView),
+    "newer task inspection supersedes older response");
 
 await Reject(() =>
 {
@@ -190,6 +198,25 @@ using (var fog = new FogManagementClient("https://fog.example",
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
     Check(otherTask.Deployments == 1, "other host task permits deployment");
+}
+
+var taskView = new FakeFog { ActiveTasksJson =
+    "{\"count\":2,\"tasks\":[{\"hostID\":\"7\"},{\"host\":{\"id\":\"8\"}}]}" };
+using (var fog = new FogManagementClient("https://fog.example",
+           new FogCredentials("fog_test", "", ""), taskView))
+    Check((await fog.GetActiveTaskHostIdsAsync()).SequenceEqual(new[] { 7, 8 }),
+        "read-only active task view preserves both host identities");
+Check(taskView.Deployments == 0, "active task inspection makes no deployment POST");
+foreach (var malformed in new[]
+{
+    "{\"count\":2,\"tasks\":[{\"hostID\":\"7\"}]}",
+    "{\"count\":1,\"tasks\":[{\"hostID\":\"bad\"}]}"
+})
+{
+    var badTaskView = new FakeFog { ActiveTasksJson = malformed };
+    using var fog = new FogManagementClient("https://fog.example",
+        new FogCredentials("fog_test", "", ""), badTaskView);
+    await Reject(() => fog.GetActiveTaskHostIdsAsync(), "malformed read-only active task view");
 }
 
 var activeForbidden = new FakeFog { ActiveTaskStatus = HttpStatusCode.Forbidden };
