@@ -2655,3 +2655,9 @@
 - **Regression:** `tests/v060_installed_migration_stage.sh` commit `17313fe93491e324afa2663e4df3a6bd30d26319` six disposable malformed-money negatives, no success/ACK and unchanged source hashes; the positive legacy transfer is adjusted to a genuine `-4 / 4 / new-source:recipient:new-destination` receipt. Original provenance, corruption, archive/sync, and native fixture tests remain in scope.
 - **EVIDENCE GAP:** Exact source/CI not verified as this is recorded. Need isolated PR against PR #89 branch, Full including PAY-0765, native, OpenWrt SDK; no owner production acceptance claimed. Only candidate stage checks improved; installed active v1 money remains v1; independent witness, P-256 protected signer, reversible audited cutover, 150 real power cuts and 30-device 24-hour soak still missing #31/#32/#43/#34. No main/Stable/Standalone, customer balances/keys, production version or tag changed. `VERSION=0.5.3`, `CUSTOMER_INSTALL_AUTHORIZED=0`, `PRODUCTION_v0.6.0_RELEASED=0`.
 
+
+
+## 2026-10-17 PAY-0767 CI-1 actual syntax failure and correction
+
+- PR #100 initial HEAD `ee0e2b310934c8e1b65827c98d1073dc06c29d28`: Full #38959462118 static validation and native #38959462100 installed staging BOTH FAILED at `v2_migration_stage.sh:145` POSIX shell `Syntax error: "(" unexpected`. The AWK program is single-quoted in the shell, but a new explanatory AWK comment contained an ASCII apostrophe and prematurely ended that string. No runtime payment action took place.
+- Corrective code SHA `3f58f4357db4c437d5553e1b594c57f612c38ead`: comment rendered without apostrophe, semantic checks untouched. New exact-head CI NOT VERIFIED at this checkpoint; do not label old failures green or claim installed hardware. Keep PR #100 DRAFT, owner-gated PR #89 OPEN and unmerged from development. `VERSION=0.5.3`, `CUSTOMER_INSTALL_AUTHORIZED=0`, `PRODUCTION_v0.6.0_RELEASED=0`.
