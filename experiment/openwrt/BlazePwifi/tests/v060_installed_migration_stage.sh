@@ -40,7 +40,7 @@ reject() {
     unsupported_wifi_money) expected=unsupported_or_corrupt_wifi_money;;
     unsupported_voucher_money|unresolved_coin_window) expected="$1";;
     missing_freeze) expected=frozen_marker_required;;
-    overflowing_member_receipt) expected=member_receipt_corrupt;;
+    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
     concurrent_writer) expected=writer_busy;;
@@ -73,6 +73,36 @@ refresh_archive
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
 reject overflowing_member_receipt
 sed -i '$d' "$BP_STATE/member-events.tsv"
+
+# PAY-0766: operator-only staging must refuse orphan or recycled paid
+# identity history, even when the frozen archive digest matches. All inputs
+# are disposable, and the helper rejects ANY candidate or money write.
+cp -p "$BP_STATE/member-events.tsv" "$T/member-events.provenance.good"
+stage_member_refuse() {
+  why="$1"
+  refresh_archive
+  before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
+  reject "$why"
+  cp -p "$T/member-events.provenance.good" "$BP_STATE/member-events.tsv"
+}
+printf 'm:orphan:2\t100\tghost\tadd\t10\t10\tVendo1\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse orphan_member_source
+printf 'm:missing:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:ghost:4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse orphan_transfer_recipient
+printf 'm:self:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:alice:4\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse same_transfer_recipient
+printf 'm:bad:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:2147483648\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse bad_transfer_balance
+printf 'admin:2:alice\t101\talice\tdelete\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse recreated_member_epoch
+printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse trimmed_delete_recreated_member
+printf 'm:transfer:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
+printf 'admin:3:bob\t101\tbob\tdelete\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+printf 'admin:4:bob\t102\tbob\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse recreated_transfer_recipient
+
 printf 'r:short\tdev01\t1800000000\t100\tp:2\n' >> "$BP_STATE/rental-events.tsv"
 refresh_archive
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
@@ -120,6 +150,10 @@ PATH="$T/bin:$PATH" reject sync_failure
 rm -rf "$BP_SNAPSHOT_ROOT/.v1-v2-candidate.tmp"
 rm "$T/bin/sync"
 
+# Healthy distinct source/recipient transfer receipts remain acceptable.
+printf 'm:healthy:2\t100\talice\ttransfer\t-4\t116\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
+refresh_archive
+before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
 result="$(stage)"
 printf '%s\n' "$result" | grep -q 'CANDIDATE.*paid_ack_authorized=0; migration_authorized=0'
 candidate="$BP_SNAPSHOT_ROOT/v1-v2-candidate"
@@ -163,4 +197,4 @@ if "$T/native" "$native_root" ctrlOne 1 ctrlOne:1 AM alice - 1 1000 "$signed" > 
   echo 'malformed provenance admitted' >&2; exit 1
 fi
 [ ! -s "$T/out" ] && [ "$(sha256sum "$native_root/ledger.tsv" | awk '{print $1}')" = "$tampered" ]
-echo 'PAY-0765 installed member/rental candidate: receipts preserved, partial/replay/corrupt states denied'
+echo 'PAY-0765/0766 installed inactive candidate: member identities and transfer recipients checked; frozen receipts preserved; partial/replay/corrupt states denied'
