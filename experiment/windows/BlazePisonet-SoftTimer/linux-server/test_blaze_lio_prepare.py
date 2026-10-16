@@ -28,8 +28,13 @@ class Backend:
             raise AssertionError("unexpected CHAP secret")
         if self.change_image:
             image = Path(spec["image_path"])
+            previous = image.stat()
             image.unlink()
-            image.touch(mode=0o600)
+            with image.open("wb") as out:
+                out.truncate(previous.st_size)
+            image.chmod(0o600)
+            os.utime(image, ns=(previous.st_atime_ns,
+                                previous.st_mtime_ns + 1_000_000_000))
         if self.fail_prepare:
             raise RuntimeError("partial configfs write")
 

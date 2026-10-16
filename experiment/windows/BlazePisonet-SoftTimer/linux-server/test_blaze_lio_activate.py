@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import types
@@ -22,12 +23,12 @@ class Backend:
     def prepare(self, spec, secret):
         self.calls.append("prepare")
 
-    def inspect_prepared(self, spec, secret):
+    def inspect_prepared(self, spec, secret, expected_image=None):
         self.calls.append("inspect")
         if self.fail_inspect:
             raise preparation.Refused("live ACL drift")
 
-    def activate(self, spec, secret):
+    def activate(self, spec, secret, expected_image=None):
         self.calls.append("activate")
         if self.fail_activate:
             raise RuntimeError("lost configfs completion")
@@ -78,10 +79,13 @@ class ActivationTests(unittest.TestCase):
             self.run_activation()
 
     def test_changed_image_refused_before_live_inspection(self):
+        previous = self.image.stat()
         self.image.unlink()
         with self.image.open("wb") as out:
-            out.truncate(16 * 1024**3)
+            out.truncate(previous.st_size)
         self.image.chmod(0o600)
+        os.utime(self.image, ns=(previous.st_atime_ns,
+                                 previous.st_mtime_ns + 1_000_000_000))
         with self.assertRaisesRegex(preparation.Refused, "image identity"):
             self.run_activation()
         self.assertEqual(json.loads(self.marker.read_text())["status"], "prepared_disabled")
@@ -195,7 +199,7 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaises(preparation.Refused):
             backend.inspect_prepared(self.data, secret)
         tpg.node_acls.pop()
-        backend.activate(self.data, secret)
+        backend.activate(self.data, secret, image_stat)
         self.assertTrue(tpg.enable)
         self.assertTrue(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
         backend.quarantine(self.data)

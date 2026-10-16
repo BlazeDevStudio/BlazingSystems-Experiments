@@ -48,6 +48,11 @@ def private_directory(path, owner):
         raise Refused("directory is not private")
 
 
+def image_identity(file_stat):
+    return (file_stat.st_dev, file_stat.st_ino, file_stat.st_size,
+            file_stat.st_ctime_ns, file_stat.st_mtime_ns)
+
+
 def read_spec(path, owner):
     private_directory(path.parent, owner)
     private_regular(path, owner)
@@ -174,8 +179,11 @@ class LioBackend:
         finally:
             os.close(dfd)
 
-    def inspect_prepared(self, spec, secret):
+    def inspect_prepared(self, spec, secret, expected_image=None):
         self.load_api()
+        image_stat = private_regular(Path(spec["image_path"]), os.geteuid())
+        if expected_image is not None and image_identity(image_stat) != image_identity(expected_image):
+            raise Refused("backing image changed since preparation")
         root = self.api[6]()
         targets = list(root.targets)
         stores = list(root.storage_objects)
@@ -186,7 +194,7 @@ class LioBackend:
             raise Refused("target identity changed")
         if (store.plugin != "fileio" or store.name != spec["storage_name"] or
                 store.udev_path != spec["image_path"] or store.write_back or
-                store.is_block or store.size != os.stat(spec["image_path"], follow_symlinks=False).st_size):
+                store.is_block or store.size != image_stat.st_size):
             raise Refused("backing image identity or write-through mode changed")
         tpgs = list(target.tpgs)
         if len(tpgs) != 1 or tpgs[0].tag != 1 or tpgs[0].enable:
@@ -227,8 +235,8 @@ class LioBackend:
             raise Refused("saved LIO configuration malformed") from error
         return root, tpg
 
-    def activate(self, spec, secret):
-        root, tpg = self.inspect_prepared(spec, secret)
+    def activate(self, spec, secret, expected_image):
+        root, tpg = self.inspect_prepared(spec, secret, expected_image)
         tpg.enable = True
         if not tpg.enable:
             raise Refused("target enable did not take effect")
@@ -287,16 +295,17 @@ def prepare(spec_path, secret_path, state_dir, backend, *, require_root=True):
             raise Refused("prior or incomplete preparation; inspect before retry")
         backend.preflight()
         after = private_regular(Path(spec["image_path"]), owner)
-        if (before.st_dev, before.st_ino, before.st_size) != (after.st_dev, after.st_ino, after.st_size):
+        if image_identity(before) != image_identity(after):
             raise Refused("image changed during preflight")
         record = {"status": "started", "target_iqn": spec["target_iqn"],
                   "initiator_iqn": spec["initiator_iqn"], "image_path": spec["image_path"],
                   "image_dev": before.st_dev, "image_ino": before.st_ino,
-                  "image_size": before.st_size}
+                  "image_size": before.st_size, "image_ctime_ns": before.st_ctime_ns,
+                  "image_mtime_ns": before.st_mtime_ns}
         write_record(marker, record)
         backend.prepare(spec, secret)
         after = private_regular(Path(spec["image_path"]), owner)
-        if (before.st_dev, before.st_ino, before.st_size) != (after.st_dev, after.st_ino, after.st_size):
+        if image_identity(before) != image_identity(after):
             raise Refused("image changed during LIO preparation")
         record["status"] = "prepared_disabled"
         replacement = state_dir / ("." + key + ".next")

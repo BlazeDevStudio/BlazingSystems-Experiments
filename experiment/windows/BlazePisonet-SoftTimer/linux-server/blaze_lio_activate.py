@@ -11,7 +11,7 @@ import stat
 import sys
 
 from blaze_lio_prepare import (LioBackend, Refused, private_directory,
-                               private_regular, read_secret, read_spec,
+                               private_regular, image_identity, read_secret, read_spec,
                                unique_object, write_record)
 
 
@@ -27,7 +27,9 @@ def activation_record(spec, image_stat, status):
     return {"status": status, "target_iqn": spec["target_iqn"],
             "initiator_iqn": spec["initiator_iqn"], "image_path": spec["image_path"],
             "image_dev": image_stat.st_dev, "image_ino": image_stat.st_ino,
-            "image_size": image_stat.st_size}
+            "image_size": image_stat.st_size,
+            "image_ctime_ns": image_stat.st_ctime_ns,
+            "image_mtime_ns": image_stat.st_mtime_ns}
 
 
 def replace_record(marker, record):
@@ -65,13 +67,12 @@ def activate(spec_path, secret_path, state_dir, backend, *, require_root=True):
             raise Refused("preparation intent or image identity changed")
         # Inspect before changing the intent, then inspect again inside the
         # backend immediately before toggling the target.
-        backend.inspect_prepared(spec, secret)
+        backend.inspect_prepared(spec, secret, image_stat)
         replace_record(marker, activation_record(spec, image_stat, "activating"))
         try:
-            backend.activate(spec, secret)
+            backend.activate(spec, secret, image_stat)
             current = private_regular(Path(spec["image_path"]), owner)
-            if (current.st_dev, current.st_ino, current.st_size) != (
-                    image_stat.st_dev, image_stat.st_ino, image_stat.st_size):
+            if image_identity(current) != image_identity(image_stat):
                 raise Refused("backing image changed during activation")
             replace_record(marker, activation_record(spec, image_stat, "active"))
         except Exception:
