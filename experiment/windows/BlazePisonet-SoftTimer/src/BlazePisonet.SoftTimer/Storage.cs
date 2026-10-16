@@ -60,12 +60,26 @@ public static class Storage
     public static string LogPath => Path.Combine(RootDirectory, "softtimer.log");
     public static string MaintenancePath => Path.Combine(RootDirectory, "maintenance.until");
 
+    // File.Exists hides access and I/O errors as "missing". Paid state and
+    // controller identity may be initialized only when the file is truly absent.
+    private static bool MissingOrdinaryFile(string path)
+    {
+        try
+        {
+            var attributes = File.GetAttributes(path);
+            if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
+                throw new InvalidDataException("Protected SoftTimer path is not an ordinary file.");
+            return false;
+        }
+        catch (FileNotFoundException) { return true; }
+    }
+
     public static AppConfig LoadConfig() => LoadConfigAtPath(ConfigPath);
 
     internal static AppConfig LoadConfigAtPath(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        if (!File.Exists(path))
+        if (MissingOrdinaryFile(path))
         {
             var cfg = new AppConfig
             {
@@ -110,6 +124,10 @@ public static class Storage
             File.WriteAllText(path, valid);
             var loaded = LoadConfigAtPath(path);
             if (loaded.CentralSharedKey != "known-key" || loaded.BlazePwifiControllerId != "known-id") return 71;
+            AtomicWrite(path, valid);
+            if (File.ReadAllText(path) != valid || File.ReadAllText(path + ".bak") != valid ||
+                File.Exists(path + ".tmp")) return 76;
+            File.Delete(path + ".bak");
             foreach (var bad in new[]
             {
                 "{\"Version\":", "null", "{}",
@@ -127,7 +145,15 @@ public static class Storage
             }
             File.Delete(path);
             loaded = LoadConfigAtPath(path);
-            return File.Exists(path) && !string.IsNullOrWhiteSpace(loaded.CentralSharedKey) ? 0 : 74;
+            if (!File.Exists(path) || string.IsNullOrWhiteSpace(loaded.CentralSharedKey)) return 74;
+            File.Delete(path);
+            Directory.CreateDirectory(path);
+            try { LoadConfigAtPath(path); return 77; }
+            catch (InvalidDataException) { }
+            try { AtomicWrite(path, valid); return 78; }
+            catch (InvalidDataException) { }
+            return Directory.Exists(path) && !File.Exists(path + ".tmp") &&
+                !File.Exists(path + ".bak") ? 0 : 79;
         }
         catch { return 75; }
         finally
@@ -164,7 +190,7 @@ public static class Storage
     internal static RuntimeState LoadStateAtPath(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        if (!File.Exists(path)) return new RuntimeState();
+        if (MissingOrdinaryFile(path)) return new RuntimeState();
         try
         {
             var json = File.ReadAllText(path);
@@ -250,7 +276,12 @@ public static class Storage
             }
             File.Delete(path);
             state = LoadStateAtPath(path);
-            return !File.Exists(path) && state.RemainingSeconds == 0 ? 0 : 84;
+            if (File.Exists(path) || state.RemainingSeconds != 0) return 84;
+            Directory.CreateDirectory(path);
+            try { LoadStateAtPath(path); return 86; }
+            catch (InvalidDataException) { }
+            return Directory.Exists(path) && !File.Exists(path + ".tmp") &&
+                !File.Exists(path + ".bak") ? 0 : 87;
         }
         catch { return 85; }
         finally
@@ -273,20 +304,13 @@ public static class Storage
     public static void AtomicWrite(string path, string content)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var missing = MissingOrdinaryFile(path);
         var temp = path + ".tmp";
         var backup = path + ".bak";
         File.WriteAllText(temp, content, new UTF8Encoding(false));
         using (var fs = new FileStream(temp, FileMode.Open, FileAccess.Read, FileShare.Read)) fs.Flush(true);
-        if (File.Exists(path))
-        {
-            try { File.Replace(temp, path, backup, true); }
-            catch
-            {
-                File.Copy(path, backup, true);
-                File.Move(temp, path, true);
-            }
-        }
-        else File.Move(temp, path, true);
+        if (missing) File.Move(temp, path);
+        else File.Replace(temp, path, backup, true);
     }
 
     public static void Log(string line)
