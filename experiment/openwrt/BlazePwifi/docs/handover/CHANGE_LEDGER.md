@@ -1,3 +1,8 @@
+## PISONET-0018 - exact source Windows CI success, 2026-10-17 Asia/Manila
+- **Status:** validated source on exact CI; current docs sync awaiting classifier; **priority:** P1; PR #90. Source/test 773eae027e4f3b99ff44ae9ec2807346cd0ff50b, synchronized 2d9991498291fb47b06a7d6df0b479820a9bd456.
+- **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38931439895 COMPLETED SUCCESS at synchronized SHA. Targetd group-map UUID negative contract, strict build, timer/config/state guards, NSIS Setup EXE install/uninstall and preview upload passed. Artifact 12059366560 ZIP API sha256:d4264975b390d1e8c24be3bdccba944748506b04bb7624657e35e31a8e18f051; public Release SKIPPED.
+- **Limits/next:** targetd group maps lack UUID and cannot establish same-name replacement identity, CHAP/ACL, writable isolation or Windows boot. No customer device or storage mutation. Verify docs-head Windows CI, update PR #90, then approved noncustomer live backend/boot acceptance. Financial PR #89 paid v2 denied; no production v0.6.0.
+
 ## PISONET-0018 - group-map identity refusal source, 2026-10-17 Asia/Manila
 - **Status:** committed_untested; **priority:** P1; isolated pisonet-diskless-manager PR #90; source/test 773eae027e4f3b99ff44ae9ec2807346cd0ff50b.
 - **Files:** TargetdInspection.cs and tests/FogManagementContract/Program.cs. A group-only targetd mapping without volume UUID is UnverifiableGroupMap, never ReportedSingleClient; shared/multiple/wrong-LUN refusal remains.
