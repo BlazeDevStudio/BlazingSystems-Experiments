@@ -138,7 +138,7 @@ awk -F '\t' '
         $5 !~ /^-?[0-9]+$/ || $6 !~ /^(0|[1-9][0-9]*)$/ ||
         length($6)>10 || $6+0>2147483647 ||
         !($3 in members)) bad=1
-    # PAY-0767: a signed old receipt's reported result is not proof
+    # PAY-0767: a retained old receipt result alone is not proof
     # that its delta and kind are consistent with the actual v1 writer.
     # Reject contradictory money before preparing any inactive opening.
     if ($4=="add" &&
