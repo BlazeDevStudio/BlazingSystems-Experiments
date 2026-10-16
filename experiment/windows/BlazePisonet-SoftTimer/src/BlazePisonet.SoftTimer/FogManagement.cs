@@ -162,7 +162,8 @@ public sealed class FogManagementClient : IDisposable
             1 when info.Minor >= 5 => "taskTypeID",
             _ => throw new InvalidOperationException("FOG version is unknown; deployment is disabled.")
         };
-        await EnsureNoActiveTaskAsync(hostId, cancellationToken);
+        if (await HasActiveTaskAsync(hostId, cancellationToken))
+            throw new InvalidOperationException("FOG already has an active task for this host.");
         using var request = NewRequest(HttpMethod.Post, $"host/{hostId}/task");
         request.Content = new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> { [property] = "1" }),
             Encoding.UTF8, "application/json");
@@ -175,9 +176,21 @@ public sealed class FogManagementClient : IDisposable
         {
             throw new FogDeploymentUncertainException(ex);
         }
+        // FOG's successful POST body is an empty string. Check its active-task
+        // view before reporting a queued deployment; a delayed/missing task is
+        // uncertain and requires operator inspection rather than a blind retry.
+        try
+        {
+            if (!await HasActiveTaskAsync(hostId, cancellationToken))
+                throw new InvalidOperationException("FOG did not show the deployment in active tasks.");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or InvalidOperationException or JsonException)
+        {
+            throw new FogDeploymentUncertainException(ex);
+        }
     }
 
-    private async Task EnsureNoActiveTaskAsync(int hostId, CancellationToken cancellationToken)
+    private async Task<bool> HasActiveTaskAsync(int hostId, CancellationToken cancellationToken)
     {
         using var json = await GetJsonAsync("task/active", cancellationToken);
         var root = json.RootElement;
@@ -188,6 +201,7 @@ public sealed class FogManagementClient : IDisposable
              count != tasks.Length))
             throw new InvalidOperationException("FOG active task list is incomplete; deployment is disabled.");
 
+        var found = false;
         foreach (var task in tasks)
         {
             if (task.ValueKind != JsonValueKind.Object)
@@ -210,8 +224,9 @@ public sealed class FogManagementClient : IDisposable
             if (ids.Count == 0 || ids.Any(id => id != ids[0]))
                 throw new InvalidOperationException("FOG active task host identity is missing or inconsistent.");
             if (ids[0] == hostId)
-                throw new InvalidOperationException("FOG already has an active task for this host.");
+                found = true;
         }
+        return found;
     }
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)

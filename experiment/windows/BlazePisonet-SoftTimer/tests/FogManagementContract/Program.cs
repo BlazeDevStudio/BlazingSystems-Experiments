@@ -114,7 +114,7 @@ using (var fog = new FogManagementClient("https://fog.example",
            new FogCredentials("", "global", "user"), legacy))
 {
     await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
-    Check(legacy.PairRequests == 7 && legacy.BearerRequests == 0, "legacy token pair and active task preflight");
+    Check(legacy.PairRequests == 8 && legacy.BearerRequests == 0, "legacy token pair and active task checks");
     Check(legacy.LastBody.Contains("\"taskTypeID\":\"1\""), "FOG 1.5 deploy body");
 }
 
@@ -226,6 +226,25 @@ using (var fog = new FogManagementClient("https://fog.example",
     Check(lostAck.Deployments == 1, "lost response never schedules twice");
 }
 
+foreach (var (activeAfterPost, name) in new[]
+{
+    ("{\"count\":0,\"tasks\":[]}", "HTTP success with no active task"),
+    ("{\"count\":1,\"tasks\":[{\"hostID\":\"8\"}]}", "HTTP success with another host task"),
+    ("{\"count\":1,\"tasks\":[]}", "HTTP success with incomplete active task list")
+})
+{
+    var unconfirmed = new FakeFog { ActiveAfterPostJson = activeAfterPost };
+    using var fog = new FogManagementClient("https://fog.example",
+        new FogCredentials("fog_test", "", ""), unconfirmed);
+    try
+    {
+        await fog.QueueDeploymentAsync(7, 5, "DEPLOY pc-01 Win11");
+        throw new Exception("FOG contract falsely confirmed: " + name);
+    }
+    catch (FogDeploymentUncertainException) { }
+    Check(unconfirmed.Deployments == 1, name + " reports uncertainty after one POST");
+}
+
 Console.WriteLine("PISONET-0003 FOG API: auth, inventory, active-task and lost-response deployment guard PASS");
 
 sealed class FakeFog : HttpMessageHandler
@@ -238,6 +257,7 @@ sealed class FakeFog : HttpMessageHandler
     public string ActiveTasksJson { get; set; } = "{\"count\":0,\"tasks\":[]}";
     public HttpStatusCode ActiveTaskStatus { get; set; } = HttpStatusCode.OK;
     public bool LostDeploymentResponse { get; set; }
+    public string ActiveAfterPostJson { get; set; } = "{\"count\":1,\"tasks\":[{\"hostID\":\"7\"}]}";
     public int PagedHostCount { get; set; } = 1;
     public string PageFault { get; set; } = "";
     public int HostPages { get; private set; }
@@ -314,6 +334,7 @@ sealed class FakeFog : HttpMessageHandler
                 ActiveTasksJson = "{\"count\":1,\"tasks\":[{\"hostID\":\"7\"}]}";
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
+            ActiveTasksJson = ActiveAfterPostJson;
             return Json("\"\"");
         }
         throw new Exception("unexpected FOG route " + request.Method + " " + path);
