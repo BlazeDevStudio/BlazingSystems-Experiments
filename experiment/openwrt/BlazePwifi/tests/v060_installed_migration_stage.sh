@@ -207,6 +207,12 @@ PATH="$T/bin:$PATH" reject sync_failure
 rm -rf "$BP_SNAPSHOT_ROOT/.v1-v2-candidate.tmp"
 rm "$T/bin/sync"
 
+# PAY-0771: after +20 and transfer of 4, v1 source/recipient balances
+# must match the saved post-transfer receipt values: 116 and 4.
+# Use only disposable fixture rows, never mutate customer member state.
+awk -F '\t' 'BEGIN {OFS="\t"} $1=="alice" {$8=116} $1=="bob" {$8=4} {print}' \
+  "$BP_STATE/members.tsv" > "$T/healthy-members.tsv"
+cat "$T/healthy-members.tsv" > "$BP_STATE/members.tsv"
 # Existing v1 writes a nonempty add detail as post-balance 120.
 printf 'm:1\t100\talice\tadd\t20\t20\tVendo1\t120\n' > "$BP_STATE/member-events.tsv"
 # Healthy distinct source/recipient transfer receipts remain acceptable.
@@ -222,7 +228,8 @@ tar -xOf "$candidate/state.tar" ./member-events.tsv | cmp - "$BP_STATE/member-ev
 tar -xOf "$candidate/state.tar" ./rental-events.tsv | cmp - "$BP_STATE/rental-events.tsv"
 archive_hash="$(sha256sum "$candidate/state.tar" | awk '{print $1}')"
 grep -Fx "$(printf 'P\t%s\t1' "$archive_hash")" "$candidate/ledger.tsv"
-grep -Fx "$(printf 'A\talice\t120')" "$candidate/ledger.tsv"
+grep -Fx "$(printf 'A\talice\t116')" "$candidate/ledger.tsv"
+grep -Fx "$(printf 'A\tbob\t4')" "$candidate/ledger.tsv"
 grep -Fx "$(printf 'L\tdev01\t1800000000')" "$candidate/ledger.tsv"
 if stage > "$T/out" 2> "$T/err"; then echo 'lost-response retry overwrote candidate' >&2; exit 1; fi
 grep -q prior_candidate_present "$T/err"
@@ -241,11 +248,11 @@ chmod 700 "$native_root"
 chmod 600 "$native_root"/* "$native_root/.blaze-v2-fixture-only"
 signed="$(printf 'BLAZE-V2-AUTH-FIXTURE/1\tctrlOne\t1\tctrlOne:1\tAM\talice\t-\t1\t1000\n' |
   openssl dgst -sha256 -mac HMAC -macopt "hexkey:$key" -r | awk '{print $1}')"
-[ "$("$T/native" "$native_root" ctrlOne 1 ctrlOne:1 AM alice - 1 1000 "$signed")" = "$(printf 'COMMIT\t121')" ]
+[ "$("$T/native" "$native_root" ctrlOne 1 ctrlOne:1 AM alice - 1 1000 "$signed")" = "$(printf 'COMMIT\t117')" ]
 grep -Fx "$(printf 'P\t%s\t1' "$archive_hash")" "$native_root/ledger.tsv"
 native_digest="$(sha256sum "$native_root/ledger.tsv" | awk '{print $1}')"
 if "$T/native" "$native_root" ctrlOne 1 ctrlOne:1 AM alice - 1 1000 "$signed" > "$T/replay"; then
-  grep -Fx "$(printf 'REPLAY\t121')" "$T/replay"
+  grep -Fx "$(printf 'REPLAY\t117')" "$T/replay"
 else echo 'native replay failed' >&2; exit 1; fi
 [ "$(sha256sum "$native_root/ledger.tsv" | awk '{print $1}')" = "$native_digest" ]
 sed -i 's/^P\t/P\tinvalid\t/' "$native_root/ledger.tsv"
