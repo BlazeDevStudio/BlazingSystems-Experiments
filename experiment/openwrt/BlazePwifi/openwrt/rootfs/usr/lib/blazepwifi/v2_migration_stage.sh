@@ -113,18 +113,48 @@ awk -F '\t' '
 ' "$tmp/rental-devices.tsv" || reject rental_corrupt_or_out_of_range
 # Retain every v1 receipt byte in state.tar. No historical event is converted
 # to a v2 controller sequence, and no assertion of complete v1 history is made.
+# PAY-0766: stages preserve old receipts but MUST NOT bind them to a new
+# username epoch or invent a transfer recipient. Check the full retained
+# paid history against current members under the pre-existing paid lock.
+# This remains an INACTIVE archive candidate, never a migration admission.
+# Nonfinancial v1 create/delete rows can be trimmed; lack of a lifecycle
+# row is NOT proof of stable provenance. Owner mapping remains required.
 awk -F '\t' '
+  FILENAME==ARGV[1] {members[$1]=1; next}
+  $4=="create" {
+    if ($3 in paid_ref) bad=1
+    if (++creates[$3]>1) reused[$3]=1
+  }
+  $4=="delete" {deleted[$3]=1}
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ || $3=="" ||
-    $4=="" || $5 !~ /^-?[0-9]+$/ || $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
+    $4=="" || $5 !~ /^-?[0-9]+$/ || $6 !~ /^[0-9]+$/ ||
+    $7=="" {bad=1}
   {if (++seen[$1]>1) bad=1}
   $4=="add" || $4=="subtract" || $4=="set" ||
   $4=="restore_all" || $4=="transfer" {
+    paid_ref[$3]=1
     d=$5; if (substr(d,1,1)=="-") d=substr(d,2)
     if (length(d)>10 || d+0>2147483647 ||
-        length($6)>10 || $6+0>2147483647) bad=1
+        $5 !~ /^-?[0-9]+$/ || $6 !~ /^(0|[1-9][0-9]*)$/ ||
+        length($6)>10 || $6+0>2147483647 ||
+        !($3 in members)) bad=1
+    if ($4=="transfer") {
+      n=split($8,p,":")
+      if (n==3) paid_ref[p[2]]=1
+      if (n!=3 || !(p[2] in members) || p[2]==$3 ||
+          p[1] !~ /^(0|[1-9][0-9]*)$/ ||
+          p[3] !~ /^(0|[1-9][0-9]*)$/ ||
+          length(p[1])>10 || length(p[3])>10 ||
+          p[1]+0>2147483647 || p[3]+0>2147483647)
+          bad=1
+    }
   }
-  END {if (bad) exit 8}
-' "$tmp/member-events.tsv" || reject member_receipt_corrupt
+  END {
+    for (u in paid_ref)
+      if ((u in deleted) || (u in reused)) bad=1
+    if (bad) exit 8
+  }
+' "$tmp/members.tsv" "$tmp/member-events.tsv" || reject member_receipt_corrupt
 awk -F '\t' '
   FILENAME==ARGV[1] {device[$1]=1; next}
   NF!=5 || $1=="" || $4 !~ /^[0-9]+$/ {bad=1}
