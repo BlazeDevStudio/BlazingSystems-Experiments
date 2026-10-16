@@ -50,6 +50,9 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: CI-0701 negative classifier contract (no API, no hardware)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ci_docs_classifier.py
       - name: Verify previous exact Full success before suppressing expensive jobs
@@ -65,7 +68,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Mandatory handover freshness gate
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Handover gate fail-closed regression
@@ -392,6 +399,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: arduino/setup-arduino-cli@v2
       - name: Install ESP8266 core
         run: |
@@ -420,6 +432,11 @@ jobs:
         target: [ruijie, x86_64, orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -439,6 +456,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: arduino/setup-arduino-cli@v2
       - name: Install ESP32 core
         run: |
@@ -469,6 +491,11 @@ jobs:
         target: [orangepi_pc_plus, orangepi_pc2, orangepi_zero, orangepi_zero2, orangepi_zero2w, orangepi_one_plus]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build optional OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -490,7 +517,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Install Android SDK 27 and isolate legacy SDK root
         shell: bash
         run: |
@@ -585,6 +616,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Build current no-reflash update assets
         shell: bash
         run: |
@@ -608,6 +644,11 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -630,6 +671,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-android-current
@@ -678,6 +724,11 @@ jobs:
         kind: [esp8266, esp32]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-${{ matrix.kind }}-firmware
@@ -701,6 +752,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-ruijie-firmware
@@ -724,6 +780,11 @@ jobs:
         target: [orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
@@ -743,6 +804,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-x86_64-firmware
@@ -773,6 +839,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Record passing candidate
         shell: bash
         run: |
@@ -800,6 +871,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-android-BlazeRental
@@ -883,7 +959,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           ref: blazepwifi-v0.3.0-production
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Download verified production signing handoff
         run: |
           set -euo pipefail
@@ -919,6 +999,11 @@ jobs:
       TAG: v0.3.0-rc.1
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/download-artifact@v4
         with:
           pattern: BlazePwifi-*
@@ -970,6 +1055,11 @@ jobs:
       TAG: v0.3.0
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -1056,8 +1146,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Verify full candidate and same-SHA Windows completed successfully
         shell: bash
         run: |
