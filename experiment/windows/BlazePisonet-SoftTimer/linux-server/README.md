@@ -37,6 +37,14 @@ configuration even if its success response was lost.
 The saved config can contain the CHAP secret and is restricted to `0600`.
 The command does not install a boot-time restore service. Verify that the
 actual target remains disabled across reboot before any live acceptance.
+On the same dedicated host, `python3 blaze_lio_status.py /private/spec.json
+--secret-file /private/chap.txt --state-dir /var/lib/blaze-lio` performs a
+read-only check of the private intent, image identity, saved configuration and
+live disabled LIO target. It prints only `PREPARED_DISABLED` after all checks
+pass. Missing, corrupt, active or incomplete intent and policy drift produce
+no success output. This local command does not open a network management port
+or expose the CHAP secret. Remote SoftTimer management still needs an
+authenticated, provisioned channel and approved noncustomer acceptance.
 For a dedicated **noncustomer lab only**, `blaze_lio_activate.py` with the same
 spec, secret and state directory plus `--confirm-lab-activation` inspects the
 live LIO target, backing image, ACL/CHAP, LUN mapping, portal and disabled
