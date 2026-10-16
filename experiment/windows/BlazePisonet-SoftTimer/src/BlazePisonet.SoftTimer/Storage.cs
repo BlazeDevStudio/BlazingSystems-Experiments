@@ -80,10 +80,12 @@ public static class Storage
         {
             var cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path), JsonOptions)
                 ?? throw new InvalidDataException("Configuration JSON is null.");
-            if (string.IsNullOrWhiteSpace(cfg.CentralSharedKey))
-                cfg.CentralSharedKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(cfg.BlazePwifiControllerId))
-                cfg.BlazePwifiControllerId = "softtimer-" + NormalizeId(Environment.MachineName);
+            // Both identities have been written since the original SoftTimer
+            // schema. Regenerating either for an existing file could strand
+            // paired stations or change a payment controller identity.
+            if (string.IsNullOrWhiteSpace(cfg.CentralSharedKey) ||
+                string.IsNullOrWhiteSpace(cfg.BlazePwifiControllerId))
+                throw new InvalidDataException("Existing configuration is missing a controller identity.");
             cfg.Version = "0.5.0-preview.1";
             EnsureSchedules(cfg);
             return cfg;
@@ -108,7 +110,14 @@ public static class Storage
             File.WriteAllText(path, valid);
             var loaded = LoadConfigAtPath(path);
             if (loaded.CentralSharedKey != "known-key" || loaded.BlazePwifiControllerId != "known-id") return 71;
-            foreach (var bad in new[] { "{\"Version\":", "null" })
+            foreach (var bad in new[]
+            {
+                "{\"Version\":", "null", "{}",
+                "{\"CentralSharedKey\":\"known-key\"}",
+                "{\"BlazePwifiControllerId\":\"known-id\"}",
+                "{\"CentralSharedKey\":\"  \",\"BlazePwifiControllerId\":\"known-id\"}",
+                "{\"CentralSharedKey\":\"known-key\",\"BlazePwifiControllerId\":\"  \"}"
+            })
             {
                 File.WriteAllText(path, bad);
                 try { LoadConfigAtPath(path); return 72; }
