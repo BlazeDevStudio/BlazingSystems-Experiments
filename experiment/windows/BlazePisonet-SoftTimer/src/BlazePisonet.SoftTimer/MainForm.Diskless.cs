@@ -13,6 +13,13 @@ public sealed partial class MainForm
     private readonly Label _fogTaskStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
     private readonly FogInventoryBinding _fogInventoryBinding = new();
     private readonly FogInventoryBinding _fogTaskBinding = new();
+    private readonly TextBox _targetdUrl = NewText();
+    private readonly TextBox _targetdUser = NewText();
+    private readonly TextBox _targetdPassword = new() { UseSystemPasswordChar = true };
+    private readonly ListBox _targetdExports = new() { Height = 115, Width = 850 };
+    private readonly ListBox _targetdMaps = new() { Height = 95, Width = 850 };
+    private readonly Label _targetdStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
+    private readonly FogInventoryBinding _targetdBinding = new();
     private readonly TextBox _disklessClient = NewText();
     private readonly TextBox _disklessTargetIp = NewText();
     private readonly TextBox _disklessTargetIqn = NewText();
@@ -54,6 +61,19 @@ public sealed partial class MainForm
         tasks.Controls.Add(_fogTaskStatus);
         root.Controls.Add(tasks);
 
+        foreach (var field in new[] { _targetdUrl, _targetdUser, _targetdPassword })
+            field.TextChanged += (_, _) => InvalidateTargetdInspection();
+        var storage = Card("Linux iSCSI storage inspection (targetd)",
+            "Read-only targetd exports and access-group mappings. HTTPS and a trusted server certificate are required. Credentials stay in this session. A listed mapping does not prove ACL isolation or Windows boot.");
+        storage.Controls.Add(Field("targetd HTTPS URL", _targetdUrl));
+        storage.Controls.Add(Field("targetd username", _targetdUser));
+        storage.Controls.Add(Field("targetd password", _targetdPassword));
+        storage.Controls.Add(Button("INSPECT STORAGE MAPPINGS", async (_, _) => await InspectTargetdAsync()));
+        storage.Controls.Add(_targetdExports);
+        storage.Controls.Add(_targetdMaps);
+        storage.Controls.Add(_targetdStatus);
+        root.Controls.Add(storage);
+
         var readiness = Card("Live diskless boot readiness",
             "FOG deployment writes an image to a client disk. True diskless Windows boot needs an iSCSI target, per-client writable image, PXE/iPXE boot, network isolation and real client validation.");
         readiness.Controls.Add(new Label
@@ -79,6 +99,44 @@ public sealed partial class MainForm
 
     private FogManagementClient NewFogClient() => new(_fogUrl.Text.Trim(),
         new FogCredentials(_fogBearer.Text, _fogGlobal.Text, _fogUser.Text));
+
+    private void InvalidateTargetdInspection()
+    {
+        _targetdBinding.ConnectionEdited();
+        _targetdExports.Items.Clear();
+        _targetdMaps.Items.Clear();
+        _targetdStatus.Text = "Storage connection changed. Inspect this server again.";
+    }
+
+    private async Task InspectTargetdAsync()
+    {
+        var generation = _targetdBinding.BeginRefresh();
+        _targetdExports.Items.Clear();
+        _targetdMaps.Items.Clear();
+        _targetdStatus.Text = "Reading targetd inventory...";
+        try
+        {
+            using var targetd = new TargetdInspectionClient(_targetdUrl.Text.Trim(),
+                _targetdUser.Text, _targetdPassword.Text);
+            var snapshot = await targetd.InspectAsync();
+            if (!_targetdBinding.CompleteRefresh(generation)) return;
+            foreach (var export in snapshot.Exports)
+                _targetdExports.Items.Add(export);
+            foreach (var map in snapshot.Maps)
+                _targetdMaps.Items.Add($"{map.Group} · LUN {map.Lun} · {map.Pool}/{map.Volume}");
+            _targetdStatus.Text = $"{snapshot.Exports.Count} export(s), {snapshot.Groups.Count} access group(s), " +
+                $"{snapshot.Maps.Count} group mapping(s) reported by {_targetdUrl.Text.Trim()}. " +
+                "Confirm target ACLs, authentication, isolation and Windows boot on approved hardware.";
+        }
+        catch (Exception ex)
+        {
+            if (_targetdBinding.Generation != generation) return;
+            _targetdBinding.ConnectionEdited();
+            _targetdExports.Items.Clear();
+            _targetdMaps.Items.Clear();
+            _targetdStatus.Text = "Storage inspection failed: " + ex.Message;
+        }
+    }
 
     private void InvalidateFogInventory()
     {

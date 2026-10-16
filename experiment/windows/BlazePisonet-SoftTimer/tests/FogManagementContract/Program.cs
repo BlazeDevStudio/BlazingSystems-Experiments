@@ -272,7 +272,41 @@ foreach (var (activeAfterPost, name) in new[]
     Check(unconfirmed.Deployments == 1, name + " reports uncertainty after one POST");
 }
 
-Console.WriteLine("PISONET-0003 FOG API: auth, inventory, active-task and lost-response deployment guard PASS");
+await Reject(() => { using var _ = new TargetdInspectionClient("http://storage.example", "operator", "secret");
+    return Task.CompletedTask; }, "targetd HTTP rejected");
+await Reject(() => { using var _ = new TargetdInspectionClient("https://operator:secret@storage.example", "operator", "secret");
+    return Task.CompletedTask; }, "targetd URL credentials rejected");
+await Reject(() => { using var _ = new TargetdInspectionClient("https://storage.example/other", "operator", "secret");
+    return Task.CompletedTask; }, "targetd path rejected");
+await Reject(() => { using var _ = new TargetdInspectionClient("https://storage.example", "operator", "");
+    return Task.CompletedTask; }, "targetd missing password rejected");
+foreach (var fault in new[] { "", "redirect", "mismatch", "rpc-error", "bad-json", "duplicate-export",
+    "unknown-group", "duplicate-group", "bad-initiator", "bad-map", "partial" })
+{
+    var server = new FakeTargetd { Fault = fault };
+    using var client = new TargetdInspectionClient("https://storage.example/targetrpc", "operator", "secret", server);
+    if (fault == "")
+    {
+        var snapshot = await client.InspectAsync();
+        Check(snapshot.Exports.Count == 1 && snapshot.Groups.Count == 1 && snapshot.Maps.Count == 1,
+            "targetd read-only complete snapshot");
+        Check(snapshot.Exports[0].InitiatorIqn == "iqn.2026-10.local.blaze:pc-01",
+            "targetd export initiator retained");
+        Check(server.Methods.SequenceEqual(new[] { "export_list", "access_group_list", "access_group_map_list" }),
+            "targetd never invokes a mutating method");
+    }
+    else await Reject(() => client.InspectAsync(), "targetd fault: " + fault);
+}
+var targetBinding = new FogInventoryBinding();
+var oldStorage = targetBinding.BeginRefresh();
+targetBinding.ConnectionEdited();
+Check(!targetBinding.CompleteRefresh(oldStorage), "targetd connection edit discards stale inspection");
+var supersededStorage = targetBinding.BeginRefresh();
+var latestStorage = targetBinding.BeginRefresh();
+Check(!targetBinding.CompleteRefresh(supersededStorage) && targetBinding.CompleteRefresh(latestStorage),
+    "targetd later inspection supersedes earlier response");
+
+Console.WriteLine("PISONET-0016 FOG and targetd contracts: auth, inventory, strict read-only RPC and failures PASS");
 
 sealed class FakeFog : HttpMessageHandler
 {
@@ -365,6 +399,66 @@ sealed class FakeFog : HttpMessageHandler
             return Json("\"\"");
         }
         throw new Exception("unexpected FOG route " + request.Method + " " + path);
+    }
+
+    private static HttpResponseMessage Json(string value) =>
+        new(HttpStatusCode.OK) { Content = new StringContent(value, Encoding.UTF8, "application/json") };
+}
+
+sealed class FakeTargetd : HttpMessageHandler
+{
+    public string Fault { get; set; } = "";
+    public List<string> Methods { get; } = new();
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Method != HttpMethod.Post || request.RequestUri?.AbsoluteUri !=
+            "https://storage.example/targetrpc" ||
+            request.Headers.Authorization?.Scheme != "Basic" ||
+            Encoding.UTF8.GetString(Convert.FromBase64String(
+                request.Headers.Authorization.Parameter ?? "")) != "operator:secret")
+            throw new Exception("targetd contract failed: fixed HTTPS endpoint and Basic identity");
+        if (Fault == "redirect")
+            return new HttpResponseMessage(HttpStatusCode.Redirect)
+                { Headers = { Location = new Uri("https://attacker.example/targetrpc") } };
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+        var root = body.RootElement;
+        if (root.GetProperty("jsonrpc").GetString() != "2.0" ||
+            root.EnumerateObject().Count() != 3)
+            throw new Exception("targetd contract failed: JSON-RPC 2.0 request body");
+        var method = root.GetProperty("method").GetString() ?? "";
+        if (method is not ("export_list" or "access_group_list" or "access_group_map_list"))
+            throw new Exception("targetd contract failed: mutation invoked");
+        Methods.Add(method);
+        var id = root.GetProperty("id").GetInt32();
+        if (Fault == "bad-json") return Json("{" );
+        if (Fault == "rpc-error")
+            return Json(JsonSerializer.Serialize(new { jsonrpc = "2.0", id,
+                error = new { code = -32601, message = "method unavailable" } }));
+        var result = method switch
+        {
+            "export_list" => Fault switch
+            {
+                "duplicate-export" => "[{\"initiator_wwn\":\"iqn.2026-10.local.blaze:pc-01\",\"lun\":0,\"pool\":\"pool1\",\"vol_name\":\"disk1\",\"vol_uuid\":\"uuid1\"},{\"initiator_wwn\":\"iqn.2026-10.local.blaze:pc-01\",\"lun\":0,\"pool\":\"pool1\",\"vol_name\":\"disk2\",\"vol_uuid\":\"uuid2\"}]",
+                "partial" => "[{\"initiator_wwn\":\"iqn.2026-10.local.blaze:pc-01\",\"lun\":0}]",
+                _ => "[{\"initiator_wwn\":\"iqn.2026-10.local.blaze:pc-01\",\"lun\":0,\"pool\":\"pool1\",\"vol_name\":\"disk1\",\"vol_uuid\":\"uuid1\"}]"
+            },
+            "access_group_list" => Fault switch
+            {
+                "duplicate-group" => "[{\"name\":\"group1\",\"init_ids\":[\"iqn.2026-10.local.blaze:pc-01\"]},{\"name\":\"group1\",\"init_ids\":[]}]",
+                "bad-initiator" => "[{\"name\":\"group1\",\"init_ids\":[\"not-an-iqn\"]}]",
+                _ => "[{\"name\":\"group1\",\"init_ids\":[\"iqn.2026-10.local.blaze:pc-01\"]}]"
+            },
+            _ => Fault switch
+            {
+                "unknown-group" => "[{\"ag_name\":\"missing\",\"h_lun_id\":0,\"pool_name\":\"pool1\",\"vol_name\":\"disk1\"}]",
+                "bad-map" => "[{\"ag_name\":\"group1\",\"h_lun_id\":\"x\",\"pool_name\":\"pool1\",\"vol_name\":\"disk1\"}]",
+                _ => "[{\"ag_name\":\"group1\",\"h_lun_id\":0,\"pool_name\":\"pool1\",\"vol_name\":\"disk1\"}]"
+            }
+        };
+        return Json("{\"jsonrpc\":\"2.0\",\"id\":" + (id + (Fault == "mismatch" ? 1 : 0)) +
+            ",\"result\":" + result + "}");
     }
 
     private static HttpResponseMessage Json(string value) =>
