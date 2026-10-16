@@ -1,3 +1,11 @@
+## PISONET-0014 - FOG post-POST task confirmation, 2026-10-16 Asia/Manila
+
+- **Status:** COMMITTED_UNTESTED, P1, isolated PR #90. Source/test `0fcea6c5cf80c89ec70d8369579f1de0d976eb68`. Files: `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/FogManagement.cs` and `tests/FogManagementContract/Program.cs`.
+- **Behavior:** after HTTP-success deployment POST, read FOG active tasks. Missing selected host, inconsistent list or read failure becomes an uncertain outcome requiring operator inspection before retry. Fake FOG tests cover no task, wrong host, incomplete list and successful appearance. Existing active-task preflight and lost-response guard remain. Official FOG 1.5/1.6 API docs describe an empty successful POST body and `/fog/task/active` as pending/active list: https://docs.fogproject.org/en/latest/1.5/kb/integrations/api/ .
+- **Evidence/limit:** `git diff --check` passed before source commit. Local focused `dotnet run` failed to start because the host has no .NET SDK. Exact Windows CI is pending. A same-host active task is only a host-level postcondition, not cryptographic attribution to this POST or live Windows boot/storage proof. No customer device, financial state, signing key or production release touched.
+- **Rollback/next:** revert `0fcea6c5` if needed. Push synchronized handover, run exact Windows contract/build/installer workflow, fix demonstrated failures and update PR #90. Financial PR #89 paid v2 remains denied pending real trust/import/hardware acceptance.
+
+---
 ## PISONET-0013 — exact source Windows CI verified, 2026-10-16 Asia/Manila
 
 - **Status VALIDATED_SCOPED, P1 wrong-server deployment prevention.** Source/test `933532281d9dec888e51ec979983a8fc0a4c846e`, synchronized head `30f8aef36d1606dba72de3ecd103f84a20a7f499`, isolated [PR #90](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/90). [Windows #38898033084](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38898033084) COMPLETED SUCCESS at exact head: handover, FOG connection-epoch contract (edited credentials, overlapping refresh, stale deployment, valid refreshed inventory), warnings-as-errors build, timer, Setup EXE install/uninstall and preview upload. Public publish SKIPPED. Artifact `12044537673`, ZIP `sha256:b4b3b05b71586a9f9cfe71853a42b9074874694470996953cf02cba1b737cb08`.
