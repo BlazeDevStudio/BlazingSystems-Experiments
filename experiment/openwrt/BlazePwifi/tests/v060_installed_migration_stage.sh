@@ -38,7 +38,8 @@ reject() {
   grep -q 'paid_ack_authorized=0; migration_authorized=0' "$T/err"
   case "$1" in
     unsupported_wifi_money) expected=unsupported_or_corrupt_wifi_money;;
-    unsupported_voucher_money|unresolved_coin_window|missing_freeze) expected="$1";;
+    unsupported_voucher_money|unresolved_coin_window) expected="$1";;
+    missing_freeze) expected=frozen_marker_required;;
     overflowing_member_receipt) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
