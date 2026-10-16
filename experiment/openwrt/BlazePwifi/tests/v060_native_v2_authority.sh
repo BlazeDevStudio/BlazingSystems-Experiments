@@ -79,6 +79,16 @@ fi
 grep -Fq UNCERTAIN "$T/err"
 unset BLAZE_V2_NATIVE_TEST_FAULT
 [ "$(bank alice):$(bank bob)" = '110:230' ]
+# FSYNC-0745: a visible recovered receipt is not an fsynced rename.
+# Abort a retry before replay-dir-fsync: no money output or mutation.
+recovery_before="$(digest)"
+export BLAZE_V2_NATIVE_TEST_FAULT=before-replay-dir-fsync
+if run ctrlOne 2 ctrlOne:2 TM alice bob 30 1000 >"$T/out" 2>"$T/err"; then
+  echo 'pre-dirsync recovered replay emitted paid success' >&2;exit 1
+fi
+[ ! -s "$T/out" ] && [ "$(digest)" = "$recovery_before" ]
+grep -Fq 'before-replay-dir-fsync' "$T/err"
+unset BLAZE_V2_NATIVE_TEST_FAULT
 [ "$(run ctrlOne 2 ctrlOne:2 TM alice bob 30 1000)" = "$(printf 'REPLAY\t110')" ]
 [ "$(( $(bank alice) + $(bank bob) ))" -eq 340 ]
 # Lease/receipt/highwater all share the same fsync'd snapshot.
@@ -197,4 +207,5 @@ mv "$T/bad" "$T/ledger.tsv"
 refuse ctrlOne 5 ctrlOne:5 AM alice - 10 1000
 grep -Fq 'SHA-256 integrity footer mismatch' "$T/err"
 echo 'MULTICTL-0673 PASS: independent controller keys, cross-key forgery refusal, shared prepaid balances, replay floor, lock and crash no-ACK'
+echo 'FSYNC-0745 PASS: signed recovered replay ACK follows parent-directory fsync'
 echo 'LAB ONLY: this host test is not hardware power-loss, v1 migration or a production release gate'
