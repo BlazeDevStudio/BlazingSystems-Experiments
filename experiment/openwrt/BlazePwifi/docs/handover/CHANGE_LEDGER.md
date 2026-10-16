@@ -2358,3 +2358,10 @@
 - **Paths:** `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/Storage.cs`, `Program.cs`, and `.github/workflows/blazepisonet-softtimer-release.yml`. Existing bad config now halts startup without rewriting it; the installed EXE verifier uses a temp path for valid, truncated, JSON-null and first-run cases.
 - **Evidence/limits:** `git diff --check` PASS, local .NET SDK absent; exact Windows workflow run ID and compiled/installer result pending. No customer data/device changed. Rollback: revert source commit on PR #90. Paid v2 financial PR #89 remains denied by missing independent witness, protected signer, reversible import and physical acceptance.
 - **Next:** synchronize handover, push PR #90, run exact-head Windows CI, inspect failure if any and update PR body.
+
+## PISONET-0009 exact CI result — 2026-10-16 Asia/Manila
+
+- **Status/priority:** validated at exact source+handover SHA `188d0987c4e8036f1bd27f5c992b0d80229fbb7d`; P1 Windows SoftTimer, PR #90 remains OPEN/UNMERGED. Source SHA `1f750c0404704d8b8d50fa22e19579963bb3d490`.
+- **Evidence:** [Windows #38860942009](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38860942009) COMPLETED SUCCESS. Handover, FOG contract, warnings-as-errors build, compiled EXE config corruption refusal, timer/ACK gates, NSIS installer smoke, portable/checksums and artifact upload all SUCCESS; public publish SKIPPED. Artifact id `12029296373`, ZIP `sha256:6e25eeda618a8857f5bec31149b5c35b10ac7bbd26a51e4ee6651f28010d6807`.
+- **Limit/rollback:** no customer config/device, live FOG or Windows diskless boot tested. This docs-only checkpoint needs exact-head CI classification. Revert source commit if necessary; financial paid v2 remains denied pending independent witness, protected signer, reversible migration and physical acceptance.
+- **Next:** commit/push status handover, verify exact docs-only Windows CI, update PR #90. Separate approved noncustomer FOG/iSCSI/PXE lab needed for physical validation.
