@@ -1,3 +1,9 @@
+## PISONET-0015 - exact source Windows proof, 2026-10-16 Asia/Manila
+
+- **Status:** VALIDATED_SCOPED, P1. Source/test `851b1bc11ebc3d1f5bcc4b35653b1d22e8e4ae66`, synchronized `8b992d6e343679edaefd72beb7339061d6f9e324`, PR #90. [Windows #38902524615](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38902524615) COMPLETED SUCCESS at exact head: FOG task contract, strict build, config/state guards, timer, portable EXEs, Setup EXE install/uninstall and preview upload; public release SKIPPED. Artifact `12046588315`, ZIP `sha256:939b0a18e443490ef3c0cf8014eda6a261c606cd45f75c731bd91faeea808b5d`.
+- **Limit/rollback:** task host list is read-only and does not identify task type, prove task origin or disk outcome. No live FOG/client disk, iSCSI/PXE Windows boot, target ACL, storage isolation or customer system. Revert source `851b1bc1` if needed. This docs-only checkpoint needs exact CI. Financial paid v2 still denied by PR #89 trust/import/hardware gates. **NEXT:** verify docs-only Windows classifier, update PR #90; pursue approved noncustomer hardware acceptance.
+
+---
 ## PISONET-0015 - read-only installed FOG task view, 2026-10-16 Asia/Manila
 
 - **Status:** COMMITTED_UNTESTED, P1, isolated PR #90. Source/test `851b1bc11ebc3d1f5bcc4b35653b1d22e8e4ae66`. Files: `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/FogManagement.cs`, `MainForm.Diskless.cs`, and `tests/FogManagementContract/Program.cs`.
