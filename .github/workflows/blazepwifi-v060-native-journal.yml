@@ -12,8 +12,10 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_maintenance_freeze.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -34,8 +36,10 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_maintenance_freeze.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -77,6 +81,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh
       - name: PAY-0760 installed frozen v1 state and receipt capture
         run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh
+      - name: PAY-0765 installed receipt-preserving member/rental migration candidate
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh
       - name: PAY-0745 durable Vendo pending sequence and corruption contract
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
       - name: RENT-0727 independently keyed rental ACKV2 native journal fixture (not production)

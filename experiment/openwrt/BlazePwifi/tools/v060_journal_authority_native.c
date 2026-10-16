@@ -49,6 +49,10 @@ struct receipt {
 static struct item bank[MAX_BANK], lease[MAX_LEASE], ctl[MAX_CTL];
 static struct receipt receipts[MAX_RECEIPT];
 static int nb=0,nl=0,nc=0,nr=0,dirfd=-1,lockfd=-1;
+/* Provenance identifies a preserved frozen v1 archive. It is not a witness. */
+static char import_archive_digest[65];
+static unsigned long long import_member_revision=0;
+static int have_import_provenance=0;
 static char next_name[64];
 static int renamed=0;
 static void die(const char *why) {
@@ -191,6 +195,12 @@ static void parseledger(char *s,size_t len) {
         } else if(n==2 && strcmp(v[0],"H")==0){
             if(newline!=end-1 || !hex64(v[1]))die("invalid integrity footer");
             return;
+        } else if(n==3 && !strcmp(v[0],"P")){
+            if(have_import_provenance || !hex64(v[1]) ||
+               !parse_uint(v[2],MAX_FINANCIAL_VALUE,&import_member_revision))
+                die("malformed/duplicate v1 archive provenance");
+            strcpy(import_archive_digest,v[1]);
+            have_import_provenance=1;
         } else if(n==3 && !strcmp(v[0],"A")){
             unsigned long long z;
             if(!valid_member_id(v[1])||!parse_uint(v[2],MAX_FINANCIAL_VALUE,&z) ||
@@ -383,6 +393,8 @@ static void commit(void) {
     FILE *ms=open_memstream(&data,&len);int fd,i;
     if(!ms)die("memory stage failed");
     fprintf(ms,"V\t2\n");
+    if(have_import_provenance)
+        fprintf(ms,"P\t%s\t%llu\n",import_archive_digest,import_member_revision);
     for(i=0;i<nb;i++)fprintf(ms,"A\t%s\t%llu\n",bank[i].name,bank[i].value);
     for(i=0;i<nl;i++)fprintf(ms,"L\t%s\t%llu\n",lease[i].name,lease[i].value);
     for(i=0;i<nc;i++)fprintf(ms,"C\t%s\t%llu\n",ctl[i].name,ctl[i].value);
