@@ -2365,3 +2365,10 @@
 - **Evidence:** [Windows #38860942009](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38860942009) COMPLETED SUCCESS. Handover, FOG contract, warnings-as-errors build, compiled EXE config corruption refusal, timer/ACK gates, NSIS installer smoke, portable/checksums and artifact upload all SUCCESS; public publish SKIPPED. Artifact id `12029296373`, ZIP `sha256:6e25eeda618a8857f5bec31149b5c35b10ac7bbd26a51e4ee6651f28010d6807`.
 - **Limit/rollback:** no customer config/device, live FOG or Windows diskless boot tested. This docs-only checkpoint needs exact-head CI classification. Revert source commit if necessary; financial paid v2 remains denied pending independent witness, protected signer, reversible migration and physical acceptance.
 - **Next:** commit/push status handover, verify exact docs-only Windows CI, update PR #90. Separate approved noncustomer FOG/iSCSI/PXE lab needed for physical validation.
+
+## PISONET-0010 — 2026-10-16 Asia/Manila — existing SoftTimer config identity admission
+
+- **Status/priority:** committed_untested, P1; isolated `pisonet-diskless-manager` PR #90. Source SHA `6312ab945e449d794413cd67f712e6feb4c84cce`.
+- **Why/paths:** PISONET-0009 rejected malformed JSON, but valid `{}` and missing/blank identity fields still generated new `CentralSharedKey` or `BlazePwifiControllerId` from an existing file. `experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/Storage.cs` now refuses them and expands the installed-EXE negative verifier. Original file must remain untouched; missing first-run config still generates identity.
+- **Evidence/limits:** `git diff --check` PASS. Local .NET SDK unavailable, exact Windows run ID/conclusion pending. Prior PISONET-0009 final head `d9dfa1bdfccec7abe5ca2884c21c559469167d3f` Windows #38861430698 SUCCESS. No customer config/device or live FOG contacted. Revert source commit on PR #90 if needed. Financial PR #89 paid v2 still denied pending witness, signer, migration and hardware acceptance.
+- **Next:** commit synchronized three handovers, push PR #90, run exact-head Windows contract/build/installer CI and record result before PR update.
