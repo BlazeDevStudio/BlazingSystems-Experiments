@@ -468,6 +468,11 @@ int main(int argc,char **argv) {
         {unsigned long long saved=0;
          if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
              die("replay receipt amount malformed");
+         /* PAY-0745: a rename visible after an interrupted dir-fsync is not
+          * a durable commit. Confirm parent directory under exclusive lock
+          * before sending a retained-sequence replay ACK. Fixture only. */
+         fault("before-replay-dir-fsync");
+         if(fsync(dirfd)!=0)die("UNCERTAIN replay parent directory fsync failed");
          emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
                       ack_kid,ack_key);
          OPENSSL_cleanse(key,sizeof(key));
