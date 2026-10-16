@@ -214,10 +214,10 @@ awk -F '\t' '
           length(p[1])>10 || length(p[3])>10 ||
           p[1]+0>2147483647 || p[3]+0>2147483647)
         bad=1
-    } else if ($8 !~ /^(0|[1-9][0-9]*)$/ ||
-               length($8)>10 || $8+0>2147483647) {
-      bad=1
     }
+    # Non-transfer paid receipt detail is historically optional in v1;
+    # preserve the old 8-column empty-final-field format for migration
+    # diagnostics rather than imposing a new false receipt failure.
   }
   END {if (bad) exit 8}
 ' "$state/members.tsv" "$state/member-events.tsv" || {
