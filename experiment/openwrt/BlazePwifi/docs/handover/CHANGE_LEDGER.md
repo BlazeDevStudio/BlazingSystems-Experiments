@@ -1,3 +1,14 @@
+## PISONET-0018 - group-map identity refusal source, 2026-10-17 Asia/Manila
+- **Status:** committed_untested; **priority:** P1; isolated pisonet-diskless-manager PR #90; source/test 773eae027e4f3b99ff44ae9ec2807346cd0ff50b.
+- **Files:** TargetdInspection.cs and tests/FogManagementContract/Program.cs. A group-only targetd mapping without volume UUID is UnverifiableGroupMap, never ReportedSingleClient; shared/multiple/wrong-LUN refusal remains.
+- **Evidence:** official targetd block.py notes same-name replacement mapping retention: https://github.com/open-iscsi/targetd/blob/main/targetd/block.py . Local .NET SDK unavailable; diff check PASS, exact Windows CI PENDING. No targetd storage write or live boot proof.
+- **Next:** exact Windows contract/build/installer CI, fix demonstrated failures; owner-provided noncustomer live acceptance before publish. Financial PR #89 paid v2 denied.
+
+## PISONET-0018 - targetd group-map UUID limit, 2026-10-17 Asia/Manila
+- **Status:** in_progress; **priority:** P1; isolated pisonet-diskless-manager PR #90. Source commit not yet made.
+- **Evidence/reason:** targetd block.py access_group_map_list comments that a mapping can survive volume delete/recreate under the same name and deliberately does not expose UUID: https://github.com/open-iscsi/targetd/blob/main/targetd/block.py . Current PISONET-0017 group-only reported-single-client status cannot bind the actual volume identity.
+- **Next:** add explicit unverified group-map status and negative contract, run exact Windows CI; no targetd write, customer equipment or release.
+
 ## PISONET-0017 - exact source Windows CI green, 2026-10-17 Asia/Manila
 - **Status:** validated source on exact CI, docs sync pending classifier; **priority:** P1; PR #90. Source/test 2bb66c9a21d85f6e1fe551de57c8a3d3a48d8ddc, synchronized 1bb642d1db4ef86ab224029cdbfeac57fb0c3f67.
 - **Evidence:** https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/38929077933 COMPLETED SUCCESS at exact synchronized SHA. FOG/targetd contract, strict build, timer/config/state guards, NSIS Setup EXE install/uninstall and preview upload passed. Artifact 12057953370 API ZIP digest sha256:a5d6630121dfc100343582f726877faee6fc6f5a750cf65dcd2545c9f768fa37; public Release SKIPPED.
