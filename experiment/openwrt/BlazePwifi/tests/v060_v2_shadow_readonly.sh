@@ -165,6 +165,36 @@ printf 'dev02\tOtherSecret\tbogus\tinvalid-lease\t10\n' >> "$T/rental-devices.ts
 refuse invalid-rental
 cp -p "$T/r.good" "$T/rental-devices.tsv"
 
+# MIG-0746: source-admission must never interpret unbounded digit strings,
+# signed-32-bit overflow, or zero-padded monetary values as safe v1 funds.
+# Test ALL current monetary/lease/time columns; restore exact fixtures after
+# each failure and assert no six-file paid state writes or partial stdout.
+numeric_bad() {
+  file="$1"; column="$2"; replacement="$3"; why="$4"
+  cp -p "$T/$file" "$T/mig0746.good"
+  awk -F '\t' -v OFS='\t' -v col="$column" -v val="$replacement" '
+    NR==1 {$col=val} {print}
+  ' "$T/mig0746.good" > "$T/mig0746.new"
+  chmod 600 "$T/mig0746.new"
+  mv "$T/mig0746.new" "$T/$file"
+  refuse "$why"
+  cp -p "$T/mig0746.good" "$T/$file"
+  rm "$T/mig0746.good"
+}
+for col in 2 3 4 6; do
+  numeric_bad accounts.tsv "$col" 2147483648 "wallet-over-int32-field-$col"
+done
+numeric_bad accounts.tsv 2 0001 wallet-noncanonical-leading-zero
+numeric_bad accounts.tsv 3 999999999999999999999999 wallet-unbounded-expiry
+numeric_bad members.tsv 8 2147483648 member-bank-over-int32
+numeric_bad members.tsv 8 0001 member-bank-leading-zero
+numeric_bad members.tsv 10 2147483648 member-updated-over-int32
+numeric_bad rental-devices.tsv 3 2147483648 rental-lease-over-int32
+numeric_bad rental-devices.tsv 3 0001 rental-lease-leading-zero
+numeric_bad rental-devices.tsv 5 2147483648 rental-lastseen-over-int32
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
+[ "$(snapshot)" = "$baseline" ]
+
 # MIG-0736: these files cannot silently disappear from a purportedly
 # safe migration source. Every case must refuse without altering balances,
 # leases, member receipts, controller event history or account identifiers.
@@ -302,5 +332,5 @@ refuse missing-marker
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
 echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
-echo 'MIG-0736/0743/0744/0745 PASS: installed read-only six-file monetary observer rejects detected username lifecycle reuse, orphan, noncanonical and oversized paid member/rental receipts without touching sources'
+echo 'MIG-0736/0743/0744/0745/0746 PASS: readonly six-file money preflight rejects detected username reuse, oversized or noncanonical present balances/leases and corrupt receipts without source writes'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'
