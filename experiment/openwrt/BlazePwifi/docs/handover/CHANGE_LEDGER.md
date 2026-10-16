@@ -1,3 +1,10 @@
+## PAY-0765 - installed receipt-preserving v1 member/rental candidate, 2026-10-16 Asia/Manila
+- **Status:** committed_untested; **priority:** P0 #31/#32; isolated `pay-0743-installed-v2-authority`, PR #89; source/test `e9bfae87ea9f257a002f97ee39bec54421dd298c`; handover checkpoint pending.
+- **Why/files:** `openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh` stages a separate operator-only candidate from existing frozen v1 `state.tar` under the installed paid lock. `tools/v060_journal_authority_native.c` and identical `openwrt/paid-authority/src/v060_journal_authority.c` parse/preserve optional `P` archive digest/member revision provenance; this is not a witness. `tests/v060_installed_migration_stage.sh` and Full/native workflows add fixture negatives for unsupported money, corrupt receipts/archive, writer contention, partial copy/sync, duplicate stage, and native tamper/replay carry-forward. Full v1 archive/receipt bytes are copied into the candidate; historic receipts are NOT converted to v2 controller sequence receipts.
+- **Evidence:** `git diff --check` PASS; local focused shell/native test unavailable (Windows host has no POSIX shell/compiler). Exact Full/native/SDK CI PENDING. No installed money authority enabled, no external witness/signing, no physical durability claim; no customer state/keys/devices or production release touched.
+- **Rollback/dependencies:** revert source `e9bfae87`; candidate path is outside live state and never installed as `ledger.tsv`. Unsupported Wi-Fi/voucher/legacy money still needs a representable migration path; existing truncated v1 receipts cannot reconstruct lost history. Owner-reviewed reconciliation, fresh controller identity, independent monotonic witness, protected P-256 signer and approved powercut/soak hardware remain required.
+- **NEXT ACTION:** push synchronized handover and run exact-head Full/native/SDK; fix demonstrated failures. No candidate activation or paid ACK.
+
 ## PAY-0746 — runtime profile admission interlock, 2026-10-15 Asia/Manila
 
 - **Status:** validated on exact checkpoint; P0 #31/#32 remain OPEN. Isolated PR #89 branch `pay-0743-installed-v2-authority`.
