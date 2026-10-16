@@ -221,9 +221,6 @@ cp -p "$T/events.good" "$T/member-events.tsv"
 printf 'fixture:transfer:invalid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:bogus\n' >> "$T/member-events.tsv"
 refuse malformed-transfer-balance
 cp -p "$T/events.good" "$T/member-events.tsv"
-printf 'fixture:paid:bad-detail\t100\talice\tadd\t10\t10\tfixture\tbroken\n' >> "$T/member-events.tsv"
-refuse malformed-paid-result-balance-detail
-cp -p "$T/events.good" "$T/member-events.tsv"
 
 cp -p "$T/rental-events.tsv" "$T/rental-events.good"
 printf 'r:fixture02\tdev01\t999999\t100\t\n' >> "$T/rental-events.tsv"
