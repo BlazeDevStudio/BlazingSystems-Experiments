@@ -1,3 +1,9 @@
+## PISONET-0027 — observed RED and source flush barrier, 2026-10-18 Asia/Manila
+- **Status:** committed_untested, P1 isolated PR #90. Test-only `9fa0db0c40ae3ebacd764f8cefb0ff5181c398c2`; synchronized `532f8cda0369d14d0c460f14013f2d6e1b2f2659`; source/test `57cbaeeec54138db764882d9341db786d58778a1`.
+- **Failure:** [literal Ubuntu #39080835810](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080835810) failed expected `test_real_adapter_orders_disabled_acl_chap_map_portal_save`: saved JSON file descriptor fsync list empty versus expected inode. This is a real file-content flush omission; parent-directory fsync alone was present. Windows job result was not used as proof.
+- **Change/tests:** `linux-server/blaze_lio_prepare.py` adds validated private `O_NOFOLLOW` file fsync in prepare/activate/quarantine; `test_blaze_lio_prepare.py` asserts the saved inode flush and refusal on OSError. Python AST syntax and `git diff --check` PASS; exact corrected Ubuntu/Windows CI pending. No physical powercut proof or production authorization.
+- **Next/rollback:** push synchronized handover and run literal-head Windows/Linux workflow; fix demonstrated red, then update PR #90. Revert only isolated slice if unsafe; never stage untracked generated `__pycache__`.
+
 ## PISONET-0027 — LIO saved-config content flush test, 2026-10-18 Asia/Manila
 - **Status:** committed_untested; priority P1, isolated PR #90. Handover in-progress `d46d10d3140108ebbb630513c29462275761f0ab`; test `9fa0db0c40ae3ebacd764f8cefb0ff5181c398c2` changes `experiment/windows/BlazePisonet-SoftTimer/linux-server/test_blaze_lio_prepare.py`.
 - **Finding/proof:** real LIO prepare flushes only the saved config parent directory; test records file-descriptor fsync and requires the saved JSON inode. Local Linux Python unavailable, so exact Ubuntu CI is pending and expected RED; no source fix or production claim yet.
