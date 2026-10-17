@@ -49,7 +49,7 @@ struct receipt {
 };
 static struct item bank[MAX_BANK], lease[MAX_LEASE], ctl[MAX_CTL];
 static struct receipt receipts[MAX_RECEIPT];
-static int nb=0,nl=0,nc=0,nr=0,dirfd=-1,lockfd=-1;
+static int nb=0,nl=0,nc=0,nr=0,authority_dir_fd=-1,lockfd=-1;
 /* Provenance identifies a preserved frozen v1 archive. It is not a witness. */
 static char import_archive_digest[65];
 static unsigned long long import_member_revision=0;
@@ -145,7 +145,7 @@ static void read_exact(int fd,char *buf,size_t n) {
 }
 static char *readfile(const char *name,size_t cap,size_t *n) {
     struct stat st;
-    int fd=openat(dirfd,name,O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_NONBLOCK);
+    int fd=openat(authority_dir_fd,name,O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_NONBLOCK);
     char *buf;
     if(fd<0 || !private_fd(fd,0600) || fstat(fd,&st)!=0 ||
        st.st_size<0 || (unsigned long long)st.st_size>cap)
@@ -356,7 +356,7 @@ static void write_all(int fd,const char *buf,size_t size) {
  * This check happens with the writer lock held and after signed verification.
  * No local file can substitute for an independent rollback witness. */
 static void refuse_unfinished_stage(void) {
-    int fd=openat(dirfd,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
+    int fd=openat(authority_dir_fd,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
     DIR *d;
     struct dirent *ent;
     int read_error;
@@ -435,7 +435,7 @@ static void commit(void) {
     memcpy(all,data,len);snprintf(all+len,total-len+1,"H\t%s\n",checksum);
     free(data);
     snprintf(next_name,sizeof(next_name),".v2-next-%ld",(long)getpid());
-    fd=openat(dirfd,next_name,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    fd=openat(authority_dir_fd,next_name,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
     if(fd<0 || !private_fd(fd,0600))die("private stage create refused");
     write_all(fd,all,total);
     OPENSSL_cleanse(all,total);free(all);
@@ -443,10 +443,10 @@ static void commit(void) {
     if(fsync(fd)!=0)die("source fsync failed");
     if(close(fd)!=0)die("source close failed");
     fault("before-rename");
-    if(renameat(dirfd,next_name,dirfd,"ledger.tsv")!=0)die("atomic rename failed");
+    if(renameat(authority_dir_fd,next_name,authority_dir_fd,"ledger.tsv")!=0)die("atomic rename failed");
     renamed=1;
     fault("after-rename-before-dir-fsync");
-    if(fsync(dirfd)!=0)die("UNCERTAIN parent directory fsync failed");
+    if(fsync(authority_dir_fd)!=0)die("UNCERTAIN parent directory fsync failed");
     fault("after-dir-fsync-before-ack");
 
 }
@@ -506,8 +506,8 @@ int main(int argc,char **argv) {
                             strcmp(dst,"-")))
         die("signed event/operation mismatched");
     }
-    dirfd=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
-    if(dirfd<0 || fstat(dirfd,&st)!=0 || !S_ISDIR(st.st_mode) ||
+    authority_dir_fd=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
+    if(authority_dir_fd<0 || fstat(authority_dir_fd,&st)!=0 || !S_ISDIR(st.st_mode) ||
        st.st_uid!=geteuid() || (st.st_mode&0777)!=0700)
         die("private fixture directory validation failed");
 #if !defined(BLAZE_RUNTIME_AUTHORITY) || defined(BLAZE_RUNTIME_TEST_ROOT_OVERRIDE)
@@ -521,7 +521,7 @@ int main(int argc,char **argv) {
        route is admitted. This mode never creates a lock, reads the ledger,
        emits an ACK, or reaches a financial write. It is not a commit gate. */
     if(!verify_only){
-        lockfd=openat(dirfd,".v2-native-lock",
+        lockfd=openat(authority_dir_fd,".v2-native-lock",
                       O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
         if(lockfd<0 || !private_fd(lockfd,0600) ||
            flock(lockfd,LOCK_EX|LOCK_NB)!=0)
@@ -577,7 +577,7 @@ int main(int argc,char **argv) {
           * a durable commit. Confirm parent directory under exclusive lock
           * before sending a retained-sequence replay ACK. Fixture only. */
          fault("before-replay-dir-fsync");
-         if(fsync(dirfd)!=0)die("UNCERTAIN replay parent directory fsync failed");
+         if(fsync(authority_dir_fd)!=0)die("UNCERTAIN replay parent directory fsync failed");
          emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
                       ack_kid,ack_key);
          OPENSSL_cleanse(key,sizeof(key));
