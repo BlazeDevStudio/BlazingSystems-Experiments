@@ -48,3 +48,6 @@ The read-only validator adds isolated temp-directory fixtures for config.plist
 parsing, missing components, duplicate enabled components, disabled entries,
 unsafe path rejection and categorical non-claims about boot/ocvalidate.
 Do not label the v0.1.2 candidate green until actual CI results are verified.
+
+## v0.1.2 CI regression triage
+Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080788463 passed 25/25 unit tests on both platforms, and PyInstaller built the toolkit EXE. The workflow then failed because PowerShell's external-command failure behavior interpreted the intentionally nonzero (`2`) exit code for an incomplete EFI fixture as a shell failure before checking `$LASTEXITCODE`. The smoke test now uses Python `subprocess.run(check=False)` to verify the return code and inspect its JSON. New release eligibility must still pass a fresh workflow run.

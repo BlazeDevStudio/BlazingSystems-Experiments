@@ -59,10 +59,7 @@ jobs:
           ./dist/BlazeHackintosh-Toolkit.exe evaluate --output dist/evaluation.json
           $r = Get-Content dist/evaluation.json -Raw | ConvertFrom-Json
           if ($r.boot_verified -or $r.can_generate_efi) { throw 'Invalid boot claim' }
-          ./dist/BlazeHackintosh-Toolkit.exe validate-efi --efi . --output dist/efi-inspection.json
-          if ($LASTEXITCODE -ne 2) { throw 'Expected an explicit missing EFI structural failure' }
-          $inspection = Get-Content dist/efi-inspection.json -Raw | ConvertFrom-Json
-          if ($inspection.structural_checks_passed -or $inspection.boot_verified -or $inspection.ocvalidate_passed) { throw 'Invalid EFI acceptance claim' }
+          python -c "import subprocess,json; from pathlib import Path; p=subprocess.run(['dist/BlazeHackintosh-Toolkit.exe','validate-efi','--efi','.','--output','dist/efi-inspection.json'],capture_output=True,text=True,timeout=60); assert p.returncode==2, (p.returncode,p.stderr); r=json.loads(Path('dist/efi-inspection.json').read_text()); assert not any(r[k] for k in ('structural_checks_passed','boot_verified','ocvalidate_passed')), r"
           Get-FileHash dist/BlazeHackintosh-Toolkit.exe -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 dist/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:

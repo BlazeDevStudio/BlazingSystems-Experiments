@@ -72,3 +72,6 @@ Actions to Node24-capable releases. Await updated CI before release claim.
 - Rejects absolute, parent and externally redirected paths. Does not execute a binary, write EFI, download macOS or generate EFI.
 - Added 11 extra unit tests, scheduled on Linux and Windows through existing CI.
 - Alpha tag \`blazehackintosh-toolkit-v0.1.2-alpha.1\` planned subject to CI success. No claim of ocvalidate result or boot validation.
+
+## v0.1.2 CI regression triage
+Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080788463 passed 25/25 unit tests on both platforms, and PyInstaller built the toolkit EXE. The workflow then failed because PowerShell's external-command failure behavior interpreted the intentionally nonzero (`2`) exit code for an incomplete EFI fixture as a shell failure before checking `$LASTEXITCODE`. The smoke test now uses Python `subprocess.run(check=False)` to verify the return code and inspect its JSON. New release eligibility must still pass a fresh workflow run.
