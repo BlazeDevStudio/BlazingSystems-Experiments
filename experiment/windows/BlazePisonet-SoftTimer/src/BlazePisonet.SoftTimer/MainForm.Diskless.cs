@@ -79,7 +79,7 @@ public sealed partial class MainForm
         root.Controls.Add(storage);
 
         var readiness = Card("Live diskless boot readiness",
-            "FOG deployment writes an image to a client disk. True diskless Windows boot needs an iSCSI target, per-client writable image, PXE/iPXE boot, network isolation and real client validation.");
+            "FOG deployment writes an image to a client disk. The generated iPXE script prompts for CHAP at the lab client and is not unattended provisioning. True diskless Windows boot needs a verified iSCSI target, per-client writable image, PXE/iPXE, network isolation and real client validation.");
         readiness.Controls.Add(new Label
         {
             Text = "Diskless boot: NOT CONFIGURED · no iSCSI target or client boot evidence",
@@ -95,7 +95,7 @@ public sealed partial class MainForm
         readiness.Controls.Add(Button("SHOW SELECTED PROFILE", (_, _) => ShowDisklessProfile()));
         readiness.Controls.Add(Button("REMOVE SELECTED PROFILE", (_, _) => RemoveDisklessProfile()));
         readiness.Controls.Add(Field("DHCP option 017 root path", _disklessRootPath));
-        readiness.Controls.Add(Field("iPXE boot script", _disklessScript));
+        readiness.Controls.Add(Field("Manual lab iPXE boot script (CHAP prompt)", _disklessScript));
         readiness.Controls.Add(_disklessProfileStatus);
         root.Controls.Add(readiness);
         _pages["Diskless"] = root;

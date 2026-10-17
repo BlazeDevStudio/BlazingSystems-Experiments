@@ -28,7 +28,10 @@ public sealed record DisklessBootProfile(string ClientLabel, string DhcpRootPath
             throw new InvalidOperationException("Enter distinct valid target and client initiator IQNs.");
 
         var rootPath = $"iscsi:{targetIp}::::{targetIqn}";
-        var script = $"#!ipxe\nset initiator-iqn {initiatorIqn}\nsanboot {rootPath}\n";
+        // The dedicated LIO target requires CHAP. Prompt at the lab client;
+        // never put its credential in a saved profile, DHCP option or script.
+        // A cancelled prompt must not fall through to a SAN boot attempt.
+        var script = $"#!ipxe\nset initiator-iqn {initiatorIqn}\nlogin || exit 1\nsanboot {rootPath}\n";
         return new DisklessBootProfile(clientLabel, rootPath, script);
     }
 

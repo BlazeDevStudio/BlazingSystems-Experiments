@@ -61,3 +61,10 @@ the intended Windows client and a second unauthorized initiator. FOG imaging,
 DHCP/PXE, per-client writable isolation, restore behavior, Windows boot,
 reboot and power-loss tests remain separate release gates. This lab preview
 does not change BlazePwifi paid v2 admission or authorize a release.
+
+SoftTimer's generated iPXE script is for a supervised lab boot. It prompts
+before `sanboot`; enter the client's initiator IQN as the CHAP username and
+the corresponding secret provisioned on this dedicated target. Cancelling
+the prompt exits the script. The saved client profile, DHCP root path and
+iPXE script contain no secret. This prompt is not unattended credential
+provisioning or proof that Windows can boot from the target.
