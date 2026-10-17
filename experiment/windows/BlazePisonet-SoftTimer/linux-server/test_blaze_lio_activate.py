@@ -89,14 +89,14 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaisesRegex(preparation.Refused, "image identity"):
             self.run_activation()
         self.assertEqual(json.loads(self.marker.read_text())["status"], "prepared_disabled")
-        self.assertEqual(self.backend.calls, ["preflight", "prepare"])
+        self.assertEqual(self.backend.calls, ["preflight", "prepare", "inspect"])
 
     def test_corrupt_intent_refused_without_backend_call(self):
         self.marker.write_text("{bad")
         self.marker.chmod(0o600)
         with self.assertRaisesRegex(preparation.Refused, "malformed"):
             self.run_activation()
-        self.assertEqual(self.backend.calls, ["preflight", "prepare"])
+        self.assertEqual(self.backend.calls, ["preflight", "prepare", "inspect"])
 
     def test_acl_or_chap_inspection_failure_does_not_start(self):
         backend = Backend(fail_inspect=True)
