@@ -54,8 +54,15 @@ var boot = DisklessBootProfile.Create("pc-01", "10.20.30.40",
 Check(boot.DhcpRootPath == "iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01",
     "per-client DHCP option 017 root path");
 Check(boot.IpxeScript == "#!ipxe\nset initiator-iqn iqn.2026-10.local.blaze:pc-01\n" +
+    "login || exit 1\n" +
     "sanboot iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01\n",
-    "per-client iPXE SAN boot script");
+    "per-client iPXE manual CHAP SAN boot script");
+Check(boot.IpxeScript.IndexOf("login || exit 1", StringComparison.Ordinal) <
+    boot.IpxeScript.IndexOf("sanboot ", StringComparison.Ordinal),
+    "cancelled CHAP login cannot continue to SAN boot");
+Check(!boot.IpxeScript.Contains("password", StringComparison.OrdinalIgnoreCase) &&
+    !boot.IpxeScript.Contains("secret", StringComparison.OrdinalIgnoreCase),
+    "generated script embeds no CHAP credential");
 foreach (var (label, address, target, initiator, name) in new[]
 {
     ("pc-01\nboot", "10.20.30.40", "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01", "label injection"),
