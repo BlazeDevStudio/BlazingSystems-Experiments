@@ -165,6 +165,36 @@ printf 'dev02\tOtherSecret\tbogus\tinvalid-lease\t10\n' >> "$T/rental-devices.ts
 refuse invalid-rental
 cp -p "$T/r.good" "$T/rental-devices.tsv"
 
+# MIG-0746: source-admission must never interpret unbounded digit strings,
+# signed-32-bit overflow, or zero-padded monetary values as safe v1 funds.
+# Test ALL current monetary/lease/time columns; restore exact fixtures after
+# each failure and assert no six-file paid state writes or partial stdout.
+numeric_bad() {
+  file="$1"; column="$2"; replacement="$3"; why="$4"
+  cp -p "$T/$file" "$T/mig0746.good"
+  awk -F '\t' -v OFS='\t' -v col="$column" -v val="$replacement" '
+    NR==1 {$col=val} {print}
+  ' "$T/mig0746.good" > "$T/mig0746.new"
+  chmod 600 "$T/mig0746.new"
+  mv "$T/mig0746.new" "$T/$file"
+  refuse "$why"
+  cp -p "$T/mig0746.good" "$T/$file"
+  rm "$T/mig0746.good"
+}
+for col in 2 3 4 6; do
+  numeric_bad accounts.tsv "$col" 2147483648 "wallet-over-int32-field-$col"
+done
+numeric_bad accounts.tsv 2 0001 wallet-noncanonical-leading-zero
+numeric_bad accounts.tsv 3 999999999999999999999999 wallet-unbounded-expiry
+numeric_bad members.tsv 8 2147483648 member-bank-over-int32
+numeric_bad members.tsv 8 0001 member-bank-leading-zero
+numeric_bad members.tsv 10 2147483648 member-updated-over-int32
+numeric_bad rental-devices.tsv 3 2147483648 rental-lease-over-int32
+numeric_bad rental-devices.tsv 3 0001 rental-lease-leading-zero
+numeric_bad rental-devices.tsv 5 2147483648 rental-lastseen-over-int32
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
+[ "$(snapshot)" = "$baseline" ]
+
 # MIG-0736: these files cannot silently disappear from a purportedly
 # safe migration source. Every case must refuse without altering balances,
 # leases, member receipts, controller event history or account identifiers.
@@ -196,6 +226,65 @@ refuse overflow-member-paid-receipt
 cp -p "$T/events.good" "$T/member-events.tsv"
 printf 'tampered:event:2\t100\talice\ttransfer\t-2147483648\t10\tfixture\t100:bob:0\n' >> "$T/member-events.tsv"
 refuse underflow-member-paid-delta
+cp -p "$T/events.good" "$T/member-events.tsv"
+
+# MIG-0744: this is the actual member-transfer receipt layout emitted by
+# installed member.sh: from_balance:recipient:to_balance. A historical paid
+# event for a deleted user/unknown transfer recipient is not safely
+# importable from the six-file source set, even if its 8 TSV columns and
+# amount are otherwise valid. Healthy legacy transfer remains admissible.
+printf 'fixture:transfer:valid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:4\n' >> "$T/member-events.tsv"
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
+cp -p "$T/events.good" "$T/member-events.tsv"
+
+# MIG-0745: real v1 zero-bank delete and later create can reuse a username
+# while the previously paid receipt is retained. A current username alone
+# must NOT make that old credit an admissible v2 identity. Model the new
+# account revision as well so a rejection cannot be attributed to stale
+# revision metadata. Every refusal must leave all six paid sources unchanged.
+cp -p "$T/members.tsv" "$T/members.epoch.good"
+printf '3\n' > "$T/member-revision"
+awk -F '\t' 'BEGIN{OFS="\t"} $1=="alice" {$9=3} {print}' "$T/members.epoch.good" > "$T/members.tsv"
+chmod 600 "$T/members.tsv"
+printf 'admin:2:alice\t101\talice\tdelete\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+refuse deleted-and-recreated-paid-username
+# Even if the nonfinancial delete audit was trimmed, a remaining create
+# that appears AFTER an older paid receipt must refuse.
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+refuse old-paid-event-before-recreated-create
+cp -p "$T/members.epoch.good" "$T/members.tsv"
+printf '1\n' > "$T/member-revision"
+cp -p "$T/events.good" "$T/member-events.tsv"
+# A historical transfer DESTINATION is also a financial identity reference,
+# not merely an arbitrary current member with the matching name.
+printf 'fixture:transfer:reused-target\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:4\n' >> "$T/member-events.tsv"
+printf 'admin:2:bob\t101\tbob\tdelete\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+printf 'admin:3:bob\t102\tbob\tcreate\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+refuse reused-transfer-destination
+cp -p "$T/events.good" "$T/member-events.tsv"
+# Retained nonfinancial lifecycle rows without ANY paid reference for that
+# member must not invalidate otherwise healthy six-file source diagnostics.
+printf 'admin:2:bob\t101\tbob\tdelete\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+printf 'admin:3:bob\t102\tbob\tcreate\t0\t0\tfixture\t\n' >> "$T/member-events.tsv"
+[ "$(fixture status | grep -Fc 'status=NON_AUTHORITATIVE_READ_ONLY')" -eq 1 ]
+cp -p "$T/events.good" "$T/member-events.tsv"
+
+printf 'fixture:orphan:credit\t100\tmissinguser\tadd\t10\t10\tfixture\t10\n' >> "$T/member-events.tsv"
+refuse orphan-paid-member-credit
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:orphan:transfer\t100\tmissinguser\ttransfer\t-4\t4\tfixture\t196:bob:4\n' >> "$T/member-events.tsv"
+refuse orphan-transfer-source
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:missing\t100\talice\ttransfer\t-4\t4\tfixture\t196:missinguser:4\n' >> "$T/member-events.tsv"
+refuse orphan-transfer-destination
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:invalid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:2147483648\n' >> "$T/member-events.tsv"
+refuse overflow-transfer-receipt-detail
+cp -p "$T/events.good" "$T/member-events.tsv"
+printf 'fixture:transfer:invalid\t100\talice\ttransfer\t-4\t4\tfixture\t196:bob:bogus\n' >> "$T/member-events.tsv"
+refuse malformed-transfer-balance
 cp -p "$T/events.good" "$T/member-events.tsv"
 
 cp -p "$T/rental-events.tsv" "$T/rental-events.good"
@@ -243,5 +332,5 @@ refuse missing-marker
 }
 [ ! -e "$T/v2-ledger.tsv" ] && [ ! -e "$T/v2-shadow-ledger" ]
 echo 'MIG-0735 PASS: real installed read-only observer requires pre-existing safe money lock, rejects active writer, linked/missing/malformed locks, cutover and uncertainty; no money/secret/ACK output'
-echo 'MIG-0736/0743 PASS: installed read-only six-file monetary observer also rejects orphan, noncanonical and oversized paid member/rental receipts without touching sources'
+echo 'MIG-0736/0743/0744/0745/0746 PASS: readonly six-file money preflight rejects detected username reuse, oversized or noncanonical present balances/leases and corrupt receipts without source writes'
 echo 'NOT PRODUCTION: no coherent financial migration or authenticated crash-atomic powercut ledger'

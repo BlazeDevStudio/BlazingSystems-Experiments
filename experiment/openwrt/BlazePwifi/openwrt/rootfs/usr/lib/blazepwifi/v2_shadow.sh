@@ -115,12 +115,20 @@ done
 before="$(sha256sum "$state/accounts.tsv" "$state/members.tsv" "$state/rental-devices.tsv" "$state/member-revision" "$state/member-events.tsv" "$state/rental-events.tsv" 2>/dev/null)" || {
   echo 'SHADOW BLOCKED: source fingerprint read failed' >&2; exit 8;
 }
+# MIG-0746: the v1 paid credit, lease and paused-time fields are
+# migration-critical arithmetic, not merely strings of digits.  Accept
+# canonical zero or positive signed-32-bit values only.  Do not guess
+# balance zero, wrap numeric conversions, or approve an unsafe cutover.
 account_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=9 || $1 !~ /^[A-Za-z0-9_.:-]+$/ || length($1)>96 ||
-        $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ ||
-        $4 !~ /^[0-9]+$/ || $5 !~ /^(0|1)$/ ||
-        $6 !~ /^[0-9]+$/ || ++seen[$1]>1) bad=1
+        !paid32($2) || !paid32($3) ||
+        !paid32($4) || $5 !~ /^(0|1)$/ ||
+        !paid32($6) || ++seen[$1]>1) bad=1
     count++
   }
   END {if (bad) exit 8; print count+0}
@@ -128,11 +136,15 @@ account_count="$(awk -F '\t' '
   echo 'SHADOW BLOCKED: invalid/duplicate Wi-Fi paid account row' >&2; exit 8;
 }
 member_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=11 || $1 !~ /^[A-Za-z0-9_.-]+$/ || length($1)>32 ||
         $3 !~ /^(0|1)$/ || $7 !~ /^[0-9]+$/ ||
-        $8 !~ /^[0-9]+$/ || $9 !~ /^[0-9]+$/ ||
-        $10 !~ /^[0-9]+$/ || ++seen[$1]>1) bad=1
+        !paid32($8) || $9 !~ /^[0-9]+$/ ||
+        !paid32($10) || ++seen[$1]>1) bad=1
     count++
   }
   END {if (bad) exit 8; print count+0}
@@ -140,10 +152,14 @@ member_count="$(awk -F '\t' '
   echo 'SHADOW BLOCKED: invalid/duplicate paid member row' >&2; exit 8;
 }
 rental_count="$(awk -F '\t' '
+  function paid32(v) {
+    return v ~ /^(0|[1-9][0-9]*)$/ &&
+           length(v)<=10 && v+0<=2147483647
+  }
   {
     if (NF!=5 || $1 !~ /^[A-Za-z0-9_.:-]+$/ ||
         length($1)>96 || length($2)==0 ||
-        $3 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ ||
+        !paid32($3) || !paid32($5) ||
         ++seen[$1]>1) bad=1
     count++
   }
@@ -185,25 +201,59 @@ awk -F '\t' -v floor="$global_rev" '
 ' "$state/members.tsv" || {
   echo 'SHADOW BLOCKED: member revision exceeds global counter' >&2; exit 8;
 }
-# MIG-0743: an eventual v2 financial migration cannot trust a merely
-# well-formed TSV row. Check canonical/32-bit-bounded paid quantities in
-# the WHOLE retained member receipt corpus; a malicious overflow may pass
-# a generic digit regex and corrupt later replay or imported balances.
-# This is readonly *source admission*, not migration authorization.
+# MIG-0743/0744: an eventual v2 financial migration cannot trust a
+# merely well-formed receipt. Validate the WHOLE retained member corpus
+# against existing paid members, not just numeric formatting. An orphaned
+# paid source or transfer destination requires operator reconciliation,
+# never a guessed balance or synthesized missing member. Historical member
+# deletion is valid in v1, but its money receipts cannot be silently
+# imported into a v2 read model without an explicit mapping decision.
+# Both files are protected by the SAME pre-existing global paid writer lock.
+# MIG-0745: usernames are NOT durable paid identities. A delete + recreate
+# can rebind old retained paid receipts to a different member epoch, even if
+# the username currently exists. The legacy 8-column create/delete audits
+# are nonfinancial and may be trimmed. Refuse detectable ambiguity; do not
+# assert that absence of such audit rows proves a safe identity migration.
+# Readonly SOURCE admission only: no payment, repair, or migration permitted.
 awk -F '\t' '
+  FILENAME==ARGV[1] {members[$1]=1; next}
+  $4=="create" {
+    if ($3 in paid_ref) bad=1
+    if (++creates[$3]>1) reused[$3]=1
+  }
+  $4=="delete" {deleted[$3]=1}
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ ||
     $3=="" || $4=="" || $5 !~ /^-?[0-9]+$/ ||
     $6 !~ /^[0-9]+$/ || $7=="" {bad=1}
   {if (++seen[$1]>1) bad=1}
   $4=="add" || $4=="subtract" || $4=="set" ||
   $4=="restore_all" || $4=="transfer" {
+    paid_ref[$3]=1
     d=$5; if (substr(d,1,1)=="-") d=substr(d,2)
     if (length(d)>10 || d+0>2147483647 ||
-        length($6)>10 || $6+0>2147483647) bad=1
+        length($6)>10 || $6+0>2147483647 ||
+        !($3 in members)) bad=1
+    if ($4=="transfer") {
+      n=split($8,p,":")
+      if (n==3) paid_ref[p[2]]=1
+      if (n!=3 || !(p[2] in members) || p[2]==$3 ||
+          p[1] !~ /^(0|[1-9][0-9]*)$/ ||
+          p[3] !~ /^(0|[1-9][0-9]*)$/ ||
+          length(p[1])>10 || length(p[3])>10 ||
+          p[1]+0>2147483647 || p[3]+0>2147483647)
+        bad=1
+    }
+    # Non-transfer paid receipt detail is historically optional in v1;
+    # preserve the old 8-column empty-final-field format for migration
+    # diagnostics rather than imposing a new false receipt failure.
   }
-  END {if (bad) exit 8}
-' "$state/member-events.tsv" || {
-  echo 'SHADOW BLOCKED: invalid, overflowing or duplicate member receipt' >&2; exit 8;
+  END {
+    for (u in paid_ref)
+      if ((u in deleted) || (u in reused)) bad=1
+    if (bad) exit 8
+  }
+' "$state/members.tsv" "$state/member-events.tsv" || {
+  echo 'SHADOW BLOCKED: invalid, orphaned, overflowing or duplicate member receipt' >&2; exit 8;
 }
 # Five columns: event, device, detail/lease, time, audit kind or p:pulses.
 # Current installed rental paid events use SHA256-lowercase r:<64-hex>.
