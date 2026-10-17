@@ -1,3 +1,9 @@
+## PAY-0770 - first merged financial CI failure and C-source correction, 2026-10-17 Asia/Manila
+- **Status:** correction committed_untested; **priority:** P0. Isolated PR #89 merge `64c4856a2e3c4889ee62e80577afff8d021d856f`, prior exact head `8d68dc2987f8dd258f6d75bb6bea5061dda2ce8b`. Native #38995776453 FAILED at `paid authority package source diverges from tested journal source`; SDK #38995779200 FAILED at the same early `cmp -s` guard. Full #38995774111 pending at observation.
+- **Root cause/fix:** auto-merged development replay-dir-fsync barrier was present in `tools/v060_journal_authority_native.c` but absent from `openwrt/paid-authority/src/v060_journal_authority.c`. Source `ffd5b70a31ab7daa208f893481eca5bea28bcafa` copied the exact five lines into package C. Local byte hashes equal; `git diff --check` PASS. No runtime paid admission, keys or customer state changed.
+- **Risk/rollback:** corrected source must pass actual native/staging/SDK and Full on exact new head; otherwise revert only this isolated candidate correction. Paid v2 ACK denied; independent witness, protected signer, identity and hardware missing.
+- **NEXT ACTION:** push handover, run literal-head Full/native/SDK, inspect named regressions and fix actual red.
+
 ## PAY-0770 - isolated financial PR development-base reconciliation, 2026-10-17 Asia/Manila
 - **Status:** in_progress; **priority:** P0 financial release evidence. Branch `pay-0743-installed-v2-authority`, PR #89, prior head `b06e6d9c482c489d148f1f067ad15eb8f67c1452`, real development base `aa89b9956309085d2742c14df294042d14e558b4`; local `31c77f36` ref was stale.
 - **Scope:** resolve three canonical handover conflicts, retaining both branch histories. Development's `v2_shadow.sh`, native C replay barrier and two regression files auto-merged into the isolated candidate. No paid ACK, protected signer, independent witness, controller identity or installed customer state changed.
