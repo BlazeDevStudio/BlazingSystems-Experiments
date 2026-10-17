@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-18",
+  "note": "Taxonomy coverage only: family presence does NOT mean macOS compatibility. Exact CPU model coverage is limited. No prebuilt bootable EFI is included.",
+  "references": {
+    "DORTANIA_LIMITS": "https://dortania.github.io/OpenCore-Install-Guide/macos-limits.html",
+    "AMD_VANILLA": "https://github.com/AMD-OSX/AMD_Vanilla"
+  },
+  "families": [
+    {
+      "id": "intel-core-2-penryn",
+      "vendor": "Intel",
+      "name": "Core 2 / Penryn",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-nehalem",
+      "vendor": "Intel",
+      "name": "Nehalem",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-westmere",
+      "vendor": "Intel",
+      "name": "Westmere",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-sandy-bridge",
+      "vendor": "Intel",
+      "name": "Sandy Bridge",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-ivy-bridge",
+      "vendor": "Intel",
+      "name": "Ivy Bridge",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-haswell",
+      "vendor": "Intel",
+      "name": "Haswell",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-broadwell",
+      "vendor": "Intel",
+      "name": "Broadwell",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-skylake",
+      "vendor": "Intel",
+      "name": "Skylake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-kaby-lake",
+      "vendor": "Intel",
+      "name": "Kaby Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-coffee-lake",
+      "vendor": "Intel",
+      "name": "Coffee Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-comet-lake",
+      "vendor": "Intel",
+      "name": "Comet Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-ice-lake",
+      "vendor": "Intel",
+      "name": "Ice Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-hedt-xeon",
+      "vendor": "Intel",
+      "name": "HEDT / Xeon",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-braswell",
+      "vendor": "Intel",
+      "name": "Braswell",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-apollo-lake",
+      "vendor": "Intel",
+      "name": "Apollo Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-gemini-lake",
+      "vendor": "Intel",
+      "name": "Gemini Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-rocket-lake",
+      "vendor": "Intel",
+      "name": "Rocket Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-alder-lake",
+      "vendor": "Intel",
+      "name": "Alder Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "intel-raptor-lake",
+      "vendor": "Intel",
+      "name": "Raptor Lake",
+      "classification": "Research Only",
+      "references": [
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-bulldozer",
+      "vendor": "AMD",
+      "name": "Bulldozer",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-piledriver",
+      "vendor": "AMD",
+      "name": "Piledriver",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-jaguar",
+      "vendor": "AMD",
+      "name": "Jaguar",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-puma",
+      "vendor": "AMD",
+      "name": "Puma",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen",
+      "vendor": "AMD",
+      "name": "Zen",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-plus",
+      "vendor": "AMD",
+      "name": "Zen+",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-2",
+      "vendor": "AMD",
+      "name": "Zen 2",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-3",
+      "vendor": "AMD",
+      "name": "Zen 3",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-3-plus",
+      "vendor": "AMD",
+      "name": "Zen 3+",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-4",
+      "vendor": "AMD",
+      "name": "Zen 4",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-zen-5",
+      "vendor": "AMD",
+      "name": "Zen 5",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    },
+    {
+      "id": "amd-threadripper-epyc",
+      "vendor": "AMD",
+      "name": "Threadripper / EPYC",
+      "classification": "Research Only",
+      "references": [
+        "AMD_VANILLA",
+        "DORTANIA_LIMITS"
+      ],
+      "validated_efi": false
+    }
+  ]
+}

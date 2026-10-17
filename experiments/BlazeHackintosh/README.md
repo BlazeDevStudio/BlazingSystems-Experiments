@@ -1,0 +1,52 @@
+# BlazeHackintosh — experimental foundation
+
+**Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
+
+BlazeHackintosh is a hardware-aware OpenCore research and preparation initiative.
+This directory is isolated within BlazingSystems-Experiments until a dedicated repository can be created.
+No files outside this namespace and its named GitHub Actions workflow are owned by this project.
+
+## What is real now
+- Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- Explicit CPU SKU reference lookup with safe **Unknown** fallback.
+- 31 Intel/AMD **research-only taxonomy entries** and a validated database structure.
+- Offline manual-reference browser UI with interactive evaluation and JSON export.
+- Automated Python tests and a Windows command-line executable build workflow.
+- Locally vendored Lucide ISC SVG icons, with license notice.
+- Source documentation, known limitations and handover record.
+
+## What is not implemented
+- Automatic OpenCore EFI generation, macOS installer creation, disk flashing or EFI migration.
+- CPU/GPU-level boot validation or real hardware acceptance.
+- A compiled *graphical* Windows Setup Assistant (the browser UI is a reference preview).
+- Offline complete macOS installer, Linux recovery ISO, IMG images, dual-boot manager and GitHub Release.
+
+## Use without installing dependencies
+
+Install Python 3.10+ and execute from this directory:
+
+```powershell
+python blazehackintosh.py scan --output hardware-report.json
+python blazehackintosh.py evaluate --report hardware-report.json
+python blazehackintosh.py catalog --output families.json
+python -m unittest discover -s Tests -v
+```
+
+The optional `--output` only writes to the **file path you choose**; without it output goes to the console.
+The scanner does not read user documents, partition disks or execute network requests.
+On Windows it queries read-only WMI/CIM properties via PowerShell; Linux uses /proc/cpuinfo and optional lspci.
+Unknown values are retained rather than guessed. JSON reports remain local unless you choose to share them.
+
+**Graphical preview:** open `Setup-Assistant/index.html` in a browser with the adjacent `assets` directory. The UI is offline. It cannot scan local hardware from a browser.
+
+**Windows CLI build:** GitHub Actions compiles `BlazeHackintosh-Scanner.exe` on `windows-latest` using a pinned PyInstaller version; inspect the actual workflow result before trusting a build. The executable is a console scanner, not a one-click macOS installer.
+
+## Licensing / legal caution
+This project is not affiliated with Apple or Acidanthera. Apple's macOS software licenses restrict installation to Apple-branded computers; see https://www.apple.com/legal/sla/ and the agreement for the desired macOS version. No macOS binaries or modified installers are distributed. Third-party code and icons must retain their notices; see LICENSES.
+
+## Engineering gates
+A matched CPU family does not mean the CPU/GPU/chipset/firmware/macOS combination will boot.
+No files in this milestone may be described as a validated EFI image, bootable USB image, or physical-hardware success.
+Future EFI generation must use a version-matched OpenCore Sample.plist, required kexts and ocvalidate.
+
+See [docs/README.md](docs/README.md), [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) and [DEVELOPMENT-HANDOVER.md](DEVELOPMENT-HANDOVER.md).

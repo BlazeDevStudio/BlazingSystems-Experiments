@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlazeHackintosh | Research Preview</title>
+<style>
+:root {color-scheme: dark; --bg:#070d19; --panel:#101b2f; --line:#31425e; --text:#eaf4ff; --muted:#a9bdd6; --cyan:#56dbf8; --fire:#ff8a47;}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 90% 0%,#163d62 0%,transparent 44%),radial-gradient(circle at 5% 90%,#442b2b 0%,transparent 42%),var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+header,main,footer{width:min(100% - 32px,1080px);margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:32px 0;border-bottom:1px solid var(--line)}
+.brand{font-weight:850;letter-spacing:.02em;font-size:1.25rem}.brand span{color:var(--cyan)} .tag{border:1px solid var(--fire);color:#ffc39b;padding:5px 13px;border-radius:50px;font-size:.75rem;letter-spacing:.12em;font-weight:800}
+main{padding:52px 0 80px}.eyebrow{letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);font-weight:750;font-size:.8rem}h1{max-width:820px;line-height:1.12;font-size:clamp(2.2rem,5.5vw,4.35rem);letter-spacing:-.045em;margin:12px 0 22px}h1 span{color:var(--fire)}p.lead{max-width:780px;color:var(--muted);font-size:1.14rem} .grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:22px;margin-top:38px}
+.card{border:1px solid var(--line);background:linear-gradient(160deg,#14253aeb,#0b1526f0);box-shadow:0 22px 70px #0004;border-radius:20px;padding:26px}h2{font-size:1.2rem;margin:0 0 16px}h3{font-size:1rem;margin:18px 0 8px}label{display:block;font-size:.9rem;color:var(--muted);margin:17px 0 7px}
+input,select{width:100%;background:#071224;border:1px solid #455a77;color:var(--text);border-radius:10px;padding:13px 14px;font:inherit} input:focus,select:focus,button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px} .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+button{border-radius:11px;padding:12px 18px;font:inherit;font-weight:750;cursor:pointer;transition:transform .15s,filter .15s}button:not(:disabled):hover{filter:brightness(1.13);transform:translateY(-1px)}button.primary{border:1px solid #bff3ff;background:linear-gradient(115deg,#70e6ff,#2faacb);color:#061523}button.secondary{border:1px solid #5a718f;background:#152742;color:var(--text)}button:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:.82rem;color:var(--muted)}.tiles{display:grid;gap:12px}.tile{display:flex;gap:15px;align-items:flex-start;background:#0a1829;border:1px solid #30445e;padding:15px;border-radius:13px}.tile img{height:26px;width:26px;filter:invert(82%) sepia(22%) saturate(1334%) hue-rotate(160deg) brightness(112%)}.tile strong{display:block}.tile small{display:block;color:var(--muted)}
+#output{margin-top:20px;border:1px solid var(--line);border-radius:13px;background:#071224;padding:18px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:110px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.87rem}#output[data-ready="true"]{border-color:#4f9fba;color:var(--text)}
+.note{padding:16px 18px;margin-top:22px;border-left:3px solid var(--fire);background:#2c231f8a;border-radius:6px;font-size:.9rem;color:#f4d5c0}
+footer{padding:24px 0 36px;color:var(--muted);border-top:1px solid var(--line);font-size:.85rem}a{color:var(--cyan)} @media(max-width:800px){header{align-items:flex-start}.grid{grid-template-columns:1fr}.card{padding:20px}main{padding-top:30px}}
+</style>
+</head>
+<body>
+<header><div class="brand">BLAZE<span>SYSTEMS</span> / HACKINTOSH</div><div class="tag">v0.1.0 EXPERIMENTAL</div></header>
+<main>
+<div class="eyebrow">OpenCore Architecture Lab</div>
+<h1>Discover your hardware.<br><span>Don't gamble with your disks.</span></h1>
+<p class="lead">A safe, offline-capable starting point for identifying CPU families before real EFI configuration. This interface does not flash USB drives or install macOS.</p>
+<div class="grid">
+<section class="card" aria-labelledby="probe">
+<h2 id="probe">Manual target reference check</h2>
+<p class="hint">For this PC or another PC. A browser cannot perform a privileged hardware scan; use the included Python/Windows CLI for local scanning.</p>
+<label for="cpu">Exact CPU model</label>
+<input id="cpu" list="cpulist" placeholder="Example: Intel Core i5-4570" autocomplete="off">
+<datalist id="cpulist"><option value="Intel Core i5-4570"></option><option value="Intel Core i7-6700"></option><option value="Intel Core i5-8500"></option><option value="AMD Ryzen 5 3600"></option></datalist>
+<label for="gpu">GPU model (optional, not automatically validated)</label>
+<input id="gpu" placeholder="Example: Intel HD Graphics 4600" autocomplete="off">
+<label for="firmware">Target firmware</label>
+<select id="firmware"><option value="Unknown">Not sure</option><option value="UEFI">UEFI</option><option value="Legacy BIOS">Legacy BIOS</option></select>
+<div class="actions"><button class="primary" id="check">Evaluate reference</button><button class="secondary" id="export" disabled>Export JSON report</button></div>
+<div id="output" role="status" aria-live="polite">Enter an exact CPU model, then evaluate. Unsupported models remain Unknown.</div>
+</section>
+<aside class="card">
+<h2>Safety-first workflow</h2>
+<div class="tiles">
+<div class="tile"><img src="assets/cpu.svg" alt=""><div><strong>CPU recognition</strong><small>Only mapped exact SKU references. No similarity guesses.</small></div></div>
+<div class="tile"><img src="assets/shield-check.svg" alt=""><div><strong>Research-only status</strong><small>No configuration is labeled bootable without evidence.</small></div></div>
+<div class="tile"><img src="assets/hard-drive.svg" alt=""><div><strong>No disk writes</strong><small>Nothing is partitioned, formatted, flashed or migrated.</small></div></div>
+</div>
+<div class="note">macOS installation and use are governed by Apple's license terms. Check the applicable agreement before proceeding. This is not an Apple product.</div>
+</aside>
+</div>
+</main>
+<footer>BlazingSystems · Original gradient/CSS interface · Icons by <a href="https://lucide.dev/license">Lucide (ISC License)</a> · <a href="https://dortania.github.io/OpenCore-Install-Guide/">OpenCore Install Guide</a> · No telemetry or external requests</footer>
+<script>
+"use strict";
+// Deliberately narrow mapping; matches Python reference engine, not an EFI compatibility claim.
+const known = [
+  [/\bi5-4570\b/i,"intel-haswell"],[/\bi7-4770\b/i,"intel-haswell"],
+  [/\bi5-6500\b/i,"intel-skylake"],[/\bi7-6700\b/i,"intel-skylake"],
+  [/\bi5-8500\b/i,"intel-coffee-lake"],[/\bi7-8700\b/i,"intel-coffee-lake"],
+  [/\bRyzen 5 3600\b/i,"amd-zen-2"],[/\bRyzen 7 3700X\b/i,"amd-zen-2"]
+];
+let latest = null;
+const output = document.getElementById("output"), exp = document.getElementById("export");
+document.getElementById("check").addEventListener("click",()=>{
+  const name=document.getElementById("cpu").value.trim(),gpu=document.getElementById("gpu").value.trim(),firmware=document.getElementById("firmware").value;
+  const hits=known.filter(([rx])=>rx.test(name));
+  const family=hits.length===1?hits[0][1]:null;
+  latest={format_version:1,source:"manual-browser-reference",cpu_name:name||null,gpu_name:gpu||null,firmware,
+    cpu_family:family,classification:family?"Research Only":"Unknown",boot_verified:false,
+    can_generate_efi:false,next_action:"Verify exact CPU/CPUID, GPU, chipset, firmware and macOS version before building an OpenCore EFI"};
+  output.dataset.ready="true";
+  output.textContent="Classification: "+latest.classification+"\nCPU family: "+(family||"Not reliably identified")+"\n\nNo boot claim. No EFI was generated. GPU, firmware and macOS compatibility are not verified.";
+  exp.disabled=false;
+});
+exp.addEventListener("click",()=>{
+  if(!latest)return;
+  const data=new Blob([JSON.stringify(latest,null,2)+"\n"],{type:"application/json"});
+  const url=URL.createObjectURL(data);
+  const a=document.createElement("a");a.href=url;a.download="blazehackintosh-reference.json";a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body></html>

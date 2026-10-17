@@ -1,0 +1,40 @@
+# BlazeHackintosh — active development handover
+
+**Checkpoint date:** 2026-10-18
+**Repo:** BlazingSystems/BlazingSystems-Experiments
+**Branch:** blazehackintosh-v0.1.0-foundation
+**Project path:** experiments/BlazeHackintosh/
+**Milestone:** 1 — research, audit, scanner, taxonomy schema and initial UI preview
+**Target release:** v0.1.0 Experimental; full installer NOT YET RELEASED.
+
+## Completed in this checkpoint
+- Scoped new, isolated BlazeHackintosh codebase on an experimental branch.
+- Read-only CLI scanner and explicit CPU SKU mapping; fail-closed fallback.
+- 31 family reference entries; schema and test checks.
+- Working offline manual-reference UI and bundled licensed Lucide SVGs.
+- GitHub Actions for Python tests and Windows console scanner build.
+- Source ledger, compatibility caveats, known blockers and basic operator docs.
+
+## Current blockers
+No hardware-specific EFI generator, version-matched ocvalidate, kext dependency
+resolver, installer downloader, image builder, safe migration system, live ISO,
+compiled Windows GUI or physical acceptance testing. No fake releases.
+
+## Design constraints
+Never claim successful boot from matching a CPU name.
+No destructive disk operation without device confirmation, backup and rollback.
+No uploading diagnostics. No distributing macOS binaries.
+
+## Test evidence
+See docs/TEST-EVIDENCE.md and actual GitHub Actions run status. The automated
+workflow must complete before any Windows executable is described as built.
+
+## Next actionable step
+Implement exact GPU/PCI ID inventory and validated per-SKU hardware manifests,
+then build a constrained OpenCore 1.0.8 EFI candidate generator using official
+Sample.plist and a matching ocvalidate binary. Begin with Intel Haswell after
+GPU/firmware evidence; do not emit IMG files prior to reproducible EFI checks.
+
+## Continuation process
+Inspect the latest branch head and CI run before any new edits.
+Update this handover after every substantial change. Preserve independent projects.
