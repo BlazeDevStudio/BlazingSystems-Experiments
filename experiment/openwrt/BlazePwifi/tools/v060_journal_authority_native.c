@@ -11,6 +11,7 @@
 #define _GNU_SOURCE 1
 #endif
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/crypto.h>
@@ -348,6 +349,31 @@ static void write_all(int fd,const char *buf,size_t size) {
         pos+=(size_t)z;
     }
 }
+/* PAY-0773: an interrupted pre-rename transaction can leave the staged
+ * journal in the private authority directory. It was NEVER acknowledged.
+ * Never silently ignore/delete it and proceed to another paid write or a
+ * retained receipt replay; the operator must reconcile the uncertain stage.
+ * This check happens with the writer lock held and after signed verification.
+ * No local file can substitute for an independent rollback witness. */
+static void refuse_unfinished_stage(void) {
+    int fd=openat(dirfd,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
+    DIR *d;
+    struct dirent *ent;
+    int read_error;
+    if(fd<0)die("native stage inventory open failed");
+    d=fdopendir(fd);
+    if(!d){close(fd);die("native stage inventory reader failed");}
+    errno=0;
+    while((ent=readdir(d))!=NULL){
+        if(strncmp(ent->d_name,".v2-next-",9)==0){
+            closedir(d);
+            die("unfinished native stage requires operator reconciliation");
+        }
+    }
+    read_error=errno;
+    if(closedir(d)!=0 || read_error!=0)
+        die("native stage inventory uncertain");
+}
 /* PAY-0717 OFF-DEVICE ONLY: signed committed-result receipt. Never emit
  * this receipt until replay is corroborated by the authoritative journal or
  * fsync of the renamed parent directory has succeeded. Domain separation
@@ -520,6 +546,9 @@ int main(int argc,char **argv) {
        admitted. The fixture build remains available for transaction tests. */
     die("runtime witness and protected P-256 signer adapters unavailable");
 #endif
+    /* Before any fixture COMMIT or retained REPLAY, deny an abandoned native
+       pre-rename stage instead of treating an uncertain payment as absent. */
+    refuse_unfinished_stage();
     /* Refuse a financial commit unless the independently configured server
        ACK signing identity is validated BEFORE any journal mutation. */
     if(authenticated_ack==2)
