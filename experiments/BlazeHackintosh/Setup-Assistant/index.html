@@ -29,6 +29,9 @@ footer{padding:24px 0 36px;color:var(--muted);border-top:1px solid var(--line);f
 <section class="card" aria-labelledby="probe">
 <h2 id="probe">Manual target reference check</h2>
 <p class="hint">For this PC or another PC. A browser cannot perform a privileged hardware scan; use the included Python/Windows CLI for local scanning.</p>
+<label for="import-report">Import a local scanner report (JSON, up to 1 MB)</label>
+<input id="import-report" type="file" accept=".json,application/json">
+<p class="hint">Files are read only in your browser. No report is uploaded.</p>
 <label for="cpu">Exact CPU model</label>
 <input id="cpu" list="cpulist" placeholder="Example: Intel Core i5-4570" autocomplete="off">
 <datalist id="cpulist"><option value="Intel Core i5-4570"></option><option value="Intel Core i7-6700"></option><option value="Intel Core i5-8500"></option><option value="AMD Ryzen 5 3600"></option></datalist>
@@ -62,11 +65,54 @@ const known = [
 ];
 let latest = null;
 const output = document.getElementById("output"), exp = document.getElementById("export");
+
+let importedScan = false;
+document.getElementById("import-report").addEventListener("change", event => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reject = message => {
+    importedScan = false;
+    latest = null;
+    exp.disabled = true;
+    output.dataset.ready = "false";
+    output.textContent = message;
+  };
+  if (file.size > 1048576) {
+    reject("Report rejected: maximum size is 1 MB.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => reject("Could not read report from local storage.");
+  reader.onload = () => {
+    try {
+      const report = JSON.parse(reader.result);
+      if (!report || typeof report !== "object" || ![1, 2].includes(report.format_version) ||
+          report.read_only !== true || !report.hardware || typeof report.hardware !== "object" ||
+          !report.hardware.cpu || typeof report.hardware.cpu !== "object") {
+        throw new Error("not a recognized scanner report");
+      }
+      const h = report.hardware;
+      document.getElementById("cpu").value = typeof h.cpu.name === "string" ? h.cpu.name.slice(0, 300) : "";
+      const gpu = Array.isArray(h.gpus) && h.gpus.length && h.gpus[0] && h.gpus[0].name;
+      document.getElementById("gpu").value = typeof gpu === "string" ? gpu.slice(0, 300) : "";
+      document.getElementById("firmware").value = ["UEFI","Legacy BIOS"].includes(h.firmware) ? h.firmware : "Unknown";
+      importedScan = true;
+      latest = null;
+      exp.disabled = true;
+      output.dataset.ready = "true";
+      output.textContent = "Local scanner report loaded. Check the fields, then press Evaluate reference. No EFI or installer has been generated.";
+    } catch (err) {
+      reject("Invalid report: expected BlazeHackintosh scanner JSON. No file was uploaded.");
+    }
+  };
+  reader.readAsText(file);
+});
+
 document.getElementById("check").addEventListener("click",()=>{
   const name=document.getElementById("cpu").value.trim(),gpu=document.getElementById("gpu").value.trim(),firmware=document.getElementById("firmware").value;
   const hits=known.filter(([rx])=>rx.test(name));
   const family=hits.length===1?hits[0][1]:null;
-  latest={format_version:1,source:"manual-browser-reference",cpu_name:name||null,gpu_name:gpu||null,firmware,
+  latest={format_version:1,source:importedScan?"imported-local-scan-reference":"manual-browser-reference",cpu_name:name||null,gpu_name:gpu||null,firmware,
     cpu_family:family,classification:family?"Research Only":"Unknown",boot_verified:false,
     can_generate_efi:false,next_action:"Verify exact CPU/CPUID, GPU, chipset, firmware and macOS version before building an OpenCore EFI"};
   output.dataset.ready="true";

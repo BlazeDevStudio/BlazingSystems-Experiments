@@ -51,3 +51,11 @@ Update this handover after every substantial change. Preserve independent projec
 The scanner-only alpha prerelease publishing workflow is being added in the next
 commit; the release does not exist until the job reports success. Do not treat
 this prerelease as the full v0.1.0 Hackintosh installer.
+
+## 2026-10-18 continuation — v0.1.1 inventory candidate
+- Expanded read-only Windows discovery: GetFirmwareType (UEFI/BIOS), GPU and physical network PCI vendor/device IDs, storage model/size/interface and memory.
+- Expanded Linux best-effort lspci numeric IDs, network devices, RAM and lsblk disk model/size/interface.
+- Added explicit missing-inventory evidence and privacy regression tests.
+- Offline UI accepts local scanner JSON and prepopulates hardware fields without uploads.
+- Updated scanner-only prerelease automation for tag v0.1.1-alpha.1, retaining the separate v0.1.0-alpha.1 release.
+- Release evidence and downstream CI job conclusions must be added after the candidate passes.

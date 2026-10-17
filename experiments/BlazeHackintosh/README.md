@@ -1,4 +1,4 @@
-# BlazeHackintosh — experimental foundation
+# BlazeHackintosh — experimental foundation (v0.1.1 inventory)
 
 **Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
 
@@ -8,9 +8,10 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 
 ## What is real now
 - Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- Windows GPU/network vendor:device PCI IDs, firmware mode, memory and non-sensitive physical storage inventory; analogous best-effort Linux probes.
 - Explicit CPU SKU reference lookup with safe **Unknown** fallback.
 - 31 Intel/AMD **research-only taxonomy entries** and a validated database structure.
-- Offline manual-reference browser UI with interactive evaluation and JSON export.
+- Offline manual-reference browser UI with scanner JSON import, interactive evaluation and JSON export.
 - Automated Python tests and a Windows command-line executable build workflow.
 - Locally vendored Lucide ISC SVG icons, with license notice.
 - Source documentation, known limitations and handover record.
@@ -33,7 +34,7 @@ python -m unittest discover -s Tests -v
 ```
 
 The optional `--output` only writes to the **file path you choose**; without it output goes to the console.
-The scanner does not read user documents, partition disks or execute network requests.
+The scanner does not read user documents, partition disks or execute network requests. PnP instance IDs, MAC addresses, serials and UUIDs are not exported. Reported disk models and sizes are read-only descriptors.
 On Windows it queries read-only WMI/CIM properties via PowerShell; Linux uses /proc/cpuinfo and optional lspci.
 Unknown values are retained rather than guessed. JSON reports remain local unless you choose to share them.
 

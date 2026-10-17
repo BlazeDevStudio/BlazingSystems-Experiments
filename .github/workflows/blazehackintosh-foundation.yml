@@ -99,7 +99,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG='blazehackintosh-scanner-v0.1.0-alpha.1'
+          TAG='blazehackintosh-scanner-v0.1.1-alpha.1'
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Existing scanner preview release preserved; refusing to overwrite assets."
             exit 0
@@ -107,9 +107,9 @@ jobs:
           cat > RELEASE-NOTES.md <<'EOF'
           # BlazeHackintosh scanner-only alpha preview
 
-          This preview contains a **read-only Windows console scanner** plus an
+          This preview adds GPU and network PCI IDs, storage models, memory and UEFI detection to a **read-only Windows console scanner**, plus an
           **offline manual-reference browser UI**. The scanner and UI are different
-          interfaces. Eight source-unit tests run on Linux and Windows; the scanner
+          interfaces. The expanded source-unit tests run on Linux and Windows; the scanner
           executable is smoke-tested on the Windows CI runner.
 
           **NOT INCLUDED:** OpenCore EFI generator, Mac installer, bootable IMG,
@@ -124,5 +124,5 @@ jobs:
             downloaded/BlazeHackintosh-Scanner.exe \
             BlazeHackintosh-Offline-UI.zip SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title 'BlazeHackintosh v0.1.0-alpha.1 — Scanner Preview' \
+            --title 'BlazeHackintosh v0.1.1-alpha.1 — Hardware Inventory Preview' \
             --notes-file RELEASE-NOTES.md --prerelease

@@ -62,5 +62,74 @@ class FoundationTests(unittest.TestCase):
         self.assertNotIn("serial_number", json.dumps(report).lower())
 
 
+    def test_linux_pci_id_and_sensitive_instance_discard(self):
+        text = "00:02.0 VGA compatible controller [0300]: Intel Graphics [8086:1912] (rev 06)"
+        self.assertEqual(module._linux_pci_id(text), "8086:1912")
+        self.assertIsNone(module._linux_pci_id("no device information"))
+
+    def test_storage_size_safety(self):
+        self.assertEqual(module._safe_size("102400"), 102400)
+        for bad in ("nope", -1, 0, None, True, "inf"):
+            self.assertIsNone(module._safe_size(bad))
+
+    def test_inventory_gaps_are_explicit_not_compatibility_predictions(self):
+        gaps = module.inventory_gaps({"hardware": {"cpu": {"name": "Intel Core i5-4570"},
+                                                   "firmware": "UEFI", "gpus": []}})
+        self.assertIn("gpu-pci-id", gaps)
+        self.assertIn("motherboard-model", gaps)
+        self.assertIn("storage-inventory", gaps)
+        self.assertNotIn("exact-cpu", gaps)
+
+    def test_windows_report_filters_sensitive_pnp_device_tail_and_mac(self):
+        from unittest.mock import patch
+        sensitive = "PCI\\VEN_8086&DEV_1912&SUBSYS_12345678\\SENSITIVE-INSTANCE-ID"
+        def fake_powershell(command):
+            if "Win32_Processor" in command:
+                return {"Name": "Intel Core i7-6700", "Manufacturer": "GenuineIntel", "NumberOfCores": 4}
+            if "Win32_BaseBoard" in command:
+                return {"Manufacturer": "Example", "Product": "Board A"}
+            if "Win32_VideoController" in command:
+                return {"Name": "Intel HD Graphics", "PNPDeviceID": sensitive}
+            if "Win32_NetworkAdapter" in command:
+                return {"ProductName": "Intel Wired Adapter", "PNPDeviceID": "PCI\\VEN_8086&DEV_15B8\\MY-MAC"}
+            if "Win32_DiskDrive" in command:
+                return [{"Model": "NVMe Sample", "Size": "500000000000", "InterfaceType": "SCSI"}]
+            if "Win32_ComputerSystem" in command:
+                return {"TotalPhysicalMemory": "17179869184"}
+            return None
+        with patch.object(module.platform, "system", return_value="Windows"), \
+             patch.object(module, "_powershell", side_effect=fake_powershell), \
+             patch.object(module, "_win_firmware_type", return_value="UEFI"):
+            report = module.scan_hardware()
+        hw = report["hardware"]
+        self.assertEqual(hw["gpus"][0]["pci_id"], "8086:1912")
+        self.assertEqual(hw["network_adapters"][0]["pci_id"], "8086:15B8")
+        self.assertEqual(hw["firmware"], "UEFI")
+        self.assertEqual(hw["memory_bytes"], 17179869184)
+        self.assertEqual(hw["storage"][0]["bytes"], 500000000000)
+        self.assertEqual(module.inventory_gaps(report), [])
+        payload = json.dumps(report).upper()
+        self.assertNotIn("SENSITIVE-INSTANCE-ID", payload)
+        self.assertNotIn("MY-MAC", payload)
+        self.assertNotIn("SUBSYS_", payload)
+
+    def test_stored_report_never_promises_efi(self):
+        report = {"hardware": {"cpu": {"name": "Intel Core i7-6700"},
+                               "gpus": [{"name": "Example", "pci_id": "8086:1912"}],
+                               "firmware": "UEFI", "storage": [{"model": "Drive"}],
+                               "network_adapters": [{"pci_id": "8086:15B8"}],
+                               "motherboard": {"model": "Board"}}}
+        result = module.evaluate(report, self.catalog)
+        self.assertFalse(result["can_generate_efi"])
+        self.assertFalse(result["boot_verified"])
+        self.assertEqual(result["cpu_family"], "intel-skylake")
+
+    def test_offline_ui_contains_import_and_no_remote_script(self):
+        ui = (ROOT / "Setup-Assistant" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="import-report"', ui)
+        self.assertNotIn("<script src=", ui)
+        self.assertIn('can_generate_efi:false', ui)
+
+
 if __name__ == "__main__":
     unittest.main()

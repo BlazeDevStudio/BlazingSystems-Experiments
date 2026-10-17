@@ -17,3 +17,4 @@
 9. **License constraints**: respect Apple's macOS restrictions; keep third-party notices.
 
 These are not silently deferred production features. v0.1.0 is experimental only.
+10. **Scanner inventory completeness:** Windows CIM and Linux optional utilities may return null; `missing_inventory_evidence` documents gaps and does not imply incompatibility. GPU vendor:device alone does not establish acceleration or kext support.

@@ -14,3 +14,6 @@
 
 Confidence scope: verified repository documentation and upstream release metadata, **not** independent boot testing.
 All entries are subject to later upstream revision.
+| WINDOWS-FIRMWARE | https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getfirmwaretype | UEFI/legacy firmware read-only detection | Windows 8+; returns Unknown if call fails |
+| WINDOWS-GPU | https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-videocontroller | Video PnP vendor/device identifiers | WMI may be inaccurate for unsupported WDDM devices |
+| WINDOWS-NIC | https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-networkadapter | Physical network adapter PnP IDs | Never export MAC or PnP instance tail |

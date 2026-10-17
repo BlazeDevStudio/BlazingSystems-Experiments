@@ -30,3 +30,8 @@ and artifact hashes. Never infer physical compatibility from CI.
 
 This constitutes source and build automation evidence only. **NO physical boot
 test, EFI validation, recovery ISO test or destructive disk test occurred.**
+
+## v0.1.1 inventory candidate evidence
+Expanded inventory, privacy and HTML-presence tests were added after first passing
+v0.1.0-alpha.1 release. No passing results for this later revision are asserted here.
+Check the new workflow run and artifact before any claims of v0.1.1 release.

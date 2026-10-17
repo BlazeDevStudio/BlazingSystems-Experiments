@@ -2,6 +2,8 @@
 
 Run `python -m unittest discover -s Tests -v` from the project directory.
 Tests cover minimum taxonomy count, explicit Intel/AMD SKU mappings, unknown CPU fallback,
+Windows read-only mock inventory, network/GPU PCI ID extraction without PnP serial tails,
+storage-size validation, explicit missing-evidence reporting and offline UI import presence,
 unverified boot classification, malformed catalog rejection, device-ID redaction and scanner privacy fields.
 
 This is software-unit-level evidence only, not verification of actual Hackintosh booting or image integrity.
