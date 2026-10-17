@@ -1,9 +1,9 @@
 ## PAY-0770 - isolated financial PR development-base reconciliation, 2026-10-17 Asia/Manila
 - **Status:** in_progress; **priority:** P0 financial release evidence. Branch `pay-0743-installed-v2-authority`, PR #89, prior head `b06e6d9c482c489d148f1f067ad15eb8f67c1452`, real development base `aa89b9956309085d2742c14df294042d14e558b4`; local `31c77f36` ref was stale.
 - **Scope:** resolve three canonical handover conflicts, retaining both branch histories. Development's `v2_shadow.sh`, native C replay barrier and two regression files auto-merged into the isolated candidate. No paid ACK, protected signer, independent witness, controller identity or installed customer state changed.
-- **Evidence:** prior PR #89 Full #38973758470 SUCCESS at old head; merged-head Full/native/three-target SDK PENDING. Earlier clean local merge assessment used a stale base and was incorrect. Commit SHA to be recorded after merge; do not treat the development source marker `6738df44cb074a4dd1d66d5c84927aca9f03a7e3` as proof of this combined candidate.
+- **Evidence:** prior PR #89 Full #38973758470 SUCCESS at old head; merged-head Full/native/three-target SDK PENDING. Earlier clean local merge assessment used a stale base and was incorrect. Isolated merge `64c4856a2e3c4889ee62e80577afff8d021d856f` committed; do not treat the development source marker `6738df44cb074a4dd1d66d5c84927aca9f03a7e3` as proof of this combined candidate.
 - **Rollback/dependency:** revert only the isolated PR branch merge if merged CI fails. Keep v2 journal/ACK denied and PR unmerged from development. Independent physical witness, protected P-256 signer, fresh controller identity, reversible activation and approved noncustomer power-cut/soak acceptance remain absent.
-- **NEXT ACTION:** stage and commit resolved handovers and auto-merged source, push isolated PR, run literal-head Full/native/SDK, inspect named financial tests and fix actual red.
+- **NEXT ACTION:** push synchronized handover, run literal-head Full/native/SDK, inspect named financial tests and fix actual red.
 
 ## CI-0022 - financial docs-head Full result, 2026-10-17 Asia/Manila
 - **Status:** prior documentation head validated; PR #89 P0. Prior head `03f24a4782bb8daa0d85d086d39532b218472633`.
