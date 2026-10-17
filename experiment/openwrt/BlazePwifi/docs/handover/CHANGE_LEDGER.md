@@ -1,3 +1,8 @@
+## PISONET-0027 — LIO saved-config content flush test, 2026-10-18 Asia/Manila
+- **Status:** committed_untested; priority P1, isolated PR #90. Handover in-progress `d46d10d3140108ebbb630513c29462275761f0ab`; test `9fa0db0c40ae3ebacd764f8cefb0ff5181c398c2` changes `experiment/windows/BlazePisonet-SoftTimer/linux-server/test_blaze_lio_prepare.py`.
+- **Finding/proof:** real LIO prepare flushes only the saved config parent directory; test records file-descriptor fsync and requires the saved JSON inode. Local Linux Python unavailable, so exact Ubuntu CI is pending and expected RED; no source fix or production claim yet.
+- **Next/rollback:** run literal-head Windows/Linux workflow; after observed RED add a private regular-file fsync barrier to prepare/activate/quarantine, prove failure refusal, rerun focused and exact CI. Revert isolated slice if unsafe; do not stage generated `__pycache__`.
+
 ## PISONET-0026 - exact manual CHAP boot CI and preview artifact, 2026-10-18 Asia/Manila
 - **Status:** validated source+handover, P1; isolated PR #90 head `89903fdd15af4368363a8323c1f0ed84b841cb4c`. Source `2434eba50c0fae632cb4587d6b784e07715e79fd`, test `69c6525a42b512165ee505d4f19e972c8f7e0b61`.
 - **Exact evidence:** Windows/Linux workflow dispatch #39074985501 and PR #39074967646 both COMPLETED SUCCESS at literal SHA. Compiled PISONET-0001 FOG/boot-profile contract, warning-as-error build, self-contained Windows EXEs, NSIS native installer smoke install/uninstall, Ubuntu LIO tests and preview upload passed. Artifact id 12116966463 ZIP sha256:431c154c2b5dfa9dd94b6e3b9dba278d57547ada81e9e743b9c763d2bf51aa62, not an installed boot image. Public GitHub Release SKIPPED. First test/source commit was not independently executed; exact synchronized head passed.
