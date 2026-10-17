@@ -67,3 +67,62 @@ jobs:
             experiments/BlazeHackintosh/dist/BlazeHackintosh-Scanner.exe
             experiments/BlazeHackintosh/dist/SHA256.txt
           if-no-files-found: error
+
+  scanner-preview-prerelease:
+    name: Publish scanner-only alpha preview
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazehackintosh-v0.1.0-foundation'
+    runs-on: ubuntu-latest
+    needs: [linux-tests, windows-console-scanner]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazeHackintosh-v0.1.0-experimental-windows-cli
+          path: downloaded
+      - name: Verify deliverables and create offline UI archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s downloaded/BlazeHackintosh-Scanner.exe
+          test -s experiments/BlazeHackintosh/Setup-Assistant/index.html
+          mkdir -p packaging/BlazeHackintosh-Offline-UI
+          cp -r experiments/BlazeHackintosh/Setup-Assistant packaging/BlazeHackintosh-Offline-UI/
+          cp -r experiments/BlazeHackintosh/LICENSES packaging/BlazeHackintosh-Offline-UI/
+          cp experiments/BlazeHackintosh/README.md packaging/BlazeHackintosh-Offline-UI/
+          (cd packaging && zip -qr ../BlazeHackintosh-Offline-UI.zip BlazeHackintosh-Offline-UI)
+          sha256sum downloaded/BlazeHackintosh-Scanner.exe BlazeHackintosh-Offline-UI.zip > SHA256SUMS.txt
+      - name: Publish explicitly-scoped alpha prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG='blazehackintosh-scanner-v0.1.0-alpha.1'
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Existing scanner preview release preserved; refusing to overwrite assets."
+            exit 0
+          fi
+          cat > RELEASE-NOTES.md <<'EOF'
+          # BlazeHackintosh scanner-only alpha preview
+
+          This preview contains a **read-only Windows console scanner** plus an
+          **offline manual-reference browser UI**. The scanner and UI are different
+          interfaces. Eight source-unit tests run on Linux and Windows; the scanner
+          executable is smoke-tested on the Windows CI runner.
+
+          **NOT INCLUDED:** OpenCore EFI generator, Mac installer, bootable IMG,
+          USB flashing, disk migration, GPU compatibility verification, or physical
+          Hackintosh boot testing. CPU taxonomy records are Research Only.
+
+          Use the standalone UI ZIP offline; the Windows EXE is a console program.
+          Assets include Lucide ISC icon notices. Check Apple licensing before
+          any macOS installation. No Apple software or boot images are distributed.
+          EOF
+          gh release create "$TAG" \
+            downloaded/BlazeHackintosh-Scanner.exe \
+            BlazeHackintosh-Offline-UI.zip SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title 'BlazeHackintosh v0.1.0-alpha.1 — Scanner Preview' \
+            --notes-file RELEASE-NOTES.md --prerelease

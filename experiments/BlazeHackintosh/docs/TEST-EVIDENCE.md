@@ -15,3 +15,18 @@ Windows console build. Check the actual run results; workflow existence is NOT a
 
 When CI succeeds, document the actual workflow run URL, commit SHA, job conclusions
 and artifact hashes. Never infer physical compatibility from CI.
+ 
+## Verified first automated run — 2026-10-18 (local UTC+08)
+- Source commit: `5fd30edb6a5806d0f77bdc1ac3c57263d0ba6bfa`
+- Workflow run: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39073023855
+- Linux `linux-tests`: **success**; 8 tests passed.
+- Windows `windows-console-scanner`: **success**; 8 tests passed,
+  PyInstaller produced `BlazeHackintosh-Scanner.exe`; CLI catalog/evaluation
+  smoke tests passed.
+- Actions artifact: `BlazeHackintosh-v0.1.0-experimental-windows-cli`
+  (artifact ID `12115877209`, 8,182,882 bytes compressed).
+- Artifact ZIP SHA-256 logged by GitHub Actions:
+  `18daa863348bec8c227ea4a4b1110bcf24eeac788ac38c24d54332a32e216e13`.
+
+This constitutes source and build automation evidence only. **NO physical boot
+test, EFI validation, recovery ISO test or destructive disk test occurred.**

@@ -38,3 +38,16 @@ GPU/firmware evidence; do not emit IMG files prior to reproducible EFI checks.
 ## Continuation process
 Inspect the latest branch head and CI run before any new edits.
 Update this handover after every substantial change. Preserve independent projects.
+ 
+## Verified CI evidence (source baseline)
+- Foundation source commit: `5fd30edb6a5806d0f77bdc1ac3c57263d0ba6bfa`
+- Linux test job: success, 8 unit tests.
+- Windows test job: success, 8 unit tests.
+- Windows PyInstaller scanner build: success and CLI smoke-test success.
+- GitHub Actions run: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39073023855
+- Windows artifact ID: 12115877209, approximately 8.2 MB downloadable through Actions.
+- No physical boot tests or EFI/IMG validation.
+
+The scanner-only alpha prerelease publishing workflow is being added in the next
+commit; the release does not exist until the job reports success. Do not treat
+this prerelease as the full v0.1.0 Hackintosh installer.
