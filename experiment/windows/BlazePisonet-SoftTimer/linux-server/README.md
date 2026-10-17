@@ -35,6 +35,8 @@ delete the intent to force a retry; the first run may have committed the LIO
 configuration even if its success response was lost.
 
 The saved config can contain the CHAP secret and is restricted to `0600`.
+Preparation rechecks the complete live and saved target before recording
+`prepared_disabled`; a mismatch leaves the intent uncertain and refuses retry.
 The command does not install a boot-time restore service. Verify that the
 actual target remains disabled across reboot before any live acceptance.
 On the same dedicated host, `python3 blaze_lio_status.py /private/spec.json

@@ -11,10 +11,12 @@ import blaze_lio_prepare as lio
 
 
 class Backend:
-    def __init__(self, fail_preflight=False, fail_prepare=False, change_image=False):
+    def __init__(self, fail_preflight=False, fail_prepare=False, change_image=False,
+                 fail_inspect=False):
         self.fail_preflight = fail_preflight
         self.fail_prepare = fail_prepare
         self.change_image = change_image
+        self.fail_inspect = fail_inspect
         self.calls = []
 
     def preflight(self):
@@ -37,6 +39,13 @@ class Backend:
                                 previous.st_mtime_ns + 1_000_000_000))
         if self.fail_prepare:
             raise RuntimeError("partial configfs write")
+
+    def inspect_prepared(self, spec, secret, expected_image=None):
+        self.calls.append("inspect")
+        if expected_image is None or secret != "0123456789ABCDEF":
+            raise AssertionError("postwrite inspection lost the image or secret")
+        if self.fail_inspect:
+            raise lio.Refused("saved target differs from live target")
 
 
 class PreparationTests(unittest.TestCase):
@@ -79,7 +88,7 @@ class PreparationTests(unittest.TestCase):
     def test_success_is_disabled_and_replay_is_refused(self):
         backend = Backend()
         self.assertEqual(self.run_prepare(backend), "PREPARED_DISABLED")
-        self.assertEqual(backend.calls, ["preflight", "prepare"])
+        self.assertEqual(backend.calls, ["preflight", "prepare", "inspect"])
         marker = self.markers()[0]
         self.assertEqual(json.loads(marker.read_text())["status"], "prepared_disabled")
         self.assertNotIn("0123456789ABCDEF", marker.read_text())
@@ -89,6 +98,15 @@ class PreparationTests(unittest.TestCase):
     def test_partial_write_keeps_intent_and_denies_retry(self):
         with self.assertRaisesRegex(RuntimeError, "partial"):
             self.run_prepare(Backend(fail_prepare=True))
+        self.assertEqual(json.loads(self.markers()[0].read_text())["status"], "started")
+        with self.assertRaisesRegex(lio.Refused, "prior or incomplete"):
+            self.run_prepare(Backend())
+
+    def test_saved_target_mismatch_keeps_uncertain_intent_and_denies_retry(self):
+        backend = Backend(fail_inspect=True)
+        with self.assertRaisesRegex(lio.Refused, "saved target differs"):
+            self.run_prepare(backend)
+        self.assertEqual(backend.calls, ["preflight", "prepare", "inspect"])
         self.assertEqual(json.loads(self.markers()[0].read_text())["status"], "started")
         with self.assertRaisesRegex(lio.Refused, "prior or incomplete"):
             self.run_prepare(Backend())

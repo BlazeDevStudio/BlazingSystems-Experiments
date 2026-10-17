@@ -304,6 +304,9 @@ def prepare(spec_path, secret_path, state_dir, backend, *, require_root=True):
         after = private_regular(Path(spec["image_path"]), owner)
         if image_identity(before) != image_identity(after):
             raise Refused("image changed during LIO preparation")
+        # A successful configfs write is not proof that the persisted restore
+        # state matches it. Keep the durable intent uncertain until both agree.
+        backend.inspect_prepared(spec, secret, before)
         record["status"] = "prepared_disabled"
         replacement = state_dir / ("." + key + ".next")
         write_record(replacement, record)
