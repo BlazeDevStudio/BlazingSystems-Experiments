@@ -35,3 +35,10 @@ test, EFI validation, recovery ISO test or destructive disk test occurred.**
 Expanded inventory, privacy and HTML-presence tests were added after first passing
 v0.1.0-alpha.1 release. No passing results for this later revision are asserted here.
 Check the new workflow run and artifact before any claims of v0.1.1 release.
+
+### CI regression found and fixed (run 39080305411)
+The first v0.1.1 CI run failed 1 of 14 Linux unit tests because the
+privacy-disclosure sentence used lowercase "serial numbers" while an existing
+test asserted uppercase "Serial numbers". This was a test wording-only mismatch:
+the sensor and PCI privacy tests passed. The test now performs a case-insensitive
+assertion. No successful run for this fix is asserted until subsequent Actions.

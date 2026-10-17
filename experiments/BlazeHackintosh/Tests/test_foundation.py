@@ -58,7 +58,7 @@ class FoundationTests(unittest.TestCase):
     def test_scan_report_privacy_and_read_only(self):
         report = module.scan_hardware()
         self.assertTrue(report["read_only"])
-        self.assertIn("Serial numbers", report["privacy"])
+        self.assertIn("serial numbers", report["privacy"].lower())
         self.assertNotIn("serial_number", json.dumps(report).lower())
 
 

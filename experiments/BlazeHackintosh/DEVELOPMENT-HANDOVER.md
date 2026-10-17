@@ -59,3 +59,8 @@ this prerelease as the full v0.1.0 Hackintosh installer.
 - Offline UI accepts local scanner JSON and prepopulates hardware fields without uploads.
 - Updated scanner-only prerelease automation for tag v0.1.1-alpha.1, retaining the separate v0.1.0-alpha.1 release.
 - Release evidence and downstream CI job conclusions must be added after the candidate passes.
+
+### Regression triage
+Initial v0.1.1 Actions run 39080305411 failed a case-sensitive privacy
+sentence assertion. Corrected test; also upgraded checkout/setup-python major
+Actions to Node24-capable releases. Await updated CI before release claim.
