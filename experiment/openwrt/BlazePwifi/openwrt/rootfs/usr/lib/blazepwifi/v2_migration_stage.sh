@@ -171,6 +171,19 @@ awk -F '\t' '
     if ($4=="set" &&
         ($5 !~ /^-?(0|[1-9][0-9]*)$/ ||
          $6+0-($5+0)<0 || $6+0-($5+0)>2147483647)) bad=1
+    # PAY-0772: v1 paid nontransfer receipts may have legacy blank detail.
+    # When present, the real member.sh writer records the post-balance.
+    # Reject any contradictory signed-32 post-balance before INACTIVE stage;
+    # this is NOT proof of receipt completeness or monetary authorization.
+    if (($4=="add" || $4=="subtract" || $4=="set" ||
+         $4=="restore_all") && $8!="") {
+      if ($8 !~ /^(0|[1-9][0-9]*)$/ ||
+          length($8)>10 || $8+0>2147483647) bad=1
+      else if (($4=="add" && $8+0<$6+0) ||
+               ($4=="subtract" && $8+0+$6+0>2147483647) ||
+               ($4=="set" && $8+0!=$6+0) ||
+               ($4=="restore_all" && $8!="0")) bad=1
+    }
     if ($4=="transfer") {
       n=split($8,p,":")
       if (n==3) paid_ref[p[2]]=1
