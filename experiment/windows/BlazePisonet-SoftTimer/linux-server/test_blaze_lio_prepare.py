@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import stat
 import sys
 import tempfile
 import types
@@ -261,10 +262,20 @@ class PreparationTests(unittest.TestCase):
             TPG=FakeTPG,
             Target=lambda fabric, iqn, mode: iqn,
         )
+        flushed_files = []
+        real_fsync = os.fsync
+
+        def record_flush(fd):
+            if stat.S_ISREG(os.fstat(fd).st_mode):
+                flushed_files.append(os.fstat(fd).st_ino)
+            return real_fsync(fd)
+
         with mock.patch.dict(sys.modules, {"rtslib": fake}):
             backend = lio.LioBackend(save_path)
             backend.preflight()
-            backend.prepare(self.data, "0123456789ABCDEF")
+            with mock.patch.object(lio.os, "fsync", side_effect=record_flush):
+                backend.prepare(self.data, "0123456789ABCDEF")
+        self.assertEqual(flushed_files, [save_path.stat().st_ino])
         self.assertEqual(operations, ["storage", "tpg", "disable",
                                       "generate_node_acls=0", "cache_dynamic_acls=0",
                                       "authentication=1", "demo_mode_write_protect=1",
