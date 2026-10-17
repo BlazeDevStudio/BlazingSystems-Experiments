@@ -1,3 +1,8 @@
+## PISONET-0025 - docs-head Windows/Linux result, 2026-10-17 Asia/Manila
+- **Status:** validated prior documentation head; P1 preview evidence. PR #90 `f0c4b8fb3e095d5bdf0a9a573e946acb775924dd` Windows/Linux #38995965335 COMPLETED SUCCESS. Ubuntu LIO tests, Windows strict build, NSIS setup install/uninstall and preview artifact 12087445547 ZIP sha256:5a149ca3443e177f7e498ecfe9b16f040c3a932b4de51942bc9ca87de37b0b4c; publish SKIPPED. Prior source+handover Full #38992669113 and Windows/Linux #38992669285 SUCCESS.
+- **Limit/rollback:** this documentation successor has no own run yet. No live Linux/Windows boot, CHAP/ACL isolation, writable image or physical durability proof; paid v2 disabled, no customer release.
+- **NEXT ACTION:** inspect docs-only CI classification, then implement provisioned authenticated noncustomer management and run approved live boot/storage acceptance.
+
 ## PISONET-0025 - reconciled preview branch literal-head CI, 2026-10-17 Asia/Manila
 - **Status:** validated exact source/head, P1 PR reviewability with inherited P0 finance; isolated PR #90 `a41c95f369947ef78f7e684f1f0ff9a48c72a35e`. GitHub reports mergeable against current development `aa89b9956309085d2742c14df294042d14e558b4`.
 - **Evidence:** Windows/Linux #38992669285 COMPLETED SUCCESS and Full #38992669113 COMPLETED SUCCESS at literal `a41c95f369947ef78f7e684f1f0ff9a48c72a35e`; Windows PR #38992644018 SUCCESS. Full push #38992641267 CANCELLED by concurrency; retained, separate Full dispatch succeeds. Source marker advanced to this verified head; this docs-only successor awaits exact classifier.
