@@ -52,19 +52,23 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check pyinstaller==6.16.0
-          python -m PyInstaller --noconfirm --clean --onefile --name BlazeHackintosh-Scanner --add-data "Hardware-Database/families.json;Hardware-Database" blazehackintosh.py
-          if (!(Test-Path dist/BlazeHackintosh-Scanner.exe)) { throw 'Executable missing' }
-          if ((Get-Item dist/BlazeHackintosh-Scanner.exe).Length -lt 100000) { throw 'Executable too small' }
-          ./dist/BlazeHackintosh-Scanner.exe catalog --output dist/families-export.json
-          ./dist/BlazeHackintosh-Scanner.exe evaluate --output dist/evaluation.json
+          python -m PyInstaller --noconfirm --clean --onefile --name BlazeHackintosh-Toolkit --add-data "Hardware-Database/families.json;Hardware-Database" blazehackintosh.py
+          if (!(Test-Path dist/BlazeHackintosh-Toolkit.exe)) { throw 'Executable missing' }
+          if ((Get-Item dist/BlazeHackintosh-Toolkit.exe).Length -lt 100000) { throw 'Executable too small' }
+          ./dist/BlazeHackintosh-Toolkit.exe catalog --output dist/families-export.json
+          ./dist/BlazeHackintosh-Toolkit.exe evaluate --output dist/evaluation.json
           $r = Get-Content dist/evaluation.json -Raw | ConvertFrom-Json
           if ($r.boot_verified -or $r.can_generate_efi) { throw 'Invalid boot claim' }
-          Get-FileHash dist/BlazeHackintosh-Scanner.exe -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 dist/SHA256.txt
+          ./dist/BlazeHackintosh-Toolkit.exe validate-efi --efi . --output dist/efi-inspection.json
+          if ($LASTEXITCODE -ne 2) { throw 'Expected an explicit missing EFI structural failure' }
+          $inspection = Get-Content dist/efi-inspection.json -Raw | ConvertFrom-Json
+          if ($inspection.structural_checks_passed -or $inspection.boot_verified -or $inspection.ocvalidate_passed) { throw 'Invalid EFI acceptance claim' }
+          Get-FileHash dist/BlazeHackintosh-Toolkit.exe -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 dist/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazeHackintosh-v0.1.0-experimental-windows-cli
+          name: BlazeHackintosh-v0.1.2-experimental-windows-toolkit
           path: |
-            experiments/BlazeHackintosh/dist/BlazeHackintosh-Scanner.exe
+            experiments/BlazeHackintosh/dist/BlazeHackintosh-Toolkit.exe
             experiments/BlazeHackintosh/dist/SHA256.txt
           if-no-files-found: error
 
@@ -79,27 +83,27 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
-          name: BlazeHackintosh-v0.1.0-experimental-windows-cli
+          name: BlazeHackintosh-v0.1.2-experimental-windows-toolkit
           path: downloaded
       - name: Verify deliverables and create offline UI archive
         shell: bash
         run: |
           set -euo pipefail
-          test -s downloaded/BlazeHackintosh-Scanner.exe
+          test -s downloaded/BlazeHackintosh-Toolkit.exe
           test -s experiments/BlazeHackintosh/Setup-Assistant/index.html
           mkdir -p packaging/BlazeHackintosh-Offline-UI
           cp -r experiments/BlazeHackintosh/Setup-Assistant packaging/BlazeHackintosh-Offline-UI/
           cp -r experiments/BlazeHackintosh/LICENSES packaging/BlazeHackintosh-Offline-UI/
           cp experiments/BlazeHackintosh/README.md packaging/BlazeHackintosh-Offline-UI/
           (cd packaging && zip -qr ../BlazeHackintosh-Offline-UI.zip BlazeHackintosh-Offline-UI)
-          sha256sum downloaded/BlazeHackintosh-Scanner.exe BlazeHackintosh-Offline-UI.zip > SHA256SUMS.txt
+          sha256sum downloaded/BlazeHackintosh-Toolkit.exe BlazeHackintosh-Offline-UI.zip > SHA256SUMS.txt
       - name: Publish explicitly-scoped alpha prerelease
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG='blazehackintosh-scanner-v0.1.1-alpha.1'
+          TAG='blazehackintosh-toolkit-v0.1.2-alpha.1'
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Existing scanner preview release preserved; refusing to overwrite assets."
             exit 0
@@ -107,22 +111,22 @@ jobs:
           cat > RELEASE-NOTES.md <<'EOF'
           # BlazeHackintosh scanner-only alpha preview
 
-          This preview adds GPU and network PCI IDs, storage models, memory and UEFI detection to a **read-only Windows console scanner**, plus an
+          This preview includes read-only CPU/GPU/network/storage discovery and a local OpenCore EFI structural inspector (not official ocvalidate), plus an
           **offline manual-reference browser UI**. The scanner and UI are different
           interfaces. The expanded source-unit tests run on Linux and Windows; the scanner
           executable is smoke-tested on the Windows CI runner.
 
-          **NOT INCLUDED:** OpenCore EFI generator, Mac installer, bootable IMG,
+          **NOT INCLUDED:** automatic OpenCore EFI generator, Apple macOS installer, bootable IMG,
           USB flashing, disk migration, GPU compatibility verification, or physical
           Hackintosh boot testing. CPU taxonomy records are Research Only.
 
-          Use the standalone UI ZIP offline; the Windows EXE is a console program.
+          The Windows EXE is a console toolkit: 'scan', 'evaluate', 'catalog', and 'validate-efi'. The UI ZIP is a separate browser preview. The structural inspector does not verify real EFI executables or boot success.
           Assets include Lucide ISC icon notices. Check Apple licensing before
           any macOS installation. No Apple software or boot images are distributed.
           EOF
           gh release create "$TAG" \
-            downloaded/BlazeHackintosh-Scanner.exe \
+            downloaded/BlazeHackintosh-Toolkit.exe \
             BlazeHackintosh-Offline-UI.zip SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title 'BlazeHackintosh v0.1.1-alpha.1 — Hardware Inventory Preview' \
+            --title 'BlazeHackintosh v0.1.2-alpha.1 — Scanner and Read-Only EFI Inspector' \
             --notes-file RELEASE-NOTES.md --prerelease

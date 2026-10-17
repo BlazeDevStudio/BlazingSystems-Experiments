@@ -1,4 +1,4 @@
-# BlazeHackintosh — experimental foundation (v0.1.1 inventory)
+# BlazeHackintosh — experimental foundation (v0.1.2 EFI inspector)
 
 **Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
 
@@ -8,6 +8,7 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 
 ## What is real now
 - Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- Read-only OpenCore EFI structural inspection: referenced ACPI, kext, UEFI driver and tool paths, with traversal/duplicate checks (not ocvalidate).
 - Windows GPU/network vendor:device PCI IDs, firmware mode, memory and non-sensitive physical storage inventory; analogous best-effort Linux probes.
 - Explicit CPU SKU reference lookup with safe **Unknown** fallback.
 - 31 Intel/AMD **research-only taxonomy entries** and a validated database structure.
@@ -30,6 +31,7 @@ Install Python 3.10+ and execute from this directory:
 python blazehackintosh.py scan --output hardware-report.json
 python blazehackintosh.py evaluate --report hardware-report.json
 python blazehackintosh.py catalog --output families.json
+python blazehackintosh.py validate-efi --efi "D:\\EFI-folder" --output inspection.json
 python -m unittest discover -s Tests -v
 ```
 
@@ -47,7 +49,7 @@ This project is not affiliated with Apple or Acidanthera. Apple's macOS software
 
 ## Engineering gates
 A matched CPU family does not mean the CPU/GPU/chipset/firmware/macOS combination will boot.
-No files in this milestone may be described as a validated EFI image, bootable USB image, or physical-hardware success.
+No EFI inspector success may be described as successful official ocvalidate or a bootable EFI. No files in this milestone may be described as a validated EFI image, bootable USB image, or physical-hardware success.
 Future EFI generation must use a version-matched OpenCore Sample.plist, required kexts and ocvalidate.
 
 See [docs/README.md](docs/README.md), [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) and [DEVELOPMENT-HANDOVER.md](DEVELOPMENT-HANDOVER.md).

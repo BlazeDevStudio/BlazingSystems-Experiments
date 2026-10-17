@@ -42,3 +42,9 @@ privacy-disclosure sentence used lowercase "serial numbers" while an existing
 test asserted uppercase "Serial numbers". This was a test wording-only mismatch:
 the sensor and PCI privacy tests passed. The test now performs a case-insensitive
 assertion. No successful run for this fix is asserted until subsequent Actions.
+
+## v0.1.2 EFI inspector
+The read-only validator adds isolated temp-directory fixtures for config.plist
+parsing, missing components, duplicate enabled components, disabled entries,
+unsafe path rejection and categorical non-claims about boot/ocvalidate.
+Do not label the v0.1.2 candidate green until actual CI results are verified.

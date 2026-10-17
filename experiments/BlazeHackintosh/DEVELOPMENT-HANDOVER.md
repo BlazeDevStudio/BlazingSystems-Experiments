@@ -64,3 +64,11 @@ this prerelease as the full v0.1.0 Hackintosh installer.
 Initial v0.1.1 Actions run 39080305411 failed a case-sensitive privacy
 sentence assertion. Corrected test; also upgraded checkout/setup-python major
 Actions to Node24-capable releases. Await updated CI before release claim.
+
+
+## v0.1.2 candidate — read-only EFI structural inspector
+- Added \`efi_validator.py\`, runnable standalone and through \`blazehackintosh.py validate-efi\`.
+- Checks config.plist parse, root section presence, loader location, enabled ACPI/driver/tool/kext references, disabled-entry handling and component duplicates.
+- Rejects absolute, parent and externally redirected paths. Does not execute a binary, write EFI, download macOS or generate EFI.
+- Added 11 extra unit tests, scheduled on Linux and Windows through existing CI.
+- Alpha tag \`blazehackintosh-toolkit-v0.1.2-alpha.1\` planned subject to CI success. No claim of ocvalidate result or boot validation.

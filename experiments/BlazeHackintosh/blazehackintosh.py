@@ -242,7 +242,7 @@ def evaluate(report: dict, catalog: dict) -> dict:
     hardware = report.get("hardware", {})
     cpu_name = (hardware.get("cpu") or {}).get("name") or ""
     match = lookup_cpu(cpu_name, catalog)
-    return {"tool_version": "0.1.1-experimental", "cpu_name": cpu_name,
+    return {"tool_version": "0.1.2-experimental", "cpu_name": cpu_name,
             "cpu_family": match["family_id"], "classification": match["classification"],
             "reason": match["reason"], "can_generate_efi": False, "boot_verified": False,
             "missing_inventory_evidence": inventory_gaps(report),
@@ -268,6 +268,9 @@ def main(argv: list[str] | None = None) -> int:
     scan.add_argument("--output", metavar="FILE")
     catalog_cmd = sub.add_parser("catalog", help="Print research-only CPU family catalog")
     catalog_cmd.add_argument("--output", metavar="FILE")
+    inspect = sub.add_parser("validate-efi", help="Read-only OpenCore EFI structure/reference checks; NOT ocvalidate")
+    inspect.add_argument("--efi", required=True, help="Existing EFI root, EFI or OC folder")
+    inspect.add_argument("--output", metavar="FILE")
     evaluation = sub.add_parser("evaluate", help="Classify a JSON report without guessing compatibility")
     evaluation.add_argument("--report", metavar="FILE", help="Existing report from scan; omit to scan this PC")
     evaluation.add_argument("--output", metavar="FILE")
@@ -277,6 +280,11 @@ def main(argv: list[str] | None = None) -> int:
             emit(scan_hardware(), args.output)
         elif args.operation == "catalog":
             emit(load_catalog(), args.output)
+        elif args.operation == "validate-efi":
+            from efi_validator import validate_efi
+            result = validate_efi(args.efi)
+            emit(result, args.output)
+            return 0 if result["structural_checks_passed"] else 2
         else:
             report = json.loads(Path(args.report).read_text(encoding="utf-8")) if args.report else scan_hardware()
             emit(evaluate(report, load_catalog()), args.output)

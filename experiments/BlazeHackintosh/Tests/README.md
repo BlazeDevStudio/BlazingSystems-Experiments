@@ -1,6 +1,8 @@
 # Tests
 
 Run `python -m unittest discover -s Tests -v` from the project directory.
+Tests additionally inspect OpenCore config.plist references, invalid/absent payloads,
+missing boot components, enabled/disabled entries, duplicated drivers and malicious paths.
 Tests cover minimum taxonomy count, explicit Intel/AMD SKU mappings, unknown CPU fallback,
 Windows read-only mock inventory, network/GPU PCI ID extraction without PnP serial tails,
 storage-size validation, explicit missing-evidence reporting and offline UI import presence,
