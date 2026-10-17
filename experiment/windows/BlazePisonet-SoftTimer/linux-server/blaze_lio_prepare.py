@@ -115,6 +115,25 @@ def write_record(path, record):
         os.close(dfd)
 
 
+def fsync_private_file(path):
+    owner = os.geteuid()
+    before = private_regular(path, owner)
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        opened = os.fstat(fd)
+        if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1 or
+                opened.st_uid != owner or stat.S_IMODE(opened.st_mode) != 0o600 or
+                (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+            raise Refused("saved LIO config changed before file flush")
+        os.fsync(fd)
+        after = private_regular(path, owner)
+        if (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) != (
+                opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns):
+            raise Refused("saved LIO config changed during file flush")
+    finally:
+        os.close(fd)
+
+
 class LioBackend:
     def __init__(self, save_path):
         self.save_path = save_path
@@ -172,7 +191,7 @@ class LioBackend:
                 Path(so.udev_path) != Path(image)):
             raise Refused("prepared LIO state does not match the requested identity")
         RTSRoot().save_to_file(self.save_path)
-        private_regular(self.save_path, os.geteuid())
+        fsync_private_file(self.save_path)
         dfd = os.open(self.save_path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
             os.fsync(dfd)
@@ -245,6 +264,7 @@ class LioBackend:
         saved = json.loads(self.save_path.read_bytes(), object_pairs_hook=unique_object)
         if saved != root.dump():
             raise Refused("enabled LIO configuration was not persisted")
+        fsync_private_file(self.save_path)
         dfd = os.open(self.save_path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
             os.fsync(dfd)
@@ -264,7 +284,7 @@ class LioBackend:
         if tpgs[0].enable:
             raise Refused("quarantine disable did not take effect")
         root.save_to_file(self.save_path)
-        private_regular(self.save_path, os.geteuid())
+        fsync_private_file(self.save_path)
         dfd = os.open(self.save_path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
             os.fsync(dfd)

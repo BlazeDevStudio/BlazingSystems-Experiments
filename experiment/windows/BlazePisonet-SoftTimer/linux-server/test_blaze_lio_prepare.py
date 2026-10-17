@@ -281,6 +281,9 @@ class PreparationTests(unittest.TestCase):
                                       "authentication=1", "demo_mode_write_protect=1",
                                       "lun", "acl", "map", "portal", "save"])
         self.assertEqual(save_path.stat().st_mode & 0o777, 0o600)
+        with mock.patch.object(lio.os, "fsync", side_effect=OSError("saved file flush failed")):
+            with self.assertRaisesRegex(OSError, "saved file flush failed"):
+                backend.prepare(self.data, "0123456789ABCDEF")
 
 
 if __name__ == "__main__":
