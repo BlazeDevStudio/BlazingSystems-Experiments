@@ -53,3 +53,11 @@ No EFI inspector success may be described as successful official ocvalidate or a
 Future EFI generation must use a version-matched OpenCore Sample.plist, required kexts and ocvalidate.
 
 See [docs/README.md](docs/README.md), [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) and [DEVELOPMENT-HANDOVER.md](DEVELOPMENT-HANDOVER.md).
+
+## Verified experimental downloads
+
+- [v0.1.2-alpha.1 Windows toolkit and offline UI](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.2-alpha.1)
+- [Latest test run](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080929664): 25 Python unit tests passed on each Linux and Windows runner; packaged Windows executable smoke-tested.
+- `validate-efi` checks only local EFI references, does not use official `ocvalidate`, and never proves physical boot.
+
+All graphical preview assets remain locally bundled and licensed as described in `LICENSES/`.

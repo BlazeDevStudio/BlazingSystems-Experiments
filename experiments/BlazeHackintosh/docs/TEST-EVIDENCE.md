@@ -51,3 +51,20 @@ Do not label the v0.1.2 candidate green until actual CI results are verified.
 
 ## v0.1.2 CI regression triage
 Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080788463 passed 25/25 unit tests on both platforms, and PyInstaller built the toolkit EXE. The workflow then failed because PowerShell's external-command failure behavior interpreted the intentionally nonzero (`2`) exit code for an incomplete EFI fixture as a shell failure before checking `$LASTEXITCODE`. The smoke test now uses Python `subprocess.run(check=False)` to verify the return code and inspect its JSON. New release eligibility must still pass a fresh workflow run.
+
+## Confirmed scanner and structural-inspector releases — 2026-10-18 (Asia/Manila)
+
+**v0.1.1-alpha.1** (scanner inventory):
+- Test run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080356869: Linux and Windows jobs successful; 14 tests per platform; Windows packaged scanner CLI.
+- Verified prerelease: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-scanner-v0.1.1-alpha.1
+- Release target commit: ecbfda73689495c68463eb7312d9a6b118362ced.
+
+**v0.1.2-alpha.1** (scanner + read-only EFI inspector):
+- Test run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080929664: Linux and Windows jobs successful; 25 tests per platform; packaged Windows CLI passed scanner tests and expected invalid EFI rejection.
+- Verified prerelease: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.2-alpha.1
+- Release target commit: 83992059cfccfaf2a26458f098669ddbdf7defa6.
+- Packaged Windows toolkit SHA-256: 9a069d1de3e0cbbb1238d3efcf54e59709d876224175a1b0170214a0ff00c193.
+- Offline UI ZIP SHA-256: 76dd71e39e3a667cdc6276d32f336f4dbb2ce876c78ca10b13608bc18b02a5bd.
+- Failure note: first attempt run 39080788463 succeeded at unit tests and building the EXE but did not pass the PowerShell smoke test because it treated an **expected failure exit code** as a job error. This was fixed with captured subprocess assertion; run 39080929664 succeeded.
+
+**Still not verified:** OpenCore ocvalidate matching version, a generated EFI, binary authenticity, an EFI partition or image boot test, any macOS installer, and real hardware boot. A structural reference check passing does not change those classifications.

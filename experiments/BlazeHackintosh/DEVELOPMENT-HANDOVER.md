@@ -75,3 +75,13 @@ Actions to Node24-capable releases. Await updated CI before release claim.
 
 ## v0.1.2 CI regression triage
 Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080788463 passed 25/25 unit tests on both platforms, and PyInstaller built the toolkit EXE. The workflow then failed because PowerShell's external-command failure behavior interpreted the intentionally nonzero (`2`) exit code for an incomplete EFI fixture as a shell failure before checking `$LASTEXITCODE`. The smoke test now uses Python `subprocess.run(check=False)` to verify the return code and inspect its JSON. New release eligibility must still pass a fresh workflow run.
+
+## Successful alpha releases and CI gates (2026-10-18)
+
+1. v0.1.0-alpha.1 scanner preview: published (initial 8 Linux/8 Windows tests).
+2. v0.1.1-alpha.1 scanner inventory: published https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-scanner-v0.1.1-alpha.1 ; 14/14 tests on both platforms, source ecbfda73689495c68463eb7312d9a6b118362ced.
+3. v0.1.2-alpha.1 scanner/EFI inspector: published https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.2-alpha.1 ; 25/25 tests on Linux and Windows, and Windows CLI smoke; run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080929664; source 83992059cfccfaf2a26458f098669ddbdf7defa6.
+
+**Repository remains a draft PR #105 and intentionally not merged.**
+**Next implementation step:** version-matched OpenCore 1.0.8 `ocvalidate` integration with trusted binary hashes and zero default execution of unverified binaries. Then source-controlled, hardware-constrained EFI generation with exact CPU/GPU/firmware evidence and full acceptance tests.
+**Production blocker remains:** no version-matched validated, actually booted EFI or installation environment. Never advertise installer or production readiness yet.
