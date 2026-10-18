@@ -2509,3 +2509,9 @@
 - Source commit 53d17201033a9ac7aa1cc42de5e4a050073e742b: CGI startup and lock-edge guards, installer fresh-only initialization, non-symlink regular paid/token files, fixture updates, state preflight test and pinned hashes. Exact corrected CI pending; no customer state, release, keys or devices touched.
 - Rollback/data impact: isolated draft PR #107 only; previous release unchanged. A partially installed or damaged state now requires operator recovery rather than silent recreation. Complete directory rollback still needs independent witness.
 - NEXT ACTION: push synchronized source+handover, inspect literal Ubuntu workflow and repair any demonstrated failures; update draft PR without claiming production readiness.
+
+## R281-STANDALONE-0015 — 2026-10-19 Asia/Manila, P0, validated preview
+
+- Source 53d17201033a9ac7aa1cc42de5e4a050073e742b and synchronized literal head 1293af17a807b4260c2ec43c9f3276db1739d596 passed Ubuntu #39151719539 COMPLETED SUCCESS. Scope: actual rental/rental-admin startup and lock-edge state guards, fresh-only installer preflight, entropy fixtures, tests/state_preflight.sh, SHA pins. Prior test-only literal #39151512514 FAILED intended missing paid authority assertion; retained.
+- Data/rollback: no customer files/keys/devices, release or main touched. Isolated draft PR #107. Partial state/reinstall now refuses; complete-directory rollback and physical powercut remain unproven and need an independent witness/approved hardware. Rollback branch change only after review.
+- NEXT ACTION: verify final docs-only exact-head CI and draft PR body; then owner-provided trust/hardware inputs for production gates, no synthetic proof or production publish.
