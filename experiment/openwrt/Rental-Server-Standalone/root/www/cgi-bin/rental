@@ -48,6 +48,15 @@ hmac(){
   printf '%s' "$data" | openssl dgst -sha256 -hmac "$key" 2>/dev/null | awk '{print $NF}' | tr 'A-F' 'a-f'
 }
 atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || return 1; sync 2>/dev/null || return 1; mv "$src" "$dst" || return 1; sync 2>/dev/null || return 1; }
+within_state_capacity(){
+  max="${BLAZE_RENTAL_MAX_STATE_BYTES:-8388608}"
+  case "$max" in ''|*[!0-9]*) return 1;; esac
+  [ "$max" -ge 128 ] 2>/dev/null && [ "$max" -le 8388608 ] 2>/dev/null || return 1
+  bytes="$(wc -c < "$1")" || return 1
+  bytes="$(printf '%s' "$bytes" | tr -d '[:space:]')" || return 1
+  case "$bytes" in ''|*[!0-9]*) return 1;; esac
+  [ "$bytes" -le "$max" ] 2>/dev/null
+}
 lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
 unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
 with_lock(){
@@ -96,6 +105,7 @@ policy_line(){
   [ -n "$l" ] && printf '%s\n' "$l" || printf '%s\t*\t-\t-\t4096\n' "$1"
 }
 write_enrolled_device(){
+  capacity_refused=0
   did="$1" secret="$2" lease="$3" label="$4" last="$5" eid="$6" esecret="$7" expiry="$8"
   suffix="$(randhex 3)" || return 1
   tmp="$STATE/.devices.$$.$suffix"
@@ -103,6 +113,7 @@ write_enrolled_device(){
   clean_label="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
   printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean_label" "$last" >> "$tmp" || return 1
   printf '@enroll\t%s\t%s\t%s\t%s\t%s\n' "$eid" "$esecret" "$did" "$secret" "$expiry" >> "$tmp" || return 1
+  within_state_capacity "$tmp" || { capacity_refused=1; rm -f "$tmp"; return 1; }
   atomic_replace "$tmp" "$DEVICES"
 }
 consume_enroll(){
@@ -170,7 +181,10 @@ case "$action" in
     [ "$line" = "$authenticated_line" ] || { unlock; fail "enrollment changed"; }
     did="$(randhex 12)" || { unlock; fail "secure randomness unavailable"; }
     dsecret="$(randhex 24)" || { unlock; fail "secure randomness unavailable"; }
-    write_enrolled_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts" "$eid" "$secret" "$expiry" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    write_enrolled_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts" "$eid" "$secret" "$expiry" || {
+      if [ "${capacity_refused:-0}" = 1 ]; then unlock; fail "receipt capacity reached or check failed"; fi
+      unlock; fail "storage outcome uncertain; inspect enrollment before retry"
+    }
     write_policy_default "$did"
     consume_enroll "$eid" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
     printf '%s\t%s\t%s\t%s\n' "$ts" enroll "$did" "${REMOTE_ADDR:-local}" >> "$EVENTS"

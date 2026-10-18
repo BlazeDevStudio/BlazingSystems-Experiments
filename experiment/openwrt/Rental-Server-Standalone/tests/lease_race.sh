@@ -536,6 +536,9 @@ cap_paid="$(printf 'action=add_time&device_id=%s&seconds=600&request_id=%s\n' "$
 printf '%s' "$cap_paid" | grep -Fq '"ok":false' || {
     echo 'FAIL: paid receipt overflow received positive ACK' >&2; exit 1;
 }
+printf '%s' "$cap_paid" | grep -Fq 'receipt capacity reached' || {
+    echo 'FAIL: paid receipt overflow did not report capacity' >&2; exit 1;
+}
 cmp -s "$T/cap-devices-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: paid receipt overflow changed saved devices' >&2; exit 1;
 }
@@ -548,6 +551,9 @@ cap_create="$(printf 'action=enroll_create&label=Test%%20phone&ttl=900&request_i
 printf '%s' "$cap_create" | grep -Fq '"ok":false' || {
     echo 'FAIL: token receipt overflow received positive ACK' >&2; exit 1;
 }
+printf '%s' "$cap_create" | grep -Fq 'enrollment capacity reached' || {
+    echo 'FAIL: token receipt overflow did not report capacity' >&2; exit 1;
+}
 cmp -s "$T/cap-enroll-before" "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: token receipt overflow changed saved tokens' >&2; exit 1;
 }
@@ -558,6 +564,9 @@ cap_phone="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$ENON
         REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental")"
 printf '%s' "$cap_phone" | grep -Fq '"ok":false' || {
     echo 'FAIL: phone receipt overflow received positive ACK' >&2; exit 1;
+}
+printf '%s' "$cap_phone" | grep -Fq 'receipt capacity reached' || {
+    echo 'FAIL: phone receipt overflow did not report capacity' >&2; exit 1;
 }
 cmp -s "$T/cap-devices-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: phone receipt overflow changed saved devices' >&2; exit 1;
