@@ -58,7 +58,7 @@ Some R281/uHTTPd CGI environments do not reliably pass the custom `X-Blaze-Renta
 
 ## v0.1.3 preview entropy refusal
 
-Enrollment IDs, enrollment secrets, device IDs, device secrets, and a new installer admin token now require complete random bytes from `/dev/urandom` through `hexdump` or `od`. When neither reader returns the requested bytes, issuance fails; the timestamp/process fallback has been removed. This is a test-server preview and does not establish crash-atomic leases or physical R281/Android acceptance. A remote-only installer still fetches from `main` and will refuse a checksum mismatch until matching payloads are published there; use the local verified payload for review.
+Enrollment IDs, enrollment secrets, device IDs, device secrets, and a new installer admin token require complete secure random bytes. The already required OpenSSL CLI (`openssl rand -hex`) is preferred, with `/dev/urandom` through `hexdump` or `od` as fallbacks. When all sources fail, issuance fails; the timestamp/process fallback has been removed. This is a test-server preview and does not establish crash-atomic leases or physical R281/Android acceptance. A remote-only installer still fetches from `main` and will refuse a checksum mismatch until matching payloads are published there; use the local verified payload for review.
 
 ## Validation boundary
 

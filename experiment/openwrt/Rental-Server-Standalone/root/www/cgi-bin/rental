@@ -20,7 +20,10 @@ randhex(){
   n="${1:-12}"
   case "$n" in ''|*[!0-9]*) return 1;; esac
   [ "$n" -ge 1 ] && [ "$n" -le 32 ] || return 1
-  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  x="$(openssl rand -hex "$n" 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq $((n*2)) ] || x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
   [ "${#x}" -eq $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
   case "$x" in *[!0-9a-f]* ) return 1;; esac
   [ "${#x}" -eq $((n*2)) ] || return 1

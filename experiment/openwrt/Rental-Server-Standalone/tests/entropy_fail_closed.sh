@@ -19,11 +19,15 @@ test -n "$admin_function" || { echo 'FAIL: installer entropy function missing' >
 if (eval "$admin_function"; PATH="$T/fail-bin:$PATH"; export PATH; admin_token_hex >/dev/null); then
     echo 'FAIL: installer accepted missing random bytes' >&2; exit 1
 fi
-admin_token="$(eval "$admin_function"; admin_token_hex)"
+admin_token="$(eval "$admin_function"; admin_token_hex)" || {
+    echo 'FAIL: installer did not produce a complete admin token' >&2; exit 1;
+}
 printf '%s' "$admin_token" | grep -Eq '^[0-9a-f]{48}$' || {
     echo 'FAIL: installer did not produce a complete admin token' >&2; exit 1;
 }
-openssl_token="$(eval "$admin_function"; PATH="$T/fail-readers:$PATH"; export PATH; admin_token_hex)"
+openssl_token="$(eval "$admin_function"; PATH="$T/fail-readers:$PATH"; export PATH; admin_token_hex)" || {
+    echo 'FAIL: installer did not use OpenSSL when byte readers failed' >&2; exit 1;
+}
 printf '%s' "$openssl_token" | grep -Eq '^[0-9a-f]{48}$' || {
     echo 'FAIL: installer did not use OpenSSL when byte readers failed' >&2; exit 1;
 }

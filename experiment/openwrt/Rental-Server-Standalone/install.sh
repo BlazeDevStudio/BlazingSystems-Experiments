@@ -59,7 +59,10 @@ if [ -e /www/rental/index.html ] && ! grep -q 'BlazeRental · R281 Test Hub' /ww
 fi
 
 admin_token_hex(){
-  x="$(hexdump -n 24 -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  x="$(openssl rand -hex 24 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq 48 ] || x="$(hexdump -n 24 -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
   [ "${#x}" -eq 48 ] || x="$(od -An -N 24 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
   case "$x" in *[!0-9a-f]* ) return 1;; esac
   [ "${#x}" -eq 48 ] || return 1
@@ -86,8 +89,8 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo 'c5236d9a5464cacd6e79b6650b5798e6816cd9e2e38cbd3d088398af29090aaf  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo '0bd28305479089705637a20fb5a685eef3dfd8d1f91f87664b608246a8fe14b0  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo '59688029b38ea344a3c6cbe6742fc1ff6305419226fe0b47132c36603e522717  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo '001dc03f6ca0298a36872a412fe2b7978566d74e0356f3ca49e8000f7db881ee  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
 echo '56330ee3df791ed402d471cdeb2fa15b1303601f097885cc1ab867c3700d0f40  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 

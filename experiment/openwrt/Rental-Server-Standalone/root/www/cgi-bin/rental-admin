@@ -13,17 +13,23 @@ randhex(){
   n="${1:-12}"
   case "$n" in ''|*[!0-9]*) return 1;; esac
   [ "$n" -ge 1 ] && [ "$n" -le 32 ] || return 1
-  hstatus=0; ostatus=0; olen=0
-  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || hstatus=$?
+  rstatus=0; hstatus=0; ostatus=0; hlen=0; olen=0
+  x="$(openssl rand -hex "$n" 2>/dev/null)" || rstatus=$?
+  rlen="${#x}"
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  if [ "${#x}" -ne $((n*2)) ]; then
+    x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || hstatus=$?
+  fi
   hlen="${#x}"
-  if [ "$hlen" -ne $((n*2)) ]; then
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  if [ "${#x}" -ne $((n*2)) ]; then
     raw="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null)" || ostatus=$?
     x="$(printf '%s' "$raw" | tr -d ' \n')"
     olen="${#x}"
   fi
   case "$x" in *[!0-9a-f]* ) x='';; esac
   [ "${#x}" -eq $((n*2)) ] || {
-    printf 'rental entropy incomplete: requested=%s hexdump_status=%s hexdump_hex=%s od_status=%s od_hex=%s\n' "$n" "$hstatus" "$hlen" "$ostatus" "$olen" >&2
+    printf 'rental entropy incomplete: requested=%s openssl_status=%s openssl_hex=%s hexdump_status=%s hexdump_hex=%s od_status=%s od_hex=%s\n' "$n" "$rstatus" "$rlen" "$hstatus" "$hlen" "$ostatus" "$olen" >&2
     return 1
   }
   printf '%s' "$x"
