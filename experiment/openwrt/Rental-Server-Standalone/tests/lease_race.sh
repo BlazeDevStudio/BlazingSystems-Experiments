@@ -439,4 +439,31 @@ receipt_corrupt="$(run_enroll_sync_fault 0)"
 printf '%s' "$receipt_corrupt" | grep -Fq '"error":"corrupt paid state"' || {
     echo 'FAIL: duplicate enrollment receipt was accepted' >&2; exit 1;
 }
+
+# An admin enrollment token must not be acknowledged after either failed
+# flush. A pre-rename failure must leave the token file unchanged.
+run_create_sync_fault(){
+    printf 'action=enroll_create&label=Test%%20phone&ttl=900\n' |
+        env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
+            BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
+            BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$1" \
+            BLAZE_SYNC_COUNT_FILE="$T/create-sync-count" \
+            HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+            sh "$ROOT/root/www/cgi-bin/rental-admin"
+}
+seed_old
+: > "$T/hub/state/enroll.tsv"
+rm -f "$T/create-sync-count"
+create_pre="$(run_create_sync_fault 1)"
+printf '%s' "$create_pre" | grep -Fq '"ok":false' || {
+    echo 'FAIL: pre-rename enrollment token flush received positive ACK' >&2; exit 1;
+}
+test ! -s "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: pre-rename enrollment token failure changed token file' >&2; exit 1;
+}
+rm -f "$T/create-sync-count"
+create_post="$(run_create_sync_fault 2)"
+printf '%s' "$create_post" | grep -Fq '"ok":false' || {
+    echo 'FAIL: post-rename enrollment token flush received positive ACK' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
