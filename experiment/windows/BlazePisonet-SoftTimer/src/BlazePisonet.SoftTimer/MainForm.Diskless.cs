@@ -20,6 +20,11 @@ public sealed partial class MainForm
     private readonly ListBox _targetdMaps = new() { Height = 95, Width = 850 };
     private readonly Label _targetdStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
     private readonly FogInventoryBinding _targetdBinding = new();
+    private readonly TextBox _lioSshUser = NewText();
+    private readonly TextBox _lioSshIdentity = NewText();
+    private readonly TextBox _lioSshKnownHosts = NewText();
+    private readonly Label _lioSshStatus = new() { AutoSize = true, ForeColor = BlazeTheme.Muted };
+    private readonly FogInventoryBinding _lioSshBinding = new();
     private TargetdSnapshot? _targetdSnapshot;
     private long _targetdSnapshotGeneration = -1;
     private long _targetdSnapshotTick = -1;
@@ -98,7 +103,51 @@ public sealed partial class MainForm
         readiness.Controls.Add(Field("Manual lab iPXE boot script (CHAP prompt)", _disklessScript));
         readiness.Controls.Add(_disklessProfileStatus);
         root.Controls.Add(readiness);
+
+        foreach (var field in new[] { _lioSshUser, _lioSshIdentity, _lioSshKnownHosts })
+            field.TextChanged += (_, _) => InvalidateLioSshStatus();
+        _disklessProfiles.SelectedIndexChanged += (_, _) => InvalidateLioSshStatus();
+        var lioStatus = Card("Linux LIO target status (read only)",
+            "Uses Windows OpenSSH with a pinned host key and an operator-provisioned restricted, forced-command identity. Paths stay in this session. A prepared disabled result is not evidence of CHAP isolation or Windows boot.");
+        lioStatus.Controls.Add(Field("Dedicated SSH account", _lioSshUser));
+        lioStatus.Controls.Add(Field("Private SSH identity file path", _lioSshIdentity));
+        lioStatus.Controls.Add(Field("Pinned known-hosts file path", _lioSshKnownHosts));
+        lioStatus.Controls.Add(Button("INSPECT SELECTED LIO TARGET", async (_, _) => await InspectLioSshAsync()));
+        lioStatus.Controls.Add(_lioSshStatus);
+        root.Controls.Add(lioStatus);
         _pages["Diskless"] = root;
+    }
+
+    private void InvalidateLioSshStatus()
+    {
+        _lioSshBinding.ConnectionEdited();
+        _lioSshStatus.Text = "LIO status has not been verified for the current selection.";
+    }
+
+    private async Task InspectLioSshAsync()
+    {
+        var generation = _lioSshBinding.BeginRefresh();
+        _lioSshStatus.Text = "Inspecting selected lab target...";
+        try
+        {
+            var saved = DisklessProfileRegistry.Validate(_controller.Config.DisklessProfiles);
+            if (_disklessProfiles.SelectedItem is not DisklessClientAssignment selected ||
+                !saved.Contains(selected))
+                throw new InvalidOperationException("Select a currently saved client profile.");
+            var client = new LioSshStatusClient();
+            var state = await client.InspectDisabledAsync(selected.TargetIp,
+                _lioSshUser.Text.Trim(), _lioSshIdentity.Text.Trim(),
+                _lioSshKnownHosts.Text.Trim());
+            if (!_lioSshBinding.CompleteRefresh(generation)) return;
+            _lioSshStatus.Text = $"{selected.ClientLabel}: {state} reported by the pinned SSH host. " +
+                "Live CHAP, isolation and Windows boot still need approved hardware tests.";
+        }
+        catch (Exception ex)
+        {
+            if (_lioSshBinding.Generation != generation) return;
+            _lioSshBinding.ConnectionEdited();
+            _lioSshStatus.Text = "LIO inspection refused: " + ex.Message;
+        }
     }
 
     private FogManagementClient NewFogClient() => new(_fogUrl.Text.Trim(),

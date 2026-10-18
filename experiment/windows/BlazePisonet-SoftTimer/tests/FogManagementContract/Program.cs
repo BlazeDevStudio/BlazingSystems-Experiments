@@ -1,4 +1,5 @@
 using System.Net;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using BlazePisonet.SoftTimer;
@@ -53,6 +54,60 @@ var boot = DisklessBootProfile.Create("pc-01", "10.20.30.40",
     "iqn.2026-10.local.blaze:target-pc-01", "iqn.2026-10.local.blaze:pc-01");
 Check(boot.DhcpRootPath == "iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01",
     "per-client DHCP option 017 root path");
+var sshFiles = Path.Combine(Path.GetTempPath(), "blaze-lio-ssh-contract-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(sshFiles);
+try
+{
+    var identity = Path.Combine(sshFiles, "identity");
+    var knownHosts = Path.Combine(sshFiles, "known_hosts");
+    File.WriteAllText(identity, "test-only-key-file");
+    File.WriteAllText(knownHosts, "10.20.30.40 test-only-host-key");
+    var fakeExecutable = typeof(object).Assembly.Location;
+    ProcessStartInfo? observed = null;
+    var ssh = new LioSshStatusClient(fakeExecutable, (start, _) =>
+    {
+        observed = start;
+        return Task.FromResult(new LioSshProcessResult(0, "PREPARED_DISABLED\n"));
+    });
+    Check(await ssh.InspectDisabledAsync("10.20.30.40", "blaze_lio", identity, knownHosts) ==
+        "PREPARED_DISABLED", "pinned SSH status accepted one exact disabled result");
+    var args = observed!.ArgumentList.ToArray();
+    Check(args.SequenceEqual(new[] { "-F", "none", "-4", "-T", "-n", "-a", "-x",
+        "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
+        "-o", "UserKnownHostsFile=" + knownHosts,
+        "-o", "GlobalKnownHostsFile=none", "-o", "UpdateHostKeys=no",
+        "-o", "IdentitiesOnly=yes", "-o", "IdentityAgent=none",
+        "-o", "PreferredAuthentications=publickey",
+        "-o", "PasswordAuthentication=no", "-o", "KbdInteractiveAuthentication=no",
+        "-o", "ConnectTimeout=5", "-o", "ConnectionAttempts=1",
+        "-i", identity, "-p", "22", "blaze_lio@10.20.30.40", "blaze-lio-status" }),
+        "SSH disables config, prompts and forwarding with fixed remote command");
+    Check(!observed.UseShellExecute && observed.RedirectStandardOutput &&
+        observed.RedirectStandardError && observed.RedirectStandardInput,
+        "SSH arguments cannot be interpreted by a shell");
+    await Reject(() => ssh.InspectDisabledAsync("10.20.30.40", "-oProxyCommand=evil", identity, knownHosts),
+        "SSH account option injection");
+    await Reject(() => ssh.InspectDisabledAsync("-oProxyCommand=evil", "blaze_lio", identity, knownHosts),
+        "SSH host option injection");
+    await Reject(() => ssh.InspectDisabledAsync("10.20.30.40", "blaze_lio", identity,
+        Path.Combine(sshFiles, "missing")), "missing pinned host key file");
+    await Reject(() => ssh.InspectDisabledAsync("10.20.30.40", "blaze_lio",
+        Path.Combine(sshFiles, "missing"), knownHosts), "missing client identity file");
+    foreach (var (exitCode, output) in new[] { (1, "PREPARED_DISABLED\n"),
+        (0, "ACTIVE_LAB_TARGET\n"), (0, "PREPARED_DISABLED\nEXTRA\n"),
+        (0, "PREPARED_DISABLED\n\n"), (0, "PREPARED_DISABLED") })
+    {
+        var invalid = new LioSshStatusClient(fakeExecutable, (_, _) =>
+            Task.FromResult(new LioSshProcessResult(exitCode, output)));
+        await Reject(() => invalid.InspectDisabledAsync("10.20.30.40", "blaze_lio",
+            identity, knownHosts), "non-exact or failed SSH status response");
+    }
+    var disconnected = new LioSshStatusClient(fakeExecutable, (_, _) =>
+        Task.FromException<LioSshProcessResult>(new IOException("lost connection")));
+    await Reject(() => disconnected.InspectDisabledAsync("10.20.30.40", "blaze_lio",
+        identity, knownHosts), "lost SSH response");
+}
+finally { Directory.Delete(sshFiles, recursive: true); }
 Check(boot.IpxeScript == "#!ipxe\nset initiator-iqn iqn.2026-10.local.blaze:pc-01\n" +
     "login || exit 1\n" +
     "sanboot iscsi:10.20.30.40::::iqn.2026-10.local.blaze:target-pc-01\n",

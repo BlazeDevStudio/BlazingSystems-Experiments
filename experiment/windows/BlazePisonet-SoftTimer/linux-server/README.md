@@ -47,6 +47,26 @@ pass. Missing, corrupt, active or incomplete intent and policy drift produce
 no success output. This local command does not open a network management port
 or expose the CHAP secret. Remote SoftTimer management still needs an
 authenticated, provisioned channel and approved noncustomer acceptance.
+For a dedicated approved **lab** server, `blaze_lio_ssh_status.py` is an
+optional forced SSH command for the same local disabled-target check. It reads
+only `/etc/blaze-lio/ssh-status.json`, a root-owned `0600` regular file inside
+a root-owned `0700` directory, with exact absolute `spec`, `secret_file`, and
+`state_dir` paths. It accepts only the SSH original command
+`blaze-lio-status`, runs the existing local inspection as root, prints only
+`PREPARED_DISABLED` on exact success, and never enables a target. Provision a
+dedicated SSH identity with a server-side forced command and `restrict` key
+option, no shell, forwarding or PTY access, under an approved privilege
+policy. The preview does not generate keys, change sshd, grant root access,
+install a listener, or establish the host's identity. The operator must pin
+the host key in a separate known-hosts file and supply its path and the SSH
+identity path to SoftTimer for that session. SoftTimer uses Windows OpenSSH
+with `-F none`, strict host-key checking, public-key-only batch mode, no
+forwarding and a fixed remote command. If OpenSSH Client is absent, the check
+refuses until it is installed. A successful response is a **read-only claim
+from that authenticated server**, not proof of CHAP refusal, persistence or
+Windows boot. See the [OpenSSH client manual](https://man.openbsd.org/ssh.1),
+[server forced-key restrictions](https://man.openbsd.org/sshd.8), and
+[Microsoft's Windows OpenSSH guidance](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview).
 For a dedicated **noncustomer lab only**, `blaze_lio_activate.py` with the same
 spec, secret and state directory plus `--confirm-lab-activation` inspects the
 live LIO target, backing image, ACL/CHAP, LUN mapping, portal and disabled

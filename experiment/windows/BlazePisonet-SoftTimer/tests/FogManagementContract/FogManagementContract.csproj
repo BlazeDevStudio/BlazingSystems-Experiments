@@ -11,5 +11,6 @@
     <Compile Include="../../src/BlazePisonet.SoftTimer/FogInventoryBinding.cs" Link="FogInventoryBinding.cs" />
     <Compile Include="../../src/BlazePisonet.SoftTimer/DisklessBootProfile.cs" Link="DisklessBootProfile.cs" />
     <Compile Include="../../src/BlazePisonet.SoftTimer/DisklessProfileRegistry.cs" Link="DisklessProfileRegistry.cs" />
+    <Compile Include="../../src/BlazePisonet.SoftTimer/LioSshStatus.cs" Link="LioSshStatus.cs" />
   </ItemGroup>
 </Project>
