@@ -1,3 +1,7 @@
+## R281-STANDALONE-0001 — nonsecret reader diagnostic, 2026-10-18 Asia/Manila
+- **Status:** committed_untested, draft PR #107. Source `e973ae72005074a07c89b22f5364fa7d57e3ead3` in standalone `rental-admin` records requested byte count, hexdump/od exit and returned hex lengths to stderr only when entropy refusal occurs; no secret/token bytes logged. Installer and SHA256SUMS pins updated from staged Git blob, local pin/diff checks PASS.
+- **Reason/next:** prior docs-head #39084362606 reproduced intermittent healthy `secure randomness unavailable`. Push synchronized handover, run literal Ubuntu, inspect diagnostic and fix demonstrated cause. PR stays draft; no hardware or production acceptance.
+
 ## R281-STANDALONE-0001 — docs-head intermittent entropy failure, 2026-10-18 Asia/Manila
 - **Status:** failed, investigation required; draft PR #107 head `c52f4c2b2f48c9ad8ffd2f55a8e9a501c00491d3` [literal #39084362606](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39084362606) returned `secure randomness unavailable` during one of ten healthy admin issuances; redacted response in CI proves it. Prior same-source stress head `e5ee7098` #39084229748 passed twice. No production claim.
 - **Next:** capture only command exit status and byte count for hexdump/od, no secret material; fix demonstrated reader failure and rerun exact CI. Keep PR draft, no R281/Android or BlazePwifi release.
