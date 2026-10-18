@@ -1,8 +1,8 @@
 # Linux LIO disk preparation (lab preview)
 
-This server component has its own `v0.1.0-preview.2` source bundle. On a
+This server component has its own `v0.1.0-preview.3` source bundle. On a
 trusted build checkout, `sh build-preview.sh /absolute/output/directory`
-produces a deterministic `BlazePisonet-LIO-v0.1.0-preview.2-linux.tar.gz`
+produces a deterministic `BlazePisonet-LIO-v0.1.0-preview.3-linux.tar.gz`
 and a SHA256SUMS file. Verify the published digest against the reviewed CI
 artifact before extracting it. On an **approved noncustomer Linux lab host**,
 unpack the archive and run `sudo sh install-preview.sh --prefix
@@ -74,6 +74,15 @@ a root-owned `0700` directory, with exact absolute `spec`, `secret_file`, and
 `state_dir` paths. It accepts only the SSH original command
 `blaze-lio-status`, runs the existing local inspection as root, prints only
 `PREPARED_DISABLED` on exact success, and never enables a target. Provision a
+fixed mapping only after local disabled-target inspection: create the empty
+root-owned `/etc/blaze-lio` directory with mode `0700`, then run
+`sudo python3 blaze_lio_configure_ssh_status.py --spec /private/spec.json
+--secret-file /private/chap.txt --state-dir /var/lib/blaze-lio
+--confirm-lab-ssh-status`. All path ancestors must be root-owned and not
+writable by group or others. The command creates a new private config and
+fsyncs it; it refuses any existing or partial config for manual reconciliation.
+It neither prints nor copies CHAP bytes. The optional SSH status command still
+requires a separate provisioned forced key and host-key pin. Provision a
 dedicated SSH identity with a server-side forced command and `restrict` key
 option, no shell, forwarding or PTY access, under an approved privilege
 policy. The preview does not generate keys, change sshd, grant root access,

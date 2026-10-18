@@ -28,11 +28,11 @@ done
   [ "$(stat -c '%u:%a' -- "$PREFIX")" = '0:755' ] || {
     echo 'Installed code directory is missing or unsafe.' >&2; exit 1;
   }
-FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py'
+FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py blaze_lio_configure_ssh_status.py'
 for item in "$PREFIX"/* "$PREFIX"/.[!.]* "$PREFIX"/..?*; do
   [ -e "$item" ] || [ -L "$item" ] || continue
   case "${item##*/}" in
-    README.md|install-preview.sh|uninstall-preview.sh|blaze_lio_prepare.py|blaze_lio_activate.py|blaze_lio_status.py|blaze_lio_ssh_status.py|MANIFEST.sha256) ;;
+    README.md|install-preview.sh|uninstall-preview.sh|blaze_lio_prepare.py|blaze_lio_activate.py|blaze_lio_status.py|blaze_lio_ssh_status.py|blaze_lio_configure_ssh_status.py|MANIFEST.sha256) ;;
     *) echo 'Installed tree has unexpected content; preserving it.' >&2; exit 1;;
   esac
 done

@@ -30,7 +30,7 @@ done
   echo 'Install target exists; preserving it.' >&2; exit 1;
 }
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
-FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py'
+FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py blaze_lio_configure_ssh_status.py'
 [ -f "$ROOT/MANIFEST.sha256" ] && [ ! -L "$ROOT/MANIFEST.sha256" ] || {
   echo 'Package manifest missing or unsafe.' >&2; exit 1;
 }

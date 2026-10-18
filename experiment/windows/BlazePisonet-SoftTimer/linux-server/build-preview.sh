@@ -5,13 +5,13 @@ set -eu
 case "$1" in /*) ;; *) echo 'Output directory must be absolute.' >&2; exit 2;; esac
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
 OUT="$1"
-VERSION='0.1.0-preview.2'
+VERSION='0.1.0-preview.3'
 NAME="BlazePisonet-LIO-v$VERSION-linux"
 TMP="$(mktemp -d)"
 trap 'rm -r -- "$TMP"' EXIT HUP INT TERM
 BUNDLE="$TMP/$NAME"
 mkdir "$BUNDLE"
-FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py'
+FILES='README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py blaze_lio_configure_ssh_status.py'
 for file in $FILES; do
   [ -f "$ROOT/$file" ] && [ ! -L "$ROOT/$file" ] || {
     echo "Missing or unsafe package source: $file" >&2; exit 1;

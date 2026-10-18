@@ -10,7 +10,7 @@ trap 'sudo rm -r -- "$T" "$SECURE"' EXIT HUP INT TERM
 mkdir "$T/one" "$T/two"
 sh "$ROOT/build-preview.sh" "$T/one" >/dev/null
 sh "$ROOT/build-preview.sh" "$T/two" >/dev/null
-NAME='BlazePisonet-LIO-v0.1.0-preview.2-linux'
+NAME='BlazePisonet-LIO-v0.1.0-preview.3-linux'
 cmp "$T/one/$NAME.tar.gz" "$T/two/$NAME.tar.gz" || {
   echo 'FAIL: Linux package is not reproducible' >&2; exit 1;
 }
@@ -20,7 +20,7 @@ tar -xzf "$T/one/$NAME.tar.gz" -C "$T/unpacked"
 PKG="$T/unpacked/$NAME"
 (cd "$PKG" && sha256sum -c MANIFEST.sha256 >/dev/null)
 sudo sh "$PKG/install-preview.sh" --prefix "$SECURE/installed" --confirm-lab-install >/dev/null
-for file in README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py MANIFEST.sha256; do
+for file in README.md install-preview.sh uninstall-preview.sh blaze_lio_prepare.py blaze_lio_activate.py blaze_lio_status.py blaze_lio_ssh_status.py blaze_lio_configure_ssh_status.py MANIFEST.sha256; do
   sudo cmp "$PKG/$file" "$SECURE/installed/$file" || {
     echo "FAIL: installed $file differs from checked package" >&2; exit 1;
   }
