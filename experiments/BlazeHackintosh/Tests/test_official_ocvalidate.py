@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 import plistlib
 import sys
 import tempfile
@@ -29,7 +30,7 @@ class OfficialValidationBridgeTests(unittest.TestCase):
         with (self.oc / "config.plist").open("wb") as stream:
             plistlib.dump({name: {} for name in SECTIONS}, stream)
         with zipfile.ZipFile(self.package, "w", zipfile.ZIP_DEFLATED) as z:
-            z.writestr("Utilities/ocvalidate/ocvalidate.exe", b"x" * 2048)
+            z.writestr("Utilities/ocvalidate/ocvalidate.exe", os.urandom(4096))
 
     def checksum(self):
         return hashlib.sha256(self.package.read_bytes()).hexdigest()

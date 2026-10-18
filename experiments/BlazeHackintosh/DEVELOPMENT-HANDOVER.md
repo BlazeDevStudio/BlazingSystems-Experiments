@@ -92,3 +92,6 @@ Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39
 - Added mock-only trust-model regression tests and CI plans to run the *actual* official checker against an intentionally invalid EFI fixture on Windows before publishing.
 - No automatic downloads in application; CI fetches and verifies the upstream archive only inside disposable GitHub-hosted runner.
 - No hardware boot testing, EFI generation or production claims. Await CI results before describing release v0.1.3 as published.
+
+## v0.1.3 CI regression (run 39081553933)
+First run failed 3/34 tests because mock ZIP contents compressed below the deliberate 1 KiB minimum archive size. Test fixtures now use incompressible random bytes to exercise the real digest gate. No production code trust limits were weakened. New CI required.
