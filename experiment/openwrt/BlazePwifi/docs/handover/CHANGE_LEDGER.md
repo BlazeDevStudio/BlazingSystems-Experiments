@@ -2404,3 +2404,6 @@
 
 ## R281-STANDALONE-0010 — enrollment lock-edge negative, 2026-10-18 Asia/Manila
 - Test-only `6314fb65b064ae501646ae6ef32c505572729fb6` replaces same enrollment ID with different secret during lock wait and requires no device issuance/token consume. Old-code exact Ubuntu pending; draft PR #107 only.
+
+## R281-STANDALONE-0010 — insufficient test corrected, 2026-10-18 Asia/Manila
+- First test sync `357daa3000020a2357d372654621c22d76c39284` [#39096172864](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096172864) unexpectedly PASS on old code, so it was not a valid RED. Test correction `e7f213350497febd8dc412ef7940c870bd207e0c` requires the race marker and exact changed-enrollment error; new exact Ubuntu pending. No source claim yet; draft PR #107 only.
