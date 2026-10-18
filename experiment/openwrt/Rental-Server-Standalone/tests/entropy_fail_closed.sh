@@ -58,12 +58,14 @@ good_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=
     env -u HTTP_X_BLAZE_RENTAL_ADMIN BLAZE_RENTAL_BASE="$T/admin" \
         REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
 printf '%s' "$good_admin_response" | grep -Fq '"ok":true' || {
+    printf '%s\n' "$good_admin_response" | sed 's/"token":"[^"]*"/"token":"REDACTED"/' >&2
     echo 'FAIL: healthy entropy did not issue enrollment' >&2; exit 1;
 }
 good_app_response="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$eid" "$nonce" "$sig" |
     env BLAZE_RENTAL_BASE="$T/app" REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental")"
 printf '%s' "$good_app_response" | grep -Fq '"ok":true' || {
+    printf '%s\n' "$good_app_response" | sed 's/"device_secret":"[^"]*"/"device_secret":"REDACTED"/' >&2
     echo 'FAIL: healthy entropy did not enroll device' >&2; exit 1;
 }
 echo 'Standalone rental entropy failure refusal PASS'
