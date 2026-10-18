@@ -63,8 +63,14 @@ case "$action" in
     while IFS="$(printf '\t')" read -r did secret lease label last; do
       [ -n "$did" ] || continue
       remaining=0; [ "${lease:-0}" -gt "$ts" ] 2>/dev/null && remaining=$((lease-ts))
+      seen="$last"
+      if [ -f "$STATE/seen-$did" ] && [ ! -L "$STATE/seen-$did" ]; then
+        seen="$(cat "$STATE/seen-$did" 2>/dev/null)" || seen="$last"
+      fi
+      case "$seen" in ''|*[!0-9]*) seen=0;; esac
+      [ "${#seen}" -le 10 ] || seen=0
       [ "$first" = 1 ] || out="$out,"; first=0
-      out="$out{\"device_id\":\"$did\",\"label\":\"$(json_escape "$label")\",\"lease_until\":${lease:-0},\"remaining\":$remaining,\"last_seen\":${last:-0}}"
+      out="$out{\"device_id\":\"$did\",\"label\":\"$(json_escape "$label")\",\"lease_until\":${lease:-0},\"remaining\":$remaining,\"last_seen\":$seen}"
     done < "$DEVICES"
     out="$out]"; json "{\"ok\":true,\"devices\":$out,\"server_time\":$ts}"
     ;;

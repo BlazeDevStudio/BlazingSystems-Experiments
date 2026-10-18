@@ -78,6 +78,12 @@ write_policy_default(){
   did="$1"; grep -q "^$did$(printf '\t')" "$POLICY" 2>/dev/null && return 0
   printf '%s\t*\t-\t-\t4096\n' "$did" >> "$POLICY"; chmod 600 "$POLICY"; sync 2>/dev/null || true
 }
+record_seen(){
+  seen_tmp="$STATE/.seen-$1.$$"
+  printf '%s\n' "$2" > "$seen_tmp" || return 1
+  chmod 600 "$seen_tmp" 2>/dev/null || true
+  mv "$seen_tmp" "$STATE/seen-$1" || { rm -f "$seen_tmp"; return 1; }
+}
 
 [ "${REQUEST_METHOD:-GET}" = POST ] || fail "POST required"
 action="$(param action)"; nonce="$(param nonce)"; sig="$(param sig)"; ts="$(now)"
@@ -119,7 +125,7 @@ case "$action" in
     current_secret="$(printf '%s' "$line" | cut -f2)"
     [ "$current_secret" = "$secret" ] || { unlock; fail "device changed"; }
     lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"
-    write_device "$did" "$secret" "${lease:-0}" "$label" "$ts" || { unlock; fail "storage or randomness unavailable"; }
+    record_seen "$did" "$ts" || true
     unlock
     p="$(policy_line "$did")"; allowed="$(printf '%s' "$p" | cut -f2)"; salt="$(printf '%s' "$p" | cut -f3)"; hash="$(printf '%s' "$p" | cut -f4)"; rounds="$(printf '%s' "$p" | cut -f5)"
     [ "$salt" = '-' ] && salt=""; [ "$hash" = '-' ] && hash=""
