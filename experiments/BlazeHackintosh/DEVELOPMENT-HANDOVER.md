@@ -101,3 +101,20 @@ All 34 unit tests passed on Linux and Windows and official release ZIP SHA-256 v
 
 ## v0.1.3 upstream version discrepancy (run 39081701539)
 Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned exit 4294967295, printed the **exact 1.0.8 banner**, followed by `Failed to read --version`. Added narrow banner-based fallback ONLY if archive is already hash-verified, plus regression tests for 1.0.8 accepted and 1.0.7 rejected. Official schema-validation smoke rerun required. No release claim yet.
+
+
+## Verified v0.1.3-alpha.1 release checkpoint — 2026-10-18
+- Source release commit: `a672a926590fe69c82f8c8719b18421b5773da4e`
+- PR remains draft #105, isolated in branch `blazehackintosh-v0.1.0-foundation`.
+- Published scanner/validator-only experimental GitHub prerelease:
+  https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.3-alpha.1
+- Windows toolkit EXE SHA-256: `0f0b26726b7c6d71a265cdc3f4be0d2fa3975f6319170c8f88fd49a3604f66af`.
+- Offline browser UI ZIP SHA-256: `0ff549f02dce3d6becc3522c717f9e8f9049aa71cc65aa1da894c73c51568b13`.
+- Verified CI workflow: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39081813252
+- **36/36 unit tests passed on Linux and Windows.**
+- GitHub Actions downloaded official OpenCore 1.0.8 RELEASE ZIP, verified published SHA-256, executed real version-matched official ocvalidate against deliberately invalid synthetic EFI, and confirmed rejection.
+- After PyInstaller packaging, the Windows EXE repeated the same real official validation smoke test and passed.
+- Project does not distribute OpenCore binaries or macOS. User must independently acquire upstream licensed components.
+- No actual EFI generator; no verified config on physical hardware; no USB IMG, live ISO, multi-boot migration or disk-write workflows. Experimental toolkit only.
+
+**Next development:** evidence-scoped hardware manifests and per-component kext/ACPI requirements, generator architecture with exact OpenCore 1.0.8 Sample.plist, and safe output-directory-only EFI assembly followed by both structural and official validation. Before any IMG or internal-disk writing, add backup/rollback and disposable virtual-disk tests.
