@@ -2502,3 +2502,10 @@
 - Safety/rollback: refuse writes when any required state file is missing, nonregular or symlinked; installer initializes only a fresh state directory and must refuse partial existing state. Revert isolated branch only if demonstrated regression; no production deployment or antirollback claim.
 - NEXT ACTION: add real missing-file CGI negatives to `tests/lease_race.sh`, prove old-code RED at literal Ubuntu HEAD, implement runtime/installer guard, synchronize handover and run literal workflow.
 
+
+## R281-STANDALONE-0015 — 2026-10-19 Asia/Manila, P0, committed_untested
+
+- Test commit c9a03ed7, handover f9dcbfc8015e8a29c68ace293e3bb595256decf3: literal Ubuntu #39151512514 FAILED intended missing-paid-authority assertion after prior tests passed. Old rental-admin silently recreated lost devices.tsv and accepted token issuance. This is demonstrated source defect, not hardware proof.
+- Source commit 53d17201033a9ac7aa1cc42de5e4a050073e742b: CGI startup and lock-edge guards, installer fresh-only initialization, non-symlink regular paid/token files, fixture updates, state preflight test and pinned hashes. Exact corrected CI pending; no customer state, release, keys or devices touched.
+- Rollback/data impact: isolated draft PR #107 only; previous release unchanged. A partially installed or damaged state now requires operator recovery rather than silent recreation. Complete directory rollback still needs independent witness.
+- NEXT ACTION: push synchronized source+handover, inspect literal Ubuntu workflow and repair any demonstrated failures; update draft PR without claiming production readiness.
