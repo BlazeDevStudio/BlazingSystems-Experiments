@@ -65,3 +65,9 @@ See [docs/README.md](docs/README.md), [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.m
 All graphical preview assets remain locally bundled and licensed as described in `LICENSES/`.
 
 - [v0.1.3-alpha.1 toolkit — with optional official, digest-pinned OpenCore 1.0.8 ocvalidate](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.3-alpha.1): 36 Linux and 36 Windows tests passed, plus actual upstream-checker rejection of intentionally invalid EFI (both source and Windows EXE); this remains experimental, **not a macOS installer**.
+
+## Latest verified prerelease
+
+- [v0.1.4-alpha.1 Windows toolkit and offline UI](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.4-alpha.1) — restricted Haswell EFI research candidate staging, optional official 1.0.8 ocvalidate, Windows executable, SHA-256 manifest.
+- [Validated GitHub Actions run](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39091108747) — 48 tests on each platform, Windows CLI compiled and smoke-tested, real official OpenCore 1.0.8 validator accepted synthetic reference config generated with fake third-party components.
+- **NOT A READY-TO-BOOT EFI**: real component provenance, physical boot and supported macOS installation remain untested.

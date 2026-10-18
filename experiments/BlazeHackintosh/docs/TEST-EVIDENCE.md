@@ -85,3 +85,32 @@ Unit tests mock upstream execution; separate Windows CI must fetch pinned offici
 
 ## v0.1.4 research builder (pending CI)
 Additional unit regression cases exercise explicit acknowledgement, fail-closed CPU/GPU/firmware gates, input file types, symlink refusal, destination non-overwrite, temporary-file cleanup and research classification. Windows Actions will use exact upstream RELEASE asset to build a candidate with deliberately fake kext/ACPI/HFS components and run real official ocvalidate. The fixtures are intentionally non-bootable and must NEVER be uploaded as a ready-to-use EFI.
+
+
+## Verified v0.1.4-alpha.1 release — 2026-10-18
+- Source release commit: `d04487c43b6e8287b0166ea5bf032e2e02beabe9`.
+- Actual published prerelease: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.4-alpha.1
+- Windows EXE `BlazeHackintosh-Toolkit.exe` (9,219,416 bytes), SHA-256:
+  `a8c9b7606c005ee5d070b720aab1b0d5d5619fb8cb40b3badc2aa20af4af706e`.
+- Offline browser UI ZIP (12,849 bytes), SHA-256:
+  `1a8e6aeed52db707b6cd8e3ae2dd3f75557d0c0a5cc2dfe9061c4ff2f74b80a8`.
+- Windows Action artifact ID 12123006774, containing the compiled CLI toolkit.
+- Verified validation workflow: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39091108747
+- **48 Python unit tests passed on Linux; 48 passed on Windows.**
+- Real upstream OpenCore 1.0.8 RELEASE ZIP SHA-256 gate passed; genuine `ocvalidate`
+  executed and rejected an intentionally invalid fixture.
+- Genuine `ocvalidate` accepted the constrained Haswell reference configuration
+  generated from the official 1.0.8 Sample.plist with synthetic kext/ACPI/HFS payloads.
+  Both Python source and PyInstaller-packaged Windows EXE completed the staging smoke
+  test. The synthetic payloads are **NOT real EFI boot components** and were not published.
+- Operator-supplied actual kext/SSDT/HFS provenance, genuine SMBIOS identity,
+  GPU framebuffer behavior, motherboard firmware compatibility, macOS installation,
+  physical boot and data-safety on actual hardware remain UNVERIFIED.
+- Draft PR #105 remains unmerged. No production, installer IMG, EFI migration,
+  ESP write or boot-verified architecture release is claimed.
+
+Next: enforce independently trusted component manifest hashes/licensing for all
+user-supplied kext/ACPI/HFS files, then add compatible ACPI/device evidence checks,
+real hardware trials and readback recovery tests before considering USB images.
+
+CI staging validates the file layout and OpenCore schema, **not** UEFI execution or actual kext/SSDT functionality.

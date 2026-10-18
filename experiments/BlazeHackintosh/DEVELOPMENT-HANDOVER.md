@@ -128,3 +128,30 @@ Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned e
 
 ## v0.1.4 CI regression 39091033215
 48 Linux tests passed; Windows failed 8 new builder tests because `Path.resolve() != Path.absolute()` rejected an ordinary Windows runner temporary parent directory (path alias/canonicalization difference), before checking real input files. Guard now requires an existing non-symlink parent and a NEW BlazeEFI-* child, without invalid canonical-string equality. Re-run mandatory; no release claim yet.
+
+
+## Verified v0.1.4-alpha.1 release — 2026-10-18
+- Source release commit: `d04487c43b6e8287b0166ea5bf032e2e02beabe9`.
+- Actual published prerelease: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.4-alpha.1
+- Windows EXE `BlazeHackintosh-Toolkit.exe` (9,219,416 bytes), SHA-256:
+  `a8c9b7606c005ee5d070b720aab1b0d5d5619fb8cb40b3badc2aa20af4af706e`.
+- Offline browser UI ZIP (12,849 bytes), SHA-256:
+  `1a8e6aeed52db707b6cd8e3ae2dd3f75557d0c0a5cc2dfe9061c4ff2f74b80a8`.
+- Windows Action artifact ID 12123006774, containing the compiled CLI toolkit.
+- Verified validation workflow: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39091108747
+- **48 Python unit tests passed on Linux; 48 passed on Windows.**
+- Real upstream OpenCore 1.0.8 RELEASE ZIP SHA-256 gate passed; genuine `ocvalidate`
+  executed and rejected an intentionally invalid fixture.
+- Genuine `ocvalidate` accepted the constrained Haswell reference configuration
+  generated from the official 1.0.8 Sample.plist with synthetic kext/ACPI/HFS payloads.
+  Both Python source and PyInstaller-packaged Windows EXE completed the staging smoke
+  test. The synthetic payloads are **NOT real EFI boot components** and were not published.
+- Operator-supplied actual kext/SSDT/HFS provenance, genuine SMBIOS identity,
+  GPU framebuffer behavior, motherboard firmware compatibility, macOS installation,
+  physical boot and data-safety on actual hardware remain UNVERIFIED.
+- Draft PR #105 remains unmerged. No production, installer IMG, EFI migration,
+  ESP write or boot-verified architecture release is claimed.
+
+Next: enforce independently trusted component manifest hashes/licensing for all
+user-supplied kext/ACPI/HFS files, then add compatible ACPI/device evidence checks,
+real hardware trials and readback recovery tests before considering USB images.
