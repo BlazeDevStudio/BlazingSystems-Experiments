@@ -54,13 +54,17 @@ test ! -s "$T/app/state/devices.tsv" || {
     echo 'FAIL: device written after entropy failure' >&2; exit 1;
 }
 
-good_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
-    env -u HTTP_X_BLAZE_RENTAL_ADMIN BLAZE_RENTAL_BASE="$T/admin" \
-        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
-printf '%s' "$good_admin_response" | grep -Fq '"ok":true' || {
-    printf '%s\n' "$good_admin_response" | sed 's/"token":"[^"]*"/"token":"REDACTED"/' >&2
-    echo 'FAIL: healthy entropy did not issue enrollment' >&2; exit 1;
-}
+i=0
+while [ "$i" -lt 10 ]; do
+    good_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
+        env -u HTTP_X_BLAZE_RENTAL_ADMIN BLAZE_RENTAL_BASE="$T/admin" \
+            REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+    printf '%s' "$good_admin_response" | grep -Fq '"ok":true' || {
+        printf '%s\n' "$good_admin_response" | sed 's/"token":"[^"]*"/"token":"REDACTED"/' >&2
+        echo 'FAIL: healthy entropy did not issue enrollment' >&2; exit 1;
+    }
+    i=$((i+1))
+done
 good_app_response="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$eid" "$nonce" "$sig" |
     env BLAZE_RENTAL_BASE="$T/app" REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental")"
