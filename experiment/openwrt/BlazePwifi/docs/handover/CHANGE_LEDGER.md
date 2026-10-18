@@ -2718,3 +2718,9 @@
 - Actual Windows OpenSSH local ssh -G accepted -F none, pinned known-hosts, public-key-only batch and no forwarding flags; this is a syntax check, not an authenticated connection. Literal Windows/Linux CI still pending.
 - Rollback/limits: isolated preview revert; server forced-command identity and host key must be operator-provisioned. The status can report only the existing prepared-disabled LIO inspection and cannot activate target, prove CHAP/ACL isolation, Windows boot, physical durability or financial authority.
 - NEXT ACTION: push synchronized docs checkpoint, run literal Windows/Linux workflow, fix demonstrated failures and update PR #90 with exact result; no release.
+
+## PISONET-0029 — 2026-10-19 Asia/Manila, P1, failed then test-corrected
+
+- Source 4cf56465af40d7e1ce3c4973dcfa8ff763b4d55f, synchronized e1eeaaf6e1a56b1fca0b9230acf0f4cddd37865a: literal #39152351223 handover SUCCESS, Ubuntu LIO SUCCESS, Windows FogManagementContract FAILED compile CS0136 at Program.cs:74 due test-local args conflicting with top-level args. Windows build/installer skipped; no runtime evidence from that job.
+- Test-only correction 61aa5c53b2d8694bdc562c3093ad30c0d2c9121e renames local variable sshArgs. Runtime source unchanged; exact corrected CI pending. No customer state or key touched.
+- NEXT ACTION: push docs checkpoint and run literal Windows/Linux workflow; inspect compiled contract, strict Windows build and NSIS before any validation claim. Forced server identity and physical acceptance still external.
