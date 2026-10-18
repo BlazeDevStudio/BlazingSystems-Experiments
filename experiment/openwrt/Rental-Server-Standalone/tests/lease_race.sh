@@ -574,4 +574,35 @@ cmp -s "$T/cap-devices-before" "$T/hub/state/devices.tsv" || {
 cmp -s "$T/cap-phone-token-before" "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: phone receipt overflow consumed token' >&2; exit 1;
 }
+# Startup must never reconstruct a lost paid or token authority file.
+cp "$T/hub/state/devices.tsv" "$T/missing-devices-snapshot"
+cp "$T/hub/state/enroll.tsv" "$T/missing-enroll-snapshot"
+rm "$T/hub/state/devices.tsv"
+missing_devices="$(printf 'action=enroll_create&label=Test%%20phone&ttl=900&request_id=%032x\n' 999 |
+    env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
+        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$missing_devices" | grep -Fq 'authority state missing or unsafe' || {
+    echo 'FAIL: missing paid authority was accepted or silently recreated' >&2; exit 1;
+}
+test ! -e "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: missing paid authority was recreated' >&2; exit 1;
+}
+cmp -s "$T/missing-enroll-snapshot" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: missing paid authority changed token state' >&2; exit 1;
+}
+cp "$T/missing-devices-snapshot" "$T/hub/state/devices.tsv"
+rm "$T/hub/state/enroll.tsv"
+missing_tokens="$(printf 'action=enroll_create&label=Test%%20phone&ttl=900&request_id=%032x\n' 998 |
+    env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
+        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$missing_tokens" | grep -Fq 'authority state missing or unsafe' || {
+    echo 'FAIL: missing token authority was accepted or silently recreated' >&2; exit 1;
+}
+test ! -e "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: missing token authority was recreated' >&2; exit 1;
+}
+cmp -s "$T/missing-devices-snapshot" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: missing token authority changed paid state' >&2; exit 1;
+}
+cp "$T/missing-enroll-snapshot" "$T/hub/state/enroll.tsv"
 echo 'Standalone rental lock-edge lease refusal PASS'
