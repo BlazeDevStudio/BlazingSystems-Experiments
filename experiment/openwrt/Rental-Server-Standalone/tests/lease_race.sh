@@ -351,6 +351,8 @@ enroll_race="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$EN
         BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=enroll_replace \
         BLAZE_TEST_EID="$EID" BLAZE_TEST_REPLACEMENT_SECRET="$replacement_secret" \
         BLAZE_TEST_EXPIRY="$EXPIRY" BLAZE_TEST_RACE_MARKER="$T/enroll-race-hit" \
+        BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT=0 \
+        BLAZE_SYNC_COUNT_FILE="$T/enroll-race-sync-count" \
         REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental")"
 test -f "$T/enroll-race-hit" || {
