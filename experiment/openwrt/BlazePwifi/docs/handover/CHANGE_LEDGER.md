@@ -2439,3 +2439,8 @@
 - **Status:** in_progress, isolated fix/rental-standalone-entropy, draft PR #107. Prior exact docs head df87da5437c639b472cff1391e55a7aa255ba3e3 Ubuntu #39117750861 SUCCESS. Source inspection found rental-admin enroll_create appends token without writer lock, ignores sync failure and sends positive ACK. No current test of this path's flush failure.
 - **Hazard/rollback:** lost durability could hand out a token not present after power loss; no physical proof or customer state. Revert bounded isolated source if necessary; do not release.
 - **NEXT:** add fault tests for first and second sync in actual admin enroll_create, synchronize handover and prove old-code RED, then implement checked atomic issuance.
+
+## R281-STANDALONE-0012 — 2026-10-18 Asia/Manila, P1 old-code token issuance test
+- **Status:** committed_untested. Test-only cd89961cef71baea28b9e76c07cc9c92178d3d87 adds actual admin enroll_create first/second sync fault negative, no source changed; isolated branch fix/rental-standalone-entropy and draft PR #107. Exact Ubuntu RED pending.
+- **Hazard/rollback:** may expose old positive ACK after failed token flush; no customer data/device. Test revertable if incorrect; no production or physical durability claim.
+- **NEXT:** push synchronized docs head, run literal Ubuntu rental-standalone-entropy workflow, inspect intended failure then implement locked atomic checked token write.
