@@ -2479,3 +2479,8 @@
 - **Status:** in_progress, isolated fix/rental-standalone-entropy, draft PR #107. Prior exact docs head 6fe3ccad55371a4866522480f00988f06e9e2af2 Ubuntu #39150563845 SUCCESS. Actual @op/@enroll/@create receipt files grow without bound; deleting receipt identities without an independent high-water witness could re-enable replay. Plan checked per-file capacity refusal before authoritative rename, preserve all receipts.
 - **Hazard/rollback:** fail-closed at capacity prevents new paid/admin operations until operator capacity resolution; does not make long-term retention solved or constitute independent antirollback/physical durability. Preview source revertable; no customer data.
 - **NEXT:** add actual over-limit CGI fault test with byte-identical state, prove old-code RED, then guard paid/enrollment writers and run literal Ubuntu. No production release.
+
+## R281-STANDALONE-0014 — 2026-10-19 Asia/Manila, P1 old-code capacity test
+- **Status:** committed_untested, draft PR #107 on isolated fix/rental-standalone-entropy. Test-only ef22ec4051c3c782adb58da982a1eeeb9f6ad2c2 asserts 128-byte test ceiling refusal for real paid grant, admin token creation and signed phone enrollment, byte-identical authority files and unused phone token. Current writers ignore ceiling; literal Ubuntu RED pending.
+- **Hazard/rollback:** no receipt deletion or synthetic witness; threshold refusal could stop new paid operations and demands operator capacity recovery, not production-ready long-term compaction. Test-only change revertable, no customer state.
+- **NEXT:** push synchronized checkpoint, inspect exact Ubuntu failure, implement checked maximum before authoritative rename in all three writers; rerun literal CI.
