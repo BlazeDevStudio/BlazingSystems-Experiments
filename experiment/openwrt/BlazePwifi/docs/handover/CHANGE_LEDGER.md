@@ -2763,3 +2763,8 @@
 - **Status:** failed_then_corrected_untested; **priority:** P1; PR #90. Literal head a31e9cc4a72424d642b211488a432f6ef3ba023b push #39154922834 COMPLETED FAILURE before any jobs due malformed YAML indentation at package step name. No package or Windows test executed.
 - **Fix:** source-only 56843f6cbe59fd24fc1338cf98d42b8980ce3929 restores step indentation in .github/workflows/blazepisonet-softtimer-release.yml. No LIO, SSH, image, financial or customer mutation. Corrected CI pending.
 - **NEXT ACTION:** commit synchronized handover, push corrected exact SHA, require Ubuntu package uninstall and Windows strict build/NSIS success; if red inspect named step and fix demonstrated error only.
+
+## PISONET-0031 — Ubuntu package fixture path refusal, 2026-10-19 Asia/Manila
+- **Status:** failed_then_test_corrected_untested; **priority:** P1; PR #90. Literal 8eb581f36f5e5e860eab6a5b4749aeb995678d5f #39155009502: handover and 27 Ubuntu LIO tests SUCCESS, package contract FAILED at first install with exact Install path has a non-root or writable ancestor. Windows job in progress at first inspection; no package install/uninstall proof. Earlier YAML parse failure #39154922834 retained.
+- **Test correction:** df88b817e8955f492621878b22f99a4f47ea37a0 moves privileged disposable install parent from /opt to /root and runs postconditions via sudo. No production installer or uninstaller changed. Exact reason for /opt ancestor refusal was not independently measured; /root test outcome pending.
+- **NEXT ACTION:** synchronize handover, push and require literal Windows/Linux package install/uninstall and NSIS result; fix demonstrated failure only. No approved host, hardware acceptance, paid v2 or public release.
