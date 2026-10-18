@@ -1,8 +1,8 @@
 # Linux LIO disk preparation (lab preview)
 
-This server component has its own `v0.1.0-preview.1` source bundle. On a
+This server component has its own `v0.1.0-preview.2` source bundle. On a
 trusted build checkout, `sh build-preview.sh /absolute/output/directory`
-produces a deterministic `BlazePisonet-LIO-v0.1.0-preview.1-linux.tar.gz`
+produces a deterministic `BlazePisonet-LIO-v0.1.0-preview.2-linux.tar.gz`
 and a SHA256SUMS file. Verify the published digest against the reviewed CI
 artifact before extracting it. On an **approved noncustomer Linux lab host**,
 unpack the archive and run `sudo sh install-preview.sh --prefix

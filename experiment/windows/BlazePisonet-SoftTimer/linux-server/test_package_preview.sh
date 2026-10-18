@@ -10,7 +10,7 @@ trap 'sudo rm -r -- "$T" "$SECURE"' EXIT HUP INT TERM
 mkdir "$T/one" "$T/two"
 sh "$ROOT/build-preview.sh" "$T/one" >/dev/null
 sh "$ROOT/build-preview.sh" "$T/two" >/dev/null
-NAME='BlazePisonet-LIO-v0.1.0-preview.1-linux'
+NAME='BlazePisonet-LIO-v0.1.0-preview.2-linux'
 cmp "$T/one/$NAME.tar.gz" "$T/two/$NAME.tar.gz" || {
   echo 'FAIL: Linux package is not reproducible' >&2; exit 1;
 }

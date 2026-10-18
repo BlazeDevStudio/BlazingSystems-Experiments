@@ -62,7 +62,7 @@ jobs:
       - name: Upload Linux LIO preview package
         uses: actions/upload-artifact@v4
         with:
-          name: BlazePisonet-LIO-v0.1.0-preview.1-linux
+          name: BlazePisonet-LIO-v0.1.0-preview.2-linux
           path: release-lio/*
           if-no-files-found: error
 

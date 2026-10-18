@@ -5,7 +5,7 @@ set -eu
 case "$1" in /*) ;; *) echo 'Output directory must be absolute.' >&2; exit 2;; esac
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
 OUT="$1"
-VERSION='0.1.0-preview.1'
+VERSION='0.1.0-preview.2'
 NAME="BlazePisonet-LIO-v$VERSION-linux"
 TMP="$(mktemp -d)"
 trap 'rm -r -- "$TMP"' EXIT HUP INT TERM
