@@ -70,3 +70,5 @@ v0.1.3-preview.1 OpenSSL entropy addendum (2026-10-18 Manila)
 - Source c44b741f, synced b5acadf9: literal Ubuntu #39085021978, #39085068843, #39085071424 SUCCESS; preview only. No hardware or lease crash atomicity proof.
 
 - R281-STANDALONE-0003 test e39c1e64, synced bdcf7d04 literal Ubuntu #39086623050 expected RED: admin lost newer lease at lock edge; checksum/syntax/entropy passed. Source 16fff7b4 moves read under lock and refuses revoked phone, exact retest pending.
+
+- R281-STANDALONE-0003 source 16fff7b4, synced 856c2687: literal Ubuntu #39086946962, #39086991742, #39086993426 all SUCCESS at exact SHA. Admin/phone status preserve newer lease and refuse revoke under synthetic lock-edge writer; no physical durability claim.
