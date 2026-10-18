@@ -280,4 +280,17 @@ printf '%s' "$duplicate" | grep -Fq '"ok":false' || {
 cmp -s "$T/duplicate-receipt-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: duplicate receipt request changed financial state' >&2; exit 1;
 }
+
+# A different damaged receipt must quarantine the whole paid state. Looking up
+# only the new request ID would allow another grant over corrupt history.
+seed_old
+printf '@op\t%s\t%s\tadd_time\t600\tbroken\n' "$RID" "$DID" >> "$T/hub/state/devices.tsv"
+cp "$T/hub/state/devices.tsv" "$T/corrupt-receipt-before"
+corrupt_other="$(run_other_paid add_time 600 '33333333333333333333333333333333')"
+printf '%s' "$corrupt_other" | grep -Fq '"ok":false' || {
+    echo 'FAIL: paid grant accepted unrelated corrupt receipt' >&2; exit 1;
+}
+cmp -s "$T/corrupt-receipt-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: paid grant rewrote unrelated corrupt receipt' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
