@@ -466,4 +466,24 @@ create_post="$(run_create_sync_fault 2)"
 printf '%s' "$create_post" | grep -Fq '"ok":false' || {
     echo 'FAIL: post-rename enrollment token flush received positive ACK' >&2; exit 1;
 }
+: > "$T/hub/state/enroll.tsv"
+printf 'bad-token-row\n' > "$T/hub/state/enroll.tsv"
+cp "$T/hub/state/enroll.tsv" "$T/create-corrupt-before"
+rm -f "$T/create-sync-count"
+create_corrupt="$(run_create_sync_fault 0)"
+printf '%s' "$create_corrupt" | grep -Fq '"error":"corrupt enrollment state"' || {
+    echo 'FAIL: corrupt enrollment token state was accepted' >&2; exit 1;
+}
+cmp -s "$T/create-corrupt-before" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: corrupt enrollment token state was rewritten' >&2; exit 1;
+}
+: > "$T/hub/state/enroll.tsv"
+rm -f "$T/create-sync-count"
+create_ok="$(run_create_sync_fault 0)"
+printf '%s' "$create_ok" | grep -Fq '"ok":true' || {
+    echo 'FAIL: healthy enrollment token issuance refused' >&2; exit 1;
+}
+awk -F '\t' 'NF==4 {n++} END {exit n==1?0:1}' "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: healthy enrollment token was not saved exactly once' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
