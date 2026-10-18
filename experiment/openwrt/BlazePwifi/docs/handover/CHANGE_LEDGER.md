@@ -2389,3 +2389,6 @@
 
 ## R281-STANDALONE-0008 — old-code RED and validator source, 2026-10-18 Asia/Manila
 - Synchronized test head `8d17c6dbfd9e932d763c23a3a10153d059397464` [literal #39095417853](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095417853) FAILED intended unrelated corrupt-receipt paid grant. Source `08dc95b5d2f8981c9c916ca768777ea943b680d4` adds under-lock whole saved paid-state validation, duplicate-device negative, canonical bounded values and updated CGI pins. Exact corrected CI pending; draft PR #107 only.
+
+## R281-STANDALONE-0008 — validator exact CI, 2026-10-18 Asia/Manila
+- Source `08dc95b5d2f8981c9c916ca768777ea943b680d4` synchronized `f622f8b707f3d15e06c3ff992744134bfcdca574` [literal Ubuntu #39095543787](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095543787) COMPLETED SUCCESS, including saved-state corruption and duplicate-device refusal, prior lost-ACK/reload contracts, pins and entropy. Final docs successor classifier pending; no physical/production acceptance. Draft PR #107.
