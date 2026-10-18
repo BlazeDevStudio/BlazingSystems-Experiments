@@ -304,4 +304,31 @@ printf '%s' "$duplicate_device" | grep -Fq '"ok":false' || {
 cmp -s "$T/duplicate-device-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: paid grant rewrote duplicate saved device' >&2; exit 1;
 }
+
+# Enrollment is another real writer of devices.tsv. It must preserve the
+# corrupted paid state for inspection and leave the enrollment token unused.
+seed_old
+printf '@op\t%s\t%s\tadd_time\t600\tbroken\n' "$RID" "$DID" >> "$T/hub/state/devices.tsv"
+cp "$T/hub/state/devices.tsv" "$T/enroll-corrupt-before"
+EID='abcdef123456'
+ESECRET='0123456789abcdef0123456789abcdef0123'
+EXPIRY=$((NOW+900))
+printf '%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$EXPIRY" 'Test phone' > "$T/hub/state/enroll.tsv"
+cp "$T/hub/state/enroll.tsv" "$T/enroll-before"
+ENONCE='abcdefgh'
+ETOKEN="$EID.$ESECRET"
+ESIG="$(printf 'enroll|%s|%s' "$ENONCE" "$ETOKEN" |
+    openssl dgst -sha256 -hmac "$ETOKEN" | awk '{print $NF}')"
+enroll_corrupt="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$ENONCE" "$ESIG" |
+    env BLAZE_RENTAL_BASE="$T/hub" REQUEST_METHOD=POST \
+        sh "$ROOT/root/www/cgi-bin/rental")"
+printf '%s' "$enroll_corrupt" | grep -Fq '"ok":false' || {
+    echo 'FAIL: enrollment wrote through corrupt paid state' >&2; exit 1;
+}
+cmp -s "$T/enroll-corrupt-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: enrollment changed corrupt paid state' >&2; exit 1;
+}
+cmp -s "$T/enroll-before" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: corrupt-state enrollment consumed token' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
