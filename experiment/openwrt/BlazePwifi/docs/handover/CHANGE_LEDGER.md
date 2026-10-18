@@ -2459,3 +2459,8 @@
 - **Status:** in_progress, isolated fix/rental-standalone-entropy, draft PR #107. Prior exact docs head afe1d5761925edb9f6c5d043bca87cf2dc5c9c20 Ubuntu #39122027206 SUCCESS. Source inspection: checked admin enroll_create has no request ID/receipt and dashboard Create has no pending ID; uncertain post-rename response can lead to a second live token on retry.
 - **Hazard/rollback:** duplicated live tokens permit extra enrollment; design must persist nonsecret request ID, preserve exact token only while active, refuse changed/used request, not expose credentials in browser storage. Isolated preview rollback; no customer state or physical evidence.
 - **NEXT:** commit real CGI/UI lost-response fault tests, synchronize handover and verify old-code RED; then add same-file receipt and browser pending retry.
+
+## R281-STANDALONE-0013 — 2026-10-19 Asia/Manila, P1 old-code test
+- **Status:** committed_untested, draft PR #107 on isolated fix/rental-standalone-entropy. Test-only 036de5c89417be095280c6790806607f3256a62a adds real admin post-rename flush lost ACK and same request ID retry; requires original token and one live token. Existing CGI ignores request ID; literal Ubuntu RED pending.
+- **Hazard/rollback:** duplicate live token issuance after uncertain result; test changes no customer data, revertable. No physical durability or production claim.
+- **NEXT:** push synchronized handover, run exact Ubuntu workflow, inspect intended duplicate then implement same-file request receipt and browser pending ID.
