@@ -443,7 +443,7 @@ printf '%s' "$receipt_corrupt" | grep -Fq '"error":"corrupt paid state"' || {
 # An admin enrollment token must not be acknowledged after either failed
 # flush. A pre-rename failure must leave the token file unchanged.
 run_create_sync_fault(){
-    printf 'action=enroll_create&label=Test%%20phone&ttl=900\n' |
+    printf 'action=enroll_create&label=Test%%20phone&ttl=%s&request_id=%s\n' "${3:-900}" "${2:-0123456789abcdef0123456789abcdef}" |
         env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
             BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
             BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$1" \
@@ -485,5 +485,25 @@ printf '%s' "$create_ok" | grep -Fq '"ok":true' || {
 }
 awk -F '\t' 'NF==4 {n++} END {exit n==1?0:1}' "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: healthy enrollment token was not saved exactly once' >&2; exit 1;
+}
+
+# A lost response after the token-file rename must resolve the same operator
+# request ID to the original live token; retry must not issue a second token.
+: > "$T/hub/state/enroll.tsv"
+rm -f "$T/create-sync-count"
+create_lost="$(run_create_sync_fault 2)"
+printf '%s' "$create_lost" | grep -Fq '"ok":false' || {
+    echo 'FAIL: lost token-create response received positive ACK' >&2; exit 1;
+}
+first_token="$(awk -F '\t' '$1!="@create" {print $1"."$2; n++} END{if(n!=1)exit 1}' "$T/hub/state/enroll.tsv")" || {
+    echo 'FAIL: post-rename token-create fault did not leave one token' >&2; exit 1;
+}
+rm -f "$T/create-sync-count"
+create_retry="$(run_create_sync_fault 0)"
+printf '%s' "$create_retry" | grep -Fq "\"token\":\"$first_token\"" || {
+    echo 'FAIL: token-create retry did not return the original token' >&2; exit 1;
+}
+awk -F '\t' '$1!="@create" {n++} END{exit n==1?0:1}' "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: token-create retry issued a second live token' >&2; exit 1;
 }
 echo 'Standalone rental lock-edge lease refusal PASS'
