@@ -2392,3 +2392,6 @@
 
 ## R281-STANDALONE-0008 — validator exact CI, 2026-10-18 Asia/Manila
 - Source `08dc95b5d2f8981c9c916ca768777ea943b680d4` synchronized `f622f8b707f3d15e06c3ff992744134bfcdca574` [literal Ubuntu #39095543787](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095543787) COMPLETED SUCCESS, including saved-state corruption and duplicate-device refusal, prior lost-ACK/reload contracts, pins and entropy. Final docs successor classifier pending; no physical/production acceptance. Draft PR #107.
+
+## R281-STANDALONE-0009 — enrollment corrupt-state regression, 2026-10-18 Asia/Manila
+- Test-only `a71c5d9b4fb7f7b3a04e28a3a67201000454eff0` drives authenticated real CGI enrollment against unrelated malformed paid receipt; requires no new device and unconsumed enrollment. Synchronized old-code exact Ubuntu pending; draft PR #107 only.
