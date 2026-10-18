@@ -293,4 +293,15 @@ printf '%s' "$corrupt_other" | grep -Fq '"ok":false' || {
 cmp -s "$T/corrupt-receipt-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: paid grant rewrote unrelated corrupt receipt' >&2; exit 1;
 }
+seed_old
+cp "$T/hub/state/devices.tsv" "$T/duplicate-device-line"
+cat "$T/duplicate-device-line" >> "$T/hub/state/devices.tsv"
+cp "$T/hub/state/devices.tsv" "$T/duplicate-device-before"
+duplicate_device="$(run_other_paid add_time 600 '44444444444444444444444444444444')"
+printf '%s' "$duplicate_device" | grep -Fq '"ok":false' || {
+    echo 'FAIL: paid grant accepted duplicate saved device' >&2; exit 1;
+}
+cmp -s "$T/duplicate-device-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: paid grant rewrote duplicate saved device' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
