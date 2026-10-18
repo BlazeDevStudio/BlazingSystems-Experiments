@@ -238,6 +238,21 @@ class ActivationTests(unittest.TestCase):
         self.assertFalse(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
         complete_save = root.save_to_file
 
+        backend.activate(self.data, secret, image_stat)
+
+        def stale_quarantine_save(path):
+            complete_save(path)
+            record = json.loads(path.read_text())
+            record["targets"][0]["tpgs"][0]["enable"] = True
+            path.write_text(json.dumps(record))
+
+        with mock.patch.object(root, "save_to_file", side_effect=stale_quarantine_save):
+            with self.assertRaisesRegex(preparation.Refused, "quarantine.*persisted"):
+                backend.quarantine(self.data)
+        self.assertFalse(tpg.enable)
+        self.assertTrue(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
+        complete_save(saved)
+
         def partial_active_save(path):
             complete_save(path)
             record = json.loads(path.read_text())
