@@ -14,6 +14,7 @@ const stored = new Map();
 const alerts = [];
 const requests = [];
 let loseFirstResponse = true;
+let loseFirstEnrollResponse = true;
 const deviceId = '0123456789abcdef01234567';
 
 function loadPage() {
@@ -21,7 +22,7 @@ const context = vm.createContext({
   document: {
     getElementById(id) {
       if (!elements.has(id)) {
-        elements.set(id, { textContent: '', className: '', classList: { remove() {} } });
+        elements.set(id, { textContent: '', className: '', classList: { remove() {}, add() {} } });
       }
       return elements.get(id);
     },
@@ -43,11 +44,17 @@ const context = vm.createContext({
       loseFirstResponse = false;
       throw Error('simulated lost response');
     }
+    if (body.get('action') === 'enroll_create' && loseFirstEnrollResponse) {
+      loseFirstEnrollResponse = false;
+      throw Error('simulated lost enrollment response');
+    }
     const response = body.get('action') === 'list'
       ? { ok: true, devices: [] }
       : body.get('action') === 'recent_events'
         ? { ok: true, events: [] }
-        : { ok: true, lease_until: 1900000000 };
+        : body.get('action') === 'enroll_create'
+          ? { ok: true, token: 'abcdef123456.0123456789abcdef0123456789abcdef0123', expires: 1900000000 }
+          : { ok: true, lease_until: 1900000000 };
     return { async json() { return response; } };
   },
   alert(message) { alerts.push(message); },
@@ -77,5 +84,20 @@ return context;
   assert.equal(grants.length, 2, 'must retry the same operation once');
   assert.equal(grants[0].get('request_id'), grants[1].get('request_id'));
   assert.equal(stored.size, 0, 'positive replay acknowledgment clears pending operation');
+  firstPage.document.getElementById('label').value = 'Test phone';
+  firstPage.document.getElementById('ttl').value = '900';
+  await firstPage.enroll();
+  const enrollmentPending = [...stored.values()].map(value => JSON.parse(value));
+  assert.equal(enrollmentPending.length, 1, 'lost enrollment response must retain one pending request');
+  assert.match(enrollmentPending[0].request_id, /^[0-9a-f]{32}$/);
+  assert.ok(!JSON.stringify(enrollmentPending[0]).includes('abcdef123456.'), 'browser must not store enrollment secret');
+  const enrollmentReload = loadPage();
+  await enrollmentReload.retryPendingEnroll();
+  const enrolls = requests.filter(body => body.get('action') === 'enroll_create');
+  assert.equal(enrolls.length, 2, 'reload must retry one enrollment request');
+  assert.equal(enrolls[0].get('request_id'), enrolls[1].get('request_id'));
+  assert.equal(stored.size, 1, 'pending ID remains until token is copied or inspected');
+  enrollmentReload.clearPendingEnroll();
+  assert.equal(stored.size, 0, 'operator confirmation clears pending enrollment');
   console.log('R281 admin lost-response pending request contract PASS');
 })().catch(error => { console.error(error); process.exitCode = 1; });

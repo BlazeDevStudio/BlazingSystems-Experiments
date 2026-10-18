@@ -58,6 +58,12 @@ valid_enroll_state(){
   awk -F '\t' '
     function hex(s,n) { return length(s)==n && s !~ /[^0-9a-f]/ }
     function lease(s) { return s ~ /^[1-9][0-9]*$/ && length(s)<=10 && s+0<=2147483647 }
+    $1=="@create" {
+      if (NF!=7 || !hex($2,32) || !hex($3,12) || !hex($4,64) ||
+          !lease($5) || $6 !~ /^[1-9][0-9]*$/ || $6+0<60 || $6+0>3600 ||
+          $7=="" || length($7)>80 || seen_request[$2]++ || seen_created[$3]++) bad=1
+      next
+    }
     NF!=4 || !hex($1,12) || !hex($2,36) || !lease($3) ||
       $4=="" || length($4)>80 || seen[$1]++ { bad=1 }
     END { exit bad ? 1 : 0 }
@@ -149,23 +155,46 @@ case "$action" in
   enroll_create)
     label="$(param label)"; ttl="$(param ttl)"; [ -n "$label" ] || label="Rental phone"
     printf '%s' "$label" | grep -q '[[:cntrl:]]' && fail "invalid label"
-    case "$ttl" in ''|*[!0-9]*) ttl=900;; esac; [ "$ttl" -ge 60 ] && [ "$ttl" -le 3600 ] || ttl=900
+    case "$ttl" in ''|0*|*[!0-9]*) ttl=900;; esac; [ "$ttl" -ge 60 ] 2>/dev/null && [ "$ttl" -le 3600 ] 2>/dev/null || ttl=900
+    rid="$(param request_id)"; valid_request_id "$rid" || fail "invalid request id"
+    clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
     with_lock || fail "server busy"
     valid_paid_state || { unlock; fail "corrupt paid state"; }
     valid_enroll_state || { unlock; fail "corrupt enrollment state"; }
+    created="$(awk -F '\t' -v i="$rid" '$1=="@create" && $2==i {print;exit}' "$ENROLL")"
+    if [ -n "$created" ]; then
+      saved_id="$(printf '%s' "$created" | cut -f3)"
+      saved_hash="$(printf '%s' "$created" | cut -f4)"
+      saved_exp="$(printf '%s' "$created" | cut -f5)"
+      [ "$(printf '%s' "$created" | cut -f6)" = "$ttl" ] &&
+        [ "$(printf '%s' "$created" | cut -f7)" = "$clean" ] || { unlock; fail "request id conflict"; }
+      saved="$(awk -F '\t' -v i="$saved_id" '$1==i {print;exit}' "$ENROLL")"
+      [ -n "$saved" ] || { unlock; fail "enrollment already used or removed"; }
+      saved_secret="$(printf '%s' "$saved" | cut -f2)"
+      [ "$(printf '%s' "$saved" | cut -f3)" = "$saved_exp" ] &&
+        [ "$(printf '%s' "$saved" | cut -f4)" = "$clean" ] || { unlock; fail "enrollment state changed"; }
+      saved_digest="$(printf '%s' "$saved_id.$saved_secret" | sha256sum 2>/dev/null | awk '{print $1}')"
+      [ "$saved_digest" = "$saved_hash" ] || { unlock; fail "enrollment state changed"; }
+      ts="$(now)"; [ "$saved_exp" -ge "$ts" ] || { unlock; fail "enrollment expired"; }
+      unlock
+      json "{\"ok\":true,\"token\":\"$saved_id.$saved_secret\",\"expires\":$saved_exp,\"replayed\":true}"
+      exit 0
+    fi
     eid="$(randhex 6)" || { unlock; fail "secure randomness unavailable"; }
     secret="$(randhex 18)" || { unlock; fail "secure randomness unavailable"; }
-    if awk -F '\t' -v i="$eid" '$1==i {found=1} END{exit found?0:1}' "$ENROLL" ||
+    if awk -F '\t' -v i="$eid" '$1==i || ($1=="@create" && $3==i) {found=1} END{exit found?0:1}' "$ENROLL" ||
        awk -F '\t' -v i="$eid" '$1=="@enroll" && $2==i {found=1} END{exit found?0:1}' "$DEVICES"; then
       unlock; fail "enrollment id collision"
     fi
     ts="$(now)"; exp=$((ts+ttl))
     valid_lease "$exp" || { unlock; fail "enrollment expiry out of range"; }
-    clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
+    digest="$(printf '%s' "$eid.$secret" | sha256sum 2>/dev/null | awk '{print $1}')"
+    printf '%s' "$digest" | grep -Eq '^[0-9a-f]{64}$' || { unlock; fail "crypto unavailable"; }
     suffix="$(randhex 3)" || { unlock; fail "secure randomness unavailable"; }
     tmp="$STATE/.enroll.$$.$suffix"
     cat "$ENROLL" > "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
     printf '%s\t%s\t%s\t%s\n' "$eid" "$secret" "$exp" "$clean" >> "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    printf '@create\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rid" "$eid" "$digest" "$exp" "$ttl" "$clean" >> "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
     atomic_replace "$tmp" "$ENROLL" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
     unlock
     log enrollment_created "$eid"

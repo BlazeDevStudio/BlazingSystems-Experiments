@@ -506,4 +506,22 @@ printf '%s' "$create_retry" | grep -Fq "\"token\":\"$first_token\"" || {
 awk -F '\t' '$1!="@create" {n++} END{exit n==1?0:1}' "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: token-create retry issued a second live token' >&2; exit 1;
 }
+cp "$T/hub/state/enroll.tsv" "$T/create-before-conflict"
+create_conflict="$(run_create_sync_fault 0 0123456789abcdef0123456789abcdef 901)"
+printf '%s' "$create_conflict" | grep -Fq '"error":"request id conflict"' || {
+    echo 'FAIL: conflicting token-create request reused one ID' >&2; exit 1;
+}
+cmp -s "$T/create-before-conflict" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: conflicting token-create request changed token state' >&2; exit 1;
+}
+first_id="${first_token%%.*}"
+awk -F '\t' -v i="$first_id" '$1!=i {print}' "$T/hub/state/enroll.tsv" > "$T/create-used"
+cp "$T/create-used" "$T/hub/state/enroll.tsv"
+create_used="$(run_create_sync_fault 0)"
+printf '%s' "$create_used" | grep -Fq '"error":"enrollment already used or removed"' || {
+    echo 'FAIL: consumed token-create request issued another token' >&2; exit 1;
+}
+cmp -s "$T/create-used" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: consumed token-create retry changed token state' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'

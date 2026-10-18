@@ -33,7 +33,7 @@ printf '%s' "$openssl_token" | grep -Eq '^[0-9a-f]{48}$' || {
 }
 
 printf 'known-token\n' > "$T/admin/admin.token"
-admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
+admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900&request_id=00000000000000000000000000000001\n' |
     env -u HTTP_X_BLAZE_RENTAL_ADMIN PATH="$T/fail-bin:$PATH" \
         BLAZE_RENTAL_BASE="$T/admin" REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental-admin")"
@@ -43,7 +43,7 @@ printf '%s' "$admin_response" | grep -Fq '"ok":false' || {
 test ! -s "$T/admin/state/enroll.tsv" || {
     echo 'FAIL: admin wrote an enrollment with no random bytes' >&2; exit 1;
 }
-openssl_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
+openssl_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900&request_id=00000000000000000000000000000002\n' |
     env -u HTTP_X_BLAZE_RENTAL_ADMIN PATH="$T/fail-readers:$PATH" \
         BLAZE_RENTAL_BASE="$T/admin" REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental-admin")"
@@ -76,7 +76,7 @@ test ! -s "$T/app/state/devices.tsv" || {
 
 i=0
 while [ "$i" -lt 10 ]; do
-    good_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
+    good_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900&request_id=%032x\n' "$((i+3))" |
         env -u HTTP_X_BLAZE_RENTAL_ADMIN BLAZE_RENTAL_BASE="$T/admin" \
             REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
     printf '%s' "$good_admin_response" | grep -Fq '"ok":true' || {
