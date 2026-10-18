@@ -16,6 +16,7 @@ const requests = [];
 let loseFirstResponse = true;
 const deviceId = '0123456789abcdef01234567';
 
+function loadPage() {
 const context = vm.createContext({
   document: {
     getElementById(id) {
@@ -55,11 +56,13 @@ const context = vm.createContext({
   Uint8Array,
   console,
 });
-
 vm.runInContext(script, context, { filename: 'rental-dashboard.js' });
+return context;
+}
 
 (async () => {
-  await context.paid('add_time', { device_id: deviceId, seconds: 600 });
+  const firstPage = loadPage();
+  await firstPage.paid('add_time', { device_id: deviceId, seconds: 600 });
   const pending = [...stored.values()].map(value => JSON.parse(value));
   assert.equal(pending.length, 1, 'lost response must retain one pending operation');
   assert.match(pending[0].request_id, /^[0-9a-f]{32}$/);
@@ -67,7 +70,9 @@ vm.runInContext(script, context, { filename: 'rental-dashboard.js' });
   assert.ok(alerts.some(message => message.includes('uncertain')));
   assert.ok(!JSON.stringify(pending[0]).includes('admin_token'), 'no admin token in durable browser state');
 
-  await context.retryPending();
+  const reloadedPage = loadPage();
+  assert.equal(reloadedPage.pendingOperation().request_id, pending[0].request_id);
+  await reloadedPage.retryPending();
   const grants = requests.filter(body => body.get('action') === 'add_time');
   assert.equal(grants.length, 2, 'must retry the same operation once');
   assert.equal(grants[0].get('request_id'), grants[1].get('request_id'));
