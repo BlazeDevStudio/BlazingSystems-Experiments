@@ -4,9 +4,12 @@ Never publish production assets solely because tests, a partial EFI candidate,
 or an alpha GitHub Release exists. All required gates need supporting evidence.
 """
 from __future__ import annotations
+import ipaddress
 import json
+import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 DEFAULT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "Production" / "RELEASE-GATES.json"
 REQUIRED_IDS = frozenset({
@@ -40,6 +43,36 @@ REQUIRED_IDS = frozenset({
 
 ALLOWED = {"verified", "in_progress", "blocked", "unstarted"}
 
+_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", re.I)
+
+
+def _valid_evidence_url(value: object) -> bool:
+    """Validate public HTTPS URL syntax only; do not fetch or authenticate evidence."""
+    if not isinstance(value, str) or not value or len(value) > 2048:
+        return False
+    if any(ord(c) < 33 or ord(c) > 126 for c in value):
+        return False
+    try:
+        p = urlsplit(value)
+        if p.scheme != "https" or not p.netloc or not p.path or p.fragment:
+            return False
+        if p.username is not None or p.password is not None or p.port not in (None, 443):
+            return False
+        host = p.hostname
+        if not host or host.endswith(".") or host == "localhost":
+            return False
+        if host.endswith((".localhost", ".local", ".internal", ".test", ".invalid")):
+            return False
+        try:
+            ipaddress.ip_address(host)
+            return False
+        except ValueError:
+            pass
+        return len(host.split(".")) >= 2 and all(_HOST_LABEL.fullmatch(label) for label in host.split("."))
+    except (ValueError, TypeError):
+        return False
+
+
 def readiness(path: str | Path = DEFAULT) -> dict:
     file = Path(path)
     if file.is_symlink() or not file.is_file() or file.stat().st_size > 1024*1024:
@@ -64,9 +97,8 @@ def readiness(path: str | Path = DEFAULT) -> dict:
         ids.add(key)
         if not isinstance(desc, str) or not desc.strip() or status not in ALLOWED or required is not True:
             raise ValueError("Invalid release gate details")
-        if not isinstance(evidence, list) or any(
-            not isinstance(u, str) or not u.startswith("https://") for u in evidence):
-            raise ValueError("Evidence URLs must be HTTPS")
+        if not isinstance(evidence, list) or any(not _valid_evidence_url(u) for u in evidence):
+            raise ValueError("Evidence URLs must be valid public HTTPS URLs")
         if status == "verified":
             if not evidence:
                 raise ValueError("Verified release gate requires evidence")
