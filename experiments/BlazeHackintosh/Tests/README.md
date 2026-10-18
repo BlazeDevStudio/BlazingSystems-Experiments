@@ -12,3 +12,5 @@ This is software-unit-level evidence only, not verification of actual Hackintosh
 Windows CLI packaging is separately handled by GitHub Actions.
 
 Official-ocvalidate bridge tests use mocked subprocess execution and synthetic non-bootable fixtures; only CI's Windows smoke test downloads the genuine upstream asset, verifies its pinned SHA-256, and executes the version-matched utility after explicit invocation. Neither approach performs macOS boot tests.
+
+Candidate staging tests check the exact restricted Haswell profile, missing dependencies, explicit user acknowledgement, no-overwrite output policy, symlink and ZIP ambiguity rejection, and robust cleanup. Windows CI is also configured to stage a deliberately non-bootable EFI folder and invoke the genuine matching ocvalidate before any new toolkit alpha release.

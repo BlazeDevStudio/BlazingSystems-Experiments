@@ -1,4 +1,4 @@
-# BlazeHackintosh — experimental foundation (v0.1.3 verified ocvalidate integration)
+# BlazeHackintosh — experimental foundation (v0.1.4 experimental Haswell candidate staging)
 
 **Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
 
@@ -8,6 +8,7 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 
 ## What is real now
 - Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- Expert-only Haswell desktop EFI research candidate staging, requiring supplied kexts/ACPI/HFS/SMBIOS and both structural and official schema validation; see [docs/HASWELL-STAGING.md](docs/HASWELL-STAGING.md).
 - User-authorized, SHA-256-pinned OpenCore 1.0.8 ocvalidate validation (requires separately supplied official ZIP, never downloaded or executed implicitly); see [docs/OFFICIAL-OCVALIDATE.md](docs/OFFICIAL-OCVALIDATE.md).
 - Read-only OpenCore EFI structural inspection: referenced ACPI, kext, UEFI driver and tool paths, with traversal/duplicate checks (not ocvalidate).
 - Windows GPU/network vendor:device PCI IDs, firmware mode, memory and non-sensitive physical storage inventory; analogous best-effort Linux probes.
@@ -19,7 +20,7 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 - Source documentation, known limitations and handover record.
 
 ## What is not implemented
-- Automatic OpenCore EFI generation, macOS installer creation, disk flashing or EFI migration.
+- Universal or hardware-verified OpenCore EFI generation, macOS installer creation, disk flashing or EFI migration. Haswell research staging is available with individually supplied components; no ready-to-boot EFI is shipped.
 - CPU/GPU-level boot validation or real hardware acceptance.
 - A compiled *graphical* Windows Setup Assistant (the browser UI is a reference preview).
 - Offline complete macOS installer, Linux recovery ISO, IMG images, dual-boot manager and GitHub Release.

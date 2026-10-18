@@ -82,3 +82,6 @@ Unit tests mock upstream execution; separate Windows CI must fetch pinned offici
 - Windows executable digest `0f0b26726b7c6d71a265cdc3f4be0d2fa3975f6319170c8f88fd49a3604f66af`.
 - Offline UI digest `0ff549f02dce3d6becc3522c717f9e8f9049aa71cc65aa1da894c73c51568b13`.
 - **None** of these tests establishes physical boot, valid SMBIOS/hardware matches, installer compatibility, or a safe disk migration.
+
+## v0.1.4 research builder (pending CI)
+Additional unit regression cases exercise explicit acknowledgement, fail-closed CPU/GPU/firmware gates, input file types, symlink refusal, destination non-overwrite, temporary-file cleanup and research classification. Windows Actions will use exact upstream RELEASE asset to build a candidate with deliberately fake kext/ACPI/HFS components and run real official ocvalidate. The fixtures are intentionally non-bootable and must NEVER be uploaded as a ready-to-use EFI.

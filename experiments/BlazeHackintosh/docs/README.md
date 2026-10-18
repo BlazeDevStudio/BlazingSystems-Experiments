@@ -8,3 +8,4 @@
 - [TEST-EVIDENCE.md](TEST-EVIDENCE.md): test boundaries
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): current scanner usage
 - [OFFICIAL-OCVALIDATE.md](OFFICIAL-OCVALIDATE.md): explicit, checksum-pinned upstream 1.0.8 configuration validation
+- [HASWELL-STAGING.md](HASWELL-STAGING.md): expert-only, non-destructive EFI research candidate procedure and limits

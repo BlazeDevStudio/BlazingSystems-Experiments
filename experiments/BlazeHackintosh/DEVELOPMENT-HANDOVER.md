@@ -118,3 +118,10 @@ Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned e
 - No actual EFI generator; no verified config on physical hardware; no USB IMG, live ISO, multi-boot migration or disk-write workflows. Experimental toolkit only.
 
 **Next development:** evidence-scoped hardware manifests and per-component kext/ACPI requirements, generator architecture with exact OpenCore 1.0.8 Sample.plist, and safe output-directory-only EFI assembly followed by both structural and official validation. Before any IMG or internal-disk writing, add backup/rollback and disposable virtual-disk tests.
+
+## v0.1.4 candidate staged for CI (no release claims yet)
+- Explicit profile gates for exact i5-4570/i7-4770 Haswell UEFI, sole 8086:0412 iGPU and macOS 12 research selection.
+- New `plan-haswell` (no writes) and `stage-haswell-efi` commands. Requires explicit acknowledgement, unmodified OpenCore 1.0.8 ZIP, private local SMBIOS identity, user-approved three kexts, two SSDTs and HfsPlus.efi.
+- Stages under NEW BlazeEFI-* folder only; fails closed on missing source, symlinks, oversized/special files, hash failure, ocvalidate rejection or existing destination. Includes per-file hash manifest and DO-NOT-INSTALL marker.
+- Tests use fake/invalid kexts, SSDTs and HFS; CI staging will be intentionally NON-BOOTABLE and never distributed. Official ocvalidate schema pass is not hardware acceptance.
+- New release target `blazehackintosh-toolkit-v0.1.4-alpha.1` gated by actual Linux/Windows test suites, genuine OpenCore schema check, source CLI and compiled EXE staging tests. Previous v0.1.3 is preserved.
