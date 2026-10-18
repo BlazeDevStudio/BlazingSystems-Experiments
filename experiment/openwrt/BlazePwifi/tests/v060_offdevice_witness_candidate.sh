@@ -118,6 +118,10 @@ crash before_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
 run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 crash after_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
 run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
+# A pending retry must name the exact committed base, even when the new
+# revision/digest/nonce tuple matches the already-persisted pending operation.
+deny pending-wrong-old-revision run prepare device01 1 1 "$A" 2 "$B" 3 "$C" "$N2"
+deny pending-wrong-old-digest run prepare device01 1 2 "$A" 3 "$B" 3 "$C" "$N2"
 run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 2 "$B" 3 "$C" "$N2"
 crash after_finalize_commit finalize device01 1 3 "$C" "$N2"
 run finalize device01 1 3 "$C" "$N2" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 3 "$C" "$N2"

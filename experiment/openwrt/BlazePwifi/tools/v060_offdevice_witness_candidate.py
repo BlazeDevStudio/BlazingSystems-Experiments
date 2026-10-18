@@ -221,6 +221,11 @@ def operate(con, command, args, fixture, key):
         # PREPARE: device epoch old_revision old_digest new_revision new_digest nonce
         _, _, old_rev, old_digest, new_rev, new_digest, nonce = args
         if row[4] is not None:
+            # A retry is idempotent only when the caller still names the exact
+            # committed base from which this pending operation was prepared.
+            # Bind the old tuple before returning any pending-state response.
+            if row[2] != int(old_rev) or row[3] != old_digest:
+                refuse("pending retry base mismatch; reconcile before response")
             if row[4] != int(new_rev) or row[5] != new_digest or row[6] != nonce:
                 refuse("conflicting pending operation; reconcile before mutation")
             con.commit()
