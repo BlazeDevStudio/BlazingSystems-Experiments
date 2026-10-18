@@ -1,8 +1,8 @@
 #!/bin/sh
-# Rental Server Standalone installer v0.1.2
+# Rental Server Standalone installer v0.1.3 preview
 # BLAZE_R281_RENTAL_HUB
 set -eu
-VERSION='0.1.2'
+VERSION='0.1.3-preview.1'
 MARKER='BLAZE_R281_RENTAL_HUB'
 REPO_RAW='https://raw.githubusercontent.com/BlazingSystems/BlazingSystems-Experiments/main/experiment/openwrt/Rental-Server-Standalone'
 MODE=install
@@ -58,6 +58,22 @@ if [ -e /www/rental/index.html ] && ! grep -q 'BlazeRental · R281 Test Hub' /ww
   [ "$FORCE" = 1 ] || { echo 'ERROR: /www/rental belongs to another application.' >&2; exit 1; }
 fi
 
+admin_token_hex(){
+  x="$(hexdump -n 24 -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  [ "${#x}" -eq 48 ] || x="$(od -An -N 24 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
+  case "$x" in *[!0-9a-f]* ) return 1;; esac
+  [ "${#x}" -eq 48 ] || return 1
+  printf '%s' "$x"
+}
+TOKEN_FILE=/etc/blazepwifi-rental/admin.token
+[ ! -L "$TOKEN_FILE" ] && { [ ! -e "$TOKEN_FILE" ] || [ -f "$TOKEN_FILE" ]; } || {
+  echo 'ERROR: unsafe admin token path.' >&2; exit 1;
+}
+NEW_ADMIN_TOKEN=''
+if [ ! -s "$TOKEN_FILE" ]; then
+  NEW_ADMIN_TOKEN="$(admin_token_hex)" || { echo 'ERROR: secure random bytes unavailable.' >&2; exit 1; }
+fi
+
 SELF_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || pwd)"
 TMP="/tmp/rental-server-standalone.$$"
 mkdir -p "$TMP/root/www/cgi-bin" "$TMP/root/www/rental"
@@ -70,8 +86,8 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo '7659e082583a771d9e9aa8ee3b9612d3cbfff2c1807d696c24f3578d5ba92113  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo 'a794e80ad1dc95cf938cd08f618740bf87d44e30bb3dad4f2c217520225c2059  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo 'c5236d9a5464cacd6e79b6650b5798e6816cd9e2e38cbd3d088398af29090aaf  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo 'af6c00fbb3653c81d1a0af2c227c40a8c838d952fca44d859c7faeb42c92465e  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
 echo '56330ee3df791ed402d471cdeb2fa15b1303601f097885cc1ab867c3700d0f40  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
@@ -86,10 +102,9 @@ chmod 755 /www/cgi-bin/rental /www/cgi-bin/rental-admin
 chmod 644 /www/rental/index.html
 chmod 700 /etc/blazepwifi-rental /etc/blazepwifi-rental/state
 for f in devices.tsv enroll.tsv policy.tsv events.tsv; do [ -f "/etc/blazepwifi-rental/state/$f" ] || : > "/etc/blazepwifi-rental/state/$f"; chmod 600 "/etc/blazepwifi-rental/state/$f"; done
-if [ ! -s /etc/blazepwifi-rental/admin.token ]; then
-  hexdump -n 24 -e '1/1 "%02x"' /dev/urandom > /etc/blazepwifi-rental/admin.token
-  echo >> /etc/blazepwifi-rental/admin.token
-  chmod 600 /etc/blazepwifi-rental/admin.token
+if [ -n "$NEW_ADMIN_TOKEN" ]; then
+  printf '%s\n' "$NEW_ADMIN_TOKEN" > "$TOKEN_FILE"
+  chmod 600 "$TOKEN_FILE"
 fi
 rm -rf "$TMP"
 

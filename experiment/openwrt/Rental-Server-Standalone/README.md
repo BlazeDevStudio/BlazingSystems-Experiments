@@ -2,7 +2,7 @@
 
 Standalone BlazeRental-compatible manual-time testing server for the Notion R281.
 
-Version: **0.1.2**
+Version: **0.1.3-preview.1** (review candidate; R281/Android validation pending)
 
 ## Purpose
 
@@ -55,6 +55,10 @@ v0.1.0 accidentally embedded the pre-GitHub SHA-256 values for the two CGI paylo
 ## v0.1.2 R281 dashboard authentication fix
 
 Some R281/uHTTPd CGI environments do not reliably pass the custom `X-Blaze-Rental-Admin` request header through to CGI. The dashboard now submits the same admin token in the POST body as `admin_token` as well as the header. The server already validates this field against the local token file, so authentication remains exact-token based.
+
+## v0.1.3 preview entropy refusal
+
+Enrollment IDs, enrollment secrets, device IDs, device secrets, and a new installer admin token now require complete random bytes from `/dev/urandom` through `hexdump` or `od`. When neither reader returns the requested bytes, issuance fails; the timestamp/process fallback has been removed. This is a test-server preview and does not establish crash-atomic leases or physical R281/Android acceptance. A remote-only installer still fetches from `main` and will refuse a checksum mismatch until matching payloads are published there; use the local verified payload for review.
 
 ## Validation boundary
 
