@@ -287,6 +287,8 @@ def main(argv: list[str] | None = None) -> int:
     stage.add_argument("--acpi-dir", required=True, metavar="DIR")
     stage.add_argument("--hfs-driver", required=True, metavar="FILE")
     stage.add_argument("--smbios-json", required=True, metavar="FILE")
+    stage.add_argument("--component-manifest", required=True, metavar="JSON",
+                       help="Required per-file SHA-256 source/license manifest, operator-attested")
     stage.add_argument("--output-dir", required=True, metavar="NEW-BlazeEFI-DIRECTORY")
     stage.add_argument("--macos", choices=["12"], required=True)
     stage.add_argument("--acknowledge-research-only", action="store_true",
@@ -317,6 +319,7 @@ def main(argv: list[str] | None = None) -> int:
             result = build_candidate(hardware_report=args.report, official_zip=args.zip,
                                      kext_dir=args.kext_dir, acpi_dir=args.acpi_dir,
                                      hfs_driver=args.hfs_driver, smbios_json=args.smbios_json,
+                                     component_manifest=args.component_manifest,
                                      output_dir=args.output_dir, macos=args.macos,
                                      consent=args.acknowledge_research_only)
             emit(result)

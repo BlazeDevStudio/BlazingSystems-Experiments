@@ -20,6 +20,7 @@ from pathlib import Path
 
 from official_ocvalidate import verify_archive, run_official_ocvalidate
 from efi_validator import validate_efi
+from component_manifest import verify_manifest
 
 KEXTS = ("Lilu.kext", "VirtualSMC.kext", "WhateverGreen.kext")
 ACPIS = ("SSDT-PLUG.aml", "SSDT-EC.aml")
@@ -220,7 +221,8 @@ def _output_path(path: str | Path) -> Path:
 
 def build_candidate(*, hardware_report: str | Path, official_zip: str | Path,
                     kext_dir: str | Path, acpi_dir: str | Path, hfs_driver: str | Path,
-                    smbios_json: str | Path, output_dir: str | Path, macos: str,
+                    smbios_json: str | Path, component_manifest: str | Path,
+                    output_dir: str | Path, macos: str,
                     consent: bool = False) -> dict:
     if not consent:
         raise ValueError("Expert must explicitly acknowledge research-only EFI and official binary execution")
@@ -233,6 +235,8 @@ def build_candidate(*, hardware_report: str | Path, official_zip: str | Path,
     for a in ACPIS:
         _safe_file(acpi_dir / a)
     _safe_file(hfs_driver)
+    component_checks = verify_manifest(component_manifest, kext_dir=kext_dir,
+                                       acpi_dir=acpi_dir, hfs_driver=hfs_driver)
     check = verify_archive(official_zip)
     if not check["verified"]:
         raise ValueError("Official OpenCore release SHA-256 gate failed: " + str(check["error"]))
@@ -253,6 +257,11 @@ def build_candidate(*, hardware_report: str | Path, official_zip: str | Path,
             shutil.copyfile(acpi_dir / a, oc / "ACPI" / a)
         for k in KEXTS:
             shutil.copytree(kext_dir / k, oc / "Kexts" / k, symlinks=False)
+        staged_checks = verify_manifest(component_manifest, kext_dir=oc / "Kexts",
+                                        acpi_dir=oc / "ACPI",
+                                        hfs_driver=oc / "Drivers" / "HfsPlus.efi")
+        if staged_checks["manifest_sha256"] != component_checks["manifest_sha256"]:
+            raise ValueError("Component manifest changed during staging")
         (oc / "config.plist").write_bytes(plist)
         local = validate_efi(stage)
         if not local["structural_checks_passed"]:
@@ -263,7 +272,8 @@ def build_candidate(*, hardware_report: str | Path, official_zip: str | Path,
                              " " + upstream["checker_output"][:1200])
         files = sorted(p for p in stage.rglob("*") if p.is_file())
         manifest = {
-            "generator": "BlazeHackintosh 0.1.4 experimental",
+            "generator": "BlazeHackintosh 0.1.5 experimental",
+            "component_integrity": staged_checks,
             "classification": "Structurally Validated Only",
             "hardware_evidence": facts,
             "ocvalidate_version": "1.0.8", "ocvalidate_passed": True,
@@ -272,7 +282,7 @@ def build_candidate(*, hardware_report: str | Path, official_zip: str | Path,
             "requirements_remaining": [
                 "Physical device boot/USB acceptance", "Review motherboard-specific ACPI and firmware quirks",
                 "Verify SMBIOS, GPU framebuffer, USB mapping, storage and supported Apple license",
-                "Confirm downloaded kext versions, provenance, hashes and licensing",
+                "Independently verify operator-declared source URLs, versions, licensing and publisher signatures",
             ],
             "files": [{"path": str(p.relative_to(stage)).replace("\\", "/"), "sha256": _hash(p)}
                       for p in files],

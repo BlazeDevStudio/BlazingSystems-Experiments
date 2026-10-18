@@ -79,7 +79,7 @@ jobs:
           Get-FileHash dist/BlazeHackintosh-Toolkit.exe -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 dist/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazeHackintosh-v0.1.4-experimental-windows-toolkit
+          name: BlazeHackintosh-v0.1.5-experimental-windows-toolkit
           path: |
             experiments/BlazeHackintosh/dist/BlazeHackintosh-Toolkit.exe
             experiments/BlazeHackintosh/dist/SHA256.txt
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
-          name: BlazeHackintosh-v0.1.4-experimental-windows-toolkit
+          name: BlazeHackintosh-v0.1.5-experimental-windows-toolkit
           path: downloaded
       - name: Verify deliverables and create offline UI archive
         shell: bash
@@ -116,7 +116,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG='blazehackintosh-toolkit-v0.1.4-alpha.1'
+          TAG='blazehackintosh-toolkit-v0.1.5-alpha.1'
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Existing scanner preview release preserved; refusing to overwrite assets."
             exit 0
@@ -133,7 +133,7 @@ jobs:
           USB flashing, disk migration, GPU compatibility verification, or physical
           Hackintosh boot testing. CPU taxonomy records are Research Only.
 
-          The Windows EXE is a console toolkit with 'scan', 'evaluate', 'catalog', 'validate-efi', 'verify-opencore-package', 'plan-haswell', and 'stage-haswell-efi'. The optional --run-official-ocvalidate requires the operator to supply the official 1.0.8 RELEASE ZIP with exact upstream SHA-256; official schema checker is executed ONLY with explicit approval. The UI ZIP is a separate browser preview. The structural inspector, official checker and synthetic candidate staging do NOT prove real EFI executable compatibility, real SSDTs/kexts, data safety on disk, or physical boot success. No assembled EFI from CI is released.
+          Component SHA-256 inventory and source/license fields are now required for Haswell staging. Those fields are OPERATOR-DECLARED; matching local hashes does not establish trusted upstream provenance. No user-supplied third-party binaries are distributed. The Windows EXE is a console toolkit with 'scan', 'evaluate', 'catalog', 'validate-efi', 'verify-opencore-package', 'plan-haswell', and 'stage-haswell-efi'. The optional --run-official-ocvalidate requires the operator to supply the official 1.0.8 RELEASE ZIP with exact upstream SHA-256; official schema checker is executed ONLY with explicit approval. The UI ZIP is a separate browser preview. The structural inspector, official checker and synthetic candidate staging do NOT prove real EFI executable compatibility, real SSDTs/kexts, data safety on disk, or physical boot success. No assembled EFI from CI is released.
           Assets include Lucide ISC icon notices. Check Apple licensing before
           any macOS installation. No Apple software or boot images are distributed.
           EOF
@@ -141,5 +141,5 @@ jobs:
             downloaded/BlazeHackintosh-Toolkit.exe \
             BlazeHackintosh-Offline-UI.zip SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title 'BlazeHackintosh v0.1.4-alpha.1 — Research-Only Haswell EFI Staging' \
+            --title 'BlazeHackintosh v0.1.5-alpha.1 — Component Integrity Gates' \
             --notes-file RELEASE-NOTES.md --prerelease

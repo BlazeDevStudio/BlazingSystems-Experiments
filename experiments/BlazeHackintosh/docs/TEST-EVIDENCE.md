@@ -114,3 +114,6 @@ user-supplied kext/ACPI/HFS files, then add compatible ACPI/device evidence chec
 real hardware trials and readback recovery tests before considering USB images.
 
 CI staging validates the file layout and OpenCore schema, **not** UEFI execution or actual kext/SSDT functionality.
+
+## v0.1.5 integrity gate candidate — awaiting CI
+Haswell candidate staging now requires a complete SHA-256 ledger of every user-supplied component file. Input and staged file bytes must match ledger digests. Missing entries, unexpected ACPI files, symlinks, invalid declared provenance/ license fields and tampered bytes cause fail-closed rejection. These checks are local content integrity only, not cryptographic vendor attestation. Expanded regression tests and Windows real ocvalidate smoke must pass before any release claim.

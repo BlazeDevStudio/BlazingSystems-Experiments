@@ -168,5 +168,49 @@ class CandidateBuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "NEW directory"):
             builder.build_candidate(**dict(self.kwargs(), output_dir=self.root / "EFI"))
 
+
+    def test_reject_tampered_component_before_output(self):
+        (self.kexts / "Lilu.kext" / "Contents" / "MacOS" / "Lilu").write_bytes(b"tampered")
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            builder.build_candidate(**self.kwargs())
+        self.assertFalse(self.output.exists())
+
+    def test_reject_missing_component_manifest(self):
+        self.manifest.unlink()
+        with self.assertRaisesRegex(ValueError, "Manifest must be"):
+            builder.build_candidate(**self.kwargs())
+        self.assertFalse(self.output.exists())
+
+    def test_reject_manifest_missing_single_component(self):
+        manifest = json.loads(self.manifest.read_text())
+        manifest["files"].pop()
+        self.manifest.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "coverage mismatch"):
+            builder.build_candidate(**self.kwargs())
+        self.assertFalse(self.output.exists())
+
+    def test_reject_component_without_declared_license(self):
+        manifest = json.loads(self.manifest.read_text())
+        manifest["files"][0]["license_id"] = ""
+        self.manifest.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "license_id"):
+            builder.build_candidate(**self.kwargs())
+
+    def test_reject_extra_unreviewed_acpi_file(self):
+        (self.acpi / "Unknown-SSDT.aml").write_bytes(b"unreviewed")
+        with self.assertRaisesRegex(ValueError, "Unexpected/missing ACPI"):
+            builder.build_candidate(**self.kwargs())
+
+    def test_candidate_records_declared_integrity_without_publisher_claim(self):
+        with patch.object(builder, "verify_archive", return_value={"verified": True}), \
+             patch.object(builder, "run_official_ocvalidate", return_value={"passed": True}):
+            builder.build_candidate(**self.kwargs())
+        manifest = json.loads((self.output / "RESEARCH-ONLY.json").read_text())
+        integrity = manifest["component_integrity"]
+        self.assertGreater(integrity["file_count"], 5)
+        self.assertEqual(len(integrity["manifest_sha256"]), 64)
+        self.assertIn("NOT verified", integrity["trust"])
+        self.assertFalse(manifest["hardware_boot_verified"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,6 +32,7 @@ https://dortania.github.io/OpenCore-Install-Guide/config.plist/haswell.html
 - `--smbios-json` with **locally generated** `SystemProductName`,
   `SystemSerialNumber`, `MLB`, `SystemUUID`, `ROM` (6-byte hex).
   Keep this file private: never commit/upload a real SMBIOS identity.
+- A complete, per-file SHA-256 JSON ledger passed through `--component-manifest`. See [COMPONENT-INTEGRITY.md](COMPONENT-INTEGRITY.md) to assemble and independently verify this ledger.
 - Existing parent directory and an **absent** child directory named `BlazeEFI-*`.
   No existing path is overwritten and no disks are partitioned or mounted.
 
@@ -40,11 +41,11 @@ Example:
 ```powershell
 BlazeHackintosh-Toolkit.exe scan --output target-report.json
 BlazeHackintosh-Toolkit.exe plan-haswell --report target-report.json --macos 12
-BlazeHackintosh-Toolkit.exe stage-haswell-efi --report target-report.json --macos 12 --zip OpenCore-1.0.8-RELEASE.zip --kext-dir C:\LocalKexts --acpi-dir C:\LocalAcpi --hfs-driver C:\LocalDrivers\HfsPlus.efi --smbios-json C:\Private\smbios.json --output-dir C:\Research\BlazeEFI-Haswell --acknowledge-research-only
+BlazeHackintosh-Toolkit.exe stage-haswell-efi --report target-report.json --macos 12 --zip OpenCore-1.0.8-RELEASE.zip --kext-dir C:\LocalKexts --acpi-dir C:\LocalAcpi --hfs-driver C:\LocalDrivers\HfsPlus.efi --smbios-json C:\Private\smbios.json --component-manifest C:\Private\components.json --output-dir C:\Research\BlazeEFI-Haswell --acknowledge-research-only
 ```
 
 The builder writes a manifest, per-file SHA-256, research-notice marker and
-non-boot-certified EFI files only to the new staging directory. If any validation
+non-boot-certified EFI files only to the new staging directory. If a file differs from its required operator-declared digest or any file was not declared, staging stops. Both inputs and copied output are checked. If any validation
 fails, it deletes the temporary staging files and leaves no candidate output.
 It never writes an ESP, partition table, MBR, UEFI boot entry, or internal disk.
 

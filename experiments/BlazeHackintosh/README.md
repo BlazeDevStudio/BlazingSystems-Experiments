@@ -1,4 +1,4 @@
-# BlazeHackintosh — experimental foundation (v0.1.4 experimental Haswell candidate staging)
+# BlazeHackintosh — experimental foundation (v0.1.5 component integrity hardening)
 
 **Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
 
@@ -8,6 +8,7 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 
 ## What is real now
 - Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- User-attested, per-file SHA-256 component ledger with fail-closed coverage checks both before copying and after staging; does not authenticate upstream source or licenses.
 - Expert-only Haswell desktop EFI research candidate staging, requiring supplied kexts/ACPI/HFS/SMBIOS and both structural and official schema validation; see [docs/HASWELL-STAGING.md](docs/HASWELL-STAGING.md).
 - User-authorized, SHA-256-pinned OpenCore 1.0.8 ocvalidate validation (requires separately supplied official ZIP, never downloaded or executed implicitly); see [docs/OFFICIAL-OCVALIDATE.md](docs/OFFICIAL-OCVALIDATE.md).
 - Read-only OpenCore EFI structural inspection: referenced ACPI, kext, UEFI driver and tool paths, with traversal/duplicate checks (not ocvalidate).

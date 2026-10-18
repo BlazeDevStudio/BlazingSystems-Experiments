@@ -11,6 +11,8 @@ import tempfile
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT))
+from component_manifest import input_files, sha256
 if len(sys.argv) not in (2, 3):
     raise SystemExit("Usage: smoke_stage.py OpenCore-1.0.8-RELEASE.zip [Toolkit.exe]")
 official_zip = Path(sys.argv[1]).resolve()
@@ -41,11 +43,19 @@ with tempfile.TemporaryDirectory(prefix="BlazeResearchNoBoot-") as temp:
         "SystemProductName": "iMac14,2", "SystemSerialNumber": "TEST12345678",
         "MLB": "EXPERIMENTAL00001", "SystemUUID": "be01ea11-abcd-4f29-b65d-118ee1d92c51",
         "ROM": "000000000002"}), encoding="utf-8")
+    items = input_files(kexts, acpi, base / "HfsPlus.efi")
+    entries = [{"path": path, "sha256": sha256(file),
+                "source_url": "https://example.org/fictional-ci-fixtures",
+                "license_id": "MIT", "release": "test-only"}
+               for path, file in sorted(items.items())]
+    (base / "components.json").write_text(json.dumps(
+        {"schema_version": 1, "files": entries}), encoding="utf-8")
     output = base / "BlazeEFI-NonBootable-CI"
     args = command + [
         "stage-haswell-efi", "--zip", str(official_zip),
         "--kext-dir", str(kexts), "--acpi-dir", str(acpi),
         "--hfs-driver", str(base / "HfsPlus.efi"), "--smbios-json", str(base / "smbios.json"),
+        "--component-manifest", str(base / "components.json"),
         "--report", str(base / "report.json"), "--output-dir", str(output),
         "--macos", "12", "--acknowledge-research-only"
     ]

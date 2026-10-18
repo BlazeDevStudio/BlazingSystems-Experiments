@@ -155,3 +155,11 @@ Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned e
 Next: enforce independently trusted component manifest hashes/licensing for all
 user-supplied kext/ACPI/HFS files, then add compatible ACPI/device evidence checks,
 real hardware trials and readback recovery tests before considering USB images.
+
+## 2026-10-18 — v0.1.5 integrity hardening candidate
+- Most recent verified release remains `blazehackintosh-toolkit-v0.1.4-alpha.1` (48 Linux and Windows tests, official OpenCore 1.0.8 ocvalidate).
+- New `component_manifest.py` validates a complete SHA-256 ledger for ALL three required kext bundles, two required ACPI SSDTs, and the user-supplied HfsPlus.efi; rejects undeclared/missing/duplicate paths, symlinks, altered hashes, unsafe sizes and missing operator-asserted HTTPS source, release and license information.
+- Builder now requires `--component-manifest`; verifies inputs before staging and verifies copied outputs before accepting the configuration. Research output embeds SHA-256 of the ledger and correctly warns that source authenticity is **not** independently confirmed.
+- Added six builder regressions: tampering, missing ledger, missing entry, missing declared license, extra ACPI input, honest integrity labeling.
+- CI release target: `blazehackintosh-toolkit-v0.1.5-alpha.1` if and only if all source tests, Windows packaging and real upstream 1.0.8 ocvalidate smoke pass. Do not label this release production.
+- Production blockers remain: genuinely verified component publishers/signatures/licenses, target-specific ACPI/GPU checks, broader CPU coverage, full GUI, installer preparation, disk migration/rollback, physical boot proof and final production acceptance.
