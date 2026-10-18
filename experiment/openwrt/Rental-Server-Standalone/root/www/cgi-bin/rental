@@ -115,6 +115,10 @@ case "$action" in
     expected="$(hmac "$secret" "status|$nonce|$secret")" || fail "crypto unavailable"
     [ "$sig" = "$expected" ] || fail "authentication failed"
     with_lock || fail "server busy"
+    line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
+    current_secret="$(printf '%s' "$line" | cut -f2)"
+    [ "$current_secret" = "$secret" ] || { unlock; fail "device changed"; }
+    lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"
     write_device "$did" "$secret" "${lease:-0}" "$label" "$ts" || { unlock; fail "storage or randomness unavailable"; }
     unlock
     p="$(policy_line "$did")"; allowed="$(printf '%s' "$p" | cut -f2)"; salt="$(printf '%s' "$p" | cut -f3)"; hash="$(printf '%s' "$p" | cut -f4)"; rounds="$(printf '%s' "$p" | cut -f5)"

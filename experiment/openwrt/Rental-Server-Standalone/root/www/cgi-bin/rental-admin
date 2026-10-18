@@ -81,9 +81,9 @@ case "$action" in
     ;;
   add_time|set_time|expire|rename|revoke)
     did="$(param device_id)"; printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || fail "invalid device id"
-    line="$(device_line "$did")"; [ -n "$line" ] || fail "unknown device"
-    secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
     with_lock || fail "server busy"
+    line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
+    secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
     case "$action" in
       add_time)
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9-]*) unlock; fail "invalid seconds";; esac
