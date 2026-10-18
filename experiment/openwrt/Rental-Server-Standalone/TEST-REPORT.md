@@ -61,3 +61,8 @@ Remaining physical validation
 - Verify Device Owner/manual APK behavior and lease refresh on the physical Android phone.
 
 This is a rental test hub, not a full hotspot/coinslot BlazePwifi deployment.
+v0.1.3-preview.1 OpenSSL entropy addendum (2026-10-18 Manila)
+- Test `608fa44c`, synced `6c20603c` literal Ubuntu #39084787348 FAILED entropy step (checksum/syntax passed); current source lacked OpenSSL fallback when byte readers failed.
+- Source `c44b741f` now prefers OpenSSL, retains checked kernel-reader fallbacks and all-source refusal; exact Ubuntu CI PENDING. Earlier diagnostic #39084567668 failed before CGI diagnostics, so its cause is not established.
+- Draft preview only. No physical R281/Android, powercut or production proof.
+
