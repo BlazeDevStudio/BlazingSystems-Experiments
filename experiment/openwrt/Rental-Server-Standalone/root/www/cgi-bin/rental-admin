@@ -1,6 +1,7 @@
 #!/bin/sh
 # BLAZE_R281_RENTAL_HUB operator endpoint v0.1.3-preview.1
 set -u
+umask 077
 BASE="${BLAZE_RENTAL_BASE:-/etc/blazepwifi-rental}"
 STATE="$BASE/state"; DEVICES="$STATE/devices.tsv"; ENROLL="$STATE/enroll.tsv"; POLICY="$STATE/policy.tsv"; EVENTS="$STATE/events.tsv"; TOKEN_FILE="$BASE/admin.token"
 mkdir -p "$STATE" 2>/dev/null || true
@@ -37,7 +38,7 @@ randhex(){
 url_decode(){ printf '%s' "$1" | awk 'function hx(c,p){c=toupper(c);p=index("0123456789ABCDEF",c);return p?p-1:-1}{s=$0;out="";for(i=1;i<=length(s);i++){c=substr(s,i,1);if(c=="%"&&i+2<=length(s)){a=hx(substr(s,i+1,1));b=hx(substr(s,i+2,1));if(a>=0&&b>=0){out=out sprintf("%c",a*16+b);i+=2;continue}}if(c=="+")c=" ";out=out c}printf "%s",out}'; }
 BODY=""; [ "${REQUEST_METHOD:-GET}" = POST ] && IFS= read -r BODY || true
 param(){ k="$1"; data="${QUERY_STRING:-}"; [ "${REQUEST_METHOD:-GET}" = POST ] && data="$BODY"; raw="$(printf '%s' "$data" | tr '&' '\n' | awk -F= -v k="$k" '$1==k {sub(/^[^=]*=/,"");print;exit}')"; url_decode "$raw"; }
-atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || true; mv "$src" "$dst"; sync 2>/dev/null || true; }
+atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || return 1; sync 2>/dev/null || return 1; mv "$src" "$dst" || return 1; sync 2>/dev/null || return 1; }
 lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
 unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
 with_lock(){ i=0; while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done; return 0; }
@@ -102,22 +103,22 @@ case "$action" in
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9-]*) unlock; fail "invalid seconds";; esac
         [ "$sec" -ge -604800 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
         base="$lease"; [ "$base" -ge "$ts" ] 2>/dev/null || base="$ts"; new=$((base+sec)); [ "$new" -ge "$ts" ] 2>/dev/null || new="$ts"
-        write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage or randomness unavailable"; }; unlock; log time_added "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$((new-ts))}"
+        write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_added "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$((new-ts))}"
         ;;
       set_time)
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9]*) unlock; fail "invalid seconds";; esac
         [ "$sec" -ge 0 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
-        new=$((ts+sec)); write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage or randomness unavailable"; }; unlock; log time_set "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$sec}"
+        new=$((ts+sec)); write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_set "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$sec}"
         ;;
       expire)
-        write_device "$did" "$secret" "$ts" "$label" "$last" || { unlock; fail "storage or randomness unavailable"; }; unlock; log expired "$did"; json "{\"ok\":true,\"lease_until\":$ts,\"remaining\":0}"
+        write_device "$did" "$secret" "$ts" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log expired "$did"; json "{\"ok\":true,\"lease_until\":$ts,\"remaining\":0}"
         ;;
       rename)
         nl="$(param label)"; [ -n "$nl" ] || { unlock; fail "label required"; }; printf '%s' "$nl" | grep -q '[[:cntrl:]]' && { unlock; fail "invalid label"; }
-        write_device "$did" "$secret" "$lease" "$nl" "$last" || { unlock; fail "storage or randomness unavailable"; }; unlock; log renamed "$did"; json "{\"ok\":true}"
+        write_device "$did" "$secret" "$lease" "$nl" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log renamed "$did"; json "{\"ok\":true}"
         ;;
       revoke)
-        remove_device "$did" || { unlock; fail "storage or randomness unavailable"; }; unlock; log revoked "$did"; json "{\"ok\":true}"
+        remove_device "$did" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log revoked "$did"; json "{\"ok\":true}"
         ;;
     esac
     ;;

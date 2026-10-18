@@ -62,6 +62,8 @@ The preview also re-reads a device under the shared writer lock before admin tim
 
 Enrollment IDs, enrollment secrets, device IDs, device secrets, and a new installer admin token require complete secure random bytes. The already required OpenSSL CLI (`openssl rand -hex`) is preferred, with `/dev/urandom` through `hexdump` or `od` as fallbacks. When all sources fail, issuance fails; the timestamp/process fallback has been removed. This is a test-server preview and does not establish crash-atomic leases or physical R281/Android acceptance. A remote-only installer still fetches from `main` and will refuse a checksum mismatch until matching payloads are published there; use the local verified payload for review.
 
+Lease-file replacement now checks a software flush before and after rename. A reported flush failure denies success; after rename the outcome may already be visible, so the operator must inspect the lease before retrying. This does not supply an idempotency key or prove persistence through power loss. Physical R281 storage and Android recovery tests remain required.
+
 ## Validation boundary
 
 Host-side protocol and syntax tests passed. Physical R281 installation, actual Android enrollment, Device Owner/manual APK behavior, and lease refresh still require device testing.
