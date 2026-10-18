@@ -52,8 +52,10 @@ spec, secret and state directory plus `--confirm-lab-activation` inspects the
 live LIO target, backing image, ACL/CHAP, LUN mapping, portal and disabled
 saved configuration before enabling the target. It writes an `activating`
 intent before the enable call. A partial write, crash or lost result refuses
-retry; the command attempts to disable the target on ordinary errors, but a
-crash can leave it live. An operator must inspect the target and intent before
+retry; the command attempts to disable the target on ordinary errors and
+refuses quarantine completion unless the private saved restore configuration
+matches the complete disabled live target. A crash can still leave it live.
+An operator must inspect the target and intent before
 any recovery. `ACTIVE_LAB_TARGET` means only that the target enable and saved
 configuration calls completed; it is not a boot, isolation or hardware pass.
 CHAP, initiator ACL and target exclusivity require independent tests from

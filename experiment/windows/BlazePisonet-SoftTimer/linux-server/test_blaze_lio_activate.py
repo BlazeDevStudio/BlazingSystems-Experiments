@@ -253,6 +253,17 @@ class ActivationTests(unittest.TestCase):
         self.assertTrue(json.loads(saved.read_text())["targets"][0]["tpgs"][0]["enable"])
         complete_save(saved)
 
+        backend.activate(self.data, secret, image_stat)
+
+        def malformed_quarantine_save(path):
+            path.write_text('{"targets": [')
+
+        with mock.patch.object(root, "save_to_file", side_effect=malformed_quarantine_save):
+            with self.assertRaisesRegex(preparation.Refused, "quarantine.*malformed"):
+                backend.quarantine(self.data)
+        self.assertFalse(tpg.enable)
+        complete_save(saved)
+
         def partial_active_save(path):
             complete_save(path)
             record = json.loads(path.read_text())

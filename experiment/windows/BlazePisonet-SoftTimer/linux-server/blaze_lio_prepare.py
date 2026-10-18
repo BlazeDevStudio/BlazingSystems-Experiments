@@ -284,6 +284,15 @@ class LioBackend:
         if tpgs[0].enable:
             raise Refused("quarantine disable did not take effect")
         root.save_to_file(self.save_path)
+        private_regular(self.save_path, os.geteuid())
+        if self.save_path.stat().st_size > 1024 * 1024:
+            raise Refused("quarantine saved LIO configuration too large")
+        try:
+            saved = json.loads(self.save_path.read_bytes(), object_pairs_hook=unique_object)
+        except (KeyError, TypeError, ValueError, UnicodeError) as error:
+            raise Refused("quarantine saved LIO configuration malformed") from error
+        if saved != root.dump():
+            raise Refused("quarantine saved LIO configuration not persisted")
         fsync_private_file(self.save_path)
         dfd = os.open(self.save_path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
