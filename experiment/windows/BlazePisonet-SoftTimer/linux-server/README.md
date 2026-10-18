@@ -8,12 +8,17 @@ artifact before extracting it. On an **approved noncustomer Linux lab host**,
 unpack the archive and run `sudo sh install-preview.sh --prefix
 /opt/blaze-lio-preview --confirm-lab-install` from inside the unpacked folder.
 The installer checks the complete file manifest, stages root-owned code and
-refuses an existing target. It does not install Python, `rtslib-fb`, SSH keys,
+refuses an existing target or a non-root/writable path ancestor. To remove an
+unmodified code install, run `sudo sh uninstall-preview.sh --prefix
+/opt/blaze-lio-preview --confirm-lab-uninstall` from the reviewed bundle.
+Uninstall refuses changed or extra files and never removes LIO, SSH, images,
+state or network configuration. Inspect a refused install manually instead
+of deleting the path blindly. Neither command installs Python, `rtslib-fb`, SSH keys,
 sshd configuration, LIO targets, images, DHCP/PXE or a boot service. The
 manifest detects accidental file changes within the bundle; it is not a
 signature or independent origin proof. Keep the pinned CI artifact digest
-with the lab acceptance record. A clean uninstall/recovery procedure still
-needs approved hardware testing.
+with the lab acceptance record. Physical uninstall/recovery still needs
+approved hardware testing.
 
 `blaze_lio_prepare.py` prepares one **disabled** Linux LIO iSCSI target for one
 pre-existing Windows disk image and one initiator. It writes actual configfs
