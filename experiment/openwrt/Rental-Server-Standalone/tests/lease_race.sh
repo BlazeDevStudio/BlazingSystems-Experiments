@@ -524,4 +524,45 @@ printf '%s' "$create_used" | grep -Fq '"error":"enrollment already used or remov
 cmp -s "$T/create-used" "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: consumed token-create retry changed token state' >&2; exit 1;
 }
+
+# A small configured ceiling exercises the installed writers without making
+# a huge fixture. Each refused write must leave its authority file unchanged.
+seed_old
+cp "$T/hub/state/devices.tsv" "$T/cap-devices-before"
+cap_paid="$(printf 'action=add_time&device_id=%s&seconds=600&request_id=%s\n' "$DID" "$RID" |
+    env BLAZE_RENTAL_MAX_STATE_BYTES=128 BLAZE_RENTAL_BASE="$T/hub" \
+        HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+        sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$cap_paid" | grep -Fq '"ok":false' || {
+    echo 'FAIL: paid receipt overflow received positive ACK' >&2; exit 1;
+}
+cmp -s "$T/cap-devices-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: paid receipt overflow changed saved devices' >&2; exit 1;
+}
+: > "$T/hub/state/enroll.tsv"
+cp "$T/hub/state/enroll.tsv" "$T/cap-enroll-before"
+cap_create="$(printf 'action=enroll_create&label=Test%%20phone&ttl=900&request_id=%s\n' "$RID" |
+    env BLAZE_RENTAL_MAX_STATE_BYTES=128 BLAZE_RENTAL_BASE="$T/hub" \
+        HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+        sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$cap_create" | grep -Fq '"ok":false' || {
+    echo 'FAIL: token receipt overflow received positive ACK' >&2; exit 1;
+}
+cmp -s "$T/cap-enroll-before" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: token receipt overflow changed saved tokens' >&2; exit 1;
+}
+printf '%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$EXPIRY" 'Test phone' > "$T/hub/state/enroll.tsv"
+cp "$T/hub/state/enroll.tsv" "$T/cap-phone-token-before"
+cap_phone="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$ENONCE" "$ESIG" |
+    env BLAZE_RENTAL_MAX_STATE_BYTES=128 BLAZE_RENTAL_BASE="$T/hub" \
+        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental")"
+printf '%s' "$cap_phone" | grep -Fq '"ok":false' || {
+    echo 'FAIL: phone receipt overflow received positive ACK' >&2; exit 1;
+}
+cmp -s "$T/cap-devices-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: phone receipt overflow changed saved devices' >&2; exit 1;
+}
+cmp -s "$T/cap-phone-token-before" "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: phone receipt overflow consumed token' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
