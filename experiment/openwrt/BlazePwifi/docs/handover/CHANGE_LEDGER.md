@@ -1,3 +1,7 @@
+## R281-STANDALONE-0001 — corrected source positive test RED, 2026-10-18 Asia/Manila
+- **Status:** failed, diagnosis in progress; draft PR #107 source `3546577b7d5487fd562db6974fb6f6d1fa094ef8`, prior synchronized `32a35539cea91d99d6d2d7e4a8316fd703f0e7b6`. [Literal CI #39083853101](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39083853101) passed checksum/syntax and forced missing-entropy refusal, then failed healthy admin enrollment. Cause unknown; no green claim.
+- **Diagnostic:** test-only `1e634d4e34e746247ca89d1862238555175b466d` prints response with token/secret redacted on positive-case failure. Push and inspect new exact run, fix demonstrated fault, keep public release denied.
+
 ## R281-STANDALONE-0001 — expected RED and entropy source, 2026-10-18 Asia/Manila
 - **Status:** committed_untested, P1 separate v0.1.3-preview.1 test-server track; draft PR #107 targeting development. Test `db163aafa6c7d653fc65ba2aee4105dc0b6d0a6d`, RED synchronized `f98d17ecad4f8ac895680900be46484b61e98b68`, source/test `3546577b7d5487fd562db6974fb6f6d1fa094ef8`.
 - **Observed failure:** [literal Ubuntu #39083519007](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39083519007) checksum and syntax PASSED; negative then FAILED `admin issued a token with no random bytes` using forced `hexdump`/`od` failures, confirming deterministic timestamp/process fallback.
