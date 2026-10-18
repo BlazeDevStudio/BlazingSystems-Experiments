@@ -394,6 +394,10 @@ first_count="$(awk -F '\t' '$1!="@op" && $1!="@enroll" {n++} END{print n+0}' "$T
 [ "$first_count" -eq 2 ] || {
     echo 'FAIL: post-rename enrollment fault did not leave one new device' >&2; exit 1;
 }
+receipt_device="$(awk -F '\t' -v e="$EID" '$1=="@enroll" && $2==e {print $4; n++} END{if(n!=1)exit 1}' "$T/hub/state/devices.tsv")" || {
+    echo 'FAIL: first enrollment did not atomically save one receipt' >&2; exit 1;
+}
+receipt_secret="$(awk -F '\t' -v e="$EID" '$1=="@enroll" && $2==e {print $5}' "$T/hub/state/devices.tsv")"
 rm -f "$T/enroll-sync-count"
 retry_enroll="$(run_enroll_sync_fault 0)"
 printf '%s' "$retry_enroll" | grep -Fq '"ok":true' || {
@@ -402,5 +406,20 @@ printf '%s' "$retry_enroll" | grep -Fq '"ok":true' || {
 retry_count="$(awk -F '\t' '$1!="@op" && $1!="@enroll" {n++} END{print n+0}' "$T/hub/state/devices.tsv")"
 [ "$retry_count" -eq 2 ] || {
     echo 'FAIL: uncertain enrollment retry issued a second device' >&2; exit 1;
+}
+printf '%s' "$retry_enroll" | grep -Fq "\"device_id\":\"$receipt_device\"" || {
+    echo 'FAIL: retry did not return the recorded device' >&2; exit 1;
+}
+printf '%s' "$retry_enroll" | grep -Fq "\"device_secret\":\"$receipt_secret\"" || {
+    echo 'FAIL: retry did not return the recorded credential' >&2; exit 1;
+}
+printf '%s' "$retry_enroll" | grep -Fq '"replayed":true' || {
+    echo 'FAIL: retry ACK was not marked as replay' >&2; exit 1;
+}
+cp "$T/hub/state/devices.tsv" "$T/enroll-receipt-before"
+printf '@enroll\t%s\t%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$receipt_device" "$receipt_secret" "$EXPIRY" >> "$T/hub/state/devices.tsv"
+receipt_corrupt="$(run_enroll_sync_fault 0)"
+printf '%s' "$receipt_corrupt" | grep -Fq '"error":"corrupt paid state"' || {
+    echo 'FAIL: duplicate enrollment receipt was accepted' >&2; exit 1;
 }
 echo 'Standalone rental lock-edge lease refusal PASS'
