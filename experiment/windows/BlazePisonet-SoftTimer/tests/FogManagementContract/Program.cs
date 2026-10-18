@@ -71,8 +71,8 @@ try
     });
     Check(await ssh.InspectDisabledAsync("10.20.30.40", "blaze_lio", identity, knownHosts) ==
         "PREPARED_DISABLED", "pinned SSH status accepted one exact disabled result");
-    var args = observed!.ArgumentList.ToArray();
-    Check(args.SequenceEqual(new[] { "-F", "none", "-4", "-T", "-n", "-a", "-x",
+    var sshArgs = observed!.ArgumentList.ToArray();
+    Check(sshArgs.SequenceEqual(new[] { "-F", "none", "-4", "-T", "-n", "-a", "-x",
         "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
         "-o", "UserKnownHostsFile=" + knownHosts,
         "-o", "GlobalKnownHostsFile=none", "-o", "UpdateHostKeys=no",
