@@ -163,3 +163,6 @@ real hardware trials and readback recovery tests before considering USB images.
 - Added six builder regressions: tampering, missing ledger, missing entry, missing declared license, extra ACPI input, honest integrity labeling.
 - CI release target: `blazehackintosh-toolkit-v0.1.5-alpha.1` if and only if all source tests, Windows packaging and real upstream 1.0.8 ocvalidate smoke pass. Do not label this release production.
 - Production blockers remain: genuinely verified component publishers/signatures/licenses, target-specific ACPI/GPU checks, broader CPU coverage, full GUI, installer preparation, disk migration/rollback, physical boot proof and final production acceptance.
+
+### v0.1.5 first CI regression (run 39092875131)
+Linux first run failed: 17 builder tests invoked new mandatory component-manifest argument without updating their fixture generator. The source builder safety gate rejected every missing argument; no prerelease published. Fixture setup now supplies a complete per-file synthetic ledger. Rerun Linux/Windows and genuine OpenCore CI mandatory.

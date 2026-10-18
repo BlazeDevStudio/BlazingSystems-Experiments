@@ -50,6 +50,7 @@ class CandidateBuilderTests(unittest.TestCase):
         self.smbios = self.root / "smbios.json"
         self.zip = self.root / "OpenCore-1.0.8-RELEASE.zip"
         self.output = self.root / "BlazeEFI-Haswell"
+        self.manifest = self.root / "components.json"
         self.report.write_text(json.dumps({
             "format_version": 2, "read_only": True, "hardware": {
                 "cpu": {"name": "Intel Core i5-4570"}, "motherboard": {"model": "Example Deskboard"},
@@ -63,11 +64,23 @@ class CandidateBuilderTests(unittest.TestCase):
             z.writestr("X64/EFI/OC/OpenCore.efi", b"sample-fake-opencore")
             z.writestr("X64/EFI/OC/Drivers/OpenRuntime.efi", b"sample-fake-driver")
             z.writestr("Docs/Sample.plist", plistlib.dumps(sample()))
+        self.write_manifest()
+
+    def write_manifest(self):
+        from component_manifest import input_files, sha256
+        entries = [{"path": name, "sha256": sha256(path),
+                    "source_url": "https://example.org/nonbootable-ci-fixtures",
+                    "license_id": "MIT", "release": "synthetic-fixture-v1"}
+                   for name, path in sorted(
+                       input_files(self.kexts, self.acpi, self.hfs).items())]
+        self.manifest.write_text(
+            json.dumps({"schema_version": 1, "files": entries}), encoding="utf-8")
 
     def kwargs(self):
         return dict(hardware_report=self.report, official_zip=self.zip,
                     kext_dir=self.kexts, acpi_dir=self.acpi, hfs_driver=self.hfs,
-                    smbios_json=self.smbios, output_dir=self.output,
+                    smbios_json=self.smbios, component_manifest=self.manifest,
+                    output_dir=self.output,
                     macos="12", consent=True)
 
     def test_approval_required_no_output(self):
