@@ -2444,3 +2444,8 @@
 - **Status:** committed_untested. Test-only cd89961cef71baea28b9e76c07cc9c92178d3d87 adds actual admin enroll_create first/second sync fault negative, no source changed; isolated branch fix/rental-standalone-entropy and draft PR #107. Exact Ubuntu RED pending.
 - **Hazard/rollback:** may expose old positive ACK after failed token flush; no customer data/device. Test revertable if incorrect; no production or physical durability claim.
 - **NEXT:** push synchronized docs head, run literal Ubuntu rental-standalone-entropy workflow, inspect intended failure then implement locked atomic checked token write.
+
+## R281-STANDALONE-0012 — 2026-10-18 Asia/Manila, P1 old-code red and source
+- **Status:** committed_untested, draft PR #107. Test cd89961cef71baea28b9e76c07cc9c92178d3d87 synchronized at 14ecb1ba4682d610702f1af060aad92cc207bb2e; exact Ubuntu #39121632698 FAILED intended pre-rename token flush positive ACK. Source/test c31a3ac422d7648258de1ff7fc7e7b909b89549f changes rental-admin CGI, lease_race.sh, installer and SHA256SUMS; token issuance now uses shared lock, validates paid/enroll state and ID collision, writes private temp and checks sync before and after rename. Added post-rename refusal, corrupt-state preservation and healthy issuance tests. Corrected literal CI pending.
+- **Data integrity/rollback:** avoids software positive ACK on failed flush but no physical durability, full multi-file enrollment atomicity or independent rollback. Isolated preview change revertable; no customer state.
+- **NEXT:** push canonical checkpoint after source, run exact Ubuntu rental-standalone-entropy, diagnose failures and update PR #107.
