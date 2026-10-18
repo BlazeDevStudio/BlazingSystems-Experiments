@@ -131,9 +131,13 @@ case "$action" in
     token="$eid.$secret"
     expected="$(hmac "$token" "enroll|$nonce|$token")" || fail "crypto unavailable"
     [ "$sig" = "$expected" ] || fail "authentication failed"
+    authenticated_line="$line"
     with_lock || fail "server busy"
     line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
     [ -n "$line" ] || { unlock; fail "enrollment invalid or used"; }
+    [ "$line" = "$authenticated_line" ] || { unlock; fail "enrollment changed"; }
+    ts="$(now)"
+    [ "$expiry" -ge "$ts" ] 2>/dev/null || { unlock; fail "enrollment expired"; }
     valid_paid_state || { unlock; fail "corrupt paid state"; }
     did="$(randhex 12)" || { unlock; fail "secure randomness unavailable"; }
     dsecret="$(randhex 24)" || { unlock; fail "secure randomness unavailable"; }
