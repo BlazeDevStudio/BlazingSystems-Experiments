@@ -2398,3 +2398,6 @@
 
 ## R281-STANDALONE-0009 — old-code RED and phone enrollment guard, 2026-10-18 Asia/Manila
 - Test `a71c5d9b4fb7f7b3a04e28a3a67201000454eff0` synchronized `c4a590030e05963dfc63638f8390d83692b6be6b` [literal #39095752298](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095752298) FAILED intended corrupt paid-state enrollment. Source `a14b167e001c3e1df6375fc99d57c4324a735233` guards real signed phone enrollment under lock and repins app CGI; exact corrected Ubuntu pending. Draft PR #107 only.
+
+## R281-STANDALONE-0009 — phone enrollment guard exact CI, 2026-10-18 Asia/Manila
+- Source `a14b167e001c3e1df6375fc99d57c4324a735233` synchronized `7589b5099fd9dc9c062d87af46162a083c732078` [literal Ubuntu #39095858050](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095858050) COMPLETED SUCCESS: signed CGI enrollment refuses unrelated corrupt receipt without consuming token or changing paid state; prior SHA, entropy, lease and dashboard negatives pass. Docs successor classifier pending. No physical/production claim; draft PR #107.
