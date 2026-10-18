@@ -43,7 +43,7 @@ reject() {
     malformed_frozen_marker|incomplete_frozen_marker) expected=frozen_marker_invalid;;
     hardlinked_frozen_marker) expected=frozen_marker_metadata;;
     changed_frozen_archive_marker) expected=frozen_archive_marker_mismatch;;
-    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|bad_detail_format|bad_add_post_balance|bad_subtract_previous_overflow|bad_set_post_balance|bad_restore_post_balance|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
+    overflowing_member_receipt|orphan_member_source|orphan_transfer_recipient|same_transfer_recipient|bad_transfer_balance|bad_add_amount|bad_subtract_amount|bad_set_origin|bad_transfer_amount|bad_transfer_target_underflow|bad_transfer_sender_overflow|bad_detail_format|bad_add_post_balance|bad_subtract_previous_overflow|bad_set_post_balance|bad_restore_post_balance|unknown_member_audit_kind|nonfinancial_delta|nonfinancial_create_result|recreated_member_epoch|trimmed_delete_recreated_member|recreated_transfer_recipient) expected=member_receipt_corrupt;;
     malformed_rental_receipt) expected=rental_receipt_corrupt;;
     corrupt_archive) expected=archive_digest_mismatch;;
     concurrent_writer) expected=writer_busy;;
@@ -152,6 +152,14 @@ printf 'm:detail:set\t100\talice\tset\t-5\t5\tVendo1\t4\n' >> "$BP_STATE/member-
 stage_member_refuse bad_set_post_balance
 printf 'm:detail:restore\t100\talice\trestore_all\t-5\t5\tVendo1\t1\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse bad_restore_post_balance
+# PAY-0774: an unrecognized kind must never be silently treated as
+# nonfinancial, and v1 create/patch/reset/delete never change credit.
+printf 'm:unknown:2\t101\talice\tbonus_credit\t4\t4\tVendo1\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse unknown_member_audit_kind
+printf 'admin:patch:2\t101\talice\tpatch\t5\t125\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse nonfinancial_delta
+printf 'admin:create:2\t101\tcharlie\tcreate\t0\t10\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
+stage_member_refuse nonfinancial_create_result
 printf 'admin:2:alice\t101\talice\tdelete\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 printf 'admin:3:alice\t102\talice\tcreate\t0\t0\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 stage_member_refuse recreated_member_epoch
@@ -218,6 +226,8 @@ cat "$T/healthy-members.tsv" > "$BP_STATE/members.tsv"
 printf 'm:1\t100\talice\tadd\t20\t20\tVendo1\t120\n' > "$BP_STATE/member-events.tsv"
 # Healthy distinct source/recipient transfer receipts remain acceptable.
 printf 'm:healthy:2\t100\talice\ttransfer\t-4\t4\tVendo1\t116:bob:4\n' >> "$BP_STATE/member-events.tsv"
+# Legitimate retained v1 nonfinancial audit may record current bank in result.
+printf 'admin:patch:healthy\t100\talice\tpatch\t0\t116\tfixture\t\n' >> "$BP_STATE/member-events.tsv"
 refresh_archive
 before="$(find "$BP_STATE" -type f -exec sha256sum {} + | LC_ALL=C sort)"
 result="$(stage)"
