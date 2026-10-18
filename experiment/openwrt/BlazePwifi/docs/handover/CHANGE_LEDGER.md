@@ -2416,3 +2416,6 @@
 
 ## R281-STANDALONE-0010 — enrollment lock-edge exact CI, 2026-10-18 Asia/Manila
 - Source `1581215f1142494f7a6b832d9110ce9ed5a2b4b8` synchronized `4b6043fa7764affbddcacef2c60655b9c422acb5` [literal Ubuntu #39114121907](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39114121907) COMPLETED SUCCESS: authenticated row reread matches under lock, concurrent replacement refuses/no device/token consume, prior pins/entropy/receipt/reload contracts PASS. Final docs classifier pending; draft PR #107 and physical gates remain.
+
+## R281-STANDALONE-0011 — enrollment post-rename lost-ACK negative, 2026-10-18 Asia/Manila
+- Test-only `718fbb0e79d8ac8e6461ddfc331a573c5c6c28c2` injects second sync failure after enrolled device rename, then repeats same signed token; requires no second device. Synchronized old-code exact Ubuntu pending; draft PR #107 only.
