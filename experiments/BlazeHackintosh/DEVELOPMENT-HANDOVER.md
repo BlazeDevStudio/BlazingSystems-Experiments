@@ -125,3 +125,6 @@ Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned e
 - Stages under NEW BlazeEFI-* folder only; fails closed on missing source, symlinks, oversized/special files, hash failure, ocvalidate rejection or existing destination. Includes per-file hash manifest and DO-NOT-INSTALL marker.
 - Tests use fake/invalid kexts, SSDTs and HFS; CI staging will be intentionally NON-BOOTABLE and never distributed. Official ocvalidate schema pass is not hardware acceptance.
 - New release target `blazehackintosh-toolkit-v0.1.4-alpha.1` gated by actual Linux/Windows test suites, genuine OpenCore schema check, source CLI and compiled EXE staging tests. Previous v0.1.3 is preserved.
+
+## v0.1.4 CI regression 39091033215
+48 Linux tests passed; Windows failed 8 new builder tests because `Path.resolve() != Path.absolute()` rejected an ordinary Windows runner temporary parent directory (path alias/canonicalization difference), before checking real input files. Guard now requires an existing non-symlink parent and a NEW BlazeEFI-* child, without invalid canonical-string equality. Re-run mandatory; no release claim yet.

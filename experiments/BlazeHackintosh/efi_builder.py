@@ -213,7 +213,7 @@ def _output_path(path: str | Path) -> Path:
     if out.exists() or out.is_symlink():
         raise ValueError("Refusing to overwrite an existing output directory or link")
     parent = out.parent
-    if not parent.is_dir() or parent.is_symlink() or parent.resolve() != parent:
+    if not parent.is_dir() or parent.is_symlink():
         raise ValueError("Destination parent must be a real, already-existing directory")
     return out
 
