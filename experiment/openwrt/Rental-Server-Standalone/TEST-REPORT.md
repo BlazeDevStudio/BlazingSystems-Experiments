@@ -74,3 +74,5 @@ v0.1.3-preview.1 OpenSSL entropy addendum (2026-10-18 Manila)
 - R281-STANDALONE-0003 source 16fff7b4, synced 856c2687: literal Ubuntu #39086946962, #39086991742, #39086993426 all SUCCESS at exact SHA. Admin/phone status preserve newer lease and refuse revoke under synthetic lock-edge writer; no physical durability claim.
 
 - R281-STANDALONE-0004 test ecf12969, synced 1e53358b literal Ubuntu #39090790627 expected RED: status rewrote devices.tsv; preceding checks passed. Source 1c05f69a separates advisory activity from lease, exact CI pending.
+
+- R281-STANDALONE-0004 source 1c05f69a, synced af9c9627: literal Ubuntu #39091052277, #39091125909, #39091127880 SUCCESS; status leaves devices.tsv byte-identical and admin receives advisory last_seen. No hardware/powercut proof.
