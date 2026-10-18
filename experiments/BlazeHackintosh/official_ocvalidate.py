@@ -134,7 +134,18 @@ def run_official_ocvalidate(
             if platform.system() != "Windows":
                 tool.chmod(0o700)
             version_code, version_output = _invoke([str(tool), "--version"])
-            if version_code != 0 or not re.search(r"(?<!\d)1\.0\.8(?!\d)", version_output):
+            expected_banner = ("NOTE: This version of ocvalidate is only compatible "
+                               "with OpenCore version 1.0.8!")
+            # Upstream RELEASE 1.0.8 Windows binary presently prints its exact
+            # version banner but interprets "--version" as an input filename.
+            # Accept that *specific* observed legacy behavior only for the
+            # cryptographically pinned archive. Any other mismatch fails closed.
+            normal_version = (version_code == 0 and
+                              bool(re.search(r"(?<!\d)1\.0\.8(?!\d)", version_output)))
+            upstream_banner = (version_code is not None and
+                               expected_banner in version_output and
+                               "Failed to read --version" in version_output)
+            if not (normal_version or upstream_banner):
                 report["error"] = (f"ocvalidate --version could not confirm 1.0.8 "
                                    f"(exit={version_code}, output={version_output[:450]!r})")
                 return report

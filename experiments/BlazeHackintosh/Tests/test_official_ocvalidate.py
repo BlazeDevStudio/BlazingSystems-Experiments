@@ -113,5 +113,29 @@ class OfficialValidationBridgeTests(unittest.TestCase):
             self.assertIsNone(official._tool_member(z, "Windows"))
 
 
+    def test_upstream_exact_banner_fallback_only_after_digest_approval(self):
+        official_banner = ("NOTE: This version of ocvalidate is only compatible "
+                           "with OpenCore version 1.0.8!\n\nFailed to read --version")
+        with patch.object(official, "_invoke", side_effect=[
+            (4294967295, official_banner), (4294967295, "fixture is not valid OpenCore config")
+        ]) as runner:
+            report = official.run_official_ocvalidate(
+                self.root, self.package, consent=True, system="Windows",
+                expected_sha256=self.checksum())
+        self.assertTrue(report["version_matched"])
+        self.assertTrue(report["attempted"])
+        self.assertFalse(report["passed"])
+        self.assertEqual(runner.call_count, 2)
+
+    def test_wrong_banner_version_is_still_blocked(self):
+        wrong = "NOTE: This version of ocvalidate is only compatible with OpenCore version 1.0.7!\nFailed to read --version"
+        with patch.object(official, "_invoke", return_value=(4294967295, wrong)) as runner:
+            report = official.run_official_ocvalidate(
+                self.root, self.package, consent=True, system="Windows",
+                expected_sha256=self.checksum())
+        self.assertFalse(report["version_matched"])
+        self.assertFalse(report["attempted"])
+        self.assertEqual(runner.call_count, 1)
+
 if __name__ == "__main__":
     unittest.main()

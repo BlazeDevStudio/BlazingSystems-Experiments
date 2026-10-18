@@ -98,3 +98,6 @@ First run failed 3/34 tests because mock ZIP contents compressed below the delib
 
 ## v0.1.3 real upstream checker regression (run 39081613900)
 All 34 unit tests passed on Linux and Windows and official release ZIP SHA-256 verified on Windows. The actual official ocvalidate --version check did not confirm 1.0.8; no binary was shipped. Added bounded exit-code and stdout/stderr diagnostic to distinguish actual upstream version format from execution errors before remediation.
+
+## v0.1.3 upstream version discrepancy (run 39081701539)
+Official RELEASE ZIP SHA256 verified. Actual ocvalidate.exe --version returned exit 4294967295, printed the **exact 1.0.8 banner**, followed by `Failed to read --version`. Added narrow banner-based fallback ONLY if archive is already hash-verified, plus regression tests for 1.0.8 accepted and 1.0.7 rejected. Official schema-validation smoke rerun required. No release claim yet.

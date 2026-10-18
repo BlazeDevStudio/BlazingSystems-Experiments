@@ -47,3 +47,14 @@ BlazeHackintosh-Toolkit.exe validate-efi --efi D:\MyOfflineEFI --ocvalidate-pack
 **Security caution:** running an approved, hash-verified upstream binary still
 executes code on your device. Use on trusted systems only, keep backups, and do not
 run downloads from unofficial sources. ZIP verification alone performs no execution.
+
+## Observed upstream version-flag behavior (GitHub Actions run 39081701539)
+The hash-matched official Windows 1.0.8 binary prints the exact banner
+`NOTE: This version of ocvalidate is only compatible with OpenCore version 1.0.8!`
+but then emits `Failed to read --version` and returns a nonzero exit status.
+Although the upstream README documents `--version`, this particular released
+binary treats it as an input path. Only that exact banner combined with the pinned
+archive digest is accepted as version evidence; all other versions still fail closed.
+The checker is subsequently run against the selected `config.plist` to perform
+real schema checks. This is an observed compatibility workaround, **not** a
+relaxation of the archive hash requirement or EFI boot-validity criteria.
