@@ -61,6 +61,30 @@ valid_lease(){
   case "$1" in *[!0-9]*) return 1;; esac
   [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
 }
+valid_paid_state(){
+  awk -F '\t' '
+    function hex(s,n) { return length(s)==n && s !~ /[^0-9a-f]/ }
+    function lease(s) { return s=="0" || (s ~ /^[1-9][0-9]*$/ && length(s)<=10 && s+0<=2147483647) }
+    function bounded(s,negative) {
+      if (s !~ /^-?[0-9]+$/ || length(s)>8) return 0
+      if (s ~ /^-?0[0-9]+$/ || s=="-0") return 0
+      return negative ? s+0>=-604800 && s+0<=2592000 : s+0>=0 && s+0<=2592000
+    }
+    $1=="@op" {
+      if (NF!=6 || !hex($2,32) || !hex($3,24) || seen_op[$2]++ ||
+          !lease($6) ||
+          !(($4=="add_time" && bounded($5,1)) ||
+            ($4=="set_time" && bounded($5,0)) ||
+            ($4=="expire" && $5=="-"))) bad=1
+      next
+    }
+    {
+      if (NF!=5 || !hex($1,24) || $2=="" || $2 ~ /[^0-9a-f]/ ||
+          seen_device[$1]++ || !lease($3) || !lease($5)) bad=1
+    }
+    END { exit bad ? 1 : 0 }
+  ' "$DEVICES"
+}
 policy_line(){
   l="$(awk -F '\t' -v d="$1" '$1==d {print;exit}' "$POLICY")"
   [ -n "$l" ] && printf '%s\n' "$l" || printf '%s\t*\t-\t-\t4096\n' "$1"
@@ -110,6 +134,7 @@ case "$action" in
     with_lock || fail "server busy"
     line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
     [ -n "$line" ] || { unlock; fail "enrollment invalid or used"; }
+    valid_paid_state || { unlock; fail "corrupt paid state"; }
     did="$(randhex 12)" || { unlock; fail "secure randomness unavailable"; }
     dsecret="$(randhex 24)" || { unlock; fail "secure randomness unavailable"; }
     write_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
