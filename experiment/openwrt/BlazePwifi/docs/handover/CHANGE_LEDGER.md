@@ -2277,3 +2277,13 @@
 - **Evidence:** source blob `4f96d1118cea148dda3038746b9d51cb4ec8e39e` unchanged; CURRENT_STATE documentation commits `e43a92604b1d87d84b04cd04f80110f5f17b208d`, `0e1afd4703727a99b35a88e2710270f43566bdb7`. DEV exact SHA `aa89b995` Full #38957888740, Windows #38957888624, SDK #38957888750, native #38957888718, sealed #38957888872 completed success BEFORE this proposed fix. PR #30 remains draft. PR #89 owner-gated, #101 and #102 candidate-only in progress. No release.
 - **Rollback/safety:** abandon docs-only isolated branch if fix cannot be safely applied. No production/customer changes, signing keys, physical hardware or payment authority touched. #31/#32/#43/#34 remain OPEN; `VERSION=0.5.3`, `CUSTOMER_INSTALL_AUTHORIZED=0`, `PRODUCTION_v0.6.0_RELEASED=0`.
 - **NEXT:** obtain an authorized source write, implement pending base comparison, add disposable negative/positive test, update all three handovers, open draft PR, run exact-head Full WITNESS-0738 and platform matrix. Never claim CI green for uncommitted code.
+
+
+## WITNESS-0770 — pending PREPARE base replay guard, 2026-10-18 Asia/Manila
+- **Status:** committed; focused and exact-head CI pending. **Priority:** P0 #43; isolated candidate only.
+- **Branch/base:** `fix/witness-0770-pending-base-replay-guard`, based on development `aa89b9956309085d2742c14df294042d14e558b4`; source/test commit `734a1adb3905d1d9317168080f89b6a62777d230`.
+- **Finding/fix:** pending PREPARE idempotence compared its new revision/digest/nonce but not the request's old revision/digest. The candidate now requires exact equality with the committed floor before any pending retry response.
+- **Regression:** `tests/v060_offdevice_witness_candidate.sh` adds wrong-old-revision and wrong-old-digest denials and retains the matching pending retry positive. No test execution or CI success is claimed yet.
+- **Scope/risk:** nonproduction off-device SQLite candidate only; no installed paid writer, real witness, public ACKP1, customer balances, keys, main, Stable/Standalone, or releases changed. The whole candidate database remains rollbackable; P0 #31/#32/#43/#34 remain open. Release flags remain denied.
+- **Rollback:** discard isolated branch or revert `734a1adb`; no migrated data exists.
+- **NEXT ACTION:** open draft PR against `blazepwifi-v0.6.0-audit-foundation`; run focused WITNESS-0738 regression and verify exact-head Full/native/SDK/handover checks before calling this guard validated.
