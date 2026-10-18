@@ -24,6 +24,13 @@ if [ "${1:-}" = "$BLAZE_RENTAL_BASE/state/.lock" ] && [ "$BLAZE_RACE_MODE" != no
     "$BLAZE_REAL_MKDIR" "$1" || exit 1
     if [ "$BLAZE_RACE_MODE" = revoke ]; then
         : > "$BLAZE_RENTAL_BASE/state/devices.tsv"
+    elif [ "$BLAZE_RACE_MODE" = enroll_replace ]; then
+        printf '%s\t%s\t%s\t%s\n' \
+            "$BLAZE_TEST_EID" "$BLAZE_TEST_REPLACEMENT_SECRET" \
+            "$BLAZE_TEST_EXPIRY" 'Replacement phone' \
+            > "$BLAZE_RENTAL_BASE/state/.enroll-race-next"
+        mv "$BLAZE_RENTAL_BASE/state/.enroll-race-next" \
+            "$BLAZE_RENTAL_BASE/state/enroll.tsv"
     else
         printf '%s\t%s\t%s\tTest phone\t0\n' \
             "$BLAZE_TEST_DID" "$BLAZE_TEST_SECRET" "$BLAZE_TEST_LEASE" \
@@ -330,5 +337,29 @@ cmp -s "$T/enroll-corrupt-before" "$T/hub/state/devices.tsv" || {
 }
 cmp -s "$T/enroll-before" "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: corrupt-state enrollment consumed token' >&2; exit 1;
+}
+
+# A token authenticated before waiting for the lock must not authorize a
+# replacement enrollment record with the same ID and a different secret.
+seed_old
+printf '%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$EXPIRY" 'Test phone' > "$T/hub/state/enroll.tsv"
+cp "$T/hub/state/devices.tsv" "$T/enroll-race-device-before"
+replacement_secret='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+enroll_race="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$ENONCE" "$ESIG" |
+    env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
+        BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=enroll_replace \
+        BLAZE_TEST_EID="$EID" BLAZE_TEST_REPLACEMENT_SECRET="$replacement_secret" \
+        BLAZE_TEST_EXPIRY="$EXPIRY" REQUEST_METHOD=POST \
+        sh "$ROOT/root/www/cgi-bin/rental")"
+printf '%s' "$enroll_race" | grep -Fq '"ok":false' || {
+    echo 'FAIL: stale authenticated enrollment accepted replacement token' >&2; exit 1;
+}
+cmp -s "$T/enroll-race-device-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: stale enrollment wrote a device' >&2; exit 1;
+}
+awk -F '\t' -v e="$EID" -v s="$replacement_secret" \
+    '$1==e && $2==s {found++} END{exit(found==1?0:1)}' \
+    "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: stale enrollment consumed replacement token' >&2; exit 1;
 }
 echo 'Standalone rental lock-edge lease refusal PASS'
