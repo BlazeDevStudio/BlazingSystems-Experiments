@@ -135,4 +135,48 @@ for malformed in corrupt 000123 2147483648; do
         echo "FAIL: phone status rewrote corrupt lease ($malformed)" >&2; exit 1;
     }
 done
+
+# The original helper ignored a failed sync and returned a paid success. A
+# failure before rename has no committed lease; after rename the outcome is
+# uncertain and must never be acknowledged as durable.
+REAL_SYNC="$(command -v sync)"
+cat > "$T/bin/sync" <<'EOF'
+#!/bin/sh
+set -eu
+count=0
+[ ! -s "$BLAZE_SYNC_COUNT_FILE" ] || count="$(cat "$BLAZE_SYNC_COUNT_FILE")"
+count=$((count+1))
+printf '%s\n' "$count" > "$BLAZE_SYNC_COUNT_FILE"
+[ "$count" -ne "$BLAZE_SYNC_FAIL_AT" ] || exit 1
+exec "$BLAZE_REAL_SYNC" "$@"
+EOF
+chmod 755 "$T/bin/sync"
+run_sync_fault(){
+    printf 'action=add_time&device_id=%s&seconds=600\n' "$DID" |
+        env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
+            BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
+            BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$1" \
+            BLAZE_SYNC_COUNT_FILE="$T/sync-count" \
+            HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+            sh "$ROOT/root/www/cgi-bin/rental-admin"
+}
+seed_old
+cp "$T/hub/state/devices.tsv" "$T/lease-before-sync"
+rm -f "$T/sync-count"
+response="$(run_sync_fault 1)"
+printf '%s' "$response" | grep -Fq '"ok":false' || {
+    echo 'FAIL: pre-rename sync failure received a paid ACK' >&2; exit 1;
+}
+cmp -s "$T/lease-before-sync" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: pre-rename sync failure replaced the lease' >&2; exit 1;
+}
+seed_old
+rm -f "$T/sync-count"
+response="$(run_sync_fault 2)"
+printf '%s' "$response" | grep -Fq '"ok":false' || {
+    echo 'FAIL: post-rename sync failure received a paid ACK' >&2; exit 1;
+}
+printf '%s' "$response" | grep -Fq 'outcome uncertain' || {
+    echo 'FAIL: post-rename sync failure hid the uncertain outcome' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
