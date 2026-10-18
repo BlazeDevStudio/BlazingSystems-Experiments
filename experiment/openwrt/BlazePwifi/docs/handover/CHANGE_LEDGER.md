@@ -2407,3 +2407,6 @@
 
 ## R281-STANDALONE-0010 — insufficient test corrected, 2026-10-18 Asia/Manila
 - First test sync `357daa3000020a2357d372654621c22d76c39284` [#39096172864](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096172864) unexpectedly PASS on old code, so it was not a valid RED. Test correction `e7f213350497febd8dc412ef7940c870bd207e0c` requires the race marker and exact changed-enrollment error; new exact Ubuntu pending. No source claim yet; draft PR #107 only.
+
+## R281-STANDALONE-0010 — sync-fixture confound identified, 2026-10-18 Asia/Manila
+- Corrected test sync `c29ee4418c76b5504dd07c787e874cd49a507ea0` [#39096283266](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096283266) FAILED due inherited sync fault wrapper, not target bug. Test-only `2fbc434bd6afec9d64bc764507470168ee9b982e` permits checked real sync in enrollment race; new exact old-code result pending. No source claim; draft PR #107.
