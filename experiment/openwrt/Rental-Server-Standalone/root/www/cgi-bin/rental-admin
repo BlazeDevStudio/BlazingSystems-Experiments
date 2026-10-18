@@ -13,10 +13,19 @@ randhex(){
   n="${1:-12}"
   case "$n" in ''|*[!0-9]*) return 1;; esac
   [ "$n" -ge 1 ] && [ "$n" -le 32 ] || return 1
-  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
-  [ "${#x}" -eq $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
-  case "$x" in *[!0-9a-f]* ) return 1;; esac
-  [ "${#x}" -eq $((n*2)) ] || return 1
+  hstatus=0; ostatus=0; olen=0
+  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || hstatus=$?
+  hlen="${#x}"
+  if [ "$hlen" -ne $((n*2)) ]; then
+    raw="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null)" || ostatus=$?
+    x="$(printf '%s' "$raw" | tr -d ' \n')"
+    olen="${#x}"
+  fi
+  case "$x" in *[!0-9a-f]* ) x='';; esac
+  [ "${#x}" -eq $((n*2)) ] || {
+    printf 'rental entropy incomplete: requested=%s hexdump_status=%s hexdump_hex=%s od_status=%s od_hex=%s\n' "$n" "$hstatus" "$hlen" "$ostatus" "$olen" >&2
+    return 1
+  }
   printf '%s' "$x"
 }
 url_decode(){ printf '%s' "$1" | awk 'function hx(c,p){c=toupper(c);p=index("0123456789ABCDEF",c);return p?p-1:-1}{s=$0;out="";for(i=1;i<=length(s);i++){c=substr(s,i,1);if(c=="%"&&i+2<=length(s)){a=hx(substr(s,i+1,1));b=hx(substr(s,i+2,1));if(a>=0&&b>=0){out=out sprintf("%c",a*16+b);i+=2;continue}}if(c=="+")c=" ";out=out c}printf "%s",out}'; }
