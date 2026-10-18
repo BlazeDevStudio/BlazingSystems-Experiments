@@ -2413,3 +2413,6 @@
 
 ## R281-STANDALONE-0010 — actual stale enrollment RED and source, 2026-10-18 Asia/Manila
 - Test `2fbc434bd6afec9d64bc764507470168ee9b982e` synchronized `7c3b0736d092c727862e352f529cb0d8d20653e7` [literal #39113978716](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39113978716) FAILED intended: old CGI issued device after same-ID token secret replaced during lock wait. Source `1581215f1142494f7a6b832d9110ce9ed5a2b4b8` compares authenticated row after lock, rechecks expiry and repins app CGI; exact corrected Ubuntu pending. Prior false-green/fixture-red documented; draft PR #107 only.
+
+## R281-STANDALONE-0010 — enrollment lock-edge exact CI, 2026-10-18 Asia/Manila
+- Source `1581215f1142494f7a6b832d9110ce9ed5a2b4b8` synchronized `4b6043fa7764affbddcacef2c60655b9c422acb5` [literal Ubuntu #39114121907](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39114121907) COMPLETED SUCCESS: authenticated row reread matches under lock, concurrent replacement refuses/no device/token consume, prior pins/entropy/receipt/reload contracts PASS. Final docs classifier pending; draft PR #107 and physical gates remain.
