@@ -25,6 +25,7 @@ if [ "${1:-}" = "$BLAZE_RENTAL_BASE/state/.lock" ] && [ "$BLAZE_RACE_MODE" != no
     if [ "$BLAZE_RACE_MODE" = revoke ]; then
         : > "$BLAZE_RENTAL_BASE/state/devices.tsv"
     elif [ "$BLAZE_RACE_MODE" = enroll_replace ]; then
+        : > "$BLAZE_TEST_RACE_MARKER"
         printf '%s\t%s\t%s\t%s\n' \
             "$BLAZE_TEST_EID" "$BLAZE_TEST_REPLACEMENT_SECRET" \
             "$BLAZE_TEST_EXPIRY" 'Replacement phone' \
@@ -349,10 +350,15 @@ enroll_race="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$EN
     env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
         BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=enroll_replace \
         BLAZE_TEST_EID="$EID" BLAZE_TEST_REPLACEMENT_SECRET="$replacement_secret" \
-        BLAZE_TEST_EXPIRY="$EXPIRY" REQUEST_METHOD=POST \
+        BLAZE_TEST_EXPIRY="$EXPIRY" BLAZE_TEST_RACE_MARKER="$T/enroll-race-hit" \
+        REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental")"
-printf '%s' "$enroll_race" | grep -Fq '"ok":false' || {
-    echo 'FAIL: stale authenticated enrollment accepted replacement token' >&2; exit 1;
+test -f "$T/enroll-race-hit" || {
+    echo 'FAIL: enrollment lock-edge replacement was not exercised' >&2; exit 1;
+}
+printf '%s' "$enroll_race" | grep -Fq '"error":"enrollment changed"' || {
+    printf '%s\n' "$enroll_race" | sed 's/"device_secret":"[^"]*"/"device_secret":"REDACTED"/' >&2
+    echo 'FAIL: stale authenticated enrollment did not refuse changed token' >&2; exit 1;
 }
 cmp -s "$T/enroll-race-device-before" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: stale enrollment wrote a device' >&2; exit 1;
