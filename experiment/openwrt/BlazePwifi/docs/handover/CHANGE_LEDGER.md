@@ -2759,3 +2759,7 @@
 - **Evidence:** local staged diff check PASS. No local POSIX shell; exact Windows/Linux CI for this SHA PENDING, prior unrelated #39154043659 SUCCESS cannot certify this change. No live server or physical uninstall proof.
 - **Rollback/data:** revert only this isolated source slice if CI/approved lab reveals defect. Script is opt-in and code-only; no LIO, SSH, image, key, network, money or customer state touched. The manifest is not a signature.
 - **NEXT ACTION:** commit the three canonical handovers, dispatch literal-head blazepisonet-softtimer-release.yml, inspect Ubuntu uninstall and Windows build/install jobs, fix concrete failures, then update PR #90.
+## PISONET-0031 — workflow parse failure and correction, 2026-10-19 Asia/Manila
+- **Status:** failed_then_corrected_untested; **priority:** P1; PR #90. Literal head a31e9cc4a72424d642b211488a432f6ef3ba023b push #39154922834 COMPLETED FAILURE before any jobs due malformed YAML indentation at package step name. No package or Windows test executed.
+- **Fix:** source-only 56843f6cbe59fd24fc1338cf98d42b8980ce3929 restores step indentation in .github/workflows/blazepisonet-softtimer-release.yml. No LIO, SSH, image, financial or customer mutation. Corrected CI pending.
+- **NEXT ACTION:** commit synchronized handover, push corrected exact SHA, require Ubuntu package uninstall and Windows strict build/NSIS success; if red inspect named step and fix demonstrated error only.
