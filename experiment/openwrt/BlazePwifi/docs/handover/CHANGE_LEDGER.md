@@ -1,3 +1,7 @@
+## R281-STANDALONE-0001 — docs-head intermittent entropy failure, 2026-10-18 Asia/Manila
+- **Status:** failed, investigation required; draft PR #107 head `c52f4c2b2f48c9ad8ffd2f55a8e9a501c00491d3` [literal #39084362606](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39084362606) returned `secure randomness unavailable` during one of ten healthy admin issuances; redacted response in CI proves it. Prior same-source stress head `e5ee7098` #39084229748 passed twice. No production claim.
+- **Next:** capture only command exit status and byte count for hexdump/od, no secret material; fix demonstrated reader failure and rerun exact CI. Keep PR draft, no R281/Android or BlazePwifi release.
+
 ## R281-STANDALONE-0001 — exact stress CI twice green, 2026-10-18 Asia/Manila
 - **Status:** validated preview contract, production NOT authorized; draft PR #107 source `3546577b`, stress test `03e90b68aec0cc454bf2eb30c5999212486e65fe`, synchronized `e5ee70984d2a36ee21652fc7293b693cd523be85`.
 - **Exact evidence:** [#39084229748](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39084229748) COMPLETED SUCCESS attempts 1 and 2 at literal head; ten healthy admin issuances, app enrollment, forced missing-entropy no-write/no-consume, checksum pins and shell syntax. Initial old-code expected RED #39083519007; first corrected #39083853101 positive RED of unknown cause; diagnostic-only #39083975140 success attempts 1 and 2. No source changed between first corrected and diagnostic success. PR body records all runs.
