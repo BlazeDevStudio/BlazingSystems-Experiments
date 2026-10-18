@@ -5,6 +5,10 @@ ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT HUP INT TERM
 mkdir -p "$T/fail-bin" "$T/fail-readers" "$T/admin/state" "$T/app/state"
+for root in "$T/admin" "$T/app"; do
+    : > "$root/state/devices.tsv"
+    : > "$root/state/enroll.tsv"
+done
 for command in hexdump od; do
     printf '#!/bin/sh\nexit 1\n' > "$T/fail-bin/$command"
     chmod 755 "$T/fail-bin/$command"

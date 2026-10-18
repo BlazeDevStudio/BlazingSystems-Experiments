@@ -4,8 +4,6 @@ set -u
 umask 077
 BASE="${BLAZE_RENTAL_BASE:-/etc/blazepwifi-rental}"
 STATE="$BASE/state"; DEVICES="$STATE/devices.tsv"; ENROLL="$STATE/enroll.tsv"; POLICY="$STATE/policy.tsv"; EVENTS="$STATE/events.tsv"; TOKEN_FILE="$BASE/admin.token"
-mkdir -p "$STATE" 2>/dev/null || true
-for f in "$DEVICES" "$ENROLL" "$POLICY" "$EVENTS"; do [ -f "$f" ] || : > "$f"; chmod 600 "$f" 2>/dev/null || true; done
 json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\r//g; s/\n/\\n/g'; }
 json(){ printf 'Content-Type: application/json\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: DENY\r\n\r\n%s\n' "$1"; }
 fail(){ json "{\"ok\":false,\"error\":\"$(json_escape "$1")\"}"; exit 0; }
@@ -50,7 +48,14 @@ within_state_capacity(){
 }
 lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
 unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
-with_lock(){ i=0; while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done; return 0; }
+state_files_ready(){
+  [ -d "$BASE" ] && [ ! -L "$BASE" ] &&
+    [ -d "$STATE" ] && [ ! -L "$STATE" ] || return 1
+  for f in "$DEVICES" "$ENROLL"; do
+    [ -f "$f" ] && [ ! -L "$f" ] && [ -r "$f" ] || return 1
+  done
+}
+with_lock(){ i=0; while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done; state_files_ready || { unlock; return 1; }; return 0; }
 check_auth(){
   [ -s "$TOKEN_FILE" ] || fail "admin token missing"
   expected="$(cat "$TOKEN_FILE")"; got="${HTTP_X_BLAZE_RENTAL_ADMIN:-$(param admin_token)}"
@@ -144,6 +149,7 @@ log(){ printf '%s\t%s\t%s\t%s\n' "$(now)" "$1" "$2" "${REMOTE_ADDR:-local}" >> "
 
 [ "${REQUEST_METHOD:-GET}" = POST ] || fail "POST required"
 check_auth
+state_files_ready || fail "authority state missing or unsafe"
 action="$(param action)"; ts="$(now)"
 case "$action" in
   health)

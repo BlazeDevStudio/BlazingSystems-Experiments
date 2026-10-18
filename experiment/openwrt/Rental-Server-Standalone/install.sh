@@ -68,12 +68,29 @@ admin_token_hex(){
   [ "${#x}" -eq 48 ] || return 1
   printf '%s' "$x"
 }
-TOKEN_FILE=/etc/blazepwifi-rental/admin.token
+RENTAL_BASE=/etc/blazepwifi-rental
+FRESH_STATE=1
+if [ -e "$RENTAL_BASE" ] || [ -L "$RENTAL_BASE" ]; then
+  FRESH_STATE=0
+  [ -d "$RENTAL_BASE" ] && [ ! -L "$RENTAL_BASE" ] &&
+    [ -d "$RENTAL_BASE/state" ] && [ ! -L "$RENTAL_BASE/state" ] || {
+      echo 'ERROR: existing rental authority is incomplete or unsafe.' >&2; exit 1;
+    }
+  for f in devices.tsv enroll.tsv policy.tsv events.tsv; do
+    [ -f "$RENTAL_BASE/state/$f" ] && [ ! -L "$RENTAL_BASE/state/$f" ] || {
+      echo "ERROR: existing rental authority file $f missing or unsafe." >&2; exit 1;
+    }
+  done
+fi
+TOKEN_FILE=$RENTAL_BASE/admin.token
 [ ! -L "$TOKEN_FILE" ] && { [ ! -e "$TOKEN_FILE" ] || [ -f "$TOKEN_FILE" ]; } || {
   echo 'ERROR: unsafe admin token path.' >&2; exit 1;
 }
 NEW_ADMIN_TOKEN=''
-if [ ! -s "$TOKEN_FILE" ]; then
+if [ "$FRESH_STATE" = 0 ] && [ ! -s "$TOKEN_FILE" ]; then
+  echo 'ERROR: existing rental admin identity missing or empty.' >&2; exit 1;
+fi
+if [ "$FRESH_STATE" = 1 ]; then
   NEW_ADMIN_TOKEN="$(admin_token_hex)" || { echo 'ERROR: secure random bytes unavailable.' >&2; exit 1; }
 fi
 
@@ -89,8 +106,8 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo 'ad4f4668567ac3a1dc34a3593838ea4489980cfda907b661ee4836cf43e6fd95  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo 'dc16f96e5c0e52881e85cbb7752bf69d5fa223939a725e759e4a2bcab20240b0  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo '9037ae0892ec2075821062037b37fefda3129ef1179019a85c37373ff7a21606  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo '8e7f2780a596a41869cacfdf31d9a7c80215c76f667a37a2a71dffe5a1cfbf27  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
 echo 'f3ce505fd15a42350b00ae9b1dec775bbf3f2bb8c4d07e89c422852100a7cb19  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
@@ -104,7 +121,10 @@ cp "$TMP/root/www/rental/index.html" /www/rental/index.html
 chmod 755 /www/cgi-bin/rental /www/cgi-bin/rental-admin
 chmod 644 /www/rental/index.html
 chmod 700 /etc/blazepwifi-rental /etc/blazepwifi-rental/state
-for f in devices.tsv enroll.tsv policy.tsv events.tsv; do [ -f "/etc/blazepwifi-rental/state/$f" ] || : > "/etc/blazepwifi-rental/state/$f"; chmod 600 "/etc/blazepwifi-rental/state/$f"; done
+for f in devices.tsv enroll.tsv policy.tsv events.tsv; do
+  if [ "$FRESH_STATE" = 1 ]; then : > "/etc/blazepwifi-rental/state/$f"; fi
+  chmod 600 "/etc/blazepwifi-rental/state/$f"
+done
 if [ -n "$NEW_ADMIN_TOKEN" ]; then
   printf '%s\n' "$NEW_ADMIN_TOKEN" > "$TOKEN_FILE"
   chmod 600 "$TOKEN_FILE"

@@ -23,7 +23,9 @@ jobs:
         run: |
           cd experiment/openwrt/Rental-Server-Standalone
           sha256sum -c SHA256SUMS
-          sh -n install.sh root/www/cgi-bin/rental root/www/cgi-bin/rental-admin tests/entropy_fail_closed.sh tests/lease_race.sh
+          sh -n install.sh root/www/cgi-bin/rental root/www/cgi-bin/rental-admin tests/entropy_fail_closed.sh tests/lease_race.sh tests/state_preflight.sh
+      - name: Refuse missing or unsafe installed authority files
+        run: sh experiment/openwrt/Rental-Server-Standalone/tests/state_preflight.sh
       - name: Refuse token and device-secret issuance without kernel entropy
         run: sh experiment/openwrt/Rental-Server-Standalone/tests/entropy_fail_closed.sh
       - name: Preserve latest rental lease across the lock edge
