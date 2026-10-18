@@ -417,6 +417,23 @@ printf '%s' "$retry_enroll" | grep -Fq '"replayed":true' || {
     echo 'FAIL: retry ACK was not marked as replay' >&2; exit 1;
 }
 cp "$T/hub/state/devices.tsv" "$T/enroll-receipt-before"
+test ! -s "$T/hub/state/enroll.tsv" || {
+    echo 'FAIL: successful replay left the enrollment token active' >&2; exit 1;
+}
+again_enroll="$(run_enroll_sync_fault 0)"
+printf '%s' "$again_enroll" | grep -Fq "\"device_secret\":\"$receipt_secret\"" || {
+    echo 'FAIL: retry after token consumption lost the recorded credential' >&2; exit 1;
+}
+cmp -s "$T/enroll-receipt-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: retry after token consumption rewrote saved devices' >&2; exit 1;
+}
+awk -F '\t' -v d="$receipt_device" 'BEGIN{OFS="\t"} $1==d {$2="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"} {print}' \
+    "$T/enroll-receipt-before" > "$T/hub/state/devices.tsv"
+changed_enroll="$(run_enroll_sync_fault 0)"
+printf '%s' "$changed_enroll" | grep -Fq '"error":"enrollment device changed"' || {
+    echo 'FAIL: changed device credential received enrollment replay' >&2; exit 1;
+}
+cp "$T/enroll-receipt-before" "$T/hub/state/devices.tsv"
 printf '@enroll\t%s\t%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$receipt_device" "$receipt_secret" "$EXPIRY" >> "$T/hub/state/devices.tsv"
 receipt_corrupt="$(run_enroll_sync_fault 0)"
 printf '%s' "$receipt_corrupt" | grep -Fq '"error":"corrupt paid state"' || {
