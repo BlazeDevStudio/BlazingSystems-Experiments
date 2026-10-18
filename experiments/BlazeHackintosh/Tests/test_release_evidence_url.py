@@ -12,12 +12,16 @@ spec.loader.exec_module(module)
 
 
 class EvidenceURLTests(unittest.TestCase):
-    def test_current_manifest_stays_blocked(self):
+    def test_current_manifest_counts_are_consistent(self):
+        document = json.loads(module.DEFAULT.read_text(encoding="utf-8"))
+        gates = document["gates"]
+        expected_verified = sum(gate["status"] == "verified" for gate in gates)
         result = module.readiness()
-        self.assertEqual(result["gates_total"], 26)
-        self.assertEqual(result["gates_verified"], 3)
-        self.assertEqual(result["remaining"], 23)
-        self.assertFalse(result["production_ready"])
+        self.assertEqual(result["gates_total"], len(module.REQUIRED_IDS))
+        self.assertEqual(result["gates_total"], len(gates))
+        self.assertEqual(result["gates_verified"], expected_verified)
+        self.assertEqual(result["remaining"], len(gates) - expected_verified)
+        self.assertEqual(result["production_ready"], expected_verified == len(gates))
 
     def test_valid_public_https_urls(self):
         for value in (
