@@ -370,4 +370,37 @@ awk -F '\t' -v e="$EID" -v s="$replacement_secret" \
     "$T/hub/state/enroll.tsv" || {
     echo 'FAIL: stale enrollment consumed replacement token' >&2; exit 1;
 }
+
+# A failed post-rename flush leaves a visible new device but an unconsumed
+# enrollment token. Retrying that exact signed token must not issue a second
+# device or a different secret after the response was lost.
+run_enroll_sync_fault(){
+    printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$EID" "$ENONCE" "$ESIG" |
+        env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
+            BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
+            BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$1" \
+            BLAZE_SYNC_COUNT_FILE="$T/enroll-sync-count" \
+            REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental"
+}
+seed_old
+: > "$T/hub/state/policy.tsv"
+printf '%s\t%s\t%s\t%s\n' "$EID" "$ESECRET" "$EXPIRY" 'Test phone' > "$T/hub/state/enroll.tsv"
+rm -f "$T/enroll-sync-count"
+first_enroll="$(run_enroll_sync_fault 2)"
+printf '%s' "$first_enroll" | grep -Fq '"ok":false' || {
+    echo 'FAIL: uncertain first enrollment received a positive ACK' >&2; exit 1;
+}
+first_count="$(awk -F '\t' '$1!="@op" && $1!="@enroll" {n++} END{print n+0}' "$T/hub/state/devices.tsv")"
+[ "$first_count" -eq 2 ] || {
+    echo 'FAIL: post-rename enrollment fault did not leave one new device' >&2; exit 1;
+}
+rm -f "$T/enroll-sync-count"
+retry_enroll="$(run_enroll_sync_fault 0)"
+printf '%s' "$retry_enroll" | grep -Fq '"ok":true' || {
+    echo 'FAIL: same-token enrollment retry did not resolve' >&2; exit 1;
+}
+retry_count="$(awk -F '\t' '$1!="@op" && $1!="@enroll" {n++} END{print n+0}' "$T/hub/state/devices.tsv")"
+[ "$retry_count" -eq 2 ] || {
+    echo 'FAIL: uncertain enrollment retry issued a second device' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
