@@ -242,11 +242,38 @@ if "$T/native" "$T" ctrlOne 2 ctrlOne:2 TM alice bob 30 1000 "$wrong" >"$T/out" 
   echo 'unauthenticated paid event accepted' >&2;exit 1
 fi
 [ ! -s "$T/out" ] && [ "$(digest)" = "$first" ]
+# PAY-0773: a crashed pre-rename journal transaction leaves an unACKed
+# private .v2-next-* stage. Do not allow ANY next paid commit or replay
+# while it exists. In the fixture only, explicit operator cleanup follows
+# demonstrated no-ACK and unchanged authoritative ledger digest.
+pending_stage() {
+  find "$T" -maxdepth 1 -name '.v2-next-*' -type f -print -quit
+}
+fixture_stage_cleanup() {
+  find "$T" -maxdepth 1 -name '.v2-next-*' -type f -exec rm -- {} +
+  [ -z "$(pending_stage)" ] || { echo 'fixture stage cleanup failed' >&2; exit 1; }
+}
 export BLAZE_V2_NATIVE_TEST_FAULT=before-source-fsync
 refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+[ -n "$(pending_stage)" ] || { echo 'source fault left no test stage' >&2; exit 1; }
+unset BLAZE_V2_NATIVE_TEST_FAULT
+refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+grep -Fq 'unfinished native stage requires operator reconciliation' "$T/err"
+fixture_stage_cleanup
 export BLAZE_V2_NATIVE_TEST_FAULT=before-rename
 refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+[ -n "$(pending_stage)" ] || { echo 'pre-rename fault left no test stage' >&2; exit 1; }
 unset BLAZE_V2_NATIVE_TEST_FAULT
+refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+grep -Fq 'unfinished native stage requires operator reconciliation' "$T/err"
+fixture_stage_cleanup
+# Nonregular or intentionally unparseable stage entries must also halt rather
+# than being followed/deleted or silently ignored.
+ln -s "$T/ledger.tsv" "$T/.v2-next-symlink-attack"
+refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+grep -Fq 'unfinished native stage requires operator reconciliation' "$T/err"
+rm "$T/.v2-next-symlink-attack"
+[ "$(digest)" = "$first" ]
 # After-rename dirsync uncertainty is not a false success ACK. On recovery
 # the committed receipt is available for exact retransmission.
 export BLAZE_V2_NATIVE_TEST_FAULT=after-rename-before-dir-fsync
@@ -266,6 +293,12 @@ fi
 [ ! -s "$T/out" ] && [ "$(digest)" = "$recovery_sha" ]
 grep -Fq "before-replay-dir-fsync fault" "$T/err"
 unset BLAZE_V2_NATIVE_TEST_FAULT
+# PAY-0773: an unresolved stage also blocks the otherwise authentic
+# retained-sequence replay ACK until the fixture operator reconciles it.
+printf 'partial-unacknowledged-stage\n' > "$T/.v2-next-unreconciled"
+refuse ctrlOne 2 ctrlOne:2 TM alice bob 30 1000
+grep -Fq 'unfinished native stage requires operator reconciliation' "$T/err"
+rm "$T/.v2-next-unreconciled"
 [ "$(run ctrlOne 2 ctrlOne:2 TM alice bob 30 1000)" = "$(printf 'REPLAY\t110')" ]
 [ "$(( $(bank alice) + $(bank bob) ))" -eq 340 ]
 # Lease/receipt/highwater all share the same fsync'd snapshot.
