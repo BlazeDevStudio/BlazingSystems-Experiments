@@ -66,3 +66,5 @@ v0.1.3-preview.1 OpenSSL entropy addendum (2026-10-18 Manila)
 - Source `c44b741f` now prefers OpenSSL, retains checked kernel-reader fallbacks and all-source refusal; exact Ubuntu CI PENDING. Earlier diagnostic #39084567668 failed before CGI diagnostics, so its cause is not established.
 - Draft preview only. No physical R281/Android, powercut or production proof.
 
+
+- Source c44b741f, synced b5acadf9: literal Ubuntu #39085021978, #39085068843, #39085071424 SUCCESS; preview only. No hardware or lease crash atomicity proof.
