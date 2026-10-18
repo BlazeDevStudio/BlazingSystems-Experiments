@@ -1,3 +1,10 @@
+BlazeRental R281 Test Hub v0.1.3-preview.1 - Entropy addendum
+==========================================================
+- Expected RED: literal PR #107 #39083519007 issued an enrollment token after forced kernel entropy reader failure.
+- Corrected source #39083853101 passed checksum/syntax and missing-entropy refusal but failed healthy admin issuance; root cause unknown.
+- Diagnostic-only head #39083975140 succeeded twice at the same literal SHA. Ten healthy-issuance stress test pending exact CI.
+- This preview has no physical R281/Android install, crash-atomic lease, or production acceptance.
+
 BlazeRental R281 Test Hub v0.1.2 - Test Report
 ================================================
 
