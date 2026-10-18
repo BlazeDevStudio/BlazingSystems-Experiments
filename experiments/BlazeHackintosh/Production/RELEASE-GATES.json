@@ -197,11 +197,14 @@
     {
       "date": "2026-10-18",
       "scope": "staged-efi-readback",
-      "status": "ci_pending",
-      "note": "Standalone read-only audit of unsigned research output ledger; not image readback, trusted provenance, rollback or boot acceptance.",
+      "status": "ci_verified_scope_limited",
+      "note": "68 Linux and 68 Windows tests and synthetic staged readback smoke passed; unsigned local ledger only. Image readback, authenticated upstream provenance, rollback and physical boot remain unverified.",
       "related_gates": [
         "efi-migration",
         "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096082439"
       ]
     }
   ]

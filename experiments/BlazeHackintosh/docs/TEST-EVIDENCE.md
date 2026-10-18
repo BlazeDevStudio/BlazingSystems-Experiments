@@ -140,6 +140,6 @@ Haswell candidate staging now requires a complete SHA-256 ledger of every user-s
 - The last independently verified downloadable prerelease remains https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1
 - Production remains blocked: no physical macOS boot acceptance, verified component publisher signatures, safe disk migration/recovery, full Windows GUI, installer media or final signing.
 
-## Staged research output readback candidate — awaiting CI
+## Staged research output readback — verified CI 39096082439 (68 Linux / 68 Windows tests)
 
-Ten new disposable-fixture tests exercise local file consistency, tampering, missing and extra files, unexpected directories, safety marker/status changes, duplicate paths, traversal and malformed digests. Windows CI synthetic Haswell staging now calls standalone stage_audit.py and requires a modified config.plist to be rejected. This checks only an unsigned local ledger; publisher provenance, physical boot and recovery are NOT tested. Do not claim this new test matrix passed before checking the next Actions run.
+Ten new disposable-fixture tests exercise local file consistency, tampering, missing and extra files, unexpected directories, safety marker/status changes, duplicate paths, traversal and malformed digests. Windows CI synthetic Haswell staging now calls standalone stage_audit.py and requires a modified config.plist to be rejected. This checks only an unsigned local ledger; publisher provenance, physical boot and recovery are NOT tested. This synthetic readback matrix passed in CI at commit 5d66e9b5f6003bb653681b62052613a579346446; physical boot and trusted provenance remain untested.
