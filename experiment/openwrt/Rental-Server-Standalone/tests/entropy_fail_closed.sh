@@ -4,11 +4,15 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT HUP INT TERM
-mkdir -p "$T/fail-bin" "$T/admin/state" "$T/app/state"
+mkdir -p "$T/fail-bin" "$T/fail-readers" "$T/admin/state" "$T/app/state"
 for command in hexdump od; do
     printf '#!/bin/sh\nexit 1\n' > "$T/fail-bin/$command"
     chmod 755 "$T/fail-bin/$command"
+    cp "$T/fail-bin/$command" "$T/fail-readers/$command"
 done
+real_openssl="$(command -v openssl)"
+printf '#!/bin/sh\nif [ "$1" = rand ]; then exit 1; fi\nexec "%s" "$@"\n' "$real_openssl" > "$T/fail-bin/openssl"
+chmod 755 "$T/fail-bin/openssl"
 
 admin_function="$(sed -n '/^admin_token_hex(){/,/^}/p' "$ROOT/install.sh")"
 test -n "$admin_function" || { echo 'FAIL: installer entropy function missing' >&2; exit 1; }
@@ -18,6 +22,10 @@ fi
 admin_token="$(eval "$admin_function"; admin_token_hex)"
 printf '%s' "$admin_token" | grep -Eq '^[0-9a-f]{48}$' || {
     echo 'FAIL: installer did not produce a complete admin token' >&2; exit 1;
+}
+openssl_token="$(eval "$admin_function"; PATH="$T/fail-readers:$PATH"; export PATH; admin_token_hex)"
+printf '%s' "$openssl_token" | grep -Eq '^[0-9a-f]{48}$' || {
+    echo 'FAIL: installer did not use OpenSSL when byte readers failed' >&2; exit 1;
 }
 
 printf 'known-token\n' > "$T/admin/admin.token"
@@ -30,6 +38,14 @@ printf '%s' "$admin_response" | grep -Fq '"ok":false' || {
 }
 test ! -s "$T/admin/state/enroll.tsv" || {
     echo 'FAIL: admin wrote an enrollment with no random bytes' >&2; exit 1;
+}
+openssl_admin_response="$(printf 'action=enroll_create&admin_token=known-token&ttl=900\n' |
+    env -u HTTP_X_BLAZE_RENTAL_ADMIN PATH="$T/fail-readers:$PATH" \
+        BLAZE_RENTAL_BASE="$T/admin" REQUEST_METHOD=POST \
+        sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$openssl_admin_response" | grep -Fq '"ok":true' || {
+    printf '%s\n' "$openssl_admin_response" | sed 's/"token":"[^"]*"/"token":"REDACTED"/' >&2
+    echo 'FAIL: admin did not use OpenSSL when byte readers failed' >&2; exit 1;
 }
 
 eid='abcdef123456'
@@ -66,7 +82,7 @@ while [ "$i" -lt 10 ]; do
     i=$((i+1))
 done
 good_app_response="$(printf 'action=enroll&enroll_id=%s&nonce=%s&sig=%s\n' "$eid" "$nonce" "$sig" |
-    env BLAZE_RENTAL_BASE="$T/app" REQUEST_METHOD=POST \
+    env PATH="$T/fail-readers:$PATH" BLAZE_RENTAL_BASE="$T/app" REQUEST_METHOD=POST \
         sh "$ROOT/root/www/cgi-bin/rental")"
 printf '%s' "$good_app_response" | grep -Fq '"ok":true' || {
     printf '%s\n' "$good_app_response" | sed 's/"device_secret":"[^"]*"/"device_secret":"REDACTED"/' >&2
