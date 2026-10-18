@@ -85,3 +85,10 @@ Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39
 **Repository remains a draft PR #105 and intentionally not merged.**
 **Next implementation step:** version-matched OpenCore 1.0.8 `ocvalidate` integration with trusted binary hashes and zero default execution of unverified binaries. Then source-controlled, hardware-constrained EFI generation with exact CPU/GPU/firmware evidence and full acceptance tests.
 **Production blocker remains:** no version-matched validated, actually booted EFI or installation environment. Never advertise installer or production readiness yet.
+
+## v0.1.3 (in development, not yet released)
+- Added explicit approval gate for official ocvalidate, SHA-256 pinned to upstream OpenCore 1.0.8 RELEASE archive, verified --version check and fail-closed execution.
+- Added offline ZIP verifier command and symlinked-config rejection.
+- Added mock-only trust-model regression tests and CI plans to run the *actual* official checker against an intentionally invalid EFI fixture on Windows before publishing.
+- No automatic downloads in application; CI fetches and verifies the upstream archive only inside disposable GitHub-hosted runner.
+- No hardware boot testing, EFI generation or production claims. Await CI results before describing release v0.1.3 as published.

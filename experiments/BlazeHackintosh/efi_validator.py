@@ -148,7 +148,9 @@ def validate_efi(path: str | Path) -> dict:
         if not (oc.parent / "BOOT" / "BOOTx64.efi").is_file():
             warnings.append("BOOT/BOOTx64.efi not found; USB fallback boot path not confirmed")
         config = oc / "config.plist"
-        if not config.is_file():
+        if config.is_symlink():
+            errors.append("EFI/OC/config.plist is a symbolic link and is not inspected")
+        elif not config.is_file():
             errors.append("EFI/OC/config.plist not found")
         elif config.stat().st_size > MAX_CONFIG_BYTES:
             errors.append("config.plist exceeds 10 MiB inspection limit")
@@ -169,7 +171,7 @@ def validate_efi(path: str | Path) -> dict:
                 errors.append("config.plist cannot be parsed safely: " + type(exc).__name__)
 
     return {
-        "tool_version": "0.1.2-experimental",
+        "tool_version": "0.1.3-experimental",
         "scope": "read-only file reference inspection",
         "structural_checks_passed": not errors,
         "ocvalidate_passed": False,

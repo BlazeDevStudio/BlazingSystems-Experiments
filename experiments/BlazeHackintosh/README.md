@@ -1,4 +1,4 @@
-# BlazeHackintosh — experimental foundation (v0.1.2 EFI inspector)
+# BlazeHackintosh — experimental foundation (v0.1.3 verified ocvalidate integration)
 
 **Status:** v0.1.0 development foundation, **NOT** a complete Hackintosh installer or EFI generator.
 
@@ -8,6 +8,7 @@ No files outside this namespace and its named GitHub Actions workflow are owned 
 
 ## What is real now
 - Python standard-library **read-only** Windows/Linux/macOS-adjacent hardware scanner; JSON output.
+- User-authorized, SHA-256-pinned OpenCore 1.0.8 ocvalidate validation (requires separately supplied official ZIP, never downloaded or executed implicitly); see [docs/OFFICIAL-OCVALIDATE.md](docs/OFFICIAL-OCVALIDATE.md).
 - Read-only OpenCore EFI structural inspection: referenced ACPI, kext, UEFI driver and tool paths, with traversal/duplicate checks (not ocvalidate).
 - Windows GPU/network vendor:device PCI IDs, firmware mode, memory and non-sensitive physical storage inventory; analogous best-effort Linux probes.
 - Explicit CPU SKU reference lookup with safe **Unknown** fallback.
@@ -54,7 +55,7 @@ Future EFI generation must use a version-matched OpenCore Sample.plist, required
 
 See [docs/README.md](docs/README.md), [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) and [DEVELOPMENT-HANDOVER.md](DEVELOPMENT-HANDOVER.md).
 
-## Verified experimental downloads
+## Previous verified experimental downloads
 
 - [v0.1.2-alpha.1 Windows toolkit and offline UI](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.2-alpha.1)
 - [Latest test run](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39080929664): 25 Python unit tests passed on each Linux and Windows runner; packaged Windows executable smoke-tested.

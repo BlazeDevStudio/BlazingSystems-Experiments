@@ -10,3 +10,5 @@ unverified boot classification, malformed catalog rejection, device-ID redaction
 
 This is software-unit-level evidence only, not verification of actual Hackintosh booting or image integrity.
 Windows CLI packaging is separately handled by GitHub Actions.
+
+Official-ocvalidate bridge tests use mocked subprocess execution and synthetic non-bootable fixtures; only CI's Windows smoke test downloads the genuine upstream asset, verifies its pinned SHA-256, and executes the version-matched utility after explicit invocation. Neither approach performs macOS boot tests.

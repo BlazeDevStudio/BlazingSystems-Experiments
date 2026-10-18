@@ -68,3 +68,6 @@ Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39
 - Failure note: first attempt run 39080788463 succeeded at unit tests and building the EXE but did not pass the PowerShell smoke test because it treated an **expected failure exit code** as a job error. This was fixed with captured subprocess assertion; run 39080929664 succeeded.
 
 **Still not verified:** OpenCore ocvalidate matching version, a generated EFI, binary authenticity, an EFI partition or image boot test, any macOS installer, and real hardware boot. A structural reference check passing does not change those classifications.
+
+## v0.1.3 gate (pending)
+Unit tests mock upstream execution; separate Windows CI must fetch pinned official archive, verify SHA-256, confirm actual checker version, and observe an intentionally invalid EFI fixture rejected before any prerelease. A valid ocvalidate result on a real user configuration, physical EFI boot, and macOS compatibility still require independent evidence.

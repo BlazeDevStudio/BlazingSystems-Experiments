@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BlazeHackintosh v0.1.0 - read-only hardware discovery and research-only evaluation.
+"""BlazeHackintosh v0.1.3 - read-only hardware discovery and research-only evaluation.
 
 This module does NOT install macOS, generate OpenCore EFI, or write disks.
 The CPU lookup is an explicit reference map, never a nearest-neighbour guess.
@@ -271,6 +271,11 @@ def main(argv: list[str] | None = None) -> int:
     inspect = sub.add_parser("validate-efi", help="Read-only OpenCore EFI structure/reference checks; NOT ocvalidate")
     inspect.add_argument("--efi", required=True, help="Existing EFI root, EFI or OC folder")
     inspect.add_argument("--output", metavar="FILE")
+    inspect.add_argument("--ocvalidate-package", metavar="ZIP", help="Local official OpenCore 1.0.8 RELEASE ZIP (hash pinned)")
+    inspect.add_argument("--run-official-ocvalidate", action="store_true", help="Explicitly run ocvalidate from verified archive")
+    verify = sub.add_parser("verify-opencore-package", help="Check SHA-256 of local official OpenCore 1.0.8 RELEASE ZIP; never execute")
+    verify.add_argument("--zip", required=True, metavar="FILE")
+    verify.add_argument("--output", metavar="FILE")
     evaluation = sub.add_parser("evaluate", help="Classify a JSON report without guessing compatibility")
     evaluation.add_argument("--report", metavar="FILE", help="Existing report from scan; omit to scan this PC")
     evaluation.add_argument("--output", metavar="FILE")
@@ -280,11 +285,26 @@ def main(argv: list[str] | None = None) -> int:
             emit(scan_hardware(), args.output)
         elif args.operation == "catalog":
             emit(load_catalog(), args.output)
+        elif args.operation == "verify-opencore-package":
+            from official_ocvalidate import verify_archive
+            result = verify_archive(args.zip)
+            emit(result, args.output)
+            return 0 if result["verified"] else 2
         elif args.operation == "validate-efi":
             from efi_validator import validate_efi
             result = validate_efi(args.efi)
+            if args.run_official_ocvalidate:
+                if not args.ocvalidate_package:
+                    parser.error("--run-official-ocvalidate requires --ocvalidate-package ZIP")
+                from official_ocvalidate import run_official_ocvalidate
+                check = run_official_ocvalidate(args.efi, args.ocvalidate_package, consent=True)
+                result["official_ocvalidate"] = check
+                result["ocvalidate_passed"] = check["passed"]
+            elif args.ocvalidate_package:
+                parser.error("--ocvalidate-package requires --run-official-ocvalidate; verify-only: use verify-opencore-package")
             emit(result, args.output)
-            return 0 if result["structural_checks_passed"] else 2
+            return 0 if result["structural_checks_passed"] and (
+                not args.run_official_ocvalidate or result["ocvalidate_passed"]) else 2
         else:
             report = json.loads(Path(args.report).read_text(encoding="utf-8")) if args.report else scan_hardware()
             emit(evaluate(report, load_catalog()), args.output)

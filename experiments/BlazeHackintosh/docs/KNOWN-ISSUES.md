@@ -20,3 +20,4 @@ These are not silently deferred production features. v0.1.0 is experimental only
 10. **Scanner inventory completeness:** Windows CIM and Linux optional utilities may return null; `missing_inventory_evidence` documents gaps and does not imply incompatibility. GPU vendor:device alone does not establish acceleration or kext support.
 
 11. **Read-only EFI inspector is not ocvalidate**: it only checks existence of enabled component references and basic path integrity. It cannot validate OpenCore schema, binary authenticity, version compatibility, actual boot paths or hardware. See EFI-Generator/README.md.
+11. **Official validator binary requires consent:** user-supplied version 1.0.8 RELEASE ZIP must match exact pinned SHA-256 before any attempt to execute an extracted binary. A successful ocvalidate verifies a config schema only; real EFI executable signatures, hardware support and physical boot are NOT established. Unavailable layouts/platforms fail closed.
