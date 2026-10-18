@@ -2386,3 +2386,6 @@
 - **Limit/next:** same-host same-file receipt does not provide independent antirollback; receipts grow, there is no accepted bounded retention/reversible migration or real R281/Android powercut durability proof. Multi-file enrollment still not transactional. Verify docs-head exact CI and PR body, then design safe receipt growth/compaction only with retained replay semantics and approved noncustomer physical acceptance. Financial PR #89 and v0.6.0 release gates remain unchanged; do not publish production.
 ## R281-STANDALONE-0008 — whole receipt negative, 2026-10-18 Asia/Manila
 - Test-only `bae9b1725742aa2cfb1c53e0fb116bb684a5f4bd`: unrelated malformed receipt must deny new paid write without changing saved state. Synchronized old-code exact Ubuntu pending. Draft PR #107 only.
+
+## R281-STANDALONE-0008 — old-code RED and validator source, 2026-10-18 Asia/Manila
+- Synchronized test head `8d17c6dbfd9e932d763c23a3a10153d059397464` [literal #39095417853](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095417853) FAILED intended unrelated corrupt-receipt paid grant. Source `08dc95b5d2f8981c9c916ca768777ea943b680d4` adds under-lock whole saved paid-state validation, duplicate-device negative, canonical bounded values and updated CGI pins. Exact corrected CI pending; draft PR #107 only.
