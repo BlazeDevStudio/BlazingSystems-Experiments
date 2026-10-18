@@ -55,6 +55,11 @@ with_lock(){
   return 0
 }
 device_line(){ awk -F '\t' -v d="$1" '$1==d {print;exit}' "$DEVICES"; }
+valid_lease(){
+  case "$1" in 0) return 0;; [1-9]*) ;; *) return 1;; esac
+  case "$1" in *[!0-9]*) return 1;; esac
+  [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
+}
 policy_line(){
   l="$(awk -F '\t' -v d="$1" '$1==d {print;exit}' "$POLICY")"
   [ -n "$l" ] && printf '%s\n' "$l" || printf '%s\t*\t-\t-\t4096\n' "$1"
@@ -125,6 +130,7 @@ case "$action" in
     current_secret="$(printf '%s' "$line" | cut -f2)"
     [ "$current_secret" = "$secret" ] || { unlock; fail "device changed"; }
     lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"
+    valid_lease "$lease" || { unlock; fail "corrupt lease state"; }
     record_seen "$did" "$ts" || true
     unlock
     p="$(policy_line "$did")"; allowed="$(printf '%s' "$p" | cut -f2)"; salt="$(printf '%s' "$p" | cut -f3)"; hash="$(printf '%s' "$p" | cut -f4)"; rounds="$(printf '%s' "$p" | cut -f5)"

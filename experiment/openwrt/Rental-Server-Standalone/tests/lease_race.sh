@@ -107,30 +107,32 @@ printf '%s' "$list_response" | grep -Eq '"last_seen":[1-9][0-9]*' || {
 
 # A damaged paid lease is not an expired lease. Every reader and money writer
 # must refuse it without replacing the original record.
-printf '%s\t%s\t%s\tTest phone\t0\n' "$DID" "$SECRET" 'corrupt' \
-    > "$T/hub/state/devices.tsv"
-cp "$T/hub/state/devices.tsv" "$T/corrupt-lease-before"
-for request in \
-    'action=list' \
-    "action=add_time&device_id=$DID&seconds=600" \
-    "action=set_time&device_id=$DID&seconds=600" \
-    "action=expire&device_id=$DID"; do
-    response="$(printf '%s\n' "$request" |
-        env BLAZE_RENTAL_BASE="$T/hub" \
-            HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
-            sh "$ROOT/root/www/cgi-bin/rental-admin")"
-    printf '%s' "$response" | grep -Fq '"ok":false' || {
-        echo "FAIL: admin accepted corrupt lease for $request" >&2; exit 1;
+for malformed in corrupt 000123 2147483648; do
+    printf '%s\t%s\t%s\tTest phone\t0\n' "$DID" "$SECRET" "$malformed" \
+        > "$T/hub/state/devices.tsv"
+    cp "$T/hub/state/devices.tsv" "$T/corrupt-lease-before"
+    for request in \
+        'action=list' \
+        "action=add_time&device_id=$DID&seconds=600" \
+        "action=set_time&device_id=$DID&seconds=600" \
+        "action=expire&device_id=$DID"; do
+        response="$(printf '%s\n' "$request" |
+            env BLAZE_RENTAL_BASE="$T/hub" \
+                HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+                sh "$ROOT/root/www/cgi-bin/rental-admin")"
+        printf '%s' "$response" | grep -Fq '"ok":false' || {
+            echo "FAIL: admin accepted corrupt lease for $request ($malformed)" >&2; exit 1;
+        }
+        cmp -s "$T/corrupt-lease-before" "$T/hub/state/devices.tsv" || {
+            echo "FAIL: admin rewrote corrupt lease for $request ($malformed)" >&2; exit 1;
+        }
+    done
+    status_response="$(run_status none)"
+    printf '%s' "$status_response" | grep -Fq '"ok":false' || {
+        echo "FAIL: phone status accepted corrupt lease ($malformed)" >&2; exit 1;
     }
     cmp -s "$T/corrupt-lease-before" "$T/hub/state/devices.tsv" || {
-        echo "FAIL: admin rewrote corrupt lease for $request" >&2; exit 1;
+        echo "FAIL: phone status rewrote corrupt lease ($malformed)" >&2; exit 1;
     }
 done
-status_response="$(run_status none)"
-printf '%s' "$status_response" | grep -Fq '"ok":false' || {
-    echo 'FAIL: phone status accepted corrupt lease' >&2; exit 1;
-}
-cmp -s "$T/corrupt-lease-before" "$T/hub/state/devices.tsv" || {
-    echo 'FAIL: phone status rewrote corrupt lease' >&2; exit 1;
-}
 echo 'Standalone rental lock-edge lease refusal PASS'

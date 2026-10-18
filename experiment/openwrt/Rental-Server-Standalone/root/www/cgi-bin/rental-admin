@@ -47,6 +47,11 @@ check_auth(){
   [ -n "$got" ] && [ "$got" = "$expected" ] || fail "unauthorized"
 }
 device_line(){ awk -F '\t' -v d="$1" '$1==d {print;exit}' "$DEVICES"; }
+valid_lease(){
+  case "$1" in 0) return 0;; [1-9]*) ;; *) return 1;; esac
+  case "$1" in *[!0-9]*) return 1;; esac
+  [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
+}
 write_device(){ did="$1" secret="$2" lease="$3" label="$4" last="$5"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.devices.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1; clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"; printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp" || return 1; atomic_replace "$tmp" "$DEVICES"; }
 remove_device(){ did="$1"; for spec in "$DEVICES:1" "$POLICY:1"; do f="${spec%%:*}"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.rm.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$f" > "$tmp" || return 1; atomic_replace "$tmp" "$f" || return 1; done; }
 log(){ printf '%s\t%s\t%s\t%s\n' "$(now)" "$1" "$2" "${REMOTE_ADDR:-local}" >> "$EVENTS"; chmod 600 "$EVENTS"; }
@@ -62,6 +67,7 @@ case "$action" in
     first=1; out='['
     while IFS="$(printf '\t')" read -r did secret lease label last; do
       [ -n "$did" ] || continue
+      valid_lease "$lease" || fail "corrupt lease state"
       remaining=0; [ "${lease:-0}" -gt "$ts" ] 2>/dev/null && remaining=$((lease-ts))
       seen="$last"
       if [ -f "$STATE/seen-$did" ] && [ ! -L "$STATE/seen-$did" ]; then
@@ -90,6 +96,7 @@ case "$action" in
     with_lock || fail "server busy"
     line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
     secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
+    valid_lease "$lease" || { unlock; fail "corrupt lease state"; }
     case "$action" in
       add_time)
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9-]*) unlock; fail "invalid seconds";; esac
