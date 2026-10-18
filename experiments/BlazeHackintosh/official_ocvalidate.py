@@ -135,7 +135,8 @@ def run_official_ocvalidate(
                 tool.chmod(0o700)
             version_code, version_output = _invoke([str(tool), "--version"])
             if version_code != 0 or not re.search(r"(?<!\d)1\.0\.8(?!\d)", version_output):
-                report["error"] = "ocvalidate --version did not confirm OpenCore 1.0.8"
+                report["error"] = (f"ocvalidate --version could not confirm 1.0.8 "
+                                   f"(exit={version_code}, output={version_output[:450]!r})")
                 return report
             report["version_matched"] = True
             code, output = _invoke([str(tool), str(target)])

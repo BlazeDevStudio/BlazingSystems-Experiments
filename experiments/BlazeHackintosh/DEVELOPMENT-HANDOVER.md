@@ -95,3 +95,6 @@ Run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39
 
 ## v0.1.3 CI regression (run 39081553933)
 First run failed 3/34 tests because mock ZIP contents compressed below the deliberate 1 KiB minimum archive size. Test fixtures now use incompressible random bytes to exercise the real digest gate. No production code trust limits were weakened. New CI required.
+
+## v0.1.3 real upstream checker regression (run 39081613900)
+All 34 unit tests passed on Linux and Windows and official release ZIP SHA-256 verified on Windows. The actual official ocvalidate --version check did not confirm 1.0.8; no binary was shipped. Added bounded exit-code and stdout/stderr diagnostic to distinguish actual upstream version format from execution errors before remediation.
