@@ -179,4 +179,52 @@ printf '%s' "$response" | grep -Fq '"ok":false' || {
 printf '%s' "$response" | grep -Fq 'outcome uncertain' || {
     echo 'FAIL: post-rename sync failure hid the uncertain outcome' >&2; exit 1;
 }
+
+# A response lost after the rename leaves the new lease visible. Repeating the
+# exact request ID must return the prior result without granting time twice.
+RID='0123456789abcdef0123456789abcdef'
+run_paid_request(){
+    printf 'action=add_time&device_id=%s&seconds=%s&request_id=%s\n' \
+        "$DID" "$2" "$1" |
+        env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
+            BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
+            BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$3" \
+            BLAZE_SYNC_COUNT_FILE="$T/sync-count" \
+            HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+            sh "$ROOT/root/www/cgi-bin/rental-admin"
+}
+seed_old
+rm -f "$T/sync-count"
+first="$(run_paid_request "$RID" 600 2)"
+printf '%s' "$first" | grep -Fq '"ok":false' || {
+    echo 'FAIL: uncertain first grant received a positive ACK' >&2; exit 1;
+}
+first_lease="$(lease_now)"
+[ "$first_lease" -eq $((OLD+600)) ] || {
+    echo 'FAIL: post-rename fault did not expose the first lease' >&2; exit 1;
+}
+rm -f "$T/sync-count"
+retry="$(run_paid_request "$RID" 600 0)"
+printf '%s' "$retry" | grep -Fq '"ok":true' || {
+    echo 'FAIL: same-ID retry was not acknowledged' >&2; exit 1;
+}
+[ "$(lease_now)" -eq "$first_lease" ] || {
+    echo 'FAIL: lost-ACK retry granted paid time twice' >&2; exit 1;
+}
+rm -f "$T/sync-count"
+conflict="$(run_paid_request "$RID" 1200 0)"
+printf '%s' "$conflict" | grep -Fq '"ok":false' || {
+    echo 'FAIL: request ID reused with different seconds was accepted' >&2; exit 1;
+}
+[ "$(lease_now)" -eq "$first_lease" ] || {
+    echo 'FAIL: conflicting request ID changed the lease' >&2; exit 1;
+}
+rm -f "$T/sync-count"
+missing="$(run_paid_request '' 600 0)"
+printf '%s' "$missing" | grep -Fq '"ok":false' || {
+    echo 'FAIL: paid grant without a request ID was accepted' >&2; exit 1;
+}
+[ "$(lease_now)" -eq "$first_lease" ] || {
+    echo 'FAIL: missing request ID changed the lease' >&2; exit 1;
+}
 echo 'Standalone rental lock-edge lease refusal PASS'
