@@ -2395,3 +2395,6 @@
 
 ## R281-STANDALONE-0009 — enrollment corrupt-state regression, 2026-10-18 Asia/Manila
 - Test-only `a71c5d9b4fb7f7b3a04e28a3a67201000454eff0` drives authenticated real CGI enrollment against unrelated malformed paid receipt; requires no new device and unconsumed enrollment. Synchronized old-code exact Ubuntu pending; draft PR #107 only.
+
+## R281-STANDALONE-0009 — old-code RED and phone enrollment guard, 2026-10-18 Asia/Manila
+- Test `a71c5d9b4fb7f7b3a04e28a3a67201000454eff0` synchronized `c4a590030e05963dfc63638f8390d83692b6be6b` [literal #39095752298](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39095752298) FAILED intended corrupt paid-state enrollment. Source `a14b167e001c3e1df6375fc99d57c4324a735233` guards real signed phone enrollment under lock and repins app CGI; exact corrected Ubuntu pending. Draft PR #107 only.
