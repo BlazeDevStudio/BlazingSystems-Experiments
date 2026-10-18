@@ -2731,3 +2731,17 @@
 - Prior literal #39152351223 FAILED Windows CS0136 in test-local args; Ubuntu/handover succeeded. No runtime source changed in correction. This failure remains evidence and is superseded by exact green source/test.
 - Scope/rollback: isolated pisonet-diskless-manager PR #90, preview only. Windows identity/host-key paths are session-only; no key generated or committed. Server forced key and approved host absent, so no authenticated live SSH, LIO, CHAP/ACL refusal, writable isolation, Windows boot or physical durability accepted. Financial paid v2 remains denied. Revert isolated branch if live acceptance finds defect.
 - NEXT ACTION: verify final docs-only literal Windows/Linux classifier and PR body, then provision approved noncustomer host with restricted forced SSH identity and out-of-band pinned host key for live negative/boot tests; no public production publish.
+
+## PISONET-0030 — 2026-10-19 Asia/Manila, P1, in_progress
+
+- Scope: isolated pisonet-diskless-manager PR #90; linux-server/build-preview.sh, install-preview.sh, package tests and Windows/Linux workflow artifact. Source commit not yet made. Prior exact head 3048c434cea5a763ff523401648beecc375b10f6 #39152987636 SUCCESS.
+- Reason: live LIO scripts and the SSH forced adapter are in source but not delivered in an installable Linux bundle; current artifact is Windows only. Build a deterministic tar.gz and root-only explicit code installer with checksum and no-clobber guards, no target/sshd/key/PXE writes. Negative tests for tamper and existing path on disposable CI root.
+- Rollback/data: isolated preview source revert; no customer device, money, key, main/Stable or production release. A package alone cannot prove live LIO, CHAP/ACL refusal, boot, physical durability or production readiness.
+- NEXT ACTION: implement and test package scripts, synchronize handover, run literal Windows/Linux workflow and report artifact digest/PR status.
+
+## PISONET-0030 — 2026-10-19 Asia/Manila, P1, committed_untested
+
+- Source/test/workflow commit 9ad43cec159facc2c117270911315c43f1a6b6ba on isolated pisonet-diskless-manager PR #90. Paths: linux-server/build-preview.sh, install-preview.sh, test_package_preview.sh, README.md, .github/workflows/blazepisonet-softtimer-release.yml. No customer data, keys, devices or production tag touched.
+- Deterministic tar.gz is separate v0.1.0-preview.1 Linux source package with SHA manifest. Installer requires explicit root lab confirmation, checks complete input manifest, stages only code under a new path and refuses existing/symlink target. No sshd, storage, DHCP/PXE or image writes. CI test covers reproducibility, tamper, incomplete manifest, existing install, symlink and missing confirmation. Local Windows has no POSIX shell; exact Ubuntu/Windows CI pending.
+- Rollback/limits: isolated preview revert; manifest/digest are not signatures. Physical durability, CHAP/ACL refusal, per-client isolation and Windows diskless boot remain unaccepted. No production release.
+- NEXT ACTION: push handover checkpoint, run literal Windows/Linux workflow, repair demonstrated failures and update PR/artifact digest.
