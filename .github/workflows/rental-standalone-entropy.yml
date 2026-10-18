@@ -1,0 +1,28 @@
+name: R281 standalone rental entropy contract
+on:
+  pull_request:
+    paths:
+      - 'experiment/openwrt/Rental-Server-Standalone/**'
+      - '.github/workflows/rental-standalone-entropy.yml'
+  workflow_dispatch:
+
+jobs:
+  entropy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Assert literal source head
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED"
+      - name: Verify standalone payload checksums and shell syntax
+        run: |
+          cd experiment/openwrt/Rental-Server-Standalone
+          sha256sum -c SHA256SUMS
+          sh -n install.sh root/www/cgi-bin/rental root/www/cgi-bin/rental-admin tests/entropy_fail_closed.sh
+      - name: Refuse token and device-secret issuance without kernel entropy
+        run: sh experiment/openwrt/Rental-Server-Standalone/tests/entropy_fail_closed.sh
