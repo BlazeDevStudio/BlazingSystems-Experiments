@@ -2287,3 +2287,12 @@
 - **Scope/risk:** nonproduction off-device SQLite candidate only; no installed paid writer, real witness, public ACKP1, customer balances, keys, main, Stable/Standalone, or releases changed. The whole candidate database remains rollbackable; P0 #31/#32/#43/#34 remain open. Release flags remain denied.
 - **Rollback:** discard isolated branch or revert `734a1adb`; no migrated data exists.
 - **NEXT ACTION:** open draft PR against `blazepwifi-v0.6.0-audit-foundation`; run focused WITNESS-0738 regression and verify exact-head Full/native/SDK/handover checks before calling this guard validated.
+
+
+## WITNESS-0770 — exact-head validation and draft PR, 2026-10-18 Asia/Manila
+- **Status:** validated in required Full CI; isolated draft PR remains open. **Priority:** P0 #43.
+- **Commits:** source/test `734a1adb3905d1d9317168080f89b6a62777d230`; handover sync before PR `fa3f5f4fff6ee5cdd9d97f5aa0161534f24db8a8`. PR #109 head was exactly `fa3f5f4fff6ee5cdd9d97f5aa0161534f24db8a8`, based on development `aa89b9956309085d2742c14df294042d14e558b4`.
+- **Evidence:** Full PR run [#39092983906](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39092983906) completed SUCCESS at exact head. Mandatory handover freshness, fail-closed regression, Full validation and named `WITNESS-0738 SQLite FULL-sync off-device witness candidate crash/replay (NO PAID ACK)` all passed. All 30 jobs completed with no failures; production signing/publishing jobs were skipped. No separate native or SDK workflow run was triggered for this PR head.
+- **Change:** a pending PREPARE retry now must present the exact committed old revision and digest before the candidate returns a pending response. Regression rejects wrong-old-revision and wrong-old-digest and preserves the matching retry positive.
+- **Scope/limits:** nonproduction off-device candidate only; no production money authority, customer data, public ACK, signer, physical witness, hardware acceptance, main/stable/standalone or release changed. PR #30 remains draft; PR #103 closed unmerged and superseded by candidate-only PR #104. #31/#32/#43/#34 stay open and release gates denied.
+- **NEXT ACTION:** review PR #109 for guarded development-only integration; retain no-ACK behavior and do not release.
