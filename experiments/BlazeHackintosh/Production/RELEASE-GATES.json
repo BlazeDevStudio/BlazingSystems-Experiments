@@ -192,5 +192,17 @@
       "status": "blocked",
       "evidence": []
     }
+  ],
+  "engineering_progress": [
+    {
+      "date": "2026-10-18",
+      "scope": "staged-efi-readback",
+      "status": "ci_pending",
+      "note": "Standalone read-only audit of unsigned research output ledger; not image readback, trusted provenance, rollback or boot acceptance.",
+      "related_gates": [
+        "efi-migration",
+        "release-security"
+      ]
+    }
   ]
 }

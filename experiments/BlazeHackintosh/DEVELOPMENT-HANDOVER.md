@@ -198,3 +198,7 @@ Next action: independent release-publisher signature/source verification, missin
 - GitHub Actions build artifact ID: `12124025596` (`BlazeHackintosh-v0.1.5-experimental-windows-toolkit`). This is a CI build artifact, **not a new production GitHub Release**.
 - The last independently verified downloadable prerelease remains https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1
 - Production remains blocked: no physical macOS boot acceptance, verified component publisher signatures, safe disk migration/recovery, full Windows GUI, installer media or final signing.
+
+## 2026-10-18 continuation: read-only staged-file audit candidate
+
+At branch head fd0468bd1e52e373118033be3c8a3300bb8b477b, PR #105 was draft; recent CI 39093445086 and 39093442190 succeeded. Added standalone stage_audit.py and ten disposable-fixture tests. The audit compares local research staging files to their unsigned manifest, rejects missing/extra paths and changed hashes or safety markers. Windows smoke_stage.py now checks a good synthetic stage and a deliberately modified file. Pending fresh CI verification. This is not publisher authentication, USB/ESP image readback, safe migration, or physical boot. Keep 26 required gates and all 23 unresolved requirements unchanged. Next: verify new CI; connect this readback groundwork to safe disposable-image tests and independent upstream component authenticity checks.

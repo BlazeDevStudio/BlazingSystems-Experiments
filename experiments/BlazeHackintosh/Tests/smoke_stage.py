@@ -65,4 +65,14 @@ with tempfile.TemporaryDirectory(prefix="BlazeResearchNoBoot-") as temp:
     data = json.loads(p.stdout)
     assert data["ocvalidate_passed"] and not data["boot_verified"]
     assert (output / "EFI/OC/config.plist").is_file()
+    audit = subprocess.run([sys.executable, str(PROJECT / "stage_audit.py"), "--folder", str(output)],
+                           capture_output=True, text=True, timeout=30, check=False)
+    assert audit.returncode == 0, (audit.returncode, audit.stdout, audit.stderr)
+    assert json.loads(audit.stdout)["integrity_passed"]
+    with (output / "EFI/OC/config.plist").open("ab") as fp:
+        fp.write(b"CI-MODIFIED")
+    audit_bad = subprocess.run([sys.executable, str(PROJECT / "stage_audit.py"), "--folder", str(output)],
+                               capture_output=True, text=True, timeout=30, check=False)
+    assert audit_bad.returncode == 2, (audit_bad.returncode, audit_bad.stdout, audit_bad.stderr)
+    assert not json.loads(audit_bad.stdout)["integrity_passed"]
     print("Actual OpenCore 1.0.8 EFI reference staging passed official ocvalidate on synthetic CI fixtures; NOT boot-tested.")

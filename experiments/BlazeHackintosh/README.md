@@ -80,3 +80,7 @@ All graphical preview assets remain locally bundled and licensed as described in
 ## Production completion tracker (not a release claim)
 
 Run `BlazeHackintosh-Toolkit.exe release-readiness` for a complete, fail-closed JSON report. See [Production/README.md](Production/README.md) and [Production/RELEASE-GATES.json](Production/RELEASE-GATES.json). All 26 mandatory requirements remain in scope; an alpha CI pass is not a production verdict. The tool exits 2 while blockers remain. No required gate can be silently deleted from the manifest.
+
+## Research staging readback candidate
+
+Run `python stage_audit.py --folder BlazeEFI-YourCandidate` to perform a read-only consistency check of a staged research output against its unsigned SHA-256 ledger. It rejects altered or missing files and safety markers. This standalone tool is not included in the previously published Windows EXE, is not a physical boot test, and does not verify publisher signatures. See [docs/STAGED-READBACK.md](docs/STAGED-READBACK.md). New CI verification is pending.

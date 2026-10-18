@@ -11,3 +11,5 @@
 - [HASWELL-STAGING.md](HASWELL-STAGING.md): expert-only, non-destructive EFI research candidate procedure and limits
 - [COMPONENT-INTEGRITY.md](COMPONENT-INTEGRITY.md): operator-attested per-file hashes, source/license fields, limits, and remaining publisher-verification gaps
 - [../Production/README.md](../Production/README.md): complete required production-gate tracker and fail-closed CLI
+
+- [STAGED-READBACK.md](STAGED-READBACK.md): experimental read-only staged EFI file consistency checks

@@ -139,3 +139,7 @@ Haswell candidate staging now requires a complete SHA-256 ledger of every user-s
 - GitHub Actions build artifact ID: `12124025596` (`BlazeHackintosh-v0.1.5-experimental-windows-toolkit`). This is a CI build artifact, **not a new production GitHub Release**.
 - The last independently verified downloadable prerelease remains https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1
 - Production remains blocked: no physical macOS boot acceptance, verified component publisher signatures, safe disk migration/recovery, full Windows GUI, installer media or final signing.
+
+## Staged research output readback candidate — awaiting CI
+
+Ten new disposable-fixture tests exercise local file consistency, tampering, missing and extra files, unexpected directories, safety marker/status changes, duplicate paths, traversal and malformed digests. Windows CI synthetic Haswell staging now calls standalone stage_audit.py and requires a modified config.plist to be rejected. This checks only an unsigned local ledger; publisher provenance, physical boot and recovery are NOT tested. Do not claim this new test matrix passed before checking the next Actions run.
