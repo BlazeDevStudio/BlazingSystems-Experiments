@@ -50,7 +50,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha || github.sha }}'
       - name: PISONET-0019 disabled LIO preparation and uncertain recovery contract
         run: python3 -m unittest discover -s experiment/windows/BlazePisonet-SoftTimer/linux-server -p 'test_*.py' -v
-        - name: PISONET-0031 package syntax and disposable install/uninstall contract
+      - name: PISONET-0031 package syntax and disposable install/uninstall contract
         run: |
           sh -n experiment/windows/BlazePisonet-SoftTimer/linux-server/build-preview.sh \
             experiment/windows/BlazePisonet-SoftTimer/linux-server/install-preview.sh \
