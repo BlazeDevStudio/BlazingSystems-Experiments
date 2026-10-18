@@ -19,7 +19,7 @@ printf 'known-token\n' > "$T/hub/admin.token"
 cat > "$T/bin/mkdir" <<'EOF'
 #!/bin/sh
 set -eu
-if [ "${1:-}" = "$BLAZE_RENTAL_BASE/state/.lock" ]; then
+if [ "${1:-}" = "$BLAZE_RENTAL_BASE/state/.lock" ] && [ "$BLAZE_RACE_MODE" != none ]; then
     "$BLAZE_REAL_MKDIR" "$1" || exit 1
     if [ "$BLAZE_RACE_MODE" = revoke ]; then
         : > "$BLAZE_RENTAL_BASE/state/devices.tsv"
@@ -86,5 +86,22 @@ revoke_response="$(run_status revoke)"
 }
 printf '%s' "$revoke_response" | grep -Fq '"ok":false' || {
     echo 'FAIL: revoked device received a status acknowledgement' >&2; exit 1;
+}
+
+seed_old
+rm -f "$T/hub/state/seen-$DID"
+cp "$T/hub/state/devices.tsv" "$T/devices-before-status"
+plain_status_response="$(run_status none)"
+printf '%s' "$plain_status_response" | grep -Fq '"ok":true' || {
+    echo 'FAIL: authenticated status request was denied' >&2; exit 1;
+}
+cmp -s "$T/devices-before-status" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: status poll rewrote the paid lease file' >&2; exit 1;
+}
+list_response="$(printf 'action=list\n' |
+    env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
+        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$list_response" | grep -Eq '"last_seen":[1-9][0-9]*' || {
+    echo 'FAIL: status activity was not visible to the admin' >&2; exit 1;
 }
 echo 'Standalone rental lock-edge lease refusal PASS'
