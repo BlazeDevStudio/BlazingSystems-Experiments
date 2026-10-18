@@ -2494,3 +2494,11 @@
 - **Status:** validated source/negative tests, draft PR #107. Old-code fba460cff3f72ceffa8833669a0bbe4c07b2947a literal Ubuntu #39150921538 FAILED intended paid overflow positive ACK. Source/test 621c20e3e34e2fa197cab78327d5935dc04fba0c synchronized 3b5d459fe1e4914e930860aacc2847bbba6adaf8, literal Ubuntu #39151132489 COMPLETED SUCCESS including real CGI paid/admin/phone over-limit no-ACK, unchanged authority state/token and prior normal/fault tests. Default per-file max 8 MiB, only lower override, no receipt deletion.
 - **Data integrity/rollback:** capacity refusal is containment only. At limit new paid/enrollment writes stop; no indefinite receipt lifecycle, independent antirollback, hardware flush or customer acceptance. Isolated preview revertable; no customer data/devices.
 - **NEXT:** verify final docs-head exact Ubuntu and PR, then obtain a real independent high-water retention approach and approved noncustomer R281/Android powercut evidence. Keep production release denied.
+## R281-STANDALONE-0015 — 2026-10-19 Asia/Manila, P0, in_progress
+
+- Scope: isolated `fix/rental-standalone-entropy` draft PR #107, `experiment/openwrt/Rental-Server-Standalone/root/www/cgi-bin/{rental,rental-admin}`, `install.sh`, real CGI regression tests. Source commit not yet made.
+- Discovery: both CGI startup loops and installer recreate missing paid/token state files. This can turn file loss into empty authority, while same-file receipts cannot detect complete rollback. No customer state was inspected or modified.
+- Evidence: source inspection at `ab39f60bb61bb28b53e4f5a6599ab0c24b82cccf`; prior capacity source #39151132489 and final docs #39151210820 SUCCESS do not cover missing-file state.
+- Safety/rollback: refuse writes when any required state file is missing, nonregular or symlinked; installer initializes only a fresh state directory and must refuse partial existing state. Revert isolated branch only if demonstrated regression; no production deployment or antirollback claim.
+- NEXT ACTION: add real missing-file CGI negatives to `tests/lease_race.sh`, prove old-code RED at literal Ubuntu HEAD, implement runtime/installer guard, synchronize handover and run literal workflow.
+
