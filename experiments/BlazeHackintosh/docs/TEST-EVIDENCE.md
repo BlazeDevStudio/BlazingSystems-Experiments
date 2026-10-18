@@ -130,3 +130,12 @@ Haswell candidate staging now requires a complete SHA-256 ledger of every user-s
 - GitHub Actions artifact ID `12123431324` (Windows compiled toolkit).
 - New integrity ledger catches substitution/missing entries and rejects altered source/copy hashes. **Operator-declared source URLs and licensing still not independently authenticated**.
 - No physical boot/USB readback/live ISO, production-grade GUI, all-family EFI database or safe internal-disk migration. **Production release remains blocked; PR #105 draft and unmerged.**
+
+## Verified production-readiness tracker CI — 2026-10-18
+- Code branch commit `f89bb1026cb8ffe17a37aff3cd7c280e32c8c767` adds machine-readable 26-mandatory-gate tracker and bundled CLI production-readiness check.
+- GitHub Actions https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39093338423: **58/58 Linux unit tests passed, 58/58 Windows unit tests passed**.
+- Real official OpenCore 1.0.8 schema staging and compiled Windows toolkit smoke tests passed, using intentionally non-bootable third-party fixtures.
+- The packaged EXE `release-readiness` command correctly exited 2 and emitted `production_ready:false`, because 23 required production gates remain open or blocked.
+- GitHub Actions build artifact ID: `12124025596` (`BlazeHackintosh-v0.1.5-experimental-windows-toolkit`). This is a CI build artifact, **not a new production GitHub Release**.
+- The last independently verified downloadable prerelease remains https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1
+- Production remains blocked: no physical macOS boot acceptance, verified component publisher signatures, safe disk migration/recovery, full Windows GUI, installer media or final signing.
