@@ -117,3 +117,16 @@ CI staging validates the file layout and OpenCore schema, **not** UEFI execution
 
 ## v0.1.5 integrity gate candidate — awaiting CI
 Haswell candidate staging now requires a complete SHA-256 ledger of every user-supplied component file. Input and staged file bytes must match ledger digests. Missing entries, unexpected ACPI files, symlinks, invalid declared provenance/ license fields and tampered bytes cause fail-closed rejection. These checks are local content integrity only, not cryptographic vendor attestation. Expanded regression tests and Windows real ocvalidate smoke must pass before any release claim.
+
+## Verified v0.1.5-alpha.1 publication — 2026-10-18
+
+- **Release is live:** https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1
+- Release source commit: `dad67964dd43de7040048d222cfe76b9c9ee6cf2`.
+- Linux 54/54 tests and Windows 54/54 tests passed.
+- Source Python + packaged EXE completed official OpenCore 1.0.8 schema validation of intentionally NON-BOOTABLE research fixtures.
+- Workflow run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39092948759
+- EXE asset `BlazeHackintosh-Toolkit.exe`, 9,225,236 bytes; SHA-256 `04ba1d1d42ceb728a2bbf8f32520ba2ab72d6166f3338aeb90c0706bf6659cb6`.
+- Offline UI ZIP 13,127 bytes; SHA-256 `902a57e898b6f5eacf3390e3f496bc5aef6c8e01b2da84b800c0b18d326ab793`.
+- GitHub Actions artifact ID `12123431324` (Windows compiled toolkit).
+- New integrity ledger catches substitution/missing entries and rejects altered source/copy hashes. **Operator-declared source URLs and licensing still not independently authenticated**.
+- No physical boot/USB readback/live ISO, production-grade GUI, all-family EFI database or safe internal-disk migration. **Production release remains blocked; PR #105 draft and unmerged.**
