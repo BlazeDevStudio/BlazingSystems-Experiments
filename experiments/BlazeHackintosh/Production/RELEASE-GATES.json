@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "project": "BlazeHackintosh",
+  "as_of": "2026-10-18",
+  "definition": "Production release blocked until every required gate is verified with supporting independently reviewable evidence. Passing configuration validation never proves boot.",
+  "gates": [
+    {
+      "id": "research-reconciliation",
+      "description": "OpenCore/macOS documentation reconciled to pinned versions",
+      "required": true,
+      "status": "in_progress",
+      "evidence": []
+    },
+    {
+      "id": "hardware-detection",
+      "description": "Read-only scanner and privacy tests",
+      "required": true,
+      "status": "verified",
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39092948759"
+      ]
+    },
+    {
+      "id": "hardware-db-25",
+      "description": "25+ exact hardware-aware documented architecture profiles with real compatibility evidence",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "adaptive-efi",
+      "description": "Fail-closed full CPU/GPU/chipset/firmware/ACPI compatibility matching",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "smbios-local",
+      "description": "Locally generated, unique and validated SMBIOS identity workflow",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "efi-generator",
+      "description": "Hardware-specific EFI generator with validated kext ordering/SMBIOS/SSDT",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "ocvalidate",
+      "description": "Pinned official OpenCore 1.0.8 ocvalidate integration and CI schema checks",
+      "required": true,
+      "status": "verified",
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39092948759"
+      ]
+    },
+    {
+      "id": "component-auth",
+      "description": "Independently verified supplier signatures, licenses, hashes and provenance",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "installer-online",
+      "description": "Official Apple-hosted online recovery/installer preparation",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "installer-offline",
+      "description": "Complete offline installer preparation with filesystem/format verification",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "windows-gui",
+      "description": "Compiled functional Windows Setup Assistant beginner/expert modes",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "usb-preparation",
+      "description": "Safe confirmed physical-device USB creation and restoration tests",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "efi-zip",
+      "description": "Real usable architecture-specific EFI ZIP release",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "esp-img",
+      "description": "Real partition IMG, readback and checksum tests",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "usb-img",
+      "description": "Real whole-disk IMG, GPT/ESP validation and readback tests",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "linux-recovery",
+      "description": "Bootable portable Linux recovery/live environment",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "efi-migration",
+      "description": "Non-destructive EFI migration, backup, restore and rollback",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "multiboot",
+      "description": "Windows/Linux/macOS bootloader preservation and multiboot acceptance",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "legacy-apple",
+      "description": "Verified legacy Apple Mac/OpenCore Legacy Patcher compatibility track",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "experimental-pc",
+      "description": "Documented isolated experimental compatibility and risk handling",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "boot-diagnostics",
+      "description": "Kernel panic and boot log classifications with verified remediation guidance",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "hardware-acceptance",
+      "description": "Physical UEFI boot and usable macOS documented on named compatible hardware",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "release-security",
+      "description": "Threat model, redaction, disk rollback and signed release artifacts",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "docs-per-folder",
+      "description": "Complete cross-linked README, sources, exact supported/unsupported hardware",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "ci-build",
+      "description": "Cross-platform source test suite, Windows toolkit compilation and automatic alpha packaging",
+      "required": true,
+      "status": "verified",
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39092948759"
+      ]
+    },
+    {
+      "id": "production-release",
+      "description": "Actual final non-alpha production GitHub Release with all required assets and valid signatures",
+      "required": true,
+      "status": "blocked",
+      "evidence": []
+    }
+  ]
+}

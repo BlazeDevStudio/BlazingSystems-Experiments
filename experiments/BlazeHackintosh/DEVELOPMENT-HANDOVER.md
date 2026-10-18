@@ -181,3 +181,11 @@ Linux first run failed: 17 builder tests invoked new mandatory component-manifes
 - No physical boot/USB readback/live ISO, production-grade GUI, all-family EFI database or safe internal-disk migration. **Production release remains blocked; PR #105 draft and unmerged.**
 
 Next action: independent release-publisher signature/source verification, missing hardware/ACPI evidence, GUI and robust non-destructive installation tooling. Every release-gate blocker must remain in handover until verified resolved.
+
+## Hourly continuation production acceptance tracker — 2026-10-18
+- Added complete 26-item machine-readable gate catalog (`Production/RELEASE-GATES.json`) and fail-closed `release-readiness` CLI.
+- 3 currently marked verified (read-only scan, version-pinned ocvalidate, test/Windows toolkit CI) backed by actual GitHub run; 23 production gates remain incomplete or blocked.
+- Code-enforced exact required gate IDs prevent dropping unfinished jobs from the checklist; verified gates must include HTTPS evidence and all `required` fields remain true.
+- Windows packaged EXE now bundles the gate catalog, and CI verifies `release-readiness` refuses production status (exit 2).
+- This checker cannot independently assess evidence truth; physical hardware boot proof, signed assets, user-permitted disk operations and all remaining components still must be completed and reviewed.
+- The user requested an hourly continuation automation; continue from this ledger and update it with genuine evidence at each milestone until a final non-alpha production release is live and verified, rather than silently closing jobs.

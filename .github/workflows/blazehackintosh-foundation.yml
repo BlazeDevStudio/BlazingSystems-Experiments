@@ -64,7 +64,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check pyinstaller==6.16.0
-          python -m PyInstaller --noconfirm --clean --onefile --name BlazeHackintosh-Toolkit --add-data "Hardware-Database/families.json;Hardware-Database" blazehackintosh.py
+          python -m PyInstaller --noconfirm --clean --onefile --name BlazeHackintosh-Toolkit --add-data "Hardware-Database/families.json;Hardware-Database" --add-data "Production/RELEASE-GATES.json;Production" blazehackintosh.py
           if (!(Test-Path dist/BlazeHackintosh-Toolkit.exe)) { throw 'Executable missing' }
           if ((Get-Item dist/BlazeHackintosh-Toolkit.exe).Length -lt 100000) { throw 'Executable too small' }
           ./dist/BlazeHackintosh-Toolkit.exe catalog --output dist/families-export.json
@@ -76,6 +76,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Packaged EXE could not run trusted OpenCore ocvalidate' }
           python Tests/smoke_stage.py OpenCore-1.0.8-RELEASE.zip dist/BlazeHackintosh-Toolkit.exe
           if ($LASTEXITCODE -ne 0) { throw 'Packaged EXE Haswell staging failed genuine ocvalidate' }
+          python -c "import subprocess,json; from pathlib import Path; p=subprocess.run(['dist/BlazeHackintosh-Toolkit.exe','release-readiness','--output','dist/release-readiness.json'],capture_output=True,text=True,timeout=50); assert p.returncode==2,(p.returncode,p.stderr); d=json.loads(Path('dist/release-readiness.json').read_text()); assert d['remaining']>0 and not d['production_ready'], d"
+          if ($LASTEXITCODE -ne 0) { throw 'Production gate tracker falsely promoted alpha toolkit' }
           Get-FileHash dist/BlazeHackintosh-Toolkit.exe -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 dist/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:

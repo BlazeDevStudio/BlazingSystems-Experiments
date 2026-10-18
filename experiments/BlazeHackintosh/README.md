@@ -76,3 +76,7 @@ All graphical preview assets remain locally bundled and licensed as described in
 ## v0.1.5 — verified component integrity hardening
 
 [Download experimental Windows toolkit + offline UI](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazehackintosh-toolkit-v0.1.5-alpha.1). Source and compiled EXE CI: 54 tests passed on Linux and Windows, genuine OpenCore 1.0.8 schema validation of intentionally non-bootable fixtures. The new component ledger requires exact per-file SHA-256 and operator-declared source/license/release values, verified before and after staging. This **does not authenticate upstream publishers or establish boot compatibility**.
+
+## Production completion tracker (not a release claim)
+
+Run `BlazeHackintosh-Toolkit.exe release-readiness` for a complete, fail-closed JSON report. See [Production/README.md](Production/README.md) and [Production/RELEASE-GATES.json](Production/RELEASE-GATES.json). All 26 mandatory requirements remain in scope; an alpha CI pass is not a production verdict. The tool exits 2 while blockers remain. No required gate can be silently deleted from the manifest.

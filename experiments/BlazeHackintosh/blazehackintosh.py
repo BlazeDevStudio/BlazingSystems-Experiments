@@ -293,6 +293,8 @@ def main(argv: list[str] | None = None) -> int:
     stage.add_argument("--macos", choices=["12"], required=True)
     stage.add_argument("--acknowledge-research-only", action="store_true",
                        help="Acknowledges experimental, not bootable or production ready, and allows official checker execution")
+    readiness_command = sub.add_parser("release-readiness", help="Fail-closed report of all mandatory production acceptance gates")
+    readiness_command.add_argument("--output", metavar="FILE")
     evaluation = sub.add_parser("evaluate", help="Classify a JSON report without guessing compatibility")
     evaluation.add_argument("--report", metavar="FILE", help="Existing report from scan; omit to scan this PC")
     evaluation.add_argument("--output", metavar="FILE")
@@ -302,6 +304,11 @@ def main(argv: list[str] | None = None) -> int:
             emit(scan_hardware(), args.output)
         elif args.operation == "catalog":
             emit(load_catalog(), args.output)
+        elif args.operation == "release-readiness":
+            from release_gates import readiness
+            result = readiness()
+            emit(result, args.output)
+            return 0 if result["production_ready"] else 2
         elif args.operation == "plan-haswell":
             from efi_builder import _hardware, _read_json
             try:
