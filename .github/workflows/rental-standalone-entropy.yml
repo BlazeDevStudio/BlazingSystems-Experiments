@@ -28,3 +28,5 @@ jobs:
         run: sh experiment/openwrt/Rental-Server-Standalone/tests/entropy_fail_closed.sh
       - name: Preserve latest rental lease across the lock edge
         run: sh experiment/openwrt/Rental-Server-Standalone/tests/lease_race.sh
+      - name: Retry the same dashboard request after a lost response
+        run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_pending.js

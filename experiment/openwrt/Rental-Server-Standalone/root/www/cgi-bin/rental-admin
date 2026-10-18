@@ -53,7 +53,33 @@ valid_lease(){
   case "$1" in *[!0-9]*) return 1;; esac
   [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
 }
+valid_request_id(){ printf '%s' "$1" | grep -Eq '^[0-9a-f]{32}$'; }
+receipt_state(){
+  receipt="$(awk -F '\t' -v id="$1" '$1=="@op" && $2==id {found=$0;n++} END {if(n>1)exit 2;if(n==1)print found}' "$DEVICES")" || return 2
+  [ -n "$receipt" ] || return 1
+  [ "$(printf '%s\n' "$receipt" | awk -F '\t' '{print NF}')" -eq 6 ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f3)" = "$2" ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f4)" = "$3" ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f5)" = "$4" ] || return 2
+  receipt_result="$(printf '%s' "$receipt" | cut -f6)"
+  valid_lease "$receipt_result" || return 2
+  return 0
+}
+paid_ack(){
+  result="$1"; replayed="$2"; remaining=$((result-ts))
+  [ "$remaining" -ge 0 ] || remaining=0
+  json "{\"ok\":true,\"lease_until\":$result,\"remaining\":$remaining,\"replayed\":$replayed}"
+}
 write_device(){ did="$1" secret="$2" lease="$3" label="$4" last="$5"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.devices.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1; clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"; printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp" || return 1; atomic_replace "$tmp" "$DEVICES"; }
+write_paid_device(){
+  did="$1"; secret="$2"; lease="$3"; label="$4"; last="$5"; rid="$6"; op="$7"; value="$8"
+  suffix="$(randhex 3)" || return 1; tmp="$STATE/.devices.$$.$suffix"
+  awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1
+  clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp" || return 1
+  printf '@op\t%s\t%s\t%s\t%s\t%s\n' "$rid" "$did" "$op" "$value" "$lease" >> "$tmp" || return 1
+  atomic_replace "$tmp" "$DEVICES"
+}
 remove_device(){ did="$1"; for spec in "$DEVICES:1" "$POLICY:1"; do f="${spec%%:*}"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.rm.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$f" > "$tmp" || return 1; atomic_replace "$tmp" "$f" || return 1; done; }
 log(){ printf '%s\t%s\t%s\t%s\n' "$(now)" "$1" "$2" "${REMOTE_ADDR:-local}" >> "$EVENTS"; chmod 600 "$EVENTS"; }
 
@@ -68,6 +94,7 @@ case "$action" in
     first=1; out='['
     while IFS="$(printf '\t')" read -r did secret lease label last; do
       [ -n "$did" ] || continue
+      [ "$did" = '@op' ] && continue
       valid_lease "$lease" || fail "corrupt lease state"
       remaining=0; [ "${lease:-0}" -gt "$ts" ] 2>/dev/null && remaining=$((lease-ts))
       seen="$last"
@@ -94,6 +121,7 @@ case "$action" in
     ;;
   add_time|set_time|expire|rename|revoke)
     did="$(param device_id)"; printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || fail "invalid device id"
+    case "$action" in add_time|set_time|expire) rid="$(param request_id)"; valid_request_id "$rid" || fail "invalid request id";; esac
     with_lock || fail "server busy"
     line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
     secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
@@ -102,16 +130,25 @@ case "$action" in
       add_time)
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9-]*) unlock; fail "invalid seconds";; esac
         [ "$sec" -ge -604800 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
+        receipt_state "$rid" "$did" "$action" "$sec"; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
         base="$lease"; [ "$base" -ge "$ts" ] 2>/dev/null || base="$ts"; new=$((base+sec)); [ "$new" -ge "$ts" ] 2>/dev/null || new="$ts"
-        write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_added "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$((new-ts))}"
+        valid_lease "$new" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$new" "$label" "$last" "$rid" "$action" "$sec" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_added "$did:$sec"; paid_ack "$new" false
         ;;
       set_time)
         sec="$(param seconds)"; case "$sec" in ''|*[!0-9]*) unlock; fail "invalid seconds";; esac
         [ "$sec" -ge 0 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
-        new=$((ts+sec)); write_device "$did" "$secret" "$new" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_set "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$sec}"
+        receipt_state "$rid" "$did" "$action" "$sec"; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
+        new=$((ts+sec)); valid_lease "$new" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$new" "$label" "$last" "$rid" "$action" "$sec" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log time_set "$did:$sec"; paid_ack "$new" false
         ;;
       expire)
-        write_device "$did" "$secret" "$ts" "$label" "$last" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log expired "$did"; json "{\"ok\":true,\"lease_until\":$ts,\"remaining\":0}"
+        receipt_state "$rid" "$did" "$action" '-' ; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
+        valid_lease "$ts" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$ts" "$label" "$last" "$rid" "$action" '-' || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log expired "$did"; paid_ack "$ts" false
         ;;
       rename)
         nl="$(param label)"; [ -n "$nl" ] || { unlock; fail "label required"; }; printf '%s' "$nl" | grep -q '[[:cntrl:]]' && { unlock; fail "invalid label"; }

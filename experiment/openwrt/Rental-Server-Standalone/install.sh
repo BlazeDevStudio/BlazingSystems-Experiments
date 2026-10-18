@@ -90,8 +90,8 @@ fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
 echo '9ade60a8c7a70bccc7be16d493ac1d966bc51e50eea7175a5cf5ba83fcc4aa7e  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo '4d0b4431d5a176e5fe92e94bd6875451de5a489aa52adb38bc4e9b2340c132dd  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
-echo '56330ee3df791ed402d471cdeb2fa15b1303601f097885cc1ab867c3700d0f40  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
+echo 'c2b04314b4695837220c4e1e08cbc93a5301699b9ad397fd36fdb9f47f36236d  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo '40505f98765a2cbd40de399c43d82740a10ee6fbde6b5d75c3f555c95707f682  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
 STAMP="$(date +%Y%m%d-%H%M%S)"

@@ -7,6 +7,7 @@ trap 'rm -rf "$T"' EXIT HUP INT TERM
 mkdir -p "$T/bin" "$T/hub/state"
 REAL_MKDIR="$(command -v mkdir)"
 DID='0123456789abcdef01234567'
+RID='0123456789abcdef0123456789abcdef'
 SECRET='0123456789abcdef0123456789abcdef0123456789abcdef'
 NOW="$(date +%s)"
 OLD=$((NOW+600))
@@ -41,7 +42,7 @@ seed_old(){
 }
 lease_now(){ awk -F '\t' -v id="$DID" '$1==id {print $3; exit}' "$T/hub/state/devices.tsv"; }
 run_admin(){
-    printf 'action=add_time&device_id=%s&seconds=600\n' "$DID" |
+    printf 'action=add_time&device_id=%s&seconds=600&request_id=%s\n' "$DID" "$RID" |
         env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
             BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=advance \
             BLAZE_TEST_DID="$DID" BLAZE_TEST_SECRET="$SECRET" \
@@ -113,9 +114,9 @@ for malformed in corrupt 000123 2147483648; do
     cp "$T/hub/state/devices.tsv" "$T/corrupt-lease-before"
     for request in \
         'action=list' \
-        "action=add_time&device_id=$DID&seconds=600" \
-        "action=set_time&device_id=$DID&seconds=600" \
-        "action=expire&device_id=$DID"; do
+        "action=add_time&device_id=$DID&seconds=600&request_id=$RID" \
+        "action=set_time&device_id=$DID&seconds=600&request_id=$RID" \
+        "action=expire&device_id=$DID&request_id=$RID"; do
         response="$(printf '%s\n' "$request" |
             env BLAZE_RENTAL_BASE="$T/hub" \
                 HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
@@ -152,7 +153,7 @@ exec "$BLAZE_REAL_SYNC" "$@"
 EOF
 chmod 755 "$T/bin/sync"
 run_sync_fault(){
-    printf 'action=add_time&device_id=%s&seconds=600\n' "$DID" |
+    printf 'action=add_time&device_id=%s&seconds=600&request_id=%s\n' "$DID" "$RID" |
         env PATH="$T/bin:$PATH" BLAZE_RENTAL_BASE="$T/hub" \
             BLAZE_REAL_MKDIR="$REAL_MKDIR" BLAZE_RACE_MODE=none \
             BLAZE_REAL_SYNC="$REAL_SYNC" BLAZE_SYNC_FAIL_AT="$1" \
@@ -182,7 +183,6 @@ printf '%s' "$response" | grep -Fq 'outcome uncertain' || {
 
 # A response lost after the rename leaves the new lease visible. Repeating the
 # exact request ID must return the prior result without granting time twice.
-RID='0123456789abcdef0123456789abcdef'
 run_paid_request(){
     printf 'action=add_time&device_id=%s&seconds=%s&request_id=%s\n' \
         "$DID" "$2" "$1" |
@@ -226,5 +226,58 @@ printf '%s' "$missing" | grep -Fq '"ok":false' || {
 }
 [ "$(lease_now)" -eq "$first_lease" ] || {
     echo 'FAIL: missing request ID changed the lease' >&2; exit 1;
+}
+awk -F '\t' -v id="$RID" '$1=="@op" && $2==id && NF==6 {found++} END{exit(found==1?0:1)}' \
+    "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: paid lease and request receipt were not saved in one file' >&2; exit 1;
+}
+list_response="$(printf 'action=list\n' |
+    env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
+        REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+printf '%s' "$list_response" | grep -Fq '"ok":true' || {
+    echo 'FAIL: receipt row broke the admin device list' >&2; exit 1;
+}
+run_other_paid(){
+    printf 'action=%s&device_id=%s&seconds=%s&request_id=%s\n' "$1" "$DID" "$2" "$3" |
+        env BLAZE_RENTAL_BASE="$T/hub" \
+            HTTP_X_BLAZE_RENTAL_ADMIN=known-token REQUEST_METHOD=POST \
+            sh "$ROOT/root/www/cgi-bin/rental-admin"
+}
+SET_RID='11111111111111111111111111111111'
+set_first="$(run_other_paid set_time 300 "$SET_RID")"
+printf '%s' "$set_first" | grep -Fq '"ok":true' || {
+    echo 'FAIL: request-ID set_time failed' >&2; exit 1;
+}
+set_lease="$(lease_now)"
+set_retry="$(run_other_paid set_time 300 "$SET_RID")"
+printf '%s' "$set_retry" | grep -Fq '"replayed":true' || {
+    echo 'FAIL: set_time retry was not identified as replay' >&2; exit 1;
+}
+[ "$(lease_now)" -eq "$set_lease" ] || {
+    echo 'FAIL: set_time retry changed the lease' >&2; exit 1;
+}
+EXP_RID='22222222222222222222222222222222'
+exp_first="$(run_other_paid expire '-' "$EXP_RID")"
+printf '%s' "$exp_first" | grep -Fq '"ok":true' || {
+    echo 'FAIL: request-ID expire failed' >&2; exit 1;
+}
+exp_lease="$(lease_now)"
+exp_retry="$(run_other_paid expire '-' "$EXP_RID")"
+printf '%s' "$exp_retry" | grep -Fq '"replayed":true' || {
+    echo 'FAIL: expire retry was not identified as replay' >&2; exit 1;
+}
+[ "$(lease_now)" -eq "$exp_lease" ] || {
+    echo 'FAIL: expire retry changed the lease' >&2; exit 1;
+}
+awk -F '\t' -v id="$SET_RID" '$1=="@op" && $2==id {print;exit}' \
+    "$T/hub/state/devices.tsv" > "$T/duplicate-receipt-line"
+cat "$T/duplicate-receipt-line" >> "$T/hub/state/devices.tsv"
+cp "$T/hub/state/devices.tsv" "$T/duplicate-receipt-before"
+duplicate="$(run_other_paid set_time 300 "$SET_RID")"
+printf '%s' "$duplicate" | grep -Fq '"ok":false' || {
+    echo 'FAIL: duplicate request receipt was accepted' >&2; exit 1;
+}
+cmp -s "$T/duplicate-receipt-before" "$T/hub/state/devices.tsv" || {
+    echo 'FAIL: duplicate receipt request changed financial state' >&2; exit 1;
 }
 echo 'Standalone rental lock-edge lease refusal PASS'
