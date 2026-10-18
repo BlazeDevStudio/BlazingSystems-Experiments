@@ -1,3 +1,10 @@
+v0.1.3-preview.1 exact CI addendum (2026-10-18 Manila)
+- Old-code expected RED #39083519007: admin issued enrollment token without random bytes.
+- First corrected head #39083853101: negative refusal/checksum/syntax PASS, healthy enrollment FAIL of unknown cause.
+- Diagnostic-only head #39083975140: SUCCESS attempts 1 and 2 without source change.
+- Ten-issuance head #39084229748: SUCCESS attempts 1 and 2 at literal SHA; no-RNG refusal, positive admin/app issuance, checksum and syntax PASS.
+- Physical R281 install, Android enrollment, lease crash recovery and customer acceptance remain untested. Draft preview only.
+
 BlazeRental R281 Test Hub v0.1.3-preview.1 - Entropy addendum
 ==========================================================
 - Expected RED: literal PR #107 #39083519007 issued an enrollment token after forced kernel entropy reader failure.
