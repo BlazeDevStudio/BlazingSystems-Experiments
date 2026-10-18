@@ -2419,3 +2419,8 @@
 
 ## R281-STANDALONE-0011 — enrollment post-rename lost-ACK negative, 2026-10-18 Asia/Manila
 - Test-only `718fbb0e79d8ac8e6461ddfc331a573c5c6c28c2` injects second sync failure after enrolled device rename, then repeats same signed token; requires no second device. Synchronized old-code exact Ubuntu pending; draft PR #107 only.
+
+## R281-STANDALONE-0011 — 2026-10-18 Asia/Manila, P1 enrollment duplicate issuance
+- **Status:** committed_untested, isolated fix/rental-standalone-entropy, draft PR #107. Old-code test 718fbb0e79d8ac8e6461ddfc331a573c5c6c28c2 synchronized at 63497b51e753ebd1dde4da8ab4adaef683d36c61; exact Ubuntu #39117271196 FAILED intended duplicate device after post-rename sync error and same signed retry. Source/test 7e1515f05b2f195c0c75c84288e14753586dd817 modifies rental and rental-admin CGIs, lease_race.sh, installer and SHA256SUMS. Device and enrollment credential receipt now share one file replacement; same token replays saved device/secret, duplicate/corrupt receipts and changed device refuse.
+- **Data integrity/rollback:** prevents software lost-ACK duplicate when saved file survives; source remains preview and can be reverted on isolated branch. No independent antirollback, physical sync/powercut, entire multi-file policy/token transaction or R281/Android acceptance. Paid v2 financial release gate unchanged.
+- **NEXT:** synchronize canonical handovers after source, run exact Ubuntu rental standalone workflow; fix only demonstrated failures, then update PR #107 and checkpoint literal CI.
