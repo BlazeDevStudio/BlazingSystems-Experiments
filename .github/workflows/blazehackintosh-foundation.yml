@@ -55,6 +55,9 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile OpenCore-1.0.8-RELEASE.zip -MaximumRetryCount 2 -RetryIntervalSec 5
           python blazehackintosh.py verify-opencore-package --zip OpenCore-1.0.8-RELEASE.zip
           if ($LASTEXITCODE -ne 0) { throw 'OpenCore archive SHA256 gate failed' }
+          # GitHub API hash/size and safe ZIP bytes inspection are NOT publisher authentication.
+          python archive_integrity.py --archive OpenCore-1.0.8-RELEASE.zip --sha256 2011e8b7216ecb2645d97ea710df965947edd406846e92050b9bc4190be6d27b --size 10544084
+          if ($LASTEXITCODE -ne 0) { throw 'Real upstream OpenCore archive ZIP structure or CRC check failed' }
           python Tests/smoke_official.py OpenCore-1.0.8-RELEASE.zip
           if ($LASTEXITCODE -ne 0) { throw 'Official ocvalidate execution/version gate failed' }
           python Tests/smoke_stage.py OpenCore-1.0.8-RELEASE.zip
