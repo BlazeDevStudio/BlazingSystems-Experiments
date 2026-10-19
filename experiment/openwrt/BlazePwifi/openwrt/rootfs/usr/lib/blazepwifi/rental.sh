@@ -506,9 +506,25 @@ bp_rental_events_json() {
 }
 
 # Keep receipt append independently mockable for fault-injection tests.
+# PAY-0780: the signed paid receipt reader refuses any corpus above
+# 4,190,208 bytes. Reserve the COMPLETE new record before paid lease change;
+# otherwise a successful payment can ACK a receipt its own reader rejects.
+# Caller holds paid-financial.lock; this helper NEVER mutates state.
+bp_rental_paid_receipt_capacity_ok() {
+  [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
+  current_bytes="$(wc -c < "$BP_RENTAL_EVENTS" 2>/dev/null)" || return 8
+  record_bytes="$(printf '%s\t%s\t%s\t%s\tp:%s\n' "$1" "$2" "$3" "$4" "$5" | wc -c)" || return 8
+  case "$current_bytes:$record_bytes" in *[!0-9:]*|:*|*:) return 8;; esac
+  [ "$record_bytes" -ge 1 ] 2>/dev/null &&
+    [ "$record_bytes" -le 4190208 ] 2>/dev/null &&
+    [ "$current_bytes" -le $((4190208-record_bytes)) ] 2>/dev/null || return 8
+  return 0
+}
+
 bp_rental_append_paid_receipt() {
   # No v1 financial/admin writes may fork the synthetic v2 lease authority.
   [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
+  bp_rental_paid_receipt_capacity_ok "$@" || return 8
   # Keep legacy fields 1-4 stable; column 5 binds the signed pulse
   # quantity to this immutable receipt, so altered retries never false-ACK.
   printf '%s\t%s\t%s\t%s\tp:%s\n' "$1" "$2" "$3" "$4" "$5" >> "$BP_RENTAL_EVENTS" || return 8
@@ -694,6 +710,12 @@ bp_rental_apply_coin() {
   [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
   [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
   newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
   # Existing v1 writes remain two separately durable operations; quarantine
   # on either failure instead of pretending this is an atomic v2 ledger.
   if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
