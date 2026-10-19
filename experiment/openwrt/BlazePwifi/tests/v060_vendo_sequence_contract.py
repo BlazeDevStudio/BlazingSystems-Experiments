@@ -23,4 +23,13 @@ assert "uint64_t sequence;" in HEADER
 assert "s->sequence == s->acked_sequence + 1" in HEADER
 assert "pulses < s->pulses" in HEADER
 assert "bp_pending_sequence_commit" in HEADER and "bp_pending_sequence_abandon" in HEADER
+# PAY-0783: the shared sequence header is a local Arduino library.
+# Core package installation alone does not put it on either sketch's include path.
+# Both board builds must explicitly admit the checked-in library directory.
+WORKFLOW = (ROOT.parents[2] / ".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8")
+for fqbn in ("esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32"):
+    lines = [line.strip() for line in WORKFLOW.splitlines() if f"arduino-cli compile --fqbn {fqbn} " in line]
+    assert len(lines) == 1, f"{fqbn}: expected exactly one compile command"
+    assert "--libraries experiment/openwrt/BlazePwifi/esp/libraries " in lines[0], f"{fqbn}: local sequence library missing from Arduino compile path"
+
 print("Vendo sequence contract source checks passed")
