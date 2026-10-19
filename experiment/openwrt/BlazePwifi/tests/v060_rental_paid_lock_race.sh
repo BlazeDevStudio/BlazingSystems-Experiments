@@ -38,10 +38,18 @@ exec 7>"$BP_RUN/paid-financial.lock"
 flock -n 7 || exit 1
 assert_reject bp_rental_apply_coin dev01 controller01 nonce01 target01 1
 assert_reject bp_rental_apply_coin dev01 controller02 nonce02 target01 1
+# PAY-0781: rename is a lease TSV rewrite and MUST NOT bypass the paid writer lock.
+# Pre-fix real v1 bp_rental_device_rename returns success here and mutates
+# paid lease metadata while another money transaction owns the global lock.
+assert_reject bp_rental_device_rename dev01 'Should Not Rename Under Paid Lock'
 [ "$snapshot" = "$(sha256sum "$BP_RENTAL_DEVICES" "$BP_RENTAL_EVENTS")" ]
 [ ! -e "$BP_STATE/paid-state-uncertain" ]
 flock -u 7
 exec 7>&-
+# The same authenticated rename is allowed only after the paid lock releases.
+bp_rental_device_rename dev01 'Safely Renamed Device'
+[ "$(getlease)" = 124600 ] || { echo "PAY-0781 rename lost purchased time" >&2; exit 1; }
+[ ! -e "$BP_PAID_UNCERTAIN" ]
 # A separate admin/consumer can win the gap between releasing the replay
 # read lock and acquiring writer lock. Simulate a committed independent
 # lease increase at that boundary and verify the current lease is RE-READ.
