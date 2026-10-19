@@ -477,6 +477,22 @@ bp_rental_device_revoke() {
   # Destructive changes touch several v1 files. Mark uncertainty BEFORE any
   # rename and retain the halt across an interrupted audit or target removal.
   bp_paid_begin || return 9
+  # PAY-0782: the expired-lease check above is only a preflight. A coin
+  # payment can commit before we acquire this lock, so recheck the current
+  # authoritative lease BEFORE deleting any device/policy/target record.
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_rental_admin_unmodified_reject "$rc"
+    return $?
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  now="$(bp_now)"
+  bp_rental_safe_seconds "$now" 2147483647 || {
+    bp_rental_admin_unmodified_reject 8; return $?
+  }
+  if [ "$lease" -gt "$now" ]; then
+    bp_rental_admin_unmodified_reject 6; return $?
+  fi
   for file in "$BP_RENTAL_DEVICES" "$BP_RENTAL_POLICY" "$BP_RENTAL_INVENTORY" "${BP_RENTAL_POLICY_V2:-}"; do
     [ -n "$file" ] || continue
     [ -f "$file" ] || continue
