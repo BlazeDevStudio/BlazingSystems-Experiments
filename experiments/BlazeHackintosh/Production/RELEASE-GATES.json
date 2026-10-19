@@ -263,6 +263,22 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214554302",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214554240"
       ]
+    },
+    {
+      "date": "2026-10-19",
+      "scope": "disposable-gpt-esp-fat32-file-audit",
+      "status": "ci_verified_scope_limited",
+      "note": "Read-only 40 MiB synthetic GPT/ESP/FAT32 regular-file structural checks; correct FSInfo trailing signature byte 508. TDD Windows file-identity regression RED in 39222279657, fixed using shared archive helper in fb6c1d1; CI push 39222341172 and PR 39222346177 passed 237/237 Linux and 237/237 Windows tests including official ocvalidate on non-bootable fixtures. No actual filesystem integrity, physical-drive readback, rollback, authenticated EFI/installer or boot acceptance.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39222279657",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39222341172",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39222346177"
+      ]
     }
   ]
 }

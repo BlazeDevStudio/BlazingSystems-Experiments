@@ -17,3 +17,8 @@
 - Dortania's generated documentation page also cautions that OpenCorePkg's official documents are authoritative: https://dortania.github.io/docs/ .
 - Apple software license terms require separate checking for the particular macOS version and restrict permitted installation and redistribution; an OpenCore ZIP archive check does not change Apple license rules: https://www.apple.com/legal/sla/ .
 - Real archive CI confirms ZIP bytes and CRC against pinned metadata, not independent supplier identity; provider-key attestation, license notices and per-device EFI acceptance remain OPEN.
+
+## 2026-10-19 — GPT/FAT32 image structure, not physical acceptance
+- Microsoft's *Extensible Firmware Initiative FAT32 File System Specification* v1.03, December 6 2000, pp. 21–22 (https://www.cs.fsu.edu/~cop4610t/assignments/project3/spec/fatspec.pdf) puts FSInfo's `FSI_Reserved2` at bytes 496–507 and `FSI_TrailSig` at bytes 508–511 (value 0xAA550000). Audit code checks 508; the earlier local draft that checked 496 was incorrect and must not be integrated.
+- Windows can expose differing inode/device IDs between path `lstat` and opened-handle `fstat`; image-auditor source reuses `archive_integrity._same_opened_file` with bounded regular-file, size and reparse checks. Full opened-handle SHA-256 is recomputed after structural reads; no promise of complete TOCTOU race immunity.
+- Passing GPT CRC, FAT32 boot metadata samples and hashes verifies a *synthetic disk file* only: no FAT-chain walk, directory tree verification, real EFI files, end-to-end USB restore, publisher identity/license verification or physical boot evidence. Gate classification remains unchanged.
