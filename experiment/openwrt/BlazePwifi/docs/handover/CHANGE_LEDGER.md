@@ -1,3 +1,11 @@
+## 2026-10-19 — PAY-0780: corrected Git executable mode regression after real source patch
+
+- Original installed writer baseline test on `5a5af83729cb6cfd23424569e80453bbf46c196c` [Full #39202796254](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39202796254) `validate` PAY-0780 **FAILED as intended** (`oversized paid receipt was acknowledged (rc=0)`); workflow later cancelled after new commit.
+- Source+docs `3254e6b11e8e41bf4815f6ad2bba46a337c13220` [Full #39203036003](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39203036003) `validate` **FAILED BEFORE PAY-0780**: static check `required executable bit missing: openwrt/rootfs/usr/lib/blazepwifi/rental.sh`; introduced by Git Tree API file mode 100644, despite correct source content. PAY-0780 skipped. Correcting ONLY executable mode to 100755 in this checkpoint, plus required handovers, no source/test logic change.
+- Installation and release unauthorized. Re-run exact-head Full CI and check named PAY-0780 and all jobs; P0 #31/#32/#43/#34 remain open because independent witness, signer, v1 cutover, crash-atomic v2 authority and real hardware acceptance are still absent.
+
+---
+
 ## 2026-10-19 — PAY-0780: confirmed old-code RED; installed v1 rental quota preflight correction pending CI
 
 - **Baseline reproducible RED confirmed:** branch `fix/pay-0780-rental-receipt-capacity`, test/CI/docs commit `5a5af83729cb6cfd23424569e80453bbf46c196c`, [Full #39202796254](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39202796254) `validate` PAY-0780 **FAILED**, log: `PAY-0780 FAIL: oversized paid receipt was acknowledged (rc=0)`. Actual `bp_rental_apply_coin` crossed `bp_rental_paid_receipt_snapshot` 4,190,208 byte corpus cap and issued positive ACK after a paid lease changed. No customer state used.
