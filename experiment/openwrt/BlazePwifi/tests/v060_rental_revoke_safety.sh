@@ -46,6 +46,28 @@ refuse 6 dev01
 [ ! -e "$BP_PAID_UNCERTAIN" ]
 [ "$(cut -f3 "$BP_RENTAL_DEVICES" | head -n1)" = "$((now+3600))" ]
 
+# PAY-0782: exercise a real synthetic payment in the gap after revocation
+# preflight but before it acquires the shared paid writer lock. Revocation
+# must reread paid time under that lock rather than delete freshly purchased
+# seconds from another authorized transaction.
+bp_paid_begin() {
+  (
+    . "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+    bp_rental_lease_add dev02 600 >/dev/null
+  ) || return 8
+  . "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+  bp_paid_begin
+}
+refuse 6 dev02
+[ "$(bp_rental_device_line dev02 | cut -f3)" -gt "$now" ] || {
+  echo 'PAY-0782 concurrent purchased time missing' >&2; exit 1;
+}
+[ ! -e "$BP_PAID_UNCERTAIN" ] || {
+  echo 'PAY-0782 read-only refusal left uncertainty' >&2; exit 1;
+}
+. "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+bp_rental_device_write dev02 synthetic-secret-dev02 1000 'Fictional Phone' "$now"
+
 # Expired non-paid lease may be revoked; unrelated active and expired
 # leases, audit and policy records must be left intact.
 bp_rental_device_revoke dev02

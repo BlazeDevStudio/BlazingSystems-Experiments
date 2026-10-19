@@ -1,3 +1,9 @@
+## 2026-10-20 — PAY-0782: rental revocation versus fresh paid credit (RED candidate)
+
+- Source base `28d38ad6f9fd41f8dc84cf7e279c8e4f83d75743`, PR #112 merged to active development (not main).
+- Regression change only: `tests/v060_rental_revoke_safety.sh` injects a synthetic *real lease extension* after revoke's unlocked expired-lease preflight but before shared writer acquisition. Revoke must reject, preserve the new lease and clear its own unmodified marker. Intended RED; exact CI not yet observed.
+- No live lease, devices, signing identity, keys, release versions or approved hardware touched. #31/#32/#43/#34 open.
+
 ## 2026-10-20 — PAY-0781 installed rental rename paid-lock race (verified scoped fix)
 
 - **Root cause:** `bp_rental_device_rename` could read/replace the authoritative `rental-devices.tsv` lease row while another prepaid writer held the global lock, enabling a stale rename to overwrite purchased rental seconds.
