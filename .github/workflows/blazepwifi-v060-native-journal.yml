@@ -8,6 +8,20 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_maintenance_freeze.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.*'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_sequence_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
@@ -18,6 +32,20 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_maintenance_freeze.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_frozen_capture.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/**'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.*'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_sequence_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_native_v2_roundtrip.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_softtimer_pending_v2_restart.sh'
@@ -38,6 +66,11 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Check compiler and libcrypto
         run: |
           cc --version
@@ -45,6 +78,18 @@ jobs:
           pkg-config --exists libcrypto
       - name: Compile and fault-test signed synthetic prepaid journal
         run: sh experiment/openwrt/BlazePwifi/tests/v060_native_v2_authority.sh
+      - name: PAY-0751 signed CGI native envelope verification remains payment-denied
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_cgi_native_envelope.sh
+      - name: PAY-0755 installed read-only v1 financial migration preflight
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_preflight.sh
+      - name: PAY-0758 installed maintenance freeze and paid-write denial
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_maintenance_freeze.sh
+      - name: PAY-0760 installed frozen v1 state and receipt capture
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_frozen_capture.sh
+      - name: PAY-0765 installed receipt-preserving member/rental migration candidate
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh
+      - name: PAY-0745 durable Vendo pending sequence and corruption contract
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
       - name: RENT-0727 independently keyed rental ACKV2 native journal fixture (not production)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py
       - uses: actions/setup-dotnet@v4

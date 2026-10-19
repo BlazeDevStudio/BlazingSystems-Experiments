@@ -1,18 +1,17 @@
 /*
- * V2NATIVE-0668: synthetic, native controller-authenticated prepaid journal.
- * LAB-ONLY, never installed in OpenWrt rootfs, no live payment endpoint.
- * Build: cc -std=c11 -Wall -Wextra -Werror -O2 -DBLAZE_FIXTURE_ONLY
- *        tools/v060_journal_authority_native.c -lcrypto -o v2-native-fixture
- * Usage: v2-native-fixture /tmp/blaze-v2-native-XXXXXX
- *        CONTROLLER SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC_SHA256
- * Requires private marker, private key registry, private ledger.
- * This does not implement production v1 migration, target power-loss proof,
- * key rotation, or encrypted backup. No flags can enable customer operation.
+ * PAY-0743: shared native prepaid journal engine for member and rental state.
+ * BLAZE_FIXTURE_ONLY builds are synthetic and restricted to marked /tmp roots.
+ * BLAZE_RUNTIME_AUTHORITY builds are packaged for /etc/blazepwifi/state and
+ * require externally provisioned controller keys and an existing ledger.
+ * The runtime package does not enable cutover, provide a response signer or
+ * antirollback witness, migrate v1 data, or prove device power-loss behavior.
+ * Neither build creates credentials or silently initializes financial state.
  */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 #endif
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/crypto.h>
@@ -25,23 +24,36 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#ifndef BLAZE_FIXTURE_ONLY
-#error "Native authority must not be built without LAB-ONLY fixture guard"
+#if !defined(BLAZE_FIXTURE_ONLY) && !defined(BLAZE_RUNTIME_AUTHORITY)
+#error "Build only as a synthetic fixture or the installed runtime package"
+#endif
+#if defined(BLAZE_FIXTURE_ONLY) && defined(BLAZE_RUNTIME_AUTHORITY)
+#error "Select one authority build profile"
+#endif
+#if defined(BLAZE_RUNTIME_AUTHORITY)
+#define V2_REQUEST_DOMAIN "BLAZE-V2-AUTH/1"
+#else
+#define V2_REQUEST_DOMAIN "BLAZE-V2-AUTH-FIXTURE/1"
 #endif
 #define ROOT_PREFIX "/tmp/blaze-v2-native-"
 #define MAX_LEDGER 2097152
 #define MAX_BANK 512
 #define MAX_LEASE 512
+#define MAX_FINANCIAL_VALUE 2147483647ULL
 #define MAX_CTL 128
 #define MAX_RECEIPT 1024
-struct item { char name[33]; unsigned long long value; };
+struct item { char name[97]; unsigned long long value; };
 struct receipt {
     char ctl[33], event[48], digest[65], result[32];
     unsigned long long seq;
 };
 static struct item bank[MAX_BANK], lease[MAX_LEASE], ctl[MAX_CTL];
 static struct receipt receipts[MAX_RECEIPT];
-static int nb=0,nl=0,nc=0,nr=0,dirfd=-1,lockfd=-1;
+static int nb=0,nl=0,nc=0,nr=0,authority_dir_fd=-1,lockfd=-1;
+/* Provenance identifies a preserved frozen v1 archive. It is not a witness. */
+static char import_archive_digest[65];
+static unsigned long long import_member_revision=0;
+static int have_import_provenance=0;
 static char next_name[64];
 static int renamed=0;
 static void die(const char *why) {
@@ -56,6 +68,23 @@ static int valid_id(const char *p) {
       (p[i]>='a'&&p[i]<='z') || (p[i]>='0'&&p[i]<='9') ||
        p[i]=='_' || p[i]=='-' || p[i]=='.')) return 0;
     return 1;
+}
+/* Keep v1 member and rental identities distinct; controller IDs have their
+   own stricter grammar. Rental device IDs may include ':' and reach 96 bytes. */
+static int valid_subject_id(const char *p,size_t limit,int rental) {
+    size_t i,n=p?strlen(p):0;
+    if(n<2 || n>limit) return 0;
+    for(i=0;i<n;i++) if(!((p[i]>='A'&&p[i]<='Z') ||
+      (p[i]>='a'&&p[i]<='z') || (p[i]>='0'&&p[i]<='9') ||
+       p[i]=='_' || p[i]=='-' || p[i]=='.' ||
+       (rental && p[i]==':'))) return 0;
+    return 1;
+}
+static int valid_member_id(const char *p) {
+    return valid_subject_id(p,32,0);
+}
+static int valid_rental_id(const char *p) {
+    return valid_subject_id(p,96,1);
 }
 static int hex64(const char *s) {
     size_t i;
@@ -116,7 +145,7 @@ static void read_exact(int fd,char *buf,size_t n) {
 }
 static char *readfile(const char *name,size_t cap,size_t *n) {
     struct stat st;
-    int fd=openat(dirfd,name,O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_NONBLOCK);
+    int fd=openat(authority_dir_fd,name,O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_NONBLOCK);
     char *buf;
     if(fd<0 || !private_fd(fd,0600) || fstat(fd,&st)!=0 ||
        st.st_size<0 || (unsigned long long)st.st_size>cap)
@@ -167,14 +196,20 @@ static void parseledger(char *s,size_t len) {
         } else if(n==2 && strcmp(v[0],"H")==0){
             if(newline!=end-1 || !hex64(v[1]))die("invalid integrity footer");
             return;
+        } else if(n==3 && !strcmp(v[0],"P")){
+            if(have_import_provenance || !hex64(v[1]) ||
+               !parse_uint(v[2],MAX_FINANCIAL_VALUE,&import_member_revision))
+                die("malformed/duplicate v1 archive provenance");
+            strcpy(import_archive_digest,v[1]);
+            have_import_provenance=1;
         } else if(n==3 && !strcmp(v[0],"A")){
             unsigned long long z;
-            if(!valid_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_member_id(v[1])||!parse_uint(v[2],MAX_FINANCIAL_VALUE,&z) ||
                nb>=MAX_BANK||find(bank,nb,v[1]))die("malformed/duplicate bank");
             strcpy(bank[nb].name,v[1]);bank[nb++].value=z;
         } else if(n==3 && !strcmp(v[0],"L")){
             unsigned long long z;
-            if(!valid_id(v[1])||!parse_uint(v[2],2000000000ULL,&z) ||
+            if(!valid_rental_id(v[1])||!parse_uint(v[2],MAX_FINANCIAL_VALUE,&z) ||
                nl>=MAX_LEASE||find(lease,nl,v[1]))die("malformed/duplicate lease");
             strcpy(lease[nl].name,v[1]);lease[nl++].value=z;
         } else if(n==3 && !strcmp(v[0],"C")){
@@ -188,7 +223,7 @@ static void parseledger(char *s,size_t len) {
             if(nr>=MAX_RECEIPT||!valid_id(v[1])||
                !parse_uint(v[2],100000000ULL,&z)||z==0||
                strlen(v[3])>=sizeof(receipts[0].event)||
-               !hex64(v[4])||!parse_uint(v[5],2000000000ULL,&res))
+               !hex64(v[4])||!parse_uint(v[5],MAX_FINANCIAL_VALUE,&res))
                 die("malformed receipt");
             a=&receipts[nr++];strcpy(a->ctl,v[1]);a->seq=z;
             strcpy(a->event,v[3]);strcpy(a->digest,v[4]);
@@ -294,12 +329,16 @@ static void get_server_ack_key(const char *controller,
     if(active!=1)die("server ACK active key absent or ambiguous");
 }
 static void fault(const char *checkpoint) {
+#ifdef BLAZE_FIXTURE_ONLY
     const char *s=getenv("BLAZE_V2_NATIVE_TEST_FAULT");
     if(s && strcmp(s,checkpoint)==0){
         fprintf(stderr,"V2NATIVE-0668 %s fault%s (no ACK)\n",
                 checkpoint,renamed?" UNCERTAIN":"");
         exit(73);
     }
+#else
+    (void)checkpoint;
+#endif
 }
 static void write_all(int fd,const char *buf,size_t size) {
     size_t pos=0;
@@ -309,6 +348,31 @@ static void write_all(int fd,const char *buf,size_t size) {
         if(z<=0)die("native staged write failed");
         pos+=(size_t)z;
     }
+}
+/* PAY-0773: an interrupted pre-rename transaction can leave the staged
+ * journal in the private authority directory. It was NEVER acknowledged.
+ * Never silently ignore/delete it and proceed to another paid write or a
+ * retained receipt replay; the operator must reconcile the uncertain stage.
+ * This check happens with the writer lock held and after signed verification.
+ * No local file can substitute for an independent rollback witness. */
+static void refuse_unfinished_stage(void) {
+    int fd=openat(authority_dir_fd,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
+    DIR *d;
+    struct dirent *ent;
+    int read_error;
+    if(fd<0)die("native stage inventory open failed");
+    d=fdopendir(fd);
+    if(!d){close(fd);die("native stage inventory reader failed");}
+    errno=0;
+    while((ent=readdir(d))!=NULL){
+        if(strncmp(ent->d_name,".v2-next-",9)==0){
+            closedir(d);
+            die("unfinished native stage requires operator reconciliation");
+        }
+    }
+    read_error=errno;
+    if(closedir(d)!=0 || read_error!=0)
+        die("native stage inventory uncertain");
 }
 /* PAY-0717 OFF-DEVICE ONLY: signed committed-result receipt. Never emit
  * this receipt until replay is corroborated by the authoritative journal or
@@ -355,6 +419,8 @@ static void commit(void) {
     FILE *ms=open_memstream(&data,&len);int fd,i;
     if(!ms)die("memory stage failed");
     fprintf(ms,"V\t2\n");
+    if(have_import_provenance)
+        fprintf(ms,"P\t%s\t%llu\n",import_archive_digest,import_member_revision);
     for(i=0;i<nb;i++)fprintf(ms,"A\t%s\t%llu\n",bank[i].name,bank[i].value);
     for(i=0;i<nl;i++)fprintf(ms,"L\t%s\t%llu\n",lease[i].name,lease[i].value);
     for(i=0;i<nc;i++)fprintf(ms,"C\t%s\t%llu\n",ctl[i].name,ctl[i].value);
@@ -369,7 +435,7 @@ static void commit(void) {
     memcpy(all,data,len);snprintf(all+len,total-len+1,"H\t%s\n",checksum);
     free(data);
     snprintf(next_name,sizeof(next_name),".v2-next-%ld",(long)getpid());
-    fd=openat(dirfd,next_name,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    fd=openat(authority_dir_fd,next_name,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
     if(fd<0 || !private_fd(fd,0600))die("private stage create refused");
     write_all(fd,all,total);
     OPENSSL_cleanse(all,total);free(all);
@@ -377,10 +443,10 @@ static void commit(void) {
     if(fsync(fd)!=0)die("source fsync failed");
     if(close(fd)!=0)die("source close failed");
     fault("before-rename");
-    if(renameat(dirfd,next_name,dirfd,"ledger.tsv")!=0)die("atomic rename failed");
+    if(renameat(authority_dir_fd,next_name,authority_dir_fd,"ledger.tsv")!=0)die("atomic rename failed");
     renamed=1;
     fault("after-rename-before-dir-fsync");
-    if(fsync(dirfd)!=0)die("UNCERTAIN parent directory fsync failed");
+    if(fsync(authority_dir_fd)!=0)die("UNCERTAIN parent directory fsync failed");
     fault("after-dir-fsync-before-ack");
 
 }
@@ -392,66 +458,105 @@ int main(int argc,char **argv) {
     unsigned int maclen=0;char signed_msg[400],digest_input[400],fingerprint[65];
     size_t n;char *data;struct stat st;
     struct item *floor,*x,*to;
-    int i,valid_opcode=0,authenticated_ack=0;
-    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack|--server-ack-v2]");
+    int i,valid_opcode=0,authenticated_ack=0,verify_only=0;
+    if(argc!=11 && argc!=12)die("usage: ROOT CTRL SEQ EVENT OP SUBJECT TARGET UNITS NOW HMAC [--authenticated-ack|--server-ack-v2|--verify-envelope-only]");
     if(argc==12){
         if(!strcmp(argv[11],"--authenticated-ack"))authenticated_ack=1;
         else if(!strcmp(argv[11],"--server-ack-v2"))authenticated_ack=2;
+        else if(!strcmp(argv[11],"--verify-envelope-only"))verify_only=1;
         else die("unknown response mode");
     }
+#ifdef BLAZE_RUNTIME_AUTHORITY
+    /* Production responses must be signed by the separately admitted target
+       identity. The fixture HMAC ACK formats are never production ACKs. */
+    if(authenticated_ack)die("fixture ACK mode unavailable in runtime build");
+#endif
     root=argv[1];id=argv[2];event=argv[4];op=argv[5];
     src=argv[6];dst=argv[7];hmac=argv[10];
+#ifdef BLAZE_RUNTIME_AUTHORITY
+#ifdef BLAZE_RUNTIME_TEST_ROOT_OVERRIDE
+    if(strncmp(root,ROOT_PREFIX,strlen(ROOT_PREFIX)) ||
+       !root[strlen(ROOT_PREFIX)] ||
+       strchr(root+strlen(ROOT_PREFIX),'/') ||
+       strstr(root+strlen(ROOT_PREFIX),".."))
+       die("not a strict runtime test root");
+#else
+    if(strcmp(root,"/etc/blazepwifi/state"))
+       die("runtime authority is bound to the installed financial state path");
+#endif
+#else
     if(strncmp(root,ROOT_PREFIX,strlen(ROOT_PREFIX)) ||
        !root[strlen(ROOT_PREFIX)] ||
        strchr(root+strlen(ROOT_PREFIX),'/') ||
        strstr(root+strlen(ROOT_PREFIX),".."))
        die("not a strict synthetic fixture root");
-    if(!valid_id(id)||!valid_id(src)||
-       !(valid_id(dst)||!strcmp(dst,"-"))||
-       !hex64(hmac)||!parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
+#endif
+    if(!valid_id(id)||!hex64(hmac)||
+       !parse_uint(argv[3],100000000ULL,&seq)||seq==0 ||
        !parse_uint(argv[8],31536000ULL,&units)||units==0 ||
-       !parse_uint(argv[9],2000000000ULL,&now))
+       !parse_uint(argv[9],MAX_FINANCIAL_VALUE,&now))
        die("malformed controller envelope");
     valid_opcode=(!strcmp(op,"AM")||!strcmp(op,"SM")||
                   !strcmp(op,"TM")||!strcmp(op,"LR"));
     {char expected[64];
      snprintf(expected,sizeof(expected),"%s:%llu",id,seq);
      if(!valid_opcode || strcmp(event,expected) ||
-        (!strcmp(op,"TM") && (!strcmp(dst,"-")||!strcmp(src,dst))) ||
-        (strcmp(op,"TM") && strcmp(dst,"-")))
+        (!strcmp(op,"LR") ? !valid_rental_id(src) : !valid_member_id(src)) ||
+        (!strcmp(op,"TM") ? (!valid_member_id(dst)||!strcmp(src,dst)) :
+                            strcmp(dst,"-")))
         die("signed event/operation mismatched");
     }
-    dirfd=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
-    if(dirfd<0 || fstat(dirfd,&st)!=0 || !S_ISDIR(st.st_mode) ||
+    authority_dir_fd=open(root,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
+    if(authority_dir_fd<0 || fstat(authority_dir_fd,&st)!=0 || !S_ISDIR(st.st_mode) ||
        st.st_uid!=geteuid() || (st.st_mode&0777)!=0700)
         die("private fixture directory validation failed");
+#if !defined(BLAZE_RUNTIME_AUTHORITY) || defined(BLAZE_RUNTIME_TEST_ROOT_OVERRIDE)
     data=readfile(".blaze-v2-fixture-only",80,&n);
     if(n!=strlen("BLAZE-V2-SYNTHETIC-ONLY\n") ||
        memcmp(data,"BLAZE-V2-SYNTHETIC-ONLY\n",n))
        die("synthetic marker required");
     free(data);
-    lockfd=openat(dirfd,".v2-native-lock",
-                  O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
-    if(lockfd<0 || !private_fd(lockfd,0600) ||
-       flock(lockfd,LOCK_EX|LOCK_NB)!=0)
-       die("unsafe/busy v2 native writer lock");
+#endif
+    /* CGI may authenticate the complete runtime envelope before any payment
+       route is admitted. This mode never creates a lock, reads the ledger,
+       emits an ACK, or reaches a financial write. It is not a commit gate. */
+    if(!verify_only){
+        lockfd=openat(authority_dir_fd,".v2-native-lock",
+                      O_CREAT|O_RDWR|O_NOFOLLOW|O_CLOEXEC,0600);
+        if(lockfd<0 || !private_fd(lockfd,0600) ||
+           flock(lockfd,LOCK_EX|LOCK_NB)!=0)
+           die("unsafe/busy v2 native writer lock");
+    }
     getkey(id,key);
     unhex(hmac,sig,32);
-    if(snprintf(signed_msg,sizeof(signed_msg),
-      "BLAZE-V2-AUTH-FIXTURE/1\t%s\t%llu\t%s\t%s\t%s\t%s\t%llu\t%llu\n",
-      id,seq,event,op,src,dst,units,now)<0)
+    i=snprintf(signed_msg,sizeof(signed_msg),
+      V2_REQUEST_DOMAIN "\t%s\t%llu\t%s\t%s\t%s\t%s\t%llu\t%llu\n",
+      id,seq,event,op,src,dst,units,now);
+    if(i<0 || (size_t)i>=sizeof(signed_msg))
        die("envelope format failed");
     if(!HMAC(EVP_sha256(),key,32,(unsigned char*)signed_msg,
          strlen(signed_msg),mac,&maclen) || maclen!=32 ||
          CRYPTO_memcmp(sig,mac,32)!=0)
        die("signed controller envelope mismatch");
+    if(verify_only)return 0;
+#ifdef BLAZE_RUNTIME_AUTHORITY
+    /* The current package has no admitted independent antirollback witness
+       or protected target P-256 ACK signer. Never mutate or replay-ACK paid
+       state from this profile until both real adapters are implemented and
+       admitted. The fixture build remains available for transaction tests. */
+    die("runtime witness and protected P-256 signer adapters unavailable");
+#endif
+    /* Before any fixture COMMIT or retained REPLAY, deny an abandoned native
+       pre-rename stage instead of treating an uncertain payment as absent. */
+    refuse_unfinished_stage();
     /* Refuse a financial commit unless the independently configured server
        ACK signing identity is validated BEFORE any journal mutation. */
     if(authenticated_ack==2)
         get_server_ack_key(id,key,ack_kid,ack_key);
-    if(snprintf(digest_input,sizeof(digest_input),
+    i=snprintf(digest_input,sizeof(digest_input),
          "%s|%llu|%s|%s|%s|%s|%llu|%llu|v2",
-         id,seq,event,op,src,dst,units,now)<0)
+         id,seq,event,op,src,dst,units,now);
+    if(i<0 || (size_t)i>=sizeof(digest_input))
        die("fingerprint format failed");
     SHA256((unsigned char*)digest_input,strlen(digest_input),dig);
     hexout(dig,32,fingerprint);
@@ -466,13 +571,13 @@ int main(int argc,char **argv) {
            CRYPTO_memcmp(receipts[i].digest,fingerprint,64)!=0)
             die("controller sequence payload collision");
         {unsigned long long saved=0;
-         if(!parse_uint(receipts[i].result,2000000000ULL,&saved))
+         if(!parse_uint(receipts[i].result,MAX_FINANCIAL_VALUE,&saved))
              die("replay receipt amount malformed");
          /* PAY-0745: a rename visible after an interrupted dir-fsync is not
           * a durable commit. Confirm parent directory under exclusive lock
           * before sending a retained-sequence replay ACK. Fixture only. */
          fault("before-replay-dir-fsync");
-         if(fsync(dirfd)!=0)die("UNCERTAIN replay parent directory fsync failed");
+         if(fsync(authority_dir_fd)!=0)die("UNCERTAIN replay parent directory fsync failed");
          emit_receipt("REPLAY",id,seq,fingerprint,saved,key,authenticated_ack,
                       ack_kid,ack_key);
          OPENSSL_cleanse(key,sizeof(key));
@@ -487,13 +592,13 @@ int main(int argc,char **argv) {
         x=find(lease,nl,src);
         if(!x)die("unknown rental lease");
         base=(x->value>now?x->value:now);
-        if(base>2000000000ULL-units)die("rental lease overflow");
+        if(base>MAX_FINANCIAL_VALUE-units)die("rental lease overflow");
         x->value=base+units;answer=x->value;
     }else{
         x=find(bank,nb,src);
         if(!x)die("unknown member bank");
         if(!strcmp(op,"AM")){
-            if(x->value>2000000000ULL-units)die("member credit overflow");
+            if(x->value>MAX_FINANCIAL_VALUE-units)die("member credit overflow");
             x->value+=units;
         }else if(!strcmp(op,"SM")){
             if(x->value<units)die("insufficient time");
@@ -501,7 +606,7 @@ int main(int argc,char **argv) {
         }else{
             to=find(bank,nb,dst);
             if(!to||x->value<units||
-               to->value>2000000000ULL-units)
+               to->value>MAX_FINANCIAL_VALUE-units)
                die("invalid prepaid transfer");
             x->value-=units;to->value+=units;
         }

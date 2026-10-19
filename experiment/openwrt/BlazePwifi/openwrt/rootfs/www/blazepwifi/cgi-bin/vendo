@@ -24,10 +24,30 @@ printf '%s' "$nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid nonce"
 [ -n "$pulses" ] || pulses=0
 bp_check_vendo_sig "$action" "$id" "$nonce" "$pulses" "$target" "$sig" || bp_fail "bad signature"
 
-# PAY-0719: v2 financial transactions have no deployed authority/trust
-# or migration approval. Verify the normal controller signature first, then
-# fail closed BEFORE heartbeat or ANY financial mutation. Never downgrade a
-# v2-prefixed action into the legacy member_bank/restore/transfer handlers.
+# PAY-0751: pass the complete second-domain envelope through the installed
+# native verifier. This is authentication only: neither a verified envelope
+# nor a missing/failed binary authorizes a paid write, replay ACK or heartbeat.
+# The v2 request fields are separately HMAC-bound by the native authority.
+case "$action" in
+  member_v2_add) v2_op=AM ;;
+  member_v2_spend) v2_op=SM ;;
+  member_v2_transfer) v2_op=TM ;;
+  rental_v2_lease) v2_op=LR ;;
+  *) v2_op= ;;
+esac
+if [ -n "$v2_op" ]; then
+  v2_seq="$(bp_param v2_seq)"
+  v2_subject="$(bp_param v2_subject)"
+  v2_destination="$(bp_param v2_destination)"
+  v2_units="$(bp_param v2_units)"
+  v2_time="$(bp_param v2_time)"
+  v2_hmac="$(bp_param v2_hmac)"
+  bp_v2_verify_envelope "$id" "$v2_seq" "$id:$v2_seq" "$v2_op" \
+    "$v2_subject" "$v2_destination" "$v2_units" "$v2_time" "$v2_hmac" || true
+fi
+# PAY-0719: v2 financial transactions have no admitted witness, protected
+# response signer or migration. Verify the normal controller signature first,
+# then fail closed BEFORE heartbeat or ANY financial mutation. Never downgrade.
 case "$action" in
   member_v2_*) bp_fail "member v2 authority unavailable; no v1 fallback" ;;
   rental_v2_*) bp_fail "rental v2 authority unavailable; no v1 fallback" ;;
