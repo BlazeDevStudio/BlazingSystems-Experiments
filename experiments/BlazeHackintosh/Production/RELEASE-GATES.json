@@ -248,6 +248,21 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39211916219",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39211909404"
       ]
+    },
+    {
+      "date": "2026-10-19",
+      "scope": "native-windows-gui-ci-research-preview",
+      "status": "ci_verified_scope_limited",
+      "note": "Source 8fc6717... built UNRELEASED Tkinter Windows research GUI EXE; actual Windows HWND launch/process ownership/graceful close verified in Actions 39214560499 & 39214554302; 186/186 Linux and Windows full Python suites in 39214560638 & 39214554240. GUI only displays read-only research inventory and export; full beginner/expert installer/EFI and drive-safety workflows remain missing. windows-gui production gate remains blocked.",
+      "related_gates": [
+        "windows-gui",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214560499",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214554302",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214554240"
+      ]
     }
   ]
 }

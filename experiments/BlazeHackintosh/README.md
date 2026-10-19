@@ -84,3 +84,11 @@ Run `BlazeHackintosh-Toolkit.exe release-readiness` for a complete, fail-closed 
 ## Research staging readback candidate
 
 Run `python stage_audit.py --folder BlazeEFI-YourCandidate` to perform a read-only consistency check of a staged research output against its unsigned SHA-256 ledger. It rejects altered or missing files and safety markers. This standalone tool is not included in the previously published Windows EXE, is not a physical boot test, and does not verify publisher signatures. See [docs/STAGED-READBACK.md](docs/STAGED-READBACK.md). 68 Linux and 68 Windows tests passed in [CI run 39096082439](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096082439). This source-only addition is not in the v0.1.5-alpha.1 executable.
+
+## Native Windows research GUI — UNRELEASED, not an installer
+
+A standard-library Tkinter workbench is available via `python desktop_gui.py`. The interface displays a **read-only, privacy-filtered hardware scan**, a conservative research evaluation, the production gate ledger, and exports a new local JSON report only when explicitly requested. It **never** writes a USB, ESP, internal drive, EFI, or macOS installer, nor claims boot compatibility. Export refuses existing destinations, fails closed on unauthorized fields, and filters common hardware identifiers (this is not an absolute anonymity guarantee).
+
+On 2026-10-19 a Windows-hosted GitHub Actions runner compiled `BlazeHackintosh-Research-GUI.exe` with PyInstaller 6.16.0 and validated its **visible top-level HWND** belonged to the spawned process tree; it closed on WM_CLOSE with exit code 0. Cross-platform source tests passed 186/186 on both Linux and Windows. Evidence: [Windows GUI CI](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214560499) and [full Linux/Windows CI](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39214554240). GUI source and tests: commit `8fc6717ca8490bf5e6695e055a7c635ef7cef674`.
+
+The compiled binary is available only as an **unreleased, short-lived GitHub Actions artifact**, not the production download and not the existing `v0.1.5-alpha.1` release. Neither GUI startup nor synthetic tests establish an installer, hardware-specific EFI, safe disk migration or real macOS boot. Do not use it to alter drives.
