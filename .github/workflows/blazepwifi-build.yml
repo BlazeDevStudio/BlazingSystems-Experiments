@@ -147,6 +147,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_receipt_failure_repro.sh
       - name: BlazePwifi v0.6 rental receipt EIO before mutation
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh
+      - name: PAY-0780 installed v1 rental receipt quota before paid lease mutation
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_receipt_capacity.sh
       - name: RENT-0723 serialize rental paid replay and recheck lease after writer lock
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
       - name: RENT-0724 prevent stale admin rental add and unauthorized forfeit across writer lock
