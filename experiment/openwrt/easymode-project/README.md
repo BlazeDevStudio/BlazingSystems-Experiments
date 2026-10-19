@@ -4,6 +4,8 @@
 
 The EasyMode application currently installed on the R281 has been copied and versioned as [EasyMode 10.0.0 — R281 app profile](releases/v10.0.0-r281/). It is an application update verified on Notion R281 / OpenWrt 24.10.8, not firmware. Its installer intentionally refuses other board profiles. Generic OpenWrt installs use the shared capability-based monitor below; full R281 management parity on other boards is not claimed.
 
+For a direct publication checklist, see [edition and R281 installer status](PUBLICATION-STATUS.md). The R281-specific management source is published, but a current one-click unlock-and-firmware installer and a reset-persistent R281 firmware image are not.
+
 EasyMode Traffic Intelligence adds real WAN, WiFi, device, domain and inferred-service monitoring to the existing router management interface. One shared ucode backend and lightweight JavaScript dashboard serve all six editions. No React, Bootstrap, Node or Python runtime is installed on routers.
 
 Open `/traffic/` on the router and sign in with OpenWrt administrator credentials. Existing EasyMode SMS, cellular, repeater, WiFi, LED and access controls remain in their installed management page; Advanced opens LuCI. Installation adds a link to recognized existing EasyMode pages without replacing their code.
