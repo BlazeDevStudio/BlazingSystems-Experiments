@@ -8,6 +8,7 @@ mkdir -p "$T/fail-bin" "$T/fail-readers" "$T/admin/state" "$T/app/state"
 for root in "$T/admin" "$T/app"; do
     : > "$root/state/devices.tsv"
     : > "$root/state/enroll.tsv"
+    : > "$root/state/policy.tsv"
 done
 for command in hexdump od; do
     printf '#!/bin/sh\nexit 1\n' > "$T/fail-bin/$command"
