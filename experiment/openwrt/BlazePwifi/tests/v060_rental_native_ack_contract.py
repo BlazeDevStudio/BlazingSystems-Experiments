@@ -200,9 +200,21 @@ def run() -> None:
                    committed, top)
         private(top / "server-ack-keys.tsv", valid_registry)
 
+        # PAY-0773: each pre-rename crash produces an unACKed private
+        # .v2-next-* file. Another signed paid request must REFUSE until
+        # explicit operator reconciliation. Only this temporary fixture is
+        # cleaned here, never installed device financial state.
         for fault in ("before-source-fsync", "before-rename"):
             denied(signed_call(binary, top, "ctrlOne", 2, "LR", "dev01",
                                100, fault=fault), committed, top)
+            stages = list(top.glob(".v2-next-*"))
+            assert len(stages) == 1, (fault, stages)
+            assert stages[0].is_file() and not stages[0].is_symlink()
+            held = signed_call(binary, top, "ctrlOne", 2, "LR", "dev01", 100)
+            denied(held, committed, top)
+            assert "unfinished native stage requires operator reconciliation" in held.stderr
+            stages[0].unlink()
+            assert not list(top.glob(".v2-next-*"))
         uncertain = signed_call(binary, top, "ctrlOne", 2, "LR", "dev01",
                                 100, fault="after-rename-before-dir-fsync")
         assert uncertain.returncode != 0 and uncertain.stdout == ""

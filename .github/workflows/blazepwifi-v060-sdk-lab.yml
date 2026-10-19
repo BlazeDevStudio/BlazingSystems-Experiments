@@ -10,7 +10,11 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
+      # CI-0768: real installed stage shell and regression must trigger SDK evidence.
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
+      - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
   pull_request:
     paths:
@@ -18,7 +22,11 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_journal_authority_native.c'
       - 'experiment/openwrt/BlazePwifi/tools/v060_p256_target_capability_probe.c'
       - 'experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh'
+      # CI-0768: real installed stage shell and regression must trigger SDK evidence.
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_migration_stage.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
+      - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
 
 permissions:
@@ -33,6 +41,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
+      - uses: actions/checkout@v4
+      - name: CI-0768 installed v1-to-v2 inactive staging refusal regression
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh
       - name: Verify pinned official OpenWrt 25.12.5 OpenSSL build sources
         run: |
           git clone --quiet --filter=blob:none --depth=1 --sparse \
@@ -54,6 +65,11 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: SDK build dependencies
         run: |
           sudo apt-get update -qq

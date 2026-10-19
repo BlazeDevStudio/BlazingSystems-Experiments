@@ -4,6 +4,7 @@
 #include <EEPROM.h>
 #include <LittleFS.h>
 #include <bearssl/bearssl_hash.h>
+#include <v060_pending_sequence.h>
 
 struct ConfigV1 {
   uint32_t magic;
@@ -48,14 +49,15 @@ int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0,
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
-struct PendingRecord {
+struct LegacyPendingRecord {
   uint32_t magic;
   uint8_t pulses;
   char nonce[17];
   char target[33];
   uint32_t checksum;
 };
-const uint32_t PENDING_MAGIC=0x42504331;
+const uint32_t LEGACY_PENDING_MAGIC=0x42504331;
+BpPendingSequence pendingSequenceState;
 
 String hexDigest(const String &s){
   br_sha256_context c; uint8_t out[32]; char buf[65];
@@ -68,29 +70,39 @@ String freshNonce(){
   sprintf(b,"%08lx%08lx",(unsigned long)a,(unsigned long)c); return String(b);
 }
 
-uint32_t pendingChecksum(const PendingRecord &r){
+uint32_t legacyPendingChecksum(const LegacyPendingRecord &r){
   const uint8_t *p=(const uint8_t*)&r; uint32_t h=2166136261UL;
-  for(size_t i=0;i<offsetof(PendingRecord,checksum);i++){h^=p[i];h*=16777619UL;}
+  for(size_t i=0;i<offsetof(LegacyPendingRecord,checksum);i++){h^=p[i];h*=16777619UL;}
   return h;
 }
 
-bool readPendingFile(const char *path, PendingRecord &r){
+bool readPendingFile(const char *path, BpPendingSequence &state, bool &legacy){
   if(!fsReady || !LittleFS.exists(path)) return false;
   File f=LittleFS.open(path,"r"); if(!f) return false;
-  size_t n=f.readBytes((char*)&r,sizeof(r)); f.close();
-  return n==sizeof(r) && r.magic==PENDING_MAGIC && r.pulses>0 && r.pulses<=20 &&
-         r.checksum==pendingChecksum(r) && strlen(r.nonce)>=8 && strlen(r.target)>=8;
+  size_t size=f.size();
+  if(size==sizeof(state)){
+    size_t n=f.readBytes((char*)&state,sizeof(state)); f.close(); legacy=false;
+    return n==sizeof(state) && bp_pending_sequence_valid(&state);
+  }
+  if(size==sizeof(LegacyPendingRecord)){
+    LegacyPendingRecord old; memset(&old,0,sizeof(old));
+    size_t n=f.readBytes((char*)&old,sizeof(old)); f.close();
+    if(n!=sizeof(old) || old.magic!=LEGACY_PENDING_MAGIC || old.pulses==0 ||
+       old.pulses>20 || old.checksum!=legacyPendingChecksum(old) ||
+       !bp_pending_sequence_hex_token(old.nonce,8,16) ||
+       !bp_pending_sequence_hex_token(old.target,8,32)) return false;
+    bp_pending_sequence_init(&state);
+    legacy=true;
+    return bp_pending_sequence_reserve(&state,old.pulses,old.nonce,old.target);
+  }
+  f.close(); return false;
 }
 
-bool savePending(){
-  if(!fsReady || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
-  PendingRecord r; memset(&r,0,sizeof(r)); r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
-  strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
-  strlcpy(r.target,pendingTarget.c_str(),sizeof(r.target));
-  r.checksum=pendingChecksum(r);
+bool persistPendingSequence(const BpPendingSequence &state){
+  if(!fsReady || !bp_pending_sequence_valid(&state)) return false;
   File f=LittleFS.open("/pending.new","w"); if(!f) return false;
-  size_t n=f.write((const uint8_t*)&r,sizeof(r)); f.flush(); f.close();
-  if(n!=sizeof(r)){LittleFS.remove("/pending.new");return false;}
+  size_t n=f.write((const uint8_t*)&state,sizeof(state)); f.flush(); f.close();
+  if(n!=sizeof(state)){LittleFS.remove("/pending.new");return false;}
   LittleFS.remove("/pending.bak");
   if(LittleFS.exists("/pending.dat")) LittleFS.rename("/pending.dat","/pending.bak");
   if(!LittleFS.rename("/pending.new","/pending.dat")){
@@ -98,33 +110,50 @@ bool savePending(){
     return false;
   }
   LittleFS.remove("/pending.bak");
+  pendingSequenceState=state;
   return true;
 }
 
-void loadPending(){
-  if(!fsReady) return;
-  PendingRecord r;
+bool savePending(){
+  if(!fsReady || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
+  BpPendingSequence next=pendingSequenceState;
+  if(!bp_pending_sequence_reserve(&next,pendingPulses,pendingNonce.c_str(),pendingTarget.c_str())) return false;
+  return persistPendingSequence(next);
+}
+
+bool loadPending(){
+  if(!fsReady) return false;
+  BpPendingSequence r; bool legacy=false;
   const char *chosen=nullptr;
-  if(readPendingFile("/pending.dat",r)) chosen="/pending.dat";
-  else if(readPendingFile("/pending.new",r)) chosen="/pending.new";
-  else if(readPendingFile("/pending.bak",r)) chosen="/pending.bak";
-  if(!chosen) return;
+  bool any=LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.new") || LittleFS.exists("/pending.bak");
+  if(readPendingFile("/pending.dat",r,legacy)) chosen="/pending.dat";
+  else if(readPendingFile("/pending.new",r,legacy)) chosen="/pending.new";
+  else if(readPendingFile("/pending.bak",r,legacy)) chosen="/pending.bak";
+  if(!chosen){
+    if(any) return false;
+    bp_pending_sequence_init(&pendingSequenceState);
+    return persistPendingSequence(pendingSequenceState);
+  }
+  pendingSequenceState=r;
   pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
-  pendingReady=true; lastSend=0;
+  pendingReady=r.sequence!=0; lastSend=0;
   if(strcmp(chosen,"/pending.dat")!=0){
     LittleFS.remove("/pending.dat"); LittleFS.rename(chosen,"/pending.dat");
   }
+  if(legacy && !persistPendingSequence(r)) return false;
   Serial.println("Recovered unacknowledged coin event from flash.");
+  return true;
 }
 
 void initPendingStore(){
   fsReady=LittleFS.begin();
   if(!fsReady){
-    Serial.println("LittleFS mount failed; formatting Vendo journal.");
-    if(LittleFS.format()) fsReady=LittleFS.begin();
+    Serial.println("LittleFS mount failed; preserving Vendo journal and disabling coin relay.");
   }
-  if(fsReady) loadPending();
-  else Serial.println("CRITICAL: coin journal unavailable; coin relay will stay disabled.");
+  if(fsReady && !loadPending()){
+    fsReady=false;
+    Serial.println("CRITICAL: Vendo sequence journal is corrupt; coin relay will stay disabled.");
+  } else if(!fsReady) Serial.println("CRITICAL: coin journal unavailable; coin relay will stay disabled.");
 }
 
 String esc(const String &s){
@@ -295,13 +324,16 @@ void connectSta(){
   if(WiFi.status()==WL_CONNECTED){wifiFailures=0;String r=post("register");applyRemoteConfig(r);}
 }
 
-void clearPending(){
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
-  if(fsReady){
-    LittleFS.remove("/pending.dat");
-    LittleFS.remove("/pending.new");
-    LittleFS.remove("/pending.bak");
+bool clearPending(bool committed){
+  BpPendingSequence next=pendingSequenceState;
+  int ok=committed?bp_pending_sequence_commit(&next):bp_pending_sequence_abandon(&next);
+  if(!ok || !persistPendingSequence(next)){
+    fsReady=false; pendingReady=true;
+    Serial.println("CRITICAL: sequence acknowledgment state failed; coin relay disabled.");
+    return false;
   }
+  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
+  return true;
 }
 
 void setup(){
@@ -351,11 +383,11 @@ void loop(){
     String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
     lastSend=millis();
     if(r.indexOf("\"ok\":true")>=0){
-      clearPending();
+      clearPending(true);
       applyOutputs();
     } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
               r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      clearPending();
+      clearPending(false);
       applyOutputs();
     }
   }

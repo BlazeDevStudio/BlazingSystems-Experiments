@@ -60,14 +60,27 @@ mkdir -p "$DEST/src"
 cp "$ROOT/openwrt/lab-native/Makefile" "$DEST/Makefile"
 cp "$ROOT/tools/v060_journal_authority_native.c" "$DEST/src/"
 cp "$ROOT/tools/v060_p256_target_capability_probe.c" "$DEST/src/"
+# PAY-0743: cross-compile the separately packaged installed authority profile
+# for the same target. This proves target ABI/package construction only; the
+# package remains excluded from customer images pending admission gates.
+PAID_DEST="$SDK/package/blazepwifi-paid-authority"
+mkdir -p "$PAID_DEST/src"
+cp "$ROOT/openwrt/paid-authority/Makefile" "$PAID_DEST/Makefile"
+cp "$ROOT/openwrt/paid-authority/src/v060_journal_authority.c" "$PAID_DEST/src/"
+cmp -s "$ROOT/tools/v060_journal_authority_native.c" \
+  "$PAID_DEST/src/v060_journal_authority.c" || {
+  echo 'PAY-0743 BLOCKED: runtime package source diverged from canonical journal' >&2; exit 9;
+}
 # PAY-0721: use actual target libcrypto EVP EC APIs; no server key material.
 grep -Fq '#ifndef BLAZE_V2_P256_CAPABILITY_LAB_ONLY' "$DEST/src/v060_p256_target_capability_probe.c"
 grep -Fq -- '-DBLAZE_V2_P256_CAPABILITY_LAB_ONLY' "$DEST/Makefile"
 # Assert the test-only macro is compile time mandatory and source never gets
 # installed into production rootfs/images by this workflow.
-grep -Fq '#ifndef BLAZE_FIXTURE_ONLY' "$DEST/src/v060_journal_authority_native.c"
+grep -Fq '#if !defined(BLAZE_FIXTURE_ONLY) && !defined(BLAZE_RUNTIME_AUTHORITY)' "$DEST/src/v060_journal_authority_native.c"
 grep -Fq -- '-DBLAZE_FIXTURE_ONLY' "$DEST/Makefile"
 ! grep -R -Fq 'blazepwifi-v2-native-lab' "$ROOT/build/build-openwrt-image.sh"
+! grep -R -Fq 'blazepwifi-paid-authority' "$ROOT/build/build-openwrt-image.sh"
+grep -Fq -- '-DBLAZE_RUNTIME_AUTHORITY' "$PAID_DEST/Makefile"
 # OpenWrt's SDK prerequisite contract REQUIRES umask 022 for compiled
 # packages; restricted 077 is used only while staging private downloads above.
 # Do not use FORCE=1 to bypass its build safety checks.
@@ -110,7 +123,7 @@ for opt in OPENSSL_ENGINE OPENSSL_ENGINE_BUILTIN \
   sed -i "/^CONFIG_$opt=/d; /^# CONFIG_$opt is not set$/d" "$SDK/.config"
   printf '# CONFIG_%s is not set\n' "$opt" >> "$SDK/.config"
 done
-printf '\nCONFIG_PACKAGE_libopenssl=m\nCONFIG_PACKAGE_blazepwifi-v2-native-lab=m\n' >> "$SDK/.config"
+printf '\nCONFIG_PACKAGE_libopenssl=m\nCONFIG_PACKAGE_blazepwifi-v2-native-lab=m\nCONFIG_PACKAGE_blazepwifi-paid-authority=m\n' >> "$SDK/.config"
 make -C "$SDK" defconfig
 # Fail closed if defconfig re-enables the engine; do NOT paper over a missing
 # kernel header by copying a host header or using FORCE=1.
@@ -127,6 +140,7 @@ OPENSSL_HDR="$(find "$SDK/staging_dir" -path '*/usr/include/openssl/crypto.h' -p
   echo 'V2TARGET-0670 BLOCKED: SDK target libcrypto headers not staged' >&2;exit 9;
 }
 make -C "$SDK" -j2 package/blazepwifi-v2-native-lab/compile V=s
+make -C "$SDK" -j2 package/blazepwifi-paid-authority/compile V=s
 ELF="$(find "$SDK/build_dir" -type f -name v2-native-fixture -print -quit)"
 [ -n "$ELF" ] && [ -s "$ELF" ] || {
   echo 'V2TARGET-0670 BLOCKED: SDK produced no native ELF' >&2;exit 9;
@@ -145,6 +159,14 @@ P256_ELF="$(find "$SDK/build_dir" -type f -name p256-primitive-probe -print -qui
 [ -n "$P256_ELF" ] && [ -s "$P256_ELF" ] || {
   echo 'PAY-0721 BLOCKED: target SDK did not build P-256 primitive probe' >&2; exit 9;
 }
+PAID_ELF="$(find "$SDK/build_dir" -type f -name blazepwifi-paid-authority -print -quit)"
+[ -n "$PAID_ELF" ] && [ -s "$PAID_ELF" ] || {
+  echo 'PAY-0743 BLOCKED: OpenWrt SDK produced no installed authority ELF' >&2; exit 9;
+}
+readelf -h "$PAID_ELF" > paid-elf-header.txt
+grep -Fq "$MACHINE" paid-elf-header.txt || {
+  echo "PAY-0743 BLOCKED: wrong authority ELF architecture ($TARGET)" >&2; exit 9;
+}
 readelf -h "$P256_ELF" > p256-elf-header.txt
 grep -Fq "$MACHINE" p256-elf-header.txt || {
   echo "PAY-0721 BLOCKED: wrong target ELF architecture ($TARGET)" >&2; exit 9;
@@ -157,12 +179,18 @@ APK="$(find "$SDK/bin" -type f -name 'blazepwifi-v2-native-lab*.apk' -print -qui
 [ -n "$APK" ] && [ -s "$APK" ] || {
   echo 'V2TARGET-0670 BLOCKED: no compiled OpenWrt .apk package' >&2;exit 9;
 }
+PAID_APK="$(find "$SDK/bin" -type f -name 'blazepwifi-paid-authority*.apk' -print -quit)"
+[ -n "$PAID_APK" ] && [ -s "$PAID_APK" ] || {
+  echo 'PAY-0743 BLOCKED: no installed authority OpenWrt package' >&2; exit 9;
+}
 OUT="$ROOT/dist/v060-native-sdk-lab/$TARGET"
 mkdir -p "$OUT"
 cp "$ELF" "$OUT/v2-native-fixture-$TARGET"
 cp "$P256_ELF" "$OUT/p256-primitive-probe-$TARGET"
+cp "$PAID_ELF" "$OUT/blazepwifi-paid-authority-$TARGET"
 cp p256-elf-header.txt "$OUT/P256-ELF-HEADER.txt"
 cp "$APK" "$OUT/"
+cp "$PAID_APK" "$OUT/"
 cp elf-header.txt "$OUT/ELF-HEADER.txt"
 {
   printf 'V2TARGET-0670 LAB ONLY — NO CUSTOMER PAYMENTS\n'
@@ -180,12 +208,16 @@ cp elf-header.txt "$OUT/ELF-HEADER.txt"
   printf 'p256_target_hardware_executed=0\n'
   printf 'p256_server_private_key_custody_verified=0\n'
   printf 'p256_production_ack_issuer_available=0\n'
+  printf 'pay0743_runtime_authority_package_crosscompiled=1\n'
+  printf 'pay0743_runtime_authority_in_customer_image=0\n'
+  printf 'pay0743_runtime_authority_paid_cutover_enabled=0\n'
   # Requested package closure is NOT an installed/signing capability.
   case "$TARGET" in
     ruijie) printf 'customer_image_openssl_util_requested=0\n' ;;
     *) printf 'customer_image_openssl_util_requested=1\n' ;;
   esac
 } >"$OUT/MANIFEST.txt"
-(cd "$OUT" && sha256sum v2-native-fixture-* p256-primitive-probe-* ./*.apk > SHA256SUMS)
+(cd "$OUT" && sha256sum v2-native-fixture-* p256-primitive-probe-* blazepwifi-paid-authority-* ./*.apk > SHA256SUMS)
 printf 'V2TARGET-0670 SDK COMPILE PASS: %s (%s) — LAB ONLY\n' "$TARGET" "$MACHINE"
+printf 'PAY-0743 OpenWrt package cross-compile PASS: %s (%s) — installed package, NOT image-enabled\n' "$TARGET" "$MACHINE"
 printf 'PAY-0721 P256 SDK LINK PASS: %s — target crypto primitive only, NO live signer or paid ACK\n' "$TARGET"
