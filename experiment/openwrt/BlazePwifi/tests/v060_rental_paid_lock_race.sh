@@ -107,5 +107,21 @@ cp "$T/healthy-events" "$BP_RENTAL_EVENTS"
 printf 'PENDING\t123456\n' >"$BP_STATE/paid-state-uncertain"
 assert_reject bp_rental_apply_coin dev01 controller01 nonce01 target01 1
 rm -f "$BP_STATE/paid-state-uncertain"
+# PAY-0781: an audit append failure AFTER a lease-row rename must not
+# acknowledge success or release the uncertain paid-state marker.
+before_rename_lease="$(getlease)"
+set +e
+(
+  bp_rental_event_log() { return 8; }
+  bp_rental_device_rename dev01 'Failed Audit Rename' > "$T/rename-failed" 2>&1
+)
+rename_rc=$?
+set -e
+[ "$rename_rc" -eq 8 ] || { echo "PAY-0781 rename audit failure was falsely accepted ($rename_rc)" >&2; exit 1; }
+[ ! -s "$T/rename-failed" ]
+[ "$(getlease)" = "$before_rename_lease" ]
+[ -e "$BP_PAID_UNCERTAIN" ]
+assert_reject bp_rental_apply_coin dev01 controller05 nonce05 target01 1
+rm -f "$BP_PAID_UNCERTAIN"
 echo 'RENT-0723 PASS: locked replay ACK, no lost updates across lock handoff, exact duplicate on concurrent commit, fail-closed corrupt/uncertain paid files'
 echo 'NOT ATOMIC: v1 rental lease TSV and receipt still commit separately; target powercut and #32 production migration blocked'
