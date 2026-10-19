@@ -16,7 +16,9 @@ on:
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - 'experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh'
+      - 'experiment/openwrt/BlazePwifi/build/verify-paid-preview-rootfs.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_rootfs_guard.sh'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
   pull_request:
     paths:
@@ -30,7 +32,9 @@ on:
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
       - 'experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh'
+      - 'experiment/openwrt/BlazePwifi/build/verify-paid-preview-rootfs.sh'
       - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_rootfs_guard.sh'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
 
 permissions:
@@ -53,6 +57,8 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: PAY-0774 installed preview refusal guards
         run: sh experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh
+      - name: PAY-0775 installed rootfs route refusal guards
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_paid_preview_rootfs_guard.sh
       - name: CI-0768 installed v1-to-v2 inactive staging refusal regression
         run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh
       - name: Verify pinned official OpenWrt 25.12.5 OpenSSL build sources

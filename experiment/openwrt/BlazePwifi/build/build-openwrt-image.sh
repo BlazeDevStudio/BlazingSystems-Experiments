@@ -171,11 +171,12 @@ make image PROFILE="$PROFILE" PACKAGES="$PACKAGES" FILES="$FILES_DIR"
 
 if [ "$PAID_PREVIEW" -eq 1 ]; then
   INSTALLED_ELF="$(find build_dir -type f -path '*/root-*/usr/sbin/blazepwifi-paid-authority' -print -quit)"
-  [ -n "$INSTALLED_ELF" ] && [ -s "$INSTALLED_ELF" ] &&
-    readelf -h "$INSTALLED_ELF" | grep -Fq 'X86-64' || {
+  [ -n "$INSTALLED_ELF" ] || {
     echo 'PAY-0774 BLOCKED: built x86 rootfs lacks target-native authority' >&2
     exit 9
   }
+  sh "$ROOT/build/verify-paid-preview-rootfs.sh" \
+    "${INSTALLED_ELF%/usr/sbin/blazepwifi-paid-authority}"
 fi
 
 OUT="$ROOT/dist/$TARGET"
