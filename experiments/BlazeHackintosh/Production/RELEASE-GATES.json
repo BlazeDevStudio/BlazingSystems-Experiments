@@ -206,6 +206,20 @@
       "evidence": [
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39096082439"
       ]
+    },
+    {
+      "date": "2026-10-19",
+      "scope": "publisher-signature-committed-regressions",
+      "status": "ci_verified_scope_limited",
+      "note": "Cross-platform CI at source commit ffc5c5c390032d52d0923ac61e9314c32e1615b4 passed 108 Linux and 108 Windows Python tests including real OpenSSL-backed synthetic Ed25519 verification/tamper scenarios. This verifies verifier regression behavior only, not third-party publisher identity, component license authenticity, production GUI or hardware boot. Required gate statuses unchanged.",
+      "related_gates": [
+        "component-auth",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39205370943",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39205366619"
+      ]
     }
   ]
 }
