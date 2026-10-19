@@ -1,0 +1,40 @@
+#!/bin/sh
+# Lightweight, RAM-only snapshot for the EasyMode watchdog.
+# No credentials, SMS bodies, SIM-lock keys, or persistent logs are written.
+umask 077
+mkdir -p /tmp/blaze-outages
+[ ! -f /tmp/blaze-outages/latest.txt ] || mv /tmp/blaze-outages/latest.txt /tmp/blaze-outages/previous.txt
+iface_status(){
+ I="$1"
+ printf '\nInterface %s\n' "$I"
+ ubus call "network.interface.$I" status 2>/dev/null || echo 'not configured/up'
+}
+{
+ date
+ uptime
+ printf '\nEasyMode health/radio state\n'
+ cat /tmp/blaze-health.json 2>/dev/null || true
+ printf '\n'
+ cat /tmp/blaze-radio.json 2>/dev/null || true
+ printf '\nIPv4 routes / rules\n'
+ ip -4 route 2>/dev/null || true
+ ip -4 rule 2>/dev/null || true
+ iface_status wwan
+ iface_status wwan_4
+ iface_status wan
+ iface_status wifiwan
+ printf '\nLink counters\n'
+ for D in eth1 wan radio0 radio1; do
+  [ -e "/sys/class/net/$D" ] || continue
+  ip -s link show dev "$D" 2>/dev/null || true
+ done
+ printf '\nDNS / reachability\n'
+ nslookup openwrt.org 2>&1 | tail -20 || true
+ for T in $(uci -q get blaze.main.watchdog_targets || echo '1.1.1.1 8.8.8.8'); do
+  ping -c1 -W1 "$T" 2>&1 | tail -3 || true
+ done
+ printf '\nMemory\n'
+ head -12 /proc/meminfo
+ printf '\nRecent system log\n'
+ logread | tail -140 | sed 's/AT+CHECKATVALID=[0-9]*/AT+CHECKATVALID=[redacted]/g'
+} >/tmp/blaze-outages/latest.txt

@@ -2,6 +2,8 @@
 
 **Validation candidate. Publication follows successful integration checks.**
 
+The EasyMode application currently installed on the R281 has been copied and versioned as [EasyMode 10.0.0 — R281 app profile](releases/v10.0.0-r281/). It is an application update verified on Notion R281 / OpenWrt 24.10.8, not firmware. Its installer intentionally refuses other board profiles. Generic OpenWrt installs use the shared capability-based monitor below; full R281 management parity on other boards is not claimed.
+
 EasyMode Traffic Intelligence adds real WAN, WiFi, device, domain and inferred-service monitoring to the existing router management interface. One shared ucode backend and lightweight JavaScript dashboard serve all six editions. No React, Bootstrap, Node or Python runtime is installed on routers.
 
 Open `/traffic/` on the router and sign in with OpenWrt administrator credentials. Existing EasyMode SMS, cellular, repeater, WiFi, LED and access controls remain in their installed management page; Advanced opens LuCI. Installation adds a link to recognized existing EasyMode pages without replacing their code.
@@ -35,6 +37,6 @@ Eight views: Overview, WiFi, Internet Data, Devices, Websites, Apps, Reports and
 
 ## Preserved history
 
-The latest established R281 management source remains [4.2.6 consolidated](releases/v4.2.6-r281-consolidated/). It is the functional baseline, not a universal flash image. Earlier release directories are immutable history. The old 5.0 alpha toolkit was scaffolding; current installers now point to the v7 package process. Version numbers do not rank the completeness of historical branches.
+The established R281 management source is preserved at [4.2.6 consolidated](releases/v4.2.6-r281-consolidated/); the installed, updated copy is [v10.0.0](releases/v10.0.0-r281/). Neither is a universal flash image. Earlier release directories are immutable history. The old 5.0 alpha toolkit was scaffolding; the shared Traffic Intelligence packages remain separately versioned as v7.0.0. Version numbers do not rank the completeness of historical branches.
 
 No physical device is automatically flashed. Private passwords, SMS, live browsing metadata and personal recovery images are excluded from public artifacts.

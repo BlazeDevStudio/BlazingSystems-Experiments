@@ -31,6 +31,8 @@ jobs:
           sh traffic/tests/run.sh
       - name: Build real edition packages
         run: python3 traffic/tools/build.py
+      - name: Build the installed R281 application profile
+        run: python3 traffic/tools/build-r281-v10.py
       - name: Prepare image and virtual integration tools
         run: |
           sudo apt-get install -y build-essential zstd libncurses-dev rsync unzip wget qemu-system-x86 ovmf python3-paramiko python3-pexpect
@@ -48,5 +50,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: EasyMode-v7-validated-build
-          path: experiment/openwrt/easymode-project/dist-v7/
+          path: |
+            experiment/openwrt/easymode-project/dist-v7/
+            experiment/openwrt/easymode-project/releases/v10.0.0-r281/openwrt/EasyMode-v10.0.0-R281-app-update.tar.gz
+            experiment/openwrt/easymode-project/releases/v10.0.0-r281/openwrt/EasyMode-v10.0.0-R281-app-update.tar.gz.sha256
           retention-days: 14

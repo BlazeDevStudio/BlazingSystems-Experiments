@@ -1,5 +1,12 @@
 # EasyMode 7.0 validation record
 
+## 2026-10-19 R281 log audit and EasyMode v10 application profile
+- Read-only capture reviewed current-boot `logread`, `dmesg`, cellular and Wi-Fi interface status, address/route state, health history, services, processes, memory and storage. The R281 was online via SIM at capture: 30,252 KiB MemAvailable and 90,624 KiB overlay free. No modem USB reset/error or memory exhaustion appeared in the captured kernel log.
+- Health history recorded 51 failed probe samples during 16h37 uptime, including a six-sample burst, and two recovery attempts. Current-boot logs did not establish a cell-tower fault or correlate a rotating SIM address with the burst. Historical DHCP renewal losses reacquired the same private address after a brief lease gap.
+- Fixed the route recovery path so an unavailable source no longer leaves a high-priority unreachable default route; automatic SIM recovery no longer escalates to a radio/RF reset. Added per-boot SIM IPv4 change count/time for future correlation.
+- Four route/recovery regression assertions passed on the R281 using the candidate script copied only to `/tmp`; shell syntax passed. Exact-target v10 installer preflight passed checksum, shell and Ucode validation. Application update was installed on notion,r281 / OpenWrt 24.10.8 with private rollback archive. Version file reports 10.0.0; homepage displays v10.0.0; app/style HTTP assets return 200; health and SMS archive services are running; SIM ping passed immediately after deployment.
+- No reboot, network/Wi-Fi config write, radio reset, firmware flash, or SMS send. The archive is an application update, not firmware. Extended stability observation, factory reset, and other hardware remain NOT VERIFIED.
+
 ## 2026-10-10 checkpoint
 - 17 pure accounting/attribution assertions PASS on the R281 OpenWrt 24.10.8 ucode runtime, using only `/tmp/emti-test` files.
 - 5 executable Node tests PASS: aggregation, date filters, billing boundaries, escaping/CSV injection, unavailable values.

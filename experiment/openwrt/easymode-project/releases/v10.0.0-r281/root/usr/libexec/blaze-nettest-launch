@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+umask 077
+REQ=${1:-{}}
+LOCK=/tmp/blaze-nettest.lock
+exec 8>/var/lock/blaze-nettest-launch.lock
+flock -x 8
+if [ -d "$LOCK" ];then
+ PID=$(cat "$LOCK/pid" 2>/dev/null || true)
+ case "$PID" in ''|*[!0-9]*) ;; *) kill -0 "$PID" 2>/dev/null && { echo 'A network test is already running.' >&2;exit 1; };; esac
+ rm -rf "$LOCK"
+fi
+mkdir -p "$LOCK" /tmp/blaze-nettests
+ID=$(cat /proc/sys/kernel/random/uuid)
+printf '%s' "$ID" >"$LOCK/id"
+printf '%s' "$REQ" >"$LOCK/request.json"
+printf '{"id":"%s","pending":true,"ok":true,"message":"Network test started."}\n' "$ID" >"/tmp/blaze-nettests/$ID.json"
+/usr/bin/timeout -k 2 65 /usr/libexec/blaze-nettest 8>&- </dev/null >/tmp/blaze-nettest.log 2>&1 &
+printf '%s' "$!" >"$LOCK/pid"
+N=0;for F in $(ls -t /tmp/blaze-nettests/*.json);do N=$((N+1));[ "$N" -le 16 ] || rm -f "$F";done
+echo "$ID"

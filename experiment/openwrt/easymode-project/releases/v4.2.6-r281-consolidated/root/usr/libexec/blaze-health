@@ -72,7 +72,14 @@ set_routes() {
   # Probe failure is not proof that all client traffic is unusable. Keep an
   # addressed uplink routable while recovery runs; prefer verified backups above.
   for S in $ORDER;do if source_info "$S" && route_one "$S";then ACTIVE="$S";EFFECTIVE=degraded;ROUTE_ERROR='Internet checks failed; retaining the addressed uplink while recovery evaluates it.';return;fi;done
-  ip route replace unreachable default proto 99 metric 5 2>/dev/null || true;ACTIVE=none;EFFECTIVE=none;ROUTE_ERROR='';return
+  # A transient DHCP gap on cellular can make source_info fail while the
+  # modem's L3 device is still present. Do not leave a high-priority
+  # unreachable route behind: netifd may reacquire the same lease/IP before
+  # the next health sample, but that stale route would black-hole traffic.
+  # With no addressable source, the kernel already reports no route; once
+  # netifd restores a lease, its normal DHCP route is usable immediately.
+  ip route del unreachable default proto 99 metric 5 2>/dev/null || true
+  ACTIVE=none;EFFECTIVE=none;ROUTE_ERROR='';return
  fi
  FIRST="${HEALTHY%% *}";[ -n "$FIRST" ] || FIRST="$HEALTHY"
  if [ "$MODE" = balance ] && [ "$COUNT" -ge 2 ]; then
@@ -82,6 +89,9 @@ set_routes() {
  else
   if route_one "$FIRST";then ACTIVE="$FIRST";EFFECTIVE=failover;ROUTE_ERROR='';else ACTIVE=none;EFFECTIVE=error;ROUTE_ERROR='Selected route could not be applied.';fi
  fi
+}
+recovery_kind() {
+ case "$1" in sim) echo reconnect;;wifi) echo reconnect-wifi;;wired) echo reconnect-wired;;*) return 1;;esac
 }
 recover_source() {
  S="$1"; NOW="$2"; ENABLED="$(uci -q get blaze.main.watchdog_enabled || echo 1)";[ "$ENABLED" = 1 ] || return 0
@@ -98,11 +108,11 @@ recover_source() {
  # Confirm again immediately before a disruptive reconnect.
  if probe_source "$S";then case "$S" in sim) SIM_FAIL=0;;wired) WIRED_FAIL=0;;wifi) WIFI_FAIL=0;;esac;return 0;fi
  /usr/libexec/blaze-outage-snapshot >/dev/null 2>&1 || true
- case "$S" in
-  sim) KIND=reconnect;[ "$ATT" -gt 0 ] && KIND=radio-reconnect;;
-  wifi) KIND=reconnect-wifi;;
-  wired) KIND=reconnect-wired;;
- esac
+ # Keep automatic recovery at the data-session layer. Cycling the radio can
+ # re-register on a different cell and force a new carrier IP, creating a
+ # second outage while the modem was already registered. A radio reset stays
+ # available as an explicit administrator action.
+ KIND="$(recovery_kind "$S")" || return 0
  logger -t BlazeSystems "Watchdog recovery for $S after $FAIL failed checks (attempt $((ATT+1)))."
  if /usr/libexec/blaze-launch "$KIND" >/dev/null 2>&1; then
   case "$S" in sim) SIM_LAST_REC=$NOW;SIM_FAIL=0;SIM_ATTEMPTS=$((ATT+1));; wired) WIRED_LAST_REC=$NOW;WIRED_FAIL=0;WIRED_ATTEMPTS=$((ATT+1));; wifi) WIFI_LAST_REC=$NOW;WIFI_FAIL=0;WIFI_ATTEMPTS=$((ATT+1));; esac
@@ -149,6 +159,17 @@ while :; do
    # A single failed probe must not remove a previously working route.
    LIMIT="$(uci -q get blaze.main.watchdog_failures || echo 3)";case "$LIMIT" in ''|*[!0-9]*) LIMIT=3;;esac
    PREV=$(cat /tmp/blaze-health.json 2>/dev/null || echo '{}')
+   SIM_IP='';source_info sim && SIM_IP="$SRC_IP"
+   OLD_SIM_IP="$(printf '%s' "$PREV" | jsonfilter -e '@.sim_ip' 2>/dev/null || true)"
+   SIM_IP_CHANGES="$(printf '%s' "$PREV" | jsonfilter -e '@.sim_ip_changes' 2>/dev/null || echo 0)"
+   SIM_IP_CHANGED_AT="$(printf '%s' "$PREV" | jsonfilter -e '@.sim_ip_changed_at' 2>/dev/null || echo 0)"
+   case "$SIM_IP_CHANGES" in ''|*[!0-9]*) SIM_IP_CHANGES=0;;esac
+   case "$SIM_IP_CHANGED_AT" in ''|*[!0-9]*) SIM_IP_CHANGED_AT=0;;esac
+   if [ -n "$SIM_IP" ] && [ -n "$OLD_SIM_IP" ] && [ "$SIM_IP" != "$OLD_SIM_IP" ];then
+    SIM_IP_CHANGES=$((SIM_IP_CHANGES+1));SIM_IP_CHANGED_AT=$EPOCH
+    logger -t BlazeSystems "Cellular IPv4 address changed during this boot."
+   fi
+   [ -n "$SIM_IP" ] || SIM_IP="$OLD_SIM_IP"
    for S in sim wired wifi;do
     case "$S" in sim) OK=$SIM_OK;FAIL=$SIM_FAIL;;wired) OK=$WIRED_OK;FAIL=$WIRED_FAIL;;wifi) OK=$WIFI_OK;FAIL=$WIFI_FAIL;;esac
     if [ "$OK" = 0 ] && [ "$FAIL" -gt 0 ] && [ "$FAIL" -lt "$LIMIT" ] && [ "$(printf '%s' "$PREV" | jsonfilter -e "@.$S")" = true ] && source_info "$S";then
@@ -167,6 +188,8 @@ while :; do
    json_add_int sim_since "$SIM_SINCE";json_add_int wired_since "$WIRED_SINCE";json_add_int wifi_since "$WIFI_SINCE";json_add_int active_since "$ACTIVE_SINCE"
    json_add_int sim_failures "$SIM_FAIL";json_add_int wired_failures "$WIRED_FAIL";json_add_int wifi_failures "$WIFI_FAIL"
    json_add_int sim_recoveries "$SIM_ATTEMPTS";json_add_int wired_recoveries "$WIRED_ATTEMPTS";json_add_int wifi_recoveries "$WIFI_ATTEMPTS";json_add_int time "$EPOCH"
+   [ -n "$SIM_IP" ] && json_add_string sim_ip "$SIM_IP"
+   json_add_int sim_ip_changes "$SIM_IP_CHANGES";json_add_int sim_ip_changed_at "$SIM_IP_CHANGED_AT"
    json_dump >/tmp/blaze-health.json.new;mv /tmp/blaze-health.json.new /tmp/blaze-health.json
   fi
  fi

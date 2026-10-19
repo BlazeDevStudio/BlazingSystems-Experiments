@@ -1,0 +1,36 @@
+#!/bin/sh
+# R281-specific switch/detect lines reconstructed from this device's saved
+# antenna-gpio.ko: select main=GPIO11, diversity=GPIO9 (inverted); detect=14/12.
+set -eu
+[ "$(cat /tmp/sysinfo/board_name)" = 'notion,r281' ] || exit 1
+BASE=''
+for CHIP in /sys/class/gpio/gpiochip*;do
+ [ "$(cat "$CHIP/label")" = '1e000600.gpio-bank0' ] && BASE=$(cat "$CHIP/base")
+done
+[ -n "$BASE" ] || { echo 'Expected GPIO controller not found';exit 1; }
+for N in 9 11 12 14;do
+ P=$((BASE+N));[ -d "/sys/class/gpio/gpio$P" ] || echo "$P" >/sys/class/gpio/export
+done
+MAIN=/sys/class/gpio/gpio$((BASE+11))
+DIV=/sys/class/gpio/gpio$((BASE+9))
+DM=/sys/class/gpio/gpio$((BASE+14))
+DD=/sys/class/gpio/gpio$((BASE+12))
+M=$(cat "$DM/value");D=$(cat "$DD/value")
+MODE=${1:-status}
+if [ "$MODE" = status ];then
+ printf '{"main_detect":%s,"div_detect":%s,"main_select":%s,"div_select":%s}\n' "$((1-M))" "$((1-D))" "$(cat "$MAIN/value")" "$(cat "$DIV/value")"
+ exit 0
+fi
+case "$MODE" in
+ internal) MS=low;DS=high;;
+ auto) MS=low;DS=high;[ "$M" = 0 ] && MS=high;[ "$D" = 0 ] && DS=low;;
+ external)
+  [ "$M" = 0 ] && [ "$D" = 0 ] || { echo 'Both external antenna connections must be detected before selecting external.';exit 1; }
+  MS=high;DS=low;;
+ *) exit 2;;
+esac
+echo in >"$DM/direction"
+echo in >"$DD/direction"
+echo "$MS" >"$MAIN/direction"
+echo "$DS" >"$DIV/direction"
+echo 'Antenna switch state applied.'

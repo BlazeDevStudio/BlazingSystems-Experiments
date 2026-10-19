@@ -1,0 +1,2 @@
+# Only redirected client DNS; the blaze_sites guard rejects direct/WAN access.
+ct status dnat meta l4proto { tcp, udp } th dport 1053-1085 accept comment "EasyMode filtered DNS"

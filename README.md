@@ -18,7 +18,7 @@
 | Area | Project | Stage | Entry |
 |---|---|---|---|
 | [OpenWrt](experiment/openwrt/) | BlazePwifi | 0.1.0-alpha.1 reconstruction | [Project](experiment/openwrt/BlazePwifi/) |
-| [OpenWrt](experiment/openwrt/) | EasyMode for OpenWrt | 5.0.0-alpha.1 | [Project](experiment/openwrt/easymode-project/) |
+| [OpenWrt](experiment/openwrt/) | EasyMode for OpenWrt | 10.0.0 R281 app profile; v7 shared monitor | [Project](experiment/openwrt/easymode-project/) |
 | [Web runtime](web/) | BlazeAPK | Beta 0.6 | [Project](web/blazeapk/) |
 | [Web runtime](web/) | BlazeJ2ME | v1.6 | [Project](web/blazej2me/) |
 | [Android](android/) | TokenLauncher | Security/device-control prototype | [Project](android/token-launcher/) |

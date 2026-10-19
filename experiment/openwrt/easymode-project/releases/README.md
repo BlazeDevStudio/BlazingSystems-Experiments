@@ -13,3 +13,5 @@ Published version directories are treated as immutable records: new work should 
 - [4.2.3 installed R281 experiment](v4.2.3-r281-experiment/): current deployed source, tested signal LED controls, independent repeater AP settings and shared-login captive compatibility. Private firmware candidate passed structural checks; flash/reset validation and USSD remain unfinished.
 
 - [4.2.3 R281 encrypted installer](v4.2.3-r281-installer-encrypted/): complete owner-specific kit protected with AES-256-GCM; recovery key retained offline. Firmware remains unflashed and not reset-tested.
+
+- [10.0.0 R281 application profile](v10.0.0-r281/): copy of the running R281 EasyMode, deployed and checked on Notion R281 / OpenWrt 24.10.8. This is an application archive, not a firmware image; other board profiles and hard-reset persistence are not verified.

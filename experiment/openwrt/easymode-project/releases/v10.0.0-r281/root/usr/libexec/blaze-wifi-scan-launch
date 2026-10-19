@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+umask 077
+mkdir -p /tmp/blaze-scans
+exec 8>/var/lock/blaze-scan-launch.lock
+flock -x 8
+PID=$(cat /tmp/blaze-scan.pid 2>/dev/null || true)
+case "$PID" in ''|*[!0-9]*) ;; *)
+ if kill -0 "$PID" 2>/dev/null && grep -q blaze-wifi-scan /proc/"$PID"/cmdline;then
+  cat /tmp/blaze-scan.id;exit 0
+ fi;;esac
+ID=$(cat /proc/sys/kernel/random/uuid)
+printf '%s' "$ID" >/tmp/blaze-scan.id
+printf '{"id":"%s","ok":true,"pending":true}' "$ID" >"/tmp/blaze-scans/$ID.json"
+/usr/libexec/blaze-wifi-scan "$ID" 8>&- </dev/null >/tmp/blaze-scan.log 2>&1 &
+echo "$!" >/tmp/blaze-scan.pid
+N=0;for F in $(ls -t /tmp/blaze-scans/*.json);do N=$((N+1));[ "$N" -le 4 ] || rm -f "$F";done
+printf '%s' "$ID"

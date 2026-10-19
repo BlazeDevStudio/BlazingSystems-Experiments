@@ -1,0 +1,3 @@
+#!/bin/sh
+umask 077
+exec /usr/bin/timeout -k 1 8 /usr/bin/flock -n -x /var/lock/blaze-clients.lock /usr/bin/ucode /usr/share/blaze/client-sample.uc
