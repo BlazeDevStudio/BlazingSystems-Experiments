@@ -220,6 +220,20 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39205370943",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39205366619"
       ]
+    },
+    {
+      "date": "2026-10-19",
+      "scope": "real-opencore-archive-zip-audit",
+      "status": "ci_verified_scope_limited",
+      "note": "Run 39211050624: actual OpenCore 1.0.8 RELEASE ZIP (10,544,084 bytes), GitHub-metadata SHA-256 match and 306 ZIP entries / 258 streamed CRC file checks passed, 126 Linux and 126 Windows tests; real version-matched ocvalidate on synthetic staging and Windows console packaging also passed. Publisher identity/license independence, GUI, device readback and boot remain unverified.",
+      "related_gates": [
+        "component-auth",
+        "release-security",
+        "efi-zip"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39211050624"
+      ]
     }
   ]
 }
