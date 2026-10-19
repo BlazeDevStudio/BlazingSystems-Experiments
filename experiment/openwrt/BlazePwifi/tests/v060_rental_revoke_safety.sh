@@ -46,6 +46,32 @@ refuse 6 dev01
 [ ! -e "$BP_PAID_UNCERTAIN" ]
 [ "$(cut -f3 "$BP_RENTAL_DEVICES" | head -n1)" = "$((now+3600))" ]
 
+# PAY-0782: a real signed paid writer can win between the read-only
+# expired-lease preflight and bp_paid_begin. Revoke must recheck the
+# authoritative lease under its acquired financial lock before deletion.
+(
+  bp_paid_begin() {
+    # Simulate an independently completed coin credit at this exact gap.
+    bp_rental_device_write dev02 synthetic-secret-dev02 "$((now+1800))" "Fictional Phone" "$now" || return 8
+    . "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+    bp_paid_begin
+  }
+  set +e
+  bp_rental_device_revoke dev02 > "$T/raced-revoke" 2>&1
+  race_rc=$?
+  set -e
+  [ "$race_rc" -eq 6 ] || {
+    echo "PAY-0782 stale revoke erased newly purchased rental time (rc=$race_rc)" >&2
+    exit 1
+  }
+)
+[ "$(printf '%s' "$(bp_rental_device_line dev02)" | cut -f3)" = "$((now+1800))" ] || {
+  echo "PAY-0782 paid lease lost after concurrent revoke" >&2;exit 1;
+}
+[ ! -e "$BP_PAID_UNCERTAIN" ]
+# Reset fictional dev02 only in disposable /tmp for the existing expiry test.
+bp_rental_device_write dev02 synthetic-secret-dev02 1000 "Fictional Phone" "$now"
+
 # Expired non-paid lease may be revoked; unrelated active and expired
 # leases, audit and policy records must be left intact.
 bp_rental_device_revoke dev02
