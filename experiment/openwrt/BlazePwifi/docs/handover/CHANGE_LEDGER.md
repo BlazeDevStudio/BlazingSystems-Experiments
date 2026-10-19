@@ -1,3 +1,11 @@
+## 2026-10-19 — PAY-0780: confirmed old-code RED; installed v1 rental quota preflight correction pending CI
+
+- **Baseline reproducible RED confirmed:** branch `fix/pay-0780-rental-receipt-capacity`, test/CI/docs commit `5a5af83729cb6cfd23424569e80453bbf46c196c`, [Full #39202796254](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39202796254) `validate` PAY-0780 **FAILED**, log: `PAY-0780 FAIL: oversized paid receipt was acknowledged (rc=0)`. Actual `bp_rental_apply_coin` crossed `bp_rental_paid_receipt_snapshot` 4,190,208 byte corpus cap and issued positive ACK after a paid lease changed. No customer state used.
+- **Runtime correction in this new source checkpoint (NOT YET VERIFIED):** `openwrt/rootfs/usr/lib/blazepwifi/rental.sh` checks projected exact paid receipt bytes before the paid lease rewrite while holding `bp_paid_begin` writer lock; no-write full/quota denial clears only its own pending marker via existing checked `bp_rental_admin_unmodified_reject`. Paid receipt append helper also guards its size. `tests/v060_rental_paid_receipt_capacity.sh` is mandatory in Full; also probes exact fit, duplicate ACK and subsequent full refusal.
+- Does NOT unify v1 lease+receipt durability or eliminate #32 generally. #31/#32/#43/#34 remain open. No antirollback witness, protected P-256, provisioned controllers, receipt-preserving migration, hardware cuts/soak or public v0.6 release. `VERSION=0.5.3`; customer install NO-GO.
+
+---
+
 ## 2026-10-19 — PAY-0780: installed v1 rental receipt capacity boundary reproduction (in progress)
 
 - Isolated branch `fix/pay-0780-rental-receipt-capacity` from PR #30 source head `493c96e749e3df88d769c1c08c572e1010b4192a`. Test-only commit `01c305db8191ff7cbfd3507c93ef021d516245a7` adds disposable `tests/v060_rental_paid_receipt_capacity.sh`; this checkpoint wires it into mandatory Full CI.
