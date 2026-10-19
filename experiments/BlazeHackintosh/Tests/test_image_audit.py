@@ -101,6 +101,21 @@ class ImageAuditTests(unittest.TestCase):
         self.assertEqual(report['audit_complete'], expected)
         return report
 
+    def test_windows_path_handle_identity_can_differ(self):
+        """The existing ZIP auditor already handles Windows stat/fstat aliases."""
+        from types import SimpleNamespace
+        baseline = dict(st_mode=0o100600, st_size=SECTORS * SECTOR, st_file_attributes=0)
+        before = SimpleNamespace(st_dev=1, st_ino=1, **baseline)
+        opened = SimpleNamespace(st_dev=2, st_ino=2, **baseline)
+        with patch.object(image_audit.os, 'name', 'nt'):
+            self.assertTrue(image_audit._same_opened_file(before, opened))
+            suspicious = SimpleNamespace(st_dev=2, st_ino=2, st_mode=0o100600,
+                                         st_size=SECTORS * SECTOR,
+                                         st_file_attributes=getattr(image_audit.stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 1024))
+            self.assertFalse(image_audit._same_opened_file(before, suspicious))
+        with patch.object(image_audit.os, 'name', 'posix'):
+            self.assertFalse(image_audit._same_opened_file(before, opened))
+
     def test_valid_synthetic_gpt_and_bpb_are_not_boot_proof(self):
         self.check()
 
