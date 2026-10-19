@@ -8,12 +8,22 @@ R="$T/root-x86"
 mkdir -p "$R/usr/sbin" "$R/lib/apk/packages" \
   "$R/usr/lib/blazepwifi" "$R/usr/lib" "$R/www/blazepwifi/cgi-bin"
 readelf() {
-printf 'Machine: Advanced Micro Devices X86-64\n'
+case "$*" in
+  *blazepwifi-paid-authority)
+    grep -Fq AUTHORITY_ELF "$R/usr/sbin/blazepwifi-paid-authority" || return 1
+    printf 'Machine: Advanced Micro Devices X86-64\n'
+    ;;
+  *libcrypto.so.3)
+    grep -Fq CRYPTO_ELF "$R/usr/lib/libcrypto.so.3" || return 1
+    printf 'Machine: Advanced Micro Devices X86-64\nLibrary soname: [libcrypto.so.3]\n'
+    ;;
+  *) return 1 ;;
+esac
 }
-printf 'ELF fixture\n' >"$R/usr/sbin/blazepwifi-paid-authority"
+printf 'AUTHORITY_ELF fixture\n' >"$R/usr/sbin/blazepwifi-paid-authority"
 printf 'usr/sbin/blazepwifi-paid-authority\n' \
   >"$R/lib/apk/packages/blazepwifi-paid-authority.list"
-printf 'crypto fixture\n' >"$R/usr/lib/libcrypto.so.3"
+printf 'CRYPTO_ELF fixture\n' >"$R/usr/lib/libcrypto.so.3"
 printf '/usr/sbin/blazepwifi-paid-authority "$@" --verify-envelope-only\n' \
   >"$R/usr/lib/blazepwifi/common.sh"
 printf 'bp_v2_verify_envelope "$id"\n' >"$R/www/blazepwifi/cgi-bin/vendo"
@@ -38,9 +48,15 @@ mv "$T/authority" "$R/usr/sbin/blazepwifi-paid-authority"
 mv "$R/lib/apk/packages/blazepwifi-paid-authority.list" "$T/package"
 reject 'installed authority package record missing'
 mv "$T/package" "$R/lib/apk/packages/blazepwifi-paid-authority.list"
+printf 'usr/sbin/unrelated\n' >"$R/lib/apk/packages/blazepwifi-paid-authority.list"
+reject 'installed authority package record missing'
+printf 'usr/sbin/blazepwifi-paid-authority\n' >"$R/lib/apk/packages/blazepwifi-paid-authority.list"
 mv "$R/usr/lib/libcrypto.so.3" "$T/crypto"
 reject 'installed crypto library missing'
 mv "$T/crypto" "$R/usr/lib/libcrypto.so.3"
+printf 'non-ELF crypto fixture\n' >"$R/usr/lib/libcrypto.so.3"
+reject 'installed crypto library missing'
+printf 'CRYPTO_ELF fixture\n' >"$R/usr/lib/libcrypto.so.3"
 mv "$R/usr/lib/blazepwifi/common.sh" "$T/common"
 reject 'installed native envelope helper missing'
 cp "$T/common" "$R/usr/lib/blazepwifi/common.sh"

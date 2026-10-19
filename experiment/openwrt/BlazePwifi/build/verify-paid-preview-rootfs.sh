@@ -13,11 +13,16 @@ ELF="$ROOTFS/usr/sbin/blazepwifi-paid-authority"
   echo 'PAY-0775 BLOCKED: installed x86 authority missing or wrong ABI' >&2
   exit 9
 }
-[ -s "$ROOTFS/lib/apk/packages/blazepwifi-paid-authority.list" ] || {
+PACKAGE_RECORD="$ROOTFS/lib/apk/packages/blazepwifi-paid-authority.list"
+[ -f "$PACKAGE_RECORD" ] && [ ! -L "$PACKAGE_RECORD" ] &&
+  grep -Eq '^/?usr/sbin/blazepwifi-paid-authority$' "$PACKAGE_RECORD" || {
   echo 'PAY-0775 BLOCKED: installed authority package record missing' >&2
   exit 9
 }
-[ -s "$ROOTFS/usr/lib/libcrypto.so.3" ] || {
+CRYPTO="$ROOTFS/usr/lib/libcrypto.so.3"
+[ -s "$CRYPTO" ] &&
+  readelf -h "$CRYPTO" | grep -Fq 'X86-64' &&
+  readelf -d "$CRYPTO" | grep -Fq 'Library soname: [libcrypto.so.3]' || {
   echo 'PAY-0775 BLOCKED: installed crypto library missing' >&2
   exit 9
 }
