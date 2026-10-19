@@ -306,13 +306,34 @@ bp_rental_event_log() {
 }
 
 bp_rental_device_rename() {
+  # PAY-0781: renaming rewrites the paid lease row, not just its display
+  # label. Serialize the entire read/replace/audit against all coin and
+  # administrator paid writers or a stale rename can erase purchased time.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   did="$1"; new_label="$(bp_rental_clean "$2")"
   [ -n "$new_label" ] || return 2
   [ "$(printf '%s' "$new_label" | wc -c)" -le 80 ] || return 2
-  line="$(bp_rental_device_line "$did")"; [ -n "$line" ] || return 1
-  secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; last="$(printf '%s' "$line" | cut -f5)"
-  bp_rental_device_write "$did" "$secret" "$lease" "$new_label" "$last"
-  bp_rental_event_log rename "$did" "$new_label"
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    # An unknown device is a read-only refusal; clear only our own new
+    # pending marker. Corrupt financial state is never accepted.
+    [ "$rc" -ne 2 ] || rc=1
+    bp_rental_admin_unmodified_reject "$rc"
+    return $?
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  last="$(printf '%s' "$line" | cut -f5)"
+  # Keep uncertainty in place if the lease replacement or audit append
+  # fails: either could already have reached storage.
+  if ! bp_rental_device_write "$did" "$secret" "$lease" "$new_label" "$last" ||
+     ! bp_rental_event_log rename "$did" "$new_label"; then
+    bp_paid_abort
+    return 8
+  fi
+  bp_paid_commit || return 8
+  return 0
 }
 
 # RENT-0724: unwind the pending marker only for a read-only failure that
