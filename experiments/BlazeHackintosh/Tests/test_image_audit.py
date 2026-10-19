@@ -442,6 +442,44 @@ class ImageAuditTests(unittest.TestCase):
             fp.write(struct.pack('<I', 1234))
         self.check(True)
 
+    def test_disposable_copy_readback_corruption_and_rollback(self):
+        """All writes target temporary .img files; no disk devices or mounts."""
+        import shutil
+        with tempfile.TemporaryDirectory() as scratch:
+            target = Path(scratch) / 'copy.img'
+            backup = Path(scratch) / 'backup.img'
+            shutil.copyfile(self.path, target)
+            original = audit_image(target, self.digest)
+            self.assertTrue(original['audit_complete'], original)
+            self.assertFalse(original['physical_readback_verified'])
+
+            shutil.copyfile(target, backup)
+            with target.open('r+b') as out:
+                out.seek(SECTOR + 16)  # Deliberately invalidate GPT header CRC.
+                out.write(bytes(4))
+            damaged = audit_image(target, self.digest)
+            self.assertFalse(damaged['audit_complete'], damaged)
+
+            os.replace(backup, target)
+            restored = audit_image(target, self.digest)
+            self.assertTrue(restored['audit_complete'], restored)
+            self.assertFalse(restored['physical_readback_verified'])
+            self.assertFalse(restored['filesystem_verified'])
+            self.assertFalse(restored['boot_verified'])
+            self.assertFalse(restored['safe_to_flash'])
+            self.assertEqual(hashlib.sha256(self.path.read_bytes()).hexdigest(), self.digest)
+
+    def test_interrupted_disposable_file_copy_is_rejected(self):
+        """A partial ordinary-file write must not pass readback."""
+        with tempfile.TemporaryDirectory() as scratch:
+            partial = Path(scratch) / 'partial.img'
+            with self.path.open('rb') as original, partial.open('wb') as out:
+                out.write(original.read(1024 * 1024))
+            report = audit_image(partial, self.digest)
+            self.assertFalse(report['audit_complete'], report)
+            self.assertFalse(report['safe_to_flash'])
+            self.assertFalse(report['physical_readback_verified'])
+
     def test_media_descriptor_disagrees_with_fat_reserved_entry(self):
         with self.path.open('r+b') as fp:
             fp.seek(START * SECTOR + 21)
