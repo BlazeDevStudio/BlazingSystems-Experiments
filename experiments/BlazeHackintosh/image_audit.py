@@ -14,6 +14,7 @@ import stat
 import struct
 import uuid
 import zlib
+from archive_integrity import _same_opened_file
 
 SECTOR = 512
 MAX_IMAGE = 64 * 1024**3
@@ -96,9 +97,7 @@ def audit_image(path, expected_sha256):
         fd = os.open(image, flags)
         with os.fdopen(fd, 'rb') as fp:
             opened = os.fstat(fp.fileno())
-            if not stat.S_ISREG(opened.st_mode) or (
-                    opened.st_dev, opened.st_ino, opened.st_size) != (
-                    st.st_dev, st.st_ino, st.st_size):
+            if not _same_opened_file(st, opened):
                 raise ValueError('Image changed between pathname and open handle')
             length = opened.st_size
             digest = hashlib.sha256()
