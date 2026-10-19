@@ -279,6 +279,22 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39222341172",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39222346177"
       ]
+    },
+    {
+      "date": "2026-10-19",
+      "scope": "disposable-image-copy-restore-regression",
+      "status": "ci_verified_scope_limited",
+      "note": "Tests-only: ordinary temporary .img copy/readback, detection of corrupt copied GPT metadata, restoration from backup file and partial-copy rejection. GitHub PR run 39224322821 and push run 39224317558 both passed 239 Linux and 239 Windows tests. No physical drive writes, actual FAT32 file content verification, installed EFI, rollback implementation or boot proof. Production gates unchanged.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "efi-migration",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224322821",
+        "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224317558"
+      ]
     }
   ]
 }
