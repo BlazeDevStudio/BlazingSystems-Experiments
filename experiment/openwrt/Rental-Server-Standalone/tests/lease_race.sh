@@ -107,6 +107,30 @@ printf '%s' "$plain_status_response" | grep -Fq '"ok":true' || {
 cmp -s "$T/devices-before-status" "$T/hub/state/devices.tsv" || {
     echo 'FAIL: status poll rewrote the paid lease file' >&2; exit 1;
 }
+# Losing the policy authority must not turn a signed status into the broad
+# wildcard default or permit a paid admin write. Preserve the paid file.
+mv "$T/hub/state/policy.tsv" "$T/policy-held"
+cp "$T/hub/state/devices.tsv" "$T/devices-before-policy-loss"
+for policy_state in missing symlink; do
+    if [ "$policy_state" = symlink ]; then
+        ln -s "$T/policy-held" "$T/hub/state/policy.tsv"
+    fi
+    policy_status="$(run_status none)"
+    printf '%s' "$policy_status" | grep -Fq '"ok":false' || {
+        echo "FAIL: phone status accepted $policy_state policy authority" >&2; exit 1;
+    }
+    policy_admin="$(printf 'action=add_time&device_id=%s&seconds=600&request_id=%s\n' "$DID" "$RID" |
+        env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
+            REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
+    printf '%s' "$policy_admin" | grep -Fq '"ok":false' || {
+        echo "FAIL: admin paid write accepted $policy_state policy authority" >&2; exit 1;
+    }
+    cmp -s "$T/devices-before-policy-loss" "$T/hub/state/devices.tsv" || {
+        echo "FAIL: $policy_state policy authority changed paid state" >&2; exit 1;
+    }
+    [ "$policy_state" = missing ] || rm "$T/hub/state/policy.tsv"
+done
+mv "$T/policy-held" "$T/hub/state/policy.tsv"
 list_response="$(printf 'action=list\n' |
     env BLAZE_RENTAL_BASE="$T/hub" HTTP_X_BLAZE_RENTAL_ADMIN=known-token \
         REQUEST_METHOD=POST sh "$ROOT/root/www/cgi-bin/rental-admin")"
