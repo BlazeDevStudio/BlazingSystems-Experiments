@@ -102,6 +102,21 @@ class ArchiveTests(unittest.TestCase):
         self.put([("f", b"x")])
         self.assertFalse(self.check(digest="z" * 64)["zip_structure_valid"])
 
+    def test_windows_inode_alias_only_relaxes_unstable_path_identity(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        a_stat = SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=1,
+                                 st_ino=10, st_size=32, st_file_attributes=0)
+        b_stat = SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=2,
+                                 st_ino=20, st_size=32, st_file_attributes=0)
+        with patch.object(a.os, "name", "nt"):
+            self.assertTrue(a._same_opened_file(a_stat, b_stat))
+            self.assertFalse(a._same_opened_file(a_stat, SimpleNamespace(
+                st_mode=stat.S_IFREG, st_dev=2, st_ino=20,
+                st_size=31, st_file_attributes=0)))
+        with patch.object(a.os, "name", "posix"):
+            self.assertFalse(a._same_opened_file(a_stat, b_stat))
+
     def test_bad_size_type(self):
         self.put([("f", b"x")])
         self.assertFalse(self.check(size=True)["zip_structure_valid"])

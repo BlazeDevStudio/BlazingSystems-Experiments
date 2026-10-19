@@ -58,6 +58,22 @@ def _fingerprint(s):
             getattr(s, "st_ctime_ns", 0))
 
 
+def _same_opened_file(before, opened):
+    """Compare stable pre-open properties; Windows path stat inode is not portable.
+
+    The opened handle is separately rechecked after reading, and a matching
+    cryptographic digest and size are always required. No Windows symlink-race
+    immunity is claimed; this checker never writes or executes input bytes.
+    """
+    if (not stat.S_ISREG(opened.st_mode) or opened.st_size != before.st_size or
+            getattr(opened, "st_file_attributes", 0) &
+            getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+        return False
+    if os.name != "nt" and (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+        return False
+    return True
+
+
 def _scan_zip(f):
     f.seek(0)
     with zipfile.ZipFile(f, "r") as archive:
@@ -135,7 +151,7 @@ def audit_zip(path, expected_sha256, expected_size):
                      getattr(os, "O_BINARY", 0))
         with os.fdopen(fd, "rb") as f:
             opened = os.fstat(f.fileno())
-            if _fingerprint(opened) != _fingerprint(original):
+            if not _same_opened_file(original, opened):
                 raise ValueError("Archive changed while opening")
             before_hash, n = _hash_stream(f)
             if before_hash != expected_sha256 or n != expected_size:
