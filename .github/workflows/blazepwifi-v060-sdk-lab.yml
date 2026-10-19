@@ -15,6 +15,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
+      - 'experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
   pull_request:
     paths:
@@ -27,6 +29,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh'
       - 'experiment/openwrt/BlazePwifi/openwrt/lab-native/**'
       - 'experiment/openwrt/BlazePwifi/openwrt/paid-authority/**'
+      - 'experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh'
       - '.github/workflows/blazepwifi-v060-sdk-lab.yml'
 
 permissions:
@@ -42,6 +46,13 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal source checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: PAY-0774 installed preview refusal guards
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_paid_preview_image_guard.sh
       - name: CI-0768 installed v1-to-v2 inactive staging refusal regression
         run: sh experiment/openwrt/BlazePwifi/tests/v060_installed_migration_stage.sh
       - name: Verify pinned official OpenWrt 25.12.5 OpenSSL build sources
@@ -62,7 +73,7 @@ jobs:
       matrix:
         target: [ruijie, x86_64, orangepi_zero3]
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,6 +93,19 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_p256_target_capability_probe.sh
       - name: Verified official SDK native lab cross-compile (never production)
         run: sh experiment/openwrt/BlazePwifi/tools/v060_cross_compile_native_lab.sh "${{ matrix.target }}"
+      - name: PAY-0774 installed native x86 preview image only
+        if: matrix.target == 'x86_64'
+        env:
+          BLAZE_V2_PAID_PREVIEW: lab-only
+        run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh x86_64
+      - name: Upload installed x86 candidate image (LAB ONLY)
+        if: matrix.target == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blazepwifi-v2-paid-installed-x86_64-LAB-ONLY
+          path: experiment/openwrt/BlazePwifi/dist/v060-paid-installed-preview/x86_64/
+          if-no-files-found: error
+          retention-days: 3
       - name: Upload target-verified laboratory artifacts only
         uses: actions/upload-artifact@v4
         with:
