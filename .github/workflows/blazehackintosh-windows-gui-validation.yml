@@ -1,0 +1,66 @@
+name: BlazeHackintosh UNRELEASED native GUI Windows acceptance
+
+on:
+  push:
+    branches: [blazehackintosh-v0.1.0-foundation]
+    paths:
+      - 'experiments/BlazeHackintosh/desktop_gui.py'
+      - 'experiments/BlazeHackintosh/Tests/smoke_windows_gui.py'
+      - 'experiments/BlazeHackintosh/Tests/test_windows_gui_smoke.py'
+      - '.github/workflows/blazehackintosh-windows-gui-validation.yml'
+  pull_request:
+    paths:
+      - 'experiments/BlazeHackintosh/desktop_gui.py'
+      - 'experiments/BlazeHackintosh/Tests/smoke_windows_gui.py'
+      - 'experiments/BlazeHackintosh/Tests/test_windows_gui_smoke.py'
+      - '.github/workflows/blazehackintosh-windows-gui-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-gui-display-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate GUI helper and privacy tests on Windows
+        shell: pwsh
+        run: |
+          python -m unittest discover -s experiments/BlazeHackintosh/Tests -p 'test_desktop_gui.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Native GUI privacy regressions failed' }
+          python -m unittest discover -s experiments/BlazeHackintosh/Tests -p 'test_windows_gui_smoke.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'HWND smoke helper regressions failed' }
+      - name: Build UNRELEASED windowed research GUI EXE
+        working-directory: experiments/BlazeHackintosh
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller installation failed' }
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name BlazeHackintosh-Research-GUI --add-data 'Hardware-Database/families.json;Hardware-Database' --add-data 'Production/RELEASE-GATES.json;Production' desktop_gui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windowed GUI build failed' }
+          if (!(Test-Path 'dist/BlazeHackintosh-Research-GUI.exe')) { throw 'GUI EXE missing' }
+          if ((Get-Item 'dist/BlazeHackintosh-Research-GUI.exe').Length -lt 100000) { throw 'GUI EXE suspiciously small' }
+      - name: REAL Windows GUI HWND creation and graceful close smoke
+        working-directory: experiments/BlazeHackintosh
+        shell: pwsh
+        run: |
+          python Tests/smoke_windows_gui.py dist/BlazeHackintosh-Research-GUI.exe --timeout 90
+          if ($LASTEXITCODE -ne 0) { throw 'Compiled Windows GUI display smoke failed' }
+      - name: Record unreleased GUI artifact hash
+        working-directory: experiments/BlazeHackintosh
+        shell: pwsh
+        run: |
+          (Get-FileHash 'dist/BlazeHackintosh-Research-GUI.exe' -Algorithm SHA256).Hash | Out-File -Encoding ascii 'dist/GUI-SHA256.txt'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeHackintosh-UNRELEASED-Windows-Research-GUI-CI
+          path: |
+            experiments/BlazeHackintosh/dist/BlazeHackintosh-Research-GUI.exe
+            experiments/BlazeHackintosh/dist/GUI-SHA256.txt
+          if-no-files-found: error
+          retention-days: 7
