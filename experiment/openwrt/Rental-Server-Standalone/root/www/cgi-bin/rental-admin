@@ -51,7 +51,7 @@ unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
 state_files_ready(){
   [ -d "$BASE" ] && [ ! -L "$BASE" ] &&
     [ -d "$STATE" ] && [ ! -L "$STATE" ] || return 1
-  for f in "$DEVICES" "$ENROLL"; do
+  for f in "$DEVICES" "$ENROLL" "$POLICY"; do
     [ -f "$f" ] && [ ! -L "$f" ] && [ -r "$f" ] || return 1
   done
 }
