@@ -60,6 +60,56 @@ case "$TARGET" in
     ;;
 esac
 
+# PAY-0774: an SDK-compiled runtime may be installed only in a separately
+# named, noncustomer x86 preview image. The ordinary firmware path is unchanged.
+PAID_PREVIEW=0
+if [ -n "${BLAZE_V2_PAID_PREVIEW:-}" ]; then
+  [ "$BLAZE_V2_PAID_PREVIEW" = lab-only ] && [ "$TARGET" = x86_64 ] &&
+    [ "${GITHUB_ACTIONS:-}" = true ] && [ -n "${RUNNER_TEMP:-}" ] || {
+    echo 'PAY-0774 BLOCKED: paid authority preview requires x86_64 LAB-ONLY CI' >&2
+    exit 9
+  }
+  SOURCE_SHA="$(git -C "$ROOT" rev-parse HEAD)"
+  printf '%s' "$SOURCE_SHA" | grep -Eq '^[0-9a-f]{40}$' || {
+    echo 'PAY-0774 BLOCKED: literal source commit is required' >&2
+    exit 9
+  }
+  PAID_SDK_DIR="$ROOT/dist/v060-native-sdk-lab/x86_64"
+  [ -d "$PAID_SDK_DIR" ] && [ ! -L "$PAID_SDK_DIR" ] &&
+    [ -f "$PAID_SDK_DIR/MANIFEST.txt" ] &&
+    [ -f "$PAID_SDK_DIR/SHA256SUMS" ] || {
+    echo 'PAY-0774 BLOCKED: same-run SDK package evidence missing' >&2
+    exit 9
+  }
+  for line in "target=x86_64" "commit=$SOURCE_SHA" \
+    'pay0743_runtime_authority_package_crosscompiled=1' \
+    'pay0743_runtime_authority_paid_cutover_enabled=0' \
+    'production_released=0' 'customer_install_authorized=0'; do
+    grep -Fxq "$line" "$PAID_SDK_DIR/MANIFEST.txt" || {
+      echo "PAY-0774 BLOCKED: SDK provenance mismatch: $line" >&2
+      exit 9
+    }
+  done
+  (cd "$PAID_SDK_DIR" && sha256sum -c SHA256SUMS) || {
+    echo 'PAY-0774 BLOCKED: SDK artifact checksum mismatch' >&2
+    exit 9
+  }
+  PAID_ELF="$PAID_SDK_DIR/blazepwifi-paid-authority-x86_64"
+  [ -f "$PAID_ELF" ] && [ ! -L "$PAID_ELF" ] &&
+    readelf -h "$PAID_ELF" | grep -Fq 'X86-64' &&
+    readelf -d "$PAID_ELF" | grep -Eq 'Shared library: \[libcrypto\.so\.' || {
+    echo 'PAY-0774 BLOCKED: SDK authority ELF ABI or crypto dependency invalid' >&2
+    exit 9
+  }
+  set -- "$PAID_SDK_DIR"/blazepwifi-paid-authority*.apk
+  [ "$#" -eq 1 ] && [ -f "$1" ] && [ ! -L "$1" ] || {
+    echo 'PAY-0774 BLOCKED: exactly one regular authority APK is required' >&2
+    exit 9
+  }
+  PAID_APK="$1"
+  PAID_PREVIEW=1
+fi
+
 BASE="https://downloads.openwrt.org/releases/$VER/targets/$SUB"
 mkdir -p "$WORK"
 cd "$WORK"
@@ -111,9 +161,27 @@ D="$(find . -maxdepth 1 -type d -name 'openwrt-imagebuilder-*' | head -n1)"
 mv "$D" imagebuilder
 cd imagebuilder
 
+if [ "$PAID_PREVIEW" -eq 1 ]; then
+  # OpenWrt 25.12.5 ImageBuilder rebuilds its local APK index on make image.
+  cp "$PAID_APK" packages/
+  PACKAGES="$PACKAGES blazepwifi-paid-authority"
+fi
+
 make image PROFILE="$PROFILE" PACKAGES="$PACKAGES" FILES="$FILES_DIR"
 
+if [ "$PAID_PREVIEW" -eq 1 ]; then
+  INSTALLED_ELF="$(find build_dir -type f -path '*/root-*/usr/sbin/blazepwifi-paid-authority' -print -quit)"
+  [ -n "$INSTALLED_ELF" ] && [ -s "$INSTALLED_ELF" ] &&
+    readelf -h "$INSTALLED_ELF" | grep -Fq 'X86-64' || {
+    echo 'PAY-0774 BLOCKED: built x86 rootfs lacks target-native authority' >&2
+    exit 9
+  }
+fi
+
 OUT="$ROOT/dist/$TARGET"
+if [ "$PAID_PREVIEW" -eq 1 ]; then
+  OUT="$ROOT/dist/v060-paid-installed-preview/$TARGET"
+fi
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
@@ -156,6 +224,12 @@ OpenWrt target: $SUB
 Profile: $PROFILE
 Capability: $( [ "$KIND" = router ] && echo lite || { [ "$KIND" = x86 ] && echo full || echo standard; } )
 Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Paid authority installed preview: $PAID_PREVIEW
+Paid v2 commit/replay authorized: 0
+Customer install authorized: 0
 EOF
+if [ "$PAID_PREVIEW" -eq 1 ]; then
+  printf 'Source commit: %s\nSDK package SHA256: %s\n' "$SOURCE_SHA" "$(sha256sum "$PAID_APK" | cut -d ' ' -f 1)" >> "$OUT/BUILD-MANIFEST.txt"
+fi
 (cd "$OUT" && sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS)
 echo "BlazePwifi $TARGET images ready in $OUT"
