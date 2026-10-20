@@ -1,3 +1,7 @@
+## 2026-10-20 — PHX-0004 PAY-0743 forward-port v1 no-fallback namespace guard
+
+- Active baseline `2e65d894a5e8edf08a8956d3bde68cb6d21e8e50`. Historical [PR #88](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/88) is old-branch draft; current `common.sh` additionally contains v2 signed envelope support from merged PR #116, so wholesale overwrite of old PR #88 source would regress source. Reapplied minimal namespace interlock hunk only, with exact original test blob and canonical handover updates. Existing source pre-fix `bp_paid_v2_cutover_pending` checks only the removable `paid-v2-cutover-intent`; a retained staged authority `v2-authority` should prohibit legacy v1 NEW, REPLAY and late final commit even if intent disappears. This is a same-domain defensive sentinel, not independent rollback evidence; already-ACKed snapshot rollback remains P0. Full post-port CI **pending**.
+
 ## 2026-10-20 — PHX-0003 PAY-0774 actual RED followed by isolated source correction
 
 - Live test-first [PR #117](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/117) test SHA `d4d3bedba9efd351ed4ba8a00ae455b6a45d11f6`, real SDK source-check [#39345801336](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39345801336), job 118377964740, **FAILED** the precise assertion `FAIL: unknown_member_audit_kind admitted`, before any tested runtime correction. This is independently reproducible under CI in a disposable fixture.

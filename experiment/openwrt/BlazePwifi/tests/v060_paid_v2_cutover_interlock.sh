@@ -39,6 +39,7 @@ chmod 600 "$BP_MEMBERS" "$BP_MEMBER_REVISION" "$BP_RENTAL_DEVICES"
 # The interlock is default-INACTIVE: healthy v1 behavior MUST remain usable
 # until an actual operator-managed migration/cutover is safely engineered.
 [ ! -e "$BP_PAID_V2_CUTOVER" ] && [ ! -L "$BP_PAID_V2_CUTOVER" ]
+[ ! -e "$BP_PAID_V2_AUTHORITY" ] && [ ! -L "$BP_PAID_V2_AUTHORITY" ]
 [ "$(bp_member_balance_change alice add 10 softtimer:fixture evt0730)" = "$(printf '10\t2')" ]
 [ "$(bp_member_balance_change alice add 10 softtimer:fixture evt0730)" = "$(printf '10\t2')" ]
 [ "$(bp_rental_apply_coin dev01 controller01 nonce0730 target01 1)" = "$(printf 'credited\t124056')" ]
@@ -84,6 +85,22 @@ ln -s "$T/does-not-exist" "$BP_PAID_V2_CUTOVER"
 deny_all dangling-symlink-marker
 rm "$BP_PAID_V2_CUTOVER"
 
+# PAY-0743: once a v2 authority namespace exists, losing the removable
+# v1 cutover intent must NEVER reactivate the legacy money/receipt writer.
+# Test the actual installed member/rental new, replay and transfer entrypoints,
+# not a mock of bp_paid_v2_cutover_pending.
+printf 'NOT-AN-AUTHORITY\n' > "$BP_PAID_V2_AUTHORITY"
+deny_all authority-regular-file
+rm "$BP_PAID_V2_AUTHORITY"
+mkdir "$BP_PAID_V2_AUTHORITY"
+printf 'V\t2\n' > "$BP_PAID_V2_AUTHORITY/ledger.tsv"
+deny_all authority-namespace-with-unverified-ledger
+rm "$BP_PAID_V2_AUTHORITY/ledger.tsv"
+rmdir "$BP_PAID_V2_AUTHORITY"
+ln -s "$T/missing-authority" "$BP_PAID_V2_AUTHORITY"
+deny_all authority-dangling-symlink
+rm "$BP_PAID_V2_AUTHORITY"
+
 # After a v1 writer acquired its paid lock and pending marker, the cutover
 # may have been staged by a faulty external operator. No success commit ACK,
 # and no automatic clearing of the uncertain financial marker is permitted.
@@ -94,6 +111,15 @@ deny 'mid-write cutover refuses final commit' bp_paid_commit
 [ -f "$BP_PAID_UNCERTAIN" ]
 rm "$BP_PAID_V2_CUTOVER"
 deny 'uncertainty remains after cutover marker removed' bp_paid_begin
+# A second attempt with an in-flight writer and only the authority namespace
+# must also reject final commit; retaining the quarantine is mandatory.
+rm "$BP_PAID_UNCERTAIN"
+bp_paid_begin
+mkdir "$BP_PAID_V2_AUTHORITY"
+deny 'late authority namespace denies v1 commit' bp_paid_commit
 [ -f "$BP_PAID_UNCERTAIN" ]
-echo 'PAY-0730 PASS: real v1 paid member/rental new+replay deny on cutover marker; late marker keeps quarantine; default absent stays functional'
+rmdir "$BP_PAID_V2_AUTHORITY"
+deny 'uncertainty survives namespace removal' bp_paid_begin
+[ -f "$BP_PAID_UNCERTAIN" ]
+echo 'PAY-0743 PASS: installed v1 member/rental new+replay refuse marker OR v2 authority namespace; late authority halts ACK and keeps quarantine'
 echo 'NOT A MIGRATION OR WITNESS: marker is same-domain, deletable/rollbackable; #31/#32/#34/#43 and v0.6 customer cutover remain BLOCKED'
