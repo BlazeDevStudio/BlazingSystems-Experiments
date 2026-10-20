@@ -20,6 +20,9 @@ body{font:15px system-ui;margin:0;background:#07111f;color:#eef6ff}.wrap{max-wid
 <script>
 function v(id){return document.getElementById(id).value.trim()}
 function generateQr(){
+  document.getElementById('qr').innerHTML='';
+  document.getElementById('json').textContent='';
+  document.getElementById('state').textContent='';
   const server=v('server'),token=v('token'),name=v('name')||'Rental phone',certPin=v('certPin').replace(/:/g,'').toLowerCase();
   if(!server||!token){document.getElementById('state').textContent='Server URL and enrollment token are required.';return}
   if(!/^https?:\/\//i.test(server)){document.getElementById('state').textContent='Server URL must begin with http:// or https://';return}

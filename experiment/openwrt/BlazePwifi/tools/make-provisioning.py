@@ -15,6 +15,7 @@ a=p.parse_args()
 def require_https(value, flag):
     try:
         url = urlsplit(value)
+        url.port  # Access validates numeric syntax and the allowed port range.
     except ValueError:
         p.error(flag + " must be a valid HTTPS URL")
     if (url.scheme.lower() != "https" or not url.hostname

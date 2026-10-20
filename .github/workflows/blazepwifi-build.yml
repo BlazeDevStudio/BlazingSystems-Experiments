@@ -269,6 +269,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_android_trust_panel.sh
       - name: Verify rental browser QR lifecycle and pin requirements
         run: node experiment/openwrt/BlazePwifi/tests/v060_rental_qr_browser.cjs
+      - name: Verify offline rental QR templates clear failed generation output
+        run: node experiment/openwrt/BlazePwifi/tests/v060_rental_qr_templates.cjs
       - name: Standalone Rental BlazeFusion self-contained UI and original secure routes
         run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_fusion.sh
       - name: EasyMode R281 BlazeFusion opt-in staging and frozen-source verification

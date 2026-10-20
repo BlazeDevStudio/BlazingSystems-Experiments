@@ -24,6 +24,9 @@ body{font:15px system-ui;margin:0;background:#07111f;color:#eef6ff}.wrap{max-wid
 const APK_URL="__APK_URL__", APK_CHECKSUM="__APK_CHECKSUM__";
 function v(id){return document.getElementById(id).value.trim()}
 function generateQr(){
+  document.getElementById('qr').innerHTML='';
+  document.getElementById('json').textContent='';
+  document.getElementById('state').textContent='';
   const token=v('token'),server=v('server'),name=v('name')||'Rental phone',certPin=v('certPin').replace(/:/g,'').toLowerCase();
   if(!token||!server){document.getElementById('state').textContent='Server URL and enrollment token are required.';return}
   if(!/^https:\/\//i.test(server)){document.getElementById('state').textContent='Device Owner provisioning requires an HTTPS BlazePwifi server URL.';return}

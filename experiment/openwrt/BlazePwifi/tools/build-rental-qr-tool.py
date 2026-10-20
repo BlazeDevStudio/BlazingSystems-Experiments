@@ -17,6 +17,7 @@ a = p.parse_args()
 
 try:
     url = urlsplit(a.apk_url)
+    url.port  # Access validates numeric syntax and the allowed port range.
 except ValueError:
     p.error("--apk-url must be a valid HTTPS URL")
 if (
