@@ -225,6 +225,25 @@ def operate(con, command, args, fixture, key):
     if command == "prepare":
         # PREPARE: device epoch old_revision old_digest new_revision new_digest nonce
         _, _, old_rev, old_digest, new_rev, new_digest, nonce = args
+        # Consult a proven receipt before the current pending tuple. A newer
+        # PREPARE must not turn a lost PREPARE acknowledgement for an older,
+        # already durable revision into a hard base mismatch.
+        proven = con.execute(
+          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+          (device, epoch, int(new_rev))).fetchone()
+        if proven:
+            if (proven[0] != nonce or proven[1] != new_digest
+                    or proven[2] != old_digest or not proven[2]):
+                refuse("finalized replay base mismatch or missing provenance")
+            # Idempotent only when the floor still names this digest, or has
+            # already moved ahead. A floor behind the receipt, or the same
+            # revision with a different digest, is a split snapshot.
+            new_revision = int(new_rev)
+            if row[2] < new_revision or (row[2] == new_revision and row[3] != new_digest):
+                refuse("finalized receipt diverges from witness floor")
+            con.commit()
+            bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row, row[4] is not None)
+            return
         if row[4] is not None:
             # A retry is idempotent only when the caller still names the exact
             # committed base from which this pending operation was prepared.
@@ -235,15 +254,6 @@ def operate(con, command, args, fixture, key):
                 refuse("conflicting pending operation; reconcile before mutation")
             con.commit()
             bound_reply("PREPARED_NOT_COMMITTED", row, True)
-            return
-        old = con.execute(
-          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
-          (device, epoch, int(new_rev))).fetchone()
-        if old:
-            if old != (nonce, new_digest, old_digest):
-                refuse("finalized replay base mismatch or missing provenance")
-            con.commit()
-            bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
             return
         if row[2] != int(old_rev) or row[3] != old_digest:
             refuse("stale/rolled-back local base snapshot")
