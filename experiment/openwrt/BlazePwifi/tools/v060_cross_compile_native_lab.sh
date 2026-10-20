@@ -79,7 +79,9 @@ grep -Fq -- '-DBLAZE_V2_P256_CAPABILITY_LAB_ONLY' "$DEST/Makefile"
 grep -Fq '#if !defined(BLAZE_FIXTURE_ONLY) && !defined(BLAZE_RUNTIME_AUTHORITY)' "$DEST/src/v060_journal_authority_native.c"
 grep -Fq -- '-DBLAZE_FIXTURE_ONLY' "$DEST/Makefile"
 ! grep -R -Fq 'blazepwifi-v2-native-lab' "$ROOT/build/build-openwrt-image.sh"
-! grep -R -Fq 'blazepwifi-paid-authority' "$ROOT/build/build-openwrt-image.sh"
+grep -Fq 'PAID_PREVIEW=0' "$ROOT/build/build-openwrt-image.sh"
+grep -Fq 'BLAZE_V2_PAID_PREVIEW' "$ROOT/build/build-openwrt-image.sh"
+grep -Fq 'OUT="$ROOT/dist/v060-paid-installed-preview/$TARGET"' "$ROOT/build/build-openwrt-image.sh"
 grep -Fq -- '-DBLAZE_RUNTIME_AUTHORITY' "$PAID_DEST/Makefile"
 # OpenWrt's SDK prerequisite contract REQUIRES umask 022 for compiled
 # packages; restricted 077 is used only while staging private downloads above.
@@ -184,6 +186,7 @@ PAID_APK="$(find "$SDK/bin" -type f -name 'blazepwifi-paid-authority*.apk' -prin
   echo 'PAY-0743 BLOCKED: no installed authority OpenWrt package' >&2; exit 9;
 }
 OUT="$ROOT/dist/v060-native-sdk-lab/$TARGET"
+SOURCE_SHA="$(git -C "$ROOT" rev-parse HEAD)"
 mkdir -p "$OUT"
 cp "$ELF" "$OUT/v2-native-fixture-$TARGET"
 cp "$P256_ELF" "$OUT/p256-primitive-probe-$TARGET"
@@ -197,7 +200,7 @@ cp elf-header.txt "$OUT/ELF-HEADER.txt"
   printf 'version=%s\nsdk=%s\n' "$VERSION" "$SDK_FILE"
   printf 'sdk_sha256=%s\n' "$DIGEST"
   printf 'target=%s\nmachine=%s\n' "$TARGET" "$MACHINE"
-  printf 'commit=%s\n' "$GITHUB_SHA"
+  printf 'commit=%s\n' "$SOURCE_SHA"
   printf 'source=tools/v060_journal_authority_native.c\n'
   printf 'macro=BLAZE_FIXTURE_ONLY\n'
   printf 'production_released=0\ncustomer_install_authorized=0\n'
