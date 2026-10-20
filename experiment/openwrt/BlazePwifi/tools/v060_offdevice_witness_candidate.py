@@ -261,10 +261,12 @@ def operate(con, command, args, fixture, key):
     # The only useful outcome is a durable candidate floor, NEVER a paid ACK.
     nonce = args[4]
     if row[4] is None:
+        # Same provenance rule as PREPARE replay: a historical finalized row
+        # without its original base digest is not an authenticated lost reply.
         old = con.execute(
-          "SELECT nonce,digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
           (device, epoch, revision)).fetchone()
-        if old != (nonce, digest):
+        if old is None or old[0] != nonce or old[1] != digest or not old[2]:
             refuse("not prepared or disputed replay")
         con.commit()
         bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)

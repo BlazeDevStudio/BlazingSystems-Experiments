@@ -160,6 +160,7 @@ with sqlite3.connect(sys.argv[1]) as db:
 PY
 run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
 deny legacy-finalized-no-base-proof run prepare device01 1 1 "$A" 2 "$B" "$N1"
+deny legacy-finalized-no-base-finalize run finalize device01 1 2 "$B" "$N1"
 # Deny privileged input and symlink redirection, rather than following it.
 chmod 644 "$LAB/secret.hex"
 deny publicly-readable-secret run status device01 "$N3"
