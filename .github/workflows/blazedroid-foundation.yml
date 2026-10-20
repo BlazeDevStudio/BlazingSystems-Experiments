@@ -1,0 +1,53 @@
+name: BlazeDroid 16 foundation
+
+on:
+  pull_request:
+    paths:
+      - "experiments/blazedroid/**"
+      - ".github/workflows/blazedroid-foundation.yml"
+  push:
+    branches:
+      - blazedroid-16-foundation-20261021
+    paths:
+      - "experiments/blazedroid/**"
+      - ".github/workflows/blazedroid-foundation.yml"
+  workflow_dispatch:
+    inputs:
+      full_build:
+        description: "Run experimental Android 16 build on a dedicated blazedroid-aosp runner"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Android 16 source constraints and unit tests
+        run: |
+          python3 experiments/blazedroid/scripts/check_build.py --lock experiments/blazedroid/foundation.lock.json
+          python3 -m unittest discover -s experiments/blazedroid/tests -v
+          bash -n experiments/blazedroid/scripts/build-iso.sh experiments/blazedroid/scripts/verify-iso.sh
+          if bash experiments/blazedroid/scripts/verify-iso.sh /does-not-exist.iso; then
+            echo "ISO verification failed open!" >&2; exit 1
+          fi
+
+  experimental-iso:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_build == true
+    needs: foundation-tests
+    runs-on: [self-hosted, linux, x64, blazedroid-aosp]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build full experimental Android 16 ISO
+        run: bash experiments/blazedroid/scripts/build-iso.sh "$RUNNER_TEMP/blazedroid-src" "$RUNNER_TEMP/blazedroid-artifacts"
+      - name: Upload experimental ISO and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazeDroid-16-EXPERIMENTAL
+          path: ${{ runner.temp }}/blazedroid-artifacts/
+          if-no-files-found: error
+          retention-days: 7

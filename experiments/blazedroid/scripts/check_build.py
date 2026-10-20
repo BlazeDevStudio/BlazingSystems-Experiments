@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""Fail closed if an Android build is not API 36 / Android 16."""
+import argparse
+import json
+from pathlib import Path
+
+
+def parse_props(path):
+    return dict(line.split("=", 1) for line in path.read_text().splitlines()
+                if "=" in line and not line.lstrip().startswith("#"))
+
+
+def validate_props(path):
+    props = parse_props(path)
+    if props.get("ro.build.version.release") != "16":
+        raise ValueError("Android release must be exactly 16")
+    if props.get("ro.build.version.sdk") != "36":
+        raise ValueError("Android API level must be exactly 36")
+
+
+def validate_lock(path):
+    lock = json.loads(path.read_text())
+    if (lock.get("android_major"), lock.get("android_api")) != (16, 36):
+        raise ValueError("foundation lock is not Android 16/API 36")
+    if lock.get("android_base_tag") != "android-16.0.0_r4":
+        raise ValueError("unexpected AOSP base")
+    if lock.get("device_product") != "lineage_x86_64_tablet":
+        raise ValueError("unexpected Android target")
+    if lock.get("gapps") != "not-included":
+        raise ValueError("GApps are not licensed for distribution")
+    if len(lock.get("manifest_commit", "")) != 40 or len(lock.get("installer_commit", "")) != 40:
+        raise ValueError("missing full pinned upstream commits")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lock", type=Path)
+    parser.add_argument("--build-prop", type=Path)
+    args = parser.parse_args()
+    if not (args.lock or args.build_prop):
+        parser.error("provide --lock and/or --build-prop")
+    if args.lock:
+        validate_lock(args.lock)
+    if args.build_prop:
+        validate_props(args.build_prop)
+
+
+if __name__ == "__main__":
+    main()
