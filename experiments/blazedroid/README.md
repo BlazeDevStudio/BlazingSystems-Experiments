@@ -1,42 +1,58 @@
-# BlazeDroid 16 — Android 16 x86-64 foundation
+# BlazeDroid 16 — Android 16 x86-64 PREVIEW
 
-**State: EXPERIMENTAL / NOT INSTALLABLE YET. No BlazeDroid ISO has been built, booted, or released.**
+**Release policy: PREVIEW / UNTESTED ON HARDWARE.** Early images can be published without VM or physical-PC testing, at the owner's explicit request. **No successful ISO compile has yet been recorded in this repository.** Do not confuse source-validation CI with a bootable operating system.
 
-BlazeDroid is separate from the other Blaze Systems products. This source tree is a controlled Android 16 build entrypoint, **not** an operating-system release.
+BlazeDroid is an independent Android desktop OS project, isolated from all coin-operated Blaze Systems projects. Only a genuine Android 16 image built from this source can be called a BlazeDroid 16 preview.
 
-## Verified source selection (2026-10-21)
+## Upstream Android 16 foundation
 
-- [Lineout Core / los-tv-x86 Android 16 manifest](https://github.com/los-tv-x86/lineage_bass_android/tree/lineage-23.2): `default.xml` uses AOSP `android-16.0.0_r4`; manifest commit locked in [foundation.lock.json](foundation.lock.json).
-- [x86-64 tablet product](https://github.com/los-tv-x86/android_device_generic_x86_64_tablet/blob/lineage-23.2/AndroidProducts.mk): lunch target `lineage_x86_64_tablet-userdebug`, **not Android TV**, by default (`USE_TV_BUILD=false`).
-- [Āropa installer](https://github.com/Bliss-Bass/bootable_aaropa/commit/8c6a69fd8d7728ceeddefd42470a488d9785339f): integrated by upstream as `bootable/aaropa`. Calamares and all installer functionality require boot/installation testing; **Windows dual boot is not certified**.
-- BlissOS `typhoon-x86` is **Android 13** (its `default.xml` pins `android-13.0.0_r77`) and is deliberately not used.
+- [los-tv-x86 LineageOS 23.2 manifest](https://github.com/los-tv-x86/lineage_bass_android/tree/lineage-23.2) references AOSP `android-16.0.0_r4`; commit pinned in [foundation.lock.json](foundation.lock.json).
+- [x86-64 tablet device product](https://github.com/los-tv-x86/android_device_generic_x86_64_tablet/blob/lineage-23.2/AndroidProducts.mk): `lineage_x86_64_tablet-userdebug` (not Android TV when `USE_TV_BUILD=false`).
+- [Bliss-Bass Āropa installer commit](https://github.com/Bliss-Bass/bootable_aaropa/commit/8c6a69fd8d7728ceeddefd42470a488d9785339f): upstream installer base including Calamares. Installer launch has not been verified.
+- BlissOS `typhoon-x86` manifest is Android 13, so it is **not** used.
 
-Upstream's manifest includes both floating branch dependencies and possible third-party firmware/prebuilts. A checked-out manifest commit alone **is not a bit-for-bit reproducible source lock**. The build exports a resolved `repo manifest -r` snapshot for provenance.
+This manifest still includes some floating upstream dependency branches. Every successful build exports `resolved-manifest.xml` with concrete resolved revisions.
 
-## Build (dedicated Linux build host only)
+## Build and preview publication
 
-Do **not** run the full build on standard GitHub-hosted runners. Supply a dedicated Linux x86-64 build machine with ample CPU, RAM and disk (plan at least 32 GiB RAM and 300+ GiB free; these are **build-host planning allowances**, not tested end-user requirements), and install the Android/Lineage dependencies, Android `repo`, `git-lfs`, Python 3, `xorriso`, and `sha256sum`.
+A full AOSP compilation needs a **dedicated Linux x86-64 build host**, with preinstalled Android/Lineage build prerequisites, Android `repo`, `git-lfs`, Python3 and `xorriso`. Plan for at least 32 GiB RAM and 300+ GiB of free SSD storage as an unverified build-host allowance. Standard GitHub-hosted runners are not adequate. Register a trusted self-hosted GitHub Actions runner labeled **`blazedroid-aosp`**.
+
+1. The `BlazeDroid 16 preview build` workflow must exist on the repository's **default branch** for the GitHub **Run workflow** UI to work.
+2. Select **Actions → BlazeDroid 16 preview build → Run workflow → main**, and set `full_build=true`.
+3. Choose `publish_preview=true` only when you want a public preview. Before setting `redistribution_approved=true`, verify that all bundled upstream firmware, binaries, and codecs may lawfully be redistributed. Otherwise an Actions artifact is uploaded **without** a public release.
+4. The build checks its pinned source/installer commits, compiles upstream `iso_img`, checks Android 16/API 36 from output `build.prop`, verifies an ISO optical structure plus EFI catalog, creates SHA256 checksums, and publishes PREVIEW artifacts.
+5. When a release is authorized and the build succeeds, GitHub Releases creates a **prerelease** tagged `blazedroid-v16.0.0-preview.<run_number>`. There is **no VM or physical acceptance test requirement**.
+
+Build locally on a trusted machine:
 
 ```bash
 python3 -m unittest discover -s experiments/blazedroid/tests -v
 bash experiments/blazedroid/scripts/build-iso.sh "$HOME/blazedroid-source" "$HOME/blazedroid-output"
+python3 experiments/blazedroid/scripts/prepare_preview.py \
+  --iso "$HOME/blazedroid-output/BlazeDroid-16.0.0-x86_64-PREVIEW.iso" \
+  --manifest "$HOME/blazedroid-output/resolved-manifest.xml" \
+  --output "$HOME/blazedroid-preview-assets"
 ```
 
-The build command refuses nonempty source directories that lack a `.repo` checkout, verifies the manifest and pinned installer commit, uses the upstream `iso_img` target, and refuses builds whose `build.prop` lacks Android 16 / API 36. It copies an ISO **only if** upstream produced exactly one image, and checks its optical filesystem and EFI boot catalog before writing a SHA-256 checksum. Artifacts are labeled **experimental** pending acceptance.
+**No real ISO exists just because these scripts have passed syntax or unit tests.** Check the *full-build* job logs and actual artifact files.
 
-To run manually in GitHub Actions use the `BlazeDroid 16 foundation` workflow with `full_build=true` **only after** registering a capable runner labeled `blazedroid-aosp`. This workflow does not create GitHub releases and does not certify a bootable product.
+### ISO download format
 
-## Release blockers (fail closed)
+For ISOs that fit GitHub Releases' **under-2 GiB per asset** limit, download `BlazeDroid-16.0.0-x86_64-PREVIEW.iso` directly. Larger ISOs are losslessly split into `.part001`, `.part002`, etc., and include a `REASSEMBLE_WINDOWS.cmd` script (Windows) plus `SHA256SUMS`. On Linux, reconstruct with `cat BlazeDroid-16.0.0-x86_64-PREVIEW.iso.part* > BlazeDroid-16.0.0-x86_64-PREVIEW.iso`. Verify the ISO's full SHA-256 before making a bootable USB.
 
-1. Full repo sync + Android 16 compile on a capable builder, with logged manifest and provenance.
-2. EFI and BIOS QEMU boot, live boot, launcher and resizable-window checks, Android version verification inside the guest.
-3. Āropa graphical installer launch, clean installation, reboot, persistence and error handling.
-4. Dual-boot validation with **disposable Windows images**; test UEFI/ESP, BitLocker, hibernation, rollback and boot entry preservation. Never resize users' real Windows disks during development.
-5. Physical x86-64 PC checks, Rufus/YUMI checks, network/audio/graphics compatibility and hardware requirements.
-6. Google Play requires distribution permission/certification. AOSP-only is the only configured edition; no GApps or Play Integrity bypasses.
+## OWNER-TEST PREVIEW: safety and limitations
 
-Until these pass, do **not** rename a generated experimental ISO to `BlazeDroid-16.0.0-x86_64.iso` or publish a production release.
+**This is untested software. Never perform your first test on a disk containing irreplaceable data or a Windows installation you must preserve.**
 
-## Legal and attribution
+- First try live USB on a spare computer, using a disposable or backed-up disk if installing.
+- Windows dual boot, BitLocker, UEFI ESP preservation, recovery, bootloader behavior, BIOS support, Rufus/YUMI, and safe installation are all **unverified**.
+- Taskbar, resizable windows, graphics, network, audio, RAM requirements and application compatibility are unverified.
+- The actual Android 16 version still must be checked on a booted image; source version and `build.prop` alone are not runtime evidence.
+- Google Play/GApps are **not included** and no Play certification is claimed. Google proprietary components cannot be redistributed without proper authorization.
+- File test evidence or bugs at [BlazeDroid acceptance issue #125](https://github.com/BlazingSystems/BlazingSystems-Experiments/issues/125).
 
-AOSP, LineageOS, Android-Generic, Āropa/Calamares, Devuan, Linux and respective third-party code retain their upstream copyrights and licenses. Review all resolved dependency licenses and redistribution rights (especially firmware/codecs) **before** distributing an image. No Google proprietary packages are downloaded or included by this repository. The upstream BlissOS licensing guide explicitly distinguishes public personal-use GApps images from authorized commercial distribution.
+Virtual testing is deferred, **not falsely reported as passed**. Production status requires separately verified installation and compatibility.
+
+## Attribution and legal
+
+Android Open Source Project, LineageOS, Android-Generic, Bliss-Bass Āropa, Calamares, Linux and their contributors retain their upstream copyrights and licenses. Inspect the resolved source manifest and third-party license obligations before publishing an ISO. No proprietary Google packages are automatically downloaded or bundled by BlazeDroid.
