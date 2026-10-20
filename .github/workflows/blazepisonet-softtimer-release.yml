@@ -62,6 +62,12 @@ jobs:
           dotnet --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Verify local build stops after each failed dotnet command
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:PROJECT_DIR/tests/BuildLocalExitCode/selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: PAY-0717 signed request and domain-separated response MAC contract (lab only)
         shell: pwsh
         run: |
