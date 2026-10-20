@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify Android 16 source constraints and unit tests
         run: |
-          python3 experiments/blazedroid/scripts/check_build.py --lock experiments/blazedroid/foundation.lock.json
+          python3 experiments/blazedroid/scripts/check_build.py --lock experiments/blazedroid/foundation.lock.json --verify-upstream
           python3 -m unittest discover -s experiments/blazedroid/tests -v
           bash -n experiments/blazedroid/scripts/build-iso.sh experiments/blazedroid/scripts/verify-iso.sh
           if bash experiments/blazedroid/scripts/verify-iso.sh /does-not-exist.iso; then
