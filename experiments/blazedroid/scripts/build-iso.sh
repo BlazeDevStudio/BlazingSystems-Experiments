@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build experimental LineageOS 23.2 / Android 16 x86-64 ISO. NEVER publish as production.
+# Build Android 16 x86-64 PREVIEW ISO; never publish as production.
 set -euo pipefail
 [[ $# -eq 2 ]] || { echo "Usage: $0 <source-dir> <artifact-dir>" >&2; exit 2; }
 SRC="$(realpath -m -- "$1")"
@@ -37,7 +37,7 @@ for prop in "${props[@]}"; do
 done
 [[ "$valid" -ge 1 ]] || { echo "No output build.prop proves Android 16/API 36" >&2; exit 1; }
 bash "$HERE/scripts/verify-iso.sh" "${images[0]}"
-cp -- "${images[0]}" "$DEST/BlazeDroid-16.0.0-x86_64-EXPERIMENTAL.iso"
+cp -- "${images[0]}" "$DEST/BlazeDroid-16.0.0-x86_64-PREVIEW.iso"
 cd "$DEST"
-sha256sum BlazeDroid-16.0.0-x86_64-EXPERIMENTAL.iso > SHA256SUMS
-echo "EXPERIMENTAL ISO assembled. VM, install and physical tests are NOT complete."
+sha256sum BlazeDroid-16.0.0-x86_64-PREVIEW.iso > SHA256SUMS
+echo "PREVIEW ISO built and structurally checked. VM, installation and hardware tests have NOT been done."
