@@ -127,9 +127,70 @@ run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "
 deny pending-wrong-old-revision run prepare device01 1 1 "$A" 2 "$B" 3 "$C" "$N2"
 deny pending-wrong-old-digest run prepare device01 1 2 "$A" 3 "$B" 3 "$C" "$N2"
 run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 2 "$B" 3 "$C" "$N2"
+# A lost PREPARE acknowledgement for an already durable revision must stay
+# idempotent after a newer PREPARE is pending. Rejecting it as a pending
+# base mismatch strands the original caller. The newer pending operation
+# stays visible and is not cleared. This is not a paid acknowledgement.
+rc=0
+run prepare device01 1 1 "$A" 2 "$B" "$N1" >"$LAB/prepare-replay-during-pending.json" 2>"$LAB/err" || rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "WITNESS-0738 FAIL: prepare-replay-during-newer-pending rejected (rc=$rc): $(cat "$LAB/err")" >&2
+  exit 1
+fi
+assert_json ALREADY_FINALIZED_NO_PAID_ACK prepare device01 1 1 "$A" 2 "$B" "$N1" <"$LAB/prepare-replay-during-pending.json"
+python3 - "$LAB/prepare-replay-during-pending.json" "$B" <<'PY'
+import json,sys
+j=json.load(open(sys.argv[1],encoding="utf8"))
+assert j["state"]=="ALREADY_FINALIZED_NO_PAID_ACK", j
+assert j["pending_reconciliation"] is True, j
+assert j["pending_revision"]==3, j
+assert j["witness_revision"]==2, j
+assert j["witness_digest"]==sys.argv[2], j
+assert j["paid_ack_authorized"] is False, j
+assert j["independent_monotonic_witness_verified"] is False, j
+PY
+deny prepare-finalized-wrong-nonce-while-pending run prepare device01 1 1 "$A" 2 "$B" "$N3"
+deny prepare-finalized-wrong-base-while-pending run prepare device01 1 1 "$C" 2 "$B" "$N1"
+run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
+run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 2 "$B" 3 "$C" "$N2"
+
 crash after_finalize_commit finalize device01 1 3 "$C" "$N2"
 run finalize device01 1 3 "$C" "$N2" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 3 "$C" "$N2"
 run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
+# A finalized PREPARE receipt is not an authenticated lost reply when the
+# floor has been rolled behind that receipt, or still names the same
+# revision with a different digest. Those are split snapshots.
+python3 - "$LAB/witness.sqlite3" "$A" <<'PY'
+import sqlite3,sys
+con=sqlite3.connect(sys.argv[1])
+con.execute("PRAGMA journal_mode=WAL")
+con.execute("UPDATE floors SET revision=1, digest=? WHERE device='device01'", (sys.argv[2],))
+con.commit()
+con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+con.close()
+PY
+deny prepare-floor-behind-proven-receipt run prepare device01 1 1 "$A" 2 "$B" "$N1"
+python3 - "$LAB/witness.sqlite3" "$C" "$A" <<'PY'
+import sqlite3,sys
+con=sqlite3.connect(sys.argv[1])
+con.execute("PRAGMA journal_mode=WAL")
+con.execute(
+  "UPDATE floors SET revision=3, digest=?, pending_revision=NULL, pending_digest=NULL, pending_nonce=NULL WHERE device='device01'",
+  (sys.argv[2],))
+con.execute("UPDATE floors SET digest=? WHERE device='device01'", (sys.argv[3],))
+con.commit()
+con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+con.close()
+PY
+deny prepare-floor-same-revision-digest-disagrees run prepare device01 1 2 "$B" 3 "$C" "$N2"
+python3 - "$LAB/witness.sqlite3" "$C" <<'PY'
+import sqlite3,sys
+con=sqlite3.connect(sys.argv[1])
+con.execute("UPDATE floors SET digest=? WHERE device='device01'", (sys.argv[2],))
+con.commit()
+con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+con.close()
+PY
 deny old-revision run prepare device01 1 2 "$B" 3 "$A" "$N3"
 deny other-epoch run prepare device01 2 3 "$C" 4 "$A" "$N3"
 deny bad-auth python3 "$SRC" "$LAB" status device01 "$N3" "$A"
