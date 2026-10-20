@@ -112,6 +112,10 @@ run finalize device01 1 2 "$B" "$N1" | assert_json FINALIZED_CANDIDATE_NO_PAID_A
 run finalize device01 1 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 2 "$B" "$N1"
 # A post-commit lost reply is NOT permission for an arbitrary second advance.
 run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK prepare device01 1 1 "$A" 2 "$B" "$N1"
+# A finalized duplicate must prove its ORIGINAL base digest, not only
+# the matching new digest and nonce. Without the base proof, do not classify
+# the request as a legitimate lost-reply replay.
+deny finalized-wrong-old-digest run prepare device01 1 1 "$C" 2 "$B" "$N1"
 deny rollback-with-wrong-digest run prepare device01 1 1 "$A" 2 "$C" "$N2"
 cp "$LAB/witness.sqlite3" "$LAB/saved-old-sqlite"
 crash before_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
@@ -135,6 +139,27 @@ deny bad-auth python3 "$SRC" "$LAB" status device01 "$N3" "$A"
 cp "$LAB/saved-old-sqlite" "$LAB/witness.sqlite3"
 chmod 600 "$LAB/witness.sqlite3"
 run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
+# Simulate an existing candidate DB written by the older schema. It lacks
+# old/base digest provenance; migration must not invent it or approve a
+# finalized PREPARE replay even if nonce and new digest still match.
+python3 - "$LAB/witness.sqlite3" <<'PY'
+import sqlite3,sys
+with sqlite3.connect(sys.argv[1]) as db:
+    db.executescript("""
+    BEGIN;
+    ALTER TABLE finalized RENAME TO former_finalized;
+    CREATE TABLE finalized (
+      device TEXT NOT NULL, epoch INTEGER NOT NULL, revision INTEGER NOT NULL,
+      digest TEXT NOT NULL, nonce TEXT NOT NULL,
+      PRIMARY KEY(device, epoch, revision));
+    INSERT INTO finalized(device, epoch, revision, digest, nonce)
+      SELECT device, epoch, revision, digest, nonce FROM former_finalized;
+    DROP TABLE former_finalized;
+    COMMIT;
+    """)
+PY
+run status device01 "$N3" | assert_json OBSERVED_CANDIDATE_ONLY status device01 "$N3"
+deny legacy-finalized-no-base-proof run prepare device01 1 1 "$A" 2 "$B" "$N1"
 # Deny privileged input and symlink redirection, rather than following it.
 chmod 644 "$LAB/secret.hex"
 deny publicly-readable-secret run status device01 "$N3"

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS finalized (
   epoch INTEGER NOT NULL,
   revision INTEGER NOT NULL,
   digest TEXT NOT NULL,
+  base_digest TEXT,
   nonce TEXT NOT NULL,
   PRIMARY KEY(device, epoch, revision)
 );
@@ -144,6 +145,10 @@ def open_store(root, initialize):
     con.execute("PRAGMA foreign_keys=ON")
     owned_regular(path)
     con.executescript(SCHEMA)
+    # Old candidate receipts lack a proven base. Migrate their schema but
+    # leave base_digest NULL so they fail closed on PREPARE replay.
+    if "base_digest" not in {col[1] for col in con.execute("PRAGMA table_info(finalized)")}:
+        con.execute("ALTER TABLE finalized ADD COLUMN base_digest TEXT")
     return con
 
 def reply(state, floor, pending=False, *, challenge=None, key=None,
@@ -232,10 +237,11 @@ def operate(con, command, args, fixture, key):
             bound_reply("PREPARED_NOT_COMMITTED", row, True)
             return
         old = con.execute(
-          "SELECT nonce,digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
           (device, epoch, int(new_rev))).fetchone()
         if old:
-            if old != (nonce, new_digest): refuse("finalized revision collision")
+            if old != (nonce, new_digest, old_digest):
+                refuse("finalized replay base mismatch or missing provenance")
             con.commit()
             bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
             return
@@ -271,8 +277,8 @@ def operate(con, command, args, fixture, key):
       " pending_digest=NULL,pending_nonce=NULL WHERE device=?",
       (revision, digest, device))
     con.execute(
-      "INSERT INTO finalized(device,epoch,revision,digest,nonce) VALUES(?,?,?,?,?)",
-      (device, epoch, revision, digest, nonce))
+      "INSERT INTO finalized(device,epoch,revision,digest,base_digest,nonce) VALUES(?,?,?,?,?,?)",
+      (device, epoch, revision, digest, row[3], nonce))
     row = (device, epoch, revision, digest, None, None, None)
     fault("before_finalize_commit", fixture)
     con.commit()
