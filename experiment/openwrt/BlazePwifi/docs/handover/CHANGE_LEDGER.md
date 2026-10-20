@@ -1,3 +1,9 @@
+## 2026-10-20 — PHX-0003 PAY-0774 actual RED followed by isolated source correction
+
+- Live test-first [PR #117](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/117) test SHA `d4d3bedba9efd351ed4ba8a00ae455b6a45d11f6`, real SDK source-check [#39345801336](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39345801336), job 118377964740, **FAILED** the precise assertion `FAIL: unknown_member_audit_kind admitted`, before any tested runtime correction. This is independently reproducible under CI in a disposable fixture.
+- New source change is the **exact existing PR #108 isolated fixed blob** `cdcff8a0918dc623327b498fe655e71b322aa6dc` in `v2_migration_stage.sh`, with test blob `8295cad404d94450b2ade0d59ea25d6aa0c02c9c`. The installed stage refuses unknown types and any nonfinancial source that attempts to convey unauthorized paid deltas. Healthy nonfinancial patch receipt remains permitted. Exact green CI is required and not yet claimed.
+- Payment commit, replay ACK, protected signer, independent witness, reversible cutover and hardware P0 still unavailable; this never migrates or edits live financial authority.
+
 ## 2026-10-20 — PHX-0003 test-first stale/forged member receipt migration rejection
 
 - Isolated integration branch `fix/phoenix-v2-stage-audit-allowlist` from `1637cc3a743f3f7e0a39dae1d2a2a24c9f41eb7f`: first imports only the exact existing PR #108 regression test blob; runtime remains unchanged, intentional missing-validation RED requires independent check of actual failing step, not just CI status. Historical PR #108 is based on now-closed PR #89, so this bounded integration preserves current branch and handovers. No v2 migration, witness/signing, paid ACK or release activation.
