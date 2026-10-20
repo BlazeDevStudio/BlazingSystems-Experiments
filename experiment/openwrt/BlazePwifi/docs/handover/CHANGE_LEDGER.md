@@ -1,3 +1,13 @@
+## 2026-10-21 — WITNESS-20261021C idempotent FINALIZE retry during a newer PREPARE
+
+- ID WITNESS-20261021C. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED then local GREEN; GitHub Actions on the source SHA not yet complete. Asia/Manila 2026-10-21.
+- Why: `operate()` in `tools/v060_offdevice_witness_candidate.py` classified FINALIZE from the current pending tuple first. A durable older revision therefore lost its idempotent FINALIZE retry once a newer PREPARE existed (`mismatched pending finalize`). With no pending row, a floor rolled behind a proven receipt was still classified `ALREADY_FINALIZED_NO_PAID_ACK`.
+- Evidence before the patch, local disposable fixture, no customer data: `sh tests/v060_offdevice_witness_candidate.sh` exited 1 with `WITNESS-0738 FAIL: finalized-replay-during-newer-pending rejected (rc=9): WITNESS-0738 BLOCKED: mismatched pending finalize (NO PAID ACK)`. Separate probe: after revisions 2 and 3 were finalized, setting `floors.revision` from 3 to 1 still returned `ALREADY_FINALIZED_NO_PAID_ACK` for revision 2.
+- Repair: proven receipt is consulted first. Retry requires matching nonce, digest and non-empty `base_digest`, and a floor that is still on that digest or already ahead. Pending state is reported and preserved. Split snapshots are refused.
+- Files: `tools/v060_offdevice_witness_candidate.py`, `tests/v060_offdevice_witness_candidate.sh`. Branch `fix/witness-20261021-finalize-during-pending` from `51a4c0cf15446ace04c86cef844a1ce82e09a868`. Source `cda707b31b1c5d185cd8c5c9cd995c3e6209fa9f`. Draft [PR #127](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/127).
+- After the patch the witness script, `tests/v060_offdevice_witness_reply_auth.py` and `tests/v060_witness_two_stage_recovery.py` exited 0 locally. [BlazePwifi build 39497736349](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39497736349) was in progress, not a recorded pass. This does not prove independent monotonic hardware, protected P-256 custody, migration, or physical acceptance. `paid_ack_authorized` stays false. VERSION stays 0.5.3.
+- NEXT ACTION: wait for run 39497736349 on `cda707b31b1c5d185cd8c5c9cd995c3e6209fa9f`. Merge only that source if the run succeeds with no failed jobs. Do not treat a green software run as production authorization.
+
 ## 2026-10-21 — WITNESS-20261021B deny provenance-free FINALIZE replay
 
 - ID WITNESS-20261021B. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED, local GREEN, exact-head Full CI SUCCESS on source SHA; development merge not yet done. Asia/Manila 2026-10-21.
