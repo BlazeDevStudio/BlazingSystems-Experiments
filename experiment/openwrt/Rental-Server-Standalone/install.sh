@@ -106,9 +106,9 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo '9037ae0892ec2075821062037b37fefda3129ef1179019a85c37373ff7a21606  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo '8e7f2780a596a41869cacfdf31d9a7c80215c76f667a37a2a71dffe5a1cfbf27  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
-echo 'f3ce505fd15a42350b00ae9b1dec775bbf3f2bb8c4d07e89c422852100a7cb19  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
+echo '5e338fa1bc20bb8ec287d1e25e9bac65ee6d23ea45eebc79a7a6410d9e4e227a  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo 'c95ceee486634e61d972bff6f60ab32851d48df652a90440ff5c3a53044fe3a3  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo 'bda1c85d03ff50bdbc8313388468ec97ed76d03ac0f82d7197577a261f23c580  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
