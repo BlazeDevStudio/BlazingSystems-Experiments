@@ -112,6 +112,10 @@ run finalize device01 1 2 "$B" "$N1" | assert_json FINALIZED_CANDIDATE_NO_PAID_A
 run finalize device01 1 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 2 "$B" "$N1"
 # A post-commit lost reply is NOT permission for an arbitrary second advance.
 run prepare device01 1 1 "$A" 2 "$B" "$N1" | assert_json ALREADY_FINALIZED_NO_PAID_ACK prepare device01 1 1 "$A" 2 "$B" "$N1"
+# A finalized duplicate must prove its ORIGINAL base digest, not only
+# the matching new digest and nonce. Without the base proof, do not classify
+# the request as a legitimate lost-reply replay.
+deny finalized-wrong-old-digest run prepare device01 1 1 "$C" 2 "$B" "$N1"
 deny rollback-with-wrong-digest run prepare device01 1 1 "$A" 2 "$C" "$N2"
 cp "$LAB/witness.sqlite3" "$LAB/saved-old-sqlite"
 crash before_prepare_commit prepare device01 1 2 "$B" 3 "$C" "$N2"
