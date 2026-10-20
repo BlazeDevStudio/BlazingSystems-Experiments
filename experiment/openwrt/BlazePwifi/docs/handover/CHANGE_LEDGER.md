@@ -1,3 +1,7 @@
+## 2026-10-20 — PHX-0003 test-first stale/forged member receipt migration rejection
+
+- Isolated integration branch `fix/phoenix-v2-stage-audit-allowlist` from `1637cc3a743f3f7e0a39dae1d2a2a24c9f41eb7f`: first imports only the exact existing PR #108 regression test blob; runtime remains unchanged, intentional missing-validation RED requires independent check of actual failing step, not just CI status. Historical PR #108 is based on now-closed PR #89, so this bounded integration preserves current branch and handovers. No v2 migration, witness/signing, paid ACK or release activation.
+
 ## 2026-10-20 — PHX-0002 superseded financial PR retirement
 
 - Historical PR #89 deliberately **closed unmerged** after source-preserving replacement PR #116 merged. Exact classification: 27/33 original changed blobs identical on development; six intentional differences are three canonical handovers, full CI workflow and docs classifier (preserve newer build optimization), and a strengthened ESP sequence regression. No financial runtime implementation abandoned. [Retirement rationale](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/89#issuecomment-6279529821).
