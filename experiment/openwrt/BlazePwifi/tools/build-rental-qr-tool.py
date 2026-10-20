@@ -40,8 +40,8 @@ for marker in ("__QRCODE_JS__", "__APK_URL__", "__APK_CHECKSUM__"):
 
 # Resolve artwork in the template before inserting QR source or URL data.
 if "__BLAZE_SYSTEMS_LOGO__" in html:
-    logo = pathlib.Path(__file__).with_name("BlazeSystems-Logo-V2.jpg").read_bytes()
-    html = html.replace("__BLAZE_SYSTEMS_LOGO__", "data:image/jpeg;base64," + base64.b64encode(logo).decode("ascii"))
+    logo = pathlib.Path(__file__).with_name("BlazeSystems-Logo-V2.png").read_bytes()
+    html = html.replace("__BLAZE_SYSTEMS_LOGO__", "data:image/png;base64," + base64.b64encode(logo).decode("ascii"))
 
 # The template places __APK_URL__ inside a JS double-quoted string.
 # Escape JSON string syntax AND HTML-significant characters so user-supplied

@@ -11,7 +11,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTWORK_SHA256 = "56fb15d1ed4faa44af7dafc3defa5e3eb04252966df853bd96f587a7a3d9132d"
+ARTWORK_SHA256 = "c4e61f370a1a9541722f4fcee522cec8d20c3c9e2917fc1a32286f4870193690"
 BUILDERS = (
     ("build-binding-qr-tool.py", "BlazeRental-Binding-QR.template.html"),
     ("build-rental-qr-tool.py", "BlazeRental-QR-Setup.template.html"),
@@ -57,7 +57,7 @@ class RentalQrBrandingChecks(unittest.TestCase):
             return output.read_text(encoding="utf-8")
 
     def test_both_pages_embed_the_exact_original_artwork(self):
-        artwork = (ROOT / "tools/BlazeSystems-Logo-V2.jpg").read_bytes()
+        artwork = (ROOT / "tools/BlazeSystems-Logo-V2.png").read_bytes()
         self.assertEqual(hashlib.sha256(artwork).hexdigest(), ARTWORK_SHA256)
         for builder, template in BUILDERS:
             with self.subTest(builder=builder):
@@ -66,13 +66,13 @@ class RentalQrBrandingChecks(unittest.TestCase):
                 page.feed(html)
                 self.assertEqual(len(page.viewports), 1, "page must show the existing horizontal logo panel")
                 viewport = page.viewports[0]
-                self.assertEqual(viewport.get("viewbox"), "16 644 246 114")
+                self.assertEqual(viewport.get("viewbox"), "16 26 246 114")
                 self.assertEqual(viewport.get("role"), "img")
                 self.assertEqual(viewport.get("aria-label"), "Blaze Systems")
                 self.assertEqual(len(page.images), 1, "logo viewport must contain the supplied artwork")
                 image = page.images[0]
-                self.assertEqual((image.get("width"), image.get("height")), ("1536", "1024"))
-                self.assertTrue(image["href"].startswith("data:image/jpeg;base64,"))
+                self.assertEqual((image.get("width"), image.get("height")), ("278", "175"))
+                self.assertTrue(image["href"].startswith("data:image/png;base64,"))
                 embedded = base64.b64decode(image["href"].split(",", 1)[1], validate=True)
                 self.assertEqual(embedded, artwork, "embedded artwork was altered")
                 self.assertNotIn("__BLAZE_SYSTEMS_LOGO__", html)
