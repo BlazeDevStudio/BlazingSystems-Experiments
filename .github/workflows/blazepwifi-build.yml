@@ -298,6 +298,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v054_member_migration.sh
       - name: BlazePwifi v0.4 build matrix validation
         run: sh experiment/openwrt/BlazePwifi/tests/v04_build_matrix.sh
+      - name: FWIMG-20261020 OpenWrt compressed-image and fwtool trailer regression
+        run: python3 experiment/openwrt/BlazePwifi/tests/test_firmware_gzip.py
       - name: Portal validation
         run: sh experiment/openwrt/BlazePwifi/tests/portal.sh
       - name: Admin UI validation
