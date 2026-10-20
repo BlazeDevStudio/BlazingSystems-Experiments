@@ -3,6 +3,8 @@
 import argparse
 import json
 from pathlib import Path
+from urllib.request import urlopen
+from xml.etree import ElementTree as ET
 
 
 def parse_props(path):
@@ -32,15 +34,40 @@ def validate_lock(path):
         raise ValueError("missing full pinned upstream commits")
 
 
+
+def verify_upstream_xml(default_xml, x86_xml, lock):
+    default = ET.fromstring(default_xml)
+    aosp = default.find("./remote[@name='aosp']")
+    if aosp is None or aosp.get("revision") != "refs/tags/" + lock["android_base_tag"]:
+        raise ValueError("upstream manifest is not pinned to Android 16")
+    x86 = ET.fromstring(x86_xml)
+    installer = x86.find("./project[@path='bootable/aaropa']")
+    if installer is None or installer.get("revision") != lock["installer_commit"]:
+        raise ValueError("upstream Āropa installer commit differs from foundation lock")
+
+
+def verify_upstream(lock):
+    url = ("https://raw.githubusercontent.com/los-tv-x86/lineage_bass_android/"
+           + lock["manifest_commit"] + "/")
+    with urlopen(url + "default.xml", timeout=25) as response:
+        default_xml = response.read()
+    with urlopen(url + "android-x86/04-custom.xml", timeout=25) as response:
+        installer_xml = response.read()
+    verify_upstream_xml(default_xml, installer_xml, lock)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lock", type=Path)
     parser.add_argument("--build-prop", type=Path)
+    parser.add_argument("--verify-upstream", action="store_true")
     args = parser.parse_args()
     if not (args.lock or args.build_prop):
         parser.error("provide --lock and/or --build-prop")
     if args.lock:
         validate_lock(args.lock)
+        if args.verify_upstream:
+            verify_upstream(json.loads(args.lock.read_text()))
     if args.build_prop:
         validate_props(args.build_prop)
 
