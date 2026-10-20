@@ -206,13 +206,13 @@ EOF
     find bin/targets -type f \( -name '*combined.img.gz' -o -name '*combined-efi.img.gz' \) -exec cp -v {} "$OUT/" \;
     ls "$OUT/"*combined.img.gz >/dev/null 2>&1 || { echo "x86 BIOS combined image missing" >&2; exit 1; }
     ls "$OUT/"*combined-efi.img.gz >/dev/null 2>&1 || { echo "x86 UEFI combined image missing" >&2; exit 1; }
-    for image in "$OUT/"*.img.gz; do gzip -t "$image"; done
+    for image in "$OUT/"*.img.gz; do python3 "$ROOT/tools/verify-firmware-gzip.py" "$image"; done
     ;;
   sbc)
     find bin/targets -type f -name "*$PROFILE*-sdcard.img.gz" -exec cp -v {} "$OUT/" \;
     count="$(find "$OUT" -type f -name '*.img.gz' | wc -l)"
     [ "$count" -gt 0 ] || { echo "Orange Pi image missing for profile $PROFILE" >&2; exit 1; }
-    for image in "$OUT/"*.img.gz; do gzip -t "$image"; done
+    for image in "$OUT/"*.img.gz; do python3 "$ROOT/tools/verify-firmware-gzip.py" "$image"; done
     cp "$ROOT/linux-agent/profiles/$(printf '%s' "$TARGET" | tr '_' '-').conf" "$OUT/HARDWARE-PROFILE.conf" 2>/dev/null || true
     ;;
 esac
