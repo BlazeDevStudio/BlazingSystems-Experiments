@@ -86,4 +86,5 @@ grep -q 'Standard Binding QR' "$TMP"
 ! grep -q 'PROVISIONING_' "$TMP"
 
 python3 "$ROOT/tests/test_provisioning_url_ports.py"
+python3 "$ROOT/tests/test_rental_qr_branding.py"
 echo "BlazeRental split binding / Device Owner QR tool checks passed"
