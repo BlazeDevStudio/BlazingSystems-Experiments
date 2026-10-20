@@ -1,3 +1,20 @@
+## 2026-10-21 — WITNESS-20261021D Full CI success on PREPARE replay checkpoint
+
+- ID WITNESS-20261021D. Scope: off-device witness candidate only. Status: exact-head Full CI SUCCESS. Asia/Manila 2026-10-21. Not production authority.
+- Exact head `cf3efa5b33012cddebc52cf5808f1560576dca18`, source `403d9a69c034ffa1ea4accd6102cc48072f7ee97`, draft [PR #128](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/128). [Full #39502965443](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39502965443) COMPLETED SUCCESS: 32 jobs, 27 success, 5 intentional production skips, 0 failures. Validate job `118904822481` passed handover freshness and WITNESS-0738.
+- This follow-up records that observed run. It does not claim CI for itself. `paid_ack_authorized` stays false. VERSION stays 0.5.3. P0 #31/#32/#43/#34 remain OPEN.
+- NEXT ACTION: merge only if the head that includes this sentence also has a successful Full run. If PR #127 merges first, rebase and keep both the FINALIZE and PREPARE guards. Do not enable customer payment.
+
+## 2026-10-21 — WITNESS-20261021D idempotent PREPARE retry during a newer PREPARE
+
+- ID WITNESS-20261021D. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED then local GREEN; GitHub Actions on the source SHA not yet observed. Asia/Manila 2026-10-21.
+- Why: `operate()` in `tools/v060_offdevice_witness_candidate.py` classified PREPARE from the current pending tuple first. A durable older revision therefore lost its idempotent PREPARE retry once a newer PREPARE existed (`pending retry base mismatch`). With no pending row, a floor rolled behind a proven receipt was still classified `ALREADY_FINALIZED_NO_PAID_ACK`. Open draft PR #127 repairs the FINALIZE sibling only; this change does not edit that branch.
+- Evidence before the patch, local disposable fixture, no customer data: `sh tests/v060_offdevice_witness_candidate.sh` exited 1 with `WITNESS-0738 FAIL: prepare-replay-during-newer-pending rejected (rc=9): WITNESS-0738 BLOCKED: pending retry base mismatch; reconcile before response (NO PAID ACK)`.
+- Repair: proven receipt is consulted first. Retry requires matching nonce, digest and non-empty original `base_digest`, and a floor that is still on that digest or already ahead. Pending state is reported and preserved. Split snapshots are refused.
+- Files: `tools/v060_offdevice_witness_candidate.py`, `tests/v060_offdevice_witness_candidate.sh`. Branch `fix/witness-20261021-prepare-during-pending` from `51a4c0cf15446ace04c86cef844a1ce82e09a868`. Source `403d9a69c034ffa1ea4accd6102cc48072f7ee97`.
+- After the patch the witness script, `tests/v060_offdevice_witness_reply_auth.py` and `tests/v060_witness_two_stage_recovery.py` exited 0 locally. This ledger sentence does not claim CI. This does not prove independent monotonic hardware, protected P-256 custody, migration, or physical acceptance. `paid_ack_authorized` stays false. VERSION stays 0.5.3.
+- NEXT ACTION: push the branch, open a draft PR, and confirm Full CI on the commit that records source `403d9a69c034ffa1ea4accd6102cc48072f7ee97`. Merge only if that run succeeds. If PR #127 merges first, rebase this PREPARE guard onto it without dropping the FINALIZE guard. Do not treat a green software run as production authorization.
+
 ## 2026-10-21 — WITNESS-20261021B deny provenance-free FINALIZE replay
 
 - ID WITNESS-20261021B. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED, local GREEN, exact-head Full CI SUCCESS on source SHA; development merge not yet done. Asia/Manila 2026-10-21.
