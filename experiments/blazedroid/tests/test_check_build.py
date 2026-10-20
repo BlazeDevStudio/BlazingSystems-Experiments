@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from check_build import validate_lock, validate_props
+from check_build import validate_lock, validate_props, verify_upstream_xml
 
 
 class BuildGateTests(unittest.TestCase):
@@ -35,6 +35,25 @@ class BuildGateTests(unittest.TestCase):
         lock["gapps"] = "included"
         with self.assertRaises(ValueError):
             validate_lock(self.write(json.dumps(lock)))
+
+    def test_upstream_manifest_matches_android_16_and_installer(self):
+        lock = json.loads((Path(__file__).resolve().parents[1] / "foundation.lock.json").read_text())
+        default = b'<manifest><remote name="aosp" revision="refs/tags/android-16.0.0_r4"/></manifest>'
+        installer = (
+            '<manifest><project path="bootable/aaropa" '
+            'revision="' + lock["installer_commit"] + '"/></manifest>'
+        ).encode()
+        verify_upstream_xml(default, installer, lock)
+
+    def test_refuses_older_upstream_android(self):
+        lock = json.loads((Path(__file__).resolve().parents[1] / "foundation.lock.json").read_text())
+        default = b'<manifest><remote name="aosp" revision="refs/tags/android-13.0.0_r77"/></manifest>'
+        installer = (
+            '<manifest><project path="bootable/aaropa" '
+            'revision="' + lock["installer_commit"] + '"/></manifest>'
+        ).encode()
+        with self.assertRaises(ValueError):
+            verify_upstream_xml(default, installer, lock)
 
 
 if __name__ == "__main__":
