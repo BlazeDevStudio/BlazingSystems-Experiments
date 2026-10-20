@@ -151,6 +151,20 @@ awk -F '\t' '
   NF!=8 || $1=="" || $2 !~ /^[0-9]+$/ || $3=="" ||
     $4=="" || $5 !~ /^-?[0-9]+$/ || $6 !~ /^[0-9]+$/ ||
     $7=="" {bad=1}
+  # PAY-0774: v1 member.sh emits only these nine audit kinds.
+  # An unknown kind may be undisclosed paid value, not a harmless audit.
+  # Do not stage an opening that silently treats it as nonfinancial.
+  $4!="create" && $4!="patch" && $4!="password_reset" &&
+  $4!="delete" && $4!="add" && $4!="subtract" &&
+  $4!="set" && $4!="restore_all" && $4!="transfer" {bad=1}
+  # Real v1 nonfinancial operations never move credit. A forged nonzero
+  # delta on patch/password_reset/create/delete is not safe provenance.
+  ($4=="create" || $4=="patch" ||
+   $4=="password_reset" || $4=="delete") {
+    if ($5!="0" || $6 !~ /^(0|[1-9][0-9]*)$/ ||
+        length($6)>10 || $6+0>2147483647 ||
+        (($4=="create" || $4=="delete") && $6!="0")) bad=1
+  }
   {if (++seen[$1]>1) bad=1}
   $4=="add" || $4=="subtract" || $4=="set" ||
   $4=="restore_all" || $4=="transfer" {
