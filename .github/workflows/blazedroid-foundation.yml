@@ -1,0 +1,99 @@
+name: BlazeDroid 16 preview build
+
+on:
+  pull_request:
+    paths:
+      - "experiments/blazedroid/**"
+      - ".github/workflows/blazedroid-foundation.yml"
+  push:
+    branches:
+      - main
+      - blazedroid-16-foundation-20261021
+    paths:
+      - "experiments/blazedroid/**"
+      - ".github/workflows/blazedroid-foundation.yml"
+  workflow_dispatch:
+    inputs:
+      full_build:
+        description: "Build genuine Android 16 ISO on registered blazedroid-aosp runner"
+        type: boolean
+        default: false
+      publish_preview:
+        description: "Publish an explicitly untested GitHub PREVIEW release after successful ISO build"
+        type: boolean
+        default: true
+      redistribution_approved:
+        description: "I reviewed upstream firmware, binaries and license rights to publicly distribute this image"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Android 16 upstream, packaging tests and shell syntax
+        run: |
+          python3 experiments/blazedroid/scripts/check_build.py --lock experiments/blazedroid/foundation.lock.json --verify-upstream
+          python3 -m unittest discover -s experiments/blazedroid/tests -v
+          bash -n experiments/blazedroid/scripts/build-iso.sh experiments/blazedroid/scripts/verify-iso.sh
+          if bash experiments/blazedroid/scripts/verify-iso.sh /does-not-exist.iso; then
+            echo "ISO verification failed open!" >&2; exit 1
+          fi
+
+  preview-iso:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_build == true && github.ref == 'refs/heads/main'
+    needs: foundation-tests
+    runs-on: [self-hosted, linux, x64, blazedroid-aosp]
+    timeout-minutes: 720
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and validate Android 16 PREVIEW ISO (VM tests intentionally skipped)
+        run: bash experiments/blazedroid/scripts/build-iso.sh "$RUNNER_TEMP/blazedroid-src" "$RUNNER_TEMP/blazedroid-output"
+      - name: Prepare preview assets, full ISO checksum, and split parts if needed
+        run: |
+          python3 experiments/blazedroid/scripts/prepare_preview.py \
+            --iso "$RUNNER_TEMP/blazedroid-output/BlazeDroid-16.0.0-x86_64-PREVIEW.iso" \
+            --manifest "$RUNNER_TEMP/blazedroid-output/resolved-manifest.xml" \
+            --output "$RUNNER_TEMP/blazedroid-preview-assets"
+      - name: Upload PREVIEW artifacts for owner testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazeDroid-16.0.0-PREVIEW
+          path: ${{ runner.temp }}/blazedroid-preview-assets/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Report withheld public release when license approval absent
+        if: inputs.publish_preview == true && inputs.redistribution_approved != true
+        run: echo "Preview files available only as Actions artifacts; public release skipped until redistribution approval."
+
+  publish-preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_build == true && inputs.publish_preview == true && inputs.redistribution_approved == true && github.ref == 'refs/heads/main'
+    needs: preview-iso
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch *actual* ISO preview assets from successful upstream build
+        uses: actions/download-artifact@v4
+        with:
+          name: BlazeDroid-16.0.0-PREVIEW
+          path: ${{ runner.temp }}/blazedroid-preview-assets
+      - name: Publish PREVIEW/UNTESTED only (no VM-test gate)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: blazedroid-v16.0.0-preview.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: BlazeDroid 16.0.0 Preview ${{ github.run_number }} — UNTESTED
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: true
+          body_path: ${{ runner.temp }}/blazedroid-preview-assets/PREVIEW_NOTES.md
+          files: ${{ runner.temp }}/blazedroid-preview-assets/*
