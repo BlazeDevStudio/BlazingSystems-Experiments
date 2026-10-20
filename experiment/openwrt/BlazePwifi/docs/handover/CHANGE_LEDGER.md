@@ -1,3 +1,10 @@
+## 2026-10-21 — WITNESS-20261021D Full CI success on PREPARE replay checkpoint
+
+- ID WITNESS-20261021D. Scope: off-device witness candidate only. Status: exact-head Full CI SUCCESS. Asia/Manila 2026-10-21. Not production authority.
+- Exact head `cf3efa5b33012cddebc52cf5808f1560576dca18`, source `403d9a69c034ffa1ea4accd6102cc48072f7ee97`, draft [PR #128](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/128). [Full #39502965443](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39502965443) COMPLETED SUCCESS: 32 jobs, 27 success, 5 intentional production skips, 0 failures. Validate job `118904822481` passed handover freshness and WITNESS-0738.
+- This follow-up records that observed run. It does not claim CI for itself. `paid_ack_authorized` stays false. VERSION stays 0.5.3. P0 #31/#32/#43/#34 remain OPEN.
+- NEXT ACTION: merge only if the head that includes this sentence also has a successful Full run. If PR #127 merges first, rebase and keep both the FINALIZE and PREPARE guards. Do not enable customer payment.
+
 ## 2026-10-21 — WITNESS-20261021D idempotent PREPARE retry during a newer PREPARE
 
 - ID WITNESS-20261021D. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED then local GREEN; GitHub Actions on the source SHA not yet observed. Asia/Manila 2026-10-21.
