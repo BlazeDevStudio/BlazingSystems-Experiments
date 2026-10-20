@@ -55,3 +55,5 @@ Check current [P0 #31](https://github.com/BlazingSystems/BlazingSystems-Experime
 5. For external blockers, retain a precise operator-run instruction and evidence requirement. **Do not mark release completed, re-sign Android with substitute keys, flash customer storage or alter real balances to satisfy a deadline.**
 
 This entrypoint intentionally adds no dependencies or duplicate build commands, no new financial authority, and no release status overrides.
+
+- [Optional REA investigation for owned LAB binaries, BlazeRental APKs, and SoftTimer assemblies](REA_LAB_INVESTIGATION.md) — evidence gathering only; never a release gate or payment trust anchor.
