@@ -50,9 +50,11 @@ jobs:
     runs-on: [self-hosted, linux, x64, blazedroid-aosp]
     timeout-minutes: 720
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Build and validate Android 16 PREVIEW ISO (VM tests intentionally skipped)
         run: bash experiments/blazedroid/scripts/build-iso.sh "$RUNNER_TEMP/blazedroid-src" "$RUNNER_TEMP/blazedroid-output"
       - name: Prepare preview assets, full ISO checksum, and split parts if needed
@@ -68,8 +70,23 @@ jobs:
           path: ${{ runner.temp }}/blazedroid-preview-assets/
           if-no-files-found: error
           retention-days: 30
-      - name: Publish GitHub prerelease only if redistribution rights confirmed
-        if: inputs.publish_preview == true && inputs.redistribution_approved == true
+      - name: Report withheld public release when license approval absent
+        if: inputs.publish_preview == true && inputs.redistribution_approved != true
+        run: echo "Preview files available only as Actions artifacts; public release skipped until redistribution approval."
+
+  publish-preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_build == true && inputs.publish_preview == true && inputs.redistribution_approved == true && github.ref == 'refs/heads/main'
+    needs: preview-iso
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch *actual* ISO preview assets from successful upstream build
+        uses: actions/download-artifact@v4
+        with:
+          name: BlazeDroid-16.0.0-PREVIEW
+          path: ${{ runner.temp }}/blazedroid-preview-assets
+      - name: Publish PREVIEW/UNTESTED only (no VM-test gate)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: blazedroid-v16.0.0-preview.${{ github.run_number }}
@@ -80,6 +97,3 @@ jobs:
           fail_on_unmatched_files: true
           body_path: ${{ runner.temp }}/blazedroid-preview-assets/PREVIEW_NOTES.md
           files: ${{ runner.temp }}/blazedroid-preview-assets/*
-      - name: Report withheld public release when license approval absent
-        if: inputs.publish_preview == true && inputs.redistribution_approved != true
-        run: echo "Preview files available only as Actions artifacts; public release skipped until redistribution approval."
