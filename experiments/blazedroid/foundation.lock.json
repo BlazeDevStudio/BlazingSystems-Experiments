@@ -12,5 +12,5 @@
   "installer_commit": "8c6a69fd8d7728ceeddefd42470a488d9785339f",
   "distribution_variant": "aosp-only",
   "gapps": "not-included",
-  "status": "experimental"
+  "status": "preview-candidate"
 }
