@@ -1,12 +1,12 @@
 ## 2026-10-21 — WITNESS-20261021B deny provenance-free FINALIZE replay
 
-- ID WITNESS-20261021B. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED then local GREEN; GitHub CI not yet verified. Asia/Manila 2026-10-21.
+- ID WITNESS-20261021B. Scope: off-device witness candidate only. Priority P0 #43 residual, lab candidate, not production authority. Status: local RED, local GREEN, exact-head Full CI SUCCESS on source SHA; development merge not yet done. Asia/Manila 2026-10-21.
 - Why: PR #122 closed PREPARE replay when the original base digest is missing or mismatched, but FINALIZE with no stored pending operation still classified `(nonce, digest)` alone as `ALREADY_FINALIZED_NO_PAID_ACK`. A schema-migrated historical row therefore remained an authenticated lost-reply on the FINALIZE path.
 - Evidence before the patch, local disposable fixture, no customer data: `sh tests/v060_offdevice_witness_candidate.sh` exited 1 with `WITNESS-0738 FAIL: legacy-finalized-no-base-finalize unexpectedly accepted`.
 - Files: `tools/v060_offdevice_witness_candidate.py` FINALIZE lookup now requires `base_digest`; `tests/v060_offdevice_witness_candidate.sh` adds `legacy-finalized-no-base-finalize`. Branch `fix/witness-20261021-legacy-finalize-provenance` from `9ca97ec7e8e01344bb9584654577f5576b1f2390`.
-- After the patch the same script exited 0. This does not prove independent monotonic hardware, protected P-256 custody, migration, or physical acceptance. `paid_ack_authorized` stays false. VERSION stays 0.5.3.
+- After the patch the same script exited 0. Exact source `af48c5ef818c85b385fb93428c0b8141cd95c408`, [PR #123](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/123), [Full #39478877493](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39478877493) COMPLETED SUCCESS: 32 jobs, 27 success, 5 intentional skips, 0 failures. WITNESS-0738 step passed. This does not prove independent monotonic hardware, protected P-256 custody, migration, or physical acceptance. `paid_ack_authorized` stays false. VERSION stays 0.5.3.
+- NEXT ACTION: merge PR #123 into `blazepwifi-v0.6.0-audit-foundation` with a merge commit that keeps `af48c5ef818c85b385fb93428c0b8141cd95c408`, then read the post-merge Full run. Do not treat that merge as production authorization.
 - Also recorded, previously written as unverified and now observed on the prior development head: workflows 39461986656, 39461986721, 39461986526, 39461986446 and 39461986718 completed success. That does not authorize release.
-- NEXT ACTION: open the draft PR and read the exact-head Full CI WITNESS-0738 step. Expected: the new deny passes and no other job fails for this diff. Do not merge a cancelled or superseded SHA.
 
 ## 2026-10-20 — PHX-0005 merged actual x86 installed native LAB preview and optional REA evidence
 
