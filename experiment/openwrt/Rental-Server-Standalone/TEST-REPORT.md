@@ -1,3 +1,26 @@
+Physical R281 replacement preview addendum — 2026-10-21 Asia/Manila
+================================================================
+- Owner authorized replacement at the existing 192.168.1.1/rental route. Installed source 301d5d30855b8a61b64849e05051bb1995048a86; Notion R281/OpenWrt 24.10.8; v0.1.3-preview.1. This supersedes older statements below that no physical install occurred. Android enrollment and production acceptance remain untested.
+- Fixed two stale installer CGI pins; raw-byte integrity regression old-code RED 2 / corrected GREEN 2. Host admin_pending.js PASS. Both CGI runtime bytes unchanged from e2a20a45.
+- Actual router disposable RAM tests PASS: complete/missing/symlink state preflight; entropy failure refusal plus ten healthy issuances and signed enrollment; lease lock-edge, receipt, corruption, policy loss and sync-fault refusal contracts. Six shell scripts syntax PASS; package SHA and payload manifest PASS.
+- Complete root-only rollback archive verified on-router and off-router before mutation. No active lease at preflight. Local installer used complete pinned payload with BLAZE_NO_PACKAGE_INSTALL=1; output kept private. Actual HTTPS dashboard POST body-token health/list and unauthorized refusal PASS; header-only auth refused because this uHTTPd omits the custom header, confirming the existing dashboard fallback is needed. Exact installed SHA, authenticated health/list, all four native TSV files/admin token and legacy device-state hashes PASS/unchanged. Network/firewall/wireless/blaze/main-page hashes and main web PID unchanged. Only obsolete dedicated 4455 listener disabled; prior dashboard retained privately.
+- HTTPS /rental 200 body SHA bda1c85d03ff50bdbc8313388468ec97ed76d03ac0f82d7197577a261f23c580 matches installed/source; root 200 and/admin 302. Verification trusts exact router certificate and validates its OpenWrt hostname. Existing HTTP-to-HTTPS redirect and self-signed OpenWrt certificate block automated browser access by LAN IP; warning not bypassed, certificate settings unchanged.
+- Manual rental test server only; no Vendo coin endpoint, real coin/payment/durability or Android acceptance. exact checkpoint `eb84c5ad0c0bd262d09a7e9d00ccd4ddaafcc4fc` [Ubuntu #39506394599](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39506394599) COMPLETED SUCCESS (all standalone steps); local full-history handover freshness and workflow lint PASS. Draft PR #129. Next: classify this documentation successor without altering deployed source, then test matching Android preview on approved R281 without touching paid authority.
+
+v0.1.3-preview.1 exact CI addendum (2026-10-18 Manila)
+- Old-code expected RED #39083519007: admin issued enrollment token without random bytes.
+- First corrected head #39083853101: negative refusal/checksum/syntax PASS, healthy enrollment FAIL of unknown cause.
+- Diagnostic-only head #39083975140: SUCCESS attempts 1 and 2 without source change.
+- Ten-issuance head #39084229748: SUCCESS attempts 1 and 2 at literal SHA; no-RNG refusal, positive admin/app issuance, checksum and syntax PASS.
+- Physical R281 install, Android enrollment, lease crash recovery and customer acceptance remain untested. Draft preview only.
+
+BlazeRental R281 Test Hub v0.1.3-preview.1 - Entropy addendum
+==========================================================
+- Expected RED: literal PR #107 #39083519007 issued an enrollment token after forced kernel entropy reader failure.
+- Corrected source #39083853101 passed checksum/syntax and missing-entropy refusal but failed healthy admin issuance; root cause unknown.
+- Diagnostic-only head #39083975140 succeeded twice at the same literal SHA. Ten healthy-issuance stress test pending exact CI.
+- This preview has no physical R281/Android install, crash-atomic lease, or production acceptance.
+
 BlazeRental R281 Test Hub v0.1.2 - Test Report
 ================================================
 
@@ -47,3 +70,18 @@ Remaining physical validation
 - Verify Device Owner/manual APK behavior and lease refresh on the physical Android phone.
 
 This is a rental test hub, not a full hotspot/coinslot BlazePwifi deployment.
+v0.1.3-preview.1 OpenSSL entropy addendum (2026-10-18 Manila)
+- Test `608fa44c`, synced `6c20603c` literal Ubuntu #39084787348 FAILED entropy step (checksum/syntax passed); current source lacked OpenSSL fallback when byte readers failed.
+- Source `c44b741f` now prefers OpenSSL, retains checked kernel-reader fallbacks and all-source refusal; exact Ubuntu CI PENDING. Earlier diagnostic #39084567668 failed before CGI diagnostics, so its cause is not established.
+- Draft preview only. No physical R281/Android, powercut or production proof.
+
+
+- Source c44b741f, synced b5acadf9: literal Ubuntu #39085021978, #39085068843, #39085071424 SUCCESS; preview only. No hardware or lease crash atomicity proof.
+
+- R281-STANDALONE-0003 test e39c1e64, synced bdcf7d04 literal Ubuntu #39086623050 expected RED: admin lost newer lease at lock edge; checksum/syntax/entropy passed. Source 16fff7b4 moves read under lock and refuses revoked phone, exact retest pending.
+
+- R281-STANDALONE-0003 source 16fff7b4, synced 856c2687: literal Ubuntu #39086946962, #39086991742, #39086993426 all SUCCESS at exact SHA. Admin/phone status preserve newer lease and refuse revoke under synthetic lock-edge writer; no physical durability claim.
+
+- R281-STANDALONE-0004 test ecf12969, synced 1e53358b literal Ubuntu #39090790627 expected RED: status rewrote devices.tsv; preceding checks passed. Source 1c05f69a separates advisory activity from lease, exact CI pending.
+
+- R281-STANDALONE-0004 source 1c05f69a, synced af9c9627: literal Ubuntu #39091052277, #39091125909, #39091127880 SUCCESS; status leaves devices.tsv byte-identical and admin receives advisory last_seen. No hardware/powercut proof.

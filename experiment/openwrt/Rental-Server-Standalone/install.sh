@@ -1,8 +1,8 @@
 #!/bin/sh
-# Rental Server Standalone installer v0.1.2
+# Rental Server Standalone installer v0.1.3 preview
 # BLAZE_R281_RENTAL_HUB
 set -eu
-VERSION='0.1.2'
+VERSION='0.1.3-preview.1'
 MARKER='BLAZE_R281_RENTAL_HUB'
 REPO_RAW='https://raw.githubusercontent.com/BlazingSystems/BlazingSystems-Experiments/main/experiment/openwrt/Rental-Server-Standalone'
 MODE=install
@@ -58,6 +58,42 @@ if [ -e /www/rental/index.html ] && ! grep -q 'BlazeRental · R281 Test Hub' /ww
   [ "$FORCE" = 1 ] || { echo 'ERROR: /www/rental belongs to another application.' >&2; exit 1; }
 fi
 
+admin_token_hex(){
+  x="$(openssl rand -hex 24 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq 48 ] || x="$(hexdump -n 24 -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq 48 ] || x="$(od -An -N 24 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
+  case "$x" in *[!0-9a-f]* ) return 1;; esac
+  [ "${#x}" -eq 48 ] || return 1
+  printf '%s' "$x"
+}
+RENTAL_BASE=/etc/blazepwifi-rental
+FRESH_STATE=1
+if [ -e "$RENTAL_BASE" ] || [ -L "$RENTAL_BASE" ]; then
+  FRESH_STATE=0
+  [ -d "$RENTAL_BASE" ] && [ ! -L "$RENTAL_BASE" ] &&
+    [ -d "$RENTAL_BASE/state" ] && [ ! -L "$RENTAL_BASE/state" ] || {
+      echo 'ERROR: existing rental authority is incomplete or unsafe.' >&2; exit 1;
+    }
+  for f in devices.tsv enroll.tsv policy.tsv events.tsv; do
+    [ -f "$RENTAL_BASE/state/$f" ] && [ ! -L "$RENTAL_BASE/state/$f" ] || {
+      echo "ERROR: existing rental authority file $f missing or unsafe." >&2; exit 1;
+    }
+  done
+fi
+TOKEN_FILE=$RENTAL_BASE/admin.token
+[ ! -L "$TOKEN_FILE" ] && { [ ! -e "$TOKEN_FILE" ] || [ -f "$TOKEN_FILE" ]; } || {
+  echo 'ERROR: unsafe admin token path.' >&2; exit 1;
+}
+NEW_ADMIN_TOKEN=''
+if [ "$FRESH_STATE" = 0 ] && [ ! -s "$TOKEN_FILE" ]; then
+  echo 'ERROR: existing rental admin identity missing or empty.' >&2; exit 1;
+fi
+if [ "$FRESH_STATE" = 1 ]; then
+  NEW_ADMIN_TOKEN="$(admin_token_hex)" || { echo 'ERROR: secure random bytes unavailable.' >&2; exit 1; }
+fi
+
 SELF_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || pwd)"
 TMP="/tmp/rental-server-standalone.$$"
 mkdir -p "$TMP/root/www/cgi-bin" "$TMP/root/www/rental"
@@ -70,9 +106,9 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo '7659e082583a771d9e9aa8ee3b9612d3cbfff2c1807d696c24f3578d5ba92113  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo 'a794e80ad1dc95cf938cd08f618740bf87d44e30bb3dad4f2c217520225c2059  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
-echo '56330ee3df791ed402d471cdeb2fa15b1303601f097885cc1ab867c3700d0f40  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
+echo '5e338fa1bc20bb8ec287d1e25e9bac65ee6d23ea45eebc79a7a6410d9e4e227a  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo 'c95ceee486634e61d972bff6f60ab32851d48df652a90440ff5c3a53044fe3a3  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo 'bda1c85d03ff50bdbc8313388468ec97ed76d03ac0f82d7197577a261f23c580  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -85,11 +121,13 @@ cp "$TMP/root/www/rental/index.html" /www/rental/index.html
 chmod 755 /www/cgi-bin/rental /www/cgi-bin/rental-admin
 chmod 644 /www/rental/index.html
 chmod 700 /etc/blazepwifi-rental /etc/blazepwifi-rental/state
-for f in devices.tsv enroll.tsv policy.tsv events.tsv; do [ -f "/etc/blazepwifi-rental/state/$f" ] || : > "/etc/blazepwifi-rental/state/$f"; chmod 600 "/etc/blazepwifi-rental/state/$f"; done
-if [ ! -s /etc/blazepwifi-rental/admin.token ]; then
-  hexdump -n 24 -e '1/1 "%02x"' /dev/urandom > /etc/blazepwifi-rental/admin.token
-  echo >> /etc/blazepwifi-rental/admin.token
-  chmod 600 /etc/blazepwifi-rental/admin.token
+for f in devices.tsv enroll.tsv policy.tsv events.tsv; do
+  if [ "$FRESH_STATE" = 1 ]; then : > "/etc/blazepwifi-rental/state/$f"; fi
+  chmod 600 "/etc/blazepwifi-rental/state/$f"
+done
+if [ -n "$NEW_ADMIN_TOKEN" ]; then
+  printf '%s\n' "$NEW_ADMIN_TOKEN" > "$TOKEN_FILE"
+  chmod 600 "$TOKEN_FILE"
 fi
 rm -rf "$TMP"
 
