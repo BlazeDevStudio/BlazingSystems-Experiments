@@ -1,14 +1,23 @@
 {
-  "stable_baseline": "4.1.4",
+  "stable_baseline": "4.2.6",
   "development": "7.0.0",
-  "status": "Traffic Intelligence implementation; integration validation pending",
-  "path": "releases/v4.2.6-r281-consolidated/",
-  "installed_reference": "4.2.6",
-  "installed_reference_kind": "consolidated R281 application source; not firmware",
+  "status": "Traffic Intelligence v7 development; R281 management application v10.0.0 installed",
+  "path": "releases/v10.0.0-r281/",
+  "installed_reference": "10.0.0",
+  "installed_reference_kind": "R281-specific application, live installed and checked on 2026-10-19; not firmware",
   "source_layers": [
-    "releases/v4.2.6-r281-consolidated/"
+    "releases/v4.2.6-r281-consolidated/",
+    "releases/v10.0.0-r281/"
   ],
   "development_path": "traffic/",
-  "version_policy": "Identifiers, not feature rankings",
-  "handoff": "HANDOVER-v7.md"
+  "version_policy": "R281 application V10 and generic Traffic Intelligence v7 are separate version lines; numeric ordering across lines does not establish feature parity",
+  "handoff": "HANDOVER-v7.md",
+  "r281_application": {
+    "version": "10.0.0",
+    "board": "notion,r281",
+    "openwrt": "24.10.8",
+    "source": "releases/v10.0.0-r281/",
+    "archive": "releases/v10.0.0-r281/openwrt/EasyMode-v10.0.0-R281-app-update.tar.gz",
+    "status": "Verified installed on R281 on 2026-10-19; extended stability, reset persistence and other-board support NOT verified"
+  }
 }
