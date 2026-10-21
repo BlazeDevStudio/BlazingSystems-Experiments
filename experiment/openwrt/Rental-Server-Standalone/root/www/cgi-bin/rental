@@ -1,6 +1,7 @@
 #!/bin/sh
-# BLAZE_R281_RENTAL_HUB app endpoint v0.1.0
+# BLAZE_R281_RENTAL_HUB app endpoint v0.1.3-preview.1
 set -u
+umask 077
 BASE="${BLAZE_RENTAL_BASE:-/etc/blazepwifi-rental}"
 STATE="$BASE/state"
 DEVICES="$STATE/devices.tsv"
@@ -8,20 +9,22 @@ ENROLL="$STATE/enroll.tsv"
 POLICY="$STATE/policy.tsv"
 EVENTS="$STATE/events.tsv"
 
-mkdir -p "$STATE" 2>/dev/null || true
-chmod 700 "$BASE" "$STATE" 2>/dev/null || true
-for f in "$DEVICES" "$ENROLL" "$POLICY" "$EVENTS"; do [ -f "$f" ] || : > "$f"; chmod 600 "$f" 2>/dev/null || true; done
-
 json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\r//g; s/\n/\\n/g'; }
 json(){ printf 'Content-Type: application/json\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n\r\n%s\n' "$1"; }
 fail(){ json "{\"ok\":false,\"error\":\"$(json_escape "$1")\"}"; exit 0; }
 now(){ date +%s; }
 randhex(){
   n="${1:-12}"
-  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null || true)"
-  [ "${#x}" -ge $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || true)"
-  [ "${#x}" -ge $((n*2)) ] || x="$(printf '%s|%s|%s' "$(date +%s)" "$$" "$n" | sha256sum | awk '{print $1}')"
-  printf '%s' "$x" | tr 'A-F' 'a-f' | cut -c1-$((n*2))
+  case "$n" in ''|*[!0-9]*) return 1;; esac
+  [ "$n" -ge 1 ] && [ "$n" -le 32 ] || return 1
+  x="$(openssl rand -hex "$n" 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq $((n*2)) ] || x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || x=''
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  [ "${#x}" -eq $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')" || x=''
+  case "$x" in *[!0-9a-f]* ) return 1;; esac
+  [ "${#x}" -eq $((n*2)) ] || return 1
+  printf '%s' "$x"
 }
 url_decode(){
   printf '%s' "$1" | awk '
@@ -40,29 +43,86 @@ hmac(){
   command -v openssl >/dev/null 2>&1 || return 2
   printf '%s' "$data" | openssl dgst -sha256 -hmac "$key" 2>/dev/null | awk '{print $NF}' | tr 'A-F' 'a-f'
 }
-atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || true; mv "$src" "$dst"; sync 2>/dev/null || true; }
+atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || return 1; sync 2>/dev/null || return 1; mv "$src" "$dst" || return 1; sync 2>/dev/null || return 1; }
+within_state_capacity(){
+  max="${BLAZE_RENTAL_MAX_STATE_BYTES:-8388608}"
+  case "$max" in ''|*[!0-9]*) return 1;; esac
+  [ "$max" -ge 128 ] 2>/dev/null && [ "$max" -le 8388608 ] 2>/dev/null || return 1
+  bytes="$(wc -c < "$1")" || return 1
+  bytes="$(printf '%s' "$bytes" | tr -d '[:space:]')" || return 1
+  case "$bytes" in ''|*[!0-9]*) return 1;; esac
+  [ "$bytes" -le "$max" ] 2>/dev/null
+}
 lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
 unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
+state_files_ready(){
+  [ -d "$BASE" ] && [ ! -L "$BASE" ] &&
+    [ -d "$STATE" ] && [ ! -L "$STATE" ] || return 1
+  for f in "$DEVICES" "$ENROLL" "$POLICY"; do
+    [ -f "$f" ] && [ ! -L "$f" ] && [ -r "$f" ] || return 1
+  done
+}
 with_lock(){
   i=0
   while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done
+  state_files_ready || { unlock; return 1; }
   return 0
 }
 device_line(){ awk -F '\t' -v d="$1" '$1==d {print;exit}' "$DEVICES"; }
+enrollment_receipt(){ awk -F '\t' -v i="$1" '$1=="@enroll" && $2==i {print;exit}' "$DEVICES"; }
+valid_lease(){
+  case "$1" in 0) return 0;; [1-9]*) ;; *) return 1;; esac
+  case "$1" in *[!0-9]*) return 1;; esac
+  [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
+}
+valid_paid_state(){
+  awk -F '\t' '
+    function hex(s,n) { return length(s)==n && s !~ /[^0-9a-f]/ }
+    function lease(s) { return s=="0" || (s ~ /^[1-9][0-9]*$/ && length(s)<=10 && s+0<=2147483647) }
+    function bounded(s,negative) {
+      if (s !~ /^-?[0-9]+$/ || length(s)>8) return 0
+      if (s ~ /^-?0[0-9]+$/ || s=="-0") return 0
+      return negative ? s+0>=-604800 && s+0<=2592000 : s+0>=0 && s+0<=2592000
+    }
+    $1=="@op" {
+      if (NF!=6 || !hex($2,32) || !hex($3,24) || seen_op[$2]++ ||
+          !lease($6) ||
+          !(($4=="add_time" && bounded($5,1)) ||
+            ($4=="set_time" && bounded($5,0)) ||
+            ($4=="expire" && $5=="-"))) bad=1
+      next
+    }
+    $1=="@enroll" {
+      if (NF!=6 || !hex($2,12) || !hex($3,36) || !hex($4,24) ||
+          !hex($5,48) || !lease($6) || seen_enroll[$2]++) bad=1
+      next
+    }
+    {
+      if (NF!=5 || !hex($1,24) || $2=="" || $2 ~ /[^0-9a-f]/ ||
+          seen_device[$1]++ || !lease($3) || !lease($5)) bad=1
+    }
+    END { exit bad ? 1 : 0 }
+  ' "$DEVICES"
+}
 policy_line(){
   l="$(awk -F '\t' -v d="$1" '$1==d {print;exit}' "$POLICY")"
   [ -n "$l" ] && printf '%s\n' "$l" || printf '%s\t*\t-\t-\t4096\n' "$1"
 }
-write_device(){
-  did="$1" secret="$2" lease="$3" label="$4" last="$5"
-  tmp="$STATE/.devices.$$.$(randhex 3)"
-  awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp"
+write_enrolled_device(){
+  capacity_refused=0
+  did="$1" secret="$2" lease="$3" label="$4" last="$5" eid="$6" esecret="$7" expiry="$8"
+  suffix="$(randhex 3)" || return 1
+  tmp="$STATE/.devices.$$.$suffix"
+  awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1
   clean_label="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
-  printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean_label" "$last" >> "$tmp"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean_label" "$last" >> "$tmp" || return 1
+  printf '@enroll\t%s\t%s\t%s\t%s\t%s\n' "$eid" "$esecret" "$did" "$secret" "$expiry" >> "$tmp" || return 1
+  within_state_capacity "$tmp" || { capacity_refused=1; rm -f "$tmp"; return 1; }
   atomic_replace "$tmp" "$DEVICES"
 }
 consume_enroll(){
-  id="$1"; tmp="$STATE/.enroll.$$.$(randhex 3)"
+  id="$1"; suffix="$(randhex 3)" || return 1
+  tmp="$STATE/.enroll.$$.$suffix"
   awk -F '\t' -v i="$id" '$1!=i {print}' "$ENROLL" > "$tmp"
   atomic_replace "$tmp" "$ENROLL"
 }
@@ -70,8 +130,15 @@ write_policy_default(){
   did="$1"; grep -q "^$did$(printf '\t')" "$POLICY" 2>/dev/null && return 0
   printf '%s\t*\t-\t-\t4096\n' "$did" >> "$POLICY"; chmod 600 "$POLICY"; sync 2>/dev/null || true
 }
+record_seen(){
+  seen_tmp="$STATE/.seen-$1.$$"
+  printf '%s\n' "$2" > "$seen_tmp" || return 1
+  chmod 600 "$seen_tmp" 2>/dev/null || true
+  mv "$seen_tmp" "$STATE/seen-$1" || { rm -f "$seen_tmp"; return 1; }
+}
 
 [ "${REQUEST_METHOD:-GET}" = POST ] || fail "POST required"
+state_files_ready || fail "authority state missing or unsafe"
 action="$(param action)"; nonce="$(param nonce)"; sig="$(param sig)"; ts="$(now)"
 [ -n "$nonce" ] && [ -n "$sig" ] || fail "missing authentication"
 printf '%s' "$nonce" | grep -Eq '^[A-Za-z0-9]{8,64}$' || fail "invalid nonce"
@@ -81,19 +148,50 @@ case "$action" in
     eid="$(param enroll_id)"
     printf '%s' "$eid" | grep -Eq '^[0-9a-f]{12}$' || fail "invalid enrollment id"
     line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
-    [ -n "$line" ] || fail "enrollment invalid or used"
-    secret="$(printf '%s' "$line" | cut -f2)"; expiry="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4-)"
-    [ "${expiry:-0}" -ge "$ts" ] 2>/dev/null || { consume_enroll "$eid"; fail "enrollment expired"; }
+    if [ -n "$line" ]; then
+      secret="$(printf '%s' "$line" | cut -f2)"; expiry="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4-)"
+    else
+      prior_receipt="$(enrollment_receipt "$eid")"
+      [ -n "$prior_receipt" ] || fail "enrollment invalid or used"
+      secret="$(printf '%s' "$prior_receipt" | cut -f3)"; expiry="$(printf '%s' "$prior_receipt" | cut -f6)"; label=''
+    fi
+    [ "${expiry:-0}" -ge "$ts" ] 2>/dev/null || fail "enrollment expired"
     token="$eid.$secret"
     expected="$(hmac "$token" "enroll|$nonce|$token")" || fail "crypto unavailable"
     [ "$sig" = "$expected" ] || fail "authentication failed"
+    authenticated_line="$line"
     with_lock || fail "server busy"
+    valid_paid_state || { unlock; fail "corrupt paid state"; }
     line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
+    ts="$(now)"
+    [ "$expiry" -ge "$ts" ] 2>/dev/null || { unlock; fail "enrollment expired"; }
+    receipt="$(enrollment_receipt "$eid")"
+    if [ -n "$receipt" ]; then
+      receipt_secret="$(printf '%s' "$receipt" | cut -f3)"
+      [ "$receipt_secret" = "$secret" ] || { unlock; fail "enrollment changed"; }
+      [ "$(printf '%s' "$receipt" | cut -f6)" = "$expiry" ] || { unlock; fail "enrollment changed"; }
+      if [ -n "$line" ]; then
+        [ "$line" = "$authenticated_line" ] || { unlock; fail "enrollment changed"; }
+      fi
+      did="$(printf '%s' "$receipt" | cut -f4)"; dsecret="$(printf '%s' "$receipt" | cut -f5)"
+      device="$(device_line "$did")"
+      [ -n "$device" ] && [ "$(printf '%s' "$device" | cut -f2)" = "$dsecret" ] || { unlock; fail "enrollment device changed"; }
+      [ -z "$line" ] || consume_enroll "$eid" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+      lease="$(printf '%s' "$device" | cut -f3)"
+      unlock
+      json "{\"ok\":true,\"device_id\":\"$did\",\"device_secret\":\"$dsecret\",\"server_time_ms\":$((ts*1000)),\"lease_until_ms\":$((lease*1000)),\"replayed\":true}"
+      exit 0
+    fi
     [ -n "$line" ] || { unlock; fail "enrollment invalid or used"; }
-    did="$(randhex 12)"; dsecret="$(randhex 24)"
-    write_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts"
+    [ "$line" = "$authenticated_line" ] || { unlock; fail "enrollment changed"; }
+    did="$(randhex 12)" || { unlock; fail "secure randomness unavailable"; }
+    dsecret="$(randhex 24)" || { unlock; fail "secure randomness unavailable"; }
+    write_enrolled_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts" "$eid" "$secret" "$expiry" || {
+      if [ "${capacity_refused:-0}" = 1 ]; then unlock; fail "receipt capacity reached or check failed"; fi
+      unlock; fail "storage outcome uncertain; inspect enrollment before retry"
+    }
     write_policy_default "$did"
-    consume_enroll "$eid"
+    consume_enroll "$eid" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
     printf '%s\t%s\t%s\t%s\n' "$ts" enroll "$did" "${REMOTE_ADDR:-local}" >> "$EVENTS"
     unlock
     json "{\"ok\":true,\"device_id\":\"$did\",\"device_secret\":\"$dsecret\",\"server_time_ms\":$((ts*1000)),\"lease_until_ms\":$((ts*1000))}"
@@ -106,7 +204,12 @@ case "$action" in
     expected="$(hmac "$secret" "status|$nonce|$secret")" || fail "crypto unavailable"
     [ "$sig" = "$expected" ] || fail "authentication failed"
     with_lock || fail "server busy"
-    write_device "$did" "$secret" "${lease:-0}" "$label" "$ts"
+    line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
+    current_secret="$(printf '%s' "$line" | cut -f2)"
+    [ "$current_secret" = "$secret" ] || { unlock; fail "device changed"; }
+    lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"
+    valid_lease "$lease" || { unlock; fail "corrupt lease state"; }
+    record_seen "$did" "$ts" || true
     unlock
     p="$(policy_line "$did")"; allowed="$(printf '%s' "$p" | cut -f2)"; salt="$(printf '%s' "$p" | cut -f3)"; hash="$(printf '%s' "$p" | cut -f4)"; rounds="$(printf '%s' "$p" | cut -f5)"
     [ "$salt" = '-' ] && salt=""; [ "$hash" = '-' ] && hash=""

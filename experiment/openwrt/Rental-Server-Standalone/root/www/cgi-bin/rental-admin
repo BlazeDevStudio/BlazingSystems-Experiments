@@ -1,84 +1,265 @@
 #!/bin/sh
-# BLAZE_R281_RENTAL_HUB operator endpoint v0.1.0
+# BLAZE_R281_RENTAL_HUB operator endpoint v0.1.3-preview.1
 set -u
+umask 077
 BASE="${BLAZE_RENTAL_BASE:-/etc/blazepwifi-rental}"
 STATE="$BASE/state"; DEVICES="$STATE/devices.tsv"; ENROLL="$STATE/enroll.tsv"; POLICY="$STATE/policy.tsv"; EVENTS="$STATE/events.tsv"; TOKEN_FILE="$BASE/admin.token"
-mkdir -p "$STATE" 2>/dev/null || true
-for f in "$DEVICES" "$ENROLL" "$POLICY" "$EVENTS"; do [ -f "$f" ] || : > "$f"; chmod 600 "$f" 2>/dev/null || true; done
 json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\r//g; s/\n/\\n/g'; }
 json(){ printf 'Content-Type: application/json\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: DENY\r\n\r\n%s\n' "$1"; }
 fail(){ json "{\"ok\":false,\"error\":\"$(json_escape "$1")\"}"; exit 0; }
 now(){ date +%s; }
-randhex(){ n="${1:-12}"; x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null || true)"; [ "${#x}" -ge $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || true)"; [ "${#x}" -ge $((n*2)) ] || x="$(printf '%s|%s|%s' "$(date +%s)" "$$" "$n" | sha256sum | awk '{print $1}')"; printf '%s' "$x" | tr 'A-F' 'a-f' | cut -c1-$((n*2)); }
+randhex(){
+  n="${1:-12}"
+  case "$n" in ''|*[!0-9]*) return 1;; esac
+  [ "$n" -ge 1 ] && [ "$n" -le 32 ] || return 1
+  rstatus=0; hstatus=0; ostatus=0; hlen=0; olen=0
+  x="$(openssl rand -hex "$n" 2>/dev/null)" || rstatus=$?
+  rlen="${#x}"
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  if [ "${#x}" -ne $((n*2)) ]; then
+    x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null)" || hstatus=$?
+  fi
+  hlen="${#x}"
+  case "$x" in *[!0-9a-f]*) x='';; esac
+  if [ "${#x}" -ne $((n*2)) ]; then
+    raw="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null)" || ostatus=$?
+    x="$(printf '%s' "$raw" | tr -d ' \n')"
+    olen="${#x}"
+  fi
+  case "$x" in *[!0-9a-f]* ) x='';; esac
+  [ "${#x}" -eq $((n*2)) ] || {
+    printf 'rental entropy incomplete: requested=%s openssl_status=%s openssl_hex=%s hexdump_status=%s hexdump_hex=%s od_status=%s od_hex=%s\n' "$n" "$rstatus" "$rlen" "$hstatus" "$hlen" "$ostatus" "$olen" >&2
+    return 1
+  }
+  printf '%s' "$x"
+}
 url_decode(){ printf '%s' "$1" | awk 'function hx(c,p){c=toupper(c);p=index("0123456789ABCDEF",c);return p?p-1:-1}{s=$0;out="";for(i=1;i<=length(s);i++){c=substr(s,i,1);if(c=="%"&&i+2<=length(s)){a=hx(substr(s,i+1,1));b=hx(substr(s,i+2,1));if(a>=0&&b>=0){out=out sprintf("%c",a*16+b);i+=2;continue}}if(c=="+")c=" ";out=out c}printf "%s",out}'; }
 BODY=""; [ "${REQUEST_METHOD:-GET}" = POST ] && IFS= read -r BODY || true
 param(){ k="$1"; data="${QUERY_STRING:-}"; [ "${REQUEST_METHOD:-GET}" = POST ] && data="$BODY"; raw="$(printf '%s' "$data" | tr '&' '\n' | awk -F= -v k="$k" '$1==k {sub(/^[^=]*=/,"");print;exit}')"; url_decode "$raw"; }
-atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || true; mv "$src" "$dst"; sync 2>/dev/null || true; }
+atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || return 1; sync 2>/dev/null || return 1; mv "$src" "$dst" || return 1; sync 2>/dev/null || return 1; }
+within_state_capacity(){
+  max="${BLAZE_RENTAL_MAX_STATE_BYTES:-8388608}"
+  case "$max" in ''|*[!0-9]*) return 1;; esac
+  [ "$max" -ge 128 ] 2>/dev/null && [ "$max" -le 8388608 ] 2>/dev/null || return 1
+  bytes="$(wc -c < "$1")" || return 1
+  bytes="$(printf '%s' "$bytes" | tr -d '[:space:]')" || return 1
+  case "$bytes" in ''|*[!0-9]*) return 1;; esac
+  [ "$bytes" -le "$max" ] 2>/dev/null
+}
 lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
 unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
-with_lock(){ i=0; while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done; return 0; }
+state_files_ready(){
+  [ -d "$BASE" ] && [ ! -L "$BASE" ] &&
+    [ -d "$STATE" ] && [ ! -L "$STATE" ] || return 1
+  for f in "$DEVICES" "$ENROLL" "$POLICY"; do
+    [ -f "$f" ] && [ ! -L "$f" ] && [ -r "$f" ] || return 1
+  done
+}
+with_lock(){ i=0; while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done; state_files_ready || { unlock; return 1; }; return 0; }
 check_auth(){
   [ -s "$TOKEN_FILE" ] || fail "admin token missing"
   expected="$(cat "$TOKEN_FILE")"; got="${HTTP_X_BLAZE_RENTAL_ADMIN:-$(param admin_token)}"
   [ -n "$got" ] && [ "$got" = "$expected" ] || fail "unauthorized"
 }
 device_line(){ awk -F '\t' -v d="$1" '$1==d {print;exit}' "$DEVICES"; }
-write_device(){ did="$1" secret="$2" lease="$3" label="$4" last="$5"; tmp="$STATE/.devices.$$.$(randhex 3)"; awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp"; clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"; printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp"; atomic_replace "$tmp" "$DEVICES"; }
-remove_device(){ did="$1"; for spec in "$DEVICES:1" "$POLICY:1"; do f="${spec%%:*}"; tmp="$STATE/.rm.$$.$(randhex 3)"; awk -F '\t' -v d="$did" '$1!=d {print}' "$f" > "$tmp"; atomic_replace "$tmp" "$f"; done; }
+valid_lease(){
+  case "$1" in 0) return 0;; [1-9]*) ;; *) return 1;; esac
+  case "$1" in *[!0-9]*) return 1;; esac
+  [ "${#1}" -le 10 ] && [ "$1" -le 2147483647 ] 2>/dev/null
+}
+valid_request_id(){ printf '%s' "$1" | grep -Eq '^[0-9a-f]{32}$'; }
+valid_enroll_state(){
+  awk -F '\t' '
+    function hex(s,n) { return length(s)==n && s !~ /[^0-9a-f]/ }
+    function lease(s) { return s ~ /^[1-9][0-9]*$/ && length(s)<=10 && s+0<=2147483647 }
+    $1=="@create" {
+      if (NF!=7 || !hex($2,32) || !hex($3,12) || !hex($4,64) ||
+          !lease($5) || $6 !~ /^[1-9][0-9]*$/ || $6+0<60 || $6+0>3600 ||
+          $7=="" || length($7)>80 || seen_request[$2]++ || seen_created[$3]++) bad=1
+      next
+    }
+    NF!=4 || !hex($1,12) || !hex($2,36) || !lease($3) ||
+      $4=="" || length($4)>80 || seen[$1]++ { bad=1 }
+    END { exit bad ? 1 : 0 }
+  ' "$ENROLL"
+}
+valid_paid_state(){
+  awk -F '\t' '
+    function hex(s,n) { return length(s)==n && s !~ /[^0-9a-f]/ }
+    function lease(s) { return s=="0" || (s ~ /^[1-9][0-9]*$/ && length(s)<=10 && s+0<=2147483647) }
+    function bounded(s,negative) {
+      if (s !~ /^-?[0-9]+$/ || length(s)>8) return 0
+      if (s ~ /^-?0[0-9]+$/ || s=="-0") return 0
+      return negative ? s+0>=-604800 && s+0<=2592000 : s+0>=0 && s+0<=2592000
+    }
+    $1=="@op" {
+      if (NF!=6 || !hex($2,32) || !hex($3,24) || seen_op[$2]++ ||
+          !lease($6) ||
+          !(($4=="add_time" && bounded($5,1)) ||
+            ($4=="set_time" && bounded($5,0)) ||
+            ($4=="expire" && $5=="-"))) bad=1
+      next
+    }
+    $1=="@enroll" {
+      if (NF!=6 || !hex($2,12) || !hex($3,36) || !hex($4,24) ||
+          !hex($5,48) || !lease($6) || seen_enroll[$2]++) bad=1
+      next
+    }
+    {
+      if (NF!=5 || !hex($1,24) || $2=="" || $2 ~ /[^0-9a-f]/ ||
+          seen_device[$1]++ || !lease($3) || !lease($5)) bad=1
+    }
+    END { exit bad ? 1 : 0 }
+  ' "$DEVICES"
+}
+receipt_state(){
+  receipt="$(awk -F '\t' -v id="$1" '$1=="@op" && $2==id {found=$0;n++} END {if(n>1)exit 2;if(n==1)print found}' "$DEVICES")" || return 2
+  [ -n "$receipt" ] || return 1
+  [ "$(printf '%s\n' "$receipt" | awk -F '\t' '{print NF}')" -eq 6 ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f3)" = "$2" ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f4)" = "$3" ] || return 2
+  [ "$(printf '%s' "$receipt" | cut -f5)" = "$4" ] || return 2
+  receipt_result="$(printf '%s' "$receipt" | cut -f6)"
+  valid_lease "$receipt_result" || return 2
+  return 0
+}
+paid_ack(){
+  result="$1"; replayed="$2"; remaining=$((result-ts))
+  [ "$remaining" -ge 0 ] || remaining=0
+  json "{\"ok\":true,\"lease_until\":$result,\"remaining\":$remaining,\"replayed\":$replayed}"
+}
+write_device(){ capacity_refused=0; did="$1" secret="$2" lease="$3" label="$4" last="$5"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.devices.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1; clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"; printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp" || return 1; within_state_capacity "$tmp" || { capacity_refused=1; rm -f "$tmp"; return 1; }; atomic_replace "$tmp" "$DEVICES"; }
+write_paid_device(){
+  capacity_refused=0
+  did="$1"; secret="$2"; lease="$3"; label="$4"; last="$5"; rid="$6"; op="$7"; value="$8"
+  suffix="$(randhex 3)" || return 1; tmp="$STATE/.devices.$$.$suffix"
+  awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp" || return 1
+  clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean" "$last" >> "$tmp" || return 1
+  printf '@op\t%s\t%s\t%s\t%s\t%s\n' "$rid" "$did" "$op" "$value" "$lease" >> "$tmp" || return 1
+  within_state_capacity "$tmp" || { capacity_refused=1; rm -f "$tmp"; return 1; }
+  atomic_replace "$tmp" "$DEVICES"
+}
+paid_write_failed(){
+  if [ "${capacity_refused:-0}" = 1 ]; then unlock; fail "receipt capacity reached or check failed"; fi
+  unlock; fail "storage outcome uncertain; inspect lease before retry"
+}
+remove_device(){ did="$1"; for spec in "$DEVICES:1" "$POLICY:1"; do f="${spec%%:*}"; suffix="$(randhex 3)" || return 1; tmp="$STATE/.rm.$$.$suffix"; awk -F '\t' -v d="$did" '$1!=d {print}' "$f" > "$tmp" || return 1; atomic_replace "$tmp" "$f" || return 1; done; }
 log(){ printf '%s\t%s\t%s\t%s\n' "$(now)" "$1" "$2" "${REMOTE_ADDR:-local}" >> "$EVENTS"; chmod 600 "$EVENTS"; }
 
 [ "${REQUEST_METHOD:-GET}" = POST ] || fail "POST required"
 check_auth
+state_files_ready || fail "authority state missing or unsafe"
 action="$(param action)"; ts="$(now)"
 case "$action" in
   health)
-    json "{\"ok\":true,\"mode\":\"manual-rental-test\",\"server_time\":$ts,\"board\":\"R281\",\"version\":\"0.1.0\"}"
+    json "{\"ok\":true,\"mode\":\"manual-rental-test\",\"server_time\":$ts,\"board\":\"R281\",\"version\":\"0.1.3-preview.1\"}"
     ;;
   list)
     first=1; out='['
     while IFS="$(printf '\t')" read -r did secret lease label last; do
       [ -n "$did" ] || continue
+      case "$did" in '@op'|'@enroll') continue;; esac
+      valid_lease "$lease" || fail "corrupt lease state"
       remaining=0; [ "${lease:-0}" -gt "$ts" ] 2>/dev/null && remaining=$((lease-ts))
+      seen="$last"
+      if [ -f "$STATE/seen-$did" ] && [ ! -L "$STATE/seen-$did" ]; then
+        seen="$(cat "$STATE/seen-$did" 2>/dev/null)" || seen="$last"
+      fi
+      case "$seen" in ''|*[!0-9]*) seen=0;; esac
+      [ "${#seen}" -le 10 ] || seen=0
       [ "$first" = 1 ] || out="$out,"; first=0
-      out="$out{\"device_id\":\"$did\",\"label\":\"$(json_escape "$label")\",\"lease_until\":${lease:-0},\"remaining\":$remaining,\"last_seen\":${last:-0}}"
+      out="$out{\"device_id\":\"$did\",\"label\":\"$(json_escape "$label")\",\"lease_until\":${lease:-0},\"remaining\":$remaining,\"last_seen\":$seen}"
     done < "$DEVICES"
     out="$out]"; json "{\"ok\":true,\"devices\":$out,\"server_time\":$ts}"
     ;;
   enroll_create)
     label="$(param label)"; ttl="$(param ttl)"; [ -n "$label" ] || label="Rental phone"
     printf '%s' "$label" | grep -q '[[:cntrl:]]' && fail "invalid label"
-    case "$ttl" in ''|*[!0-9]*) ttl=900;; esac; [ "$ttl" -ge 60 ] && [ "$ttl" -le 3600 ] || ttl=900
-    eid="$(randhex 6)"; secret="$(randhex 18)"; exp=$((ts+ttl)); clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
-    printf '%s\t%s\t%s\t%s\n' "$eid" "$secret" "$exp" "$clean" >> "$ENROLL"; chmod 600 "$ENROLL"; sync 2>/dev/null || true
+    case "$ttl" in ''|0*|*[!0-9]*) ttl=900;; esac; [ "$ttl" -ge 60 ] 2>/dev/null && [ "$ttl" -le 3600 ] 2>/dev/null || ttl=900
+    rid="$(param request_id)"; valid_request_id "$rid" || fail "invalid request id"
+    clean="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
+    with_lock || fail "server busy"
+    valid_paid_state || { unlock; fail "corrupt paid state"; }
+    valid_enroll_state || { unlock; fail "corrupt enrollment state"; }
+    created="$(awk -F '\t' -v i="$rid" '$1=="@create" && $2==i {print;exit}' "$ENROLL")"
+    if [ -n "$created" ]; then
+      saved_id="$(printf '%s' "$created" | cut -f3)"
+      saved_hash="$(printf '%s' "$created" | cut -f4)"
+      saved_exp="$(printf '%s' "$created" | cut -f5)"
+      [ "$(printf '%s' "$created" | cut -f6)" = "$ttl" ] &&
+        [ "$(printf '%s' "$created" | cut -f7)" = "$clean" ] || { unlock; fail "request id conflict"; }
+      saved="$(awk -F '\t' -v i="$saved_id" '$1==i {print;exit}' "$ENROLL")"
+      [ -n "$saved" ] || { unlock; fail "enrollment already used or removed"; }
+      saved_secret="$(printf '%s' "$saved" | cut -f2)"
+      [ "$(printf '%s' "$saved" | cut -f3)" = "$saved_exp" ] &&
+        [ "$(printf '%s' "$saved" | cut -f4)" = "$clean" ] || { unlock; fail "enrollment state changed"; }
+      saved_digest="$(printf '%s' "$saved_id.$saved_secret" | sha256sum 2>/dev/null | awk '{print $1}')"
+      [ "$saved_digest" = "$saved_hash" ] || { unlock; fail "enrollment state changed"; }
+      ts="$(now)"; [ "$saved_exp" -ge "$ts" ] || { unlock; fail "enrollment expired"; }
+      unlock
+      json "{\"ok\":true,\"token\":\"$saved_id.$saved_secret\",\"expires\":$saved_exp,\"replayed\":true}"
+      exit 0
+    fi
+    eid="$(randhex 6)" || { unlock; fail "secure randomness unavailable"; }
+    secret="$(randhex 18)" || { unlock; fail "secure randomness unavailable"; }
+    if awk -F '\t' -v i="$eid" '$1==i || ($1=="@create" && $3==i) {found=1} END{exit found?0:1}' "$ENROLL" ||
+       awk -F '\t' -v i="$eid" '$1=="@enroll" && $2==i {found=1} END{exit found?0:1}' "$DEVICES"; then
+      unlock; fail "enrollment id collision"
+    fi
+    ts="$(now)"; exp=$((ts+ttl))
+    valid_lease "$exp" || { unlock; fail "enrollment expiry out of range"; }
+    digest="$(printf '%s' "$eid.$secret" | sha256sum 2>/dev/null | awk '{print $1}')"
+    printf '%s' "$digest" | grep -Eq '^[0-9a-f]{64}$' || { unlock; fail "crypto unavailable"; }
+    suffix="$(randhex 3)" || { unlock; fail "secure randomness unavailable"; }
+    tmp="$STATE/.enroll.$$.$suffix"
+    cat "$ENROLL" > "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    printf '%s\t%s\t%s\t%s\n' "$eid" "$secret" "$exp" "$clean" >> "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    printf '@create\t%s\t%s\t%s\t%s\t%s\t%s\n' "$rid" "$eid" "$digest" "$exp" "$ttl" "$clean" >> "$tmp" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    within_state_capacity "$tmp" || { rm -f "$tmp"; unlock; fail "enrollment capacity reached or check failed"; }
+    atomic_replace "$tmp" "$ENROLL" || { unlock; fail "storage outcome uncertain; inspect enrollment before retry"; }
+    unlock
     log enrollment_created "$eid"
     json "{\"ok\":true,\"token\":\"$eid.$secret\",\"expires\":$exp}"
     ;;
   add_time|set_time|expire|rename|revoke)
     did="$(param device_id)"; printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || fail "invalid device id"
-    line="$(device_line "$did")"; [ -n "$line" ] || fail "unknown device"
-    secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
+    case "$action" in add_time|set_time|expire) rid="$(param request_id)"; valid_request_id "$rid" || fail "invalid request id";; esac
     with_lock || fail "server busy"
+    valid_paid_state || { unlock; fail "corrupt paid state"; }
+    line="$(device_line "$did")"; [ -n "$line" ] || { unlock; fail "unknown device"; }
+    secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
+    valid_lease "$lease" || { unlock; fail "corrupt lease state"; }
     case "$action" in
       add_time)
-        sec="$(param seconds)"; case "$sec" in ''|*[!0-9-]*) unlock; fail "invalid seconds";; esac
+        sec="$(param seconds)"; printf '%s' "$sec" | grep -Eq '^(0|-?[1-9][0-9]*)$' || { unlock; fail "invalid seconds"; }
         [ "$sec" -ge -604800 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
+        receipt_state "$rid" "$did" "$action" "$sec"; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
         base="$lease"; [ "$base" -ge "$ts" ] 2>/dev/null || base="$ts"; new=$((base+sec)); [ "$new" -ge "$ts" ] 2>/dev/null || new="$ts"
-        write_device "$did" "$secret" "$new" "$label" "$last"; unlock; log time_added "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$((new-ts))}"
+        valid_lease "$new" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$new" "$label" "$last" "$rid" "$action" "$sec" || paid_write_failed; unlock; log time_added "$did:$sec"; paid_ack "$new" false
         ;;
       set_time)
-        sec="$(param seconds)"; case "$sec" in ''|*[!0-9]*) unlock; fail "invalid seconds";; esac
+        sec="$(param seconds)"; printf '%s' "$sec" | grep -Eq '^(0|[1-9][0-9]*)$' || { unlock; fail "invalid seconds"; }
         [ "$sec" -ge 0 ] 2>/dev/null && [ "$sec" -le 2592000 ] 2>/dev/null || { unlock; fail "seconds out of range"; }
-        new=$((ts+sec)); write_device "$did" "$secret" "$new" "$label" "$last"; unlock; log time_set "$did:$sec"; json "{\"ok\":true,\"lease_until\":$new,\"remaining\":$sec}"
+        receipt_state "$rid" "$did" "$action" "$sec"; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
+        new=$((ts+sec)); valid_lease "$new" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$new" "$label" "$last" "$rid" "$action" "$sec" || paid_write_failed; unlock; log time_set "$did:$sec"; paid_ack "$new" false
         ;;
       expire)
-        write_device "$did" "$secret" "$ts" "$label" "$last"; unlock; log expired "$did"; json "{\"ok\":true,\"lease_until\":$ts,\"remaining\":0}"
+        receipt_state "$rid" "$did" "$action" '-' ; receipt_status=$?
+        case "$receipt_status" in 0) unlock; paid_ack "$receipt_result" true; exit 0;; 2) unlock; fail "request ID conflict or corrupt receipt";; esac
+        valid_lease "$ts" || { unlock; fail "lease out of range"; }
+        write_paid_device "$did" "$secret" "$ts" "$label" "$last" "$rid" "$action" '-' || paid_write_failed; unlock; log expired "$did"; paid_ack "$ts" false
         ;;
       rename)
         nl="$(param label)"; [ -n "$nl" ] || { unlock; fail "label required"; }; printf '%s' "$nl" | grep -q '[[:cntrl:]]' && { unlock; fail "invalid label"; }
-        write_device "$did" "$secret" "$lease" "$nl" "$last"; unlock; log renamed "$did"; json "{\"ok\":true}"
+        write_device "$did" "$secret" "$lease" "$nl" "$last" || paid_write_failed; unlock; log renamed "$did"; json "{\"ok\":true}"
         ;;
       revoke)
-        remove_device "$did"; unlock; log revoked "$did"; json "{\"ok\":true}"
+        remove_device "$did" || { unlock; fail "storage outcome uncertain; inspect lease before retry"; }; unlock; log revoked "$did"; json "{\"ok\":true}"
         ;;
     esac
     ;;
