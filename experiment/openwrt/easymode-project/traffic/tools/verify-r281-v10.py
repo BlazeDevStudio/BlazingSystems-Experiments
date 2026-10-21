@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Read-only verification of the published EasyMode v10 R281 application archive."""
+import hashlib
+import json
+import pathlib
+import re
+import sys
+import tarfile
+
+BASE = pathlib.Path(__file__).resolve().parents[2]
+RELEASE = BASE / 'releases/v10.0.0-r281'
+ARCHIVE = RELEASE / 'openwrt/EasyMode-v10.0.0-R281-app-update.tar.gz'
+SIDE = ARCHIVE.with_suffix(ARCHIVE.suffix + '.sha256')
+REQUIRED = {'SOURCE-MANIFEST.json', 'VERSION', 'SHA256SUMS'}
+
+
+def require(ok, message):
+    if not ok:
+        raise ValueError(message)
+
+
+def sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def valid_name(name):
+    require(isinstance(name, str) and name and not name.startswith('/'), f'Unsafe archive path: {name!r}')
+    path = pathlib.PurePosixPath(name)
+    require('..' not in path.parts and '\\' not in name and ':' not in name, f'Unsafe archive path: {name!r}')
+    return path.as_posix()
+
+
+def run():
+    manifest_path = RELEASE / 'SOURCE-MANIFEST.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    require(manifest.get('version') == '10.0.0', 'Unexpected EasyMode version')
+    require(manifest.get('board') == 'notion,r281' and manifest.get('openwrt') == '24.10.8',
+            'V10 hardware target mismatch')
+    expected = {}
+    for entry in manifest['files']:
+        name = valid_name(entry['path'])
+        require(name not in expected and name not in REQUIRED, f'Duplicate/reserved manifest path: {name}')
+        require(re.fullmatch('[0-9a-f]{64}', entry['sha256']) is not None, f'Invalid SHA256: {name}')
+        require(entry['mode'] in ('0644', '0755'), f'Invalid file mode: {name}')
+        data = (RELEASE / name).read_bytes()
+        require(len(data) == entry['bytes'] and sha256(data) == entry['sha256'],
+                f'Source tree differs from manifest: {name}')
+        expected[name] = entry
+    require(expected and any(n.startswith('root/') for n in expected), 'Missing R281 application files')
+
+    check = SIDE.read_text(encoding='ascii').strip()
+    require(check == f'{sha256(ARCHIVE.read_bytes())}  {ARCHIVE.name}', 'Release archive sidecar hash mismatch')
+
+    seen = {}
+    with tarfile.open(ARCHIVE, 'r:gz') as archive:
+        for member in archive.getmembers():
+            name = valid_name(member.name)
+            if member.isdir():
+                continue
+            require(member.isfile(), f'Unsupported archive member type: {name}')
+            require(name not in seen, f'Duplicate archive path: {name}')
+            require(member.mode in (0o644, 0o755), f'Unexpected archive mode: {name}')
+            fileobj = archive.extractfile(member)
+            require(fileobj is not None, f'Cannot read archive member: {name}')
+            seen[name] = (fileobj.read(), member.mode)
+    require(set(seen) == set(expected) | REQUIRED,
+            f'Archive file-set mismatch: missing={sorted((set(expected)|REQUIRED)-set(seen))}, extra={sorted(set(seen)-(set(expected)|REQUIRED))}')
+    for name, meta in expected.items():
+        data, mode = seen[name]
+        require(sha256(data) == meta['sha256'] and len(data) == meta['bytes']
+                and mode == int(meta['mode'], 8), f'Archive/source mismatch: {name}')
+    require(seen['SOURCE-MANIFEST.json'][0] == manifest_path.read_bytes(), 'Embedded source manifest differs')
+    require(seen['VERSION'][0] == b'10.0.0\n', 'Embedded version differs')
+
+    sums = {}
+    for line in seen['SHA256SUMS'][0].decode('ascii').splitlines():
+        m = re.fullmatch(r'([a-f0-9]{64})  (.+)', line)
+        require(m is not None, 'Invalid SHA256SUMS record')
+        name = valid_name(m.group(2))
+        require(name not in sums, f'Duplicate SHA256SUMS entry: {name}')
+        sums[name] = m.group(1)
+    require(set(sums) == set(seen) - {'SHA256SUMS'}, 'Embedded checksum file list mismatch')
+    for name, expected_hash in sums.items():
+        require(sha256(seen[name][0]) == expected_hash, f'Embedded checksum mismatch: {name}')
+    print(f'PASS: V10 R281 immutable release integrity; {len(seen)} archive files, source manifest, modes and SHA-256 verified')
+
+
+if __name__ == '__main__':
+    try:
+        run()
+    except (ValueError, OSError, KeyError, tarfile.TarError, UnicodeError) as error:
+        print(f'FAIL: EasyMode V10 integrity: {error}', file=sys.stderr)
+        raise SystemExit(1)
