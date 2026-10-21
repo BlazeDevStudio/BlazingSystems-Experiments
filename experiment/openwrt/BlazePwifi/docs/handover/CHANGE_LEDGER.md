@@ -1,3 +1,10 @@
+## 2026-10-22 — WITNESS-20261022 / P0 #43 — exact Full PR merge-tree candidate green
+
+- **Source:** current v0.6 development base `f002c3240b86f887b39dd8b09ee8661dba69ea4c`, bounded candidate source commit `284604ec`, regression `aa99d510`; mandatory docs checkpoint `0adea5ba0fde53057a54821d1fad2bd53cf2b345`. Draft [PR #135](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/135).
+- **Proven CI:** PR merge-tree [Full #39674640446](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39674640446) SUCCESS, 0 failed jobs. Mandatory handover, WITNESS-0738 crash/replay with historic FINALIZE while newer PREPARE pending, HMAC reply guard, rollback/split-floor and wrong-nonce/digest denials, accounting/replay x3, firmware builds, browser, Android Device Owner emulator, x86 QEMU and final candidate gate all passed. First source-only runs #39673710510/#39673950856 were correctly blocked for missing handover freshness and remain preserved, not hidden.
+- **Boundary:** validated software test candidate only; signed production, independent protected hardware witness, P-256 custody, reversible v1→v2 financial migration, actual coin/electrical/power-cut soak and P0 #31/#32/#43/#34 all unresolved. No paid ACK, customer admission or changes to Standalone/hardware/tag/signers.
+- **Next:** validate docs-only exact successor, guarded development merge and record merged-head checks; superseded/stale #127 is not a safe direct merge.
+
 ## 2026-10-22 — WITNESS-20261022 / P0 #43 — bounded FINALIZE replay reconciliation, awaiting exact-head CI
 
 - **Branch/PR:** `fix/witness-20261022-finalize-replay-reconciled`, draft [#135](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/135), based on current v0.6.0 audit-fundation `f002c3240b86f887b39dd8b09ee8661dba69ea4c`; explicitly supersedes implementation strategy of stale/conflicting open PR #127 but does not merge/close #127.
