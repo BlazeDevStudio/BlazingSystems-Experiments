@@ -143,7 +143,7 @@ HANDOFF = '''# EasyMode v10.0.0 handoff
 
 def main():
     if not SOURCE.is_dir(): raise SystemExit(f'Missing source {SOURCE}')
-    if OUT.exists(): shutil.rmtree(OUT)
+    if OUT.exists(): raise SystemExit('Refusing to overwrite the published V10 release. Use a new version/output path for a new release.')
     shutil.copytree(SOURCE, ROOT)
     for f in ROOT.rglob('*'):
         if not f.is_file(): continue
