@@ -270,17 +270,24 @@ def operate(con, command, args, fixture, key):
     # *candidate* cannot verify hardware fsync or monotonic external storage.
     # The only useful outcome is a durable candidate floor, NEVER a paid ACK.
     nonce = args[4]
-    if row[4] is None:
-        # Same provenance rule as PREPARE replay: a historical finalized row
-        # without its original base digest is not an authenticated lost reply.
-        old = con.execute(
-          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
-          (device, epoch, revision)).fetchone()
-        if old is None or old[0] != nonce or old[1] != digest or not old[2]:
+    # Check the durable finalized receipt before comparing with the current
+    # pending tuple. A newer PREPARE must not turn a lost FINALIZE response for
+    # an already durable revision into a conflicting-pending failure.
+    proven = con.execute(
+      "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+      (device, epoch, revision)).fetchone()
+    if proven:
+        if proven[0] != nonce or proven[1] != digest or not proven[2]:
             refuse("not prepared or disputed replay")
+        # A receipt cannot attest to a floor that is behind its revision, or
+        # the same revision with a different digest (split-snapshot evidence).
+        if row[2] < revision or (row[2] == revision and row[3] != digest):
+            refuse("finalized receipt diverges from witness floor")
         con.commit()
-        bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
+        bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row, row[4] is not None)
         return
+    if row[4] is None:
+        refuse("not prepared or disputed replay")
     if row[4] != revision or row[5] != digest or row[6] != nonce:
         refuse("mismatched pending finalize")
     if row[2] + 1 != revision: refuse("nonadjacent pending finalize")
