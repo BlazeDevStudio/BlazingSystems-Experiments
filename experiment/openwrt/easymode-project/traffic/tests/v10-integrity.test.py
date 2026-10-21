@@ -27,7 +27,7 @@ def main():
         (release/'root/etc/blaze').mkdir(parents=True)
         version=release/'root/etc/blaze/easymode-version'
         version.write_bytes(b'10.0.0\n')
-        (release/'install.sh').write_bytes(b'#!/bin/sh\n')
+        # install.sh is generated into the archive, not tracked beside the snapshot.
         payload={'root/etc/blaze/easymode-version':(b'10.0.0\n',0o644),
                  'install.sh':(b'#!/bin/sh\n',0o755)}
         manifest={'version':'10.0.0','board':'notion,r281','openwrt':'24.10.8',
