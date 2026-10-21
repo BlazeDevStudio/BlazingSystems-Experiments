@@ -36,7 +36,7 @@ jobs:
           printf '%s' "$RUN_ID" | grep -Eq '^[0-9]+$'
           printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'
           [ "$TAG" = "v0.4.0" ]
-          [ "$NAME" = "BlazeRental-v0.4.0-d2ee-TEST.apk" ]
+          [ "$NAME" = "BlazeRental-v0.4.0-d2ee-TEST.apk" ] || [ "$NAME" = "BlazeRental-v0.4.0-${SHA:0:8}-TEST.apk" ]
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
