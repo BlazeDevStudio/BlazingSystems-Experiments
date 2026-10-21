@@ -81,6 +81,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/template_gallery.sh
       - name: Controller protocol parity
         run: sh experiment/openwrt/BlazePwifi/tests/controllers.sh
+      - name: Verify Vendo firmware source bundles include their build dependencies
+        run: python3 experiment/openwrt/BlazePwifi/tests/test_vendo_source_bundle.py
       - name: BlazePwifi v0.4 controller compatibility
         run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
       - name: Linux GPIO agent validation
@@ -392,10 +394,9 @@ jobs:
           arduino-cli core install esp8266:esp8266
       - name: Compile BlazePwifi Vendo
         run: |
-          mkdir -p experiment/openwrt/BlazePwifi/dist/esp8266
-          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
-          cp experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino experiment/openwrt/BlazePwifi/dist/esp8266/
-          (cd experiment/openwrt/BlazePwifi/dist/esp8266 && sha256sum * > SHA256SUMS)
+          python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp8266 experiment/openwrt/BlazePwifi/dist/esp8266
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/dist/esp8266/source/BlazePwifiVendo
+          (cd experiment/openwrt/BlazePwifi/dist/esp8266 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: BlazePwifi-esp8266-firmware
@@ -439,10 +440,9 @@ jobs:
           arduino-cli core install esp32:esp32
       - name: Compile BlazePwifi Vendo ESP32
         run: |
-          mkdir -p experiment/openwrt/BlazePwifi/dist/esp32
-          arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
-          cp experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino experiment/openwrt/BlazePwifi/dist/esp32/
-          (cd experiment/openwrt/BlazePwifi/dist/esp32 && sha256sum * > SHA256SUMS)
+          python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 experiment/openwrt/BlazePwifi/dist/esp32
+          arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/dist/esp32/source/BlazePwifiVendo32
+          (cd experiment/openwrt/BlazePwifi/dist/esp32 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: BlazePwifi-esp32-firmware
