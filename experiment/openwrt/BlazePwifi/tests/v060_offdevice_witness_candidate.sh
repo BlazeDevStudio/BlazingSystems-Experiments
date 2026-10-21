@@ -151,6 +151,31 @@ assert j["independent_monotonic_witness_verified"] is False, j
 PY
 deny prepare-finalized-wrong-nonce-while-pending run prepare device01 1 1 "$A" 2 "$B" "$N3"
 deny prepare-finalized-wrong-base-while-pending run prepare device01 1 1 "$C" 2 "$B" "$N1"
+
+# FINALIZE has the same lost-ACK requirement as PREPARE: a proven historical
+# receipt may be replayed while a NEWER PREPARE is pending. The newer pending
+# tuple stays intact, and a paid acknowledgment is never produced.
+rc=0
+run finalize device01 1 2 "$B" "$N1" >"$LAB/finalize-replay-during-pending.json" 2>"$LAB/err" || rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "WITNESS-0738 FAIL: finalize-replay-during-newer-pending rejected (rc=$rc): $(cat "$LAB/err")" >&2
+  exit 1
+fi
+assert_json ALREADY_FINALIZED_NO_PAID_ACK finalize device01 1 2 "$B" "$N1" <"$LAB/finalize-replay-during-pending.json"
+python3 - "$LAB/finalize-replay-during-pending.json" "$B" <<'PY'
+import json,sys
+j=json.load(open(sys.argv[1],encoding="utf8"))
+assert j["state"]=="ALREADY_FINALIZED_NO_PAID_ACK", j
+assert j["pending_reconciliation"] is True, j
+assert j["pending_revision"]==3, j
+assert j["witness_revision"]==2, j
+assert j["witness_digest"]==sys.argv[2], j
+for field in ("paid_ack_authorized","independent_monotonic_witness_verified",
+              "financial_migration_authorized","customer_install_authorized"):
+    assert j[field] is False,(field,j)
+PY
+deny finalize-finalized-wrong-nonce-while-pending run finalize device01 1 2 "$B" "$N3"
+deny finalize-finalized-wrong-digest-while-pending run finalize device01 1 2 "$C" "$N1"
 run status device01 "$N3" | assert_json PENDING_RECONCILIATION status device01 "$N3"
 run prepare device01 1 2 "$B" 3 "$C" "$N2" | assert_json PREPARED_NOT_COMMITTED prepare device01 1 2 "$B" 3 "$C" "$N2"
 
@@ -170,6 +195,7 @@ con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 con.close()
 PY
 deny prepare-floor-behind-proven-receipt run prepare device01 1 1 "$A" 2 "$B" "$N1"
+deny finalize-floor-behind-proven-receipt run finalize device01 1 2 "$B" "$N1"
 python3 - "$LAB/witness.sqlite3" "$C" "$A" <<'PY'
 import sqlite3,sys
 con=sqlite3.connect(sys.argv[1])
@@ -183,6 +209,7 @@ con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 con.close()
 PY
 deny prepare-floor-same-revision-digest-disagrees run prepare device01 1 2 "$B" 3 "$C" "$N2"
+deny finalize-floor-same-revision-digest-disagrees run finalize device01 1 3 "$C" "$N2"
 python3 - "$LAB/witness.sqlite3" "$C" <<'PY'
 import sqlite3,sys
 con=sqlite3.connect(sys.argv[1])
