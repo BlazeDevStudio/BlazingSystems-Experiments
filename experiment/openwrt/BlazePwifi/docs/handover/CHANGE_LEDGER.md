@@ -1,3 +1,10 @@
+## 2026-10-22 — WITNESS-20261022 / P0 #43 — verified development merge #135
+
+- **Completed guarded integration:** PR [#135](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/135) merged into `blazepwifi-v0.6.0-audit-foundation` at `c358ab10f022984afbf8abcf722c722f573e51c9`. Exact PR head `496a9a4fb3e2bc682f6cb3c6fe6f9debd27849ec` had 0 base-behind commits, 0 Standalone/release/signing file changes and was mergeable. Full PR merge-tree [#39675854578](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39675854578) completed SUCCESS with 0 failures, including final candidate gate, Android emulator and x86 QEMU.
+- **Proof limits:** source `284604ec` plus regression `aa99d510` enforces historical FINALIZE original nonce/digest/nonempty base receipt verification, refuses rolled-back/divergent floors, retains the newer pending PREPARE, returns `ALREADY_FINALIZED_NO_PAID_ACK` without paid authority. Prior handover gate failed runs are preserved; corrected runs and all canonical handovers passed.
+- **Current stage:** this docs-only successor requires fresh merged-head CI classification. Stale/conflicted older PR #127 is not blindly merged; do not infer separate hardware witness, protected signing, reversible money migration, real coin/power-cut evidence or commercial release. P0 #31/#32/#43/#34 remain OPEN.
+- **No action on:** Standalone, R281 devices, customer leases, signing keys, v0.5.2 production tag or customer payment admission.
+
 ## 2026-10-22 — WITNESS-20261022 / P0 #43 — exact Full PR merge-tree candidate green
 
 - **Source:** current v0.6 development base `f002c3240b86f887b39dd8b09ee8661dba69ea4c`, bounded candidate source commit `284604ec`, regression `aa99d510`; mandatory docs checkpoint `0adea5ba0fde53057a54821d1fad2bd53cf2b345`. Draft [PR #135](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/135).
