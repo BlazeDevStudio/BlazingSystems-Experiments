@@ -79,7 +79,17 @@ public final class RentalLeaseStore {
     }
 
     public static void invalidateLeaseAfterBoot(Context context) {
-        prefs(context).edit().putLong("lease_sync_elapsed", 0L).apply();
+        // elapsedRealtime() starts over after every boot. A persisted deadline
+        // for an unlocked administrator session must never survive that reset.
+        SharedPreferences p = prefs(context);
+        long previousLockout = p.getLong("admin_locked_until", 0L);
+        long nextLockout = AdminBootPolicy.lockedUntilAfterReboot(
+                previousLockout, SystemClock.elapsedRealtime());
+        p.edit()
+                .putLong("lease_sync_elapsed", 0L)
+                .remove("admin_unlock_until")
+                .putLong("admin_locked_until", nextLockout)
+                .apply();
     }
 
     public static void recordAdminVerifier(Context context, String salt, String hash, int rounds) {
@@ -175,7 +185,7 @@ public final class RentalLeaseStore {
         int failures = p.getInt("admin_failures", 0) + 1;
         if (failures >= 5) {
             edit.putInt("admin_failures", 0)
-                    .putLong("admin_locked_until", now + 900000L).apply();
+                    .putLong("admin_locked_until", now + AdminBootPolicy.LOCKOUT_MS).apply();
         } else {
             edit.putInt("admin_failures", failures).apply();
         }
