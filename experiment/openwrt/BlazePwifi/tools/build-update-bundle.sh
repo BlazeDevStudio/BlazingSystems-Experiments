@@ -3,6 +3,16 @@ set -eu
 ROOT="${1:-experiment/openwrt/BlazePwifi}"
 OUT="${2:-dist/update}"
 VERSION="$(cat "$ROOT/VERSION")"
+RUNTIME_VERSION_FILE="$ROOT/openwrt/rootfs/usr/share/blazepwifi/VERSION"
+[ -f "$RUNTIME_VERSION_FILE" ] && [ ! -L "$RUNTIME_VERSION_FILE" ] && [ -r "$RUNTIME_VERSION_FILE" ] || {
+  echo "ERROR: runtime VERSION must be a readable regular file" >&2
+  exit 1
+}
+RUNTIME_VERSION="$(cat "$RUNTIME_VERSION_FILE")"
+[ "$RUNTIME_VERSION" = "$VERSION" ] || {
+  echo "ERROR: bundle VERSION $VERSION does not match runtime VERSION $RUNTIME_VERSION" >&2
+  exit 1
+}
 BASE_MIN="${BASE_MIN:-0.5.0}"
 GRACE="${STABILITY_GRACE_SECONDS:-600}"
 WORK="$(mktemp -d)"
