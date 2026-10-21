@@ -83,6 +83,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/controllers.sh
       - name: Verify Vendo firmware source bundles include their build dependencies
         run: python3 experiment/openwrt/BlazePwifi/tests/test_vendo_source_bundle.py
+      - name: Verify durable Vendo sequence contract and packaged compile paths
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
       - name: BlazePwifi v0.4 controller compatibility
         run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
       - name: Linux GPIO agent validation
