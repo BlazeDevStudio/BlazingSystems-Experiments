@@ -52,6 +52,36 @@ class VendoSourceBundle(unittest.TestCase):
                         destination = stage / relative
                         destination.parent.mkdir(parents=True, exist_ok=True)
                         destination.write_bytes((REPO / relative).read_bytes())
+                contract = stage / PROJECT / "tests/v060_vendo_sequence_contract.py"
+                contract.parent.mkdir(parents=True, exist_ok=True)
+                contract.write_bytes((ROOT / "tests/v060_vendo_sequence_contract.py").read_bytes())
+                staged_workflow = stage / ".github/workflows/blazepwifi-build.yml"
+                staged_workflow.parent.mkdir(parents=True)
+                workflow = WORKFLOW.read_text(encoding="utf-8")
+
+                def check_contract(text):
+                    staged_workflow.write_text(text, encoding="utf-8")
+                    return subprocess.run([sys.executable, str(contract)], cwd=stage,
+                                          capture_output=True, text=True)
+
+                result = check_contract(workflow)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                libraries = (PROJECT / "dist" / target / "source/libraries").as_posix()
+                shipped_sketch = (PROJECT / "dist" / target / "source" / sketch).as_posix()
+                compile_line = next(line for line in blocks[step].splitlines() if "arduino-cli compile " in line)
+                invalid_workflows = {
+                    "missing libraries": workflow.replace("--libraries " + libraries + " ", ""),
+                    "checkout-only libraries": workflow.replace(libraries, (PROJECT / "esp/libraries").as_posix()),
+                    "checkout-only sketch": workflow.replace(shipped_sketch, (PROJECT / target / sketch).as_posix()),
+                    "duplicate compile": workflow + "\n" + compile_line + "\n",
+                }
+                for case, invalid in invalid_workflows.items():
+                    with self.subTest(invalid_compile_input=case):
+                        self.assertNotEqual(invalid, workflow, "fixture must alter the actual compile input")
+                        result = check_contract(invalid)
+                        self.assertNotEqual(result.returncode, 0, case + " unexpectedly passed sequence guard")
+                        self.assertIn("AssertionError", result.stderr)
+                staged_workflow.write_text(workflow, encoding="utf-8")
                 commands = "\n".join(line[10:] for line in blocks[step].splitlines())
                 fake_bin = stage / "bin"
                 fake_bin.mkdir()
