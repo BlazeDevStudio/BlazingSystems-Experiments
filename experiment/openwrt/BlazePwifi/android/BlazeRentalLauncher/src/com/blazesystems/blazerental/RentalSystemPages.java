@@ -131,9 +131,14 @@ public final class RentalSystemPages {
 
     private static View createRentalPage(final Launcher launcher) {
         final LinearLayout root = basePage(launcher);
+        // Launcher3 gives its workspace a shorter viewport than the screen.
+        // Keep the primary coin action above the fold; scroll on small devices.
         final TextView state = headline(launcher, "BLAZERENTAL");
+        state.setTextSize(22f);
+        state.setPadding(0, dp(launcher, 3), 0, dp(launcher, 3));
         final TextView timer = headline(launcher, "00:00:00");
-        timer.setTextSize(42f);
+        timer.setTextSize(36f);
+        timer.setPadding(0, dp(launcher, 3), 0, dp(launcher, 3));
         final Handler adminHandler = new Handler();
         final long holdMs = RentalUiPolicy.adminHoldMs(launcher);
         final AdminGestureController adminGesture = new AdminGestureController(holdMs);
@@ -162,12 +167,13 @@ public final class RentalSystemPages {
             }
         });
         final TextView detail = body(launcher, "TIME FINISHED");
+        detail.setPadding(0, dp(launcher, 4), 0, dp(launcher, 4));
         final Button coin = actionButton(launcher, "INSERT COIN");
 
         root.addView(state);
         root.addView(timer);
         root.addView(detail);
-        root.addView(coin, buttonMargins(launcher));
+        root.addView(coin, rentalButtonMargins(launcher));
 
         coin.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -200,7 +206,11 @@ public final class RentalSystemPages {
             }
         };
         root.post(refresh);
-        return root;
+        ScrollView scroll = new ScrollView(launcher);
+        scroll.setFillViewport(true);
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.addView(root);
+        return scroll;
     }
 
     private static View createQuickPage(final Launcher launcher) {
@@ -668,6 +678,13 @@ public final class RentalSystemPages {
         b.setTextSize(13f);
         b.setMinHeight(dp(c, 48));
         return b;
+    }
+
+    private static LinearLayout.LayoutParams rentalButtonMargins(Context c) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 54));
+        lp.setMargins(0, dp(c, 8), 0, dp(c, 12));
+        return lp;
     }
 
     private static LinearLayout.LayoutParams buttonMargins(Context c) {

@@ -190,6 +190,32 @@ dump_ui "01-rental-page"
 assert_ui_exact "$OUT/01-rental-page.xml" "BLAZERENTAL"
 assert_ui "$OUT/01-rental-page.xml" "TIME FINISHED"
 assert_ui "$OUT/01-rental-page.xml" "INSERT COIN"
+# A label existing in the accessibility tree is not enough: an older build
+# placed the actual coin button flush against the clipped workspace bottom.
+python3 - "$OUT/01-rental-page.xml" <<'PY'
+import re,sys,xml.etree.ElementTree as ET
+root=ET.parse(sys.argv[1]).getroot()
+def bounds(text):
+    values=[int(v) for v in re.findall(r'\d+',text or '')]
+    if len(values)!=4: raise ValueError('invalid UI bounds')
+    return values
+seen=[]
+def check(node,parent_frame=None):
+    kind=node.attrib.get('class','')
+    if kind.endswith('FrameLayout'):
+        parent_frame=node.attrib.get('bounds')
+    if node.attrib.get('text')=='INSERT COIN' and kind.endswith('Button'):
+        if not parent_frame: raise AssertionError('missing coin workspace')
+        b=bounds(node.attrib.get('bounds')); p=bounds(parent_frame)
+        gap=p[3]-b[3]
+        assert gap>=20, 'coin button clipped against workspace bottom: %d px gap'%gap
+        assert b[1]>=p[1], 'coin button clipped against workspace top'
+        seen.append(gap)
+    for child in node: check(child,parent_frame)
+check(root)
+assert seen, 'coin button not found inside workspace'
+print('Coin action fully visible: %d px below button'%seen[0])
+PY
 
 # Unpaid drawer gesture must not transition into All Apps.
 swipe_drawer_up
