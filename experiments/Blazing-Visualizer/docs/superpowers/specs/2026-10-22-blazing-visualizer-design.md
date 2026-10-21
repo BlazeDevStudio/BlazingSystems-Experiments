@@ -2,24 +2,24 @@
 
 Date: 22 October 2026 (Asia/Manila)  
 Owner: Loumer Cabaluna Manreal / Blazing Systems  
-Status: written specification for owner review; implementation has not started  
+Status: owner-approved product direction on 22 October 2026; Avee familiarity clarification incorporated; implementation plan pending review  
 Repository: BlazingSystems/BlazingSystems-Experiments  
 Project directory: experiments/Blazing-Visualizer  
 Proposed Android application ID: com.blazingsystems.visualizer
 
 ## 1. Agreed purpose
 
-Build an Avee-based Android music player and visualizer with an original Blazing Visualizer identity, modern interaction design, editable visual compositions, video export, and visualizer-pack import/export.
+Build an Avee-based Android music player and visualizer with Blazing Visualizer branding, modern Android support, editable visual compositions, video export, and visualizer-pack import/export. Preserve the familiar Avee look, feel, control placement, and player/editor workflow; the owner's latest clarification makes that familiarity a primary acceptance requirement.
 
 Its defining capability is audio-to-note analysis that produces notes musicians can inspect and follow on their own instruments. A decorative frequency spectrum alone does not meet that requirement: the application must represent pitch, octave, note onset, and duration, and provide a synchronized practice view.
 
-The owner chose a source-built Avee-based application rather than modifying the uploaded 1.2.252 APK. The requested modernization covers the complete user experience, not just the displayed name and icon. Existing Avee notices remain in the source and acknowledgements.
+The owner chose a source-built Avee-based application rather than modifying the uploaded 1.2.252 APK. Modernization updates Android compatibility, presentation, responsiveness, and capabilities while preserving familiar Avee interactions. Existing Avee notices remain in the source and acknowledgements.
 
 ### Required outcomes
 
 | Owner requirement | Concrete behavior |
 | --- | --- |
-| Distinct Blazing Visualizer product | Original navigation, visual language, player, studio, practice view, editor, and export flow. Installable alongside Avee under a separate app ID. |
+| Familiar Avee experience under Blazing branding | Retain recognizable library/queue navigation, transport, visualizer canvas, preset grid, layer/property editor, and export actions. Add notes and Practice inside that workflow. Installable alongside Avee under a separate app ID. |
 | Music visualization like the supplied video | Twelve chromatic pitch-class nodes, glowing active notes, chord connections, estimated chord names, and synchronized piano highlights. |
 | Notes people can follow | Octave-specific note timeline, readable names, onset/duration, slower practice playback without pitch change, and section looping. |
 | Video export | Real MP4 files containing rendered visualizer frames and synchronized audio. |
@@ -44,14 +44,19 @@ The protected/obfuscated uploaded APK is a read-only investigation reference, no
 
 ## 3. Application experience
 
-The main destinations are Library, Studio, Practice, and Exports. The visual language uses a dark working canvas, strong contrast for notes, clear typography, direct manipulation, and a compact transport bar. Color is accompanied by note labels and shapes so musical information remains readable without color discrimination.
+The main experience retains Avee's familiar Library/Queue and Visualizer structure, transport controls, preset chooser, element editor, and export action. Use Blazing Visualizer naming and theme, modern Android layouts, scalable controls, and clear typography. Do not replace this workflow with an unrelated four-destination studio navigation system.
 
-- **Library:** open files or folders through Android's file picker; browse available local audio, search, manage a queue and playlists, and resume the last session.
-- **Studio:** choose a track and preset, preview the composition, arrange layers, change their transforms and appearance, and bind supported properties to audio or note activity.
-- **Practice:** display the note timeline and keyboard, select a useful register, slow playback while preserving pitch, set A/B loop points, and inspect or correct detected notes.
-- **Exports:** select video dimensions, frame rate, clip range and destination; monitor a real export; open or share completed files.
+- **Library and queue:** open files/folders through Android's picker; browse local audio, search, manage playlists and the queue, and resume the last session.
+- **Player:** retain a recognizable now-playing/transport area, seek control, previous/play/pause/next actions, queue access, and background media controls.
+- **Visualizer canvas:** show the selected visualizer full-screen with familiar access to preset selection, the pencil/edit action, and export. Preserve the track and current composition when opening or closing editing panels.
+- **Preset chooser:** show a thumbnail grid, select or duplicate a visualizer, and import/export visualizer packs.
+- **Element editor:** present a composition/layer list and property controls using recognizable element concepts such as Audio Provider, Image, Text, Bars/Segments, Blur, and Particles; add Note Wheel and Piano Roll to this vocabulary.
+- **Note guide and Practice:** expose note-following as a visualizer/Practice mode using the same selected track and transport. Show the timeline and keyboard, slow playback without changing pitch, set A/B loops, and inspect or correct notes.
+- **Export:** open from the visualizer controls, choose output settings and destination, show progress, and open/share completed files.
 
-The default workflow is: choose music → analyze once → inspect notes → edit the visualizer → preview → practice or export. Spectrum-only compositions can preview while note analysis is pending. A note-based composition clearly shows analysis progress and does not invent note data.
+Color is accompanied by note labels and shapes so musical information remains readable without color discrimination. Match familiar interaction and hierarchy while using original Blazing branding and source-licensed components; no claim of pixel-identical proprietary assets is made.
+
+The default workflow is: choose music → analyze once → inspect notes → select/edit a visualizer → preview → practice or export. Spectrum-only compositions can preview while note analysis is pending. A note-based composition clearly shows analysis progress and does not invent note data.
 
 V1 is offline for playback, analysis, editing, pack exchange, and export after installation. The model is packaged with the application. A remote account, paid API, or cloud processing service is not required.
 
@@ -178,6 +183,7 @@ The following are requirements and design targets, not results already achieved.
 
 | Area | Acceptance evidence |
 | --- | --- |
+| Avee familiarity | The Library → Visualizer → preset grid → element/property editor → export path is recognizable to an Avee user; the owner accepts its look, feel and interaction. Notes/Practice use the same track and transport. |
 | Build/install | Reproducible CI debug/preview APK; successful install and launch on supported Android versions, including Android 16. |
 | Actual Avee basis | Pinned upstream provenance, attribution, and identifiable adapted source components; new UI and modern media path documented. |
 | Playback | Local supported-format files, queue, background controls, pause, seek, track changes and revoked permission handling. |
@@ -199,7 +205,7 @@ A successful build alone does not establish note accuracy, export correctness, p
 
 ## 11. First-release scope boundary
 
-Required in the first complete release: original modern Android experience; local player; editable core visualizers; real note analysis; practice view; note correction and MIDI/CSV output; native pack import/export; the tested Avee compatibility subset; and actual video export.
+Required in the first complete release: familiar Avee-style experience with Blazing branding and modern Android support; local player; editable core visualizers; real note analysis; practice view; note correction and MIDI/CSV output; native pack import/export; the tested Avee compatibility subset; and actual video export.
 
 Microphone/live-instrument transcription, instrument stem separation, sheet-music engraving, guitar fingering generation, executable third-party plugins, a plugin marketplace, cloud accounts, desktop editions, and automatic support for every proprietary Avee effect are separate extensions. The pendulum grid in the second reference reel is a future preset, not a prerequisite for the requested note-following path.
 
@@ -216,4 +222,4 @@ Microphone/live-instrument transcription, instrument stem separation, sheet-musi
 - Android model runtime: https://ai.google.dev/edge/litert/android
 - Android 16 behavior changes: https://developer.android.com/about/versions/16/behavior-changes-16
 
-The earlier APK/video investigation established a plausible audio-provider integration seam and the desired graphic appearance. It did not produce a runnable modified application. This document establishes a source-built product design for review; no implementation, detector benchmark, export test, or release artifact is claimed by this commit.
+The earlier APK/video investigation established a plausible audio-provider integration seam and the desired graphic appearance. It did not produce a runnable modified application. This document records the approved source-built product direction and the owner's subsequent Avee-familiarity requirement. No implementation, detector benchmark, export test, or release artifact is claimed by this document.
