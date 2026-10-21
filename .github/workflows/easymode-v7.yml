@@ -6,6 +6,8 @@ on:
       - 'experiment/openwrt/easymode-project/**'
       - '.github/workflows/easymode-v7.yml'
   workflow_dispatch:
+  pull_request:
+    branches: [easymode-v7-production]
 permissions:
   contents: read
 jobs:
@@ -31,8 +33,10 @@ jobs:
           sh traffic/tests/run.sh
       - name: Build real edition packages
         run: python3 traffic/tools/build.py
-      - name: Build the installed R281 application profile
-        run: python3 traffic/tools/build-r281-v10.py
+      - name: Verify immutable R281 V10 application archive
+        run: |
+          python3 traffic/tools/verify-r281-v10.py
+          python3 traffic/tests/v10-integrity.test.py
       - name: Prepare image and virtual integration tools
         run: |
           sudo apt-get install -y build-essential zstd libncurses-dev rsync unzip wget qemu-system-x86 ovmf python3-paramiko python3-pexpect
