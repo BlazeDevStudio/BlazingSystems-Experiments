@@ -147,6 +147,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_member_receipt_failure_repro.sh
       - name: BlazePwifi v0.6 rental receipt EIO before mutation
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh
+      - name: PAY-0780 installed v1 rental receipt quota before paid lease mutation
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_receipt_capacity.sh
       - name: RENT-0723 serialize rental paid replay and recheck lease after writer lock
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
       - name: RENT-0724 prevent stale admin rental add and unauthorized forfeit across writer lock
@@ -267,6 +269,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_android_trust_panel.sh
       - name: Verify rental browser QR lifecycle and pin requirements
         run: node experiment/openwrt/BlazePwifi/tests/v060_rental_qr_browser.cjs
+      - name: Verify offline rental QR templates clear failed generation output
+        run: node experiment/openwrt/BlazePwifi/tests/v060_rental_qr_templates.cjs
       - name: Standalone Rental BlazeFusion self-contained UI and original secure routes
         run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_fusion.sh
       - name: EasyMode R281 BlazeFusion opt-in staging and frozen-source verification
@@ -296,6 +300,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v054_member_migration.sh
       - name: BlazePwifi v0.4 build matrix validation
         run: sh experiment/openwrt/BlazePwifi/tests/v04_build_matrix.sh
+      - name: FWIMG-20261020 OpenWrt compressed-image and fwtool trailer regression
+        run: python3 experiment/openwrt/BlazePwifi/tests/test_firmware_gzip.py
       - name: Portal validation
         run: sh experiment/openwrt/BlazePwifi/tests/portal.sh
       - name: Admin UI validation
@@ -387,7 +393,7 @@ jobs:
       - name: Compile BlazePwifi Vendo
         run: |
           mkdir -p experiment/openwrt/BlazePwifi/dist/esp8266
-          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
           cp experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino experiment/openwrt/BlazePwifi/dist/esp8266/
           (cd experiment/openwrt/BlazePwifi/dist/esp8266 && sha256sum * > SHA256SUMS)
       - uses: actions/upload-artifact@v4
@@ -434,7 +440,7 @@ jobs:
       - name: Compile BlazePwifi Vendo ESP32
         run: |
           mkdir -p experiment/openwrt/BlazePwifi/dist/esp32
-          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/esp/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
           cp experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino experiment/openwrt/BlazePwifi/dist/esp32/
           (cd experiment/openwrt/BlazePwifi/dist/esp32 && sha256sum * > SHA256SUMS)
       - uses: actions/upload-artifact@v4

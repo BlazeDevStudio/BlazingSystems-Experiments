@@ -61,8 +61,14 @@ BP_PAID_UNCERTAIN="$BP_STATE/paid-state-uncertain"
 # and it must never be treated as an independent antirollback witness.
 # A dangling symlink or directory also blocks, rather than being ignored.
 BP_PAID_V2_CUTOVER="$BP_STATE/paid-v2-cutover-intent"
+# PAY-0743: a staged/committed v2 authority must take precedence over v1
+# even if a removable legacy cutover-intent marker disappears. No installer
+# currently creates this namespace or admits v2 payment transactions.
+# Its presence is solely a v1 DENY, NOT proof of a secure witness or ledger.
+BP_PAID_V2_AUTHORITY="$BP_STATE/v2-authority"
 bp_paid_v2_cutover_pending() {
-	[ -e "$BP_PAID_V2_CUTOVER" ] || [ -L "$BP_PAID_V2_CUTOVER" ]
+	[ -e "$BP_PAID_V2_CUTOVER" ] || [ -L "$BP_PAID_V2_CUTOVER" ] ||
+	[ -e "$BP_PAID_V2_AUTHORITY" ] || [ -L "$BP_PAID_V2_AUTHORITY" ]
 }
 bp_paid_begin() {
 	mkdir -p "$BP_STATE" "$BP_RUN" || return 8
@@ -512,4 +518,12 @@ bp_check_vendo_sig() {
 	[ -n "$nonce" ] && [ -n "$got" ] || return 1
 	exp="$(bp_vendo_sig_expected "$action" "$id" "$nonce" "$pulses" "$target")"
 	[ "$got" = "$exp" ]
+}
+
+# PAY-0751: only verify the production-domain controller envelope at the
+# installed native boundary. This helper cannot commit money or return an ACK;
+# witness, protected signer and migration admission remain outstanding.
+bp_v2_verify_envelope() {
+	/usr/sbin/blazepwifi-paid-authority "$BP_STATE" "$@" \
+		--verify-envelope-only >/dev/null 2>&1
 }

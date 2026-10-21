@@ -306,13 +306,34 @@ bp_rental_event_log() {
 }
 
 bp_rental_device_rename() {
+  # PAY-0781: renaming rewrites the paid lease row, not just its display
+  # label. Serialize the entire read/replace/audit against all coin and
+  # administrator paid writers or a stale rename can erase purchased time.
+  [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
   did="$1"; new_label="$(bp_rental_clean "$2")"
   [ -n "$new_label" ] || return 2
   [ "$(printf '%s' "$new_label" | wc -c)" -le 80 ] || return 2
-  line="$(bp_rental_device_line "$did")"; [ -n "$line" ] || return 1
-  secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; last="$(printf '%s' "$line" | cut -f5)"
-  bp_rental_device_write "$did" "$secret" "$lease" "$new_label" "$last"
-  bp_rental_event_log rename "$did" "$new_label"
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    # An unknown device is a read-only refusal; clear only our own new
+    # pending marker. Corrupt financial state is never accepted.
+    [ "$rc" -ne 2 ] || rc=1
+    bp_rental_admin_unmodified_reject "$rc"
+    return $?
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  last="$(printf '%s' "$line" | cut -f5)"
+  # Keep uncertainty in place if the lease replacement or audit append
+  # fails: either could already have reached storage.
+  if ! bp_rental_device_write "$did" "$secret" "$lease" "$new_label" "$last" ||
+     ! bp_rental_event_log rename "$did" "$new_label"; then
+    bp_paid_abort
+    return 8
+  fi
+  bp_paid_commit || return 8
+  return 0
 }
 
 # RENT-0724: unwind the pending marker only for a read-only failure that
@@ -456,6 +477,22 @@ bp_rental_device_revoke() {
   # Destructive changes touch several v1 files. Mark uncertainty BEFORE any
   # rename and retain the halt across an interrupted audit or target removal.
   bp_paid_begin || return 9
+  # PAY-0782: the expired-lease check above is only a preflight. A coin
+  # payment can commit before we acquire this lock, so recheck the current
+  # authoritative lease BEFORE deleting any device/policy/target record.
+  line="$(bp_rental_paid_device_snapshot "$did")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_rental_admin_unmodified_reject "$rc"
+    return $?
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  now="$(bp_now)"
+  bp_rental_safe_seconds "$now" 2147483647 || {
+    bp_rental_admin_unmodified_reject 8; return $?
+  }
+  if [ "$lease" -gt "$now" ]; then
+    bp_rental_admin_unmodified_reject 6; return $?
+  fi
   for file in "$BP_RENTAL_DEVICES" "$BP_RENTAL_POLICY" "$BP_RENTAL_INVENTORY" "${BP_RENTAL_POLICY_V2:-}"; do
     [ -n "$file" ] || continue
     [ -f "$file" ] || continue
@@ -506,9 +543,25 @@ bp_rental_events_json() {
 }
 
 # Keep receipt append independently mockable for fault-injection tests.
+# PAY-0780: the signed paid receipt reader refuses any corpus above
+# 4,190,208 bytes. Reserve the COMPLETE new record before paid lease change;
+# otherwise a successful payment can ACK a receipt its own reader rejects.
+# Caller holds paid-financial.lock; this helper NEVER mutates state.
+bp_rental_paid_receipt_capacity_ok() {
+  [ -f "$BP_RENTAL_EVENTS" ] && [ ! -L "$BP_RENTAL_EVENTS" ] || return 8
+  current_bytes="$(wc -c < "$BP_RENTAL_EVENTS" 2>/dev/null)" || return 8
+  record_bytes="$(printf '%s\t%s\t%s\t%s\tp:%s\n' "$1" "$2" "$3" "$4" "$5" | wc -c)" || return 8
+  case "$current_bytes:$record_bytes" in *[!0-9:]*|:*|*:) return 8;; esac
+  [ "$record_bytes" -ge 1 ] 2>/dev/null &&
+    [ "$record_bytes" -le 4190208 ] 2>/dev/null &&
+    [ "$current_bytes" -le $((4190208-record_bytes)) ] 2>/dev/null || return 8
+  return 0
+}
+
 bp_rental_append_paid_receipt() {
   # No v1 financial/admin writes may fork the synthetic v2 lease authority.
   [ "${BP_RENTAL_V2_LAB:-0}" != 1 ] || return 9
+  bp_rental_paid_receipt_capacity_ok "$@" || return 8
   # Keep legacy fields 1-4 stable; column 5 binds the signed pulse
   # quantity to this immutable receipt, so altered retries never false-ACK.
   printf '%s\t%s\t%s\t%s\tp:%s\n' "$1" "$2" "$3" "$4" "$5" >> "$BP_RENTAL_EVENTS" || return 8
@@ -694,6 +747,12 @@ bp_rental_apply_coin() {
   [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
   [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
   newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
   # Existing v1 writes remain two separately durable operations; quarantine
   # on either failure instead of pretending this is an atomic v2 ledger.
   if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then

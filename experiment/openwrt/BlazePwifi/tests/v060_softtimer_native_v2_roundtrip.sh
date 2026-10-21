@@ -63,6 +63,18 @@ if BLAZE_V2_NATIVE_TEST_FAULT=before-rename "$T/native" "$T" "$@" >"$T/rejected"
   echo 'PAY-0715 precommit fsync fault emitted ACK' >&2; exit 1
 fi
 [ ! -s "$T/rejected" ] && [ "$(hash)" = "$stable" ]
+# PAY-0773: the interrupted stage is ambiguous. An authentic .NET-signed
+# retransmission must be denied while that file remains; only this isolated
+# disposable fixture cleans its own staged bytes after verifying no ACK.
+pending="$(find "$T" -maxdepth 1 -name '.v2-next-*' -type f -print -quit)"
+[ -n "$pending" ] || { echo 'pre-rename fault left no native stage' >&2; exit 1; }
+if "$T/native" "$T" "$@" > "$T/rejected" 2>"$T/reason"; then
+  echo 'PAY-0773 SoftTimer signed transfer bypassed unresolved native stage' >&2; exit 1
+fi
+grep -Fq 'unfinished native stage requires operator reconciliation' "$T/reason"
+[ ! -s "$T/rejected" ] && [ "$(hash)" = "$stable" ]
+rm "$pending"
+[ -z "$(find "$T" -maxdepth 1 -name '.v2-next-*' -print -quit)" ]
 # After authority rename but before directory fsync, no paid ACK; exact
 # retransmission must replay rather than duplicate balance or receipt.
 if BLAZE_V2_NATIVE_TEST_FAULT=after-rename-before-dir-fsync "$T/native" "$T" "$@" >"$T/rejected" 2>"$T/reason"; then

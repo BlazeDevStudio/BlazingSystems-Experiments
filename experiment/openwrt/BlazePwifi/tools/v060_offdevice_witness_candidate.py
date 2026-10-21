@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS finalized (
   epoch INTEGER NOT NULL,
   revision INTEGER NOT NULL,
   digest TEXT NOT NULL,
+  base_digest TEXT,
   nonce TEXT NOT NULL,
   PRIMARY KEY(device, epoch, revision)
 );
@@ -144,6 +145,10 @@ def open_store(root, initialize):
     con.execute("PRAGMA foreign_keys=ON")
     owned_regular(path)
     con.executescript(SCHEMA)
+    # Old candidate receipts lack a proven base. Migrate their schema but
+    # leave base_digest NULL so they fail closed on PREPARE replay.
+    if "base_digest" not in {col[1] for col in con.execute("PRAGMA table_info(finalized)")}:
+        con.execute("ALTER TABLE finalized ADD COLUMN base_digest TEXT")
     return con
 
 def reply(state, floor, pending=False, *, challenge=None, key=None,
@@ -220,19 +225,35 @@ def operate(con, command, args, fixture, key):
     if command == "prepare":
         # PREPARE: device epoch old_revision old_digest new_revision new_digest nonce
         _, _, old_rev, old_digest, new_rev, new_digest, nonce = args
+        # Consult a proven receipt before the current pending tuple. A newer
+        # PREPARE must not turn a lost PREPARE acknowledgement for an older,
+        # already durable revision into a hard base mismatch.
+        proven = con.execute(
+          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+          (device, epoch, int(new_rev))).fetchone()
+        if proven:
+            if (proven[0] != nonce or proven[1] != new_digest
+                    or proven[2] != old_digest or not proven[2]):
+                refuse("finalized replay base mismatch or missing provenance")
+            # Idempotent only when the floor still names this digest, or has
+            # already moved ahead. A floor behind the receipt, or the same
+            # revision with a different digest, is a split snapshot.
+            new_revision = int(new_rev)
+            if row[2] < new_revision or (row[2] == new_revision and row[3] != new_digest):
+                refuse("finalized receipt diverges from witness floor")
+            con.commit()
+            bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row, row[4] is not None)
+            return
         if row[4] is not None:
+            # A retry is idempotent only when the caller still names the exact
+            # committed base from which this pending operation was prepared.
+            # Bind the old tuple before returning any pending-state response.
+            if row[2] != int(old_rev) or row[3] != old_digest:
+                refuse("pending retry base mismatch; reconcile before response")
             if row[4] != int(new_rev) or row[5] != new_digest or row[6] != nonce:
                 refuse("conflicting pending operation; reconcile before mutation")
             con.commit()
             bound_reply("PREPARED_NOT_COMMITTED", row, True)
-            return
-        old = con.execute(
-          "SELECT nonce,digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
-          (device, epoch, int(new_rev))).fetchone()
-        if old:
-            if old != (nonce, new_digest): refuse("finalized revision collision")
-            con.commit()
-            bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
             return
         if row[2] != int(old_rev) or row[3] != old_digest:
             refuse("stale/rolled-back local base snapshot")
@@ -250,10 +271,12 @@ def operate(con, command, args, fixture, key):
     # The only useful outcome is a durable candidate floor, NEVER a paid ACK.
     nonce = args[4]
     if row[4] is None:
+        # Same provenance rule as PREPARE replay: a historical finalized row
+        # without its original base digest is not an authenticated lost reply.
         old = con.execute(
-          "SELECT nonce,digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
+          "SELECT nonce,digest,base_digest FROM finalized WHERE device=? AND epoch=? AND revision=?",
           (device, epoch, revision)).fetchone()
-        if old != (nonce, digest):
+        if old is None or old[0] != nonce or old[1] != digest or not old[2]:
             refuse("not prepared or disputed replay")
         con.commit()
         bound_reply("ALREADY_FINALIZED_NO_PAID_ACK", row)
@@ -266,8 +289,8 @@ def operate(con, command, args, fixture, key):
       " pending_digest=NULL,pending_nonce=NULL WHERE device=?",
       (revision, digest, device))
     con.execute(
-      "INSERT INTO finalized(device,epoch,revision,digest,nonce) VALUES(?,?,?,?,?)",
-      (device, epoch, revision, digest, nonce))
+      "INSERT INTO finalized(device,epoch,revision,digest,base_digest,nonce) VALUES(?,?,?,?,?,?)",
+      (device, epoch, revision, digest, row[3], nonce))
     row = (device, epoch, revision, digest, None, None, None)
     fault("before_finalize_commit", fixture)
     con.commit()
