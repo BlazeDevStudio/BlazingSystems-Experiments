@@ -1,3 +1,12 @@
+## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — current v1 split-write RED proven
+
+- **Status:** failed reproduction as intended; runtime fix not yet applied.
+- **Evidence:** focused run [#39741428517](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39741428517), exact head `035f71c00b0e15a1dcf9bac3a1389c0a208f6c3f`, job `rental-atomicity` FAILED at the fixture with `EXPECTED_UNSAFE RENTAL_V1_SPLIT_WRITE lease_changed=1 receipt_missing=1 uncertainty=1 status_exposes_partial_lease=1 rc=8`.
+- **Interpretation:** existing containment correctly emits no credited/duplicate result and leaves `paid-state-uncertain`, but the lease has already advanced and authenticated Rental status still exposes it. This is exactly the remaining issue #32 divergence; it is not a real customer incident or physical power-cut result.
+- **Fix design boundary:** durable structured rental intent must be persisted before lease mutation; recovery must run only for the exact matching event under `paid-financial.lock`, complete missing lease/receipt stages deterministically, refuse malformed/wrong-event/inconsistent states, and clear uncertainty only after both paid effects are durable. Status/policy reads must fail closed while uncertainty remains.
+- **Safety:** keep v2 authority disabled, VERSION unchanged, no migration, no production/customer/hardware/Standalone/R281 action.
+- **NEXT ACTION:** implement the bounded rental intent/recovery helpers and status gate, turn this exact fixture GREEN, add negative recovery vectors, then wire the test into Full validate and rerun focused + Full exact-head CI.
+
 ## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — modern RED fixture committed
 
 - **Status:** committed_untested / expected RED. Isolated branch `fix/rent-20261022-atomic-receipt-repro`.
