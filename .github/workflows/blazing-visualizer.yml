@@ -75,12 +75,9 @@ jobs:
           ram-size: 3072M
           heap-size: 512M
           disable-animations: true
-          script: cd experiments/Blazing-Visualizer && ./gradlew :app:connectedDebugAndroidTest --no-daemon
-      - name: Collect native acceptance evidence
-        if: always()
-        run: |
-          mkdir -p device-evidence
-          adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > device-evidence/acceptance.tar || true
+          script: |
+            cd experiments/Blazing-Visualizer && ./gradlew :app:connectedDebugAndroidTest --no-daemon
+            mkdir -p device-evidence && adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > device-evidence/acceptance.tar
       - uses: actions/upload-artifact@v4
         if: always()
         with:

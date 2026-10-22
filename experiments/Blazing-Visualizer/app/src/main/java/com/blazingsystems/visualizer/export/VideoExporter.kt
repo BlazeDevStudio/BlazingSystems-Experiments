@@ -12,6 +12,7 @@ import java.io.*
 import java.nio.ByteBuffer
 import kotlin.math.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.takeWhile
 
 /** MP4 encoder uses source time, never the preview's wall clock or practice speed. */
 class VideoExporter(private val context: Context) {
@@ -43,10 +44,10 @@ class VideoExporter(private val context: Context) {
                 encodeVideo(request, timeline, audio, notes, video) { progress(it * .78f) }
                 ensureActive()
                 progress(.8f)
-                encodeAudio(audio, timeline, s.audioBitrate, sound)
+                val audioShiftUs = encodeAudio(audio, timeline, s.audioBitrate, sound)
                 ensureActive()
                 progress(.9f)
-                remux(video, sound, complete, timeline.durationUs)
+                remux(video, sound, complete, timeline.durationUs, audioShiftUs)
                 ensureActive()
                 progress(.96f)
                 destinationStarted = true
@@ -211,7 +212,7 @@ class VideoExporter(private val context: Context) {
         timeline: ExportTimeline,
         bitrate: Int,
         output: File,
-    ) {
+    ): Long {
         val job = currentCoroutineContext()
         require(audio.channels in 1..2) { "Video export supports mono and stereo audio" }
         val codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
@@ -219,6 +220,7 @@ class VideoExporter(private val context: Context) {
         var started = false
         var track = -1
         var primaryFailure: Throwable? = null
+        val prefix = AacAlignment.prefix(audio.sampleRate)
         try {
             val format =
                 MediaFormat.createAudioFormat(
@@ -242,6 +244,7 @@ class VideoExporter(private val context: Context) {
                     (timeline.durationUs * audio.sampleRate / 1_000_000).coerceAtMost(
                         audio.frames - startFrame,
                     )
+                val totalFrames = count + prefix.size
                 pcm.seek(startFrame * audio.channels * 2)
                 var sent = 0L
                 var inputEnded = false
@@ -256,19 +259,34 @@ class VideoExporter(private val context: Context) {
                             val input = codec.getInputBuffer(index)!!
                             input.clear()
                             val frames =
-                                min(input.capacity() / (audio.channels * 2).toLong(), count - sent)
+                                min(
+                                        input.capacity() / (audio.channels * 2).toLong(),
+                                        totalFrames - sent,
+                                    )
                                     .toInt()
-                            val size = frames * audio.channels * 2
-                            val bytes = ByteArray(size)
-                            pcm.readFully(bytes)
+                            val bytes = ByteArray(frames * audio.channels * 2)
+                            val prefixFrames =
+                                min(frames.toLong(), (prefix.size - sent).coerceAtLeast(0)).toInt()
+                            val b =
+                                java.nio.ByteBuffer.wrap(bytes)
+                                    .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                            for (i in 0 until prefixFrames) repeat(audio.channels) {
+                                b.putShort((prefix[(sent + i).toInt()] * 32767).toInt().toShort())
+                            }
+                            if (frames > prefixFrames)
+                                pcm.readFully(
+                                    bytes,
+                                    prefixFrames * audio.channels * 2,
+                                    (frames - prefixFrames) * audio.channels * 2,
+                                )
                             input.put(bytes)
                             val pts = sent * 1_000_000 / audio.sampleRate
                             sent += frames
-                            inputEnded = sent >= count
+                            inputEnded = sent >= totalFrames
                             codec.queueInputBuffer(
                                 index,
                                 0,
-                                size,
+                                bytes.size,
                                 pts,
                                 if (inputEnded) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0,
                             )
@@ -276,7 +294,10 @@ class VideoExporter(private val context: Context) {
                     }
                     when (val index = codec.dequeueOutputBuffer(info, 10_000)) {
                         MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                            track = muxer.addTrack(codec.outputFormat)
+                            val f = codec.outputFormat
+                            f.setInteger("encoder-delay", 0)
+                            f.setInteger("encoder-padding", 0)
+                            track = muxer.addTrack(f)
                             muxer.start()
                             started = true
                             last = System.nanoTime()
@@ -288,8 +309,7 @@ class VideoExporter(private val context: Context) {
                                         info.size > 0 &&
                                             info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG ==
                                                 0 &&
-                                            info.presentationTimeUs >= 0 &&
-                                            info.presentationTimeUs < timeline.durationUs
+                                            info.presentationTimeUs >= 0
                                     ) {
                                         check(started)
                                         val bytes = codec.getOutputBuffer(index)!!
@@ -309,13 +329,6 @@ class VideoExporter(private val context: Context) {
                     }
                 }
                 check(started)
-                muxer.writeSampleData(
-                    track,
-                    ByteBuffer.allocate(0),
-                    MediaCodec.BufferInfo().apply {
-                        set(0, 0, timeline.durationUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                    },
-                )
             }
         } catch (failure: Throwable) {
             primaryFailure = failure
@@ -329,9 +342,31 @@ class VideoExporter(private val context: Context) {
                 { muxer.release() },
             )
         }
+        val decoded = ArrayList<Float>()
+        PcmDecoder(context)
+            .decode(Uri.fromFile(output))
+            .takeWhile { decoded.size < AacAlignment.PREFIX_FRAMES + 8192 }
+            .collect { chunk ->
+                require(chunk.sampleRate == audio.sampleRate) { "AAC sample rate changed" }
+                for (frame in 0 until chunk.samples.size / chunk.channels) {
+                    var sample = 0f
+                    for (channel in 0 until chunk.channels) sample +=
+                        chunk.samples[frame * chunk.channels + channel]
+                    decoded += sample / chunk.channels
+                }
+            }
+        job.ensureActive()
+        val delay = AacAlignment.measureDelay(decoded.toFloatArray(), audio.sampleRate)
+        return (AacAlignment.PREFIX_FRAMES + delay) * 1_000_000L / audio.sampleRate
     }
 
-    private suspend fun remux(video: File, audio: File, output: File, durationUs: Long) {
+    private suspend fun remux(
+        video: File,
+        audio: File,
+        output: File,
+        durationUs: Long,
+        audioShiftUs: Long,
+    ) {
         val job = currentCoroutineContext()
         val extractors =
             listOf(video, audio).map { file ->
@@ -354,7 +389,11 @@ class VideoExporter(private val context: Context) {
                     buffer.clear()
                     val size = extractor.readSampleData(buffer, 0)
                     if (size < 0) break
-                    val pts = extractor.sampleTime
+                    val pts =
+                        if (i == 1)
+                            AacAlignment.sourcePts(extractor.sampleTime, audioShiftUs, durationUs)
+                                ?: -1L
+                        else extractor.sampleTime
                     if (pts >= 0 && pts < durationUs) {
                         val flags =
                             if (extractor.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0)

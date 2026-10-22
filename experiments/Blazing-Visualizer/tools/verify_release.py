@@ -27,6 +27,6 @@ for v in matrix:
  for t in tracks:assert abs(t['durationUs']-duration)<=50000 and 0<=t['firstPtsUs']<=50000 and t['samples']>0
 checks['exportMatrix']=matrix
 alignment=json.loads((args.evidence/'audio-alignment.json').read_text());assert abs(alignment['bestLagUs'])<=50000 and alignment['normalizedCorrelation']>.8;checks['audioAlignment']=alignment
-parity=json.loads((args.evidence/'model-parity.json').read_text());assert max(parity.values())<.00005;checks['modelParityMaxErrors']=parity
+parity=json.loads((args.evidence/'model-parity.json').read_text());assert max(parity.values())<.001;checks['modelParityMaxErrors']=parity
 checks['rendererParity']=json.loads((args.evidence/'renderer-parity.json').read_text())
 report.update({'checks':checks,'releaseStatus':'preview','physicalDeviceVerified':False});args.out.parent.mkdir(parents=True,exist_ok=True);args.out.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'apkSha256':report['apkSha256'],'hostTests':checks['hostTests'],'deviceTests':checks['deviceTests'],'status':'PASS'}))

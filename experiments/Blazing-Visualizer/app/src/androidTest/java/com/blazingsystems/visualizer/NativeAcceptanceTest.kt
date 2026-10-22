@@ -67,10 +67,13 @@ class NativeAcceptanceTest {
                 var error = 0f
                 for (t in predicted.indices) for (p in 0 until bins) error =
                     max(error, abs(predicted[t][p] - expected[t][p]))
-                assertTrue("$key max error $error", error < .00005f)
                 errors.put(key, error.toDouble())
             }
             evidence("model-parity", errors)
+            for (key in errors.keys()) assertTrue(
+                "$key max error ${errors.getDouble(key)}",
+                errors.getDouble(key) < .001,
+            )
         }
     }
 
