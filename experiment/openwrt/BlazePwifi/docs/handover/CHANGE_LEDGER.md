@@ -1,3 +1,12 @@
+## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — reproduction started
+
+- **Status:** in_progress; no runtime fix yet.
+- **Why:** current v1 `bp_rental_apply_coin` performs durable lease write before durable receipt append. Receipt failure refuses ACK and marks uncertainty, but cannot make the already-written lease disappear; issue #32 therefore remains open.
+- **Planned scope:** isolated branch, fixture-only private `/tmp` state, fictional device/controller/nonce, injected receipt append failure after lease write. Add `tests/v060_rental_receipt_failure_repro.sh` and focused CI only after proving the real current call path.
+- **Expected RED evidence:** operation returns failure/no success ACK, receipt is absent, lease differs from pre-operation state, uncertainty/quarantine is present. That proves divergence without claiming a customer incident or physical power-cut result.
+- **Safety:** no Standalone/R281/device/customer files, no version/tag/signer/migration changes, no v2 money activation. P0 #31/#32/#43/#34 and production denial stay open.
+- **NEXT ACTION:** create `fix/rent-20261022-atomic-receipt-repro` from the synchronized active branch and add the failing fixture before any production-path modification.
+
 ## 2026-10-22 — RENT-20261022-HASH / P0 #32 — merged-head validation complete
 
 - **Status:** validated development integration. PR [#136](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/136) merged at `9d43c4738a57eb4c2f32ae49ebc8b9b0ce276a66` into `blazepwifi-v0.6.0-audit-foundation`.
