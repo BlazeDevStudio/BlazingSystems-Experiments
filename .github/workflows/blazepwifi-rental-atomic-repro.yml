@@ -1,0 +1,37 @@
+name: RENT-20261022 rental atomicity repro
+
+on:
+  push:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/common.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh'
+      - '.github/workflows/blazepwifi-rental-atomic-repro.yml'
+      - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/common.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh'
+      - '.github/workflows/blazepwifi-rental-atomic-repro.yml'
+      - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+
+permissions:
+  contents: read
+
+jobs:
+  rental-atomicity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax
+        run: sh -n experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh
+      - name: Reproduce rental lease receipt split-write
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh
