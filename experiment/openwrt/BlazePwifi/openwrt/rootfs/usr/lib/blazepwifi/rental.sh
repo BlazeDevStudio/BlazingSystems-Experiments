@@ -617,13 +617,19 @@ bp_rental_paid_receipt_snapshot() {
   ' "$BP_RENTAL_EVENTS"
 }
 bp_rental_paid_receipt_match() {
-  receipt="$1"; expected_did="$2"; expected_pulses="$3"
+  receipt="$1"; expected_did="$2"; expected_pulses="$3"; observed_lease="$4"
   old_did="$(printf '%s' "$receipt" | cut -f2)"
   old_lease="$(printf '%s' "$receipt" | cut -f3)"
   old_pulses="$(printf '%s' "$receipt" | cut -f5)"
+  # RENT-20261022-FLOOR: a valid receipt cannot ACK a payment after its
+  # materialized lease has regressed below the credited post-transaction
+  # lease. Refuse conservatively (including explicit forfeit) rather than
+  # silently restoring money or treating this as antirollback protection.
   [ "$old_did" = "$expected_did" ] &&
     [ "$old_pulses" = "p:$expected_pulses" ] &&
-    bp_rental_safe_seconds "$old_lease" 2147483647 || return 5
+    bp_rental_safe_seconds "$old_lease" 2147483647 &&
+    bp_rental_safe_seconds "$observed_lease" 2147483647 &&
+    [ "$observed_lease" -ge "$old_lease" ] || return 5
   printf 'duplicate\t%s\n' "$old_lease"
 }
 
@@ -697,7 +703,7 @@ bp_rental_apply_coin() {
   fi
   if [ -n "$old" ]; then
     # Emit only a well-formed bound original receipt, while read lock held.
-    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses" "$lease"
     rc=$?
     bp_paid_replay_read_unlock
     return "$rc"
@@ -739,7 +745,8 @@ bp_rental_apply_coin() {
     # A competing writer committed the same event between locks. No paid
     # mutation occurs here; clear only our just-created pending marker.
     # Refuse ACK when that marker cannot be durably cleared.
-    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    lease="$(printf '%s' "$line" | cut -f3)"
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses" "$lease")"
     rc=$?
     if [ "$rc" -ne 0 ]; then
       bp_paid_abort
