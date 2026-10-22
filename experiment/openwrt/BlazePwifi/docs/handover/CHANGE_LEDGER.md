@@ -2925,3 +2925,10 @@
 - **Hazard:** account/lease authority still written independently from receipt. Marker is a halt, not atomic recovery. P0 #31/#32/#43/#34 and independent witness, signer, migration, physical acceptance, customer install remain BLOCKED. Code and source version unchanged; older alpha lab remains nonproduction.
 - **Rollback:** delete this isolated test/workflow/doc/branch; zero production state migration and no hardware effect.
 - **NEXT ACTION:** design/implement guarded single-authority rental lease+receipt transaction under protected monotonic witness, compatibility-safe v1 migration and owner physical evidence, using existing `tests/fixtures/rental_v2_atomic.py` only as a LAB model. Do not treat RED evidence workflow success as a production-green gate.
+
+## 2026-10-22 — RENT-20261022-ATOMIC full-PR codebase compatibility checkpoint
+
+- **Exact source + docs tested:** `97e2e51bb3f20e9d17da75a45198906bc479b531` draft PR [#139](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/139), isolated test/CI/docs only.
+- **Full Actions [#39741838737](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39741838737):** initial attempt failed Android `:lintVitalAospRelease` due official Google Maven `lint-api-26.1.3.jar` read timeout, NOT RENT/ESP regression. Failed jobs rerun unchanged source; attempt 2 `COMPLETED SUCCESS`, all 30 jobs complete/zero failures, including Android Device Owner emulator and candidate gate.
+- **P0 real unsafe behavior remains:** focused [#39741266570](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39741266570) emitted mandatory `RENT-20261022-ATOMIC RED` before receipt. Lease persistence without receipt remains open; no customer money or hardware touched, no safe release. No automatic quarantine clearing, no v1→v2 activation, signer/migration/witness unchanged.
+- **Rollback:** test-only branch, no device deployment. **NEXT:** v1-compatible protected single-authority journal with interruption boundary tests and verified migration; keep P0 #31/#32/#34/#43 open.
