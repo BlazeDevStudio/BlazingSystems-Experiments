@@ -1,3 +1,12 @@
+## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — modern RED fixture committed
+
+- **Status:** committed_untested / expected RED. Isolated branch `fix/rent-20261022-atomic-receipt-repro`.
+- **Test:** `tests/v060_rental_receipt_failure_repro.sh` updated at `14823bc81843d21a75c908614d8dcef6ee16ea50` from old MIG-0622 behavior to the remaining current v1 split-write hazard. It injects receipt append failure only inside a private synthetic shell fixture while exercising the real lease writer and real authenticated Rental status CGI.
+- **Expected unsafe signature:** lease advances, receipt is absent, `paid-state-uncertain` remains, no credited/duplicate result escapes, yet authenticated status exposes the changed lease. The fixture exits 1 only when that exact current hazard is reproduced.
+- **Focused CI:** workflow added at `99d43fb5418c28ec9f8f174d1c12a3d29bcd73c6`; #39741302457 queued. Full #39741140174 is running on the prior test-only SHA and is not evidence for this new focused fixture.
+- **Safety:** test-only; no runtime/account/customer/Standalone/R281/version/tag/signer/migration change.
+- **NEXT ACTION:** require focused run RED with the named `EXPECTED_UNSAFE RENTAL_V1_SPLIT_WRITE` output. Only then change runtime semantics; after the fix, the same fixture must turn GREEN and be wired into Full validate.
+
 ## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — reproduction started
 
 - **Status:** in_progress; no runtime fix yet.
