@@ -65,7 +65,7 @@ class QueueRegressionTest {
                     player.state.value.isPlaying
             }
         } finally {
-            if (::player.isInitialized) instrumentation.runOnMainSync { player.close() }
+            instrumentation.runOnMainSync { player.close() }
         }
     }
 

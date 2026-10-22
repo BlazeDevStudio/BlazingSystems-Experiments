@@ -3,7 +3,7 @@
 ## 2026-10-22 continuous playback native transition regression (COMMITTED_UNVERIFIED)
 
 - Added a real Media3 device test with two audio fixture files. It starts a MediaController playlist, seeks to 120 ms before the first track ends and checks automatic transition to the second without tapping Next; repeats with Repeat All enabled and verifies last-to-first wrap. This directly reproduces the owner's old complaint, unlike earlier tests that manually invoked Next. UI queue behavior from 863d91d is unchanged.
-- CI host/Android26/Android36 outcome for this instrumentation addition is pending. An emulator pass is not a physical phone guarantee. Keep the preview release gated until all checks pass.
+- Corrected local late-initialized test variable cleanup for Kotlin compatibility. CI host/Android26/Android36 outcome for this instrumentation addition is pending. An emulator pass is not a physical phone guarantee. Keep the preview release gated until all checks pass.
 
 
 ## 2026-10-22 Android 8 launch/permission instrumentation correction (COMMITTED_UNVERIFIED)
