@@ -38,6 +38,14 @@ class ClickAuditTest {
         rule.onNodeWithText("Queue", useUnmergedTree = true).performClick()
         rule.onNodeWithText("Up next").assertIsDisplayed()
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
+        rule.onNodeWithContentDescription("Playback options").performClick()
+        rule.onNodeWithText("Repeat all", substring = true).performClick()
+        rule.onNodeWithContentDescription("Playback options").performClick()
+        rule.onNodeWithText("Repeat one", substring = true).performClick()
+        rule.onNodeWithContentDescription("Playback options").performClick()
+        rule.onNodeWithText("Shuffle off", substring = true).performClick()
+        rule.onNodeWithContentDescription("Playback options").performClick()
+        rule.onNodeWithText("Shuffle on", substring = true).performClick()
         rule.onNodeWithContentDescription("Choose visualizer").performClick()
         rule.onNodeWithText("Visualizers").assertIsDisplayed()
         rule.onAllNodes(hasText("Harmonic compass") and hasClickAction()).onFirst().performClick()
@@ -129,6 +137,13 @@ class ClickAuditTest {
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
         rule.onNodeWithContentDescription("Export video").performClick()
         rule.onNodeWithText("Composition preview at selected output shape").assertExists()
+        rule.onNodeWithText("Fill screen · crop edges").performScrollTo().performClick()
+        rule.onNodeWithText("Fit entire scene").performScrollTo().performClick()
+        rule.waitUntil(10_000) {
+            model().state.value.project?.exportFrameMode ==
+                com.blazingsystems.visualizer.project.ExportFrameMode.CONTAIN
+        }
+        rule.onNodeWithText("Fill screen · crop edges").performScrollTo().performClick()
         rule.onNodeWithText("Portrait 9:16").performScrollTo().performClick()
         rule.onNodeWithText("Output: 720 × 1280 pixels").assertExists()
         rule.onNodeWithText("Separate arrangement").performScrollTo().performClick()

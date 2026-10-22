@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.playback.Playlist
+import androidx.media3.common.Player
 import com.blazingsystems.visualizer.render.*
 import java.io.File
 import java.util.UUID
@@ -58,6 +59,7 @@ fun AveeShell(model: StudioModel) {
         onDispose { lifecycle?.removeObserver(observer); model.stopTuner() }
     }
     var tab by rememberSaveable { mutableIntStateOf(1) }
+    var playbackOptions by remember { mutableStateOf(false) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
     var viewportAspect by remember { mutableFloatStateOf(1f) }
     val microphonePermission = rememberLauncherForActivityResult(
@@ -141,21 +143,9 @@ fun AveeShell(model: StudioModel) {
                 Row(
                     Modifier.fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Text(
-                            "BV",
-                            Modifier.padding(10.dp),
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
                     Text(
                         "Blazing Visualizer",
                         modifier = Modifier.weight(1f),
@@ -166,16 +156,35 @@ fun AveeShell(model: StudioModel) {
                     IconButton(onClick = { audio.launch(arrayOf("audio/*")) }) {
                         Icon(Icons.Rounded.LibraryMusic, "Open music")
                     }
-                }
-                PrimaryTabRow(selectedTabIndex = tab) {
-                    listOf("Library", "Visualizer", "Queue").forEachIndexed { i, label ->
-                        Tab(selected = tab == i, onClick = { tab = i }, text = { Text(label) })
+                    Box {
+                        IconButton(onClick = { playbackOptions = true }) {
+                            Icon(Icons.Rounded.MoreVert, "Playback options")
+                        }
+                        DropdownMenu(expanded = playbackOptions,
+                            onDismissRequest = { playbackOptions = false }) {
+                            DropdownMenuItem(
+                                text = { Text(when (p.repeatMode) {
+                                    Player.REPEAT_MODE_ONE -> "Repeat one · tap to turn off"
+                                    Player.REPEAT_MODE_ALL -> "Repeat all · tap for one"
+                                    else -> "Repeat off · tap for all"
+                                }) },
+                                leadingIcon = { Icon(if (p.repeatMode == Player.REPEAT_MODE_ONE)
+                                    Icons.Rounded.RepeatOne else Icons.Rounded.Repeat, null) },
+                                onClick = { model.player.cycleRepeatMode(); playbackOptions = false },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(if (p.shuffle) "Shuffle on · tap to disable"
+                                    else "Shuffle off · tap to enable") },
+                                leadingIcon = { Icon(Icons.Rounded.Shuffle, null) },
+                                onClick = { model.player.toggleShuffle(); playbackOptions = false },
+                            )
+                        }
                     }
                 }
             }
         },
         bottomBar = {
-            Column(Modifier.navigationBarsPadding().background(MaterialTheme.colorScheme.surface)) {
+            if (!s.layoutEditing) Column(Modifier.navigationBarsPadding().background(MaterialTheme.colorScheme.surface)) {
                 s.progress?.let { value ->
                     LinearProgressIndicator(
                         progress = { value },
@@ -183,7 +192,7 @@ fun AveeShell(model: StudioModel) {
                     )
                 }
                 Row(
-                    Modifier.padding(start = 20.dp, end = 8.dp, top = 12.dp),
+                    Modifier.padding(start = 14.dp, end = 6.dp, top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
@@ -230,10 +239,10 @@ fun AveeShell(model: StudioModel) {
                         dragging = null
                     },
                     enabled = s.project != null,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(28.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(20.dp),
                 )
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 10.dp),
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
@@ -247,6 +256,21 @@ fun AveeShell(model: StudioModel) {
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                    listOf(
+                        Triple("Library", Icons.Rounded.LibraryMusic, 0),
+                        Triple("Visualizer", Icons.Rounded.GraphicEq, 1),
+                        Triple("Queue", Icons.Rounded.QueueMusic, 2),
+                    ).forEach { (label, symbol, index) ->
+                        NavigationBarItem(
+                            selected = tab == index,
+                            onClick = { tab = index },
+                            icon = { Icon(symbol, null) },
+                            label = { Text(label) },
+                            alwaysShowLabel = true,
+                        )
+                    }
                 }
             }
         },
@@ -543,7 +567,7 @@ private fun LibraryScreen(
                                 },
                             )
                         } else Modifier)
-                        .clickable { model.select(source, true) },
+                        .clickable { model.select(source, true, fromLibrary = !queue) },
                 )
             }
             if (tracks.isNotEmpty() && filteredTracks.isEmpty())

@@ -38,6 +38,23 @@ class LayoutAndMusicalMathTest {
         }
     }
 
+    @Test fun coverFillsPortraitInsteadOfLeavingEmptyBottomSpace() {
+        val layer = Layer(type = ElementType.SHAPE,
+            transform = Transform(width = .8f, height = 1f))
+        val scene = Scene(designAspect = 1f, layers = listOf(layer))
+        val project = Project(source = SourceRef("content://test"), scene = scene)
+        val settings = ExportSettings(720, 1280)
+        val cover = SceneLayouts.forExport(project, settings)
+        val fit = SceneLayouts.forExport(project.copy(exportFrameMode = ExportFrameMode.CONTAIN), settings)
+        assertEquals(1f, cover.layers.single().transform.height, .00001f)
+        assertTrue(fit.layers.single().transform.height < .6f)
+        assertTrue(cover.layers.single().transform.width > fit.layers.single().transform.width)
+        val stretch = SceneLayouts.forExport(project.copy(exportFrameMode = ExportFrameMode.STRETCH), settings)
+        assertEquals(settings.width.toFloat() / settings.height, stretch.designAspect, .00001f)
+        assertEquals(ExportFrameMode.COVER,
+            Json.decodeFromString<Project>(Json.encodeToString(project)).exportFrameMode)
+    }
+
     @Test fun separateExportArrangementRoundTripsWithoutMovingPreview() {
         val layer = Layer(id = "piano", type = ElementType.PIANO_ROLL)
         val moved = Transform(x = .25f, y = .3f, width = .4f, height = .3f)

@@ -17,6 +17,8 @@ data class PlaybackState(
     val failure: String? = null,
     val sourceUri: String? = null,
     val connected: Boolean = false,
+    val repeatMode: Int = Player.REPEAT_MODE_ALL,
+    val shuffle: Boolean = false,
 )
 
 data class LoopRange(val startUs: Long, val endUs: Long) {
@@ -42,6 +44,11 @@ class PlayerController(context: Context) : AutoCloseable {
     private var pendingIndex = 0
     private var pendingAutoPlay = false
     private var restoreOnly = false
+    private val preferences = context.getSharedPreferences("playback-mode", Context.MODE_PRIVATE)
+    private var desiredRepeat = preferences.getInt("repeat", Player.REPEAT_MODE_ALL)
+        .takeIf { it == Player.REPEAT_MODE_OFF || it == Player.REPEAT_MODE_ALL || it == Player.REPEAT_MODE_ONE }
+        ?: Player.REPEAT_MODE_ALL
+    private var desiredShuffle = preferences.getBoolean("shuffle", false)
     private var desiredSpeed = 1f
     private var practiceSourceUri: String? = null
     private var closed = false
@@ -88,6 +95,8 @@ class PlayerController(context: Context) : AutoCloseable {
                                     },
                                 )
                             }
+                        controller!!.repeatMode = desiredRepeat
+                        controller!!.shuffleModeEnabled = desiredShuffle
                         val adoptingLive = restoreOnly && controller!!.mediaItemCount > 0
                         if (pending != null && !adoptingLive)
                             applyPending()
@@ -268,6 +277,29 @@ class PlayerController(context: Context) : AutoCloseable {
         update()
     }
 
+    fun setRepeatMode(mode: Int) {
+        require(mode == Player.REPEAT_MODE_OFF || mode == Player.REPEAT_MODE_ONE || mode == Player.REPEAT_MODE_ALL)
+        desiredRepeat = mode
+        preferences.edit().putInt("repeat", mode).apply()
+        controller?.repeatMode = mode
+        update()
+    }
+
+    fun cycleRepeatMode() = setRepeatMode(when (desiredRepeat) {
+        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+        Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
+        else -> Player.REPEAT_MODE_ALL
+    })
+
+    fun setShuffle(enabled: Boolean) {
+        desiredShuffle = enabled
+        preferences.edit().putBoolean("shuffle", enabled).apply()
+        controller?.shuffleModeEnabled = enabled
+        update()
+    }
+
+    fun toggleShuffle() = setShuffle(!desiredShuffle)
+
     fun setPracticeSpeed(speed: Float) {
         require(speed.isFinite() && speed in .5f..1.5f)
         desiredSpeed = speed
@@ -326,6 +358,8 @@ class PlayerController(context: Context) : AutoCloseable {
                     p.playerError?.localizedMessage,
                     p.currentMediaItem?.localConfiguration?.uri?.toString(),
                     true,
+                    p.repeatMode,
+                    p.shuffleModeEnabled,
                 )
         }
     }

@@ -175,6 +175,9 @@ data class PracticeSettings(
 @Serializable
 enum class ExportLayoutMode { FOLLOW_FIT, SEPARATE }
 
+/** How the existing scene is mapped to a video frame. */
+@Serializable enum class ExportFrameMode { CONTAIN, COVER, STRETCH }
+
 @Serializable
 data class Project(
     val id: String = UUID.randomUUID().toString(),
@@ -185,6 +188,7 @@ data class Project(
     val export: ExportSettings = ExportSettings(),
     val practice: PracticeSettings = PracticeSettings(),
     val exportLayout: ExportLayoutMode = ExportLayoutMode.FOLLOW_FIT,
+    val exportFrameMode: ExportFrameMode = ExportFrameMode.COVER,
     val exportTransforms: Map<String, Transform> = emptyMap(),
     val exportDesignAspect: Float = 1f,
 )

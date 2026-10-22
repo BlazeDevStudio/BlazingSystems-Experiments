@@ -88,6 +88,23 @@ fun ExportSheet(
         }
         if (s.project?.exportLayout == ExportLayoutMode.SEPARATE)
             TextButton(onClick = onArrange) { Text("Arrange export on canvas") }
+        Text("Frame filling", fontWeight = FontWeight.SemiBold)
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            listOf(
+                ExportFrameMode.COVER to "Fill screen · crop edges",
+                ExportFrameMode.CONTAIN to "Fit entire scene",
+                ExportFrameMode.STRETCH to "Stretch to frame",
+            ).forEach { (mode, label) ->
+                FilterChip(
+                    selected = (s.project?.exportFrameMode ?: ExportFrameMode.COVER) == mode,
+                    onClick = { model.setExportFrameMode(mode) },
+                    label = { Text(label) },
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
+        }
+        Text("Fill avoids empty borders; Fit retains every edge; Stretch can distort circles.",
+            fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             "Output: $width × $height pixels",
             fontSize = 12.sp,

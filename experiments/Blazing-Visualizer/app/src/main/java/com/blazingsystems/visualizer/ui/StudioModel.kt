@@ -343,7 +343,8 @@ class StudioModel @JvmOverloads constructor(
         persist()
     }
 
-    fun select(source: SourceRef, startPlayback: Boolean = true) {
+    /** Library selection creates a listening queue; Queue selection preserves its order. */
+    fun select(source: SourceRef, startPlayback: Boolean = true, fromLibrary: Boolean = false) {
         stopTuner()
         val preparation = preanalysisJob
         preparation?.cancel()
@@ -377,7 +378,9 @@ class StudioModel @JvmOverloads constructor(
                     editingExportLayout = false,
                 )
             if (startPlayback) {
-                val q = (mutable.value.queue + source).distinctBy { it.uri }
+                val q = if (fromLibrary) {
+                    (mutable.value.library + source).distinctBy { it.uri }
+                } else (mutable.value.queue + source).distinctBy { it.uri }
                 if (q != mutable.value.queue) {
                     mutable.update { it.copy(queue = q) }
                     persist()
@@ -553,6 +556,13 @@ class StudioModel @JvmOverloads constructor(
     fun setExportSettings(settings: ExportSettings) {
         validateExportSettings(settings)
         mutable.update { it.copy(project = it.project?.copy(export = settings)) }
+        persist()
+    }
+
+    fun setExportFrameMode(mode: ExportFrameMode) {
+        mutable.update { state ->
+            state.copy(project = state.project?.copy(exportFrameMode = mode))
+        }
         persist()
     }
 

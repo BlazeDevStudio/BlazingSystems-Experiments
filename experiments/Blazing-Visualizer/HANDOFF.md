@@ -1,5 +1,14 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 modern-Avee player and portrait export correction
+
+- Owner's refreshed priority: **preserve current visualizer presets**; fix music player continuous queue playback, modern phone UI, Avee .viz interoperability, and lower blank export framing. Audio-reactive visual response must not be confused with polyphonic Basic Pitch note transcription. Uploaded Avee 1.2.252 Premium APK is an unofficially modified build (contains E_l_a_Mods.xml and libpairipcore); use only for reference, do not embed or redistribute any protected source/assets.
+- Implemented in this commit: Media3 repeat ALL by default and saved OFF / ONE / ALL plus shuffle toggles; Library selection constructs ordered library listening queue rather than playing only a single file; compact phone-first header and bottom Library / Visualizer / Queue navigation with mini-player; hide navigation while arranging scene; export COVER default to fill portrait video without lower letterbox, explicit CONTAIN and STRETCH choices, matching saved frame layout for preview and MP4. Added shape regression and menu/export click tests.
+- **Not a complete Avee 1.2.252 clone or .viz import implementation.** Existing AveePresetAdapter still supports only Text, Image, Bars and Particles from Avee JSON. Modern .viz should be independently researched from a legally obtained template sample before claiming broad compatibility. The modern APK is not a preset sample.
+- Pending: same-SHA GitHub Actions JDK17/SDK36 host/lint/APK and API26/API36 interaction tests, plus real phone UI/playback/export inspection. Current published GitHub release is still Preview 1; do not mislabel a CI build as a validated new release. Owner's hourly preview notification remains configured.
+- Previous baseline before these changes: source 31a6f7c passed build and API36 device tests but API26 failed permission-related lifecycle RESUMED transition (run 39764907346). This remains open; Android8 launch resilience needs attention. Video-to-graph stays last.
+
+
 ## 2026-10-22 click-by-click audit pass (in progress)
 
 - Owner reports Preview 2 buggy. Source inspection and CI confirmed: API26 permission-smoke cannot see OS permission buttons (run 39756912938), while API36 and the clean host build passed on source d31a43b; release remains blocked. Do not present the old downloadable CI APK as accepted/released.

@@ -16,12 +16,32 @@ object SceneLayouts {
         })
     }
 
+    /** Fill the frame, cropping edges instead of shrinking into a letterboxed strip. */
+    fun cover(scene: Scene, targetAspect: Float): Scene {
+        require(targetAspect.isFinite() && targetAspect > 0 &&
+            scene.designAspect.isFinite() && scene.designAspect > 0)
+        val sx = max(1f, scene.designAspect / targetAspect)
+        val sy = max(1f, targetAspect / scene.designAspect)
+        return scene.copy(designAspect = targetAspect, layers = scene.layers.map { layer ->
+            val t = layer.transform
+            layer.copy(transform = t.copy(
+                x = .5f + (t.x - .5f) * sx, y = .5f + (t.y - .5f) * sy,
+                width = t.width * sx, height = t.height * sy,
+            ))
+        })
+    }
+
     fun forExport(project: Project, settings: ExportSettings = project.export): Scene {
         val source = if (project.exportLayout == ExportLayoutMode.SEPARATE) project.scene.copy(
             designAspect = project.exportDesignAspect,
             layers = project.scene.layers.map { it.copy(transform = project.exportTransforms[it.id] ?: it.transform) },
         ) else project.scene
-        return fit(source, settings.width.toFloat() / settings.height)
+        val aspect = settings.width.toFloat() / settings.height
+        return when (project.exportFrameMode) {
+            ExportFrameMode.CONTAIN -> fit(source, aspect)
+            ExportFrameMode.COVER -> cover(source, aspect)
+            ExportFrameMode.STRETCH -> source.copy(designAspect = aspect)
+        }
     }
 
     fun move(t: Transform, dx: Float, dy: Float) = t.copy(x = (t.x + dx).coerceIn(-.5f, 1.5f), y = (t.y + dy).coerceIn(-.5f, 1.5f))
