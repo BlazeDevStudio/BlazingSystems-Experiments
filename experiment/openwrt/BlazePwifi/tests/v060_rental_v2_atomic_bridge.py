@@ -166,7 +166,10 @@ try:
     invalid_digest = digest()
     before_devices = DEVICES.read_bytes()
     before_events = EVENTS.read_bytes()
-    check(call("dev01", "ctrlA", "nonce3", "targetA", "1"), code=8)
+    for args in (("dev01", "ctrlA", "nonce3", "targetA", "1"),
+                 ("dev01", "ctrlA", "nonce4", "targetA", "1"),
+                 ("dev02", "ctrlB", "nonce5", "targetB", "1")):
+        check(call(*args), code=8)
     assert digest() == invalid_digest, "rejected inconsistent journal was changed"
     assert DEVICES.read_bytes() == before_devices, "invalid authority rewrote paid lease projection"
     assert EVENTS.read_bytes() == before_events, "invalid authority rewrote receipt projection"
