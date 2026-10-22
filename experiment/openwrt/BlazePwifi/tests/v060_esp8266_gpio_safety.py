@@ -112,12 +112,14 @@ class Esp8266PinSafety(unittest.TestCase):
         self.assertIsNotNone(match, "physical relay update not found")
         body = match.group(1)
         self.assertIn("bp_esp8266_coin_can_accept(", body)
-        for required in ("activeTarget.length()", "pendingTarget==activeTarget",
+        for required in ("bp_pending_sequence_hex_token(activeTarget.c_str(),8,32)", "pendingTarget==activeTarget",
                          "pendingPulses", "relayEnabled"):
             self.assertIn(required, body, f"relay accepts without {required}")
         # Before the next loop iteration or HTTP poll, shut the relay on the
         # twentieth stored pulse. This cannot prove physical switching delay.
         loop = text.split("void loop()", 1)[1]
+        self.assertIn("bp_pending_sequence_hex_token(activeTarget.c_str(),8,32)", loop,
+                      "coin intake must refuse the same malformed target as its flash journal")
         stored = loop.split("pendingPulses++;", 1)[1].split("lastCoin=active;", 1)[0]
         self.assertIn("applyOutputs();", stored, "relay cutoff cannot wait for the next poll")
 
@@ -127,6 +129,7 @@ class Esp8266PinSafety(unittest.TestCase):
         self.assertTrue(header.is_file(), "missing firmware-linked relay accounting gate")
         code = r"""
 #include "v060_esp8266_coin_acceptance.h"
+#include "v060_pending_sequence.h"
 #include <cassert>
 int main() {
     auto can = [](bool controller, bool coin, bool relay, bool window,
@@ -134,6 +137,12 @@ int main() {
         return bp_esp8266_coin_can_accept(controller,coin,relay,window,disk,
                                            queued,target,same,count);
     };
+    assert(can(true,true,true,true,true,false,
+               bp_pending_sequence_hex_token("deadbeef",8,32),true,0));
+    assert(!can(true,true,true,true,true,false,
+                bp_pending_sequence_hex_token("bad-token",8,32),true,0));
+    assert(!can(true,true,true,true,true,false,
+                bp_pending_sequence_hex_token("xyz",8,32),true,0));
     assert(can(true,true,true,true,true,false,true,true,0));
     assert(can(true,true,true,true,true,false,true,true,1));
     assert(can(true,true,true,true,true,false,true,true,19));
@@ -155,7 +164,8 @@ int main() {
             binary = Path(temp) / "relay"
             src.write_text(code, encoding="utf-8")
             subprocess.run(["g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
-                            "-pedantic", "-I", str(header.parent), str(src),
+                            "-pedantic", "-I", str(header.parent),
+                            "-I", str(ROOT / "esp/libraries/BlazePendingSequence/src"), str(src),
                             "-o", str(binary)], check=True, capture_output=True, text=True)
             subprocess.run([str(binary)], check=True, capture_output=True, text=True)
 
