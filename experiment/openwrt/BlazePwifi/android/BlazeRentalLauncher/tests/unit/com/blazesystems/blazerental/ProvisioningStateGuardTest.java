@@ -118,6 +118,36 @@ public class ProvisioningStateGuardTest {
     }
 
     @Test
+    public void manualScannerRejectsPendingDeviceOwnerIdentity() {
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "device_owner_provisioning", SERVER, TOKEN, PIN, "", ""));
+    }
+
+    @Test
+    public void manualScannerRejectsOrphanedOriginOrCertificatePin() {
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "", SERVER, "", "", "", ""));
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "", "", "", PIN, "", ""));
+    }
+
+    @Test
+    public void manualScannerRejectsPartialPermanentDeviceIdentity() {
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "", "", "", "", "00112233445566778899aabb", ""));
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "", "", "", "", "", "deadbeef"));
+    }
+
+    @Test
+    public void manualScannerRejectsPendingManualTokenUntilExplicitTransfer() {
+        assertFalse(ProvisioningStateGuard.canStartStandard(
+                "standard_manual", SERVER, TOKEN, "", "", ""));
+        assertTrue(ProvisioningStateGuard.canStartStandard(
+                "", "", "", "", "", ""));
+    }
+
+    @Test
     public void deviceOwnerCompletionRequiresProvisioningSource() {
         assertTrue(ProvisioningStateGuard.isProvisioningSource("device_owner_provisioning"));
         assertFalse(ProvisioningStateGuard.isProvisioningSource("standard_manual"));

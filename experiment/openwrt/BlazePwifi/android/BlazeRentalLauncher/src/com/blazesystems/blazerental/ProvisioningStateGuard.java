@@ -47,6 +47,23 @@ final class ProvisioningStateGuard {
                 existingPin, newServer, newToken, newPin);
     }
 
+    // Manual enrollment may only start in a clean unbound slot. In
+    // particular, the in-app scanner must never replace a pending Device
+    // Owner provisioning token or its pinned server identity.
+    static boolean canStartStandard(String existingSource,
+                                    String existingServer,
+                                    String existingToken,
+                                    String existingPin,
+                                    String existingDeviceId,
+                                    String existingDeviceSecret) {
+        return !nonEmpty(existingSource)
+                && !nonEmpty(existingServer)
+                && !nonEmpty(existingToken)
+                && !nonEmpty(existingPin)
+                && !nonEmpty(existingDeviceId)
+                && !nonEmpty(existingDeviceSecret);
+    }
+
     static boolean isExactReplay(String existingSource,
                                  String existingServer,
                                  String existingToken,

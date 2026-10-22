@@ -166,6 +166,9 @@ public class QrEnrollmentScannerActivity extends Activity
             if (RentalLeaseStore.isEnrolled(this)) {
                 throw new IllegalStateException("ALREADY_ENROLLED");
             }
+            if (!RentalLeaseStore.canStartManualEnrollment(this)) {
+                throw new IllegalStateException("PENDING_ENROLLMENT");
+            }
             if (!RentalLeaseStore.saveManualEnrollment(this, server, token, name, normalizedPin)) {
                 throw new IllegalStateException("ENROLLMENT_STORAGE");
             }
@@ -200,6 +203,10 @@ public class QrEnrollmentScannerActivity extends Activity
             } else if ("ALREADY_ENROLLED".equals(reason)) {
                 Toast.makeText(this,
                         "This phone is already bound. Use Transfer before scanning a new Standard Enrollment QR.",
+                        Toast.LENGTH_LONG).show();
+            } else if ("PENDING_ENROLLMENT".equals(reason)) {
+                Toast.makeText(this,
+                        "Enrollment is already pending. Retry the current binding or use Transfer to explicitly reset it.",
                         Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this,

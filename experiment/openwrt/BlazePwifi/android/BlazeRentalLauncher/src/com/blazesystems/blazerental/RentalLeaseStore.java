@@ -100,11 +100,22 @@ public final class RentalLeaseStore {
         if (isHttpsServerOrigin(server) && normalizedPin.length() != 64) return false;
         if (!isHttpsServerOrigin(server) && normalizedPin.length() != 0) return false;
 
-        // A working permanent identity must never be destroyed merely because a
-        // second Standard Enrollment QR was scanned. Administrators must use the
-        // explicit Transfer action first; prepareTransfer() clears the identity.
-        if (isEnrolled(context)) return false;
+        // The scanner cannot overwrite Device Owner provisioning, any
+        // partially persisted identity, or an existing Standard enrollment.
+        // An operator must explicitly Transfer before binding a new server.
+        if (!canStartManualEnrollment(context)) return false;
         return saveEnrollment(context, server, token, name, normalizedPin, "standard_manual");
+    }
+
+    public static synchronized boolean canStartManualEnrollment(Context context) {
+        SharedPreferences p = prefs(context);
+        return ProvisioningStateGuard.canStartStandard(
+                p.getString("enrollment_source", ""),
+                p.getString("server", ""),
+                p.getString("enrollment", ""),
+                normalizePin(p.getString("server_cert_sha256", "")),
+                p.getString("device_id", ""),
+                p.getString("device_secret", ""));
     }
 
     private static boolean saveEnrollment(Context context, String server, String token,
@@ -243,13 +254,17 @@ public final class RentalLeaseStore {
         prefs(context).edit().remove("admin_unlock_until").apply();
     }
 
-    public static void prepareTransfer(Context context) {
-        prefs(context).edit()
+    public static synchronized boolean prepareTransfer(Context context) {
+        // Do not report Transfer as complete before the identity wipe has
+        // reached persistent storage; stale source would block the next QR.
+        boolean cleared = prefs(context).edit()
                 .putBoolean("setup_complete", false)
                 .remove("server")
                 .remove("enrollment")
+                .remove("enrollment_source")
                 .remove("enrollment_request_nonce")
                 .remove("server_cert_sha256")
+                .remove("device_name")
                 .remove("device_id")
                 .remove("device_secret")
                 .remove("lease_duration_ms")
@@ -257,8 +272,9 @@ public final class RentalLeaseStore {
                 .remove("server_time_ms")
                 .remove("lease_until_ms")
                 .remove("admin_unlock_until")
-                .apply();
-        AndroidRentalPolicyRepository.clear(context);
+                .commit();
+        if (cleared) AndroidRentalPolicyRepository.clear(context);
+        return cleared;
     }
 
     private static long adminLockDurationMs(int level) {

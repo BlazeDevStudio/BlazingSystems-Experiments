@@ -256,3 +256,22 @@ Pure JUnit regressions cover isolated server residue, isolated certificate
 residue, server+pin residue, missing token, missing new fields, and incomplete
 callback replays. This is an isolated source/test change, **not a production
 release or proof of physical Setup Wizard interoperability**.
+
+## RC12 candidate: symmetric Standard Enrollment vs Device Owner state ownership
+
+The earlier source prevented Device Owner extras from overwriting pending Standard
+Enrollment, but the in-app Standard Enrollment scanner could still replace a
+pending Device Owner server/token/pin because it previously checked only
+`isEnrolled` (permanent secret presence). This allowed changing the trust
+anchor during Setup Wizard provisioning, and the old `prepareTransfer()`
+left `enrollment_source` behind after wiping the other state.
+
+The pending-state guard now rejects Standard Enrollment unless the entire
+enrollment slot is empty. A new scan cannot silently replace either a pending
+manual binding or Device Owner provisioning. Explicit administrator Transfer
+clears the source marker and identity together using a synchronous commit;
+if persistence fails, the admin UI reports failure and does not advance into
+the new setup UI. Separate scanner error messaging distinguishes an existing
+pending binding from a permanent device identity. Pure JUnit tests cover
+cross-mode overwrite, orphaned origin/pin, partial permanent identity, and
+clean-slot acceptance.

@@ -307,8 +307,12 @@ public class BlazeAdminActivity extends Activity {
                                 + "The administrator password is kept so the phone remains protected.")
                         .setPositiveButton("Transfer", new DialogInterface.OnClickListener() {
                             @Override public void onClick(DialogInterface d, int which) {
-                                RentalLeaseStore.prepareTransfer(BlazeAdminActivity.this);
-                                AndroidRentalPolicyRepository.clear(BlazeAdminActivity.this);
+                                if (!RentalLeaseStore.prepareTransfer(BlazeAdminActivity.this)) {
+                                    Toast.makeText(BlazeAdminActivity.this,
+                                            "Transfer failed: could not persist identity reset.",
+                                            Toast.LENGTH_LONG).show();
+                                    return;
+                                }
                                 ManagedPolicyController.apply(BlazeAdminActivity.this);
                                 showInitialSetup();
                             }
