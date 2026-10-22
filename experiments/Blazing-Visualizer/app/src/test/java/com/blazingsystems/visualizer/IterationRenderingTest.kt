@@ -12,8 +12,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class IterationRenderingTest {
     private fun render(scene: Scene, notes: List<NoteEvent> = emptyList()): Bitmap {
