@@ -54,6 +54,12 @@ bp_controller_set() {
   rhigh="$1"; lhigh="$2"; debounce="$3"; group="$4"; retries="$5"
   for value in "$enabled" "$coin" "$relay" "$led" "$clow" "$rhigh" "$lhigh"; do bp_controller_bool "$value" || return 2; done
   for value in "$cpin" "$rpin" "$lpin"; do bp_controller_pin "$value" || return 2; done
+  # Coin input must not share a configured pin with an output; relay and
+  # LED outputs must not drive the same GPIO. -1 requests a board default.
+  # Numeric comparison detects aliases such as 04 and 4.
+  if [ "$cpin" != -1 ] && [ "$rpin" != -1 ] && [ "$cpin" -eq "$rpin" ]; then return 2; fi
+  if [ "$cpin" != -1 ] && [ "$lpin" != -1 ] && [ "$cpin" -eq "$lpin" ]; then return 2; fi
+  if [ "$rpin" != -1 ] && [ "$lpin" != -1 ] && [ "$rpin" -eq "$lpin" ]; then return 2; fi
   bp_controller_uint "$debounce" 1 2000 || return 2
   bp_controller_uint "$group" 10 10000 || return 2
   bp_controller_uint "$retries" 1 60 || return 2
