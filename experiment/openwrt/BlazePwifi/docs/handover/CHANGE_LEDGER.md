@@ -2926,3 +2926,10 @@
 - **Risk/dependency:** no physical flash test, no signed firmware provenance or power-cut evidence; Full PR merge-tree ESP8266/ESP32 build mandatory, no v2 paid ACK authorization. This independent controller safety fix does NOT address P0 #32 rental lease/receipt atomicity (reproduced in draft PR #139) or member/witness/migration blockers. No live coin state or installed signing changed.
 - **Rollback:** revert only shared header, new test, shell runner, focused workflow and note on this branch. Do not deploy an unverified binary.
 - **NEXT ACTION:** open draft PR for exact diff and run Full PR merge-tree firmware+ESPs, plus focused asan; review then guarded merge to development only if all required checks pass.
+
+## 2026-10-22 — COIN-20261022-BOUNDED / full-PR evidence checkpoint
+
+- **Status:** validated development-only safety fix, pending guarded merge, not hardware accepted. Draft PR [#140](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/140) current executable+docs HEAD `374f80c6075839347971f0c067835a25cc64d688`.
+- **Exact Full evidence:** [Actions #39743315899](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39743315899), `completed/success`, 30 jobs complete/zero failures; required ESP8266/ESP32 compilation, native ASan regression, Android emulator, x86/Orange Pi/Ruijie, browser and finance sim green, production sign/release intentionally skipped. Earlier dedicated ASan pre-fix failure #39742533424 and post-fix success #39742761893 preserved.
+- **No changed business behavior claimed:** only corrupt controller pending-record parser bounds; no physical coin insertion, supply interruption, independent monotonic witness or actual install test. No APK signing, Standalone/R281, customer data, controller key, or release tag change.
+- **Rollback:** restore original header on development review only (would regress confirmed ASan overread; not recommended); no runtime deployment. **NEXT:** diff review, guarded development integration/merged-head CI if no conflicts, then physical owner bench. P0 #31/#32/#34/#43 remain open.
