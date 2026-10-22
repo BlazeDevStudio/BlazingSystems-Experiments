@@ -28,6 +28,7 @@ function generateQr(){
   const server=v('server'),token=v('token'),name=v('name')||'Rental phone',certPin=v('certPin').replace(/:/g,'').toLowerCase();
   if(!server||!token){document.getElementById('state').textContent='Server URL and enrollment token are required.';return}
   if(!/^https?:\/\//i.test(server)){document.getElementById('state').textContent='Server URL must begin with http:// or https://';return}
+  try{if(!new URL(server).hostname)throw new Error()}catch(_){document.getElementById('state').textContent='Server URL is invalid. Check the hostname and optional port.';return}
   if(token.indexOf('.')<=0){document.getElementById('state').textContent='Enrollment token format is invalid.';return}
   if(certPin&&!/^[0-9a-f]{64}$/.test(certPin)){document.getElementById('state').textContent='TLS certificate SHA-256 must be exactly 64 hex characters.';return}
   const d={"server_url":server,"enrollment_token":token,"device_name":name};
