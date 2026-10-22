@@ -1,3 +1,12 @@
+## ESP8266-GPIO-20261022 — COMMITTED_UNTESTED (2026-10-22 Manila)
+
+- Isolated branch fix/esp8266-coin-gpio-safety-20261022, original development HEAD 72987a376d66b2a9027a0685e9681fc5cd45b674. RENT-20261022-ATOMIC P0 #32 continues on development independently. Only ESP8266 NodeMCU coin hardware safety is modified; no other subsystems.
+- RED: focused #39743080798 completed FAILURE in old firmware with two expected tests. Test-only source commit 7dbd8d199429a32c8715c2966684b37d8bb22ee4; focused workflow 1055328449043de3389ddd2c09ce505f4cb09fb4.
+- Source: same-sketch-folder header 592379c0f20f317c7bda0befccc4a58cb29ccf75 permits only GPIO4,5,12,13,14 all distinct. Firmware 73b4665c9d2636d75633ef13e90cf7ac83faa473 applies validation at configureRuntimePins, remote config, local /save before Wi-Fi/EEPROM, and saved-config boot with known safe inactive GPIO fallback. Controller/coin/relay OFF inhibits pulse collection. Existing LittleFS pending journal, signed coin protocol, and ESP32 untouched. Original CRLF preserved.
+- Evidence: header-only intermediate focused #39743321393 FAILURE was expected before .ino modification. Candidate focused #39743513997 QUEUED, Full #39743514401 QUEUED at time of docs checkpoint. Do not assume green; must verify packaged Arduino ESP8266 board build and host portable C++ tests. No actual physical GPIO/pulse or customer-install acceptance.
+- Hazard: existing unsupported pin layouts may require controlled rewiring; never silently remap active acceptor or mutate customer EEPROM. Rollback discard isolated branch. Production v0.6.0 remains blocked.
+- NEXT EXACT ACTION: inspect focused run and full ESP8266 shipped-sketch compile by final docs head SHA, correct any failure narrowly, then prepare a draft PR and update all three handovers with full exact proof.
+
 ## ESP8266-GPIO-20261022 / EXPECTED OLD-FIRMWARE RED OBSERVED (2026-10-22 Asia/Manila)
 
 - Branch `fix/esp8266-coin-gpio-safety-20261022`, only ESP8266 coin-controller GPIO. **Pre-fix evidence:** test `7dbd8d199429a32c8715c2966684b37d8bb22ee4`, new focused workflow `1055328449043de3389ddd2c09ce505f4cb09fb4`, [CI #39743080798](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39743080798) **completed FAILURE**, two tests fail in old unchanged source as designed (missing local safety header and firmware integration). This is the RED check, not a regression fixed or board compilation success.
