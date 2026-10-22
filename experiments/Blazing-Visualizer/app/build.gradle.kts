@@ -5,7 +5,7 @@ android {
  namespace="com.blazingsystems.visualizer"; compileSdk=36; buildToolsVersion="36.0.0"
  defaultConfig { applicationId="com.blazingsystems.visualizer"; minSdk=26; targetSdk=36; versionCode=2; versionName="1.0.0-preview.2"; testInstrumentationRunner="androidx.test.runner.AndroidJUnitRunner"; ndk { abiFilters+=listOf("arm64-v8a","x86_64") } }
  // Public preview identity, deliberately not a production signing credential.
- val previewStore = layout.buildDirectory.file("preview-signing.p12").get().asFile
+ val previewStore = rootProject.file(".gradle/preview-signing.p12")
  previewStore.parentFile.mkdirs()
  previewStore.writeBytes(Base64.getMimeDecoder().decode(rootProject.file("config/preview-signing.p12.base64").readText()))
  signingConfigs.getByName("debug") { storeFile=previewStore; storeType="PKCS12"; storePassword="android"; keyAlias="blazing-preview"; keyPassword="android" }
