@@ -14,11 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.practice.NoteNames
+import com.blazingsystems.visualizer.render.MathVisualMode
 import kotlin.math.pow
 import kotlinx.serialization.json.*
 
 @Composable
-fun ElementEditorSheet(scene: Scene, model: StudioModel) {
+fun ElementEditorSheet(scene: Scene, model: StudioModel, onArrange: (Boolean) -> Unit = {}) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     var add by remember { mutableStateOf(false) }
     var imageLayer by remember { mutableStateOf<Layer?>(null) }
@@ -35,6 +36,18 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(10.dp))
+        Row {
+            OutlinedButton(onClick = { onArrange(false) }, modifier = Modifier.weight(1f)) { Text("Arrange preview") }
+            Spacer(Modifier.width(8.dp))
+            OutlinedButton(onClick = { onArrange(true) }, modifier = Modifier.weight(1f)) { Text("Arrange export") }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(scene.showEquations, { model.editScene(scene.copy(showEquations = it)) })
+            Text("Include math equations in graph visuals")
+        }
+        ColorField("Background color", scene.backgroundColor) {
+            model.editScene(scene.copy(backgroundColor = it))
+        }
         PropertySlider("Global animation intensity", scene.animationIntensity, 0f..2f) {
             model.editScene(scene.copy(animationIntensity = it))
         }
@@ -48,10 +61,11 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
             Switch(
                 scene.paletteColor != null,
                 { enabled ->
-                    model.editScene(scene.copy(paletteColor = if (enabled) paletteInput else null))
+                    model.editScene(scene.copy(paletteColor = if (enabled)
+                        paletteInput.takeIf { validColor(it) } ?: "#FF9C83FF" else null))
                 },
             )
-            Text("Use one global palette color", Modifier.padding(start = 10.dp))
+            Text("Global palette (layer colors can override)", Modifier.padding(start = 10.dp))
         }
         if (scene.paletteColor != null) OutlinedTextField(
             paletteInput,
@@ -132,7 +146,9 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
                             modifier = Modifier.fillMaxWidth(),
                         )
                         if (layer.type == ElementType.NOTE_WHEEL ||
-                            layer.type == ElementType.PIANO_ROLL) {
+                            layer.type == ElementType.PIANO_ROLL ||
+                            layer.type == ElementType.MATH_CURVE ||
+                            layer.type == ElementType.SPECTRUM || layer.bindings.isNotEmpty()) {
                             Text("Detected note band (pitch, not volume)")
                             Row(Modifier.horizontalScroll(rememberScrollState())) {
                                 NoteBand.entries.forEach { band ->
@@ -168,6 +184,23 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
                                 model.setLayer(layer.copy(noteRouting = layer.noteRouting.copy(
                                     highMidi = it.toInt().coerceAtLeast(bounds.first),
                                 )))
+                            }
+                        }
+                        if (layer.type == ElementType.MATH_CURVE) Row(Modifier.horizontalScroll(rememberScrollState())) {
+                            MathVisualMode.entries.forEach { mode ->
+                                FilterChip(
+                                    (layer.properties["mode"]?.jsonPrimitive?.content ?: "LISSAJOUS") == mode.name,
+                                    { prop("mode", mode.name) }, label = { Text(mode.name.lowercase()) },
+                                    modifier = Modifier.padding(end = 6.dp),
+                                )
+                            }
+                        }
+                        if (layer.type == ElementType.PIANO_ROLL) {
+                            listOf("whiteKeyColor" to "#FFF3F2F7", "blackKeyColor" to "#FF171622",
+                                "activeKeyColor" to "#FF9C83FF", "glowColor" to "#FF9C83FF",
+                                "sparkColor" to "#FFFFFFFF").forEach { (key, fallback) ->
+                                ColorField(key.removeSuffix("Color").replace(Regex("([A-Z])"), " $1") + " color",
+                                    layer.properties[key]?.jsonPrimitive?.content ?: fallback) { prop(key, it) }
                             }
                         }
                         val t = layer.transform
@@ -272,6 +305,16 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
             },
             confirmButton = { TextButton(onClick = { add = false }) { Text("Close") } },
         )
+}
+
+private fun validColor(text: String) = text.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))
+
+@Composable
+private fun ColorField(label: String, value: String, onChange: (String) -> Unit) {
+    var input by remember(label, value) { mutableStateOf(value) }
+    OutlinedTextField(input, { input = it; if (validColor(it)) onChange(it) },
+        label = { Text("$label · #RRGGBB or #AARRGGBB") }, singleLine = true,
+        modifier = Modifier.fillMaxWidth())
 }
 
 @Composable

@@ -15,6 +15,8 @@ import kotlin.math.log2
 @Composable
 fun TunerSheet(model: StudioModel) {
     val reading by model.tuner.collectAsState()
+    val running by model.tunerRunning.collectAsState()
+    val liveReading = reading.takeIf { running }
     var a4 by rememberSaveable { mutableFloatStateOf(440f) }
     var stringIndex by rememberSaveable { mutableIntStateOf(0) }
     val guitar = listOf(
@@ -23,19 +25,19 @@ fun TunerSheet(model: StudioModel) {
     )
     val (stringName, standardHz) = guitar[stringIndex]
     val targetHz = standardHz * a4 / 440.0
-    val centsFromTarget = reading?.let { 1200 * log2(it.frequencyHz / targetHz) }
+    val centsFromTarget = liveReading?.let { 1200 * log2(it.frequencyHz / targetHz) }
     Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
         Text("Microphone tuner", fontSize = 25.sp, fontWeight = FontWeight.Bold)
         Text("Tune one string at a time. Music playback pauses to avoid feedback.")
         Text(
-            reading?.let {
+            liveReading?.let {
                 "${NoteNames.name(it.midi)} · %.1f Hz · %+.1f cents"
                     .format(it.frequencyHz, it.cents)
-            } ?: "Listening · play a clear note",
+            } ?: if (running) "Listening · play a clear note" else "Microphone stopped",
             fontSize = 20.sp, modifier = Modifier.padding(vertical = 16.dp),
         )
-        Text(reading?.let { "Pitch confidence: %.0f%%".format(it.confidence * 100) }
-            ?: "Silence or noisy input is ignored")
+        Text(liveReading?.let { "Pitch confidence: %.0f%%".format(it.confidence * 100) }
+            ?: if (running) "Silence or noisy input is ignored" else "Resume the microphone to tune")
         Row(Modifier.horizontalScroll(rememberScrollState())) {
             guitar.forEachIndexed { i, pair ->
                 FilterChip(
@@ -50,24 +52,27 @@ fun TunerSheet(model: StudioModel) {
         Text(
             centsFromTarget?.let {
                 when {
+                    abs(it) > 150 -> "Check the selected string or octave before adjusting"
                     abs(it) <= 5 -> "In tune (±5 cents)"
                     it < 0 -> "Flat: tighten string (%.0f cents)".format(-it)
                     else -> "Sharp: loosen string (%.0f cents)".format(it)
                 }
-            } ?: "Pluck $stringName and let it ring",
+            } ?: if (running) "Pluck $stringName and let it ring" else "Resume to tune $stringName",
             fontWeight = FontWeight.Bold,
         )
         Text("A4 calibration: ${a4.toInt()} Hz")
         Slider(
             value = a4, onValueChange = { a4 = it },
             valueRange = 430f..450f,
-            onValueChangeFinished = { model.startTuner(a4.toDouble()) },
+            onValueChangeFinished = { if (running) model.startTuner(a4.toDouble()) },
         )
         Text(
             "YIN uses one detected fundamental at a time; overlapping notes, harmonics " +
                 "and background noise can cause octave errors. Recorded songs still use Basic Pitch.",
             fontSize = 12.sp,
         )
-        OutlinedButton(onClick = model::stopTuner) { Text("Stop microphone") }
+        OutlinedButton(
+            onClick = { if (running) model.stopTuner() else model.startTuner(a4.toDouble()) },
+        ) { Text(if (running) "Stop microphone" else "Resume microphone") }
     }
 }

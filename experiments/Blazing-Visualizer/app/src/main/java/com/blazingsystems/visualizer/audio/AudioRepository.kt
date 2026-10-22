@@ -34,15 +34,16 @@ data class DecodedAudio(
 
 class AudioRepository(private val context: Context) {
     private val root = File(context.cacheDir, "audio-v1").apply { mkdirs() }
+    private val leases = DecodedAudioLeases(root)
+
+    /** Prefer acquireDecoded when the hash is not already known: it pins before cache lookup. */
+    fun retain(hash: String): AutoCloseable = leases.retain(hash)
 
     /** Analysis results are stored separately; temporary PCM must not grow without a bound. */
-    @Synchronized
     fun discardDecoded(hash: String) {
-        require(hash.matches(Regex("[0-9a-f]{64}")))
-        File(root, hash).deleteRecursively()
+        leases.discard(hash)
     }
 
-    @Synchronized
     fun compactDecodedCache(protected: Set<String>, limitBytes: Long = 256L * 1024 * 1024) {
         val folders = root.listFiles().orEmpty()
             .filter { it.isDirectory && it.name.matches(Regex("[0-9a-f]{64}")) }
@@ -52,91 +53,129 @@ class AudioRepository(private val context: Context) {
         for (folder in folders.filterNot { it.name in protected }.sortedBy { it.lastModified() }) {
             if (total <= limitBytes) break
             val bytes = size(folder)
-            if (folder.deleteRecursively()) total -= bytes
+            if (leases.discard(folder.name)) total -= bytes
         }
     }
 
     suspend fun get(source: SourceRef, progress: (Float) -> Unit = {}): DecodedAudio =
-        withContext(Dispatchers.IO) {
-            val hash = MessageDigest.getInstance("SHA-256")
-            context.contentResolver.openInputStream(Uri.parse(source.uri))!!.use { input ->
-                val bytes = ByteArray(65536)
-                while (true) {
-                    ensureActive()
-                    val count = input.read(bytes)
-                    if (count < 0) break
-                    hash.update(bytes, 0, count)
+        acquireDecoded(source, progress).use { it.audio }
+
+    suspend fun acquireDecoded(
+        source: SourceRef,
+        progress: (Float) -> Unit = {},
+    ): DecodedAudioLease {
+        var acquired: DecodedAudioLease? = null
+        try {
+            return withContext(Dispatchers.IO) {
+                leases.decoding {
+                    val digest = contentHash(source)
+                    val retention = retain(digest)
+                    try {
+                        DecodedAudioLease(decode(source, digest, progress), retention).also {
+                            acquired = it
+                        }
+                    } catch (failure: Throwable) {
+                        retention.close()
+                        throw failure
+                    }
                 }
             }
-            val digest = hash.digest().joinToString("") { "%02x".format(it) }
-            val folder = File(root, digest)
-            val metadata = File(folder, "audio.json")
-            if (metadata.isFile) {
-                val audio =
-                    Json.decodeFromString<DecodedAudio>(metadata.readText())
-                        .copy(rootPath = folder.path)
-                if (audio.pcmFile.isFile && audio.monoFile.isFile) return@withContext audio
-                folder.deleteRecursively()
+        } catch (failure: Throwable) {
+            // withContext may cancel while returning an otherwise successful acquisition.
+            acquired?.close()
+            throw failure
+        }
+    }
+
+    suspend fun sourceHash(source: SourceRef): String = withContext(Dispatchers.IO) { contentHash(source) }
+
+    private suspend fun contentHash(source: SourceRef): String {
+        val hash = MessageDigest.getInstance("SHA-256")
+        context.contentResolver.openInputStream(Uri.parse(source.uri))!!.use { input ->
+            val bytes = ByteArray(65536)
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val count = input.read(bytes)
+                if (count < 0) break
+                hash.update(bytes, 0, count)
             }
-            val staging = File(root, "$digest.pending")
-            staging.deleteRecursively()
-            staging.mkdirs()
-            try {
-                var resampler: PcmResampler? = null
-                var rate = 0
-                var channels = 0
-                var frames = 0L
-                DataOutputStream(BufferedOutputStream(FileOutputStream(File(staging, "mono.f32"))))
-                    .use { mono ->
-                        BufferedOutputStream(FileOutputStream(File(staging, "original.pcm"))).use {
-                            pcm ->
-                            PcmDecoder(context).decode(Uri.parse(source.uri)).collect { chunk ->
-                                ensureActive()
-                                if (resampler == null) {
-                                    rate = chunk.sampleRate
-                                    channels = chunk.channels
-                                    resampler = PcmResampler(rate, channels)
-                                }
-                                require(rate == chunk.sampleRate && channels == chunk.channels) {
-                                    "Audio format changed mid-track"
-                                }
-                                val bytes =
-                                    ByteBuffer.allocate(chunk.samples.size * 2)
-                                        .order(ByteOrder.LITTLE_ENDIAN)
-                                chunk.samples.forEach {
-                                    bytes.putShort((it.coerceIn(-1f, 1f) * 32767).toInt().toShort())
-                                }
-                                pcm.write(bytes.array())
-                                resampler!!.feed(chunk.samples).forEach {
-                                    mono.writeInt(
-                                        Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)),
-                                    )
-                                }
-                                frames += chunk.samples.size / channels
-                                progress(
-                                    (frames * 1_000_000f /
-                                            rate /
-                                            source.durationUs.coerceAtLeast(1))
-                                        .coerceIn(0f, 1f),
-                                )
+        }
+        return hash.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private suspend fun decode(
+        source: SourceRef,
+        digest: String,
+        progress: (Float) -> Unit,
+    ): DecodedAudio {
+        val folder = File(root, digest)
+        val metadata = File(folder, "audio.json")
+        if (metadata.isFile) {
+            val audio =
+                Json.decodeFromString<DecodedAudio>(metadata.readText())
+                    .copy(rootPath = folder.path)
+            if (audio.pcmFile.isFile && audio.monoFile.isFile) return audio
+            folder.deleteRecursively()
+        }
+        val staging = File(root, "$digest.pending")
+        staging.deleteRecursively()
+        staging.mkdirs()
+        try {
+            var resampler: PcmResampler? = null
+            var rate = 0
+            var channels = 0
+            var frames = 0L
+            DataOutputStream(BufferedOutputStream(FileOutputStream(File(staging, "mono.f32"))))
+                .use { mono ->
+                    BufferedOutputStream(FileOutputStream(File(staging, "original.pcm"))).use {
+                        pcm ->
+                        PcmDecoder(context).decode(Uri.parse(source.uri)).collect { chunk ->
+                            currentCoroutineContext().ensureActive()
+                            if (resampler == null) {
+                                rate = chunk.sampleRate
+                                channels = chunk.channels
+                                resampler = PcmResampler(rate, channels)
                             }
-                            resampler?.feed(FloatArray(0), true)?.forEach {
+                            require(rate == chunk.sampleRate && channels == chunk.channels) {
+                                "Audio format changed mid-track"
+                            }
+                            val bytes =
+                                ByteBuffer.allocate(chunk.samples.size * 2)
+                                    .order(ByteOrder.LITTLE_ENDIAN)
+                            chunk.samples.forEach {
+                                bytes.putShort((it.coerceIn(-1f, 1f) * 32767).toInt().toShort())
+                            }
+                            pcm.write(bytes.array())
+                            resampler!!.feed(chunk.samples).forEach {
                                 mono.writeInt(
                                     Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)),
                                 )
                             }
+                            frames += chunk.samples.size / channels
+                            progress(
+                                (frames * 1_000_000f /
+                                        rate /
+                                        source.durationUs.coerceAtLeast(1))
+                                    .coerceIn(0f, 1f),
+                            )
+                        }
+                        resampler?.feed(FloatArray(0), true)?.forEach {
+                            mono.writeInt(
+                                Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)),
+                            )
                         }
                     }
-                require(frames > 0) { "The track is empty" }
-                val decoded = DecodedAudio(digest, rate, channels, frames, folder.path)
-                File(staging, "audio.json").writeText(Json.encodeToString(decoded))
-                check(staging.renameTo(folder)) { "Could not finalize decoded audio" }
-                decoded
-            } catch (failure: Throwable) {
-                staging.deleteRecursively()
-                throw failure
-            }
+                }
+            require(frames > 0) { "The track is empty" }
+            val decoded = DecodedAudio(digest, rate, channels, frames, folder.path)
+            File(staging, "audio.json").writeText(Json.encodeToString(decoded))
+            check(staging.renameTo(folder)) { "Could not finalize decoded audio" }
+            return decoded
+        } catch (failure: Throwable) {
+            staging.deleteRecursively()
+            throw failure
         }
+    }
 }
 
 class AudioFeatures(private val audio: DecodedAudio) : AutoCloseable {

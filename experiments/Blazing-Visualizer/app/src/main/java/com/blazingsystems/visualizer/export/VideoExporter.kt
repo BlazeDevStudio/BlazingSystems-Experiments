@@ -27,54 +27,56 @@ class VideoExporter(private val context: Context) {
             require(StatFs(context.cacheDir.path).availableBytes > estimate) {
                 "Not enough storage for this video"
             }
-            val audio = AudioRepository(context).get(request.project.source)
-            SourceIdentity.requireExportMatch(request.project.source.contentSha256, audio.hash)
-            require(request.clipEndUs <= audio.durationUs) {
-                "The export range exceeds the track duration"
-            }
-            val result = AnalysisRepository(context).getOrAnalyze(audio)
-            val notes = applyNoteEdits(result.rawNotes, request.project.edits)
-            val temporary =
-                File(context.cacheDir, "export-${java.util.UUID.randomUUID()}").apply { mkdirs() }
-            var destinationStarted = false
-            try {
-                val video = File(temporary, "video.mp4")
-                val sound = File(temporary, "audio.mp4")
-                val complete = File(temporary, "complete.mp4")
-                encodeVideo(request, timeline, audio, notes, video) { progress(it * .78f) }
-                ensureActive()
-                progress(.8f)
-                val audioShiftUs = encodeAudio(audio, timeline, s.audioBitrate, sound)
-                ensureActive()
-                progress(.9f)
-                remux(video, sound, complete, timeline.durationUs, audioShiftUs)
-                ensureActive()
-                progress(.96f)
-                destinationStarted = true
-                context.contentResolver.openOutputStream(Uri.parse(request.outputUri), "wt")?.use {
-                    output ->
-                    complete.inputStream().use { input ->
-                        val buffer = ByteArray(65536)
-                        while (true) {
-                            ensureActive()
-                            val count = input.read(buffer)
-                            if (count < 0) break
-                            output.write(buffer, 0, count)
+            AudioRepository(context).acquireDecoded(request.project.source).use { lease ->
+                val audio = lease.audio
+                SourceIdentity.requireExportMatch(request.project.source.contentSha256, audio.hash)
+                require(request.clipEndUs <= audio.durationUs) {
+                    "The export range exceeds the track duration"
+                }
+                val result = AnalysisRepository(context).getOrAnalyze(audio)
+                val notes = applyNoteEdits(result.rawNotes, request.project.edits)
+                val temporary =
+                    File(context.cacheDir, "export-${java.util.UUID.randomUUID()}").apply { mkdirs() }
+                var destinationStarted = false
+                try {
+                    val video = File(temporary, "video.mp4")
+                    val sound = File(temporary, "audio.mp4")
+                    val complete = File(temporary, "complete.mp4")
+                    encodeVideo(request, timeline, audio, notes, video) { progress(it * .78f) }
+                    ensureActive()
+                    progress(.8f)
+                    val audioShiftUs = encodeAudio(audio, timeline, s.audioBitrate, sound)
+                    ensureActive()
+                    progress(.9f)
+                    remux(video, sound, complete, timeline.durationUs, audioShiftUs)
+                    ensureActive()
+                    progress(.96f)
+                    destinationStarted = true
+                    context.contentResolver.openOutputStream(Uri.parse(request.outputUri), "wt")?.use {
+                        output ->
+                        complete.inputStream().use { input ->
+                            val buffer = ByteArray(65536)
+                            while (true) {
+                                ensureActive()
+                                val count = input.read(buffer)
+                                if (count < 0) break
+                                output.write(buffer, 0, count)
+                            }
                         }
-                    }
-                } ?: error("Could not open the export destination")
-                progress(1f)
-            } catch (failure: Throwable) {
-                if (destinationStarted)
-                    runCatching {
-                        android.provider.DocumentsContract.deleteDocument(
-                            context.contentResolver,
-                            Uri.parse(request.outputUri),
-                        )
-                    }
-                throw failure
-            } finally {
-                temporary.deleteRecursively()
+                    } ?: error("Could not open the export destination")
+                    progress(1f)
+                } catch (failure: Throwable) {
+                    if (destinationStarted)
+                        runCatching {
+                            android.provider.DocumentsContract.deleteDocument(
+                                context.contentResolver,
+                                Uri.parse(request.outputUri),
+                            )
+                        }
+                    throw failure
+                } finally {
+                    temporary.deleteRecursively()
+                }
             }
         }
 

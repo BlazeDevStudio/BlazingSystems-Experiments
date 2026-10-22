@@ -24,6 +24,8 @@ Owner's 2026-10-22 requests:
 12. Microphone mode for external instruments/music, with runtime permission, note/frequency/cents/confidence and guitar tuning guidance; pause playback to avoid feedback, release microphone on exit/background.
 13. Research primary YIN/autocorrelation tuner sources, silence/noise rejection, harmonic mistakes, smoothing and calibration. Use monophonic tuning for individual strings while keeping Basic Pitch for polyphonic recorded music; measure changes rather than claiming perfect transcription.
 14. Independent element colors and optional global palette, persisted and round-tripped through native presets and applied to MP4 output.
+15. Reference recording: Screen_Recording_20261022_145348_Facebook.mp4. Its musical visuals suggest animated graph cursors, Lissajous chord curves, orbit markers, wave panels and note-impact glow. Read docs/acceptance/reference-video-math.md for the fact check. Implement original note-derived visuals, not the video's artwork/audio. Keep equations OFF by default with an explicit checkbox to include them. MIDI A4 is 69, while the video's piano-key index is 49; equal temperament and just intonation are different. A circle needs quadrature, not x=sin(t), y=sin(t).
+16. The last video-to-graph tracing/Bezier idea is LAST PRIORITY. First finish and deliver the other features/APK WITHOUT the video renderer. Do not let tracing delay this release.
 
 Routine design, implementation, testing, branch updates and preview publication are approved. Do not repeatedly ask to continue. Work directly in source in reviewable commits. Reproduce reported bugs and verify meaningful regressions. Keep main and previous releases intact.
 

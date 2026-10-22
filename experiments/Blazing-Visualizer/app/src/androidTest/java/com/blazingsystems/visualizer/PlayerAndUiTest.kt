@@ -68,6 +68,20 @@ class PlayerAndUiTest {
                 model().state.value.project?.edits?.isNotEmpty() == true
         }
         assertEquals(62, model().state.value.notes.first().pitch)
+        assertEquals(.5f, model().state.value.project!!.practice.speed, .001f)
+        rule.runOnUiThread {
+            model().editScene(model().state.value.scene.copy(showEquations = true))
+            model().setExportSettings(ExportSettings(720, 1280))
+            model().beginLayoutEdit(true, 1f)
+            val id = model().state.value.scene.layers.last().id
+            model().setLayoutTransform(id, Transform(x = .25f, y = .3f, width = .4f, height = .2f))
+            model().finishLayoutEdit()
+        }
+        rule.activityRule.scenario.recreate()
+        assertTrue(model().state.value.scene.showEquations)
+        assertEquals(ExportLayoutMode.SEPARATE, model().state.value.project!!.exportLayout)
+        assertEquals(1280, model().state.value.project!!.export.height)
+        assertEquals(.25f, model().state.value.project!!.exportTransforms.values.last().x, .0001f)
     }
 
     @Test
@@ -102,5 +116,42 @@ class PlayerAndUiTest {
         } finally {
             rule.runOnUiThread { player.close() }
         }
+    }
+
+    @Test
+    fun coldQueueRestorationKeepsPendingLoopAndReorderingKeepsPosition() {
+        val inst = InstrumentationRegistry.getInstrumentation()
+        val tracks = (0..3).map { index ->
+            val f = File(rule.activity.filesDir, "queue-$index.wav")
+            inst.context.assets.open("synthetic.wav").use { input -> f.outputStream().use(input::copyTo) }
+            SourceRef(Uri.fromFile(f).toString(), title = "Track $index")
+        }
+        rule.waitUntil(15_000) { model().playback.value.connected }
+        rule.runOnUiThread { model().player.clearQueue() }
+        lateinit var controller: PlayerController
+        rule.runOnUiThread {
+            controller = PlayerController(rule.activity)
+            controller.restoreQueue(tracks.take(3), 1)
+            controller.setPracticeSpeed(.75f)
+            controller.setLoop(300_000, 700_000)
+        }
+        try {
+            rule.waitUntil(15_000) {
+                controller.state.value.connected && controller.state.value.sourceUri == tracks[1].uri &&
+                    controller.state.value.durationUs > 0
+            }
+            assertFalse(controller.state.value.isPlaying)
+            assertEquals(.75f, controller.state.value.speed, .001f)
+            assertTrue(controller.state.value.sourceTimeUs in 280_000..350_000)
+            rule.runOnUiThread {
+                controller.seekTo(500_000)
+                controller.moveQueueItem(1, 2)
+                controller.insertQueueItem(tracks[3], 1)
+            }
+            rule.waitUntil(5_000) { controller.queue.value.map { it.uri } ==
+                listOf(tracks[0], tracks[3], tracks[2], tracks[1]).map { it.uri } }
+            assertEquals(tracks[1].uri, controller.state.value.sourceUri)
+            assertTrue(controller.state.value.sourceTimeUs in 450_000..550_000)
+        } finally { rule.runOnUiThread { controller.clearQueue(); controller.close() } }
     }
 }

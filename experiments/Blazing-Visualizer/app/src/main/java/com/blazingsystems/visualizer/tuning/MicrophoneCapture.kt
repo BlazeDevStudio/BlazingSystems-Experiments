@@ -4,9 +4,9 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import java.util.ArrayDeque
 import kotlinx.coroutines.*
 
 /** Releases recording hardware on background, sheet dismissal and job cancellation. */
@@ -24,8 +24,13 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
                 PackageManager.PERMISSION_GRANTED) {
                 "Microphone permission was revoked; grant access and try again."
             }
+            val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            val source = if (manager?.getProperty(
+                    AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED,
+                ) == "true") MediaRecorder.AudioSource.UNPROCESSED
+                else MediaRecorder.AudioSource.VOICE_RECOGNITION
             val recorder = AudioRecord(
-                MediaRecorder.AudioSource.MIC, rate,
+                source, rate,
                 AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
                 (minimum * 2).coerceAtLeast(8192),
             )
@@ -35,28 +40,26 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
             }
             active = recorder
             val samples = ShortArray(4096)
-            val history = ArrayDeque<Double>()
+            val smoother = PitchSmoother()
             var received = 0
             try {
+                currentCoroutineContext().ensureActive()
                 recorder.startRecording()
+                check(recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                    "Microphone could not start recording"
+                }
                 while (currentCoroutineContext().isActive) {
                     val count = recorder.read(
                         samples, received, samples.size - received, AudioRecord.READ_BLOCKING,
                     )
-                    if (count < 0) break
+                    currentCoroutineContext().ensureActive()
+                    check(count >= 0) { "Microphone read failed (AudioRecord error $count)" }
                     if (count == 0) continue
                     received += count
                     if (received == samples.size) {
                         val reading = YinTuner.estimate(samples, rate, a4Hz)
-                        if (reading == null) {
-                            history.clear()
-                            onPitch(null)
-                        } else {
-                            history.addLast(reading.frequencyHz)
-                            if (history.size > 5) history.removeFirst()
-                            val median = history.toList().sorted()[history.size / 2]
-                            onPitch(YinTuner.fromHz(median, a4Hz, reading.confidence))
-                        }
+                        currentCoroutineContext().ensureActive()
+                        onPitch(smoother.update(reading, a4Hz))
                         System.arraycopy(samples, 2048, samples, 0, 2048)
                         received = 2048
                     }

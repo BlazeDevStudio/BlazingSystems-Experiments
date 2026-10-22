@@ -12,6 +12,7 @@ import kotlinx.serialization.json.*
 class ScenePainter(private val assets: File) : AutoCloseable {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val images = linkedMapOf<String, Bitmap>()
+    private val mathCurves = MathCurvePainter()
 
     private fun Layer.string(key: String, default: String = "") =
         properties[key]?.jsonPrimitive?.contentOrNull ?: default
@@ -20,7 +21,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         string(key).toFloatOrNull()?.takeIf { it.isFinite() } ?: default
 
     private fun Layer.color(default: Int = Color.rgb(128, 104, 255)) = runCatching {
-        Color.parseColor(string("color", "#FF9C83FF"))
+        Color.parseColor(string("color"))
     }
         .getOrDefault(default)
 
@@ -39,7 +40,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         Color.argb(alpha.coerceIn(0, 255), Color.red(color), Color.green(color), Color.blue(color))
 
     fun draw(canvas: Canvas, s: EvaluatedScene, width: Int, height: Int) {
-        canvas.drawColor(Color.rgb(8, 9, 17))
+        canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.rgb(8, 9, 17)))
         paint.shader = null
         paint.style = Paint.Style.FILL
         for (e in s.layers) {
@@ -50,9 +51,8 @@ class ScenePainter(private val assets: File) : AutoCloseable {
             canvas.save()
             canvas.translate(width * t.x, height * t.y)
             canvas.rotate(t.rotation)
-            val tint = runCatching {
-                s.scene.paletteColor?.let(Color::parseColor) ?: layer.color()
-            }.getOrDefault(layer.color())
+            val defaultTint = runCatching { s.scene.paletteColor?.let(Color::parseColor) }.getOrNull() ?: Color.rgb(156, 131, 255)
+            val tint = layer.color(defaultTint)
             val intensity = s.scene.animationIntensity.coerceIn(0f, 2f)
             paint.color = tint
             paint.alpha = 255
@@ -88,7 +88,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 ElementType.TEXT -> {
                     paint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
                     paint.textAlign = Paint.Align.CENTER
-                    paint.textSize = layer.number("fontSize", 24f).coerceIn(4f, 160f) * width / 420f
+                    paint.textSize = layer.number("fontSize", 24f).coerceIn(4f, 160f) * width / 420f * min(t.width, t.height) * e.scale
                     canvas.drawText(
                         layer.string("text", "BLAZING"),
                         0f,
@@ -139,7 +139,11 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     paint.strokeCap = Paint.Cap.ROUND
                     for (i in 0 until bins) {
                         val from = (i.toDouble() / bins).pow(2) * min(512, s.features.spectrum.size)
-                        val amplitude = s.features.spectrum.getOrElse(from.toInt()) { 0f }
+                        val frequency = from * 22050 / (2*s.features.spectrum.size.coerceAtLeast(1))
+                        val bounds = layer.noteRouting.bounds()
+                        val allowed = layer.noteRouting == NoteRouting() || frequency in
+                            MusicalMath.frequency(bounds.first)*2.0.pow(-.5/12)..MusicalMath.frequency(bounds.last)*2.0.pow(.5/12)
+                        val amplitude = if (allowed) s.features.spectrum.getOrElse(from.toInt()) { 0f } else 0f
                         val level = (ln(1 + amplitude * 80) / ln(81f)).coerceIn(0f, 1f)
                         paint.color = tint
                         if (circle) {
@@ -177,9 +181,10 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     wheel(canvas, routed(s, layer), w, h, tint, intensity)
                 ElementType.PIANO_ROLL ->
                     piano(
-                        canvas, routed(s, layer), w, h, tint,
+                        canvas, routed(s, layer), layer, w, h, tint,
                         intensity * s.scene.pianoIntensity.coerceIn(0f, 2f),
                     )
+                ElementType.MATH_CURVE -> mathCurves.draw(canvas, routed(s, layer), layer, w, h, tint, intensity)
             }
             canvas.restore()
         }
@@ -246,7 +251,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     }
 
     private fun piano(
-        c: Canvas, s: EvaluatedScene, w: Float, h: Float, tint: Int, intensity: Float,
+        c: Canvas, s: EvaluatedScene, layer: Layer, w: Float, h: Float, tint: Int, intensity: Float,
     ) {
         val first = 48
         val last = 83
@@ -255,6 +260,12 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         val keyHeight = min(h * .4f, w * .22f)
         val base = h / 2 - keyHeight
         val active = s.activeNotes.map { it.pitch }.toSet()
+        fun partColor(key: String, fallback: Int) = runCatching { Color.parseColor(layer.string(key)) }.getOrDefault(fallback)
+        fun depth(pitch: Int): Float {
+            val onset = s.activeNotes.filter { it.pitch == pitch }.maxOfOrNull { it.startUs } ?: return 0f
+            val age = (s.sourceTimeUs-onset).coerceAtLeast(0)/1e6
+            return (sin(min(1.0,age/.25)*PI)*exp(-age*10)*min(7f,keyHeight*.09f)*intensity).toFloat()
+        }
         // Upcoming bars travel toward the keyboard in source time, unaffected by playback speed.
         val rangeUs = 3_000_000.0
         val area = h - keyHeight
@@ -294,8 +305,8 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 }
             }
         whites.forEach { p ->
-            paint.color = if (p in active) tint else Color.rgb(219, 220, 232)
-            c.drawRoundRect(x(p) + 1, base, x(p) + kw - 1, h / 2, 2f, 2f, paint)
+            paint.color = if (p in active) partColor("activeKeyColor",tint) else partColor("whiteKeyColor",Color.rgb(219,220,232))
+            c.drawRoundRect(x(p) + 1, base + depth(p), x(p) + kw - 1, h / 2, 2f, 2f, paint)
             if (p % 12 == 0) {
                 paint.textSize = kw * .4f
                 paint.textAlign = Paint.Align.CENTER
@@ -306,10 +317,10 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         (first..last)
             .filter { it % 12 in setOf(1, 3, 6, 8, 10) }
             .forEach { p ->
-                paint.color = if (p in active) tint else Color.rgb(23, 23, 35)
+                paint.color = if (p in active) partColor("activeKeyColor",tint) else partColor("blackKeyColor",Color.rgb(23,23,35))
                 c.drawRoundRect(
                     x(p),
-                    base,
+                    base + depth(p),
                     x(p) + kw * .64f,
                     base + keyHeight * .63f,
                     2f,
@@ -321,29 +332,36 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         if (intensity > 0f) for (note in s.activeNotes) {
             if (note.pitch !in first..last) continue
             val elapsed = (s.sourceTimeUs - note.startUs).coerceAtLeast(0)
-            if (elapsed >= 500_000) continue
-            val falloff = (1f - elapsed / 500_000f) * intensity
+            val falloff = (.2f + .8f*exp(-elapsed/120000f)) * intensity
             val centerX = x(note.pitch) + kw * .42f
             val centerY = base + keyHeight * .17f
             val radius = kw * 1.8f
+            c.save()
+            val black = note.pitch % 12 in setOf(1,3,6,8,10)
+            val left = x(note.pitch) + if (black) 0f else 1f
+            val right = x(note.pitch) + if (black) kw*.64f else kw-1f
+            c.clipRect(left,-h/2,right,h/2)
+            if (!black) for (p in first..last) if (p % 12 in setOf(1,3,6,8,10))
+                c.clipOutRect(x(p),base,x(p)+kw*.64f,base+keyHeight*.63f)
             paint.shader = RadialGradient(
                 centerX, centerY, radius,
-                intArrayOf(tinted(tint, (145 * falloff).toInt()), Color.TRANSPARENT),
+                intArrayOf(tinted(partColor("glowColor",tint), (145 * falloff).toInt()), Color.TRANSPARENT),
                 null, Shader.TileMode.CLAMP,
             )
             c.drawCircle(centerX, centerY, radius, paint)
             paint.shader = null
-            for (i in 0 until 6) {
+            if (elapsed < 500_000) for (i in 0 until 6) {
                 val phase = (note.pitch * 13 + i * 19 + s.scene.seed) * .73
                 val angle = phase + elapsed * .000004
                 val distance = kw * (.2 + (elapsed / 500_000f) * (1 + i % 3))
-                paint.color = tinted(tint, (220 * falloff).toInt())
+                paint.color = tinted(partColor("sparkColor",tint), (220 * falloff).toInt())
                 c.drawCircle(
                     centerX + (cos(angle) * distance).toFloat(),
                     centerY - (sin(angle) * distance).toFloat(),
                     (kw * .075f).coerceAtLeast(1f), paint,
                 )
             }
+            c.restore()
         }
     }
 

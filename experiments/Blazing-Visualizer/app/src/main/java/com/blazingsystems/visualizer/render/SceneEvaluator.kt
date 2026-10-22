@@ -23,16 +23,18 @@ object SceneEvaluator {
                 .filter { it.visible }
                 .map { layer ->
                     var scale = 1f
+                    val routed = active.filter { layer.noteRouting.allows(it.pitch) }
                     layer.bindings.forEach { binding ->
                         val value =
                             when (binding.source) {
                                 BindingSource.RMS -> features.rms
                                 BindingSource.NOTE_ENERGY ->
-                                    active.maxOfOrNull { it.amplitude } ?: 0f
+                                    routed.maxOfOrNull { it.amplitude } ?: 0f
                                 BindingSource.SPECTRUM_BAND ->
                                     features.spectrum.getOrElse(binding.band) { 0f }
                             }
-                        if (binding.property == "scale") scale += value * binding.amount
+                        if (binding.property == "scale")
+                            scale += value * binding.amount * scene.animationIntensity
                     }
                     EvaluatedLayer(layer, scale.coerceIn(.05f, 6f))
                 }
@@ -109,5 +111,27 @@ object BuiltinScenes {
                 ),
         )
 
-    fun all() = listOf(defaultSpectrum(), noteWheel(), pianoRoll())
+    fun mathematical(mode: MathVisualMode) = Scene(
+        id = "builtin-math-${mode.name.lowercase()}",
+        name = when (mode) {
+            MathVisualMode.LISSAJOUS -> "Harmonic flow"
+            MathVisualMode.ORBITS -> "Orbital voices"
+            MathVisualMode.WAVES -> "Wave garden"
+        },
+        layers = listOf(
+            Layer(type = ElementType.BLUR),
+            Layer(
+                type = ElementType.MATH_CURVE,
+                transform = Transform(y = .43f, width = .86f, height = .68f),
+                properties = props("mode" to mode.name),
+            ),
+            Layer(
+                type = ElementType.PIANO_ROLL,
+                transform = Transform(y = .85f, width = .92f, height = .18f),
+            ),
+        ),
+    )
+
+    fun all() = listOf(defaultSpectrum(), noteWheel(), pianoRoll()) +
+        MathVisualMode.entries.map(::mathematical)
 }

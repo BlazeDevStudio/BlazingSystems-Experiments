@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.*
 import com.blazingsystems.visualizer.export.*
 import com.blazingsystems.visualizer.playback.PlaybackState
 import com.blazingsystems.visualizer.project.*
+import com.blazingsystems.visualizer.render.*
+import java.io.File
 
 @Composable
 fun ExportSheet(
@@ -22,10 +24,13 @@ fun ExportSheet(
     p: PlaybackState,
     jobs: List<ExportJob>,
     model: StudioModel,
+    onArrange: () -> Unit = {},
     onSave: (Long, Long, ExportSettings) -> Unit,
 ) {
-    var size by rememberSaveable { mutableIntStateOf(720) }
-    var aspect by rememberSaveable { mutableIntStateOf(0) }
+    val previous = s.project?.export ?: ExportSettings()
+    var size by rememberSaveable(s.project?.id) { mutableIntStateOf(minOf(previous.width, previous.height)) }
+    var aspect by rememberSaveable(s.project?.id) { mutableIntStateOf(
+        if (previous.width == previous.height) 2 else if (previous.width < previous.height) 1 else 0) }
     var start by rememberSaveable(s.project?.id) { mutableStateOf("0") }
     var end by
         rememberSaveable(s.project?.id, s.project?.source?.durationUs) {
@@ -50,7 +55,7 @@ fun ExportSheet(
                 )
             }
         }
-        Row {
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
             listOf("Landscape 16:9", "Portrait 9:16", "Square 1:1").forEachIndexed { i, label ->
                 FilterChip(
                     aspect == i,
@@ -71,12 +76,26 @@ fun ExportSheet(
                 1 -> longEdge
                 else -> size
             }
+        val settings = ExportSettings(width, height,
+            videoBitrate = if (size == 1080) 12_000_000 else 8_000_000)
+        LaunchedEffect(settings, s.project?.id) { model.setExportSettings(settings) }
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            FilterChip(s.project?.exportLayout != ExportLayoutMode.SEPARATE,
+                { model.setExportLayout(ExportLayoutMode.FOLLOW_FIT) }, label = { Text("Follow preview · auto fit") })
+            Spacer(Modifier.width(8.dp))
+            FilterChip(s.project?.exportLayout == ExportLayoutMode.SEPARATE,
+                { model.setExportLayout(ExportLayoutMode.SEPARATE) }, label = { Text("Separate arrangement") })
+        }
+        if (s.project?.exportLayout == ExportLayoutMode.SEPARATE)
+            TextButton(onClick = onArrange) { Text("Arrange export on canvas") }
         Text(
             "Output: $width × $height pixels",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         val frame by model.rendered.collectAsState()
+        val outputScene = s.project?.let { SceneLayouts.forExport(it.copy(scene = s.scene), settings) } ?: s.scene
+        val outputFrame = SceneEvaluator.evaluate(outputScene, frame.features, frame.sourceTimeUs)
         Text("Composition preview at selected output shape", fontSize = 12.sp)
         Box(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -85,10 +104,11 @@ fun ExportSheet(
             AndroidView(
                 factory = { context ->
                     com.blazingsystems.visualizer.render.SceneView(context).apply {
-                        update(frame)
+                        assets = File(context.filesDir, "assets")
+                        update(outputFrame)
                     }
                 },
-                update = { it.update(frame) },
+                update = { it.update(outputFrame) },
                 modifier = Modifier.width(if (aspect == 1) 130.dp else 220.dp)
                     .aspectRatio(width.toFloat() / height),
             )
@@ -121,11 +141,7 @@ fun ExportSheet(
                     onSave(
                         a,
                         b,
-                        ExportSettings(
-                            width,
-                            height,
-                            videoBitrate = if (size == 1080) 12_000_000 else 8_000_000,
-                        ),
+                        settings,
                     )
             },
             enabled =

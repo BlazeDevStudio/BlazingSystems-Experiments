@@ -15,6 +15,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import kotlin.math.abs
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
@@ -56,6 +57,7 @@ fun AveeShell(model: StudioModel) {
     }
     var tab by rememberSaveable { mutableIntStateOf(1) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
+    var viewportAspect by remember { mutableFloatStateOf(1f) }
     val microphonePermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -78,7 +80,24 @@ fun AveeShell(model: StudioModel) {
             model.refreshLibrary()
         else permission.launch(readAudioPermission)
     }
-    LaunchedEffect(readAudioPermission) { refresh() }
+    val accessPreferences = remember { context.getSharedPreferences("music-access", 0) }
+    LaunchedEffect(readAudioPermission) {
+        if (context.checkSelfPermission(readAudioPermission) == PackageManager.PERMISSION_GRANTED)
+            model.refreshLibrary()
+        else if (!accessPreferences.getBoolean("requested", false)) {
+            accessPreferences.edit().putBoolean("requested", true).apply()
+            permission.launch(readAudioPermission)
+        }
+    }
+    DisposableEffect(lifecycle, readAudioPermission) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME &&
+                context.checkSelfPermission(readAudioPermission) == PackageManager.PERMISSION_GRANTED)
+                model.refreshLibrary()
+        }
+        lifecycle?.addObserver(observer)
+        onDispose { lifecycle?.removeObserver(observer) }
+    }
     val audio =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             uris.forEach {
@@ -239,17 +258,32 @@ fun AveeShell(model: StudioModel) {
                     onRefresh = refresh,
                 )
                 else -> {
-                    AndroidView(
-                        factory = {
-                            SceneView(it).apply {
-                                assets = File(context.filesDir, "assets")
-                                update(rendered)
+                    BoxWithConstraints(Modifier.fillMaxSize().onSizeChanged { size ->
+                        if (size.height > 0) {
+                            viewportAspect = size.width.toFloat() / size.height
+                            model.setPreviewAspect(viewportAspect)
+                        }
+                    }, contentAlignment = Alignment.Center) {
+                        val exportAspect = (s.project?.export?.width ?: 1).toFloat() /
+                            (s.project?.export?.height ?: 1)
+                        val frameModifier = if (!s.editingExportLayout) Modifier.fillMaxSize()
+                            else if (maxWidth / maxHeight > exportAspect)
+                                Modifier.height(maxHeight).aspectRatio(exportAspect)
+                            else Modifier.width(maxWidth).aspectRatio(exportAspect)
+                        Box(frameModifier) {
+                            AndroidView(
+                                factory = { SceneView(it).apply {
+                                    assets = File(context.filesDir, "assets")
+                                    update(rendered)
+                                } },
+                                update = { it.update(rendered) }, modifier = Modifier.fillMaxSize(),
+                            )
+                            LayoutOverlay(s.displayScene(), s.layoutEditing, s.editingExportLayout, model) {
+                                model.beginLayoutEdit(false, it)
                             }
-                        },
-                        update = { it.update(rendered) },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    Column(
+                        }
+                    }
+                    if (!s.layoutEditing) Column(
                         Modifier.fillMaxSize().padding(12.dp),
                         verticalArrangement = Arrangement.SpaceBetween,
                     ) {
@@ -340,7 +374,10 @@ fun AveeShell(model: StudioModel) {
                             },
                             onExport = { savePack.launch("${s.scene.name}.blazeviz") },
                         )
-                    "editor" -> ElementEditorSheet(s.scene, model)
+                    "editor" -> ElementEditorSheet(s.scene, model, onArrange = { export ->
+                        panel = null
+                        model.beginLayoutEdit(export, viewportAspect)
+                    })
                     "practice" ->
                         PracticeSheet(
                             s,
@@ -355,6 +392,7 @@ fun AveeShell(model: StudioModel) {
                             p,
                             jobs,
                             model,
+                            onArrange = { panel = null; model.beginLayoutEdit(true, viewportAspect) },
                             onSave = { start, end, settings ->
                                 runCatching {
                                         model.prepareExport(start, end, settings)
@@ -454,7 +492,13 @@ private fun LibraryScreen(
                     headlineContent = {
                         Text(source.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     },
-                    supportingContent = { Text(source.artist.ifBlank { "Local audio" }) },
+                    supportingContent = {
+                        Column {
+                            Text(source.artist.ifBlank { "Local audio" })
+                            s.preparations[source.uri]?.let { Text(it, fontSize = 11.sp,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        }
+                    },
                     leadingContent = {
                         Icon(
                             if (source.uri == s.project?.source?.uri) Icons.Rounded.GraphicEq

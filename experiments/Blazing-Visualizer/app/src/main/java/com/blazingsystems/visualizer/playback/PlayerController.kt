@@ -16,6 +16,7 @@ data class PlaybackState(
     val speed: Float = 1f,
     val failure: String? = null,
     val sourceUri: String? = null,
+    val connected: Boolean = false,
 )
 
 data class LoopRange(val startUs: Long, val endUs: Long) {
@@ -31,11 +32,15 @@ data class LoopRange(val startUs: Long, val endUs: Long) {
 class PlayerController(context: Context) : AutoCloseable {
     private val mutable = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = mutable
+    private val mutableQueue = MutableStateFlow<List<SourceRef>>(emptyList())
+    val queue: StateFlow<List<SourceRef>> = mutableQueue
     private val handler = Handler(Looper.getMainLooper())
     private var controller: MediaController? = null
     private var loop: LoopRange? = null
     private var pending: List<SourceRef>? = null
     private var pendingIndex = 0
+    private var pendingAutoPlay = false
+    private var restoreOnly = false
     private var desiredSpeed = 1f
     private var closed = false
     private val future =
@@ -77,10 +82,11 @@ class PlayerController(context: Context) : AutoCloseable {
                                     },
                                 )
                             }
-                        pending
-                            ?.takeIf { it.isNotEmpty() }
-                            ?.let { setQueue(it, pendingIndex.coerceAtMost(it.lastIndex)) }
+                        if (pending != null && (!restoreOnly || controller!!.mediaItemCount == 0))
+                            applyPending()
                         controller?.playbackParameters = PlaybackParameters(desiredSpeed, 1f)
+                        loop?.let { controller?.seekTo(it.startUs / 1000) }
+                        update()
                         handler.post(ticker)
                     }
                         .onFailure {
@@ -96,23 +102,55 @@ class PlayerController(context: Context) : AutoCloseable {
         require(sources.isNotEmpty() && index in sources.indices)
         pending = sources
         pendingIndex = index
+        pendingAutoPlay = true
+        restoreOnly = false
         loop = null
+        mutableQueue.value = sources
+        applyPending()
+    }
+
+    /** Cold launch restores ordering without interrupting an existing background session. */
+    fun restoreQueue(sources: List<SourceRef>, index: Int = 0) {
+        require(sources.isEmpty() || index in sources.indices)
+        pending = sources
+        pendingIndex = index
+        pendingAutoPlay = false
+        restoreOnly = true
+        mutableQueue.value = sources
+        if (controller?.mediaItemCount == 0) applyPending() else update()
+    }
+
+    fun clearQueue() {
+        pending = emptyList()
+        pendingIndex = 0
+        pendingAutoPlay = false
+        restoreOnly = false
+        loop = null
+        mutableQueue.value = emptyList()
+        controller?.clearMediaItems()
+        update()
+    }
+
+    private fun mediaItem(source: SourceRef) = MediaItem.Builder()
+        .setUri(source.uri).setMediaId(source.uri)
+        .setMediaMetadata(MediaMetadata.Builder().setTitle(source.title).setArtist(source.artist).build())
+        .build()
+
+    private fun applyPending() {
+        val sources = pending ?: return
         controller?.let { player ->
+            if (sources.isEmpty()) {
+                player.clearMediaItems()
+                update()
+                return
+            }
             player.setMediaItems(
-                sources.map {
-                    MediaItem.Builder()
-                        .setUri(it.uri)
-                        .setMediaId(it.uri)
-                        .setMediaMetadata(
-                            MediaMetadata.Builder().setTitle(it.title).setArtist(it.artist).build(),
-                        )
-                        .build()
-                },
-                index,
+                sources.map(::mediaItem),
+                pendingIndex.coerceIn(sources.indices),
                 0,
             )
             player.prepare()
-            player.play()
+            player.playWhenReady = pendingAutoPlay
             update()
         }
     }
@@ -150,7 +188,7 @@ class PlayerController(context: Context) : AutoCloseable {
     }
 
     fun insertQueueItem(source: SourceRef, index: Int) {
-        pending?.let { previous ->
+        pending.orEmpty().let { previous ->
             val at = index.coerceIn(0, previous.size)
             val currentUri = controller?.currentMediaItem?.mediaId
                 ?: previous.getOrNull(pendingIndex)?.uri
@@ -173,10 +211,13 @@ class PlayerController(context: Context) : AutoCloseable {
     fun open(uri: Uri) = setQueue(listOf(SourceRef(uri.toString())))
 
     fun play() {
+        pendingAutoPlay = true
+        controller?.prepare()
         controller?.play()
     }
 
     fun pause() {
+        pendingAutoPlay = false
         controller?.pause()
     }
 
@@ -212,6 +253,16 @@ class PlayerController(context: Context) : AutoCloseable {
 
     private fun update() {
         controller?.let { p ->
+            val known = pending.orEmpty().associateBy { it.uri }
+            val actual = (0 until p.mediaItemCount).map { index ->
+                val item = p.getMediaItemAt(index)
+                val uri = item.localConfiguration?.uri?.toString() ?: item.mediaId
+                known[uri] ?: SourceRef(uri, title = item.mediaMetadata.title?.toString().orEmpty(),
+                    artist = item.mediaMetadata.artist?.toString().orEmpty())
+            }
+            pending = actual
+            pendingIndex = p.currentMediaItemIndex.coerceAtLeast(0)
+            mutableQueue.value = actual
             mutable.value =
                 PlaybackState(
                     p.currentPosition.coerceAtLeast(0) * 1000,
@@ -221,6 +272,7 @@ class PlayerController(context: Context) : AutoCloseable {
                     p.playbackParameters.speed,
                     p.playerError?.localizedMessage,
                     p.currentMediaItem?.localConfiguration?.uri?.toString(),
+                    true,
                 )
         }
     }

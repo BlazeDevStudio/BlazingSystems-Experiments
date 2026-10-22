@@ -109,6 +109,16 @@ class BasicPitchAnalyzer(private val context: Context) {
 class AnalysisRepository(private val context: Context) {
     private val root = File(context.filesDir, "analysis-v2").apply { mkdirs() }
 
+    suspend fun cached(hash: String, parameters: AnalysisParameters = AnalysisParameters()): AnalysisResult? =
+        withContext(Dispatchers.IO) {
+            val key = AnalysisKeys.key(hash, ModelRunner.MODEL_SHA256, parameters)
+            runCatching { Json.decodeFromString<AnalysisResult>(File(root, "$key.json").readText()) }
+                .getOrNull()?.takeIf {
+                    it.key == key && it.sourceHash == hash &&
+                        it.modelHash == ModelRunner.MODEL_SHA256 && it.parameters == parameters
+                }
+        }
+
     suspend fun getOrAnalyze(
         audio: DecodedAudio,
         parameters: AnalysisParameters = AnalysisParameters(),
@@ -117,18 +127,7 @@ class AnalysisRepository(private val context: Context) {
         withContext(Dispatchers.Default) {
             val key = AnalysisKeys.key(audio.hash, ModelRunner.MODEL_SHA256, parameters)
             val target = File(root, "$key.json")
-            if (target.isFile)
-                runCatching { Json.decodeFromString<AnalysisResult>(target.readText()) }
-                    .getOrNull()
-                    ?.let {
-                        if (
-                            it.key == key &&
-                                it.sourceHash == audio.hash &&
-                                it.modelHash == ModelRunner.MODEL_SHA256 &&
-                                it.parameters == parameters
-                        )
-                            return@withContext it
-                    }
+            cached(audio.hash, parameters)?.let { return@withContext it }
             val result = BasicPitchAnalyzer(context).analyze(audio, parameters, progress)
             ensureActive()
             atomicWrite(target, Json.encodeToString(result).toByteArray())

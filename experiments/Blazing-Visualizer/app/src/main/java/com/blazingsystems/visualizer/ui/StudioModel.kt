@@ -35,7 +35,16 @@ data class StudioState(
     val progress: Float? = null,
     val error: String? = null,
     val compatibility: ImportResult? = null,
-)
+    val preparations: Map<String, String> = emptyMap(),
+    val layoutEditing: Boolean = false,
+    val editingExportLayout: Boolean = false,
+) {
+    fun displayScene(): Scene {
+        val display = if (editingExportLayout && project != null)
+            SceneLayouts.forExport(project.copy(scene = scene)) else scene
+        return if (layoutEditing) display.copy(animationIntensity = 0f, pianoIntensity = 0f) else display
+    }
+}
 
 class StudioModel(app: Application) : AndroidViewModel(app) {
     private val library = LibraryRepository(app)
@@ -49,14 +58,17 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         MutableStateFlow(SceneEvaluator.evaluate(mutable.value.scene, FeatureFrame(0), 0))
     val exports = ExportHub.jobs
     val tuner = MutableStateFlow<PitchReading?>(null)
+    val tunerRunning = MutableStateFlow(false)
+    private var tunerGeneration = 0L
     private var microphone: MicrophoneCapture? = null
     private var microphoneJob: Job? = null
     private var trackJob: Job? = null
     private val coordinator = TrackCoordinator()
     private val initialized = CompletableDeferred<Unit>()
     private var audioFeatures: AudioFeatures? = null
+    private var previewLease: DecodedAudioLease? = null
     private var rawNotes: List<NoteEvent> = emptyList()
-    private val saves = Channel<StudioState>(Channel.UNLIMITED)
+    private val saves = Channel<StudioState>(Channel.CONFLATED)
     private val audio = AudioRepository(app)
     private val analysisLock = Mutex()
     private var preanalysisJob: Job? = null
@@ -115,13 +127,16 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     scene = scene,
                     savedPresets = storedPresets,
                 )
+            player.restoreQueue(saved.first, saved.first.indexOfFirst {
+                it.uri == saved.third?.source?.uri
+            }.coerceAtLeast(0))
             initialized.complete(Unit)
             if (knownLibrary != mergedLibrary) persist()
             scheduleBackgroundAnalysis()
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
-            combine(playback, state.map { it.scene to it.notes }.distinctUntilChanged()) { p, s ->
+            combine(playback, state.map { it.displayScene() to it.notes }.distinctUntilChanged()) { p, s ->
                     p to s
                 }
                 .collectLatest { (p, s) ->
@@ -132,6 +147,15 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                         }
                     rendered.value = SceneEvaluator.evaluate(s.first, f, p.sourceTimeUs)
                 }
+        }
+        viewModelScope.launch {
+            initialized.await()
+            player.queue.collect { queue ->
+                if (queue != mutable.value.queue) {
+                    mutable.update { it.copy(queue = queue) }
+                    persist()
+                }
+            }
         }
         viewModelScope.launch {
             combine(
@@ -200,34 +224,36 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
      */
     private fun scheduleBackgroundAnalysis() {
         preanalysisJob?.cancel()
+        val foreground = trackJob
         preanalysisJob = viewModelScope.launch(Dispatchers.IO) {
             initialized.await()
+            foreground?.join()
             val sources = mutable.value.library.toList()
             for (source in sources) {
                 ensureActive()
                 if (source.uri == mutable.value.project?.source?.uri) continue
-                var decoded: DecodedAudio? = null
+                var lease: DecodedAudioLease? = null
+                var hash: String? = null
                 try {
+                    mutable.update { it.copy(preparations = it.preparations + (source.uri to "Preparing notes")) }
+                    hash = audio.sourceHash(source)
+                    val repository = AnalysisRepository(context())
                     analysisLock.withLock {
                         ensureActive()
-                        if (source.uri != mutable.value.project?.source?.uri) {
-                            decoded = audio.get(source)
-                            AnalysisRepository(context()).getOrAnalyze(decoded!!)
+                        if (source.uri != mutable.value.project?.source?.uri && repository.cached(hash!!) == null) {
+                            lease = audio.acquireDecoded(source)
+                            repository.getOrAnalyze(lease!!.audio)
                         }
                     }
+                    mutable.update { it.copy(preparations = it.preparations + (source.uri to "Notes ready")) }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
-                } catch (_: Exception) {
-                    // An inaccessible music file must not stop all other background preparations.
+                } catch (failure: Exception) {
+                    mutable.update { it.copy(preparations = it.preparations +
+                        (source.uri to "Preparation needs retry: ${failure.localizedMessage ?: "unavailable"}")) }
                 } finally {
-                    decoded?.let { prepared ->
-                        val current = mutable.value.project
-                        if (current?.source?.uri != source.uri &&
-                            current?.source?.contentSha256 != prepared.hash
-                        ) {
-                            audio.discardDecoded(prepared.hash)
-                        }
-                    }
+                    lease?.close()
+                    hash?.let(audio::discardDecoded)
                 }
                 val playingHash = mutable.value.project?.source?.contentSha256
                 if (mutable.value.progress == null)
@@ -296,14 +322,18 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun select(source: SourceRef, startPlayback: Boolean = true) {
-        preanalysisJob?.cancel()
+        stopTuner()
+        val preparation = preanalysisJob
+        preparation?.cancel()
         val previous = trackJob
         previous?.cancel()
         trackJob = viewModelScope.launch {
             previous?.join()
-            preanalysisJob?.cancel()
+            preparation?.cancelAndJoin()
             audioFeatures?.close()
             audioFeatures = null
+            previewLease?.close()
+            previewLease = null
             rawNotes = emptyList()
             val current = mutable.value.project
             val restored =
@@ -321,6 +351,8 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     status = "Preparing audio",
                     progress = 0f,
                     error = null,
+                    layoutEditing = false,
+                    editingExportLayout = false,
                 )
             if (startPlayback) {
                 val q = (mutable.value.queue + source).distinctBy { it.uri }
@@ -336,7 +368,9 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 restored.practice.loopEndUs.takeIf { restored.practice.loopEnabled },
             )
             try {
-                val decoded = audio.get(source) { p -> mutable.update { it.copy(progress = p) } }
+                val lease = audio.acquireDecoded(source) { p -> mutable.update { it.copy(progress = p) } }
+                previewLease = lease
+                val decoded = lease.audio
                 ensureActive()
                 val before = mutable.value.project!!
                 val changed =
@@ -360,6 +394,10 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
                 audioFeatures = AudioFeatures(decoded)
+                player.setLoop(
+                    bound.practice.loopStartUs.takeIf { bound.practice.loopEnabled },
+                    bound.practice.loopEndUs.takeIf { bound.practice.loopEnabled },
+                )
                 persist()
                 val result =
                     analysisLock.withLock {
@@ -376,6 +414,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                         notes = applyNoteEdits(rawNotes, project.edits),
                         status = "${result.rawNotes.size} estimated notes • tap Practice to follow",
                         progress = null,
+                        preparations = it.preparations + (source.uri to "Notes ready"),
                     )
                 }
                 persist()
@@ -400,28 +439,38 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         player.pause()
         val capture = MicrophoneCapture(context())
         microphone = capture
+        val generation = ++tunerGeneration
+        tunerRunning.value = true
         microphoneJob = viewModelScope.launch {
             try {
-                capture.run(a4Hz) { tuner.value = it }
+                capture.run(a4Hz) { if (generation == tunerGeneration) tuner.value = it }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                report(failure)
+                if (generation == tunerGeneration) report(failure)
             } finally {
                 capture.close()
+                if (generation == tunerGeneration) {
+                    tunerRunning.value = false
+                    microphone = null
+                    microphoneJob = null
+                }
             }
         }
     }
 
     fun stopTuner() {
-        microphone?.close()
-        microphone = null
+        tunerGeneration++
         microphoneJob?.cancel()
         microphoneJob = null
+        microphone?.close()
+        microphone = null
+        tunerRunning.value = false
         tuner.value = null
     }
 
     fun playPause() {
+        stopTuner()
         val p = playback.value
         if (p.isPlaying) player.pause()
         else if (p.sourceUri == null) mutable.value.project?.let { select(it.source, true) }
@@ -465,6 +514,65 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 layers = mutable.value.scene.layers.map { if (it.id == layer.id) layer else it },
             ),
         )
+    }
+
+    fun setPreviewAspect(aspect: Float) {
+        if (!aspect.isFinite() || aspect !in .1f..10f || mutable.value.editingExportLayout) return
+        if (kotlin.math.abs(mutable.value.scene.designAspect - aspect) < .001f) return
+        editScene(mutable.value.scene.copy(designAspect = aspect))
+    }
+
+    fun setExportSettings(settings: ExportSettings) {
+        validateExportSettings(settings)
+        mutable.update { it.copy(project = it.project?.copy(export = settings)) }
+        persist()
+    }
+
+    fun setExportLayout(mode: ExportLayoutMode) {
+        val s = mutable.value
+        val p = s.project ?: return
+        val updated = if (mode == ExportLayoutMode.SEPARATE && p.exportTransforms.isEmpty()) {
+            val fitted = SceneLayouts.forExport(p.copy(scene = s.scene))
+            p.copy(exportLayout = mode, exportTransforms = fitted.layers.associate { it.id to it.transform },
+                exportDesignAspect = fitted.designAspect)
+        } else p.copy(exportLayout = mode)
+        mutable.value = s.copy(project = updated)
+        persist()
+    }
+
+    fun beginLayoutEdit(forExport: Boolean, viewportAspect: Float) {
+        if (forExport) {
+            setExportLayout(ExportLayoutMode.SEPARATE)
+            val s = mutable.value
+            val p = s.project ?: return
+            val fitted = SceneLayouts.forExport(p.copy(scene = s.scene))
+            mutable.value = s.copy(project = p.copy(
+                exportTransforms = fitted.layers.associate { it.id to it.transform },
+                exportDesignAspect = fitted.designAspect,
+            ), layoutEditing = true, editingExportLayout = true)
+        } else {
+            setPreviewAspect(viewportAspect)
+            mutable.update { it.copy(layoutEditing = true, editingExportLayout = false) }
+        }
+        persist()
+    }
+
+    fun setLayoutTransform(id: String, transform: Transform) {
+        val s = mutable.value
+        if (!s.layoutEditing) return
+        if (s.editingExportLayout) {
+            mutable.update { it.copy(project = it.project?.copy(
+                exportTransforms = it.project.exportTransforms + (id to transform),
+            )) }
+            persist()
+        } else s.scene.layers.firstOrNull { it.id == id }?.let {
+            setLayer(it.copy(transform = transform))
+        }
+    }
+
+    fun finishLayoutEdit() {
+        mutable.update { it.copy(layoutEditing = false, editingExportLayout = false) }
+        persist()
     }
 
     fun removeLayer(id: String) {
@@ -554,6 +662,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
     fun openPlaylist(playlist: Playlist) {
         mutable.update { it.copy(queue = playlist.tracks) }
         persist()
+        if (playlist.tracks.isEmpty()) player.clearQueue()
         playlist.tracks.firstOrNull()?.let { select(it, true) }
     }
 
@@ -763,9 +872,11 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         validateExportSettings(settings)
         ExportTimeline(startUs, endUs, settings.fps)
         require(endUs <= p.source.durationUs)
+        setExportSettings(settings)
+        val saved = mutable.value.project!!.copy(scene = mutable.value.scene)
         pendingExport =
             ExportRequest(
-                p.copy(scene = mutable.value.scene, export = settings),
+                saved.copy(scene = SceneLayouts.forExport(saved, settings)),
                 startUs,
                 endUs,
                 "",
@@ -782,6 +893,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         trackJob?.cancel()
         preanalysisJob?.cancel()
         audioFeatures?.close()
+        previewLease?.close()
         stopTuner()
         player.close()
         saves.close()

@@ -259,6 +259,8 @@ class NativePackCodec {
             }
             require(scene.animationIntensity.isFinite() && scene.animationIntensity in 0f..2f)
             require(scene.pianoIntensity.isFinite() && scene.pianoIntensity in 0f..2f)
+            require(scene.designAspect.isFinite() && scene.designAspect in .1f..10f)
+            require(scene.backgroundColor.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")))
             scene.paletteColor?.let { require(it.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))) }
             scene.layers.forEach { layer ->
                 require(layer.noteRouting.isValid()) { "Invalid MIDI note range" }

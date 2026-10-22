@@ -51,6 +51,7 @@ enum class ElementType {
     BLUR,
     NOTE_WHEEL,
     PIANO_ROLL,
+    MATH_CURVE,
 }
 
 @Serializable
@@ -130,6 +131,9 @@ data class Scene(
     val animationIntensity: Float = 1f,
     val pianoIntensity: Float = 1f,
     val paletteColor: String? = null,
+    val backgroundColor: String = "#080911",
+    val showEquations: Boolean = false,
+    val designAspect: Float = 1f,
 )
 
 data class FeatureFrame(
@@ -169,6 +173,9 @@ data class PracticeSettings(
 }
 
 @Serializable
+enum class ExportLayoutMode { FOLLOW_FIT, SEPARATE }
+
+@Serializable
 data class Project(
     val id: String = UUID.randomUUID().toString(),
     val source: SourceRef,
@@ -177,6 +184,9 @@ data class Project(
     val edits: List<NoteEdit> = emptyList(),
     val export: ExportSettings = ExportSettings(),
     val practice: PracticeSettings = PracticeSettings(),
+    val exportLayout: ExportLayoutMode = ExportLayoutMode.FOLLOW_FIT,
+    val exportTransforms: Map<String, Transform> = emptyMap(),
+    val exportDesignAspect: Float = 1f,
 )
 
 object SourceIdentity {
@@ -189,6 +199,7 @@ object SourceIdentity {
             source = source,
             analysisKey = if (changed) null else project.analysisKey,
             edits = if (changed) emptyList() else project.edits,
+            practice = if (changed) project.practice.copy(loopStartUs = null, loopEndUs = null, loopEnabled = false) else project.practice,
         )
     }
 
