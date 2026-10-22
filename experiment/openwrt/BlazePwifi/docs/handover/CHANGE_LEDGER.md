@@ -1,3 +1,9 @@
+## 2026-10-22 — ESP8266-GPIO-20261022 — expected_red_validated
+
+- From current development base `72987a376d66b2a9027a0685e9681fc5cd45b674`, isolated branch `fix/esp8266-coin-gpio-safety-20261022`; canonical pre-code handovers committed before source. Created fail-first `tests/v060_esp8266_gpio_safety.py` `7dbd8d199429a32c8715c2966684b37d8bb22ee4` and isolated focused CI `1055328449043de3389ddd2c09ce505f4cb09fb4`.
+- **RED proof:** [Actions #39743080798](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39743080798) exact `105532844...` completed FAILURE, two tests fail at real firmware integration / absent safety header, as expected. Runtime ESP8266 remains unmodified at RED. No physical test.
+- **NEXT:** implement minimal GPIO allowlist and local boot/config/remote guards, check controller-off pulse handling; run literal native C++ policy and actual ESP8266 Arduino compile from packaged sketch. Do not merge into active RENT atomicity branch or write customer hardware. Rollback isolated PR. Status expected_red_validated; production NO-GO.
+
 ## 2026-10-22 — ESP8266-GPIO-20261022 — in_progress / P1 coin controller
 
 - **Owner scope:** exactly ESP8266 coin-acceptor hardware GPIO safety, not payment server, ESP32, R281, Blender, rental lease atomicity, admin UI or all-system release. New isolated branch `fix/esp8266-coin-gpio-safety-20261022` from `72987a376d66b2a9027a0685e9681fc5cd45b674`; no source commit yet.
