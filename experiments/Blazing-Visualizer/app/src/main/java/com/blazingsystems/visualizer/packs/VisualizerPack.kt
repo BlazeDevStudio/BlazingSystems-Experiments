@@ -384,7 +384,7 @@ object AveePresetAdapter {
                         (v["x"] as? JsonPrimitive)?.content?.toFloatOrNull(),
                         (v["y"] as? JsonPrimitive)?.content?.toFloatOrNull(),
                     )
-                    is JsonPrimitive -> v.content.trim().split(Regex("[,;\\\\s]+"))
+                    is JsonPrimitive -> v.content.trim().split(Regex("[,;\\s]+"))
                         .mapNotNull { it.toFloatOrNull() }
                     else -> emptyList()
                 }

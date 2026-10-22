@@ -4,7 +4,7 @@
 
 - Existing modern-Avee phone/navigation/player/crop work is at commit 863d91d; DO NOT duplicate its Media3/layout changes. This pass changes only .viz importer, its regression tests and this handoff.
 - Plain JSON and ZIP archives with exactly one JSON-formatted .viz/.json/.txt entry can be recognized using the existing bounded extraction/path rules. Importer understands direct element-array and composition-wrapped JSON, nested v wrappers, float pair arrays or x/y objects, boolean visibility, rotation in degrees, Spectrum and Waveform type aliases. It still reports approximation and explicitly refuses opaque binary .viz and ambiguous multi-preset archives. This is NOT a claim that all modern Avee .viz presets work; a real legally obtained sample corpus is necessary.
-- Test state: 3 new host fixture tests added, exact-head GitHub Actions pending. No customer APK, no new release. Same existing API26 ActivityScenario failure may persist.
+- Test state: 3 new host fixture tests added, exact-head GitHub Actions pending. Corrected a Kotlin regex delimiter escape in a follow-up source checkpoint so space-delimited JSON vectors also parse as intended. No customer APK, no new release. Same existing API26 ActivityScenario failure may persist.
 - Next action: inspect exact-head Gradle host/Android26/36 run, fix compile/test findings, then independently compare modern Avee preset samples and real-device rendering. Preserve existing Basic Pitch and licensed FFT source.
 
 ## 2026-10-22 modern-Avee player and portrait export correction
