@@ -232,3 +232,6 @@ grep -q 'callbackHasExtras && !captured' "$SRC/BlazeProvisioningComplianceActivi
 grep -q 'ProvisioningStateGuard.isProvisioningSource' "$SRC/BlazeDeviceAdminReceiver.java"
 grep -q 'AndroidRentalPolicyRepository.revision(app) >= 0L' "$SRC/BlazeDeviceAdminReceiver.java"
 grep -q 'deviceOwnerCompletionRequiresProvisioningSource' "$ANDROID/tests/unit/com/blazesystems/blazerental/ProvisioningStateGuardTest.java"
+
+# Modern Android completion is owned by the compliance activity, not receiver.
+grep -Fq 'if (Build.VERSION.SDK_INT >= 26) return;' "$SRC/BlazeDeviceAdminReceiver.java"

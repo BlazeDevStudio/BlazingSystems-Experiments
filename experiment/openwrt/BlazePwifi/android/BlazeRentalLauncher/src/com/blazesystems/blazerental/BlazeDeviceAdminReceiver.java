@@ -12,6 +12,9 @@ public class BlazeDeviceAdminReceiver extends DeviceAdminReceiver {
                 && intent.hasExtra(BlazeProvisioningContract.EXTRA_ADMIN_EXTRAS);
         boolean captured = BlazeProvisioningContract.capture(context, intent);
         ManagedPolicyController.apply(context);
+        // Android 8+ has a dedicated provisioning-success/compliance activity.
+        // Do not race it from DeviceAdminReceiver for the same one-time token.
+        if (Build.VERSION.SDK_INT >= 26) return;
         final Context app = context.getApplicationContext();
         final boolean accepted = (!callbackHasExtras || captured)
                 && ProvisioningStateGuard.isProvisioningSource(

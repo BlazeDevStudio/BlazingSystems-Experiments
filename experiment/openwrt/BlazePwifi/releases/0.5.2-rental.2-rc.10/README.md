@@ -23,6 +23,8 @@ This is a **prerelease with TEST signing**. No claim is made that the Device Own
 
 A stable promotion still requires the exact production APK signer and physical evidence specified in `PROVISIONING-AUDIT.md`. Do not install this TEST-signed APK over existing production-signed managed devices: Android signing identity continuity will reject or disrupt that upgrade path.
 
+To avoid a Setup Wizard callback race, `DeviceAdminReceiver` no longer attempts the initial server enrollment on Android 8+; the dedicated provisioning activity owns that path. The receiver retains the legacy Android 5–7 fallback only.
+
 RC9 tags/assets remain immutable.
 
 ### Primary Windows installer
