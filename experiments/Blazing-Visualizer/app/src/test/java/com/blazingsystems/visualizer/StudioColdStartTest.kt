@@ -73,6 +73,20 @@ class StudioColdStartTest {
         assertEquals(.6f, model.state.value.displayScene().designAspect, .0001f)
     }
 
+    @Test fun resizingThePhoneCanvasDoesNotCancelArrangementOrShrinkSavedGeometry() {
+        val model = model()
+        pumpUntil { model.state.value.ready }
+        val original = BuiltinScenes.noteWheel()
+        model.setScene(original)
+        model.beginLayoutEdit(false, .6f)
+        model.setPreviewAspect(.48f) // bottom controls hide when arrangement opens
+        assertTrue("Viewport resize must not close the arrangement tools", model.state.value.layoutEditing)
+        model.finishLayoutEdit()
+        model.beginLayoutEdit(false, .6f)
+        model.finishLayoutEdit()
+        assertEquals("Opening/closing tools must not bake repeated contain transforms", original, model.state.value.scene)
+    }
+
     @Test fun pendingChangesForAStillSaveWhenBIsSelectedBeforeDiskCatchesUp() {
         val projectA = Project(id = "project-a", source = a, scene = preset)
         val projectB = Project(id = "project-b", source = b, scene = preset)

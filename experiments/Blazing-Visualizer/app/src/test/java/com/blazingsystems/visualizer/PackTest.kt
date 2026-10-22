@@ -207,4 +207,19 @@ class PackTest {
         assertTrue(result.report.requiresPartialAcceptance)
         assertTrue(result.report.unsupported.any { it.contains("UnknownShader") })
     }
+
+    @Test fun nestedModernSegmentsKeepTheirRenderingProperties() {
+        val text = """{"compositions":[{"elements":[{"objType":"Bars",
+            "ShapePath":{"v":"SidedPolygon","sides":{"v":5}},
+            "heightScale":{"v":2.5},"flipInput":{"v":1},
+            "Segment1":{"v":"RoundBars","colorFrom":{"v":-65536},
+                "colorTo":{"v":-16711936},"barWidth":{"v":0.6}}}]}]}"""
+        val result = AveePresetAdapter.read(text, root)
+        val p = result.scene.layers.single().properties
+        assertEquals("Nested paths cannot silently become horizontal bars", "polygon", p["path"]?.jsonPrimitive?.content)
+        assertEquals("5", p["sides"]?.jsonPrimitive?.content)
+        assertEquals("RoundBars", p["segment"]?.jsonPrimitive?.content)
+        assertEquals("#FFFF0000", p["color"]?.jsonPrimitive?.content)
+        assertEquals("#FF00FF00", p["colorTo"]?.jsonPrimitive?.content)
+    }
 }
