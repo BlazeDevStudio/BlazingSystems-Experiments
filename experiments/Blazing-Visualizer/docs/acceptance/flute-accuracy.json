@@ -1,0 +1,30 @@
+{
+  "fixture": "flute",
+  "matches": 3,
+  "expected": 3,
+  "predicted": 3,
+  "onsetToleranceUs": 50000,
+  "rawF1": 1,
+  "deltasUs": [
+    31428,
+    40000,
+    25093
+  ],
+  "notes": [
+    {
+      "pitch": 72,
+      "startUs": 331428,
+      "endUs": 719819
+    },
+    {
+      "pitch": 76,
+      "startUs": 1640000,
+      "endUs": 2056250
+    },
+    {
+      "pitch": 81,
+      "startUs": 2925093,
+      "endUs": 3356567
+    }
+  ]
+}

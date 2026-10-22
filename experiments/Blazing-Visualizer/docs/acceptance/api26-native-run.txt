@@ -1,0 +1,186 @@
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+com.blazingsystems.visualizer.NativeAcceptanceTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=cancellationNeverCompletesDestination
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=cancellationNeverCompletesDestination
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=postprocessorMatchesSpotifyReference
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=postprocessorMatchesSpotifyReference
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=rawSyntheticAndRecordedFluteMeetOnsetTarget
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=rawSyntheticAndRecordedFluteMeetOnsetTarget
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=rendererReplaysSamePixelsAfterSeek
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=rendererReplaysSamePixelsAfterSeek
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteEditsAndPackRoundTripRemainExportable
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteEditsAndPackRoundTripRemainExportable
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=mp4ExportHasAudioVideoForAllRequiredPresets
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=mp4ExportHasAudioVideoForAllRequiredPresets
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=modelMatchesIndependentPythonOutput
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=modelMatchesIndependentPythonOutput
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.NativeAcceptanceTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+com.blazingsystems.visualizer.PlayerAndUiTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+Error in noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(com.blazingsystems.visualizer.PlayerAndUiTest):
+androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 10000 ms
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:755)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.waitUntil(AndroidComposeTestRule.android.kt:362)
+	at com.blazingsystems.visualizer.PlayerAndUiTest.noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(PlayerAndUiTest.kt:59)
+
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: stack=androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 10000 ms
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:755)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.waitUntil(AndroidComposeTestRule.android.kt:362)
+	at com.blazingsystems.visualizer.PlayerAndUiTest.noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(PlayerAndUiTest.kt:59)
+
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=familiarWorkflowOpensPresetsAndLayerEditor
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=familiarWorkflowOpensPresetsAndLayerEditor
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=playbackSeeksAndLoopsUsingSourceTime
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=playbackSeeksAndLoopsUsingSourceTime
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=
+com.blazingsystems.visualizer.QueueRegressionTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=removingQueuedTrackUpdatesMedia3Playlist
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.QueueRegressionTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=11
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=removingQueuedTrackUpdatesMedia3Playlist
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.QueueRegressionTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 237.713
+There was 1 failure:
+1) noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(com.blazingsystems.visualizer.PlayerAndUiTest)
+androidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 10000 ms
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:755)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.waitUntil(AndroidComposeTestRule.android.kt:362)
+	at com.blazingsystems.visualizer.PlayerAndUiTest.noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(PlayerAndUiTest.kt:59)
+
+FAILURES!!!
+Tests run: 11,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+
+{"returncode": 0, "elapsed": 241.46729003200016}
+

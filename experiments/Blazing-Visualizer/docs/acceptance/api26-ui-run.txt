@@ -1,0 +1,69 @@
+
+{"returncode": 0, "elapsed": 97.4452629440002}
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+com.blazingsystems.visualizer.PlayerAndUiTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=familiarWorkflowOpensPresetsAndLayerEditor
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=familiarWorkflowOpensPresetsAndLayerEditor
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=playbackSeeksAndLoopsUsingSourceTime
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=playbackSeeksAndLoopsUsingSourceTime
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.PlayerAndUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=
+com.blazingsystems.visualizer.QueueRegressionTest:
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=removingQueuedTrackUpdatesMedia3Playlist
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.QueueRegressionTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: numtests=4
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: test=removingQueuedTrackUpdatesMedia3Playlist
+INSTRUMENTATION_STATUS: class=com.blazingsystems.visualizer.QueueRegressionTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 93.429
+
+OK (4 tests)
+
+
+INSTRUMENTATION_CODE: -1
+

@@ -1,0 +1,144 @@
+{
+  "results": [
+    {
+      "width": 1280,
+      "height": 720,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 720,
+      "height": 1280,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 720,
+      "height": 720,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 1080,
+      "height": 1920,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 1080,
+      "height": 1080,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 100000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 66666,
+          "samples": 3
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 139319,
+          "firstPtsUs": 0,
+          "lastPtsUs": 92879,
+          "samples": 3
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "height": 180,
+      "tracks": [
+        {
+          "mime": "video\/avc",
+          "durationUs": 4000000,
+          "firstPtsUs": 0,
+          "lastPtsUs": 3966666,
+          "samples": 120
+        },
+        {
+          "mime": "audio\/mp4a-latm",
+          "durationUs": 4040272,
+          "firstPtsUs": 0,
+          "lastPtsUs": 3993832,
+          "samples": 87
+        }
+      ]
+    }
+  ]
+}

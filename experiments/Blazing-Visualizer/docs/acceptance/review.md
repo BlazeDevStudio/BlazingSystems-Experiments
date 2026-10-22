@@ -1,6 +1,6 @@
 # Review and decisions
 
-A fresh whole-branch review of `bb86af8…532ec1b` found no Critical issues, six Important issues and three Minor issues. The Important fixes are in one implementation pass; all related host and native UI/queue regressions pass. Final audio-export revalidation is running.
+A fresh whole-branch review of `bb86af8…532ec1b` found no Critical issues, six Important issues and three Minor issues. The Important fixes are in one implementation pass; all related host and native UI/queue regressions pass. Audio export is verified after calibration/tail fixes: decoded lag 0 us, correlation 0.9999358; all six presets passed.
 
 | Finding | Fix and regression |
 |---|---|
@@ -34,3 +34,5 @@ Rulings made, exhaustively:
 - Keep this as a debug-signed preview in the existing draft PR; do not merge main or publish to a store. Cost: production signing, physical-device performance and owner familiarity acceptance remain release checks.
 
 Declined-to-judge outcomes: native codecs and lifecycle are evaluated by instrumentation, API36 by CI; physical arm64 performance, arbitrary-song transcription and the owner's acceptance of Avee familiarity are not established by emulator fixtures.
+
+Final verification: 45/45 host tests, seven native analysis/render/export checks and four UI/player/queue checks pass. API26/API36 CI passed all 11 tests on the same production code at d87730e. A repeat-run UI test initially read an older project before its asynchronous import completed; it now waits for the actual selected URI and pauses it before correction. The corrected four-test UI suite passes. The packaged license update preserves all 17 DEX/native/model entries byte-for-byte.

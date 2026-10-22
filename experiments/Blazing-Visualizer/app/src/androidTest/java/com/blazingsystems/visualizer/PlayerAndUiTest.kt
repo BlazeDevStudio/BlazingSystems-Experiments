@@ -44,9 +44,15 @@ class PlayerAndUiTest {
             f.outputStream().use(input::copyTo)
         }
         rule.runOnUiThread { model().importTracks(listOf(Uri.fromFile(f))) }
-        rule.waitUntil(60_000) { model().state.value.notes.isNotEmpty() }
+        val expectedUri = Uri.fromFile(f).toString()
+        rule.waitUntil(30_000) { model().playback.value.sourceUri == expectedUri }
+        rule.runOnUiThread { model().player.pause() }
+        rule.waitUntil(60_000) {
+            model().state.value.project?.source?.uri == expectedUri &&
+                model().state.value.progress == null &&
+                model().state.value.notes.isNotEmpty()
+        }
         rule.runOnUiThread {
-            model().player.pause()
             model().setScene(BuiltinScenes.noteWheel())
             val n = model().state.value.notes.first()
             model().editNote(NoteEdit.Replace(n.copy(pitch = 62)))
@@ -56,7 +62,10 @@ class PlayerAndUiTest {
         rule.onNodeWithText("0.5×").performClick()
         rule.onNodeWithText("Export MIDI").performScrollTo().assertIsEnabled()
         rule.activityRule.scenario.recreate()
-        rule.waitUntil(10_000) { model().state.value.project?.edits?.isNotEmpty() == true }
+        rule.waitUntil(10_000) {
+            model().state.value.project?.source?.uri == expectedUri &&
+                model().state.value.project?.edits?.isNotEmpty() == true
+        }
         assertEquals(62, model().state.value.notes.first().pitch)
     }
 

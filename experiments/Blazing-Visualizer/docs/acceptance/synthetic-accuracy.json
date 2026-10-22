@@ -1,0 +1,47 @@
+{
+  "fixture": "synthetic",
+  "matches": 5,
+  "expected": 5,
+  "predicted": 6,
+  "onsetToleranceUs": 50000,
+  "rawF1": 0.9090909090909091,
+  "deltasUs": [
+    -3402,
+    -4218,
+    1148,
+    1148,
+    1148
+  ],
+  "notes": [
+    {
+      "pitch": 60,
+      "startUs": 296598,
+      "endUs": 1335147
+    },
+    {
+      "pitch": 64,
+      "startUs": 1495782,
+      "endUs": 2532259
+    },
+    {
+      "pitch": 79,
+      "startUs": 2699515,
+      "endUs": 2950218
+    },
+    {
+      "pitch": 60,
+      "startUs": 2701148,
+      "endUs": 3728087
+    },
+    {
+      "pitch": 64,
+      "startUs": 2701148,
+      "endUs": 3728087
+    },
+    {
+      "pitch": 67,
+      "startUs": 2701148,
+      "endUs": 3728087
+    }
+  ]
+}
