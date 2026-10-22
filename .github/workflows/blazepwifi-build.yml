@@ -167,6 +167,29 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py
       - name: BlazePwifi v0.6 rental receipt EIO after lease rename
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh
+      - name: P0 #32 rental coin process-death EXPECTED UNSAFE (NOT an atomicity PASS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=experiment/openwrt/BlazePwifi/tests/v060_rental_postwrite_process_crash_red.sh
+          evidence="$RUNNER_TEMP/blazepwifi-rental-postwrite-expected-red.log"
+          sh -n "$fixture"
+          set +e
+          sh "$fixture" > "$evidence" 2>&1
+          rc=$?
+          set -e
+          cat "$evidence"
+          # The signature proves a known non-atomic v1 defect, NOT a success.
+          # A future fixed runtime requires deliberate contract replacement;
+          # missing/changed evidence or an invalid fixture is never accepted.
+          if [ "$rc" -eq 1 ] &&
+             grep -Fqx 'RENT-20261022-ATOMIC RED: process died after rental lease rename; lease=124056, receipt absent, no ACK, quarantine persists' "$evidence" &&
+             grep -Fqx 'NOT PRODUCTION SAFE: this is a synthetic process-death boundary, not physical power-loss acceptance' "$evidence"; then
+            echo '::warning::P0 #32 OPEN: expected rental lease/receipt divergence reproduced; production money authority NOT SAFE'
+          else
+            echo "::error::P0 #32 fixture result changed (rc=$rc). Inspect paid lease + receipt and update this gate only after a VERIFIED atomic-runtime fix."
+            exit 1
+          fi
       - name: RENT-20261022-HASH reject unavailable or malformed rental paid receipt digest
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh
       - name: Refuse altered-pulse and cross-device rental coin receipt duplicate ACKs
