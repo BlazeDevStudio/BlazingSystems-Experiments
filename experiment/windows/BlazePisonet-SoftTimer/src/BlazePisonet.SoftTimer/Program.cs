@@ -10,6 +10,8 @@ internal static class Program
             return TimerEngine.VerifyTimerMath();
         if (args.Any(a => string.Equals(a, "--verify-serial-exact-binding", StringComparison.OrdinalIgnoreCase)))
             return SerialDiscovery.VerifyExactBinding();
+        if (args.Any(a => string.Equals(a, "--verify-serial-session-isolation", StringComparison.OrdinalIgnoreCase)))
+            return SerialHardware.VerifySerialSessionIsolation();
         if (args.Any(a => string.Equals(a, "--verify-config-corruption-guard", StringComparison.OrdinalIgnoreCase)))
             return Storage.VerifyConfigCorruptionGuard();
         if (args.Any(a => string.Equals(a, "--verify-state-corruption-guard", StringComparison.OrdinalIgnoreCase)))

@@ -1,3 +1,18 @@
+## Serial reconnect pulse-session isolation (development fix)
+
+SoftTimer accepts serial pin-change notifications only from the **currently
+connected, open serial-port object**. Late pin callbacks from an unplugged or
+disposed adapter cannot be interpreted against a newly connected adapter.
+The DSR/CTS/CD/ring pulse state and debounce timestamp reset on disconnect,
+rather than carrying an unfinished pulse into a later COM session. A serial
+port created for an unsuccessful Open() call is closed/disposed explicitly.
+
+The compiled Windows EXE offers `--verify-serial-session-isolation`; it checks
+session-identity and reset invariants without opening real serial hardware,
+collecting coins or changing paid balances. Physical USB-RS232 unplug/replug,
+DSR timing, RTS/DTR electrical levels and coinslot behavior remain untested
+until an approved noncustomer hardware acceptance run.
+
 ## Exact USB-RS232 identity safety (development fix)
 
 **Exact Device** is an identity-only binding, not a preferred COM-number mode. If the
