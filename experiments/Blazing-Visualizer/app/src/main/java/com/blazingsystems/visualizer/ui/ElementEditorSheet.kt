@@ -118,6 +118,14 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel, onArrange: (Boolean) ->
                                 label = { Text("Text") },
                                 modifier = Modifier.fillMaxWidth(),
                             )
+                        if (layer.type == ElementType.NOTE_WHEEL)
+                            OutlinedTextField(
+                                layer.properties["emptyText"]?.jsonPrimitive?.content
+                                    ?: "FOLLOW THE NOTES",
+                                { prop("emptyText", it.take(120)) },
+                                label = { Text("Note wheel · text when no notes are detected") },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         if (layer.type == ElementType.IMAGE)
                             OutlinedButton(
                                 onClick = {

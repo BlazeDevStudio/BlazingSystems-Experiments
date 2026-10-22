@@ -195,19 +195,61 @@ fun applyNoteEdits(raw: List<NoteEvent>, edits: List<NoteEdit>): List<NoteEvent>
 }
 
 object ChordEstimator {
+    private val names = arrayOf(
+        "C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B",
+    )
+
+    // Pitch-class templates: octave doublings and inversions remain valid.
+    // Equal pitch sets can have more than one harmonic explanation. Prefer
+    // the lowest sounding voice as the root, but never invent a chord from
+    // incomplete or extra pitch classes.
+    private val quality = listOf(
+        "" to setOf(0, 4, 7),
+        "m" to setOf(0, 3, 7),
+        "dim" to setOf(0, 3, 6),
+        "aug" to setOf(0, 4, 8),
+        "sus2" to setOf(0, 2, 7),
+        "sus4" to setOf(0, 5, 7),
+        "maj7" to setOf(0, 4, 7, 11),
+        "m7" to setOf(0, 3, 7, 10),
+        "7" to setOf(0, 4, 7, 10),
+        "mMaj7" to setOf(0, 3, 7, 11),
+        "dim7" to setOf(0, 3, 6, 9),
+        "m7♭5" to setOf(0, 3, 6, 10),
+        "6" to setOf(0, 4, 7, 9),
+        "m6" to setOf(0, 3, 7, 9),
+        "add9" to setOf(0, 2, 4, 7),
+        "9" to setOf(0, 2, 4, 7, 10),
+        "m9" to setOf(0, 2, 3, 7, 10),
+        "maj9" to setOf(0, 2, 4, 7, 11),
+    )
+
+    private fun active(notes: List<NoteEvent>, timeUs: Long): List<NoteEvent> =
+        notes.filter { timeUs >= it.startUs && timeUs < it.endUs }
+
     fun estimate(notes: List<NoteEvent>, timeUs: Long): String? {
-        val pitches =
-            notes.filter { timeUs >= it.startUs && timeUs < it.endUs }.map { it.pitch % 12 }.toSet()
+        val sounding = active(notes, timeUs)
+        val pitches = sounding.map { Math.floorMod(it.pitch, 12) }.toSet()
         if (pitches.size < 3) return null
-        val names = arrayOf("C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B")
-        for (root in 0..11) for ((suffix, intervals) in
-            listOf(
-                "" to setOf(0, 4, 7),
-                "m" to setOf(0, 3, 7),
-                "dim" to setOf(0, 3, 6),
-                "7" to setOf(0, 4, 7, 10),
-            )) if (pitches == intervals.map { (root + it) % 12 }.toSet())
-            return names[root] + suffix
+        val bass = sounding.minByOrNull { it.pitch }?.pitch?.let { Math.floorMod(it, 12) }
+        for (root in (listOfNotNull(bass) + (0..11)).distinct()) {
+            for ((suffix, intervals) in quality) {
+                if (pitches == intervals.map { (root + it) % 12 }.toSet()) {
+                    return names[root] + suffix
+                }
+            }
+        }
         return null
+    }
+
+    /** Show each detected note once when a chord cannot be named. */
+    fun displayLabel(
+        notes: List<NoteEvent>, timeUs: Long, emptyText: String = "FOLLOW THE NOTES",
+    ): String {
+        val sounding = active(notes, timeUs)
+        if (sounding.isEmpty()) return emptyText.take(120)
+        estimate(sounding, timeUs)?.let { return it }
+        return sounding.map { Math.floorMod(it.pitch, 12) }.distinct().sorted()
+            .joinToString(" · ") { names[it] }
     }
 }

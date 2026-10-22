@@ -144,6 +144,27 @@ class CoreTest {
     }
 
     @Test
+    fun chordDictionaryNamesExtendedAndSuspendedHarmony() {
+        fun notes(vararg pitches: Int) = pitches.mapIndexed { i, pitch ->
+            NoteEvent("h$i", pitch, 0, 1_000_000)
+        }
+        assertEquals("Am", ChordEstimator.estimate(notes(57, 60, 64), 10))
+        assertEquals("Cmaj7", ChordEstimator.estimate(notes(48, 52, 55, 59), 10))
+        assertEquals("Dsus4", ChordEstimator.estimate(notes(50, 55, 57), 10))
+        assertEquals("C9", ChordEstimator.estimate(notes(48, 50, 52, 55, 58), 10))
+    }
+
+    @Test
+    fun unmatchedNotesAreAllShownAndEmptyTextIsCustomizable() {
+        val simultaneous = listOf(60, 61, 69).mapIndexed { i, pitch ->
+            NoteEvent("note-$i", pitch, 0, 1_000_000)
+        }
+        assertNull(ChordEstimator.estimate(simultaneous, 1))
+        assertEquals("C · C♯ · A", ChordEstimator.displayLabel(simultaneous, 1))
+        assertEquals("PLAY A CHORD", ChordEstimator.displayLabel(simultaneous, 2_000_000, "PLAY A CHORD"))
+    }
+
+    @Test
     fun spectrumTracksKnownTone() {
         val pcm = FloatArray(2048) { sin(2 * PI * 441 * it / 22050).toFloat() }
         val result = AveeSpectrumAnalyzer().analyze(pcm, 22050)

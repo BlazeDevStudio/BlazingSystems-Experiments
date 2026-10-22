@@ -232,7 +232,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     }
                 }
                 ElementType.NOTE_WHEEL ->
-                    wheel(canvas, routed(s, layer), w, h, tint, intensity)
+                    wheel(canvas, routed(s, layer), layer, w, h, tint, intensity)
                 ElementType.PIANO_ROLL ->
                     piano(
                         canvas, routed(s, layer), layer, w, h, tint,
@@ -245,7 +245,8 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     }
 
     private fun wheel(
-        c: Canvas, s: EvaluatedScene, w: Float, h: Float, tint: Int, intensity: Float,
+        c: Canvas, s: EvaluatedScene, layer: Layer, w: Float, h: Float,
+        tint: Int, intensity: Float,
     ) {
         val r = min(w, h) * .37f
         val active = s.activeNotes.map { it.pitch % 12 }.toSet()
@@ -291,13 +292,19 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 paint,
             )
         }
-        paint.textSize = r * .25f
+        val label = ChordEstimator.displayLabel(
+            s.activeNotes, s.sourceTimeUs,
+            layer.string("emptyText", "FOLLOW THE NOTES"),
+        )
+        // Fit long multi-note labels instead of cutting them off on phones.
+        paint.textSize = min(r * .25f, w * .78f / (label.length * .56f).coerceAtLeast(1f))
         paint.color = Color.WHITE
-        c.drawText(s.chord ?: "♪", 0f, r * .04f, paint)
+        c.drawText(label, 0f, r * .04f, paint)
         paint.textSize = r * .085f
         paint.color = Color.rgb(156, 151, 177)
         c.drawText(
-            if (s.chord != null) "ESTIMATED CHORD" else "FOLLOW THE NOTES",
+            if (s.chord != null) "ESTIMATED CHORD"
+            else if (s.activeNotes.isNotEmpty()) "DETECTED NOTES" else "",
             0f,
             r * .23f,
             paint,
