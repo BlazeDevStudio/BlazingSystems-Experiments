@@ -371,14 +371,13 @@ object AveePresetAdapter {
                     "Text" -> ElementType.TEXT
                     "Image" -> ElementType.IMAGE
                     "Bars", "Spectrum", "Spectrum2", "RoundBars", "SharpBars" -> ElementType.SPECTRUM
-                    "BlurEffect", "MotionBlurEffect" -> ElementType.BLUR
-                    "Waveform" -> ElementType.WAVEFORM
-                    "Particles" -> ElementType.PARTICLES
                     "BlurEffect" -> ElementType.BLUR
                     "MotionBlurEffect" -> {
                         unsupported += "Temporal motion blur approximated by a glow"
                         ElementType.BLUR
                     }
+                    "Waveform" -> ElementType.WAVEFORM
+                    "Particles" -> ElementType.PARTICLES
                     else -> {
                         unsupported += "Element $type"
                         continue
@@ -453,12 +452,47 @@ object AveePresetAdapter {
                         }
                     }
                 if (native == ElementType.SPECTRUM) {
-                    put(
-                        "path",
-                        if (value("ShapePath")?.jsonPrimitive?.content == "Circle") "circle"
-                        else "bars",
-                    )
-                    unsupported += "$type shader / DSP styling is approximated"
+                    // Modern Avee presets frequently nest path and segment
+                    // parameters below custom-value objects, not flat keys.
+                    val shape = item["ShapePath"] as? JsonObject
+                    val shapeName = (shape?.get("v") ?: item["ShapePath"]) as? JsonPrimitive
+                    val path = when (shapeName?.content) {
+                        "Circle" -> "circle"
+                        "SidedPolygon" -> "polygon"
+                        else -> "bars"
+                    }
+                    put("path", path)
+                    if (path == "polygon") {
+                        val sides = (shape?.get("sides") as? JsonObject)?.get("v")
+                            ?: shape?.get("sides")
+                        put("sides", (sides as? JsonPrimitive)?.intOrNull?.coerceIn(3, 24) ?: 5)
+                    }
+                    val segment = item["Segment1"] as? JsonObject
+                    (segment?.get("v") as? JsonPrimitive)?.content?.let {
+                        put("segment", it)
+                    }
+                    fun parseAveeColor(element: JsonElement?): String? {
+                        val raw = (element as? JsonPrimitive)?.content ?: return null
+                        return when {
+                            raw.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) -> raw
+                            raw.toLongOrNull() != null -> "#%08X".format(raw.toLong().toInt())
+                            else -> null
+                        }
+                    }
+                    parseAveeColor(
+                        (segment?.get("colorFrom") as? JsonObject)?.get("v")
+                            ?: segment?.get("colorFrom"),
+                    )?.let { put("color", it) }
+                    parseAveeColor(
+                        (segment?.get("colorTo") as? JsonObject)?.get("v")
+                            ?: segment?.get("colorTo"),
+                    )?.let { put("colorTo", it) }
+                    val width = (segment?.get("barWidth") as? JsonObject)?.get("v")
+                        ?: segment?.get("barWidth")
+                    (width as? JsonPrimitive)?.floatOrNull?.takeIf {
+                        it.isFinite() && it in .05f..2f
+                    }?.let { put("barWidth", it) }
+                    unsupported += "$type shader, depth and multi-segment DSP styling remain approximated"
                 }
                 if (native == ElementType.BLUR) unsupported += "$type simplified blur effect"
             }

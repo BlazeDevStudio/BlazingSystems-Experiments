@@ -133,7 +133,14 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     }
                 }
                 ElementType.SPECTRUM -> {
-                    val circle = layer.string("path", "circle") == "circle"
+                    val pathMode = layer.string("path", "circle")
+                    val circle = pathMode == "circle"
+                    val polygon = pathMode == "polygon"
+                    val sides = layer.number("sides", 5f).toInt().coerceIn(3, 24)
+                    val segment = layer.string("segment")
+                    val colorTo = runCatching {
+                        Color.parseColor(layer.string("colorTo"))
+                    }.getOrNull()
                     val config = s.scene.aveeAudio
                     fun param(key: String, fallback: Float): Float =
                         config[key]?.jsonPrimitive?.floatOrNull?.takeIf(Float::isFinite) ?: fallback
@@ -146,8 +153,10 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     val gain = param("outputMultiplier", 1f).coerceIn(.1f, 3f)
                     val lowMagnitude = param("lowerFreqMagnitude", .5f).coerceIn(0f, 1f)
                     val filterRadius = param("filterRadius", 0f).toInt().coerceIn(0, 8)
-                    paint.strokeWidth = max(1f, min(w, h) / 300f)
-                    paint.strokeCap = Paint.Cap.ROUND
+                    paint.strokeWidth = max(1f, min(w, h) / 300f) *
+                        layer.number("barWidth", 1f).coerceIn(.05f, 2f)
+                    paint.strokeCap = if (segment == "SharpBars") Paint.Cap.SQUARE
+                        else Paint.Cap.ROUND
                     for (i in 0 until bins) {
                         val fraction = i.toDouble() / bins
                         val from = if (imported) {
@@ -177,10 +186,23 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                                 (1f - lowMagnitude) * fraction.toFloat())
                         }
                         val level = (ln(1 + amplitude * 80) / ln(81f)).coerceIn(0f, 1f)
-                        paint.color = tint
-                        if (circle) {
+                        paint.color = if (colorTo == null) tint else {
+                            val portion = i.toFloat() / (bins - 1).coerceAtLeast(1)
+                            Color.argb(
+                                (Color.alpha(tint) * (1 - portion) + Color.alpha(colorTo) * portion).toInt(),
+                                (Color.red(tint) * (1 - portion) + Color.red(colorTo) * portion).toInt(),
+                                (Color.green(tint) * (1 - portion) + Color.green(colorTo) * portion).toInt(),
+                                (Color.blue(tint) * (1 - portion) + Color.blue(colorTo) * portion).toInt(),
+                            )
+                        }
+                        if (circle || polygon) {
                             val a = i * 2 * PI / bins - PI / 2
-                            val r = min(w, h) * .29f
+                            val sector = 2 * PI / sides
+                            val angleOnSide = ((a + PI / 2 + PI) % sector) - sector / 2
+                            val radialFactor = if (polygon)
+                                cos(PI / sides) / cos(angleOnSide).coerceAtLeast(.1)
+                            else 1.0
+                            val r = min(w, h) * .29f * radialFactor.toFloat()
                             val length = 2 + level * min(w, h) * .2f
                             canvas.drawLine(
                                 (cos(a) * r).toFloat(),
