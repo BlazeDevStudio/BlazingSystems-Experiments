@@ -678,7 +678,104 @@ bp_rental_apply_coin() {
     bp_paid_replay_read_unlock
     return 8
   }
-  event="r:$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)"
+  # RENT-20261022-HASH: an unavailable or malformed digest must never
+  # create an unmatchable paid receipt, mutate lease, or emit coin ACK.
+  # Validate BEFORE entering the paid writer section (and again use the
+  # validated event identity when the financial lock changes owners).
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
   old="$(bp_rental_paid_receipt_snapshot "$event")"
   rc=$?
   if [ "$rc" -ne 0 ]; then
