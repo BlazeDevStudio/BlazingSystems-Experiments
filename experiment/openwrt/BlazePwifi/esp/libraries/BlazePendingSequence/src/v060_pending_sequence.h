@@ -34,7 +34,13 @@ static inline uint32_t bp_pending_sequence_checksum(const BpPendingSequence *s) 
 
 static inline int bp_pending_sequence_hex_token(const char *s, size_t min_len,
                                                 size_t max_len) {
-    size_t i, n = s ? strlen(s) : 0;
+    size_t i, n = 0;
+    /* Flash-loaded nonce[17]/target[33] may be corrupt and lack a NUL.
+     * Never pass those fixed-width records to unbounded strlen(). The
+     * known wire format permits at most 32 hex bytes plus a terminator.
+     */
+    if (!s || min_len > max_len || max_len > 32) return 0;
+    while (n <= max_len && s[n] != '\0') ++n;
     if (n < min_len || n > max_len) return 0;
     for (i = 0; i < n; ++i)
         if (!((s[i] >= '0' && s[i] <= '9') ||
