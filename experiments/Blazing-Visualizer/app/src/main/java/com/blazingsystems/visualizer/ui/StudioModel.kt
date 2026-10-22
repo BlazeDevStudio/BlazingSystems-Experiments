@@ -780,27 +780,7 @@ class StudioModel @JvmOverloads constructor(
                                 if (native != null) native
                                 else {
                                     val assets = File(folder, "avee").apply { mkdirs() }
-                                    val text =
-                                        if (original.inputStream().use { it.read() } == 0x50) {
-                                            NativePackCodec.extract(original.inputStream(), assets)
-                                            val files =
-                                                assets
-                                                    .walkTopDown()
-                                                    .filter {
-                                                        it.isFile &&
-                                                            it.extension.lowercase() in
-                                                                setOf("json", "txt")
-                                                    }
-                                                    .toList()
-                                            require(files.size == 1) {
-                                                "Select an Avee JSON preset or a pack with one JSON scene"
-                                            }
-                                            require(files[0].length() <= 2 * 1024 * 1024)
-                                            files[0].readText()
-                                        } else {
-                                            require(original.length() <= 2 * 1024 * 1024)
-                                            original.readText()
-                                        }
+                                    val text = AveePresetAdapter.loadPresetText(original, assets)
                                     AveePresetAdapter.read(text, assets)
                                         .copy(originalFile = original)
                                 }

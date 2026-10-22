@@ -292,10 +292,44 @@ class NativePackCodec {
 }
 
 object AveePresetAdapter {
+    /** Many presets are plain JSON; others are ZIPs holding JSON or text .viz.
+     * Non-JSON proprietary .viz is rejected explicitly rather than misrendered.
+     * Existing archive bounds, traversal and image guards are preserved.
+     */
+    fun loadPresetText(original: File, assets: File): String {
+        val zipped = original.inputStream().use { it.read() == 0x50 && it.read() == 0x4b }
+        val file = if (zipped) {
+            NativePackCodec.extract(original.inputStream(), assets)
+            val candidates = assets.walkTopDown().filter {
+                it.isFile && it.extension.lowercase() in setOf("json", "txt", "viz") &&
+                    it.length() in 2..(2L * 1024 * 1024) &&
+                    it.inputStream().buffered().use { stream ->
+                        var first = stream.read()
+                        while (first in listOf(9, 10, 13, 32)) first = stream.read()
+                        first == '{'.code
+                    }
+            }.toList()
+            require(candidates.size == 1) {
+                "This archive needs exactly one JSON Avee preset. Binary or multiple .viz files " +
+                    "cannot be imported automatically; extract and select one supported template."
+            }
+            candidates.single()
+        } else original
+        require(file.length() <= 2L * 1024 * 1024) { "Avee preset JSON exceeds 2 MiB" }
+        val text = file.readText()
+        require(text.trimStart().startsWith("{")) {
+            "Unsupported binary Avee .viz format. A JSON-compatible preset is required."
+        }
+        return text
+    }
+
     fun read(text: String, assets: File): ImportResult {
         val root = boundedJson(text).jsonObject
-        val compositions =
-            root["compositions"]?.jsonArray ?: error("Avee compositions array is missing")
+        val compositions = root["compositions"]?.let {
+            require(it is JsonArray) { "Avee compositions must be an array" }
+            it
+        } ?: if (root["elements"] is JsonArray) JsonArray(listOf(JsonObject(root)))
+            else error("No Avee compositions or elements found in this preset")
         val supported = mutableListOf<String>()
         val unsupported = mutableListOf<String>()
         val missing = mutableListOf<String>()
@@ -304,7 +338,9 @@ object AveePresetAdapter {
         for (composition in compositions) for (element in
             composition.jsonObject["elements"]?.jsonArray ?: JsonArray(emptyList())) {
             val item = element.jsonObject
-            fun value(key: String) = item[key]?.let { if (it is JsonObject) it["v"] else it }
+            fun value(key: String) = item[key]?.let {
+                if (it is JsonObject && "v" in it) it["v"] else it
+            }
             val type =
                 item["objType"]?.jsonPrimitive?.content
                     ?: item["v"]?.jsonPrimitive?.content
@@ -313,7 +349,8 @@ object AveePresetAdapter {
                 when (type) {
                     "Text" -> ElementType.TEXT
                     "Image" -> ElementType.IMAGE
-                    "Bars" -> ElementType.SPECTRUM
+                    "Bars", "Spectrum" -> ElementType.SPECTRUM
+                    "Waveform" -> ElementType.WAVEFORM
                     "Particles" -> ElementType.PARTICLES
                     else -> {
                         unsupported += "Element $type"
@@ -338,16 +375,28 @@ object AveePresetAdapter {
                     "ShapePath",
                 )
             item.keys.filterNot { it in known }.forEach { unsupported += "$type.$it" }
-            fun pair(key: String, default: Float): List<Float> =
-                value(key)
-                    ?.jsonPrimitive
-                    ?.content
-                    ?.trim()
-                    ?.split(Regex("\\s+"))
-                    ?.mapNotNull { it.toFloatOrNull() }
-                    ?.takeIf { it.size == 2 && it.all(Float::isFinite) } ?: listOf(default, default)
+            fun pair(key: String, default: Float): List<Float> {
+                val pair = when (val v = value(key)) {
+                    is JsonArray -> v.mapNotNull {
+                        (it as? JsonPrimitive)?.content?.toFloatOrNull()
+                    }
+                    is JsonObject -> listOfNotNull(
+                        (v["x"] as? JsonPrimitive)?.content?.toFloatOrNull(),
+                        (v["y"] as? JsonPrimitive)?.content?.toFloatOrNull(),
+                    )
+                    is JsonPrimitive -> v.content.trim().split(Regex("[,;\\\\s]+"))
+                        .mapNotNull { it.toFloatOrNull() }
+                    else -> emptyList()
+                }
+                return pair.takeIf { it.size == 2 && it.all(Float::isFinite) }
+                    ?: listOf(default, default)
+            }
             val position = pair("position", .5f)
             val scale = pair("scale", 1f)
+            val rawRotation = (value("rotation") as? JsonPrimitive)?.floatOrNull
+            val rotation = rawRotation?.takeIf { it.isFinite() && it in -180f..180f } ?: 0f
+            if (rawRotation != null && rawRotation != rotation)
+                unsupported += "$type.rotation outside supported degrees"
             val properties = buildJsonObject {
                 value("text")?.let { put("text", it) }
                 value("fontSize")?.let { put("fontSize", it) }
@@ -384,19 +433,21 @@ object AveePresetAdapter {
                 Layer(
                     type = native,
                     name = item["_name"]?.jsonPrimitive?.content ?: type,
-                    visible = value("visible")?.jsonPrimitive?.intOrNull != 0,
+                    visible = when ((value("visible") as? JsonPrimitive)?.content?.lowercase()) {
+                        "0", "false" -> false
+                        else -> true
+                    },
                     transform =
                         Transform(
                             position[0],
                             position[1],
                             scale[0].coerceIn(.001f, 4f),
                             scale[1].coerceIn(.001f, 4f),
+                            rotation,
                         ),
                     properties = properties,
                 )
-            if (value("rotation")?.jsonPrimitive?.floatOrNull?.let { it != 0f } == true)
-                unsupported += "$type.rotation"
-        }
+         }
         unsupported += "Avee font metrics, blending and DSP may look different"
         return ImportResult(
             Scene(name = "Imported Avee preset", layers = layers),

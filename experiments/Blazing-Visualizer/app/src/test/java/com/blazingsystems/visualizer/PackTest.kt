@@ -105,6 +105,50 @@ class PackTest {
     }
 
     @Test
+    fun zippedJsonVizIsDiscoverableWithoutCallingItFullFidelity() {
+        val archive = File(root, "compatible.viz")
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("templates/single.viz"))
+            zip.write("""{"compositions":[{"elements":[{"objType":"Waveform"}]}]}""".toByteArray())
+            zip.closeEntry()
+        }
+        val content = AveePresetAdapter.loadPresetText(archive, File(root, "extract"))
+        val imported = AveePresetAdapter.read(content, root)
+        assertEquals(ElementType.WAVEFORM, imported.scene.layers.single().type)
+        assertTrue(imported.report.requiresPartialAcceptance)
+    }
+
+    @Test
+    fun modernShapedVectorsAndBooleanVisibilityDoNotCrashImporter() {
+        val json = """{"elements":[{"objType":"Image","_name":"foreground",
+          "position":{"v":[0.3,0.7]},"scale":{"v":{"x":0.5,"y":0.2}},
+          "rotation":{"v":45},"visible":{"v":false}}]}"""
+        val result = AveePresetAdapter.read(json, root)
+        val layer = result.scene.layers.single()
+        assertFalse(layer.visible)
+        assertEquals(.3f, layer.transform.x, .0001f)
+        assertEquals(.7f, layer.transform.y, .0001f)
+        assertEquals(.5f, layer.transform.width, .0001f)
+        assertEquals(.2f, layer.transform.height, .0001f)
+        assertEquals(45f, layer.transform.rotation, .0001f)
+    }
+
+    @Test
+    fun archiveWithTwoPresetsRequiresExplicitChoice() {
+        val archive = File(root, "ambiguous.viz")
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            for (name in listOf("one.viz", "two.viz")) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write("""{"compositions":[]}""".toByteArray())
+                zip.closeEntry()
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            AveePresetAdapter.loadPresetText(archive, File(root, "ambiguous"))
+        }
+    }
+
+    @Test
     fun partialAveeSupportIsExplicit() {
         val result =
             AveePresetAdapter.read(
