@@ -6,6 +6,7 @@
 #include <bearssl/bearssl_hash.h>
 #include <v060_pending_sequence.h>
 #include "v060_esp8266_gpio_safety.h"
+#include "v060_esp8266_coin_acceptance.h"
 
 struct ConfigV1 {
   uint32_t magic;
@@ -285,7 +286,10 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  // Relay eligibility must match the recording path, not just insertMode.
+  bool accepting=bp_esp8266_coin_can_accept(
+      controllerEnabled,coinEnabled,relayEnabled,insertMode,fsReady,
+      pendingReady,activeTarget.length()!=0,pendingTarget==activeTarget,pendingPulses);
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -393,7 +397,10 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(controllerEnabled && coinEnabled && relayEnabled && insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+  if(bp_esp8266_coin_can_accept(
+      controllerEnabled,coinEnabled,relayEnabled,insertMode,fsReady,
+      pendingReady,activeTarget.length()!=0,pendingTarget==activeTarget,pendingPulses) &&
+      active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){
       pendingNonce=freshNonce();
       pendingTarget=activeTarget;
@@ -406,6 +413,9 @@ void loop(){
         pendingReady=true;
         Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
       }
+      // Close relay immediately at the 20th pulse or on journal EIO.
+      // Do not wait for another poll or the pulse-group timeout.
+      applyOutputs();
     }
   }
   lastCoin=active;
