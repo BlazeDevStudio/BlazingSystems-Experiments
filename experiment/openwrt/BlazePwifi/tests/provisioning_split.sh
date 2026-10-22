@@ -413,3 +413,25 @@ assert lease.index("AndroidRentalPolicyRepository.applyVerified") < lease.index(
 assert "if (!deviceId.equals(RentalLeaseStore.deviceId(context))) return false;" in lease
 assert "policySynced && policyStored" in compliance
 PY
+
+# RC12: symmetric provisioning/standard-enrollment boundary and durable Transfer.
+# JUnit covers the pure guard matrix. Also verify the Android persistence and
+# UI call sites have not bypassed it or regressed to asynchronous identity wipe.
+python3 - "$SRC/RentalLeaseStore.java" "$SRC/BlazeAdminActivity.java" "$SRC/QrEnrollmentScannerActivity.java" <<'PY'
+from pathlib import Path
+import sys
+store,admin,scanner=[Path(x).read_text(encoding="utf-8") for x in sys.argv[1:]]
+transfer=store.split("public static synchronized boolean prepareTransfer(",1)[1].split("private static long adminLockDurationMs",1)[0]
+manual=store.split("public static synchronized boolean saveManualEnrollment(",1)[1].split("private static boolean saveEnrollment(",1)[0]
+assert '.remove("enrollment_source")' in transfer
+assert '.remove("enrollment_request_nonce")' in transfer
+assert '.remove("server_cert_sha256")' in transfer
+assert ".commit();" in transfer
+assert "if (cleared) AndroidRentalPolicyRepository.clear(context);" in transfer
+assert "ProvisioningStateGuard.canStartStandard(" in manual
+assert "if (!canStartManualEnrollment(context)) return false;" in manual
+assert "if (!RentalLeaseStore.prepareTransfer(BlazeAdminActivity.this))" in admin
+assert "if (!RentalLeaseStore.canStartManualEnrollment(this))" in scanner
+assert '"PENDING_ENROLLMENT"' in scanner
+PY
+echo "RC12 provisioning identity persistence and scanner guards passed"
