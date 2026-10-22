@@ -1,3 +1,5 @@
+> **COIN-GPIO-20261022 updated CI:** PR #138 initially failed Static validation because the file editor dropped the original executable bit on controller.sh. Follow-up tree commit restores 100755 on the unchanged fixed script; exact new CI required. Full issue #31/#32/#43/#34, signed and hardware release gates remain open.
+
 > **COIN-GPIO-20261022 latest P1:** Remote coin/relay/LED GPIO conflict fix 874596041f and tests 4528c90f are committed on isolated branch; new exact-head Full CI is PENDING. The pre-fix test run #39741014252 failed earlier at handover freshness, not at GPIO parity. Read live CURRENT_STATE and ledger before merging. No device or production edits.
 
 > **COIN-GPIO-20261022 P1 / TEST-ONLY RED CANDIDATE:** `tests/controllers.sh` source `4528c90f` adds negative remote GPIO collision tests; expect source RED before repairing server validation. Read `docs/handover/CURRENT_STATE.md` and the ledger for exact CI. Branch fix/coin-20261022-gpio-pin-conflicts; NO installed hardware edits and production 0.6 remains blocked.
