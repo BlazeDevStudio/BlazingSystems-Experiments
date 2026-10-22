@@ -41,6 +41,12 @@ int main() {
     assert(!bp_esp8266_vendo_pins_safe(4,5,5));
     assert(!bp_esp8266_vendo_pins_safe(14,14,14));
     assert(!bp_esp8266_vendo_pins_safe(255,5,14));
+    // An unsafe stored EEPROM wiring verdict must remain sticky despite
+    // individually allowed remote overrides; only local correction + reboot clears it.
+    assert(bp_esp8266_vendo_remote_pins_safe(false,4,5,14));
+    assert(!bp_esp8266_vendo_remote_pins_safe(true,4,5,14));
+    assert(!bp_esp8266_vendo_remote_pins_safe(false,0,5,14));
+    assert(!bp_esp8266_vendo_remote_pins_safe(false,4,4,14));
     return 0;
 }
 """
@@ -73,6 +79,25 @@ class Esp8266PinSafety(unittest.TestCase):
         for unsafe in ("cfg.coinPin=web.arg", "cfg.relayPin=web.arg", "cfg.insertLedPin=web.arg"):
             self.assertNotIn(unsafe, text)
         self.assertIn("writeLogical(runRelayPin,false,runRelayActiveHigh)", text)
+
+    def test_unsafe_saved_pin_boot_cannot_be_reenabled_remotely(self):
+        # The EEPROM verdict must survive a safe-looking server pin override.
+        # Host source-contract test, not evidence of a real device latch.
+        text = self.src
+        self.assertIn("bool bootPinsRejected=false;", text)
+        self.assertIn("bootPinsRejected=!savedPinsSafe;", text)
+        remote = re.search(
+            r"void applyRemoteConfig\(const String&r\)\{(.*?)\n\}",
+            text, re.DOTALL,
+        )
+        self.assertIsNotNone(remote, "real remote-configuration function not found")
+        self.assertIn(
+            "bp_esp8266_vendo_remote_pins_safe(bootPinsRejected,nextCoin,nextRelay,nextLed)",
+            remote.group(1),
+            "valid remote GPIO must not override unsafe persisted boot wiring",
+        )
+        self.assertEqual(text.count("bootPinsRejected="), 2,
+                         "boot interlock must not silently clear during a poll")
 
     def test_output_latch_inactive_before_enabling_output_mode(self):
         # Source-order safety proof only, NOT an oscilloscope/relay-polarity test.
