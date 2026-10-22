@@ -239,8 +239,10 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
-  pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
+  // Select the inactive output latch BEFORE enabling the new GPIO driver.
+  // Prevents an output-enable ordering hazard, NOT proof of physical relay polarity.
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
+  pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
 }
 
 void applyRemoteConfig(const String&r){
