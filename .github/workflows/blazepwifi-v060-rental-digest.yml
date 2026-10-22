@@ -1,0 +1,34 @@
+name: RENT-20261022 rental receipt digest failure guard
+on:
+  push:
+    branches:
+      - fix/rent-20261022-coin-digest-failclosed
+      - fix/rent-20261022-replay-lease-floor
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_replay_floor_guard.sh'
+      - '.github/workflows/blazepwifi-v060-rental-digest.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_replay_floor_guard.sh'
+      - '.github/workflows/blazepwifi-v060-rental-digest.yml'
+permissions:
+  contents: read
+jobs:
+  receipt-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          sh -n experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh
+          sh -n experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh
+          sh -n experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_replay_floor_guard.sh
+      - name: Require safe rental coin receipt hash and exact replay
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh
+      - name: RENT-20261022 lease-floor replay mismatch must refuse ACK
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_replay_floor_guard.sh
