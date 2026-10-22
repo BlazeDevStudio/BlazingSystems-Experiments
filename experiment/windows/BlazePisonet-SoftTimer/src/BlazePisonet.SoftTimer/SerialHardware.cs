@@ -244,9 +244,10 @@ public sealed class SerialHardware : IDisposable
                 return false;
             }
 
+            SerialPort? candidate = null;
             try
             {
-                var port = new SerialPort(selected.PortName, Math.Clamp(config.SerialBaudRate, 300, 115200), Parity.None, 8, StopBits.One)
+                candidate = new SerialPort(selected.PortName, Math.Clamp(config.SerialBaudRate, 300, 115200), Parity.None, 8, StopBits.One)
                 {
                     Handshake = Handshake.None,
                     DtrEnable = config.DtrEnabled,
@@ -254,20 +255,33 @@ public sealed class SerialHardware : IDisposable
                     ReadTimeout = 250,
                     WriteTimeout = 250
                 };
-                port.PinChanged += OnPinChanged;
-                port.ErrorReceived += (_, e) => Storage.Log($"Serial error {selected.PortName}: {e.EventType}");
-                port.Open();
-                _port = port;
+                candidate.PinChanged += OnPinChanged;
+                candidate.ErrorReceived += OnSerialError;
+                candidate.Open();
+                _port = candidate;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
+                _pulseStarted = null;
                 _lastCoinActive = IsSignalActive(config.CoinInputSignal, config.CoinInputActiveHigh);
                 ConnectionChanged?.Invoke($"Connected to {selected.Display}");
                 return true;
             }
             catch (Exception ex)
             {
-                Storage.Log($"Serial open failed for {selected.PortName}: {ex.Message}");
+                // A failed Open() never assigned _port, so DisconnectInternal()
+                // cannot release this temporary SerialPort. Dispose it here.
+                if (candidate is not null)
+                {
+                    try { candidate.PinChanged -= OnPinChanged; } catch { }
+                    try { candidate.ErrorReceived -= OnSerialError; } catch { }
+                    try { if (candidate.IsOpen) candidate.Close(); } catch { }
+                    try { candidate.Dispose(); } catch { }
+                }
+                _port = null;
+                _config = null;
+                _pulseStarted = null;
                 ConnectedDevice = null;
+                Storage.Log($"Serial open failed for {selected.PortName}: {ex.Message}");
                 ConnectionChanged?.Invoke($"Could not open {selected.PortName}: {ex.Message}");
                 return false;
             }
@@ -310,43 +324,69 @@ public sealed class SerialHardware : IDisposable
         lock (_gate) if (_port?.IsOpen == true) _port.RtsEnable = enabled;
     }
 
-    private void OnPinChanged(object? sender, SerialPinChangedEventArgs e)
+    // PinChanged events can remain queued after Close()/Dispose(). Never let
+    // a callback from a previous COM port read signals or credit the new port.
+    private static bool IsCurrentPinEvent(object? sender, object? current, bool isOpen) =>
+        isOpen && current is not null && ReferenceEquals(sender, current);
+
+    private void OnSerialError(object? sender, SerialErrorReceivedEventArgs e)
     {
-        var cfg = _config;
-        if (cfg is null) return;
-        SignalChanged?.Invoke();
-
-        if (cfg.CoinInputSignal == ModemSignal.RingIndicator && e.EventType == SerialPinChange.Ring)
+        lock (_gate)
         {
-            AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
-            return;
-        }
-
-        var active = IsSignalActive(cfg.CoinInputSignal, cfg.CoinInputActiveHigh);
-        if (active == _lastCoinActive) return;
-        _lastCoinActive = active;
-
-        if (active)
-        {
-            _pulseStarted = DateTimeOffset.UtcNow;
-        }
-        else if (_pulseStarted is { } started)
-        {
-            var width = (int)Math.Max(0, (DateTimeOffset.UtcNow - started).TotalMilliseconds);
-            _pulseStarted = null;
-            AcceptCoinIfDebounced(cfg, width);
+            if (!IsCurrentPinEvent(sender, _port, _port?.IsOpen == true)) return;
+            Storage.Log($"Serial error {_port?.PortName}: {e.EventType}");
         }
     }
 
-    private void AcceptCoinIfDebounced(AppConfig cfg, int widthMs)
+    private void OnPinChanged(object? sender, SerialPinChangedEventArgs e)
+    {
+        bool acceptedCoin = false;
+        lock (_gate)
+        {
+            if (!IsCurrentPinEvent(sender, _port, _port?.IsOpen == true) || _config is null)
+                return;
+            var cfg = _config;
+
+            if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
+            {
+                if (e.EventType == SerialPinChange.Ring)
+                    acceptedCoin = AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
+            }
+            else
+            {
+                var active = IsSignalActive(cfg.CoinInputSignal, cfg.CoinInputActiveHigh);
+                if (active != _lastCoinActive)
+                {
+                    _lastCoinActive = active;
+                    if (active)
+                    {
+                        _pulseStarted = DateTimeOffset.UtcNow;
+                    }
+                    else if (_pulseStarted is { } started)
+                    {
+                        var width = (int)Math.Max(0, (DateTimeOffset.UtcNow - started).TotalMilliseconds);
+                        _pulseStarted = null;
+                        acceptedCoin = AcceptCoinIfDebounced(cfg, width);
+                    }
+                }
+            }
+        }
+
+        // Call application listeners outside the hardware lock. A serial
+        // callback must not hold the COM lock while doing HTTP or UI work.
+        SignalChanged?.Invoke();
+        if (acceptedCoin) CoinPulseAccepted?.Invoke();
+    }
+
+    private bool AcceptCoinIfDebounced(AppConfig cfg, int widthMs)
     {
         var now = DateTimeOffset.UtcNow;
-        if ((now - _lastAccepted).TotalMilliseconds < Math.Max(10, cfg.DebounceMs)) return;
-        if (widthMs < Math.Max(1, cfg.MinimumPulseMs)) return;
-        if (cfg.MaximumPulseMs > 0 && widthMs > cfg.MaximumPulseMs) return;
+        if ((now - _lastAccepted).TotalMilliseconds < Math.Max(10, cfg.DebounceMs)) return false;
+        if (widthMs < Math.Max(1, cfg.MinimumPulseMs)) return false;
+        if (cfg.MaximumPulseMs > 0 && widthMs > cfg.MaximumPulseMs) return false;
         _lastAccepted = now;
         Storage.Log($"Coin pulse accepted on {ConnectedDevice?.PortName ?? "serial"} ({widthMs} ms)");
-        CoinPulseAccepted?.Invoke();
+        return true;
     }
 
     private bool IsSignalActive(ModemSignal signal, bool activeHigh)
@@ -365,11 +405,42 @@ public sealed class SerialHardware : IDisposable
         if (_port is not null)
         {
             try { _port.PinChanged -= OnPinChanged; } catch { }
+            try { _port.ErrorReceived -= OnSerialError; } catch { }
             try { if (_port.IsOpen) _port.Close(); } catch { }
             try { _port.Dispose(); } catch { }
         }
         _port = null;
+        _config = null;
         ConnectedDevice = null;
+        _pulseStarted = null;
+        _lastCoinActive = false;
+        _lastAccepted = DateTimeOffset.MinValue;
+    }
+
+    // Synthetic session regression in the real compiled WinExe. Does not open
+    // serial hardware, trigger an actual PinChanged event or grant paid time.
+    internal static int VerifySerialSessionIsolation()
+    {
+        var current = new object();
+        var previous = new object();
+        if (IsCurrentPinEvent(previous, current, true)) return 201;
+        if (IsCurrentPinEvent(null, current, true)) return 202;
+        if (IsCurrentPinEvent(current, current, false)) return 203;
+        if (!IsCurrentPinEvent(current, current, true)) return 204;
+
+        using var serial = new SerialHardware();
+        serial._lastCoinActive = true;
+        serial._pulseStarted = DateTimeOffset.UtcNow.AddSeconds(-10);
+        serial._lastAccepted = DateTimeOffset.UtcNow;
+        serial.Disconnect();
+        if (serial._lastCoinActive || serial._pulseStarted is not null ||
+            serial._lastAccepted != DateTimeOffset.MinValue)
+            return 205;
+
+        // Reconnecting without an open current port must never credit a pulse.
+        if (IsCurrentPinEvent(previous, serial._port, serial._port?.IsOpen == true))
+            return 206;
+        return 0;
     }
 
     public void Dispose() => Disconnect();
