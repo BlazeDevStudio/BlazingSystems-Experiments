@@ -1,37 +1,116 @@
 #!/bin/sh
-# MIG-0622: synthetic expected RED, no real device/network/customer record.
-# Shows a changed prepaid lease when receipt append cannot be written.
-set -u
-ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-T="$(mktemp -d)" || exit 1
-trap 'chmod 700 "$BP_RENTAL_EVENTS" 2>/dev/null || true; rm -rf "$T"' EXIT HUP INT TERM
-BP_STATE="$T/state"; BP_RUN="$T/run"; mkdir -p "$BP_STATE" "$BP_RUN"
-printf 'BLAZE-SYNTHETIC-FIXTURE-ONLY\n' > "$T/.blaze-fixture-only"
-BP_RENTAL_DEVICES="$BP_STATE/rental-devices.tsv"
-BP_RENTAL_EVENTS="$BP_STATE/rental-events.tsv"
-. "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
-bp_init_dirs() { :; }
-bp_cfg() { [ "$1" = rental_seconds_per_pulse ] && printf '600' || printf ''; }
-bp_tmp_suffix() { printf 'rental-fixture'; }
-bp_durable_sync() { :; }
-bp_now() { printf '123456'; }
-bp_sha256() { sha256sum | awk '{print $1}'; }
-. "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/rental.sh"
-printf 'dev01\tfake-secret\t0\tSynthetic Device\t0\n' > "$BP_RENTAL_DEVICES"
-# This private directory intentionally rejects the append operation. NEVER use
-# /dev/full, /etc, another user's account file, or live router directories.
-mkdir "$BP_RENTAL_EVENTS"
-out="$(bp_rental_apply_coin dev01 controller01 nonce01 target01 1 2>"$T/receipt-error.log")"
-rc=$?
-lease="$(bp_rental_device_line dev01 | cut -f3)"
-if [ "$rc" -eq 0 ] && [ "$lease" -eq 124056 ] &&
-    [ "$out" = "$(printf 'credited\t124056')" ] && [ -d "$BP_RENTAL_EVENTS" ]; then
-  echo 'P0 RED: rental lease credited and ACK succeeded despite unwritable receipt' >&2
+# RENT-20261022-ATOMIC: fixture-only expected RED. No customer/device state.
+# Proves current v1 can durably change a rental lease before receipt commit.
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+T="$(mktemp -d /tmp/blaze-rent-atomic-XXXXXX)"
+trap 'rm -rf "$T"' EXIT HUP INT TERM
+mkdir -p "$T/bin" "$T/state" "$T/run"
+chmod 700 "$T" "$T/state" "$T/run"
+printf 'BLAZE-RENT-ATOMIC-SYNTHETIC-ONLY\n' > "$T/.blaze-fixture-only"
+
+cat > "$T/bin/uci" <<'UCI'
+#!/bin/sh
+case "$*" in
+ *'get blazepwifi.main.durable_sync') echo 0;;
+ *'get blazepwifi.main.rental_seconds_per_pulse') echo 600;;
+ *'get blazepwifi.main.pulse_value_centavos') echo 100;;
+ *'get blazepwifi.main.vendo_port') echo 4455;;
+ *'get blazepwifi.main.vendo_key') echo rent-atomic-fixture-secret;;
+ *) exit 1;;
+esac
+UCI
+chmod +x "$T/bin/uci"
+
+export PATH="$T/bin:$PATH"
+export BP_STATE="$T/state" BP_RUN="$T/run"
+export BP_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+export BP_AUTH_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/auth.sh"
+export BP_RENTAL_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/rental.sh"
+export BP_RENTAL_POLICY_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/rental_policy.sh"
+export BP_RENTAL_UPDATE_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/rental_update.sh"
+
+. "$BP_LIB"
+. "$BP_AUTH_LIB"
+. "$BP_RENTAL_LIB"
+. "$BP_RENTAL_POLICY_LIB"
+bp_rental_init
+
+DID=0123456789abcdef01234567
+DSEC=0123456789abcdef0123456789abcdef0123456789abcdef
+BEFORE=2000003600
+NOW=2000000000
+PULSES=2
+CONTROLLER=vendo-atomic
+NONCE=aabbccdd
+TARGET=11223344
+
+# Keep the money calculation deterministic while leaving the CGI status call
+# on its real wall clock. The chosen lease is safely in the future.
+bp_now() { printf '%s' "$NOW"; }
+
+bp_rental_device_write "$DID" "$DSEC" "$BEFORE" "Fixture phone" "$NOW"
+bp_rental_policy_ensure "$DID"
+
+EVENT="r:$(printf 'rental|%s|%s|%s' "$CONTROLLER" "$NONCE" "$TARGET" | bp_sha256)"
+[ -z "$(bp_rental_paid_receipt_snapshot "$EVENT")" ]
+
+# Fault injection is limited to this shell and replaces only the final receipt
+# append boundary. The real lease writer and paid-state marker remain intact.
+bp_rental_append_paid_receipt() { return 8; }
+
+set +e
+RESULT="$(bp_rental_apply_coin "$DID" "$CONTROLLER" "$NONCE" "$TARGET" "$PULSES")"
+RC=$?
+set -e
+
+AFTER="$(printf '%s' "$(bp_rental_device_line "$DID")" | cut -f3)"
+RECEIPT="$(bp_rental_paid_receipt_snapshot "$EVENT")"
+UNCERTAIN=0
+[ -f "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] && UNCERTAIN=1
+EXPECTED_AFTER=$((BEFORE + 600 * PULSES))
+
+# Current containment correctly refuses a success result.
+[ "$RC" -ne 0 ]
+case "$RESULT" in
+  credited*|duplicate*)
+    echo "REPRO SETUP FAILURE: successful ACK result escaped receipt failure: $RESULT" >&2
+    exit 2 ;;
+esac
+
+LEASE_DIVERGED=0
+RECEIPT_MISSING=0
+[ "$AFTER" = "$EXPECTED_AFTER" ] && LEASE_DIVERGED=1
+[ -z "$RECEIPT" ] && RECEIPT_MISSING=1
+
+# Use a separate process for the real authenticated Rental status CGI. Current
+# code still exposes the partially written lease while uncertainty is present.
+STATUS_NONCE=statusatomic1
+STATUS_SIG="$(bp_rental_hmac "$DSEC" "status|$STATUS_NONCE|$DSEC")"
+RENTAL_CGI="$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/rental"
+STATUS="$(printf 'action=status&device_id=%s&nonce=%s&sig=%s' "$DID" "$STATUS_NONCE" "$STATUS_SIG" |
+  REQUEST_METHOD=POST sh "$RENTAL_CGI")"
+STATUS_EXPOSES=0
+if printf '%s' "$STATUS" | grep -q '"ok":true' &&
+   printf '%s' "$STATUS" | grep -q "\"lease_until_ms\":$((EXPECTED_AFTER * 1000))"; then
+  STATUS_EXPOSES=1
+fi
+
+if [ "$LEASE_DIVERGED" -eq 1 ] &&
+   [ "$RECEIPT_MISSING" -eq 1 ] &&
+   [ "$UNCERTAIN" -eq 1 ] &&
+   [ "$STATUS_EXPOSES" -eq 1 ]; then
+  echo "EXPECTED_UNSAFE RENTAL_V1_SPLIT_WRITE lease_changed=1 receipt_missing=1 uncertainty=1 status_exposes_partial_lease=1 rc=$RC" >&2
   exit 1
 fi
-if [ "$rc" -ne 0 ] && [ "$lease" -eq 0 ]; then
-  echo 'PASS: rejected rental receipt failure without changing lease'
+
+if [ "$AFTER" = "$BEFORE" ] &&
+   [ "$RECEIPT_MISSING" -eq 1 ] &&
+   [ "$UNCERTAIN" -eq 1 ] &&
+   [ "$STATUS_EXPOSES" -eq 0 ]; then
+  echo "PASS: receipt failure left lease unchanged and uncertain paid state hidden"
   exit 0
 fi
-echo "REPRO SETUP FAILURE: unexpected rental receipt result rc=$rc lease=$lease" >&2
+
+echo "REPRO SETUP FAILURE: lease_before=$BEFORE lease_after=$AFTER receipt_present=$([ -n "$RECEIPT" ] && echo 1 || echo 0) uncertainty=$UNCERTAIN status_exposes=$STATUS_EXPOSES rc=$RC" >&2
 exit 2
