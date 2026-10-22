@@ -1,3 +1,9 @@
+## 2026-10-22 — ESP8266-GPIO-20261022 — integration_dirty / no_force_merge
+
+- Actual GitHub PR #141: draft OPEN, mergeable=false, mergeable_state=dirty on source/docs head cef767ee2fafdf25ad1c6824fc07e47ec80d9045 (before this annotation). Dev base changed independently from fork 72987a376d66b2a9027a0685e9681fc5cd45b674 to merge e99fa6c45b10cbd81156013797de9780f35338be for RENT P0 #32 RED reproduction. Do not flatten/overwrite concurrent RENT canonical docs.
+- Previous exact source/docs head 1636211fc33748a7dd9ad64797618654aff7313f passed Full PR #39744295495 SUCCESS, focused #39744295639 SUCCESS, native #39744295517 SUCCESS. ESP8266 compiled and uploaded non-production lab artifact 12410162884 / SHA256 b1eea1e01fe399d82782aec95217f6f3d414d689d719294601f3c7dff372ef0c. No code changes after that SHA; successor docs only.
+- Status integration_dirty, software_validated, physical_blocked. Rollback is discard isolated branch/PR, not customer device rollback. **NEXT:** reconcile parent handover conflicts safely on isolated branch after RENT P0 checkpoint; reverify exact final CI and then physical ESP8266 test. No parent force-push, no production release.
+
 ## 2026-10-22 — ESP8266-GPIO-20261022 — full_source_validated / draft PR #141 / physical_blocked
 
 - **Branch and PR:** fix/esp8266-coin-gpio-safety-20261022 → draft [PR #141](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/141); source: firmware 73b4665c9d2636d75633ef13e90cf7ac83faa473, GPIO policy header 592379c0f20f317c7bda0befccc4a58cb29ccf75, README af05f16cacf6a61cab875e0ff9b6135993ee1eff, required Full workflow test 1e03ee938e88fb993cae7759fd2e90bf69f2a54d. Pre-fix expected RED #39743080798 and header-only expected failing intermediate #39743321393 preserved.
