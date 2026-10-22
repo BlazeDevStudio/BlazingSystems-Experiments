@@ -1,3 +1,9 @@
+## 2026-10-22 — ESP8266-GPIO-20261022 — in_progress / P1 coin controller
+
+- **Owner scope:** exactly ESP8266 coin-acceptor hardware GPIO safety, not payment server, ESP32, R281, Blender, rental lease atomicity, admin UI or all-system release. New isolated branch `fix/esp8266-coin-gpio-safety-20261022` from `72987a376d66b2a9027a0685e9681fc5cd45b674`; no source commit yet.
+- **Observed source defect:** ESP8266 `applyRemoteConfig` trusts numeric 0..16 remote pin override even if boot-flash or overlapping pins, local setup persists unchecked `toInt()`, and `setup` applies persisted pins directly. Loop can still collect pulses while the remote controller or coin flag is disabled. Risk P1 relay/coin hardware behavior; actual physical reproduction not attempted.
+- **Planned proof:** fail-first portable GPIO guard regression and static integration checks, then minimal safety policy permitting GPIO4/5/12/13/14 unique pin roles, explicit local rejection, remote fail-closed, boot safe without touching existing paid flash or state, compile ESP8266 sketch in its existing CI pipeline. **State** in_progress, no pass, no new release. **Next** add test, run exact-head Ubuntu RED, then firmware fix and exact CI. **Rollback** discard branch with no customer-device impact.
+
 ## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — reproduction started
 
 - **Status:** in_progress; no runtime fix yet.
