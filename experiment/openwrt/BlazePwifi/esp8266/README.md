@@ -29,6 +29,14 @@ resuming; the firmware does not rewrite previous EEPROM configuration or
 the LittleFS pending-coin journal. Remote config and the local setup
 portal cannot bypass the GPIO role guard.
 
+**Unsafe EEPROM recovery:** a rejected saved pin mapping now latches coin
+acceptance off for the entire boot session, even when the server later sends
+valid-looking remote GPIO overrides. Correct the physical wiring, submit a
+supported, distinct pin mapping through the protected local setup portal,
+and reboot; the new EEPROM wiring is evaluated again on startup. Remote
+polling cannot clear this latch. Neither a reboot alone with unchanged
+unsafe EEPROM nor a controller flag toggle enables paid coin collection.
+
 **Verification limit:** host policy test and Arduino compilation do not
 prove real boot, GPIO polarity, pulse-width/debounce, relay isolation or
 coin accounting. A supervised physical electrical/power-cut test remains
