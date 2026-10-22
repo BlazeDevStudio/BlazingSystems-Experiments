@@ -17,12 +17,14 @@ This integration adds preview/export decoded-audio leases across repository inst
 
 It also adds original note-derived Harmonic flow, Orbital voices and Wave garden presets; an equations checkbox; independent piano-part/background colors; pitch-routed scale bindings and spectrum bins; zero-intensity decorative-motion fixes; clipped per-key glow; long-press move/resize handles; separately persisted export transforms or auto-fit-follow mode; persisted portrait/landscape/square output settings and an accurately fitted composition preview.
 
-## Verification state — integration not yet approved as a release
+## Verification state — release candidate awaiting device acceptance
 
 - c85247b is the regression-test baseline. Actions run 39747267719/build119718745948 executed 51 host tests with three intentional behavioral failures: piano glow spilling to an unpressed key, explicit layer color overridden by palette, and motion at zero intensity.
 - e921558's initial pixel-test attempt failed Robolectric SDK setup; c85247b pins supported API33 and produced the meaningful failures above.
 - General Compose tests now grant music access before creating the Activity. Previous API26/API36 failures were a visible GrantPermissionsActivity covering the Compose hierarchy; do not count the older matrix as passing.
-- Integrated host/lint/assemble/API26/API36 verification is pending. New math/layout/cache/YIN and queue/Practice/export-layout regressions are included but must actually run.
+- Integrated source c84a4d1e19daf0be695a4e9dba6e191032a86e44 passed all 76 host tests (0 failures/errors), lint, APK and instrumentation-APK compilation in run 39753520154/build119739674443. Downloaded host XML was inspected: leases7, rendering6, layout/math5, startup/persistence3, YIN7 all passed. Its emulator jobs were superseded by the corrected runner configuration; do not call that device matrix a pass.
+- Current candidate: 4f697965ba3b0e0b90779584cc4200deac260528, validation run https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39754432234 . It adds clean-build signing retention plus correct emulator working directory and a standalone fresh-install permission smoke test. Host clean build and API26/API36 jobs are pending at this checkpoint.
+- New native checks isolate queue/loop restoration from any Activity/ViewModel owner; preserve a live session against stale saved-track loops; cover graph preset PNG rendering, pack round-trip and MP4. General Compose checks also cover Practice and independent export layout through configuration recreation; the new host tests separately verify disk writes across tracks.
 - Local Gradle bootstrap is blocked by Java networking in this environment; use GitHub Actions. Numerical Python tuner checks are supplementary and are not JVM/device or real-microphone proof.
 
 ## Release baseline
@@ -31,12 +33,14 @@ ONLY preview 1 is currently published; it does not contain these October 22 impr
 Direct APK: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.1/Blazing-Visualizer-preview-1.apk
 SHA256: ba86f7b48b9b751d3d1399611dc1cd8e2d20cfdc26ce92cb14322ec4d9e5ffb3 ; 31,605,136 bytes.
 Validated source: 590150cc672007a3951b7d6f5366a532297be5ae ; full successful run 39717064004.
-ChatGPT file URLs fail on the owner's phone; publish and verify a GitHub Releases direct APK URL. Do not replace preview 1. Check signing continuity before promising an in-place upgrade.
+ChatGPT file URLs fail on the owner's phone; publish and verify a GitHub Releases direct APK URL. Do not replace preview 1. Preview 2 now uses a retained public debug-only identity, documented in config/README.md; expected certificate SHA256 64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c. Preview 1 used an ephemeral CI key: export wanted BlazeViz presets before its one-time uninstall/reinstall. Future previews can update preview 2 with the retained identity. The publication workflow must verify both actual certificates.
 
 ## Next actions
 
-1. Run the integrated source through host tests/lint/assemble and API26/API36 device matrix; inspect every failure and fix its cause.
-2. Exercise permission denial/manual import, layout gestures, actual queue ordering, Practice persistence, export aspect/fitting and audio cache ownership. Obtain a fresh whole-change review and fix material findings.
+1. Finish candidate run 39754432234 and inspect the clean host build plus API26/API36 permission and native acceptance reports. Source host regressions already passed at c84a4d1; do not redo implemented features.
+2. One fresh whole-change review is complete. Six material findings were fixed: startup writes before load, per-track changes lost through conflation, stale preview aspect on scene replacement, missing low/high piano keys, fitted text shrinking, and stale-loop seeking during live-session adoption. Five host reproductions were watched fail in run39752269344 then pass at c84a4d1; live MediaSession behavior is covered by isolated native tests. Review record/rulings are in docs/plans/2026-10-22-preview-2.md. Do not commission duplicate whole-change reviews.
+- The editor states the graph cap of 12 pitches; equations label ratio truncation beyond six. Practice retains full detection. Tuner generation checks/publication now run on Main. Physical microphone behavior is still unverified.
+- A normal preview renders a fitted COPY of canonical scene geometry using ephemeral StudioState.previewAspect. Entering arrangement captures that visible geometry as the new design canvas. Export fitting and its preview resolve from the same canonical scene or the saved independent transforms.
 3. Publish preview 2 from the exact validated CI artifact via the preview publication workflow, then verify its release asset, hash and direct link. Record exact source/build/release/signing evidence here.
 4. Physical arm64 playback/export/microphone and longer mixed-music note accuracy remain device acceptance checks. Do not claim perfect transcription or a calibrated physical tuner from synthetic tests.
 5. Deliver the non-video-renderer APK first. Only then consider the deferred video tracing/Bezier renderer.
