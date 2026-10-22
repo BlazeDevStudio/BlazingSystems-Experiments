@@ -12,6 +12,7 @@ RC10 contains a targeted correction to authenticated Rental lease/policy state h
 - Reject unversioned/legacy policy response after a modern revision has been accepted.
 - Persist newly verified policy synchronously; fail instead of continuing when storage fails.
 - Android provisioning-compliance activity requires a successful follow-up authenticated status sync and persisted policy before returning `RESULT_OK`.
+- Device Owner completion rejects previously saved Standard Enrollment state and changed/invalid provisioning callbacks; the legacy provisioning-complete receiver enforces the same source identity and second authenticated policy sync.
 - New pure-Java JUnit revision tests and static source-order checks are executed in the Android/release validation matrix.
 - Android TEST APK versionCode **50211** and versionName **0.5.2-rental.2-rc.10**, unique versus RC9.
 - Existing Standard Enrollment and Device Provisioning QRs remain distinct. R281/EasyMode and BusyBox installer boundaries are preserved.

@@ -19,7 +19,16 @@ public class BlazeProvisioningComplianceActivity extends Activity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         buildUi();
-        BlazeProvisioningContract.capture(this, getIntent());
+        boolean callbackHasExtras = getIntent() != null
+                && getIntent().hasExtra(BlazeProvisioningContract.EXTRA_ADMIN_EXTRAS);
+        boolean captured = BlazeProvisioningContract.capture(this, getIntent());
+        if ((callbackHasExtras && !captured)
+                || !ProvisioningStateGuard.isProvisioningSource(
+                        RentalLeaseStore.enrollmentSource(this))) {
+            showFailure("Device Provisioning identity is invalid, changed, or missing. "
+                    + "Do not complete Android setup with a Standard Enrollment identity.");
+            return;
+        }
         attempt();
     }
 
@@ -66,9 +75,14 @@ public class BlazeProvisioningComplianceActivity extends Activity {
                 boolean success = false;
                 String reason = "Unable to bind to the Rental Server.";
                 for (int attempt = 1; attempt <= 8 && !success; attempt++) {
-                    if (!ManagedPolicyController.isDeviceOwner(self)) {
+                    if (!ProvisioningStateGuard.isProvisioningSource(
+                            RentalLeaseStore.enrollmentSource(self))) {
+                        reason = "Device Owner provisioning identity was not accepted.";
+                        break;
+                    } else if (!ManagedPolicyController.isDeviceOwner(self)) {
                         reason = "Android has not granted Device Owner yet.";
-                    } else if (!RentalLeaseStore.hasEnrollmentConfig(self)) {
+                    } else if (!RentalLeaseStore.hasEnrollmentConfig(self)
+                            && !RentalLeaseStore.isEnrolled(self)) {
                         // ACTION_PROVISIONING_SUCCESSFUL can arrive before the
                         // provisioning-complete receiver on older Android. Wait
                         // briefly for the receiver to persist admin extras.

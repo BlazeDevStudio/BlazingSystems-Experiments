@@ -67,6 +67,13 @@ public class ProvisioningStateGuardTest {
     }
 
     @Test
+    public void deviceOwnerCompletionRequiresProvisioningSource() {
+        assertTrue(ProvisioningStateGuard.isProvisioningSource("device_owner_provisioning"));
+        assertFalse(ProvisioningStateGuard.isProvisioningSource("standard_manual"));
+        assertFalse(ProvisioningStateGuard.isProvisioningSource(""));
+    }
+
+    @Test
     public void permanentIdentityCannotBeReprovisionedByCallback() {
         assertFalse(ProvisioningStateGuard.canAccept(
                 "device_owner_provisioning", SERVER, "", PIN,

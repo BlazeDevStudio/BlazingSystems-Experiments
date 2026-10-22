@@ -13,6 +13,10 @@ final class ProvisioningStateGuard {
 
     private ProvisioningStateGuard() {}
 
+    static boolean isProvisioningSource(String source) {
+        return DEVICE_OWNER_SOURCE.equals(clean(source));
+    }
+
     static boolean canAccept(String existingSource,
                              String existingServer,
                              String existingToken,

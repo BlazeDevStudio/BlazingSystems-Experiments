@@ -225,3 +225,10 @@ grep -q 'policySynced && policyStored' "$SRC/BlazeProvisioningComplianceActivity
 grep -q 'return prefs(context).edit()' "$SRC/AndroidRentalPolicyRepository.java"
 test -f "$SRC/LeaseSyncStateGuard.java"
 test -f "$ANDROID/tests/unit/com/blazesystems/blazerental/LeaseSyncStateGuardTest.java"
+
+# RC10: provisioning completion must never promote standard/manual enrollment.
+grep -q 'ProvisioningStateGuard.isProvisioningSource' "$SRC/BlazeProvisioningComplianceActivity.java"
+grep -q 'callbackHasExtras && !captured' "$SRC/BlazeProvisioningComplianceActivity.java"
+grep -q 'ProvisioningStateGuard.isProvisioningSource' "$SRC/BlazeDeviceAdminReceiver.java"
+grep -q 'AndroidRentalPolicyRepository.revision(app) >= 0L' "$SRC/BlazeDeviceAdminReceiver.java"
+grep -q 'deviceOwnerCompletionRequiresProvisioningSource' "$ANDROID/tests/unit/com/blazesystems/blazerental/ProvisioningStateGuardTest.java"

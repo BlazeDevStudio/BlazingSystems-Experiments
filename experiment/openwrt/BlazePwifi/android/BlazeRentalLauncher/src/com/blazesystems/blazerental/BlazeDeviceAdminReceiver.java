@@ -8,15 +8,25 @@ import android.os.Build;
 public class BlazeDeviceAdminReceiver extends DeviceAdminReceiver {
     @Override
     public void onProfileProvisioningComplete(Context context, Intent intent) {
-        BlazeProvisioningContract.capture(context, intent);
+        boolean callbackHasExtras = intent != null
+                && intent.hasExtra(BlazeProvisioningContract.EXTRA_ADMIN_EXTRAS);
+        boolean captured = BlazeProvisioningContract.capture(context, intent);
         ManagedPolicyController.apply(context);
         final Context app = context.getApplicationContext();
+        final boolean accepted = (!callbackHasExtras || captured)
+                && ProvisioningStateGuard.isProvisioningSource(
+                        RentalLeaseStore.enrollmentSource(app));
         new Thread(new Runnable() {
             @Override public void run() {
                 boolean ok = false;
-                if (RentalLeaseStore.hasEnrollmentConfig(app)) {
-                    ok = LeaseClient.sync(app) && RentalLeaseStore.isEnrolled(app);
-                    if (ok) LeaseClient.sync(app);
+                if (accepted && (RentalLeaseStore.hasEnrollmentConfig(app)
+                        || RentalLeaseStore.isEnrolled(app))) {
+                    boolean enrolled = LeaseClient.sync(app)
+                            && RentalLeaseStore.isEnrolled(app);
+                    if (enrolled) {
+                        ok = LeaseClient.sync(app)
+                                && AndroidRentalPolicyRepository.revision(app) >= 0L;
+                    }
                 }
                 ManagedPolicyController.apply(app);
                 // Android 8+ invokes ACTION_PROVISIONING_SUCCESSFUL and modern
