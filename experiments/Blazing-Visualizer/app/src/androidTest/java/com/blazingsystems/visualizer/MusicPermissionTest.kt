@@ -23,21 +23,31 @@ class MusicPermissionTest {
     private fun permissionButton(suffix: String) {
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
         automation.serviceInfo = automation.serviceInfo.apply {
-            flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+            flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         }
         fun find(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
             if (node == null) return null
             if (node.viewIdResourceName?.endsWith(":id/$suffix") == true) return node
+            val label = (node.text?.toString() ?: node.contentDescription?.toString())
+                ?.trim()?.lowercase().orEmpty()
+            val deny = suffix == "permission_deny_button" &&
+                label in setOf("deny", "don't allow", "do not allow", "not now")
+            val allow = suffix == "permission_allow_button" &&
+                label in setOf("allow", "allow access", "while using the app")
+            if (node.isClickable && (deny || allow)) return node
             for (i in 0 until node.childCount) find(node.getChild(i))?.let { return it }
             return null
         }
         val deadline = SystemClock.uptimeMillis() + 15_000
         while (SystemClock.uptimeMillis() < deadline) {
-            val button = find(automation.rootInActiveWindow)
+            val roots = listOfNotNull(automation.rootInActiveWindow) +
+                automation.windows.mapNotNull { it.root }
+            val button = roots.firstNotNullOfOrNull(::find)
             if (button != null && button.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return
             SystemClock.sleep(100)
         }
-        fail("Runtime permission button $suffix was not displayed")
+        fail("Runtime permission button $suffix was not displayed in active/accessibility windows")
     }
 
     @Test fun denialKeepsLibraryUsableAndRefreshCanGrantAccess() {

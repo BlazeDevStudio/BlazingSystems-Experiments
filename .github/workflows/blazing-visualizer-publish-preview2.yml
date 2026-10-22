@@ -5,6 +5,7 @@ on:
     branches: [blazing-visualizer]
     paths:
       - '.github/workflows/blazing-visualizer-publish-preview2.yml'
+      - 'experiments/Blazing-Visualizer/**'
   workflow_dispatch:
 
 permissions:
@@ -22,31 +23,47 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      VALIDATION_RUN: '39754432234'
-      VALIDATED_SHA: '4f697965ba3b0e0b90779584cc4200deac260528'
-      RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.2'
+       RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.2'
       EXPECTED_CERT: '64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c'
     steps:
-      - name: Require exact full successful JDK17 / SDK36 / API26 / API36 candidate
+      - name: Require full successful JDK17 / SDK36 / API26 / API36 on this exact source
+        id: validation
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 96); do
-            gh api "repos/$GH_REPO/actions/runs/$VALIDATION_RUN" > validation.json
-            status=$(python3 -c 'import json; print(json.load(open("validation.json"))["status"])')
-            if [[ "$status" == "completed" ]]; then break; fi
-            echo "Validation job still $status ($attempt/96)"
+          RUN_ID=''
+          for attempt in $(seq 1 105); do
+            gh api "repos/$GH_REPO/actions/workflows/blazing-visualizer.yml/runs?branch=blazing-visualizer&per_page=50" > runs.json
+            RUN_ID=$(python3 - <<'PY'
+          import json, os
+          runs=json.load(open('runs.json'))['workflow_runs']
+          matching=[r for r in runs if r['head_sha']==os.environ['GITHUB_SHA'] and r['event']=='push']
+          print(matching[0]['id'] if matching else '')
+          PY
+            )
+            if [[ -n "$RUN_ID" ]]; then
+              gh api "repos/$GH_REPO/actions/runs/$RUN_ID" > validation.json
+              status=$(python3 -c 'import json; print(json.load(open("validation.json"))["status"])')
+              if [[ "$status" == "completed" ]]; then break; fi
+              echo "Source build $RUN_ID still $status ($attempt/105)"
+            else
+              echo "Matching source validation not started yet ($attempt/105)"
+            fi
             sleep 20
           done
+          test -n "$RUN_ID"
           python3 - <<'PY'
           import json, os
           run=json.load(open('validation.json'))
-          assert run['head_sha']==os.environ['VALIDATED_SHA'], 'Wrong source SHA'
+          assert run['head_sha']==os.environ['GITHUB_SHA'], 'Wrong source SHA'
           assert run['head_branch']=='blazing-visualizer', 'Wrong branch'
           assert run['status']=='completed' and run['conclusion']=='success', (
               f"Not publishable: {run['status']}, {run['conclusion']}")
           print('Validated source:', run['head_sha'], 'run:', run['id'])
           PY
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "VALIDATION_RUN=$RUN_ID" >> "$GITHUB_ENV"
+          echo "VALIDATED_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
           gh api "repos/$GH_REPO/actions/runs/$VALIDATION_RUN/jobs?per_page=100" > jobs.json
           python3 - <<'PY'
           import json
@@ -62,7 +79,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Blazing-Visualizer-preview-APK
-          run-id: 39754432234
+          run-id: ${{ steps.validation.outputs.run_id }}
           github-token: ${{ github.token }}
           path: candidate
 
@@ -123,7 +140,7 @@ jobs:
 
           IMPORTANT INSTALLATION: Preview 1 had a different, unretained signing key, so Android cannot upgrade it in place. Export needed BlazeViz presets and other important data, uninstall Preview 1, then install Preview 2. Future Preview 2-family APKs use this retained *public debug-only* identity, never a production signing key.
 
-          This exact APK was built from GitHub source SHA 4f697965ba3b0e0b90779584cc4200deac260528 and verified by Actions run 39754432234 (JDK17 / SDK36 host/lint/assemble + Android API26/API36). Its SHA256SUMS.txt is included.
+          This exact APK was built from the validated GitHub source commit linked by this release and verified using JDK17 / SDK36 host/lint/assemble + Android API26/API36. Its SHA256SUMS.txt is included.
           NOTES
           gh release create "$RELEASE_TAG"             dist/Blazing-Visualizer-preview-2.apk dist/SHA256SUMS.txt             --target "$VALIDATED_SHA"             --title 'Blazing Visualizer 1.0.0-preview.2'             --prerelease --notes-file release-notes.md
 

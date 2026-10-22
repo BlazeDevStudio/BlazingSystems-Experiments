@@ -37,6 +37,7 @@ class PlayerController(context: Context) : AutoCloseable {
     private val handler = Handler(Looper.getMainLooper())
     private var controller: MediaController? = null
     private var loop: LoopRange? = null
+    private var pendingLoopSeekUs: Long? = null
     private var pending: List<SourceRef>? = null
     private var pendingIndex = 0
     private var pendingAutoPlay = false
@@ -80,7 +81,10 @@ class PlayerController(context: Context) : AutoCloseable {
                                         override fun onEvents(
                                             player: Player,
                                             events: Player.Events,
-                                        ) = update()
+                                        ) {
+                                            flushPreparedSeek(player)
+                                            update()
+                                        }
                                     },
                                 )
                             }
@@ -95,6 +99,7 @@ class PlayerController(context: Context) : AutoCloseable {
                             if (practiceSourceUri == null || practiceSourceUri == controller?.currentMediaItem?.mediaId)
                                 loop?.let { controller?.seekTo(it.startUs / 1000) }
                         }
+                        controller?.let(::flushPreparedSeek)
                         update()
                         handler.post(ticker)
                     }
@@ -107,6 +112,18 @@ class PlayerController(context: Context) : AutoCloseable {
         )
     }
 
+    /** A restored loop is sought only after the chosen audio has been prepared. */
+    private fun flushPreparedSeek(player: Player) {
+        val target = pendingLoopSeekUs ?: return
+        if (player.playbackState != Player.STATE_READY) return
+        if (practiceSourceUri != null && player.currentMediaItem?.mediaId != practiceSourceUri) {
+            pendingLoopSeekUs = null
+            return
+        }
+        pendingLoopSeekUs = null
+        player.seekTo(target / 1000)
+    }
+
     fun setQueue(sources: List<SourceRef>, index: Int = 0) {
         require(sources.isNotEmpty() && index in sources.indices)
         pending = sources
@@ -114,6 +131,7 @@ class PlayerController(context: Context) : AutoCloseable {
         pendingAutoPlay = true
         restoreOnly = false
         loop = null
+        pendingLoopSeekUs = null
         mutableQueue.value = sources
         applyPending()
     }
@@ -135,6 +153,7 @@ class PlayerController(context: Context) : AutoCloseable {
         pendingAutoPlay = false
         restoreOnly = false
         loop = null
+        pendingLoopSeekUs = null
         mutableQueue.value = emptyList()
         controller?.clearMediaItems()
         update()
@@ -232,11 +251,13 @@ class PlayerController(context: Context) : AutoCloseable {
 
     fun next() {
         loop = null
+        pendingLoopSeekUs = null
         controller?.seekToNextMediaItem()
     }
 
     fun previous() {
         loop = null
+        pendingLoopSeekUs = null
         controller?.seekToPreviousMediaItem()
     }
 
@@ -258,7 +279,11 @@ class PlayerController(context: Context) : AutoCloseable {
         require((start == null) == (end == null))
         loop = if (start == null) null else LoopRange(start, end!!)
         practiceSourceUri = controller?.currentMediaItem?.mediaId ?: pending?.getOrNull(pendingIndex)?.uri
-        loop?.let { seekTo(it.startUs) }
+        pendingLoopSeekUs = null
+        loop?.let {
+            if (controller?.playbackState == Player.STATE_READY) seekTo(it.startUs)
+            else pendingLoopSeekUs = it.startUs
+        }
     }
 
     /** Restored settings are bound to their track and do not rewind a live session. */
@@ -270,8 +295,12 @@ class PlayerController(context: Context) : AutoCloseable {
         practiceSourceUri = sourceUri
         desiredSpeed = speed
         loop = range
+        pendingLoopSeekUs = null
         controller?.playbackParameters = PlaybackParameters(speed, 1f)
-        if (rewind && range != null) seekTo(range.startUs)
+        if (rewind && range != null) {
+            if (controller?.playbackState == Player.STATE_READY) seekTo(range.startUs)
+            else pendingLoopSeekUs = range.startUs
+        }
         update()
     }
 
