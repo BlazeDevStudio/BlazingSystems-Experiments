@@ -183,9 +183,18 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     error = null,
                 )
             if (startPlayback) {
-                val q = mutable.value.queue.ifEmpty { listOf(source) }
+                val q = (mutable.value.queue + source).distinctBy { it.uri }
+                if (q != mutable.value.queue) {
+                    mutable.update { it.copy(queue = q) }
+                    persist()
+                }
                 player.setQueue(q, q.indexOfFirst { it.uri == source.uri }.coerceAtLeast(0))
             }
+            player.setPracticeSpeed(restored.practice.speed)
+            player.setLoop(
+                restored.practice.loopStartUs.takeIf { restored.practice.loopEnabled },
+                restored.practice.loopEndUs.takeIf { restored.practice.loopEnabled },
+            )
             try {
                 val decoded = audio.get(source) { p -> mutable.update { it.copy(progress = p) } }
                 ensureActive()
@@ -320,6 +329,29 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 .getOrNull() ?: return
         val notes = applyNoteEdits(rawNotes, updated.edits)
         mutable.update { it.copy(project = updated, notes = notes) }
+        persist()
+    }
+
+    fun updatePractice(change: (PracticeSettings) -> PracticeSettings) {
+        val previous = mutable.value.project ?: return
+        val next = change(previous.practice)
+        require(next.isValid()) { "Invalid Practice settings" }
+        mutable.update { state ->
+            if (state.project?.id == previous.id)
+                state.copy(project = state.project.copy(practice = next))
+            else state
+        }
+        player.setPracticeSpeed(next.speed)
+        if (
+            previous.practice.loopStartUs != next.loopStartUs ||
+                previous.practice.loopEndUs != next.loopEndUs ||
+                previous.practice.loopEnabled != next.loopEnabled
+        ) {
+            player.setLoop(
+                next.loopStartUs.takeIf { next.loopEnabled },
+                next.loopEndUs.takeIf { next.loopEnabled },
+            )
+        }
         persist()
     }
 

@@ -6,7 +6,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -25,12 +24,13 @@ fun PracticeSheet(
     onMidi: () -> Unit,
     onCsv: () -> Unit,
 ) {
-    var flats by rememberSaveable { mutableStateOf(false) }
-    var transpose by rememberSaveable { mutableIntStateOf(0) }
-    var register by rememberSaveable { mutableIntStateOf(0) }
-    var a by rememberSaveable { mutableStateOf<Long?>(null) }
-    var b by rememberSaveable { mutableStateOf<Long?>(null) }
-    var looping by rememberSaveable { mutableStateOf(false) }
+    val practice = s.project?.practice ?: PracticeSettings()
+    val flats = practice.preferFlats
+    val transpose = practice.instrumentSemitones
+    val register = practice.register
+    val a = practice.loopStartUs
+    val b = practice.loopEndUs
+    val looping = practice.loopEnabled
     var editing by
         remember(s.project?.id, s.project?.source?.contentSha256) {
             mutableStateOf<NoteDraft?>(null)
@@ -56,7 +56,7 @@ fun PracticeSheet(
             listOf(.5f, .75f, 1f, 1.25f, 1.5f).forEach { speed ->
                 FilterChip(
                     p.speed == speed,
-                    { model.player.setPracticeSpeed(speed) },
+                    { model.updatePractice { it.copy(speed = speed) } },
                     label = { Text("${speed}×") },
                     modifier = Modifier.padding(end = 8.dp),
                 )
@@ -65,10 +65,9 @@ fun PracticeSheet(
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(
                 onClick = {
-                    a = p.sourceTimeUs
-                    b = null
-                    looping = false
-                    model.player.setLoop(null, null)
+                    model.updatePractice {
+                        it.copy(loopStartUs = p.sourceTimeUs, loopEndUs = null, loopEnabled = false)
+                    }
                 },
                 enabled = s.project != null,
             ) {
@@ -78,9 +77,9 @@ fun PracticeSheet(
             OutlinedButton(
                 onClick = {
                     if (a != null && p.sourceTimeUs > a!!) {
-                        b = p.sourceTimeUs
-                        looping = true
-                        model.player.setLoop(a, b)
+                        model.updatePractice {
+                            it.copy(loopEndUs = p.sourceTimeUs, loopEnabled = true)
+                        }
                     }
                 },
                 enabled = a != null && p.sourceTimeUs > (a ?: Long.MAX_VALUE),
@@ -91,13 +90,7 @@ fun PracticeSheet(
             FilterChip(
                 looping,
                 {
-                    if (looping) {
-                        looping = false
-                        model.player.setLoop(null, null)
-                    } else if (a != null && b != null) {
-                        model.player.setLoop(a, b)
-                        looping = true
-                    }
+                    model.updatePractice { it.copy(loopEnabled = !looping) }
                 },
                 enabled = b != null,
                 label = { Text("Loop") },
@@ -108,14 +101,14 @@ fun PracticeSheet(
                 (shift, label) ->
                 FilterChip(
                     transpose == shift,
-                    { transpose = shift },
+                    { model.updatePractice { it.copy(instrumentSemitones = shift) } },
                     label = { Text(label) },
                     modifier = Modifier.padding(end = 8.dp),
                 )
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(flats, { flats = it })
+            Switch(flats, { value -> model.updatePractice { it.copy(preferFlats = value) } })
             Text("Prefer flats", Modifier.padding(start = 8.dp))
             Spacer(Modifier.weight(1f))
             TextButton(
@@ -130,7 +123,7 @@ fun PracticeSheet(
             listOf("All", "Bass", "Middle", "High").forEachIndexed { i, label ->
                 FilterChip(
                     register == i,
-                    { register = i },
+                    { model.updatePractice { it.copy(register = i) } },
                     label = { Text(label) },
                     modifier = Modifier.padding(end = 8.dp),
                 )

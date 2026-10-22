@@ -115,6 +115,24 @@ data class ExportSettings(
 )
 
 @Serializable
+data class PracticeSettings(
+    val speed: Float = 1f,
+    val preferFlats: Boolean = false,
+    val instrumentSemitones: Int = 0,
+    val register: Int = 0,
+    val loopStartUs: Long? = null,
+    val loopEndUs: Long? = null,
+    val loopEnabled: Boolean = false,
+) {
+    fun isValid(): Boolean =
+        speed.isFinite() && speed in .5f..1.5f &&
+            instrumentSemitones in -12..12 && register in 0..3 &&
+            (loopStartUs == null || loopStartUs >= 0) &&
+            (loopEndUs == null || (loopStartUs != null && loopEndUs > loopStartUs)) &&
+            (!loopEnabled || loopEndUs != null)
+}
+
+@Serializable
 data class Project(
     val id: String = UUID.randomUUID().toString(),
     val source: SourceRef,
@@ -122,6 +140,7 @@ data class Project(
     val analysisKey: String? = null,
     val edits: List<NoteEdit> = emptyList(),
     val export: ExportSettings = ExportSettings(),
+    val practice: PracticeSettings = PracticeSettings(),
 )
 
 object SourceIdentity {

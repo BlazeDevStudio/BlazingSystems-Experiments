@@ -46,6 +46,28 @@ class StorageTest {
     }
 
     @Test
+    fun practiceSettingsPersistPerTrackAndReadLegacyProjects() {
+        val store = ProjectStore(root)
+        val configured = PracticeSettings(
+            speed = .75f, preferFlats = true, instrumentSemitones = 2,
+            register = 1, loopStartUs = 500_000, loopEndUs = 1_500_000,
+            loopEnabled = true,
+        )
+        val first = Project(source = SourceRef("content://first"), practice = configured)
+        val second = Project(source = SourceRef("content://second"))
+        store.save(first)
+        store.save(second)
+        assertEquals(configured, store.load(first.id)!!.practice)
+        assertEquals(PracticeSettings(), store.load(second.id)!!.practice)
+        assertTrue(configured.isValid())
+        assertFalse(configured.copy(loopStartUs = 2_000_000).isValid())
+        val legacy = """{"source":{"uri":"content://legacy"}}"""
+        val loaded = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+            .decodeFromString<Project>(legacy)
+        assertEquals(PracticeSettings(), loaded.practice)
+    }
+
+    @Test
     fun abandonedTemporaryAndCorruptProjectDoNotHideGoodOne() {
         val store = ProjectStore(root)
         val p = Project(source = SourceRef("a"))

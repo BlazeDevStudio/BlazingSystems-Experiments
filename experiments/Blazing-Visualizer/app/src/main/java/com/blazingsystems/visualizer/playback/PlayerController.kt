@@ -36,6 +36,7 @@ class PlayerController(context: Context) : AutoCloseable {
     private var loop: LoopRange? = null
     private var pending: List<SourceRef>? = null
     private var pendingIndex = 0
+    private var desiredSpeed = 1f
     private var closed = false
     private val future =
         MediaController.Builder(
@@ -79,6 +80,7 @@ class PlayerController(context: Context) : AutoCloseable {
                         pending
                             ?.takeIf { it.isNotEmpty() }
                             ?.let { setQueue(it, pendingIndex.coerceAtMost(it.lastIndex)) }
+                        controller?.playbackParameters = PlaybackParameters(desiredSpeed, 1f)
                         handler.post(ticker)
                     }
                         .onFailure {
@@ -160,6 +162,7 @@ class PlayerController(context: Context) : AutoCloseable {
 
     fun setPracticeSpeed(speed: Float) {
         require(speed.isFinite() && speed in .5f..1.5f)
+        desiredSpeed = speed
         controller?.playbackParameters = PlaybackParameters(speed, 1f)
         update()
     }
