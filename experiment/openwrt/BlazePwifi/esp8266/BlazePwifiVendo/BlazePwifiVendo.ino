@@ -5,6 +5,7 @@
 #include <LittleFS.h>
 #include <bearssl/bearssl_hash.h>
 #include <v060_pending_sequence.h>
+#include "v060_esp8266_gpio_safety.h"
 
 struct ConfigV1 {
   uint32_t magic;
@@ -227,6 +228,14 @@ int jsonInt(const String&r,const String&k,int def){
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
+  // Never touch boot/flash pins or mix output and coin input roles.
+  if(!bp_esp8266_vendo_pins_safe(coinPin,relayPin,ledPin)){
+    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    Serial.println("CRITICAL: rejected unsafe ESP8266 GPIO assignment; coin relay disabled.");
+    return;
+  }
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
@@ -240,7 +249,14 @@ void applyRemoteConfig(const String&r){
   controllerEnabled=jsonInt(r,"enabled",1)!=0; coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
-  int nextCoin=(cp>=0&&cp<=16)?cp:cfg.coinPin, nextRelay=(rp>=0&&rp<=16)?rp:cfg.relayPin, nextLed=(lp>=0&&lp<=16)?lp:cfg.insertLedPin;
+  int nextCoin=cp==-1?cfg.coinPin:cp, nextRelay=rp==-1?cfg.relayPin:rp, nextLed=lp==-1?cfg.insertLedPin:lp;
+  if(!bp_esp8266_vendo_pins_safe(nextCoin,nextRelay,nextLed)){
+    // Invalid remote GPIO never reaches pinMode or an accepting relay.
+    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+    applyOutputs();
+    Serial.println("CRITICAL: unsafe remote ESP8266 GPIO configuration rejected.");
+    return;
+  }
   runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
   runRelayActiveHigh=jsonInt(r,"relay_active_high",1)!=0; runLedActiveHigh=jsonInt(r,"led_active_high",1)!=0;
   runDebounceMs=(uint16_t)constrain(jsonInt(r,"coin_debounce_ms",40),1,2000);
@@ -302,6 +318,14 @@ void setupPortal(){
   });
 
   web.on("/save",HTTP_POST,[](){
+    // Validate before Wi-Fi changes or EEPROM writes; reject uint8 overflow.
+    int coinPin=web.arg("coin").toInt();
+    int relayPin=web.arg("relay").toInt();
+    int ledPin=web.arg("led").toInt();
+    if(!bp_esp8266_vendo_pins_safe(coinPin,relayPin,ledPin)){
+      web.send(400,"text/plain","Unsafe ESP8266 GPIO selection. Use distinct GPIO 4,5,12,13,14 only. Settings were NOT saved.");
+      return;
+    }
     String newSsid=web.arg("s"),newPass=web.arg("p").length()?web.arg("p"):String(cfg.pass);
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
@@ -309,7 +333,7 @@ void setupPortal(){
     }
     strlcpy(cfg.ssid,newSsid.c_str(),sizeof(cfg.ssid));strlcpy(cfg.pass,newPass.c_str(),sizeof(cfg.pass));
     strlcpy(cfg.server,web.arg("server").c_str(),sizeof(cfg.server));if(web.arg("k").length())strlcpy(cfg.key,web.arg("k").c_str(),sizeof(cfg.key));strlcpy(cfg.id,web.arg("id").c_str(),sizeof(cfg.id));
-    cfg.coinPin=web.arg("coin").toInt();cfg.insertLedPin=web.arg("led").toInt();cfg.relayPin=web.arg("relay").toInt();
+    cfg.coinPin=(uint8_t)coinPin;cfg.insertLedPin=(uint8_t)ledPin;cfg.relayPin=(uint8_t)relayPin;
     saveCfg();web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
   });
   web.begin();
@@ -338,8 +362,19 @@ bool clearPending(bool committed){
 
 void setup(){
   Serial.begin(115200); loadCfg(); initPendingStore();
-  runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
+  // Legacy EEPROM may contain unsafe assignments. Use only safe fallback
+  // lines to hold the relay off; do not rewrite the saved configuration.
+  bool savedPinsSafe=bp_esp8266_vendo_pins_safe(cfg.coinPin,cfg.relayPin,cfg.insertLedPin);
+  runCoinPin=savedPinsSafe?cfg.coinPin:4;
+  runRelayPin=savedPinsSafe?cfg.relayPin:5;
+  runLedPin=savedPinsSafe?cfg.insertLedPin:14;
+  runCoinActiveLow=cfg.coinActiveLow;
+  if(!savedPinsSafe){
+    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+    Serial.println("CRITICAL: unsafe saved ESP8266 GPIO configuration; coin relay disabled until corrected.");
+  }
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  applyOutputs();setupPortal();connectSta();
 }
 
 void loop(){
@@ -356,7 +391,7 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+  if(controllerEnabled && coinEnabled && relayEnabled && insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){
       pendingNonce=freshNonce();
       pendingTarget=activeTarget;
