@@ -678,7 +678,17 @@ bp_rental_apply_coin() {
     bp_paid_replay_read_unlock
     return 8
   }
-  event="r:$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)"
+  # RENT-20261022-HASH: never make a paid write or ACK if its receipt
+  # identity cannot be deterministically constructed.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}$'; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
   old="$(bp_rental_paid_receipt_snapshot "$event")"
   rc=$?
   if [ "$rc" -ne 0 ]; then
