@@ -17,7 +17,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PlayerAndUiTest {
-    @get:Rule val rule = createAndroidComposeRule<MainActivity>()
+    @get:Rule(order = 0) val audioPermission = AudioPermissionRule()
+    @get:Rule(order = 1) val rule = createAndroidComposeRule<MainActivity>()
 
     private fun model() = ViewModelProvider(rule.activity)[StudioModel::class.java]
 
