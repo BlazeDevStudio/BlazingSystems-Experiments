@@ -235,3 +235,14 @@ grep -q 'deviceOwnerCompletionRequiresProvisioningSource' "$ANDROID/tests/unit/c
 
 # Modern Android completion is owned by the compliance activity, not receiver.
 grep -Fq 'if (Build.VERSION.SDK_INT >= 26) return;' "$SRC/BlazeDeviceAdminReceiver.java"
+
+# RC11 development audit: authenticated Rental JSON response boundary.
+test -f "$SRC/RentalHttpResponseGuard.java"
+test -f "$ANDROID/tests/unit/com/blazesystems/blazerental/RentalHttpResponseGuardTest.java"
+grep -Fq 'setInstanceFollowRedirects(false)' "$SRC/LeaseClient.java"
+grep -Fq 'connection.disconnect()' "$SRC/LeaseClient.java"
+grep -Fq 'RentalHttpResponseGuard.isRedirect(status)' "$SRC/LeaseClient.java"
+grep -Fq 'getContentLengthLong() > RentalHttpResponseGuard.MAX_BODY_BYTES' "$SRC/LeaseClient.java"
+grep -Fq 'RentalHttpResponseGuard.readLimited(input)' "$SRC/LeaseClient.java"
+grep -Fq 'MAX_BODY_BYTES = 256 * 1024' "$SRC/RentalHttpResponseGuard.java"
+grep -Fq 'refusesOversizeAndClosesStream' "$ANDROID/tests/unit/com/blazesystems/blazerental/RentalHttpResponseGuardTest.java"

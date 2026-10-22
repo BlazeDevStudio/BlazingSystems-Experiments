@@ -230,3 +230,23 @@ RC8 remains immutable; this product delta is released only as RC9.
 Previously `LeaseClient.sync()` applied `recordLease()` before verifying the signed status policy, allowing a failed policy signature to mutate local paid-time state. RC10 moves the lease mutation behind the MAC check, server device-ID match, monotonic revision guard, and synchronous verified policy persistence. Identical signed policy revisions may refresh lease time without rewriting operator policy; stale revisions and unversioned downgrade after modern policy are rejected.
 
 Device Owner provisioning compliance now requires the second authenticated status sync to succeed and a verified policy revision to be stored before reporting completion. New pure Java revision-policy tests and build-time source-order assertions guard both boundaries. This remains CI-audited, not physical Setup Wizard validated; release stays prerelease, using a TEST signing identity.
+
+## 2026-10-22 — RC11 development transport-boundary audit (unreleased)
+
+Auditing the immutable v0.5.2-rental.2-rc.10 source revealed that the
+Android Rental API client relied on default HttpURLConnection redirect
+behavior and read JSON response bodies without a maximum size. The same
+client handles initial enrollment, authenticated rental-status/policy sync,
+and coin-start responses, including an HTTP option for Standard Enrollment.
+
+The RC11 development branch now explicitly disables redirect following,
+rejects any 3xx status, caps success and structured-error JSON at 256 KiB,
+and disconnects each HTTP(S) connection. A pure-Java response guard and
+JUnit cases cover redirects, exact-size acceptance, oversize refusal, and
+stream closure. Existing non-200 JSON error responses remain available
+to the UI subject to the same cap.
+
+These tests are transport regression coverage, not a substitute for
+physical Android Setup Wizard provisioning, production APK signing
+continuity, or verifying the exact installed R281 build.
+Do not retag RC10 or mark RC11 stable on the basis of source/CI checks.

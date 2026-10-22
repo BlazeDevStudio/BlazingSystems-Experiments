@@ -2,7 +2,6 @@ package com.blazesystems.blazerental;
 
 import android.content.Context;
 import org.json.JSONObject;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -241,19 +240,37 @@ public final class LeaseClient {
     static JSONObject post(Context context, String base, String body) throws Exception {
         URL url = new URL(base.replaceAll("/+$", "") + "/cgi-bin/rental");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        applyPinnedTls(context, connection);
-        connection.setConnectTimeout(3500);
-        connection.setReadTimeout(3500);
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        OutputStream output = connection.getOutputStream();
-        output.write(body.getBytes(StandardCharsets.UTF_8));
-        output.close();
-        InputStream input = connection.getResponseCode() == 200
-                ? connection.getInputStream() : connection.getErrorStream();
-        if (input == null) return null;
-        return new JSONObject(read(input));
+        try {
+            // A redirect must never move a signed enrollment/status request to
+            // another origin. Redirects are not part of the Rental API protocol.
+            connection.setInstanceFollowRedirects(false);
+            applyPinnedTls(context, connection);
+            connection.setConnectTimeout(3500);
+            connection.setReadTimeout(3500);
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            OutputStream output = connection.getOutputStream();
+            try {
+                output.write(body.getBytes(StandardCharsets.UTF_8));
+            } finally {
+                output.close();
+            }
+
+            int status = connection.getResponseCode();
+            if (RentalHttpResponseGuard.isRedirect(status)
+                    || connection.getContentLengthLong() > RentalHttpResponseGuard.MAX_BODY_BYTES) {
+                return null;
+            }
+            // Preserve structured 4xx errors for the customer UI, but enforce
+            // the same byte limit on both success and error JSON.
+            InputStream input = status == HttpURLConnection.HTTP_OK
+                    ? connection.getInputStream() : connection.getErrorStream();
+            if (input == null) return null;
+            return new JSONObject(RentalHttpResponseGuard.readLimited(input));
+        } finally {
+            connection.disconnect();
+        }
     }
 
     private static void applyPinnedTls(Context context, HttpURLConnection connection)
@@ -320,12 +337,4 @@ public final class LeaseClient {
         return URLEncoder.encode(value == null ? "" : value, "UTF-8");
     }
 
-    private static String read(InputStream input) throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] buffer = new byte[2048];
-        int count;
-        while ((count = input.read(buffer)) > 0) output.write(buffer, 0, count);
-        input.close();
-        return output.toString("UTF-8");
-    }
 }
