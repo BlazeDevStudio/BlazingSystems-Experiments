@@ -244,7 +244,8 @@ class VideoExporter(private val context: Context) {
                     (timeline.durationUs * audio.sampleRate / 1_000_000).coerceAtMost(
                         audio.frames - startFrame,
                     )
-                val totalFrames = count + prefix.size
+                val totalFrames =
+                    count + prefix.size + 8192 // Flush the encoder's delayed tail with silence.
                 pcm.seek(startFrame * audio.channels * 2)
                 var sent = 0L
                 var inputEnded = false
@@ -273,12 +274,21 @@ class VideoExporter(private val context: Context) {
                             for (i in 0 until prefixFrames) repeat(audio.channels) {
                                 b.putShort((prefix[(sent + i).toInt()] * 32767).toInt().toShort())
                             }
-                            if (frames > prefixFrames)
+                            val musicOffset = (sent - prefix.size).coerceAtLeast(0)
+                            val musicFrames =
+                                min(
+                                        (frames - prefixFrames).toLong(),
+                                        (count - musicOffset).coerceAtLeast(0),
+                                    )
+                                    .toInt()
+                            if (musicFrames > 0)
                                 pcm.readFully(
                                     bytes,
                                     prefixFrames * audio.channels * 2,
-                                    (frames - prefixFrames) * audio.channels * 2,
+                                    musicFrames * audio.channels * 2,
                                 )
+                            // Remaining bytes stay zero: the calibration prefix and codec tail are
+                            // discarded at remux.
                             input.put(bytes)
                             val pts = sent * 1_000_000 / audio.sampleRate
                             sent += frames
@@ -384,6 +394,7 @@ class VideoExporter(private val context: Context) {
             started = true
             val buffer = ByteBuffer.allocateDirect(4 * 1024 * 1024)
             extractors.forEachIndexed { i, extractor ->
+                var writtenSamples = 0
                 while (true) {
                     job.ensureActive()
                     buffer.clear()
@@ -401,8 +412,12 @@ class VideoExporter(private val context: Context) {
                             else 0
                         val info = MediaCodec.BufferInfo().apply { set(0, size, pts, flags) }
                         muxer.writeSampleData(tracks[i], buffer, info)
+                        writtenSamples++
                     }
                     extractor.advance()
+                }
+                require(writtenSamples >= 2) {
+                    "Choose a longer clip for this audio/video encoder."
                 }
                 muxer.writeSampleData(
                     tracks[i],

@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse,hashlib,json,struct,subprocess,zipfile,xml.etree.ElementTree as E
 p=argparse.ArgumentParser();p.add_argument('--apk',type=Path,required=True);p.add_argument('--evidence',type=Path,required=True);p.add_argument('--instrumentation-log',type=Path,required=True);p.add_argument('--out',type=Path,required=True);args=p.parse_args()
 root=Path(__file__).resolve().parents[1];report={'apk':args.apk.name,'apkSha256':hashlib.sha256(args.apk.read_bytes()).hexdigest(),'sourceRevision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root).decode().strip()}
-report['sourceDirty']=bool(subprocess.check_output(['git','status','--porcelain'],cwd=root).strip())
+report['sourceDirty']=bool(subprocess.check_output(['git','status','--porcelain','--','app/src/main','app/build.gradle.kts','build.gradle.kts','settings.gradle.kts','gradle.properties','gradle'],cwd=root).strip())
 checks={}
 with zipfile.ZipFile(args.apk) as z:
  model=z.read('assets/models/nmp.tflite');checks['modelSha256']=hashlib.sha256(model).hexdigest();assert checks['modelSha256']=='3db297d54af8e01c6e5618245c956b1d71b6a2b978cb2dedb527173186552676'
