@@ -1,8 +1,8 @@
-name: BlazePwifi Standalone Rental v0.5.2 rental.2 RC10 authenticated-state audit
+name: BlazePwifi Standalone Rental v0.5.2 rental.2 RC11 authenticated-state audit
 
 on:
   push:
-    branches: [blazepwifi-rental-v0.5.2-rc10-audit]
+    branches: [blazepwifi-rental-v0.5.2-rc11-audit]
     paths:
       - 'experiment/openwrt/BlazePwifi/profiles/standalone-rental/**'
       - '!experiment/openwrt/BlazePwifi/profiles/standalone-rental/PROVISIONING-AUDIT.md'
@@ -12,7 +12,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build.gradle'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/**'
       - 'experiment/openwrt/BlazePwifi/tests/**'
-      - 'experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.10/**'
+      - 'experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.11/**'
       - '.github/workflows/blazepwifi-rental-release.yml'
   workflow_dispatch:
 
@@ -21,13 +21,13 @@ permissions:
   actions: read
 
 concurrency:
-  group: blazepwifi-rental-v0.5.2-rc10-audit
+  group: blazepwifi-rental-v0.5.2-rc11-audit
   cancel-in-progress: true
 
 env:
   PROFILE: experiment/openwrt/BlazePwifi/profiles/standalone-rental
-  VERSION: 0.5.2-rental.2-rc.10
-  TAG: v0.5.2-rental.2-rc.10
+  VERSION: 0.5.2-rental.2-rc.11
+  TAG: v0.5.2-rental.2-rc.11
 
 jobs:
   validate:
@@ -145,7 +145,7 @@ jobs:
 
           # Device Owner provisioning must use the production package ID.
           # The release variant has com.blazesystems.blazerental; debug does not.
-          "$AAPT" dump badging "$RELEASE_APK" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50211' versionName='0.5.2-rental.2-rc.10'"
+          "$AAPT" dump badging "$RELEASE_APK" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50212' versionName='0.5.2-rental.2-rc.11'"
 
           TEST_KEY="$RUNNER_TEMP/BlazeRental-provisioning-test.p12"
           TEST_PASS="$(openssl rand -hex 24)"
@@ -156,7 +156,7 @@ jobs:
             -dname "CN=BlazeRental RC Provisioning TEST,O=BlazingSystems,C=PH"
 
           ALIGNED="$RUNNER_TEMP/BlazeRental-provisioning-aligned.apk"
-          SIGNED="$OUT/BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk"
+          SIGNED="$OUT/BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk"
           "$ZIPALIGN" -p -f 4 "$RELEASE_APK" "$ALIGNED"
           "$APKSIGNER" sign \
             --ks "$TEST_KEY" --ks-type PKCS12 --ks-key-alias blazerental-test \
@@ -164,10 +164,10 @@ jobs:
             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
             --out "$SIGNED" "$ALIGNED"
 
-          VERIFY="$OUT/BlazeRental-v0.5.2-rental.2-rc.10-TEST-apksigner-verify.txt"
+          VERIFY="$OUT/BlazeRental-v0.5.2-rental.2-rc.11-TEST-apksigner-verify.txt"
           "$APKSIGNER" verify --verbose --print-certs "$SIGNED" > "$VERIFY"
           grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' "$VERIFY"
-          "$AAPT" dump badging "$SIGNED" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50211' versionName='0.5.2-rental.2-rc.10'"
+          "$AAPT" dump badging "$SIGNED" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50212' versionName='0.5.2-rental.2-rc.11'"
 
           APK_SHA256="$(sha256sum "$SIGNED" | awk '{print $1}')"
           APK_CHECKSUM="$(python3 -c 'import base64,hashlib,pathlib,sys; print(base64.urlsafe_b64encode(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).digest()).decode())' "$SIGNED")"
@@ -179,8 +179,8 @@ jobs:
 
           printf '%s\n' \
             'PACKAGE_NAME=com.blazesystems.blazerental' \
-            'APK_VERSION=0.5.2-rental.2-rc.10' \
-            'APK_VERSION_CODE=50211' \
+            'APK_VERSION=0.5.2-rental.2-rc.11' \
+            'APK_VERSION_CODE=50212' \
             'APK_CHANNEL=test' \
             'PRODUCTION_READY=0' \
             'GMS_DPC_APPROVED=0' \
@@ -188,14 +188,14 @@ jobs:
             "APK_SHA256=$APK_SHA256" \
             "APK_CHECKSUM=$APK_CHECKSUM" \
             "SIGNER_CERT_SHA256=$SIGNER_CERT_SHA256" \
-            > "$OUT/BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt"
+            > "$OUT/BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt"
 
-          printf '%s  %s\n' "$APK_SHA256" "$SIGNED" > "$OUT/BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk.sha256"
+          printf '%s  %s\n' "$APK_SHA256" "$SIGNED" > "$OUT/BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk.sha256"
           rm -f "$ALIGNED" "$TEST_KEY"
           TEST_PASS=
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Android-052rental2rc10
+          name: BlazePwifi-Rental-Android-052rental2rc11
           path: dist-rental/android/
           if-no-files-found: error
 
@@ -206,7 +206,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: BlazePwifi-Rental-Android-052rental2rc10
+          name: BlazePwifi-Rental-Android-052rental2rc11
           path: android-artifact
       - name: Assemble complete OpenWrt Rental bundle
         shell: bash
@@ -218,8 +218,8 @@ jobs:
           cp -a experiment/openwrt/BlazePwifi/openwrt/rootfs/. "$OUT/rootfs/"
           cp "$PROFILE/README.md" "$OUT/RELEASE-README.md"
 
-          APK="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk' -print -quit)"
-          META="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt' -print -quit)"
+          APK="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk' -print -quit)"
+          META="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt' -print -quit)"
           test -n "$APK" -a -s "$APK" -a -n "$META" -a -s "$META"
 
           python3 "$PROFILE/build/make-release-provisioning-meta.py" \
@@ -254,10 +254,10 @@ jobs:
           sh -n "$1/install-r281.sh"
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc11
           path: |
-            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz
-            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz.sha256
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz.sha256
           if-no-files-found: error
 
   windows_installer:
@@ -267,7 +267,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc11
           path: downloaded
       - name: Build one-click Windows installer package
         shell: bash
@@ -280,7 +280,7 @@ jobs:
           cp "$PROFILE/windows/Reset-BlazePwifi-Admin-Password.bat" "$OUT/"
           cp "$PROFILE/windows/Reset-BlazePwifi-Admin-Password.ps1" "$OUT/"
           cp "$PROFILE/windows/README.txt" "$OUT/"
-          cp downloaded/BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz "$OUT/"
+          cp downloaded/BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz "$OUT/"
 
           PUTTY_VER=0.83
           BASE="https://the.earth.li/~sgtatham/putty/$PUTTY_VER"
@@ -315,10 +315,10 @@ jobs:
           sha256sum "$RESET.zip" > "$RESET.zip.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc11
           path: |
-            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.10.zip
-            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.10.zip.sha256
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.11.zip
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.11.zip.sha256
             BlazePwifi-Admin-Password-Reset-Windows-v0.5.2.zip
             BlazePwifi-Admin-Password-Reset-Windows-v0.5.2.zip.sha256
           if-no-files-found: error
@@ -352,7 +352,7 @@ jobs:
           (cd "$OUT" && sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-ESP8266-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-ESP8266-052rental2rc11
           path: dist-rental/esp8266/
           if-no-files-found: error
 
@@ -385,7 +385,7 @@ jobs:
           (cd "$OUT" && sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-ESP32-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-ESP32-052rental2rc11
           path: dist-rental/esp32/
           if-no-files-found: error
 
@@ -400,7 +400,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: BlazePwifi-Rental-Android-052rental2rc10
+          name: BlazePwifi-Rental-Android-052rental2rc11
           path: android-artifact
       - name: Install ImageBuilder dependencies
         run: sudo apt-get update && sudo apt-get install -y zstd
@@ -408,8 +408,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk' -print -quit)"
-          META="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt' -print -quit)"
+          APK="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk' -print -quit)"
+          META="$(find android-artifact -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt' -print -quit)"
           test -n "$APK" -a -s "$APK" -a -n "$META" -a -s "$META"
           python3 "$PROFILE/build/make-release-provisioning-meta.py" \
             --apk "$APK" \
@@ -436,15 +436,15 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-Standalone-OpenWrt-${{ matrix.target }}-052rental2rc10
+          name: BlazePwifi-Rental-Standalone-OpenWrt-${{ matrix.target }}-052rental2rc11
           path: experiment/openwrt/BlazePwifi/dist/rental-${{ matrix.target }}/
           if-no-files-found: error
 
   publish:
-    # RC10 remains a prerelease. Publication is allowed only after every audited
+    # RC11 remains a prerelease. Publication is allowed only after every audited
     # build/protocol gate passes; physical Setup Wizard validation is still
     # explicitly pending and blocks stable promotion.
-    if: github.ref == 'refs/heads/blazepwifi-rental-v0.5.2-rc10-audit'
+    if: github.ref == 'refs/heads/blazepwifi-rental-v0.5.2-rc11-audit'
     needs: [validate, android_test, openwrt_bundle, windows_installer, esp8266, esp32, firmware]
     runs-on: ubuntu-22.04
     env:
@@ -453,51 +453,51 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: BlazePwifi-Rental-Standalone-*-052rental2rc10
+          pattern: BlazePwifi-Rental-Standalone-*-052rental2rc11
           path: artifacts
       - uses: actions/download-artifact@v4
         with:
-          name: BlazePwifi-Rental-Android-052rental2rc10
+          name: BlazePwifi-Rental-Android-052rental2rc11
           path: artifacts/android
-      - name: Assemble immutable v0.5.2 rental.2 RC10 provisioning release set
+      - name: Assemble immutable v0.5.2 rental.2 RC11 provisioning release set
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p release-out
 
-          cp "$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc10 -type f -name '*.tar.gz' -print -quit)" release-out/
-          cp "$(find artifacts/BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc10 -type f -name 'BlazePwifi-Rental-Standalone-Windows-OneClick-*.zip' -print -quit)" release-out/
-          cp "$(find artifacts/BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc10 -type f -name 'BlazePwifi-Admin-Password-Reset-Windows-v0.5.2.zip' -print -quit)" release-out/
+          cp "$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-052rental2rc11 -type f -name '*.tar.gz' -print -quit)" release-out/
+          cp "$(find artifacts/BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc11 -type f -name 'BlazePwifi-Rental-Standalone-Windows-OneClick-*.zip' -print -quit)" release-out/
+          cp "$(find artifacts/BlazePwifi-Rental-Standalone-Windows-OneClick-052rental2rc11 -type f -name 'BlazePwifi-Admin-Password-Reset-Windows-v0.5.2.zip' -print -quit)" release-out/
 
-          E6BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-052rental2rc10 -type f -name 'BlazePwifi-Rental-Standalone-ESP8266.bin' -print -quit)"
-          E6INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-052rental2rc10 -type f -name '*.ino' -print -quit)"
-          E32BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-052rental2rc10 -type f -name 'BlazePwifi-Rental-Standalone-ESP32.bin' -print -quit)"
-          E32INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-052rental2rc10 -type f -name '*.ino' -print -quit)"
+          E6BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-052rental2rc11 -type f -name 'BlazePwifi-Rental-Standalone-ESP8266.bin' -print -quit)"
+          E6INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-052rental2rc11 -type f -name '*.ino' -print -quit)"
+          E32BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-052rental2rc11 -type f -name 'BlazePwifi-Rental-Standalone-ESP32.bin' -print -quit)"
+          E32INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-052rental2rc11 -type f -name '*.ino' -print -quit)"
           test -s "$E6BIN" -a -s "$E6INO" -a -s "$E32BIN" -a -s "$E32INO"
           cp "$E6BIN" release-out/BlazePwifi-Rental-Standalone-ESP8266.bin
           cp "$E6INO" release-out/BlazePwifi-Rental-Standalone-ESP8266.ino
           cp "$E32BIN" release-out/BlazePwifi-Rental-Standalone-ESP32.bin
           cp "$E32INO" release-out/BlazePwifi-Rental-Standalone-ESP32.ino
 
-          R="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-052rental2rc10 -type f -name 'BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin' -print -quit)"
+          R="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-052rental2rc11 -type f -name 'BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin' -print -quit)"
           test -n "$R" -a -s "$R"
           cp "$R" release-out/
-          BOOT="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-052rental2rc10 -type f -name '*recovery-initramfs.bin' -print -quit)"
+          BOOT="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-052rental2rc11 -type f -name '*recovery-initramfs.bin' -print -quit)"
           [ -z "$BOOT" ] || cp "$BOOT" release-out/
 
-          BIOS="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-052rental2rc10 -type f -name '*BIOS.img.gz' -print -quit)"
-          EFI="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-052rental2rc10 -type f -name '*UEFI.img.gz' -print -quit)"
+          BIOS="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-052rental2rc11 -type f -name '*BIOS.img.gz' -print -quit)"
+          EFI="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-052rental2rc11 -type f -name '*UEFI.img.gz' -print -quit)"
           test -n "$BIOS" -a -s "$BIOS" -a -n "$EFI" -a -s "$EFI"
           cp "$BIOS" "$EFI" release-out/
 
-          APK="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk' -print -quit)"
-          META="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt' -print -quit)"
-          VERIFY="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.10-TEST-apksigner-verify.txt' -print -quit)"
+          APK="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk' -print -quit)"
+          META="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt' -print -quit)"
+          VERIFY="$(find artifacts/android -type f -name 'BlazeRental-v0.5.2-rental.2-rc.11-TEST-apksigner-verify.txt' -print -quit)"
           test -n "$APK" -a -s "$APK" -a -n "$META" -a -s "$META" -a -n "$VERIFY" -a -s "$VERIFY"
-          cp "$APK" release-out/BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk
-          cp "$META" release-out/BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt
-          cp "$VERIFY" release-out/BlazeRental-v0.5.2-rental.2-rc.10-TEST-apksigner-verify.txt
-          cp experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.10/README.md release-out/README.md
+          cp "$APK" release-out/BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk
+          cp "$META" release-out/BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt
+          cp "$VERIFY" release-out/BlazeRental-v0.5.2-rental.2-rc.11-TEST-apksigner-verify.txt
+          cp experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.11/README.md release-out/README.md
 
           APK_SHA256="$(sed -n 's/^APK_SHA256=//p' "$META" | head -n1)"
           APK_CHECKSUM="$(sed -n 's/^APK_CHECKSUM=//p' "$META" | head -n1)"
@@ -540,12 +540,12 @@ jobs:
               gms_dpc_approved:false,
               target_scope:"aosp_non_gms_or_explicit_oem_only",
               google_certified_device_custom_dpc_may_be_blocked:true,
-              apk_asset:"BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk",
+              apk_asset:"BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk",
               apk_sha256:$apk_sha256,
               package_checksum_base64url_sha256:$apk_checksum,
               signer_certificate_sha256:$signer_cert_sha256,
               checksum_encoding:"canonical padded Base64URL",
-              version_code:50211,
+              version_code:50212,
               android_12_integrated_provisioning:true,
               physical_setup_wizard_validation_pending:true,
               secure_enrollment_protocol:2,
@@ -554,7 +554,7 @@ jobs:
               test_signing_identity_ephemeral_per_release_build:true,
               in_place_upgrade_between_test_rcs_not_guaranteed:true,
               factory_reset_may_be_required_between_provisioning_rcs:true,
-              server_scope:"openwrt_only_in_rc10",
+              server_scope:"openwrt_only_in_rc11",
               esp_server_device_provisioning:false
             },
             esp:{
@@ -576,16 +576,16 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazePwifi-Rental-v0.5.2-rental.2-rc.10-release-stage
+          name: BlazePwifi-Rental-v0.5.2-rental.2-rc.11-release-stage
           path: release-out/
           retention-days: 90
           if-no-files-found: error
 
-      - name: Publish v0.5.2 rental.2 RC10 provisioning release
+      - name: Publish v0.5.2 rental.2 RC11 provisioning release
         shell: bash
         run: |
           set -euo pipefail
-          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.10/README.md
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.2-rental.2-rc.11/README.md
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             TAG_COMMIT="$(gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" --jq '.object.sha')"
             test -n "$TAG_COMMIT"
@@ -622,12 +622,12 @@ jobs:
           ASSETS=(release-out/*)
           test "${#ASSETS[@]}" -gt 0
           gh release create "$TAG" "${ASSETS[@]}" --repo "${{ github.repository }}" --target "$GITHUB_SHA" \
-            --title "BlazePwifi Standalone Rental Server v0.5.2-rental.2-rc.10" --notes-file "$NOTES" --prerelease
+            --title "BlazePwifi Standalone Rental Server v0.5.2-rental.2-rc.11" --notes-file "$NOTES" --prerelease
 
           JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
           for required in \
-            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz \
-            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.10.zip \
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz \
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.2-rental.2-rc.11.zip \
             BlazePwifi-Admin-Password-Reset-Windows-v0.5.2.zip \
             BlazePwifi-Rental-Standalone-ESP8266.bin \
             BlazePwifi-Rental-Standalone-ESP8266.ino \
@@ -636,9 +636,9 @@ jobs:
             BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin \
             BlazePwifi-Rental-Standalone-x86_64-BIOS.img.gz \
             BlazePwifi-Rental-Standalone-x86_64-UEFI.img.gz \
-            BlazeRental-v0.5.2-rental.2-rc.10-TEST.apk \
-            BlazeRental-v0.5.2-rental.2-rc.10-PROVISIONING-METADATA.txt \
-            BlazeRental-v0.5.2-rental.2-rc.10-TEST-apksigner-verify.txt \
+            BlazeRental-v0.5.2-rental.2-rc.11-TEST.apk \
+            BlazeRental-v0.5.2-rental.2-rc.11-PROVISIONING-METADATA.txt \
+            BlazeRental-v0.5.2-rental.2-rc.11-TEST-apksigner-verify.txt \
             RELEASE-MANIFEST.json SHA256SUMS
           do
             printf '%s' "$JSON" | jq -e --arg n "$required" '.assets[] | select(.name==$n)' >/dev/null \

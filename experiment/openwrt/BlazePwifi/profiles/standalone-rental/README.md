@@ -1,7 +1,7 @@
 # BlazePwifi Standalone Rental Server
 
 Latest stable server line: **v0.5.2-rental.1**  
-Provisioning architecture candidate: **v0.5.2-rental.2-rc.10**
+Provisioning architecture candidate: **v0.5.2-rental.2-rc.11**
 
 The provisioning candidate keeps two independent Android onboarding modes:
 
@@ -44,3 +44,7 @@ RC8 retains RC7 origin validation and additionally verifies the actual APK signi
 ## RC10 authenticated status/lease boundary
 
 Status responses may update paid lease time only after the response policy signature, device-ID binding, policy revision monotonicity and durable policy write have passed. Repeated signed status responses at the same revision can refresh lease time without rewriting settings; revisions older than the accepted policy are rejected. Device Owner Setup Wizard compliance requires a verified follow-up policy sync. This remains a TEST prerelease pending physical Setup Wizard validation.
+
+## RC11 release identity
+
+RC10 is immutable and intentionally contains only the earlier authenticated-lease correction. The final Device Owner source/callback guard, modern Android receiver-race isolation and persisted signed-policy gate were completed after that tag was published. Those changes belong to RC11, using TEST APK versionCode 50212. Production signing and physical Setup Wizard validation remain outstanding.

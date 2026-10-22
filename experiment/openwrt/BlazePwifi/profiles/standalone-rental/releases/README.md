@@ -2,6 +2,11 @@
 
 ## Provisioning candidate
 
+### v0.5.2-rental.2-rc.11
+
+RC11 carries the authenticated lease validation from RC10, plus Device Owner callback source validation, Android 8+ completion-race isolation, and a persisted signed-policy prerequisite for lease refresh and Setup Wizard completion. RC10 remains immutable. TEST APK versionCode 50212; physical provisioning remains pending.
+
+
 ### v0.5.2-rental.2-rc.10
 
 RC10 fixes lease-credit mutation before signed policy verification, rejects stale/replayed policy revision or legacy-policy downgrade after a modern revision, persists newly verified policies durably, and blocks Device Owner compliance completion unless a subsequent authenticated policy sync succeeds. RC9 remains immutable. Physical provisioning and production signing are still required.

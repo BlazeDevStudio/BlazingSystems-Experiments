@@ -103,7 +103,7 @@ function Prompt-Password {
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Plink = Join-Path $Here "plink.exe"
 $Pscp = Join-Path $Here "pscp.exe"
-$BundleName = "BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz"
+$BundleName = "BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz"
 $Bundle = Get-ChildItem -Path $Here -Filter $BundleName -ErrorAction SilentlyContinue | Select-Object -First 1
 
 if (!(Test-Path $Plink) -or !(Test-Path $Pscp)) {
@@ -244,7 +244,7 @@ try {
     # the archive's single top-level bundle directory.
     $remoteTemplate = @'
 set -e
-ARCHIVE=/tmp/BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.10.tar.gz
+ARCHIVE=/tmp/BlazePwifi-Rental-Standalone-OpenWrt-v0.5.2-rental.2-rc.11.tar.gz
 UNPACK=/tmp/blazepwifi-rental-unpack
 rm -rf "$UNPACK"
 mkdir -p "$UNPACK"

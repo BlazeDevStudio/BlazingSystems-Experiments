@@ -1,5 +1,5 @@
 BlazePwifi Standalone Rental Server - Windows One-Click Installer
-Version: v0.5.2-rental.2-rc.10
+Version: v0.5.2-rental.2-rc.11
 
 1. Extract the ZIP completely.
 2. Double-click Install-BlazePwifi-Rental.bat.
