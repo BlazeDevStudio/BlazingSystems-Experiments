@@ -13,6 +13,24 @@
 - **Next exact action:** harden both v1 duplicate paths to refuse receipt ACK if authoritative lease is below receipt credited lease, without any automatic balance repair; retain normal purchase/replay tests; require focused and Full exact-head CI before guarded development merge. A legitimate explicit administrative forfeit might also cause conservative replay refusal; this is intentional fail-closed until an auditable new ledger expresses forfeit provenance.
 - **Prohibitions:** no Standalone/R281/real payments, no version/tag/signer change, no v2 migration/payment activation, no independent witness proof, no closing P0 #31/#32/#43/#34.
 
+## 2026-10-22 — RENT-20261022-ATOMIC / P0 #32 — reproduction started
+
+- **Status:** in_progress; no runtime fix yet.
+- **Why:** current v1 `bp_rental_apply_coin` performs durable lease write before durable receipt append. Receipt failure refuses ACK and marks uncertainty, but cannot make the already-written lease disappear; issue #32 therefore remains open.
+- **Planned scope:** isolated branch, fixture-only private `/tmp` state, fictional device/controller/nonce, injected receipt append failure after lease write. Add `tests/v060_rental_receipt_failure_repro.sh` and focused CI only after proving the real current call path.
+- **Expected RED evidence:** operation returns failure/no success ACK, receipt is absent, lease differs from pre-operation state, uncertainty/quarantine is present. That proves divergence without claiming a customer incident or physical power-cut result.
+- **Safety:** no Standalone/R281/device/customer files, no version/tag/signer/migration changes, no v2 money activation. P0 #31/#32/#43/#34 and production denial stay open.
+- **NEXT ACTION:** create `fix/rent-20261022-atomic-receipt-repro` from the synchronized active branch and add the failing fixture before any production-path modification.
+
+## 2026-10-22 — RENT-20261022-HASH / P0 #32 — merged-head validation complete
+
+- **Status:** validated development integration. PR [#136](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/136) merged at `9d43c4738a57eb4c2f32ae49ebc8b9b0ce276a66` into `blazepwifi-v0.6.0-audit-foundation`.
+- **Merged-head evidence:** Full push [#39712248645](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39712248645) SUCCESS; RENT digest guard #39712248618 SUCCESS; staged-accounting regression #39712248628 SUCCESS; lab publishing security #39712248620 SUCCESS. Exact-head companion checks also succeeded: Full #39712253140, native SDK #39712253089, Windows #39712253189, OpenWrt SDK #39712253203, sealed recovery #39712253118 and standalone entropy #39712253138.
+- **Behavior proven:** synthetic receipt-digest failure is fail-closed for missing, empty, short and nonhex digest; no rental lease extension, receipt persistence or ACK occurs on those paths. Valid purchase and exact replay remain green.
+- **Scope/boundary:** this does **not** make v1 lease+receipt persistence atomic, does not provide an independent protected witness or signer, does not activate v2 money commits, does not authorize migration, customer installation/payment, production signing/release or physical coin/power-cut acceptance. P0 #31/#32/#43/#34 remain OPEN.
+- **No action on:** Standalone Rental, R281 installed state, production tags/releases, signing keys, device enrollment or customer balances.
+- **NEXT ACTION:** inspect the current open P0 issues and select the next bounded reproducible defect. Before any source write, add a new IN PROGRESS state entry, reproduce RED, then patch the smallest affected money/witness surface and require exact-head focused + Full CI.
+
 ## 2026-10-22 — WITNESS-20261022 / P0 #43 — verified development merge #135
 
 - **Completed guarded integration:** PR [#135](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/135) merged into `blazepwifi-v0.6.0-audit-foundation` at `c358ab10f022984afbf8abcf722c722f573e51c9`. Exact PR head `496a9a4fb3e2bc682f6cb3c6fe6f9debd27849ec` had 0 base-behind commits, 0 Standalone/release/signing file changes and was mergeable. Full PR merge-tree [#39675854578](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39675854578) completed SUCCESS with 0 failures, including final candidate gate, Android emulator and x86 QEMU.
