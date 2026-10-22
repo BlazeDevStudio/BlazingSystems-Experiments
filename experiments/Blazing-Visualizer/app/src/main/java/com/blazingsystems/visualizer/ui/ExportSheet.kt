@@ -94,6 +94,7 @@ fun ExportSheet(
                 ExportFrameMode.COVER to "Fill screen · crop edges",
                 ExportFrameMode.CONTAIN to "Fit entire scene",
                 ExportFrameMode.STRETCH to "Stretch to frame",
+                ExportFrameMode.OPTIMIZE to "Optimize note layout",
             ).forEach { (mode, label) ->
                 FilterChip(
                     selected = (s.project?.exportFrameMode ?: ExportFrameMode.COVER) == mode,
@@ -103,7 +104,7 @@ fun ExportSheet(
                 )
             }
         }
-        Text("Fill avoids empty borders; Fit retains every edge; Stretch can distort circles.",
+        Text("Fill crops edges; Fit retains everything; Optimize anchors the note keyboard low; Stretch can distort circles.",
             fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             "Output: $width × $height pixels",

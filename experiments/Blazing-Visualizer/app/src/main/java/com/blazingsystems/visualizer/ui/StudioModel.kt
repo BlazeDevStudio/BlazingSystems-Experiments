@@ -548,7 +548,7 @@ class StudioModel @JvmOverloads constructor(
     fun setPreviewAspect(aspect: Float) {
         if (!aspect.isFinite() || aspect !in .1f..10f || mutable.value.editingExportLayout) return
         if (kotlin.math.abs(mutable.value.previewAspect - aspect) < .001f) return
-        if (mutable.value.layoutEditing) finishLayoutEdit()
+        // Resizing while tools are open must not close the arrangement mode.
         // Viewport measurement is ephemeral; it must never write unloaded collections.
         mutable.update { it.copy(previewAspect = aspect) }
     }
@@ -591,7 +591,8 @@ class StudioModel @JvmOverloads constructor(
             ), layoutEditing = true, editingExportLayout = true)
         } else {
             setPreviewAspect(viewportAspect)
-            editScene(SceneLayouts.fit(mutable.value.scene, viewportAspect))
+            // The overlay displays the fitted copy; never bake viewport
+            // fitting into saved canonical scene geometry on editor open.
             mutable.update { it.copy(layoutEditing = true, editingExportLayout = false) }
         }
         persist()
@@ -605,8 +606,25 @@ class StudioModel @JvmOverloads constructor(
                 exportTransforms = it.project.exportTransforms + (id to transform),
             )) }
             persist()
+        } else s.scene.layers.firstOrNull { it.id == id }?.let { original ->
+            val source = SceneLayouts.unfitTransform(
+                transform, s.scene.designAspect, s.previewAspect,
+            )
+            setLayer(original.copy(transform = source))
+        }
+    }
+
+    fun resetLayoutTransform(id: String) {
+        val s = mutable.value
+        if (!s.layoutEditing) return
+        if (s.editingExportLayout) {
+            val p = s.project ?: return
+            val reference = SceneLayouts.forExport(
+                p.copy(scene = s.scene, exportLayout = ExportLayoutMode.FOLLOW_FIT),
+            ).layers.firstOrNull { it.id == id }?.transform ?: return
+            setLayoutTransform(id, reference)
         } else s.scene.layers.firstOrNull { it.id == id }?.let {
-            setLayer(it.copy(transform = transform))
+            setLayer(it.copy(transform = Transform()))
         }
     }
 

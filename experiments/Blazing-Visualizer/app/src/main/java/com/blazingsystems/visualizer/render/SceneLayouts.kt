@@ -31,6 +31,31 @@ object SceneLayouts {
         })
     }
 
+    /** Invert a viewport-fit transform before storing the user's real edit. */
+    fun unfitTransform(display: Transform, sourceAspect: Float, viewportAspect: Float): Transform {
+        require(sourceAspect.isFinite() && sourceAspect > 0f &&
+            viewportAspect.isFinite() && viewportAspect > 0f)
+        val sx = min(1f, sourceAspect / viewportAspect)
+        val sy = min(1f, viewportAspect / sourceAspect)
+        return display.copy(
+            x = .5f + (display.x - .5f) / sx,
+            y = .5f + (display.y - .5f) / sy,
+            width = (display.width / sx).coerceIn(.001f, 4f),
+            height = (display.height / sy).coerceIn(.001f, 4f),
+        )
+    }
+
+    /** Note-aware cover, anchoring the piano to a 2% safe bottom margin. */
+    fun optimize(scene: Scene, targetAspect: Float): Scene {
+        val covered = cover(scene, targetAspect)
+        return covered.copy(layers = covered.layers.map { layer ->
+            if (!layer.visible || layer.type != ElementType.PIANO_ROLL) layer else {
+                val t = layer.transform
+                layer.copy(transform = t.copy(y = .98f - t.height / 2f))
+            }
+        })
+    }
+
     fun forExport(project: Project, settings: ExportSettings = project.export): Scene {
         val source = if (project.exportLayout == ExportLayoutMode.SEPARATE) project.scene.copy(
             designAspect = project.exportDesignAspect,
@@ -41,6 +66,7 @@ object SceneLayouts {
             ExportFrameMode.CONTAIN -> fit(source, aspect)
             ExportFrameMode.COVER -> cover(source, aspect)
             ExportFrameMode.STRETCH -> source.copy(designAspect = aspect)
+            ExportFrameMode.OPTIMIZE -> optimize(source, aspect)
         }
     }
 

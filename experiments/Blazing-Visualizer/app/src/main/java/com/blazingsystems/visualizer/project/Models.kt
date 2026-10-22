@@ -178,7 +178,7 @@ data class PracticeSettings(
 enum class ExportLayoutMode { FOLLOW_FIT, SEPARATE }
 
 /** How the existing scene is mapped to a video frame. */
-@Serializable enum class ExportFrameMode { CONTAIN, COVER, STRETCH }
+@Serializable enum class ExportFrameMode { CONTAIN, COVER, STRETCH, OPTIMIZE }
 
 @Serializable
 data class Project(

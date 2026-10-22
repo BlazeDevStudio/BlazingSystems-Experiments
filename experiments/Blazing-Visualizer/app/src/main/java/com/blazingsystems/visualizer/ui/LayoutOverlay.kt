@@ -98,7 +98,7 @@ fun LayoutOverlay(scene: Scene, editing: Boolean, export: Boolean, model: Studio
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = { selected?.let { model.setLayoutTransform(it, Transform()) } },
+                TextButton(onClick = { selected?.let(model::resetLayoutTransform) },
                     enabled = selected != null) { Text("Reset layer") }
                 Button(onClick = model::finishLayoutEdit) { Text("Done") }
             }
