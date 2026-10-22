@@ -1,6 +1,7 @@
 package com.blazingsystems.visualizer
 
 import android.Manifest
+import android.content.Intent
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -61,9 +62,15 @@ class MusicPermissionTest {
             assertTrue("CI permission smoke test requires a fresh install", fresh)
         else Assume.assumeTrue("Run permission smoke separately on a fresh install", fresh)
         context.getSharedPreferences("music-access", 0).edit().clear().commit()
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            val deniedByDialog = permissionButton("permission_deny_button")
-            if (!deniedByDialog) {
+        // Launch without ActivityScenario first. The OS permission dialog can
+        // leave Android 8 activity STARTED (not RESUMED), which makes
+        // ActivityScenario.launch wait/throw before we can click Deny.
+        context.startActivity(
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+        val deniedByDialog = permissionButton("permission_deny_button")
+        if (!deniedByDialog) {
                 // On CI API26 the system PackageInstaller sometimes crashes before
                 // it exposes a dialog. Back dismisses any leftover occluding window.
                 // Retain the denied-permission app flow; only the OS-button click is
@@ -75,9 +82,9 @@ class MusicPermissionTest {
                         stream.readBytes()
                     }
                 }
-                scenario.recreate()
-            }
-            assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(permission))
+        }
+        assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(permission))
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             compose.onNodeWithText("Library", useUnmergedTree = true).performClick()
             compose.onNodeWithText("Your library").assertIsDisplayed()
             compose.onNodeWithContentDescription("Import music").assertIsEnabled()

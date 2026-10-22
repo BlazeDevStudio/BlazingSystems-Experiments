@@ -1,5 +1,11 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 Android 8 launch/permission instrumentation correction (COMMITTED_UNVERIFIED)
+
+- Earlier exact source 31a6f7c run 39764907346 succeeded host + API36 but API26 failed: ActivityScenario never reached RESUMED (remained STARTED while OS permission UI was showing). The fresh-install smoke now starts MainActivity without ActivityScenario's RESUMED wait, handles real Deny if accessible, asserts permission denied, then uses ActivityScenario for navigable Library and refresh/regrant. The old API26 broken-installer fallback is still explicitly identified; modern Android requires actual dialogs.
+- Exact-head host, lint, API26/API36 outcome is PENDING; no validated APK release. No alteration to app permission semantics or shipped release; this is a faithful test-harness correction. One next action: inspect same-SHA Android 8 emulator run and rework permission flow if still blocked.
+
+
 ## 2026-10-22 Avee 1.2.252 APK static compatibility extension
 
 - Owner provided an unofficially modified Avee 1.2.252 APK; ZIP integrity and DEX class strings were inspected without distributing its code or media. Static strings include Spectrum2, RoundBars, SharpBars, Waveform, BlurEffect and MotionBlurEffect. See docs/acceptance/avee-1.2.252-compat.md.
