@@ -111,6 +111,13 @@ def valid(body):
         reject(isinstance(event, str) and HEX.fullmatch(event) and event not in events)
         events.add(event)
         reject(item["id"] in ids)
+        # RENT-20261023-V2-FLOOR: never use an intact historical receipt to
+        # ACK paid seconds when the single-authority lease has regressed.
+        # This detects internally inconsistent mixed snapshots only; it is
+        # NOT an off-device antirollback witness for complete old snapshots.
+        device_lease = next(d["lease"] for d in body["devices"]
+                            if d["id"] == item["id"])
+        reject(device_lease >= decimal(item["lease"]))
         pulses = decimal(item["pulses"], 20)
         reject(pulses >= 1)
         decimal(item["lease"]); decimal(item["now"])
