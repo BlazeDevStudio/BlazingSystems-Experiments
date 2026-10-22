@@ -5,6 +5,7 @@ import com.blazingsystems.visualizer.audio.*
 import com.blazingsystems.visualizer.export.*
 import com.blazingsystems.visualizer.packs.*
 import com.blazingsystems.visualizer.project.*
+import com.blazingsystems.visualizer.tuning.YinTuner
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
@@ -89,6 +90,21 @@ class StorageTest {
         )
         ProjectStore(root).save(p)
         assertEquals(p, ProjectStore(root).load(p.id))
+    }
+
+    @Test
+    fun yinMonophonicGuitarAAndSilence() {
+        val rate = 22050
+        val sine = ShortArray(4096) { i ->
+            (kotlin.math.sin(2 * Math.PI * 110 * i / rate) * 18_000).toInt().toShort()
+        }
+        val reading = YinTuner.estimate(sine, rate)
+        assertNotNull(reading)
+        assertEquals(110.0, reading!!.frequencyHz, 1.0)
+        assertEquals(45, reading.midi)
+        assertTrue(reading.confidence > .85)
+        assertNull(YinTuner.estimate(ShortArray(4096), rate))
+        assertNull(YinTuner.estimate(ShortArray(4096) { (it % 3).toShort() }, rate))
     }
 
     @Test

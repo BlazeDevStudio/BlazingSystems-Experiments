@@ -11,6 +11,7 @@ import com.blazingsystems.visualizer.playback.*
 import com.blazingsystems.visualizer.practice.*
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.render.*
+import com.blazingsystems.visualizer.tuning.*
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.*
@@ -47,6 +48,9 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
     val rendered =
         MutableStateFlow(SceneEvaluator.evaluate(mutable.value.scene, FeatureFrame(0), 0))
     val exports = ExportHub.jobs
+    val tuner = MutableStateFlow<PitchReading?>(null)
+    private var microphone: MicrophoneCapture? = null
+    private var microphoneJob: Job? = null
     private var trackJob: Job? = null
     private val coordinator = TrackCoordinator()
     private val initialized = CompletableDeferred<Unit>()
@@ -388,6 +392,33 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     scheduleBackgroundAnalysis()
             }
         }
+    }
+
+    fun startTuner(a4Hz: Double = 440.0) {
+        require(a4Hz in 400.0..480.0)
+        stopTuner()
+        player.pause()
+        val capture = MicrophoneCapture()
+        microphone = capture
+        microphoneJob = viewModelScope.launch {
+            try {
+                capture.run(a4Hz) { tuner.value = it }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                report(failure)
+            } finally {
+                capture.close()
+            }
+        }
+    }
+
+    fun stopTuner() {
+        microphone?.close()
+        microphone = null
+        microphoneJob?.cancel()
+        microphoneJob = null
+        tuner.value = null
     }
 
     fun playPause() {
@@ -751,6 +782,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         trackJob?.cancel()
         preanalysisJob?.cancel()
         audioFeatures?.close()
+        stopTuner()
         player.close()
         saves.close()
         super.onCleared()

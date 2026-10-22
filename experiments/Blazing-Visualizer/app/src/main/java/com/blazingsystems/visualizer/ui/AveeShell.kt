@@ -3,6 +3,9 @@
 package com.blazingsystems.visualizer.ui
 
 import android.Manifest
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -43,8 +46,28 @@ fun AveeShell(model: StudioModel) {
     val rendered by model.rendered.collectAsState()
     val jobs by model.exports.collectAsState()
     val context = LocalContext.current
+    val lifecycle = (context as? LifecycleOwner)?.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) model.stopTuner()
+        }
+        lifecycle?.addObserver(observer)
+        onDispose { lifecycle?.removeObserver(observer); model.stopTuner() }
+    }
     var tab by rememberSaveable { mutableIntStateOf(1) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
+    val microphonePermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) { panel = "tuner"; model.startTuner() }
+        else model.report(IllegalStateException("Microphone permission denied"))
+    }
+    val openTuner = {
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED) {
+            panel = "tuner"; model.startTuner()
+        } else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+    }
     val readAudioPermission = if (Build.VERSION.SDK_INT >= 33)
         Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
     val permission = rememberLauncherForActivityResult(
@@ -241,6 +264,11 @@ fun AveeShell(model: StudioModel) {
                                     Icon(Icons.Rounded.Piano, "", Modifier.size(18.dp))
                                 },
                             )
+                            AssistChip(
+                                onClick = openTuner,
+                                label = { Text("Tuner") },
+                                leadingIcon = { Icon(Icons.Rounded.Mic, null, Modifier.size(18.dp)) },
+                            )
                             Surface(
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = .7f),
                                 shape = MaterialTheme.shapes.large,
@@ -287,11 +315,12 @@ fun AveeShell(model: StudioModel) {
     }
     if (panel != null)
         ModalBottomSheet(
-            onDismissRequest = { panel = null },
+            onDismissRequest = { panel = null; model.stopTuner() },
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).navigationBarsPadding()) {
                 when (panel) {
+                    "tuner" -> TunerSheet(model)
                     "presets" ->
                         PresetChooserSheet(
                             s.scene,
