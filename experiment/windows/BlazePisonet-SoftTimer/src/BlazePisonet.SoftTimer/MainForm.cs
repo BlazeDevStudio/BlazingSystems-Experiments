@@ -633,9 +633,17 @@ public sealed partial class MainForm : Form
     private void BindExactDevice()
     {
         if (_serialDevices.SelectedItem is not SerialDeviceItem item) { MessageBox.Show("Select a serial device first."); return; }
-        SerialDiscovery.BindExactDevice(_controller.Config, item.Device);
-        _serialMode.SelectedItem = SerialSelectionMode.ExactDevice;
-        _serialStatus.Text = $"Bound to {item.Device.Display}\nPnP: {item.Device.PnpDeviceId}\nVID/PID: {item.Device.Vid}/{item.Device.Pid}";
+        try
+        {
+            SerialDiscovery.BindExactDevice(_controller.Config, item.Device);
+            _serialMode.SelectedItem = SerialSelectionMode.ExactDevice;
+            _serialStatus.Text = $"Bound to {item.Device.Display}\nPnP: {item.Device.PnpDeviceId}\nVID/PID: {item.Device.Vid}/{item.Device.Pid}";
+        }
+        catch (InvalidOperationException ex)
+        {
+            _serialStatus.Text = "Exact device binding refused: no reliable PnP identity.";
+            MessageBox.Show(ex.Message, "Serial identity unavailable", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private async Task DiscoverTimers()
