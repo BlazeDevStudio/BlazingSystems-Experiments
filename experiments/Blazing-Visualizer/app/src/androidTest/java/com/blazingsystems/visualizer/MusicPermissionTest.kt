@@ -1,6 +1,7 @@
 package com.blazingsystems.visualizer
 
 import android.Manifest
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
@@ -21,6 +22,9 @@ class MusicPermissionTest {
 
     private fun permissionButton(suffix: String) {
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        automation.serviceInfo = automation.serviceInfo.apply {
+            flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        }
         fun find(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
             if (node == null) return null
             if (node.viewIdResourceName?.endsWith(":id/$suffix") == true) return node
@@ -40,8 +44,10 @@ class MusicPermissionTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
             else Manifest.permission.READ_EXTERNAL_STORAGE
-        assertEquals("This test requires a fresh install without pre-granted audio access",
-            PackageManager.PERMISSION_DENIED, context.checkSelfPermission(permission))
+        val fresh = context.checkSelfPermission(permission) == PackageManager.PERMISSION_DENIED
+        if (InstrumentationRegistry.getArguments().getString("freshAudioPermission") == "true")
+            assertTrue("CI permission smoke test requires a fresh install", fresh)
+        else Assume.assumeTrue("Run permission smoke separately on a fresh install", fresh)
         context.getSharedPreferences("music-access", 0).edit().clear().commit()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             permissionButton("permission_deny_button")
