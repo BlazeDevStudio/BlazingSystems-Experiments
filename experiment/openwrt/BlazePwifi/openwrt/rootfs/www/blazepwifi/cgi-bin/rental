@@ -119,6 +119,10 @@ EOF
     label="$(printf '%s' "$line" | cut -f4)"
     expected="$(bp_rental_hmac "$secret" "$action|$nonce|$secret")" || bp_fail "rental crypto unavailable"
     [ "$sig" = "$expected" ] || bp_fail "authentication failed"
+    # Never disclose/use a partially committed paid lease while any financial
+    # transaction is quarantined. Exact rental retries recover through Vendo.
+    [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] ||
+      bp_fail "paid state uncertain; operator reconciliation required"
 
     # Once the device proves possession of its permanent secret, the temporary
     # retry-redemption record is no longer needed. Missing record is a no-op.

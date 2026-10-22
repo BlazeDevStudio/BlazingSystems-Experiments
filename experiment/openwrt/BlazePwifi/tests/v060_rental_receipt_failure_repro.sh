@@ -104,13 +104,49 @@ if [ "$LEASE_DIVERGED" -eq 1 ] &&
   exit 1
 fi
 
-if [ "$AFTER" = "$BEFORE" ] &&
-   [ "$RECEIPT_MISSING" -eq 1 ] &&
-   [ "$UNCERTAIN" -eq 1 ] &&
-   [ "$STATUS_EXPOSES" -eq 0 ]; then
-  echo "PASS: receipt failure left lease unchanged and uncertain paid state hidden"
-  exit 0
+if [ "$AFTER" != "$BEFORE" ] ||
+   [ "$RECEIPT_MISSING" -ne 1 ] ||
+   [ "$UNCERTAIN" -ne 1 ] ||
+   [ "$STATUS_EXPOSES" -ne 0 ]; then
+  echo "REPRO SETUP FAILURE: lease_before=$BEFORE lease_after=$AFTER receipt_present=$([ -n "$RECEIPT" ] && echo 1 || echo 0) uncertainty=$UNCERTAIN status_exposes=$STATUS_EXPOSES rc=$RC" >&2
+  exit 2
 fi
+printf '%s' "$STATUS" | grep -q 'paid state uncertain; operator reconciliation required'
 
-echo "REPRO SETUP FAILURE: lease_before=$BEFORE lease_after=$AFTER receipt_present=$([ -n "$RECEIPT" ] && echo 1 || echo 0) uncertainty=$UNCERTAIN status_exposes=$STATUS_EXPOSES rc=$RC" >&2
-exit 2
+# Restore the real receipt writer. A different signed event cannot steal or
+# clear the structured intent, and cannot change the compensated old lease.
+. "$BP_RENTAL_LIB"
+bp_now() { printf '%s' "$NOW"; }
+WRONG_NONCE=deadbeef
+set +e
+WRONG="$(bp_rental_apply_coin "$DID" "$CONTROLLER" "$WRONG_NONCE" "$TARGET" "$PULSES")"
+WRONG_RC=$?
+set -e
+[ "$WRONG_RC" -ne 0 ]
+[ -z "$WRONG" ]
+[ "$(printf '%s' "$(bp_rental_device_line "$DID")" | cut -f3)" = "$BEFORE" ]
+[ -f "$BP_PAID_UNCERTAIN" ]
+
+# Exact retry owns the intent and deterministically completes both lease and
+# receipt. It is not a duplicate ACK because the original call never escaped.
+RECOVERED="$(bp_rental_apply_coin "$DID" "$CONTROLLER" "$NONCE" "$TARGET" "$PULSES")"
+[ "$RECOVERED" = "$(printf 'recovered\t%s' "$EXPECTED_AFTER")" ]
+[ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ]
+[ "$(printf '%s' "$(bp_rental_device_line "$DID")" | cut -f3)" = "$EXPECTED_AFTER" ]
+RECOVERED_RECEIPT="$(bp_rental_paid_receipt_snapshot "$EVENT")"
+[ "$(printf '%s' "$RECOVERED_RECEIPT" | cut -f2)" = "$DID" ]
+[ "$(printf '%s' "$RECOVERED_RECEIPT" | cut -f3)" = "$EXPECTED_AFTER" ]
+[ "$(printf '%s' "$RECOVERED_RECEIPT" | cut -f5)" = "p:$PULSES" ]
+
+# Once the recovery is committed, later exact replay is an ordinary duplicate.
+DUP="$(bp_rental_apply_coin "$DID" "$CONTROLLER" "$NONCE" "$TARGET" "$PULSES")"
+[ "$DUP" = "$(printf 'duplicate\t%s' "$EXPECTED_AFTER")" ]
+
+STATUS_NONCE_2=statusatomic2
+STATUS_SIG_2="$(bp_rental_hmac "$DSEC" "status|$STATUS_NONCE_2|$DSEC")"
+STATUS_2="$(printf 'action=status&device_id=%s&nonce=%s&sig=%s' "$DID" "$STATUS_NONCE_2" "$STATUS_SIG_2" |
+  REQUEST_METHOD=POST sh "$RENTAL_CGI")"
+printf '%s' "$STATUS_2" | grep -q '"ok":true'
+printf '%s' "$STATUS_2" | grep -q "\"lease_until_ms\":$((EXPECTED_AFTER * 1000))"
+
+echo "PASS: rental v1 intent rolls back synchronous receipt failure, hides uncertain lease, refuses wrong event, and recovers exact retry once"

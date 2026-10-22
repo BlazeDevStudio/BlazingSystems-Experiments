@@ -627,6 +627,978 @@ bp_rental_paid_receipt_match() {
   printf 'duplicate\t%s\n' "$old_lease"
 }
 
+# RENT-20261022-ATOMIC: v1 rental coin writes use the existing global
+# paid-state uncertainty marker as a durable write-ahead intent. This is a
+# compatibility recovery protocol, NOT the v2 ledger or an antirollback witness.
+bp_rental_paid_intent_snapshot() {
+  [ -f "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || return 3
+  LC_ALL=C awk -F '\t' '
+    NR==1 {
+      token=substr($2,3)
+      if (NF!=8 || $1!="RENTAL_V1_INTENT" ||
+          substr($2,1,2)!="r:" || length(token)!=64 || token ~ /[^0-9a-f]/ ||
+          $3 !~ /^[A-Za-z0-9_.:-]+$/ || length($3)<2 || length($3)>96 ||
+          $4 !~ /^(0|[1-9][0-9]*)$/ || length($4)>10 || $4+0>2147483647 ||
+          $5 !~ /^(0|[1-9][0-9]*)$/ || length($5)>10 || $5+0>2147483647 ||
+          $5+0<$4+0 ||
+          $6 !~ /^(0|[1-9][0-9]*)$/ || length($6)>10 || $6+0>2147483647 ||
+          $7 !~ /^[0-9]+$/ || $7+0<1 || $7+0>20 ||
+          $8 !~ /^(0|[1-9][0-9]*)$/ || length($8)>10 || $8+0>2147483647)
+        bad=1
+      row=$0
+      next
+    }
+    {bad=1}
+    END {if(bad || row=="") exit 8; print row}
+  ' "$BP_PAID_UNCERTAIN"
+}
+
+bp_rental_paid_intent_write() {
+  rpi_event="$1"; rpi_did="$2"; rpi_old="$3"; rpi_new="$4"
+  rpi_when="$5"; rpi_pulses="$6"; rpi_oldlast="$7"
+  printf '%s\n' "$rpi_event" | LC_ALL=C grep -Eq '^r:[0-9a-f]{64}
+# tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
+# can call it; no default runtime helper or customer migration exists.
+bp_rental_v2_lab_dispatch() {
+  [ "${BP_RENTAL_V2_LAB:-0}" = 1 ] || return 9
+  case "$BP_STATE" in /tmp/blaze-v2-rental-*/state) ;; *) return 9;; esac
+  root="${BP_STATE%/state}"
+  suffix="${root#/tmp/blaze-v2-rental-}"
+  case "$suffix" in ''|*/*|*..*|*[!A-Za-z0-9]*) return 9;; esac
+  [ "$BP_RUN" = "$root/run" ] &&
+    [ "$BP_RENTAL_DEVICES" = "$BP_STATE/rental-devices.tsv" ] &&
+    [ "$BP_RENTAL_EVENTS" = "$BP_STATE/rental-events.tsv" ] &&
+    [ "$BP_PAID_UNCERTAIN" = "$BP_STATE/paid-state-uncertain" ] || return 9
+  [ -d "$root" ] && [ ! -L "$root" ] &&
+    [ -f "$root/.blaze-v2-rental-synthetic-only" ] &&
+    [ ! -L "$root/.blaze-v2-rental-synthetic-only" ] || return 9
+  [ "$(cat "$root/.blaze-v2-rental-synthetic-only" 2>/dev/null)" = BLAZE-V2-RENTAL-SYNTHETIC-ONLY ] || return 9
+  helper="${BP_RENTAL_V2_LAB_HELPER:-}"
+  [ -n "$helper" ] || return 9
+  case "$helper" in /*) ;; *) return 9;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 9
+  command -v python3 >/dev/null 2>&1 || return 9
+  now="$(bp_now)" || return 9
+  rate="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$rate" ] || rate=600
+  BP_RENTAL_V2_LAB_NOW="$now" BP_RENTAL_V2_LAB_SECONDS_PER_PULSE="$rate" \
+    python3 "$helper" coin "$@"
+}
+
+bp_rental_apply_coin() {
+  if [ "${BP_RENTAL_V2_LAB:-0}" = 1 ]; then
+    bp_rental_v2_lab_dispatch "$@"; return $?
+  fi
+  did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
+  bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  # RENT-20261022-HASH: receipt identity must exist before any lock/recovery.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || return 8
+  printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  oldlast="$(printf '%s' "$line" | cut -f5)"
+  bp_rental_safe_seconds "$lease" 2147483647 &&
+    bp_rental_safe_seconds "$oldlast" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Persist an exact recovery intent BEFORE either v1 paid file changes.
+  # This does not make v1 a v2 journal or independent witness; it guarantees
+  # that the exact retry can deterministically finish an interrupted pair.
+  if ! bp_rental_paid_intent_write "$event" "$did" "$lease" "$newlease" "$now" "$pulses" "$oldlast"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_rental_paid_restore_before "$did" "$lease" "$newlease" "$now" "$oldlast" >/dev/null 2>&1 || true
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_paid_restore_before "$did" "$lease" "$newlease" "$now" "$oldlast" >/dev/null 2>&1 || true
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+ || return 8
+  printf '%s\n' "$rpi_did" | LC_ALL=C grep -Eq '^[A-Za-z0-9_.:-]{2,96}
+# tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
+# can call it; no default runtime helper or customer migration exists.
+bp_rental_v2_lab_dispatch() {
+  [ "${BP_RENTAL_V2_LAB:-0}" = 1 ] || return 9
+  case "$BP_STATE" in /tmp/blaze-v2-rental-*/state) ;; *) return 9;; esac
+  root="${BP_STATE%/state}"
+  suffix="${root#/tmp/blaze-v2-rental-}"
+  case "$suffix" in ''|*/*|*..*|*[!A-Za-z0-9]*) return 9;; esac
+  [ "$BP_RUN" = "$root/run" ] &&
+    [ "$BP_RENTAL_DEVICES" = "$BP_STATE/rental-devices.tsv" ] &&
+    [ "$BP_RENTAL_EVENTS" = "$BP_STATE/rental-events.tsv" ] &&
+    [ "$BP_PAID_UNCERTAIN" = "$BP_STATE/paid-state-uncertain" ] || return 9
+  [ -d "$root" ] && [ ! -L "$root" ] &&
+    [ -f "$root/.blaze-v2-rental-synthetic-only" ] &&
+    [ ! -L "$root/.blaze-v2-rental-synthetic-only" ] || return 9
+  [ "$(cat "$root/.blaze-v2-rental-synthetic-only" 2>/dev/null)" = BLAZE-V2-RENTAL-SYNTHETIC-ONLY ] || return 9
+  helper="${BP_RENTAL_V2_LAB_HELPER:-}"
+  [ -n "$helper" ] || return 9
+  case "$helper" in /*) ;; *) return 9;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 9
+  command -v python3 >/dev/null 2>&1 || return 9
+  now="$(bp_now)" || return 9
+  rate="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$rate" ] || rate=600
+  BP_RENTAL_V2_LAB_NOW="$now" BP_RENTAL_V2_LAB_SECONDS_PER_PULSE="$rate" \
+    python3 "$helper" coin "$@"
+}
+
+bp_rental_apply_coin() {
+  if [ "${BP_RENTAL_V2_LAB:-0}" = 1 ]; then
+    bp_rental_v2_lab_dispatch "$@"; return $?
+  fi
+  did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
+  bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  # PAY-0711 shared lock holds across the entire duplicate receipt ACK. If
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  # RENT-20261022-HASH: never make a paid write or ACK if its receipt
+  # identity cannot be deterministically constructed.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}$'; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+ || return 8
+  bp_rental_safe_seconds "$rpi_old" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_new" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_when" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_oldlast" 2147483647 || return 8
+  [ "$rpi_new" -ge "$rpi_old" ] 2>/dev/null || return 8
+  bp_rental_safe_seconds "$rpi_pulses" 20 && [ "$rpi_pulses" -ge 1 ] || return 8
+  rpi_tmp="$BP_STATE/.rental-paid-intent.$(bp_tmp_suffix)"
+  umask 077
+  if ! printf 'RENTAL_V1_INTENT\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$rpi_event" "$rpi_did" "$rpi_old" "$rpi_new" "$rpi_when" "$rpi_pulses" "$rpi_oldlast" > "$rpi_tmp" ||
+     ! chmod 600 "$rpi_tmp" ||
+     ! mv "$rpi_tmp" "$BP_PAID_UNCERTAIN" ||
+     ! sync; then
+    rm -f "$rpi_tmp" 2>/dev/null || true
+    return 8
+  fi
+  return 0
+}
+
+bp_rental_paid_recovery_lock() {
+  mkdir -p "$BP_RUN" || return 8
+  exec 6>"$BP_RUN/paid-financial.lock" || return 8
+  if ! flock -n 6; then exec 6>&-; return 8; fi
+  if bp_paid_v2_cutover_pending; then
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 9
+  fi
+  if [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ]; then
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 3
+  fi
+  [ -f "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || {
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 9
+  }
+  return 0
+}
+
+bp_rental_paid_recovery_unlock() {
+  flock -u 6 2>/dev/null || true
+  exec 6>&-
+}
+
+bp_rental_paid_restore_before() {
+  rrb_did="$1"; rrb_old="$2"; rrb_new="$3"; rrb_when="$4"; rrb_oldlast="$5"
+  rrb_line="$(bp_rental_paid_device_snapshot "$rrb_did")" || return $?
+  rrb_secret="$(printf '%s' "$rrb_line" | cut -f2)"
+  rrb_lease="$(printf '%s' "$rrb_line" | cut -f3)"
+  rrb_label="$(printf '%s' "$rrb_line" | cut -f4)"
+  rrb_last="$(printf '%s' "$rrb_line" | cut -f5)"
+  if [ "$rrb_lease" = "$rrb_old" ] && [ "$rrb_last" = "$rrb_oldlast" ]; then
+    return 0
+  fi
+  [ "$rrb_lease" = "$rrb_new" ] && [ "$rrb_last" = "$rrb_when" ] || return 9
+  bp_rental_device_write "$rrb_did" "$rrb_secret" "$rrb_old" "$rrb_label" "$rrb_oldlast"
+}
+
+bp_rental_paid_recover_pending() {
+  rpr_expected_event="$1"; rpr_expected_did="$2"; rpr_expected_pulses="$3"
+  bp_rental_paid_recovery_lock || return $?
+  rpr_intent="$(bp_rental_paid_intent_snapshot)"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then
+    bp_rental_paid_recovery_unlock
+    return 9
+  fi
+  IFS="$(printf '\t')" read -r rpr_kind rpr_event rpr_did rpr_old rpr_new rpr_when rpr_pulses rpr_oldlast <<EOF
+$rpr_intent
+EOF
+  if [ "$rpr_event" != "$rpr_expected_event" ] ||
+     [ "$rpr_did" != "$rpr_expected_did" ] ||
+     [ "$rpr_pulses" != "$rpr_expected_pulses" ]; then
+    bp_rental_paid_recovery_unlock
+    return 9
+  fi
+
+  rpr_line="$(bp_rental_paid_device_snapshot "$rpr_did")"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then bp_paid_abort; return "$rpr_rc"; fi
+  rpr_secret="$(printf '%s' "$rpr_line" | cut -f2)"
+  rpr_lease="$(printf '%s' "$rpr_line" | cut -f3)"
+  rpr_label="$(printf '%s' "$rpr_line" | cut -f4)"
+  rpr_last="$(printf '%s' "$rpr_line" | cut -f5)"
+
+  rpr_receipt="$(bp_rental_paid_receipt_snapshot "$rpr_event")"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then bp_paid_abort; return "$rpr_rc"; fi
+  if [ -n "$rpr_receipt" ]; then
+    [ "$(printf '%s' "$rpr_receipt" | cut -f2)" = "$rpr_did" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f3)" = "$rpr_new" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f4)" = "$rpr_when" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f5)" = "p:$rpr_pulses" ] ||
+      { bp_paid_abort; return 5; }
+  fi
+
+  if [ "$rpr_lease" = "$rpr_old" ]; then
+    [ "$rpr_last" = "$rpr_oldlast" ] || { bp_paid_abort; return 9; }
+    bp_rental_device_write "$rpr_did" "$rpr_secret" "$rpr_new" "$rpr_label" "$rpr_when" ||
+      { bp_paid_abort; return 8; }
+  elif [ "$rpr_lease" = "$rpr_new" ]; then
+    [ "$rpr_last" = "$rpr_when" ] || { bp_paid_abort; return 9; }
+  else
+    bp_paid_abort
+    return 9
+  fi
+
+  if [ -z "$rpr_receipt" ]; then
+    bp_rental_paid_receipt_capacity_ok "$rpr_event" "$rpr_did" "$rpr_new" "$rpr_when" "$rpr_pulses" ||
+      { bp_paid_abort; return 8; }
+    bp_rental_append_paid_receipt "$rpr_event" "$rpr_did" "$rpr_new" "$rpr_when" "$rpr_pulses" ||
+      { bp_paid_abort; return 8; }
+  fi
+
+  bp_paid_commit || return 8
+  printf 'recovered\t%s\n' "$rpr_new"
+  return 0
+}
+
+# RENT-0725: the rental coin+receipt authority exists OFF DEVICE in
+# tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
+# can call it; no default runtime helper or customer migration exists.
+bp_rental_v2_lab_dispatch() {
+  [ "${BP_RENTAL_V2_LAB:-0}" = 1 ] || return 9
+  case "$BP_STATE" in /tmp/blaze-v2-rental-*/state) ;; *) return 9;; esac
+  root="${BP_STATE%/state}"
+  suffix="${root#/tmp/blaze-v2-rental-}"
+  case "$suffix" in ''|*/*|*..*|*[!A-Za-z0-9]*) return 9;; esac
+  [ "$BP_RUN" = "$root/run" ] &&
+    [ "$BP_RENTAL_DEVICES" = "$BP_STATE/rental-devices.tsv" ] &&
+    [ "$BP_RENTAL_EVENTS" = "$BP_STATE/rental-events.tsv" ] &&
+    [ "$BP_PAID_UNCERTAIN" = "$BP_STATE/paid-state-uncertain" ] || return 9
+  [ -d "$root" ] && [ ! -L "$root" ] &&
+    [ -f "$root/.blaze-v2-rental-synthetic-only" ] &&
+    [ ! -L "$root/.blaze-v2-rental-synthetic-only" ] || return 9
+  [ "$(cat "$root/.blaze-v2-rental-synthetic-only" 2>/dev/null)" = BLAZE-V2-RENTAL-SYNTHETIC-ONLY ] || return 9
+  helper="${BP_RENTAL_V2_LAB_HELPER:-}"
+  [ -n "$helper" ] || return 9
+  case "$helper" in /*) ;; *) return 9;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 9
+  command -v python3 >/dev/null 2>&1 || return 9
+  now="$(bp_now)" || return 9
+  rate="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$rate" ] || rate=600
+  BP_RENTAL_V2_LAB_NOW="$now" BP_RENTAL_V2_LAB_SECONDS_PER_PULSE="$rate" \
+    python3 "$helper" coin "$@"
+}
+
+bp_rental_apply_coin() {
+  if [ "${BP_RENTAL_V2_LAB:-0}" = 1 ]; then
+    bp_rental_v2_lab_dispatch "$@"; return $?
+  fi
+  did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
+  bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  # PAY-0711 shared lock holds across the entire duplicate receipt ACK. If
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  # RENT-20261022-HASH: never make a paid write or ACK if its receipt
+  # identity cannot be deterministically constructed.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}$'; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+ || return 8
+  event="r:$digest"
+  # A crash/failure after a durable rental intent is recoverable ONLY by the
+  # exact event/device/pulse tuple. Any other paid request remains fail-closed.
+  if [ -e "$BP_PAID_UNCERTAIN" ] || [ -L "$BP_PAID_UNCERTAIN" ]; then
+    recovered="$(bp_rental_paid_recover_pending "$event" "$did" "$pulses")"
+    rc=$?
+    [ "$rc" -eq 0 ] && printf '%s\n' "$recovered"
+    return "$rc"
+  fi
+  # PAY-0711 shared lock holds across the entire duplicate receipt ACK. If
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  # RENT-20261022-HASH: never make a paid write or ACK if its receipt
+  # identity cannot be deterministically constructed.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}$'; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+ || return 8
+  printf '%s\n' "$rpi_did" | LC_ALL=C grep -Eq '^[A-Za-z0-9_.:-]{2,96}
+# tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
+# can call it; no default runtime helper or customer migration exists.
+bp_rental_v2_lab_dispatch() {
+  [ "${BP_RENTAL_V2_LAB:-0}" = 1 ] || return 9
+  case "$BP_STATE" in /tmp/blaze-v2-rental-*/state) ;; *) return 9;; esac
+  root="${BP_STATE%/state}"
+  suffix="${root#/tmp/blaze-v2-rental-}"
+  case "$suffix" in ''|*/*|*..*|*[!A-Za-z0-9]*) return 9;; esac
+  [ "$BP_RUN" = "$root/run" ] &&
+    [ "$BP_RENTAL_DEVICES" = "$BP_STATE/rental-devices.tsv" ] &&
+    [ "$BP_RENTAL_EVENTS" = "$BP_STATE/rental-events.tsv" ] &&
+    [ "$BP_PAID_UNCERTAIN" = "$BP_STATE/paid-state-uncertain" ] || return 9
+  [ -d "$root" ] && [ ! -L "$root" ] &&
+    [ -f "$root/.blaze-v2-rental-synthetic-only" ] &&
+    [ ! -L "$root/.blaze-v2-rental-synthetic-only" ] || return 9
+  [ "$(cat "$root/.blaze-v2-rental-synthetic-only" 2>/dev/null)" = BLAZE-V2-RENTAL-SYNTHETIC-ONLY ] || return 9
+  helper="${BP_RENTAL_V2_LAB_HELPER:-}"
+  [ -n "$helper" ] || return 9
+  case "$helper" in /*) ;; *) return 9;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 9
+  command -v python3 >/dev/null 2>&1 || return 9
+  now="$(bp_now)" || return 9
+  rate="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$rate" ] || rate=600
+  BP_RENTAL_V2_LAB_NOW="$now" BP_RENTAL_V2_LAB_SECONDS_PER_PULSE="$rate" \
+    python3 "$helper" coin "$@"
+}
+
+bp_rental_apply_coin() {
+  if [ "${BP_RENTAL_V2_LAB:-0}" = 1 ]; then
+    bp_rental_v2_lab_dispatch "$@"; return $?
+  fi
+  did="$1"; controller="$2"; nonce="$3"; target="$4"; pulses="$5"; now="$(bp_now)"
+  bp_rental_safe_seconds "$pulses" 20 && [ "$pulses" -ge 1 ] || return 2
+  bp_rental_safe_seconds "$now" 2147483647 || return 8
+  # PAY-0711 shared lock holds across the entire duplicate receipt ACK. If
+  # a paid writer owns the lock (even BEFORE its pending marker appears), do
+  # not acknowledge a previous payment or read stale paid lease state.
+  bp_paid_replay_read_lock || return $?
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  lease="$(printf '%s' "$line" | cut -f3)"
+  bp_rental_safe_seconds "$lease" 2147483647 || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  # RENT-20261022-HASH: never make a paid write or ACK if its receipt
+  # identity cannot be deterministically constructed.
+  digest="$(printf 'rental|%s|%s|%s' "$controller" "$nonce" "$target" | bp_sha256)" || {
+    bp_paid_replay_read_unlock
+    return 8
+  }
+  if ! printf '%s' "$digest" | LC_ALL=C grep -Eq '^[0-9a-f]{64}$'; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  event="r:$digest"
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # Emit only a well-formed bound original receipt, while read lock held.
+    bp_rental_paid_receipt_match "$old" "$did" "$pulses"
+    rc=$?
+    bp_paid_replay_read_unlock
+    return "$rc"
+  fi
+  # Reject malformed rates and any overflow on the currently locked
+  # snapshot BEFORE marking a paid transaction. The writer side will STILL
+  # re-read and revalidate the lease after the lock handoff.
+  per="$(bp_cfg rental_seconds_per_pulse)"
+  [ -n "$per" ] || per=600
+  if ! bp_rental_safe_seconds "$per" 86400 || [ "$per" -lt 1 ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  delta=$((per * pulses))
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  if [ "$base" -gt $((2147483647-delta)) ]; then
+    bp_paid_replay_read_unlock
+    return 8
+  fi
+  bp_paid_replay_read_unlock
+  # Initial read lock was dropped to acquire the paid WRITER lock. Recheck
+  # both the receipt and current lease under that writer lock; another
+  # authenticated admin/client may have committed between these steps.
+  bp_paid_begin || return 9
+  line="$(bp_rental_paid_device_snapshot "$did")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  old="$(bp_rental_paid_receipt_snapshot "$event")"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    bp_paid_abort
+    return "$rc"
+  fi
+  if [ -n "$old" ]; then
+    # A competing writer committed the same event between locks. No paid
+    # mutation occurs here; clear only our just-created pending marker.
+    # Refuse ACK when that marker cannot be durably cleared.
+    validated="$(bp_rental_paid_receipt_match "$old" "$did" "$pulses")"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bp_paid_abort
+      return "$rc"
+    fi
+    bp_paid_commit || return 8
+    printf '%s\n' "$validated"
+    return 0
+  fi
+  secret="$(printf '%s' "$line" | cut -f2)"
+  lease="$(printf '%s' "$line" | cut -f3)"
+  label="$(printf '%s' "$line" | cut -f4)"
+  bp_rental_safe_seconds "$lease" 2147483647 || { bp_paid_abort; return 8; }
+  base="$lease"
+  [ "$base" -gt "$now" ] 2>/dev/null || base="$now"
+  [ "$base" -le $((2147483647-delta)) ] || { bp_paid_abort; return 8; }
+  newlease=$((base + delta))
+  # PAY-0780: reserve receipt space before ANY paid lease mutation.
+  # Capacity refusal is read-only and may clear only our new pending marker.
+  if ! bp_rental_paid_receipt_capacity_ok "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_rental_admin_unmodified_reject 8
+    return $?
+  fi
+  # Existing v1 writes remain two separately durable operations; quarantine
+  # on either failure instead of pretending this is an atomic v2 ledger.
+  if ! bp_rental_device_write "$did" "$secret" "$newlease" "$label" "$now"; then
+    bp_paid_abort; return 8
+  fi
+  if ! bp_rental_append_paid_receipt "$event" "$did" "$newlease" "$now" "$pulses"; then
+    bp_paid_abort; return 8
+  fi
+  bp_paid_commit || return 8
+  printf 'credited\t%s\n' "$newlease"
+}
+ || return 8
+  bp_rental_safe_seconds "$rpi_old" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_new" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_when" 2147483647 &&
+    bp_rental_safe_seconds "$rpi_oldlast" 2147483647 || return 8
+  [ "$rpi_new" -ge "$rpi_old" ] 2>/dev/null || return 8
+  bp_rental_safe_seconds "$rpi_pulses" 20 && [ "$rpi_pulses" -ge 1 ] || return 8
+  rpi_tmp="$BP_STATE/.rental-paid-intent.$(bp_tmp_suffix)"
+  umask 077
+  if ! printf 'RENTAL_V1_INTENT\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$rpi_event" "$rpi_did" "$rpi_old" "$rpi_new" "$rpi_when" "$rpi_pulses" "$rpi_oldlast" > "$rpi_tmp" ||
+     ! chmod 600 "$rpi_tmp" ||
+     ! mv "$rpi_tmp" "$BP_PAID_UNCERTAIN" ||
+     ! sync; then
+    rm -f "$rpi_tmp" 2>/dev/null || true
+    return 8
+  fi
+  return 0
+}
+
+bp_rental_paid_recovery_lock() {
+  mkdir -p "$BP_RUN" || return 8
+  exec 6>"$BP_RUN/paid-financial.lock" || return 8
+  if ! flock -n 6; then exec 6>&-; return 8; fi
+  if bp_paid_v2_cutover_pending; then
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 9
+  fi
+  if [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ]; then
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 3
+  fi
+  [ -f "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || {
+    flock -u 6 2>/dev/null || true; exec 6>&-; return 9
+  }
+  return 0
+}
+
+bp_rental_paid_recovery_unlock() {
+  flock -u 6 2>/dev/null || true
+  exec 6>&-
+}
+
+bp_rental_paid_restore_before() {
+  rrb_did="$1"; rrb_old="$2"; rrb_new="$3"; rrb_when="$4"; rrb_oldlast="$5"
+  rrb_line="$(bp_rental_paid_device_snapshot "$rrb_did")" || return $?
+  rrb_secret="$(printf '%s' "$rrb_line" | cut -f2)"
+  rrb_lease="$(printf '%s' "$rrb_line" | cut -f3)"
+  rrb_label="$(printf '%s' "$rrb_line" | cut -f4)"
+  rrb_last="$(printf '%s' "$rrb_line" | cut -f5)"
+  if [ "$rrb_lease" = "$rrb_old" ] && [ "$rrb_last" = "$rrb_oldlast" ]; then
+    return 0
+  fi
+  [ "$rrb_lease" = "$rrb_new" ] && [ "$rrb_last" = "$rrb_when" ] || return 9
+  bp_rental_device_write "$rrb_did" "$rrb_secret" "$rrb_old" "$rrb_label" "$rrb_oldlast"
+}
+
+bp_rental_paid_recover_pending() {
+  rpr_expected_event="$1"; rpr_expected_did="$2"; rpr_expected_pulses="$3"
+  bp_rental_paid_recovery_lock || return $?
+  rpr_intent="$(bp_rental_paid_intent_snapshot)"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then
+    bp_rental_paid_recovery_unlock
+    return 9
+  fi
+  IFS="$(printf '\t')" read -r rpr_kind rpr_event rpr_did rpr_old rpr_new rpr_when rpr_pulses rpr_oldlast <<EOF
+$rpr_intent
+EOF
+  if [ "$rpr_event" != "$rpr_expected_event" ] ||
+     [ "$rpr_did" != "$rpr_expected_did" ] ||
+     [ "$rpr_pulses" != "$rpr_expected_pulses" ]; then
+    bp_rental_paid_recovery_unlock
+    return 9
+  fi
+
+  rpr_line="$(bp_rental_paid_device_snapshot "$rpr_did")"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then bp_paid_abort; return "$rpr_rc"; fi
+  rpr_secret="$(printf '%s' "$rpr_line" | cut -f2)"
+  rpr_lease="$(printf '%s' "$rpr_line" | cut -f3)"
+  rpr_label="$(printf '%s' "$rpr_line" | cut -f4)"
+  rpr_last="$(printf '%s' "$rpr_line" | cut -f5)"
+
+  rpr_receipt="$(bp_rental_paid_receipt_snapshot "$rpr_event")"
+  rpr_rc=$?
+  if [ "$rpr_rc" -ne 0 ]; then bp_paid_abort; return "$rpr_rc"; fi
+  if [ -n "$rpr_receipt" ]; then
+    [ "$(printf '%s' "$rpr_receipt" | cut -f2)" = "$rpr_did" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f3)" = "$rpr_new" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f4)" = "$rpr_when" ] &&
+      [ "$(printf '%s' "$rpr_receipt" | cut -f5)" = "p:$rpr_pulses" ] ||
+      { bp_paid_abort; return 5; }
+  fi
+
+  if [ "$rpr_lease" = "$rpr_old" ]; then
+    [ "$rpr_last" = "$rpr_oldlast" ] || { bp_paid_abort; return 9; }
+    bp_rental_device_write "$rpr_did" "$rpr_secret" "$rpr_new" "$rpr_label" "$rpr_when" ||
+      { bp_paid_abort; return 8; }
+  elif [ "$rpr_lease" = "$rpr_new" ]; then
+    [ "$rpr_last" = "$rpr_when" ] || { bp_paid_abort; return 9; }
+  else
+    bp_paid_abort
+    return 9
+  fi
+
+  if [ -z "$rpr_receipt" ]; then
+    bp_rental_paid_receipt_capacity_ok "$rpr_event" "$rpr_did" "$rpr_new" "$rpr_when" "$rpr_pulses" ||
+      { bp_paid_abort; return 8; }
+    bp_rental_append_paid_receipt "$rpr_event" "$rpr_did" "$rpr_new" "$rpr_when" "$rpr_pulses" ||
+      { bp_paid_abort; return 8; }
+  fi
+
+  bp_paid_commit || return 8
+  printf 'recovered\t%s\n' "$rpr_new"
+  return 0
+}
+
 # RENT-0725: the rental coin+receipt authority exists OFF DEVICE in
 # tests/fixtures. Only an explicitly enabled, privately owned /tmp fixture
 # can call it; no default runtime helper or customer migration exists.
