@@ -3,6 +3,7 @@
 NO customer devices, signed controller production ACKs, v1 migration or keys.
 """
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -148,6 +149,31 @@ try:
           stdout="duplicate\t125856\n")
     assert lease("dev01") == 125856 and receipt_count("nonce3") == 1
 
+    # RENT-20261023-V2-FLOOR: locally re-sealed mixed state is not a valid
+    # authority: a retained immutable receipt may NOT ACK a regressed lease.
+    # A full rollback to an earlier self-consistent snapshot still requires
+    # the missing independent antirollback witness (P0 #43).
+    original_authority = LEDGER.read_text()
+    envelope = json.loads(original_authority)
+    row = next(d for d in envelope["body"]["devices"] if d["id"] == "dev01")
+    row["lease"] = 0
+    packed = json.dumps(envelope["body"], sort_keys=True, separators=(",", ":"),
+                        ensure_ascii=True).encode()
+    envelope["checksum"] = hashlib.sha256(packed).hexdigest()
+    file(LEDGER, json.dumps(envelope, sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=True) + "\\n")
+    invalid_digest = digest()
+    before_devices = DEVICES.read_bytes()
+    before_events = EVENTS.read_bytes()
+    check(call("dev01", "ctrlA", "nonce3", "targetA", "1"), code=8)
+    assert digest() == invalid_digest, "rejected inconsistent journal was changed"
+    assert DEVICES.read_bytes() == before_devices, "invalid authority rewrote paid lease projection"
+    assert EVENTS.read_bytes() == before_events, "invalid authority rewrote receipt projection"
+    file(LEDGER, original_authority)
+    check(call("dev01", "ctrlA", "nonce3", "targetA", "1"),
+          stdout="duplicate\\t125856\\n")
+    assert digest() == snapshot
+
     # Derived-state corruption is repaired from the ledger, not imported.
     snapshot = digest()
     file(DEVICES, "dev01\tforged\t0\ttampered\t0\n")
@@ -192,6 +218,7 @@ try:
     check(call("dev01", "ctrlA", "nonce4", "targetA", "1"), code=9)
     (STATE / "paid-state-uncertain").unlink()
     assert digest() == snapshot and baseline != snapshot
+    print("RENT-20261023-V2-FLOOR PASS: consistent receipt lease floor rejects local state divergence")
     print("RENT-0725 PASS: real rental coin entrypoint synthetic-only lease+receipt one-rename, lost ACK, projection recovery, collision, tamper and path guards")
     print("NOT PRODUCTION: no signed v2 controller contract, independently witnessed antirollback, v1 migration or physical powercut proof")
 finally:
