@@ -161,6 +161,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh
       - name: RENT-0725 synthetic rental lease and coin receipt single-authority bridge (not production)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
+      - name: RENT-20261022-V2FLOOR reject internally regressed lease before paid ACK
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_receipt_floor_guard.py
       - name: RENT-0726 reject signed rental-v2 protocol downgrade before heartbeat or credit
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_v2_no_downgrade.sh
       - name: RENT-0727 synthetic rental controller HMAC journal and independent ACKV2 contract (not production)
