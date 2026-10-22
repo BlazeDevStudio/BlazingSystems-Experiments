@@ -13,7 +13,11 @@ import kotlinx.coroutines.*
 class MicrophoneCapture(private val context: Context) : AutoCloseable {
     @Volatile private var active: AudioRecord? = null
 
-    suspend fun run(a4Hz: Double, onPitch: suspend (PitchReading?) -> Unit) =
+    suspend fun run(
+        a4Hz: Double,
+        onPitch: suspend (PitchReading?) -> Unit,
+        onSamples: suspend (FloatArray) -> Unit = {},
+    ) =
         withContext(Dispatchers.IO) {
             val rate = 22050
             val minimum = AudioRecord.getMinBufferSize(
@@ -57,6 +61,9 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
                     if (count == 0) continue
                     received += count
                     if (received == samples.size) {
+                        // Feed the same microphone frames to the real-time
+                        // visualizer; a pitch reading alone has no spectrum.
+                        onSamples(FloatArray(2048) { samples[it + 2048] / 32768f })
                         val reading = YinTuner.estimate(samples, rate, a4Hz)
                         currentCoroutineContext().ensureActive()
                         onPitch(smoother.update(reading, a4Hz))

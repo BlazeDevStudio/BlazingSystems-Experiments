@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.*
 import com.blazingsystems.visualizer.analysis.*
 import com.blazingsystems.visualizer.audio.*
+import com.blazingsystems.visualizer.avee.AveeSpectrumAnalyzer
+import com.blazingsystems.visualizer.avee.SpectrumFrame
 import com.blazingsystems.visualizer.export.*
 import com.blazingsystems.visualizer.packs.*
 import com.blazingsystems.visualizer.playback.*
@@ -48,6 +50,27 @@ data class StudioState(
     }
 }
 
+/** Microphone drives the same renderer without overwriting track notes or exports. */
+internal fun micVisualFeatures(
+    base: FeatureFrame, pitch: PitchReading?, spectrum: SpectrumFrame?,
+): FeatureFrame {
+    val note = pitch?.takeIf { it.confidence >= .85 }?.let {
+        NoteEvent(
+            id = "live-microphone",
+            pitch = it.midi.coerceIn(0, 127),
+            startUs = base.sourceTimeUs,
+            endUs = base.sourceTimeUs + 250_000,
+            amplitude = it.confidence.toFloat(),
+        )
+    }
+    return base.copy(
+        rms = spectrum?.rms ?: 0f,
+        spectrum = spectrum?.spectrum ?: emptyList(),
+        waveform = spectrum?.waveform ?: emptyList(),
+        notes = listOfNotNull(note),
+    )
+}
+
 class StudioModel @JvmOverloads constructor(
     app: Application,
     private val persistenceDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -64,6 +87,7 @@ class StudioModel @JvmOverloads constructor(
     val exports = ExportHub.jobs
     val tuner = MutableStateFlow<PitchReading?>(null)
     val tunerRunning = MutableStateFlow(false)
+    private val liveSpectrum = MutableStateFlow<SpectrumFrame?>(null)
     private var tunerGeneration = 0L
     private var microphone: MicrophoneCapture? = null
     private var microphoneJob: Job? = null
@@ -144,16 +168,25 @@ class StudioModel @JvmOverloads constructor(
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
-            combine(playback, state.map { it.displayScene() to it.notes }.distinctUntilChanged()) { p, s ->
-                    p to s
-                }
-                .collectLatest { (p, s) ->
-                    val f =
-                        withContext(Dispatchers.Default) {
-                            runCatching { audioFeatures?.at(p.sourceTimeUs, s.second) }.getOrNull()
-                                ?: FeatureFrame(p.sourceTimeUs, notes = s.second)
-                        }
-                    rendered.value = SceneEvaluator.evaluate(s.first, f, p.sourceTimeUs)
+            val microphone = combine(tuner, tunerRunning, liveSpectrum) {
+                reading, running, spectrum -> Triple(reading, running, spectrum)
+            }
+            combine(
+                playback,
+                state.map { it.displayScene() to it.notes }.distinctUntilChanged(),
+                microphone,
+            ) { player, snapshot, mic -> Triple(player, snapshot, mic) }
+                .collectLatest { (player, snapshot, mic) ->
+                    val frame = withContext(Dispatchers.Default) {
+                        val decoded = runCatching {
+                            audioFeatures?.at(player.sourceTimeUs, snapshot.second)
+                        }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = snapshot.second)
+                        if (mic.second) micVisualFeatures(decoded, mic.first, mic.third)
+                        else decoded
+                    }
+                    rendered.value = SceneEvaluator.evaluate(
+                        snapshot.first, frame, player.sourceTimeUs,
+                    )
                 }
         }
         viewModelScope.launch {
@@ -345,7 +378,6 @@ class StudioModel @JvmOverloads constructor(
 
     /** Library selection creates a listening queue; Queue selection preserves its order. */
     fun select(source: SourceRef, startPlayback: Boolean = true, fromLibrary: Boolean = false) {
-        stopTuner()
         val preparation = preanalysisJob
         preparation?.cancel()
         val previous = trackJob
@@ -461,18 +493,28 @@ class StudioModel @JvmOverloads constructor(
     fun startTuner(a4Hz: Double = 440.0) {
         require(a4Hz in 400.0..480.0)
         stopTuner()
-        player.pause()
+        // Monitoring room audio must not pause or change music playback.
         val capture = MicrophoneCapture(context())
         microphone = capture
         val generation = ++tunerGeneration
         tunerRunning.value = true
         microphoneJob = viewModelScope.launch {
             try {
-                capture.run(a4Hz) { reading ->
-                    withContext(Dispatchers.Main.immediate) {
-                        if (generation == tunerGeneration) tuner.value = reading
-                    }
-                }
+                val fft = AveeSpectrumAnalyzer()
+                capture.run(
+                    a4Hz,
+                    onPitch = { reading ->
+                        withContext(Dispatchers.Main.immediate) {
+                            if (generation == tunerGeneration) tuner.value = reading
+                        }
+                    },
+                    onSamples = { pcm ->
+                        val spectrum = fft.analyze(pcm, 22050)
+                        withContext(Dispatchers.Main.immediate) {
+                            if (generation == tunerGeneration) liveSpectrum.value = spectrum
+                        }
+                    },
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -481,6 +523,8 @@ class StudioModel @JvmOverloads constructor(
                 capture.close()
                 if (generation == tunerGeneration) {
                     tunerRunning.value = false
+                    liveSpectrum.value = null
+                    tuner.value = null
                     microphone = null
                     microphoneJob = null
                 }
@@ -496,10 +540,10 @@ class StudioModel @JvmOverloads constructor(
         microphone = null
         tunerRunning.value = false
         tuner.value = null
+        liveSpectrum.value = null
     }
 
     fun playPause() {
-        stopTuner()
         val p = playback.value
         if (p.isPlaying) player.pause()
         else if (p.sourceUri == null) mutable.value.project?.let { select(it.source, true) }

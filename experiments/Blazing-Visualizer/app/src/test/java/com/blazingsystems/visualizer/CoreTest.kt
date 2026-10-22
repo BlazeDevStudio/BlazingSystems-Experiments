@@ -165,6 +165,23 @@ class CoreTest {
     }
 
     @Test
+    fun liveMicrophoneFramesDriveMainVisualizerWithoutMutatingTrackNotes() {
+        val fileNotes = listOf(note)
+        val original = FeatureFrame(42, rms = .2f, notes = fileNotes)
+        val mic = com.blazingsystems.visualizer.tuning.PitchReading(440.0, 69, 0.0, .95)
+        val wave = com.blazingsystems.visualizer.avee.SpectrumFrame(
+            .7f, listOf(.1f, .9f), listOf(0f, .3f),
+        )
+        val live = com.blazingsystems.visualizer.ui.micVisualFeatures(original, mic, wave)
+        assertEquals(69, live.notes.single().pitch)
+        assertEquals(.7f, live.rms, .0001f)
+        assertEquals(listOf(.1f, .9f), live.spectrum)
+        assertEquals(fileNotes, original.notes)
+        val silence = com.blazingsystems.visualizer.ui.micVisualFeatures(original, null, wave)
+        assertTrue(silence.notes.isEmpty())
+    }
+
+    @Test
     fun spectrumTracksKnownTone() {
         val pcm = FloatArray(2048) { sin(2 * PI * 441 * it / 22050).toFloat() }
         val result = AveeSpectrumAnalyzer().analyze(pcm, 22050)
