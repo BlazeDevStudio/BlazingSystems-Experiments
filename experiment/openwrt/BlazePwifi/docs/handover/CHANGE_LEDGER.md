@@ -2987,3 +2987,12 @@
 - Rollback: discard unmerged branch. No physical device involved. Missing independently protected witness, signer, reversible v1 migration and real hardware durability, P0 #31/#32/#43/#34 remain open.
 - NEXT ACTION: exact-head full GitHub Actions validation, review diff, sync final handovers before safe dev merge.
 
+
+
+## 2026-10-23 RENT-20261023-V2-FLOOR performance review
+
+- Status: untested optimization; priority P0 synthetic v2 rental authority only.
+- Commit c9dbb0f483850c55a84b657b38560ea9e325d76e replaces per-receipt linear device scan with validated lease-index map; no change to rootfs, paid admission or customer state.
+- Verified preoptimization RENT-0725 step green in exact Full #39859912528 at cbf31316. Whole full matrix pending at this checkpoint; new optimized head untested until fresh CI.
+- NEXT: exact-head Full mandatory green, then guarded dev branch merge if review remains bounded. P0 #31/#32/#43/#34 all open.
+
