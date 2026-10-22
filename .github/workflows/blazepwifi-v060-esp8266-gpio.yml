@@ -1,0 +1,34 @@
+name: BlazePwifi ESP8266 Coin GPIO Safety
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_esp8266_gpio_safety.py'
+      - '.github/workflows/blazepwifi-v060-esp8266-gpio.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_esp8266_gpio_safety.py'
+      - '.github/workflows/blazepwifi-v060-esp8266-gpio.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esp8266-gpio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-mcu-pin-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile GPIO policy and assert real ESP8266 coin-controller integration
+        run: python3 -m unittest -v experiment/openwrt/BlazePwifi/tests/v060_esp8266_gpio_safety.py
+      - name: Ensure ESP32 and monetary authority are outside this hardware change
+        run: |
+          git diff --check
+          echo "ESP8266 GPIO policy simulation ONLY; no device wiring or actual paid coin test"
