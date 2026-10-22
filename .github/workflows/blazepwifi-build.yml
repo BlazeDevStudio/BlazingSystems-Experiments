@@ -79,6 +79,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/config.sh
       - name: Template gallery validation
         run: sh experiment/openwrt/BlazePwifi/tests/template_gallery.sh
+      - name: ESP8266 safe coin-controller GPIO and relay boot boundary
+        run: python3 -m unittest -v experiment/openwrt/BlazePwifi/tests/v060_esp8266_gpio_safety.py
       - name: Controller protocol parity
         run: sh experiment/openwrt/BlazePwifi/tests/controllers.sh
       - name: Verify Vendo firmware source bundles include their build dependencies
