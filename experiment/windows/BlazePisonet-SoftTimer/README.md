@@ -1,3 +1,21 @@
+## Exact USB-RS232 identity safety (development fix)
+
+**Exact Device** is an identity-only binding, not a preferred COM-number mode. If the
+bound adapter is removed or replaced, SoftTimer must remain disconnected rather
+than falling back to the last-used COM port (which Windows may assign to another
+device). The port may change freely when Windows reports the same unambiguous
+PnP identity, or a **unique stable USB serial with matching VID/PID**.
+
+Adapters with no Windows PnP identity cannot be bound in Exact Device mode. Use
+the explicitly selectable **Manual COM**, **Any Available**, or **Legacy COM1**
+mode if you deliberately need port-only behavior. A USB location-instance suffix
+containing `&` is not treated as a stable USB serial number.
+
+The compiled Windows EXE runs synthetic identity/ambiguity/legacy-mode
+regressions with `--verify-serial-exact-binding` (no hardware access or payment).
+This protects selection logic only; real adapter unplug/replug, DSR/RTS electrical
+behavior and coin pulse acceptance still require physical testing.
+
 # BlazePisonet SoftTimer
 
 **BlazePisonet SoftTimer** is a clean-room Windows Pisonet timer and kiosk controller inspired by the useful operating principles of legacy ASApp-style timer software, rebuilt for the Blaze ecosystem.

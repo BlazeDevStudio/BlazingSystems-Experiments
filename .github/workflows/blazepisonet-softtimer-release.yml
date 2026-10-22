@@ -152,6 +152,15 @@ jobs:
           dotnet run --project "$env:PROJECT_DIR/tests/V2PublicAckProbe/V2PublicAckProbe.csproj" -c Release -- (Resolve-Path $binary).Path
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Verify exact USB-RS232 identity binding fails closed (compiled WinExe)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $binary=Join-Path $env:PROJECT_DIR 'src/BlazePisonet.SoftTimer/bin/Release/net8.0-windows/win-x64/BlazePisonet.SoftTimer.exe'
+          if (-not (Test-Path $binary)) { throw 'Compiled SoftTimer EXE missing for serial identity test' }
+          $p=Start-Process -FilePath (Resolve-Path $binary).Path -ArgumentList @('--verify-serial-exact-binding') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Exact USB-RS232 binding regression failed: $($p.ExitCode)" }
+
       - name: Verify monotonic billing timer (60-minute simulation)
         shell: pwsh
         run: |

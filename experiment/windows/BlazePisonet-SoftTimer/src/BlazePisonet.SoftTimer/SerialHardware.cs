@@ -82,23 +82,51 @@ public static class SerialDiscovery
 
     private static SerialDeviceInfo? ResolveExact(AppConfig config, IReadOnlyList<SerialDeviceInfo> devices)
     {
+        // Exact mode must NEVER become manual COM mode when an adapter is removed.
+        // Windows can reassign the last-known COM number to unrelated hardware.
         if (!string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
         {
-            var exact = devices.FirstOrDefault(d => d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase));
-            if (exact is not null) return exact;
+            var matches = devices.Where(d =>
+                !string.IsNullOrWhiteSpace(d.PnpDeviceId) &&
+                d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase) &&
+                MatchesPinnedVidPid(config, d)).Take(2).ToArray();
+            if (matches.Length == 1) return matches[0];
+            if (matches.Length > 1) return null; // Conflicting PnP enumeration.
         }
-        if (!string.IsNullOrWhiteSpace(config.PreferredUsbSerial))
+
+        // USB adapters with a genuine stable serial can move between ports.
+        // Require VID + PID to avoid mistaking an identically numbered adapter
+        // of a different family for the operator's selected coin interface.
+        if (!string.IsNullOrWhiteSpace(config.PreferredUsbSerial) &&
+            !string.IsNullOrWhiteSpace(config.PreferredVid) &&
+            !string.IsNullOrWhiteSpace(config.PreferredPid))
         {
-            var serial = devices.FirstOrDefault(d => d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase)
-                && (string.IsNullOrWhiteSpace(config.PreferredVid) || d.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase))
-                && (string.IsNullOrWhiteSpace(config.PreferredPid) || d.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase)));
-            if (serial is not null) return serial;
+            var matches = devices.Where(d =>
+                d.IsUsb &&
+                !string.IsNullOrWhiteSpace(d.UsbSerial) &&
+                d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase) &&
+                MatchesPinnedVidPid(config, d)).Take(2).ToArray();
+            if (matches.Length == 1) return matches[0];
         }
-        return devices.FirstOrDefault(d => d.PortName.Equals(config.LastKnownComPort, StringComparison.OrdinalIgnoreCase));
+
+        // Missing or ambiguous hardware identity: disconnect until explicitly rebound.
+        // ManualPort, AnyAvailable and LegacyCom1 still offer deliberate port-only modes.
+        return null;
     }
+
+    private static bool MatchesPinnedVidPid(AppConfig config, SerialDeviceInfo device) =>
+        (string.IsNullOrWhiteSpace(config.PreferredVid) ||
+         device.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(config.PreferredPid) ||
+         device.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase));
 
     public static void BindExactDevice(AppConfig config, SerialDeviceInfo device)
     {
+        if (string.IsNullOrWhiteSpace(device.PnpDeviceId))
+            throw new InvalidOperationException(
+                "Windows did not provide a PnP hardware identity for this serial port. " +
+                "Choose Manual COM instead, or reinstall the adapter driver and rescan.");
+
         config.SerialSelection = SerialSelectionMode.ExactDevice;
         config.PreferredPnpDeviceId = device.PnpDeviceId;
         config.PreferredVid = device.Vid;
@@ -113,7 +141,71 @@ public static class SerialDiscovery
     {
         if (!pnp.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase)) return string.Empty;
         var parts = pnp.Split('\\', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 3 ? parts[^1].Split('&')[0] : string.Empty;
+        if (parts.Length < 3) return string.Empty;
+        // A location-generated instance (e.g. 5&26ABCDEF&0&2) is NOT a
+        // stable USB serial and must never be used to match a different port.
+        return parts[^1].Contains('&') ? string.Empty : parts[^1];
+    }
+
+    // Runs inside the actual compiled Windows EXE before UI/mutex/device access.
+    // Synthetic enumeration only: never opens a COM port or credits time.
+    internal static int VerifyExactBinding()
+    {
+        const string pinnedPnp = @"USB\VID_1A86&PID_7523\REAL123";
+        var bound = new SerialDeviceInfo("COM7", "Bound RS232 adapter", "Vendor", pinnedPnp,
+            "1A86", "7523", "REAL123");
+        var other = new SerialDeviceInfo("COM7", "Unrelated adapter", "Vendor",
+            @"USB\VID_0403&PID_6001\OTHER456", "0403", "6001", "OTHER456");
+        var moved = bound with { PortName = "COM9" };
+        var config = new AppConfig
+        {
+            SerialSelection = SerialSelectionMode.ExactDevice,
+            PreferredPnpDeviceId = pinnedPnp,
+            PreferredVid = "1A86",
+            PreferredPid = "7523",
+            PreferredUsbSerial = "REAL123",
+            LastKnownComPort = "COM7"
+        };
+
+        if (Resolve(config, [other]) is not null) return 101; // Previously accepted COM7.
+        if (Resolve(config, [other, moved]) != moved) return 102;
+        if (Resolve(config, [moved, moved with { PortName = "COM10" }]) is not null) return 103;
+
+        // PnP instance can change after a genuine adapter moves; stable serial,
+        // full matching VID/PID, and uniqueness are required for recovery.
+        var reborn = moved with
+        {
+            PnpDeviceId = @"USB\VID_1A86&PID_7523\REAL123NEW",
+            PortName = "COM11"
+        };
+        if (Resolve(config, [reborn]) != reborn) return 104;
+        if (Resolve(config, [reborn, reborn with { PortName = "COM12" }]) is not null) return 105;
+
+        var wrongFamily = reborn with { Vid = "0403", Pid = "6001" };
+        if (Resolve(config, [wrongFamily]) is not null) return 106;
+
+        config.PreferredPnpDeviceId = string.Empty;
+        config.PreferredUsbSerial = string.Empty;
+        if (Resolve(config, [other]) is not null) return 107; // No identity, no COM fallback.
+        try
+        {
+            BindExactDevice(config, other with { PnpDeviceId = string.Empty });
+            return 108; // Binding an identity-less port must be refused.
+        }
+        catch (InvalidOperationException) { }
+
+        config.SerialSelection = SerialSelectionMode.ManualPort;
+        config.ManualComPort = "COM7";
+        if (Resolve(config, [other]) != other) return 109; // Explicit legacy modes retained.
+        config.SerialSelection = SerialSelectionMode.AnyAvailable;
+        if (Resolve(config, [other]) != other) return 110;
+        config.SerialSelection = SerialSelectionMode.LegacyCom1;
+        if (Resolve(config, [other with { PortName = "COM1" }])?.PortName != "COM1") return 111;
+
+        if (ExtractUsbSerial(@"USB\VID_1A86&PID_7523\5&26ABCDEF&0&2") != string.Empty)
+            return 112; // USB location IDs cannot impersonate stable serials.
+        if (ExtractUsbSerial(pinnedPnp) != "REAL123") return 113;
+        return 0;
     }
 
     private static int PortNumber(string port)
@@ -168,8 +260,6 @@ public sealed class SerialHardware : IDisposable
                 _port = port;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
-                if (config.SerialSelection == SerialSelectionMode.ExactDevice && string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
-                    SerialDiscovery.BindExactDevice(config, selected);
                 _lastCoinActive = IsSignalActive(config.CoinInputSignal, config.CoinInputActiveHigh);
                 ConnectionChanged?.Invoke($"Connected to {selected.Display}");
                 return true;

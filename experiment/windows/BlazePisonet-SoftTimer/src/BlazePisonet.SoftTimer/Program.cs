@@ -8,6 +8,8 @@ internal static class Program
         // Safe headless regression mode. Runs before mutex/UI/setup/device access.
         if (args.Any(a => string.Equals(a, "--verify-timer-math", StringComparison.OrdinalIgnoreCase)))
             return TimerEngine.VerifyTimerMath();
+        if (args.Any(a => string.Equals(a, "--verify-serial-exact-binding", StringComparison.OrdinalIgnoreCase)))
+            return SerialDiscovery.VerifyExactBinding();
         if (args.Any(a => string.Equals(a, "--verify-config-corruption-guard", StringComparison.OrdinalIgnoreCase)))
             return Storage.VerifyConfigCorruptionGuard();
         if (args.Any(a => string.Equals(a, "--verify-state-corruption-guard", StringComparison.OrdinalIgnoreCase)))
