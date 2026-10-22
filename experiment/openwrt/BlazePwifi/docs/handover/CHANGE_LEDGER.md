@@ -1,3 +1,10 @@
+## 2026-10-22 — ESP8266-GPIO-20261022 — focused/ESP8266_board_verified, full_matrix_pending
+
+- Branch fix/esp8266-coin-gpio-safety-20261022. Prior RED #39743080798 FAILED intentionally; header 592379c0f20f317c7bda0befccc4a58cb29ccf75 + firmware 73b4665c9d2636d75633ef13e90cf7ac83faa473. Focused real-sketch and g++ gate #39743513997 completed SUCCESS at source SHA 73b4665c. Full #39743514401 ESP8266 Arduino-CLI NodeMCU **job SUCCESS** on same source; artifact 12410078591, uploaded ZIP SHA256 2f568acd36cdb07ae42c6db14bab48ce8de53a74c3417ee8c263ee4f7003e06e, upload verified. Full validate job FAILED mandatory handover freshness before synchronized docs, so do not call overall Full green.
+- Operator-only wiring and physical-power acceptance notes README commit af05f16cacf6a61cab875e0ff9b6135993ee1eff; full mandatory independent C++ GPIO test workflow line 1e03ee938e88fb993cae7759fd2e90bf69f2a54d. All new source follows single ESP8266 hardware GPIO and coin intake boundary, no ESP32/rental/admin/accounting changed.
+- Status focused_validated+ESP8266_board_compiled/full_matrix_pending. New documentation checkpoint is part of CI; next source tree must be tested on its exact SHA, not old runs. Remaining hardware physical testing, wiring, relay polarity, pulse stability and actual electrical safety unverified; customer deployment and production release NOT authorized.
+- NEXT: create DRAFT PR targeting current development, examine exact head Full and focused jobs, fix any genuine regression and maintain three canonical handovers; no parent branch overwrite or tenant state mutation.
+
 ## 2026-10-22 — ESP8266-GPIO-20261022 — committed_untested / P1 ESP8266 coin-controller GPIO
 
 - Isolated fix/esp8266-coin-gpio-safety-20261022, base 72987a376d66b2a9027a0685e9681fc5cd45b674. RED #39743080798 FAIL (two expected failures in unmodified sketch), portable test 7dbd8d199429a32c8715c2966684b37d8bb22ee4 and focused workflow 1055328449043de3389ddd2c09ce505f4cb09fb4.
