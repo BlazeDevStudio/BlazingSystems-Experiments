@@ -2977,3 +2977,13 @@
 - **Rollback:** delete isolated feature branch; not customer-affecting. No production or signing decision.
 - **NEXT ACTION:** confirm genuine RED in `tests/v060_rental_v2_atomic_bridge.py` on Actions from exact branch; implement invariant in `tests/fixtures/rental_v2_atomic.py`, then full exact-HEAD green and reconcile all handovers.
 
+
+
+## 2026-10-23 — RENT-20261023-V2-FLOOR / RED and candidate guard
+
+- Status: verified RED, fix committed but exact-head GREEN pending. Scope P0 #32, lab-only rental authority.
+- Branch: fix/rent-20261023-v2-lease-receipt-floor; PR #148; base 9c6c673a. RED #39859462448 at b821e274, validate job #120106170564 step #52: rc=0 with duplicate 125856 against regressed lease=0 instead of expected reject.
+- Source: synthetic test commits 3c87661, a4b0b152; fixture guard commit 845f8be1. No money writer or customer state changes.
+- Rollback: discard unmerged branch. No physical device involved. Missing independently protected witness, signer, reversible v1 migration and real hardware durability, P0 #31/#32/#43/#34 remain open.
+- NEXT ACTION: exact-head full GitHub Actions validation, review diff, sync final handovers before safe dev merge.
+
