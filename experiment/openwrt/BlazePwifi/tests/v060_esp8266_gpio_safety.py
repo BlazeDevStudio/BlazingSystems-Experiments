@@ -77,7 +77,7 @@ class Esp8266PinSafety(unittest.TestCase):
     def test_output_latch_inactive_before_enabling_output_mode(self):
         # Source-order safety proof only, NOT an oscilloscope/relay-polarity test.
         match = re.search(
-            r"void configureRuntimePins\\([^)]*\\)\\s*\\{(.*?)\\n\\}",
+            r"void configureRuntimePins\([^)]*\)\s*\{(.*?)\n\}",
             self.src, re.DOTALL,
         )
         self.assertIsNotNone(match, "GPIO reconfiguration function not found")
