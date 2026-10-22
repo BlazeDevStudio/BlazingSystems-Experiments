@@ -289,7 +289,7 @@ void applyOutputs(){
   // Relay eligibility must match the recording path, not just insertMode.
   bool accepting=bp_esp8266_coin_can_accept(
       controllerEnabled,coinEnabled,relayEnabled,insertMode,fsReady,
-      pendingReady,activeTarget.length()!=0,pendingTarget==activeTarget,pendingPulses);
+      pendingReady,bp_pending_sequence_hex_token(activeTarget.c_str(),8,32),pendingTarget==activeTarget,pendingPulses);
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -399,7 +399,7 @@ void loop(){
   bool active=runCoinActiveLow?!raw:raw;
   if(bp_esp8266_coin_can_accept(
       controllerEnabled,coinEnabled,relayEnabled,insertMode,fsReady,
-      pendingReady,activeTarget.length()!=0,pendingTarget==activeTarget,pendingPulses) &&
+      pendingReady,bp_pending_sequence_hex_token(activeTarget.c_str(),8,32),pendingTarget==activeTarget,pendingPulses) &&
       active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){
       pendingNonce=freshNonce();
