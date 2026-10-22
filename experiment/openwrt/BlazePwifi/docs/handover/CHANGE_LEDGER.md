@@ -1,3 +1,10 @@
+## 2026-10-22 — ESP8266-GPIO-20261022 — committed_untested / P1 ESP8266 coin-controller GPIO
+
+- Isolated fix/esp8266-coin-gpio-safety-20261022, base 72987a376d66b2a9027a0685e9681fc5cd45b674. RED #39743080798 FAIL (two expected failures in unmodified sketch), portable test 7dbd8d199429a32c8715c2966684b37d8bb22ee4 and focused workflow 1055328449043de3389ddd2c09ce505f4cb09fb4.
+- Same-folder header 592379c0f20f317c7bda0befccc4a58cb29ccf75 enforces GPIO4/5/12/13/14 distinct pins. Header-only interim CI #39743321393 FAILED expected absent sketch integration. Sketch commit 73b4665c9d2636d75633ef13e90cf7ac83faa473 protects unsafe persisted GPIO boot, rejects remotely supplied boot/flash GPIO and overlapping pins, prevents invalid HTTP setup save from EEPROM writes, and gates off disabled controller coin intake. Shared paid journal/HMAC unchanged.
+- First patched focused #39743513997 and full #39743514401 were queued at checkpoint; no compiler or hardware pass yet. Rollback discard branch. Existing active rental P0 #32 unaffected and no physical device or production release touched.
+- NEXT: verify focused g++ and true Arduino ESP8266 board compile on exact final docs HEAD; capture failing step if any, then draft PR only. Production v0.6.0 NO-GO.
+
 ## 2026-10-22 — ESP8266-GPIO-20261022 — expected_red_validated
 
 - From current development base `72987a376d66b2a9027a0685e9681fc5cd45b674`, isolated branch `fix/esp8266-coin-gpio-safety-20261022`; canonical pre-code handovers committed before source. Created fail-first `tests/v060_esp8266_gpio_safety.py` `7dbd8d199429a32c8715c2966684b37d8bb22ee4` and isolated focused CI `1055328449043de3389ddd2c09ce505f4cb09fb4`.
