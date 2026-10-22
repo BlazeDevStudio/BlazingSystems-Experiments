@@ -169,6 +169,8 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh
       - name: RENT-20261022-HASH reject unavailable or malformed rental paid receipt digest
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_digest_guard.sh
+      - name: RENT-20261022-FLOOR refuse stale paid lease with retained signed receipt
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_replay_floor_guard.sh
       - name: Refuse altered-pulse and cross-device rental coin receipt duplicate ACKs
         run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_identity.sh
       - name: PAY-0740 reject unrelated malformed or duplicate v1 member and rental receipt corpus before ACK
