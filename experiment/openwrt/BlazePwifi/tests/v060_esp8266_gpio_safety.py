@@ -100,6 +100,63 @@ class Esp8266PinSafety(unittest.TestCase):
                 f"{signal}: inactive GPIO latch must be selected before OUTPUT",
             )
 
+    def test_energized_relay_requires_creditable_coin_target_and_capacity(self):
+        # P0 source-boundary regression; no relay board or coin hardware here.
+        # Coin intake already checks target/cap, but the OUTPUT relay previously
+        # did not, so an acceptor could swallow a coin that cannot be journaled.
+        text = self.src
+        self.assertIn('#include "v060_esp8266_coin_acceptance.h"', text)
+        match = re.search(r"void applyOutputs\\(\\)\\s*\\{(.*?)\\n\\}", text, re.DOTALL)
+        self.assertIsNotNone(match, "physical relay update not found")
+        body = match.group(1)
+        self.assertIn("bp_esp8266_coin_can_accept(", body)
+        for required in ("activeTarget.length()", "pendingTarget==activeTarget",
+                         "pendingPulses", "relayEnabled"):
+            self.assertIn(required, body, f"relay accepts without {required}")
+        # Before the next loop iteration or HTTP poll, shut the relay on the
+        # twentieth stored pulse. This cannot prove physical switching delay.
+        loop = text.split("void loop()", 1)[1]
+        stored = loop.split("pendingPulses++;", 1)[1].split("lastCoin=active;", 1)[0]
+        self.assertIn("applyOutputs();", stored, "relay cutoff cannot wait for the next poll")
+
+    def test_coin_relay_compiled_truth_table(self):
+        # Verify the EXACT standalone predicate included by the shipped .ino.
+        header = HEADER.parent / "v060_esp8266_coin_acceptance.h"
+        self.assertTrue(header.is_file(), "missing firmware-linked relay accounting gate")
+        code = r"""
+#include "v060_esp8266_coin_acceptance.h"
+#include <cassert>
+int main() {
+    auto can = [](bool controller, bool coin, bool relay, bool window,
+                  bool disk, bool queued, bool target, bool same, unsigned count) {
+        return bp_esp8266_coin_can_accept(controller,coin,relay,window,disk,
+                                           queued,target,same,count);
+    };
+    assert(can(true,true,true,true,true,false,true,true,0));
+    assert(can(true,true,true,true,true,false,true,true,1));
+    assert(can(true,true,true,true,true,false,true,true,19));
+    assert(!can(true,true,true,true,true,false,true,true,20)); // cannot save more
+    assert(!can(true,true,true,true,true,false,true,true,21));
+    assert(!can(true,true,true,true,true,false,false,true,0)); // no target nonce
+    assert(!can(true,true,true,true,true,false,false,false,3));
+    assert(!can(true,true,true,true,true,false,true,false,3)); // changed target
+    assert(!can(true,true,true,true,true,true,true,true,1));   // replay pending
+    assert(!can(true,true,true,true,false,false,true,true,0)); // flash unavailable
+    assert(!can(true,true,true,false,true,false,true,true,0)); // window expired
+    assert(!can(true,true,false,true,true,false,true,true,0));
+    assert(!can(true,false,true,true,true,false,true,true,0));
+    assert(!can(false,true,true,true,true,false,true,true,0));
+}
+"""
+        with tempfile.TemporaryDirectory(prefix="blaze-esp8266-relay-") as temp:
+            src = Path(temp) / "relay.cpp"
+            binary = Path(temp) / "relay"
+            src.write_text(code, encoding="utf-8")
+            subprocess.run(["g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+                            "-pedantic", "-I", str(header.parent), str(src),
+                            "-o", str(binary)], check=True, capture_output=True, text=True)
+            subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+
     def test_compiled_policy_blocks_boot_and_flash_gpios(self):
         self.assertTrue(HEADER.is_file(), "missing firmware-shipped safety header")
         with tempfile.TemporaryDirectory(prefix="blaze-esp8266-gpio-") as temp:
