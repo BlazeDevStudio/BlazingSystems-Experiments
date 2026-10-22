@@ -2966,3 +2966,14 @@
 - **Hazard:** account/lease authority still written independently from receipt. Marker is a halt, not atomic recovery. P0 #31/#32/#43/#34 and independent witness, signer, migration, physical acceptance, customer install remain BLOCKED. Code and source version unchanged; older alpha lab remains nonproduction.
 - **Rollback:** delete this isolated test/workflow/doc/branch; zero production state migration and no hardware effect.
 - **NEXT ACTION:** design/implement guarded single-authority rental lease+receipt transaction under protected monotonic witness, compatibility-safe v1 migration and owner physical evidence, using existing `tests/fixtures/rental_v2_atomic.py` only as a LAB model. Do not treat RED evidence workflow success as a production-green gate.
+
+
+## 2026-10-23 — RENT-20261023-V2-FLOOR / P0 #32 / fixture checkpoint
+
+- **Status:** in_progress / RED not verified yet; priority P0, synthetic lab only.
+- **Source and SHA:** `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` development base 9c6c673a; `tests/v060_rental_v2_atomic_bridge.py` commits 07a1a805 then corrective 3c87661; corrects escaped-literal test setup before CI, no runtime code changed.
+- **Hazard:** mixed v2 local authority: retained paid receipt vs lower materialized lease permits unjustified replay ACK unless rejected before derived projections. Whole-file rollback is separately blocked by absence of independent witness.
+- **Evidence:** Full development #39747466186 SUCCESS was only prior baseline. Test run not yet started / verified. No hardware acceptance or live state.
+- **Rollback:** delete isolated feature branch; not customer-affecting. No production or signing decision.
+- **NEXT ACTION:** confirm genuine RED in `tests/v060_rental_v2_atomic_bridge.py` on Actions from exact branch; implement invariant in `tests/fixtures/rental_v2_atomic.py`, then full exact-HEAD green and reconcile all handovers.
+
