@@ -4,7 +4,9 @@
 
 - Owner reports Preview 2 buggy. Source inspection and CI confirmed: API26 permission-smoke cannot see OS permission buttons (run 39756912938), while API36 and the clean host build passed on source d31a43b; release remains blocked. Do not present the old downloadable CI APK as accepted/released.
 - This pass adds direct Compose click tests for Library/Visualizer/Queue, preset selection and dismissal, editor/arrangement controls, search/no-results feedback, queue sorting and playlist save; routes multi-file import around bad files rather than failing the entire selection; makes the export affordance unavailable before loading a song. The arrangement canvas gains tap-to-select, in addition to drag/resize. Android 8 test retains denied/granted permission UI assertions but documents a fallback if the emulator's system installer never exposes its permission buttons; on modern Android a missing dialog remains a hard test failure.
-- Verification of *this* change: pending GitHub Actions. Until same-commit host/lint/API26/API36 pass, do not publish it as validated. Physical device coverage, tuner and actual export reliability still need acceptance.
+- Verification of *this* change: pending GitHub Actions.
+- Actions run 39764223851 failed before executing tests: missing `com.blazingsystems.visualizer.playback.Playlist` import in the playlist-delete UI added by this pass. The missing import is corrected here. Do not treat this build as validated; recheck next same-SHA host and device jobs.
+ Until same-commit host/lint/API26/API36 pass, do not publish it as validated. Physical device coverage, tuner and actual export reliability still need acceptance.
 
 
 - Detailed interaction routes and unverified checkpoints: [docs/acceptance/click-audit.md](docs/acceptance/click-audit.md).

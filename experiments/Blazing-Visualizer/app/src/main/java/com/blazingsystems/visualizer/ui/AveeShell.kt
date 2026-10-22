@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
 import com.blazingsystems.visualizer.project.*
+import com.blazingsystems.visualizer.playback.Playlist
 import com.blazingsystems.visualizer.render.*
 import java.io.File
 import java.util.UUID

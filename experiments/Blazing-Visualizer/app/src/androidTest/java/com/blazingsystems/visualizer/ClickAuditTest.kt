@@ -72,6 +72,9 @@ class ClickAuditTest {
         val bad = Uri.fromFile(File(rule.activity.filesDir, "missing-${UUID.randomUUID()}.wav"))
         rule.runOnUiThread { model().importTracks(listOf(source, bad)) }
         rule.waitUntil(20_000) { model().state.value.library.any { it.uri == source.toString() } }
+        // An inaccessible second file may show an actionable alert. Dismiss
+        // it before auditing the still-imported good file's navigation.
+        rule.runOnUiThread { model().dismissError() }
         rule.onNodeWithText("Library", useUnmergedTree = true).performClick()
         rule.onNodeWithText("Your library").assertIsDisplayed()
         rule.onNodeWithTag("track-search").performTextInput("no-song-matches-this-search")
