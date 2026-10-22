@@ -308,10 +308,10 @@ fun AveeShell(model: StudioModel) {
                                 shape = MaterialTheme.shapes.large,
                             ) {
                                 Row {
-                                    IconButton(onClick = { panel = "presets" }) {
+                                    IconButton(onClick = { panel = "presets" }, enabled = s.ready) {
                                         Icon(Icons.Rounded.Dashboard, "Choose visualizer")
                                     }
-                                    IconButton(onClick = { panel = "editor" }) {
+                                    IconButton(onClick = { panel = "editor" }, enabled = s.ready) {
                                         Icon(Icons.Rounded.Edit, "Edit visualizer")
                                     }
                                     IconButton(onClick = { panel = "export" }) {

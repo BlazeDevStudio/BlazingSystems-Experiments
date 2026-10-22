@@ -42,6 +42,7 @@ class PlayerController(context: Context) : AutoCloseable {
     private var pendingAutoPlay = false
     private var restoreOnly = false
     private var desiredSpeed = 1f
+    private var practiceSourceUri: String? = null
     private var closed = false
     private val future =
         MediaController.Builder(
@@ -55,7 +56,8 @@ class PlayerController(context: Context) : AutoCloseable {
                 if (closed) return
                 controller?.let { player ->
                     val current = player.currentPosition.coerceAtLeast(0) * 1000
-                    if (player.isPlaying)
+                    if (player.isPlaying && (practiceSourceUri == null ||
+                        practiceSourceUri == player.currentMediaItem?.mediaId))
                         loop?.let { range ->
                             val target = range.rewindIfOutside(current)
                             if (current != target) player.seekTo(target / 1000)
@@ -82,10 +84,17 @@ class PlayerController(context: Context) : AutoCloseable {
                                     },
                                 )
                             }
-                        if (pending != null && (!restoreOnly || controller!!.mediaItemCount == 0))
+                        val adoptingLive = restoreOnly && controller!!.mediaItemCount > 0
+                        if (pending != null && !adoptingLive)
                             applyPending()
-                        controller?.playbackParameters = PlaybackParameters(desiredSpeed, 1f)
-                        loop?.let { controller?.seekTo(it.startUs / 1000) }
+                        if (adoptingLive) {
+                            desiredSpeed = controller!!.playbackParameters.speed
+                            if (practiceSourceUri != controller!!.currentMediaItem?.mediaId) loop = null
+                        } else {
+                            controller?.playbackParameters = PlaybackParameters(desiredSpeed, 1f)
+                            if (practiceSourceUri == null || practiceSourceUri == controller?.currentMediaItem?.mediaId)
+                                loop?.let { controller?.seekTo(it.startUs / 1000) }
+                        }
                         update()
                         handler.post(ticker)
                     }
@@ -248,7 +257,22 @@ class PlayerController(context: Context) : AutoCloseable {
     fun setLoop(start: Long?, end: Long?) {
         require((start == null) == (end == null))
         loop = if (start == null) null else LoopRange(start, end!!)
+        practiceSourceUri = controller?.currentMediaItem?.mediaId ?: pending?.getOrNull(pendingIndex)?.uri
         loop?.let { seekTo(it.startUs) }
+    }
+
+    /** Restored settings are bound to their track and do not rewind a live session. */
+    fun restorePractice(sourceUri: String, speed: Float, start: Long?, end: Long?, rewind: Boolean = false) {
+        require(speed.isFinite() && speed in .5f..1.5f)
+        require((start == null) == (end == null))
+        val range = if (start == null) null else LoopRange(start, end!!)
+        if (controller != null && controller?.currentMediaItem?.mediaId != sourceUri) return
+        practiceSourceUri = sourceUri
+        desiredSpeed = speed
+        loop = range
+        controller?.playbackParameters = PlaybackParameters(speed, 1f)
+        if (rewind && range != null) seekTo(range.startUs)
+        update()
     }
 
     private fun update() {

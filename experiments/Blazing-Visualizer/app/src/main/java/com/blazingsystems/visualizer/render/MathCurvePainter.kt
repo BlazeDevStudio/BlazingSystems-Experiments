@@ -75,7 +75,8 @@ class MathCurvePainter {
             c.drawText(formula,0f,height*.36f,paint)
             c.drawText("f(m) = 440 × 2^((m−69)/12); θ is visual phase",0f,height*.42f,paint)
             paint.textSize *= .8f
-            c.drawText("r: "+ratios.take(6).joinToString(" : "){"%.3f".format(java.util.Locale.US,it)},0f,height*.47f,paint)
+            val label = if (ratios.size > 6) "r (first 6/${ratios.size}): " else "r: "
+            c.drawText(label+ratios.take(6).joinToString(" : "){"%.3f".format(java.util.Locale.US,it)},0f,height*.47f,paint)
         }
     }
 }

@@ -118,40 +118,4 @@ class PlayerAndUiTest {
         }
     }
 
-    @Test
-    fun coldQueueRestorationKeepsPendingLoopAndReorderingKeepsPosition() {
-        val inst = InstrumentationRegistry.getInstrumentation()
-        val tracks = (0..3).map { index ->
-            val f = File(rule.activity.filesDir, "queue-$index.wav")
-            inst.context.assets.open("synthetic.wav").use { input -> f.outputStream().use(input::copyTo) }
-            SourceRef(Uri.fromFile(f).toString(), title = "Track $index")
-        }
-        rule.waitUntil(15_000) { model().playback.value.connected }
-        rule.runOnUiThread { model().player.clearQueue() }
-        lateinit var controller: PlayerController
-        rule.runOnUiThread {
-            controller = PlayerController(rule.activity)
-            controller.restoreQueue(tracks.take(3), 1)
-            controller.setPracticeSpeed(.75f)
-            controller.setLoop(300_000, 700_000)
-        }
-        try {
-            rule.waitUntil(15_000) {
-                controller.state.value.connected && controller.state.value.sourceUri == tracks[1].uri &&
-                    controller.state.value.durationUs > 0
-            }
-            assertFalse(controller.state.value.isPlaying)
-            assertEquals(.75f, controller.state.value.speed, .001f)
-            assertTrue(controller.state.value.sourceTimeUs in 280_000..350_000)
-            rule.runOnUiThread {
-                controller.seekTo(500_000)
-                controller.moveQueueItem(1, 2)
-                controller.insertQueueItem(tracks[3], 1)
-            }
-            rule.waitUntil(5_000) { controller.queue.value.map { it.uri } ==
-                listOf(tracks[0], tracks[3], tracks[2], tracks[1]).map { it.uri } }
-            assertEquals(tracks[1].uri, controller.state.value.sourceUri)
-            assertTrue(controller.state.value.sourceTimeUs in 450_000..550_000)
-        } finally { rule.runOnUiThread { controller.clearQueue(); controller.close() } }
-    }
 }

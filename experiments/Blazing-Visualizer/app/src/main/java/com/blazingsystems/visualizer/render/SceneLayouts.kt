@@ -7,7 +7,7 @@ import kotlinx.serialization.json.*
 /** Normalized positions, with uniform physical scale when fitting to a new aspect. */
 object SceneLayouts {
     fun fit(scene: Scene, targetAspect: Float): Scene {
-        require(targetAspect.isFinite() && targetAspect > 0 && scene.designAspect > 0)
+        require(targetAspect.isFinite() && targetAspect > 0 && scene.designAspect.isFinite() && scene.designAspect > 0)
         val sx = min(1f, scene.designAspect / targetAspect)
         val sy = min(1f, targetAspect / scene.designAspect)
         return scene.copy(designAspect = targetAspect, layers = scene.layers.map { layer ->
@@ -33,11 +33,11 @@ object SceneLayouts {
         val a = Math.toRadians(t.rotation.toDouble())
         val dx = (x - t.x) * aspect; val dy = y - t.y
         val rx = cos(a)*dx + sin(a)*dy; val ry = -sin(a)*dx + cos(a)*dy
-        val textScale = if (layer.type == ElementType.TEXT) {
-            val font = layer.properties["fontSize"]?.jsonPrimitive?.content?.toFloatOrNull() ?: 24f
+        if (layer.type == ElementType.TEXT) {
+            val font = (layer.properties["fontSize"]?.jsonPrimitive?.content?.toFloatOrNull() ?: 24f).coerceIn(4f,160f)
             val count = layer.properties["text"]?.jsonPrimitive?.content?.length ?: 7
-            Pair((count*font*.65f/420f).coerceAtMost(1f), font*aspect*1.4f/420f)
-        } else Pair(1f, 1f)
-        abs(rx) <= t.width*aspect*textScale.first/2 && abs(ry) <= t.height*textScale.second/2
+            val scale = min(t.width*aspect, t.height)*font/420f
+            abs(rx) <= count*.65f*scale/2 && abs(ry) <= scale*1.4f/2
+        } else abs(rx) <= t.width*aspect/2 && abs(ry) <= t.height/2
     }?.id
 }

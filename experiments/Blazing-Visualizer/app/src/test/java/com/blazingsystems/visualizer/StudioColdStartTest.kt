@@ -62,7 +62,7 @@ class StudioColdStartTest {
         assertEquals("saved-list", repository.loadPlaylists().single().id)
         assertEquals(listOf(preset), PresetStore(File(app.filesDir,"presets.json")).load())
         pumpUntil { model.state.value.library.isNotEmpty() }
-        assertEquals(.6f, model.state.value.scene.designAspect, .0001f)
+        assertEquals(.6f, model.state.value.displayScene().designAspect, .0001f)
     }
 
     @Test fun choosingPresetAfterMeasurementKeepsTheRealPreviewAspect() {
@@ -70,7 +70,7 @@ class StudioColdStartTest {
         pumpUntil { model.state.value.library.isNotEmpty() }
         model.setPreviewAspect(.6f)
         model.setScene(BuiltinScenes.noteWheel())
-        assertEquals(.6f, model.state.value.scene.designAspect, .0001f)
+        assertEquals(.6f, model.state.value.displayScene().designAspect, .0001f)
     }
 
     @Test fun pendingChangesForAStillSaveWhenBIsSelectedBeforeDiskCatchesUp() {

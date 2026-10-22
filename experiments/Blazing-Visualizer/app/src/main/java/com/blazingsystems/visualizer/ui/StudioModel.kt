@@ -38,10 +38,12 @@ data class StudioState(
     val preparations: Map<String, String> = emptyMap(),
     val layoutEditing: Boolean = false,
     val editingExportLayout: Boolean = false,
+    val previewAspect: Float = 1f,
+    val ready: Boolean = false,
 ) {
     fun displayScene(): Scene {
         val display = if (editingExportLayout && project != null)
-            SceneLayouts.forExport(project.copy(scene = scene)) else scene
+            SceneLayouts.forExport(project.copy(scene = scene)) else SceneLayouts.fit(scene, previewAspect)
         return if (layoutEditing) display.copy(animationIntensity = 0f, pianoIntensity = 0f) else display
     }
 }
@@ -71,7 +73,9 @@ class StudioModel @JvmOverloads constructor(
     private var audioFeatures: AudioFeatures? = null
     private var previewLease: DecodedAudioLease? = null
     private var rawNotes: List<NoteEvent> = emptyList()
-    private val saves = Channel<StudioState>(Channel.CONFLATED)
+    // A snapshot for track B must never replace pending edits for track A.
+    private val saves = Channel<StudioState>(Channel.UNLIMITED)
+    private val persistenceScope = CoroutineScope(SupervisorJob() + persistenceDispatcher)
     private val audio = AudioRepository(app)
     private val analysisLock = Mutex()
     private var preanalysisJob: Job? = null
@@ -80,7 +84,7 @@ class StudioModel @JvmOverloads constructor(
 
     init {
         ExportHub.initialize(app)
-        viewModelScope.launch(persistenceDispatcher) {
+        persistenceScope.launch {
             for (s in saves) {
                 try {
                     s.project?.let(projects::save)
@@ -129,6 +133,7 @@ class StudioModel @JvmOverloads constructor(
                     project = saved.third,
                     scene = scene,
                     savedPresets = storedPresets,
+                    ready = true,
                 )
             player.restoreQueue(saved.first, saved.first.indexOfFirst {
                 it.uri == saved.third?.source?.uri
@@ -185,6 +190,7 @@ class StudioModel @JvmOverloads constructor(
     }
 
     private fun persist() {
+        if (!initialized.isCompleted) return
         saves.trySend(mutable.value)
     }
 
@@ -365,10 +371,10 @@ class StudioModel @JvmOverloads constructor(
                 }
                 player.setQueue(q, q.indexOfFirst { it.uri == source.uri }.coerceAtLeast(0))
             }
-            player.setPracticeSpeed(restored.practice.speed)
-            player.setLoop(
+            player.restorePractice(source.uri, restored.practice.speed,
                 restored.practice.loopStartUs.takeIf { restored.practice.loopEnabled },
                 restored.practice.loopEndUs.takeIf { restored.practice.loopEnabled },
+                rewind = startPlayback,
             )
             try {
                 val lease = audio.acquireDecoded(source) { p -> mutable.update { it.copy(progress = p) } }
@@ -397,7 +403,7 @@ class StudioModel @JvmOverloads constructor(
                     )
                 }
                 audioFeatures = AudioFeatures(decoded)
-                player.setLoop(
+                player.restorePractice(source.uri, bound.practice.speed,
                     bound.practice.loopStartUs.takeIf { bound.practice.loopEnabled },
                     bound.practice.loopEndUs.takeIf { bound.practice.loopEnabled },
                 )
@@ -446,7 +452,11 @@ class StudioModel @JvmOverloads constructor(
         tunerRunning.value = true
         microphoneJob = viewModelScope.launch {
             try {
-                capture.run(a4Hz) { if (generation == tunerGeneration) tuner.value = it }
+                capture.run(a4Hz) { reading ->
+                    withContext(Dispatchers.Main.immediate) {
+                        if (generation == tunerGeneration) tuner.value = reading
+                    }
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -521,8 +531,10 @@ class StudioModel @JvmOverloads constructor(
 
     fun setPreviewAspect(aspect: Float) {
         if (!aspect.isFinite() || aspect !in .1f..10f || mutable.value.editingExportLayout) return
-        if (kotlin.math.abs(mutable.value.scene.designAspect - aspect) < .001f) return
-        editScene(mutable.value.scene.copy(designAspect = aspect))
+        if (kotlin.math.abs(mutable.value.previewAspect - aspect) < .001f) return
+        if (mutable.value.layoutEditing) finishLayoutEdit()
+        // Viewport measurement is ephemeral; it must never write unloaded collections.
+        mutable.update { it.copy(previewAspect = aspect) }
     }
 
     fun setExportSettings(settings: ExportSettings) {
@@ -544,6 +556,7 @@ class StudioModel @JvmOverloads constructor(
     }
 
     fun beginLayoutEdit(forExport: Boolean, viewportAspect: Float) {
+        if (!mutable.value.ready) return
         if (forExport) {
             setExportLayout(ExportLayoutMode.SEPARATE)
             val s = mutable.value
@@ -555,6 +568,7 @@ class StudioModel @JvmOverloads constructor(
             ), layoutEditing = true, editingExportLayout = true)
         } else {
             setPreviewAspect(viewportAspect)
+            editScene(SceneLayouts.fit(mutable.value.scene, viewportAspect))
             mutable.update { it.copy(layoutEditing = true, editingExportLayout = false) }
         }
         persist()
@@ -623,17 +637,15 @@ class StudioModel @JvmOverloads constructor(
                 state.copy(project = state.project.copy(practice = next))
             else state
         }
-        player.setPracticeSpeed(next.speed)
-        if (
+        val loopChanged =
             previous.practice.loopStartUs != next.loopStartUs ||
                 previous.practice.loopEndUs != next.loopEndUs ||
                 previous.practice.loopEnabled != next.loopEnabled
-        ) {
-            player.setLoop(
+        player.restorePractice(previous.source.uri, next.speed,
                 next.loopStartUs.takeIf { next.loopEnabled },
                 next.loopEndUs.takeIf { next.loopEnabled },
-            )
-        }
+                rewind = loopChanged,
+        )
         persist()
     }
 
@@ -893,6 +905,7 @@ class StudioModel @JvmOverloads constructor(
     }
 
     override fun onCleared() {
+        persist()
         trackJob?.cancel()
         preanalysisJob?.cancel()
         audioFeatures?.close()

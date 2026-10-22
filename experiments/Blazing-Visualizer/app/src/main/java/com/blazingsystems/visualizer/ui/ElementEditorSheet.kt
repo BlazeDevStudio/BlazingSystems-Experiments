@@ -186,7 +186,10 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel, onArrange: (Boolean) ->
                                 )))
                             }
                         }
-                        if (layer.type == ElementType.MATH_CURVE) Row(Modifier.horizontalScroll(rememberScrollState())) {
+                        if (layer.type == ElementType.MATH_CURVE) {
+                            Text("Graph view shows up to 12 simultaneous pitches; Practice keeps the full detection.",
+                                style = MaterialTheme.typography.bodySmall)
+                            Row(Modifier.horizontalScroll(rememberScrollState())) {
                             MathVisualMode.entries.forEach { mode ->
                                 FilterChip(
                                     (layer.properties["mode"]?.jsonPrimitive?.content ?: "LISSAJOUS") == mode.name,
@@ -194,10 +197,12 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel, onArrange: (Boolean) ->
                                     modifier = Modifier.padding(end = 6.dp),
                                 )
                             }
+                            }
                         }
                         if (layer.type == ElementType.PIANO_ROLL) {
-                            listOf("whiteKeyColor" to "#FFF3F2F7", "blackKeyColor" to "#FF171622",
-                                "activeKeyColor" to "#FF9C83FF", "glowColor" to "#FF9C83FF",
+                            val baseColor = layer.properties["color"]?.jsonPrimitive?.content ?: scene.paletteColor ?: "#FF9C83FF"
+                            listOf("whiteKeyColor" to "#FFDBDCE8", "blackKeyColor" to "#FF171723",
+                                "activeKeyColor" to baseColor, "glowColor" to baseColor,
                                 "sparkColor" to "#FFFFFFFF").forEach { (key, fallback) ->
                                 ColorField(key.removeSuffix("Color").replace(Regex("([A-Z])"), " $1") + " color",
                                     layer.properties[key]?.jsonPrimitive?.content ?: fallback) { prop(key, it) }

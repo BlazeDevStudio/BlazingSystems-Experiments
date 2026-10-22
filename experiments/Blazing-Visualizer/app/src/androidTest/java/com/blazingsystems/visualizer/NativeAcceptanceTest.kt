@@ -1,6 +1,8 @@
 package com.blazingsystems.visualizer
 
 import android.media.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -345,6 +347,38 @@ class NativeAcceptanceTest {
             return JSONObject().put("width", width).put("height", height).put("tracks", tracks)
         } finally {
             e.release()
+        }
+    }
+
+    @Test fun graphPresetsRoundTripRenderAndExportWithOptionalEquations() = runBlocking {
+        val source = fixture("synthetic")
+        AudioRepository(context).acquireDecoded(source).use { lease ->
+            val bound = source.copy(contentSha256 = lease.audio.hash, durationUs = lease.audio.durationUs)
+            val notes = listOf(60,64,67,71).map { NoteEvent("voice-$it",it,0,2_000_000) }
+            val reports = JSONArray()
+            for (mode in MathVisualMode.entries) {
+                val scene = BuiltinScenes.mathematical(mode)
+                assertFalse(scene.showEquations)
+                val pack = ByteArrayOutputStream()
+                NativePackCodec().write(VisualizerPack(scene = scene), AssetResolver { error("no assets") }, pack)
+                val imported = NativePackCodec().read(pack.toByteArray().inputStream(),
+                    File(context.cacheDir, "math-pack-${mode.name}"))
+                assertEquals(scene, imported.scene)
+                val bitmap = Bitmap.createBitmap(800,800,Bitmap.Config.ARGB_8888)
+                ScenePainter(File(context.filesDir,"assets")).use { painter ->
+                    painter.draw(Canvas(bitmap),SceneEvaluator.evaluate(scene, FeatureFrame(300_000, notes = notes),300_000),800,800)
+                }
+                val png = File(context.filesDir,"acceptance/graph-${mode.name.lowercase()}.png")
+                png.parentFile!!.mkdirs()
+                png.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) }
+                bitmap.recycle()
+                val file = File(context.filesDir,"acceptance/graph-${mode.name.lowercase()}.mp4")
+                val project = Project(source = bound,scene = scene.copy(showEquations = mode == MathVisualMode.ORBITS))
+                VideoExporter(context).export(ExportRequest(project,0,400_000,Uri.fromFile(file).toString(),ExportSettings(320,320)))
+                reports.put(inspect(file,400_000,320,320).put("mode",mode.name))
+                file.delete()
+            }
+            evidence("graph-export",JSONObject().put("results",reports))
         }
     }
 

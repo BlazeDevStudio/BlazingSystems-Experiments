@@ -88,7 +88,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 ElementType.TEXT -> {
                     paint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
                     paint.textAlign = Paint.Align.CENTER
-                    paint.textSize = layer.number("fontSize", 24f).coerceIn(4f, 160f) * width / 420f * min(t.width, t.height) * e.scale
+                    paint.textSize = layer.number("fontSize", 24f).coerceIn(4f, 160f) * min(w, h) / 420f
                     canvas.drawText(
                         layer.string("text", "BLAZING"),
                         0f,
@@ -127,7 +127,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                         canvas.drawCircle(
                             x.toFloat(),
                             y.toFloat(),
-                            (1 + i % 3) * width / 420f,
+                            (1 + i % 3) * min(w, h) / 420f,
                             paint,
                         )
                     }
@@ -135,7 +135,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 ElementType.SPECTRUM -> {
                     val circle = layer.string("path", "circle") == "circle"
                     val bins = 80
-                    paint.strokeWidth = max(1.5f, width / 300f)
+                    paint.strokeWidth = max(1f, min(w, h) / 300f)
                     paint.strokeCap = Paint.Cap.ROUND
                     for (i in 0 until bins) {
                         val from = (i.toDouble() / bins).pow(2) * min(512, s.features.spectrum.size)
@@ -167,7 +167,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     val values = s.features.waveform
                     if (values.size > 1) {
                         paint.style = Paint.Style.STROKE
-                        paint.strokeWidth = width / 400f
+                        paint.strokeWidth = max(.5f, min(w, h) / 400f)
                         val path = Path()
                         values.forEachIndexed { i, v ->
                             val x = -w / 2 + i * w / (values.size - 1)
@@ -253,8 +253,10 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     private fun piano(
         c: Canvas, s: EvaluatedScene, layer: Layer, w: Float, h: Float, tint: Int, intensity: Float,
     ) {
-        val first = 48
-        val last = 83
+        val bounds = layer.noteRouting.bounds()
+        val first = if (layer.noteRouting == NoteRouting()) 48 else bounds.first / 12 * 12
+        val last = if (layer.noteRouting == NoteRouting()) 83 else
+            (bounds.last / 12 * 12 + 11).coerceAtMost(127)
         val whites = (first..last).filter { it % 12 !in setOf(1, 3, 6, 8, 10) }
         val kw = w / whites.size
         val keyHeight = min(h * .4f, w * .22f)
@@ -354,7 +356,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 val phase = (note.pitch * 13 + i * 19 + s.scene.seed) * .73
                 val angle = phase + elapsed * .000004
                 val distance = kw * (.2 + (elapsed / 500_000f) * (1 + i % 3))
-                paint.color = tinted(partColor("sparkColor",tint), (220 * falloff).toInt())
+                paint.color = tinted(partColor("sparkColor",Color.WHITE), (220 * falloff).toInt())
                 c.drawCircle(
                     centerX + (cos(angle) * distance).toFloat(),
                     centerY - (sin(angle) * distance).toFloat(),

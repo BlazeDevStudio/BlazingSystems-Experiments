@@ -13,7 +13,7 @@ import kotlinx.coroutines.*
 class MicrophoneCapture(private val context: Context) : AutoCloseable {
     @Volatile private var active: AudioRecord? = null
 
-    suspend fun run(a4Hz: Double, onPitch: (PitchReading?) -> Unit) =
+    suspend fun run(a4Hz: Double, onPitch: suspend (PitchReading?) -> Unit) =
         withContext(Dispatchers.IO) {
             val rate = 22050
             val minimum = AudioRecord.getMinBufferSize(
