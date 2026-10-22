@@ -3,36 +3,36 @@
     "pitch": 60,
     "startUs": 301859,
     "endUs": 1335147,
-    "amplitude": 0.7727449536323547
+    "amplitude": 0.772718608379364
   },
   {
     "pitch": 64,
     "startUs": 1486077,
     "endUs": 2532259,
-    "amplitude": 0.771780252456665
+    "amplitude": 0.7718070149421692
   },
   {
     "pitch": 79,
     "startUs": 2694799,
     "endUs": 2950218,
-    "amplitude": 0.352572500705719
+    "amplitude": 0.35260990262031555
   },
   {
     "pitch": 60,
     "startUs": 2706409,
     "endUs": 3728087,
-    "amplitude": 0.787571132183075
+    "amplitude": 0.7875992059707642
   },
   {
     "pitch": 64,
     "startUs": 2706409,
     "endUs": 3728087,
-    "amplitude": 0.8126897215843201
+    "amplitude": 0.8126947283744812
   },
   {
     "pitch": 67,
     "startUs": 2706409,
     "endUs": 3728087,
-    "amplitude": 0.7464950084686279
+    "amplitude": 0.7464514374732971
   }
 ]

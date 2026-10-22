@@ -1,50 +1,296 @@
 package com.blazingsystems.visualizer.render
+
 import android.graphics.*
-import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.practice.NoteNames
-import kotlinx.serialization.json.*
+import com.blazingsystems.visualizer.project.*
 import java.io.File
 import kotlin.math.*
+import kotlinx.serialization.json.*
 
 /** Deterministic scene drawing; Canvas pixels feed the same GL pipeline for preview and MP4. */
-class ScenePainter(private val assets:File):AutoCloseable {
- private val paint=Paint(Paint.ANTI_ALIAS_FLAG);private val images=linkedMapOf<String,Bitmap>()
- private fun Layer.string(key:String,default:String="")=properties[key]?.jsonPrimitive?.contentOrNull ?: default
- private fun Layer.number(key:String,default:Float)=string(key).toFloatOrNull()?.takeIf{it.isFinite()} ?: default
- private fun Layer.color(default:Int=Color.rgb(128,104,255))=runCatching{Color.parseColor(string("color","#FF9C83FF"))}.getOrDefault(default)
- fun draw(canvas:Canvas,s:EvaluatedScene,width:Int,height:Int){
-  canvas.drawColor(Color.rgb(8,9,17));paint.shader=null;paint.style=Paint.Style.FILL
-  for(e in s.layers){val layer=e.layer;val t=layer.transform;val w=width*t.width*e.scale;val h=height*t.height*e.scale
-   canvas.save();canvas.translate(width*t.x,height*t.y);canvas.rotate(t.rotation);paint.color=layer.color();paint.alpha=255;paint.shader=null;paint.style=Paint.Style.FILL
-   when(layer.type){
-    ElementType.IMAGE->{val path=layer.string("asset");val f=File(assets,path);if(path.isNotBlank() && f.canonicalPath.startsWith(assets.canonicalPath+"/") && f.isFile){val bitmap=images[path] ?: BitmapFactory.decodeFile(f.path)?.also {if(images.size>=8){images.values.first().recycle();images.remove(images.keys.first())};images[path]=it};if(bitmap!=null)canvas.drawBitmap(bitmap,null,RectF(-w/2,-h/2,w/2,h/2),paint)}}
-    ElementType.TEXT->{paint.typeface=Typeface.create("sans-serif-medium",Typeface.NORMAL);paint.textAlign=Paint.Align.CENTER;paint.textSize=layer.number("fontSize",24f).coerceIn(4f,160f)*width/420f;canvas.drawText(layer.string("text","BLAZING"),0f,-(paint.ascent()+paint.descent())/2,paint)}
-    ElementType.SHAPE->{if(layer.string("shape","circle")=="rect")canvas.drawRoundRect(-w/2,-h/2,w/2,h/2,16f,16f,paint) else canvas.drawCircle(0f,0f,min(w,h)/2,paint)}
-    ElementType.BLUR->{val radius=max(w,h)*.58f;paint.shader=RadialGradient(0f,0f,radius,intArrayOf(Color.argb(80,101,56,202),Color.TRANSPARENT),null,Shader.TileMode.CLAMP);canvas.drawCircle(0f,0f,radius,paint);paint.shader=null}
-    ElementType.PARTICLES->{for(i in 0 until 48){val phase=(i*0.61803398875+s.scene.seed*.031)%1;val age=(s.sourceTimeUs/1_000_000.0*.035+phase)%1;val x=sin(i*12.9898+s.scene.seed)*w*.5;val y=(.5-age)*h;paint.alpha=(sin(age*PI)*95).toInt().coerceIn(0,255);canvas.drawCircle(x.toFloat(),y.toFloat(),(1+i%3)*width/420f,paint)}}
-    ElementType.SPECTRUM->{val circle=layer.string("path","circle")=="circle";val bins=80;paint.strokeWidth=max(1.5f,width/300f);paint.strokeCap=Paint.Cap.ROUND
-     for(i in 0 until bins){val from=(i.toDouble()/bins).pow(2)*min(512,s.features.spectrum.size);val amplitude=s.features.spectrum.getOrElse(from.toInt()){0f};val level=(ln(1+amplitude*80)/ln(81f)).coerceIn(0f,1f);paint.color=Color.HSVToColor(floatArrayOf(250f+i*1.2f,.45f,.96f))
-      if(circle){val a=i*2*PI/bins-PI/2;val r=min(w,h)*.29f;val length=2+level*min(w,h)*.2f;canvas.drawLine((cos(a)*r).toFloat(),(sin(a)*r).toFloat(),(cos(a)*(r+length)).toFloat(),(sin(a)*(r+length)).toFloat(),paint)}else{val x=-w/2+i*w/bins;canvas.drawLine(x,h/2,x,h/2-level*h,paint)}
-     }}
-    ElementType.WAVEFORM->{val values=s.features.waveform;if(values.size>1){paint.style=Paint.Style.STROKE;paint.strokeWidth=width/400f;val path=Path();values.forEachIndexed{i,v->val x=-w/2+i*w/(values.size-1);val y=v*h/2;if(i==0)path.moveTo(x,y) else path.lineTo(x,y)};canvas.drawPath(path,paint)}}
-    ElementType.NOTE_WHEEL->wheel(canvas,s,w,h)
-    ElementType.PIANO_ROLL->piano(canvas,s,w,h)
-   };canvas.restore()
-  }
- }
- private fun wheel(c:Canvas,s:EvaluatedScene,w:Float,h:Float){val r=min(w,h)*.37f;val active=s.activeNotes.map{it.pitch%12}.toSet();val points=(0..11).map{val a=it*PI/6-PI/2;PointF((cos(a)*r).toFloat(),(sin(a)*r).toFloat())}
-  paint.style=Paint.Style.STROKE;paint.strokeWidth=w/650;paint.color=Color.argb(60,172,150,255);c.drawCircle(0f,0f,r,paint)
-  for(a in active)for(b in active)if(a<b){paint.color=Color.argb(150,169,131,255);paint.strokeWidth=w/260;c.drawLine(points[a].x,points[a].y,points[b].x,points[b].y,paint)}
-  points.forEachIndexed{i,p->paint.style=Paint.Style.FILL;paint.color=if(i in active)Color.rgb(179,151,255) else Color.rgb(36,35,57);if(i in active){paint.shader=RadialGradient(p.x,p.y,r*.25f,intArrayOf(Color.argb(150,153,101,255),Color.TRANSPARENT),null,Shader.TileMode.CLAMP);c.drawCircle(p.x,p.y,r*.25f,paint);paint.shader=null};c.drawCircle(p.x,p.y,r*.105f,paint);paint.color=if(i in active)Color.WHITE else Color.rgb(152,151,179);paint.textSize=r*.105f;paint.textAlign=Paint.Align.CENTER;paint.typeface=Typeface.create("sans-serif-medium",Typeface.NORMAL);c.drawText(NoteNames.name(60+i).dropLast(1),p.x,p.y-(paint.ascent()+paint.descent())/2,paint)}
-  paint.textSize=r*.25f;paint.color=Color.WHITE;c.drawText(s.chord ?: "♪",0f,r*.04f,paint);paint.textSize=r*.085f;paint.color=Color.rgb(156,151,177);c.drawText(if(s.chord!=null)"ESTIMATED CHORD" else "FOLLOW THE NOTES",0f,r*.23f,paint)
- }
- private fun piano(c:Canvas,s:EvaluatedScene,w:Float,h:Float){val first=48;val last=83;val whites=(first..last).filter{it%12 !in setOf(1,3,6,8,10)};val kw=w/whites.size;val keyHeight=min(h*.4f,w*.22f);val base=h/2-keyHeight;val active=s.activeNotes.map{it.pitch}.toSet()
-  // Upcoming bars travel toward the keyboard in source time, unaffected by playback speed.
-  val rangeUs=3_000_000.0;val area=h-keyHeight;val whiteIndex=whites.withIndex().associate{it.value to it.index}
-  fun x(pitch:Int):Float {val white=whiteIndex[pitch];return if(white!=null)-w/2+white*kw else -w/2+(whites.count{it<pitch}-.32f)*kw}
-  s.features.notes.filter{it.pitch in first..last && it.endUs>s.sourceTimeUs && it.startUs<s.sourceTimeUs+rangeUs}.forEach{n->val top=(base-(n.endUs-s.sourceTimeUs)/rangeUs*area).toFloat().coerceAtLeast(-h/2);val bottom=(base-(n.startUs-s.sourceTimeUs)/rangeUs*area).toFloat().coerceIn(-h/2,base);if(bottom>top){paint.color=if(n.pitch in active)Color.rgb(179,146,255) else Color.rgb(84,66,135);c.drawRoundRect(x(n.pitch)+1,top,x(n.pitch)+kw*.86f,bottom,kw*.13f,kw*.13f,paint)}}
-  whites.forEach{p->paint.color=if(p in active)Color.rgb(192,166,255) else Color.rgb(219,220,232);c.drawRoundRect(x(p)+1,base,x(p)+kw-1,h/2,2f,2f,paint);if(p%12==0){paint.textSize=kw*.4f;paint.textAlign=Paint.Align.CENTER;paint.color=Color.DKGRAY;c.drawText(NoteNames.name(p),x(p)+kw/2,h/2-kw*.25f,paint)}}
-  (first..last).filter{it%12 in setOf(1,3,6,8,10)}.forEach{p->paint.color=if(p in active)Color.rgb(133,95,225) else Color.rgb(23,23,35);c.drawRoundRect(x(p),base,x(p)+kw*.64f,base+keyHeight*.63f,2f,2f,paint)}
- }
- override fun close(){images.values.forEach{it.recycle()};images.clear()}
+class ScenePainter(private val assets: File) : AutoCloseable {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val images = linkedMapOf<String, Bitmap>()
+
+    private fun Layer.string(key: String, default: String = "") =
+        properties[key]?.jsonPrimitive?.contentOrNull ?: default
+
+    private fun Layer.number(key: String, default: Float) =
+        string(key).toFloatOrNull()?.takeIf { it.isFinite() } ?: default
+
+    private fun Layer.color(default: Int = Color.rgb(128, 104, 255)) = runCatching {
+        Color.parseColor(string("color", "#FF9C83FF"))
+    }
+        .getOrDefault(default)
+
+    fun draw(canvas: Canvas, s: EvaluatedScene, width: Int, height: Int) {
+        canvas.drawColor(Color.rgb(8, 9, 17))
+        paint.shader = null
+        paint.style = Paint.Style.FILL
+        for (e in s.layers) {
+            val layer = e.layer
+            val t = layer.transform
+            val w = width * t.width * e.scale
+            val h = height * t.height * e.scale
+            canvas.save()
+            canvas.translate(width * t.x, height * t.y)
+            canvas.rotate(t.rotation)
+            paint.color = layer.color()
+            paint.alpha = 255
+            paint.shader = null
+            paint.style = Paint.Style.FILL
+            when (layer.type) {
+                ElementType.IMAGE -> {
+                    val path = layer.string("asset")
+                    val f = File(assets, path)
+                    if (
+                        path.isNotBlank() &&
+                            f.canonicalPath.startsWith(assets.canonicalPath + "/") &&
+                            f.isFile
+                    ) {
+                        val bitmap =
+                            images[path]
+                                ?: BitmapFactory.decodeFile(f.path)?.also {
+                                    if (images.size >= 8) {
+                                        images.values.first().recycle()
+                                        images.remove(images.keys.first())
+                                    }
+                                    images[path] = it
+                                }
+                        if (bitmap != null)
+                            canvas.drawBitmap(
+                                bitmap,
+                                null,
+                                RectF(-w / 2, -h / 2, w / 2, h / 2),
+                                paint,
+                            )
+                    }
+                }
+                ElementType.TEXT -> {
+                    paint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                    paint.textAlign = Paint.Align.CENTER
+                    paint.textSize = layer.number("fontSize", 24f).coerceIn(4f, 160f) * width / 420f
+                    canvas.drawText(
+                        layer.string("text", "BLAZING"),
+                        0f,
+                        -(paint.ascent() + paint.descent()) / 2,
+                        paint,
+                    )
+                }
+                ElementType.SHAPE -> {
+                    if (layer.string("shape", "circle") == "rect")
+                        canvas.drawRoundRect(-w / 2, -h / 2, w / 2, h / 2, 16f, 16f, paint)
+                    else canvas.drawCircle(0f, 0f, min(w, h) / 2, paint)
+                }
+                ElementType.BLUR -> {
+                    val radius = max(w, h) * .58f
+                    paint.shader =
+                        RadialGradient(
+                            0f,
+                            0f,
+                            radius,
+                            intArrayOf(Color.argb(80, 101, 56, 202), Color.TRANSPARENT),
+                            null,
+                            Shader.TileMode.CLAMP,
+                        )
+                    canvas.drawCircle(0f, 0f, radius, paint)
+                    paint.shader = null
+                }
+                ElementType.PARTICLES -> {
+                    for (i in 0 until 48) {
+                        val phase = (i * 0.61803398875 + s.scene.seed * .031) % 1
+                        val age = (s.sourceTimeUs / 1_000_000.0 * .035 + phase) % 1
+                        val x = sin(i * 12.9898 + s.scene.seed) * w * .5
+                        val y = (.5 - age) * h
+                        paint.alpha = (sin(age * PI) * 95).toInt().coerceIn(0, 255)
+                        canvas.drawCircle(
+                            x.toFloat(),
+                            y.toFloat(),
+                            (1 + i % 3) * width / 420f,
+                            paint,
+                        )
+                    }
+                }
+                ElementType.SPECTRUM -> {
+                    val circle = layer.string("path", "circle") == "circle"
+                    val bins = 80
+                    paint.strokeWidth = max(1.5f, width / 300f)
+                    paint.strokeCap = Paint.Cap.ROUND
+                    for (i in 0 until bins) {
+                        val from = (i.toDouble() / bins).pow(2) * min(512, s.features.spectrum.size)
+                        val amplitude = s.features.spectrum.getOrElse(from.toInt()) { 0f }
+                        val level = (ln(1 + amplitude * 80) / ln(81f)).coerceIn(0f, 1f)
+                        paint.color = Color.HSVToColor(floatArrayOf(250f + i * 1.2f, .45f, .96f))
+                        if (circle) {
+                            val a = i * 2 * PI / bins - PI / 2
+                            val r = min(w, h) * .29f
+                            val length = 2 + level * min(w, h) * .2f
+                            canvas.drawLine(
+                                (cos(a) * r).toFloat(),
+                                (sin(a) * r).toFloat(),
+                                (cos(a) * (r + length)).toFloat(),
+                                (sin(a) * (r + length)).toFloat(),
+                                paint,
+                            )
+                        } else {
+                            val x = -w / 2 + i * w / bins
+                            canvas.drawLine(x, h / 2, x, h / 2 - level * h, paint)
+                        }
+                    }
+                }
+                ElementType.WAVEFORM -> {
+                    val values = s.features.waveform
+                    if (values.size > 1) {
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = width / 400f
+                        val path = Path()
+                        values.forEachIndexed { i, v ->
+                            val x = -w / 2 + i * w / (values.size - 1)
+                            val y = v * h / 2
+                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        canvas.drawPath(path, paint)
+                    }
+                }
+                ElementType.NOTE_WHEEL -> wheel(canvas, s, w, h)
+                ElementType.PIANO_ROLL -> piano(canvas, s, w, h)
+            }
+            canvas.restore()
+        }
+    }
+
+    private fun wheel(c: Canvas, s: EvaluatedScene, w: Float, h: Float) {
+        val r = min(w, h) * .37f
+        val active = s.activeNotes.map { it.pitch % 12 }.toSet()
+        val points =
+            (0..11).map {
+                val a = it * PI / 6 - PI / 2
+                PointF((cos(a) * r).toFloat(), (sin(a) * r).toFloat())
+            }
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = w / 650
+        paint.color = Color.argb(60, 172, 150, 255)
+        c.drawCircle(0f, 0f, r, paint)
+        for (a in active) for (b in active) if (a < b) {
+            paint.color = Color.argb(150, 169, 131, 255)
+            paint.strokeWidth = w / 260
+            c.drawLine(points[a].x, points[a].y, points[b].x, points[b].y, paint)
+        }
+        points.forEachIndexed { i, p ->
+            paint.style = Paint.Style.FILL
+            paint.color = if (i in active) Color.rgb(179, 151, 255) else Color.rgb(36, 35, 57)
+            if (i in active) {
+                paint.shader =
+                    RadialGradient(
+                        p.x,
+                        p.y,
+                        r * .25f,
+                        intArrayOf(Color.argb(150, 153, 101, 255), Color.TRANSPARENT),
+                        null,
+                        Shader.TileMode.CLAMP,
+                    )
+                c.drawCircle(p.x, p.y, r * .25f, paint)
+                paint.shader = null
+            }
+            c.drawCircle(p.x, p.y, r * .105f, paint)
+            paint.color = if (i in active) Color.WHITE else Color.rgb(152, 151, 179)
+            paint.textSize = r * .105f
+            paint.textAlign = Paint.Align.CENTER
+            paint.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            c.drawText(
+                NoteNames.name(60 + i).dropLast(1),
+                p.x,
+                p.y - (paint.ascent() + paint.descent()) / 2,
+                paint,
+            )
+        }
+        paint.textSize = r * .25f
+        paint.color = Color.WHITE
+        c.drawText(s.chord ?: "♪", 0f, r * .04f, paint)
+        paint.textSize = r * .085f
+        paint.color = Color.rgb(156, 151, 177)
+        c.drawText(
+            if (s.chord != null) "ESTIMATED CHORD" else "FOLLOW THE NOTES",
+            0f,
+            r * .23f,
+            paint,
+        )
+    }
+
+    private fun piano(c: Canvas, s: EvaluatedScene, w: Float, h: Float) {
+        val first = 48
+        val last = 83
+        val whites = (first..last).filter { it % 12 !in setOf(1, 3, 6, 8, 10) }
+        val kw = w / whites.size
+        val keyHeight = min(h * .4f, w * .22f)
+        val base = h / 2 - keyHeight
+        val active = s.activeNotes.map { it.pitch }.toSet()
+        // Upcoming bars travel toward the keyboard in source time, unaffected by playback speed.
+        val rangeUs = 3_000_000.0
+        val area = h - keyHeight
+        val whiteIndex = whites.withIndex().associate { it.value to it.index }
+        fun x(pitch: Int): Float {
+            val white = whiteIndex[pitch]
+            return if (white != null) -w / 2 + white * kw
+            else -w / 2 + (whites.count { it < pitch } - .32f) * kw
+        }
+        s.features.notes
+            .filter {
+                it.pitch in first..last &&
+                    it.endUs > s.sourceTimeUs &&
+                    it.startUs < s.sourceTimeUs + rangeUs
+            }
+            .forEach { n ->
+                val top =
+                    (base - (n.endUs - s.sourceTimeUs) / rangeUs * area)
+                        .toFloat()
+                        .coerceAtLeast(-h / 2)
+                val bottom =
+                    (base - (n.startUs - s.sourceTimeUs) / rangeUs * area)
+                        .toFloat()
+                        .coerceIn(-h / 2, base)
+                if (bottom > top) {
+                    paint.color =
+                        if (n.pitch in active) Color.rgb(179, 146, 255) else Color.rgb(84, 66, 135)
+                    c.drawRoundRect(
+                        x(n.pitch) + 1,
+                        top,
+                        x(n.pitch) + kw * .86f,
+                        bottom,
+                        kw * .13f,
+                        kw * .13f,
+                        paint,
+                    )
+                }
+            }
+        whites.forEach { p ->
+            paint.color = if (p in active) Color.rgb(192, 166, 255) else Color.rgb(219, 220, 232)
+            c.drawRoundRect(x(p) + 1, base, x(p) + kw - 1, h / 2, 2f, 2f, paint)
+            if (p % 12 == 0) {
+                paint.textSize = kw * .4f
+                paint.textAlign = Paint.Align.CENTER
+                paint.color = Color.DKGRAY
+                c.drawText(NoteNames.name(p), x(p) + kw / 2, h / 2 - kw * .25f, paint)
+            }
+        }
+        (first..last)
+            .filter { it % 12 in setOf(1, 3, 6, 8, 10) }
+            .forEach { p ->
+                paint.color = if (p in active) Color.rgb(133, 95, 225) else Color.rgb(23, 23, 35)
+                c.drawRoundRect(
+                    x(p),
+                    base,
+                    x(p) + kw * .64f,
+                    base + keyHeight * .63f,
+                    2f,
+                    2f,
+                    paint,
+                )
+            }
+    }
+
+    override fun close() {
+        images.values.forEach { it.recycle() }
+        images.clear()
+    }
 }

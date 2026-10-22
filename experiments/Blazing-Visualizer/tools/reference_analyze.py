@@ -3,7 +3,7 @@ import argparse, json, sys
 from pathlib import Path
 import numpy as np
 from scipy.io import wavfile
-from tflite_runtime.interpreter import Interpreter
+from ai_edge_litert.interpreter import Interpreter
 p=argparse.ArgumentParser();p.add_argument('--upstream',type=Path,required=True);args=p.parse_args();sys.path.insert(0,str(args.upstream))
 from basic_pitch.note_creation import model_output_to_notes
 root=Path(__file__).resolve().parents[1];out=root/'fixtures'

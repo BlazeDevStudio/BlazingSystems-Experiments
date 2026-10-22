@@ -3,18 +3,18 @@
     "pitch": 72,
     "startUs": 336689,
     "endUs": 719819,
-    "amplitude": 0.7430679202079773
+    "amplitude": 0.7430659532546997
   },
   {
     "pitch": 76,
     "startUs": 1660227,
     "endUs": 2056250,
-    "amplitude": 0.7434343695640564
+    "amplitude": 0.7434360384941101
   },
   {
     "pitch": 81,
     "startUs": 2915388,
     "endUs": 3356567,
-    "amplitude": 0.6714693307876587
+    "amplitude": 0.6714679598808289
   }
 ]

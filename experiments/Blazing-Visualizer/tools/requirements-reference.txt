@@ -7,3 +7,4 @@ mir_eval==0.8.2
 resampy==0.4.3
 
 setuptools==80.9.0
+ai-edge-litert==1.4.0
