@@ -1,6 +1,7 @@
 package com.blazingsystems.visualizer
 
 import android.net.Uri
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelProvider
@@ -48,7 +49,12 @@ class ClickAuditTest {
         rule.waitUntil(10_000) { model().state.value.layoutEditing }
         rule.onNodeWithText("Arrange preview").assertExists()
         rule.onNodeWithTag("visualizer-canvas").assertExists()
-        rule.onNodeWithText("Reset layer").assertExists()
+        rule.onNodeWithTag("visualizer-canvas").performTouchInput {
+            click(Offset(3f, 3f))
+        }
+        rule.onNodeWithText("Reset layer").assertIsNotEnabled()
+        rule.onNodeWithTag("visualizer-canvas").performTouchInput { click(center) }
+        rule.onNodeWithText("Reset layer").assertIsEnabled()
         rule.onNodeWithText("Done").performClick()
         rule.waitUntil(10_000) { !model().state.value.layoutEditing }
         rule.onNodeWithContentDescription("Edit visualizer").assertIsDisplayed()
@@ -68,9 +74,9 @@ class ClickAuditTest {
         rule.waitUntil(20_000) { model().state.value.library.any { it.uri == source.toString() } }
         rule.onNodeWithText("Library", useUnmergedTree = true).performClick()
         rule.onNodeWithText("Your library").assertIsDisplayed()
-        rule.onNodeWithText("Search tracks").performTextInput("no-song-matches-this-search")
+        rule.onNodeWithTag("track-search").performTextInput("no-song-matches-this-search")
         rule.onNodeWithText("No tracks match", substring = true).assertExists()
-        rule.onNodeWithText("Search tracks").performTextClearance()
+        rule.onNodeWithTag("track-search").performTextClearance()
         rule.onNodeWithText("Queue", useUnmergedTree = true).performClick()
         rule.onNodeWithContentDescription("Sort queue").performClick()
         rule.onNodeWithText("Title A–Z").performClick()
@@ -80,5 +86,60 @@ class ClickAuditTest {
         rule.onNodeWithText("Library", useUnmergedTree = true).performClick()
         rule.onNodeWithText("Playlists").assertExists()
         assertTrue(model().state.value.queue.any { it.uri == source.toString() })
+        rule.onNodeWithContentDescription("Delete playlist").performClick()
+        rule.onNodeWithText("Delete playlist?").assertIsDisplayed()
+        rule.onNodeWithText("Cancel").performClick()
+        assertTrue(model().state.value.playlists.any { it.name == "My playlist" })
+    }
+
+    private fun openFixture(): Uri {
+        ready()
+        val f = File(rule.activity.filesDir, "click-audit-${UUID.randomUUID()}.wav")
+        InstrumentationRegistry.getInstrumentation().context.assets.open("synthetic.wav").use {
+            input -> f.outputStream().use(input::copyTo)
+        }
+        val uri = Uri.fromFile(f)
+        rule.runOnUiThread { model().importTracks(listOf(uri)) }
+        rule.waitUntil(20_000) {
+            model().state.value.project?.source?.uri == uri.toString()
+        }
+        return uri
+    }
+
+    @Test
+    fun practiceSpeedTransposeAndNoteWheelAreClickDriven() {
+        openFixture()
+        rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
+        rule.onNodeWithText("Practice").performClick()
+        rule.onNodeWithText("Playback speed · pitch stays the same").assertIsDisplayed()
+        rule.onNodeWithText("0.75×").performClick()
+        rule.waitUntil(10_000) { model().state.value.project?.practice?.speed == .75f }
+        rule.onNodeWithText("B♭ instrument").performScrollTo().performClick()
+        assertEquals(2, model().state.value.project!!.practice.instrumentSemitones)
+        rule.onNodeWithText("Note wheel").performScrollTo().performClick()
+        assertEquals("Harmonic compass", model().state.value.scene.name)
+    }
+
+    @Test
+    fun exportOrientationAndSeparateCanvasLayoutAreClickDriven() {
+        openFixture()
+        rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
+        rule.onNodeWithContentDescription("Export video").performClick()
+        rule.onNodeWithText("Composition preview at selected output shape").assertExists()
+        rule.onNodeWithText("Portrait 9:16").performScrollTo().performClick()
+        rule.onNodeWithText("Output: 720 × 1280 pixels").assertExists()
+        rule.onNodeWithText("Separate arrangement").performScrollTo().performClick()
+        rule.waitUntil(10_000) {
+            model().state.value.project?.exportLayout ==
+                com.blazingsystems.visualizer.project.ExportLayoutMode.SEPARATE
+        }
+        rule.onNodeWithText("Arrange export on canvas").performScrollTo().performClick()
+        rule.waitUntil(10_000) {
+            model().state.value.layoutEditing && model().state.value.editingExportLayout
+        }
+        rule.onNodeWithText("Arrange export").assertExists()
+        rule.onNodeWithText("Done").performClick()
+        assertFalse(model().state.value.layoutEditing)
+        assertEquals(1280, model().state.value.project!!.export.height)
     }
 }

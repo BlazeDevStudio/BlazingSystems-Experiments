@@ -7,6 +7,9 @@
 - Verification of *this* change: pending GitHub Actions. Until same-commit host/lint/API26/API36 pass, do not publish it as validated. Physical device coverage, tuner and actual export reliability still need acceptance.
 
 
+- Detailed interaction routes and unverified checkpoints: [docs/acceptance/click-audit.md](docs/acceptance/click-audit.md).
+- Playlist deletion now asks for confirmation; search uses a stable semantic tag for UI automation.
+
 ## 2026-10-22 late owner APK delivery checkpoint
 
 - Owner explicitly requested new Preview 2 APK as soon as compiled, without waiting for Codex to submit it. A compiled but *not yet device-verified* APK is available from CI artifact https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39754432234/artifacts/12415611017 (ZIP containing app-debug.apk). This is not a published GitHub Releases APK; no direct Preview 2 Releases URL is established yet.

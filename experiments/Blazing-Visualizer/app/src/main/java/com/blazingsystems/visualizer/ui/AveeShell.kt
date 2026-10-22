@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -441,6 +442,7 @@ private fun LibraryScreen(
 ) {
     var search by rememberSaveable { mutableStateOf("") }
     var playlistName by rememberSaveable { mutableStateOf<String?>(null) }
+    var playlistToDelete by remember { mutableStateOf<Playlist?>(null) }
     var sortMenu by remember { mutableStateOf(false) }
     val tracks = if (queue) s.queue else s.library
     val filteredTracks = tracks.filter {
@@ -477,7 +479,7 @@ private fun LibraryScreen(
             { search = it },
             label = { Text("Search tracks") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("track-search"),
         )
         if (queue && s.queue.isNotEmpty())
             TextButton(onClick = { playlistName = "My playlist" }) {
@@ -579,13 +581,29 @@ private fun LibraryScreen(
                         supportingContent = { Text("${list.tracks.size} tracks") },
                         modifier = Modifier.clickable { model.openPlaylist(list) },
                         trailingContent = {
-                            IconButton(onClick = { model.deletePlaylist(list.id) }) {
+                            IconButton(onClick = { playlistToDelete = list }) {
                                 Icon(Icons.Rounded.DeleteOutline, "Delete playlist")
                             }
                         },
                     )
                 }
         }
+    }
+    playlistToDelete?.let { target ->
+        AlertDialog(
+            onDismissRequest = { playlistToDelete = null },
+            title = { Text("Delete playlist?") },
+            text = { Text("Delete \"${target.name}\"? This does not delete your music files.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    model.deletePlaylist(target.id)
+                    playlistToDelete = null
+                }) { Text("Delete playlist") }
+            },
+            dismissButton = {
+                TextButton(onClick = { playlistToDelete = null }) { Text("Cancel") }
+            },
+        )
     }
     playlistName?.let { name ->
         AlertDialog(
