@@ -1,5 +1,11 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 continuous playback native transition regression (COMMITTED_UNVERIFIED)
+
+- Added a real Media3 device test with two audio fixture files. It starts a MediaController playlist, seeks to 120 ms before the first track ends and checks automatic transition to the second without tapping Next; repeats with Repeat All enabled and verifies last-to-first wrap. This directly reproduces the owner's old complaint, unlike earlier tests that manually invoked Next. UI queue behavior from 863d91d is unchanged.
+- CI host/Android26/Android36 outcome for this instrumentation addition is pending. An emulator pass is not a physical phone guarantee. Keep the preview release gated until all checks pass.
+
+
 ## 2026-10-22 Android 8 launch/permission instrumentation correction (COMMITTED_UNVERIFIED)
 
 - Earlier exact source 31a6f7c run 39764907346 succeeded host + API36 but API26 failed: ActivityScenario never reached RESUMED (remained STARTED while OS permission UI was showing). The fresh-install smoke now starts MainActivity without ActivityScenario's RESUMED wait, handles real Deny if accessible, asserts permission denied, then uses ActivityScenario for navigable Library and refresh/regrant. The old API26 broken-installer fallback is still explicitly identified; modern Android requires actual dialogs.
