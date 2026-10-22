@@ -260,6 +260,7 @@ class NativePackCodec {
             require(scene.animationIntensity.isFinite() && scene.animationIntensity in 0f..2f)
             require(scene.pianoIntensity.isFinite() && scene.pianoIntensity in 0f..2f)
             require(scene.designAspect.isFinite() && scene.designAspect in .1f..10f)
+            require(scene.aveeAudio.toString().length <= 4096)
             require(scene.backgroundColor.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")))
             scene.paletteColor?.let { require(it.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))) }
             scene.layers.forEach { layer ->
@@ -334,6 +335,8 @@ object AveePresetAdapter {
         val unsupported = mutableListOf<String>()
         val missing = mutableListOf<String>()
         val layers = mutableListOf<Layer>()
+        var audioProvider = JsonObject(emptyMap())
+        var providerCount = 0
         if (compositions.size != 1) unsupported += "Multiple compositions / offscreen passes"
         for (composition in compositions) for (element in
             composition.jsonObject["elements"]?.jsonArray ?: JsonArray(emptyList())) {
@@ -345,6 +348,24 @@ object AveePresetAdapter {
                 item["objType"]?.jsonPrimitive?.content
                     ?: item["v"]?.jsonPrimitive?.content
                     ?: "Unknown"
+            if (type == "AudioProvider") {
+                providerCount++
+                if (providerCount == 1) {
+                    audioProvider = buildJsonObject {
+                        listOf("sampleProvider", "sampleOutCount", "lowerHz", "higherHz",
+                            "hzLinearFactor", "smooth", "filterRadius", "filterStrength",
+                            "lowerFreqMagnitude", "outputMultiplier", "beatSmooth").forEach { key ->
+                            value(key)?.let { if (it is JsonPrimitive) put(key, it) }
+                        }
+                    }
+                    supported += "AudioProvider FFT band mapping and response parameters"
+                } else unsupported += "Multiple AudioProvider routing is approximated"
+                continue
+            }
+            if (type == "AppLogo") {
+                supported += "Source-app branding intentionally excluded"
+                continue
+            }
             val native =
                 when (type) {
                     "Text" -> ElementType.TEXT
@@ -352,6 +373,11 @@ object AveePresetAdapter {
                     "Bars", "Spectrum" -> ElementType.SPECTRUM
                     "Waveform" -> ElementType.WAVEFORM
                     "Particles" -> ElementType.PARTICLES
+                    "BlurEffect" -> ElementType.BLUR
+                    "MotionBlurEffect" -> {
+                        unsupported += "Temporal motion blur approximated by a glow"
+                        ElementType.BLUR
+                    }
                     else -> {
                         unsupported += "Element $type"
                         continue
@@ -450,7 +476,7 @@ object AveePresetAdapter {
          }
         unsupported += "Avee font metrics, blending and DSP may look different"
         return ImportResult(
-            Scene(name = "Imported Avee preset", layers = layers),
+            Scene(name = "Imported Avee preset", layers = layers, aveeAudio = audioProvider),
             assets,
             CompatibilityReport(supported, unsupported.distinct(), missing.distinct()),
         )

@@ -149,6 +149,33 @@ class PackTest {
     }
 
     @Test
+    fun modernAveeAudioProviderAndBlurRoundTripWithoutSourceBranding() {
+        val json = """{"compositions":[{"elements":[
+          {"objType":"AudioProvider","sampleProvider":{"v":"Spectrum2"},
+           "sampleOutCount":{"v":128},"lowerHz":{"v":30},
+           "higherHz":{"v":9000},"outputMultiplier":{"v":1.8}},
+          {"objType":"Bars","position":{"v":"0.5 0.4"},
+           "scale":{"v":"0.8 0.3"},"ShapePath":{"v":"Circle"},
+           "rotation":{"v":20},"visible":{"v":1}},
+          {"objType":"BlurEffect","visible":{"v":1},"color":{"v":-1}},
+          {"objType":"AppLogo","visible":{"v":1}}
+        ]}]}"""
+        val imported = AveePresetAdapter.read(json, root)
+        assertEquals(2, imported.scene.layers.size)
+        assertEquals(ElementType.SPECTRUM, imported.scene.layers[0].type)
+        assertEquals(20f, imported.scene.layers[0].transform.rotation, .001f)
+        assertEquals(ElementType.BLUR, imported.scene.layers[1].type)
+        assertEquals("128", imported.scene.aveeAudio["sampleOutCount"]?.jsonPrimitive?.content)
+        assertFalse(imported.scene.layers.any { it.name == "AppLogo" })
+        val out = ByteArrayOutputStream()
+        NativePackCodec().write(VisualizerPack(scene = imported.scene),
+            AssetResolver { error("No assets") }, out)
+        val restored = NativePackCodec().read(out.toByteArray().inputStream(),
+            File(root, "native-avee")).scene
+        assertEquals(imported.scene, restored)
+    }
+
+    @Test
     fun partialAveeSupportIsExplicit() {
         val result =
             AveePresetAdapter.read(

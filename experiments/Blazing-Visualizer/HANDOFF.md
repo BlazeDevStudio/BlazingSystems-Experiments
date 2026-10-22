@@ -1,5 +1,12 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 FFT audio-provider interoperability increment
+
+- Archive review of owner-provided, third-party-modified Avee 1.2.252 APK found 18 JSON visualizer definitions with AudioProvider Spectrum2 settings (sample counts, Hz range, smoothing/filter radius, gain). No evidence supports claiming a polyphonic note-identification engine in Avee; visual FFT response is distinct from BlazeViz's Basic Pitch MIDI transcription.
+- New importer handling: stores a safe subset of first AudioProvider metadata inside Scene, maps BlurEffect/MotionBlurEffect as explicit approximations, skips Avee app-brand logos, and adds a schema-only roundtrip regression. The original spectrum painter now interprets imported band-count/frequency/FFT gains using the same preview/export scene; existing beloved native presets use the original path unchanged. Evidence and limitations: [docs/acceptance/avee-1252-audio-profile.md](docs/acceptance/avee-1252-audio-profile.md).
+- Must verify same-source GitHub Actions. **Do not claim full .viz interoperability or the latest build released.** Modern multicomposition effects and true .viz fixture compatibility are outstanding.
+
+
 ## 2026-10-22 Avee preset import compatibility increment (COMMITTED_UNVERIFIED)
 
 - Existing modern-Avee phone/navigation/player/crop work is at commit 863d91d; DO NOT duplicate its Media3/layout changes. This pass changes only .viz importer, its regression tests and this handoff.

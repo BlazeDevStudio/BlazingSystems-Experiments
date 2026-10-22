@@ -134,16 +134,48 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                 }
                 ElementType.SPECTRUM -> {
                     val circle = layer.string("path", "circle") == "circle"
-                    val bins = 80
+                    val config = s.scene.aveeAudio
+                    fun param(key: String, fallback: Float): Float =
+                        config[key]?.jsonPrimitive?.floatOrNull?.takeIf(Float::isFinite) ?: fallback
+                    val imported = config.isNotEmpty()
+                    val bins = if (imported)
+                        param("sampleOutCount", 80f).toInt().coerceIn(24, 192) else 80
+                    val low = param("lowerHz", 20f).coerceIn(0f, 8000f)
+                    val high = param("higherHz", 11025f).coerceIn(low + 1f, 11025f)
+                    val linearity = param("hzLinearFactor", .5f).coerceIn(0f, 1f)
+                    val gain = param("outputMultiplier", 1f).coerceIn(.1f, 3f)
+                    val lowMagnitude = param("lowerFreqMagnitude", .5f).coerceIn(0f, 1f)
+                    val filterRadius = param("filterRadius", 0f).toInt().coerceIn(0, 8)
                     paint.strokeWidth = max(1f, min(w, h) / 300f)
                     paint.strokeCap = Paint.Cap.ROUND
                     for (i in 0 until bins) {
-                        val from = (i.toDouble() / bins).pow(2) * min(512, s.features.spectrum.size)
+                        val fraction = i.toDouble() / bins
+                        val from = if (imported) {
+                            val mapped = fraction.pow(2) * (1.0 - linearity) + fraction * linearity
+                            val hz = low + (high - low) * mapped
+                            (hz / 22050.0 * (2 * s.features.spectrum.size))
+                                .coerceIn(0.0, (s.features.spectrum.size - 1).coerceAtLeast(0).toDouble())
+                        } else fraction.pow(2) * min(512, s.features.spectrum.size)
                         val frequency = from * 22050 / (2*s.features.spectrum.size.coerceAtLeast(1))
                         val bounds = layer.noteRouting.bounds()
                         val allowed = layer.noteRouting == NoteRouting() || frequency in
                             MusicalMath.frequency(bounds.first)*2.0.pow(-.5/12)..MusicalMath.frequency(bounds.last)*2.0.pow(.5/12)
-                        val amplitude = if (allowed) s.features.spectrum.getOrElse(from.toInt()) { 0f } else 0f
+                        val amplitude = if (!allowed) 0f else if (!imported) {
+                            s.features.spectrum.getOrElse(from.toInt()) { 0f }
+                        } else {
+                            var sum = 0f
+                            var count = 0
+                            for (offset in -filterRadius..filterRadius) {
+                                val index = from.toInt() + offset
+                                if (index in s.features.spectrum.indices) {
+                                    sum += s.features.spectrum[index]
+                                    count++
+                                }
+                            }
+                            val filter = if (count > 0) sum / count else 0f
+                            filter * gain * (lowMagnitude +
+                                (1f - lowMagnitude) * fraction.toFloat())
+                        }
                         val level = (ln(1 + amplitude * 80) / ln(81f)).coerceIn(0f, 1f)
                         paint.color = tint
                         if (circle) {

@@ -134,6 +134,8 @@ data class Scene(
     val backgroundColor: String = "#080911",
     val showEquations: Boolean = false,
     val designAspect: Float = 1f,
+    /** Safe declarative Avee AudioProvider scalars; never executable imported code. */
+    val aveeAudio: JsonObject = JsonObject(emptyMap()),
 )
 
 data class FeatureFrame(
