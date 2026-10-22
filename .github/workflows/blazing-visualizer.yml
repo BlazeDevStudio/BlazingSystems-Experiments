@@ -77,7 +77,10 @@ jobs:
           heap-size: 512M
           disable-animations: true
           script: |
-            cd experiments/Blazing-Visualizer && ./gradlew :app:connectedDebugAndroidTest --no-daemon
+            cd experiments/Blazing-Visualizer
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.blazingsystems.visualizer.MusicPermissionTest --no-daemon
+            mv app/build/reports/androidTests/connected app/build/reports/androidTests/permission
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=com.blazingsystems.visualizer.MusicPermissionTest --no-daemon
             mkdir -p device-evidence && adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > device-evidence/acceptance.tar
       - uses: actions/upload-artifact@v4
         if: always()
