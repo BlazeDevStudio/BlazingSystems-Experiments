@@ -12,7 +12,6 @@ public final class RentalHttpResponseGuardTest {
         TrackedStream(byte[] content) { super(content); }
         @Override public void close() {
             closed = true;
-            super.close();
         }
     }
 

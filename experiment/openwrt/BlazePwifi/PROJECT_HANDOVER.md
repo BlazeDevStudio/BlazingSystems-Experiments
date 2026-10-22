@@ -1,8 +1,18 @@
 # BlazePwifi Project Handover
 
-**Last updated:** 2026-10-06  
+**Last updated:** 2026-10-22  
 **Repository:** BlazingSystems/BlazingSystems-Experiments  
 **Development state:** BlazePwifi v0.5.1 is published and fully build-validated as a prerelease from exact candidate `65f87d775793a1fdc09a9522cf752349f68c3b41`. Transactional no-reflash updates and rollback are included. Android production signing remains blocked only by unavailable exact locked v0.4 signing material.
+
+## Current focused Rental audit — 2026-10-22
+
+**Immutable latest provisioning prerelease:** `v0.5.2-rental.2-rc.10`, exact release target `047b4ac798e75b69d324eb802013fdaf7695bb91`. The dedicated Rental release run `39742380175` passed. This is TEST-signed for device provisioning and must not be represented as a production Device Owner release.
+
+**Unreleased continuation branch:** `blazepwifi-rental-v0.5.2-rc11-network-audit`, based on RC10. Security transport commit `4f3f5cf75ff33ab8ada1a110858ea3f58bdc853f` rejects HTTP redirects, limits all rental API JSON responses to 256 KiB, and guarantees connection cleanup. The JUnit suite covers oversized, exact-limit and normal responses plus stream closure. CI started at run `39745189497`; consult the latest run on this branch for its actual status before claiming success.
+
+**Remaining release blockers:** physical Android Setup Wizard provisioning evidence, locked long-term production APK signing continuity and target-specific GMS/OEM compatibility. Do not upgrade a production-signed managed device with a TEST-signed RC APK. Continue only the Rental provisioning/enrollment transport and signing boundaries in this branch; other BlazePwifi subsystems should remain untouched.
+
+**Detailed log:** `docs/handover/2026-10-22-rental-rc11-transport-audit.md`.
 
 ## Active v0.5.1 maintenance target
 
