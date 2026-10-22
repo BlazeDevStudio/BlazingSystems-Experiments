@@ -94,6 +94,7 @@ def valid(body):
     reject(isinstance(body["devices"], list) and 0 < len(body["devices"]) <= 5000)
     reject(isinstance(body["receipts"], list) and len(body["receipts"]) <= 100000)
     ids, events = set(), set()
+    lease_by_device = {}
     for row in body["devices"]:
         reject(isinstance(row, dict) and set(row) == {"id", "secret", "lease", "label", "last"})
         did = row["id"]
@@ -103,7 +104,8 @@ def valid(body):
         reject(isinstance(row["label"], str) and len(row["label"]) <= 80)
         reject("\t" not in row["secret"] and "\n" not in row["secret"])
         reject("\t" not in row["label"] and "\n" not in row["label"])
-        decimal(row["lease"]); decimal(row["last"])
+        lease_by_device[did] = decimal(row["lease"])
+        decimal(row["last"])
     for item in body["receipts"]:
         reject(isinstance(item, dict) and set(item) ==
                {"event", "id", "lease", "now", "pulses", "controller", "nonce", "target"})
@@ -115,9 +117,7 @@ def valid(body):
         # ACK paid seconds when the single-authority lease has regressed.
         # This detects internally inconsistent mixed snapshots only; it is
         # NOT an off-device antirollback witness for complete old snapshots.
-        device_lease = next(d["lease"] for d in body["devices"]
-                            if d["id"] == item["id"])
-        reject(device_lease >= decimal(item["lease"]))
+        reject(lease_by_device[item["id"]] >= decimal(item["lease"]))
         pulses = decimal(item["pulses"], 20)
         reject(pulses >= 1)
         decimal(item["lease"]); decimal(item["now"])
