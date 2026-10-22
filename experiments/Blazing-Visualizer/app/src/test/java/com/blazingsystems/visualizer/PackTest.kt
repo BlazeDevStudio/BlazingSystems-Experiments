@@ -176,6 +176,28 @@ class PackTest {
     }
 
     @Test
+    fun modernSpectrumWaveformAndBlurAliasesPreserveColorsAndVisibility() {
+        val json = """{"compositions":[{"elements":[
+            {"objType":"Spectrum2","position":[0.25,0.75],"scale":{"v":"0.6 0.2"},"visible":true,"color":"#FF44CC88"},
+            {"objType":"Waveform","visible":false},
+            {"objType":"BlurEffect","visible":1},
+            {"objType":"MotionBlurEffect","visible":0}
+        ]}]}"""
+        val imported = AveePresetAdapter.read(json, root)
+        assertEquals(4, imported.scene.layers.size)
+        assertEquals(ElementType.SPECTRUM, imported.scene.layers[0].type)
+        assertEquals(.25f, imported.scene.layers[0].transform.x, .0001f)
+        assertEquals(.75f, imported.scene.layers[0].transform.y, .0001f)
+        assertEquals(.6f, imported.scene.layers[0].transform.width, .0001f)
+        assertEquals("#FF44CC88", imported.scene.layers[0].properties["color"]!!.jsonPrimitive.content)
+        assertEquals(ElementType.WAVEFORM, imported.scene.layers[1].type)
+        assertFalse(imported.scene.layers[1].visible)
+        assertEquals(ElementType.BLUR, imported.scene.layers[2].type)
+        assertFalse(imported.scene.layers[3].visible)
+        assertTrue(imported.report.requiresPartialAcceptance)
+    }
+
+    @Test
     fun partialAveeSupportIsExplicit() {
         val result =
             AveePresetAdapter.read(

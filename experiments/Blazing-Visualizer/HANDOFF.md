@@ -1,5 +1,13 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 Avee 1.2.252 APK static compatibility extension
+
+- Owner provided an unofficially modified Avee 1.2.252 APK; ZIP integrity and DEX class strings were inspected without distributing its code or media. Static strings include Spectrum2, RoundBars, SharpBars, Waveform, BlurEffect and MotionBlurEffect. See docs/acceptance/avee-1.2.252-compat.md.
+- Preserve concurrent cbbc8783 and b81ce290 modern .viz ZIP/JSON loader and whitespace-vector fix; this pass adds visual-type aliases, hex string colors, simplified blur warnings, and regression tests.
+- Music responsiveness: existing fast Hann-windowed FFT is distinct from slower offline polyphonic Basic Pitch MIDI detection. Claim neither byte-for-byte modern Avee engine replication nor all .viz files supported.
+- Current branch CI/host/mobile physical validation still required; no Preview 2 direct GitHub release verified. Video tracing stays deferred.
+
+
 ## 2026-10-22 FFT audio-provider interoperability increment
 
 - Archive review of owner-provided, third-party-modified Avee 1.2.252 APK found 18 JSON visualizer definitions with AudioProvider Spectrum2 settings (sample counts, Hz range, smoothing/filter radius, gain). No evidence supports claiming a polyphonic note-identification engine in Avee; visual FFT response is distinct from BlazeViz's Basic Pitch MIDI transcription.

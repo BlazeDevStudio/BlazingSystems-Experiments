@@ -370,7 +370,8 @@ object AveePresetAdapter {
                 when (type) {
                     "Text" -> ElementType.TEXT
                     "Image" -> ElementType.IMAGE
-                    "Bars", "Spectrum" -> ElementType.SPECTRUM
+                    "Bars", "Spectrum", "Spectrum2", "RoundBars", "SharpBars" -> ElementType.SPECTRUM
+                    "BlurEffect", "MotionBlurEffect" -> ElementType.BLUR
                     "Waveform" -> ElementType.WAVEFORM
                     "Particles" -> ElementType.PARTICLES
                     "BlurEffect" -> ElementType.BLUR
@@ -426,8 +427,14 @@ object AveePresetAdapter {
             val properties = buildJsonObject {
                 value("text")?.let { put("text", it) }
                 value("fontSize")?.let { put("fontSize", it) }
-                value("color")?.jsonPrimitive?.longOrNull?.let {
-                    put("color", "#%08X".format(it.toInt()))
+                (value("color") as? JsonPrimitive)?.content?.let { encoded ->
+                    val normalized = when {
+                        encoded.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) -> encoded
+                        encoded.toLongOrNull() != null -> "#%08X".format(encoded.toLong().toInt())
+                        else -> null
+                    }
+                    if (normalized != null) put("color", normalized)
+                    else unsupported += "$type.color"
                 }
                 value("customImage")
                     ?.jsonPrimitive
@@ -451,8 +458,9 @@ object AveePresetAdapter {
                         if (value("ShapePath")?.jsonPrimitive?.content == "Circle") "circle"
                         else "bars",
                     )
-                    unsupported += "Bars shader / DSP styling is approximated"
+                    unsupported += "$type shader / DSP styling is approximated"
                 }
+                if (native == ElementType.BLUR) unsupported += "$type simplified blur effect"
             }
             supported += "$type static transform and visibility"
             layers +=
