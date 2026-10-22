@@ -1,0 +1,33 @@
+name: RENT-20261022 synthetic rental v2 receipt floor guard
+on:
+  push:
+    branches:
+      - fix/rent-20261022-v2-internal-floor
+    paths:
+      - '.github/workflows/blazepwifi-v060-rental-v2-floor.yml'
+      - 'experiment/openwrt/BlazePwifi/tests/fixtures/rental_v2_atomic.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_v2_receipt_floor_guard.py'
+  pull_request:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - '.github/workflows/blazepwifi-v060-rental-v2-floor.yml'
+      - 'experiment/openwrt/BlazePwifi/tests/fixtures/rental_v2_atomic.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_v2_receipt_floor_guard.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-rental-v2-floor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile synthetic-only Python source
+        run: python3 -m py_compile experiment/openwrt/BlazePwifi/tests/fixtures/rental_v2_atomic.py experiment/openwrt/BlazePwifi/tests/v060_rental_v2_receipt_floor_guard.py
+      - name: Reject regressed lease before replay or financial-state projection
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_receipt_floor_guard.py
+      - name: Preserve existing v2 atomic bridge tests
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
