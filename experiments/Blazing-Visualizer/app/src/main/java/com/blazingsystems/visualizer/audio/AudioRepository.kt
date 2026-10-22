@@ -35,6 +35,27 @@ data class DecodedAudio(
 class AudioRepository(private val context: Context) {
     private val root = File(context.cacheDir, "audio-v1").apply { mkdirs() }
 
+    /** Analysis results are stored separately; temporary PCM must not grow without a bound. */
+    @Synchronized
+    fun discardDecoded(hash: String) {
+        require(hash.matches(Regex("[0-9a-f]{64}")))
+        File(root, hash).deleteRecursively()
+    }
+
+    @Synchronized
+    fun compactDecodedCache(protected: Set<String>, limitBytes: Long = 256L * 1024 * 1024) {
+        val folders = root.listFiles().orEmpty()
+            .filter { it.isDirectory && it.name.matches(Regex("[0-9a-f]{64}")) }
+        fun size(directory: File) = directory.walkTopDown()
+            .filter { it.isFile }.sumOf { it.length() }
+        var total = folders.sumOf(::size)
+        for (folder in folders.filterNot { it.name in protected }.sortedBy { it.lastModified() }) {
+            if (total <= limitBytes) break
+            val bytes = size(folder)
+            if (folder.deleteRecursively()) total -= bytes
+        }
+    }
+
     suspend fun get(source: SourceRef, progress: (Float) -> Unit = {}): DecodedAudio =
         withContext(Dispatchers.IO) {
             val hash = MessageDigest.getInstance("SHA-256")

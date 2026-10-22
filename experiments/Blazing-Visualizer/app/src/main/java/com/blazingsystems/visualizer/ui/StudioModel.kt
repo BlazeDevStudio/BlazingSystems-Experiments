@@ -16,6 +16,8 @@ import java.util.UUID
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -52,6 +54,8 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
     private var rawNotes: List<NoteEvent> = emptyList()
     private val saves = Channel<StudioState>(Channel.UNLIMITED)
     private val audio = AudioRepository(app)
+    private val analysisLock = Mutex()
+    private var preanalysisJob: Job? = null
     private val presets = PresetStore(File(app.filesDir, "presets.json"))
     var pendingExport: ExportRequest? = null
 
@@ -109,6 +113,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 )
             initialized.complete(Unit)
             if (knownLibrary != mergedLibrary) persist()
+            scheduleBackgroundAnalysis()
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
@@ -163,6 +168,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     mutable.value = mutable.value.copy(queue = q, library = all)
                     persist()
                     select(tracks.first(), true)
+                    scheduleBackgroundAnalysis()
                 }
                 .onFailure(::report)
         }
@@ -178,7 +184,51 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     state.copy(library = (state.library + discovered).distinctBy { it.uri })
                 }
                 persist()
+                scheduleBackgroundAnalysis()
             }.onFailure(::report)
+        }
+    }
+
+    /**
+     * Pre-analyze each discovered track off the playback thread. Selecting a track cancels
+     * this lower-priority worker, so the foreground inference gets the next model slot.
+     * The hash/model/parameter cache in AnalysisRepository avoids repeat inference.
+     */
+    private fun scheduleBackgroundAnalysis() {
+        preanalysisJob?.cancel()
+        preanalysisJob = viewModelScope.launch(Dispatchers.IO) {
+            initialized.await()
+            val sources = mutable.value.library.toList()
+            for (source in sources) {
+                ensureActive()
+                if (source.uri == mutable.value.project?.source?.uri) continue
+                var decoded: DecodedAudio? = null
+                try {
+                    analysisLock.withLock {
+                        ensureActive()
+                        if (source.uri != mutable.value.project?.source?.uri) {
+                            decoded = audio.get(source)
+                            AnalysisRepository(context()).getOrAnalyze(decoded!!)
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // An inaccessible music file must not stop all other background preparations.
+                } finally {
+                    decoded?.let { prepared ->
+                        val current = mutable.value.project
+                        if (current?.source?.uri != source.uri &&
+                            current?.source?.contentSha256 != prepared.hash
+                        ) {
+                            audio.discardDecoded(prepared.hash)
+                        }
+                    }
+                }
+                val playingHash = mutable.value.project?.source?.contentSha256
+                if (mutable.value.progress == null)
+                    audio.compactDecodedCache(listOfNotNull(playingHash).toSet())
+            }
         }
     }
 
@@ -242,10 +292,12 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun select(source: SourceRef, startPlayback: Boolean = true) {
+        preanalysisJob?.cancel()
         val previous = trackJob
         previous?.cancel()
         trackJob = viewModelScope.launch {
             previous?.join()
+            preanalysisJob?.cancel()
             audioFeatures?.close()
             audioFeatures = null
             rawNotes = emptyList()
@@ -306,8 +358,10 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 audioFeatures = AudioFeatures(decoded)
                 persist()
                 val result =
-                    AnalysisRepository(context()).getOrAnalyze(decoded) { p ->
-                        mutable.update { it.copy(progress = p) }
+                    analysisLock.withLock {
+                        AnalysisRepository(context()).getOrAnalyze(decoded) { p ->
+                            mutable.update { it.copy(progress = p) }
+                        }
                     }
                 ensureActive()
                 rawNotes = result.rawNotes
@@ -330,6 +384,8 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                 }
             } finally {
                 coordinator.finish(source.uri)
+                if (currentCoroutineContext().isActive && coordinator.selectedUri == source.uri)
+                    scheduleBackgroundAnalysis()
             }
         }
     }
@@ -693,6 +749,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         trackJob?.cancel()
+        preanalysisJob?.cancel()
         audioFeatures?.close()
         player.close()
         saves.close()
