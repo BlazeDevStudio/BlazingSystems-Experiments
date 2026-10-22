@@ -154,6 +154,7 @@ try:
     # A full rollback to an earlier self-consistent snapshot still requires
     # the missing independent antirollback witness (P0 #43).
     original_authority = LEDGER.read_text()
+    original_digest = digest()
     envelope = json.loads(original_authority)
     row = next(d for d in envelope["body"]["devices"] if d["id"] == "dev01")
     row["lease"] = 0
@@ -161,7 +162,7 @@ try:
                         ensure_ascii=True).encode()
     envelope["checksum"] = hashlib.sha256(packed).hexdigest()
     file(LEDGER, json.dumps(envelope, sort_keys=True, separators=(",", ":"),
-                           ensure_ascii=True) + "\\n")
+                           ensure_ascii=True) + "\n")
     invalid_digest = digest()
     before_devices = DEVICES.read_bytes()
     before_events = EVENTS.read_bytes()
@@ -171,8 +172,8 @@ try:
     assert EVENTS.read_bytes() == before_events, "invalid authority rewrote receipt projection"
     file(LEDGER, original_authority)
     check(call("dev01", "ctrlA", "nonce3", "targetA", "1"),
-          stdout="duplicate\\t125856\\n")
-    assert digest() == snapshot
+          stdout="duplicate\t125856\n")
+    assert digest() == original_digest
 
     # Derived-state corruption is repaired from the ledger, not imported.
     snapshot = digest()
