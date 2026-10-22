@@ -1,0 +1,334 @@
+{
+  "apk": "Blazing-Visualizer-preview-1.apk",
+  "apkSha256": "f315a0c09e781d945555f783dbf3bfd356d0030aa7006936af6fa172cfe1ad4d",
+  "sourceRevision": "df5ee544cb5cd4bf1dd1f7e76f352be1adcaface",
+  "sourceDirty": false,
+  "deviceRuns": [
+    {
+      "log": "api26-native-run.txt",
+      "summary": "INSTRUMENTATION_RESULT: stream=\n\nTime: 237.713\nThere was 1 failure:\n1) noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(com.blazingsystems.visualizer.PlayerAndUiTest)\nandroidx.compose.ui.test.ComposeTimeoutException: Condition still not satisfied after 10000 ms\n\tat androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:755)\n\tat androidx.compose.ui.test.junit4.AndroidComposeTestRule.waitUntil(AndroidComposeTestRule.android.kt:362)\n\tat com.blazingsystems.visualizer.PlayerAndUiTest.noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation(PlayerAndUiTest.kt:59)\n\nFAILURES!!!\nTests run: 11,  Failures: 1\n\n\nINSTRUMENTATION_CODE: -1\n\n{\"returncode\": 0, \"elapsed\": 241.46729003200016}"
+    },
+    {
+      "log": "api26-ui-run.txt",
+      "summary": "INSTRUMENTATION_RESULT: stream=\n\nTime: 93.429\n\nOK (4 tests)\n\n\nINSTRUMENTATION_CODE: -1"
+    }
+  ],
+  "checks": {
+    "bundledLicenses": [
+      "assets/licenses/Apache-2.0.txt",
+      "assets/licenses/Basic-Pitch-Apache-2.0.txt",
+      "assets/licenses/Ms-PL.txt"
+    ],
+    "modelSha256": "3db297d54af8e01c6e5618245c956b1d71b6a2b978cb2dedb527173186552676",
+    "nativeLoadAlignment": {
+      "lib/arm64-v8a/libandroidx.graphics.path.so": [
+        16384,
+        16384,
+        16384
+      ],
+      "lib/arm64-v8a/libtensorflowlite_jni.so": [
+        16384,
+        16384,
+        16384
+      ],
+      "lib/x86_64/libandroidx.graphics.path.so": [
+        16384,
+        16384,
+        16384
+      ],
+      "lib/x86_64/libtensorflowlite_jni.so": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    "deviceCodeEquivalent": {
+      "allIdentical": true,
+      "entries": 17,
+      "testedApkSha256": "71b3971d99a6e65afea7afece6137e7dcb254ab3e98f5dc5ea52958da795a845"
+    },
+    "hostTests": 45,
+    "deviceTests": 11,
+    "deviceTestResults": {
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#cancellationNeverCompletesDestination": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#postprocessorMatchesSpotifyReference": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#rawSyntheticAndRecordedFluteMeetOnsetTarget": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#rendererReplaysSamePixelsAfterSeek": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#noteEditsAndPackRoundTripRemainExportable": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#mp4ExportHasAudioVideoForAllRequiredPresets": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.NativeAcceptanceTest#modelMatchesIndependentPythonOutput": {
+        "status": 0,
+        "run": "api26-native-run.txt"
+      },
+      "com.blazingsystems.visualizer.PlayerAndUiTest#noteGuideUsesSelectedTrackAndKeepsCorrectionsAfterRecreation": {
+        "status": 0,
+        "run": "api26-ui-run.txt"
+      },
+      "com.blazingsystems.visualizer.PlayerAndUiTest#familiarWorkflowOpensPresetsAndLayerEditor": {
+        "status": 0,
+        "run": "api26-ui-run.txt"
+      },
+      "com.blazingsystems.visualizer.PlayerAndUiTest#playbackSeeksAndLoopsUsingSourceTime": {
+        "status": 0,
+        "run": "api26-ui-run.txt"
+      },
+      "com.blazingsystems.visualizer.QueueRegressionTest#removingQueuedTrackUpdatesMedia3Playlist": {
+        "status": 0,
+        "run": "api26-ui-run.txt"
+      }
+    },
+    "synthetic-accuracy": {
+      "fixture": "synthetic",
+      "matches": 5,
+      "expected": 5,
+      "predicted": 6,
+      "onsetToleranceUs": 50000,
+      "rawF1": 0.9090909090909091,
+      "deltasUs": [
+        -3402,
+        -4218,
+        1148,
+        1148,
+        1148
+      ],
+      "notes": [
+        {
+          "pitch": 60,
+          "startUs": 296598,
+          "endUs": 1335147
+        },
+        {
+          "pitch": 64,
+          "startUs": 1495782,
+          "endUs": 2532259
+        },
+        {
+          "pitch": 79,
+          "startUs": 2699515,
+          "endUs": 2950218
+        },
+        {
+          "pitch": 60,
+          "startUs": 2701148,
+          "endUs": 3728087
+        },
+        {
+          "pitch": 64,
+          "startUs": 2701148,
+          "endUs": 3728087
+        },
+        {
+          "pitch": 67,
+          "startUs": 2701148,
+          "endUs": 3728087
+        }
+      ]
+    },
+    "flute-accuracy": {
+      "fixture": "flute",
+      "matches": 3,
+      "expected": 3,
+      "predicted": 3,
+      "onsetToleranceUs": 50000,
+      "rawF1": 1,
+      "deltasUs": [
+        31428,
+        40000,
+        25093
+      ],
+      "notes": [
+        {
+          "pitch": 72,
+          "startUs": 331428,
+          "endUs": 719819
+        },
+        {
+          "pitch": 76,
+          "startUs": 1640000,
+          "endUs": 2056250
+        },
+        {
+          "pitch": 81,
+          "startUs": 2925093,
+          "endUs": 3356567
+        }
+      ]
+    },
+    "exportMatrix": [
+      {
+        "width": 1280,
+        "height": 720,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 720,
+        "height": 1280,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 720,
+        "height": 720,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 1920,
+        "height": 1080,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 1080,
+        "height": 1920,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 1080,
+        "height": 1080,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 100000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 66666,
+            "samples": 3
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 139319,
+            "firstPtsUs": 0,
+            "lastPtsUs": 92879,
+            "samples": 3
+          }
+        ]
+      },
+      {
+        "width": 320,
+        "height": 180,
+        "tracks": [
+          {
+            "mime": "video/avc",
+            "durationUs": 4000000,
+            "firstPtsUs": 0,
+            "lastPtsUs": 3966666,
+            "samples": 120
+          },
+          {
+            "mime": "audio/mp4a-latm",
+            "durationUs": 4040272,
+            "firstPtsUs": 0,
+            "lastPtsUs": 3993832,
+            "samples": 87
+          }
+        ]
+      }
+    ],
+    "audioAlignment": {
+      "bestLagUs": 0,
+      "normalizedCorrelation": 0.9999357987188497,
+      "toleranceUs": 50000
+    },
+    "modelParityMaxErrors": {
+      "note": 5.924701690673828e-05,
+      "onset": 9.109824895858765e-05,
+      "contour": 7.158517837524414e-05
+    },
+    "rendererParity": {
+      "aspectRatios": 3,
+      "sameTimestampReplay": true
+    }
+  },
+  "releaseStatus": "preview",
+  "physicalDeviceVerified": false
+}
