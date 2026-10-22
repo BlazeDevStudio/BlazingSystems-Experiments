@@ -94,6 +94,10 @@ def valid(body):
     reject(isinstance(body["devices"], list) and 0 < len(body["devices"]) <= 5000)
     reject(isinstance(body["receipts"], list) and len(body["receipts"]) <= 100000)
     ids, events = set(), set()
+    # P0 #32: the authority must never claim a durable paid receipt beyond
+    # the same authority's current lease. Validate before any projections or
+    # duplicate ACKs; a matching checksum alone cannot prove this invariant.
+    lease_floor = {}
     for row in body["devices"]:
         reject(isinstance(row, dict) and set(row) == {"id", "secret", "lease", "label", "last"})
         did = row["id"]
@@ -103,7 +107,8 @@ def valid(body):
         reject(isinstance(row["label"], str) and len(row["label"]) <= 80)
         reject("\t" not in row["secret"] and "\n" not in row["secret"])
         reject("\t" not in row["label"] and "\n" not in row["label"])
-        decimal(row["lease"]); decimal(row["last"])
+        lease_floor[did] = decimal(row["lease"])
+        decimal(row["last"])
     for item in body["receipts"]:
         reject(isinstance(item, dict) and set(item) ==
                {"event", "id", "lease", "now", "pulses", "controller", "nonce", "target"})
@@ -113,7 +118,9 @@ def valid(body):
         reject(item["id"] in ids)
         pulses = decimal(item["pulses"], 20)
         reject(pulses >= 1)
-        decimal(item["lease"]); decimal(item["now"])
+        receipt_lease = decimal(item["lease"])
+        decimal(item["now"])
+        reject(receipt_lease <= lease_floor[item["id"]])
         for field in ("controller", "nonce", "target"):
             reject(isinstance(item[field], str) and 0 < len(item[field]) <= 128)
         expected = hashlib.sha256(
