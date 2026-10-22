@@ -198,13 +198,26 @@ class StudioModel @JvmOverloads constructor(
         viewModelScope.launch {
             initialized.await()
             runCatching {
-                    val tracks = withContext(Dispatchers.IO) { uris.map { library.open(it) } }
-                    if (tracks.isEmpty()) return@runCatching
+                    // One broken or inaccessible file must not discard other selections.
+                    val opened = withContext(Dispatchers.IO) {
+                        uris.map { uri -> runCatching { library.open(uri) } }
+                    }
+                    val tracks = opened.mapNotNull { it.getOrNull() }
+                    val failed = opened.count { it.isFailure }
+                    if (tracks.isEmpty()) {
+                        if (failed > 0) report(IllegalArgumentException(
+                            "Could not open any of the $failed selected files. Check file access and format."
+                        ))
+                        return@runCatching
+                    }
                     val q = (mutable.value.queue + tracks).distinctBy { it.uri }
                     val all = (mutable.value.library + tracks).distinctBy { it.uri }
                     mutable.value = mutable.value.copy(queue = q, library = all)
                     persist()
                     select(tracks.first(), true)
+                    if (failed > 0) report(IllegalArgumentException(
+                        "$failed of ${uris.size} selected audio files could not be opened; the remaining tracks were imported."
+                    ))
                     scheduleBackgroundAnalysis()
                 }
                 .onFailure(::report)

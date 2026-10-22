@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.render.SceneLayouts
@@ -33,7 +34,7 @@ fun LayoutOverlay(scene: Scene, editing: Boolean, export: Boolean, model: Studio
         }?.id
     }
     Box(Modifier.fillMaxSize()) {
-        Canvas(Modifier.fillMaxSize().pointerInput(editing, export) {
+        Canvas(Modifier.fillMaxSize().testTag("visualizer-canvas").pointerInput(editing, export) {
             if (!editing) detectTapGestures(onLongPress = { point ->
                 selected = SceneLayouts.hitTest(latest, point.x / size.width,
                     point.y / size.height, size.width.toFloat() / size.height)
@@ -69,6 +70,11 @@ fun LayoutOverlay(scene: Scene, editing: Boolean, export: Boolean, model: Studio
                     },
                 )
             }
+        }.pointerInput(editing) {
+            if (editing) detectTapGestures(onTap = { point ->
+                selected = SceneLayouts.hitTest(latest, point.x / size.width,
+                    point.y / size.height, size.width.toFloat() / size.height)
+            })
         }) {
             if (editing) latest.layers.firstOrNull { it.id == selected }?.transform?.let { t ->
                 val center = Offset(t.x * size.width, t.y * size.height)

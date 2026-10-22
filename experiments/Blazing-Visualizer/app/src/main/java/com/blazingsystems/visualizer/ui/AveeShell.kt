@@ -314,7 +314,7 @@ fun AveeShell(model: StudioModel) {
                                     IconButton(onClick = { panel = "editor" }, enabled = s.ready) {
                                         Icon(Icons.Rounded.Edit, "Edit visualizer")
                                     }
-                                    IconButton(onClick = { panel = "export" }) {
+                                    IconButton(onClick = { panel = "export" }, enabled = s.project != null) {
                                         Icon(Icons.Rounded.IosShare, "Export video")
                                     }
                                 }
@@ -360,7 +360,7 @@ fun AveeShell(model: StudioModel) {
                             s.scene,
                             s.savedPresets,
                             onSave = model::savePreset,
-                            onSelect = model::setScene,
+                            onSelect = { chosen -> model.setScene(chosen); panel = null },
                             onImport = {
                                 import.launch(
                                     arrayOf(
@@ -443,6 +443,9 @@ private fun LibraryScreen(
     var playlistName by rememberSaveable { mutableStateOf<String?>(null) }
     var sortMenu by remember { mutableStateOf(false) }
     val tracks = if (queue) s.queue else s.library
+    val filteredTracks = tracks.filter {
+        it.title.contains(search, true) || it.artist.contains(search, true)
+    }
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(18.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -482,12 +485,7 @@ private fun LibraryScreen(
                 Text("Save queue as playlist")
             }
         LazyColumn(Modifier.weight(1f)) {
-            items(
-                tracks.filter {
-                    it.title.contains(search, true) || it.artist.contains(search, true)
-                },
-                key = { it.uri },
-            ) { source ->
+            items(filteredTracks, key = { it.uri }) { source ->
                 ListItem(
                     headlineContent = {
                         Text(source.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -545,6 +543,14 @@ private fun LibraryScreen(
                         .clickable { model.select(source, true) },
                 )
             }
+            if (tracks.isNotEmpty() && filteredTracks.isEmpty())
+                item {
+                    Text(
+                        "No tracks match \"$search\". Clear the search to see all tracks.",
+                        modifier = Modifier.padding(vertical = 24.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             if (tracks.isEmpty())
                 item {
                     Column(Modifier.padding(vertical = 40.dp)) {
