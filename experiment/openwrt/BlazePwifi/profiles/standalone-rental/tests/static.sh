@@ -230,7 +230,10 @@ test -f "$ANDROID/tests/unit/com/blazesystems/blazerental/LeaseSyncStateGuardTes
 grep -q 'ProvisioningStateGuard.isProvisioningSource' "$SRC/BlazeProvisioningComplianceActivity.java"
 grep -q 'callbackHasExtras && !captured' "$SRC/BlazeProvisioningComplianceActivity.java"
 grep -q 'ProvisioningStateGuard.isProvisioningSource' "$SRC/BlazeDeviceAdminReceiver.java"
-grep -q 'AndroidRentalPolicyRepository.revision(app) >= 0L' "$SRC/BlazeDeviceAdminReceiver.java"
+grep -q 'AndroidRentalPolicyRepository.hasVerifiedPolicy(app)' "$SRC/BlazeDeviceAdminReceiver.java"
+grep -q 'AndroidRentalPolicyRepository.hasVerifiedPolicy(self)' "$SRC/BlazeProvisioningComplianceActivity.java"
+grep -q 'AndroidRentalPolicyRepository.hasVerifiedPolicy(context)' "$SRC/LeaseClient.java"
+grep -q 'public static boolean hasVerifiedPolicy(Context context)' "$SRC/AndroidRentalPolicyRepository.java"
 grep -q 'deviceOwnerCompletionRequiresProvisioningSource' "$ANDROID/tests/unit/com/blazesystems/blazerental/ProvisioningStateGuardTest.java"
 
 # Modern Android completion is owned by the compliance activity, not receiver.

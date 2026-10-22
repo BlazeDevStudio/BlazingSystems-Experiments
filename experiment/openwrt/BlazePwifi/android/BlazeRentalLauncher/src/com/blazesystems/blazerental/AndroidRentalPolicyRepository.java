@@ -14,6 +14,13 @@ public final class AndroidRentalPolicyRepository {
         return prefs(context).getLong("revision", -1L);
     }
 
+    public static boolean hasVerifiedPolicy(Context context) {
+        SharedPreferences p = prefs(context);
+        return p.getLong("revision", -1L) >= 0L
+                && p.getString("signed_payload", "").length() > 0
+                && p.getString("signature", "").length() > 0;
+    }
+
     public static RentalPolicy load(Context context) {
         SharedPreferences p = prefs(context);
         long revision = Math.max(0L, p.getLong("revision", 0L));

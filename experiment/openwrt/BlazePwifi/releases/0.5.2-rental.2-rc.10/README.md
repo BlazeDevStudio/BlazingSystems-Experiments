@@ -25,6 +25,8 @@ A stable promotion still requires the exact production APK signer and physical e
 
 To avoid a Setup Wizard callback race, `DeviceAdminReceiver` no longer attempts the initial server enrollment on Android 8+; the dedicated provisioning activity owns that path. The receiver retains the legacy Android 5–7 fallback only.
 
+A nonnegative local revision by itself is not sufficient: RC10 additionally requires evidence of a persisted signed policy before allowing a same-revision lease refresh or returning Device Owner provisioning success.
+
 RC9 tags/assets remain immutable.
 
 ### Primary Windows installer

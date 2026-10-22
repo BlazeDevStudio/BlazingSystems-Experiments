@@ -28,7 +28,7 @@ public class BlazeDeviceAdminReceiver extends DeviceAdminReceiver {
                             && RentalLeaseStore.isEnrolled(app);
                     if (enrolled) {
                         ok = LeaseClient.sync(app)
-                                && AndroidRentalPolicyRepository.revision(app) >= 0L;
+                                && AndroidRentalPolicyRepository.hasVerifiedPolicy(app);
                     }
                 }
                 ManagedPolicyController.apply(app);

@@ -120,6 +120,13 @@ public final class LeaseClient {
                         : 0L;
                 if (!LeaseSyncStateGuard.acceptRevision(versioned, revision,
                         previousRevision)) return false;
+                // A locally-created policy revision is not evidence that any
+                // server signature was previously accepted. Fail closed on a
+                // same-revision status until signed policy is persisted.
+                if (revision == previousRevision
+                        && !AndroidRentalPolicyRepository.hasVerifiedPolicy(context)) {
+                    return false;
+                }
 
                 String acceptedCanonical = legacyCanonical;
                 String acceptedSignature = policySignature;

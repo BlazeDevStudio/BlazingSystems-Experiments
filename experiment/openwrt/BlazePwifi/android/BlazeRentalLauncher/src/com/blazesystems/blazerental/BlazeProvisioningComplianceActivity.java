@@ -96,7 +96,7 @@ public class BlazeProvisioningComplianceActivity extends Activity {
                             // verified policy before completing Setup Wizard.
                             boolean policySynced = LeaseClient.sync(self);
                             boolean policyStored =
-                                    AndroidRentalPolicyRepository.revision(self) >= 0L;
+                                    AndroidRentalPolicyRepository.hasVerifiedPolicy(self);
                             if (policySynced && policyStored) {
                                 ManagedPolicyController.apply(self);
                                 success = true;
