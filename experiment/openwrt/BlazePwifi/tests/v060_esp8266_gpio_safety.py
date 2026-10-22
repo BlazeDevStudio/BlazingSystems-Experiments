@@ -65,7 +65,9 @@ class Esp8266PinSafety(unittest.TestCase):
         self.assertIn("controllerEnabled=false", text)
         self.assertIn("coinEnabled=false", text)
         self.assertIn("relayEnabled=false", text)
-        self.assertIn("if(controllerEnabled && coinEnabled && relayEnabled && insertMode && fsReady", text)
+        # The same guarded predicate now controls the relay and coin intake.
+        self.assertIn("if(bp_esp8266_coin_can_accept(", text)
+        self.assertIn("active && !lastCoin && millis()-lastEdge>runDebounceMs", text)
         self.assertIn("runCoinPin=savedPinsSafe?cfg.coinPin:4", text)
         self.assertIn("runRelayPin=savedPinsSafe?cfg.relayPin:5", text)
         self.assertIn("runLedPin=savedPinsSafe?cfg.insertLedPin:14", text)
@@ -106,7 +108,7 @@ class Esp8266PinSafety(unittest.TestCase):
         # did not, so an acceptor could swallow a coin that cannot be journaled.
         text = self.src
         self.assertIn('#include "v060_esp8266_coin_acceptance.h"', text)
-        match = re.search(r"void applyOutputs\\(\\)\\s*\\{(.*?)\\n\\}", text, re.DOTALL)
+        match = re.search(r"void applyOutputs\(\)\s*\{(.*?)\n\}", text, re.DOTALL)
         self.assertIsNotNone(match, "physical relay update not found")
         body = match.group(1)
         self.assertIn("bp_esp8266_coin_can_accept(", body)
