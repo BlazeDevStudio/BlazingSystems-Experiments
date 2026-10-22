@@ -12,7 +12,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "tests/fixtures/rental_v2_atomic.py"
@@ -33,9 +32,12 @@ def command(env, *args):
                           env=env, capture_output=True, text=True, timeout=15)
 
 
-base = Path(tempfile.mkdtemp(prefix="blaze-v2-rental-", dir="/tmp"))
+# The helper requires an alphanumeric 6–32-character directory suffix:
+# tempfile's random alphabet includes underscores, which are deliberately
+# rejected by its path-escape guard. Use the established bridge convention.
+base = Path(PREFIX + os.urandom(8).hex())
+base.mkdir(mode=0o700)
 try:
-    # Hard fixture root prefix, private dirs/marker, exact derived paths.
     assert str(base).startswith(PREFIX)
     state, run = base / "state", base / "run"
     state.mkdir(mode=0o700)
