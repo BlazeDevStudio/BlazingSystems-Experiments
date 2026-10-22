@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
+const {URL} = require('node:url');
 
 const root = path.join(__dirname, '..');
 const qrSource = fs.readFileSync(path.join(root, 'ui/vendor/qrcode/qrcode.js'), 'utf8');
@@ -26,7 +27,7 @@ function loadTemplate(filename) {
   for (const match of source.matchAll(/<(?:input|select|div|pre)\b[^>]*\bid="([^"]+)"[^>]*>/g)) {
     nodes.set(match[1], element(match[0].match(/\bvalue="([^"]*)"/)?.[1] || ''));
   }
-  const context = vm.createContext({document: {getElementById: id => nodes.get(id)}});
+  const context = vm.createContext({document: {getElementById: id => nodes.get(id)}, URL});
   for (const match of source.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
     vm.runInContext(match[1].replace('__QRCODE_JS__', () => qrSource), context, {timeout: 3000});
   }
@@ -41,6 +42,9 @@ const templates = [
 const invalidInputs = [
   ['invalid server', 'server', 'invalid'],
   ['missing server', 'server', ''],
+  ['missing server hostname', 'server', 'https://'],
+  ['nonnumeric server port', 'server', 'https://example.invalid:abc'],
+  ['out-of-range server port', 'server', 'https://example.invalid:65536'],
   ['missing token', 'token', ''],
   ['invalid certificate pin', 'certPin', 'not-a-sha256']
 ];
@@ -48,7 +52,7 @@ const invalidInputs = [
 for (const [label, filename] of templates) {
   const cases = label === 'binding'
     ? [...invalidInputs, ['invalid token format', 'token', 'missing-separator']]
-    : invalidInputs;
+    : [...invalidInputs, ['HTTP server', 'server', 'http://example.invalid:8080']];
   for (const [failure, field, invalidValue] of cases) {
     test(`${label}: ${failure} retry removes the previous QR, JSON and success state`, () => {
       const tool = loadTemplate(filename);
@@ -73,6 +77,21 @@ for (const [label, filename] of templates) {
       assert.match(tool.get('qr').innerHTML, /<svg\b/, 'corrected input must generate again');
       assert.match(tool.get('json').textContent, /fixture-token\.one-time/);
       assert.match(tool.get('state').textContent, /QR ready/);
+    });
+  }
+  const validServers = ['https://EXAMPLE.invalid:443', 'https://example.invalid:8443'];
+  if (label === 'binding') validServers.push('http://example.invalid:80', 'http://192.168.1.1:8080');
+  for (const server of validServers) {
+    test(`${label}: valid server ${server} keeps its original payload text`, () => {
+      const tool = loadTemplate(filename);
+      tool.get('server').value = server;
+      tool.generate();
+      assert.match(tool.get('qr').innerHTML, /<svg\b/, 'valid input must generate a real QR');
+      assert.match(tool.get('state').textContent, /QR ready/);
+      const payload = JSON.parse(tool.get('json').textContent);
+      const binding = payload['android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE'] || payload;
+      assert.equal(binding.server_url, server, 'validation must not normalize the saved server URL');
+      assert.equal(binding.enrollment_token, 'fixture-token.one-time');
     });
   }
 }
