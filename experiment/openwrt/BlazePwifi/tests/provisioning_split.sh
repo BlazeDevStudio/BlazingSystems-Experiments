@@ -127,13 +127,13 @@ python3 "$ROOT/tools/make-provisioning.py" \
   --server-cert-sha256 '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' \
   --enrollment-token '0123456789ab.0123456789abcdef0123456789abcdef' \
   --device-name 'Audit phone' \
-  --version-code 50210 \
+  --version-code 50211 \
   --out "$TMP/provisioning.json"
 python3 - "$TMP/provisioning.json" "$TMP/app.apk" <<'PY'
 import base64,hashlib,json,pathlib,sys
 p=json.load(open(sys.argv[1],encoding="utf-8"))
 assert p["android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME"]=="com.blazesystems.blazerental/.BlazeDeviceAdminReceiver"
-assert p["android.app.extra.PROVISIONING_DEVICE_ADMIN_MINIMUM_VERSION_CODE"]==50210
+assert p["android.app.extra.PROVISIONING_DEVICE_ADMIN_MINIMUM_VERSION_CODE"]==50211
 checksum=p["android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM"]
 assert len(checksum)==44 and checksum.endswith("=")
 assert base64.urlsafe_b64decode(checksum)==hashlib.sha256(pathlib.Path(sys.argv[2]).read_bytes()).digest()
@@ -159,7 +159,7 @@ do
       --server-cert-sha256 '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' \
       --enrollment-token '0123456789ab.0123456789abcdef0123456789abcdef' \
       --device-name 'Audit phone' \
-      --version-code 50210 \
+      --version-code 50211 \
       --out "$TMP/should-not-exist.json" >/dev/null 2>&1
   then
     echo "invalid server origin accepted: $bad_server" >&2
@@ -172,8 +172,8 @@ APK_SHA="$(sha256sum "$TMP/app.apk" | awk '{print $1}')"
 APK_CHECKSUM="$(python3 -c 'import base64,hashlib,pathlib,sys; print(base64.urlsafe_b64encode(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).digest()).decode())' "$TMP/app.apk")"
 printf '%s\n' \
   'PACKAGE_NAME=com.blazesystems.blazerental' \
-  'APK_VERSION=0.5.2-rental.2-rc.9' \
-  'APK_VERSION_CODE=50210' \
+  'APK_VERSION=0.5.2-rental.2-rc.10' \
+  'APK_VERSION_CODE=50211' \
   'APK_CHANNEL=test' \
   'PRODUCTION_READY=0' \
   'GMS_DPC_APPROVED=0' \
@@ -185,7 +185,7 @@ printf '%s\n' \
 python3 "$ROOT/profiles/standalone-rental/build/make-release-provisioning-meta.py" \
   --apk "$TMP/app.apk" \
   --metadata "$TMP/build-meta.txt" \
-  --tag 'v0.5.2-rental.2-rc.9' \
+  --tag 'v0.5.2-rental.2-rc.10' \
   --repository 'BlazingSystems/BlazingSystems-Experiments' \
   --out "$TMP/release-meta.env"
 grep -qx "APK_SHA256=$APK_SHA" "$TMP/release-meta.env"
@@ -281,8 +281,8 @@ LOCKED_FP="$(python3 -c 'import json,re,sys; d=json.load(open(sys.argv[1])); pri
 printf '%s\n' \
   'READY=1' \
   'PACKAGE_NAME=com.blazesystems.blazerental' \
-  'APK_VERSION=0.5.2-rental.2-rc.9' \
-  'APK_VERSION_CODE=50210' \
+  'APK_VERSION=0.5.2-rental.2-rc.10' \
+  'APK_VERSION_CODE=50211' \
   'APK_CHANNEL=test' \
   'PRODUCTION_READY=0' \
   'GMS_DPC_APPROVED=0' \
@@ -326,7 +326,7 @@ printf '%s\n' \
   'READY=1' \
   'PACKAGE_NAME=com.blazesystems.blazerental' \
   'APK_VERSION=0.5.2-rental.2' \
-  'APK_VERSION_CODE=50210' \
+  'APK_VERSION_CODE=50211' \
   'APK_CHANNEL=production' \
   'PRODUCTION_READY=1' \
   'GMS_DPC_APPROVED=0' \
@@ -398,3 +398,18 @@ then
 fi
 
 echo "BlazeRental provisioning/enrollment split audit passed"
+
+# RC10: Reject unauthenticated status mutations before local lease credit changes.
+python3 - "$SRC/LeaseClient.java" "$SRC/BlazeProvisioningComplianceActivity.java" <<'PY'
+from pathlib import Path
+import sys
+lease=Path(sys.argv[1]).read_text()
+compliance=Path(sys.argv[2]).read_text()
+write="RentalLeaseStore.recordLease(context, serverNow, leaseUntil);"
+assert lease.count(write)==1
+assert lease.index("if (policySignatureV3.length() > 0)") < lease.index(write)
+assert lease.index("LeaseSyncStateGuard.acceptRevision") < lease.index(write)
+assert lease.index("AndroidRentalPolicyRepository.applyVerified") < lease.index(write)
+assert "if (!deviceId.equals(RentalLeaseStore.deviceId(context))) return false;" in lease
+assert "policySynced && policyStored" in compliance
+PY

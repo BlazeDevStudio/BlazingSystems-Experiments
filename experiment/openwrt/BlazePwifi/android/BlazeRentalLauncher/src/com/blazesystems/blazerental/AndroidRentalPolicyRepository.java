@@ -33,7 +33,7 @@ public final class AndroidRentalPolicyRepository {
         if (revision <= current) return false;
         RentalPolicy validated = new RentalPolicy(revision, mode,
                 parseCsv(allowedCsv), parseCsv(hiddenCsv), parseCsv(sensitiveCsv));
-        prefs(context).edit()
+        return prefs(context).edit()
                 .putLong("revision", validated.getRevision())
                 .putString("launcher_mode", validated.getLauncherMode())
                 .putString("allowed", join(validated.getAllowedPackages()))
@@ -41,8 +41,7 @@ public final class AndroidRentalPolicyRepository {
                 .putString("sensitive", join(validated.getSensitivePackages()))
                 .putString("signed_payload", signedPayload)
                 .putString("signature", signature)
-                .apply();
-        return true;
+                .commit();
     }
 
     public static void setLocalLauncherMode(Context context, String mode) {

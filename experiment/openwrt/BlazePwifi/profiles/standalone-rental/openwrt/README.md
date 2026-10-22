@@ -1,4 +1,4 @@
-# OpenWrt Rental Standalone — v0.5.2-rental.2-rc.9
+# OpenWrt Rental Standalone — v0.5.2-rental.2-rc.10
 
 The installer is intentionally **network-neutral**. It does not change WAN, LAN, Wi-Fi, cellular, repeater, DNS, or firewall UCI configuration during Standalone installation.
 

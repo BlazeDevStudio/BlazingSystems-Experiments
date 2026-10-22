@@ -77,12 +77,18 @@ public class BlazeProvisioningComplianceActivity extends Activity {
                         ManagedPolicyController.apply(self);
                         boolean synced = LeaseClient.sync(self);
                         if (synced && RentalLeaseStore.isEnrolled(self)) {
-                            // First sync consumes the one-time token. Second sync
-                            // retrieves the server-signed policy for the identity.
-                            LeaseClient.sync(self);
-                            ManagedPolicyController.apply(self);
-                            success = true;
-                            break;
+                            // Server enrollment alone is insufficient. Require a
+                            // second authenticated status sync and a persisted
+                            // verified policy before completing Setup Wizard.
+                            boolean policySynced = LeaseClient.sync(self);
+                            boolean policyStored =
+                                    AndroidRentalPolicyRepository.revision(self) >= 0L;
+                            if (policySynced && policyStored) {
+                                ManagedPolicyController.apply(self);
+                                success = true;
+                                break;
+                            }
+                            reason = "Enrollment succeeded, but verified policy synchronization failed.";
                         }
                         reason = "The Rental Server rejected enrollment or is unreachable.";
                     }

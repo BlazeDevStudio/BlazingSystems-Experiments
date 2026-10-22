@@ -224,3 +224,9 @@ pin.
 The acceptance policy is implemented in pure Java `ProvisioningStateGuard` and is
 covered by JUnit in the same Android build that produces the RC9 provisioning APK.
 RC8 remains immutable; this product delta is released only as RC9.
+
+## RC10 authenticated lease/policy state audit
+
+Previously `LeaseClient.sync()` applied `recordLease()` before verifying the signed status policy, allowing a failed policy signature to mutate local paid-time state. RC10 moves the lease mutation behind the MAC check, server device-ID match, monotonic revision guard, and synchronous verified policy persistence. Identical signed policy revisions may refresh lease time without rewriting operator policy; stale revisions and unversioned downgrade after modern policy are rejected.
+
+Device Owner provisioning compliance now requires the second authenticated status sync to succeed and a verified policy revision to be stored before reporting completion. New pure Java revision-policy tests and build-time source-order assertions guard both boundaries. This remains CI-audited, not physical Setup Wizard validated; release stays prerelease, using a TEST signing identity.

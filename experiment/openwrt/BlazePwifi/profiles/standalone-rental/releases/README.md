@@ -2,6 +2,11 @@
 
 ## Provisioning candidate
 
+### v0.5.2-rental.2-rc.10
+
+RC10 fixes lease-credit mutation before signed policy verification, rejects stale/replayed policy revision or legacy-policy downgrade after a modern revision, persists newly verified policies durably, and blocks Device Owner compliance completion unless a subsequent authenticated policy sync succeeds. RC9 remains immutable. Physical provisioning and production signing are still required.
+
+
 ### v0.5.2-rental.2-rc.9
 
 RC9 supersedes RC8 for further Device Provisioning validation. It pins the first

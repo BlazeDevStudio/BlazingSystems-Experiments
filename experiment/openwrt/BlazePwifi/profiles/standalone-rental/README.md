@@ -1,7 +1,7 @@
 # BlazePwifi Standalone Rental Server
 
 Latest stable server line: **v0.5.2-rental.1**  
-Provisioning architecture candidate: **v0.5.2-rental.2-rc.9**
+Provisioning architecture candidate: **v0.5.2-rental.2-rc.10**
 
 The provisioning candidate keeps two independent Android onboarding modes:
 
@@ -40,3 +40,7 @@ ESP8266/ESP32 Rental Server mode continues to support manual one-time server/tok
 ## RC8 promotion hardening
 
 RC8 retains RC7 origin validation and additionally verifies the actual APK signing certificate during stable-promotion checks. It also binds provisioning metadata and physical validation evidence to an explicit target scope so a non-GMS-approved custom DPC cannot be promoted with a universal GMS compatibility claim.
+
+## RC10 authenticated status/lease boundary
+
+Status responses may update paid lease time only after the response policy signature, device-ID binding, policy revision monotonicity and durable policy write have passed. Repeated signed status responses at the same revision can refresh lease time without rewriting settings; revisions older than the accepted policy are rejected. Device Owner Setup Wizard compliance requires a verified follow-up policy sync. This remains a TEST prerelease pending physical Setup Wizard validation.

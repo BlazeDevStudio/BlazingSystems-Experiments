@@ -85,9 +85,12 @@ public final class LeaseClient {
                     return false;
                 }
             }
-            RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
+            // Do not mutate lease state before the authenticated status policy
+            // is verified. Enrollment itself is authenticated above by the
+            // enroll-response-v2 MAC.
 
             if (!enrolling) {
+                if (!deviceId.equals(RentalLeaseStore.deviceId(context))) return false;
                 String allowed = response.optString("allowed_packages", "*");
                 String hidden = response.optString("hidden_packages", "");
                 String mode = response.optString("launcher_mode", RentalPolicy.MODE_RENTAL);
@@ -110,9 +113,13 @@ public final class LeaseClient {
                 String legacyCanonical = deviceId + "|" + nonce + "|" + serverNow + "|"
                         + leaseUntil + "|" + allowed + "|" + salt + "|" + hash + "|"
                         + rounds + "|" + preferred + "|" + secondsPerPulse;
-                long revision = response.has("policy_revision")
-                        ? response.optLong("policy_revision", 0L)
-                        : Math.max(0L, AndroidRentalPolicyRepository.revision(context) + 1L);
+                boolean versioned = response.has("policy_revision");
+                long previousRevision = AndroidRentalPolicyRepository.revision(context);
+                long revision = versioned
+                        ? response.optLong("policy_revision", -1L)
+                        : 0L;
+                if (!LeaseSyncStateGuard.acceptRevision(versioned, revision,
+                        previousRevision)) return false;
 
                 String acceptedCanonical = legacyCanonical;
                 String acceptedSignature = policySignature;
@@ -152,15 +159,21 @@ public final class LeaseClient {
                 String effectiveAllowed = allowed;
                 if ("*".equals(allowed)) effectiveAllowed = inventoryCsv(context);
 
-                AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
-                        effectiveAllowed, hidden, "", acceptedCanonical, acceptedSignature);
-                if (fullPolicyVerified) {
-                    RentalUiPolicy.applyVerified(context, timerMode, timerUserToggle,
-                            quickControls, notificationsEnabled, gestureType,
-                            gestureValue, offlineGrace);
-                }
-                if (salt.length() > 0 && hash.length() > 0) {
-                    RentalLeaseStore.recordAdminVerifier(context, salt, hash, rounds);
+                boolean applyNewRevision = LeaseSyncStateGuard.shouldApplyRevision(
+                        versioned, revision, previousRevision);
+                if (applyNewRevision) {
+                    if (!AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
+                            effectiveAllowed, hidden, "", acceptedCanonical, acceptedSignature)) {
+                        return false;
+                    }
+                    if (fullPolicyVerified) {
+                        RentalUiPolicy.applyVerified(context, timerMode, timerUserToggle,
+                                quickControls, notificationsEnabled, gestureType,
+                                gestureValue, offlineGrace);
+                    }
+                    if (salt.length() > 0 && hash.length() > 0) {
+                        RentalLeaseStore.recordAdminVerifier(context, salt, hash, rounds);
+                    }
                 }
 
                 JSONObject update = response.optJSONObject("update");
@@ -177,6 +190,10 @@ public final class LeaseClient {
                 }
             }
 
+            // This is the first lease mutation for an authenticated status
+            // response: signature + revision gate + durable policy storage
+            // must all pass first. A rejected response cannot extend credit.
+            RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
             ManagedPolicyController.apply(context);
             return true;
         } catch (Exception ignored) {
