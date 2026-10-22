@@ -62,7 +62,7 @@ class Esp8266PinSafety(unittest.TestCase):
         self.assertIn('#include "v060_esp8266_gpio_safety.h"', text)
         for fragment in (
             "bp_esp8266_vendo_pins_safe(coinPin,relayPin,ledPin)",
-            "bp_esp8266_vendo_pins_safe(nextCoin,nextRelay,nextLed)",
+            "bp_esp8266_vendo_remote_pins_safe(bootPinsRejected,nextCoin,nextRelay,nextLed)",
             "bp_esp8266_vendo_pins_safe(cfg.coinPin,cfg.relayPin,cfg.insertLedPin)",
         ):
             self.assertIn(fragment, text, f"missing runtime GPIO guard: {fragment}")
@@ -96,6 +96,8 @@ class Esp8266PinSafety(unittest.TestCase):
             remote.group(1),
             "valid remote GPIO must not override unsafe persisted boot wiring",
         )
+        self.assertIn("bool accepting=controllerEnabled && coinEnabled && !bootPinsRejected", text)
+        self.assertIn("if(controllerEnabled && coinEnabled && relayEnabled && !bootPinsRejected", text)
         self.assertEqual(text.count("bootPinsRejected="), 2,
                          "boot interlock must not silently clear during a poll")
 

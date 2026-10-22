@@ -43,6 +43,8 @@ bool insertMode=false;
 bool lastCoin=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
+// Set only at boot from EEPROM; never clear from a remote config/poll.
+bool bootPinsRejected=false;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 bool pendingReady=false, fsReady=false;
@@ -252,11 +254,11 @@ void applyRemoteConfig(const String&r){
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
   int nextCoin=cp==-1?cfg.coinPin:cp, nextRelay=rp==-1?cfg.relayPin:rp, nextLed=lp==-1?cfg.insertLedPin:lp;
-  if(!bp_esp8266_vendo_pins_safe(nextCoin,nextRelay,nextLed)){
+  if(!bp_esp8266_vendo_remote_pins_safe(bootPinsRejected,nextCoin,nextRelay,nextLed)){
     // Invalid remote GPIO never reaches pinMode or an accepting relay.
     controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
     applyOutputs();
-    Serial.println("CRITICAL: unsafe remote ESP8266 GPIO configuration rejected.");
+    Serial.println(bootPinsRejected ? "CRITICAL: unsafe saved GPIO; correct locally and reboot before accepting coins." : "CRITICAL: unsafe remote ESP8266 GPIO configuration rejected.");
     return;
   }
   runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
@@ -285,7 +287,7 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && !bootPinsRejected && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -367,6 +369,7 @@ void setup(){
   // Legacy EEPROM may contain unsafe assignments. Use only safe fallback
   // lines to hold the relay off; do not rewrite the saved configuration.
   bool savedPinsSafe=bp_esp8266_vendo_pins_safe(cfg.coinPin,cfg.relayPin,cfg.insertLedPin);
+  bootPinsRejected=!savedPinsSafe;
   runCoinPin=savedPinsSafe?cfg.coinPin:4;
   runRelayPin=savedPinsSafe?cfg.relayPin:5;
   runLedPin=savedPinsSafe?cfg.insertLedPin:14;
@@ -393,7 +396,7 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(controllerEnabled && coinEnabled && relayEnabled && insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+  if(controllerEnabled && coinEnabled && relayEnabled && !bootPinsRejected && insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){
       pendingNonce=freshNonce();
       pendingTarget=activeTarget;

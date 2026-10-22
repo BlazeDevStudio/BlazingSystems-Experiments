@@ -27,4 +27,12 @@ static inline bool bp_esp8266_vendo_pins_safe(int coinPin,
          coinPin != relayPin && coinPin != ledPin && relayPin != ledPin;
 }
 
+/* Persisted unsafe GPIO cannot be silently rehabilitated by a server response. */
+static inline bool bp_esp8266_vendo_remote_pins_safe(bool bootPinsRejected,
+                                                    int coinPin,
+                                                    int relayPin,
+                                                    int ledPin) {
+  return !bootPinsRejected && bp_esp8266_vendo_pins_safe(coinPin,relayPin,ledPin);
+}
+
 #endif
