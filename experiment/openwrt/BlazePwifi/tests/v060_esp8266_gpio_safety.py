@@ -74,6 +74,32 @@ class Esp8266PinSafety(unittest.TestCase):
             self.assertNotIn(unsafe, text)
         self.assertIn("writeLogical(runRelayPin,false,runRelayActiveHigh)", text)
 
+    def test_output_latch_inactive_before_enabling_output_mode(self):
+        # Source-order safety proof only, NOT an oscilloscope/relay-polarity test.
+        match = re.search(
+            r"void configureRuntimePins\\([^)]*\\)\\s*\\{(.*?)\\n\\}",
+            self.src, re.DOTALL,
+        )
+        self.assertIsNotNone(match, "GPIO reconfiguration function not found")
+        body = match.group(1)
+        assigned = "runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;"
+        self.assertIn(assigned, body)
+        # Earlier deassertions may refer to OLD output pins and don't protect
+        # NEW relay/LED GPIOs. Require preloading after pin assignment.
+        configuring = body.split(assigned, 1)[1]
+        for signal, polarity in (
+            ("runRelayPin", "runRelayActiveHigh"),
+            ("runLedPin", "runLedActiveHigh"),
+        ):
+            off = f"writeLogical({signal},false,{polarity})"
+            output = f"pinMode({signal},OUTPUT)"
+            self.assertIn(off, configuring)
+            self.assertIn(output, configuring)
+            self.assertLess(
+                configuring.index(off), configuring.index(output),
+                f"{signal}: inactive GPIO latch must be selected before OUTPUT",
+            )
+
     def test_compiled_policy_blocks_boot_and_flash_gpios(self):
         self.assertTrue(HEADER.is_file(), "missing firmware-shipped safety header")
         with tempfile.TemporaryDirectory(prefix="blaze-esp8266-gpio-") as temp:
