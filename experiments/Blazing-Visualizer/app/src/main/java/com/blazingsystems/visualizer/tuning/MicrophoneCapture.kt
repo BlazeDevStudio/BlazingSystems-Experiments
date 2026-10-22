@@ -1,5 +1,8 @@
 package com.blazingsystems.visualizer.tuning
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -7,7 +10,7 @@ import java.util.ArrayDeque
 import kotlinx.coroutines.*
 
 /** Releases recording hardware on background, sheet dismissal and job cancellation. */
-class MicrophoneCapture : AutoCloseable {
+class MicrophoneCapture(private val context: Context) : AutoCloseable {
     @Volatile private var active: AudioRecord? = null
 
     suspend fun run(a4Hz: Double, onPitch: (PitchReading?) -> Unit) =
@@ -17,6 +20,10 @@ class MicrophoneCapture : AutoCloseable {
                 rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
             )
             require(minimum > 0) { "Microphone sample format is not supported" }
+            check(context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED) {
+                "Microphone permission was revoked; grant access and try again."
+            }
             val recorder = AudioRecord(
                 MediaRecorder.AudioSource.MIC, rate,
                 AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,

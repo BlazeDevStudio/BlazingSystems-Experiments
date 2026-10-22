@@ -398,7 +398,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
         require(a4Hz in 400.0..480.0)
         stopTuner()
         player.pause()
-        val capture = MicrophoneCapture()
+        val capture = MicrophoneCapture(context())
         microphone = capture
         microphoneJob = viewModelScope.launch {
             try {
