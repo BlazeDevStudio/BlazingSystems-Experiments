@@ -23,7 +23,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-       RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.2'
+      RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.2'
       EXPECTED_CERT: '64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c'
     steps:
       - name: Require full successful JDK17 / SDK36 / API26 / API36 on this exact source
@@ -62,6 +62,7 @@ jobs:
           print('Validated source:', run['head_sha'], 'run:', run['id'])
           PY
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          VALIDATION_RUN="$RUN_ID"
           echo "VALIDATION_RUN=$RUN_ID" >> "$GITHUB_ENV"
           echo "VALIDATED_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
           gh api "repos/$GH_REPO/actions/runs/$VALIDATION_RUN/jobs?per_page=100" > jobs.json

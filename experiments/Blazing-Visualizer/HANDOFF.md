@@ -1,5 +1,15 @@
 # Blazing Visualizer handoff
 
+## 2026-10-22 late owner APK delivery checkpoint
+
+- Owner explicitly requested new Preview 2 APK as soon as compiled, without waiting for Codex to submit it. A compiled but *not yet device-verified* APK is available from CI artifact https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39754432234/artifacts/12415611017 (ZIP containing app-debug.apk). This is not a published GitHub Releases APK; no direct Preview 2 Releases URL is established yet.
+- Validation run 39754432234: clean Android host build, 76 host tests, lint and APK packaging passed. API26 failed on the fresh-runtime-permission smoke (Android 8 SystemUI also crashed on keyguard occlusion; package installer opened, but the test could not find deny button). API36 failed in PlayerRestoreTest.kt:53 because the pending A/B loop initial position was not observable at READY. These are actual failures; do not label full CI a success.
+- d3f50a4f79a4ce87bace0e1a8df4ca46589f59d3 adjusts Media3 restore to apply pending A/B loop seeks after playback READY and searches all accessibility windows/text alternatives for OS permission buttons. Full native validation is pending, and hardware behavior is not yet proven.
+- The Preview 2 GitHub Release publisher is installed at .github/workflows/blazing-visualizer-publish-preview2.yml. It is gated on a *same source commit* clean build plus passing API26/API36 jobs; it verifies application ID/version, APK signing certificate, archive ABIs, downloads the release asset again and compares bytes. The first update had invalid YAML indentation and a within-step environment oversight; the following fix addresses both. Publication is intentionally blocked until the device matrix passes. The owner has a one-hourly notification watch for a published direct APK URL.
+- Do not replace Preview 1. It uses an incompatible signing identity: export desired presets, uninstall Preview 1, then install Preview 2 once available. Keep video-to-graph deferred until after this first upgraded APK.
+- Priority: examine latest Android CI failures, fix test or runtime code without weakening meaningful assertions, and verify release workflow actually publishes and byte-checks the APK on a passing candidate; edit this handoff with exact run and release proof.
+
+
 Updated 2026-10-22. Resume this existing application; do not restart it.
 
 - Repository: https://github.com/BlazingSystems/BlazingSystems-Experiments
