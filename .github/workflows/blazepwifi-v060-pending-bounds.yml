@@ -1,0 +1,23 @@
+name: COIN-20261022 ESP pending coin record bounds
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/coin-20261022-pending-token-bounds
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_bounds.c'
+      - '.github/workflows/blazepwifi-v060-pending-bounds.yml'
+permissions:
+  contents: read
+jobs:
+  controller-bounds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run actual pending-sequence contract with ASan persisted-record corruption
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
