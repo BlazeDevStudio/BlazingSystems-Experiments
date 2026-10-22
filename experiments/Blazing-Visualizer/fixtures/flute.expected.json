@@ -1,0 +1,22 @@
+{
+  "sampleRate": 22050,
+  "sha256": "0c9100f25653f5978bb003c90fa2b5a3e67a3afbd67bf23a0188fb16b6829bae",
+  "events": [
+    {
+      "pitch": 72,
+      "startUs": 300000,
+      "endUs": 899683
+    },
+    {
+      "pitch": 76,
+      "startUs": 1600000,
+      "endUs": 2500000
+    },
+    {
+      "pitch": 81,
+      "startUs": 2900000,
+      "endUs": 3654966
+    }
+  ],
+  "license": "VSCO 2 CE / Sam Gossner and Simon Dalzell; CC0; samples cut by Elan Hickler; pinned 440300901dfe9275fd84e0b7763af1f8443ae62e"
+}

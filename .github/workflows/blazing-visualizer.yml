@@ -1,0 +1,87 @@
+name: Blazing Visualizer Android
+on:
+  push:
+    branches: [blazing-visualizer, main]
+    paths: ['experiments/Blazing-Visualizer/**', '.github/workflows/blazing-visualizer.yml']
+  pull_request:
+    paths: ['experiments/Blazing-Visualizer/**', '.github/workflows/blazing-visualizer.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blazing-visualizer-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiments/Blazing-Visualizer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Blazing-Visualizer-preview-APK
+          path: experiments/Blazing-Visualizer/app/build/outputs/apk/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Blazing-Visualizer-host-reports
+          path: |
+            experiments/Blazing-Visualizer/app/build/reports/
+            experiments/Blazing-Visualizer/app/build/test-results/
+  device:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 26
+            target: default
+          - api: 36
+            target: google_apis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          ram-size: 3072M
+          heap-size: 512M
+          disable-animations: true
+          script: cd experiments/Blazing-Visualizer && ./gradlew :app:connectedDebugAndroidTest --no-daemon
+      - name: Collect native acceptance evidence
+        if: always()
+        run: |
+          mkdir -p device-evidence
+          adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > device-evidence/acceptance.tar || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Blazing-Visualizer-API-${{ matrix.api }}-reports
+          path: |
+            experiments/Blazing-Visualizer/app/build/reports/androidTests/
+            experiments/Blazing-Visualizer/app/build/outputs/androidTest-results/
+            device-evidence/

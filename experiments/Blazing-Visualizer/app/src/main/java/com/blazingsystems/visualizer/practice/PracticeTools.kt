@@ -16,5 +16,6 @@ object NoteExport {
   var previous=0L;messages.forEach{variable(it.tick-previous);track.write(if(it.on)0x90 else 0x80);track.write(it.pitch);track.write(it.velocity);previous=it.tick};track.write(byteArrayOf(0,0xff.toByte(),0x2f,0))
   DataOutputStream(output).apply{writeBytes("MThd");writeInt(6);writeShort(0);writeShort(1);writeShort(480);writeBytes("MTrk");writeInt(track.size());track.writeTo(this);flush()}
  }
- fun writeCsv(events:List<NoteEvent>,output:OutputStream){fun quote(value:String)="\""+value.replace("\"","\"\"")+"\"";val writer=output.bufferedWriter(Charsets.UTF_8);writer.write("id,pitch,note,start_us,end_us,amplitude,activation,provenance\r\n");events.sortedBy{it.startUs}.forEach{n->validateNote(n);writer.write("${quote(n.id)},${n.pitch},${quote(NoteNames.name(n.pitch))},${n.startUs},${n.endUs},${n.amplitude},${n.activation},${n.provenance}\r\n")};writer.flush()}
+ fun writeCsv(events:List<NoteEvent>,output:OutputStream){fun quote(value:String)="\""+value.replace("\"","\"\"")+"\""
+ val writer=output.bufferedWriter(Charsets.UTF_8);writer.write("id,pitch,note,start_us,end_us,amplitude,activation,provenance\r\n");events.sortedBy{it.startUs}.forEach{n->validateNote(n);writer.write("${quote(n.id)},${n.pitch},${quote(NoteNames.name(n.pitch))},${n.startUs},${n.endUs},${n.amplitude},${n.activation},${n.provenance}\r\n")};writer.flush()}
 }

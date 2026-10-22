@@ -1,0 +1,32 @@
+{
+  "sampleRate": 22050,
+  "sha256": "25345c0c205ba1557f2f0117cee5c6921f93bd335b580f3a4413d8e9178a69fa",
+  "events": [
+    {
+      "pitch": 60,
+      "startUs": 300000,
+      "endUs": 1300000
+    },
+    {
+      "pitch": 64,
+      "startUs": 1500000,
+      "endUs": 2500000
+    },
+    {
+      "pitch": 60,
+      "startUs": 2700000,
+      "endUs": 3700000
+    },
+    {
+      "pitch": 64,
+      "startUs": 2700000,
+      "endUs": 3700000
+    },
+    {
+      "pitch": 67,
+      "startUs": 2700000,
+      "endUs": 3700000
+    }
+  ],
+  "license": "Original generated fixture; CC0"
+}

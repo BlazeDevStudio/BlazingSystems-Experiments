@@ -15,8 +15,6 @@ data class ImportResult(val scene:Scene,val assetDirectory:File,val report:Compa
 fun interface AssetResolver {fun open(relativePath:String):InputStream}
 object AssetChecks {
  fun validateImage(file:File) {
-  // Regression retained from the reviewed checkpoint; the content-based fix follows its failing test.
-  if(file.extension.lowercase() !in setOf("png","jpg","jpeg","webp","gif"))return
   val options=android.graphics.BitmapFactory.Options().apply{inJustDecodeBounds=true}
   android.graphics.BitmapFactory.decodeFile(file.path,options)
   require(options.outWidth in 1..4096 && options.outHeight in 1..4096){NativePackCodec.LIMITS}
