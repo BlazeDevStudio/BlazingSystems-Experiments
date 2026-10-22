@@ -56,6 +56,28 @@ if bp_controller_set vendo-01 1 1 1 1 99 5 14 1 1 1 55 450 9; then
   echo "invalid controller pin unexpectedly accepted" >&2; exit 1
 fi
 
+# COIN-GPIO-20261022: a remotely saved configuration must not assign an
+# ESP coin input to a relay/LED output or overlap two outputs. Reject before
+# changing the controller revision or persisted row; never touch real GPIO.
+before="$(sha256sum "$BP_CONTROLLERS" | awk '{print $1}')"
+revision="$(bp_controller_json vendo-01 | sed -n 's/.*"config_revision":\\([0-9][0-9]*\\).*/\\1/p')"
+for pins in "4 4 14" "4 5 4" "4 5 5" "04 4 14"; do
+  set -- $pins
+  rc=0
+  bp_controller_set vendo-01 1 1 1 1 "$1" "$2" "$3" 1 1 1 55 450 9 || rc=$?
+  [ "$rc" = 2 ] || { echo "controller GPIO collision $pins accepted or wrong error rc=$rc" >&2; exit 1; }
+  [ "$(sha256sum "$BP_CONTROLLERS" | awk '{print $1}')" = "$before" ] || {
+    echo "invalid GPIO configuration $pins modified stored controller settings" >&2; exit 1;
+  }
+  [ "$(bp_controller_json vendo-01 | sed -n 's/.*"config_revision":\\([0-9][0-9]*\\).*/\\1/p')" = "$revision" ] || {
+    echo "invalid GPIO configuration $pins advanced controller revision" >&2; exit 1;
+  }
+done
+# Valid explicit mappings and firmware (-1) defaults remain configurable.
+bp_controller_set vendo-01 1 1 1 1 4 5 14 1 1 1 55 450 9
+bp_controller_set vendo-01 1 1 1 1 -1 5 14 1 1 1 55 450 9
+echo "COIN-GPIO-20261022: three pin overlaps and numeric alias blocked before write"
+
 DOC="$ROOT/docs/PROTOCOL.md"
 grep -q 'ESP8266' "$DOC"
 grep -q 'ESP32' "$DOC"
