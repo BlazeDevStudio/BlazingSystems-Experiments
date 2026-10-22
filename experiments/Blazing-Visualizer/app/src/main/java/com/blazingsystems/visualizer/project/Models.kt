@@ -77,6 +77,38 @@ data class Binding(
     val band: Int = 0,
 )
 
+/** The intermediate "2" bands are adjacent pitch regions, never loudness levels. */
+@Serializable
+enum class NoteBand { ALL, LO, LO2, MID, MID2, HI, HI2 }
+
+@Serializable
+data class NoteRouting(
+    val band: NoteBand = NoteBand.ALL,
+    val lowMidi: Int? = null,
+    val highMidi: Int? = null,
+) {
+    fun bounds(): IntRange {
+        val defaults = when (band) {
+            NoteBand.ALL -> 0..127
+            NoteBand.LO -> 0..40
+            NoteBand.LO2 -> 41..52
+            NoteBand.MID -> 53..64
+            NoteBand.MID2 -> 65..76
+            NoteBand.HI -> 77..88
+            NoteBand.HI2 -> 89..127
+        }
+        return (lowMidi ?: defaults.first)..(highMidi ?: defaults.last)
+    }
+
+    fun allows(pitch: Int) = pitch in bounds()
+
+    fun isValid(): Boolean {
+        val range = bounds()
+        return range.first in 0..127 && range.last in 0..127 &&
+            range.first <= range.last
+    }
+}
+
 @Serializable
 data class Layer(
     val id: String = UUID.randomUUID().toString(),
@@ -86,6 +118,7 @@ data class Layer(
     val transform: Transform = Transform(),
     val properties: JsonObject = JsonObject(emptyMap()),
     val bindings: List<Binding> = emptyList(),
+    val noteRouting: NoteRouting = NoteRouting(),
 )
 
 @Serializable
@@ -94,6 +127,9 @@ data class Scene(
     val name: String = "My visualizer",
     val layers: List<Layer> = emptyList(),
     val seed: Long = 1,
+    val animationIntensity: Float = 1f,
+    val pianoIntensity: Float = 1f,
+    val paletteColor: String? = null,
 )
 
 data class FeatureFrame(

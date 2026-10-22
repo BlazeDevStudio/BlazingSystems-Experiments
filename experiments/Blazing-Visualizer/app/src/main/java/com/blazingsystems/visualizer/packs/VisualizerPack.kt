@@ -257,7 +257,11 @@ class NativePackCodec {
             ) {
                 "Invalid layer count or IDs"
             }
+            require(scene.animationIntensity.isFinite() && scene.animationIntensity in 0f..2f)
+            require(scene.pianoIntensity.isFinite() && scene.pianoIntensity in 0f..2f)
+            scene.paletteColor?.let { require(it.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))) }
             scene.layers.forEach { layer ->
+                require(layer.noteRouting.isValid()) { "Invalid MIDI note range" }
                 val t = layer.transform
                 require(
                     listOf(t.x, t.y, t.width, t.height, t.rotation).all(Float::isFinite) &&

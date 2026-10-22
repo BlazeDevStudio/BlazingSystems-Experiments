@@ -13,6 +13,8 @@ import androidx.compose.ui.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.blazingsystems.visualizer.project.*
+import com.blazingsystems.visualizer.practice.NoteNames
+import kotlin.math.pow
 import kotlinx.serialization.json.*
 
 @Composable
@@ -33,6 +35,34 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(10.dp))
+        PropertySlider("Global animation intensity", scene.animationIntensity, 0f..2f) {
+            model.editScene(scene.copy(animationIntensity = it))
+        }
+        PropertySlider("Independent piano effects", scene.pianoIntensity, 0f..2f) {
+            model.editScene(scene.copy(pianoIntensity = it))
+        }
+        var paletteInput by remember(scene.id) {
+            mutableStateOf(scene.paletteColor ?: "#FF9C83FF")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(
+                scene.paletteColor != null,
+                { enabled ->
+                    model.editScene(scene.copy(paletteColor = if (enabled) paletteInput else null))
+                },
+            )
+            Text("Use one global palette color", Modifier.padding(start = 10.dp))
+        }
+        if (scene.paletteColor != null) OutlinedTextField(
+            paletteInput,
+            { text ->
+                paletteInput = text
+                if (text.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")))
+                    model.editScene(scene.copy(paletteColor = text))
+            },
+            label = { Text("Global palette #RRGGBB") },
+            singleLine = true,
+        )
         scene.layers.forEachIndexed { i, layer ->
             Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(Modifier.padding(12.dp)) {
@@ -101,6 +131,45 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel) {
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        if (layer.type == ElementType.NOTE_WHEEL ||
+                            layer.type == ElementType.PIANO_ROLL) {
+                            Text("Detected note band (pitch, not volume)")
+                            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                                NoteBand.entries.forEach { band ->
+                                    FilterChip(
+                                        selected = layer.noteRouting.band == band,
+                                        onClick = {
+                                            model.setLayer(layer.copy(
+                                                noteRouting = NoteRouting(band),
+                                            ))
+                                        },
+                                        label = { Text(band.name.lowercase()) },
+                                        modifier = Modifier.padding(end = 6.dp),
+                                    )
+                                }
+                            }
+                            val bounds = layer.noteRouting.bounds()
+                            fun pitchLabel(pitch: Int): String {
+                                val hz = 440.0 * 2.0.pow((pitch - 69) / 12.0)
+                                return "${NoteNames.name(pitch)} (${hz.toInt()} Hz)"
+                            }
+                            PropertySlider(
+                                "Low MIDI ${bounds.first}: ${pitchLabel(bounds.first)}",
+                                bounds.first.toFloat(), 0f..127f,
+                            ) {
+                                model.setLayer(layer.copy(noteRouting = layer.noteRouting.copy(
+                                    lowMidi = it.toInt().coerceAtMost(bounds.last),
+                                )))
+                            }
+                            PropertySlider(
+                                "High MIDI ${bounds.last}: ${pitchLabel(bounds.last)}",
+                                bounds.last.toFloat(), 0f..127f,
+                            ) {
+                                model.setLayer(layer.copy(noteRouting = layer.noteRouting.copy(
+                                    highMidi = it.toInt().coerceAtLeast(bounds.first),
+                                )))
+                            }
+                        }
                         val t = layer.transform
                         PropertySlider("Position X", t.x, -.5f..1.5f) {
                             model.setLayer(layer.copy(transform = t.copy(x = it)))

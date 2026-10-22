@@ -68,6 +68,30 @@ class StorageTest {
     }
 
     @Test
+    fun intermediateNoteBandsAreDistinctAndPackSettingsRoundTrip() {
+        val bands = NoteBand.entries.filter { it != NoteBand.ALL }
+        val notes = (0..127).toList()
+        val routed = bands.flatMap { band -> notes.filter { NoteRouting(band).allows(it) } }
+        assertEquals(notes, routed.sorted())
+        assertTrue(NoteRouting(NoteBand.LO2).allows(47))
+        assertFalse(NoteRouting(NoteBand.LO2).allows(69))
+        val range = NoteRouting(NoteBand.MID, lowMidi = 60, highMidi = 64)
+        assertTrue(range.allows(62))
+        assertFalse(range.allows(65))
+        assertFalse(range.copy(lowMidi = 100).isValid())
+        val p = Project(
+            source = SourceRef("content://notes"),
+            scene = Scene(
+                animationIntensity = 0f, pianoIntensity = .3f,
+                paletteColor = "#3366AA",
+                layers = listOf(Layer(type = ElementType.PIANO_ROLL, noteRouting = range)),
+            ),
+        )
+        ProjectStore(root).save(p)
+        assertEquals(p, ProjectStore(root).load(p.id))
+    }
+
+    @Test
     fun abandonedTemporaryAndCorruptProjectDoNotHideGoodOne() {
         val store = ProjectStore(root)
         val p = Project(source = SourceRef("a"))
