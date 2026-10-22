@@ -46,7 +46,10 @@ data class StudioState(
     }
 }
 
-class StudioModel(app: Application) : AndroidViewModel(app) {
+class StudioModel @JvmOverloads constructor(
+    app: Application,
+    private val persistenceDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : AndroidViewModel(app) {
     private val library = LibraryRepository(app)
     private val projects = ProjectStore(File(app.filesDir, "projects"))
     private val draft = File(app.filesDir, "scene-draft.json")
@@ -77,7 +80,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
 
     init {
         ExportHub.initialize(app)
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(persistenceDispatcher) {
             for (s in saves) {
                 try {
                     s.project?.let(projects::save)

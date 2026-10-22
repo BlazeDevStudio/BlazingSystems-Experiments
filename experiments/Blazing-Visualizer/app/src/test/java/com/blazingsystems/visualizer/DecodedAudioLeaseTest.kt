@@ -128,7 +128,7 @@ class DecodedAudioLeaseTest {
     fun rejectedExportReleasesItsLease() = runBlocking {
         ShadowStatFs.registerStats(directory.path, 100_000, 100_000, 100_000)
         val request = ExportRequest(
-            Project(source.copy(contentSha256 = "changed")), 0, 1, "content://unused",
+            Project(source = source.copy(contentSha256 = "changed")), 0, 1, "content://unused",
         )
         try {
             VideoExporter(context).export(request)
