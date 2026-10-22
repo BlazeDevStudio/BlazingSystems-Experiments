@@ -1,6 +1,11 @@
 package com.blazingsystems.visualizer.playback
 
+import android.Manifest
+import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.MediaStore
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -57,6 +62,52 @@ class LibraryRepository(private val context: Context) {
             )
         }
     }
+
+    /** MediaStore is read only after the matching runtime permission is granted. */
+    fun discoverAudio(): List<SourceRef> {
+        val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
+            else Manifest.permission.READ_EXTERNAL_STORAGE
+        if (context.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED)
+            return emptyList()
+        val columns = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.DURATION,
+        )
+        val tracks = mutableListOf<SourceRef>()
+        context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            columns, null, null, MediaStore.Audio.Media.TITLE + " COLLATE NOCASE ASC",
+        )?.use { rows ->
+            val id = rows.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val title = rows.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artist = rows.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val duration = rows.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            while (rows.moveToNext()) {
+                val millis = rows.getLong(duration)
+                if (millis <= 0) continue
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, rows.getLong(id),
+                )
+                tracks += SourceRef(
+                    uri = uri.toString(),
+                    title = rows.getString(title)?.takeIf { it.isNotBlank() } ?: "Audio track",
+                    artist = rows.getString(artist).orEmpty().takeUnless { it == "<unknown>" } ?: "",
+                    durationUs = millis * 1000,
+                )
+            }
+        }
+        return tracks
+    }
+
+    fun loadLibrary(): List<SourceRef> =
+        File(root, "library.json").takeIf { it.isFile }
+            ?.let { Json.decodeFromString(it.readText()) } ?: emptyList()
+
+    @Synchronized
+    fun saveLibrary(tracks: List<SourceRef>) =
+        atomicWrite(File(root, "library.json"), Json.encodeToString(tracks).toByteArray())
 
     fun loadQueue(): List<SourceRef> =
         File(root, "queue.json").takeIf { it.isFile }?.let { Json.decodeFromString(it.readText()) }

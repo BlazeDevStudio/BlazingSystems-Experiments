@@ -2,11 +2,17 @@
 
 package com.blazingsystems.visualizer.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.abs
 import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -39,6 +45,17 @@ fun AveeShell(model: StudioModel) {
     val context = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(1) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
+    val readAudioPermission = if (Build.VERSION.SDK_INT >= 33)
+        Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+    val permission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) model.refreshLibrary() }
+    val refresh = {
+        if (context.checkSelfPermission(readAudioPermission) == PackageManager.PERMISSION_GRANTED)
+            model.refreshLibrary()
+        else permission.launch(readAudioPermission)
+    }
+    LaunchedEffect(readAudioPermission) { refresh() }
     val audio =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             uris.forEach {
@@ -95,20 +112,13 @@ fun AveeShell(model: StudioModel) {
                         )
                     }
                     Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "BLAZING",
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 3.sp,
-                            fontSize = 16.sp,
-                        )
-                        Text(
-                            "VISUALIZER",
-                            fontSize = 9.sp,
-                            letterSpacing = 3.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    Text(
+                        "Blazing Visualizer",
+                        modifier = Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        maxLines = 1,
+                    )
                     IconButton(onClick = { audio.launch(arrayOf("audio/*")) }) {
                         Icon(Icons.Rounded.LibraryMusic, "Open music")
                     }
@@ -187,14 +197,7 @@ fun AveeShell(model: StudioModel) {
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        s.status,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = 10.sp,
-                        modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Spacer(Modifier.weight(1f))
                     Text(
                         time(duration),
                         fontSize = 10.sp,
@@ -207,7 +210,11 @@ fun AveeShell(model: StudioModel) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
                 0,
-                2 -> LibraryScreen(s, model, tab == 2) { audio.launch(arrayOf("audio/*")) }
+                2 -> LibraryScreen(
+                    s, model, tab == 2,
+                    onOpen = { audio.launch(arrayOf("audio/*")) },
+                    onRefresh = refresh,
+                )
                 else -> {
                     AndroidView(
                         factory = {
@@ -361,9 +368,14 @@ fun AveeShell(model: StudioModel) {
 }
 
 @Composable
-private fun LibraryScreen(s: StudioState, model: StudioModel, queue: Boolean, onOpen: () -> Unit) {
+private fun LibraryScreen(
+    s: StudioState, model: StudioModel, queue: Boolean,
+    onOpen: () -> Unit, onRefresh: () -> Unit,
+) {
     var search by rememberSaveable { mutableStateOf("") }
     var playlistName by rememberSaveable { mutableStateOf<String?>(null) }
+    var sortMenu by remember { mutableStateOf(false) }
+    val tracks = if (queue) s.queue else s.library
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(18.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -373,7 +385,22 @@ private fun LibraryScreen(s: StudioState, model: StudioModel, queue: Boolean, on
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
-            FilledTonalIconButton(onClick = onOpen) { Icon(Icons.Rounded.Add, "Add music") }
+            if (queue) {
+                Box {
+                    IconButton(onClick = { sortMenu = true }) {
+                        Icon(Icons.Rounded.SortByAlpha, "Sort queue")
+                    }
+                    DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                        DropdownMenuItem(text = { Text("Title A–Z") }, onClick = {
+                            model.sortQueue(false); sortMenu = false
+                        })
+                        DropdownMenuItem(text = { Text("Artist A–Z") }, onClick = {
+                            model.sortQueue(true); sortMenu = false
+                        })
+                    }
+                }
+            } else IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, "Refresh library") }
+            FilledTonalIconButton(onClick = onOpen) { Icon(Icons.Rounded.Add, "Import music") }
         }
         OutlinedTextField(
             search,
@@ -382,14 +409,14 @@ private fun LibraryScreen(s: StudioState, model: StudioModel, queue: Boolean, on
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         )
-        if (s.queue.isNotEmpty())
+        if (queue && s.queue.isNotEmpty())
             TextButton(onClick = { playlistName = "My playlist" }) {
                 Icon(Icons.Rounded.PlaylistAdd, "", Modifier.size(18.dp))
                 Text("Save queue as playlist")
             }
         LazyColumn(Modifier.weight(1f)) {
             items(
-                s.queue.filter {
+                tracks.filter {
                     it.title.contains(search, true) || it.artist.contains(search, true)
                 },
                 key = { it.uri },
@@ -408,14 +435,44 @@ private fun LibraryScreen(s: StudioState, model: StudioModel, queue: Boolean, on
                         )
                     },
                     trailingContent = {
-                        IconButton(onClick = { model.removeQueue(source.uri) }) {
-                            Icon(Icons.Rounded.Close, "Remove from queue")
+                        if (queue) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.DragHandle, "Long press track to reorder")
+                                IconButton(onClick = { model.removeQueue(source.uri) }) {
+                                    Icon(Icons.Rounded.Close, "Remove from queue")
+                                }
+                            }
+                        } else {
+                            Row {
+                                IconButton(onClick = { model.addToQueue(source) }) {
+                                    Icon(Icons.Rounded.PlaylistAdd, "Add to queue")
+                                }
+                                IconButton(onClick = { model.playNext(source) }) {
+                                    Icon(Icons.Rounded.QueuePlayNext, "Play next")
+                                }
+                            }
                         }
                     },
-                    modifier = Modifier.clickable { model.select(source, true) },
+                    modifier = Modifier
+                        .then(if (queue) Modifier.pointerInput(source.uri) {
+                            var drag = 0f
+                            val threshold = 52.dp.toPx()
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { drag = 0f },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    drag += amount.y
+                                    if (abs(drag) > threshold) {
+                                        model.moveQueue(source.uri, if (drag > 0) 1 else -1)
+                                        drag = 0f
+                                    }
+                                },
+                            )
+                        } else Modifier)
+                        .clickable { model.select(source, true) },
                 )
             }
-            if (s.queue.isEmpty())
+            if (tracks.isEmpty())
                 item {
                     Column(Modifier.padding(vertical = 40.dp)) {
                         Text("Your tracks live here.", fontWeight = FontWeight.SemiBold)

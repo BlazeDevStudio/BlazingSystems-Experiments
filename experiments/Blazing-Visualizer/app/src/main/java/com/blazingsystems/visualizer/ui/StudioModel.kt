@@ -24,6 +24,7 @@ data class StudioState(
     val project: Project? = null,
     val scene: Scene = BuiltinScenes.defaultSpectrum(),
     val queue: List<SourceRef> = emptyList(),
+    val library: List<SourceRef> = emptyList(),
     val savedPresets: List<Scene> = emptyList(),
     val playlists: List<Playlist> = emptyList(),
     val notes: List<NoteEvent> = emptyList(),
@@ -62,6 +63,7 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     s.project?.let(projects::save)
                     atomicWrite(draft, Json.encodeToString(s.scene).toByteArray())
                     presets.save(s.savedPresets)
+                    library.saveLibrary(s.library)
                     library.saveQueue(s.queue)
                     library.savePlaylists(s.playlists)
                 } catch (failure: Exception) {
@@ -80,6 +82,12 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                         projects.list().firstOrNull(),
                     )
                 }
+            val knownLibrary = withContext(Dispatchers.IO) {
+                runCatching { library.loadLibrary() }.getOrDefault(emptyList())
+            }
+            val mergedLibrary =
+                (knownLibrary + saved.first + listOfNotNull(saved.third?.source))
+                    .distinctBy { it.uri }
             val scene =
                 saved.third?.scene
                     ?: withContext(Dispatchers.IO) {
@@ -93,12 +101,14 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
             mutable.value =
                 mutable.value.copy(
                     queue = saved.first,
+                    library = mergedLibrary,
                     playlists = saved.second,
                     project = saved.third,
                     scene = scene,
                     savedPresets = storedPresets,
                 )
             initialized.complete(Unit)
+            if (knownLibrary != mergedLibrary) persist()
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
@@ -149,12 +159,86 @@ class StudioModel(app: Application) : AndroidViewModel(app) {
                     val tracks = withContext(Dispatchers.IO) { uris.map { library.open(it) } }
                     if (tracks.isEmpty()) return@runCatching
                     val q = (mutable.value.queue + tracks).distinctBy { it.uri }
-                    mutable.value = mutable.value.copy(queue = q)
+                    val all = (mutable.value.library + tracks).distinctBy { it.uri }
+                    mutable.value = mutable.value.copy(queue = q, library = all)
                     persist()
                     select(tracks.first(), true)
                 }
                 .onFailure(::report)
         }
+    }
+
+    /** Refreshing Library never rewrites the independently ordered play queue. */
+    fun refreshLibrary() {
+        viewModelScope.launch {
+            initialized.await()
+            runCatching {
+                val discovered = withContext(Dispatchers.IO) { library.discoverAudio() }
+                mutable.update { state ->
+                    state.copy(library = (state.library + discovered).distinctBy { it.uri })
+                }
+                persist()
+            }.onFailure(::report)
+        }
+    }
+
+    fun addToQueue(source: SourceRef, next: Boolean = false) {
+        val current = mutable.value.queue
+        if (current.any { it.uri == source.uri }) {
+            if (next) playNext(source)
+            return
+        }
+        val playing = playback.value.sourceUri
+        val index = if (next && playing != null) {
+            (current.indexOfFirst { it.uri == playing } + 1).coerceIn(0, current.size)
+        } else current.size
+        val updated = current.toMutableList().apply { add(index, source) }
+        mutable.update { it.copy(queue = updated, library = (it.library + source).distinctBy { x -> x.uri }) }
+        player.insertQueueItem(source, index)
+        persist()
+    }
+
+    fun moveQueue(uri: String, delta: Int) {
+        val current = mutable.value.queue
+        val index = current.indexOfFirst { it.uri == uri }
+        if (index < 0) return
+        val target = (index + delta).coerceIn(0, current.lastIndex)
+        if (index == target) return
+        player.moveQueueItem(index, target)
+        val reordered = current.toMutableList().apply { add(target, removeAt(index)) }
+        mutable.update { it.copy(queue = reordered) }
+        persist()
+    }
+
+    fun playNext(source: SourceRef) {
+        val current = mutable.value.queue
+        val playing = playback.value.sourceUri
+        val nextIndex = if (playing == null) 0 else
+            (current.indexOfFirst { it.uri == playing } + 1).coerceIn(0, current.size)
+        val index = current.indexOfFirst { it.uri == source.uri }
+        if (index < 0) {
+            addToQueue(source, next = true)
+        } else {
+            val target = if (index < nextIndex) (nextIndex - 1).coerceAtLeast(0)
+                else nextIndex.coerceAtMost(current.lastIndex)
+            moveQueue(source.uri, target - index)
+        }
+    }
+
+    fun sortQueue(byArtist: Boolean) {
+        val next = if (byArtist) mutable.value.queue.sortedWith(
+            compareBy<SourceRef> { it.artist.lowercase() }.thenBy { it.title.lowercase() },
+        ) else mutable.value.queue.sortedBy { it.title.lowercase() }
+        val working = mutable.value.queue.toMutableList()
+        next.forEachIndexed { index, source ->
+            val from = working.indexOfFirst { it.uri == source.uri }
+            if (from != index) {
+                player.moveQueueItem(from, index)
+                working.add(index, working.removeAt(from))
+            }
+        }
+        mutable.update { it.copy(queue = working) }
+        persist()
     }
 
     fun select(source: SourceRef, startPlayback: Boolean = true) {

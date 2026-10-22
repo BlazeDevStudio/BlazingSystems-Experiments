@@ -133,6 +133,43 @@ class PlayerController(context: Context) : AutoCloseable {
         update()
     }
 
+    /** Media3 playlist mutations do not call prepare/play or reset the current item. */
+    fun moveQueueItem(from: Int, to: Int) {
+        pending?.let { previous ->
+            if (from !in previous.indices || to !in previous.indices) return
+            val currentUri = controller?.currentMediaItem?.mediaId
+                ?: previous.getOrNull(pendingIndex)?.uri
+            pending = previous.toMutableList().apply { add(to, removeAt(from)) }
+            pendingIndex = pending!!.indexOfFirst { it.uri == currentUri }.coerceAtLeast(0)
+        }
+        controller?.let { player ->
+            if (from in 0 until player.mediaItemCount && to in 0 until player.mediaItemCount)
+                player.moveMediaItem(from, to)
+        }
+        update()
+    }
+
+    fun insertQueueItem(source: SourceRef, index: Int) {
+        pending?.let { previous ->
+            val at = index.coerceIn(0, previous.size)
+            val currentUri = controller?.currentMediaItem?.mediaId
+                ?: previous.getOrNull(pendingIndex)?.uri
+            pending = previous.toMutableList().apply { add(at, source) }
+            pendingIndex = pending!!.indexOfFirst { it.uri == currentUri }.coerceAtLeast(0)
+        }
+        controller?.let { player ->
+            val at = index.coerceIn(0, player.mediaItemCount)
+            player.addMediaItem(
+                at,
+                MediaItem.Builder().setUri(source.uri).setMediaId(source.uri)
+                    .setMediaMetadata(MediaMetadata.Builder()
+                        .setTitle(source.title).setArtist(source.artist).build())
+                    .build(),
+            )
+        }
+        update()
+    }
+
     fun open(uri: Uri) = setQueue(listOf(SourceRef(uri.toString())))
 
     fun play() {

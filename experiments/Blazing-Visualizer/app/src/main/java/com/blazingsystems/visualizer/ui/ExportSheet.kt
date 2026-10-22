@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -50,7 +51,7 @@ fun ExportSheet(
             }
         }
         Row {
-            listOf("16:9", "9:16", "1:1").forEachIndexed { i, label ->
+            listOf("Landscape 16:9", "Portrait 9:16", "Square 1:1").forEachIndexed { i, label ->
                 FilterChip(
                     aspect == i,
                     { aspect = i },
@@ -71,10 +72,27 @@ fun ExportSheet(
                 else -> size
             }
         Text(
-            "$width × $height",
+            "Output: $width × $height pixels",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        val frame by model.rendered.collectAsState()
+        Text("Composition preview at selected output shape", fontSize = 12.sp)
+        Box(
+            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            AndroidView(
+                factory = { context ->
+                    com.blazingsystems.visualizer.render.SceneView(context).apply {
+                        update(frame)
+                    }
+                },
+                update = { it.update(frame) },
+                modifier = Modifier.width(if (aspect == 1) 130.dp else 220.dp)
+                    .aspectRatio(width.toFloat() / height),
+            )
+        }
         Row(Modifier.padding(vertical = 12.dp)) {
             OutlinedTextField(
                 start,
