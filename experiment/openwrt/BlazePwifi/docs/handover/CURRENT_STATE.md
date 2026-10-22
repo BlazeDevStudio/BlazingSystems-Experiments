@@ -1,3 +1,9 @@
+## ESP8266-GPIO-20261022 / EXPECTED OLD-FIRMWARE RED OBSERVED (2026-10-22 Asia/Manila)
+
+- Branch `fix/esp8266-coin-gpio-safety-20261022`, only ESP8266 coin-controller GPIO. **Pre-fix evidence:** test `7dbd8d199429a32c8715c2966684b37d8bb22ee4`, new focused workflow `1055328449043de3389ddd2c09ce505f4cb09fb4`, [CI #39743080798](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39743080798) **completed FAILURE**, two tests fail in old unchanged source as designed (missing local safety header and firmware integration). This is the RED check, not a regression fixed or board compilation success.
+- **Exact next edit:** create `esp8266/BlazePwifiVendo/v060_esp8266_gpio_safety.h` with portable strict allowlist GPIO4/5/12/13/14 and all-distinct roles; instrument `configureRuntimePins`, `applyRemoteConfig`, setup /save, early `setup`, coin ISR-equivalent polling. Fail closed on invalid remote or EEPROM pins without touching them; preserve default 4/5/14 and journal. No ESP32/R281/other branch change. Proof: fast Python/g++ focused CI and full Arduino ESP8266 compile from shipped artifact.
+- **Rollback:** discard the isolated branch, no device flash/money state. Production `v0.6.0` remains not authorized. RENT P0 #32 worker continues on shared development independently.
+
 ## ESP8266-GPIO-20261022 — IN PROGRESS / P1 COIN HARDWARE PIN SAFETY
 
 - **Branch:** `fix/esp8266-coin-gpio-safety-20261022` from development `72987a376d66b2a9027a0685e9681fc5cd45b674`; **single scope:** NodeMCU ESP8266 controller `esp8266/BlazePwifiVendo/BlazePwifiVendo.ino`, its same-folder portable GPIO guard and new focused regression/CI only. The existing RENT-20261022-ATOMIC P0 #32 reproduction on development continues separately and is not being changed or superseded.
