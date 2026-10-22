@@ -42,5 +42,26 @@ if [ "$rc" -eq 0 ] || [ -n "$out" ] ||
   echo "RENT-20261022-FLOOR FAIL: stale lease received duplicate paid ACK or mutated state (rc=$rc)" >&2
   exit 1
 fi
-echo 'RENT-20261022-FLOOR PASS: valid receipt with regressed paid lease refuses duplicate ACK; valid normal purchase/replay retained'
+# Exercise the second receipt lookup as though another writer committed
+# between our initial read lock and the paid writer lock. Only this fixture
+# overrides snapshot visibility; production receipt validation stays intact.
+bp_rental_paid_receipt_snapshot() {
+  if [ ! -e "$T/writer-read" ]; then
+    : > "$T/writer-read"
+    return 0
+  fi
+  awk -F '\t' -v e="$1" '$1==e {print; exit}' "$BP_RENTAL_EVENTS"
+}
+set +e
+out="$(bp_rental_apply_coin dev01 controller01 nonce01 target01 1 2>"$T/writer.err")"
+rc=$?
+set -e
+if [ "$rc" -eq 0 ] || [ -n "$out" ] ||
+   [ "$(cut -f3 "$BP_RENTAL_DEVICES")" != 0 ] ||
+   [ "$(sha256sum "$BP_RENTAL_EVENTS")" != "$receipt_before" ] ||
+   [ ! -f "$BP_STATE/paid-state-uncertain" ]; then
+  echo "RENT-20261022-FLOOR FAIL: writer-lock replay ACKed regressed lease or cleared uncertainty (rc=$rc)" >&2
+  exit 1
+fi
+echo 'RENT-20261022-FLOOR PASS: stale-lease paid ACK refused under read and writer locks; normal purchase/replay preserved'
 echo 'NOT ATOMIC: v1 separate lease/receipt writes, independent monotonic witness, migration, hardware proof remain blocked.'
