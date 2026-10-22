@@ -234,3 +234,25 @@ Device Owner provisioning compliance now requires the second authenticated statu
 ## RC11 completion fixes and immutable RC10 boundary
 
 RC10 was published before follow-up Device Owner callback and verified-policy fixes landed. Its tag and assets are immutable; the unreleased product deltas are isolated in RC11. The RC11 build uses TEST APK versionCode 50212. Modern Android provisioning completion is owned by the dedicated activity, not concurrently by the legacy broadcast receiver; the receiver fallback is limited to Android 5–7. Both paths require explicit provisioning provenance and successfully synchronized, persisted signed policy. No production-signed or physical Setup Wizard certification claim is made.
+
+## RC12 candidate: partial enrollment-state fail-closed audit
+
+After RC11, the Device Owner callback guard still treated an absent
+`enrollment_source` **and** `enrollment_token` as a fresh installation,
+even when the persisted server origin or TLS certificate pin was nonempty.
+This can arise from interrupted writes, partial migration, or damaged local
+preferences. Accepting a new provisioning callback over this residue could
+replace the intended server or certificate trust anchor without an explicit
+reset.
+
+The guard now permits first-time provisioning only when **all four** pending
+fields are empty: source, server origin, one-time token, and pinned certificate.
+It also rejects incomplete newly submitted identities and refuses an
+incomplete callback replay. Complete, byte-identical Setup Wizard callbacks
+remain idempotent. Existing device IDs or secrets continue to block
+reprovisioning.
+
+Pure JUnit regressions cover isolated server residue, isolated certificate
+residue, server+pin residue, missing token, missing new fields, and incomplete
+callback replays. This is an isolated source/test change, **not a production
+release or proof of physical Setup Wizard interoperability**.

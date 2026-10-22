@@ -67,6 +67,57 @@ public class ProvisioningStateGuardTest {
     }
 
     @Test
+    public void interruptedStateWithOnlyServerCannotChangeOrigin() {
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", SERVER, "", "", "", "",
+                "https://192.168.1.2", TOKEN, PIN));
+    }
+
+    @Test
+    public void interruptedStateWithOnlyCertificatePinCannotChangeTrustAnchor() {
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", "", "", PIN, "", "",
+                SERVER, TOKEN, PIN));
+    }
+
+    @Test
+    public void interruptedStateWithSourceAndNoTokenFailsClosed() {
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "device_owner_provisioning", SERVER, "", PIN, "", "",
+                SERVER, TOKEN, PIN));
+    }
+
+    @Test
+    public void interruptedStateWithOnlyOriginAndPinCannotBeReplaced() {
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", SERVER, "", PIN, "", "",
+                SERVER, TOKEN, PIN));
+    }
+
+    @Test
+    public void freshStateRejectsIncompleteNewProvisioningIdentity() {
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", "", "", "", "", "",
+                "", TOKEN, PIN));
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", "", "", "", "", "",
+                SERVER, "", PIN));
+        assertFalse(ProvisioningStateGuard.canAccept(
+                "", "", "", "", "", "",
+                SERVER, TOKEN, ""));
+    }
+
+    @Test
+    public void replayWithoutCompleteOriginalIdentityIsNotAccepted() {
+        assertFalse(ProvisioningStateGuard.isExactReplay(
+                "device_owner_provisioning", SERVER, TOKEN, "",
+                SERVER, TOKEN, ""));
+        assertFalse(ProvisioningStateGuard.isExactReplay(
+                "device_owner_provisioning", "", TOKEN, PIN,
+                "", TOKEN, PIN));
+    }
+
+    @Test
     public void deviceOwnerCompletionRequiresProvisioningSource() {
         assertTrue(ProvisioningStateGuard.isProvisioningSource("device_owner_provisioning"));
         assertFalse(ProvisioningStateGuard.isProvisioningSource("standard_manual"));

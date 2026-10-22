@@ -30,9 +30,17 @@ final class ProvisioningStateGuard {
             return false;
         }
 
-        boolean hasPendingState = nonEmpty(existingSource) || nonEmpty(existingToken);
-        if (!hasPendingState) {
-            return true;
+        // Only a completely empty local enrollment slot may take a new
+        // provisioning identity. Interrupted writes, old schema migration
+        // and torn state can leave a server/pin behind without source/token.
+        // Accepting new extras over such residue would silently switch the
+        // destination or trust anchor. Require explicit reset/transfer.
+        boolean hasAnyEnrollmentState = nonEmpty(existingSource)
+                || nonEmpty(existingServer)
+                || nonEmpty(existingToken)
+                || nonEmpty(existingPin);
+        if (!hasAnyEnrollmentState) {
+            return nonEmpty(newServer) && nonEmpty(newToken) && nonEmpty(newPin);
         }
 
         return isExactReplay(existingSource, existingServer, existingToken,
@@ -50,7 +58,9 @@ final class ProvisioningStateGuard {
                 && clean(existingServer).equals(clean(newServer))
                 && clean(existingToken).equals(clean(newToken))
                 && clean(existingPin).equals(clean(newPin))
-                && nonEmpty(existingToken);
+                && nonEmpty(existingServer)
+                && nonEmpty(existingToken)
+                && nonEmpty(existingPin);
     }
 
     private static boolean nonEmpty(String value) {
