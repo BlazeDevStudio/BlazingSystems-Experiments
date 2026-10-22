@@ -260,8 +260,6 @@ public sealed class SerialHardware : IDisposable
                 _port = port;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
-                if (config.SerialSelection == SerialSelectionMode.ExactDevice && string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
-                    SerialDiscovery.BindExactDevice(config, selected);
                 _lastCoinActive = IsSignalActive(config.CoinInputSignal, config.CoinInputActiveHigh);
                 ConnectionChanged?.Invoke($"Connected to {selected.Display}");
                 return true;
