@@ -71,7 +71,7 @@ class Esp8266PinSafety(unittest.TestCase):
         self.assertIn("controllerEnabled=false", text)
         self.assertIn("coinEnabled=false", text)
         self.assertIn("relayEnabled=false", text)
-        self.assertIn("if(controllerEnabled && coinEnabled && relayEnabled && insertMode && fsReady", text)
+        self.assertIn("if(controllerEnabled && coinEnabled && relayEnabled && !bootPinsRejected && insertMode && fsReady", text)
         self.assertIn("runCoinPin=savedPinsSafe?cfg.coinPin:4", text)
         self.assertIn("runRelayPin=savedPinsSafe?cfg.relayPin:5", text)
         self.assertIn("runLedPin=savedPinsSafe?cfg.insertLedPin:14", text)
