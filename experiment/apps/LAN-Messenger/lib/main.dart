@@ -214,6 +214,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         }
         setState(() {});
       };
+      inter.onRemoteControlRequest = (peer) async {
+        if (!mounted || inter.talkingTo?.id != peer.id ||
+            !inter.sharingScreen || !Platform.isWindows) return false;
+        return _ask(title: 'Allow remote mouse control?',
+          detail: '${peer.name} requests temporary mouse control of your shared Windows screen. '
+              'Permission lasts up to 5 minutes. Stop sharing or revoke it at any time.',
+          allowText: 'Allow for 5 minutes');
+      };
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
@@ -905,13 +913,23 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ]),
           Expanded(child: call.video ? LayoutBuilder(builder: (context, size) {
             return Stack(children: [
-              Positioned.fill(child: Center(child: AspectRatio(
-                aspectRatio: sourceRatio,
-                child: call.remoteRenderer != null
-                    ? RTCVideoView(call.remoteRenderer!,
-                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
-                    : const Center(child: Icon(Icons.videocam,
-                        color: Colors.white54, size: 70))))),
+              Positioned.fill(child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: call.remoteControlActive && call.peerSharingScreen
+                    ? (details) {
+                        final x = (details.localPosition.dx / size.maxWidth)
+                            .clamp(0.0, 1.0).toDouble();
+                        final y = (details.localPosition.dy / size.maxHeight)
+                            .clamp(0.0, 1.0).toDouble();
+                        unawaited(call.sendRemoteClick(x, y));
+                      } : null,
+                child: Center(child: AspectRatio(
+                  aspectRatio: sourceRatio,
+                  child: call.remoteRenderer != null
+                      ? RTCVideoView(call.remoteRenderer!,
+                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+                      : const Center(child: Icon(Icons.videocam,
+                          color: Colors.white54, size: 70)))))),
               if (call.localRenderer != null)
                 Positioned(
                   left: _videoPosition.dx.clamp(0.0,
@@ -935,6 +953,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     ),
                   ),
                 ),
+              if (call.remoteControlActive)
+                const Positioned(top: 9, left: 9, child: DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.teal, borderRadius: BorderRadius.all(Radius.circular(6))),
+                  child: Padding(padding: EdgeInsets.all(6), child:
+                    Text('REMOTE MOUSE ENABLED', style: TextStyle(
+                      fontSize: 11, color: Colors.white))))),
               if (call.sharingScreen)
                 const Positioned(bottom: 12, left: 12, child: DecoratedBox(
                   decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(6))),
@@ -954,6 +978,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   IconButton.filledTonal(tooltip: 'Switch camera (also double tap preview)',
                     onPressed: () => unawaited(_switchCamera()),
                     icon: const Icon(Icons.flip_camera_android_rounded)),
+                if (call.video && call.peerSharingScreen && !call.remoteControlActive)
+                  IconButton.filledTonal(tooltip: 'Ask to control shared Windows screen',
+                    onPressed: () async {
+                      try { await call.requestRemoteControl(); }
+                      catch (e) { _toast('Control request failed: $e'); }
+                    },
+                    icon: const Icon(Icons.touch_app_outlined)),
+                if (call.sharingScreen && call.remoteControlApproved)
+                  IconButton.filled(tooltip: 'Revoke remote control now',
+                    style: IconButton.styleFrom(backgroundColor: Colors.deepOrange),
+                    onPressed: () => unawaited(call.revokeRemoteControl()),
+                    icon: const Icon(Icons.gpp_bad)),
                 if (call.video)
                   IconButton.filledTonal(
                     tooltip: call.sharingScreen ? 'Stop screen sharing' : 'Share my screen',
