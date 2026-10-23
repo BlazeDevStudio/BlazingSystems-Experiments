@@ -80,6 +80,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Size? _normalWindowSize;
   Offset? _normalWindowPosition;
   bool _normalWindowWasVisible = true;
+  bool _normalWindowWasMinimized = false;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -221,12 +222,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       await wm.windowManager.ensureInitialized();
       _normalWindowWasVisible = await wm.windowManager.isVisible();
+      _normalWindowWasMinimized = await wm.windowManager.isMinimized();
+      if (_normalWindowWasMinimized) {
+        // Native SW_SHOWNOACTIVATE restores the minimized window without
+        // stealing focus from the PC user who answered from the toast.
+        await _desktopCalls.invokeMethod<bool>('restoreMainInactive');
+      }
       _normalWindowSize = await wm.windowManager.getSize();
       _normalWindowPosition = await wm.windowManager.getPosition();
-      if (await wm.windowManager.isMinimized()) {
-        // Restore only the app's own surface, without activating it.
-        await wm.windowManager.restore();
-      }
       _compactWindowsVideo = true;
       if (mounted) setState(() {});
       await wm.windowManager.setMinimumSize(const Size(290, 230));
@@ -261,9 +264,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (_normalWindowPosition != null) {
         await wm.windowManager.setPosition(_normalWindowPosition!);
       }
-      if (forceOpen || _normalWindowWasVisible) {
-        await wm.windowManager.show(inactive: !forceOpen);
-        if (forceOpen) await wm.windowManager.focus();
+      if (forceOpen) {
+        await wm.windowManager.show();
+        await wm.windowManager.focus();
+      } else if (_normalWindowWasMinimized) {
+        await wm.windowManager.minimize();
+      } else if (_normalWindowWasVisible) {
+        await wm.windowManager.show(inactive: true);
       } else {
         await wm.windowManager.hide();
       }
