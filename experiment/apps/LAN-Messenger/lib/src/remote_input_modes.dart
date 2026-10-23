@@ -131,9 +131,12 @@ class _RemoteInputOverlayState extends State<RemoteInputOverlay> {
       });
       _gesture = true;
     }
-    if ((event.localPosition - _down).distance > 12 && count == 1) {
+    if (delta.distance > 12 || (count == 1 &&
+        (event.localPosition - _down).distance > 12)) {
       _gesture = true;
     }
+    if (widget.mode == RemoteInputMode.trackpad &&
+        count == 2 && delta.distance > 4) _gesture = true;
     _oldCentroid = _centroid;
     _oldRadius = _radius;
   }
@@ -145,9 +148,11 @@ class _RemoteInputOverlayState extends State<RemoteInputOverlay> {
     if (_points.isNotEmpty) return;
     final duration = DateTime.now().difference(
         _pressedAt ?? DateTime.now()).inMilliseconds;
-    if (!_gesture && duration < 350 && (up - _down).distance < 14) {
-      final point = normalizedVideoPoint(up, _size, widget.sourceRatio,
-          _zoom, _pan);
+    if (!_gesture && duration < 350 &&
+        (_contacts > 1 || (up - _down).distance < 14)) {
+      final point = widget.mode == RemoteInputMode.trackpad
+          ? const Offset(0.5, 0.5)
+          : normalizedVideoPoint(up, _size, widget.sourceRatio, _zoom, _pan);
       if (point != null) {
         final button = _contacts >= 3 ? RemoteMouseButton.middle :
             _contacts == 2 ? RemoteMouseButton.right :
@@ -168,7 +173,10 @@ class _RemoteInputOverlayState extends State<RemoteInputOverlay> {
       onPointerDown: _downPointer,
       onPointerMove: _movePointer,
       onPointerUp: _upPointer,
-      onPointerCancel: _upPointer,
+      onPointerCancel: (event) {
+        _gesture = true;
+        _upPointer(event);
+      },
       child: ClipRect(child: Transform.translate(
         offset: _pan,
         child: Transform.scale(scale: _zoom,
