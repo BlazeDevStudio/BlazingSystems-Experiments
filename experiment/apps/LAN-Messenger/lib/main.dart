@@ -100,7 +100,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           });
         }
       };
-      n.onProgress = (progress) { if (mounted) setState(() => transfers[progress.id] = progress); };
+      n.onProgress = (progress) {
+        if (mounted) setState(() => transfers[progress.id] = progress);
+        if (progress.finished && !progress.incoming) {
+          _nativeNotify('file', 'File sent', progress.name);
+        }
+      };
       // Auto-receive is configurable. Received attachments are never opened automatically.
       n.onFileOffer = (peer, name, size) async => _ask(
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
