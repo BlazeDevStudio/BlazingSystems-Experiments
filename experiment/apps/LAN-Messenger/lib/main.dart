@@ -424,10 +424,43 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<void> _openAndroidAssistiveSettings() async {
     if (!Platform.isAndroid) return;
-    try {
-      await const MethodChannel('lan_messenger/remote')
-          .invokeMethod<void>('openAccessibilitySettings');
-    } catch (e) { _toast('Could not open Accessibility settings: $e'); }
+    // Android 13+ may restrict Accessibility for apps installed from an APK.
+    // The platform alone can grant the permission. Never bypass this policy.
+    if (!mounted) return;
+    await showDialog<void>(context: context, builder: (dialog) => AlertDialog(
+      title: const Text('Enable Remote Touch safely'),
+      content: const SingleChildScrollView(child: Text(
+        'LAN Messenger can receive remote taps only when you share your '
+        'screen and approve a control request.\n\n'
+        '1. Open Android Settings > Apps > LAN Messenger.\n'
+        '2. If Accessibility is disabled or greyed out, tap the three-dot '
+        'menu in App info > Allow restricted settings (Android 13+). '
+        'Android may ask for your screen lock.\n'
+        '3. Return to Settings > Accessibility > Installed apps > '
+        'LAN Messenger Remote Touch and enable it.\n\n'
+        'If your phone or administrator blocks this permission, '
+        'remote viewing still works. Never enable remote access for '
+        'an untrusted person. Permission is not granted by this button.',
+      )),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            Navigator.of(dialog).pop();
+            try {
+              await const MethodChannel('lan_messenger/remote')
+                  .invokeMethod<void>('openAppInfo');
+            } catch (e) { _toast('Could not open App info: $e'); }
+          }, child: const Text('App info')),
+        TextButton(
+          onPressed: () async {
+            Navigator.of(dialog).pop();
+            try {
+              await const MethodChannel('lan_messenger/remote')
+                  .invokeMethod<void>('openAccessibilitySettings');
+            } catch (e) { _toast('Could not open Accessibility settings: $e'); }
+          }, child: const Text('Accessibility')),
+      ],
+    ));
   }
 
   Future<void> _openAndroidCallNotificationSettings() async {
@@ -556,7 +589,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (Platform.isAndroid) ListTile(
       leading: const Icon(Icons.touch_app),
       title: const Text('Optional remote touch permission'),
-      subtitle: const Text('Only needed if you explicitly approve remote control of your Android screen during sharing'),
+      subtitle: const Text('Android 13+ can grey out this permission: see guided setup'),
       trailing: const Icon(Icons.open_in_new),
       onTap: _openAndroidAssistiveSettings),
     SwitchListTile(title: const Text('Use LAN Messenger sounds'),
