@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'identity.dart';
 import 'node.dart';
@@ -280,6 +281,8 @@ class Intercom {
       if (Platform.isAndroid) {
         final permission = await Helper.requestCapturePermission(fullScreenOnly: true);
         if (!permission) return false;
+        await const MethodChannel('lan_messenger/screen_capture')
+            .invokeMethod<void>('start');
       }
       acquired = await navigator.mediaDevices.getDisplayMedia({
         'audio': false,
@@ -314,6 +317,10 @@ class Intercom {
         for (final track in acquired.getTracks()) { track.stop(); }
         await acquired.dispose();
       }
+      if (Platform.isAndroid) {
+        try { await const MethodChannel('lan_messenger/screen_capture')
+            .invokeMethod<void>('stop'); } catch (_) {}
+      }
       return false;
     } finally {
       changingVideoSource = false;
@@ -344,6 +351,10 @@ class Intercom {
     } finally {
       for (final track in stream.getTracks()) { track.stop(); }
       try { await stream.dispose(); } catch (_) {}
+      if (Platform.isAndroid) {
+        try { await const MethodChannel('lan_messenger/screen_capture')
+            .invokeMethod<void>('stop'); } catch (_) {}
+      }
       onChanged?.call();
     }
   }
@@ -419,6 +430,10 @@ class Intercom {
     } catch (e) { await _log('peer teardown error: $e'); }
     // Each resource is released independently; one native plugin failure must
     // not skip the remaining stream or video renderer cleanup.
+    if (screen != null && Platform.isAndroid) {
+      try { await const MethodChannel('lan_messenger/screen_capture')
+          .invokeMethod<void>('stop'); } catch (_) {}
+    }
     try { await screen?.dispose().timeout(const Duration(seconds: 5)); }
     catch (e) { await _log('screen share dispose error: $e'); }
     try { await stream?.dispose().timeout(const Duration(seconds: 5)); }
