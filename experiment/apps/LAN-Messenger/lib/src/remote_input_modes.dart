@@ -74,7 +74,7 @@ class _RemoteInputOverlayState extends State<RemoteInputOverlay> {
   int get _requiredPanFingers => widget.mode == RemoteInputMode.panThree ? 3 : 2;
 
   Offset get _centroid => _points.values.fold(Offset.zero,
-      (Offset total, Offset point) => total + point) / math.max(1, _points.length);
+      (Offset total, Offset point) => total + point) / math.max(1, _points.length).toDouble();
 
   double get _radius {
     final center = _centroid;
