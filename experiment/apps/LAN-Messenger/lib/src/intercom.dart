@@ -168,7 +168,7 @@ class Intercom {
       // Windows WebRTC can return a track whose native desktop capturer
       // never produced a frame. Test the capture before replacing the working
       // camera sender so failures cannot leave the remote call blank.
-      await _verifyDisplayFrames(display);
+      if (Platform.isWindows) await _verifyDisplayFrames(display);
       if (_closing || _connection == null || talkingTo == null) {
         throw StateError('Call ended while screen capture was starting');
       }
