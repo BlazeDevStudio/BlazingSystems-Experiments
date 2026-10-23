@@ -660,7 +660,7 @@ class StudioModel @JvmOverloads constructor(
             )) }
             persist()
         } else s.scene.layers.firstOrNull { it.id == id }?.let { original ->
-            val source = SceneLayouts.unfitTransform(
+            val source = if(s.scene.originalAvee!=null) transform else SceneLayouts.unfitTransform(
                 transform, s.scene.designAspect, s.previewAspect,
             )
             setLayer(original.copy(transform = source))

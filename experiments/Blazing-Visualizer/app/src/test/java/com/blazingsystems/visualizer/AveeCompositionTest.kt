@@ -23,10 +23,10 @@ class AveeCompositionTest {
     private fun raw(source: String,color: String="#FFFFFFFF")=buildJsonObject {
         put("objType","Image");put("customImage",buildJsonObject { put("v",source) });put("color",color)
     }
-    private fun render(scene: Scene,w: Int=120,h: Int=120): Bitmap {
+    private fun render(scene: Scene,w: Int=120,h: Int=120,features: FeatureFrame=FeatureFrame(0)): Bitmap {
         val root=Files.createTempDirectory("composition").toFile()
         return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888).also { b ->
-            try { ScenePainter(root).use { it.draw(Canvas(b),SceneEvaluator.evaluate(scene,FeatureFrame(0),0),w,h) } }
+            try { ScenePainter(root).use { it.draw(Canvas(b),SceneEvaluator.evaluate(scene,features,0),w,h) } }
             finally { root.deleteRecursively() }
         }
     }
@@ -66,6 +66,22 @@ class AveeCompositionTest {
             val restored=NativePackCodec().read(bytes.toByteArray().inputStream(),root.resolve("pack"))
             assertEquals(imported.scene,restored.scene)
             assertNotNull(restored.scene.originalAvee?.get("customFutureField"))
+        } finally { root.deleteRecursively() }
+    }
+    @Test fun bothSegmentsRetainTheirOwnColorAndSignedHeight() {
+        val root=Files.createTempDirectory("dual-segment").toFile()
+        try {
+            val imported=AveePresetAdapter.read("""{"compositions":[{"elements":[{
+                "objType":"Bars","position":{"v":"0.5 0.5"},"scale":{"v":"0.8 0.8"},
+                "heightScale":{"v":1},"ShapePath":{"v":"HorizontalLine"},
+                "Segment1":{"v":"Bars","colorFrom":{"v":-65536},"colorTo":{"v":-65536},"barHeightMultiplier":{"v":1}},
+                "Segment2":{"v":"Bars","colorFrom":{"v":-16776961},"colorTo":{"v":-16776961},"barHeightMultiplier":{"v":-1}}
+            }]}]}""",root)
+            assertEquals(2,imported.scene.layers.size)
+            val image=render(imported.scene,features=FeatureFrame(0,aveeSpectrum=List(32){.7f}))
+            assertEquals(Color.RED,image.getPixel(60,40))
+            assertEquals(Color.BLUE,image.getPixel(60,80))
+            image.recycle()
         } finally { root.deleteRecursively() }
     }
 }

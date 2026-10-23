@@ -38,6 +38,8 @@ class ClickAuditTest {
         rule.onNodeWithText("Queue", useUnmergedTree = true).performClick()
         rule.onNodeWithText("Up next").assertIsDisplayed()
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
+        rule.onNodeWithContentDescription("Fullscreen visualizer").assertIsDisplayed().performClick()
+        rule.onNodeWithContentDescription("Exit fullscreen").assertIsDisplayed().performClick()
         rule.onNodeWithContentDescription("Playback options").performClick()
         rule.onNodeWithText("Repeat all", substring = true).performClick()
         rule.onNodeWithContentDescription("Playback options").performClick()

@@ -198,7 +198,7 @@ data class Project(
     val export: ExportSettings = ExportSettings(),
     val practice: PracticeSettings = PracticeSettings(),
     val exportLayout: ExportLayoutMode = ExportLayoutMode.FOLLOW_FIT,
-    val exportFrameMode: ExportFrameMode = ExportFrameMode.COVER,
+    val exportFrameMode: ExportFrameMode = ExportFrameMode.OPTIMIZE,
     val exportTransforms: Map<String, Transform> = emptyMap(),
     val exportDesignAspect: Float = 1f,
 )

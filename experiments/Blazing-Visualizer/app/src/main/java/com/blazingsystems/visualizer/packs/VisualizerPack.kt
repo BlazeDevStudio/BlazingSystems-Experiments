@@ -433,6 +433,9 @@ object AveePresetAdapter {
             val properties = buildJsonObject {
                 value("text")?.let { put("text", it) }
                 value("fontSize")?.let { put("fontSize", it) }
+                listOf("heightScale","minHeightScale","maxHeightScale","flipInput").forEach { key ->
+                    (value(key) as? JsonPrimitive)?.let { put(key,it) }
+                }
                 (value("color") as? JsonPrimitive)?.content?.let { encoded ->
                     val normalized = when {
                         encoded.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) -> encoded
@@ -475,6 +478,11 @@ object AveePresetAdapter {
                         put("sides", (sides as? JsonPrimitive)?.intOrNull?.coerceIn(3, 24) ?: 5)
                     }
                     val segment = item["Segment1"] as? JsonObject
+                    listOf("barHeightMultiplier","mirror").forEach { key ->
+                        val raw=segment?.get(key)
+                        val v=if(raw is JsonObject) raw["v"] else raw
+                        if(v is JsonPrimitive) put(key,v)
+                    }
                     (segment?.get("v") as? JsonPrimitive)?.content?.let {
                         put("segment", it)
                     }
@@ -524,7 +532,20 @@ object AveePresetAdapter {
                         ),
                     properties = properties,
                 )
+            val second=item["Segment2"] as? JsonObject
+            val secondType=(second?.get("v") as? JsonPrimitive)?.content
+            if(native==ElementType.SPECTRUM && second!=null && secondType!=null && secondType!="None") {
+                val p=properties.toMutableMap()
+                p["segment"]=JsonPrimitive(secondType)
+                for((key,target) in listOf("colorFrom" to "color","colorTo" to "colorTo",
+                    "barWidth" to "barWidth","barHeightMultiplier" to "barHeightMultiplier","mirror" to "mirror")) {
+                    val raw=second[key];val v=(if(raw is JsonObject) raw["v"] else raw) as? JsonPrimitive ?: continue
+                    p[target]=if(key.startsWith("color")) JsonPrimitive(v.longOrNull?.let { "#%08X".format(it.toInt()) } ?: v.content) else v
+                }
+                layers+=layers.last().copy(id=UUID.randomUUID().toString(),name=layers.last().name+" / Segment 2",properties=JsonObject(p))
+            }
          }
+        require(layers.size<=128) { "Avee preset exceeds 128 rendered layers" }
         unsupported += "Avee font metrics, blending and DSP may look different"
         return ImportResult(
             Scene(name = "Imported Avee preset", layers = layers, aveeAudio = audioProvider,

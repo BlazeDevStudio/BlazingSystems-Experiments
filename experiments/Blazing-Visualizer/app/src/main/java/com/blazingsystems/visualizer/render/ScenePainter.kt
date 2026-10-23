@@ -7,6 +7,7 @@ import com.blazingsystems.visualizer.project.*
 import java.io.File
 import kotlin.math.*
 import kotlinx.serialization.json.*
+import com.blazingsystems.visualizer.avee.Spectrum2Analyzer
 
 /** Deterministic scene drawing; Canvas pixels feed the same GL pipeline for preview and MP4. */
 class ScenePainter(private val assets: File) : AutoCloseable {
@@ -14,6 +15,8 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     private val images = linkedMapOf<String, Bitmap>()
     private val mathCurves = MathCurvePainter()
     private val importedPainter=lazy { AveeScenePainter(assets) }
+    private var frequencyProfile: JsonObject?=null
+    private var bankFrequencies=emptyList<Double>()
 
     private fun Layer.string(key: String, default: String = "") =
         properties[key]?.jsonPrimitive?.contentOrNull ?: default
@@ -152,14 +155,18 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     val polygon = pathMode == "polygon"
                     val sides = layer.number("sides", 5f).toInt().coerceIn(3, 24)
                     val segment = layer.string("segment")
+                    if (segment == "None") { canvas.restore(); continue }
                     val colorTo = runCatching {
                         Color.parseColor(layer.string("colorTo"))
                     }.getOrNull()
                     val config = s.scene.aveeAudio
                     fun param(key: String, fallback: Float): Float =
                         config[key]?.jsonPrimitive?.floatOrNull?.takeIf(Float::isFinite) ?: fallback
-                    val imported = config.isNotEmpty()
+                    val imported = config.isNotEmpty() || layer.avee.isNotEmpty()
                     val bank=s.features.aveeSpectrum
+                    if(bank.isNotEmpty() && frequencyProfile!=config) {
+                        frequencyProfile=config;bankFrequencies=Spectrum2Analyzer(config).frequencies
+                    }
                     val bins = if(bank.isNotEmpty()) bank.size else if (imported)
                         param("sampleOutCount", 80f).toInt().coerceIn(24, 192) else 80
                     val low = param("lowerHz", 20f).coerceIn(0f, 8000f)
@@ -172,7 +179,11 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                         layer.number("barWidth", 1f).coerceIn(.05f, 2f)
                     paint.strokeCap = if (segment == "SharpBars") Paint.Cap.SQUARE
                         else Paint.Cap.ROUND
+                    if(imported) paint.strokeWidth=max(1f,(if(circle || polygon) min(w,h)*1.82f/bins else w/bins)*layer.number("barWidth",.7f))
+                    val line=if(segment=="Line") Path() else null
+                    paint.style=Paint.Style.STROKE
                     for (i in 0 until bins) {
+                        val input=if(layer.string("flipInput") in setOf("1","true")) bins-1-i else i
                         val fraction = i.toDouble() / bins
                         val from = if (imported) {
                             val mapped = fraction.pow(2) * (1.0 - linearity) + fraction * linearity
@@ -180,12 +191,13 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                             (hz / 22050.0 * (2 * s.features.spectrum.size))
                                 .coerceIn(0.0, (s.features.spectrum.size - 1).coerceAtLeast(0).toDouble())
                         } else fraction.pow(2) * min(512, s.features.spectrum.size)
-                        val frequency = from * 22050 / (2*s.features.spectrum.size.coerceAtLeast(1))
+                        val frequency = if(bank.isNotEmpty()) bankFrequencies.getOrElse(input){0.0}
+                            else from * 22050 / (2*s.features.spectrum.size.coerceAtLeast(1))
                         val bounds = layer.noteRouting.bounds()
                         val allowed = layer.noteRouting == NoteRouting() || frequency in
                             MusicalMath.frequency(bounds.first)*2.0.pow(-.5/12)..MusicalMath.frequency(bounds.last)*2.0.pow(.5/12)
                         val amplitude = if (!allowed) 0f else if(bank.isNotEmpty()) {
-                            bank.getOrElse(i){0f}
+                            bank.getOrElse(input){0f}
                         } else if (!imported) {
                             s.features.spectrum.getOrElse(from.toInt()) { 0f }
                         } else {
@@ -203,6 +215,12 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                                 (1f - lowMagnitude) * fraction.toFloat())
                         }
                         val level = (ln(1 + amplitude * 80) / ln(81f)).coerceIn(0f, 1f)
+                        val magnitude=layer.number("heightScale",1f)*layer.number("barHeightMultiplier",1f)
+                        val scaled = if (imported) {
+                            val height = max(abs(layer.number("minHeightScale", 0f)), amplitude * abs(magnitude))
+                                .coerceAtMost(abs(layer.number("maxHeightScale", 1f)))
+                            height * if (magnitude < 0f) -1f else 1f
+                        } else level
                         paint.color = if (colorTo == null) tint else {
                             val portion = i.toFloat() / (bins - 1).coerceAtLeast(1)
                             Color.argb(
@@ -220,8 +238,11 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                                 cos(PI / sides) / cos(angleOnSide).coerceAtLeast(.1)
                             else 1.0
                             val r = min(w, h) * .29f * radialFactor.toFloat()
-                            val length = 2 + level * min(w, h) * .2f
-                            canvas.drawLine(
+                            val length = if(imported) scaled*min(w,h)*.5f else 2 + level * min(w, h) * .2f
+                            if(line!=null) {
+                                val x=(cos(a)*(r+length)).toFloat();val y=(sin(a)*(r+length)).toFloat()
+                                if(i==0) line.moveTo(x,y) else line.lineTo(x,y)
+                            } else canvas.drawLine(
                                 (cos(a) * r).toFloat(),
                                 (sin(a) * r).toFloat(),
                                 (cos(a) * (r + length)).toFloat(),
@@ -230,9 +251,16 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                             )
                         } else {
                             val x = -w / 2 + i * w / bins
-                            canvas.drawLine(x, h / 2, x, h / 2 - level * h, paint)
+                            val base=if(imported) 0f else h/2
+                            val length=if(imported) scaled*h*.5f else level*h
+                            if(line!=null) { if(i==0) line.moveTo(x,base-length) else line.lineTo(x,base-length) }
+                            else {
+                                canvas.drawLine(x,base,x,base-length,paint)
+                                if(layer.string("mirror") in setOf("1","true")) canvas.drawLine(x,base,x,base+length,paint)
+                            }
                         }
                     }
+                    if(line!=null) { if(circle || polygon) line.close();canvas.drawPath(line,paint) }
                 }
                 ElementType.WAVEFORM -> {
                     val values = s.features.waveform
@@ -313,17 +341,22 @@ class ScenePainter(private val assets: File) : AutoCloseable {
             s.activeNotes, s.sourceTimeUs,
             layer.string("emptyText", "FOLLOW THE NOTES"),
         )
-        // Fit long multi-note labels instead of cutting them off on phones.
-        paint.textSize = min(r * .25f, w * .78f / (label.length * .56f).coerceAtLeast(1f))
         paint.color = Color.WHITE
-        c.drawText(label, 0f, r * .04f, paint)
+        if(s.chord==null && s.activeNotes.isNotEmpty()) {
+            val rows=label.split(" · ").chunked(4).map { it.joinToString(" · ") }
+            paint.textSize=r*.14f
+            rows.forEachIndexed { i,text -> c.drawText(text,0f,(i-(rows.size-1)/2f)*r*.22f+r*.04f,paint) }
+        } else {
+            paint.textSize = min(r * .25f, r * 1.4f / (label.length * .56f).coerceAtLeast(1f))
+            c.drawText(label, 0f, r * .04f, paint)
+        }
         paint.textSize = r * .085f
         paint.color = Color.rgb(156, 151, 177)
         c.drawText(
             if (s.chord != null) "ESTIMATED CHORD"
             else if (s.activeNotes.isNotEmpty()) "DETECTED NOTES" else "",
             0f,
-            r * .23f,
+            r * .46f,
             paint,
         )
     }

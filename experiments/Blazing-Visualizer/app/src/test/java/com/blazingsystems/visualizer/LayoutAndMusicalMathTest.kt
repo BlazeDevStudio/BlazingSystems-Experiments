@@ -42,7 +42,7 @@ class LayoutAndMusicalMathTest {
         val layer = Layer(type = ElementType.SHAPE,
             transform = Transform(width = .8f, height = 1f))
         val scene = Scene(designAspect = 1f, layers = listOf(layer))
-        val project = Project(source = SourceRef("content://test"), scene = scene)
+        val project = Project(source = SourceRef("content://test"), scene = scene,exportFrameMode=ExportFrameMode.COVER)
         val settings = ExportSettings(720, 1280)
         val cover = SceneLayouts.forExport(project, settings)
         val fit = SceneLayouts.forExport(project.copy(exportFrameMode = ExportFrameMode.CONTAIN), settings)
