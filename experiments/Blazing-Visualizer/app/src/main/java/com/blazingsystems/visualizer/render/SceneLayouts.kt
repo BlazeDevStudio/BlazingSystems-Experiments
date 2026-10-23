@@ -8,6 +8,8 @@ import kotlinx.serialization.json.*
 object SceneLayouts {
     fun fit(scene: Scene, targetAspect: Float): Scene {
         require(targetAspect.isFinite() && targetAspect > 0 && scene.designAspect.isFinite() && scene.designAspect > 0)
+        if(scene.originalAvee!=null) return scene.copy(designAspect=targetAspect,
+            aveeRenderAspect=scene.aveeRenderAspect ?: scene.designAspect,aveeFrameMode=ExportFrameMode.CONTAIN)
         val sx = min(1f, scene.designAspect / targetAspect)
         val sy = min(1f, targetAspect / scene.designAspect)
         return scene.copy(designAspect = targetAspect, layers = scene.layers.map { layer ->
@@ -20,6 +22,8 @@ object SceneLayouts {
     fun cover(scene: Scene, targetAspect: Float): Scene {
         require(targetAspect.isFinite() && targetAspect > 0 &&
             scene.designAspect.isFinite() && scene.designAspect > 0)
+        if(scene.originalAvee!=null) return scene.copy(designAspect=targetAspect,
+            aveeRenderAspect=scene.aveeRenderAspect ?: scene.designAspect,aveeFrameMode=ExportFrameMode.COVER)
         val sx = max(1f, scene.designAspect / targetAspect)
         val sy = max(1f, targetAspect / scene.designAspect)
         return scene.copy(designAspect = targetAspect, layers = scene.layers.map { layer ->
@@ -47,6 +51,7 @@ object SceneLayouts {
 
     /** Note-aware cover, anchoring the piano to a 2% safe bottom margin. */
     fun optimize(scene: Scene, targetAspect: Float): Scene {
+        if(scene.originalAvee!=null) return scene.copy(designAspect=targetAspect,aveeRenderAspect=null,aveeFrameMode=null)
         val covered = cover(scene, targetAspect)
         return covered.copy(layers = covered.layers.map { layer ->
             if (!layer.visible || layer.type != ElementType.PIANO_ROLL) layer else {
@@ -65,7 +70,7 @@ object SceneLayouts {
         return when (project.exportFrameMode) {
             ExportFrameMode.CONTAIN -> fit(source, aspect)
             ExportFrameMode.COVER -> cover(source, aspect)
-            ExportFrameMode.STRETCH -> source.copy(designAspect = aspect)
+            ExportFrameMode.STRETCH -> source.copy(designAspect = aspect,aveeRenderAspect=null,aveeFrameMode=null)
             ExportFrameMode.OPTIMIZE -> optimize(source, aspect)
         }
     }

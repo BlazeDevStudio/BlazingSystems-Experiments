@@ -6,6 +6,7 @@ import androidx.lifecycle.*
 import com.blazingsystems.visualizer.analysis.*
 import com.blazingsystems.visualizer.audio.*
 import com.blazingsystems.visualizer.avee.AveeSpectrumAnalyzer
+import com.blazingsystems.visualizer.avee.Spectrum2Analyzer
 import com.blazingsystems.visualizer.avee.SpectrumFrame
 import com.blazingsystems.visualizer.export.*
 import com.blazingsystems.visualizer.packs.*
@@ -45,7 +46,9 @@ data class StudioState(
 ) {
     fun displayScene(): Scene {
         val display = if (editingExportLayout && project != null)
-            SceneLayouts.forExport(project.copy(scene = scene)) else SceneLayouts.fit(scene, previewAspect)
+            SceneLayouts.forExport(project.copy(scene = scene)) else if(scene.originalAvee!=null)
+                scene.copy(designAspect=previewAspect,aveeRenderAspect=null,aveeFrameMode=null)
+            else SceneLayouts.fit(scene, previewAspect)
         return if (layoutEditing) display.copy(animationIntensity = 0f, pianoIntensity = 0f) else display
     }
 }
@@ -177,7 +180,7 @@ class StudioModel @JvmOverloads constructor(
                 .collectLatest { (player, snapshot, mic) ->
                     val frame = mic ?: withContext(Dispatchers.Default) {
                         runCatching {
-                            audioFeatures?.at(player.sourceTimeUs, snapshot.second)
+                            audioFeatures?.at(player.sourceTimeUs, snapshot.second,snapshot.first.aveeAudio)
                         }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = snapshot.second)
                     }
                     rendered.value = SceneEvaluator.evaluate(
@@ -496,16 +499,26 @@ class StudioModel @JvmOverloads constructor(
         microphone = capture
         val generation = ++tunerGeneration
         val tracker=LiveNoteTracker(22050,a4Hz)
+        var liveBank: Spectrum2Analyzer?=null
         tunerRunning.value = true
         microphoneFeatures.value=FeatureFrame(0)
         microphoneJob = viewModelScope.launch {
             try {
                 capture.runFrames { samples,time ->
                     val frame=tracker.update(samples,time)
+                    var features=frame.features
+                    val profile=state.value.scene.aveeAudio
+                    if(profile["sampleProvider"]?.jsonPrimitive?.content=="Spectrum2") {
+                        if(liveBank?.settings!=profile) liveBank=Spectrum2Analyzer(profile)
+                        val bank=liveBank!!
+                        val pcm=FloatArray(bank.inputCount) { i -> samples.getOrElse(samples.size-bank.inputCount+i){0}/32768f }
+                        val bars=bank.analyze(pcm)
+                        features=features.copy(aveeSpectrum=bars,beat=bank.beat(bars))
+                    }
                     withContext(Dispatchers.Main.immediate) {
                         if(generation==tunerGeneration) {
                             tuner.value=frame.pitch
-                            microphoneFeatures.value=frame.features
+                            microphoneFeatures.value=features
                         }
                     }
                 }

@@ -120,6 +120,8 @@ data class Layer(
     val properties: JsonObject = JsonObject(emptyMap()),
     val bindings: List<Binding> = emptyList(),
     val noteRouting: NoteRouting = NoteRouting(),
+    val avee: JsonObject = JsonObject(emptyMap()),
+    val composition: Int = 0,
 )
 
 @Serializable
@@ -136,6 +138,10 @@ data class Scene(
     val designAspect: Float = 1f,
     /** Safe declarative Avee AudioProvider scalars; never executable imported code. */
     val aveeAudio: JsonObject = JsonObject(emptyMap()),
+    val originalAvee: JsonObject? = null,
+    val aveeCompositionCount: Int = 0,
+    val aveeRenderAspect: Float? = null,
+    val aveeFrameMode: ExportFrameMode? = null,
 )
 
 data class FeatureFrame(
@@ -145,6 +151,8 @@ data class FeatureFrame(
     val waveform: List<Float> = emptyList(),
     val notes: List<NoteEvent> = emptyList(),
     val chord: String? = null,
+    val aveeSpectrum: List<Float> = emptyList(),
+    val beat: Float = 0f,
 )
 
 @Serializable

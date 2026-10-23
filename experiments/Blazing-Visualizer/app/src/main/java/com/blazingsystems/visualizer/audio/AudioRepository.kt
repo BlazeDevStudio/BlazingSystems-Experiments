@@ -3,6 +3,7 @@ package com.blazingsystems.visualizer.audio
 import android.content.Context
 import android.net.Uri
 import com.blazingsystems.visualizer.avee.AveeSpectrumAnalyzer
+import com.blazingsystems.visualizer.avee.Spectrum2Analyzer
 import com.blazingsystems.visualizer.project.*
 import java.io.*
 import java.nio.ByteBuffer
@@ -12,7 +13,8 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
+import kotlin.math.*
 
 @Serializable
 data class DecodedAudio(
@@ -181,9 +183,39 @@ class AudioRepository(private val context: Context) {
 class AudioFeatures(private val audio: DecodedAudio) : AutoCloseable {
     private val file = RandomAccessFile(audio.monoFile, "r")
     private val analyzer = AveeSpectrumAnalyzer()
+    private var bank: Spectrum2Analyzer?=null
+    private val targets=linkedMapOf<Long,List<Float>>()
+    private fun preceding(timeUs: Long,count: Int): FloatArray {
+        val start=timeUs.coerceAtLeast(0)*22050/1_000_000-count
+        val padding=(-start).coerceIn(0,count.toLong()).toInt()
+        file.seek(start.coerceAtLeast(0)*4)
+        val bytes=ByteArray((count-padding)*4)
+        var received=0
+        while(received<bytes.size) {
+            val n=file.read(bytes,received,bytes.size-received);if(n<0) break;received+=n
+        }
+        val buffer=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        return FloatArray(count) { i -> if(i>=padding && (i-padding)*4+4<=received) buffer.float else 0f }
+    }
+    private fun configured(timeUs: Long,profile: JsonObject): Pair<List<Float>,Float> {
+        if(bank?.settings!=profile) { bank=Spectrum2Analyzer(profile);targets.clear() }
+        val b=bank!!;val tick=timeUs.coerceAtLeast(0)/20_000;val blend=.4*b.response
+        val history=ceil(8/blend).toInt().coerceIn(12,64)
+        val values=DoubleArray(b.count);var weight=1.0;var total=0.0
+        for(age in 0 until history) {
+            val key=tick-age
+            val target=if(key<0) null else targets[key] ?: b.analyze(preceding(key*20_000,b.inputCount)).also {
+                targets[key]=it;if(targets.size>160) targets.remove(targets.keys.first())
+            }
+            if(target!=null) for(i in values.indices) values[i]+=target[i]*weight
+            total+=weight;weight*=1-blend
+        }
+        val valuesOut=values.map { (it/total).toFloat() }
+        return valuesOut to b.beat(valuesOut)
+    }
 
     @Synchronized
-    fun at(timeUs: Long, notes: List<NoteEvent> = emptyList()): FeatureFrame {
+    fun at(timeUs: Long, notes: List<NoteEvent> = emptyList(),profile: JsonObject=JsonObject(emptyMap())): FeatureFrame {
         val start = (timeUs.coerceAtLeast(0) * 22050 / 1_000_000).coerceAtMost(file.length() / 4)
         file.seek(start * 4)
         val bytes = ByteArray(2048 * 4)
@@ -191,7 +223,9 @@ class AudioFeatures(private val audio: DecodedAudio) : AutoCloseable {
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
         val pcm = FloatArray(2048) { if (it * 4 + 4 <= count) buffer.float else 0f }
         val f = analyzer.analyze(pcm, 22050)
-        return FeatureFrame(timeUs, f.rms, f.spectrum, f.waveform, notes)
+        val extra=if(profile["sampleProvider"]?.jsonPrimitive?.content=="Spectrum2") configured(timeUs,profile)
+            else emptyList<Float>() to f.rms.coerceIn(0f,1f)
+        return FeatureFrame(timeUs, f.rms, f.spectrum, f.waveform, notes,aveeSpectrum=extra.first,beat=extra.second)
     }
 
     @Synchronized override fun close() = file.close()

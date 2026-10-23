@@ -170,7 +170,7 @@ class VideoExporter(private val context: Context) {
                                 renderer.render(
                                     SceneEvaluator.evaluate(
                                         request.project.scene,
-                                        features.at(time, notes),
+                                        features.at(time, notes,request.project.scene.aveeAudio),
                                         time,
                                     ),
                                     target,

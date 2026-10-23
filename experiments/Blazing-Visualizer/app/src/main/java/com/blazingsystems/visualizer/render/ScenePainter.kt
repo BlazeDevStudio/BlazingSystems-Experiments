@@ -13,6 +13,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val images = linkedMapOf<String, Bitmap>()
     private val mathCurves = MathCurvePainter()
+    private val importedPainter=lazy { AveeScenePainter(assets) }
 
     private fun Layer.string(key: String, default: String = "") =
         properties[key]?.jsonPrimitive?.contentOrNull ?: default
@@ -40,7 +41,20 @@ class ScenePainter(private val assets: File) : AutoCloseable {
         Color.argb(alpha.coerceIn(0, 255), Color.red(color), Color.green(color), Color.blue(color))
 
     fun draw(canvas: Canvas, s: EvaluatedScene, width: Int, height: Int) {
-        canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.rgb(8, 9, 17)))
+        if(s.scene.originalAvee!=null && s.scene.aveeCompositionCount>0) {
+            canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.BLACK),PorterDuff.Mode.SRC)
+            val aspect=s.scene.aveeRenderAspect
+            val rh=(if(aspect==null) height.toFloat() else if(s.scene.aveeFrameMode==ExportFrameMode.COVER)
+                max(height.toFloat(),width/aspect) else min(height.toFloat(),width/aspect)).roundToInt().coerceAtLeast(1)
+            val rw=(if(aspect==null) width.toFloat() else rh*aspect).roundToInt().coerceAtLeast(1)
+            val saved=canvas.save();canvas.clipRect(0,0,width,height);canvas.translate((width-rw)/2f,(height-rh)/2f)
+            importedPainter.value.draw(canvas,s,rw,rh) { target,layer -> drawNative(target,layer,rw,rh,false) }
+            canvas.restoreToCount(saved)
+        } else drawNative(canvas,s,width,height,true)
+    }
+
+    private fun drawNative(canvas: Canvas,s: EvaluatedScene,width: Int,height: Int,clear: Boolean) {
+        if(clear) canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.rgb(8, 9, 17)),PorterDuff.Mode.SRC)
         paint.shader = null
         paint.style = Paint.Style.FILL
         for (e in s.layers) {
@@ -145,7 +159,8 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                     fun param(key: String, fallback: Float): Float =
                         config[key]?.jsonPrimitive?.floatOrNull?.takeIf(Float::isFinite) ?: fallback
                     val imported = config.isNotEmpty()
-                    val bins = if (imported)
+                    val bank=s.features.aveeSpectrum
+                    val bins = if(bank.isNotEmpty()) bank.size else if (imported)
                         param("sampleOutCount", 80f).toInt().coerceIn(24, 192) else 80
                     val low = param("lowerHz", 20f).coerceIn(0f, 8000f)
                     val high = param("higherHz", 11025f).coerceIn(low + 1f, 11025f)
@@ -169,7 +184,9 @@ class ScenePainter(private val assets: File) : AutoCloseable {
                         val bounds = layer.noteRouting.bounds()
                         val allowed = layer.noteRouting == NoteRouting() || frequency in
                             MusicalMath.frequency(bounds.first)*2.0.pow(-.5/12)..MusicalMath.frequency(bounds.last)*2.0.pow(.5/12)
-                        val amplitude = if (!allowed) 0f else if (!imported) {
+                        val amplitude = if (!allowed) 0f else if(bank.isNotEmpty()) {
+                            bank.getOrElse(i){0f}
+                        } else if (!imported) {
                             s.features.spectrum.getOrElse(from.toInt()) { 0f }
                         } else {
                             var sum = 0f
@@ -429,6 +446,7 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     }
 
     override fun close() {
+        if(importedPainter.isInitialized()) importedPainter.value.close()
         images.values.forEach { it.recycle() }
         images.clear()
     }
