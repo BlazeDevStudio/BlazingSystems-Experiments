@@ -45,7 +45,7 @@ class LanNode {
   // separate concept from whether we will authenticate its HTTP requests.
   static const peerOnlineWindow = Duration(seconds: 35);
   bool autoReceiveFiles = true;
-  static const int maxIncomingFileBytes = 512 * 1024 * 1024;
+  int maxIncomingFileBytes = 512 * 1024 * 1024;
   static const int maxConcurrentIncoming = 4;
   bool _checkingPeers = false;
   bool isOnline(Peer peer) =>
@@ -62,13 +62,13 @@ class LanNode {
     try {
       final old = peers.values.where((p) =>
           DateTime.now().difference(p.seen) > const Duration(seconds: 9)).toList();
-      for (final peer in old.take(30)) {
+      await Future.wait(old.take(16).map((peer) async {
         try {
           final reply = await _event(peer, {'kind': 'ping'}).timeout(
               const Duration(seconds: 3));
           if (reply['ok'] == true) _markSeen(peer);
         } catch (_) { /* Stale peers remain known, but appear offline. */ }
-      }
+      }));
     } finally { _checkingPeers = false; }
   }
   final HttpClient _http = HttpClient()..connectionTimeout = const Duration(seconds: 6);
@@ -173,12 +173,31 @@ class LanNode {
       final data = utf8.decode(builder.takeBytes());
       final packet = jsonDecode(data) as Map<String, dynamic>;
       final senderId = PeerCipher.senderId(packet);
-      final peer = peers[senderId];
-      if (peer == null || peer.key != packet['from']) {
+      final known = peers[senderId];
+      if (known != null && known.key != packet['from']) {
         request.response.statusCode = HttpStatus.forbidden;
         return;
       }
+      // Authenticate first. A lost/asymmetric multicast announcement must not
+      // cause HTTP 403 for a peer with a valid encrypted request. The reply
+      // identity is a first-contact introduction, not a verified real name.
       final plaintext = await cipher.open(packet);
+      var peer = known;
+      if (peer == null) {
+        final port = packet['replyPort'];
+        final name = packet['replyName'];
+        final remoteAddress = request.connectionInfo?.remoteAddress.address;
+        if (port is! int || port < 1 || port > 65535 ||
+            name is! String || name.trim().isEmpty || name.length > 80 ||
+            remoteAddress == null || packet['from'] is! String) {
+          request.response.statusCode = HttpStatus.forbidden;
+          return;
+        }
+        peer = Peer(id: senderId, key: packet['from'] as String,
+            host: remoteAddress, port: port, name: name, seen: DateTime.now());
+        peers[senderId] = peer;
+        onPeersChanged?.call();
+      }
       _markSeen(peer);
       Map<String, dynamic> output;
       if (request.uri.path == '/v1/chunk') {
@@ -200,11 +219,14 @@ class LanNode {
   Future<Map<String, dynamic>> _post(Peer peer, String path, List<int> body,
       {Duration timeout = const Duration(seconds: 15)}) async {
     final packet = await cipher.seal(peer.key, body);
-    final request = await _http.postUrl(peer.uri(path));
+    // Reply address lets new peers join even when UDP discovery is one-way.
+    packet['replyName'] = identity.displayName;
+    packet['replyPort'] = _server?.port;
+    final request = await _http.postUrl(peer.uri(path)).timeout(timeout);
     request.headers.contentType = ContentType.json;
     request.add(utf8.encode(jsonEncode(packet)));
     final response = await request.close().timeout(timeout);
-    final raw = await utf8.decoder.bind(response).join();
+    final raw = await utf8.decoder.bind(response).join().timeout(timeout);
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException('Peer rejected request: ${response.statusCode}');
     }
@@ -270,7 +292,7 @@ class LanNode {
     if (id is! String || !RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ||
         name is! String || name.isEmpty || name.length > 255 ||
         total is! int || total < 0 || total > maxIncomingFileBytes ||
-        sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false};
+        sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false, 'reason': 'invalid or over configured size limit'};
     if (_incoming.containsKey(id)) {
       final previous = _incoming[id]!;
       return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};

@@ -9,7 +9,7 @@
 3. Open LAN Messenger on both devices. Both appear under **Nearby devices** automatically.
 4. Tap a device to open its conversation. Send texts, images, and arbitrary files there, or tap the phone button to call. Incoming files are accepted automatically within safety limits; calls still require Answer.
 
-No internet, account, phone number, pairing code, scanning, server, or IP configuration is needed. First-run OS permissions and Windows Firewall approval may still be required. On Android, foreground use is necessary in this preview; the app is not a background/locked-screen telephone.
+No internet, account, phone number, pairing code, scanning, server, or IP configuration is needed. First-run OS permissions and Windows Firewall approval may still be required. An optional Android foreground service keeps the connection alive with an ongoing notification, but OS battery policies can still stop it. Calls in the background and Bluetooth helmets require hands-on verification.
 
 ## Developer guide
 
@@ -36,7 +36,7 @@ GitHub Actions also generates an Android debug APK and Windows portable debug ZI
 ## Limitations / known issues
 
 - **Preview code has not been tested with physical Android and Windows pairs.** Real device voice/video calling, the Windows native crash and discovery stability remain unverified.
-- Foreground-only on Android; calls won't reliably ring with the app stopped/sleeping. Native foreground services, notifications and Telecom integration remain future work.
+- Android foreground service supports continued network listening while active; a force-stop still terminates it. Incoming-call notifications/lock-screen answer behavior and battery optimizations remain to be tested. This is not a system dialer.
 - Received files remain in app-private storage. Tapping an attachment requests the OS to open it. On Android this is not an explicit save/export-to-Downloads operation. Do not uninstall expecting these files to survive.
 - Local chat history is cached on the device in app-private storage (not encrypted at rest); groups, push-to-talk broadcast, directory transfers, off-LAN calls, and network-crossing discovery are not implemented.
 - Discovery fails if local networks block multicast and broadcast, client/AP isolation is enabled, VLANs cannot route between each other, or OS firewalls block incoming traffic. The first Windows inbound connection may trigger a firewall prompt.
@@ -75,3 +75,15 @@ This is original preview source, not a SHAREit fork. Dependencies retain their s
 - Verify Android call dialog flow no longer produces Flutter `_dependents.isEmpty`.
 - Test video calling only on authorized devices with working cameras.
 - Auto-receive is intended for trusted LANs, with individual files limited to 512 MiB and up to four simultaneous inbound transfers. Do not expose TCP ports on public networks.
+
+## v0.2.1 field-feedback fixes
+
+- Android Flutter red-screen: avoid popping active dialogs synchronously in widget life-cycle; delay disposal of dialog TextField controller until its transition ends. Needs hardware regression testing.
+- File error `403`: retain known cryptographic identities across missed UDP presence broadcasts; allow authenticated first-contact HTTP introductions (reply metadata is only self-declared). Auto-receive up to a configurable 512 MB default limit; protect filename and content integrity.
+- Stability: ping previously seen peers concurrently, refresh presence via authenticated requests and direct unicast announcements. No router setup required on a non-isolated LAN.
+- Calling: serialized teardown and error log (`call-diagnostics.log` in app storage), WebRTC audio + optional camera video in one calling interface. Windows forced native close still requires reproduction logs.
+- Four synthesized, license-free tones (voice, video, message, file) generated with `python tool/generate_assets.py`.
+- Windows tray icon and close-to-tray behavior; full exit through tray menu, optional startup at sign-in. Settings control file reception, tones and background behavior.
+- Android opt-in foreground service attempts to keep discovery, chat and receiving available; it requires Android's notification and service permissions. Microphone/video background support varies by OS and is not production-tested.
+
+Build from a clean clone: first run `python tool/generate_assets.py` before `flutter create` and `flutter pub get`. GitHub Actions does this automatically.

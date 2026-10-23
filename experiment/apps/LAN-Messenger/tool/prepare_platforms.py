@@ -13,12 +13,19 @@ if manifest.exists():
         'android.permission.CHANGE_WIFI_MULTICAST_STATE',
         'android.permission.RECORD_AUDIO',
         'android.permission.CAMERA',
+        'android.permission.FOREGROUND_SERVICE',
+        'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE',
+        'android.permission.POST_NOTIFICATIONS',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
                       if f'android:name="{p}"' not in text)
     text = text.replace('<application', missing + '    <application', 1)
     text = re.sub(r'android:label="[^"]*"', 'android:label="LAN Messenger"', text, count=1)
     text = text.replace('<application', '<application android:usesCleartextTraffic="true"', 1)
+    service = ('        <service android:name="de.julianassmann.flutter_background.IsolateHolderService" '
+               'android:exported="false" android:foregroundServiceType="connectedDevice" />\n')
+    if 'de.julianassmann.flutter_background.IsolateHolderService' not in text:
+        text = text.replace('</application>', service + '    </application>', 1)
     manifest.write_text(text, encoding='utf-8')
     print(f'Patched {manifest}')
 

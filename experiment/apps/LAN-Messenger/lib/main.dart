@@ -4,6 +4,11 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart' as wm;
+import 'package:tray_manager/tray_manager.dart' as tray;
+import 'package:flutter_background/flutter_background.dart';
+import 'src/settings.dart';
+import 'src/alerts.dart';
 import 'src/identity.dart';
 import 'src/intercom.dart';
 import 'src/node.dart';
@@ -35,8 +40,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayListener {
   LanNode? node;
+  AppSettings settings = AppSettings();
+  final Alerts alerts = Alerts();
+  bool showSettings = false;
+  bool backgroundRunning = false;
+  bool _exitRequested = false;
+  bool _trayInitialized = false;
   Intercom? intercom;
   Peer? selected;
   final input = TextEditingController();
@@ -48,7 +59,6 @@ class _HomePageState extends State<HomePage> {
   bool showReceived = false;
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
-  Timer? _ringTimer;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -57,8 +67,14 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _initialize() async {
     try {
+      settings = await AppSettings.load();
+      alerts.enabled = settings.soundsEnabled;
+      if (Platform.isWindows) await _initializeDesktop();
+      if (Platform.isAndroid && settings.backgroundMode) await _enableBackground();
       final identity = await Identity.load();
       final n = LanNode(identity);
+      n.autoReceiveFiles = settings.autoReceiveFiles;
+      n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
       await _restoreChats();
       final inter = Intercom(n);
       n.onPeersChanged = () { if (mounted) setState(() {}); };
@@ -66,6 +82,9 @@ class _HomePageState extends State<HomePage> {
         if (!mounted) return;
         setState(() => chats.putIfAbsent(peer.id, () => []).add(message));
         _persistChats();
+        if (!message.outgoing) {
+          unawaited(alerts.notify(message.kind == 'file' ? AlertKind.file : AlertKind.message));
+        }
         if (scroll.hasClients) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (scroll.hasClients) scroll.animateTo(scroll.position.maxScrollExtent,
@@ -74,9 +93,7 @@ class _HomePageState extends State<HomePage> {
         }
       };
       n.onProgress = (progress) { if (mounted) setState(() => transfers[progress.id] = progress); };
-      // No receiver popup by default: all approved-size files are saved safely.
-      // A request never starts an executable or opens a received file.
-      n.autoReceiveFiles = true;
+      // Auto-receive is configurable. Received attachments are never opened automatically.
       n.onFileOffer = (peer, name, size) async => _ask(
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
@@ -99,16 +116,12 @@ class _HomePageState extends State<HomePage> {
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
-        SystemSound.play(SystemSoundType.alert);
-        _ringTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-          if (_incomingDialogOpen) SystemSound.play(SystemSoundType.alert);
-        });
+        unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
         try {
           return await _ask(title: incomingVideo ? 'Incoming video call' : 'Incoming call',
               detail: '${peer.name} is calling.', allowText: 'Answer', incomingCall: true);
         } finally {
-          _ringTimer?.cancel();
-          _ringTimer = null;
+          unawaited(alerts.stopRing());
           _incomingDialogOpen = false;
           _incomingDialogContext = null;
         }
@@ -119,6 +132,160 @@ class _HomePageState extends State<HomePage> {
       if (mounted) setState(() => error = 'Cannot start LAN Messenger: $e');
     }
   }
+
+  Future<void> _initializeDesktop() async {
+    try {
+      await wm.windowManager.ensureInitialized();
+      await wm.windowManager.setPreventClose(true);
+      wm.windowManager.addListener(this);
+      final dir = await Identity.appDirectory();
+      final iconFile = File('${dir.path}${Platform.pathSeparator}tray_icon.ico');
+      final asset = await rootBundle.load('assets/icons/lan_messenger.ico');
+      await iconFile.writeAsBytes(asset.buffer.asUint8List(), flush: true);
+      await tray.trayManager.setIcon(iconFile.path);
+      await tray.trayManager.setToolTip('LAN Messenger — Local network');
+      await tray.trayManager.setContextMenu(tray.Menu(items: [
+        tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+        tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+      ]));
+      tray.trayManager.addListener(this);
+      _trayInitialized = true;
+    } catch (e) {
+      // Tray plugin failure should not prevent messaging in the main window.
+      if (mounted) setState(() => error = 'System tray unavailable: $e');
+    }
+  }
+
+  Future<void> _enableBackground() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final ready = await FlutterBackground.initialize(
+        androidConfig: FlutterBackgroundAndroidConfig(
+          notificationTitle: 'LAN Messenger is ready',
+          notificationText: 'Listening for local messages and calls',
+          notificationIcon: AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+          enableWifiLock: true,
+        ),
+      );
+      if (ready) backgroundRunning = await FlutterBackground.enableBackgroundExecution();
+    } catch (_) {
+      backgroundRunning = false;
+      // Permissions may be unavailable. Continue in foreground normally.
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _setBackground(bool value) async {
+    if (Platform.isAndroid) {
+      if (value) {
+        await _enableBackground();
+      } else {
+        try { await FlutterBackground.disableBackgroundExecution(); } catch (_) {}
+        backgroundRunning = false;
+      }
+    }
+    settings.backgroundMode = value;
+    await settings.save();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void onWindowClose() {
+    if (!Platform.isWindows) return;
+    if (settings.minimizeToTray && !_exitRequested) {
+      unawaited(wm.windowManager.hide());
+    } else {
+      unawaited(_exitWindows());
+    }
+  }
+
+  Future<void> _exitWindows() async {
+    if (_exitRequested) return;
+    _exitRequested = true;
+    await wm.windowManager.setPreventClose(false);
+    await wm.windowManager.close();
+  }
+
+  void _openWindow() {
+    unawaited(() async {
+      await wm.windowManager.show();
+      await wm.windowManager.restore();
+      await wm.windowManager.focus();
+    }());
+  }
+
+  @override
+  void onTrayIconMouseDown() => _openWindow();
+
+  @override
+  void onTrayMenuItemClick(tray.MenuItem item) {
+    if (item.key == 'exit') {
+      unawaited(_exitWindows());
+    } else if (item.key == 'open') {
+      _openWindow();
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    final n = node;
+    if (n != null) {
+      n.autoReceiveFiles = settings.autoReceiveFiles;
+      n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
+    }
+    alerts.enabled = settings.soundsEnabled;
+    if (!settings.soundsEnabled) unawaited(alerts.stopRing());
+    await settings.save();
+    if (mounted) setState(() {});
+  }
+
+  Widget _settingsPanel() => ListView(children: [
+    ListTile(leading: IconButton(onPressed: () => setState(() => showSettings = false),
+      icon: const Icon(Icons.arrow_back)),
+      title: const Text('Settings', style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold))),
+    ListTile(title: const Text('This device name'),
+      subtitle: Text(node?.identity.displayName ?? 'Starting'),
+      trailing: const Icon(Icons.edit), onTap: _renameDevice),
+    SwitchListTile(title: const Text('Automatically receive files'),
+      subtitle: const Text('Save nearby LAN attachments without popups. Never open automatically.'),
+      value: settings.autoReceiveFiles,
+      onChanged: (value) { settings.autoReceiveFiles = value; unawaited(_saveSettings()); }),
+    ListTile(title: const Text('Maximum automatic file size'),
+      subtitle: Text('${settings.maximumFileMb} MB per file'),
+      trailing: DropdownButton<int>(value: settings.maximumFileMb,
+        items: [128,512,1024,2048].map((v) => DropdownMenuItem(value:v,child:Text('${v} MB'))).toList(),
+        onChanged: (value) { if (value != null) { settings.maximumFileMb = value; unawaited(_saveSettings()); } })),
+    SwitchListTile(title: const Text('Distinct notification sounds'),
+      subtitle: const Text('Different tones for voice calls, video calls, chats and files'),
+      value: settings.soundsEnabled,
+      onChanged: (value) {settings.soundsEnabled = value; unawaited(_saveSettings());}),
+    if (Platform.isWindows) ...[
+      SwitchListTile(title: const Text('Close button minimizes to tray'),
+        subtitle: const Text('Leave LAN Messenger running in the taskbar hidden icons'),
+        value: settings.minimizeToTray,
+        onChanged: (value) {settings.minimizeToTray = value; unawaited(_saveSettings());}),
+      SwitchListTile(title: const Text('Start with Windows'),
+        subtitle: const Text('Run when this Windows account signs in'),
+        value: settings.startWithWindows,
+        onChanged: (value) async {
+          try { await settings.configureWindowsStartup(value); if (mounted) setState(() {}); }
+          catch (e) { _toast('$e'); }
+        }),
+      ListTile(leading: const Icon(Icons.power_settings_new),
+        title: const Text('Exit LAN Messenger'), onTap: _exitWindows),
+    ],
+    if (Platform.isAndroid) SwitchListTile(
+      title: const Text('Keep available in background'),
+      subtitle: Text(backgroundRunning ?
+        'Active — Android displays a persistent notification' :
+        'Not active — allow system permissions to keep listening'),
+      value: settings.backgroundMode,
+      onChanged: (value) => _setBackground(value)),
+    const Padding(padding: EdgeInsets.all(16), child: Text(
+      'Internet is not required, but devices must share a reachable LAN. '
+      'Android may suspend the application after force-stop or under battery restrictions. '
+      'Your contacts are not authenticated by a separate account service.',
+      style: TextStyle(color: Colors.black54))),
+  ]);
 
   Future<void> _restoreChats() async {
     try {
@@ -265,6 +432,8 @@ class _HomePageState extends State<HomePage> {
         tooltip: 'Rename this device (optional)', icon: const Icon(Icons.edit_outlined, color: Colors.white)),
       IconButton(onPressed: _viewReceived,
         tooltip: 'Received files', icon: const Icon(Icons.folder_rounded, color: Colors.white)),
+      IconButton(onPressed: () => setState(() {showSettings = true; selected = null; showReceived = false;}),
+        tooltip: 'Settings', icon: const Icon(Icons.settings, color: Colors.white)),
     ])));
 
   Widget _deviceList() {
@@ -464,7 +633,8 @@ class _HomePageState extends State<HomePage> {
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
         style: const TextStyle(color: Colors.red))),
-    Expanded(child: showReceived ? _files() : selected == null ? _deviceList() : _chat()),
+    Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
+      selected == null ? _deviceList() : _chat()),
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
       Positioned.fill(child: _activeCall()),
@@ -472,9 +642,17 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _ringTimer?.cancel();
     unawaited(intercom?.hangUp(notify: false) ?? Future<void>.value());
     unawaited(node?.dispose() ?? Future<void>.value());
+    unawaited(alerts.dispose());
+    if (_trayInitialized) {
+      tray.trayManager.removeListener(this);
+      unawaited(tray.trayManager.destroy());
+      wm.windowManager.removeListener(this);
+    }
+    if (Platform.isAndroid && backgroundRunning) {
+      unawaited(FlutterBackground.disableBackgroundExecution());
+    }
     input.dispose();
     scroll.dispose();
     super.dispose();
