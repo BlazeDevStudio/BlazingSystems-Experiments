@@ -90,6 +90,47 @@ if window.exists():
     window.write_text(text, encoding='utf-8')
     print(f'Patched {window}')
 
+# A second native popup HWND runs on the Flutter runner's existing Windows
+# message loop. Its independent lifecycle allows calls to be offered while
+# the main Flutter window is hidden without activating/restoring that window.
+runner = root / 'windows/runner'
+if (runner.exists():
+    header = runner / 'windows_call_toast.h'
+    source = runner / 'windows_call_toast.cpp'
+    header.write_text((root / 'tool/windows_call_toast.h').read_text(encoding='utf-8'),
+                      encoding='utf-8')
+    source.write_text((root / 'tool/windows_call_toast.cpp').read_text(encoding='utf-8'),
+                      encoding='utf-8')
+    flutter_window = runner / 'flutter_window.cpp'
+    if flutter_window.exists():
+        code = flutter_window.read_text(encoding='utf-8')
+        if '#include "windows_call_toast.h"' not in code:
+            code = '#include "windows_call_toast.h"\n' + code
+        if 'g_call_toast' not in code:
+            code = code.replace(
+                'FlutterWindow::FlutterWindow(',
+                'namespace {\nstd::unique_ptr<WindowsCallToast> g_call_toast;\n}\n\n'
+                'FlutterWindow::FlutterWindow(', 1)
+            marker = 'RegisterPlugins(flutter_controller_->engine());'
+            if marker not in code:
+                raise RuntimeError('Flutter runner has no plugin registration anchor')
+            code = code.replace(marker, marker + '\n  g_call_toast = '
+                                'std::make_unique<WindowsCallToast>('
+                                'flutter_controller_->engine()->messenger());', 1)
+            on_destroy = 'void FlutterWindow::OnDestroy() {'
+            if on_destroy not in code:
+                raise RuntimeError('Flutter runner has no OnDestroy anchor')
+            code = code.replace(on_destroy,
+                                on_destroy + '\n  g_call_toast.reset();', 1)
+        flutter_window.write_text(code, encoding='utf-8')
+    cmake = runner / 'CMakeLists.txt'
+    if cmake.exists():
+        code = cmake.read_text(encoding='utf-8')
+        if 'windows_call_toast.cpp' not in code:
+            code += '\n# Native, non-activating draggable call HUD.\n' \\
+                    'target_sources(${BINARY_NAME} PRIVATE "windows_call_toast.cpp")\n'
+        cmake.write_text(code, encoding='utf-8')
+
 # Flutter create may scaffold a demo widget_test referencing MyApp. This is
 # not our application and must not replace the real protocol/crypto tests.
 demo = root / 'test/widget_test.dart'
