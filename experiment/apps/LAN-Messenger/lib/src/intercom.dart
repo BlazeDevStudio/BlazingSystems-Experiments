@@ -567,6 +567,7 @@ class Intercom {
     sharingScreen = false;
     peerSharingScreen = false;
     remoteControlActive = false;
+    if (Platform.isWindows) WindowsRemoteInput.releaseButtons();
     _approvedControllerId = null;
     _controlDeadline = null;
     _controlTimer?.cancel();
