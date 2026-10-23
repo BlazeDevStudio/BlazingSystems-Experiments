@@ -55,6 +55,11 @@ class _InlineAttachmentState extends State<InlineAttachment> {
             const SizedBox(width: 10),
             Icon(expanded ? Icons.expand_less : Icons.expand_more),
           ]))),
+        if (!expanded && path != null && File(path).existsSync() &&
+            const {'jpg','jpeg','png','gif','webp','bmp'}.contains(ext))
+          ClipRRect(borderRadius: BorderRadius.circular(8),
+            child: Image.file(File(path), width: 250, height: 170, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Text('Image preview unavailable'))),
         if (expanded) ...[
           const SizedBox(height: 6),
           if (path == null || !File(path).existsSync())
