@@ -219,6 +219,15 @@ class MainActivity : FlutterActivity() {
                         "tap" -> result.success(RemoteTouchService.tap(
                             (call.argument<Number>("x") ?: 0.0).toDouble(),
                             (call.argument<Number>("y") ?: 0.0).toDouble()))
+                        "status" -> {
+                            val active = call.argument<Boolean>("active") == true
+                            val intent = Intent(this, ScreenProjectionService::class.java).apply {
+                                action = if (active) "CONTROL_ON" else "CONTROL_OFF"
+                            }
+                            // The existing projection foreground service must already run.
+                            startService(intent)
+                            result.success(null)
+                        }
                         "openCallSettings" -> {
                             if (Build.VERSION.SDK_INT >= 26) {
                                 startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
