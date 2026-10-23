@@ -21,6 +21,7 @@ class Intercom {
   String? _approvedControllerId;
   DateTime? _controlDeadline;
   DateTime? _lastInputAt;
+  Timer? _controlTimer;
   bool get remoteControlApproved => _approvedControllerId == talkingTo?.id &&
       _controlDeadline != null &&
       DateTime.now().isBefore(_controlDeadline!);
@@ -39,6 +40,8 @@ class Intercom {
     final id = callId;
     _approvedControllerId = null;
     _controlDeadline = null;
+    _controlTimer?.cancel();
+    _controlTimer = null;
     remoteControlActive = false;
     onChanged?.call();
     if (peer != null && id != null) {
@@ -98,6 +101,9 @@ class Intercom {
       if (!granted) throw StateError('Screen sharing was declined');
       await const MethodChannel('lan_messenger/projection')
           .invokeMethod<void>('start');
+      // Allow the foreground service to enter mediaProjection state before
+      // WebRTC acquires the projection token on Android 14+.
+      await Future<void>.delayed(const Duration(milliseconds: 350));
     }
     MediaStream? display;
     try {
@@ -355,6 +361,12 @@ class Intercom {
       _approvedControllerId = accepted ? peer.id : null;
       _controlDeadline = accepted
           ? DateTime.now().add(const Duration(minutes: 5)) : null;
+      _controlTimer?.cancel();
+      if (accepted) {
+        _controlTimer = Timer(const Duration(minutes: 5), () {
+          unawaited(revokeRemoteControl());
+        });
+      }
       await node.signal(peer, {
         'type': 'control-grant', 'callId': id, 'enabled': accepted,
       }).catchError((_) {});
@@ -454,6 +466,8 @@ class Intercom {
     remoteControlActive = false;
     _approvedControllerId = null;
     _controlDeadline = null;
+    _controlTimer?.cancel();
+    _controlTimer = null;
     _lastInputAt = null;
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
