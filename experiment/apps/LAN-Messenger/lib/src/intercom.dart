@@ -257,24 +257,32 @@ class Intercom {
       unawaited(node.signal(peer, {'type': 'hangup', 'callId': id})
           .catchError((_) {}));
     }
+    // Stop live capture synchronously before any native peer disposal await.
+    // Otherwise a slow Windows WebRTC close() can hold the microphone open.
+    if (stream != null) {
+      for (final track in stream.getTracks()) {
+        try { track.enabled = false; track.stop(); }
+        catch (e) { unawaited(_log('media track stop error: $e')); }
+      }
+    }
     try {
       if (pc != null) {
-        // Detach callbacks first so close/dispose cannot recursively hang up.
+        // Disconnect callbacks first; don't allow an onConnectionState recursion.
         pc.onIceCandidate = null;
         pc.onConnectionState = null;
         pc.onTrack = null;
-        await pc.close();
-        await pc.dispose();
+        await pc.close().timeout(const Duration(seconds: 5));
+        await pc.dispose().timeout(const Duration(seconds: 5));
       }
     } catch (e) { await _log('peer teardown error: $e'); }
-    try {
-      if (stream != null) {
-        for (final track in stream.getTracks()) { track.stop(); }
-        await stream.dispose();
-      }
-      if (local != null) { local.srcObject = null; await local.dispose(); }
-      if (remote != null) { remote.srcObject = null; await remote.dispose(); }
-    } catch (e) { await _log('media teardown error: $e'); }
+    // Each resource is released independently; one native plugin failure must
+    // not skip the remaining stream or video renderer cleanup.
+    try { await stream?.dispose().timeout(const Duration(seconds: 5)); }
+    catch (e) { await _log('stream dispose error: $e'); }
+    try { if (local != null) { local.srcObject = null; await local.dispose(); } }
+    catch (e) { await _log('local renderer dispose error: $e'); }
+    try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
+    catch (e) { await _log('remote renderer dispose error: $e'); }
     _closing = false;
   }
 }
