@@ -4,6 +4,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter/services.dart';
 import 'identity.dart';
 import 'node.dart';
+import 'windows_remote_input.dart';
 import 'protocol.dart';
 
 // Exactly one active call, shared for voice and video. No STUN/TURN or internet.
@@ -15,6 +16,48 @@ class Intercom {
   bool connecting = false;
   bool muted = false;
   bool sharingScreen = false;
+  bool peerSharingScreen = false;
+  bool remoteControlActive = false;
+  String? _approvedControllerId;
+  DateTime? _controlDeadline;
+  DateTime? _lastInputAt;
+  bool get remoteControlApproved => _approvedControllerId == talkingTo?.id &&
+      _controlDeadline != null &&
+      DateTime.now().isBefore(_controlDeadline!);
+  Future<bool> Function(Peer peer)? onRemoteControlRequest;
+
+  Future<void> requestRemoteControl() async {
+    final peer = talkingTo;
+    if (peer == null || callId == null || !peerSharingScreen) {
+      throw StateError('No shared screen to control');
+    }
+    await node.signal(peer, {'type': 'control-request', 'callId': callId});
+  }
+
+  Future<void> revokeRemoteControl() async {
+    final peer = talkingTo;
+    final id = callId;
+    _approvedControllerId = null;
+    _controlDeadline = null;
+    remoteControlActive = false;
+    onChanged?.call();
+    if (peer != null && id != null) {
+      try { await node.signal(peer, {
+        'type': 'control-grant', 'callId': id, 'enabled': false,
+      }); } catch (_) {}
+    }
+  }
+
+  Future<void> sendRemoteClick(double x, double y) async {
+    final peer = talkingTo;
+    if (!remoteControlActive || !peerSharingScreen ||
+        peer == null || callId == null ||
+        !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
+    await node.signal(peer, {
+      'type': 'control-click', 'callId': callId, 'x': x, 'y': y,
+    });
+  }
+
   MediaStream? _displayStream;
   List<MediaDeviceInfo> availableCameras = <MediaDeviceInfo>[];
   int activeCameraIndex = 0;
@@ -75,6 +118,9 @@ class Intercom {
       sharingScreen = true;
       localRenderer?.srcObject = display;
       onChanged?.call();
+      await node.signal(talkingTo!, {
+        'type': 'share-state', 'callId': callId, 'active': true,
+      }).catchError((_) {});
       await _log('screen share started');
     } catch (e) {
       if (display != null) {
@@ -94,6 +140,12 @@ class Intercom {
     if (!sharingScreen && stream == null) return;
     sharingScreen = false;
     _displayStream = null;
+    await revokeRemoteControl();
+    if (talkingTo != null && callId != null) {
+      await node.signal(talkingTo!, {
+        'type': 'share-state', 'callId': callId, 'active': false,
+      }).catchError((_) {});
+    }
     try {
       if (_connection != null && _localStream != null &&
           _localStream!.getVideoTracks().isNotEmpty) {
@@ -287,6 +339,49 @@ class Intercom {
       return;
     }
     if (id != callId || peer.id != talkingTo?.id || _closing) return;
+    if (type == 'share-state') {
+      peerSharingScreen = data['active'] == true;
+      if (!peerSharingScreen) remoteControlActive = false;
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control-request') {
+      if (!sharingScreen || !Platform.isWindows) return;
+      // Existing authenticated peer + same live call ID; approval is never
+      // automatic, lasts five minutes, and can be revoked locally.
+      final accepted = await (onRemoteControlRequest?.call(peer) ??
+          Future<bool>.value(false));
+      if (callId != id || talkingTo?.id != peer.id || !sharingScreen) return;
+      _approvedControllerId = accepted ? peer.id : null;
+      _controlDeadline = accepted
+          ? DateTime.now().add(const Duration(minutes: 5)) : null;
+      await node.signal(peer, {
+        'type': 'control-grant', 'callId': id, 'enabled': accepted,
+      }).catchError((_) {});
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control-grant') {
+      remoteControlActive = data['enabled'] == true && peerSharingScreen;
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control-click') {
+      if (!Platform.isWindows || !sharingScreen || !remoteControlApproved ||
+          _approvedControllerId != peer.id) return;
+      final x = data['x'];
+      final y = data['y'];
+      if (x is! num || y is! num ||
+          !x.isFinite || !y.isFinite ||
+          x < 0 || x > 1 || y < 0 || y > 1) return;
+      final now = DateTime.now();
+      // Rate-limit remote input to at most ten clicks per second.
+      if (_lastInputAt != null &&
+          now.difference(_lastInputAt!) < const Duration(milliseconds: 100)) return;
+      _lastInputAt = now;
+      WindowsRemoteInput.clickNormalized(x.toDouble(), y.toDouble());
+      return;
+    }
     if (type == 'ice' && data['candidate'] is String) {
       final candidate = RTCIceCandidate(data['candidate'] as String,
           data['mid'] as String?, data['mLine'] as int?);
@@ -355,6 +450,11 @@ class Intercom {
     final display = _displayStream;
     _displayStream = null;
     sharingScreen = false;
+    peerSharingScreen = false;
+    remoteControlActive = false;
+    _approvedControllerId = null;
+    _controlDeadline = null;
+    _lastInputAt = null;
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
