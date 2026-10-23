@@ -80,7 +80,11 @@ class LanNode {
   Future<bool> Function(Peer, String, int)? onFileOffer;
   final Directory? storageDirectory;
   LanNode(this.identity, {this.storageDirectory});
-  Future<Directory> _storage() async => storageDirectory ?? Identity.appDirectory();
+  Future<Directory> _storage() async {
+    final override = storageDirectory;
+    if (override != null) return override;
+    return Identity.appDirectory();
+  }
 
   static const _wifiMulticast = MethodChannel('lan_messenger/multicast');
 
