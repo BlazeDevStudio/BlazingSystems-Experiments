@@ -69,8 +69,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       settings = await AppSettings.load();
       alerts.enabled = settings.soundsEnabled;
-      if (Platform.isWindows) await _initializeDesktop();
-      if (Platform.isAndroid && settings.backgroundMode) await _enableBackground();
+      // Start the tiny LAN service before initializing optional native UI plugins.
+      // A slow tray or Android foreground-service permission must never block chat.
       final identity = await Identity.load();
       final n = LanNode(identity);
       n.autoReceiveFiles = settings.autoReceiveFiles;
@@ -129,6 +129,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       };
       await n.start();
       if (mounted) setState(() { node = n; intercom = inter; });
+      if (Platform.isWindows) {
+        unawaited(_initializeDesktop());
+      } else if (Platform.isAndroid && settings.backgroundMode) {
+        unawaited(_enableBackground());
+      }
     } catch (e) {
       if (mounted) setState(() => error = 'Cannot start LAN Messenger: $e');
     }

@@ -77,6 +77,26 @@ class LanNode {
   void Function(Peer, ChatMessage)? onChat;
   void Function(Peer, Map<String, dynamic>)? onSignal;
   void Function(TransferProgress)? onProgress;
+  // Large files have thousands of encrypted 64 KiB chunks. Coalesce UI updates
+  // without changing chunk ACKs, checksums, transfer scheduling or completion.
+  Timer? _progressPulse;
+  final Map<String, TransferProgress> _progressPending = {};
+  void _reportProgress(TransferProgress p) {
+    if (p.finished || p.error != null) {
+      _progressPending.remove(p.id);
+      onProgress?.call(p);
+      return;
+    }
+    _progressPending[p.id] = p;
+    _progressPulse ??= Timer(const Duration(milliseconds: 250), () {
+      _progressPulse = null;
+      final snapshot = List<TransferProgress>.of(_progressPending.values);
+      _progressPending.clear();
+      for (final value in snapshot) {
+        onProgress?.call(value);
+      }
+    });
+  }
   Future<bool> Function(Peer, String, int)? onFileOffer;
   final Directory? storageDirectory;
   LanNode(this.identity, {this.storageDirectory});
@@ -312,7 +332,7 @@ class LanNode {
     final temporary = File('${tempDir.path}${Platform.pathSeparator}$id.part');
     await temporary.writeAsBytes([], flush: true);
     _incoming[id] = _ReceiveState(safeFileName(name), sha, total, temporary, peer.id);
-    onProgress?.call(TransferProgress(id, peer.id, safeFileName(name), 0, total, true));
+    _reportProgress(TransferProgress(id, peer.id, safeFileName(name), 0, total, true));
     if (total == 0) return {'ok': await _finish(id, _incoming[id]!), 'next': 0};
     return {'ok': true, 'next': 0};
   }
@@ -333,7 +353,7 @@ class LanNode {
         transfer.written + bytes.length > transfer.total) return {'ok': false};
     await transfer.temporary.writeAsBytes(bytes, mode: FileMode.append);
     transfer.written += bytes.length;
-    onProgress?.call(TransferProgress(id, peer.id, transfer.name, transfer.written,
+    _reportProgress(TransferProgress(id, peer.id, transfer.name, transfer.written,
         transfer.total, true));
     if (transfer.written == transfer.total && !await _finish(id, transfer)) {
       return {'ok': false};
@@ -346,7 +366,7 @@ class LanNode {
     if (actual != transfer.checksum) {
       await transfer.temporary.delete();
       _incoming.remove(id);
-      onProgress?.call(TransferProgress(id, transfer.senderId, transfer.name, transfer.written,
+      _reportProgress(TransferProgress(id, transfer.senderId, transfer.name, transfer.written,
         transfer.total, true, error: 'Integrity check failed'));
       return false;
     }
@@ -364,7 +384,7 @@ class LanNode {
     final completed = await transfer.temporary.rename(
         '${destination.path}${Platform.pathSeparator}$name');
     _incoming.remove(id);
-    onProgress?.call(TransferProgress(id, transfer.senderId, name, transfer.total, transfer.total,
+    _reportProgress(TransferProgress(id, transfer.senderId, name, transfer.total, transfer.total,
         true, finished: true));
     final sender = peers[transfer.senderId];
     if (sender != null) {
@@ -405,16 +425,16 @@ class LanNode {
             }
           }
           index++;
-          onProgress?.call(TransferProgress(id, peer.id, name,
+          _reportProgress(TransferProgress(id, peer.id, name,
               min(index * chunkSize, total), total, false));
         }
       } finally { await input.close(); }
-      onProgress?.call(TransferProgress(id, peer.id, name, total, total, false, finished: true));
+      _reportProgress(TransferProgress(id, peer.id, name, total, total, false, finished: true));
       onChat?.call(peer, ChatMessage(id: id, peerId: peer.id, text: name,
           outgoing: true, time: DateTime.now(), kind: 'file',
           filePath: file.path, fileSize: total));
     } catch (e) {
-      onProgress?.call(TransferProgress(id, peer.id, name, min(index * chunkSize, total),
+      _reportProgress(TransferProgress(id, peer.id, name, min(index * chunkSize, total),
           total, false, error: e.toString()));
       rethrow;
     }
@@ -430,6 +450,8 @@ class LanNode {
 
   Future<void> dispose() async {
     _ticker?.cancel();
+    _progressPulse?.cancel();
+    _progressPending.clear();
     _udp?.close();
     await _server?.close(force: true);
     _http.close(force: true);

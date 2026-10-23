@@ -1,4 +1,4 @@
-name: LAN Messenger - build and test
+name: LAN Messenger - optimized release build and install checks
 on:
   push:
     paths:
@@ -6,9 +6,13 @@ on:
       - '.github/workflows/lan-messenger.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   android:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: experiment/apps/LAN-Messenger
@@ -25,17 +29,61 @@ jobs:
       - run: dart format --output=write lib test
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
-      - run: flutter build apk --debug
-      - run: sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/SHA256SUMS.txt
+      # Release AOT: no debug engine, validation layers or Dart kernel blob.
+      # Standalone APK per CPU architecture: a user installs ONE matching file.
+      - run: flutter build apk --release --split-per-abi --tree-shake-icons
+      - name: Verify individual APK signing, APK structure and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
+            test -s "$apk"
+            "$tools/apksigner" verify --verbose "$apk"
+            "$tools/aapt" dump badging "$apk" | grep -E "^(package:|sdkVersion:|native-code:)"
+            unzip -t "$apk" | tail -1
+          done
+          (cd build/app/outputs/flutter-apk && sha256sum app-*-release.apk > SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: LAN-Messenger-Android-Preview
+          name: LAN-Messenger-Android-Optimized
           path: |
-            experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/app-debug.apk
+            experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/app-*-release.apk
             experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 30
+
+  android-install-test:
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Optimized
+          path: android-apk
+      - name: Install and launch APK on Android emulator (no Internet required by app)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            APK="$(find android-apk -name 'app-x86_64-release.apk' -print -quit)"
+            test -f "$APK"
+            adb install -r "$APK"
+            adb shell pm list packages | grep -F 'com.example.lan_messenger'
+            adb shell am start -n com.example.lan_messenger/.MainActivity
+            sleep 8
+            adb shell pidof com.example.lan_messenger
+            adb logcat -d -t 500 | grep -E 'FATAL EXCEPTION|INSTALL_FAILED' && exit 1 || true
+
   windows:
     runs-on: windows-latest
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: experiment/apps/LAN-Messenger
@@ -51,16 +99,29 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
-      - run: flutter build windows --debug
-      - shell: pwsh
+      - run: flutter build windows --release --tree-shake-icons
+      - name: Include application-local Microsoft VC++ runtime dependencies
+        shell: pwsh
         run: |
-          Compress-Archive -Path build/windows/x64/runner/Debug/* -DestinationPath build/LAN-Messenger-Windows-Preview.zip -Force
-          $h = (Get-FileHash build/LAN-Messenger-Windows-Preview.zip -Algorithm SHA256).Hash
-          "$h  LAN-Messenger-Windows-Preview.zip" | Out-File -FilePath build/SHA256SUMS.txt -Encoding utf8
+          $ErrorActionPreference = 'Stop'
+          $release = 'build/windows/x64/runner/Release'
+          if (!(Test-Path "$release/lan_messenger.exe")) { throw "Missing release executable" }
+          foreach ($name in @('msvcp140.dll','vcruntime140.dll','vcruntime140_1.dll')) {
+            $source = Join-Path $env:WINDIR "System32/$name"
+            if (!(Test-Path $source)) { throw "Missing VC++ runtime DLL $source" }
+            if ((Get-AuthenticodeSignature $source).Status -ne 'Valid') { throw "Unsigned MS runtime $source" }
+            Copy-Item $source -Destination $release -Force
+          }
+          $size = (Get-ChildItem $release -Recurse -File | Measure-Object -Sum Length).Sum
+          Write-Host "Optimized portable app bytes: $size"
+          Compress-Archive -Path "$release/*" -DestinationPath build/LAN-Messenger-Windows-Optimized.zip -Force
+          $h = (Get-FileHash build/LAN-Messenger-Windows-Optimized.zip -Algorithm SHA256).Hash.ToLower()
+          "$h  LAN-Messenger-Windows-Optimized.zip" | Out-File -FilePath build/SHA256SUMS.txt -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: LAN-Messenger-Windows-Preview
+          name: LAN-Messenger-Windows-Optimized
           path: |
-            experiment/apps/LAN-Messenger/build/LAN-Messenger-Windows-Preview.zip
+            experiment/apps/LAN-Messenger/build/LAN-Messenger-Windows-Optimized.zip
             experiment/apps/LAN-Messenger/build/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 30
