@@ -13,6 +13,7 @@ import 'src/identity.dart';
 import 'src/intercom.dart';
 import 'src/node.dart';
 import 'src/protocol.dart';
+import 'src/inline_preview.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -44,6 +45,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   LanNode? node;
   AppSettings settings = AppSettings();
   final Alerts alerts = Alerts();
+  static const _notifications = MethodChannel('lan_messenger/notifications');
   bool showSettings = false;
   bool backgroundRunning = false;
   bool _exitRequested = false;
@@ -69,8 +71,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       settings = await AppSettings.load();
       alerts.enabled = settings.soundsEnabled;
-      // Start the tiny LAN service before initializing optional native UI plugins.
-      // A slow tray or Android foreground-service permission must never block chat.
+      _applySounds();
+      // Optional OS integrations cannot block LAN discovery or messaging.
       final identity = await Identity.load();
       final n = LanNode(identity);
       n.autoReceiveFiles = settings.autoReceiveFiles;
@@ -82,8 +84,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return;
         setState(() => chats.putIfAbsent(peer.id, () => []).add(message));
         _persistChats();
-        if (!message.outgoing || message.kind == 'file') {
-          unawaited(alerts.notify(message.kind == 'file' ? AlertKind.file : AlertKind.message));
+        if (!message.outgoing) {
+          if (!Platform.isAndroid || !settings.headsUpNotifications) {
+            unawaited(alerts.notify(message.kind == 'file' ? AlertKind.file : AlertKind.message));
+          }
+          if (!message.outgoing) {
+            _nativeNotify(message.kind == 'file' ? 'file' : 'message',
+                peer.name, message.kind == 'file' ? 'Sent a file: ${message.text}' : message.text);
+          }
         }
         if (scroll.hasClients) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -115,9 +123,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
-        if (Platform.isWindows) _openWindow();
         _incomingDialogOpen = true;
-        unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
+        if (!Platform.isAndroid || !settings.headsUpNotifications) {
+          unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
+        }
+        _nativeNotify(incomingVideo ? 'video_call' : 'call', peer.name,
+            incomingVideo ? 'Incoming video call — tap to answer' : 'Incoming voice call — tap to answer');
         try {
           return await _ask(title: incomingVideo ? 'Incoming video call' : 'Incoming call',
               detail: '${peer.name} is calling.', allowText: 'Answer', incomingCall: true);
@@ -131,8 +142,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (mounted) setState(() { node = n; intercom = inter; });
       if (Platform.isWindows) {
         unawaited(_initializeDesktop());
-      } else if (Platform.isAndroid && settings.backgroundMode) {
-        unawaited(_enableBackground());
+      } else if (Platform.isAndroid) {
+        unawaited(_notifications.invokeMethod<void>('setup').catchError((_) {}));
+        if (settings.backgroundMode) unawaited(_enableBackground());
       }
     } catch (e) {
       if (mounted) setState(() => error = 'Cannot start LAN Messenger: $e');
@@ -232,13 +244,71 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
-  Future<void> _saveSettings() async {
+  void _applySounds() {
+    alerts.enabled = settings.soundsEnabled;
+    alerts.useAppSounds = settings.useAppSounds;
+    alerts.customSounds.clear();
+    for (final kind in AlertKind.values) {
+      final path = settings.soundPaths[kind.name];
+      if (path != null && path.isNotEmpty) alerts.customSounds[kind] = path;
+    }
+  }
+
+  void _nativeNotify(String kind, String title, String message) {
+    if (!Platform.isAndroid || !settings.headsUpNotifications) return;
+    unawaited(_notifications.invokeMethod<void>('show', {
+      'kind': kind, 'title': title, 'body': message,
+    }).catchError((_) {}));
+  }
+
+  Future<void> _pickAvatar() async {
+    final selected = await FilePicker.pickFiles(type: FileType.image);
+    if (selected.isEmpty || selected.first.path == null) return;
+    final file = File(selected.first.path!);
+    if (await file.length() > 4 * 1024 * 1024) { _toast('Choose a profile image below 4 MB.'); return; }
+    final dir = await Identity.appDirectory();
+    final target = File('${dir.path}${Platform.pathSeparator}avatar.${file.path.split('.').last.toLowerCase()}');
+    await file.copy(target.path);
+    settings.avatarPath = target.path;
+    await _saveSettings();
+  }
+
+  Future<void> _pickTone(AlertKind kind) async {
+    final picked = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['wav','mp3','m4a','ogg']);
+    if (picked.isEmpty || picked.first.path == null) return;
+    final file = File(picked.first.path!);
+    if (await file.length() > 5 * 1024 * 1024) { _toast('Choose an audio file below 5 MB.'); return; }
+    final dir = await Identity.appDirectory();
+    final target = File('${dir.path}${Platform.pathSeparator}tone_${kind.name}.${file.path.split('.').last.toLowerCase()}');
+    await file.copy(target.path);
+    settings.soundPaths[kind.name] = target.path;
+    settings.useAppSounds = false;
+    await _saveSettings();
+    unawaited(alerts.notify(kind));
+  }
+
+  static const _swatches = <int>[
+    0xff1267d8, 0xff008577, 0xff7051c5, 0xffc44c78,
+    0xffdf7c25, 0xff546b7d, 0xff303d58,
+  ];
+
+  Widget _colorPicker(int selected, ValueChanged<int> onPick) =>
+      Wrap(spacing: 8, runSpacing: 8, children: _swatches.map((value) =>
+        Tooltip(message: 'Choose this accent color', child: InkWell(
+          onTap: () => onPick(value), borderRadius: BorderRadius.circular(40),
+          child: Container(width: 32, height: 32,
+            decoration: BoxDecoration(color: Color(value), shape: BoxShape.circle,
+              border: Border.all(color: selected == value ? Colors.black : Colors.transparent, width: 2)),
+            child: selected == value ? const Icon(Icons.check, color: Colors.white, size: 18) : null),
+        ))).toList());
+
+    Future<void> _saveSettings() async {
     final n = node;
     if (n != null) {
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
     }
-    alerts.enabled = settings.soundsEnabled;
+    _applySounds();
     if (!settings.soundsEnabled) unawaited(alerts.stopRing());
     await settings.save();
     if (mounted) setState(() {});
@@ -248,7 +318,31 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     ListTile(leading: IconButton(onPressed: () => setState(() => showSettings = false),
       icon: const Icon(Icons.arrow_back)),
       title: const Text('Settings', style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold))),
-    ListTile(title: const Text('This device name'),
+    ListTile(leading: _myAvatar(radius: 18),
+      title: const Text('Profile picture'), subtitle: const Text('Pick an image from this device'),
+      trailing: IconButton(icon: const Icon(Icons.image_outlined), onPressed: _pickAvatar),
+      onTap: _pickAvatar),
+    const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 2),
+      child: Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold))),
+    Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 10), child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Accent color'), const SizedBox(height: 8),
+        _colorPicker(settings.accentValue, (value) {
+          settings.accentValue = value; unawaited(_saveSettings());
+        }),
+      ])),
+    ListTile(title: const Text('Message font'),
+      trailing: DropdownButton<String>(value: settings.fontFamily,
+        items: ['Default','Serif','Monospace'].map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),
+        onChanged: (v) { if (v != null) { settings.fontFamily = v; unawaited(_saveSettings()); } })),
+    ListTile(title: const Text('Message text size'), subtitle: Slider(
+      min: 0.85, max: 1.4, divisions: 11, label: '${(settings.fontScale * 100).round()}%',
+      value: settings.fontScale,
+      onChanged: (value) => setState(() => settings.fontScale = value),
+      onChangeEnd: (_) => unawaited(_saveSettings()),
+    )),
+    const Divider(height: 16),
+        ListTile(title: const Text('This device name'),
       subtitle: Text(node?.identity.displayName ?? 'Starting'),
       trailing: const Icon(Icons.edit), onTap: _renameDevice),
     SwitchListTile(title: const Text('Automatically receive files'),
@@ -260,7 +354,27 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       trailing: DropdownButton<int>(value: settings.maximumFileMb,
         items: [128,512,1024,2048].map((v) => DropdownMenuItem(value:v,child:Text('${v} MB'))).toList(),
         onChanged: (value) { if (value != null) { settings.maximumFileMb = value; unawaited(_saveSettings()); } })),
-    SwitchListTile(title: const Text('Distinct notification sounds'),
+    if (Platform.isAndroid) SwitchListTile(
+      title: const Text('Pop-up notifications'),
+      subtitle: const Text('Android heads-up alerts for incoming calls, messages and files (requires notification permission)'),
+      value: settings.headsUpNotifications,
+      onChanged: (v) {
+        settings.headsUpNotifications = v;
+        if (v) unawaited(_notifications.invokeMethod<void>('setup').catchError((_) {}));
+        unawaited(_saveSettings());
+      }),
+    SwitchListTile(title: const Text('Use LAN Messenger sounds'),
+      subtitle: const Text('Default: distinctive sounds for each event. Turn off to use the custom tones below.'),
+      value: settings.useAppSounds,
+      onChanged: (v) { settings.useAppSounds = v; unawaited(_saveSettings()); }),
+    if (!settings.useAppSounds)
+      for (final kind in AlertKind.values)
+        ListTile(dense: true, leading: const Icon(Icons.music_note_outlined),
+          title: Text('Customize ${kind.name == 'videoCall' ? 'video call' : kind.name} sound'),
+          subtitle: Text(settings.soundPaths[kind.name]?.split(Platform.pathSeparator).last ?? 'Using application default'),
+          trailing: IconButton(icon: const Icon(Icons.folder_open), onPressed: () => _pickTone(kind)),
+          onTap: () => _pickTone(kind)),
+        SwitchListTile(title: const Text('Distinct notification sounds'),
       subtitle: const Text('Different tones for voice calls, video calls, chats and files'),
       value: settings.soundsEnabled,
       onChanged: (value) {settings.soundsEnabled = value; unawaited(_saveSettings());}),
@@ -397,9 +511,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     } catch (_) { _toast('Enter a device name of 1 to 40 characters.'); }
   }
 
-  static bool _imageName(String name) => RegExp(r'\.(jpg|jpeg|png|gif|webp|bmp)$',
-      caseSensitive: false).hasMatch(name);
-
   Future<void> _openAttachment(String? path) async {
     if (path == null || !await File(path).exists()) {
       _toast('This file is no longer on this device.');
@@ -421,25 +532,29 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     return '${(size / 1073741824).toStringAsFixed(2)} GB';
   }
 
+  Widget _myAvatar({double radius = 15}) {
+    final file = settings.avatarPath.isNotEmpty ? File(settings.avatarPath) : null;
+    return CircleAvatar(radius: radius,
+      backgroundColor: settings.accent.withValues(alpha: 0.16),
+      backgroundImage: file != null && file.existsSync() ? FileImage(file) : null,
+      child: file == null || !file.existsSync()
+        ? Icon(Icons.person, color: settings.accent, size: radius * 1.2) : null);
+  }
+
   Widget _title() => Container(
-    padding: const EdgeInsets.fromLTRB(20, 25, 20, 22),
-    decoration: const BoxDecoration(color: Color(0xff103e82),
-      borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+    color: settings.accent,
     child: SafeArea(bottom: false, child: Row(children: [
-      const Icon(Icons.forum_rounded, size: 36, color: Colors.white),
-      const SizedBox(width: 14),
-      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('LAN Messenger', style: TextStyle(fontWeight: FontWeight.bold,
-            fontSize: 25, color: Colors.white)),
-        Text('Private conversations on your local network',
-          style: TextStyle(color: Color(0xffdce9ff), fontSize: 13)),
-      ])),
-      IconButton(onPressed: _renameDevice,
-        tooltip: 'Rename this device (optional)', icon: const Icon(Icons.edit_outlined, color: Colors.white)),
-      IconButton(onPressed: _viewReceived,
-        tooltip: 'Received files', icon: const Icon(Icons.folder_rounded, color: Colors.white)),
-      IconButton(onPressed: () => setState(() {showSettings = true; selected = null; showReceived = false;}),
-        tooltip: 'Settings', icon: const Icon(Icons.settings, color: Colors.white)),
+      _myAvatar(radius: 15), const SizedBox(width: 9),
+      const Expanded(child: Text('LAN Messenger',
+          maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white))),
+      IconButton(icon: const Icon(Icons.folder_outlined, color: Colors.white, size: 21),
+          tooltip: 'Received files', onPressed: _viewReceived),
+      IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 21),
+          tooltip: 'Settings', onPressed: () => setState(() {
+            showSettings = true; selected = null; showReceived = false;
+          })),
     ])));
 
   Widget _deviceList() {
@@ -476,8 +591,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, index) {
             final p = peers[index];
-            return ListTile(minVerticalPadding: 18,
-              leading: CircleAvatar(radius: 28, child: Text(p.name.characters.first.toUpperCase(),
+            return ListTile(minVerticalPadding: 8,
+              leading: CircleAvatar(radius: 23, child: Text(p.name.characters.first.toUpperCase(),
                   style: const TextStyle(fontSize: 24))),
               title: Text(p.name, style: const TextStyle(fontSize: 20,
                   fontWeight: FontWeight.w600)),
@@ -489,34 +604,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     ]);
   }
 
-  Widget _attachmentBubble(ChatMessage message) {
-    final path = message.filePath;
-    final isImage = _imageName(message.text);
-    return InkWell(onTap: () => _openAttachment(path),
-      borderRadius: BorderRadius.circular(12),
-      child: Column(mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (isImage && path != null && File(path).existsSync())
-          ClipRRect(borderRadius: BorderRadius.circular(12), child:
-            Image.file(File(path), width: 245, height: 180, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 48))),
-        if (isImage) const SizedBox(height: 8),
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(isImage ? Icons.image_outlined : Icons.insert_drive_file_rounded,
-              color: const Color(0xff164b94)),
-          const SizedBox(width: 8),
-          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min, children: [
-            Text(message.text, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            if (message.fileSize != null)
-              Text(_bytes(message.fileSize!), style: const TextStyle(fontSize: 12)),
-          ])),
-          const SizedBox(width: 8),
-          const Icon(Icons.open_in_new, size: 19),
-        ]),
-      ]));
-  }
+  Widget _attachmentBubble(ChatMessage message) => InlineAttachment(
+    key: ValueKey(message.id), path: message.filePath,
+    name: message.text, size: message.fileSize,
+    openExternally: () => _openAttachment(message.filePath));
 
   Widget _chat() {
     final p = node?.peers[selected!.id] ?? selected!;
@@ -527,7 +618,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 10),
         leading: IconButton(icon: const Icon(Icons.arrow_back, size: 28),
           onPressed: () => setState(() => selected = null)),
-        title: Text(p.name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
+        title: Text(p.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
         subtitle: Text(node?.isOnline(p) == true ? 'Online • Local network' :
             'Offline • Waiting for this device'),
         trailing: intercom?.talkingTo?.id == p.id
@@ -537,6 +628,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true
                   ? null : () => _startCall(),
                 icon: const Icon(Icons.call_rounded, color: Color(0xff1a8c62), size: 29)),
+              PopupMenuButton<int>(tooltip: 'Conversation theme', icon: const Icon(Icons.palette_outlined, size: 22),
+                itemBuilder: (_) => _swatches.map((v) => PopupMenuItem<int>(value: v,
+                    child: Row(children: [CircleAvatar(radius: 9, backgroundColor: Color(v)),
+                      const SizedBox(width: 8), const Text('Thread theme')]))).toList(),
+                onSelected: (v) { settings.threadAccents[p.id] = v; unawaited(_saveSettings()); }),
               IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true
                   ? null : () => _startCall(video: true),
                 icon: const Icon(Icons.videocam_rounded, color: Color(0xff1a8c62), size: 29)),
@@ -557,9 +653,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               constraints: const BoxConstraints(maxWidth: 440),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(20),
-                color: msg.outgoing ? const Color(0xffcfdefc) : Colors.white),
+                color: msg.outgoing ? settings.threadAccent(p.id).withValues(alpha: 0.17) : Colors.white),
               child: msg.kind == 'file' ? _attachmentBubble(msg) :
-                Text(msg.text, style: const TextStyle(fontSize: 18))));
+                Text(msg.text, style: TextStyle(fontSize: 18 * settings.fontScale,
+                    fontFamily: settings.fontFamily == 'Default' ? null : (settings.fontFamily == 'Serif' ? 'serif' : 'monospace'))))); 
         })),
       for (final transfer in ongoing.take(2))
         ListTile(dense: true, title: Text('${transfer.incoming ? 'Receiving' : 'Sending'} ${transfer.name}'),
@@ -634,7 +731,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   @override
-  Widget build(BuildContext context) => Stack(children: [
+  Widget build(BuildContext context) => Theme(
+    data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
+      useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
+    child: Stack(children: [
     Scaffold(body: Column(children: [
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
@@ -644,7 +744,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
       Positioned.fill(child: _activeCall()),
-  ]);
+  ]));
 
   @override
   void dispose() {

@@ -77,8 +77,6 @@ class LanNode {
   void Function(Peer, ChatMessage)? onChat;
   void Function(Peer, Map<String, dynamic>)? onSignal;
   void Function(TransferProgress)? onProgress;
-  // Large files have thousands of encrypted 64 KiB chunks. Coalesce UI updates
-  // without changing chunk ACKs, checksums, transfer scheduling or completion.
   Timer? _progressPulse;
   final Map<String, TransferProgress> _progressPending = {};
   void _reportProgress(TransferProgress p) {
@@ -90,11 +88,9 @@ class LanNode {
     _progressPending[p.id] = p;
     _progressPulse ??= Timer(const Duration(milliseconds: 250), () {
       _progressPulse = null;
-      final snapshot = List<TransferProgress>.of(_progressPending.values);
+      final batch = List<TransferProgress>.of(_progressPending.values);
       _progressPending.clear();
-      for (final value in snapshot) {
-        onProgress?.call(value);
-      }
+      for (final progress in batch) { onProgress?.call(progress); }
     });
   }
   Future<bool> Function(Peer, String, int)? onFileOffer;

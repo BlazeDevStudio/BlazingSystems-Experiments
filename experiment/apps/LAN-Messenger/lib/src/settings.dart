@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'identity.dart';
 
 /// Intentional defaults: auto-receive known LAN peers, never auto-open files.
@@ -11,6 +12,17 @@ class AppSettings {
   bool minimizeToTray = true;
   bool backgroundMode = true;
   bool startWithWindows = false;
+  bool headsUpNotifications = true;
+  bool useAppSounds = true;
+  String avatarPath = '';
+  int accentValue = 0xff1267d8;
+  String fontFamily = 'Default';
+  double fontScale = 1.0;
+  final Map<String, int> threadAccents = {};
+  final Map<String, String> soundPaths = {};
+  Color get accent => Color(accentValue);
+  Color threadAccent(String peerId) => Color(threadAccents[peerId] ?? accentValue);
+
 
   static Future<File> _file() async {
     final dir = await Identity.appDirectory();
@@ -29,6 +41,22 @@ class AppSettings {
         settings.minimizeToTray = map['minimizeToTray'] is bool ? map['minimizeToTray'] : true;
         settings.backgroundMode = map['backgroundMode'] is bool ? map['backgroundMode'] : true;
         settings.startWithWindows = map['startWithWindows'] is bool ? map['startWithWindows'] : false;
+        settings.headsUpNotifications = map['headsUpNotifications'] is bool ? map['headsUpNotifications'] : true;
+        settings.useAppSounds = map['useAppSounds'] is bool ? map['useAppSounds'] : true;
+        settings.avatarPath = map['avatarPath'] is String ? map['avatarPath'] : '';
+        settings.accentValue = map['accentValue'] is int ? map['accentValue'] : 0xff1267d8;
+        settings.fontFamily = ['Default','Serif','Monospace'].contains(map['fontFamily']) ? map['fontFamily'] : 'Default';
+        settings.fontScale = map['fontScale'] is num ? (map['fontScale'] as num).toDouble().clamp(0.85, 1.4) : 1.0;
+        if (map['threadAccents'] is Map) {
+          (map['threadAccents'] as Map).forEach((key, value) {
+            if (key is String && value is int && key.length < 100) settings.threadAccents[key] = value;
+          });
+        }
+        if (map['soundPaths'] is Map) {
+          (map['soundPaths'] as Map).forEach((key, value) {
+            if (key is String && value is String && key.length < 40) settings.soundPaths[key] = value;
+          });
+        }
       }
     } catch (_) {}
     return settings;
@@ -43,21 +71,34 @@ class AppSettings {
       'minimizeToTray': minimizeToTray,
       'backgroundMode': backgroundMode,
       'startWithWindows': startWithWindows,
+      'headsUpNotifications': headsUpNotifications,
+      'useAppSounds': useAppSounds,
+      'avatarPath': avatarPath,
+      'accentValue': accentValue,
+      'fontFamily': fontFamily,
+      'fontScale': fontScale,
+      'threadAccents': threadAccents,
+      'soundPaths': soundPaths,
     }), flush:true);
   }
 
-  /// Optional per-user autorun, never modified without user toggling it.
+  /// reg.exe uses the verb "add", not "/add"; this was the original Windows
+  /// startup failure. Keep arguments unquoted here: Process.run handles them.
+  static List<String> windowsStartupArgs(bool enabled, String executable) {
+    const key = r'HKCU\Software\Microsoft\Windows\CurrentVersion\Run';
+    return enabled
+        ? ['add', key, '/v', 'LAN Messenger', '/t', 'REG_SZ', '/d', '"$executable"', '/f']
+        : ['delete', key, '/v', 'LAN Messenger', '/f'];
+  }
+
   Future<void> configureWindowsStartup(bool enabled) async {
     if (!Platform.isWindows) return;
-    const key = r'HKCU\Software\Microsoft\Windows\CurrentVersion\Run';
-    final args = enabled ? ['/add', key, '/v', 'LAN Messenger', '/t', 'REG_SZ',
-      '/d', '"${Platform.resolvedExecutable}"', '/f'] :
-      ['/delete', key, '/v', 'LAN Messenger', '/f'];
-    final result = await Process.run('reg', args);
+    final args = windowsStartupArgs(enabled, Platform.resolvedExecutable);
+    final result = await Process.run('reg.exe', args, runInShell: false);
     if (result.exitCode != 0) {
-      throw StateError('Unable to update Windows startup: ${result.stderr}');
+      throw StateError('Windows startup setting failed: ${result.stderr}');
     }
-    startWithWindows=enabled;
+    startWithWindows = enabled;
     await save();
   }
 }

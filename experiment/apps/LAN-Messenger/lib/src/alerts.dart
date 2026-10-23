@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 
 enum AlertKind { call, videoCall, message, file }
@@ -6,9 +7,18 @@ enum AlertKind { call, videoCall, message, file }
 /// Playback errors cannot break chat, transfer or WebRTC signaling.
 class Alerts {
   AudioPlayer? _ringer;
-  // Avoid opening native audio handles until the first notification.
   AudioPlayer? _effect;
   bool enabled = true;
+  bool useAppSounds = true;
+  final Map<AlertKind, String> customSounds = {};
+  Source _source(AlertKind kind) {
+    final path = customSounds[kind];
+    if (!useAppSounds && path != null && path.isNotEmpty && File(path).existsSync()) {
+      return DeviceFileSource(path);
+    }
+    return AssetSource(_asset(kind));
+  }
+
 
   String _asset(AlertKind kind) => switch (kind) {
     AlertKind.call => 'sounds/call.wav',
@@ -24,7 +34,7 @@ class Alerts {
       final player = AudioPlayer();
       _ringer = player;
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.play(AssetSource(_asset(kind)));
+      await player.play(_source(kind));
     } catch (_) {/* Device may have no audio output. */}
   }
 
@@ -40,7 +50,7 @@ class Alerts {
     try {
       final effect = _effect ??= AudioPlayer();
       await effect.stop();
-      await effect.play(AssetSource(_asset(kind)));
+      await effect.play(_source(kind));
     } catch (_) {}
   }
 
