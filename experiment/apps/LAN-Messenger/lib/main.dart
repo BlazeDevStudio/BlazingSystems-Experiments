@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return;
         setState(() => chats.putIfAbsent(peer.id, () => []).add(message));
         _persistChats();
-        if (!message.outgoing) {
+        if (!message.outgoing || message.kind == 'file') {
           unawaited(alerts.notify(message.kind == 'file' ? AlertKind.file : AlertKind.message));
         }
         if (scroll.hasClients) {
@@ -115,6 +115,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
+        if (Platform.isWindows) _openWindow();
         _incomingDialogOpen = true;
         unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
         try {
