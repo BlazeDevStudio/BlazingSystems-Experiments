@@ -201,6 +201,24 @@ class MainActivity : FlutterActivity() {
                 }
             } catch (e: Exception) { result.error("LAN_NOTIFY", e.message, null) }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/screen_capture")
+            .setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "start" -> {
+                            val intent = Intent(this, ScreenCaptureForegroundService::class.java)
+                            if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent)
+                            else startService(intent)
+                            result.success(null)
+                        }
+                        "stop" -> {
+                            stopService(Intent(this, ScreenCaptureForegroundService::class.java))
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) { result.error("SCREEN_CAPTURE", e.message, null) }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/multicast")
             .setMethodCallHandler { call, result ->
                 try {
