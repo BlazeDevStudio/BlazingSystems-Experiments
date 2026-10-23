@@ -1,0 +1,360 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'package:crypto/crypto.dart' as hash;
+import 'package:flutter/services.dart';
+import 'identity.dart';
+import 'protocol.dart';
+
+class TransferProgress {
+  final String id;
+  final String peerId;
+  final String name;
+  final int done;
+  final int total;
+  final bool incoming;
+  final bool finished;
+  final String? error;
+  const TransferProgress(this.id, this.peerId, this.name, this.done, this.total,
+      this.incoming, {this.finished = false, this.error});
+}
+
+class _ReceiveState {
+  final String name;
+  final String checksum;
+  final int total;
+  final File temporary;
+  final String senderId;
+  int written = 0;
+  _ReceiveState(this.name, this.checksum, this.total, this.temporary, this.senderId);
+  int get nextChunk => (written / chunkSize).ceil();
+}
+
+class LanNode {
+  final Identity identity;
+  late final PeerCipher cipher = PeerCipher(identity);
+  HttpServer? _server;
+  RawDatagramSocket? _udp;
+  Timer? _ticker;
+  final Map<String, Peer> peers = {};
+  final Map<String, _ReceiveState> _incoming = {};
+  final Set<String> _seenMessages = {};
+  final HttpClient _http = HttpClient()..connectionTimeout = const Duration(seconds: 6);
+
+  void Function()? onPeersChanged;
+  void Function(Peer, ChatMessage)? onChat;
+  void Function(Peer, Map<String, dynamic>)? onSignal;
+  void Function(TransferProgress)? onProgress;
+  Future<bool> Function(Peer, String, int)? onFileOffer;
+  LanNode(this.identity);
+
+  static const _wifiMulticast = MethodChannel('lan_messenger/multicast');
+
+  Future<void> start() async {
+    try { await _wifiMulticast.invokeMethod<void>('acquire'); } catch (_) {}
+    _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+    _server!.listen(_serve, onError: (_) {});
+    try {
+      _udp = await RawDatagramSocket.bind(InternetAddress.anyIPv4, discoveryPort,
+          reuseAddress: true);
+      _udp!.broadcastEnabled = true;
+      try { _udp!.joinMulticast(InternetAddress(multicastIp)); } catch (_) {}
+      _udp!.listen((event) {
+        if (event != RawSocketEvent.read) return;
+        Datagram? packet;
+        while ((packet = _udp!.receive()) != null) {
+          _handleAnnouncement(packet!);
+        }
+      }, onError: (_) {});
+    } on SocketException {
+      // UI remains open and reports discovery failure instead of crashing.
+    }
+    announce();
+    _ticker = Timer.periodic(const Duration(seconds: 4), (_) {
+      announce();
+      final before = peers.length;
+      peers.removeWhere((_, peer) => DateTime.now().difference(peer.seen) >
+          const Duration(seconds: 14));
+      if (peers.length != before) onPeersChanged?.call();
+    });
+  }
+
+  bool get discoveryReady => _udp != null;
+
+  void announce() {
+    if (_udp == null || _server == null) return;
+    final message = utf8.encode(announcement(identity.id, identity.displayName,
+        identity.publicKeyB64, _server!.port));
+    _udp!.send(message, InternetAddress(multicastIp), discoveryPort);
+    _udp!.send(message, InternetAddress('255.255.255.255'), discoveryPort);
+  }
+
+  void _handleAnnouncement(Datagram packet) {
+    if (packet.data.length > 1024) return;
+    try {
+      final decoded = jsonDecode(utf8.decode(packet.data));
+      if (decoded is! Map<String, dynamic> || decoded['app'] != 'lan-messenger') return;
+      final peer = Peer.fromDiscovery(decoded, packet.address.address);
+      if (peer == null || peer.id == identity.id) return;
+      final old = peers[peer.id];
+      // Never allow a different public key to replace a pinned identity.
+      if (old != null && old.key != peer.key) return;
+      peers[peer.id] = peer;
+      if (old == null || old.host != peer.host || old.port != peer.port ||
+          old.name != peer.name) onPeersChanged?.call();
+    } catch (_) { /* Untrusted malformed multicast is ignored. */ }
+  }
+
+  Future<void> _serve(HttpRequest request) async {
+    request.response.headers.set('cache-control', 'no-store');
+    try {
+      if (request.method != 'POST' ||
+          (request.uri.path != '/v1/event' && request.uri.path != '/v1/chunk')) {
+        request.response.statusCode = HttpStatus.notFound;
+        return;
+      }
+      if (request.contentLength > 180000) {
+        request.response.statusCode = HttpStatus.requestEntityTooLarge;
+        return;
+      }
+      final builder = BytesBuilder();
+      await for (final chunk in request) {
+        if (builder.length + chunk.length > 180000) {
+          throw const FormatException('Oversize payload');
+        }
+        builder.add(chunk);
+      }
+      final data = utf8.decode(builder.takeBytes());
+      final packet = jsonDecode(data) as Map<String, dynamic>;
+      final senderId = PeerCipher.senderId(packet);
+      final peer = peers[senderId];
+      if (peer == null || peer.key != packet['from']) {
+        request.response.statusCode = HttpStatus.forbidden;
+        return;
+      }
+      final plaintext = await cipher.open(packet);
+      Map<String, dynamic> output;
+      if (request.uri.path == '/v1/chunk') {
+        output = await _receiveChunk(peer, plaintext);
+      } else {
+        final event = jsonDecode(utf8.decode(plaintext)) as Map<String, dynamic>;
+        output = await _handleEvent(peer, event);
+      }
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(jsonEncode(await cipher.seal(peer.key,
+          utf8.encode(jsonEncode(output)))));
+    } catch (_) {
+      request.response.statusCode = HttpStatus.badRequest;
+    } finally {
+      await request.response.close();
+    }
+  }
+
+  Future<Map<String, dynamic>> _post(Peer peer, String path, List<int> body,
+      {Duration timeout = const Duration(seconds: 15)}) async {
+    final packet = await cipher.seal(peer.key, body);
+    final request = await _http.postUrl(peer.uri(path));
+    request.headers.contentType = ContentType.json;
+    request.add(utf8.encode(jsonEncode(packet)));
+    final response = await request.close().timeout(timeout);
+    final raw = await utf8.decoder.bind(response).join();
+    if (response.statusCode != HttpStatus.ok) {
+      throw HttpException('Peer rejected request: ${response.statusCode}');
+    }
+    final reply = jsonDecode(raw) as Map<String, dynamic>;
+    if (reply['from'] != peer.key) throw const FormatException('Untrusted response');
+    return jsonDecode(utf8.decode(await cipher.open(reply))) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> _event(Peer peer, Map<String, dynamic> event) =>
+      _post(peer, '/v1/event', utf8.encode(jsonEncode(event)),
+        timeout: event['kind'] == 'file-offer'
+            ? const Duration(minutes: 3) : const Duration(seconds: 15));
+
+  Future<void> sendMessage(Peer peer, String body) async {
+    if (body.trim().isEmpty || body.length > 4000) throw ArgumentError('Invalid message');
+    final id = randomId();
+    final result = await _event(peer, {'kind': 'message', 'id': id, 'text': body,
+      'time': DateTime.now().toUtc().toIso8601String()});
+    if (result['ok'] != true) throw StateError('Message not accepted');
+    onChat?.call(peer, ChatMessage(id: id, peerId: peer.id, text: body,
+        outgoing: true, time: DateTime.now()));
+  }
+
+  Future<void> signal(Peer peer, Map<String, dynamic> payload) async {
+    final result = await _event(peer, {'kind': 'signal', ...payload});
+    if (result['ok'] != true) throw StateError('Signaling unavailable');
+  }
+
+  Future<Map<String, dynamic>> _handleEvent(Peer peer, Map<String, dynamic> event) async {
+    switch (event['kind']) {
+      case 'message':
+        final text = event['text'];
+        final id = event['id'];
+        if (text is! String || text.isEmpty || text.length > 4000 ||
+            id is! String || id.length > 100 || id.isEmpty) return {'ok': false};
+        if (_seenMessages.add('${peer.id}/$id')) {
+          if (_seenMessages.length > 10000) _seenMessages.clear();
+          onChat?.call(peer, ChatMessage(id: id, peerId: peer.id,
+              text: text, outgoing: false, time: DateTime.now()));
+        }
+        return {'ok': true};
+      case 'signal':
+        if (jsonEncode(event).length > 28000) return {'ok': false};
+        onSignal?.call(peer, event);
+        return {'ok': true};
+      case 'file-offer':
+        return _acceptOffer(peer, event);
+      case 'file-status':
+        final transfer = _incoming[event['id']];
+        return {'ok': transfer != null && transfer.senderId == peer.id,
+          'next': transfer?.senderId == peer.id ? transfer!.nextChunk : 0};
+      default:
+        return {'ok': false};
+    }
+  }
+
+  Future<Map<String, dynamic>> _acceptOffer(Peer peer, Map<String, dynamic> data) async {
+    final id = data['id'], name = data['name'], total = data['size'], sha = data['sha256'];
+    if (id is! String || !RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ||
+        name is! String || name.isEmpty || name.length > 255 ||
+        total is! int || total < 0 || total > 1000000000000 ||
+        sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false};
+    if (_incoming.containsKey(id)) {
+      final previous = _incoming[id]!;
+      return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};
+    }
+    final ask = onFileOffer;
+    if (ask == null || !await ask(peer, safeFileName(name), total)) return {'ok': false};
+    final dir = await Identity.appDirectory();
+    final tempDir = Directory('${dir.path}${Platform.pathSeparator}pending');
+    await tempDir.create(recursive: true);
+    final temporary = File('${tempDir.path}${Platform.pathSeparator}$id.part');
+    await temporary.writeAsBytes([], flush: true);
+    _incoming[id] = _ReceiveState(safeFileName(name), sha, total, temporary, peer.id);
+    onProgress?.call(TransferProgress(id, peer.id, safeFileName(name), 0, total, true));
+    if (total == 0) return {'ok': await _finish(id, _incoming[id]!), 'next': 0};
+    return {'ok': true, 'next': 0};
+  }
+
+  Future<Map<String, dynamic>> _receiveChunk(Peer peer, List<int> plain) async {
+    final data = jsonDecode(utf8.decode(plain)) as Map<String, dynamic>;
+    final id = data['id'];
+    final idx = data['index'];
+    final payload = data['bytes'];
+    if (id is! String || idx is! int || payload is! String) return {'ok': false};
+    final transfer = _incoming[id];
+    if (transfer == null || transfer.senderId != peer.id) return {'ok': false};
+    if (idx < 0) return {'ok': false};
+    if (idx < transfer.nextChunk) return {'ok': true, 'next': transfer.nextChunk};
+    if (idx != transfer.nextChunk) return {'ok': false, 'next': transfer.nextChunk};
+    final bytes = base64Decode(payload);
+    if (bytes.isEmpty || bytes.length > chunkSize ||
+        transfer.written + bytes.length > transfer.total) return {'ok': false};
+    await transfer.temporary.writeAsBytes(bytes, mode: FileMode.append);
+    transfer.written += bytes.length;
+    onProgress?.call(TransferProgress(id, peer.id, transfer.name, transfer.written,
+        transfer.total, true));
+    if (transfer.written == transfer.total && !await _finish(id, transfer)) {
+      return {'ok': false};
+    }
+    return {'ok': true, 'next': idx + 1};
+  }
+
+  Future<bool> _finish(String id, _ReceiveState transfer) async {
+    final actual = (await hash.sha256.bind(transfer.temporary.openRead()).first).toString();
+    if (actual != transfer.checksum) {
+      await transfer.temporary.delete();
+      _incoming.remove(id);
+      onProgress?.call(TransferProgress(id, transfer.senderId, transfer.name, transfer.written,
+        transfer.total, true, error: 'Integrity check failed'));
+      return false;
+    }
+    final dir = await Identity.appDirectory();
+    final destination = Directory('${dir.path}${Platform.pathSeparator}Received');
+    await destination.create(recursive: true);
+    var name = transfer.name;
+    final dot = name.lastIndexOf('.');
+    final stem = dot > 0 ? name.substring(0, dot) : name;
+    final ext = dot > 0 ? name.substring(dot) : '';
+    var n = 1;
+    while (await File('${destination.path}${Platform.pathSeparator}$name').exists()) {
+      name = '$stem (${n++})$ext';
+    }
+    final completed = await transfer.temporary.rename(
+        '${destination.path}${Platform.pathSeparator}$name');
+    _incoming.remove(id);
+    onProgress?.call(TransferProgress(id, transfer.senderId, name, transfer.total, transfer.total,
+        true, finished: true));
+    final sender = peers[transfer.senderId];
+    if (sender != null) {
+      onChat?.call(sender, ChatMessage(id: id, peerId: sender.id, text: name,
+          outgoing: false, time: DateTime.now(), kind: 'file',
+          filePath: completed.path, fileSize: transfer.total));
+    }
+    return true;
+  }
+
+  Future<void> sendFile(Peer peer, File file) async {
+    final id = randomId();
+    final name = safeFileName(file.uri.pathSegments.last);
+    final total = await file.length();
+    final sha = (await hash.sha256.bind(file.openRead()).first).toString();
+    final reply = await _event(peer, {'kind': 'file-offer', 'id': id,
+      'name': name, 'size': total, 'sha256': sha});
+    if (reply['ok'] != true) throw StateError('Recipient declined file');
+    var index = (reply['next'] as int?) ?? 0;
+    try {
+      final input = await file.open();
+      try {
+        await input.setPosition(index * chunkSize);
+        while (index * chunkSize < total) {
+          final chunk = await input.read(min(chunkSize, total - index * chunkSize));
+          if (chunk.isEmpty) throw const FileSystemException('Unable to read file');
+          var retries = 0;
+          while (true) {
+            try {
+              final res = await _post(peer, '/v1/chunk', utf8.encode(jsonEncode({
+                'id': id, 'index': index, 'bytes': base64Encode(chunk),
+              })));
+              if (res['ok'] != true) throw StateError('Peer rejected file chunk');
+              break;
+            } catch (_) {
+              if (++retries > 3) rethrow;
+              await Future<void>.delayed(Duration(milliseconds: 500 * retries));
+            }
+          }
+          index++;
+          onProgress?.call(TransferProgress(id, peer.id, name,
+              min(index * chunkSize, total), total, false));
+        }
+      } finally { await input.close(); }
+      onProgress?.call(TransferProgress(id, peer.id, name, total, total, false, finished: true));
+      onChat?.call(peer, ChatMessage(id: id, peerId: peer.id, text: name,
+          outgoing: true, time: DateTime.now(), kind: 'file',
+          filePath: file.path, fileSize: total));
+    } catch (e) {
+      onProgress?.call(TransferProgress(id, peer.id, name, min(index * chunkSize, total),
+          total, false, error: e.toString()));
+      rethrow;
+    }
+  }
+
+  Future<List<File>> receivedFiles() async {
+    final dir = await Identity.appDirectory();
+    final folder = Directory('${dir.path}${Platform.pathSeparator}Received');
+    if (!await folder.exists()) return [];
+    return folder.listSync().whereType<File>().toList()
+      ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+  }
+
+  Future<void> dispose() async {
+    _ticker?.cancel();
+    _udp?.close();
+    await _server?.close(force: true);
+    _http.close(force: true);
+    try { await _wifiMulticast.invokeMethod<void>('release'); } catch (_) {}
+  }
+}

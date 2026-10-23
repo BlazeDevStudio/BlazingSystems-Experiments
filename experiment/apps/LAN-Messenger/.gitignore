@@ -1,0 +1,11 @@
+.dart_tool/
+.flutter-plugins*
+.packages
+.pub/
+build/
+android/
+windows/
+*.iml
+.idea/
+.vscode/
+tool/__pycache__/

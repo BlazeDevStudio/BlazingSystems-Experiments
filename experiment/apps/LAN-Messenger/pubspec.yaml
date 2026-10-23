@@ -1,0 +1,25 @@
+name: lan_messenger
+description: Zero-configuration peer-to-peer LAN chat, files, and intercom.
+publish_to: none
+version: 0.2.0+2
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cryptography: ^2.9.0
+  crypto: ^3.0.6
+  file_picker: ^11.0.3
+  flutter_webrtc: ^1.6.2+hotfix.4
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

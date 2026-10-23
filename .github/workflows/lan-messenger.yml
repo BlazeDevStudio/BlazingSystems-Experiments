@@ -1,0 +1,64 @@
+name: LAN Messenger - build and test
+on:
+  push:
+    paths:
+      - 'experiment/apps/LAN-Messenger/**'
+      - '.github/workflows/lan-messenger.yml'
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiment/apps/LAN-Messenger
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=android --project-name lan_messenger .
+      - run: python3 tool/prepare_platforms.py
+      - run: flutter pub get
+      - run: dart format --output=write lib test
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug
+      - run: sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Preview
+          path: |
+            experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/app-debug.apk
+            experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/SHA256SUMS.txt
+          if-no-files-found: error
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: experiment/apps/LAN-Messenger
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=windows --project-name lan_messenger .
+      - run: python tool/prepare_platforms.py
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build windows --debug
+      - shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Debug/* -DestinationPath build/LAN-Messenger-Windows-Preview.zip -Force
+          $h = (Get-FileHash build/LAN-Messenger-Windows-Preview.zip -Algorithm SHA256).Hash
+          "$h  LAN-Messenger-Windows-Preview.zip" | Out-File -FilePath build/SHA256SUMS.txt -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Preview
+          path: |
+            experiment/apps/LAN-Messenger/build/LAN-Messenger-Windows-Preview.zip
+            experiment/apps/LAN-Messenger/build/SHA256SUMS.txt
+          if-no-files-found: error
