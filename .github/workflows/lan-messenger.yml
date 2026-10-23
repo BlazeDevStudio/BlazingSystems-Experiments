@@ -80,26 +80,7 @@ jobs:
           target: google_apis
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: |
-            # Android emulator runner runs its script from a separate working
-            # directory; the previous relative 'android-apk' search failed
-            # before installation. Use the stable checkout workspace path.
-            APK_DIR="$GITHUB_WORKSPACE/android-apk"
-            echo "Downloaded APK files in $APK_DIR:"
-            find "$APK_DIR" -maxdepth 6 -type f -print
-            APK="$(find "$APK_DIR" -type f -name 'app-x86_64-release.apk' -print -quit)"
-            if [ -z "$APK" ] || [ ! -s "$APK" ]; then
-              echo "ERROR: x86_64 APK not downloaded; inspect artifact paths above"
-              exit 1
-            fi
-            echo "Installing $APK"
-            adb install -r "$APK"
-            adb shell pm list packages | grep -F 'com.example.lan_messenger'
-            adb shell am start -n com.example.lan_messenger/.MainActivity
-            sleep 8
-            adb shell pidof com.example.lan_messenger
-            adb logcat -d -t 500 | grep -E 'FATAL EXCEPTION|INSTALL_FAILED' && exit 1 || true
-
+          script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_install_smoke.sh"
   windows:
     runs-on: windows-latest
     timeout-minutes: 35
