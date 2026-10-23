@@ -17,9 +17,18 @@ Peer localPeer(Identity identity, int port, {bool stale = false}) {
       seen: DateTime.now().subtract(const Duration(minutes: 2)));
 }
 
+class _LoopbackHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) =>
+      super.createHttpClient(context);
+}
+
+Future<void> realSockets(Future<void> Function() testBody) =>
+    HttpOverrides.runWithHttpOverrides(testBody, _LoopbackHttpOverrides());
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('authenticated text and keepalive work after discovery goes stale', () async {
+  test('authenticated text and keepalive work after discovery goes stale', () => realSockets(() async {
     final alice = LanNode(Identity(
         await (await X25519().newKeyPair()).extract(), 'Android'));
     final bob = LanNode(Identity(
@@ -44,9 +53,9 @@ void main() {
       await alice.dispose();
       await bob.dispose();
     }
-  });
+  }));
 
-  test('file arrives automatically with matching content after stale discovery', () async {
+  test('file arrives automatically with matching content after stale discovery', () => realSockets(() async {
     final folder = await Directory.systemTemp.createTemp('lan-messenger-tests-');
     final alice = LanNode(Identity(
         await (await X25519().newKeyPair()).extract(), 'Phone'), storageDirectory: folder);
@@ -75,5 +84,5 @@ void main() {
       await bob.dispose();
       await folder.delete(recursive: true);
     }
-  });
+  }));
 }
