@@ -26,6 +26,7 @@ class Intercom {
       _controlDeadline != null &&
       DateTime.now().isBefore(_controlDeadline!);
   Future<bool> Function(Peer peer)? onRemoteControlRequest;
+  void Function(String message)? onControlStatus;
   Future<DesktopCapturerSource?> Function(List<DesktopCapturerSource> sources)?
       onChooseDesktopSource;
 
@@ -376,21 +377,15 @@ class Intercom {
     if (type == 'control-request') {
       if (!sharingScreen ||
           !(Platform.isWindows || Platform.isAndroid)) return;
-      if (Platform.isAndroid) {
-        final ready = await const MethodChannel('lan_messenger/remote')
-            .invokeMethod<bool>('available').catchError((_) => false);
-        if (ready != true) {
-          // Never auto-enable Accessibility or silently accept control.
-          await node.signal(peer, {
-            'type': 'control-grant', 'callId': id, 'enabled': false,
-          }).catchError((_) {});
-          return;
-        }
-      }
       // Existing authenticated peer + same live call ID; approval is never
       // automatic, lasts five minutes, and can be revoked locally.
-      final accepted = await (onRemoteControlRequest?.call(peer) ??
+      var accepted = await (onRemoteControlRequest?.call(peer) ??
           Future<bool>.value(false));
+      if (accepted && Platform.isAndroid) {
+        final ready = await const MethodChannel('lan_messenger/remote')
+            .invokeMethod<bool>('available').catchError((_) => false);
+        if (ready != true) accepted = false;
+      }
       if (callId != id || talkingTo?.id != peer.id || !sharingScreen) return;
       _approvedControllerId = accepted ? peer.id : null;
       _controlDeadline = accepted
@@ -403,12 +398,18 @@ class Intercom {
       }
       await node.signal(peer, {
         'type': 'control-grant', 'callId': id, 'enabled': accepted,
+        if (!accepted) 'reason': Platform.isAndroid
+            ? 'Remote touch permission disabled or request declined' :
+              'Remote-control request declined',
       }).catchError((_) {});
       onChanged?.call();
       return;
     }
     if (type == 'control-grant') {
       remoteControlActive = data['enabled'] == true && peerSharingScreen;
+      if (!remoteControlActive && data['reason'] is String) {
+        onControlStatus?.call(data['reason'] as String);
+      }
       onChanged?.call();
       return;
     }
