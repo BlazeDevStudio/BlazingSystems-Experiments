@@ -3,7 +3,7 @@ name: LAN Messenger - publish preview downloads
 on:
   push:
     branches:
-      - feature/lan-messenger-v0.2.1-conversations
+      - feature/lan-messenger-v0.2.0-conversations
     paths:
       - .github/workflows/lan-messenger-publish.yml
 
