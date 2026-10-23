@@ -7,7 +7,7 @@ Branch: blazing-visualizer
 Project: experiments/Blazing-Visualizer
 PR: https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/133
 
-Read HANDOFF.md first, then HANDOVER.md, README.md, docs/acceptance/review.md and the latest design and plan. Inspect recent commits and resume unfinished work; do not recreate the application. Keep all implemented playback, offline Basic Pitch analysis, Practice, note corrections, presets and MP4 export. Keep upstream license notices.
+Read HANDOFF.md first, then README.md, docs/acceptance/preview-3-evidence.md and the latest design/plan. HANDOVER.md and older review files are historical baselines. Inspect recent commits and resume unfinished work; do not recreate the application. Keep all implemented playback, offline Basic Pitch analysis, Practice, note corrections, presets and MP4 export. Keep upstream license notices.
 
 Owner's 2026-10-22 requests:
 1. Simplify redundant header/status content.
@@ -37,6 +37,6 @@ Use GitHub Actions if local build tools are unavailable. Never claim a test or f
 
 Before ending each pass update HANDOFF.md with exact commits, completed features, tests/CI evidence, failures, remaining requests, relevant files, next actions and release/signing details. Push source plus handoff so scratch cleanup or exhausted credits cannot erase progress.
 
-Latest owner steering: close modern Avee phone workflow, real .viz interoperability rather than renamed native scenes, continuous next-song/repeat playback, no bottom blank strip in optimized exports, substantially closer motion. Keep editable note-wheel idle text; only show it with no notes. Unknown chords display every simultaneous note. Do not market Spectrum2 strongest-bar indices as named note detection. Inspect HANDOFF.md for the current Preview 3 candidate and exact test results before making completion claims.
+Latest owner steering: close modern Avee phone workflow, real .viz interoperability rather than renamed native scenes, continuous next-song/repeat playback, no bottom blank strip in optimized exports, substantially closer motion. Keep editable note-wheel idle text; only show it with no notes. Unknown chords display every simultaneous note. Do not market Spectrum2 strongest-bar indices as named note detection. Preview 3 is published from b9db4c115b5fc42905b7ede9e844a67c2f76acf2: 108 host tests, lint/build and API26/API36 passed. Its direct APK is https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.3/Blazing-Visualizer-preview-3.apk . Read HANDOFF.md for evidence and remaining compatibility work. Do not replace this tag/asset; use Preview 4 for the next APK.
 
 Report briefly: changed, verified, pending, and the working APK link when available.

@@ -14,6 +14,8 @@ An Android music player and visualizer with an Avee-style Library / Visualizer /
 - Original Harmonic flow, Orbital voices and Wave garden presets plus five optional motion presets: trails, spatial chords, shared-cursor reveal, rhythm gates and radial contours. Optional equations are off by default. Graph views display up to 12 simultaneous pitches; Practice retains the complete note detection.
 - Main-canvas microphone toggle with conservative simultaneous note estimates and precise single-note YIN readings. Capture time drives animation independently of playback; capture stops when disabled or the app backgrounds.
 
+Current verified APK: [Download Preview 3](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.3/Blazing-Visualizer-preview-3.apk). It can update Preview 2 in place. Read [HANDOFF.md](HANDOFF.md) for the continuation checkpoint and remaining Avee compatibility limits.
+
 ## Build
 
 Use JDK 17, Android SDK platform 36 and build-tools 36.0.0. Android 8.0 / API 26 is the minimum. The APK includes arm64-v8a and x86_64 native libraries.
@@ -23,7 +25,7 @@ Use JDK 17, Android SDK platform 36 and build-tools 36.0.0. Android 8.0 / API 26
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. CI uploads it under **Blazing-Visualizer-preview-APK**. Preview 2 uses the public debug-only identity described in [config/README.md](config/README.md); future preview updates retain it. Preview 1's ephemeral CI identity requires a one-time uninstall/reinstall; export wanted BlazeViz presets first. Production signing and store publication are separate release work.
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. CI uploads it under **Blazing-Visualizer-preview-APK**. Preview 3 retains Preview 2's public debug-only identity described in [config/README.md](config/README.md); future preview updates retain it. Preview 1's ephemeral CI identity requires a one-time uninstall/reinstall; export wanted BlazeViz presets first. Production signing and store publication are separate release work.
 
 CI runs `MusicPermissionTest` alone on a fresh install (with `freshAudioPermission=true`), then the general native suite with `notClass=com.blazingsystems.visualizer.MusicPermissionTest`. On an already granted local install the standalone denial test skips; reset app permissions before exercising it independently.
 

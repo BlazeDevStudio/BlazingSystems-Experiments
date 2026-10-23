@@ -2,55 +2,48 @@
 
 Updated 23 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
 
-## Published APK
+## Current APK: Preview 3, published and verified
 
-**Preview 2 is now published and verified.**
+- Direct download: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.3/Blazing-Visualizer-preview-3.apk
+- Release: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazing-visualizer-v1.0.0-preview.3
+- Exact release source: `b9db4c115b5fc42905b7ede9e844a67c2f76acf2`. App versionCode 3 / versionName 1.0.0-preview.3.
+- Full validation: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39897614925 . Clean JDK17 / SDK36 host tests, lint and both APK assemblies passed. Downloaded XML confirms 108 host tests, zero failures/errors/skips. API26 and API36 each passed 19 general native/UI cases plus their independent fresh-permission flow.
+- Build job 120231570299; API26 job 120232736456; API36 job 120232736501. Real native JSON/PNG/MP4 evidence was retained and inspected, including spatial-chord, rhythm and radial frames, graph exports and source/audio alignment.
+- Publisher: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39897614942 . Job120231570274 verified package/version, APK Signature Scheme v2, retained signer, both ABIs and downloaded identical release bytes.
+- APK size 31,834,700 bytes. SHA256: `2fa101ecf699a03198ce37d9125d8c3a263ed31c533df0f717738ff614d444da`. The root session independently downloaded the public URL, checked SHA256SUMS, ZIP integrity and equality to the CI APK.
+- Retained public debug-only certificate SHA256: `64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c`. Preview 3 can update Preview 2 in place. Preview 1 had a different key: export wanted presets before a one-time uninstall/reinstall. Never use this public preview identity for production.
 
-- Direct download: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.2/Blazing-Visualizer-preview-2.apk
-- Source: `48c229e607e7fdcab2f71c915c7f75102a1e9304` on `blazing-visualizer`.
-- Full validation: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39889541772 . Clean host tests/lint/APK, API26, and API36 all succeeded.
-- Publisher: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39889541799 . It verified package/version, retained signer, both ABIs and re-downloaded identical release bytes.
-- Size: 31,769,164 bytes. SHA256: `e12079aecc762a08e7bb15b19f79358ef11e9a7f402e4a35d975a386f8fae3d5`.
-- The retained public debug-only certificate SHA256 is `64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c`.
-- Preview 1 used a different signing key. Export wanted presets before uninstalling Preview 1, then install Preview 2. Later previews keep the retained identity and can update Preview 2.
+ChatGPT file URLs fail on the owner's phone. Deliver direct GitHub Releases APK URLs. Keep existing release assets/tags intact; the next APK needs a separately versioned Preview 4 release.
 
-ChatGPT file download URLs fail on the owner's phone. Deliver direct GitHub Releases APK URLs.
+## Repository and working scope
 
-## Repository and scope
+Repo: `BlazingSystems/BlazingSystems-Experiments`; project: `experiments/Blazing-Visualizer`; development branch: `blazing-visualizer`; draft PR133: https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/133 . Main remains untouched. Backup branch `blazing-visualizer-notes-motion` also preserves this iteration.
 
-Repo: BlazingSystems/BlazingSystems-Experiments. Project: experiments/Blazing-Visualizer. Draft PR133: https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/133 . Main remains untouched.
-
-The owner wants the familiar current Avee player/editor workflow and useful preset interoperability, phone-sized controls, continuous playback, note following, MP4 export, and much closer reference motion. Existing liked native presets must stay available. Routine implementation, feature-branch updates, testing and preview publication are authorized; do not repeatedly request approval or launch paid Codex tasks.
+The owner wants modern Avee familiarity and useful preset interoperability, phone controls, continuous playback, playable note following, and MP4 export. Preserve the existing native presets they like. Routine implementation, feature-branch updates, checks and preview publication are approved; do not repeatedly ask to continue or launch paid Codex tasks. Reconcile remote heads and update refs with expected-SHA leases. Do not rely on uncommitted scratch files surviving a reload.
 
 Portable non-Codex continuation prompt: [CONTINUE_WITH_CHATGPT.md](CONTINUE_WITH_CHATGPT.md).
 
 ## Implemented and reconciled
 
-- MediaStore permission/discovery, manual import, separate reorderable/sortable queue and playlists; library selection builds a listening queue. Media3 repeat-all default and repeat/shuffle settings persist.
-- Preview 2 fixes the narrow-phone toolbar overflowing offscreen and exposes Playlists as a browser tab. Requested playback takes priority over stale old-item updates; a race had cancelled newly imported/selected tracks. Exact-source device tests now pass, including natural next-track and last-to-first repeat-all transitions.
-- Per-track Practice speed, transposition, spelling/register, section loops, note edits and MIDI/CSV export persist. Basic Pitch analysis is cached and queued with current-track priority; decoded-audio ownership and startup persistence regressions were fixed.
-- Lo/Lo2/Mid/Mid2/Hi/Hi2 MIDI routing, independent piano/global animation intensity and part colors; only active keys light. Long-press move/resize, preview or separate export layout, portrait/landscape/square MP4 and optimized note-keyboard bottom occupancy exist.
-- Editable note-wheel idle text and simultaneous note labels when no chord is recognized; an expanded exact-set chord dictionary avoids guessing from incomplete notes.
-- Preview 2 mic toggle feeds the main visualizer with FFT and a monophonic YIN reading. It does not open a separate tuning window. Live polyphonic estimates and an independent capture animation clock are the next increment.
-- Three original math presets and optional equations are included. Equations default OFF. [Reference math fact check](docs/acceptance/reference-video-math.md) remains authoritative.
-- Avee plain JSON and JSON-in-ZIP .viz subset supports wrapped vectors, colors, nested polygon/segment settings and safe assets. In Preview 2, compatibility is partial and the importer flattens multiple compositions; the Preview 3 candidate replaces this with referenced passes and still approximates modern effects. Never claim all Avee presets or pixel-identical rendering work.
+- MediaStore music permissions/discovery, manual import, separate drag-reorder/sort/play-next queue and playlists. Repeat-all, repeat and shuffle settings persist; real end-of-track and last-to-first transitions are tested.
+- Compact reachable phone actions, visible Songs/Playlists navigation, thumbnail preset grid and fullscreen viewing. A requested source has priority over stale old-media updates.
+- Per-track Practice speed, written transposition, spelling/register, A/B looping, corrections and MIDI/CSV export persist. Basic Pitch preparation runs automatically, caches results and prioritizes the current track. Decoded audio ownership and cold-start persistence are guarded.
+- Per-layer Lo/Lo2/Mid/Mid2/Hi/Hi2 or custom MIDI ranges, independent piano/global intensity and colors. Only active pitches light their keys. Long-press move/resize, preview-following or separate export layouts, explicit portrait/landscape/square and optimized note/keyboard reflow exist. Custom separate layouts remain preserved.
+- Note-wheel idle text is editable and appears only with no notes. Unknown chord sets display all simultaneous note classes in fitted rows; exact-set chord templates avoid guessing from missing tones.
+- The mic toggle feeds the SAME canvas, with up to six conservative simultaneous spectral pitches and precise monophonic YIN when applicable. Capture time animates the canvas even without a playing track. Playback may continue while monitoring; selecting another track exits monitoring. Background/exit/disable releases capture. It is not a separate tuner window and does not save or upload microphone audio.
+- Five optional motion presets add luminous trails, projected chord axes, shared-cursor progressive wave reveal/reset, fixed rhythm gates with a sweeping hand, and settled radial contours. Speed/trail/camera/subdivision controls are editable. Original native/graph presets remain. Equations default OFF.
+- Avee plain JSON and JSON-in-ZIP .viz imports retain original metadata and referenced composition passes rather than flattening. Paired segments preserve independent colors and signed heights. Common image tint/aspect/circle/blend and bounded effects are supported. Explicit image replacements override retained sources. Configured Spectrum2 correlation/response feeds bars in preview/export; mic input retains up to 300ms PCM and applies capture-time smoothing. Native pack round trips retain original metadata.
 
-## Current continuation: Preview 3 candidate
+Key files: `tuning/LiveNoteTracker.kt`, `tuning/LiveSpectrum2.kt`, `tuning/MicrophoneCapture.kt`, `avee/Spectrum2Analyzer.kt`, `audio/AudioRepository.kt`, `packs/VisualizerPack.kt`, `render/AveeScenePainter.kt`, `render/MotionGeometry.kt`, `render/MathCurvePainter.kt`, `render/SceneLayouts.kt`, `ui/PresetChooserSheet.kt`, `ui/AveeShell.kt`, `ui/StudioModel.kt`.
 
-The `blazing-visualizer-notes-motion` integration branch preserves the next increment. Primary branch updates use an expected-head lease; reconcile both heads before editing so concurrent work survives. Published Preview 2 remains intact. Preview 3 (versionCode 3) must pass its own exact-source matrix before its separately tagged APK is published. The publisher verifies the retained signer and refuses to overwrite any existing release.
+## Verification history and remaining work
 
-Implemented candidate, not yet verified: thumbnail preset grid and fullscreen control; note-aware optimized export reflow with custom separate layouts preserved; all unknown note classes displayed in fitted rows; conservative live spectral polyphony plus precise single-note YIN with an independent capture clock; five optional outline/trail/reveal, projected chord, shared-cursor wave, rhythm gate and stable radial motion presets. Equations stay off. Existing native presets remain.
+[Preview 3 execution/review evidence](docs/acceptance/preview-3-evidence.md) records the independent review, real RED-to-GREEN tests, failed intermediate runs and corrected Android test ownership/timing. App product code is edcd8ad; b9db4c1 changed test/CI evidence handling and docs. Both built APKs are byte-identical. The former evidence tar contained an unknown-package error because Gradle uninstalled the app; current CI preserves the APK after the second instrumentation run and validates required tar members.
 
-Avee candidate retains original JSON and per-layer raw metadata through native packs, renders referenced compositions instead of flattening them, adds paired segments with independent colors/signed heights, procedural internal images, image aspect/circle/tint/blend and bounded current-frame effects. Spectrum2 uses configured arbitrary-frequency correlations with bounded, seek-independent recorded response. Imported contain/cover frames the entire composite once. Unknown expressions/shaders, exact temporal blur/beat gain and arbitrary presets remain partial. No source APK/code/artwork is redistributed.
+Compatibility remains PARTIAL. Safe measure expressions, dynamic text tokens, custom shaders/masks/fonts, exact temporal feedback blur/beat gain, older Spectrum/binary variants and Avee .viz re-export are incomplete. Unknown/raw fields survive native packs; that does not mean they are rendered. Numeric mirror flags work; JSON boolean mirror handling is a deferred minor. Maximum-size frequency banks make cold seeks expensive; physical timing is unmeasured. Next, use a genuine permissioned exported .viz fixture and a physical phone to measure actual interoperability and responsiveness.
 
-Candidate e54f0db passed104 host tests, lint and APK assemblies in Actions39894731415; its device runs were cancelled for the review fix pass. Fresh read-only review found image-replacement precedence and long-window/live-smoothing defects. Regression216037b executed107 tests in Actions39895368547: precisely those3 tests failed, confirming the defects. The fix candidate preserves explicit assets and full300ms live PCM with capture-time response. Fix source edcd8ad63f1d88511546664b367046c967f41fd9 passed108 host tests, lint and APK assemblies in Actions39895982129 (build120226429608); all3 targeted regressions are now green. API26 passed19 general cases; API36 failed2 raw-controller/timing assertions. The follow-up isolates the standalone controller test from Activity/StudioModel state and waits for the actual deferred loop seek. CI evidence collection also now keeps test APKs installed and validates the tar; the old archive contained only an unknown-package error. Both versions must pass again, then review real PNG evidence and verify the direct Preview3 asset. [Review/execution record](docs/acceptance/preview-3-evidence.md). See [mobile/motion evidence](docs/acceptance/2026-10-23-mobile-and-motion.md).
+The inspected Avee 1.2.252 upload is unofficially modified. Functional/schema observations and original implementations are permitted; do not redistribute its APK, code or artwork. A prior narrow DEX audit found Spectrum2's arbitrary-frequency bank and response controls; its strongest-bar index is not a named-note detector. Static inspection is not proof of official runtime parity. Reference geometry is an original interpretation, not the author's production project/stems or literal lesson choreography. See [audio/schema limits](docs/acceptance/avee-1252-audio-profile.md), [reference math fact check](docs/acceptance/reference-video-math.md) and [motion observations](docs/acceptance/2026-10-23-mobile-and-motion.md).
 
-## Reference and acceptance limits
+Emulator/synthetic results do not establish physical ARM64 audio focus, mic latency, dense-song transcription or full modern Avee parity. Overlapping harmonics, octave doublings, percussion and closely spaced low notes remain ambiguous. Keep these limits explicit; benchmark before claiming more accurate or faster detection.
 
-The uploaded Avee 1.2.252 APK is unofficially modified (contains E_l_a_Mods and pairip). Use read-only functional/schema observations, source-licensed components and original implementations. Do not distribute its code, APK or artwork. A prior narrow DEX/JADX audit found Spectrum2's arbitrary-frequency correlation bank and response controls; its strongest-bar index is not a MIDI note detector. The engine tool was not connected; temporary local tooling supplied static evidence, not official runtime parity.
-
-Reference recording observations distinguish full interval outlines plus bright travelers, progressive shared-cursor reveal with hard loop resets, 3D chord projections, fixed polygon impacts, and settled radial contours. Implementations are original interpretations, not recovery of the author's production project or stem separation.
-
-The published matrix proves emulator behavior, not physical ARM64 audio focus, microphone latency, arbitrary-song transcription accuracy or full modern Avee parity. Live harmonic/octave ambiguity remains. More details: [mobile/motion evidence](docs/acceptance/2026-10-23-mobile-and-motion.md), [Replica audit](docs/acceptance/replica-rea-audit.md), [older execution record](docs/acceptance/execution-record.md).
-
-**Video-to-graph tracing/Bezier rendering stays LAST and is explicitly excluded from these APKs.** Deliver the improved player first.
+**Video-to-graph tracing/Bezier rendering stays LAST and is excluded from Preview 3.** Deliver and refine the improved player first. Earlier verified Preview 2 remains available at its own release tag/source 48c229e; its evidence is historical, not proof of newer code.
