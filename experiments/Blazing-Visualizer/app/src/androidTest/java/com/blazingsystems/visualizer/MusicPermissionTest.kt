@@ -100,7 +100,10 @@ class MusicPermissionTest {
                         stream.readBytes()
                     }
                 }
-                scenario.recreate()
+                // Do not recreate ActivityScenario while Android 8's broken
+                // system permission overlay has left the app PAUSED.
+                // The permission update is system-owned; confirm the real
+                // PackageManager state and visible Library without a restart.
             }
             compose.waitUntil(10_000) {
                 context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED

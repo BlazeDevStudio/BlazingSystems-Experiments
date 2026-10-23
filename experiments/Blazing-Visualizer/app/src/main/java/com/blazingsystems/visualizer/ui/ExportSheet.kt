@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.blazingsystems.visualizer.export.*
@@ -41,8 +42,13 @@ fun ExportSheet(
     val context = LocalContext.current
     val a = start.toDoubleOrNull()?.takeIf { it.isFinite() }?.let { (it * 1e6).toLong() }
     val b = end.toDoubleOrNull()?.takeIf { it.isFinite() }?.let { (it * 1e6).toLong() }
-    Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
+    Column(
+        Modifier.verticalScroll(rememberScrollState())
+            .padding(20.dp)
+            .testTag("export-sheet"),
+    ) {
         Text("Export video", fontSize = 25.sp, fontWeight = FontWeight.Bold)
+        Text("Composition preview at selected output shape", fontSize = 12.sp)
         Text("MP4 · H.264 + AAC · 30 fps", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(14.dp))
         Row {
@@ -114,7 +120,7 @@ fun ExportSheet(
         val frame by model.rendered.collectAsState()
         val outputScene = s.project?.let { SceneLayouts.forExport(it.copy(scene = s.scene), settings) } ?: s.scene
         val outputFrame = SceneEvaluator.evaluate(outputScene, frame.features, frame.sourceTimeUs)
-        Text("Composition preview at selected output shape", fontSize = 12.sp)
+        Text("Live composition preview", fontSize = 12.sp)
         Box(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             contentAlignment = Alignment.Center,

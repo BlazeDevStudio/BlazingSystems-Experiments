@@ -511,7 +511,31 @@ private fun LibraryScreen(
                 Icon(Icons.Rounded.PlaylistAdd, "", Modifier.size(18.dp))
                 Text("Save queue as playlist")
             }
-        LazyColumn(Modifier.weight(1f)) {
+        LazyColumn(Modifier.weight(1f).testTag("library-list")) {
+            // Playlists must remain reachable on a phone even with hundreds
+            // of local tracks; previously they were rendered *after* all
+            // tracks and their semantics were absent until deep scrolling.
+            if (!queue && s.playlists.isNotEmpty())
+                item {
+                    Text(
+                        "Playlists",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
+                    )
+                }
+            if (!queue)
+                items(s.playlists, key = { it.id }) { list ->
+                    ListItem(
+                        headlineContent = { Text(list.name) },
+                        supportingContent = { Text("${list.tracks.size} tracks") },
+                        modifier = Modifier.clickable { model.openPlaylist(list) },
+                        trailingContent = {
+                            IconButton(onClick = { playlistToDelete = list }) {
+                                Icon(Icons.Rounded.DeleteOutline, "Delete playlist")
+                            }
+                        },
+                    )
+                }
             items(filteredTracks, key = { it.uri }) { source ->
                 ListItem(
                     headlineContent = {
@@ -591,28 +615,7 @@ private fun LibraryScreen(
                         }
                     }
                 }
-            if (!queue && s.playlists.isNotEmpty())
-                item {
-                    Text(
-                        "Playlists",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 18.dp),
-                    )
-                }
-            if (!queue)
-                items(s.playlists, key = { it.id }) { list ->
-                    ListItem(
-                        headlineContent = { Text(list.name) },
-                        supportingContent = { Text("${list.tracks.size} tracks") },
-                        modifier = Modifier.clickable { model.openPlaylist(list) },
-                        trailingContent = {
-                            IconButton(onClick = { playlistToDelete = list }) {
-                                Icon(Icons.Rounded.DeleteOutline, "Delete playlist")
-                            }
-                        },
-                    )
-                }
-        }
+         }
     }
     playlistToDelete?.let { target ->
         AlertDialog(

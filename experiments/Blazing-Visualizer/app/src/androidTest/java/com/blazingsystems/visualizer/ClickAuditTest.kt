@@ -136,6 +136,7 @@ class ClickAuditTest {
         openFixture()
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
         rule.onNodeWithContentDescription("Export video").performClick()
+        rule.onNodeWithTag("export-sheet").assertExists()
         rule.onNodeWithText("Composition preview at selected output shape").assertExists()
         rule.onNodeWithText("Fill screen · crop edges").performScrollTo().performClick()
         rule.onNodeWithText("Fit entire scene").performScrollTo().performClick()
