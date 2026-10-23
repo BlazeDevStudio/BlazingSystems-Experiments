@@ -216,6 +216,15 @@ class MainActivity : FlutterActivity() {
                             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             result.success(null)
                         }
+                        "openAppInfo" -> {
+                            // Android 13+ sideloaded APKs may require the owner to
+                            // choose "Allow restricted settings" in App info.
+                            // There is no API for the app to grant itself this access.
+                            startActivity(Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:$packageName")))
+                            result.success(null)
+                        }
                         "tap" -> result.success(RemoteTouchService.tap(
                             (call.argument<Number>("x") ?: 0.0).toDouble(),
                             (call.argument<Number>("y") ?: 0.0).toDouble()))
