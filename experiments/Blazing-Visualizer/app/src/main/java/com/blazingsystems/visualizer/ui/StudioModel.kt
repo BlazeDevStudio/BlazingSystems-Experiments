@@ -88,6 +88,7 @@ class StudioModel @JvmOverloads constructor(
     val tuner = MutableStateFlow<PitchReading?>(null)
     val tunerRunning = MutableStateFlow(false)
     private val liveSpectrum = MutableStateFlow<SpectrumFrame?>(null)
+    private val microphoneFeatures=MutableStateFlow<FeatureFrame?>(null)
     private var tunerGeneration = 0L
     private var microphone: MicrophoneCapture? = null
     private var microphoneJob: Job? = null
@@ -168,24 +169,19 @@ class StudioModel @JvmOverloads constructor(
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
-            val microphone = combine(tuner, tunerRunning, liveSpectrum) {
-                reading, running, spectrum -> Triple(reading, running, spectrum)
-            }
             combine(
                 playback,
                 state.map { it.displayScene() to it.notes }.distinctUntilChanged(),
-                microphone,
+                microphoneFeatures,
             ) { player, snapshot, mic -> Triple(player, snapshot, mic) }
                 .collectLatest { (player, snapshot, mic) ->
-                    val frame = withContext(Dispatchers.Default) {
-                        val decoded = runCatching {
+                    val frame = mic ?: withContext(Dispatchers.Default) {
+                        runCatching {
                             audioFeatures?.at(player.sourceTimeUs, snapshot.second)
                         }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = snapshot.second)
-                        if (mic.second) micVisualFeatures(decoded, mic.first, mic.third)
-                        else decoded
                     }
                     rendered.value = SceneEvaluator.evaluate(
-                        snapshot.first, frame, player.sourceTimeUs,
+                        snapshot.first, frame, frame.sourceTimeUs,
                     )
                 }
         }
@@ -378,6 +374,7 @@ class StudioModel @JvmOverloads constructor(
 
     /** Library selection creates a listening queue; Queue selection preserves its order. */
     fun select(source: SourceRef, startPlayback: Boolean = true, fromLibrary: Boolean = false) {
+        if(startPlayback) stopTuner()
         if (startPlayback) coordinator.expectPlayback(source.uri)
         val preparation = preanalysisJob
         preparation?.cancel()
@@ -498,24 +495,20 @@ class StudioModel @JvmOverloads constructor(
         val capture = MicrophoneCapture(context())
         microphone = capture
         val generation = ++tunerGeneration
+        val tracker=LiveNoteTracker(22050,a4Hz)
         tunerRunning.value = true
+        microphoneFeatures.value=FeatureFrame(0)
         microphoneJob = viewModelScope.launch {
             try {
-                val fft = AveeSpectrumAnalyzer()
-                capture.run(
-                    a4Hz,
-                    onPitch = { reading ->
-                        withContext(Dispatchers.Main.immediate) {
-                            if (generation == tunerGeneration) tuner.value = reading
+                capture.runFrames { samples,time ->
+                    val frame=tracker.update(samples,time)
+                    withContext(Dispatchers.Main.immediate) {
+                        if(generation==tunerGeneration) {
+                            tuner.value=frame.pitch
+                            microphoneFeatures.value=frame.features
                         }
-                    },
-                    onSamples = { pcm ->
-                        val spectrum = fft.analyze(pcm, 22050)
-                        withContext(Dispatchers.Main.immediate) {
-                            if (generation == tunerGeneration) liveSpectrum.value = spectrum
-                        }
-                    },
-                )
+                    }
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -524,6 +517,7 @@ class StudioModel @JvmOverloads constructor(
                 capture.close()
                 if (generation == tunerGeneration) {
                     tunerRunning.value = false
+                    microphoneFeatures.value=null
                     liveSpectrum.value = null
                     tuner.value = null
                     microphone = null
@@ -542,6 +536,7 @@ class StudioModel @JvmOverloads constructor(
         tunerRunning.value = false
         tuner.value = null
         liveSpectrum.value = null
+        microphoneFeatures.value=null
     }
 
     fun playPause() {
