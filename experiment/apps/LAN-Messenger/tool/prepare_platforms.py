@@ -12,6 +12,7 @@ if manifest.exists():
         'android.permission.ACCESS_NETWORK_STATE',
         'android.permission.CHANGE_WIFI_MULTICAST_STATE',
         'android.permission.RECORD_AUDIO',
+        'android.permission.CAMERA',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
                       if f'android:name="{p}"' not in text)
@@ -78,8 +79,10 @@ if window.exists():
     text = text.replace('L"lan_messenger"', 'L"LAN Messenger"')
     window.write_text(text, encoding='utf-8')
     print(f'Patched {window}')
-# Flutter create scaffolds a demo MyApp widget_test unrelated to LAN Messenger.
+
+# Flutter create may scaffold a demo widget_test referencing MyApp. This is
+# not our application and must not replace the real protocol/crypto tests.
 demo = root / 'test/widget_test.dart'
 if demo.exists() and 'pumpWidget(const MyApp())' in demo.read_text(encoding='utf-8'):
     demo.unlink()
-    print(f'Removed generated template test {demo}')
+    print(f'Removed default template test {demo}')

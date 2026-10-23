@@ -9,6 +9,7 @@ import 'src/intercom.dart';
 import 'src/node.dart';
 import 'src/protocol.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,7 @@ class _HomePageState extends State<HomePage> {
   String? error;
   bool showReceived = false;
   bool _incomingDialogOpen = false;
+  BuildContext? _incomingDialogContext;
   Timer? _ringTimer;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
@@ -72,6 +74,9 @@ class _HomePageState extends State<HomePage> {
         }
       };
       n.onProgress = (progress) { if (mounted) setState(() => transfers[progress.id] = progress); };
+      // No receiver popup by default: all approved-size files are saved safely.
+      // A request never starts an executable or opens a received file.
+      n.autoReceiveFiles = true;
       n.onFileOffer = (peer, name, size) async => _ask(
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
@@ -79,11 +84,18 @@ class _HomePageState extends State<HomePage> {
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
-          Navigator.of(context, rootNavigator: true).pop(false);
+          // Never pop a route synchronously during Flutter's widget lifecycle.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final dialog = _incomingDialogContext;
+            if (dialog != null && dialog.mounted && _incomingDialogOpen &&
+                ModalRoute.of(dialog)?.isCurrent == true) {
+              Navigator.of(dialog).pop(false);
+            }
+          });
         }
         setState(() {});
       };
-      inter.onIncoming = (peer) async {
+      inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
@@ -92,12 +104,13 @@ class _HomePageState extends State<HomePage> {
           if (_incomingDialogOpen) SystemSound.play(SystemSoundType.alert);
         });
         try {
-          return await _ask(title: 'Incoming call',
-              detail: '${peer.name} is calling.', allowText: 'Answer');
+          return await _ask(title: incomingVideo ? 'Incoming video call' : 'Incoming call',
+              detail: '${peer.name} is calling.', allowText: 'Answer', incomingCall: true);
         } finally {
           _ringTimer?.cancel();
           _ringTimer = null;
           _incomingDialogOpen = false;
+          _incomingDialogContext = null;
         }
       };
       await n.start();
@@ -131,16 +144,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<bool> _ask({required String title, required String detail,
-      required String allowText}) async {
+      required String allowText, bool incomingCall = false}) async {
     if (!mounted) return false;
     return await showDialog<bool>(context: context, barrierDismissible: false,
-      builder: (context) => AlertDialog(title: Text(title, style: const TextStyle(fontSize: 24)),
+      builder: (context) {
+        if (incomingCall) _incomingDialogContext = context;
+        return AlertDialog(title: Text(title, style: const TextStyle(fontSize: 24)),
         content: Text(detail, style: const TextStyle(fontSize: 18)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Decline')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(allowText)),
         ],
-      )) ?? false;
+      );
+      }) ?? false;
   }
 
   void _toast(String message) {
@@ -176,11 +192,11 @@ class _HomePageState extends State<HomePage> {
     finally { if (mounted) setState(() => busy = false); }
   }
 
-  Future<void> _startCall() async {
+  Future<void> _startCall({bool video = false}) async {
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
-    try { await intercom!.call(peer); }
-    catch (_) { _toast('Could not start the call. Check microphone permission.'); }
+    try { await intercom!.call(peer, withVideo: video); }
+    catch (e) { _toast('Could not start call: $e'); }
   }
 
   Future<void> _renameDevice() async {
@@ -197,7 +213,9 @@ class _HomePageState extends State<HomePage> {
           FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text),
               child: const Text('Save')),
         ]));
-    controller.dispose();
+    // showDialog resolves before its reverse animation finishes. Don't dispose
+    // TextField's controller while a transitioning route still depends on it.
+    Future<void>.delayed(const Duration(milliseconds: 550), controller.dispose);
     if (value == null) return;
     try {
       await n.identity.rename(value);
@@ -250,8 +268,13 @@ class _HomePageState extends State<HomePage> {
     ])));
 
   Widget _deviceList() {
-    final peers = node?.peers.values.toList() ?? [];
-    peers.sort((a, b) => a.name.compareTo(b.name));
+    final peers = node?.peers.values.where((p) => node!.isOnline(p)).toList() ?? [];
+    peers.sort((a, b) {
+      final onlineA = node!.isOnline(a);
+      final onlineB = node!.isOnline(b);
+      if (onlineA != onlineB) return onlineA ? -1 : 1;
+      return a.name.compareTo(b.name);
+    });
     return Column(children: [
       Padding(padding: const EdgeInsets.all(16), child: Row(children: [
         const Icon(Icons.circle, color: Color(0xff21a56d), size: 13),
@@ -283,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                   style: const TextStyle(fontSize: 24))),
               title: Text(p.name, style: const TextStyle(fontSize: 20,
                   fontWeight: FontWeight.w600)),
-              subtitle: Text('Online • ${p.shortCode}', style: const TextStyle(fontSize: 14)),
+              subtitle: Text('${node!.isOnline(p) ? 'Online' : 'Offline'} • ${p.shortCode}', style: const TextStyle(fontSize: 14)),
               trailing: const Icon(Icons.chevron_right, size: 28),
               onTap: () => setState(() { selected = p; showReceived = false; }),
             );
@@ -330,12 +353,19 @@ class _HomePageState extends State<HomePage> {
         leading: IconButton(icon: const Icon(Icons.arrow_back, size: 28),
           onPressed: () => setState(() => selected = null)),
         title: Text(p.name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-        subtitle: const Text('Local network'),
+        subtitle: Text(node?.isOnline(p) == true ? 'Online • Local network' :
+            'Offline • Waiting for this device'),
         trailing: intercom?.talkingTo?.id == p.id
           ? IconButton(tooltip: 'End call', onPressed: () => intercom?.hangUp(),
-              icon: const Icon(Icons.call_end, color: Colors.red, size: 32))
-          : IconButton(tooltip: 'Voice call', onPressed: node?.peers[p.id] == null ? null : _startCall,
-              icon: const Icon(Icons.call_rounded, color: Color(0xff1a8c62), size: 31)),
+              icon: const Icon(Icons.call_end, color: Colors.red, size: 30))
+          : Row(mainAxisSize: MainAxisSize.min, children: [
+              IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true
+                  ? null : () => _startCall(),
+                icon: const Icon(Icons.call_rounded, color: Color(0xff1a8c62), size: 29)),
+              IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true
+                  ? null : () => _startCall(video: true),
+                icon: const Icon(Icons.videocam_rounded, color: Color(0xff1a8c62), size: 29)),
+            ]),
       ),
       if (intercom?.talkingTo?.id == p.id)
         Container(color: const Color(0xffd7edff), width: double.infinity,
@@ -393,13 +423,52 @@ class _HomePageState extends State<HomePage> {
       textAlign: TextAlign.center)),
   ]);
 
+  Widget _activeCall() {
+    final call = intercom!;
+    return Material(
+      color: const Color(0xff102b4e),
+      child: SafeArea(child: Column(children: [
+        const SizedBox(height: 20),
+        Text(call.talkingTo?.name ?? 'Call',
+          style: const TextStyle(fontSize: 26, color: Colors.white,
+              fontWeight: FontWeight.bold)),
+        Text(call.connecting ? 'Connecting...' : 'Connected • Local network',
+          style: const TextStyle(fontSize: 17, color: Colors.white70)),
+        Expanded(child: call.video
+          ? Stack(fit: StackFit.expand, children: [
+              if (call.remoteRenderer != null)
+                RTCVideoView(call.remoteRenderer!, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+              else const Center(child: Icon(Icons.videocam, color: Colors.white54, size: 80)),
+              if (call.localRenderer != null)
+                Positioned(top: 20, right: 12, height: 150, width: 120,
+                  child: ClipRRect(borderRadius: BorderRadius.circular(12),
+                    child: RTCVideoView(call.localRenderer!, mirror: true))),
+            ])
+          : const Center(child: Icon(Icons.call, color: Colors.white70, size: 105))),
+        Padding(padding: const EdgeInsets.all(24), child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            IconButton.filledTonal(tooltip: call.muted ? 'Unmute' : 'Mute',
+              iconSize: 32, onPressed: () => call.setMuted(!call.muted),
+              icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
+            IconButton.filled(tooltip: 'End call', iconSize: 36,
+              style: IconButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => call.hangUp(), icon: const Icon(Icons.call_end)),
+          ])),
+      ])),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(body: Column(children: [
+  Widget build(BuildContext context) => Stack(children: [
+    Scaffold(body: Column(children: [
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
         style: const TextStyle(color: Colors.red))),
     Expanded(child: showReceived ? _files() : selected == null ? _deviceList() : _chat()),
-  ]));
+  ])),
+    if (intercom?.talkingTo != null && !_incomingDialogOpen)
+      Positioned.fill(child: _activeCall()),
+  ]);
 
   @override
   void dispose() {

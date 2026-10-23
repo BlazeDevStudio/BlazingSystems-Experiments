@@ -41,6 +41,36 @@ class LanNode {
   final Map<String, Peer> peers = {};
   final Map<String, _ReceiveState> _incoming = {};
   final Set<String> _seenMessages = {};
+  // A peer's identity must outlive a missed UDP announcement. Presence is a
+  // separate concept from whether we will authenticate its HTTP requests.
+  static const peerOnlineWindow = Duration(seconds: 35);
+  bool autoReceiveFiles = true;
+  static const int maxIncomingFileBytes = 512 * 1024 * 1024;
+  static const int maxConcurrentIncoming = 4;
+  bool _checkingPeers = false;
+  bool isOnline(Peer peer) =>
+      DateTime.now().difference(peers[peer.id]?.seen ?? peer.seen) < peerOnlineWindow;
+  void _markSeen(Peer peer) {
+    final old = peers[peer.id];
+    if (old == null || old.key != peer.key) return;
+    peers[peer.id] = Peer(id: old.id, name: old.name, key: old.key,
+        host: old.host, port: old.port, seen: DateTime.now());
+  }
+  Future<void> _checkPeerReachability() async {
+    if (_checkingPeers) return;
+    _checkingPeers = true;
+    try {
+      final old = peers.values.where((p) =>
+          DateTime.now().difference(p.seen) > const Duration(seconds: 9)).toList();
+      for (final peer in old.take(30)) {
+        try {
+          final reply = await _event(peer, {'kind': 'ping'}).timeout(
+              const Duration(seconds: 3));
+          if (reply['ok'] == true) _markSeen(peer);
+        } catch (_) { /* Stale peers remain known, but appear offline. */ }
+      }
+    } finally { _checkingPeers = false; }
+  }
   final HttpClient _http = HttpClient()..connectionTimeout = const Duration(seconds: 6);
 
   void Function()? onPeersChanged;
@@ -48,7 +78,9 @@ class LanNode {
   void Function(Peer, Map<String, dynamic>)? onSignal;
   void Function(TransferProgress)? onProgress;
   Future<bool> Function(Peer, String, int)? onFileOffer;
-  LanNode(this.identity);
+  final Directory? storageDirectory;
+  LanNode(this.identity, {this.storageDirectory});
+  Future<Directory> _storage() async => storageDirectory ?? Identity.appDirectory();
 
   static const _wifiMulticast = MethodChannel('lan_messenger/multicast');
 
@@ -74,14 +106,22 @@ class LanNode {
     announce();
     _ticker = Timer.periodic(const Duration(seconds: 4), (_) {
       announce();
-      final before = peers.length;
-      peers.removeWhere((_, peer) => DateTime.now().difference(peer.seen) >
-          const Duration(seconds: 14));
-      if (peers.length != before) onPeersChanged?.call();
+      // Unicast announcements also reach a previously discovered peer if the
+      // router temporarily stops forwarding multicast or broadcast packets.
+      for (final peer in peers.values) {
+        try {
+          final body = utf8.encode(announcement(identity.id,
+              identity.displayName, identity.publicKeyB64, _server!.port));
+          _udp?.send(body, InternetAddress(peer.host), discoveryPort);
+        } catch (_) {}
+      }
+      unawaited(_checkPeerReachability());
+      onPeersChanged?.call();
     });
   }
 
   bool get discoveryReady => _udp != null;
+  int get listenPort => _server?.port ?? 0;
 
   void announce() {
     if (_udp == null || _server == null) return;
@@ -135,6 +175,7 @@ class LanNode {
         return;
       }
       final plaintext = await cipher.open(packet);
+      _markSeen(peer);
       Map<String, dynamic> output;
       if (request.uri.path == '/v1/chunk') {
         output = await _receiveChunk(peer, plaintext);
@@ -165,7 +206,9 @@ class LanNode {
     }
     final reply = jsonDecode(raw) as Map<String, dynamic>;
     if (reply['from'] != peer.key) throw const FormatException('Untrusted response');
-    return jsonDecode(utf8.decode(await cipher.open(reply))) as Map<String, dynamic>;
+    final opened = jsonDecode(utf8.decode(await cipher.open(reply))) as Map<String, dynamic>;
+    _markSeen(peer);
+    return opened;
   }
 
   Future<Map<String, dynamic>> _event(Peer peer, Map<String, dynamic> event) =>
@@ -190,6 +233,8 @@ class LanNode {
 
   Future<Map<String, dynamic>> _handleEvent(Peer peer, Map<String, dynamic> event) async {
     switch (event['kind']) {
+      case 'ping':
+        return {'ok': true};
       case 'message':
         final text = event['text'];
         final id = event['id'];
@@ -220,15 +265,22 @@ class LanNode {
     final id = data['id'], name = data['name'], total = data['size'], sha = data['sha256'];
     if (id is! String || !RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ||
         name is! String || name.isEmpty || name.length > 255 ||
-        total is! int || total < 0 || total > 1000000000000 ||
+        total is! int || total < 0 || total > maxIncomingFileBytes ||
         sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false};
     if (_incoming.containsKey(id)) {
       final previous = _incoming[id]!;
       return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};
     }
-    final ask = onFileOffer;
-    if (ask == null || !await ask(peer, safeFileName(name), total)) return {'ok': false};
-    final dir = await Identity.appDirectory();
+    if (_incoming.length >= maxConcurrentIncoming) return {'ok': false, 'reason': 'busy'};
+    if (!autoReceiveFiles) {
+      final ask = onFileOffer;
+      if (ask == null || !await ask(peer, safeFileName(name), total)) {
+        return {'ok': false, 'reason': 'declined'};
+      }
+    }
+    // The default is receive-without-prompt, *never* automatically execute.
+    // Size and concurrent-transfer ceilings reduce malicious LAN exhaustion.
+    final dir = await _storage();
     final tempDir = Directory('${dir.path}${Platform.pathSeparator}pending');
     await tempDir.create(recursive: true);
     final temporary = File('${tempDir.path}${Platform.pathSeparator}$id.part');
@@ -272,7 +324,7 @@ class LanNode {
         transfer.total, true, error: 'Integrity check failed'));
       return false;
     }
-    final dir = await Identity.appDirectory();
+    final dir = await _storage();
     final destination = Directory('${dir.path}${Platform.pathSeparator}Received');
     await destination.create(recursive: true);
     var name = transfer.name;
@@ -304,7 +356,7 @@ class LanNode {
     final sha = (await hash.sha256.bind(file.openRead()).first).toString();
     final reply = await _event(peer, {'kind': 'file-offer', 'id': id,
       'name': name, 'size': total, 'sha256': sha});
-    if (reply['ok'] != true) throw StateError('Recipient declined file');
+    if (reply['ok'] != true) throw StateError('Receiver cannot accept file: ${reply['reason'] ?? 'unavailable'}');
     var index = (reply['next'] as int?) ?? 0;
     try {
       final input = await file.open();
@@ -343,7 +395,7 @@ class LanNode {
   }
 
   Future<List<File>> receivedFiles() async {
-    final dir = await Identity.appDirectory();
+    final dir = await _storage();
     final folder = Directory('${dir.path}${Platform.pathSeparator}Received');
     if (!await folder.exists()) return [];
     return folder.listSync().whereType<File>().toList()
