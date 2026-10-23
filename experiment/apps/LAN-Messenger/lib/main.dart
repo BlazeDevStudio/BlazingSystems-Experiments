@@ -61,6 +61,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool showReceived = false;
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
+  bool? _pendingIncomingDecision;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -85,11 +86,22 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   void _resolveIncomingDialog(bool answered) {
+    if (!_incomingDialogOpen) return;
+    // A system banner or tray action may arrive before the Flutter dialog has
+    // completed its first frame; retain the answer until its route is ready.
+    _pendingIncomingDecision = answered;
+    _flushIncomingDecision();
+  }
+
+  void _flushIncomingDecision() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dialog = _incomingDialogContext;
-      if (dialog != null && dialog.mounted && _incomingDialogOpen &&
+      final decision = _pendingIncomingDecision;
+      if (decision == null || !_incomingDialogOpen || !mounted) return;
+      if (dialog != null && dialog.mounted &&
           ModalRoute.of(dialog)?.isCurrent == true) {
-        Navigator.of(dialog).pop(answered);
+        _pendingIncomingDecision = null;
+        Navigator.of(dialog).pop(decision);
       }
     });
   }
@@ -194,14 +206,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
-          // Never pop a route synchronously during Flutter's widget lifecycle.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final dialog = _incomingDialogContext;
-            if (dialog != null && dialog.mounted && _incomingDialogOpen &&
-                ModalRoute.of(dialog)?.isCurrent == true) {
-              Navigator.of(dialog).pop(false);
-            }
-          });
+          // Remote hangup may race the dialog's creation.
+          _resolveIncomingDialog(false);
         }
         setState(() {});
       };
@@ -209,13 +215,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
+        _pendingIncomingDecision = null;
+        // Ring immediately on Windows even if the window-manager plugin takes
+        // time to restore a hidden window. Android notification owns ringtone
+        // audio when a native call banner is available.
         if (Platform.isWindows) {
+          unawaited(alerts.ring(incomingVideo
+              ? AlertKind.videoCall : AlertKind.call));
           await _raiseIncomingWindow(peer);
         }
-        // The Android system call banner owns notification audio; don't also
-        // loop an in-app ringtone or both systems will play simultaneously.
         final nativeShown = await _showNativeIncoming(peer, incomingVideo);
-        if (!nativeShown) {
+        if (!nativeShown && !Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
         }
@@ -233,6 +243,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(_restoreWindowAfterCall());
           _incomingDialogOpen = false;
           _incomingDialogContext = null;
+          _pendingIncomingDecision = null;
         }
       };
       await n.start();
@@ -534,7 +545,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!mounted) return false;
     return await showDialog<bool>(context: context, barrierDismissible: false,
       builder: (context) {
-        if (incomingCall) _incomingDialogContext = context;
+        if (incomingCall) {
+          _incomingDialogContext = context;
+          if (_pendingIncomingDecision != null) _flushIncomingDecision();
+        }
         return AlertDialog(title: Text(title, style: const TextStyle(fontSize: 24)),
         content: Text(detail, style: const TextStyle(fontSize: 18)),
         actions: [
