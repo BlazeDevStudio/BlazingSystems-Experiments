@@ -55,7 +55,7 @@ class PcmDecoder(private val context: Context) {
                 return@flow
             }
             extractor.selectTrack(track)
-            if (startUs > 0) extractor.seekTo(startUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+            if (startUs > 0) extractor.seekTo(startUs, MediaExtractorCompat.SEEK_TO_PREVIOUS_SYNC)
             val format = extractor.getTrackFormat(track)
             val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
             decoder = codec
