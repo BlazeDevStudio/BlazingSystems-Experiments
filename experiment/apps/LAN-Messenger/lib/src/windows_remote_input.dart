@@ -15,6 +15,9 @@ class WindowsRemoteInput {
     final mouse = user32.lookupFunction<
         Void Function(Uint32, Uint32, Uint32, Uint32, IntPtr),
         void Function(int, int, int, int, int)>('mouse_event');
+    // One-monitor prototype: avoid incorrect clicks when multiple desktop
+    // monitors or arbitrary captured windows have a different origin.
+    if (metric(80) > 1) return; // SM_CMONITORS
     final width = metric(0);
     final height = metric(1);
     if (width < 2 || height < 2) return;
