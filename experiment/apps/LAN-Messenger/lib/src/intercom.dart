@@ -224,6 +224,10 @@ class Intercom {
       remoteRenderer = RTCVideoRenderer();
       await localRenderer!.initialize();
       await remoteRenderer!.initialize();
+      // Frame sizes change when the remote phone rotates or shares a screen.
+      // Rebuild the AspectRatio on actual decoded-frame resize, not just
+      // the local device OrientationBuilder callback.
+      remoteRenderer!.onResize = () => onChanged?.call();
       localRenderer!.srcObject = stream;
     }
     final pc = await createPeerConnection({
