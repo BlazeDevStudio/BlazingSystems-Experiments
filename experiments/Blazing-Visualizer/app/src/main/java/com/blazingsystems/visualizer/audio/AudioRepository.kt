@@ -24,6 +24,7 @@ data class DecodedAudio(
     val frames: Long,
     val rootPath: String,
     val hasAudio: Boolean = true,
+    val timelineVersion: Int = 0,
 ) {
     val pcmFile
         get() = File(rootPath, "original.pcm")
@@ -36,6 +37,10 @@ data class DecodedAudio(
 }
 
 class AudioRepository(private val context: Context) {
+    companion object {
+        const val TIMELINE_VERSION = 1
+        private const val MAX_TIMELINE_US = 1_800_000_000L
+    }
     private val root = File(context.cacheDir, "audio-v1").apply { mkdirs() }
     private val leases = DecodedAudioLeases(root)
 
@@ -117,13 +122,20 @@ class AudioRepository(private val context: Context) {
             val audio =
                 Json.decodeFromString<DecodedAudio>(metadata.readText())
                     .copy(rootPath = folder.path)
-            if (audio.pcmFile.isFile && audio.monoFile.isFile) return audio
+            if (audio.timelineVersion == TIMELINE_VERSION &&
+                audio.pcmFile.isFile && audio.monoFile.isFile) return audio
             folder.deleteRecursively()
         }
         val staging = File(root, "$digest.pending")
         staging.deleteRecursively()
         staging.mkdirs()
         try {
+            require(source.durationUs <= MAX_TIMELINE_US) {
+                "Choose a track of 30 minutes or less for note analysis and export"
+            }
+            val limitUs = if (source.durationUs > 0)
+                (source.durationUs + 1_000_000).coerceAtMost(MAX_TIMELINE_US)
+            else MAX_TIMELINE_US
             var resampler: PcmResampler? = null
             var rate = 0
             var channels = 0
@@ -133,6 +145,32 @@ class AudioRepository(private val context: Context) {
                 .use { mono ->
                     BufferedOutputStream(FileOutputStream(File(staging, "original.pcm"))).use {
                         pcm ->
+                        suspend fun append(samples: FloatArray) {
+                            currentCoroutineContext().ensureActive()
+                            val count = samples.size / channels
+                            require(frames + count <= MAX_TIMELINE_US * rate / 1_000_000) {
+                                "Audio timestamps exceed the supported 30-minute timeline"
+                            }
+                            val bytes = ByteBuffer.allocate(samples.size * 2)
+                                .order(ByteOrder.LITTLE_ENDIAN)
+                            samples.forEach {
+                                bytes.putShort((it.coerceIn(-1f, 1f) * 32767).toInt().toShort())
+                            }
+                            pcm.write(bytes.array())
+                            resampler!!.feed(samples).forEach {
+                                mono.writeInt(Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)))
+                            }
+                            frames += count
+                            progress((frames * 1_000_000f / rate /
+                                source.durationUs.coerceAtLeast(1)).coerceIn(0f, 1f))
+                        }
+                        suspend fun padTo(target: Long) {
+                            val silence = FloatArray(2048 * channels)
+                            while (frames < target) {
+                                val count = minOf(2048L, target - frames).toInt()
+                                append(if (count == 2048) silence else silence.copyOf(count * channels))
+                            }
+                        }
                         PcmDecoder(context).decode(Uri.parse(source.uri)).collect { chunk ->
                             currentCoroutineContext().ensureActive()
                             if (resampler == null) {
@@ -144,26 +182,19 @@ class AudioRepository(private val context: Context) {
                             require(rate == chunk.sampleRate && channels == chunk.channels) {
                                 "Audio format changed mid-track"
                             }
-                            val bytes =
-                                ByteBuffer.allocate(chunk.samples.size * 2)
-                                    .order(ByteOrder.LITTLE_ENDIAN)
-                            chunk.samples.forEach {
-                                bytes.putShort((it.coerceIn(-1f, 1f) * 32767).toInt().toShort())
+                            require(chunk.sourceTimeUs in 0..limitUs) {
+                                "Audio timestamp is outside the media timeline"
                             }
-                            pcm.write(bytes.array())
-                            resampler!!.feed(chunk.samples).forEach {
-                                mono.writeInt(
-                                    Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)),
-                                )
-                            }
-                            frames += chunk.samples.size / channels
-                            progress(
-                                (frames * 1_000_000f /
-                                        rate /
-                                        source.durationUs.coerceAtLeast(1))
-                                    .coerceIn(0f, 1f),
-                            )
+                            val start = (chunk.sourceTimeUs * rate / 1_000_000.0).roundToLong()
+                            if (start > frames) padTo(start)
+                            val overlap = (frames - start).coerceIn(0,
+                                (chunk.samples.size / channels).toLong()).toInt()
+                            if (overlap * channels < chunk.samples.size)
+                                append(if (overlap == 0) chunk.samples
+                                    else chunk.samples.copyOfRange(overlap * channels, chunk.samples.size))
                         }
+                        if (resampler != null && source.hasVideo && source.durationUs > 0)
+                            padTo(ceil(source.durationUs * rate / 1_000_000.0).toLong())
                         resampler?.feed(FloatArray(0), true)?.forEach {
                             mono.writeInt(
                                 Integer.reverseBytes(java.lang.Float.floatToRawIntBits(it)),
@@ -172,7 +203,8 @@ class AudioRepository(private val context: Context) {
                     }
                 }
             require(frames > 0) { "The track is empty" }
-            val decoded = DecodedAudio(digest, rate, channels, frames, folder.path, hasAudio)
+            val decoded = DecodedAudio(digest, rate, channels, frames, folder.path, hasAudio,
+                timelineVersion = TIMELINE_VERSION)
             File(staging, "audio.json").writeText(Json.encodeToString(decoded))
             check(staging.renameTo(folder)) { "Could not finalize decoded audio" }
             return decoded

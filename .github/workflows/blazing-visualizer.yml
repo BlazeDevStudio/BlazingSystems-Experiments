@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    timeout-minutes: 15
+    timeout-minutes: 30
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     defaults:
@@ -30,9 +30,12 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Compile native regression checkpoint only (not release validation)
+      - name: Host regression suite
+        timeout-minutes: 15
+        run: timeout --signal=TERM --kill-after=30s 12m ./gradlew clean :app:testDebugUnitTest --no-daemon --console=plain --stacktrace --info
+      - name: Lint and Android APK assemblies
         timeout-minutes: 12
-        run: ./gradlew clean :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --console=plain
+        run: ./gradlew :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --console=plain --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: Blazing-Visualizer-preview-APK
@@ -45,6 +48,7 @@ jobs:
             experiments/Blazing-Visualizer/app/build/reports/
             experiments/Blazing-Visualizer/app/build/test-results/
   device:
+    timeout-minutes: 25
     needs: build
     runs-on: ubuntu-latest
     strategy:

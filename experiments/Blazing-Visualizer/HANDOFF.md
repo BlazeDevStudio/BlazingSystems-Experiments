@@ -2,6 +2,18 @@
 
 Updated 23 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
 
+## Preview 4 continuation: validation in progress
+
+The unreleased `1879d577d5cbd626fd1ddf993cd975fcc9b0eac7` implements the approved mixed-media/fast-notes plan: multi-select audio/video, one synchronized Media3 video background, source-time video in MP4 output, silent-video support, and temporary bounded note estimates before whole-file Basic Pitch finishes. It is not yet a verified release.
+
+Its original validation `39920860762` passed 118 host tests, lint/APK and API26, but API36 failed the existing EGL target-survival test. The publisher correctly blocked Preview4. Fresh review also found collapsed audio timestamps and truncated video duration when video audio starts late, has gaps, or ends early.
+
+Test checkpoint `5bed678f93484ee6dc4d389d1883e533876095aa` adds real delayed/gapped/short-audio MP4 regressions, an old-analysis-cache rejection case and inactive/idempotent EGL close coverage. Run39933760214 stalled in host runtime initialization. Diagnostic checkpoint `d85594426a4f064af350832dd4b8bb110074fc40`, run39936432159, compiled both APKs and observed the three timing assertions, stale-cache assertion and both EGL assertions fail on API36. API26 additionally exposed its framework extractor reporting the fixture's initial timestamp as zero. The publisher was explicitly disabled for that diagnostic checkpoint. See [Preview 4 evidence](docs/acceptance/preview-4-evidence.md) and the [mixed-media plan](docs/superpowers/plans/2026-10-23-mixed-media-fast-notes.md).
+
+The fix candidate preserves chunk source timestamps in both original/analysis PCM with bounded silence insertion, overlap trimming and video-tail padding. Legacy PCM and analysis caches are invalidated without changing content identities. Decoding now uses the existing Media3 extractor, matching playback's container timeline across Android versions. EGL targets share display ownership, release only their own context/surface and tolerate repeated close. Complete host/lint/APK validation and publication are restored; device checks and final release remain pending.
+
+Next: finish source-time PCM and shared EGL ownership fixes, revalidate clean host/lint/APK plus API26/API36, inspect native artifacts, then publish a separately versioned Preview4 with the retained signer. The existing verified download below remains Preview3 until those checks pass. No local JDK/Android SDK was available in the Windows continuation workspace; builds run in GitHub Actions.
+
 ## Current APK: Preview 3, published and verified
 
 - Direct download: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.3/Blazing-Visualizer-preview-3.apk

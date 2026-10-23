@@ -44,7 +44,8 @@ class DecodedAudioLeaseTest {
             .joinToString("") { "%02x".format(it) }
         source = SourceRef(Uri.fromFile(original).toString())
         val folder = File(directory, "audio-v1/$hash").apply { mkdirs() }
-        decoded = DecodedAudio(hash, 22050, 1, 1, folder.path)
+        decoded = DecodedAudio(hash, 22050, 1, 1, folder.path,
+            timelineVersion = AudioRepository.TIMELINE_VERSION)
         decoded.pcmFile.writeBytes(byteArrayOf(1, 2))
         decoded.monoFile.writeBytes(byteArrayOf(0, 0, 0, 0))
         File(folder, "audio.json").writeText(Json.encodeToString(decoded))

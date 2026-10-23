@@ -31,7 +31,7 @@ fun sha256(bytes: ByteArray) =
 object AnalysisKeys {
     fun key(sourceHash: String, modelHash: String, parameters: AnalysisParameters) =
         sha256(
-            "basic-pitch-cache-v2:$sourceHash:$modelHash:${Json.encodeToString(parameters)}"
+            "basic-pitch-cache-v3:$sourceHash:$modelHash:${Json.encodeToString(parameters)}"
                 .toByteArray(),
         )
 }

@@ -6,13 +6,23 @@ import java.nio.ByteBuffer
 
 class GlTarget private constructor(val width: Int, val height: Int, surface: Surface?) :
     AutoCloseable {
-    private val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+    private val display: EGLDisplay
     private var context = EGL14.EGL_NO_CONTEXT
     private var eglSurface = EGL14.EGL_NO_SURFACE
+    private var closed = false
 
     init {
         check(width > 0 && height > 0)
-        check(EGL14.eglInitialize(display, IntArray(2), 0, IntArray(2), 1))
+        display = acquireDisplay()
+        try {
+            initialize(surface)
+        } catch (failure: Throwable) {
+            close()
+            throw failure
+        }
+    }
+
+    private fun initialize(surface: Surface?) {
         val config = arrayOfNulls<android.opengl.EGLConfig>(1)
         val count = IntArray(1)
         val attributes =
@@ -68,12 +78,14 @@ class GlTarget private constructor(val width: Int, val height: Int, surface: Sur
     }
 
     fun makeCurrent() {
+        check(!closed) { "EGL target is closed" }
         check(EGL14.eglMakeCurrent(display, eglSurface, eglSurface, context)) {
             "EGL context unavailable"
         }
     }
 
     fun present(presentationTimeUs: Long = 0) {
+        check(!closed) { "EGL target is closed" }
         EGLExt.eglPresentationTimeANDROID(display, eglSurface, presentationTimeUs * 1000)
         check(EGL14.eglSwapBuffers(display, eglSurface)) { "EGL frame could not be presented" }
     }
@@ -85,20 +97,51 @@ class GlTarget private constructor(val width: Int, val height: Int, surface: Sur
         return ByteArray(b.capacity()).also { b.get(it) }
     }
 
-    override fun close() {
-        EGL14.eglMakeCurrent(
-            display,
-            EGL14.EGL_NO_SURFACE,
-            EGL14.EGL_NO_SURFACE,
-            EGL14.EGL_NO_CONTEXT,
-        )
-        if (eglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display, eglSurface)
-        if (context != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display, context)
-        EGL14.eglReleaseThread()
-        EGL14.eglTerminate(display)
+    @Synchronized override fun close() {
+        if (closed) return
+        closed = true
+        try {
+            if (context != EGL14.EGL_NO_CONTEXT && EGL14.eglGetCurrentContext() == context) {
+                EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE,
+                    EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
+            }
+            if (eglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display, eglSurface)
+            if (context != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display, context)
+        } finally {
+            eglSurface = EGL14.EGL_NO_SURFACE
+            context = EGL14.EGL_NO_CONTEXT
+            releaseDisplay()
+        }
     }
 
     companion object {
+        private var sharedDisplay = EGL14.EGL_NO_DISPLAY
+        private var displayUsers = 0
+
+        // Preview, encoder and fixture targets use the same default display, including
+        // on different threads. A target owns its context/surface, not thread-wide EGL state.
+        @Synchronized private fun acquireDisplay(): EGLDisplay {
+            if (displayUsers == 0) {
+                val candidate = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+                check(candidate != EGL14.EGL_NO_DISPLAY) { "No EGL display" }
+                check(EGL14.eglInitialize(candidate, IntArray(2), 0, IntArray(2), 1)) {
+                    "Could not initialize EGL display"
+                }
+                sharedDisplay = candidate
+            }
+            displayUsers++
+            return sharedDisplay
+        }
+
+        @Synchronized private fun releaseDisplay() {
+            check(displayUsers > 0)
+            displayUsers--
+            if (displayUsers == 0) {
+                EGL14.eglTerminate(sharedDisplay)
+                sharedDisplay = EGL14.EGL_NO_DISPLAY
+            }
+        }
+
         fun pbuffer(width: Int, height: Int) = GlTarget(width, height, null)
 
         fun encoder(surface: Surface, width: Int, height: Int) = GlTarget(width, height, surface)

@@ -45,3 +45,11 @@ Base302bbe0. Existing source/release reconciled; no AGENTS.md observed in the sc
 - Integrated implementation restores the complete host/lint/assemble and two-device workflow. Additional tests cover bounded source-time decode/seek, stale quick-frame rejection, video pixel layering, metadata, rotated frames, video→audio transition and MP4 source-time compositing.
 - Target release is separately tagged Preview 4 (versionCode4); retain Preview2/3 public debug signer. Do not describe this preview as production-ready.
 - Real instrument/source separation remains research only. See `docs/acceptance/2026-10-23-stem-separation-research.md` for the staged offline pilot and primary sources. No model weights or runtime added, and no media uploaded.
+
+## Continuation: 23 October evening
+
+- Observed native RED at `d855944`, run39936432159: API36 reproduces collapsed audio timestamps, truncated video duration, stale analysis cache reuse and EGL target ownership failures. API26's generated timing input failed fixture verification; the older muxer changed the first timestamp. Those setup failures are not claimed as timing regressions.
+- Ruling: preserve one source timeline in original PCM and analysis mono, pad/trim in bounded cancellable blocks and version both caches. Content hashes remain unchanged, preserving project identity. Cost if wrong: an affected track needs reanalysis; native PCM assertions pin the intended timing.
+- Ruling: use the existing Media3 1.8 extractor for decode as well as playback, and one fixed synthetic MP4 on both device versions. No new runtime dependency or copied parser. Cost if wrong: an unsupported container may report a visible decode failure; the media, queue and source remain available.
+- The earlier host stall was not reproduced in independent diagnostic39959477936: unchanged source passed118 tests/20 suites. The cause remains unconfirmed. Complete host/lint/APK and API26/API36 validation are restored for the fix candidate; diagnostic checkpoints cannot publish a preview.
+- Pending: GREEN verification, native artifact inspection, retained-signer/direct-APK verification, Preview4 publication and final handoff.

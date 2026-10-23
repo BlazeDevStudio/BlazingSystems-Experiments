@@ -3,6 +3,7 @@ package com.blazingsystems.visualizer.audio
 import android.content.Context
 import android.media.*
 import android.net.Uri
+import androidx.media3.exoplayer.MediaExtractorCompat
 import java.nio.ByteOrder
 import kotlin.math.ceil
 import kotlinx.coroutines.*
@@ -16,11 +17,12 @@ data class PcmChunk(
     val synthesizedSilence: Boolean = false,
 )
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class PcmDecoder(private val context: Context) {
     fun decode(uri: Uri, startUs: Long = 0, durationUs: Long? = null): Flow<PcmChunk> = flow {
         require(startUs >= 0 && (durationUs == null || durationUs > 0))
         val endUs = durationUs?.let { startUs + it.coerceAtMost(Long.MAX_VALUE - startUs) }
-        val extractor = MediaExtractor()
+        val extractor = MediaExtractorCompat(context)
         var decoder: MediaCodec? = null
         try {
             extractor.setDataSource(context, uri, null)
