@@ -2,7 +2,7 @@ name: LAN Messenger v0.2.6 - installer and release
 on:
   push:
     branches: [fix/lan-messenger-v0.2.6-call-interop]
-    paths: [.github/workflows/lan-messenger-publish-v025.yml]
+    paths: [.github/workflows/lan-messenger-publish-v026.yml]
   workflow_dispatch:
 permissions:
   actions: read
