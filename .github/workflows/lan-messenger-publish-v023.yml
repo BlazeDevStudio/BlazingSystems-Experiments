@@ -1,0 +1,138 @@
+name: LAN Messenger v0.2.3 - installer and release
+on:
+  push:
+    branches: [feature/lan-messenger-v0.2.3-polish]
+    paths: [.github/workflows/lan-messenger-publish-v023.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve tested Windows portable app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh run download 39953968835 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
+          Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
+          if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
+      - name: Assemble user-level EXE installer (no administrative rights needed)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (!(Test-Path $iscc)) { throw "Inno Setup 6 not found" }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          @'
+          [Setup]
+          AppId=BlazingSystems.LANMessenger
+          AppName=LAN Messenger
+          AppVersion=0.2.3
+          DefaultDirName={localappdata}\Programs\LAN Messenger
+          DefaultGroupName=LAN Messenger
+          PrivilegesRequired=lowest
+          ArchitecturesAllowed=x64compatible
+          OutputDir=dist
+          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.2.3
+          Compression=lzma2
+          SolidCompression=yes
+          UninstallDisplayName=LAN Messenger
+          SetupIconFile=windows-payload\data\flutter_assets\assets\icons\lan_messenger.ico
+          [Files]
+          Source: "windows-payload\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+          [Icons]
+          Name: "{autoprograms}\LAN Messenger"; Filename: "{app}\lan_messenger.exe"
+          [Run]
+          Filename: "{app}\lan_messenger.exe"; Description: "Launch LAN Messenger"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content -Path installer.iss -Encoding UTF8
+          & $iscc installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
+          $setup = Get-ChildItem dist -Filter '*Setup*.exe' | Select-Object -First 1
+          if (!$setup -or $setup.Length -lt 100000) { throw "Installer missing or too small" }
+          $h = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Installer bytes: $($setup.Length), SHA256: $h"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.3
+          path: dist/LAN-Messenger-Windows-Setup-v0.2.3.exe
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch optimized compiled platform builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/android artifacts/windows dist
+          gh run download 39953968835 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 39953968835 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.3
+          path: artifacts/installer
+      - name: Check checksums, stage downloads and prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, zipfile
+          checks = [
+            ('artifacts/android/app-arm64-v8a-release.apk','LAN-Messenger-Android-arm64-v0.2.3.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-armeabi-v7a-release.apk','LAN-Messenger-Android-arm32-v0.2.3.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-x86_64-release.apk','LAN-Messenger-Android-x86_64-v0.2.3.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/windows/LAN-Messenger-Windows-Optimized.zip','LAN-Messenger-Windows-Portable-v0.2.3.zip','artifacts/windows/SHA256SUMS.txt'),
+          ]
+          for src, dst, sums in checks:
+            p=Path(src)
+            expected={line.split()[1].removeprefix('*'):line.split()[0].lower() for line in Path(sums).read_text(encoding='utf-8-sig').splitlines()}
+            actual=hashlib.sha256(p.read_bytes()).hexdigest()
+            assert expected.get(p.name)==actual, f'CI hash mismatch: {src}'
+            if p.suffix=='.zip':
+              with zipfile.ZipFile(p) as z: assert z.testzip() is None
+            shutil.copy2(p,Path('dist')/dst)
+          setup=Path('artifacts/installer/LAN-Messenger-Windows-Setup-v0.2.3.exe')
+          assert setup.stat().st_size>100000, 'Missing Windows installer'
+          shutil.copy2(setup, Path('dist')/setup.name)
+          PY
+          (cd dist && sha256sum *.apk *.zip *.exe > SHA256SUMS.txt)
+          cat > dist/RELEASE-NOTES.md <<'EOF'
+          # LAN Messenger v0.2.3 — Personalization and Inline Media Preview
+
+          **Offline local messaging and calls for Windows and Android.** This is a preview build, not a production-validated safety intercom.
+
+          What's new:
+          - Windows Start with Windows toggle: fixed invalid REG.exe /add argument; startup argument regression test.
+          - Android incoming voice/video calls, messages and file transfers: high-importance native local notification channels with built-in app tones. Requires Android notification permission and OS permission to display heads-up alerts; a force-stopped app will not receive calls.
+          - Compact chat header and smaller row density to preserve conversation space.
+          - Local profile avatar and personal color/font-size/font-family settings; optional per-conversation accent theme.
+          - Refined distinct default sound motifs and per-event custom in-app audio file selection.
+          - Media/documents appear **inside** the message thread: image thumbnails, tap-to-expand audio/video, PDF viewer, and read-only DOCX, XLSX, TXT, CSV, JSON, XML, Markdown and logs. Preview only loads on expansion; other files can still open externally. Legacy DOC/XLS require external applications.
+          - Preserves v0.2.2 optimized AOT/architecture-split builds, offline discovery, calls and encrypted file transfers. No account or internet required.
+
+          **Compatibility notes:** Android notification sound channels use the bundled default tones even when a custom in-app sound is chosen; OS controls heads-up display and Do Not Disturb. A profile icon is local to the device in this version. Unsupported Windows Media Foundation video codecs require an external player.
+
+          **Installation:** Windows use Setup EXE (per-user) or extract the complete ZIP. For typical modern Android phones use the ARM64 APK. Because APKs are CI-signed, an older debug build may require uninstalling before installing, which erases app-private history.
+
+          Verification: Android/Windows Flutter analyze/tests/release builds and APK structural signature/hash checks from CI: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39953968835
+
+          **Still requiring physical test:** Samsung Android heads-up behavior, cross-device video/PDF performance on low-end PCs, desktop system startup toggle, profile persistence, motorcycle screen-off audio and headset routing.
+          EOF      - name: Publish immutable GitHub prerelease assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create lan-messenger-v0.2.3-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "LAN Messenger v0.2.3 - Optimized Compatibility Preview" \
+            --notes-file dist/RELEASE-NOTES.md --prerelease
