@@ -542,6 +542,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (v) unawaited(_notifications.invokeMethod<void>('setup').catchError((_) {}));
         unawaited(_saveSettings());
       }),
+    if (Platform.isAndroid) ListTile(
+      leading: const Icon(Icons.call),
+      title: const Text('Incoming call banners'),
+      subtitle: const Text('Allow heads-up call notifications, Answer and Decline buttons in Android settings'),
+      trailing: const Icon(Icons.open_in_new),
+      onTap: _openAndroidCallNotificationSettings),
+    if (Platform.isAndroid) ListTile(
+      leading: const Icon(Icons.touch_app),
+      title: const Text('Optional remote touch permission'),
+      subtitle: const Text('Only needed if you explicitly approve remote control of your Android screen during sharing'),
+      trailing: const Icon(Icons.open_in_new),
+      onTap: _openAndroidAssistiveSettings),
     SwitchListTile(title: const Text('Use LAN Messenger sounds'),
       subtitle: const Text('Default: distinctive sounds for each event. Turn off to use the custom tones below.'),
       value: settings.useAppSounds,
