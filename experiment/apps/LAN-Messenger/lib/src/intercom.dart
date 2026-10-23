@@ -154,16 +154,16 @@ class Intercom {
       if (display.getVideoTracks().isEmpty) {
         throw StateError('No screen video track available');
       }
-      // flutter_webrtc on Windows can return an enabled but dead capture track.
+      // Flutter WebRTC may return an enabled but dead screen-capture track.
       // Confirm an actual decoded desktop frame BEFORE replacing the camera
       // sender; otherwise both local preview and peer can go permanently blank.
-      if (Platform.isWindows) {
+      if (Platform.isWindows || Platform.isAndroid) {
         final probe = RTCVideoRenderer();
         await probe.initialize();
         try {
           probe.srcObject = display;
           var frameReady = false;
-          for (var attempt = 0; attempt < 35; attempt++) {
+          for (var attempt = 0; attempt < 50; attempt++) {
             if (_closing || _connection == null) break;
             if (probe.videoWidth > 0 && probe.videoHeight > 0) {
               frameReady = true;
