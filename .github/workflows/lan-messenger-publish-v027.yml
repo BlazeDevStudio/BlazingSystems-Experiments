@@ -1,0 +1,167 @@
+name: LAN Messenger v0.2.7 - owner preview release
+on:
+  push:
+    branches: [release/lan-messenger-v027-publisher]
+    paths: [.github/workflows/lan-messenger-publish-v027.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  verify-compiled-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Require successful cross-platform source build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 120); do
+            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40034258422 --jq '.conclusion // ""')"
+            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40034258422 --jq '.head_sha')"
+            test "$commit" = "d8964d8da5afe27e1a540cd6b52f3373fca5c311" || { echo "Unrecognized source SHA"; exit 1; }
+            if [ "$conclusion" = "success" ]; then
+              echo "Verified successful full CI run 40034258422 for d8964d8da5afe27e1a540cd6b52f3373fca5c311"
+              exit 0
+            fi
+            if [ -n "$conclusion" ]; then
+              echo "Build concluded $conclusion, refusing release"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "Timed out verifying compiled cross-platform candidate"
+          exit 1
+
+  windows-installer:
+    needs: verify-compiled-candidate
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve tested Windows portable app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh run download 40034258422 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
+          Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
+          if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
+      - name: Assemble user-level EXE installer (no administrative rights needed)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (!(Test-Path $iscc)) { throw "Inno Setup 6 not found" }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          @'
+          [Setup]
+          AppId=BlazingSystems.LANMessenger
+          AppName=LAN Messenger
+          AppVersion=0.2.7
+          DefaultDirName={localappdata}\Programs\LAN Messenger
+          DefaultGroupName=LAN Messenger
+          PrivilegesRequired=lowest
+          ArchitecturesAllowed=x64compatible
+          OutputDir=dist
+          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.2.7
+          Compression=lzma2
+          SolidCompression=yes
+          UninstallDisplayName=LAN Messenger
+          SetupIconFile=windows-payload\data\flutter_assets\assets\icons\lan_messenger.ico
+          [Files]
+          Source: "windows-payload\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+          [Icons]
+          Name: "{autoprograms}\LAN Messenger"; Filename: "{app}\lan_messenger.exe"
+          [Run]
+          Filename: "{app}\lan_messenger.exe"; Description: "Launch LAN Messenger"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content -Path installer.iss -Encoding UTF8
+          & $iscc installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
+          $setup = Get-ChildItem dist -Filter '*Setup*.exe' | Select-Object -First 1
+          if (!$setup -or $setup.Length -lt 100000) { throw "Installer missing or too small" }
+          $h = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Installer bytes: $($setup.Length), SHA256: $h"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.7
+          path: dist/LAN-Messenger-Windows-Setup-v0.2.7.exe
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch optimized compiled platform builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/android artifacts/windows dist
+          gh run download 40034258422 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 40034258422 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.7
+          path: artifacts/installer
+      - name: Check checksums, stage downloads and prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, zipfile
+          checks = [
+            ('artifacts/android/app-arm64-v8a-release.apk','LAN-Messenger-Android-arm64-v0.2.7.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-armeabi-v7a-release.apk','LAN-Messenger-Android-arm32-v0.2.7.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-x86_64-release.apk','LAN-Messenger-Android-x86_64-v0.2.7.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/windows/LAN-Messenger-Windows-Optimized.zip','LAN-Messenger-Windows-Portable-v0.2.7.zip','artifacts/windows/SHA256SUMS.txt'),
+          ]
+          for src, dst, sums in checks:
+            p=Path(src)
+            expected={line.split()[1].removeprefix('*'):line.split()[0].lower() for line in Path(sums).read_text(encoding='utf-8-sig').splitlines()}
+            actual=hashlib.sha256(p.read_bytes()).hexdigest()
+            assert expected.get(p.name)==actual, f'CI hash mismatch: {src}'
+            if p.suffix=='.zip':
+              with zipfile.ZipFile(p) as z: assert z.testzip() is None
+            shutil.copy2(p,Path('dist')/dst)
+          setup=Path('artifacts/installer/LAN-Messenger-Windows-Setup-v0.2.7.exe')
+          assert setup.stat().st_size>100000, 'Missing Windows installer'
+          shutil.copy2(setup, Path('dist')/setup.name)
+          PY
+          (cd dist && sha256sum *.apk *.zip *.exe > SHA256SUMS.txt)
+          cat > dist/RELEASE-NOTES.md <<'EOF'
+          # LAN Messenger v0.2.7 — Remote Control and Screen Sharing Recovery Preview
+
+          **Owner-test preview only.** Android and Windows code was compiled, linted and tested in GitHub Actions; live Android↔Windows screen-control behavior still needs physical testing.
+
+          ## Corrections from v0.2.6
+          - Windows and Android: probe an actual captured screen frame before replacing the working camera video sender. Reject an empty/dead capture instead of blanking the call; restore camera on capture-ended notification.
+          - Four selectable remote touch modes inspired by Chrome Remote Desktop: Trackpad (including pinch zoom), Direct Touch, two-finger pan/zoom, three-finger pan/zoom.
+          - Windows target: remote pointer movement, left/right/middle clicks, dragging and mouse-wheel scrolling on a single-monitor desktop. Touch modes currently emulate a mouse, NOT Windows native multi-touch injection.
+          - Input remains encrypted and restricted to the live approved session. Recipient must approve each request; approval ends after five minutes or revocation, and mouse buttons are released.
+          - Android owner can open app details and Accessibility from LAN Messenger Settings. For sideloaded APKs on Android 13+, Android may require App info > three-dot menu > Allow restricted settings. The user must make this choice manually; there is no permission bypass.
+          - Android target: Accessibility-based remote taps only; swiping, text entry and full native touch injection remain unsupported.
+          - Regression tests cover touch selection, letterbox mapping, pointer cancellation, direct-touch event delivery and disabled-session isolation.
+
+          ## Downloads and limitations
+          - For recent phones use **Android-arm64** APK; ARM32 and x86_64 are specialized alternatives. Preview Android signing identity may change, requiring uninstall (and loss of app-private history).
+          - Windows portable ZIP must be completely extracted; Setup EXE is unsigned and installs for the current user.
+          - Real peer-to-peer screen share, desktop frame encoding, Android Accessibility vendor settings, camera recovery, headset routing and four-device pairings remain **not physically validated**.
+          - Use only on trusted local networks; do not rely on this preview for unattended control or safety-critical voice communication.
+          - Source build evidence: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40034258422
+          - Source revision: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/d8964d8da5afe27e1a540cd6b52f3373fca5c311
+          EOF
+      - name: Publish immutable GitHub prerelease assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create lan-messenger-v0.2.7-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target d8964d8da5afe27e1a540cd6b52f3373fca5c311 \
+            --title "LAN Messenger v0.2.7 - Remote Control Recovery Preview" \
+            --notes-file dist/RELEASE-NOTES.md --prerelease
