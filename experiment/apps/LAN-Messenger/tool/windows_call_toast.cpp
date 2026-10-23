@@ -37,13 +37,24 @@ bool BoolArg(const flutter::EncodableMap& args, const char* key) {
 }
 }  // namespace
 
-WindowsCallToast::WindowsCallToast(flutter::BinaryMessenger* messenger) {
+WindowsCallToast::WindowsCallToast(flutter::BinaryMessenger* messenger,
+                                   HWND main_window)
+    : main_window_(main_window) {
   channel_ = std::make_unique<MethodChannel>(
       messenger, "lan_messenger/desktop_call",
       &flutter::StandardMethodCodec::GetInstance());
   channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "restoreMainInactive") {
+          if (!main_window_ || !IsWindow(main_window_)) {
+            result->Success(flutter::EncodableValue(false));
+          } else {
+            ShowWindow(main_window_, SW_SHOWNOACTIVATE);
+            result->Success(flutter::EncodableValue(true));
+          }
+          return;
+        }
         if (call.method_name() == "dismiss") {
           Hide();
           result->Success(flutter::EncodableValue(true));
