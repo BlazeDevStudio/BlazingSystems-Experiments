@@ -32,7 +32,7 @@ if manifest.exists():
         text = text.replace('</application>', receiver + '    </application>', 1)
     projection_service = ('        <service android:name=".ScreenProjectionService" '
                           'android:exported="false" '
-                          'android:foregroundServiceType="mediaProjection" />\\n')
+                          'android:foregroundServiceType="mediaProjection" />\n')
     if 'android:name=".ScreenProjectionService"' not in text:
         text = text.replace('</application>', projection_service + '    </application>', 1)
     manifest.write_text(text, encoding='utf-8')
