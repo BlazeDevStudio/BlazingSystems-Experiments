@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -60,6 +61,10 @@ fun AveeShell(model: StudioModel) {
         onDispose { lifecycle?.removeObserver(observer); model.stopTuner() }
     }
     var tab by rememberSaveable { mutableIntStateOf(1) }
+    var fullscreen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(fullscreen || s.layoutEditing) {
+        if(s.layoutEditing) model.finishLayoutEdit() else fullscreen=false
+    }
     var playbackOptions by remember { mutableStateOf(false) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
     var viewportAspect by remember { mutableFloatStateOf(1f) }
@@ -140,7 +145,7 @@ fun AveeShell(model: StudioModel) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
+            if(!fullscreen || tab!=1) Column {
                 Row(
                     Modifier.fillMaxWidth()
                         .statusBarsPadding()
@@ -185,7 +190,7 @@ fun AveeShell(model: StudioModel) {
             }
         },
         bottomBar = {
-            if (!s.layoutEditing) Column(Modifier.navigationBarsPadding().background(MaterialTheme.colorScheme.surface)) {
+            if (!s.layoutEditing && (!fullscreen || tab!=1)) Column(Modifier.navigationBarsPadding().background(MaterialTheme.colorScheme.surface)) {
                 s.progress?.let { value ->
                     LinearProgressIndicator(
                         progress = { value },
@@ -258,7 +263,7 @@ fun AveeShell(model: StudioModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                NavigationBar(modifier=Modifier.height(64.dp),containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                     listOf(
                         Triple("Library", Icons.Rounded.LibraryMusic, 0),
                         Triple("Visualizer", Icons.Rounded.GraphicEq, 1),
@@ -344,6 +349,10 @@ fun AveeShell(model: StudioModel) {
                                     }
                                     IconButton(onClick = { panel = "export" }, enabled = s.project != null) {
                                         Icon(Icons.Rounded.IosShare, "Export video")
+                                    }
+                                    IconButton(onClick={fullscreen=!fullscreen}) {
+                                        Icon(if(fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
+                                            if(fullscreen) "Exit fullscreen" else "Fullscreen visualizer")
                                     }
                                 }
                             }
@@ -655,77 +664,6 @@ private fun LibraryScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { playlistName = null }) { Text("Cancel") } },
-        )
-    }
-}
-
-@Composable
-private fun PresetChooserSheet(
-    scene: Scene,
-    saved: List<Scene>,
-    onSave: () -> Unit,
-    onSelect: (Scene) -> Unit,
-    onImport: () -> Unit,
-    onExport: () -> Unit,
-) {
-    Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
-        Text("Visualizers", fontSize = 25.sp, fontWeight = FontWeight.Bold)
-        Text(
-            "Start with a look. Shape every layer.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(18.dp))
-        (BuiltinScenes.all() + saved)
-            .distinctBy { it.id }
-            .forEach { preset ->
-                Card(
-                    onClick = { onSelect(preset) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                ) {
-                    Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            if (preset.layers.any { it.type == ElementType.NOTE_WHEEL })
-                                Icons.Rounded.Hub
-                            else if (preset.layers.any { it.type == ElementType.PIANO_ROLL })
-                                Icons.Rounded.Piano
-                            else Icons.Rounded.GraphicEq,
-                            null,
-                            Modifier.size(38.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Spacer(Modifier.width(18.dp))
-                        Column {
-                            Text(preset.name, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                "${preset.layers.size} editable layers",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-        TextButton(onClick = onSave) { Text("Save current preset") }
-        TextButton(
-            onClick = {
-                onSelect(scene.copy(id = UUID.randomUUID().toString(), name = scene.name + " copy"))
-            },
-        ) {
-            Icon(Icons.Rounded.ContentCopy, null, Modifier.size(18.dp))
-            Text("Duplicate current visualizer")
-        }
-        Row {
-            OutlinedButton(onClick = onImport, modifier = Modifier.weight(1f)) {
-                Text("Import preset")
-            }
-            Spacer(Modifier.width(8.dp))
-            Button(onClick = onExport, modifier = Modifier.weight(1f)) { Text("Export pack") }
-        }
-        Text(
-            "BlazeViz packs include the scene and images. Avee JSON/ZIP imports show a compatibility report.",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 12.dp),
         )
     }
 }

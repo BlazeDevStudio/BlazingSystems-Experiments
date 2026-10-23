@@ -33,13 +33,17 @@ Portable non-Codex continuation prompt: [CONTINUE_WITH_CHATGPT.md](CONTINUE_WITH
 - Editable note-wheel idle text and simultaneous note labels when no chord is recognized; an expanded exact-set chord dictionary avoids guessing from incomplete notes.
 - Preview 2 mic toggle feeds the main visualizer with FFT and a monophonic YIN reading. It does not open a separate tuning window. Live polyphonic estimates and an independent capture animation clock are the next increment.
 - Three original math presets and optional equations are included. Equations default OFF. [Reference math fact check](docs/acceptance/reference-video-math.md) remains authoritative.
-- Avee plain JSON and JSON-in-ZIP .viz subset supports wrapped vectors, colors, nested polygon/segment settings and safe assets. Compatibility is still partial: the older importer flattens multiple compositions and approximates modern effects. Never claim all Avee presets or pixel-identical rendering work.
+- Avee plain JSON and JSON-in-ZIP .viz subset supports wrapped vectors, colors, nested polygon/segment settings and safe assets. In Preview 2, compatibility is partial and the importer flattens multiple compositions; the Preview 3 candidate replaces this with referenced passes and still approximates modern effects. Never claim all Avee presets or pixel-identical rendering work.
 
-## Current continuation
+## Current continuation: Preview 3 candidate
 
-A separate temporary integration branch, `blazing-visualizer-notes-motion`, starts from the published Preview 2 and holds the next source increment. It currently checkpoints the source-clock live note tracker at `6890f8fb557ef09c2a8df31971382dc6d7fc490e`; later commits may supersede it. Reconcile both branch heads before applying changes. Do not assume uncommitted scratch files survive a session reload.
+The `blazing-visualizer-notes-motion` integration branch preserves the next increment. Primary branch updates use an expected-head lease; reconcile both heads before editing so concurrent work survives. Published Preview 2 remains intact. Preview 3 (versionCode 3) must pass its own exact-source matrix before its separately tagged APK is published. The publisher verifies the retained signer and refuses to overwrite any existing release.
 
-Next work: finish source-clock microphone estimates (conservative simultaneous pitches plus precise single-note YIN), selectable outline/trail/reveal motion, actual projected chord geometry, fixed rhythm gates with a shared hand, stable radial contours, and their controls/tests. Continue modern Avee composition/AudioProvider interoperability. Preserve the original imported data and describe remaining shader/temporal approximations. Publish the next separately versioned APK only from a passing same-source matrix and verify its direct asset.
+Implemented candidate, not yet verified: thumbnail preset grid and fullscreen control; note-aware optimized export reflow with custom separate layouts preserved; all unknown note classes displayed in fitted rows; conservative live spectral polyphony plus precise single-note YIN with an independent capture clock; five optional outline/trail/reveal, projected chord, shared-cursor wave, rhythm gate and stable radial motion presets. Equations stay off. Existing native presets remain.
+
+Avee candidate retains original JSON and per-layer raw metadata through native packs, renders referenced compositions instead of flattening them, adds paired segments with independent colors/signed heights, procedural internal images, image aspect/circle/tint/blend and bounded current-frame effects. Spectrum2 uses configured arbitrary-frequency correlations with bounded, seek-independent recorded response. Imported contain/cover frames the entire composite once. Unknown expressions/shaders, exact temporal blur/beat gain and arbitrary presets remain partial. No source APK/code/artwork is redistributed.
+
+Focused tracker, geometry, native-pixel, composition, segment and frequency-bank tests accompany this increment. These are verification targets, not passing evidence until Actions runs. Continue clean host/lint/APK and API26/API36, resolve failures, review pixels and verify the direct Preview 3 asset before reporting completion. See [mobile/motion evidence](docs/acceptance/2026-10-23-mobile-and-motion.md).
 
 ## Reference and acceptance limits
 

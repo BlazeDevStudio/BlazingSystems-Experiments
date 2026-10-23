@@ -17,7 +17,15 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
         a4Hz: Double,
         onPitch: suspend (PitchReading?) -> Unit,
         onSamples: suspend (FloatArray) -> Unit = {},
-    ) =
+    ) {
+        val smoother=PitchSmoother()
+        runFrames { samples, _ ->
+            onSamples(FloatArray(2048) { samples[it+2048]/32768f })
+            onPitch(smoother.update(YinTuner.estimate(samples,22050,a4Hz),a4Hz))
+        }
+    }
+
+    suspend fun runFrames(onFrame: suspend (ShortArray,Long) -> Unit) =
         withContext(Dispatchers.IO) {
             val rate = 22050
             val minimum = AudioRecord.getMinBufferSize(
@@ -44,8 +52,8 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
             }
             active = recorder
             val samples = ShortArray(4096)
-            val smoother = PitchSmoother()
             var received = 0
+            var totalSamples=0L
             try {
                 currentCoroutineContext().ensureActive()
                 recorder.startRecording()
@@ -60,15 +68,12 @@ class MicrophoneCapture(private val context: Context) : AutoCloseable {
                     check(count >= 0) { "Microphone read failed (AudioRecord error $count)" }
                     if (count == 0) continue
                     received += count
+                    totalSamples += count
                     if (received == samples.size) {
-                        // Feed the same microphone frames to the real-time
-                        // visualizer; a pitch reading alone has no spectrum.
-                        onSamples(FloatArray(2048) { samples[it + 2048] / 32768f })
-                        val reading = YinTuner.estimate(samples, rate, a4Hz)
                         currentCoroutineContext().ensureActive()
-                        onPitch(smoother.update(reading, a4Hz))
-                        System.arraycopy(samples, 2048, samples, 0, 2048)
-                        received = 2048
+                        onFrame(samples.copyOf(),totalSamples*1_000_000/rate)
+                        System.arraycopy(samples,1024,samples,0,3072)
+                        received = 3072
                     }
                 }
             } finally { close() }

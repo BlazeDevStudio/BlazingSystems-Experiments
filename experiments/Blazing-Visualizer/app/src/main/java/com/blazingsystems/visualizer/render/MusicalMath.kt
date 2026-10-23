@@ -2,7 +2,7 @@ package com.blazingsystems.visualizer.render
 
 import kotlin.math.*
 
-enum class MathVisualMode { LISSAJOUS, ORBITS, WAVES }
+enum class MathVisualMode { LISSAJOUS, ORBITS, WAVES, CHORD_3D, RHYTHM, RADIAL }
 data class CurvePoint(val x: Double, val y: Double)
 
 /** Equal temperament; visual phase is intentionally slowed, never used to retune audio. */

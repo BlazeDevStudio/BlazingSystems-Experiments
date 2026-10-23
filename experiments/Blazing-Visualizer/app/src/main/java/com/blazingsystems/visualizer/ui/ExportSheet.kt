@@ -97,13 +97,13 @@ fun ExportSheet(
         Text("Frame filling", fontWeight = FontWeight.SemiBold)
         Row(Modifier.horizontalScroll(rememberScrollState())) {
             listOf(
+                ExportFrameMode.OPTIMIZE to "Optimize note layout",
                 ExportFrameMode.COVER to "Fill screen · crop edges",
                 ExportFrameMode.CONTAIN to "Fit entire scene",
                 ExportFrameMode.STRETCH to "Stretch to frame",
-                ExportFrameMode.OPTIMIZE to "Optimize note layout",
             ).forEach { (mode, label) ->
                 FilterChip(
-                    selected = (s.project?.exportFrameMode ?: ExportFrameMode.COVER) == mode,
+                    selected = (s.project?.exportFrameMode ?: ExportFrameMode.OPTIMIZE) == mode,
                     onClick = { model.setExportFrameMode(mode) },
                     label = { Text(label) },
                     modifier = Modifier.padding(end = 8.dp),

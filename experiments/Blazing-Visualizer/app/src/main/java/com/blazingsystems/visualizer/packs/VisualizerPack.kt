@@ -261,6 +261,9 @@ class NativePackCodec {
             require(scene.pianoIntensity.isFinite() && scene.pianoIntensity in 0f..2f)
             require(scene.designAspect.isFinite() && scene.designAspect in .1f..10f)
             require(scene.aveeAudio.toString().length <= 4096)
+            require(scene.aveeCompositionCount in 0..8)
+            scene.originalAvee?.let { require(it.toString().length<=768*1024) }
+            scene.aveeRenderAspect?.let { require(it.isFinite() && it in .1f..10f) }
             require(scene.backgroundColor.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")))
             scene.paletteColor?.let { require(it.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))) }
             scene.layers.forEach { layer ->
@@ -276,6 +279,7 @@ class NativePackCodec {
                     "Invalid transform"
                 }
                 require(layer.properties.toString().length <= 16384 && layer.name.length <= 200)
+                require(layer.avee.toString().length<=32768 && layer.composition in 0..7)
                 layer.properties["asset"]?.jsonPrimitive?.content?.let(::safePath)
                 require(
                     layer.bindings.all {
@@ -337,8 +341,8 @@ object AveePresetAdapter {
         val layers = mutableListOf<Layer>()
         var audioProvider = JsonObject(emptyMap())
         var providerCount = 0
-        if (compositions.size != 1) unsupported += "Multiple compositions / offscreen passes"
-        for (composition in compositions) for (element in
+        require(compositions.size in 1..8) { "Up to eight composition passes are supported" }
+        for ((compositionIndex,composition) in compositions.withIndex()) for (element in
             composition.jsonObject["elements"]?.jsonArray ?: JsonArray(emptyList())) {
             val item = element.jsonObject
             fun value(key: String) = item[key]?.let {
@@ -352,13 +356,15 @@ object AveePresetAdapter {
                 providerCount++
                 if (providerCount == 1) {
                     audioProvider = buildJsonObject {
-                        listOf("sampleProvider", "sampleOutCount", "lowerHz", "higherHz",
+                        listOf("sampleProvider", "sampleOutCount", "lowerHz", "higherHz", "audioDurationMs",
                             "hzLinearFactor", "smooth", "filterRadius", "filterStrength",
-                            "lowerFreqMagnitude", "outputMultiplier", "beatSmooth").forEach { key ->
+                            "lowerFreqMagnitude", "outputMultiplier", "beatSmooth", "freqShift",
+                            "mirrorSamples", "repeatSamples", "starAndEndGap", "beatRangeBarFirst",
+                            "beatRangeBarLast", "beatRangeValueLower", "beatRangeValueHigher").forEach { key ->
                             value(key)?.let { if (it is JsonPrimitive) put(key, it) }
                         }
                     }
-                    supported += "AudioProvider FFT band mapping and response parameters"
+                    supported += "AudioProvider frequency mapping and response parameters"
                 } else unsupported += "Multiple AudioProvider routing is approximated"
                 continue
             }
@@ -373,9 +379,10 @@ object AveePresetAdapter {
                     "Bars", "Spectrum", "Spectrum2", "RoundBars", "SharpBars" -> ElementType.SPECTRUM
                     "BlurEffect" -> ElementType.BLUR
                     "MotionBlurEffect" -> {
-                        unsupported += "Temporal motion blur approximated by a glow"
+                        unsupported += "Motion blur uses current-frame copies, without temporal feedback"
                         ElementType.BLUR
                     }
+                    "RgbSplitEffect", "MirrorEffect" -> ElementType.BLUR
                     "Waveform" -> ElementType.WAVEFORM
                     "Particles" -> ElementType.PARTICLES
                     else -> {
@@ -426,6 +433,9 @@ object AveePresetAdapter {
             val properties = buildJsonObject {
                 value("text")?.let { put("text", it) }
                 value("fontSize")?.let { put("fontSize", it) }
+                listOf("heightScale","minHeightScale","maxHeightScale","flipInput").forEach { key ->
+                    (value(key) as? JsonPrimitive)?.let { put(key,it) }
+                }
                 (value("color") as? JsonPrimitive)?.content?.let { encoded ->
                     val normalized = when {
                         encoded.matches(Regex("#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) -> encoded
@@ -446,7 +456,7 @@ object AveePresetAdapter {
                             val file = File(assets, relative)
                             if (file.isFile) AssetChecks.validateImage(file) else missing += path
                             put("asset", relative)
-                        } else {
+                        } else if(!path.startsWith("internalres:") && !path.startsWith("composition:")) {
                             unsupported += "Image resource $path"
                             missing += path
                         }
@@ -468,6 +478,11 @@ object AveePresetAdapter {
                         put("sides", (sides as? JsonPrimitive)?.intOrNull?.coerceIn(3, 24) ?: 5)
                     }
                     val segment = item["Segment1"] as? JsonObject
+                    listOf("barHeightMultiplier","mirror").forEach { key ->
+                        val raw=segment?.get(key)
+                        val v=if(raw is JsonObject) raw["v"] else raw
+                        if(v is JsonPrimitive) put(key,v)
+                    }
                     (segment?.get("v") as? JsonPrimitive)?.content?.let {
                         put("segment", it)
                     }
@@ -499,6 +514,8 @@ object AveePresetAdapter {
             supported += "$type static transform and visibility"
             layers +=
                 Layer(
+                    avee = item,
+                    composition = compositionIndex,
                     type = native,
                     name = item["_name"]?.jsonPrimitive?.content ?: type,
                     visible = when ((value("visible") as? JsonPrimitive)?.content?.lowercase()) {
@@ -515,10 +532,24 @@ object AveePresetAdapter {
                         ),
                     properties = properties,
                 )
+            val second=item["Segment2"] as? JsonObject
+            val secondType=(second?.get("v") as? JsonPrimitive)?.content
+            if(native==ElementType.SPECTRUM && second!=null && secondType!=null && secondType!="None") {
+                val p=properties.toMutableMap()
+                p["segment"]=JsonPrimitive(secondType)
+                for((key,target) in listOf("colorFrom" to "color","colorTo" to "colorTo",
+                    "barWidth" to "barWidth","barHeightMultiplier" to "barHeightMultiplier","mirror" to "mirror")) {
+                    val raw=second[key];val v=(if(raw is JsonObject) raw["v"] else raw) as? JsonPrimitive ?: continue
+                    p[target]=if(key.startsWith("color")) JsonPrimitive(v.longOrNull?.let { "#%08X".format(it.toInt()) } ?: v.content) else v
+                }
+                layers+=layers.last().copy(id=UUID.randomUUID().toString(),name=layers.last().name+" / Segment 2",properties=JsonObject(p))
+            }
          }
+        require(layers.size<=128) { "Avee preset exceeds 128 rendered layers" }
         unsupported += "Avee font metrics, blending and DSP may look different"
         return ImportResult(
-            Scene(name = "Imported Avee preset", layers = layers, aveeAudio = audioProvider),
+            Scene(name = "Imported Avee preset", layers = layers, aveeAudio = audioProvider,
+                originalAvee = root, aveeCompositionCount = compositions.size),
             assets,
             CompatibilityReport(supported, unsupported.distinct(), missing.distinct()),
         )
