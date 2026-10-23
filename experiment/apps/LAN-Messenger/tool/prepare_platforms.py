@@ -127,8 +127,8 @@ if (runner.exists():
     if cmake.exists():
         code = cmake.read_text(encoding='utf-8')
         if 'windows_call_toast.cpp' not in code:
-            code += '\n# Native, non-activating draggable call HUD.\n' \\
-                    'target_sources(${BINARY_NAME} PRIVATE "windows_call_toast.cpp")\n'
+            code += ('\n# Native, non-activating draggable call HUD.\n'
+                     'target_sources(${BINARY_NAME} PRIVATE "windows_call_toast.cpp")\n')
         cmake.write_text(code, encoding='utf-8')
 
 # Flutter create may scaffold a demo widget_test referencing MyApp. This is
