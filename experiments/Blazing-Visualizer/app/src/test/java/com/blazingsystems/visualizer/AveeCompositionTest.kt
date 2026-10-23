@@ -84,4 +84,22 @@ class AveeCompositionTest {
             image.recycle()
         } finally { root.deleteRecursively() }
     }
+    @Test fun explicitImageReplacementOverridesInternalAndCompositionSources() {
+        val root=Files.createTempDirectory("image-override").toFile()
+        try {
+            val replacement=Bitmap.createBitmap(8,8,Bitmap.Config.ARGB_8888)
+            replacement.eraseColor(Color.GREEN)
+            root.resolve("replacement.png").outputStream().use { replacement.compress(Bitmap.CompressFormat.PNG,100,it) }
+            replacement.recycle()
+            for(source in listOf("internalres:white","composition:1")) {
+                val imageLayer=Layer(type=ElementType.IMAGE,avee=raw(source),
+                    properties=buildJsonObject { put("asset","replacement.png") })
+                val child=Layer(type=ElementType.IMAGE,composition=1,avee=raw("internalres:white","#FFFF0000"))
+                val scene=Scene(layers=listOf(imageLayer,child),originalAvee=buildJsonObject {},aveeCompositionCount=2)
+                val image=Bitmap.createBitmap(120,120,Bitmap.Config.ARGB_8888)
+                ScenePainter(root).use { it.draw(Canvas(image),SceneEvaluator.evaluate(scene,FeatureFrame(0),0),120,120) }
+                assertEquals(source,Color.GREEN,image.getPixel(60,60));image.recycle()
+            }
+        } finally { root.deleteRecursively() }
+    }
 }

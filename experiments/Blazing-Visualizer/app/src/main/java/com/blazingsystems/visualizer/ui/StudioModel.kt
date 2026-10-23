@@ -499,7 +499,7 @@ class StudioModel @JvmOverloads constructor(
         microphone = capture
         val generation = ++tunerGeneration
         val tracker=LiveNoteTracker(22050,a4Hz)
-        var liveBank: Spectrum2Analyzer?=null
+        val liveBank=LiveSpectrum2()
         tunerRunning.value = true
         microphoneFeatures.value=FeatureFrame(0)
         microphoneJob = viewModelScope.launch {
@@ -509,11 +509,8 @@ class StudioModel @JvmOverloads constructor(
                     var features=frame.features
                     val profile=state.value.scene.aveeAudio
                     if(profile["sampleProvider"]?.jsonPrimitive?.content=="Spectrum2") {
-                        if(liveBank?.settings!=profile) liveBank=Spectrum2Analyzer(profile)
-                        val bank=liveBank!!
-                        val pcm=FloatArray(bank.inputCount) { i -> samples.getOrElse(samples.size-bank.inputCount+i){0}/32768f }
-                        val bars=bank.analyze(pcm)
-                        features=features.copy(aveeSpectrum=bars,beat=bank.beat(bars))
+                        val (bars,beat)=liveBank.update(samples,time,profile)
+                        features=features.copy(aveeSpectrum=bars,beat=beat)
                     }
                     withContext(Dispatchers.Main.immediate) {
                         if(generation==tunerGeneration) {
