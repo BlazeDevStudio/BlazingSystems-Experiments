@@ -4,6 +4,8 @@ Updated 23 October 2026 (Asia/Manila). Continue this existing Android app; do no
 
 ## Preview 4 continuation: validation in progress
 
+Latest checkpoint `b06753140bcc8b5f476edfebd4e4c1b5ea9866f1`, [run39962875776](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39962875776): clean host XML confirms118 tests/20 suites with zero failures/errors/skips; lint and both APK assemblies pass. API36 passes30 general cases plus1 independent permission case. API26 passes its permission case and25 general cases, then reaches the25-minute limit while creating the color-video input for `readerUsesSourceTimeAndReturnsRotatedBoundedFrames`. Its partial logs show the fixture encoder started, but no EOS/stop or reader progress. No assertion failed; the remaining5 cases are unverified. Publisher39962875773 correctly blocked release. Fixed original synthetic red/green videos at rotation0/90 replace this live test setup next; production decoder/EGL code and all existing assertions are retained. Complete exact-source checks must pass again before release.
+
 The unreleased `1879d577d5cbd626fd1ddf993cd975fcc9b0eac7` implements the approved mixed-media/fast-notes plan: multi-select audio/video, one synchronized Media3 video background, source-time video in MP4 output, silent-video support, and temporary bounded note estimates before whole-file Basic Pitch finishes. It is not yet a verified release.
 
 Its original validation `39920860762` passed 118 host tests, lint/APK and API26, but API36 failed the existing EGL target-survival test. The publisher correctly blocked Preview4. Fresh review also found collapsed audio timestamps and truncated video duration when video audio starts late, has gaps, or ends early.
