@@ -11,7 +11,7 @@
 // main Flutter window, even when the main app was minimized to tray.
 class WindowsCallToast {
  public:
-  explicit WindowsCallToast(flutter::BinaryMessenger* messenger);
+  explicit WindowsCallToast(flutter::BinaryMessenger* messenger, HWND main_window);
   ~WindowsCallToast();
   WindowsCallToast(const WindowsCallToast&) = delete;
   WindowsCallToast& operator=(const WindowsCallToast&) = delete;
@@ -20,6 +20,7 @@ class WindowsCallToast {
   using MethodChannel = flutter::MethodChannel<flutter::EncodableValue>;
   std::unique_ptr<MethodChannel> channel_;
   HWND hwnd_ = nullptr;
+  HWND main_window_ = nullptr;
   HWND buttons_[3] = {};
   std::wstring caller_;
   std::string call_id_;
