@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   AppSettings settings = AppSettings();
   final Alerts alerts = Alerts();
   static const _notifications = MethodChannel('lan_messenger/notifications');
+  static const _desktopCalls = MethodChannel('lan_messenger/desktop_call');
   bool showSettings = false;
   bool backgroundRunning = false;
   bool _exitRequested = false;
@@ -67,6 +68,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
   bool? _pendingIncomingDecision;
+  Completer<bool>? _incomingAnswer;
+  Peer? _incomingPeer;
+  bool _incomingVideo = false;
+  bool _nativeIncomingAvailable = false;
+  String? _activeCallUiId;
+  bool? _lastNativeMuted;
+  bool _compactWindowsVideo = false;
+  bool _restoringCompactWindow = false;
+  Size? _normalWindowSize;
+  Offset? _normalWindowPosition;
+  bool _normalWindowWasVisible = true;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -76,24 +88,59 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (Platform.isAndroid) {
       _notifications.setMethodCallHandler(_handleNativeCallAction);
     }
+    if (Platform.isWindows) {
+      _desktopCalls.setMethodCallHandler(_handleDesktopCallAction);
+    }
     unawaited(_initialize());
   }
 
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
-    if (call.method != 'callAction' || !mounted || !_incomingDialogOpen) return;
+    if (call.method != 'callAction' || !mounted) return;
     final data = call.arguments;
     if (data is! Map) return;
     final id = data['callId'];
     final action = data['action'];
-    if (id is! String || id != intercom?.callId ||
-        (action != 'answer' && action != 'decline')) return;
-    _resolveIncomingDialog(action == 'answer');
+    if (id is! String || id != intercom?.callId) return;
+    if (action == 'answer' || action == 'decline') {
+      _resolveIncomingDialog(action == 'answer');
+    } else if (!_incomingDialogOpen) {
+      if (action == 'end') {
+        unawaited(intercom?.hangUp() ?? Future<void>.value());
+      } else if (action == 'mute') {
+        unawaited(intercom?.setMuted(!(intercom?.muted ?? false)) ??
+            Future<void>.value());
+      } else if (action == 'open') {
+        unawaited(_openCallThread());
+      }
+    }
+  }
+
+  Future<dynamic> _handleDesktopCallAction(MethodCall call) async {
+    if (call.method != 'callAction' || !mounted) return;
+    final data = call.arguments;
+    if (data is! Map || data['callId'] != intercom?.callId) return;
+    final action = data['action'];
+    if (action == 'answer' || action == 'decline') {
+      _resolveIncomingDialog(action == 'answer');
+    } else if (action == 'open') {
+      unawaited(_openCallThread());
+    } else if (!_incomingDialogOpen && action == 'end') {
+      unawaited(intercom?.hangUp() ?? Future<void>.value());
+    } else if (!_incomingDialogOpen && action == 'mute') {
+      unawaited(intercom?.setMuted(!(intercom?.muted ?? false)) ??
+          Future<void>.value());
+    }
   }
 
   void _resolveIncomingDialog(bool answered) {
     if (!_incomingDialogOpen) return;
     // A system banner or tray action may arrive before the Flutter dialog has
     // completed its first frame; retain the answer until its route is ready.
+    final decision = _incomingAnswer;
+    if (decision != null && !decision.isCompleted) {
+      decision.complete(answered);
+      return;
+    }
     _pendingIncomingDecision = answered;
     _flushIncomingDecision();
   }
@@ -128,25 +175,43 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     catch (_) {}
   }
 
-  Future<void> _raiseIncomingWindow(Peer peer) async {
-    if (!Platform.isWindows) return;
+  Future<bool> _showDesktopIncoming(Peer peer, bool video) async {
+    if (!Platform.isWindows) return false;
     try {
-      await wm.windowManager.ensureInitialized();
-      await wm.windowManager.show();
-      await wm.windowManager.restore();
-      await wm.windowManager.setAlwaysOnTop(true);
-      await wm.windowManager.focus();
-      if (_trayInitialized) {
-        await tray.trayManager.setToolTip('Incoming call from ${peer.name}');
-        await tray.trayManager.setContextMenu(tray.Menu(items: [
-          tray.MenuItem(key: 'answer', label: 'Answer ${peer.name}'),
-          tray.MenuItem(key: 'decline', label: 'Decline call'),
-          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
-          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
-        ]));
+      return await _desktopCalls.invokeMethod<bool>('incoming', {
+        'callId': intercom?.callId ?? '',
+        'caller': peer.name,
+        'video': video,
+      }) ?? false;
+    } catch (_) {
+      // The tray remains usable if Windows refuses native popup creation.
+      return false;
+    }
+  }
+
+  Future<void> _dismissDesktopCall() async {
+    if (!Platform.isWindows) return;
+    try { await _desktopCalls.invokeMethod<void>('dismiss'); } catch (_) {}
+  }
+
+  Future<void> _showOngoingCall(Peer peer, String id, bool video) async {
+    final args = {
+      'caller': peer.name, 'callId': id,
+      'video': video, 'muted': intercom?.muted ?? false,
+    };
+    _activeCallUiId = id;
+    _lastNativeMuted = intercom?.muted;
+    if (Platform.isAndroid) {
+      try { await _notifications.invokeMethod<bool>('ongoing', args); }
+      catch (_) {}
+    } else if (Platform.isWindows) {
+      if (video) {
+        await _dismissDesktopCall();
+        await _openCompactVideoWindow();
+      } else {
+        try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
+        catch (_) {}
       }
-    } catch (e) {
-      if (mounted) setState(() => error = 'Could not raise incoming call window: $e');
     }
   }
 
