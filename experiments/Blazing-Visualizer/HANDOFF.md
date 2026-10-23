@@ -1,8 +1,10 @@
 # Blazing Visualizer handoff
 
-Updated 23 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
+Updated 24 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
 
 ## Preview 4 continuation: validation in progress
+
+24 October continuation: fixed-fixture checkpoint `5073c272`, run `39968524056`, passed 118 host tests/20 suites, lint/APK and API26's 30 general plus1 permission cases. API36 passed29/30 but timed out waiting for the first red video frame after an immediate paused seek, before the 800 ms seek was reached. Logs show an early decoder flush followed by missing SPS/PPS; the valid fixed input and assertions remain unchanged. A narrow renderer correction will recreate a decoder when a seek precedes its first output format, preserving the requested clock and fresh configuration. Publisher39968524038 correctly blocked release. See [Preview 4 evidence](docs/acceptance/preview-4-evidence.md) for exact jobs, artifacts and native timing. No Preview4 APK is verified yet.
 
 Latest checkpoint `b06753140bcc8b5f476edfebd4e4c1b5ea9866f1`, [run39962875776](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39962875776): clean host XML confirms118 tests/20 suites with zero failures/errors/skips; lint and both APK assemblies pass. API36 passes30 general cases plus1 independent permission case. API26 passes its permission case and25 general cases, then reaches the25-minute limit while creating the color-video input for `readerUsesSourceTimeAndReturnsRotatedBoundedFrames`. Its partial logs show the fixture encoder started, but no EOS/stop or reader progress. No assertion failed; the remaining5 cases are unverified. Publisher39962875773 correctly blocked release. Fixed original synthetic red/green videos at rotation0/90 replace this live test setup next; production decoder/EGL code and all existing assertions are retained. Complete exact-source checks must pass again before release.
 

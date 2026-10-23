@@ -10,7 +10,8 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        session = MediaSession.Builder(this, ExoPlayer.Builder(this).build()).build()
+        val player = ExoPlayer.Builder(this, StartupSafeRenderersFactory(this)).build()
+        session = MediaSession.Builder(this, player).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = session
