@@ -65,7 +65,87 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<void> _historyQueue = Future<void>.value();
 
   @override
-  void initState() { super.initState(); unawaited(_initialize()); }
+  void initState() {
+    super.initState();
+    if (Platform.isAndroid) {
+      _notifications.setMethodCallHandler(_handleNativeCallAction);
+    }
+    unawaited(_initialize());
+  }
+
+  Future<dynamic> _handleNativeCallAction(MethodCall call) async {
+    if (call.method != 'callAction' || !mounted || !_incomingDialogOpen) return;
+    final data = call.arguments;
+    if (data is! Map) return;
+    final id = data['callId'];
+    final action = data['action'];
+    if (id is! String || id != intercom?.callId ||
+        (action != 'answer' && action != 'decline')) return;
+    _resolveIncomingDialog(action == 'answer');
+  }
+
+  void _resolveIncomingDialog(bool answered) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dialog = _incomingDialogContext;
+      if (dialog != null && dialog.mounted && _incomingDialogOpen &&
+          ModalRoute.of(dialog)?.isCurrent == true) {
+        Navigator.of(dialog).pop(answered);
+      }
+    });
+  }
+
+  Future<bool> _showNativeIncoming(Peer peer, bool video) async {
+    if (!Platform.isAndroid || !settings.headsUpNotifications) return false;
+    try {
+      return await _notifications.invokeMethod<bool>('incoming', {
+        'caller': peer.name,
+        'callId': intercom?.callId ?? '',
+        'video': video,
+      }) ?? false;
+    } catch (_) { return false; }
+  }
+
+  Future<void> _dismissNativeIncoming() async {
+    if (!Platform.isAndroid) return;
+    try { await _notifications.invokeMethod<void>('dismissIncoming'); }
+    catch (_) {}
+  }
+
+  Future<void> _raiseIncomingWindow(Peer peer) async {
+    if (!Platform.isWindows) return;
+    try {
+      await wm.windowManager.ensureInitialized();
+      await wm.windowManager.show();
+      await wm.windowManager.restore();
+      await wm.windowManager.setAlwaysOnTop(true);
+      await wm.windowManager.focus();
+      if (_trayInitialized) {
+        await tray.trayManager.setToolTip('Incoming call from ${peer.name}');
+        await tray.trayManager.setContextMenu(tray.Menu(items: [
+          tray.MenuItem(key: 'answer', label: 'Answer ${peer.name}'),
+          tray.MenuItem(key: 'decline', label: 'Decline call'),
+          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+        ]));
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = 'Could not raise incoming call window: $e');
+    }
+  }
+
+  Future<void> _restoreWindowAfterCall() async {
+    if (!Platform.isWindows) return;
+    try {
+      await wm.windowManager.setAlwaysOnTop(false);
+      if (_trayInitialized) {
+        await tray.trayManager.setToolTip('LAN Messenger — Local network');
+        await tray.trayManager.setContextMenu(tray.Menu(items: [
+          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+        ]));
+      }
+    } catch (_) {}
+  }
 
   Future<void> _initialize() async {
     try {
@@ -129,14 +209,28 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
-        // Keep the in-app ringing loop until the call is answered or declined.\n        // A heads-up notification sound is only a short chime.\n        unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
-        _nativeNotify(incomingVideo ? 'video_call' : 'call', peer.name,
-            incomingVideo ? 'Incoming video call — tap to answer' : 'Incoming voice call — tap to answer');
+        if (Platform.isWindows) {
+          await _raiseIncomingWindow(peer);
+        }
+        // The Android system call banner owns notification audio; don't also
+        // loop an in-app ringtone or both systems will play simultaneously.
+        final nativeShown = await _showNativeIncoming(peer, incomingVideo);
+        if (!nativeShown) {
+          unawaited(alerts.ring(incomingVideo
+              ? AlertKind.videoCall : AlertKind.call));
+        }
         try {
-          return await _ask(title: incomingVideo ? 'Incoming video call' : 'Incoming call',
-              detail: '${peer.name} is calling.', allowText: 'Answer', incomingCall: true);
+          return await _ask(
+            title: incomingVideo ? 'Incoming video call' : 'Incoming voice call',
+            detail: '${peer.name} is calling.',
+            allowText: 'Answer',
+            incomingCall: true,
+          );
         } finally {
+          // Clearing all three paths also handles missed, declined and canceled calls.
+          await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
+          unawaited(_restoreWindowAfterCall());
           _incomingDialogOpen = false;
           _incomingDialogContext = null;
         }
@@ -240,7 +334,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   @override
   void onTrayMenuItemClick(tray.MenuItem item) {
-    if (item.key == 'exit') {
+    if (item.key == 'answer' || item.key == 'decline') {
+      _resolveIncomingDialog(item.key == 'answer');
+    } else if (item.key == 'exit') {
       unawaited(_exitWindows());
     } else if (item.key == 'open') {
       _openWindow();
@@ -754,6 +850,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     unawaited(intercom?.hangUp(notify: false) ?? Future<void>.value());
     unawaited(node?.dispose() ?? Future<void>.value());
     unawaited(alerts.dispose());
+    if (Platform.isAndroid) _notifications.setMethodCallHandler(null);
+    unawaited(_dismissNativeIncoming());
     if (_trayInitialized) {
       tray.trayManager.removeListener(this);
       unawaited(tray.trayManager.destroy());
