@@ -174,7 +174,7 @@ Future<String> previewDocument(File file, String ext) async {
     for (final entry in zip) {
       if (entry.name != name || !entry.isFile) continue;
       if (entry.size > 5 * 1024 * 1024) throw const FormatException('Document contains an oversized XML part');
-      return utf8.decode(entry.readBytes(), allowMalformed: true);
+      return utf8.decode(entry.readBytes() ?? <int>[], allowMalformed: true);
     }
     return null;
   }
