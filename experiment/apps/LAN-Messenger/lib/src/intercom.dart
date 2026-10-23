@@ -20,7 +20,8 @@ class Intercom {
   bool remoteControlActive = false;
   String? _approvedControllerId;
   DateTime? _controlDeadline;
-  DateTime? _lastInputAt;
+  DateTime? _lastMotionAt;
+  DateTime? _lastClickAt;
   Timer? _controlTimer;
   bool get remoteControlApproved => _approvedControllerId == talkingTo?.id &&
       _controlDeadline != null &&
@@ -484,9 +485,15 @@ class Intercom {
         'click' || 'right' || 'middle' => const Duration(milliseconds: 85),
         _ => Duration.zero,
       };
-      if (gap > Duration.zero && _lastInputAt != null &&
-          now.difference(_lastInputAt!) < gap) return;
-      _lastInputAt = now;
+      final previous = (action == 'move' || action == 'scroll')
+          ? _lastMotionAt : _lastClickAt;
+      if (gap > Duration.zero && previous != null &&
+          now.difference(previous) < gap) return;
+      if (action == 'move' || action == 'scroll') {
+        _lastMotionAt = now;
+      } else if (gap > Duration.zero) {
+        _lastClickAt = now;
+      }
       if (Platform.isWindows) {
         WindowsRemoteInput.perform(action, x.toDouble(), y.toDouble(),
             action == 'scroll' ? wheel as int : 0);
@@ -572,7 +579,8 @@ class Intercom {
     _controlDeadline = null;
     _controlTimer?.cancel();
     _controlTimer = null;
-    _lastInputAt = null;
+    _lastMotionAt = null;
+    _lastClickAt = null;
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
