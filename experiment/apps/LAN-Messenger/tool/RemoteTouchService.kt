@@ -4,7 +4,6 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.view.accessibility.AccessibilityEvent
-import android.content.res.Resources
 import android.os.Build
 
 /**
@@ -22,7 +21,7 @@ class RemoteTouchService : AccessibilityService() {
                 !normalizedX.isFinite() || !normalizedY.isFinite() ||
                 normalizedX < 0.0 || normalizedX > 1.0 ||
                 normalizedY < 0.0 || normalizedY > 1.0) return false
-            val metrics = Resources.getSystem().displayMetrics
+            val metrics = service.resources.displayMetrics
             val width = metrics.widthPixels
             val height = metrics.heightPixels
             if (width <= 1 || height <= 1) return false
