@@ -40,7 +40,7 @@ if manifest.exists():
     # Never exported, no hidden remote-control service or automatic enabling.
     accessibility = ('        <service android:name=".RemoteTouchService" '
                      'android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" '
-                     'android:exported="true">\\n'
+                     'android:exported="true">\n'
                      '            <intent-filter>\n'
                      '                <action android:name="android.accessibilityservice.AccessibilityService" />\n'
                      '            </intent-filter>\n'
