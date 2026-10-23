@@ -46,6 +46,10 @@ class Intercom {
     _controlTimer?.cancel();
     _controlTimer = null;
     remoteControlActive = false;
+    if (Platform.isAndroid && sharingScreen) {
+      unawaited(const MethodChannel('lan_messenger/remote')
+          .invokeMethod<void>('status', {'active': false}).catchError((_) {}));
+    }
     onChanged?.call();
     if (peer != null && id != null) {
       try { await node.signal(peer, {
@@ -388,6 +392,10 @@ class Intercom {
       }
       if (callId != id || talkingTo?.id != peer.id || !sharingScreen) return;
       _approvedControllerId = accepted ? peer.id : null;
+      if (Platform.isAndroid) {
+        unawaited(const MethodChannel('lan_messenger/remote')
+            .invokeMethod<void>('status', {'active': accepted}).catchError((_) {}));
+      }
       _controlDeadline = accepted
           ? DateTime.now().add(const Duration(minutes: 5)) : null;
       _controlTimer?.cancel();
