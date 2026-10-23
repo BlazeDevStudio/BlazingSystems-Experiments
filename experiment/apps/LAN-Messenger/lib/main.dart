@@ -215,6 +215,89 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Future<void> _openCompactVideoWindow() async {
+    if (!Platform.isWindows || _compactWindowsVideo) return;
+    try {
+      await wm.windowManager.ensureInitialized();
+      _normalWindowWasVisible = await wm.windowManager.isVisible();
+      _normalWindowSize = await wm.windowManager.getSize();
+      _normalWindowPosition = await wm.windowManager.getPosition();
+      if (await wm.windowManager.isMinimized()) {
+        // Restore only the app's own surface, without activating it.
+        await wm.windowManager.restore();
+      }
+      _compactWindowsVideo = true;
+      if (mounted) setState(() {});
+      await wm.windowManager.setMinimumSize(const Size(290, 230));
+      await wm.windowManager.setSize(const Size(358, 310));
+      await wm.windowManager.setAlignment(Alignment.bottomRight);
+      await wm.windowManager.setAlwaysOnTop(true);
+      await wm.windowManager.setSkipTaskbar(true);
+      // Unlike show(), show(inactive: true) deliberately does not take focus
+      // away from the current PC app (game, document, presenter etc.).
+      await wm.windowManager.show(inactive: true);
+    } catch (e) {
+      _compactWindowsVideo = false;
+      if (mounted) setState(() {
+        error = 'Could not open compact video viewer: $e';
+      });
+    }
+  }
+
+  Future<void> _restoreCompactVideo({bool forceOpen = false}) async {
+    if (!Platform.isWindows || !_compactWindowsVideo ||
+        _restoringCompactWindow) return;
+    _restoringCompactWindow = true;
+    _compactWindowsVideo = false;
+    if (mounted) setState(() {});
+    try {
+      await wm.windowManager.setAlwaysOnTop(false);
+      await wm.windowManager.setSkipTaskbar(false);
+      await wm.windowManager.setMinimumSize(const Size(0, 0));
+      if (_normalWindowSize != null) {
+        await wm.windowManager.setSize(_normalWindowSize!);
+      }
+      if (_normalWindowPosition != null) {
+        await wm.windowManager.setPosition(_normalWindowPosition!);
+      }
+      if (forceOpen || _normalWindowWasVisible) {
+        await wm.windowManager.show(inactive: !forceOpen);
+        if (forceOpen) await wm.windowManager.focus();
+      } else {
+        await wm.windowManager.hide();
+      }
+    } catch (_) {
+      // Do not interrupt a call if Windows rejects a geometry change.
+    } finally {
+      _normalWindowPosition = null;
+      _normalWindowSize = null;
+      _restoringCompactWindow = false;
+    }
+  }
+
+  Future<void> _openCallThread() async {
+    if (!mounted) return;
+    setState(() {
+      _callMinimized = true;
+      showSettings = false;
+      showReceived = false;
+      selected = intercom?.talkingTo ?? _incomingPeer ?? selected;
+    });
+    if (Platform.isWindows) {
+      if (_compactWindowsVideo) {
+        await _restoreCompactVideo(forceOpen: true);
+      } else {
+        _openWindow();
+      }
+    }
+  }
+
+  Future<void> _endCallPresentation() async {
+    await _dismissNativeIncoming();
+    await _dismissDesktopCall();
+    if (Platform.isWindows) await _restoreCompactVideo();
+  }
+
   Future<void> _restoreWindowAfterCall() async {
     if (!Platform.isWindows) return;
     try {
