@@ -187,6 +187,15 @@ class Intercom {
       await videoSenders.first.replaceTrack(display.getVideoTracks().first);
       _displayStream = display;
       sharingScreen = true;
+      // If Android stops MediaProjection or the desktop capturer ends,
+      // restore the camera instead of leaving the peer on a dead screen track.
+      display.getVideoTracks().first.onEnded = () {
+        if (!_closing && sharingScreen && identical(_displayStream, display)) {
+          unawaited(stopScreenShare().catchError((Object e) async {
+            await _log('automatic screen-share recovery error: $e');
+          }));
+        }
+      };
       localRenderer?.srcObject = display;
       onChanged?.call();
       await node.signal(talkingTo!, {
