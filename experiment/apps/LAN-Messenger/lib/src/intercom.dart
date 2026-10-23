@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:flutter/services.dart';
 import 'identity.dart';
 import 'node.dart';
 import 'protocol.dart';
@@ -13,6 +14,108 @@ class Intercom {
   bool video = false;
   bool connecting = false;
   bool muted = false;
+  bool sharingScreen = false;
+  MediaStream? _displayStream;
+  List<MediaDeviceInfo> availableCameras = <MediaDeviceInfo>[];
+  int activeCameraIndex = 0;
+  bool get canSwitchCamera => video && !sharingScreen &&
+      availableCameras.length > 1 && _localStream != null;
+
+  Future<void> refreshCameras() async {
+    try {
+      availableCameras = (await navigator.mediaDevices.enumerateDevices())
+          .where((device) => device.kind == 'videoinput').toList();
+      if (activeCameraIndex >= availableCameras.length) activeCameraIndex = 0;
+    } catch (e) {
+      availableCameras = <MediaDeviceInfo>[];
+      unawaited(_log('camera enumeration error: $e'));
+    }
+    onChanged?.call();
+  }
+
+  Future<void> switchCamera() async {
+    if (!canSwitchCamera || _closing) return;
+    final track = _localStream!.getVideoTracks().first;
+    final next = (activeCameraIndex + 1) % availableCameras.length;
+    final success = await Helper.switchCamera(
+        track, availableCameras[next].deviceId, _localStream);
+    if (!success) throw StateError('Camera switch is unsupported');
+    activeCameraIndex = next;
+    onChanged?.call();
+  }
+
+  Future<void> startScreenShare() async {
+    if (!video || _connection == null || _closing) {
+      throw StateError('Screen sharing requires an active video call');
+    }
+    if (sharingScreen) return;
+    // Request Android's system screen capture permission for every session.
+    if (Platform.isAndroid) {
+      final granted = await Helper.requestCapturePermission();
+      if (!granted) throw StateError('Screen sharing was declined');
+      await const MethodChannel('lan_messenger/projection')
+          .invokeMethod<void>('start');
+    }
+    MediaStream? display;
+    try {
+      display = await navigator.mediaDevices.getDisplayMedia({
+        'audio': false, 'video': {'frameRate': 12},
+      });
+      if (_closing || _connection == null || talkingTo == null) {
+        throw StateError('The call ended while selecting a screen');
+      }
+      if (display.getVideoTracks().isEmpty) {
+        throw StateError('No screen video track available');
+      }
+      final senders = await _connection!.getSenders();
+      final videoSenders = senders.where((s) => s.track?.kind == 'video').toList();
+      if (videoSenders.isEmpty) throw StateError('Video sender unavailable');
+      await videoSenders.first.replaceTrack(display.getVideoTracks().first);
+      _displayStream = display;
+      sharingScreen = true;
+      localRenderer?.srcObject = display;
+      onChanged?.call();
+      await _log('screen share started');
+    } catch (e) {
+      if (display != null) {
+        for (final track in display.getTracks()) { track.stop(); }
+        await display.dispose();
+      }
+      if (Platform.isAndroid) {
+        try { await const MethodChannel('lan_messenger/projection')
+            .invokeMethod<void>('stop'); } catch (_) {}
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> stopScreenShare() async {
+    final stream = _displayStream;
+    if (!sharingScreen && stream == null) return;
+    sharingScreen = false;
+    _displayStream = null;
+    try {
+      if (_connection != null && _localStream != null &&
+          _localStream!.getVideoTracks().isNotEmpty) {
+        final senders = await _connection!.getSenders();
+        final videoSenders = senders.where((s) => s.track?.kind == 'video').toList();
+        if (videoSenders.isNotEmpty) {
+          await videoSenders.first.replaceTrack(_localStream!.getVideoTracks().first);
+        }
+      }
+      localRenderer?.srcObject = _localStream;
+    } finally {
+      if (stream != null) {
+        for (final track in stream.getTracks()) { track.stop(); }
+        await stream.dispose();
+      }
+      if (Platform.isAndroid) {
+        try { await const MethodChannel('lan_messenger/projection')
+            .invokeMethod<void>('stop'); } catch (_) {}
+      }
+      onChanged?.call();
+    }
+  }
   bool _closing = false;
   bool _remoteDescriptionReady = false;
   Future<void>? _shutdown;
@@ -56,6 +159,7 @@ class Intercom {
       return;
     }
     _localStream = stream;
+    if (video) unawaited(refreshCameras());
     await _log('media acquired');
     if (video) {
       localRenderer = RTCVideoRenderer();
@@ -116,6 +220,7 @@ class Intercom {
     callId = id;
     video = withVideo;
     muted = false;
+    sharingScreen = false;
     connecting = true;
     _remoteDescriptionReady = false;
     onChanged?.call();
@@ -155,6 +260,7 @@ class Intercom {
       video = data['video'] == true;
       connecting = true;
       muted = false;
+      sharingScreen = false;
       _remoteDescriptionReady = false;
       onChanged?.call();
       try {
@@ -246,6 +352,10 @@ class Intercom {
     _pendingIce.clear();
     final pc = _connection;
     final stream = _localStream;
+    final display = _displayStream;
+    _displayStream = null;
+    sharingScreen = false;
+    availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
     _connection = null;
@@ -277,6 +387,15 @@ class Intercom {
     } catch (e) { await _log('peer teardown error: $e'); }
     // Each resource is released independently; one native plugin failure must
     // not skip the remaining stream or video renderer cleanup.
+    if (display != null) {
+      for (final track in display.getTracks()) { track.stop(); }
+      try { await display.dispose().timeout(const Duration(seconds: 5)); }
+      catch (e) { await _log('display stream dispose error: $e'); }
+    }
+    if (Platform.isAndroid) {
+      try { await const MethodChannel('lan_messenger/projection')
+          .invokeMethod<void>('stop'); } catch (_) {}
+    }
     try { await stream?.dispose().timeout(const Duration(seconds: 5)); }
     catch (e) { await _log('stream dispose error: $e'); }
     try { if (local != null) { local.srcObject = null; await local.dispose(); } }
