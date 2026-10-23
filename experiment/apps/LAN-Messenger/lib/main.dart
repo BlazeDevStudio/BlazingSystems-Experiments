@@ -163,11 +163,11 @@ class _HomePageState extends State<HomePage> {
   Future<void> _sendFiles() async {
     final peer = node?.peers[selected?.id];
     if (node == null || peer == null || busy) return;
-    final result = await FilePicker.pickFiles(allowMultiple: true);
-    if (result == null) return;
+    final result = await FilePicker.pickFiles();
+    if (result.isEmpty) return;
     setState(() => busy = true);
     try {
-      for (final f in result.files) {
+      for (final f in result) {
         if (f.path == null) { _toast('This file could not be accessed.'); continue; }
         await node!.sendFile(peer, File(f.path!));
       }
