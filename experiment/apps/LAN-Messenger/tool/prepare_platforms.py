@@ -17,7 +17,6 @@ if manifest.exists():
         'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE',
         'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
         'android.permission.POST_NOTIFICATIONS',
-        'android.permission.USE_FULL_SCREEN_INTENT',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
                       if f'android:name="{p}"' not in text)
