@@ -15,6 +15,7 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -88,7 +89,7 @@ class MainActivity : FlutterActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun eventChannel(event: String): String = "lan_v024_" + event
+    private fun eventChannel(event: String): String = "lan_v026_" + event
 
     private fun createChannel(event: String) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -155,6 +156,11 @@ class MainActivity : FlutterActivity() {
             .setAutoCancel(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+        // Full screen intents are restricted by Android 14's user-controlled
+        // Special App Access, but enable a heads-up call banner when allowed.
+        if (Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()) {
+            b.setFullScreenIntent(openApp(), true)
+        }
         if (Build.VERSION.SDK_INT >= 31) {
             b.setStyle(Notification.CallStyle.forIncomingCall(
                 Person.Builder().setName(caller).build(), decline, answer))
@@ -201,6 +207,43 @@ class MainActivity : FlutterActivity() {
                 }
             } catch (e: Exception) { result.error("LAN_NOTIFY", e.message, null) }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/remote")
+            .setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "available" -> result.success(RemoteTouchService.active != null)
+                        "openAccessibilitySettings" -> {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            result.success(null)
+                        }
+                        "tap" -> result.success(RemoteTouchService.tap(
+                            (call.argument<Number>("x") ?: 0.0).toDouble(),
+                            (call.argument<Number>("y") ?: 0.0).toDouble()))
+                        "openCallSettings" -> {
+                            if (Build.VERSION.SDK_INT >= 26) {
+                                startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                    .putExtra(Settings.EXTRA_CHANNEL_ID, eventChannel("call")))
+                            } else {
+                                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:$packageName")))
+                            }
+                            result.success(null)
+                        }
+                        "openFullScreenSettings" -> {
+                            if (Build.VERSION.SDK_INT >= 34) {
+                                startActivity(Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
+                                    Uri.parse("package:$packageName")))
+                            } else {
+                                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:$packageName")))
+                            }
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) { result.error("LAN_REMOTE", e.message, null) }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/projection")
             .setMethodCallHandler { call, result ->
                 try {
