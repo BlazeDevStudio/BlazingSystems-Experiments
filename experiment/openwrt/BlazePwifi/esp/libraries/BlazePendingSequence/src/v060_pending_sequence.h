@@ -32,15 +32,21 @@ static inline uint32_t bp_pending_sequence_checksum(const BpPendingSequence *s) 
     return h;
 }
 
+/* The persisted nonce[17] / target[33] fields may be corrupt and lack NUL.
+ * Read at most max_len+1 bytes (including the final terminator slot) so a
+ * forged checksum cannot make validation scan beyond the fixed-size field. */
 static inline int bp_pending_sequence_hex_token(const char *s, size_t min_len,
                                                 size_t max_len) {
-    size_t i, n = s ? strlen(s) : 0;
-    if (n < min_len || n > max_len) return 0;
-    for (i = 0; i < n; ++i)
-        if (!((s[i] >= '0' && s[i] <= '9') ||
-              (s[i] >= 'a' && s[i] <= 'f') ||
-              (s[i] >= 'A' && s[i] <= 'F'))) return 0;
-    return 1;
+    size_t i;
+    if (!s || min_len > max_len) return 0;
+    for (i = 0; i < max_len; ++i) {
+        unsigned char c = (unsigned char)s[i];
+        if (c == 0) return i >= min_len;
+        if (!((c >= '0' && c <= '9') ||
+              (c >= 'a' && c <= 'f') ||
+              (c >= 'A' && c <= 'F'))) return 0;
+    }
+    return s[max_len] == '\0';
 }
 
 static inline void bp_pending_sequence_seal(BpPendingSequence *s) {
