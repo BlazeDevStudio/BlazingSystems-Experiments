@@ -23,12 +23,40 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Host suite with bounded JVM diagnostics
-        run: timeout --signal=QUIT --kill-after=30s 7m ./gradlew clean :app:testDebugUnitTest --no-daemon --console=plain --stacktrace --info
+      - name: Host suite with worker thread dumps and runtime-download logging
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          mkdir -p host-diagnostics
+          cat > host-diagnostics/logging.init.gradle <<'GRADLE'
+          allprojects {
+            tasks.withType(Test).configureEach {
+              systemProperty 'robolectric.logging.enabled', 'true'
+            }
+          }
+          GRADLE
+          ./gradlew clean :app:testDebugUnitTest --no-daemon --console=plain --stacktrace --info --init-script host-diagnostics/logging.init.gradle &
+          avee_build_pid=$!
+          (
+            sleep 120
+            while kill -0 "$avee_build_pid" 2>/dev/null; do
+              for avee_jvm in $(jcmd -l | awk '/GradleWorkerMain/ {print $1}'); do
+                jcmd "$avee_jvm" Thread.print > "host-diagnostics/threads-$avee_jvm-$(date +%s).txt" 2>&1 || true
+              done
+              sleep 60
+            done
+          ) &
+          avee_watch_pid=$!
+          set +e
+          wait "$avee_build_pid"
+          avee_status=$?
+          kill "$avee_watch_pid" 2>/dev/null || true
+          exit "$avee_status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: visualizer-host-diagnostics
           path: |
+            experiments/Blazing-Visualizer/host-diagnostics/
             experiments/Blazing-Visualizer/app/build/reports/
             experiments/Blazing-Visualizer/app/build/test-results/
