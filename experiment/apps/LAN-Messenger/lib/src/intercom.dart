@@ -21,6 +21,8 @@ class Intercom {
   String? _approvedControllerId;
   DateTime? _controlDeadline;
   DateTime? _lastInputAt;
+  DateTime? _lastMovementAt;
+  DateTime? _lastScrollAt;
   Timer? _controlTimer;
   bool get remoteControlApproved => _approvedControllerId == talkingTo?.id &&
       _controlDeadline != null &&
@@ -58,13 +60,37 @@ class Intercom {
     }
   }
 
-  Future<void> sendRemoteClick(double x, double y) async {
+  Future<void> sendRemoteClick(double x, double y,
+      {String button = 'left', bool atPointer = false}) async {
     final peer = talkingTo;
     if (!remoteControlActive || !peerSharingScreen ||
         peer == null || callId == null ||
-        !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
+        !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1 ||
+        !const {'left', 'right', 'middle'}.contains(button)) return;
     await node.signal(peer, {
       'type': 'control-click', 'callId': callId, 'x': x, 'y': y,
+      'button': button, 'atPointer': atPointer,
+    });
+  }
+
+  Future<void> sendRemotePointerMove(double dx, double dy) async {
+    final peer = talkingTo;
+    if (!remoteControlActive || !peerSharingScreen ||
+        peer == null || callId == null ||
+        !dx.isFinite || !dy.isFinite ||
+        dx.abs() > 0.5 || dy.abs() > 0.5) return;
+    await node.signal(peer, {
+      'type': 'control-move', 'callId': callId, 'dx': dx, 'dy': dy,
+    });
+  }
+
+  Future<void> sendRemoteScroll(double steps) async {
+    final peer = talkingTo;
+    if (!remoteControlActive || !peerSharingScreen ||
+        peer == null || callId == null ||
+        !steps.isFinite || steps.abs() > 10) return;
+    await node.signal(peer, {
+      'type': 'control-scroll', 'callId': callId, 'steps': steps,
     });
   }
 
@@ -139,6 +165,13 @@ class Intercom {
       if (display.getVideoTracks().isEmpty) {
         throw StateError('No screen video track available');
       }
+      // Windows WebRTC can return a track whose native desktop capturer
+      // never produced a frame. Test the capture before replacing the working
+      // camera sender so failures cannot leave the remote call blank.
+      await _verifyDisplayFrames(display);
+      if (_closing || _connection == null || talkingTo == null) {
+        throw StateError('Call ended while screen capture was starting');
+      }
       final senders = await _connection!.getSenders();
       final videoSenders = senders.where((s) => s.track?.kind == 'video').toList();
       if (videoSenders.isEmpty) throw StateError('Video sender unavailable');
@@ -161,6 +194,28 @@ class Intercom {
             .invokeMethod<void>('stop'); } catch (_) {}
       }
       rethrow;
+    }
+  }
+
+  Future<void> _verifyDisplayFrames(MediaStream display) async {
+    final probe = RTCVideoRenderer();
+    await probe.initialize();
+    try {
+      probe.srcObject = display;
+      for (var attempt = 0; attempt < 18; attempt++) {
+        if (_closing || talkingTo == null) {
+          throw StateError('Call ended during screen share');
+        }
+        if (probe.videoWidth > 0 && probe.videoHeight > 0) return;
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      await _log('display capture produced no frames after 4.5 seconds');
+      throw StateError('Screen capture is blank. Select a physical display, '
+          'check Windows Graphics Capture permissions and try again. '
+          'The camera call was kept active.');
+    } finally {
+      probe.srcObject = null;
+      await probe.dispose();
     }
   }
 
@@ -421,6 +476,28 @@ class Intercom {
       onChanged?.call();
       return;
     }
+    if (type == 'control-move' || type == 'control-scroll') {
+      if (!Platform.isWindows || !sharingScreen ||
+          !remoteControlApproved || _approvedControllerId != peer.id) return;
+      final now = DateTime.now();
+      if (type == 'control-move') {
+        final dx = data['dx'], dy = data['dy'];
+        if (dx is! num || dy is! num || !dx.isFinite || !dy.isFinite ||
+            dx.abs() > 0.5 || dy.abs() > 0.5) return;
+        if (_lastMovementAt != null && now.difference(_lastMovementAt!) <
+            const Duration(milliseconds: 25)) return;
+        _lastMovementAt = now;
+        WindowsRemoteInput.moveRelative(dx.toDouble(), dy.toDouble());
+      } else {
+        final steps = data['steps'];
+        if (steps is! num || !steps.isFinite || steps.abs() > 10) return;
+        if (_lastScrollAt != null && now.difference(_lastScrollAt!) <
+            const Duration(milliseconds: 60)) return;
+        _lastScrollAt = now;
+        WindowsRemoteInput.scroll(steps.toDouble());
+      }
+      return;
+    }
     if (type == 'control-click') {
       if (!(Platform.isWindows || Platform.isAndroid) ||
           !sharingScreen || !remoteControlApproved ||
@@ -435,9 +512,17 @@ class Intercom {
       if (_lastInputAt != null &&
           now.difference(_lastInputAt!) < const Duration(milliseconds: 100)) return;
       _lastInputAt = now;
+      final button = data['button'] is String ? data['button'] as String : 'left';
+      if (!const {'left', 'right', 'middle'}.contains(button)) return;
       if (Platform.isWindows) {
-        WindowsRemoteInput.clickNormalized(x.toDouble(), y.toDouble());
+        if (data['atPointer'] == true) {
+          WindowsRemoteInput.clickPointer(button: button);
+        } else {
+          WindowsRemoteInput.clickNormalized(
+              x.toDouble(), y.toDouble(), button: button);
+        }
       } else if (Platform.isAndroid) {
+        if (button != 'left') return;
         await const MethodChannel('lan_messenger/remote').invokeMethod<bool>(
           'tap', {'x': x.toDouble(), 'y': y.toDouble()},
         ).catchError((_) => false);
@@ -519,6 +604,8 @@ class Intercom {
     _controlTimer?.cancel();
     _controlTimer = null;
     _lastInputAt = null;
+    _lastMovementAt = null;
+    _lastScrollAt = null;
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
