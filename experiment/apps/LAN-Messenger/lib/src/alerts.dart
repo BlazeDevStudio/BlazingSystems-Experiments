@@ -6,7 +6,8 @@ enum AlertKind { call, videoCall, message, file }
 /// Playback errors cannot break chat, transfer or WebRTC signaling.
 class Alerts {
   AudioPlayer? _ringer;
-  final AudioPlayer _effect = AudioPlayer();
+  // Avoid opening native audio handles until the first notification.
+  AudioPlayer? _effect;
   bool enabled = true;
 
   String _asset(AlertKind kind) => switch (kind) {
@@ -37,13 +38,15 @@ class Alerts {
   Future<void> notify(AlertKind kind) async {
     if (!enabled) return;
     try {
-      await _effect.stop();
-      await _effect.play(AssetSource(_asset(kind)));
+      final effect = _effect ??= AudioPlayer();
+      await effect.stop();
+      await effect.play(AssetSource(_asset(kind)));
     } catch (_) {}
   }
 
   Future<void> dispose() async {
     await stopRing();
-    await _effect.dispose();
+    await _effect?.dispose();
+    _effect = null;
   }
 }
