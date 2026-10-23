@@ -66,12 +66,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create lan-messenger-v0.2.1-preview.1 \
+          gh release create lan-messenger-v0.2.1-preview.2 \
             dist/LAN-Messenger-Android-v0.2.1-preview.apk \
             dist/LAN-Messenger-Windows-v0.2.1-preview.zip \
             dist/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "LAN Messenger v0.2.1 - Stability Preview" \
+            --title "LAN Messenger v0.2.1 - Stability Preview 2" \
             --notes-file dist/RELEASE-NOTES.md \
             --prerelease
