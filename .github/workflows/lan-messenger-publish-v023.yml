@@ -128,7 +128,8 @@ jobs:
           Verification: Android/Windows Flutter analyze/tests/release builds and APK structural signature/hash checks from CI: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39953968835
 
           **Still requiring physical test:** Samsung Android heads-up behavior, cross-device video/PDF performance on low-end PCs, desktop system startup toggle, profile persistence, motorcycle screen-off audio and headset routing.
-          EOF      - name: Publish immutable GitHub prerelease assets
+          EOF
+      - name: Publish immutable GitHub prerelease assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
