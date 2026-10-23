@@ -214,12 +214,53 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         }
         setState(() {});
       };
+      inter.onChooseDesktopSource = (sources) async {
+        if (!mounted || !Platform.isWindows) return null;
+        return showDialog<DesktopCapturerSource>(
+          context: context, barrierDismissible: true,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Choose screen to share'),
+            content: SizedBox(
+              width: 440, height: 300,
+              child: ListView.builder(
+                itemCount: sources.length,
+                itemBuilder: (context, i) {
+                  final source = sources[i];
+                  return ListTile(
+                    leading: Icon(source.type == SourceType.Screen
+                        ? Icons.monitor : Icons.web_asset),
+                    title: Text(source.name, maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                    subtitle: Text(source.type == SourceType.Screen
+                        ? 'Full display • Recommended'
+                        : 'Application window • May show black if minimized'),
+                    onTap: () => Navigator.of(dialogContext).pop(source),
+                  );
+                },
+              ),
+            ),
+            actions: [TextButton(onPressed:
+              () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'))],
+          ),
+        );
+      };
       inter.onRemoteControlRequest = (peer) async {
         if (!mounted || inter.talkingTo?.id != peer.id ||
-            !inter.sharingScreen || !Platform.isWindows) return false;
-        return _ask(title: 'Allow remote mouse control?',
-          detail: '${peer.name} requests temporary mouse control of your shared Windows screen. '
-              'Permission lasts up to 5 minutes. Stop sharing or revoke it at any time.',
+            !inter.sharingScreen) return false;
+        if (Platform.isAndroid) {
+          final available = await const MethodChannel('lan_messenger/remote')
+              .invokeMethod<bool>('available').catchError((_) => false);
+          if (available != true) {
+            _toast('Android remote control needs Accessibility permission. '
+                'Enable LAN Messenger Remote Touch in Android Accessibility settings.');
+            return false;
+          }
+        }
+        return _ask(title: 'Allow remote control?',
+          detail: '${peer.name} requests temporary control of your shared '
+              '${Platform.isAndroid ? "Android screen" : "Windows screen"}. '
+              'Permission lasts up to 5 minutes. Stop sharing or revoke at any time.',
           allowText: 'Allow for 5 minutes');
       };
       inter.onIncoming = (peer, incomingVideo) async {
@@ -374,6 +415,22 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       final path = settings.soundPaths[kind.name];
       if (path != null && path.isNotEmpty) alerts.customSounds[kind] = path;
     }
+  }
+
+  Future<void> _openAndroidAssistiveSettings() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await const MethodChannel('lan_messenger/remote')
+          .invokeMethod<void>('openAccessibilitySettings');
+    } catch (e) { _toast('Could not open Accessibility settings: $e'); }
+  }
+
+  Future<void> _openAndroidCallNotificationSettings() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await const MethodChannel('lan_messenger/remote')
+          .invokeMethod<void>('openCallSettings');
+    } catch (e) { _toast('Could not open call notification settings: $e'); }
   }
 
   void _nativeNotify(String kind, String title, String message) {
