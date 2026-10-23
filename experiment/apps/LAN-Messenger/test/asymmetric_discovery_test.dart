@@ -1,13 +1,20 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lan_messenger/src/identity.dart';
 import 'package:lan_messenger/src/node.dart';
 import 'package:lan_messenger/src/protocol.dart';
 
+class _RealSockets extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) => super.createHttpClient(context);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('encrypted first-contact message works with one-way peer discovery', () async {
+  test('encrypted first-contact message works with one-way peer discovery', () =>
+      HttpOverrides.runWithHttpOverrides(() async {
     final a = LanNode(Identity(await (await X25519().newKeyPair()).extract(), 'Android'));
     final b = LanNode(Identity(await (await X25519().newKeyPair()).extract(), 'PC-03'));
     await a.start();
@@ -28,5 +35,5 @@ void main() {
       await a.dispose();
       await b.dispose();
     }
-  });
+  }, _RealSockets()));
 }
