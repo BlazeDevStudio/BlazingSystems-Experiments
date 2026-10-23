@@ -186,7 +186,7 @@ class MainActivity : FlutterActivity() {
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setSilent(true)
+        if (Build.VERSION.SDK_INT >= 26) b.setSilent(true)
         val end = callAction("end", callId)
         if (Build.VERSION.SDK_INT >= 31) {
             b.setStyle(Notification.CallStyle.forOngoingCall(
