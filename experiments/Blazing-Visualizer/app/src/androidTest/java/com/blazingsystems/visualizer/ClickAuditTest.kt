@@ -94,7 +94,18 @@ class ClickAuditTest {
         rule.onNodeWithText("Save queue as playlist").performClick()
         rule.onNodeWithText("Save", useUnmergedTree = true).performClick()
         rule.waitUntil(10_000) { model().state.value.playlists.any { it.name == "My playlist" } }
+        // Wait for the Save dialog's dismissal before tapping the underlying
+        // navigation. An animated modal can swallow a premature click.
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithText("Save playlist", useUnmergedTree = true)
+                .fetchSemanticsNodes().isEmpty()
+        }
         rule.onNodeWithText("Library", useUnmergedTree = true).performClick()
+        rule.onNodeWithText("Your library").assertIsDisplayed()
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithText("Playlists", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithText("Playlists").assertExists()
         assertTrue(model().state.value.queue.any { it.uri == source.toString() })
         rule.onNodeWithContentDescription("Delete playlist").performClick()
@@ -136,6 +147,12 @@ class ClickAuditTest {
         openFixture()
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
         rule.onNodeWithContentDescription("Export video").performClick()
+        // The Material3 modal enters Compose semantics asynchronously.
+        // Keep the real-click assertion, but allow its entrance animation.
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithTag("export-sheet", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithTag("export-sheet").assertExists()
         rule.onNodeWithText("Composition preview at selected output shape").assertExists()
         rule.onNodeWithText("Fill screen · crop edges").performScrollTo().performClick()

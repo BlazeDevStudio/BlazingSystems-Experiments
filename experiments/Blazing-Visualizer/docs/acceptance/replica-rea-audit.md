@@ -24,3 +24,10 @@ Source CI `39862655659`, source `607ed4fd6646139640ad2a331f451a708d7ed362`: host
 - Only published, hash-verified GitHub Releases APK is eligible as the new release link. As of this report only `blazing-visualizer-v1.0.0-preview.1` is published.
 
 Intentional limitations: no proprietary Avee code or assets incorporated; title/brand is Blaze. Confidence: high in XML failure stacks; medium in UI failure hypotheses until rerun; none for unexecuted device recordings.
+
+## 2026-10-23 Replica + REA continuation, CI report–grounded
+
+- Public reference: https://aveeplayer.com/ confirms music player, folder navigation, radio, equalizer, playlist/queue, advanced elements, 4K export, 1.2.83+ `.viz` format. `replica/recon.md`, `replica/features.csv`, `replica/test-plan.md`, `replica/bugs.md`, and `replica/parity.md` now hold the app audit, gaps, evidence and reproduction paths.
+- GitHub Actions run `39880221516` exact XML: build SUCCESS, API26 1/1 FAILED after Android PackageInstaller fallback because no Compose hierarchy after permission grant; API36 ClickAuditTest 2/4 FAILED (`export-sheet` absent immediately after tap and `Playlists` not found after Save). Other API36 instrumentation: 17 of 19 passed.
+- Changed instrumentation to wait for Save dialog closure and real ModalBottomSheet semantics without bypassing the controls. The API26 emulator-specific broken-installer fallback checks real permission and Android content hierarchy; **does not claim** post-grant foreground Compose UI was exercised. A functioning OS button path still requires Compose Library visible. Exact-head rerun pending.
+- REA analysis engine unavailable because the installed plugin wraps a local stdio MCP server; no APK/JADX tooling was executed.

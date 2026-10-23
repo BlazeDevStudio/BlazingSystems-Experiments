@@ -1,0 +1,16 @@
+feature,area,priority,original,clone,notes
+Continuous next-track playback,Music player,must,yes,partial,Media3 queue and repeat-all source; emulator transitions require physical validation
+Search local audio library,Library,must,yes,partial,Compose search exists; API36 click coverage
+Queue and playlists,Library,must,yes,partial,Compose tests include create/delete; 2 API36 UI failures still under validation
+Browse music device folders,Library,should,yes,no,Official Avee website lists folder browsing; no equivalent documented Blaze UI
+Internet radio streaming,Player,could,yes,no,Not implemented in current Blaze source
+Built-in equalizer,Player,should,yes,no,Not implemented in current Blaze source
+Bluetooth and media transport controls,Player,should,yes,partial,Media3 session present but hardware button checks absent
+Import and edit .viz presets,Visualizer,must,yes,partial,JSON subset supports some nested Avee settings; full binary renderer unverified
+Audio-reactive layers and animations,Visualizer,must,yes,partial,FFT based independent renderer; exact modern effects fidelity unverified
+Custom note and chord identification,Blaze extension,must,no,partial,Feature requested by owner; YIN mic pitch is monophonic
+Mic on main visualizer,Blaze extension,must,no,partial,Live mic FFT/YIN source present; physical hardware unverified
+Portrait aspect video export,Video export,must,yes,partial,Cover contain optimize and stretch source; on-device output validation needed
+Variable output frame rate,Video export,should,yes,no,Blaze export fixed to 30 fps
+4K export,Video export,could,yes,no,Blaze supports documented 720p/1080p presets
+GIF and image layers,Visualizer,should,yes,partial,Images supported; animated GIF parity unverified
