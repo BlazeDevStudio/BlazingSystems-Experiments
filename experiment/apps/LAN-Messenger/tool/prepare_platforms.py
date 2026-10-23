@@ -26,7 +26,7 @@ if manifest.exists():
                'android:exported="false" android:foregroundServiceType="connectedDevice" />\n')
     if 'de.julianassmann.flutter_background.IsolateHolderService' not in text:
         text = text.replace('</application>', service + '    </application>', 1)
-    receiver = ('        <receiver android:name=".CallActionReceiver" android:exported="false" />\\n')
+    receiver = ('        <receiver android:name=".CallActionReceiver" android:exported="false" />\n')
     if 'android:name=".CallActionReceiver"' not in text:
         text = text.replace('</application>', receiver + '    </application>', 1)
     manifest.write_text(text, encoding='utf-8')
