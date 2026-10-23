@@ -245,6 +245,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ),
         );
       };
+      inter.onControlStatus = (message) {
+        if (mounted) _toast(message);
+      };
       inter.onRemoteControlRequest = (peer) async {
         if (!mounted || inter.talkingTo?.id != peer.id ||
             !inter.sharingScreen) return false;
