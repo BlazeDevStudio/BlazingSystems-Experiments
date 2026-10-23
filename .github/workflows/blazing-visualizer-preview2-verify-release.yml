@@ -1,0 +1,130 @@
+name: Verify and Publish Side-by-Side Preview 2 APK
+on:
+  push:
+    branches: [blazing-visualizer-preview2-install-fix]
+    paths: ['.github/workflows/blazing-visualizer-preview2-verify-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: blazing-visualizer-preview2-installfix-release
+  cancel-in-progress: false
+jobs:
+  verified-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm exact previously built package sources and successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git diff --quiet 28ef99380332ffaa401bab5bc863ce82ec657ca9 HEAD -- experiments/Blazing-Visualizer/app/build.gradle.kts experiments/Blazing-Visualizer/app/src/main/AndroidManifest.xml
+          gh api "repos/$GH_REPO/actions/runs/39893300859/jobs?per_page=100" > /tmp/original-jobs.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/original-jobs.json'))['jobs']
+          assert len([x for x in j if x['name']=='build' and x['conclusion']=='success'])==1, 'signed artifact source build not verified'
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: Blazing-Visualizer-side-by-side-APK
+          run-id: 39893300859
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Verify exact signed APK SHA-256 before reused device tests
+        run: |
+          set -euo pipefail
+          test -s candidate/Blazing-Visualizer-preview-2-side-by-side.apk
+          (cd candidate && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum candidate/Blazing-Visualizer-preview-2-side-by-side.apk | cut -d' ' -f1)" = 37e31f606e70354350532728913a7f84f89ab5a8727c45f13934cf09c7f6235f
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Blazing-Visualizer-side-by-side-candidate
+          path: candidate/
+  install:
+    needs: verified-apk
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 26
+            target: default
+          - api: 36
+            target: google_apis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: actions/download-artifact@v4
+        with:
+          name: Blazing-Visualizer-side-by-side-candidate
+          path: candidate
+      - name: Download Preview 1 for true side-by-side install verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release download blazing-visualizer-v1.0.0-preview.1 --dir candidate --pattern Blazing-Visualizer-preview-1.apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          ram-size: 3072M
+          heap-size: 512M
+          disable-animations: true
+          script: |
+            set -eu
+            adb install -r candidate/Blazing-Visualizer-preview-1.apk
+            adb install -r candidate/Blazing-Visualizer-preview-2-side-by-side.apk
+            adb shell pm path com.blazingsystems.visualizer | grep package:
+            adb shell pm path com.blazingsystems.visualizer.preview2 | grep package:
+            adb shell am start -n com.blazingsystems.visualizer.preview2/com.blazingsystems.visualizer.MainActivity
+            sleep 3
+            adb shell pidof com.blazingsystems.visualizer.preview2
+            adb shell pm path com.blazingsystems.visualizer | grep package:
+            echo 'Both Preview 1 and the side-by-side Preview 2 are installed, and Preview 2 launched.'
+  publish:
+    needs: [verified-apk, install]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: blazing-visualizer-v1.0.0-preview.2-installfix.1
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Blazing-Visualizer-side-by-side-candidate
+          path: dist
+      - name: Release APK only after both emulator installs and launch checks pass
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo 'Already published, refusing overwrite.'
+            exit 1
+          fi
+          cat > release-notes.md <<'NOTES'
+          Blazing Visualizer Preview 2 — Side-by-Side Install Fix.
+
+          For users seeing “App not installed” because Preview 1 and Preview 2 used incompatible signing identities. This install-fix APK has a distinct Android ID com.blazingsystems.visualizer.preview2 and a separate launcher label Blazing Visualizer P2. Preview 1 can remain installed, with its own settings and presets unchanged. This is the SAME Preview 2 app source with changed installer identity, not a new functional development release.
+
+          Both Preview 1 and this signed APK were installed side by side on Android 8/API26 and Android 16/API36 emulators before this release was published. The APK's exact SHA256 and retained Preview 2 debug certificate were verified in the build pipeline.
+
+          IMPORTANT: App data and custom presets do not automatically migrate between apps. Future standard-package updates will not update this temporary side-by-side copy. This is a preview test build, not a production-certified release.
+          NOTES
+          gh release create "$TAG" dist/Blazing-Visualizer-preview-2-side-by-side.apk dist/SHA256SUMS.txt --target "$GITHUB_SHA" --prerelease --title 'Blazing Visualizer Preview 2 — Side-by-Side Install Fix' --notes-file release-notes.md
+          mkdir verify
+          gh release download "$TAG" --dir verify --pattern '*.apk' --pattern SHA256SUMS.txt
+          cmp dist/Blazing-Visualizer-preview-2-side-by-side.apk verify/Blazing-Visualizer-preview-2-side-by-side.apk
+          cmp dist/SHA256SUMS.txt verify/SHA256SUMS.txt
+          echo "Verified direct URL: https://github.com/$GH_REPO/releases/download/$TAG/Blazing-Visualizer-preview-2-side-by-side.apk"
