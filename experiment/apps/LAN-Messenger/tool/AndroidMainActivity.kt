@@ -177,8 +177,25 @@ class MainActivity : FlutterActivity() {
     private fun showOngoingCall(caller: String, callId: String,
                                 video: Boolean, muted: Boolean): Boolean {
         if (!canNotify() || callId.isBlank()) return false
-        val b = builder(if (video) "video_call" else "call")
-            .setSmallIcon(android.R.drawable.ic_menu_call)
+        // Active calls must not play the incoming ringtone again.
+        // A separate low-importance channel preserves in-call actions without
+        // silently overriding the owner's high-priority incoming-call settings.
+        val b = if (Build.VERSION.SDK_INT >= 26) {
+            val channelId = "lan_v028_ongoing"
+            if (notifications.getNotificationChannel(channelId) == null) {
+                val channel = NotificationChannel(channelId,
+                    "LAN Messenger active calls", NotificationManager.IMPORTANCE_LOW)
+                channel.setSound(null, null)
+                notifications.createNotificationChannel(channel)
+            }
+            Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+                .setPriority(Notification.PRIORITY_LOW)
+                .setSound(null)
+        }
+        b.setSmallIcon(android.R.drawable.ic_menu_call)
             .setContentTitle(caller)
             .setContentText(if (muted) "Microphone muted" else
                 if (video) "Video call in progress" else "Voice call in progress")
@@ -186,7 +203,6 @@ class MainActivity : FlutterActivity() {
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-        if (Build.VERSION.SDK_INT >= 26) b.setSilent(true)
         val end = callAction("end", callId)
         if (Build.VERSION.SDK_INT >= 31) {
             b.setStyle(Notification.CallStyle.forOngoingCall(
