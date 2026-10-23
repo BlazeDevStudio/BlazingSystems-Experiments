@@ -46,6 +46,20 @@ class ReviewRegressionTest {
         assertTrue(b.edits.isEmpty())
     }
 
+    @Test fun oldMediaItemCannotCancelARequestedLibrarySelection() {
+        val old = SourceRef("old")
+        val chosen = SourceRef("chosen")
+        val next = SourceRef("next")
+        val coordinator = TrackCoordinator()
+        coordinator.begin(old.uri)
+        coordinator.expectPlayback(chosen.uri)
+        assertNull(coordinator.selectionFor(old.uri,listOf(old,chosen,next)))
+        assertEquals(chosen.uri,coordinator.selectedUri)
+        assertNull(coordinator.selectionFor(chosen.uri,listOf(old,chosen,next)))
+        // Once Media3 confirms the request, real automatic transitions still work.
+        assertEquals(next,coordinator.selectionFor(next.uri,listOf(old,chosen,next)))
+    }
+
     @Test
     fun correctionCannotCrossChangedContent() {
         val a = Project(source = SourceRef("a", "old"))

@@ -106,9 +106,9 @@ class ClickAuditTest {
             rule.onAllNodesWithText("Playlists", useUnmergedTree = true)
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Playlists").assertExists()
+        rule.onNodeWithText("Playlists").assertIsDisplayed().performClick()
         assertTrue(model().state.value.queue.any { it.uri == source.toString() })
-        rule.onNodeWithContentDescription("Delete playlist").performClick()
+        rule.onAllNodesWithContentDescription("Delete playlist").onFirst().performClick()
         rule.onNodeWithText("Delete playlist?").assertIsDisplayed()
         rule.onNodeWithText("Cancel").performClick()
         assertTrue(model().state.value.playlists.any { it.name == "My playlist" })
@@ -132,7 +132,7 @@ class ClickAuditTest {
     fun practiceSpeedTransposeAndNoteWheelAreClickDriven() {
         openFixture()
         rule.onNodeWithText("Visualizer", useUnmergedTree = true).performClick()
-        rule.onNodeWithText("Practice").performClick()
+        rule.onNodeWithContentDescription("Practice").performClick()
         rule.onNodeWithText("Playback speed · pitch stays the same").assertIsDisplayed()
         rule.onNodeWithText("0.75×").performClick()
         rule.waitUntil(10_000) { model().state.value.project?.practice?.speed == .75f }

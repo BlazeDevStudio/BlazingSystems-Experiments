@@ -378,6 +378,7 @@ class StudioModel @JvmOverloads constructor(
 
     /** Library selection creates a listening queue; Queue selection preserves its order. */
     fun select(source: SourceRef, startPlayback: Boolean = true, fromLibrary: Boolean = false) {
+        if (startPlayback) coordinator.expectPlayback(source.uri)
         val preparation = preanalysisJob
         preparation?.cancel()
         val previous = trackJob

@@ -318,18 +318,19 @@ fun AveeShell(model: StudioModel) {
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            AssistChip(
-                                onClick = { panel = "practice" },
-                                label = { Text("Practice") },
-                                leadingIcon = {
-                                    Icon(Icons.Rounded.Piano, "", Modifier.size(18.dp))
-                                },
-                            )
-                            AssistChip(
-                                onClick = toggleMicrophone,
-                                label = { Text(if (micListening) "Mic · Live" else "Mic · Off") },
-                                leadingIcon = { Icon(Icons.Rounded.Mic, null, Modifier.size(18.dp)) },
-                            )
+                            Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = .7f),
+                                shape = MaterialTheme.shapes.large) {
+                                Row {
+                                    IconButton(onClick = { panel = "practice" }) {
+                                        Icon(Icons.Rounded.Piano,"Practice")
+                                    }
+                                    IconButton(onClick = toggleMicrophone) {
+                                        Icon(if (micListening) Icons.Rounded.Mic else Icons.Rounded.MicNone,
+                                            if (micListening) "Stop microphone" else "Listen with microphone",
+                                            tint = if (micListening) MaterialTheme.colorScheme.primary else LocalContentColor.current)
+                                    }
+                                }
+                            }
                             Surface(
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = .7f),
                                 shape = MaterialTheme.shapes.large,
@@ -469,6 +470,7 @@ private fun LibraryScreen(
     var playlistName by rememberSaveable { mutableStateOf<String?>(null) }
     var playlistToDelete by remember { mutableStateOf<Playlist?>(null) }
     var sortMenu by remember { mutableStateOf(false) }
+    var librarySection by rememberSaveable { mutableIntStateOf(0) }
     val tracks = if (queue) s.queue else s.library
     val filteredTracks = tracks.filter {
         it.title.contains(search, true) || it.artist.contains(search, true)
@@ -506,6 +508,10 @@ private fun LibraryScreen(
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("track-search"),
         )
+        if (!queue) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(librarySection == 0,{ librarySection = 0 },label = { Text("Songs") })
+            FilterChip(librarySection == 1,{ librarySection = 1 },label = { Text("Playlists") })
+        }
         if (queue && s.queue.isNotEmpty())
             TextButton(onClick = { playlistName = "My playlist" }) {
                 Icon(Icons.Rounded.PlaylistAdd, "", Modifier.size(18.dp))
@@ -515,16 +521,16 @@ private fun LibraryScreen(
             // Playlists must remain reachable on a phone even with hundreds
             // of local tracks; previously they were rendered *after* all
             // tracks and their semantics were absent until deep scrolling.
-            if (!queue && s.playlists.isNotEmpty())
+            if (!queue && librarySection == 1 && s.playlists.isEmpty())
                 item {
                     Text(
-                        "Playlists",
+                        "Save a queue as a playlist to find it here.",
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp, bottom = 6.dp),
                     )
                 }
-            if (!queue)
-                items(s.playlists, key = { it.id }) { list ->
+            if (!queue && librarySection == 1)
+                items(s.playlists.filter { it.name.contains(search,true) }, key = { it.id }) { list ->
                     ListItem(
                         headlineContent = { Text(list.name) },
                         supportingContent = { Text("${list.tracks.size} tracks") },
@@ -536,7 +542,7 @@ private fun LibraryScreen(
                         },
                     )
                 }
-            items(filteredTracks, key = { it.uri }) { source ->
+            items(if(queue || librarySection == 0) filteredTracks else emptyList(), key = { it.uri }) { source ->
                 ListItem(
                     headlineContent = {
                         Text(source.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -594,7 +600,7 @@ private fun LibraryScreen(
                         .clickable { model.select(source, true, fromLibrary = !queue) },
                 )
             }
-            if (tracks.isNotEmpty() && filteredTracks.isEmpty())
+            if ((queue || librarySection == 0) && tracks.isNotEmpty() && filteredTracks.isEmpty())
                 item {
                     Text(
                         "No tracks match \"$search\". Clear the search to see all tracks.",
@@ -602,7 +608,7 @@ private fun LibraryScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            if (tracks.isEmpty())
+            if ((queue || librarySection == 0) && tracks.isEmpty())
                 item {
                     Column(Modifier.padding(vertical = 40.dp)) {
                         Text("Your tracks live here.", fontWeight = FontWeight.SemiBold)

@@ -9,6 +9,13 @@ class TrackCoordinator {
 
     var loadingUri: String? = null
         private set
+    private var requestedPlaybackUri: String? = null
+
+    /** User intent takes precedence while the previous Media3 item is still reported. */
+    fun expectPlayback(uri: String) {
+        requestedPlaybackUri = uri
+        begin(uri)
+    }
 
     fun begin(uri: String) {
         selectedUri = uri
@@ -20,6 +27,10 @@ class TrackCoordinator {
     }
 
     fun selectionFor(playingUri: String?, queue: List<SourceRef>): SourceRef? {
+        requestedPlaybackUri?.let { requested ->
+            if (playingUri != requested) return null
+            requestedPlaybackUri = null
+        }
         return queue.firstOrNull { it.uri == playingUri && it.uri != selectedUri }
     }
 }

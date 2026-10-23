@@ -58,7 +58,7 @@ class PlayerAndUiTest {
             val n = model().state.value.notes.first()
             model().editNote(NoteEdit.Replace(n.copy(pitch = 62)))
         }
-        rule.onNodeWithText("Practice").performClick()
+        rule.onNodeWithContentDescription("Practice").performClick()
         rule.onNodeWithText("Playback speed · pitch stays the same").assertIsDisplayed()
         rule.onNodeWithText("0.5×").performClick()
         rule.onNodeWithText("Export MIDI").performScrollTo().assertIsEnabled()
