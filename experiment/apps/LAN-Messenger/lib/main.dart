@@ -276,8 +276,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
-          // Remote hangup may race the dialog's creation.
           _resolveIncomingDialog(false);
+        }
+        if (_activeCallUiId != null && inter.talkingTo == null) {
+          _activeCallUiId = null;
+          _lastNativeMuted = null;
+          unawaited(_endCallPresentation());
+        } else if (_activeCallUiId == inter.callId &&
+            _lastNativeMuted != inter.muted) {
+          _lastNativeMuted = inter.muted;
+          final currentPeer = inter.talkingTo;
+          final id = inter.callId;
+          if (currentPeer != null && id != null) {
+            unawaited(_showOngoingCall(currentPeer, id, inter.video));
+          }
         }
         setState(() {});
       };
@@ -335,38 +347,65 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       };
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
-        setState(() { selected = peer; showReceived = false; });
+        final id = inter.callId;
+        if (id == null) return false;
+        final answer = Completer<bool>();
+        _incomingAnswer = answer;
+        _incomingPeer = peer;
+        _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _callMinimized = false;
-        // Ring immediately on Windows even if the window-manager plugin takes
-        // time to restore a hidden window. Android notification owns ringtone
-        // audio when a native call banner is available.
+        _callMinimized = true;
+        setState(() { selected = peer; showReceived = false; });
+        // Never focus or restore the Windows app on an inbound call.
+        // Android uses a system CallStyle heads-up notification with actions.
         if (Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
-          await _raiseIncomingWindow(peer);
+          _nativeIncomingAvailable =
+              await _showDesktopIncoming(peer, incomingVideo);
+          if (_trayInitialized) {
+            unawaited(tray.trayManager.setContextMenu(tray.Menu(items: [
+              tray.MenuItem(key: 'answer', label: 'Answer ${peer.name}'),
+              tray.MenuItem(key: 'decline', label: 'Decline call'),
+              tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+              tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+            ])));
+          }
+        } else {
+          _nativeIncomingAvailable =
+              await _showNativeIncoming(peer, incomingVideo);
+          if (!_nativeIncomingAvailable) {
+            unawaited(alerts.ring(incomingVideo
+                ? AlertKind.videoCall : AlertKind.call));
+          }
         }
-        final nativeShown = await _showNativeIncoming(peer, incomingVideo);
-        if (!nativeShown && !Platform.isWindows) {
-          unawaited(alerts.ring(incomingVideo
-              ? AlertKind.videoCall : AlertKind.call));
-        }
+        bool accepted = false;
         try {
-          return await _ask(
-            title: incomingVideo ? 'Incoming video call' : 'Incoming voice call',
-            detail: '${peer.name} is calling.',
-            allowText: 'Answer',
-            incomingCall: true,
-          );
+          // Also resolves on remote hangup; never leave an orphaned modal route.
+          accepted = await answer.future.timeout(const Duration(seconds: 42),
+              onTimeout: () => false);
+          if (id != inter.callId || inter.talkingTo?.id != peer.id) {
+            return false;
+          }
+          return accepted;
         } finally {
-          // Clearing all three paths also handles missed, declined and canceled calls.
+          _incomingAnswer = null;
+          _incomingDialogOpen = false;
+          _incomingPeer = null;
+          _nativeIncomingAvailable = false;
+          _incomingDialogContext = null;
+          _pendingIncomingDecision = null;
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
           unawaited(_restoreWindowAfterCall());
-          _incomingDialogOpen = false;
-          _incomingDialogContext = null;
-          _pendingIncomingDecision = null;
+          if (accepted && inter.callId == id &&
+              inter.talkingTo?.id == peer.id) {
+            await _showOngoingCall(peer, id, incomingVideo);
+          } else {
+            await _dismissDesktopCall();
+          }
+          if (mounted) setState(() {});
         }
       };
       await n.start();
