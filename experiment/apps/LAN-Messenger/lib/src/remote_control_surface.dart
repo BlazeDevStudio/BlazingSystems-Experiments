@@ -131,11 +131,11 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       setState(() {
         if (_previousCenter != null) _pan += center - _previousCenter!;
         if (_previousSpread != null && _previousSpread! > 3 && spread > 3) {
-          _zoom = (_zoom * spread / _previousSpread!).clamp(1.0, 4.0);
+          _zoom = (_zoom * spread / _previousSpread!).clamp(1.0, 4.0).toDouble();
         }
         _pan = Offset(
-          _pan.dx.clamp(-_viewport.width * 1.5, _viewport.width * 1.5),
-          _pan.dy.clamp(-_viewport.height * 1.5, _viewport.height * 1.5),
+          _pan.dx.clamp(-_viewport.width * 1.5, _viewport.width * 1.5).toDouble(),
+          _pan.dy.clamp(-_viewport.height * 1.5, _viewport.height * 1.5).toDouble(),
         );
       });
       _previousCenter = center;
@@ -146,7 +146,7 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       // Two remote fingers in trackpad/3-finger mode emulate scrolling.
       // Full Windows multitouch injection remains a separate native feature.
       final dy = e.localPosition.dy - previous.dy;
-      if (dy.abs() >= 1) _send('scroll', (-dy * 12).round().clamp(-120, 120));
+      if (dy.abs() >= 1) _send('scroll', (-dy * 12).round().clamp(-120, 120).toInt());
       _moved = true;
       return;
     }
@@ -155,8 +155,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
     if ((e.localPosition - initial).distance > 9) _moved = true;
     if (_trackpad) {
       final next = Offset(
-        (_cursor.dx + (e.localPosition.dx - previous.dx) / math.max(1, _viewport.width)).clamp(0.0, 1.0),
-        (_cursor.dy + (e.localPosition.dy - previous.dy) / math.max(1, _viewport.height)).clamp(0.0, 1.0));
+        (_cursor.dx + (e.localPosition.dx - previous.dx) / math.max(1, _viewport.width)).clamp(0.0, 1.0).toDouble(),
+        (_cursor.dy + (e.localPosition.dy - previous.dy) / math.max(1, _viewport.height)).clamp(0.0, 1.0).toDouble());
       _cursor = next;
       final holding = _firstDownAt != null &&
           DateTime.now().difference(_firstDownAt!) > const Duration(milliseconds: 450);
@@ -252,8 +252,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
           child: Transform.scale(scale: _zoom, child: widget.child))),
         if (widget.enabled && _trackpad)
           Positioned(
-            left: (_cursor.dx * box.maxWidth - 9).clamp(0, box.maxWidth - 18),
-            top: (_cursor.dy * box.maxHeight - 9).clamp(0, box.maxHeight - 18),
+            left: (_cursor.dx * box.maxWidth - 9).clamp(0.0, math.max(0.0, box.maxWidth - 18)).toDouble(),
+            top: (_cursor.dy * box.maxHeight - 9).clamp(0.0, math.max(0.0, box.maxHeight - 18)).toDouble(),
             child: IgnorePointer(child: Container(
               width: 18, height: 18,
               decoration: BoxDecoration(
