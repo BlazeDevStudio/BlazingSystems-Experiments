@@ -8,6 +8,7 @@ enum AlertKind { call, videoCall, message, file }
 class Alerts {
   AudioPlayer? _ringer;
   AudioPlayer? _effect;
+  int _ringGeneration = 0;
   bool enabled = true;
   bool useAppSounds = true;
   final Map<AlertKind, String> customSounds = {};
@@ -29,16 +30,28 @@ class Alerts {
 
   Future<void> ring(AlertKind kind) async {
     if (!enabled) return;
-    await stopRing();
+    final generation = ++_ringGeneration;
+    final previous = _ringer;
+    _ringer = null;
+    if (previous != null) {
+      try { await previous.stop(); await previous.dispose(); } catch (_) {}
+    }
+    if (generation != _ringGeneration || !enabled) return;
+    final player = AudioPlayer();
+    _ringer = player;
     try {
-      final player = AudioPlayer();
-      _ringer = player;
       await player.setReleaseMode(ReleaseMode.loop);
+      if (generation != _ringGeneration || !enabled) return;
       await player.play(_source(kind));
-    } catch (_) {/* Device may have no audio output. */}
+      if (generation != _ringGeneration || !enabled) await stopRing();
+    } catch (_) {
+      if (identical(_ringer, player)) _ringer = null;
+      try { await player.dispose(); } catch (_) {}
+    }
   }
 
   Future<void> stopRing() async {
+    ++_ringGeneration;
     final player = _ringer;
     _ringer = null;
     if (player == null) return;
