@@ -11,4 +11,4 @@ void main() {
     expect(args, isNot(contains('/add')));
     expect(AppSettings.windowsStartupArgs(false, r'C:\app.exe').first, 'delete');
   });
-});
+}
