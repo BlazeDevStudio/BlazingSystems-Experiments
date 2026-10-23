@@ -16,7 +16,12 @@ class GlSceneRenderer(assets: File) : AutoCloseable {
             position(0)
         }
 
-    fun render(scene: EvaluatedScene, target: GlTarget) {
+    fun render(
+        scene: EvaluatedScene,
+        target: GlTarget,
+        videoFrame: Bitmap? = null,
+        transparentBackground: Boolean = false,
+    ) {
         target.makeCurrent()
         if (program == 0) {
             fun shader(type: Int, source: String): Int {
@@ -55,7 +60,7 @@ class GlSceneRenderer(assets: File) : AutoCloseable {
             bitmap?.recycle()
             bitmap = Bitmap.createBitmap(target.width, target.height, Bitmap.Config.ARGB_8888)
         }
-        painter.draw(Canvas(bitmap!!), scene, target.width, target.height)
+        painter.draw(Canvas(bitmap!!), scene, target.width, target.height, videoFrame, transparentBackground)
         GLES20.glViewport(0, 0, target.width, target.height)
         GLES20.glUseProgram(program)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)

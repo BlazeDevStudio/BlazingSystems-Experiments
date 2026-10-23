@@ -128,7 +128,8 @@ class AnalysisRepository(private val context: Context) {
             val key = AnalysisKeys.key(audio.hash, ModelRunner.MODEL_SHA256, parameters)
             val target = File(root, "$key.json")
             cached(audio.hash, parameters)?.let { return@withContext it }
-            val result = BasicPitchAnalyzer(context).analyze(audio, parameters, progress)
+            val result = if (audio.hasAudio) BasicPitchAnalyzer(context).analyze(audio, parameters, progress)
+                else AnalysisResult(key, audio.hash, ModelRunner.MODEL_SHA256, parameters, audio.durationUs, emptyList())
             ensureActive()
             atomicWrite(target, Json.encodeToString(result).toByteArray())
             result

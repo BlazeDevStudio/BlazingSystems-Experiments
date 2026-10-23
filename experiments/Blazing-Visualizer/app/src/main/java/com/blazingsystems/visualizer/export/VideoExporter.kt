@@ -160,24 +160,32 @@ class VideoExporter(private val context: Context) {
                 }
             }
             try {
-                GlTarget.encoder(surface, s.width, s.height).use { target ->
-                    GlSceneRenderer(File(context.filesDir, "assets")).use { renderer ->
-                        AudioFeatures(audio).use { features ->
-                            for (frame in 0 until timeline.frameCount) {
-                                job.ensureActive()
-                                drain(false)
-                                val time = timeline.sourceTimeUs(frame)
-                                renderer.render(
-                                    SceneEvaluator.evaluate(
-                                        request.project.scene,
-                                        features.at(time, notes,request.project.scene.aveeAudio),
-                                        time,
-                                    ),
-                                    target,
-                                )
-                                target.present(timeline.presentationTimeUs(frame))
-                                drain(false)
-                                progress((frame + 1f) / timeline.frameCount)
+                val videoFrames = if (request.project.source.hasVideo)
+                    VideoFrameSource(context, Uri.parse(request.project.source.uri)) else null
+                videoFrames.use { background ->
+                    GlTarget.encoder(surface, s.width, s.height).use { target ->
+                        GlSceneRenderer(File(context.filesDir, "assets")).use { renderer ->
+                            AudioFeatures(audio).use { features ->
+                                for (frame in 0 until timeline.frameCount) {
+                                    job.ensureActive()
+                                    drain(false)
+                                    val time = timeline.sourceTimeUs(frame)
+                                    val videoFrame = background?.frameAt(time, s.width, s.height)
+                                    try {
+                                        renderer.render(
+                                            SceneEvaluator.evaluate(
+                                                request.project.scene,
+                                                features.at(time, notes,request.project.scene.aveeAudio),
+                                                time,
+                                            ),
+                                            target,
+                                            videoFrame = videoFrame,
+                                        )
+                                    } finally { videoFrame?.recycle() }
+                                    target.present(timeline.presentationTimeUs(frame))
+                                    drain(false)
+                                    progress((frame + 1f) / timeline.frameCount)
+                                }
                             }
                         }
                     }

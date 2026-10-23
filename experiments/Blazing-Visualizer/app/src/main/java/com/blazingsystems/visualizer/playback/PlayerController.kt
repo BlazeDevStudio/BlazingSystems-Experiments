@@ -3,6 +3,9 @@ package com.blazingsystems.visualizer.playback
 import android.content.*
 import android.net.Uri
 import android.os.*
+import android.graphics.Matrix
+import android.view.TextureView
+import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.media3.common.*
 import androidx.media3.session.*
@@ -38,6 +41,10 @@ class PlayerController(context: Context) : AutoCloseable {
     val queue: StateFlow<List<SourceRef>> = mutableQueue
     private val handler = Handler(Looper.getMainLooper())
     private var controller: MediaController? = null
+    private var videoView: TextureView? = null
+    private val videoLayoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        updateVideoTransform()
+    }
     private var loop: LoopRange? = null
     private var pendingLoopSeekUs: Long? = null
     private var pending: List<SourceRef>? = null
@@ -90,6 +97,7 @@ class PlayerController(context: Context) : AutoCloseable {
                                             events: Player.Events,
                                         ) {
                                             flushPreparedSeek(player)
+                                            if (events.contains(Player.EVENT_VIDEO_SIZE_CHANGED)) updateVideoTransform()
                                             update()
                                         }
                                     },
@@ -97,6 +105,8 @@ class PlayerController(context: Context) : AutoCloseable {
                             }
                         controller!!.repeatMode = desiredRepeat
                         controller!!.shuffleModeEnabled = desiredShuffle
+                        videoView?.let { controller!!.setVideoTextureView(it) }
+                        updateVideoTransform()
                         val adoptingLive = restoreOnly && controller!!.mediaItemCount > 0
                         if (pending != null && !adoptingLive)
                             applyPending()
@@ -172,6 +182,36 @@ class PlayerController(context: Context) : AutoCloseable {
         .setUri(source.uri).setMediaId(source.uri)
         .setMediaMetadata(MediaMetadata.Builder().setTitle(source.title).setArtist(source.artist).build())
         .build()
+
+    /** The visible video and audible audio belong to this one MediaSession. */
+    fun attachVideo(view: TextureView) {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (videoView === view) return
+        videoView?.let(::detachVideo)
+        videoView = view
+        view.isOpaque = false
+        view.addOnLayoutChangeListener(videoLayoutListener)
+        controller?.setVideoTextureView(view)
+        updateVideoTransform()
+    }
+
+    fun detachVideo(view: TextureView) {
+        if (videoView !== view) return
+        controller?.clearVideoTextureView(view)
+        view.removeOnLayoutChangeListener(videoLayoutListener)
+        videoView = null
+    }
+
+    private fun updateVideoTransform() {
+        val view = videoView ?: return
+        val size = controller?.videoSize ?: return
+        if (view.width <= 0 || view.height <= 0 || size.width <= 0 || size.height <= 0) return
+        val aspect = size.width * size.pixelWidthHeightRatio / size.height
+        val viewport = view.width.toFloat() / view.height
+        val sx = if (aspect < viewport) aspect / viewport else 1f
+        val sy = if (aspect > viewport) viewport / aspect else 1f
+        view.setTransform(Matrix().apply { setScale(sx, sy, view.width / 2f, view.height / 2f) })
+    }
 
     private fun applyPending() {
         val sources = pending ?: return
@@ -365,6 +405,7 @@ class PlayerController(context: Context) : AutoCloseable {
     }
 
     override fun close() {
+        videoView?.let(::detachVideo)
         closed = true
         handler.removeCallbacks(ticker)
         MediaController.releaseFuture(future)

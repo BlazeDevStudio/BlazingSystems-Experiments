@@ -42,6 +42,7 @@ data class StudioState(
     val editingExportLayout: Boolean = false,
     val previewAspect: Float = 1f,
     val ready: Boolean = false,
+    val analysisReady: Boolean = false,
 ) {
     fun displayScene(): Scene {
         val display = if (editingExportLayout && project != null)
@@ -97,7 +98,10 @@ class StudioModel @JvmOverloads constructor(
     private var trackJob: Job? = null
     private val coordinator = TrackCoordinator()
     private val initialized = CompletableDeferred<Unit>()
-    private var audioFeatures: AudioFeatures? = null
+    @Volatile private var audioFeatures: AudioFeatures? = null
+    @Volatile private var audioFeatureSourceUri: String? = null
+    private val quickPreview = MutableStateFlow(QuickPreviewFrames())
+    private data class QuickRequest(val uri: String, val bucket: Long, val profile: JsonObject)
     private var previewLease: DecodedAudioLease? = null
     private var rawNotes: List<NoteEvent> = emptyList()
     // A snapshot for track B must never replace pending edits for track A.
@@ -173,19 +177,63 @@ class StudioModel @JvmOverloads constructor(
         viewModelScope.launch {
             combine(
                 playback,
-                state.map { it.displayScene() to it.notes }.distinctUntilChanged(),
+                state.map { Triple(it.displayScene(), it.notes,
+                    it.project?.source?.uri?.takeIf { _ -> it.analysisReady }) }.distinctUntilChanged(),
                 microphoneFeatures,
-            ) { player, snapshot, mic -> Triple(player, snapshot, mic) }
-                .collectLatest { (player, snapshot, mic) ->
+                quickPreview,
+            ) { player, snapshot, mic, quick -> Pair(Triple(player, snapshot, mic), quick) }
+                .collectLatest { (input, quick) ->
+                    val (player, snapshot, mic) = input
                     val frame = mic ?: withContext(Dispatchers.Default) {
-                        runCatching {
-                            audioFeatures?.at(player.sourceTimeUs, snapshot.second,snapshot.first.aveeAudio)
-                        }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = snapshot.second)
+                        val detailed = snapshot.third != null && snapshot.third == player.sourceUri
+                        val immediate = quick.at(player.sourceUri, player.sourceTimeUs)
+                        val notes = if (detailed) snapshot.second else immediate?.notes.orEmpty()
+                        if (!detailed && immediate != null) immediate.copy(sourceTimeUs = player.sourceTimeUs)
+                        else runCatching {
+                            audioFeatures?.takeIf { audioFeatureSourceUri == player.sourceUri }
+                                ?.at(player.sourceTimeUs, notes, snapshot.first.aveeAudio)
+                        }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = notes)
                     }
                     rendered.value = SceneEvaluator.evaluate(
                         snapshot.first, frame, frame.sourceTimeUs,
                     )
                 }
+        }
+        viewModelScope.launch {
+            var previous: QuickRequest? = null
+            combine(playback, state) { playing, current ->
+                val source = current.queue.firstOrNull { it.uri == playing.sourceUri }
+                    ?: current.project?.source?.takeIf { it.uri == playing.sourceUri }
+                if (source == null || !source.hasAudio || current.analysisReady &&
+                    current.project?.source?.uri == source.uri) null
+                else QuickRequest(source.uri, playing.sourceTimeUs / 1_000_000, current.scene.aveeAudio)
+            }.distinctUntilChanged().collectLatest { request ->
+                if (request == null) {
+                    previous = null
+                    quickPreview.value = QuickPreviewFrames()
+                    return@collectLatest
+                }
+                val old = previous
+                if (old == null || old.uri != request.uri || request.bucket < old.bucket ||
+                    request.bucket - old.bucket > 1 || old.profile != request.profile)
+                    quickPreview.value = QuickPreviewFrames(request.uri)
+                previous = request
+                try {
+                    QuickNotePreview(context()).frames(request.uri,
+                        (request.bucket * 1_000_000 - 250_000).coerceAtLeast(0), profile = request.profile,
+                    ).collect { frame ->
+                        ensureActive()
+                        quickPreview.update { it.withFrame(request.uri, frame) }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    mutable.update { current ->
+                        if (current.project?.source?.uri == request.uri && !current.analysisReady)
+                            current.copy(status = "Preparing detailed notes · quick preview unavailable") else current
+                    }
+                }
+            }
         }
         viewModelScope.launch {
             initialized.await()
@@ -247,7 +295,7 @@ class StudioModel @JvmOverloads constructor(
                     persist()
                     select(tracks.first(), true)
                     if (failed > 0) report(IllegalArgumentException(
-                        "$failed of ${uris.size} selected audio files could not be opened; the remaining tracks were imported."
+                        "$failed of ${uris.size} selected media files could not be opened; the remaining files were imported."
                     ))
                     scheduleBackgroundAnalysis()
                 }
@@ -387,6 +435,7 @@ class StudioModel @JvmOverloads constructor(
             preparation?.cancelAndJoin()
             audioFeatures?.close()
             audioFeatures = null
+            audioFeatureSourceUri = null
             previewLease?.close()
             previewLease = null
             rawNotes = emptyList()
@@ -403,8 +452,9 @@ class StudioModel @JvmOverloads constructor(
                     project = restored,
                     scene = restored.scene,
                     notes = emptyList(),
-                    status = "Preparing audio",
+                    status = "Quick note preview · preparing detailed analysis",
                     progress = 0f,
+                    analysisReady = false,
                     error = null,
                     layoutEditing = false,
                     editingExportLayout = false,
@@ -436,13 +486,13 @@ class StudioModel @JvmOverloads constructor(
                 val bound =
                     SourceIdentity.bind(
                         before,
-                        source.copy(contentSha256 = decoded.hash, durationUs = decoded.durationUs),
+                        source.copy(contentSha256 = decoded.hash, durationUs = decoded.durationUs, hasAudio = decoded.hasAudio),
                     )
                 mutable.update {
                     it.copy(
                         project = bound,
                         scene = bound.scene,
-                        status = "Detecting notes on this device",
+                        status = "Quick note preview · refining notes on this device",
                         progress = 0f,
                         error =
                             if (changed)
@@ -451,6 +501,7 @@ class StudioModel @JvmOverloads constructor(
                     )
                 }
                 audioFeatures = AudioFeatures(decoded)
+                audioFeatureSourceUri = source.uri
                 player.restorePractice(source.uri, bound.practice.speed,
                     bound.practice.loopStartUs.takeIf { bound.practice.loopEnabled },
                     bound.practice.loopEndUs.takeIf { bound.practice.loopEnabled },
@@ -471,6 +522,7 @@ class StudioModel @JvmOverloads constructor(
                         notes = applyNoteEdits(rawNotes, project.edits),
                         status = "${result.rawNotes.size} estimated notes • tap Practice to follow",
                         progress = null,
+                        analysisReady = true,
                         preparations = it.preparations + (source.uri to "Notes ready"),
                     )
                 }
@@ -951,7 +1003,7 @@ class StudioModel @JvmOverloads constructor(
 
     fun prepareExport(startUs: Long, endUs: Long, settings: ExportSettings) {
         val p = mutable.value.project ?: error("Open a track first")
-        require(p.source.contentSha256 != null && mutable.value.progress == null) {
+        require(p.source.contentSha256 != null && mutable.value.analysisReady) {
             "Wait for note analysis to finish"
         }
         validateExportSettings(settings)

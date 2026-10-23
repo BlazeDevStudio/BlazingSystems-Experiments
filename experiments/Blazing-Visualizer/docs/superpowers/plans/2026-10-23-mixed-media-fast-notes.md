@@ -37,3 +37,11 @@
 ## Execution ledger
 
 Base302bbe0. Existing source/release reconciled; no AGENTS.md observed in the scoped project. Standing approval resolves routine choices without another design gate. Owner priorities supersede the old roadmap order: mixed media and startup responsiveness first, then preset/production hardening; tracing remains deferred.
+
+
+## Verification ledger
+
+- Baseline regression source: `c249f1f330524f277f7a937fdddf27f9430bffcc`. Actions run `39919163110`: all three metadata/view contract tests failed with assertions; independent first-note test failed with the intended timeout on API26 and API36. No production changes were included in this checkpoint.
+- Integrated implementation restores the complete host/lint/assemble and two-device workflow. Additional tests cover bounded source-time decode/seek, stale quick-frame rejection, video pixel layering, metadata, rotated frames, video→audio transition and MP4 source-time compositing.
+- Target release is separately tagged Preview 4 (versionCode4); retain Preview2/3 public debug signer. Do not describe this preview as production-ready.
+- Real instrument/source separation remains research only. See `docs/acceptance/2026-10-23-stem-separation-research.md` for the staged offline pilot and primary sources. No model weights or runtime added, and no media uploaded.

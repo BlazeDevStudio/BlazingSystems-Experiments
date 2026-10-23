@@ -11,6 +11,9 @@ data class SourceRef(
     val durationUs: Long = 0,
     val title: String = "Untitled",
     val artist: String = "",
+    val mimeType: String? = null,
+    val hasVideo: Boolean = false,
+    val hasAudio: Boolean = true,
 )
 
 @Serializable

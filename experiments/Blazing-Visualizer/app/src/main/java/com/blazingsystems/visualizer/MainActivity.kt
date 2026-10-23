@@ -2,6 +2,7 @@ package com.blazingsystems.visualizer
 
 import android.content.Intent
 import android.os.Bundle
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,8 +24,20 @@ class MainActivity : ComponentActivity() {
         accept(intent)
     }
 
+    @Suppress("DEPRECATION")
     private fun accept(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_VIEW)
-            intent.data?.let { studio.importTracks(listOf(it)) }
+        if (intent == null) return
+        val uris = when (intent.action) {
+            Intent.ACTION_VIEW -> listOfNotNull(intent.data)
+            Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
+            Intent.ACTION_SEND_MULTIPLE -> intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
+            else -> emptyList()
+        }.distinct()
+        if (uris.isNotEmpty()) {
+            uris.forEach { uri -> runCatching {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } }
+            studio.importTracks(uris)
+        }
     }
 }

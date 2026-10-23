@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.view.TextureView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,6 +52,8 @@ fun AveeShell(model: StudioModel) {
     val rendered by model.rendered.collectAsState()
     val jobs by model.exports.collectAsState()
     val micListening by model.tunerRunning.collectAsState()
+    val videoBackground = (s.queue.firstOrNull { it.uri == p.sourceUri }
+        ?: s.project?.source?.takeIf { it.uri == p.sourceUri })?.hasVideo == true
     val context = LocalContext.current
     val lifecycle = (context as? LifecycleOwner)?.lifecycle
     DisposableEffect(lifecycle) {
@@ -159,8 +162,8 @@ fun AveeShell(model: StudioModel) {
                         fontSize = 17.sp,
                         maxLines = 1,
                     )
-                    IconButton(onClick = { audio.launch(arrayOf("audio/*")) }) {
-                        Icon(Icons.Rounded.LibraryMusic, "Open music")
+                    IconButton(onClick = { audio.launch(arrayOf("audio/*", "video/*")) }) {
+                        Icon(Icons.Rounded.LibraryMusic, "Open media")
                     }
                     Box {
                         IconButton(onClick = { playbackOptions = true }) {
@@ -286,7 +289,7 @@ fun AveeShell(model: StudioModel) {
                 0,
                 2 -> LibraryScreen(
                     s, model, tab == 2,
-                    onOpen = { audio.launch(arrayOf("audio/*")) },
+                    onOpen = { audio.launch(arrayOf("audio/*", "video/*")) },
                     onRefresh = refresh,
                 )
                 else -> {
@@ -302,13 +305,21 @@ fun AveeShell(model: StudioModel) {
                             else if (maxWidth / maxHeight > exportAspect)
                                 Modifier.height(maxHeight).aspectRatio(exportAspect)
                             else Modifier.width(maxWidth).aspectRatio(exportAspect)
-                        Box(frameModifier) {
+                        Box(frameModifier.then(if (videoBackground) Modifier.background(Color.Black) else Modifier)) {
+                            if (videoBackground) key(p.sourceUri) {
+                                AndroidView(
+                                    factory = { TextureView(it).also(model.player::attachVideo) },
+                                    onRelease = model.player::detachVideo,
+                                    modifier = Modifier.fillMaxSize().testTag("media-video-background"),
+                                )
+                            }
                             AndroidView(
                                 factory = { SceneView(it).apply {
                                     assets = File(context.filesDir, "assets")
-                                    update(rendered)
+                                    update(rendered, transparentBackground = videoBackground)
                                 } },
-                                update = { it.update(rendered) }, modifier = Modifier.fillMaxSize(),
+                                update = { it.update(rendered, transparentBackground = videoBackground) },
+                                modifier = Modifier.fillMaxSize().testTag("visualizer-scene"),
                             )
                             LayoutOverlay(s.displayScene(), s.layoutEditing, s.editingExportLayout, model) {
                                 model.beginLayoutEdit(false, it)
@@ -373,9 +384,9 @@ fun AveeShell(model: StudioModel) {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     Spacer(Modifier.height(12.dp))
-                                    Button(onClick = { audio.launch(arrayOf("audio/*")) }) {
+                                    Button(onClick = { audio.launch(arrayOf("audio/*", "video/*")) }) {
                                         Icon(Icons.Rounded.Add, "", Modifier.size(18.dp))
-                                        Text("Open music")
+                                        Text("Open media")
                                     }
                                 }
                             }
@@ -558,7 +569,7 @@ private fun LibraryScreen(
                     },
                     supportingContent = {
                         Column {
-                            Text(source.artist.ifBlank { "Local audio" })
+                            Text(source.artist.ifBlank { if (source.hasVideo) "Local video" else "Local audio" })
                             s.preparations[source.uri]?.let { Text(it, fontSize = 11.sp,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis) }
                         }
@@ -566,7 +577,7 @@ private fun LibraryScreen(
                     leadingContent = {
                         Icon(
                             if (source.uri == s.project?.source?.uri) Icons.Rounded.GraphicEq
-                            else Icons.Rounded.MusicNote,
+                            else if (source.hasVideo) Icons.Rounded.Videocam else Icons.Rounded.MusicNote,
                             null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
@@ -622,11 +633,11 @@ private fun LibraryScreen(
                     Column(Modifier.padding(vertical = 40.dp)) {
                         Text("Your tracks live here.", fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Choose audio files from your device to start listening and detecting notes.",
+                            "Select audio or video files together. Video plays behind your visualizer.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Button(onClick = onOpen, modifier = Modifier.padding(top = 18.dp)) {
-                            Text("Open music")
+                            Text("Open media")
                         }
                     }
                 }

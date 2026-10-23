@@ -23,6 +23,7 @@ data class DecodedAudio(
     val channels: Int,
     val frames: Long,
     val rootPath: String,
+    val hasAudio: Boolean = true,
 ) {
     val pcmFile
         get() = File(rootPath, "original.pcm")
@@ -127,6 +128,7 @@ class AudioRepository(private val context: Context) {
             var rate = 0
             var channels = 0
             var frames = 0L
+            var hasAudio = true
             DataOutputStream(BufferedOutputStream(FileOutputStream(File(staging, "mono.f32"))))
                 .use { mono ->
                     BufferedOutputStream(FileOutputStream(File(staging, "original.pcm"))).use {
@@ -137,6 +139,7 @@ class AudioRepository(private val context: Context) {
                                 rate = chunk.sampleRate
                                 channels = chunk.channels
                                 resampler = PcmResampler(rate, channels)
+                                hasAudio = !chunk.synthesizedSilence
                             }
                             require(rate == chunk.sampleRate && channels == chunk.channels) {
                                 "Audio format changed mid-track"
@@ -169,7 +172,7 @@ class AudioRepository(private val context: Context) {
                     }
                 }
             require(frames > 0) { "The track is empty" }
-            val decoded = DecodedAudio(digest, rate, channels, frames, folder.path)
+            val decoded = DecodedAudio(digest, rate, channels, frames, folder.path, hasAudio)
             File(staging, "audio.json").writeText(Json.encodeToString(decoded))
             check(staging.renameTo(folder)) { "Could not finalize decoded audio" }
             return decoded

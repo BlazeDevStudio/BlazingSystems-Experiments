@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.MediaStore
 import android.media.MediaMetadataRetriever
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.blazingsystems.visualizer.project.*
@@ -39,6 +41,18 @@ class LibraryRepository(private val context: Context) {
             val metadata = MediaMetadataRetriever()
             return try {
                 metadata.setDataSource(context, uri)
+                // Inspect tracks rather than extensions: a video may be silent, and
+                // document providers often supply application/octet-stream.
+                val extractor = MediaExtractor()
+                val mimes = try {
+                    extractor.setDataSource(context, uri, null)
+                    (0 until extractor.trackCount).mapNotNull {
+                        extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)
+                    }
+                } finally { extractor.release() }
+                val hasVideo = mimes.any { it.startsWith("video/") }
+                val hasAudio = mimes.any { it.startsWith("audio/") }
+                require(hasAudio || hasVideo) { "No supported audio or video track" }
                 SourceRef(
                     uri.toString(),
                     durationUs =
@@ -51,13 +65,17 @@ class LibraryRepository(private val context: Context) {
                             ?.takeIf { it.isNotBlank() } ?: title,
                     artist =
                         metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: "",
+                    mimeType = metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+                        ?: context.contentResolver.getType(uri),
+                    hasVideo = hasVideo,
+                    hasAudio = hasAudio,
                 )
             } finally {
                 metadata.release()
             }
         } catch (failure: Exception) {
             throw SourceUnavailableException(
-                "Can't read this track. Choose the file again to restore access.",
+                "Can't read this media file. Choose it again to restore access or use a supported format.",
                 failure,
             )
         }

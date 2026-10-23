@@ -43,21 +43,47 @@ class ScenePainter(private val assets: File) : AutoCloseable {
     private fun tinted(color: Int, alpha: Int) =
         Color.argb(alpha.coerceIn(0, 255), Color.red(color), Color.green(color), Color.blue(color))
 
-    fun draw(canvas: Canvas, s: EvaluatedScene, width: Int, height: Int) {
-        if(s.scene.originalAvee!=null && s.scene.aveeCompositionCount>0) {
-            canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.BLACK),PorterDuff.Mode.SRC)
+    fun draw(
+        canvas: Canvas,
+        s: EvaluatedScene,
+        width: Int,
+        height: Int,
+        videoFrame: Bitmap? = null,
+        transparentBackground: Boolean = false,
+    ) {
+        val imported = s.scene.originalAvee != null && s.scene.aveeCompositionCount > 0
+        when {
+            videoFrame != null -> {
+                canvas.drawColor(Color.BLACK, PorterDuff.Mode.SRC)
+                val scale = min(width.toFloat() / videoFrame.width, height.toFloat() / videoFrame.height)
+                val w = videoFrame.width * scale
+                val h = videoFrame.height * scale
+                paint.reset()
+                paint.isFilterBitmap = true
+                canvas.drawBitmap(videoFrame, null,
+                    RectF((width - w) / 2, (height - h) / 2, (width + w) / 2, (height + h) / 2), paint)
+                paint.reset()
+                paint.isAntiAlias = true
+            }
+            transparentBackground -> canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+            else -> canvas.drawColor(
+                runCatching { Color.parseColor(s.scene.backgroundColor) }
+                    .getOrDefault(if (imported) Color.BLACK else Color.rgb(8, 9, 17)),
+                PorterDuff.Mode.SRC,
+            )
+        }
+        if(imported) {
             val aspect=s.scene.aveeRenderAspect
             val rh=(if(aspect==null) height.toFloat() else if(s.scene.aveeFrameMode==ExportFrameMode.COVER)
                 max(height.toFloat(),width/aspect) else min(height.toFloat(),width/aspect)).roundToInt().coerceAtLeast(1)
             val rw=(if(aspect==null) width.toFloat() else rh*aspect).roundToInt().coerceAtLeast(1)
             val saved=canvas.save();canvas.clipRect(0,0,width,height);canvas.translate((width-rw)/2f,(height-rh)/2f)
-            importedPainter.value.draw(canvas,s,rw,rh) { target,layer -> drawNative(target,layer,rw,rh,false) }
+            importedPainter.value.draw(canvas,s,rw,rh) { target,layer -> drawNative(target,layer,rw,rh) }
             canvas.restoreToCount(saved)
-        } else drawNative(canvas,s,width,height,true)
+        } else drawNative(canvas,s,width,height)
     }
 
-    private fun drawNative(canvas: Canvas,s: EvaluatedScene,width: Int,height: Int,clear: Boolean) {
-        if(clear) canvas.drawColor(runCatching { Color.parseColor(s.scene.backgroundColor) }.getOrDefault(Color.rgb(8, 9, 17)),PorterDuff.Mode.SRC)
+    private fun drawNative(canvas: Canvas,s: EvaluatedScene,width: Int,height: Int) {
         paint.shader = null
         paint.style = Paint.Style.FILL
         for (e in s.layers) {
