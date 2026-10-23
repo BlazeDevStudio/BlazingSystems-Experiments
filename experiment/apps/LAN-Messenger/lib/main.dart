@@ -60,6 +60,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   String? error;
   bool showReceived = false;
   bool _incomingDialogOpen = false;
+  // Viewport changes never touch WebRTC capture/sending state.
+  bool _callMinimized = false;
+  Offset _floatingCallPosition = const Offset(16, 95);
+  Offset _selfPreviewPosition = const Offset(12, 12);
+  bool _callVideoWorking = false;
   BuildContext? _incomingDialogContext;
   bool? _pendingIncomingDecision;
   List<File> received = [];
@@ -215,6 +220,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
+        _callMinimized = false;
         _pendingIncomingDecision = null;
         // Ring immediately on Windows even if the window-manager plugin takes
         // time to restore a hidden window. Android notification owns ringtone
@@ -595,6 +601,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<void> _startCall({bool video = false}) async {
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
+    _callMinimized = false;
     try { await intercom!.call(peer, withVideo: video); }
     catch (e) { _toast('Could not start call: $e'); }
   }
@@ -808,37 +815,169 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       textAlign: TextAlign.center)),
   ]);
 
-  Widget _activeCall() {
+  Future<void> _swapCamera() async {
+    if (_callVideoWorking || intercom == null) return;
+    setState(() => _callVideoWorking = true);
+    try {
+      final ok = await intercom!.switchCamera();
+      if (!ok && mounted) _toast('No other available camera, or switching was not supported.');
+    } catch (e) {
+      if (mounted) _toast('Camera switch unavailable: $e');
+    } finally {
+      if (mounted) setState(() => _callVideoWorking = false);
+    }
+  }
+
+  Future<void> _toggleScreenShare() async {
+    final call = intercom;
+    if (call == null || _callVideoWorking) return;
+    setState(() => _callVideoWorking = true);
+    try {
+      if (call.sharingScreen) {
+        await call.stopScreenShare();
+      } else {
+        final approved = await _ask(
+          title: 'Share your screen?',
+          detail: 'Your screen may show private messages, passwords and other applications. '
+              'The other participant will see your screen until you press Stop Sharing.',
+          allowText: 'Share screen',
+        );
+        if (!approved || !mounted) return;
+        final ok = await call.startScreenShare();
+        if (!ok && mounted) _toast('Screen capture declined or unavailable on this device.');
+      }
+    } catch (e) {
+      if (mounted) _toast('Screen share failed: $e');
+    } finally {
+      if (mounted) setState(() => _callVideoWorking = false);
+    }
+  }
+
+  Widget _remoteVideo(Intercom call) {
+    final renderer = call.remoteRenderer;
+    if (renderer == null) {
+      return const Center(child: Icon(Icons.videocam_off, size: 60, color: Colors.white60));
+    }
+    // WebRTC reports decoded frame width/height after device rotation. Honor
+    // its real aspect ratio rather than stretching a portrait feed to landscape.
+    return ValueListenableBuilder<RTCVideoValue>(
+      valueListenable: renderer,
+      builder: (context, _, child) {
+        final width = renderer.videoWidth;
+        final height = renderer.videoHeight;
+        final ratio = (width > 0 && height > 0) ? width / height : (16 / 9);
+        return Center(child: AspectRatio(
+          aspectRatio: ratio.clamp(0.4, 2.5).toDouble(),
+          child: RTCVideoView(renderer,
+            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+        ));
+      },
+    );
+  }
+
+  Widget _activeCall({bool compact = false}) {
     final call = intercom!;
+    final title = call.talkingTo?.name ?? 'Call';
+    final overlayBackground = const Color(0xff102b4e);
+    final videoContent = call.video
+        ? LayoutBuilder(builder: (context, box) => Stack(
+            fit: StackFit.expand,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onDoubleTap: call.cameraCount > 1 && !call.sharingScreen
+                    ? _swapCamera : null,
+                child: _remoteVideo(call),
+              ),
+              if (call.localRenderer != null && !compact)
+                Positioned(
+                  left: _selfPreviewPosition.dx.clamp(0.0,
+                      (box.maxWidth - 116).clamp(0.0, double.infinity)).toDouble(),
+                  top: _selfPreviewPosition.dy.clamp(0.0,
+                      (box.maxHeight - 150).clamp(0.0, double.infinity)).toDouble(),
+                  width: 116,
+                  height: 150,
+                  child: GestureDetector(
+                    onPanUpdate: (details) => setState(() =>
+                        _selfPreviewPosition += details.delta),
+                    onDoubleTap: call.cameraCount > 1 && !call.sharingScreen
+                        ? _swapCamera : null,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white70),
+                          borderRadius: BorderRadius.circular(12)),
+                      clipBehavior: Clip.antiAlias,
+                      child: RTCVideoView(call.localRenderer!,
+                        mirror: !call.sharingScreen,
+                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+                    ),
+                  ),
+                ),
+              if (call.sharingScreen)
+                Positioned(bottom: 4, left: 8, child: Container(
+                  color: Colors.red.shade900, padding: const EdgeInsets.all(5),
+                  child: const Text('SCREEN SHARING', style: TextStyle(
+                      color: Colors.white, fontSize: 11)),
+                )),
+            ],
+          ))
+        : const Center(child: Icon(Icons.call, color: Colors.white70, size: 80));
+
+    final toolbar = Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+      IconButton(tooltip: compact ? 'Expand call' : 'Minimize call',
+        color: Colors.white,
+        onPressed: () => setState(() => _callMinimized = !compact),
+        icon: Icon(compact ? Icons.open_in_full : Icons.picture_in_picture_alt)),
+      if (!compact)
+        IconButton(tooltip: call.muted ? 'Unmute' : 'Mute',
+          color: Colors.white, onPressed: () => call.setMuted(!call.muted),
+          icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
+      if (call.video && !compact && call.cameraCount > 1)
+        IconButton(tooltip: 'Switch camera', color: Colors.white,
+          onPressed: _callVideoWorking || call.sharingScreen ? null : _swapCamera,
+          icon: const Icon(Icons.cameraswitch)),
+      if (call.video && !compact)
+        IconButton(
+          tooltip: call.sharingScreen ? 'Stop screen sharing' : 'Share screen',
+          color: call.sharingScreen ? Colors.amber : Colors.white,
+          onPressed: _callVideoWorking ? null : _toggleScreenShare,
+          icon: Icon(call.sharingScreen ? Icons.stop_screen_share : Icons.screen_share)),
+      IconButton(tooltip: 'End call', color: Colors.white,
+        style: IconButton.styleFrom(backgroundColor: Colors.red),
+        onPressed: () => call.hangUp(),
+        icon: const Icon(Icons.call_end)),
+    ]);
     return Material(
-      color: const Color(0xff102b4e),
+      color: overlayBackground,
+      elevation: compact ? 12 : 0,
+      borderRadius: compact ? BorderRadius.circular(16) : null,
+      clipBehavior: Clip.antiAlias,
       child: SafeArea(child: Column(children: [
-        const SizedBox(height: 20),
-        Text(call.talkingTo?.name ?? 'Call',
-          style: const TextStyle(fontSize: 26, color: Colors.white,
-              fontWeight: FontWeight.bold)),
-        Text(call.connecting ? 'Connecting...' : 'Connected • Local network',
-          style: const TextStyle(fontSize: 17, color: Colors.white70)),
-        Expanded(child: call.video
-          ? Stack(fit: StackFit.expand, children: [
-              if (call.remoteRenderer != null)
-                RTCVideoView(call.remoteRenderer!, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
-              else const Center(child: Icon(Icons.videocam, color: Colors.white54, size: 80)),
-              if (call.localRenderer != null)
-                Positioned(top: 20, right: 12, height: 150, width: 120,
-                  child: ClipRRect(borderRadius: BorderRadius.circular(12),
-                    child: RTCVideoView(call.localRenderer!, mirror: true))),
-            ])
-          : const Center(child: Icon(Icons.call, color: Colors.white70, size: 105))),
-        Padding(padding: const EdgeInsets.all(24), child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            IconButton.filledTonal(tooltip: call.muted ? 'Unmute' : 'Mute',
-              iconSize: 32, onPressed: () => call.setMuted(!call.muted),
-              icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
-            IconButton.filled(tooltip: 'End call', iconSize: 36,
-              style: IconButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => call.hangUp(), icon: const Icon(Icons.call_end)),
-          ])),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanUpdate: compact
+              ? (details) => setState(() => _floatingCallPosition += details.delta)
+              : null,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 5 : 14),
+            child: Row(children: [
+              if (compact) const Icon(Icons.drag_indicator, color: Colors.white54),
+              Expanded(child: Text(title,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: compact ? 14 : 22,
+                  color: Colors.white, fontWeight: FontWeight.bold))),
+              Text(call.connecting ? 'Connecting' : 'Live',
+                style: const TextStyle(fontSize: 11, color: Colors.white70)),
+            ]),
+          ),
+        ),
+        Expanded(child: OrientationBuilder(builder: (context, orientation) {
+          // The renderer's decoded frame aspect is authoritative; Flutter's
+          // orientation/layout automatically accommodates phone rotation.
+          return videoContent;
+        })),
+        Padding(padding: EdgeInsets.symmetric(vertical: compact ? 3 : 12),
+          child: toolbar),
       ])),
     );
   }
@@ -856,7 +995,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       selected == null ? _deviceList() : _chat()),
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
-      Positioned.fill(child: _activeCall()),
+      if (_callMinimized)
+        Positioned(
+          left: _floatingCallPosition.dx.clamp(0.0,
+              (MediaQuery.sizeOf(context).width - 250).clamp(0.0, double.infinity)).toDouble(),
+          top: _floatingCallPosition.dy.clamp(0.0,
+              (MediaQuery.sizeOf(context).height - 180).clamp(0.0, double.infinity)).toDouble(),
+          width: 250,
+          height: 180,
+          child: _activeCall(compact: true),
+        )
+      else Positioned.fill(child: _activeCall()),
   ]));
 
   @override
