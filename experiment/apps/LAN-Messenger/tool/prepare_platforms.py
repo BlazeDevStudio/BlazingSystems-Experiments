@@ -78,3 +78,8 @@ if window.exists():
     text = text.replace('L"lan_messenger"', 'L"LAN Messenger"')
     window.write_text(text, encoding='utf-8')
     print(f'Patched {window}')
+# Flutter create scaffolds a demo MyApp widget_test unrelated to LAN Messenger.
+demo = root / 'test/widget_test.dart'
+if demo.exists() and 'pumpWidget(const MyApp())' in demo.read_text(encoding='utf-8'):
+    demo.unlink()
+    print(f'Removed generated template test {demo}')
