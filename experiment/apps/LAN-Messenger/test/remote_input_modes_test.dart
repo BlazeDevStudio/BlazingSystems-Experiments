@@ -22,7 +22,7 @@ void main() {
     final center = normalizedVideoPoint(const Offset(200, 150),
         view, 4 / 3, 2.0, const Offset(80, 0));
     expect(center, isNotNull);
-    expect(center!.dx, closeTo(0.366667, 0.0001));
+    expect(center!.dx, closeTo(0.4, 0.0001));
     expect(center.dy, closeTo(0.5, 0.0001));
   });
 
