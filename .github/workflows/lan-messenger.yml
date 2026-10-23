@@ -72,8 +72,18 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
-            APK="$(find android-apk -name 'app-x86_64-release.apk' -print -quit)"
-            test -f "$APK"
+            # Android emulator runner runs its script from a separate working
+            # directory; the previous relative 'android-apk' search failed
+            # before installation. Use the stable checkout workspace path.
+            APK_DIR="$GITHUB_WORKSPACE/android-apk"
+            echo "Downloaded APK files in $APK_DIR:"
+            find "$APK_DIR" -maxdepth 6 -type f -print
+            APK="$(find "$APK_DIR" -type f -name 'app-x86_64-release.apk' -print -quit)"
+            if [ -z "$APK" ] || [ ! -s "$APK" ]; then
+              echo "ERROR: x86_64 APK not downloaded; inspect artifact paths above"
+              exit 1
+            fi
+            echo "Installing $APK"
             adb install -r "$APK"
             adb shell pm list packages | grep -F 'com.example.lan_messenger'
             adb shell am start -n com.example.lan_messenger/.MainActivity
