@@ -13,7 +13,7 @@ extension ControlInputModeDescription on ControlInputMode {
     ControlInputMode.threeFingerPanZoom => '3-finger pan & zoom',
   };
   String get hint => switch (this) {
-    ControlInputMode.trackpad => 'Swipe to move pointer; tap to click; two fingers scroll or right-click',
+    ControlInputMode.trackpad => 'Swipe to move pointer; tap to click; pinch to zoom or two-finger scroll/right-click',
     ControlInputMode.directTouch => 'Tap or drag at the corresponding desktop position',
     ControlInputMode.twoFingerPanZoom => 'One finger controls the PC; two fingers pan and zoom locally',
     ControlInputMode.threeFingerPanZoom => 'One finger controls the PC; two fingers scroll/right-click; three fingers pan and zoom',
@@ -62,6 +62,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
   bool _dragging = false;
   bool _moved = false;
   bool _localGesture = false;
+  bool _pinching = false;
+  double? _pinchStartSpread;
   Offset? _firstDown;
   DateTime? _firstDownAt;
   Offset? _previousCenter;
@@ -103,6 +105,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       _firstDownAt = DateTime.now();
       _moved = false;
       _localGesture = false;
+      _pinching = false;
+      _pinchStartSpread = null;
       if (!_trackpad) {
         final p = RemoteControlSurface.normalizedPoint(
             e.localPosition, _viewport, widget.sourceRatio,
@@ -117,6 +121,7 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
     final c = _center();
     _previousCenter = c;
     _previousSpread = _spread(c);
+    if (_points.length == 2) _pinchStartSpread = _previousSpread;
     setState(() {});
   }
   void _onMove(PointerMoveEvent e) {
@@ -143,10 +148,30 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       return;
     }
     if (_points.length == 2) {
-      // Two remote fingers in trackpad/3-finger mode emulate scrolling.
-      // Full Windows multitouch injection remains a separate native feature.
-      final dy = e.localPosition.dy - previous.dy;
-      if (dy.abs() >= 1) _send('scroll', (-dy * 12).round().clamp(-120, 120).toInt());
+      // In trackpad mode, a divergent two-finger gesture scales the local
+      // desktop preview, while parallel movement scrolls on the host.
+      // The initial threshold prevents small touch jitter from zooming.
+      final center = _center();
+      final spread = _spread(center);
+      if (_trackpad && _pinchStartSpread != null &&
+          _pinchStartSpread! > 3 && spread > 3) {
+        if ((spread - _pinchStartSpread!).abs() > 8) _pinching = true;
+        if (_pinching && _previousSpread != null &&
+            _previousSpread! > 3) {
+          setState(() {
+            _zoom = (_zoom * spread / _previousSpread!)
+                .clamp(1.0, 4.0).toDouble();
+          });
+        }
+      }
+      if (!_pinching) {
+        final dy = e.localPosition.dy - previous.dy;
+        if (dy.abs() >= 1) {
+          _send('scroll', (-dy * 12).round().clamp(-120, 120).toInt());
+        }
+      }
+      _previousCenter = center;
+      _previousSpread = spread;
       _moved = true;
       return;
     }
@@ -212,6 +237,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       _previousCenter = null;
       _previousSpread = null;
       _localGesture = false;
+      _pinching = false;
+      _pinchStartSpread = null;
     } else {
       final c = _center();
       _previousCenter = c;
@@ -228,6 +255,8 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       _releaseDrag();
       _points.clear();
       _localGesture = false;
+      _pinching = false;
+      _pinchStartSpread = null;
       _pan = Offset.zero;
       _zoom = 1;
     }
@@ -245,7 +274,11 @@ class _RemoteControlSurfaceState extends State<RemoteControlSurface> {
       onPointerDown: widget.enabled ? _onDown : null,
       onPointerMove: widget.enabled ? _onMove : null,
       onPointerUp: widget.enabled ? _onUp : null,
-      onPointerCancel: widget.enabled ? _onUp : null,
+      onPointerCancel: widget.enabled ? (event) {
+        _moved = true;
+        _localGesture = true;
+        _onUp(event);
+      } : null,
       child: Stack(children: [
         Positioned.fill(child: Transform.translate(
           offset: _pan,
