@@ -201,6 +201,24 @@ class MainActivity : FlutterActivity() {
                 }
             } catch (e: Exception) { result.error("LAN_NOTIFY", e.message, null) }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/projection")
+            .setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "start" -> {
+                            val service = Intent(this, ScreenProjectionService::class.java)
+                            if (Build.VERSION.SDK_INT >= 26) startForegroundService(service)
+                            else startService(service)
+                            result.success(null)
+                        }
+                        "stop" -> {
+                            stopService(Intent(this, ScreenProjectionService::class.java))
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) { result.error("PROJECTION", e.message, null) }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lan_messenger/multicast")
             .setMethodCallHandler { call, result ->
                 try {
