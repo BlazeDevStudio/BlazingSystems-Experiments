@@ -15,6 +15,12 @@ class Intercom {
   bool connecting = false;
   bool muted = false;
   bool sharingScreen = false;
+  bool peerSharingScreen = false;
+  bool controllingPeer = false;
+  bool remoteControlGranted = false;
+  bool remoteControlRequested = false;
+  Future<bool> Function(Peer)? onRemoteControlRequest;
+  DateTime? _lastRemoteInput;
   bool changingVideoSource = false;
   int cameraCount = 0;
   String? cameraId;
@@ -202,6 +208,56 @@ class Intercom {
       return;
     }
     if (id != callId || peer.id != talkingTo?.id || _closing) return;
+    // Commands are authenticated through the existing encrypted peer channel
+    // and additionally bound to the currently active call ID.
+    if (type == 'screen_state') {
+      peerSharingScreen = data['active'] == true;
+      if (!peerSharingScreen) {
+        controllingPeer = false;
+        remoteControlRequested = false;
+      }
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control_request') {
+      // Android OS accessibility/input injection is deliberately unsupported.
+      // Only a visible Windows sharer may grant session-bound remote assistance.
+      final granted = Platform.isWindows && sharingScreen && !remoteControlGranted
+          && (await (onRemoteControlRequest?.call(peer) ?? Future.value(false)));
+      remoteControlGranted = granted;
+      if (granted) onChanged?.call();
+      await node.signal(peer, {'type': 'control_permission',
+          'callId': id, 'granted': granted}).catchError((_) {});
+      return;
+    }
+    if (type == 'control_permission') {
+      controllingPeer = data['granted'] == true && peerSharingScreen;
+      remoteControlRequested = false;
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control_revoke') {
+      remoteControlGranted = false;
+      controllingPeer = false;
+      remoteControlRequested = false;
+      onChanged?.call();
+      return;
+    }
+    if (type == 'control_input') {
+      if (!Platform.isWindows || !sharingScreen || !remoteControlGranted) return;
+      final action = data['action'];
+      if (action != 'move' && action != 'tap' && action != 'text') return;
+      try {
+        await const MethodChannel('lan_messenger/windows_control')
+            .invokeMethod<void>('input', {
+              'action': action,
+              'x': data['x'],
+              'y': data['y'],
+              'text': data['text'],
+            });
+      } catch (e) { await _log('remote input rejected: $e'); }
+      return;
+    }
     if (type == 'ice' && data['candidate'] is String) {
       final candidate = RTCIceCandidate(data['candidate'] as String,
           data['mid'] as String?, data['mLine'] as int?);
@@ -303,6 +359,9 @@ class Intercom {
       await videoSenders.first.replaceTrack(acquired.getVideoTracks().first);
       _screenStream = acquired;
       sharingScreen = true;
+      await node.signal(talkingTo!, {
+        'type': 'screen_state', 'callId': callId, 'active': true,
+      }).catchError((_) {});
       // The local preview shows exactly what the other side receives.
       localRenderer?.srcObject = acquired;
       for (final camera in _localStream?.getVideoTracks() ?? <MediaStreamTrack>[]) {
@@ -333,6 +392,12 @@ class Intercom {
     final stream = _screenStream!;
     _screenStream = null;
     sharingScreen = false;
+    await revokeRemoteControl();
+    if (talkingTo != null && callId != null) {
+      await node.signal(talkingTo!, {
+        'type': 'screen_state', 'callId': callId, 'active': false,
+      }).catchError((_) {});
+    }
     try {
       final cameraTrack = _cameraTrack;
       if (cameraTrack != null && _connection != null && !_closing) {
@@ -357,6 +422,49 @@ class Intercom {
       }
       onChanged?.call();
     }
+  }
+
+  Future<void> requestRemoteControl() async {
+    if (talkingTo == null || callId == null || !peerSharingScreen ||
+        controllingPeer || remoteControlRequested || _closing) return;
+    remoteControlRequested = true;
+    onChanged?.call();
+    try {
+      await node.signal(talkingTo!, {'type': 'control_request', 'callId': callId});
+    } catch (_) {
+      remoteControlRequested = false;
+      onChanged?.call();
+    }
+  }
+
+  Future<void> revokeRemoteControl() async {
+    remoteControlGranted = false;
+    controllingPeer = false;
+    remoteControlRequested = false;
+    onChanged?.call();
+    if (talkingTo != null && callId != null) {
+      await node.signal(talkingTo!, {'type': 'control_revoke',
+          'callId': callId}).catchError((_) {});
+    }
+  }
+
+  /// Rate-limited, call-scoped input; no file execution, shell or shortcuts.
+  Future<void> sendRemoteInput(String action, {double? x, double? y,
+      String? text}) async {
+    if (!controllingPeer || !peerSharingScreen || talkingTo == null ||
+        callId == null || _closing) return;
+    if (action != 'tap' && action != 'move' && action != 'text') return;
+    if (action == 'move') {
+      final now = DateTime.now();
+      if (_lastRemoteInput != null &&
+          now.difference(_lastRemoteInput!).inMilliseconds < 40) return;
+      _lastRemoteInput = now;
+    }
+    if (action == 'text' && (text == null || text.length > 120)) return;
+    if (action != 'text' && (x == null || y == null ||
+        x < 0 || x > 1 || y < 0 || y > 1)) return;
+    await node.signal(talkingTo!, {'type': 'control_input', 'callId': callId,
+      'action': action, 'x': x, 'y': y, 'text': text}).catchError((_) {});
   }
 
   Future<void> setMuted(bool value) async {
@@ -391,6 +499,10 @@ class Intercom {
     final screen = _screenStream;
     _screenStream = null;
     sharingScreen = false;
+    peerSharingScreen = false;
+    controllingPeer = false;
+    remoteControlGranted = false;
+    remoteControlRequested = false;
     changingVideoSource = false;
     cameraCount = 0;
     cameraId = null;
