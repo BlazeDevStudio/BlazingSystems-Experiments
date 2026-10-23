@@ -14,6 +14,7 @@ import 'src/intercom.dart';
 import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
+import 'src/remote_control_surface.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -61,6 +62,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool showReceived = false;
   bool _callMinimized = false;
   Offset _videoPosition = const Offset(16, 20);
+  ControlInputMode _controlMode = ControlInputMode.trackpad;
   Offset _miniCallPosition = const Offset(20, 110);
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
@@ -421,11 +423,32 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _openAndroidAssistiveSettings() async {
-    if (!Platform.isAndroid) return;
+    if (!Platform.isAndroid || !mounted) return;
+    final action = await showDialog<String>(context: context, builder: (ctx) =>
+      AlertDialog(
+        title: const Text('Enable optional remote control'),
+        content: const Text(
+          'LAN Messenger Remote Touch needs Android Accessibility access. '
+          'On Android 13+ an APK installed outside an app store may be '
+          'restricted: first try enabling LAN Messenger Remote Touch under '
+          'Settings > Accessibility > Installed apps. If the switch is gray, '
+          'open Settings > Apps > LAN Messenger > three-dot menu > '
+          'Allow restricted settings, then return to Accessibility. '
+          'Only permit this on your own trusted device. The caller must '
+          'still approve each remote session, and approval expires in five minutes.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, 'app'),
+            child: const Text('App info')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, 'accessibility'),
+            child: const Text('Accessibility')),
+        ],
+      ));
+    if (action == null) return;
     try {
-      await const MethodChannel('lan_messenger/remote')
-          .invokeMethod<void>('openAccessibilitySettings');
-    } catch (e) { _toast('Could not open Accessibility settings: $e'); }
+      await const MethodChannel('lan_messenger/remote').invokeMethod<void>(
+        action == 'app' ? 'openAppInfo' : 'openAccessibilitySettings');
+    } catch (e) { _toast('Could not open Android settings: $e'); }
   }
 
   Future<void> _openAndroidCallNotificationSettings() async {
@@ -553,8 +576,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       onTap: _openAndroidCallNotificationSettings),
     if (Platform.isAndroid) ListTile(
       leading: const Icon(Icons.touch_app),
-      title: const Text('Optional remote touch permission'),
-      subtitle: const Text('Only needed if you explicitly approve remote control of your Android screen during sharing'),
+      title: const Text('Enable Android Remote Touch'),
+      subtitle: const Text('If Accessibility is gray on a sideloaded APK: App info > three dots > Allow restricted settings. Permission is optional and each call still requires approval.'),
       trailing: const Icon(Icons.open_in_new),
       onTap: _openAndroidAssistiveSettings),
     SwitchListTile(title: const Text('Use LAN Messenger sounds'),
@@ -985,27 +1008,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ]),
           Expanded(child: call.video ? LayoutBuilder(builder: (context, size) {
             return Stack(children: [
-              Positioned.fill(child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: call.remoteControlActive && call.peerSharingScreen
-                    ? (details) {
-                        // Map taps to the decoded video rectangle, excluding
-                        // fitContain letterbox margins. Ignoring those areas
-                        // avoids clicking an unintended desktop location.
-                        final viewRatio = size.maxWidth / size.maxHeight;
-                        final displayedW = viewRatio > sourceRatio
-                            ? size.maxHeight * sourceRatio : size.maxWidth;
-                        final displayedH = viewRatio > sourceRatio
-                            ? size.maxHeight : size.maxWidth / sourceRatio;
-                        final left = (size.maxWidth - displayedW) / 2;
-                        final top = (size.maxHeight - displayedH) / 2;
-                        final dx = details.localPosition.dx - left;
-                        final dy = details.localPosition.dy - top;
-                        if (dx < 0 || dy < 0 ||
-                            dx > displayedW || dy > displayedH) return;
-                        unawaited(call.sendRemoteClick(
-                            dx / displayedW, dy / displayedH));
-                      } : null,
+              Positioned.fill(child: RemoteControlSurface(
+                enabled: call.remoteControlActive && call.peerSharingScreen,
+                mode: _controlMode,
+                sourceRatio: sourceRatio,
+                onInput: (action, x, y, wheel) =>
+                    unawaited(call.sendRemoteInput(action, x, y, wheel)),
                 child: Center(child: AspectRatio(
                   aspectRatio: sourceRatio,
                   child: call.remoteRenderer != null
@@ -1040,7 +1048,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 const Positioned(top: 9, left: 9, child: DecoratedBox(
                   decoration: BoxDecoration(color: Colors.teal, borderRadius: BorderRadius.all(Radius.circular(6))),
                   child: Padding(padding: EdgeInsets.all(6), child:
-                    Text('REMOTE MOUSE ENABLED', style: TextStyle(
+                    Text('REMOTE CONTROL ACTIVE', style: TextStyle(
                       fontSize: 11, color: Colors.white))))),
               if (call.sharingScreen)
                 const Positioned(bottom: 12, left: 12, child: DecoratedBox(
@@ -1061,8 +1069,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   IconButton.filledTonal(tooltip: 'Switch camera (also double tap preview)',
                     onPressed: () => unawaited(_switchCamera()),
                     icon: const Icon(Icons.flip_camera_android_rounded)),
+                if (call.video && call.remoteControlActive && call.peerSharingScreen)
+                  PopupMenuButton<ControlInputMode>(
+                    tooltip: 'Choose touch control mode',
+                    initialValue: _controlMode,
+                    icon: const Icon(Icons.touch_app, color: Colors.white),
+                    onSelected: (mode) => setState(() => _controlMode = mode),
+                    itemBuilder: (_) => [
+                      for (final mode in ControlInputMode.values)
+                        PopupMenuItem(value: mode, child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(mode.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(mode.hint, style: const TextStyle(fontSize: 11)),
+                          ])),
+                    ],
+                  ),
                 if (call.video && call.peerSharingScreen && !call.remoteControlActive)
-                  IconButton.filledTonal(tooltip: 'Ask to control shared Windows screen',
+                  IconButton.filledTonal(tooltip: 'Ask permission to control the shared screen',
                     onPressed: () async {
                       try { await call.requestRemoteControl(); }
                       catch (e) { _toast('Control request failed: $e'); }
