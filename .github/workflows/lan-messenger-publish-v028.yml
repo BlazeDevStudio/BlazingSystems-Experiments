@@ -19,11 +19,11 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 120); do
-            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40041356332 --jq '.conclusion // ""')"
-            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40041356332 --jq '.head_sha')"
-            test "$commit" = "7c707fa16420e80f8613bac56b567c370c5f8ed6" || { echo "Unrecognized source SHA"; exit 1; }
+            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40042160485 --jq '.conclusion // ""')"
+            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40042160485 --jq '.head_sha')"
+            test "$commit" = "a1528d02ea8a6c238b9d1c4271863f55cd1443a5" || { echo "Unrecognized source SHA"; exit 1; }
             if [ "$conclusion" = "success" ]; then
-              echo "Verified successful full CI run 40041356332 for 7c707fa16420e80f8613bac56b567c370c5f8ed6"
+              echo "Verified successful full CI run 40042160485 for a1528d02ea8a6c238b9d1c4271863f55cd1443a5"
               exit 0
             fi
             if [ -n "$conclusion" ]; then
@@ -46,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh run download 40041356332 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40042160485 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
           New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
           Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
           if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
@@ -103,8 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p artifacts/android artifacts/windows dist
-          gh run download 40041356332 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
-          gh run download 40041356332 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40042160485 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 40042160485 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
       - uses: actions/download-artifact@v4
         with:
           name: LAN-Messenger-Windows-Installer-v0.2.8
@@ -159,16 +159,16 @@ jobs:
           - The Android Accessibility permission setup flow remains manual and respects Android's restricted-settings policy.
 
           ## Verification and limits
-          - Android and Windows source compilation, automated tests and APK validation via GitHub Actions: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40041356332
+          - Android and Windows source compilation, automated tests and APK validation via GitHub Actions: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40042160485
           - Windows Setup EXE is unsigned. Portable ZIP must be fully extracted; Android preview APKs can have a different signing key and may require uninstalling an older version, losing local app data.
           - **Important:** Real busy-PC no-focus-steal behavior, draggable native HWND, Android OEM call banner presentation, live video after screen capture, and Bluetooth/background calling STILL REQUIRE owner testing. Passing CI is not equivalent to real device approval.
-          - Source: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/7c707fa16420e80f8613bac56b567c370c5f8ed6
+          - Source: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/a1528d02ea8a6c238b9d1c4271863f55cd1443a5
           EOF
       - name: Publish immutable GitHub prerelease assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create lan-messenger-v0.2.8-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --target 7c707fa16420e80f8613bac56b567c370c5f8ed6 \
+            --repo "$GITHUB_REPOSITORY" --target a1528d02ea8a6c238b9d1c4271863f55cd1443a5 \
             --title "LAN Messenger v0.2.8 - Compact Incoming Call Preview" \
             --notes-file dist/RELEASE-NOTES.md --prerelease
