@@ -134,13 +134,13 @@ bool loadPending(){
     bp_pending_sequence_init(&pendingSequenceState);
     return persistPendingSequence(pendingSequenceState);
   }
+  // Promote first: failed remove/rename means do NOT accept a recovered event.
+  // The source /pending.new or /pending.bak remains for later retry.
+  if(!bp_pending_promote_recovered(LittleFS, chosen)) return false;
+  if(legacy && !persistPendingSequence(r)) return false;
   pendingSequenceState=r;
   pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
   pendingReady=r.sequence!=0; lastSend=0;
-  if(strcmp(chosen,"/pending.dat")!=0){
-    LittleFS.remove("/pending.dat"); LittleFS.rename(chosen,"/pending.dat");
-  }
-  if(legacy && !persistPendingSequence(r)) return false;
   Serial.println("Recovered unacknowledged coin event from flash.");
   return true;
 }
