@@ -46,6 +46,7 @@ class Intercom {
     _controlTimer?.cancel();
     _controlTimer = null;
     remoteControlActive = false;
+    if (Platform.isWindows) WindowsRemoteInput.releaseButtons();
     if (Platform.isAndroid && sharingScreen) {
       unawaited(const MethodChannel('lan_messenger/remote')
           .invokeMethod<void>('status', {'active': false}).catchError((_) {}));
@@ -65,6 +66,20 @@ class Intercom {
         !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
     await node.signal(peer, {
       'type': 'control-click', 'callId': callId, 'x': x, 'y': y,
+    });
+  }
+
+  /// Allowed input events are session-bound and checked by the receiving host.
+  Future<void> sendRemoteInput(String action, double x, double y, [int wheel = 0]) async {
+    final peer = talkingTo;
+    const allowed = {'move', 'down', 'up', 'click', 'right', 'middle', 'scroll'};
+    if (!remoteControlActive || !peerSharingScreen || peer == null ||
+        callId == null || !allowed.contains(action) ||
+        !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
+    await node.signal(peer, {
+      'type': 'control-input', 'callId': callId,
+      'action': action, 'x': x, 'y': y,
+      'wheel': wheel.clamp(-120, 120),
     });
   }
 
@@ -138,6 +153,32 @@ class Intercom {
       }
       if (display.getVideoTracks().isEmpty) {
         throw StateError('No screen video track available');
+      }
+      // flutter_webrtc on Windows can return an enabled but dead capture track.
+      // Confirm an actual decoded desktop frame BEFORE replacing the camera
+      // sender; otherwise both local preview and peer can go permanently blank.
+      if (Platform.isWindows) {
+        final probe = RTCVideoRenderer();
+        await probe.initialize();
+        try {
+          probe.srcObject = display;
+          var frameReady = false;
+          for (var attempt = 0; attempt < 35; attempt++) {
+            if (_closing || _connection == null) break;
+            if (probe.videoWidth > 0 && probe.videoHeight > 0) {
+              frameReady = true;
+              break;
+            }
+            await Future<void>.delayed(const Duration(milliseconds: 120));
+          }
+          if (!frameReady) {
+            throw StateError('Selected desktop capture produced no frames. '
+                'Keep the display active and select a different screen.');
+          }
+        } finally {
+          probe.srcObject = null;
+          await probe.dispose();
+        }
       }
       final senders = await _connection!.getSenders();
       final videoSenders = senders.where((s) => s.track?.kind == 'video').toList();
@@ -421,23 +462,35 @@ class Intercom {
       onChanged?.call();
       return;
     }
-    if (type == 'control-click') {
+    if (type == 'control-click' || type == 'control-input') {
       if (!(Platform.isWindows || Platform.isAndroid) ||
           !sharingScreen || !remoteControlApproved ||
           _approvedControllerId != peer.id) return;
       final x = data['x'];
       final y = data['y'];
-      if (x is! num || y is! num ||
+      final action = type == 'control-click' ? 'click' : data['action'];
+      const allowed = {'move', 'down', 'up', 'click', 'right', 'middle', 'scroll'};
+      if (x is! num || y is! num || action is! String ||
+          !allowed.contains(action) ||
           !x.isFinite || !y.isFinite ||
           x < 0 || x > 1 || y < 0 || y > 1) return;
+      final wheel = data['wheel'];
+      if (action == 'scroll' &&
+          (wheel is! int || wheel < -120 || wheel > 120)) return;
       final now = DateTime.now();
-      // Rate-limit remote input to at most ten clicks per second.
-      if (_lastInputAt != null &&
-          now.difference(_lastInputAt!) < const Duration(milliseconds: 100)) return;
+      // Throttle motion without dropping an essential mouse-button release.
+      final gap = switch (action) {
+        'move' || 'scroll' => const Duration(milliseconds: 25),
+        'click' || 'right' || 'middle' => const Duration(milliseconds: 85),
+        _ => Duration.zero,
+      };
+      if (gap > Duration.zero && _lastInputAt != null &&
+          now.difference(_lastInputAt!) < gap) return;
       _lastInputAt = now;
       if (Platform.isWindows) {
-        WindowsRemoteInput.clickNormalized(x.toDouble(), y.toDouble());
-      } else if (Platform.isAndroid) {
+        WindowsRemoteInput.perform(action, x.toDouble(), y.toDouble(),
+            action == 'scroll' ? wheel as int : 0);
+      } else if (Platform.isAndroid && action == 'click') {
         await const MethodChannel('lan_messenger/remote').invokeMethod<bool>(
           'tap', {'x': x.toDouble(), 'y': y.toDouble()},
         ).catchError((_) => false);
