@@ -493,6 +493,11 @@ class Intercom {
         catch (e) { unawaited(_log('media track stop error: $e')); }
       }
     }
+    // Terminate screen capture immediately as well: a slow native peer close
+    // must not keep the OS screen-sharing indicator active.
+    if (display != null) {
+      for (final track in display.getTracks()) { track.stop(); }
+    }
     try {
       if (pc != null) {
         // Disconnect callbacks first; don't allow an onConnectionState recursion.
