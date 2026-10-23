@@ -46,7 +46,9 @@ class PlayerRestoreTest {
         try {
             waitUntil(15_000) {
                 controller.state.value.connected && controller.state.value.sourceUri == tracks[1].uri &&
-                    controller.state.value.durationUs > 0
+                    controller.state.value.durationUs > 0 &&
+                    controller.state.value.sourceTimeUs in 280_000..350_000 &&
+                    kotlin.math.abs(controller.state.value.speed - .75f) < .001f
             }
             assertFalse(controller.state.value.isPlaying)
             assertEquals(.75f, controller.state.value.speed, .001f)
@@ -91,4 +93,27 @@ class PlayerRestoreTest {
             }
         }
     }
+    /** Raw-controller checks have no competing Activity/StudioModel restoring Practice. */
+    @Test fun playbackSeeksAndLoopsUsingSourceTime() {
+        val file=File(context.filesDir,"playback.wav")
+        instrument.context.assets.open("synthetic.wav").use { input -> file.outputStream().use(input::copyTo) }
+        clearSession()
+        lateinit var player: PlayerController
+        instrument.runOnMainSync { player=PlayerController(context);player.open(Uri.fromFile(file)) }
+        try {
+            waitUntil(30_000) { player.state.value.isPlaying }
+            instrument.runOnMainSync {
+                player.pause();player.seekTo(1_000_000);player.setPracticeSpeed(.5f)
+            }
+            waitUntil(5_000) {
+                kotlin.math.abs(player.state.value.sourceTimeUs-1_000_000)<=50_000 &&
+                    kotlin.math.abs(player.state.value.speed-.5f)<.001f
+            }
+            assertEquals(.5f,player.state.value.speed,.001f)
+            instrument.runOnMainSync { player.setLoop(300_000,700_000);player.play() }
+            SystemClock.sleep(1300)
+            assertTrue("Loop state: ${player.state.value}",player.state.value.sourceTimeUs in 300_000..750_000)
+        } finally { instrument.runOnMainSync { player.clearQueue();player.close() } }
+    }
+
 }

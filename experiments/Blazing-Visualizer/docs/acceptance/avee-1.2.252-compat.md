@@ -1,5 +1,7 @@
 # Avee 1.2.252 comparison — verified vs unknown
 
+This comparison records the earlier importer/FFT baseline. The Preview 3 composition and configured Spectrum2 increment, with its remaining limits, is described in [avee-1252-audio-profile.md](avee-1252-audio-profile.md) and [preview-3-evidence.md](preview-3-evidence.md). Refer to HANDOFF.md for actual release verification.
+
 Owner-provided reference: `Avee Player v1.2.252 (Premium).apk`. It is an **unofficially modified** distribution, indicated by `E_l_a_Mods.xml` and `libpairipcore.so`. It is inspected locally for interoperability research only, not committed, executed, repackaged or redistributed.
 
 ## Confirmed static structure

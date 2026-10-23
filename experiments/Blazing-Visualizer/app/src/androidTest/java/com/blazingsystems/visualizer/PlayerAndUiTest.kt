@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.blazingsystems.visualizer.playback.PlayerController
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.render.BuiltinScenes
 import com.blazingsystems.visualizer.ui.StudioModel
@@ -84,38 +83,6 @@ class PlayerAndUiTest {
         assertEquals(.25f, model().state.value.project!!.exportTransforms.values.last().x, .0001f)
     }
 
-    @Test
-    fun playbackSeeksAndLoopsUsingSourceTime() {
-        val inst = InstrumentationRegistry.getInstrumentation()
-        val f = File(rule.activity.filesDir, "playback.wav")
-        inst.context.assets.open("synthetic.wav").use { input ->
-            f.outputStream().use(input::copyTo)
-        }
-        lateinit var player: PlayerController
-        rule.runOnUiThread {
-            player = PlayerController(rule.activity)
-            player.open(Uri.fromFile(f))
-        }
-        try {
-            rule.waitUntil(30_000) { player.state.value.isPlaying }
-            rule.runOnUiThread {
-                player.pause()
-                player.seekTo(1_000_000)
-                player.setPracticeSpeed(.5f)
-            }
-            rule.waitUntil(5_000) {
-                kotlin.math.abs(player.state.value.sourceTimeUs - 1_000_000) <= 50_000
-            }
-            assertEquals(.5f, player.state.value.speed, .001f)
-            rule.runOnUiThread {
-                player.setLoop(300_000, 700_000)
-                player.play()
-            }
-            Thread.sleep(1300)
-            assertTrue(player.state.value.sourceTimeUs in 300_000..750_000)
-        } finally {
-            rule.runOnUiThread { player.close() }
-        }
-    }
+
 
 }

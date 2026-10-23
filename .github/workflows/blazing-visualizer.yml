@@ -80,8 +80,9 @@ jobs:
           script: |
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.blazingsystems.visualizer.MusicPermissionTest -Pandroid.testInstrumentationRunnerArguments.freshAudioPermission=true --no-daemon
             mv app/build/reports/androidTests/connected app/build/reports/androidTests/permission
-            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=com.blazingsystems.visualizer.MusicPermissionTest --no-daemon
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.notClass=com.blazingsystems.visualizer.MusicPermissionTest --no-daemon
             mkdir -p ../../device-evidence && adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > ../../device-evidence/acceptance.tar
+            python3 -c 'import tarfile; t=tarfile.open("../../device-evidence/acceptance.tar"); assert {"acceptance/model-parity.json", "acceptance/graph-chord_3d.png", "acceptance/graph-radial.png"} <= set(t.getnames()), "Missing native evidence"'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

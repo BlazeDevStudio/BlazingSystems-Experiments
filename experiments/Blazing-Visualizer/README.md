@@ -11,8 +11,8 @@ An Android music player and visualizer with an Avee-style Library / Visualizer /
 - Automatic MediaStore library discovery after music access is allowed, independent sortable/drag-reorderable Queue, and cached background note preparation.
 - Long-press visualizer arrangement with move/resize handles; export follows and auto-fits the preview or uses its own arrangement.
 - Per-layer Lo/Lo2/Mid/Mid2/Hi/Hi2 routing, independent piano-key glow/sparks and colors, global/piano intensity and a global palette.
-- Original Harmonic flow, Orbital voices and Wave garden graph presets; optional equations are off by default. Graph views display up to 12 simultaneous pitches; Practice retains the complete note detection.
-- Microphone/YIN tuner with A4 calibration, cents/confidence and guitar-string guidance. Capture stops when the sheet closes or the app backgrounds; resume explicitly.
+- Original Harmonic flow, Orbital voices and Wave garden presets plus five optional motion presets: trails, spatial chords, shared-cursor reveal, rhythm gates and radial contours. Optional equations are off by default. Graph views display up to 12 simultaneous pitches; Practice retains the complete note detection.
+- Main-canvas microphone toggle with conservative simultaneous note estimates and precise single-note YIN readings. Capture time drives animation independently of playback; capture stops when disabled or the app backgrounds.
 
 ## Build
 
@@ -31,9 +31,9 @@ CI runs `MusicPermissionTest` alone on a fresh install (with `freshAudioPermissi
 
 Allow music access to fill Library automatically, or open files with the music button. Queue is separate: add tracks, choose Play next, long press to reorder, or sort by title/artist. Notes prepare in the background; the selected track takes priority.
 
-Choose **Harmonic compass** for the note wheel, or one of the three graph presets. Tap **Practice** to follow or correct notes; its selections and loops are saved per track. The pencil opens layers, note bands, colors and effects. Turn on **Include math equations** only if wanted. Hold the canvas to arrange, drag a layer to move it and its white corner to resize; tap Done to save. Rotation ends an active preview arrangement before fitting it to the new viewport.
+Use the thumbnail grid to choose **Harmonic compass**, a graph, or one of the new motion presets. The fullscreen button hides the player chrome. The note wheel has editable idle text and displays all detected note classes when no chord matches. Tap **Practice** to follow or correct notes; its selections and loops are saved per track. The pencil opens layers, note bands, colors and effects. Turn on **Include math equations** only if wanted. Hold the canvas to arrange, drag a layer to move it and its white corner to resize; tap Done to save. Rotation ends an active preview arrangement before fitting it to the new viewport.
 
-The share/export icon offers landscape, portrait and square with dimensions and an output preview. Choose **Follow preview · auto fit** or **Separate arrangement**, then arrange the export frame independently. Tuner listens through the microphone and pauses playback. Imported presets and attached images are stored locally.
+The share/export icon offers landscape, portrait and square with dimensions and an output preview. Choose optimized layout, contain, cover or stretch; keep preview-following placement or use a **Separate arrangement** for the export. The mic toggle listens on the same visualizer canvas while playback may continue; selecting another playback track exits monitoring. Imported presets and attached images are stored locally.
 
 Note estimates are suggestions, especially on dense mixes. Corrections are separate from raw model results and survive reopening a project. Replacing the contents behind a file URI clears stale corrections and requires fresh analysis before export. MIDI always exports sounding concert pitch.
 
@@ -41,7 +41,7 @@ Analysis length is limited by the device heap, up to 30 minutes. Video settings 
 
 ## Verification and provenance
 
-See [execution record](docs/acceptance/execution-record.md), [third-party notices](THIRD_PARTY_NOTICES.md), and the [design](docs/superpowers/specs/2026-10-22-blazing-visualizer-design.md). Instrumentation checks independent Python model/postprocessor parity, onset accuracy on synthetic and CC0 recorded-flute fixtures, deterministic GL rendering, real playback/looping, Compose flows, all six export presets, clip duration and cancellation. Physical-device performance and mixed-song transcription are not established by these fixtures.
+For the current release and test evidence read [HANDOFF.md](HANDOFF.md) and [Preview 3 evidence](docs/acceptance/preview-3-evidence.md). Earlier baselines remain in the [execution record](docs/acceptance/execution-record.md), [third-party notices](THIRD_PARTY_NOTICES.md), and the [design](docs/superpowers/specs/2026-10-22-blazing-visualizer-design.md). Instrumentation checks independent Python model/postprocessor parity, onset accuracy on synthetic and CC0 recorded-flute fixtures, deterministic GL rendering, real playback/looping, Compose flows, all six export presets, clip duration and cancellation. Physical-device performance and mixed-song transcription are not established by these fixtures.
 
 The supplied reference recording's math was checked separately in [reference-video-math.md](docs/acceptance/reference-video-math.md). Its video tracing/Bezier conversion idea is deliberately deferred until the improved non-video-renderer APK is delivered.
 

@@ -1,4 +1,6 @@
-# Blazing Visualizer preview
+# Historical Preview 1 handover
+
+For the current app, APK and continuation state, read [HANDOFF.md](HANDOFF.md). The evidence below records the original Preview 1 baseline and does not verify subsequent source changes.
 
 The Android preview is built, signed, persisted and available in draft PR #133. Source is under `experiments/Blazing-Visualizer` on `blazing-visualizer` in `BlazingSystems/BlazingSystems-Experiments`.
 

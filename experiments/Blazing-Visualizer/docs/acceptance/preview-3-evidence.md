@@ -7,7 +7,7 @@ Updated 23 October 2026 (Asia/Manila). The owner approved continued development,
 - Integration `e54f0db378d65d168e192f5439f0aec0294b727d` reconciled published Preview 2 plus checkpoint branch `blazing-visualizer-notes-motion`.
 - Actions `39894731415`, build job `120222407687`: clean JDK17/SDK36 host tests, lint and both APK assemblies succeeded. Downloaded host XML reports contain 104 tests, zero failures/errors/skips. API26/API36 jobs were cancelled when the review regressions were pushed; this is not a full passing matrix.
 - Regression source `216037b3b2d0c3733ffb2f969902abfc800d76fe`, Actions `39895368547`: image replacement and live configured-window/response tests. The host run compiled and executed 107 tests: exactly the three new behavioral regressions failed (image override, long live window, live attack/release); all other tests passed. Both device jobs were skipped by the failed host gate. This confirms the reported defects before fixes.
-- The fix candidate gives explicit assets precedence, retains a 6615-sample live history, and applies capture-time response smoothing. Same-instance motion seeking and recorded bank settings/seek-order tests also strengthen verification. Green verification and the full device matrix are pending. Preview 3 is not yet verified or published. Use HANDOFF.md for the final release checkpoint.
+- Fix source `edcd8ad63f1d88511546664b367046c967f41fd9`, Actions `39895982129`, build `120226429608`: clean host/lint/debug and test APK assembly succeeded. Downloaded XML reports contain108 tests, zero failures/errors/skips. The three previously failing behavioral tests now pass, completing RED-to-GREEN verification. Same-instance motion seeking and recorded bank settings/seek-order tests pass as well. API26/API36 and publication remain pending at this checkpoint. Use HANDOFF.md for the final release checkpoint.
 
 ## Fresh read-only review
 
@@ -23,3 +23,11 @@ Deferred minor: JSON boolean `mirrorSamples: true` is not interpreted as the num
 Ruling: use original bounded approximations for modern Avee effects and report partial compatibility. The inspected upload is an unofficial modified APK; no source code, APK or artwork is redistributed. Cost if wrong: some imported presets will still differ, explicitly reported rather than marketed as full compatibility.
 
 Ruling: preserve the owner's main-canvas mic workflow and earlier accepted playback behavior. Monitoring can continue while playback runs, and capture time drives animation even with no playing track. Selecting another playback track exits monitoring. Cost if wrong: speaker playback may be heard by the mic; the toggle lets the owner stop monitoring.
+
+## Android 16 follow-up
+
+At edcd8ad, API26 passed all19 general tests (plus the independent permission flow). API36 passed17/19; source-speed and restored-loop assertions failed. The raw-controller speed test ran inside an Activity with a second StudioModel controller restoring per-track defaults. It is moved to the existing controller-only suite. The cold-loop test waited for duration metadata, which arrives before the deferred ready-state seek; logcat shows the300ms seek arriving around assertion/teardown. It now waits for the actual requested speed and loop position before asserting. Neither assertion is removed or widened.
+
+Artifact inspection also found that the successful API26 tar contained only `run-as: unknown package`: Gradle had uninstalled the app before extraction. The second instrumentation invocation now uses `android.injected.androidTest.leaveApksInstalledAfterRun=true`, as used by AndroidX upstream, and verifies required JSON/PNG files in a real tar before success. Earlier job success did not prove native screenshots were retained. Primary reference: https://android.googlesource.com/platform/frameworks/support/+/9e4716bac2232e13eb633984353a169d177a9b99/gradle.properties .
+
+The next exact-source run must revalidate both Android versions and the recovered native visual evidence before publication. The app product code remains edcd8ad; this follow-up changes test isolation, condition waiting, CI evidence collection and documentation.
