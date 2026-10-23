@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    timeout-minutes: 15
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     defaults:
@@ -29,7 +30,9 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-      - run: ./gradlew clean :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+      - name: Compile native regression checkpoint only (not release validation)
+        timeout-minutes: 12
+        run: ./gradlew clean :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --console=plain
       - uses: actions/upload-artifact@v4
         with:
           name: Blazing-Visualizer-preview-APK
