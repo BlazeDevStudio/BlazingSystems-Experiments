@@ -146,7 +146,7 @@ class MainActivity : FlutterActivity() {
         val answer = callAction("answer", callId)
         val decline = callAction("decline", callId)
         val b = builder(event)
-            .setSmallIcon(android.R.drawable.stat_sys_phone_call)
+            .setSmallIcon(android.R.drawable.ic_menu_call)
             .setContentTitle(caller)
             .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
             .setContentIntent(openApp())
