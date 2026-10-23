@@ -9,12 +9,12 @@
  <uses-permission android:name="android.permission.RECORD_AUDIO" />
  <uses-feature android:name="android.hardware.microphone" android:required="false" />
  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
- <application android:label="Blazing Visualizer" android:icon="@drawable/ic_blazing" android:theme="@style/Theme.Blazing" android:allowBackup="false" android:supportsRtl="true">
-  <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
+ <application android:label="${blazeLabel}" android:icon="@drawable/ic_blazing" android:theme="@style/Theme.Blazing" android:allowBackup="false" android:supportsRtl="true">
+  <activity android:name="com.blazingsystems.visualizer.MainActivity" android:exported="true" android:launchMode="singleTop">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
    <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="content" android:mimeType="audio/*"/></intent-filter>
   </activity>
-  <service android:name=".playback.PlaybackService" android:exported="true" android:foregroundServiceType="mediaPlayback"><intent-filter><action android:name="androidx.media3.session.MediaSessionService"/></intent-filter></service>
-  <service android:name=".export.ExportService" android:exported="false" android:foregroundServiceType="mediaProcessing|dataSync" />
+  <service android:name="com.blazingsystems.visualizer.playback.PlaybackService" android:exported="true" android:foregroundServiceType="mediaPlayback"><intent-filter><action android:name="androidx.media3.session.MediaSessionService"/></intent-filter></service>
+  <service android:name="com.blazingsystems.visualizer.export.ExportService" android:exported="false" android:foregroundServiceType="mediaProcessing|dataSync" />
  </application>
 </manifest>
