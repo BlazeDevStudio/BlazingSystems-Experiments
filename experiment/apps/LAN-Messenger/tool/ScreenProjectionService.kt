@@ -13,6 +13,7 @@ import android.os.IBinder
  * Never starts unless the user granted system MediaProjection consent in app.
  */
 class ScreenProjectionService : Service() {
+    private var remoteControlActive = false
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -21,6 +22,8 @@ class ScreenProjectionService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.action == "CONTROL_ON") remoteControlActive = true
+        if (intent?.action == "CONTROL_OFF") remoteControlActive = false
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val id = "lan_messenger_projection"
         if (Build.VERSION.SDK_INT >= 26) {
@@ -34,7 +37,9 @@ class ScreenProjectionService : Service() {
             Notification.Builder(this).setPriority(Notification.PRIORITY_LOW)
         }.setSmallIcon(android.R.drawable.ic_menu_view)
             .setContentTitle("LAN Messenger is sharing your screen")
-            .setContentText("Return to the active call to stop sharing")
+            .setContentText(if (remoteControlActive)
+                "REMOTE TOUCH ACTIVE — Return to the call to revoke access"
+                else "Return to the active call to stop sharing")
             .setOngoing(true).build()
         if (Build.VERSION.SDK_INT >= 29) {
             startForeground(7025, notification,
