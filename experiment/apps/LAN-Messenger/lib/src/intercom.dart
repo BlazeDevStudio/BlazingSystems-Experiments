@@ -26,6 +26,8 @@ class Intercom {
       _controlDeadline != null &&
       DateTime.now().isBefore(_controlDeadline!);
   Future<bool> Function(Peer peer)? onRemoteControlRequest;
+  Future<DesktopCapturerSource?> Function(List<DesktopCapturerSource> sources)?
+      onChooseDesktopSource;
 
   Future<void> requestRemoteControl() async {
     final peer = talkingTo;
@@ -107,8 +109,24 @@ class Intercom {
     }
     MediaStream? display;
     try {
+      Map<String, dynamic> videoOptions = {'frameRate': 12};
+      if (Platform.isWindows) {
+        // Desktop Flutter WebRTC does not provide a native source picker.
+        // A source ID is required for predictable Windows capture.
+        final sources = await desktopCapturer.getSources(
+          types: [SourceType.Screen, SourceType.Window],
+        );
+        if (sources.isEmpty) throw StateError('Windows has no capturable displays');
+        final source = await onChooseDesktopSource?.call(sources);
+        if (source == null) throw StateError('No screen selected');
+        videoOptions = {
+          'deviceId': {'exact': source.id},
+          'mandatory': {'frameRate': 12.0},
+        };
+        await _log('selected capture source ${source.type}: ${source.name}');
+      }
       display = await navigator.mediaDevices.getDisplayMedia({
-        'audio': false, 'video': {'frameRate': 12},
+        'audio': false, 'video': videoOptions,
       });
       if (_closing || _connection == null || talkingTo == null) {
         throw StateError('The call ended while selecting a screen');
@@ -489,14 +507,20 @@ class Intercom {
     // Otherwise a slow Windows WebRTC close() can hold the microphone open.
     if (stream != null) {
       for (final track in stream.getTracks()) {
-        try { track.enabled = false; track.stop(); }
-        catch (e) { unawaited(_log('media track stop error: $e')); }
+        try {
+          track.enabled = false;
+          // stop() is asynchronous on Windows. Await it before proceeding.
+          await track.stop().timeout(const Duration(seconds: 3));
+        } catch (e) { await _log('media track stop error: $e'); }
       }
     }
     // Terminate screen capture immediately as well: a slow native peer close
     // must not keep the OS screen-sharing indicator active.
     if (display != null) {
-      for (final track in display.getTracks()) { track.stop(); }
+      for (final track in display.getTracks()) {
+        try { await track.stop().timeout(const Duration(seconds: 3)); }
+        catch (e) { await _log('display track stop error: $e'); }
+      }
     }
     try {
       if (pc != null) {
@@ -504,8 +528,10 @@ class Intercom {
         pc.onIceCandidate = null;
         pc.onConnectionState = null;
         pc.onTrack = null;
-        await pc.close().timeout(const Duration(seconds: 5));
-        await pc.dispose().timeout(const Duration(seconds: 5));
+        try { await pc.close().timeout(const Duration(seconds: 5)); }
+        catch (e) { await _log('peer close error: $e'); }
+        try { await pc.dispose().timeout(const Duration(seconds: 5)); }
+        catch (e) { await _log('peer dispose error: $e'); }
       }
     } catch (e) { await _log('peer teardown error: $e'); }
     // Each resource is released independently; one native plugin failure must
@@ -519,8 +545,14 @@ class Intercom {
       try { await const MethodChannel('lan_messenger/projection')
           .invokeMethod<void>('stop'); } catch (_) {}
     }
-    try { await stream?.dispose().timeout(const Duration(seconds: 5)); }
-    catch (e) { await _log('stream dispose error: $e'); }
+    if (stream != null) {
+      for (final track in stream.getTracks()) {
+        try { await track.dispose().timeout(const Duration(seconds: 3)); }
+        catch (e) { await _log('track dispose error: $e'); }
+      }
+      try { await stream.dispose().timeout(const Duration(seconds: 5)); }
+      catch (e) { await _log('stream dispose error: $e'); }
+    }
     try { if (local != null) { local.srcObject = null; await local.dispose(); } }
     catch (e) { await _log('local renderer dispose error: $e'); }
     try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
