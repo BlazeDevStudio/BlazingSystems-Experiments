@@ -1,4 +1,5 @@
 #include "windows_call_toast.h"
+#include <windowsx.h>
 #include <algorithm>
 #include <array>
 #include <cstdint>
