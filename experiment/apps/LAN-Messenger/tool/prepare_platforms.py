@@ -110,12 +110,13 @@ if runner.exists():
                 'FlutterWindow::FlutterWindow(',
                 'namespace {\nstd::unique_ptr<WindowsCallToast> g_call_toast;\n}\n\n'
                 'FlutterWindow::FlutterWindow(', 1)
-            marker = 'RegisterPlugins(flutter_controller_->engine());'
+            marker = 'SetChildContent(flutter_controller_->view()->GetNativeWindow());'
             if marker not in code:
-                raise RuntimeError('Flutter runner has no plugin registration anchor')
+                raise RuntimeError('Flutter runner has no window child anchor')
             code = code.replace(marker, marker + '\n  g_call_toast = '
                                 'std::make_unique<WindowsCallToast>('
-                                'flutter_controller_->engine()->messenger());', 1)
+                                'flutter_controller_->engine()->messenger(), '
+                                'GetAncestor(flutter_controller_->view()->GetNativeWindow(), GA_ROOT));', 1)
             on_destroy = 'void FlutterWindow::OnDestroy() {'
             if on_destroy not in code:
                 raise RuntimeError('Flutter runner has no OnDestroy anchor')
