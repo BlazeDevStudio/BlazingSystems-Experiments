@@ -6,7 +6,6 @@ import androidx.lifecycle.*
 import com.blazingsystems.visualizer.analysis.*
 import com.blazingsystems.visualizer.audio.*
 import com.blazingsystems.visualizer.avee.AveeSpectrumAnalyzer
-import com.blazingsystems.visualizer.avee.Spectrum2Analyzer
 import com.blazingsystems.visualizer.avee.SpectrumFrame
 import com.blazingsystems.visualizer.export.*
 import com.blazingsystems.visualizer.packs.*

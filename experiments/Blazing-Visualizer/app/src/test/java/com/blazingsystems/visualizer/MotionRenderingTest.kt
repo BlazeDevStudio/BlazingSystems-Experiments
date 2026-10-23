@@ -18,20 +18,27 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class MotionRenderingTest {
     private val notes=listOf(60,64,67,71).map { NoteEvent("n-$it",it,0,4_000_000) }
-    private fun render(scene: Scene,time: Long): IntArray {
+    private fun render(scene: Scene,time: Long,shared: ScenePainter?=null): IntArray {
         val root=Files.createTempDirectory("motion-frame").toFile()
         val bitmap=Bitmap.createBitmap(240,240,Bitmap.Config.ARGB_8888)
         try {
-            ScenePainter(root).use { it.draw(Canvas(bitmap),SceneEvaluator.evaluate(scene,FeatureFrame(time,notes=notes),time),240,240) }
+            val evaluated=SceneEvaluator.evaluate(scene,FeatureFrame(time,notes=notes),time)
+            if(shared!=null) shared.draw(Canvas(bitmap),evaluated,240,240)
+            else ScenePainter(root).use { it.draw(Canvas(bitmap),evaluated,240,240) }
             return IntArray(240*240).also { bitmap.getPixels(it,0,240,0,0,240,240) }
         } finally { bitmap.recycle();root.deleteRecursively() }
     }
     @Test fun newPresetsHaveDifferentMotionAndRemainSeekDeterministic() {
         val images=MotionScenes.all().map { scene ->
-            val a=render(scene,1_000_000)
-            render(scene,2_000_000)
-            assertArrayEquals(a,render(scene,1_000_000))
-            a.contentHashCode()
+            val assets=Files.createTempDirectory("shared-motion").toFile()
+            try {
+                ScenePainter(assets).use { painter ->
+                    val a=render(scene,1_000_000,painter)
+                    render(scene,2_000_000,painter)
+                    assertArrayEquals(a,render(scene,1_000_000,painter))
+                    a.contentHashCode()
+                }
+            } finally { assets.deleteRecursively() }
         }
         assertEquals(5,images.distinct().size)
         assertTrue(MotionScenes.all().all { !it.showEquations })

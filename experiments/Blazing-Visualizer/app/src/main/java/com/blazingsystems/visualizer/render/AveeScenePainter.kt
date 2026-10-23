@@ -80,7 +80,9 @@ class AveeScenePainter(private val assets: File): AutoCloseable {
                 for(e in groups[index].orEmpty()) {
                     val layer=e.layer
                     val type=layer.avee["objType"].scalar() ?: ""
-                    val source=layer.text("customImage").ifBlank { layer.text("TargetImage").ifBlank { layer.text("targetImage") } }
+                    val retainedSource=layer.text("customImage").ifBlank { layer.text("TargetImage").ifBlank { layer.text("targetImage") } }
+                    // An editor-selected asset overrides the retained import source.
+                    val source=if(type=="Image") layer.text("asset").ifBlank { retainedSource } else retainedSource
                     val ref=if(source.startsWith("composition:")) source.substringAfter(':').toIntOrNull()
                         else if(type=="BlurEffect") layer.number("sourceCompositionIndex",1f).toInt() else null
                     // Resolve child textures before allocating the parent layer's blend surface.

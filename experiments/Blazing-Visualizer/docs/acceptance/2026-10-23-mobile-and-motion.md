@@ -2,7 +2,7 @@
 
 ## Published checkpoint
 
-Source48c229e607e7fdcab2f71c915c7f75102a1e9304, Actions39889541772: clean host build/lint/APK and both API26/API36 jobs passed. Publisher39889541799 passed, including signing/version checks and re-downloading the same release bytes.
+Source `48c229e607e7fdcab2f71c915c7f75102a1e9304`, Actions `39889541772`: clean host build/lint/APK and both API26/API36 jobs passed. Publisher39889541799 passed, including signing/version checks and re-downloading the same release bytes.
 
 Preview2 direct APK: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.2/Blazing-Visualizer-preview-2.apk
 
@@ -14,11 +14,11 @@ The exact previous sourcebbe88d0 failed both device export/playlist cases and th
 
 Earlier read-only inspection recovered the full owner-provided recording (648×1404,60fps,464.696729s). Dense samples showed distinct behaviors:
 
--64–95s: a complete interval outline plus traveling bright tip; detuning changes/drifts the lobes, with a short flash/expanding halo at a tuning lock. Do not claim that equal-tempered detected music was retuned to an exact just ratio.
--105–124s: a changing spatial chord projection and chord-entry bursts.
--145–177s: fixed polygon gates, struck by one sweeping radial hand. Peak flashes are roughly50–100ms; gate rings roughly250–350ms. These visual subdivisions must be distinguished from irrational equal-tempered frequency ratios.
--150–157s: a rotating hand becomes a radial outline; held outlines settle and note/rate changes reshape them.
--233–237s: multiple source traces share one cursor, retain already drawn history, and reset together at a loop boundary. A short fading tail alone does not reproduce this.
+- 64–95s: a complete interval outline plus traveling bright tip; detuning changes/drifts the lobes, with a short flash/expanding halo at a tuning lock. Do not claim that equal-tempered detected music was retuned to an exact just ratio.
+- 105–124s: a changing spatial chord projection and chord-entry bursts.
+- 145–177s: fixed polygon gates, struck by one sweeping radial hand. Peak flashes are roughly50–100ms; gate rings roughly250–350ms. These visual subdivisions must be distinguished from irrational equal-tempered frequency ratios.
+- 150–157s: a rotating hand becomes a radial outline; held outlines settle and note/rate changes reshape them.
+- 233–237s: multiple source traces share one cursor, retain already drawn history, and reset together at a loop boundary. A short fading tail alone does not reproduce this.
 
 The app implements original deterministic interpretations with outline/trail/reveal modes, projected chord axes, rhythmic gates and radial contours. Literal source/stem separation, the video's scripted lesson/thumbnail choreography, and exact authoring parity are not claimed. Video-to-graph tracing remains deferred.
 
