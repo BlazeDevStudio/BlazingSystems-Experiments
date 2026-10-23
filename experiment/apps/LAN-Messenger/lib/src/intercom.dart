@@ -13,6 +13,12 @@ class Intercom {
   bool video = false;
   bool connecting = false;
   bool muted = false;
+  bool sharingScreen = false;
+  bool changingVideoSource = false;
+  int cameraCount = 0;
+  String? cameraId;
+  MediaStream? _screenStream;
+  MediaStreamTrack? _cameraTrack;
   bool _closing = false;
   bool _remoteDescriptionReady = false;
   Future<void>? _shutdown;
@@ -56,6 +62,20 @@ class Intercom {
       return;
     }
     _localStream = stream;
+    _cameraTrack = stream.getVideoTracks().isEmpty ? null : stream.getVideoTracks().first;
+    if (video) {
+      try {
+        final cameras = await Helper.cameras;
+        cameraCount = cameras.length;
+        cameraId = cameras.isNotEmpty ? cameras.first.deviceId : null;
+      } catch (e) {
+        cameraCount = 1;
+        await _log('camera enumeration unavailable: $e');
+      }
+    } else {
+      cameraCount = 0;
+      cameraId = null;
+    }
     await _log('media acquired');
     if (video) {
       localRenderer = RTCVideoRenderer();
@@ -216,6 +236,118 @@ class Intercom {
     }
   }
 
+  /// Switch only between actual detected cameras. A switching failure leaves
+  /// the existing outgoing video track intact.
+  Future<bool> switchCamera() async {
+    if (!video || sharingScreen || _closing || _localStream == null) return false;
+    final tracks = _localStream!.getVideoTracks();
+    if (tracks.isEmpty || changingVideoSource) return false;
+    changingVideoSource = true;
+    onChanged?.call();
+    try {
+      final devices = await Helper.cameras;
+      cameraCount = devices.length;
+      if (devices.length < 2) return false;
+      final currentIndex = devices.indexWhere((x) => x.deviceId == cameraId);
+      final next = devices[(currentIndex + 1) % devices.length];
+      final ok = await Helper.switchCamera(tracks.first, next.deviceId, _localStream);
+      if (ok) {
+        cameraId = next.deviceId;
+        await _log('switched camera device');
+        onChanged?.call();
+      }
+      return ok;
+    } catch (e) {
+      await _log('camera switch unavailable: $e');
+      return false;
+    } finally {
+      changingVideoSource = false;
+      onChanged?.call();
+    }
+  }
+
+  /// Local WebRTC screen-share replaces the video sender without starting
+  /// another peer connection, and keeps the original audio call uninterrupted.
+  /// Only supported for VIDEO calls with an existing sender.
+  Future<bool> startScreenShare() async {
+    if (!video || talkingTo == null || _connection == null ||
+        sharingScreen || changingVideoSource || _closing) return false;
+    changingVideoSource = true;
+    onChanged?.call();
+    MediaStream? acquired;
+    try {
+      // Android shows the standard OS screen-capture consent sheet.
+      if (Platform.isAndroid) {
+        final permission = await Helper.requestCapturePermission(fullScreenOnly: true);
+        if (!permission) return false;
+      }
+      acquired = await navigator.mediaDevices.getDisplayMedia({
+        'audio': false,
+        'video': {'frameRate': 12},
+      });
+      if (acquired.getVideoTracks().isEmpty) {
+        await acquired.dispose();
+        return false;
+      }
+      if (_connection == null || callId == null || _closing) {
+        for (final t in acquired.getTracks()) { t.stop(); }
+        await acquired.dispose();
+        return false;
+      }
+      final senders = await _connection!.getSenders();
+      final videoSenders = senders.where((x) => x.track?.kind == 'video').toList();
+      if (videoSenders.isEmpty) throw StateError('No video sender in this call');
+      await videoSenders.first.replaceTrack(acquired.getVideoTracks().first);
+      _screenStream = acquired;
+      sharingScreen = true;
+      // The local preview shows exactly what the other side receives.
+      localRenderer?.srcObject = acquired;
+      for (final camera in _localStream?.getVideoTracks() ?? <MediaStreamTrack>[]) {
+        camera.enabled = false;
+      }
+      onChanged?.call();
+      await _log('screen sharing enabled');
+      return true;
+    } catch (e) {
+      await _log('screen sharing declined/unavailable: $e');
+      if (acquired != null) {
+        for (final track in acquired.getTracks()) { track.stop(); }
+        await acquired.dispose();
+      }
+      return false;
+    } finally {
+      changingVideoSource = false;
+      onChanged?.call();
+    }
+  }
+
+  Future<void> stopScreenShare() async {
+    if (_screenStream == null) return;
+    final stream = _screenStream!;
+    _screenStream = null;
+    sharingScreen = false;
+    try {
+      final cameraTrack = _cameraTrack;
+      if (cameraTrack != null && _connection != null && !_closing) {
+        final senders = await _connection!.getSenders();
+        for (final sender in senders) {
+          if (sender.track?.kind == 'video') {
+            await sender.replaceTrack(cameraTrack);
+            break;
+          }
+        }
+        cameraTrack.enabled = true;
+        localRenderer?.srcObject = _localStream;
+      }
+    } catch (e) {
+      await _log('screen share camera restore error: $e');
+    } finally {
+      for (final track in stream.getTracks()) { track.stop(); }
+      try { await stream.dispose(); } catch (_) {}
+      onChanged?.call();
+    }
+  }
+
   Future<void> setMuted(bool value) async {
     muted = value;
     for (final track in _localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
@@ -245,6 +377,13 @@ class Intercom {
     _remoteDescriptionReady = false;
     _pendingIce.clear();
     final pc = _connection;
+    final screen = _screenStream;
+    _screenStream = null;
+    sharingScreen = false;
+    changingVideoSource = false;
+    cameraCount = 0;
+    cameraId = null;
+    _cameraTrack = null;
     final stream = _localStream;
     final local = localRenderer;
     final remote = remoteRenderer;
@@ -259,6 +398,9 @@ class Intercom {
     }
     // Stop live capture synchronously before any native peer disposal await.
     // Otherwise a slow Windows WebRTC close() can hold the microphone open.
+    if (screen != null) {
+      for (final track in screen.getTracks()) { try { track.stop(); } catch (_) {} }
+    }
     if (stream != null) {
       for (final track in stream.getTracks()) {
         try { track.enabled = false; track.stop(); }
@@ -277,6 +419,8 @@ class Intercom {
     } catch (e) { await _log('peer teardown error: $e'); }
     // Each resource is released independently; one native plugin failure must
     // not skip the remaining stream or video renderer cleanup.
+    try { await screen?.dispose().timeout(const Duration(seconds: 5)); }
+    catch (e) { await _log('screen share dispose error: $e'); }
     try { await stream?.dispose().timeout(const Duration(seconds: 5)); }
     catch (e) { await _log('stream dispose error: $e'); }
     try { if (local != null) { local.srcObject = null; await local.dispose(); } }
