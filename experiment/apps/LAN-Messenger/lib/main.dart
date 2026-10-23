@@ -917,11 +917,22 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 behavior: HitTestBehavior.opaque,
                 onTapUp: call.remoteControlActive && call.peerSharingScreen
                     ? (details) {
-                        final x = (details.localPosition.dx / size.maxWidth)
-                            .clamp(0.0, 1.0).toDouble();
-                        final y = (details.localPosition.dy / size.maxHeight)
-                            .clamp(0.0, 1.0).toDouble();
-                        unawaited(call.sendRemoteClick(x, y));
+                        // Map taps to the decoded video rectangle, excluding
+                        // fitContain letterbox margins. Ignoring those areas
+                        // avoids clicking an unintended desktop location.
+                        final viewRatio = size.maxWidth / size.maxHeight;
+                        final displayedW = viewRatio > sourceRatio
+                            ? size.maxHeight * sourceRatio : size.maxWidth;
+                        final displayedH = viewRatio > sourceRatio
+                            ? size.maxHeight : size.maxWidth / sourceRatio;
+                        final left = (size.maxWidth - displayedW) / 2;
+                        final top = (size.maxHeight - displayedH) / 2;
+                        final dx = details.localPosition.dx - left;
+                        final dy = details.localPosition.dy - top;
+                        if (dx < 0 || dy < 0 ||
+                            dx > displayedW || dy > displayedH) return;
+                        unawaited(call.sendRemoteClick(
+                            dx / displayedW, dy / displayedH));
                       } : null,
                 child: Center(child: AspectRatio(
                   aspectRatio: sourceRatio,
