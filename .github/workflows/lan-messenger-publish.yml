@@ -1,0 +1,66 @@
+name: LAN Messenger - publish preview downloads
+
+on:
+  push:
+    branches:
+      - feature/lan-messenger-v0.2.0-conversations
+    paths:
+      - .github/workflows/lan-messenger-publish.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Fetch successful Android and Windows artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/android dist/windows
+          gh run download 39938606839 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Preview --dir dist/android
+          gh run download 39938606839 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Preview --dir dist/windows
+
+      - name: Prepare standalone public downloads and verify checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/android/app-debug.apk
+          test -s dist/windows/LAN-Messenger-Windows-Preview.zip
+          mv dist/android/app-debug.apk dist/LAN-Messenger-Android-v0.2.0-preview.apk
+          mv dist/windows/LAN-Messenger-Windows-Preview.zip dist/LAN-Messenger-Windows-v0.2.0-preview.zip
+          printf '%s  %s\n' \
+            '882f8f1ff2d5c3f543081b2ae08ddeae6339bb10d6d6b289def449299d4b9312' 'dist/LAN-Messenger-Android-v0.2.0-preview.apk' \
+            'c680e604bf71cc2a06543b8dfb0c47c17edf9380f36c5e8b9e4d0d44e3bb36a3' 'dist/LAN-Messenger-Windows-v0.2.0-preview.zip' | sha256sum --check
+          cat > dist/RELEASE-NOTES.md <<'EOF'
+          # LAN Messenger v0.2.0 — Preview (not production ready)
+
+          Offline peer discovery, conversation-based text and file transfers, and LAN voice call foundation for Android and Windows.
+
+          - **Android**: debug APK (unsigned for public distribution; development signing only).
+          - **Windows**: portable ZIP containing the executable, DLLs and data directory; extract all files before running.
+
+          These files passed GitHub Actions compilation, Flutter analysis and automated tests in [run 39938606839](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39938606839).
+          Physical multi-device testing, Android background calling, Bluetooth helmet-headset routing, Windows tray reception and firewall/VLAN cases remain unverified.
+
+          This release contains original LAN Messenger code, not SHAREit proprietary code or assets.
+          EOF
+
+      - name: Publish prerelease with durable asset URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create lan-messenger-v0.2.0-preview.1 \
+            "dist/LAN-Messenger-Android-v0.2.0-preview.apk" \
+            "dist/LAN-Messenger-Windows-v0.2.0-preview.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LAN Messenger v0.2.0 Preview" \
+            --notes-file dist/RELEASE-NOTES.md \
+            --prerelease
