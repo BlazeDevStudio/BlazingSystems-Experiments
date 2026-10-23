@@ -1,0 +1,77 @@
+name: LAN Messenger v0.2.1 - publish verified preview
+on:
+  push:
+    branches: [fix/lan-messenger-v0.2.1-stability]
+    paths: [.github/workflows/lan-messenger-publish-v021.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch both successful platform builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p stage/android stage/windows dist
+          gh run download 39944956710 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Preview --dir stage/android
+          gh run download 39944956710 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Preview --dir stage/windows
+      - name: Validate artifacts and assemble distribution
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import zipfile
+          for directory,name,target in [
+            ('stage/android','app-debug.apk','LAN-Messenger-Android-v0.2.1-preview.apk'),
+            ('stage/windows','LAN-Messenger-Windows-Preview.zip','LAN-Messenger-Windows-v0.2.1-preview.zip')
+          ]:
+            d=Path(directory)
+            source=d/name
+            assert source.is_file() and source.stat().st_size>10000, source
+            checksum=(d/'SHA256SUMS.txt').read_text(encoding='utf-8-sig').strip().split()[0].lower()
+            observed=hashlib.sha256(source.read_bytes()).hexdigest()
+            assert observed==checksum, f'Checksum mismatch for {source}'
+            if source.suffix=='.zip':
+              with zipfile.ZipFile(source) as z:
+                assert z.testzip() is None, 'Corrupt Windows ZIP'
+            shutil.copy2(source,Path('dist')/target)
+            print(target,observed)
+          PY
+          (cd dist && sha256sum *.apk *.zip > SHA256SUMS.txt)
+          cat > dist/RELEASE-NOTES.md <<'EOF'
+          # LAN Messenger v0.2.1 — Field-Feedback Preview
+
+          This is a development build, **not a verified production intercom**.
+
+          Changes since v0.2.0:
+          - File/photo transfer: prevents known-peer eviction from breaking encrypted HTTP transfer, adds asymmetric-discovery handshake, safe auto-receive up to a configurable size limit, attachment progress.
+          - Device discovery: longer presence threshold, unicast announcements and direct ping recovery.
+          - Call stability: safer WebRTC teardown and local call diagnostic log, plus experimental camera video calling.
+          - Android: foreground service and persistent status notification; Android may suspend it when force-stopped or under battery restrictions.
+          - Windows: system tray icon, close-to-tray, incoming call window restore, optional startup at sign-in.
+          - Settings and four original tones for voice call, video call, chat and file transfers.
+
+          Android APK and Windows portable debug ZIP compiled, analyzed and tested in CI run #39944956710.
+          Physical field tests are outstanding: the original red-screen assertion on Samsung Android, Windows native call crash, audio/video on a Windows/Android pair, Bluetooth motorcycle headsets, screen-off calls, and routed VLANs. Do not rely on it for riding safety or urgent communication.
+
+          The Android APK is debug signed; production signing and upgrades are not yet validated. On Windows extract all files and launch lan_messenger.exe; do not move only the EXE. Received files are never executed automatically.
+          EOF
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create lan-messenger-v0.2.1-preview.1 \
+            dist/LAN-Messenger-Android-v0.2.1-preview.apk \
+            dist/LAN-Messenger-Windows-v0.2.1-preview.zip \
+            dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LAN Messenger v0.2.1 - Stability Preview" \
+            --notes-file dist/RELEASE-NOTES.md \
+            --prerelease
