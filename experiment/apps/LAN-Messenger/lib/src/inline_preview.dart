@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:archive/archive.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:video_player/video_player.dart';
-import 'package:xml/xml.dart';
 
 /// Never read a document merely because its chat bubble is scrolling onscreen.
 /// The preview only loads after the user expands a specific attachment.
@@ -33,11 +31,7 @@ class _InlineAttachmentState extends State<InlineAttachment> {
     'xlsx' || 'xls' || 'csv' => Icons.table_chart_outlined,
     _ => Icons.attach_file,
   };
-  bool get supported => const {
-    'jpg','jpeg','png','gif','webp','bmp',
-    'mp4','mov','webm','mkv','mp3','m4a','wav','ogg','aac',
-    'pdf','docx','txt','md','log','csv','json','xml','xlsx',
-  }.contains(ext);
+  bool get supported => supportsInlinePreview(ext);
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +95,7 @@ class _PreviewBodyState extends State<_PreviewBody> {
       video = VideoPlayerController.file(widget.file)
         ..initialize().then((_) { if (mounted) setState(() {}); })
           .catchError((Object e) { if (mounted) setState(() => mediaError = '$e'); });
-    } else if (const {'txt','md','log','csv','json','xml','docx','xlsx'}.contains(ext)) {
+    } else if (const {'txt','md','log','csv','json','xml'}.contains(ext)) {
       document = previewDocument(widget.file, ext);
     }
   }
@@ -164,59 +158,25 @@ class _PreviewBodyState extends State<_PreviewBody> {
   }
 }
 
-/// Safe, bounded, read-only previews. ZIP macros/scripts are never executed.
-/// Legacy binary .doc/.xls intentionally need an external editor.
+/// Inline previews are deliberately conservative. A flattened worksheet or
+/// DOCX XML dump is misleading, so Office attachments remain file cards.
+bool supportsInlinePreview(String ext) => const <String>{
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp',
+  'mp4', 'mov', 'webm', 'mkv', 'mp3', 'm4a', 'wav', 'ogg', 'aac',
+  'pdf', 'txt', 'md', 'log', 'csv', 'json', 'xml',
+}.contains(ext.toLowerCase());
+
 Future<String> previewDocument(File file, String ext) async {
+  if (!const <String>{'txt', 'md', 'log', 'csv', 'json', 'xml'}.contains(ext)) {
+    return 'No faithful inline preview is available. Open in another application.';
+  }
   final length = await file.length();
-  if (length > 8 * 1024 * 1024) return 'This document is larger than the 8 MB inline preview limit. Open externally.';
-  if (const {'txt','md','log','csv','json','xml'}.contains(ext)) {
-    final raw = await file.readAsString().catchError((_) => 'This document is not UTF-8 encoded.');
-    return raw.length > 24000 ? '${raw.substring(0,24000)}\n… Preview truncated' : raw;
+  if (length > 8 * 1024 * 1024) {
+    return 'File exceeds the 8 MB text preview limit. Open externally.';
   }
-  if (ext != 'docx' && ext != 'xlsx') return 'Preview not available.';
-  final zip = ZipDecoder().decodeBytes(await file.readAsBytes());
-  String? readEntry(String name) {
-    for (final entry in zip) {
-      if (entry.name != name || !entry.isFile) continue;
-      if (entry.size > 5 * 1024 * 1024) throw const FormatException('Document contains an oversized XML part');
-      return utf8.decode(entry.readBytes() ?? <int>[], allowMalformed: true);
-    }
-    return null;
-  }
-  if (ext == 'docx') {
-    final xml = readEntry('word/document.xml');
-    if (xml == null) return 'DOCX document content is unavailable.';
-    final doc = XmlDocument.parse(xml);
-    final paragraphs = doc.descendants.whereType<XmlElement>()
-        .where((e) => e.name.local == 'p').take(180);
-    final text = paragraphs.map((e) => e.descendants.whereType<XmlElement>()
-        .where((t) => t.name.local == 't').map((t) => t.innerText).join()).join('\n');
-    return text.isEmpty ? 'No readable text in this DOCX (images and formatting are not rendered).' : text;
-  }
-  final stringsXml = readEntry('xl/sharedStrings.xml');
-  final shared = <String>[];
-  if (stringsXml != null) {
-    final parsed = XmlDocument.parse(stringsXml);
-    for (final item in parsed.descendants.whereType<XmlElement>().where((e) => e.name.local == 'si').take(1000)) {
-      shared.add(item.descendants.whereType<XmlElement>().where((e) => e.name.local == 't').map((e) => e.innerText).join());
-    }
-  }
-  final sheet = readEntry('xl/worksheets/sheet1.xml');
-  if (sheet == null) return 'No first worksheet available for preview.';
-  final rows = XmlDocument.parse(sheet).descendants.whereType<XmlElement>()
-      .where((e) => e.name.local == 'row').take(100);
-  final lines = <String>[];
-  for (final row in rows) {
-    final cells = <String>[];
-    for (final cell in row.children.whereType<XmlElement>().where((e) => e.name.local == 'c').take(24)) {
-      final name = cell.getAttribute('r') ?? '';
-      final values = cell.descendants.whereType<XmlElement>().where((e) => e.name.local == 'v' || e.name.local == 't');
-      final value = values.isEmpty ? '' : values.first.innerText;
-      final index = int.tryParse(value);
-      final display = cell.getAttribute('t') == 's' && index != null && index < shared.length && index >= 0 ? shared[index] : value;
-      if (display.isNotEmpty) cells.add('$name: $display');
-    }
-    if (cells.isNotEmpty) lines.add(cells.join('   |   '));
-  }
-  return lines.isEmpty ? 'No readable cells in the first worksheet.' : lines.join('\n');
+  final raw = await file.readAsString().catchError(
+      (_) => 'This document is not UTF-8 encoded.');
+  return raw.length > 24000
+      ? '${raw.substring(0,24000)}\\n… Preview truncated'
+      : raw;
 }
