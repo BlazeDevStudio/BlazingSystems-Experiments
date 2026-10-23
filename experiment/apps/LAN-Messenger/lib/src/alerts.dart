@@ -43,7 +43,10 @@ class Alerts {
       await player.setReleaseMode(ReleaseMode.loop);
       if (generation != _ringGeneration || !enabled) return;
       await player.play(_source(kind));
-      if (generation != _ringGeneration || !enabled) await stopRing();
+      if (generation != _ringGeneration || !enabled) {
+        if (identical(_ringer, player)) _ringer = null;
+        try { await player.stop(); await player.dispose(); } catch (_) {}
+      }
     } catch (_) {
       if (identical(_ringer, player)) _ringer = null;
       try { await player.dispose(); } catch (_) {}
