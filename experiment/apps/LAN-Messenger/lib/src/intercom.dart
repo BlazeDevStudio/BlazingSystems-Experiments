@@ -374,7 +374,19 @@ class Intercom {
       return;
     }
     if (type == 'control-request') {
-      if (!sharingScreen || !Platform.isWindows) return;
+      if (!sharingScreen ||
+          !(Platform.isWindows || Platform.isAndroid)) return;
+      if (Platform.isAndroid) {
+        final ready = await const MethodChannel('lan_messenger/remote')
+            .invokeMethod<bool>('available').catchError((_) => false);
+        if (ready != true) {
+          // Never auto-enable Accessibility or silently accept control.
+          await node.signal(peer, {
+            'type': 'control-grant', 'callId': id, 'enabled': false,
+          }).catchError((_) {});
+          return;
+        }
+      }
       // Existing authenticated peer + same live call ID; approval is never
       // automatic, lasts five minutes, and can be revoked locally.
       final accepted = await (onRemoteControlRequest?.call(peer) ??
@@ -401,7 +413,8 @@ class Intercom {
       return;
     }
     if (type == 'control-click') {
-      if (!Platform.isWindows || !sharingScreen || !remoteControlApproved ||
+      if (!(Platform.isWindows || Platform.isAndroid) ||
+          !sharingScreen || !remoteControlApproved ||
           _approvedControllerId != peer.id) return;
       final x = data['x'];
       final y = data['y'];
@@ -413,7 +426,13 @@ class Intercom {
       if (_lastInputAt != null &&
           now.difference(_lastInputAt!) < const Duration(milliseconds: 100)) return;
       _lastInputAt = now;
-      WindowsRemoteInput.clickNormalized(x.toDouble(), y.toDouble());
+      if (Platform.isWindows) {
+        WindowsRemoteInput.clickNormalized(x.toDouble(), y.toDouble());
+      } else if (Platform.isAndroid) {
+        await const MethodChannel('lan_messenger/remote').invokeMethod<bool>(
+          'tap', {'x': x.toDouble(), 'y': y.toDouble()},
+        ).catchError((_) => false);
+      }
       return;
     }
     if (type == 'ice' && data['candidate'] is String) {
