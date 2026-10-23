@@ -15,6 +15,7 @@ if manifest.exists():
         'android.permission.CAMERA',
         'android.permission.FOREGROUND_SERVICE',
         'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE',
+        'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
         'android.permission.POST_NOTIFICATIONS',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
@@ -29,6 +30,11 @@ if manifest.exists():
     receiver = ('        <receiver android:name=".CallActionReceiver" android:exported="false" />\n')
     if 'android:name=".CallActionReceiver"' not in text:
         text = text.replace('</application>', receiver + '    </application>', 1)
+    projection_service = ('        <service android:name=".ScreenProjectionService" '
+                          'android:exported="false" '
+                          'android:foregroundServiceType="mediaProjection" />\\n')
+    if 'android:name=".ScreenProjectionService"' not in text:
+        text = text.replace('</application>', projection_service + '    </application>', 1)
     manifest.write_text(text, encoding='utf-8')
     print(f'Patched {manifest}')
 
@@ -37,6 +43,8 @@ if manifest.exists():
     # Native NotificationManager is intentionally used instead of a heavy plugin:
     # heads-up notifications need no network, account or background polling SDK.
     main_activity.write_text((root / 'tool/AndroidMainActivity.kt').read_text(encoding='utf-8'), encoding='utf-8')
+    projection_target = main_activity.parent / 'ScreenProjectionService.kt'
+    projection_target.write_text((root / 'tool/ScreenProjectionService.kt').read_text(encoding='utf-8'), encoding='utf-8')
 
     # Audio tones are generated original assets; Android plays these through
     # high-priority notification channels even when Flutter is not foregrounded.
