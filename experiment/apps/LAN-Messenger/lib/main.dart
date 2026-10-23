@@ -129,9 +129,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (!mounted) return false;
         setState(() { selected = peer; showReceived = false; });
         _incomingDialogOpen = true;
-        if (!Platform.isAndroid || !settings.headsUpNotifications) {
-          unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
-        }
+        // Keep the in-app ringing loop until the call is answered or declined.\n        // A heads-up notification sound is only a short chime.\n        unawaited(alerts.ring(incomingVideo ? AlertKind.videoCall : AlertKind.call));
         _nativeNotify(incomingVideo ? 'video_call' : 'call', peer.name,
             incomingVideo ? 'Incoming video call — tap to answer' : 'Incoming voice call — tap to answer');
         try {
