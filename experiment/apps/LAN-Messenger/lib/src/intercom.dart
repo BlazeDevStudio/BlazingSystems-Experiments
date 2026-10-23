@@ -104,7 +104,7 @@ class Intercom {
     if (sharingScreen) return;
     // Request Android's system screen capture permission for every session.
     if (Platform.isAndroid) {
-      final granted = await Helper.requestCapturePermission();
+      final granted = await Helper.requestCapturePermission(fullScreenOnly: true);
       if (!granted) throw StateError('Screen sharing was declined');
       await const MethodChannel('lan_messenger/projection')
           .invokeMethod<void>('start');
@@ -119,7 +119,7 @@ class Intercom {
         // Desktop Flutter WebRTC does not provide a native source picker.
         // A source ID is required for predictable Windows capture.
         final sources = await desktopCapturer.getSources(
-          types: [SourceType.Screen, SourceType.Window],
+          types: [SourceType.Screen],
         );
         if (sources.isEmpty) throw StateError('Windows has no capturable displays');
         final source = await onChooseDesktopSource?.call(sources);
