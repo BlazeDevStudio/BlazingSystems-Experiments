@@ -47,7 +47,13 @@ class VendoSourceBundle(unittest.TestCase):
                     destination = stage / relative
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     destination.write_bytes(repository_bytes(relative))
-                for relative in (PROJECT / "tools/package-vendo-source.py", PROJECT / "esp/REBUILD.md"):
+                # The source-contract also runs the host-only LittleFS recovery fixture.
+                # Stage it alongside the contract; it is NOT packaged into firmware.
+                for relative in (
+                    PROJECT / "tools/package-vendo-source.py",
+                    PROJECT / "esp/REBUILD.md",
+                    PROJECT / "tests/v060_vendo_recovery_promote.cpp",
+                ):
                     if (REPO / relative).exists():
                         destination = stage / relative
                         destination.parent.mkdir(parents=True, exist_ok=True)

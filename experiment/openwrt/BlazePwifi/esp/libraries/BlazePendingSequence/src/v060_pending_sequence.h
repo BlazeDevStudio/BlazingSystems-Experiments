@@ -119,4 +119,26 @@ static inline int bp_pending_sequence_abandon(BpPendingSequence *s) {
     return 1;
 }
 
+
+#ifdef __cplusplus
+/* Recovery of a validated /pending.new or /pending.bak must not claim success
+ * if the LittleFS promotion fails. The previous source file remains on disk
+ * after a failed rename, to be retried or inspected with the coin relay off.
+ * Store supplies exists(), remove(), rename(); tested with a failing fake FS.
+ * Never erase a readable canonical record before validating the replacement.
+ */
+template <typename Store>
+static inline bool bp_pending_promote_recovered(Store &store,
+                                                  const char *chosen) {
+    if (!chosen) return false;
+    if (!strcmp(chosen, "/pending.dat")) return store.exists("/pending.dat");
+    if (strcmp(chosen, "/pending.new") && strcmp(chosen, "/pending.bak"))
+        return false;
+    if (!store.exists(chosen)) return false;
+    if (store.exists("/pending.dat") && !store.remove("/pending.dat"))
+        return false;
+    return store.rename(chosen, "/pending.dat");
+}
+#endif
+
 #endif
