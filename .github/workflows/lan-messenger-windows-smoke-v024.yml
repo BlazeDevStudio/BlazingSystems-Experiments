@@ -1,0 +1,36 @@
+name: LAN Messenger v0.2.4 - Windows launch and memory smoke
+on:
+  push:
+    branches: [fix/lan-messenger-v0.2.4-optimized-builds]
+    paths: [.github/workflows/lan-messenger-windows-smoke-v024.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download optimized Windows portable package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh run download 39959096923 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts
+          Expand-Archive artifacts/LAN-Messenger-Windows-Optimized.zip -DestinationPath app -Force
+          if (!(Test-Path app/lan_messenger.exe)) { throw "Missing executable" }
+      - name: Check Windows launch and initial working set
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path app/lan_messenger.exe).Path
+          $wd = (Resolve-Path app).Path
+          $p = Start-Process -FilePath $exe -WorkingDirectory $wd -PassThru
+          Start-Sleep -Seconds 10
+          $p.Refresh()
+          if ($p.HasExited) { throw "Application exited on launch with code $($p.ExitCode)" }
+          $rss = [math]::Round($p.WorkingSet64 / 1MB,1)
+          Write-Host "LAN Messenger started successfully. Initial working set: $rss MiB"
+          Get-Process -Id $p.Id | Select-Object Name,Id,WorkingSet64,PrivateMemorySize64 | Format-List
+          Stop-Process -Id $p.Id -Force
