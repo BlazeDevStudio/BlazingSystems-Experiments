@@ -11,6 +11,7 @@ import 'src/settings.dart';
 import 'src/alerts.dart';
 import 'src/identity.dart';
 import 'src/intercom.dart';
+import 'src/remote_input_modes.dart';
 import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
@@ -60,6 +61,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   String? error;
   bool showReceived = false;
   bool _callMinimized = false;
+  RemoteInputMode _remoteInputMode = RemoteInputMode.trackpad;
   Offset _videoPosition = const Offset(16, 20);
   Offset _miniCallPosition = const Offset(20, 110);
   bool _incomingDialogOpen = false;
@@ -985,34 +987,40 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ]),
           Expanded(child: call.video ? LayoutBuilder(builder: (context, size) {
             return Stack(children: [
-              Positioned.fill(child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: call.remoteControlActive && call.peerSharingScreen
-                    ? (details) {
-                        // Map taps to the decoded video rectangle, excluding
-                        // fitContain letterbox margins. Ignoring those areas
-                        // avoids clicking an unintended desktop location.
-                        final viewRatio = size.maxWidth / size.maxHeight;
-                        final displayedW = viewRatio > sourceRatio
-                            ? size.maxHeight * sourceRatio : size.maxWidth;
-                        final displayedH = viewRatio > sourceRatio
-                            ? size.maxHeight : size.maxWidth / sourceRatio;
-                        final left = (size.maxWidth - displayedW) / 2;
-                        final top = (size.maxHeight - displayedH) / 2;
-                        final dx = details.localPosition.dx - left;
-                        final dy = details.localPosition.dy - top;
-                        if (dx < 0 || dy < 0 ||
-                            dx > displayedW || dy > displayedH) return;
-                        unawaited(call.sendRemoteClick(
-                            dx / displayedW, dy / displayedH));
-                      } : null,
-                child: Center(child: AspectRatio(
-                  aspectRatio: sourceRatio,
-                  child: call.remoteRenderer != null
+              Positioned.fill(child: call.remoteControlActive &&
+                  call.peerSharingScreen
+                ? RemoteInputOverlay(
+                    mode: _remoteInputMode,
+                    sourceRatio: sourceRatio,
+                    onClick: (point, button) {
+                      unawaited(call.sendRemoteClick(point.dx, point.dy,
+                        button: button.name,
+                        atPointer: _remoteInputMode == RemoteInputMode.trackpad));
+                    },
+                    onMove: (delta) {
+                      if (_remoteInputMode == RemoteInputMode.trackpad) {
+                        unawaited(call.sendRemotePointerMove(delta.dx, delta.dy));
+                      }
+                    },
+                    onScroll: (steps) {
+                      if (_remoteInputMode == RemoteInputMode.trackpad) {
+                        unawaited(call.sendRemoteScroll(steps));
+                      }
+                    },
+                    video: Center(child: AspectRatio(
+                      aspectRatio: sourceRatio,
+                      child: call.remoteRenderer != null
+                        ? RTCVideoView(call.remoteRenderer!,
+                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+                        : const Center(child: Icon(Icons.videocam,
+                            color: Colors.white54, size: 70)))))
+                : Center(child: AspectRatio(
+                    aspectRatio: sourceRatio,
+                    child: call.remoteRenderer != null
                       ? RTCVideoView(call.remoteRenderer!,
                           objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
                       : const Center(child: Icon(Icons.videocam,
-                          color: Colors.white54, size: 70)))))),
+                          color: Colors.white54, size: 70))))),
               if (call.localRenderer != null)
                 Positioned(
                   left: _videoPosition.dx.clamp(0.0,
@@ -1061,8 +1069,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   IconButton.filledTonal(tooltip: 'Switch camera (also double tap preview)',
                     onPressed: () => unawaited(_switchCamera()),
                     icon: const Icon(Icons.flip_camera_android_rounded)),
+                if (call.remoteControlActive && call.peerSharingScreen)
+                  PopupMenuButton<RemoteInputMode>(
+                    initialValue: _remoteInputMode,
+                    tooltip: 'Remote input mode',
+                    icon: const Icon(Icons.touch_app, color: Colors.white),
+                    onSelected: (mode) => setState(() => _remoteInputMode = mode),
+                    itemBuilder: (context) => RemoteInputMode.values
+                        .map((mode) => PopupMenuItem(
+                          value: mode, child: Text(mode.label))).toList(),
+                  ),
                 if (call.video && call.peerSharingScreen && !call.remoteControlActive)
-                  IconButton.filledTonal(tooltip: 'Ask to control shared Windows screen',
+                  IconButton.filledTonal(tooltip: 'Ask to control shared screen',
                     onPressed: () async {
                       try { await call.requestRemoteControl(); }
                       catch (e) { _toast('Control request failed: $e'); }
