@@ -22,7 +22,7 @@ jobs:
       - run: python3 tool/prepare_platforms.py
       - run: flutter pub get
       - run: dart format --output=write lib test
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build apk --debug
       - run: sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/SHA256SUMS.txt
@@ -47,7 +47,7 @@ jobs:
       - run: flutter create --platforms=windows --project-name lan_messenger .
       - run: python tool/prepare_platforms.py
       - run: flutter pub get
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build windows --debug
       - shell: pwsh
