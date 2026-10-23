@@ -28,11 +28,11 @@
 
 ## Tasks
 
-- [ ] 1. Root: add SourceRef media metadata, multi-media import/intent handling and silent-video decoder behavior, with metadata/backward compatibility tests.
-- [ ] 2. Video renderer owner: transparent TextureView visualizer, optional deepest background bitmap in painter/GL, source-time video export reader, pixel/native export tests. Root owns Media3 surface attachment and UI wiring.
-- [ ] 3. Root: bounded quick decoder/cache and StudioModel progressive preview; regressions for early estimates, seeks, cancellation and refined-note precedence. Publish regressions before the fixes where a current observable behavior is pinned.
-- [ ] 4. Research owner: primary-source instrument-separation assessment and concrete measurable next-stage workflow; no unsupported model claims or downloads into the app.
-- [ ] 5. Integrated review, clean host/lint/APK and API26/API36, resolve failures, verify separately versioned Preview4 release and rewrite handoff.
+- [x] 1. Root: add SourceRef media metadata, multi-media import/intent handling and silent-video decoder behavior, with metadata/backward compatibility tests.
+- [x] 2. Video renderer owner: transparent TextureView visualizer, optional deepest background bitmap in painter/GL, source-time video export reader, pixel/native export tests. Root owns Media3 surface attachment and UI wiring.
+- [x] 3. Root: bounded quick decoder/cache and StudioModel progressive preview; regressions for early estimates, seeks, cancellation and refined-note precedence. Publish regressions before the fixes where a current observable behavior is pinned.
+- [x] 4. Research owner: primary-source instrument-separation assessment and concrete measurable next-stage workflow; no unsupported model claims or downloads into the app.
+- [x] 5. Integrated review, clean host/lint/APK and API26/API36, resolve failures, verify separately versioned Preview4 release and rewrite handoff.
 
 ## Execution ledger
 
@@ -52,4 +52,4 @@ Base302bbe0. Existing source/release reconciled; no AGENTS.md observed in the sc
 - Ruling: preserve one source timeline in original PCM and analysis mono, pad/trim in bounded cancellable blocks and version both caches. Content hashes remain unchanged, preserving project identity. Cost if wrong: an affected track needs reanalysis; native PCM assertions pin the intended timing.
 - Ruling: use the existing Media3 1.8 extractor for decode as well as playback, and one fixed synthetic MP4 on both device versions. No new runtime dependency or copied parser. Cost if wrong: an unsupported container may report a visible decode failure; the media, queue and source remain available.
 - The earlier host stall was not reproduced in independent diagnostic39959477936: unchanged source passed118 tests/20 suites. The cause remains unconfirmed. Complete host/lint/APK and API26/API36 validation are restored for the fix candidate; diagnostic checkpoints cannot publish a preview.
-- Pending: GREEN verification, native artifact inspection, retained-signer/direct-APK verification, Preview4 publication and final handoff.
+- Complete: exact-source run 40009120574 passed 118 host tests, lint/APK and both device suites (30 general plus 1 fresh-permission case each). Native artifacts and direct public APK/signature/hash/CI byte equality were inspected. Publisher 40009120823 released Preview 4 from 72c94336. See `docs/acceptance/preview-4-evidence.md` and final `HANDOFF.md`.
