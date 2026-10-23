@@ -63,6 +63,15 @@ jobs:
         with:
           name: LAN-Messenger-Android-Optimized
           path: android-apk
+      - name: Permit temporary KVM acceleration on this disposable runner
+        shell: bash
+        run: |
+          if [ -c /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          else
+            echo "No /dev/kvm device; emulator will use slower software mode"
+          fi
       - name: Install and launch APK on Android emulator (no Internet required by app)
         uses: reactivecircus/android-emulator-runner@v2
         with:
