@@ -6,6 +6,11 @@ on:
       - '.github/workflows/lan-messenger.yml'
   workflow_dispatch:
 
+# Avoid competing Android/Windows compilers from every intermediate commit.
+concurrency:
+  group: lan-messenger-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
