@@ -117,6 +117,9 @@ object BuiltinScenes {
             MathVisualMode.LISSAJOUS -> "Harmonic flow"
             MathVisualMode.ORBITS -> "Orbital voices"
             MathVisualMode.WAVES -> "Wave garden"
+            MathVisualMode.CHORD_3D -> "Chord sculpture"
+            MathVisualMode.RHYTHM -> "Rhythm geometry"
+            MathVisualMode.RADIAL -> "Pitch contours"
         },
         layers = listOf(
             Layer(type = ElementType.BLUR),
@@ -133,5 +136,5 @@ object BuiltinScenes {
     )
 
     fun all() = listOf(defaultSpectrum(), noteWheel(), pianoRoll()) +
-        MathVisualMode.entries.map(::mathematical)
+        listOf(MathVisualMode.LISSAJOUS,MathVisualMode.ORBITS,MathVisualMode.WAVES).map(::mathematical) + MotionScenes.all()
 }

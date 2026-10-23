@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.*
 import com.blazingsystems.visualizer.project.*
 import com.blazingsystems.visualizer.practice.NoteNames
 import com.blazingsystems.visualizer.render.MathVisualMode
+import com.blazingsystems.visualizer.render.CurveMotion
 import kotlin.math.pow
 import kotlinx.serialization.json.*
 
@@ -206,6 +207,18 @@ fun ElementEditorSheet(scene: Scene, model: StudioModel, onArrange: (Boolean) ->
                                 )
                             }
                             }
+                            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                                CurveMotion.entries.forEach { motion ->
+                                    FilterChip((layer.properties["motion"]?.jsonPrimitive?.content ?: "OUTLINE")==motion.name,
+                                        { prop("motion",motion.name) },label={ Text(motion.name.lowercase()) },modifier=Modifier.padding(end=6.dp))
+                                }
+                            }
+                            PropertySlider("Motion speed",layer.properties["speed"]?.jsonPrimitive?.floatOrNull ?: 1f,0f..4f) { prop("speed",it.toString()) }
+                            PropertySlider("Trail / reveal seconds",layer.properties["trailSeconds"]?.jsonPrimitive?.floatOrNull ?: 1.5f,.2f..8f) { prop("trailSeconds",it.toString()) }
+                            PropertySlider("Spatial camera motion",layer.properties["cameraAmount"]?.jsonPrimitive?.floatOrNull ?: 1f,0f..2f) { prop("cameraAmount",it.toString()) }
+                            if(layer.properties["mode"]?.jsonPrimitive?.content=="RHYTHM")
+                                OutlinedTextField(layer.properties["rhythmDivisions"]?.jsonPrimitive?.content ?: "2,3,4,5,6,7",
+                                    { prop("rhythmDivisions",it.take(64)) },label={ Text("Visual subdivisions · e.g. 4,5,6") })
                         }
                         if (layer.type == ElementType.PIANO_ROLL) {
                             val baseColor = layer.properties["color"]?.jsonPrimitive?.content ?: scene.paletteColor ?: "#FF9C83FF"
