@@ -6,6 +6,7 @@ import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.opengl.GLES20
+import android.opengl.EGL14
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.blazingsystems.visualizer.audio.AudioRepository
@@ -49,6 +50,27 @@ class VideoBackgroundNativeTest {
             assertEquals(0, pixels[2].toInt() and 255)
             assertEquals(255, pixels[3].toInt() and 255)
         }
+    }
+
+    @Test fun closingAnInactiveTargetPreservesTheCurrentTargetAndIsIdempotent() {
+        val preview = GlTarget.pbuffer(32, 32)
+        try {
+            GlTarget.pbuffer(32, 32).use { export ->
+                val current = EGL14.eglGetCurrentContext()
+                preview.close()
+                assertEquals("Closing an inactive target detached the export", current,
+                    EGL14.eglGetCurrentContext())
+                preview.close()
+                assertEquals("Closing twice detached the export", current,
+                    EGL14.eglGetCurrentContext())
+                GLES20.glClearColor(0f, 1f, 0f, 1f)
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+                assertEquals(GLES20.GL_NO_ERROR, GLES20.glGetError())
+                val pixels = export.readPixels()
+                assertEquals(255, pixels[1].toInt() and 255)
+                assertEquals(255, pixels[3].toInt() and 255)
+            }
+        } finally { preview.close() }
     }
 
     @Test fun readerUsesSourceTimeAndReturnsRotatedBoundedFrames() {
