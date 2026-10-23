@@ -22,6 +22,42 @@ void main() {
         const Offset(0, 200), view, ratio), const Offset(0, 0.5));
   });
 
+  testWidgets('direct-touch tap maps correctly to shared desktop', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(
+      child: SizedBox(width: 200, height: 200,
+        child: RemoteControlSurface(
+          mode: ControlInputMode.directTouch,
+          enabled: true,
+          sourceRatio: 1,
+          onInput: (action, x, y, wheel) {
+            calls.add('$action:${x.toStringAsFixed(2)}:${y.toStringAsFixed(2)}');
+          },
+          child: const ColoredBox(color: Colors.black),
+        )),
+    ))));
+    await tester.tapAt(tester.getCenter(find.byType(RemoteControlSurface)));
+    await tester.pump();
+    expect(calls, contains('click:0.50:0.50'));
+  });
+
+  testWidgets('disabled remote-control surface never sends clicks', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(
+      child: SizedBox(width: 200, height: 200,
+        child: RemoteControlSurface(
+          mode: ControlInputMode.trackpad,
+          enabled: false,
+          sourceRatio: 1,
+          onInput: (action, x, y, wheel) => calls.add(action),
+          child: const ColoredBox(color: Colors.black),
+        )),
+    ))));
+    await tester.tapAt(tester.getCenter(find.byType(RemoteControlSurface)));
+    await tester.pump();
+    expect(calls, isEmpty);
+  });
+
   test('translated and zoomed view maps input back to desktop positions', () {
     const pan = Offset(20, -10);
     expect(RemoteControlSurface.normalizedPoint(
