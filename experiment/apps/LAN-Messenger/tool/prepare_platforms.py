@@ -17,6 +17,7 @@ if manifest.exists():
         'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE',
         'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
         'android.permission.POST_NOTIFICATIONS',
+        'android.permission.USE_FULL_SCREEN_INTENT',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
                       if f'android:name="{p}"' not in text)
@@ -35,6 +36,19 @@ if manifest.exists():
                           'android:foregroundServiceType="mediaProjection" />\n')
     if 'android:name=".ScreenProjectionService"' not in text:
         text = text.replace('</application>', projection_service + '    </application>', 1)
+    # Device owner must manually grant Accessibility access in Android settings.
+    # Never exported, no hidden remote-control service or automatic enabling.
+    accessibility = ('        <service android:name=".RemoteTouchService" '
+                     'android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" '
+                     'android:exported="true">\\n'
+                     '            <intent-filter>\n'
+                     '                <action android:name="android.accessibilityservice.AccessibilityService" />\n'
+                     '            </intent-filter>\n'
+                     '            <meta-data android:name="android.accessibilityservice" '
+                     'android:resource="@xml/remote_touch_accessibility" />\n'
+                     '        </service>\n')
+    if 'android:name=".RemoteTouchService"' not in text:
+        text = text.replace('</application>', accessibility + '    </application>', 1)
     manifest.write_text(text, encoding='utf-8')
     print(f'Patched {manifest}')
 
@@ -45,6 +59,19 @@ if manifest.exists():
     main_activity.write_text((root / 'tool/AndroidMainActivity.kt').read_text(encoding='utf-8'), encoding='utf-8')
     projection_target = main_activity.parent / 'ScreenProjectionService.kt'
     projection_target.write_text((root / 'tool/ScreenProjectionService.kt').read_text(encoding='utf-8'), encoding='utf-8')
+    touch_target = main_activity.parent / 'RemoteTouchService.kt'
+    touch_target.write_text((root / 'tool/RemoteTouchService.kt').read_text(encoding='utf-8'), encoding='utf-8')
+    accessibility_xml = root / 'android/app/src/main/res/xml/remote_touch_accessibility.xml'
+    accessibility_xml.parent.mkdir(parents=True, exist_ok=True)
+    accessibility_xml.write_text((root / 'tool/remote_touch_accessibility.xml').read_text(encoding='utf-8'), encoding='utf-8')
+    strings_xml = root / 'android/app/src/main/res/values/strings.xml'
+    strings_xml.parent.mkdir(parents=True, exist_ok=True)
+    if not strings_xml.exists():
+        strings_xml.write_text('<resources></resources>', encoding='utf-8')
+    strings = strings_xml.read_text(encoding='utf-8')
+    if 'lan_remote_touch_description' not in strings:
+        strings = strings.replace('</resources>', '<string name="lan_remote_touch_description">Optional mouse-like taps during an approved LAN Messenger screen-sharing call. Enable only when you want remote control, and revoke it in the call or Accessibility settings.</string></resources>')
+        strings_xml.write_text(strings, encoding='utf-8')
 
     # Audio tones are generated original assets; Android plays these through
     # high-priority notification channels even when Flutter is not foregrounded.
