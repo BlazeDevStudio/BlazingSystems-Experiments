@@ -28,8 +28,9 @@ class CallActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        if (action != "answer" && action != "decline") return
-        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
+        if (action !in listOf("answer", "decline", "end", "mute", "open")) return
+        if (action == "answer" || action == "decline" || action == "end")
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
         MainActivity.deliverCallAction(context, action, callId)
     }
 }
@@ -156,20 +157,47 @@ class MainActivity : FlutterActivity() {
             .setAutoCancel(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-        // Full screen intents are restricted by Android 14's user-controlled
-        // Special App Access, but enable a heads-up call banner when allowed.
-        if (Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()) {
-            b.setFullScreenIntent(openApp(), true)
-        }
+        // Intentionally do NOT use setFullScreenIntent. Incoming calls
+        // display system-managed CallStyle/heads-up Answer + Decline buttons
+        // without launching or stealing the screen of the busy user.
         if (Build.VERSION.SDK_INT >= 31) {
             b.setStyle(Notification.CallStyle.forIncomingCall(
-                Person.Builder().setName(caller).build(), decline, answer))
+                Person.Builder().setName(caller).build(), decline, answer)
+                .setIsVideo(video))
         } else {
             @Suppress("DEPRECATION")
             b.setPriority(Notification.PRIORITY_MAX)
             b.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
+        notifications.notify(7024, b.build())
+        return true
+    }
+
+    private fun showOngoingCall(caller: String, callId: String,
+                                video: Boolean, muted: Boolean): Boolean {
+        if (!canNotify() || callId.isBlank()) return false
+        val b = builder(if (video) "video_call" else "call")
+            .setSmallIcon(android.R.drawable.ic_menu_call)
+            .setContentTitle(caller)
+            .setContentText(if (muted) "Microphone muted" else
+                if (video) "Video call in progress" else "Voice call in progress")
+            .setContentIntent(openApp())
+            .setCategory(Notification.CATEGORY_CALL)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+        val end = callAction("end", callId)
+        if (Build.VERSION.SDK_INT >= 31) {
+            b.setStyle(Notification.CallStyle.forOngoingCall(
+                Person.Builder().setName(caller).build(), end).setIsVideo(video))
+        } else {
+            b.addAction(android.R.drawable.ic_menu_close_clear_cancel, "End call", end)
+        }
+        b.addAction(android.R.drawable.ic_lock_silent_mode,
+            if (muted) "Unmute" else "Mute", callAction("mute", callId))
+        b.addAction(android.R.drawable.ic_menu_view, "Open thread",
+            callAction("open", callId))
         notifications.notify(7024, b.build())
         return true
     }
@@ -199,6 +227,11 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
                     "dismissIncoming" -> { notifications.cancel(7024); result.success(null) }
+                    "ongoing" -> result.success(showOngoingCall(
+                        call.argument<String>("caller") ?: "LAN Messenger",
+                        call.argument<String>("callId") ?: "",
+                        call.argument<Boolean>("video") ?: false,
+                        call.argument<Boolean>("muted") ?: false))
                     "show" -> result.success(showEvent(
                         call.argument<String>("kind") ?: "message",
                         call.argument<String>("title") ?: "LAN Messenger",
