@@ -93,7 +93,7 @@ if window.exists():
 # message loop. Its independent lifecycle allows calls to be offered while
 # the main Flutter window is hidden without activating/restoring that window.
 runner = root / 'windows/runner'
-if (runner.exists():
+if runner.exists():
     header = runner / 'windows_call_toast.h'
     source = runner / 'windows_call_toast.cpp'
     header.write_text((root / 'tool/windows_call_toast.h').read_text(encoding='utf-8'),
