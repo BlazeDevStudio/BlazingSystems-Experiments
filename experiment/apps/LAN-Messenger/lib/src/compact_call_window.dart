@@ -15,6 +15,7 @@ class CompactCallWindow {
   Rect? _originalBounds;
   bool _wasVisible = false;
   bool _wasMaximized = false;
+  bool _wasMinimized = false;
   Future<void> _serial = Future<void>.value();
 
   bool get isCompact => mode != CompactCallMode.normal;
@@ -46,6 +47,7 @@ class CompactCallWindow {
       _originalBounds = await wm.windowManager.getBounds();
       _wasVisible = await wm.windowManager.isVisible();
       _wasMaximized = await wm.windowManager.isMaximized();
+      _wasMinimized = await wm.windowManager.isMinimized();
     }
     mode = CompactCallMode.incoming;
     changed();
@@ -80,6 +82,11 @@ class CompactCallWindow {
     await wm.windowManager.setBounds(target);
     // Inactive show prevents the compact caller banner taking keyboard focus
     // away from whatever application the user is currently working in.
+    // A window previously minimized to the taskbar needs to be restored only
+    // AFTER it has been resized to the small call surface.
+    if (await wm.windowManager.isMinimized()) {
+      await wm.windowManager.restore();
+    }
     await wm.windowManager.show(inactive: true);
   }
 
@@ -93,6 +100,7 @@ class CompactCallWindow {
     final original = _originalBounds!;
     final wasVisible = _wasVisible;
     final wasMaximized = _wasMaximized;
+    final wasMinimized = _wasMinimized;
     _originalBounds = null;
     mode = CompactCallMode.normal;
     changed();
@@ -105,6 +113,10 @@ class CompactCallWindow {
     await wm.windowManager.setTitleBarStyle(wm.TitleBarStyle.normal);
     await wm.windowManager.setBounds(original);
     if (wasMaximized) await wm.windowManager.maximize();
+    if (!bringToFront && wasMinimized) {
+      await wm.windowManager.minimize();
+      return;
+    }
     if (bringToFront || wasVisible) {
       await wm.windowManager.show(inactive: !bringToFront);
       if (bringToFront) await wm.windowManager.focus();
