@@ -1,4 +1,5 @@
 #!/bin/sh
+# PHX-L-CORE: source test and 3 canonical docs synchronized in one Git tree for RED CI.
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 T="$(mktemp -d)"
