@@ -247,6 +247,46 @@ var locationGeneratedSerial = (string?)reflectedExtractor.Invoke(null,
 var realUsbSerial = (string?)reflectedExtractor.Invoke(null,
     new object[] { @"USB\VID_1234&PID_5678\COIN-A" });
 
+// PHX-L-APPS #164: source-linked API regression for the GUI button's
+// existing unconditional SerialDiscovery.BindExactDevice() call. Identity-free
+// COM and USB location IDs must NOT silently switch a user's current mode
+// to ExactDevice or show a successful binding in the WinForms screen.
+// This tests the actual C# binder, NOT MainForm click/render behavior.
+var unknownComCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+SerialDiscovery.BindExactDevice(unknownComCfg, new SerialDeviceInfo(
+    "COM8", "Unknown COM port", "", "", "", "", ""));
+var locationOnlyCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+SerialDiscovery.BindExactDevice(locationOnlyCfg, new SerialDeviceInfo(
+    "COM8", "Location-derived USB adapter", "", @"USB\VID_1234&PID_5678\5&ABCDEF&0&2",
+    "1234", "5678", ""));
+var stableBindCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+SerialDiscovery.BindExactDevice(stableBindCfg, originalDevice);
+
+// Current-device validation is a separate binder API used by MainForm's
+// exact-device button. The test executes the ACTUAL source method against
+// synthetic USB descriptors, but does not click/render actual WinForms.
+var bindUniqueCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindUniqueOk = SerialDiscovery.TryBindExactDevice(bindUniqueCfg,
+    originalDevice, new[] { originalDevice }, out var bindUniqueReason);
+var bindDuplicatePnpCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindDuplicatePnpOk = SerialDiscovery.TryBindExactDevice(bindDuplicatePnpCfg,
+    originalDevice, new[] { originalDevice, duplicateDevice }, out _);
+var bindStaleRowCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindStaleRowOk = SerialDiscovery.TryBindExactDevice(bindStaleRowCfg,
+    originalDevice, new[] { movedPort }, out _);
+var bindDuplicateUsbCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindDuplicateUsbOk = SerialDiscovery.TryBindExactDevice(bindDuplicateUsbCfg,
+    originalDevice, new[] { originalDevice, duplicateSerial2 }, out _);
+var unknownDevice = new SerialDeviceInfo("COM8", "Unidentified COM", "", "", "", "", "");
+var bindUnknownCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindUnknownOk = SerialDiscovery.TryBindExactDevice(bindUnknownCfg,
+    unknownDevice, new[] { unknownDevice }, out _);
+var locationOnlyDevice = new SerialDeviceInfo("COM8", "USB location only", "",
+    @"USB\VID_1234&PID_5678\5&ABCDEF&0&2", "1234", "5678", "");
+var bindLocationCfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM3" };
+var bindLocationOk = SerialDiscovery.TryBindExactDevice(bindLocationCfg,
+    locationOnlyDevice, new[] { locationOnlyDevice }, out _);
+
 var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("exact_pnp_missing_com_recycled_must_refuse", exactComReused is not null, false),
     ("exact_duplicate_pnp_must_refuse_ambiguity", exactDuplicate is not null, false),
@@ -258,7 +298,16 @@ var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("exact_usb_serial_wrong_vid_must_refuse", SerialDiscovery.Resolve(usbOnlyPinned, new[] { bogusVendor }) is not null, false),
     ("exact_usb_serial_without_vidpid_must_refuse", SerialDiscovery.Resolve(unqualifiedSerial, new[] { movedPort }) is not null, false),
     ("exact_com_only_legacy_must_refuse", SerialDiscovery.Resolve(comOnlyPinned, new[] { replacementDevice }) is not null, false),
-    ("usb_location_instance_must_not_be_stable_serial", !string.IsNullOrEmpty(locationGeneratedSerial) || realUsbSerial != "COIN-A", false)
+    ("usb_location_instance_must_not_be_stable_serial", !string.IsNullOrEmpty(locationGeneratedSerial) || realUsbSerial != "COIN-A", false),
+    ("bind_exact_unknown_com_must_not_promote", unknownComCfg.SerialSelection == SerialSelectionMode.ExactDevice, false),
+    ("bind_exact_usb_location_instance_must_not_promote", locationOnlyCfg.SerialSelection == SerialSelectionMode.ExactDevice, false),
+    ("bind_exact_unique_pnp_positive_control", stableBindCfg.SerialSelection == SerialSelectionMode.ExactDevice && stableBindCfg.PreferredPnpDeviceId == originalDevice.PnpDeviceId, true),
+    ("gui_recheck_unique_pnp_accept", bindUniqueOk && bindUniqueCfg.SerialSelection == SerialSelectionMode.ExactDevice && bindUniqueCfg.PreferredPnpDeviceId == originalDevice.PnpDeviceId && string.IsNullOrEmpty(bindUniqueReason), true),
+    ("gui_recheck_duplicate_pnp_refuse_no_mutation", !bindDuplicatePnpOk && bindDuplicatePnpCfg.SerialSelection == SerialSelectionMode.ManualPort && bindDuplicatePnpCfg.ManualComPort == "COM3", true),
+    ("gui_recheck_stale_com_row_refuse_no_mutation", !bindStaleRowOk && bindStaleRowCfg.SerialSelection == SerialSelectionMode.ManualPort && bindStaleRowCfg.ManualComPort == "COM3", true),
+    ("gui_recheck_duplicate_usb_serial_refuse_no_mutation", !bindDuplicateUsbOk && bindDuplicateUsbCfg.SerialSelection == SerialSelectionMode.ManualPort && bindDuplicateUsbCfg.ManualComPort == "COM3", true),
+    ("gui_recheck_unidentified_com_refuse_no_mutation", !bindUnknownOk && bindUnknownCfg.SerialSelection == SerialSelectionMode.ManualPort && bindUnknownCfg.ManualComPort == "COM3", true),
+    ("gui_recheck_usb_location_refuse_no_mutation", !bindLocationOk && bindLocationCfg.SerialSelection == SerialSelectionMode.ManualPort && bindLocationCfg.ManualComPort == "COM3", true)
 };
 
 var cases = new (string Name, int Actual, int Expected)[] {
@@ -301,5 +350,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 26/26 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 35/35 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;

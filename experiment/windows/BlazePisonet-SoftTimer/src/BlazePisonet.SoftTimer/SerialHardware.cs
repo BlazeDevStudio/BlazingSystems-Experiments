@@ -126,8 +126,26 @@ public static class SerialDiscovery
         return null;
     }
 
-    public static void BindExactDevice(AppConfig config, SerialDeviceInfo device)
+    // Exact binding is an adapter-identity operation, not a COM-number
+    // preference. USB location-generated instances are not stable identity.
+    private static bool HasStableExactBindingIdentity(SerialDeviceInfo device)
     {
+        if (device.IsUsb)
+            return !string.IsNullOrWhiteSpace(device.PnpDeviceId) &&
+                   !string.IsNullOrWhiteSpace(device.UsbSerial) &&
+                   !device.UsbSerial.Contains('&') &&
+                   !string.IsNullOrWhiteSpace(device.Vid) &&
+                   !string.IsNullOrWhiteSpace(device.Pid);
+
+        return !string.IsNullOrWhiteSpace(device.PnpDeviceId);
+    }
+
+    // The low-level binder refuses identity-free input without modifying the
+    // current station configuration. A caller may deliberately use ManualPort
+    // as a separate, operator-selected compatibility mode.
+    public static bool BindExactDevice(AppConfig config, SerialDeviceInfo device)
+    {
+        if (!HasStableExactBindingIdentity(device)) return false;
         config.SerialSelection = SerialSelectionMode.ExactDevice;
         config.PreferredPnpDeviceId = device.PnpDeviceId;
         config.PreferredVid = device.Vid;
@@ -136,6 +154,89 @@ public static class SerialDiscovery
         config.PreferredFriendlyName = device.FriendlyName;
         config.LastKnownComPort = device.PortName;
         config.ManualComPort = device.PortName;
+        return true;
+    }
+
+    // The WinForms binding button must re-enumerate at click time. Validate
+    // the selected row, its current COM assignment, and unique identity before
+    // any configuration mutation. This does not close hot-unplug races between
+    // enumeration and actual SerialPort.Open(), nor authenticate USB silicon.
+    public static bool TryBindExactDevice(
+        AppConfig config,
+        SerialDeviceInfo selected,
+        IReadOnlyList<SerialDeviceInfo> freshDevices,
+        out string reason)
+    {
+        if (!HasStableExactBindingIdentity(selected))
+        {
+            reason = "Windows did not expose a stable device identity. Exact binding was refused. Rescan, use a serial-numbered adapter, or explicitly select ManualPort.";
+            return false;
+        }
+
+        var portMatches = freshDevices.Where(d =>
+            d.PortName.Equals(selected.PortName, StringComparison.OrdinalIgnoreCase))
+            .Take(2).ToArray();
+        if (portMatches.Length != 1)
+        {
+            reason = "The selected COM port disappeared or is ambiguous. Rescan before binding.";
+            return false;
+        }
+        var current = portMatches[0];
+        if (!HasStableExactBindingIdentity(current) ||
+            !current.PnpDeviceId.Equals(selected.PnpDeviceId, StringComparison.OrdinalIgnoreCase) ||
+            !current.Vid.Equals(selected.Vid, StringComparison.OrdinalIgnoreCase) ||
+            !current.Pid.Equals(selected.Pid, StringComparison.OrdinalIgnoreCase) ||
+            !current.UsbSerial.Equals(selected.UsbSerial, StringComparison.OrdinalIgnoreCase))
+        {
+            reason = "The device identity changed since the last scan. Rescan and select the adapter again.";
+            return false;
+        }
+
+        var pinned = freshDevices.Count(d =>
+            !string.IsNullOrWhiteSpace(d.PnpDeviceId) &&
+            d.PnpDeviceId.Equals(current.PnpDeviceId, StringComparison.OrdinalIgnoreCase));
+        if (pinned != 1)
+        {
+            reason = "Multiple serial ports claim the same PnP identity. Exact binding was refused.";
+            return false;
+        }
+
+        if (current.IsUsb)
+        {
+            var serialMatches = freshDevices.Count(d =>
+                d.IsUsb &&
+                d.Vid.Equals(current.Vid, StringComparison.OrdinalIgnoreCase) &&
+                d.Pid.Equals(current.Pid, StringComparison.OrdinalIgnoreCase) &&
+                d.UsbSerial.Equals(current.UsbSerial, StringComparison.OrdinalIgnoreCase));
+            if (serialMatches != 1)
+            {
+                reason = "Multiple adapters claim the same USB serial and VID/PID. Exact binding was refused.";
+                return false;
+            }
+        }
+
+        var probe = new AppConfig {
+            SerialSelection = SerialSelectionMode.ExactDevice,
+            PreferredPnpDeviceId = current.PnpDeviceId,
+            PreferredUsbSerial = current.UsbSerial,
+            PreferredVid = current.Vid,
+            PreferredPid = current.Pid
+        };
+        var resolved = Resolve(probe, freshDevices);
+        if (resolved is null ||
+            !resolved.PortName.Equals(current.PortName, StringComparison.OrdinalIgnoreCase))
+        {
+            reason = "The selected device cannot be uniquely resolved. Exact binding was refused.";
+            return false;
+        }
+
+        if (!BindExactDevice(config, current))
+        {
+            reason = "The adapter identity could not be validated for exact binding.";
+            return false;
+        }
+        reason = string.Empty;
+        return true;
     }
 
     private static string ExtractUsbSerial(string pnp)
