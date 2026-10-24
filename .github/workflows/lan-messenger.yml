@@ -86,6 +86,38 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_install_smoke.sh"
+  android-pair-lan:
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Optimized
+          path: android-apk
+      - name: Enable KVM for two cloud Android emulators
+        shell: bash
+        run: |
+          if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Two Android emulators — real shared virtual Wi-Fi discovery
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh"
+      - name: Upload dual-emulator network evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Peer-LAN-Evidence
+          path: android-lan-evidence/
+          if-no-files-found: ignore
+          retention-days: 14
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 35
