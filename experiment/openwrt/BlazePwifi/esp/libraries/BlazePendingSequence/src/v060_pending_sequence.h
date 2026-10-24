@@ -119,4 +119,28 @@ static inline int bp_pending_sequence_abandon(BpPendingSequence *s) {
     return 1;
 }
 
+/* Compare two already-validated records that coexist after interrupted atomic
+ * replacement. /pending.new is the intended next durable record only if its
+ * event/ack evolution is consistent with the valid canonical predecessor.
+ * Refuse ambiguous identities, backward pulse counts and rollback epochs.
+ * This does not certify LittleFS power-loss durability or signed receipts. */
+static inline int bp_pending_sequence_is_successor(const BpPendingSequence *old,
+                                                   const BpPendingSequence *next) {
+    if (!bp_pending_sequence_valid(old) || !bp_pending_sequence_valid(next))
+        return 0;
+    if (old->sequence != 0 &&
+        next->acked_sequence == old->acked_sequence + 1)
+        return next->sequence == 0; /* server ACK durably committed */
+    if (next->acked_sequence != old->acked_sequence) return 0;
+    if (old->sequence == 0)
+        return next->sequence == 0 ||
+            next->sequence == old->acked_sequence + 1; /* new reservation */
+    if (next->sequence == 0)
+        return 1; /* known rejected event, same ACK floor */
+    return next->sequence == old->sequence &&
+           next->pulses >= old->pulses &&
+           strcmp(next->nonce, old->nonce) == 0 &&
+           strcmp(next->target, old->target) == 0;
+}
+
 #endif
