@@ -40,3 +40,7 @@ Source change is narrowly restricted to `SerialDiscovery.ResolveExact` and `Extr
 ## 2026-10-25 UTC22 — Open-time COM adapter swap negative (TEST-ONLY)
 
 The new isolated child branch from draft #195 adds a deterministic fake WMI/SerialPort mapping change between `SerialDiscovery.Enumerate()` and `SerialPort.Open()`. The actual `SerialHardware.Connect()` is still compiled unmodified into the .NET 8 native C# fixture. It now checks 28 synthetic cases: 26 unchanged parent cases, one stable Open-time adapter positive, and one swapped adapter negative. The negative **must refuse connection**; until actual Windows CI logs are inspected, it is a proposed RED, not an observed failure. This does not authenticate USB hardware and does not prove a real Windows race, physical coin acceptance or financial safety. No application production source or financial core change; MASTER/VERIFY integration review remains mandatory.
+
+### 2026-10-25 UTC22 — verified test-only RED
+
+[Windows #40137220654](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40137220654) exact docs HEAD `a3965da5` COMPLETED FAILURE at the native C# diagnostic: 27/28 cases matched; the only mismatch was `exact_open_time_adapter_swap_must_refuse` (connected True vs expected False). Stable adapter control and prior 26 cases passed; no .NET compilation errors. Handover PASS, Windows build/installer/artifact/release downstream SKIPPED. Fake API test only; no physical adapter or paid coin proof. MASTER/VERIFY must review before any source fix.
