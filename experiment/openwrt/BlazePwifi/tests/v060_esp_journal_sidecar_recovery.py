@@ -18,7 +18,7 @@ BOARDS = {
 }
 
 def load_pending_function(text):
-    m = re.search(r"\\bbool\\s+loadPending\\s*\\(\\s*\\)\\s*\\{", text)
+    m = re.search(r"\bbool\s+loadPending\s*\(\s*\)\s*\{", text)
     assert m, "Missing real firmware loadPending"
     level = 0
     for pos in range(m.end() - 1, len(text)):
