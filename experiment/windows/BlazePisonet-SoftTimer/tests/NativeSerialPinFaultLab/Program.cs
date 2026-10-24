@@ -157,6 +157,42 @@ using (var sut = new SerialHardware()) {
     newPort.Raise(SerialPinChange.CtsChanged);
 }
 
+// PHX-L-APPS #164: deterministic reentrant session-crossing negative test.
+// SignalChanged is a public callback invoked BEFORE OnPinChanged reads CTS.
+// A listener may reconnect synchronously, replacing _port/_config. The old
+// callback must not then use its old cfg to sample the NEW port and invent
+// an edge. New COM9 stays electrically idle (CTS high, active-low mode).
+// This tests the actual linked SerialHardware.cs; no production source edit.
+int reentrantReconnectIdleFalseCoin = 0;
+SerialPort.InitialCtsLevel = false;
+var beforeReconnectCfg = new AppConfig {
+    CoinInputSignal = ModemSignal.Cts, CoinInputActiveHigh = true, MinimumPulseMs = 10
+};
+var afterReconnectCfg = new AppConfig {
+    CoinInputSignal = ModemSignal.Cts, CoinInputActiveHigh = false, MinimumPulseMs = 10
+};
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => reentrantReconnectIdleFalseCoin++;
+    if (!sut.Connect(beforeReconnectCfg)) throw new Exception("Initial reentrant COM failed");
+    var previous = SerialPort.LastCreated ?? throw new Exception("Missing previous COM");
+    bool didReconnect = false;
+    sut.SignalChanged += () => {
+        if (didReconnect) return;
+        didReconnect = true;
+        SerialPort.InitialCtsLevel = true; // new port's idle CTS, never changes
+        if (!sut.Connect(afterReconnectCfg)) throw new Exception("Reentrant reconnect failed");
+    };
+    // Unrelated old-session notification triggers the reconnect callback.
+    previous.Raise(SerialPinChange.DsrChanged);
+    if (!didReconnect) throw new Exception("Reentrant callback did not reconnect");
+    var replacement = SerialPort.LastCreated ?? throw new Exception("Missing replacement COM");
+    if (ReferenceEquals(previous, replacement)) throw new Exception("COM not replaced");
+    if (!replacement.CtsLevel) throw new Exception("Replacement CTS was not idle-high");
+    Thread.Sleep(50);
+    // Still idle, but an old callback may have fabricated a pulse start.
+    replacement.Raise(SerialPinChange.CtsChanged);
+}
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
@@ -171,7 +207,8 @@ var cases = new (string Name, int Actual, int Expected)[] {
     ("stale_ring_after_disconnect", staleRingAfterDisconnect, 0),
     ("stale_ring_after_replacement", staleRingAfterReplacement, 0),
     ("fresh_ring_after_stale_sender", freshRingAfterStale, 1),
-    ("stale_cts_callback_does_not_cancel_fresh_pulse", staleCtsDuringFreshPulse, 1)
+    ("stale_cts_callback_does_not_cancel_fresh_pulse", staleCtsDuringFreshPulse, 1),
+    ("reentrant_reconnect_idle_cts_must_not_credit", reentrantReconnectIdleFalseCoin, 0)
 };
 bool diagnosticFailed = false;
 foreach (var c in cases) {
@@ -191,5 +228,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 14/14 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 15/15 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
