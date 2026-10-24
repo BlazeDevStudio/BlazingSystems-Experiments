@@ -15,6 +15,7 @@ class GroupCallMesh {
   String? sessionId;
   bool video = false;
   final Map<String, Intercom> links = {};
+  final Set<String> _announcedTo = {};
   Future<bool> Function(Peer, GroupRoom, bool)? onInvitation;
   void Function()? onChanged;
 
@@ -30,6 +31,7 @@ class GroupCallMesh {
         !room.includes(node.identity.id)) {
       throw StateError('Group calls support one active room with 3–4 members');
     }
+    _announcedTo.clear();
     activeRoom = room;
     sessionId = randomId();
     video = withVideo;
@@ -78,6 +80,7 @@ class GroupCallMesh {
       final accepted = await (onInvitation?.call(sender, room, requestedVideo) ??
           Future<bool>.value(false));
       if (!accepted || active) return true;
+      _announcedTo.clear();
       activeRoom = room;
       sessionId = id;
       video = requestedVideo;
@@ -89,6 +92,14 @@ class GroupCallMesh {
       if (!active || id != sessionId || roomId != activeRoom?.id ||
           activeRoom?.includes(sender.id) != true ||
           sender.id == node.identity.id) return true;
+      // Confirm our presence once to each new joiner. This prevents
+      // deadlock if an earlier join broadcast arrived before they accepted.
+      if (_announcedTo.add(sender.id)) {
+        unawaited(node.signal(sender, {
+          'type': 'group-join', 'groupId': activeRoom!.id,
+          'sessionId': sessionId, 'video': video,
+        }).catchError((Object _) {}));
+      }
       final link = _link(sender);
       // Deterministic caller order prevents simultaneous-offer glare.
       if (node.identity.id.compareTo(sender.id) < 0 &&
@@ -138,6 +149,7 @@ class GroupCallMesh {
     await _broadcast('group-leave');
     final old = links.values.toList();
     links.clear();
+    _announcedTo.clear();
     activeRoom = null; sessionId = null; video = false;
     onChanged?.call();
     await Future.wait(old.map((link) => link.hangUp(notify: false)));
