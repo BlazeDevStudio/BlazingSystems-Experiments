@@ -261,6 +261,50 @@ var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("usb_location_instance_must_not_be_stable_serial", !string.IsNullOrEmpty(locationGeneratedSerial) || realUsbSerial != "COIN-A", false)
 };
 
+// PHX-L-APPS #164 UTC22: TEST-ONLY Open-time COM adapter substitution.
+// The real SerialHardware.Connect() is linked; only WMI/SerialPort are fake.
+// WMI reports the pinned adapter on COM9, then the fake COM9 physical
+// mapping is changed before SerialPort.Open(). The selected descriptor
+// remains stale even though the newly opened adapter is different.
+// This is NOT evidence of actual Windows driver behavior or real coin money.
+var openPinnedPnp = @"USB\VID_1234&PID_5678\COIN-A";
+var openReplacementPnp = @"USB\VID_1234&PID_5678\COIN-B";
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+var openConfig = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredPnpDeviceId = openPinnedPnp,
+    PreferredUsbSerial = "COIN-A", PreferredVid = "1234", PreferredPid = "5678",
+    CoinInputSignal = ModemSignal.Cts
+};
+SerialPort.InitialCtsLevel = false;
+SerialPort.PhysicalPnpAtOpen = openReplacementPnp;
+bool connectedToSubstitutedAdapter;
+using (var sut = new SerialHardware()) {
+    connectedToSubstitutedAdapter = sut.Connect(openConfig);
+    var opened = SerialPort.LastCreated ?? throw new Exception("Missing swapped COM9");
+    if (opened.OpenedPhysicalPnp != openReplacementPnp)
+        throw new Exception("Fake COM mapping did not change at Open");
+    if (connectedToSubstitutedAdapter && sut.ConnectedDevice?.PnpDeviceId != openPinnedPnp)
+        throw new Exception("Unexpected descriptor: stale WMI selection was not retained");
+}
+SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
+bool connectedToStableAdapter;
+using (var sut = new SerialHardware()) {
+    connectedToStableAdapter = sut.Connect(openConfig);
+    var opened = SerialPort.LastCreated ?? throw new Exception("Missing stable COM9");
+    if (opened.OpenedPhysicalPnp != openPinnedPnp)
+        throw new Exception("Fake stable COM mapping invalid");
+}
+SerialPort.PhysicalPnpAtOpen = null;
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+var openTimeCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
+    ("exact_open_time_adapter_swap_must_refuse", connectedToSubstitutedAdapter, false),
+    ("exact_open_time_stable_adapter_control", connectedToStableAdapter, true)
+};
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
@@ -284,6 +328,11 @@ foreach (var c in identityCases) {
     Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: resolved={c.Resolved}, expected_resolved={c.ExpectedResolved}");
     diagnosticFailed |= !pass;
 }
+foreach (var c in openTimeCases) {
+    var pass = c.Resolved == c.ExpectedResolved;
+    Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: connected={c.Resolved}, expected_connected={c.ExpectedResolved}");
+    diagnosticFailed |= !pass;
+}
 foreach (var c in cases) {
     var pass = c.Actual == c.Expected;
     Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: accepted={c.Actual}, expected_source_behavior={c.Expected}");
@@ -301,5 +350,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 26/26 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 28/28 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
