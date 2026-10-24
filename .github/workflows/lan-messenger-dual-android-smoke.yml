@@ -45,7 +45,7 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_2
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim
           script: bash "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/run_dual_android_voice_e2e.sh"
       - name: Upload screenshots, UI hierarchy and network logs
         if: always()

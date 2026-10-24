@@ -16,7 +16,7 @@ if [[ ! -x "$AVD_MANAGER" ]]; then AVD_MANAGER="$(command -v avdmanager)"; fi
 if [[ ! -x "$AVD_MANAGER" ]]; then echo "avdmanager unavailable"; exit 1; fi
 echo no | "$AVD_MANAGER" create avd -n lan_peer2 -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --force
 "$EMULATOR" -avd lan_peer2 -port 5556 -no-window -gpu swiftshader_indirect \
-  -no-snapshot -noaudio -no-boot-anim >"$OUT/emulator-peer2.log" 2>&1 &
+  -no-snapshot -no-boot-anim >"$OUT/emulator-peer2.log" 2>&1 &
 SECOND_PID=$!
 cleanup() {
   kill "$SECOND_PID" 2>/dev/null || true
