@@ -27,7 +27,7 @@ BpPendingSequence pendingSequenceState;
 Config cfg;
 Preferences prefs;
 WebServer web(80);
-bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false;
+bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, pollIntakeSuspended=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -234,7 +234,7 @@ String post(const String &action,const String &pulses="0",const String &target="
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -310,8 +310,11 @@ void loop(){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0; String r=post("poll"); insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
+  // Avoid blocking a coin edge or cutting power while a multi-pulse group is still settling.
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 &&
+     !(pendingPulses && !pendingReady) &&
+     (runCoinActiveLow ? digitalRead(runCoinPin) : !digitalRead(runCoinPin))){
+    wifiFailures=0; pollIntakeSuspended=true; applyOutputs(); String r=post("poll"); pollIntakeSuspended=false; insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
     applyOutputs(); lastPoll=millis();
   }
 
