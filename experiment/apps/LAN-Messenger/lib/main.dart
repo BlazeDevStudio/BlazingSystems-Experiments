@@ -379,7 +379,25 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
     await _dismissNativeIncoming();
     await _dismissDesktopCall();
-    if (Platform.isWindows) await _restoreCompactVideo();
+    if (Platform.isWindows) {
+      await _restoreCompactVideo();
+      await _restoreWindowAfterCall();
+    }
+  }
+
+  Future<void> _showActiveTrayMenu(Peer peer) async {
+    if (!Platform.isWindows || !_trayInitialized) return;
+    try {
+      await tray.trayManager.setToolTip('LAN Messenger — Call with ${peer.name}');
+      await tray.trayManager.setContextMenu(tray.Menu(items: [
+        tray.MenuItem(key: 'mute', label:
+          intercom?.muted == true ? 'Unmute microphone' : 'Mute microphone'),
+        tray.MenuItem(key: 'end', label: 'End call'),
+        tray.MenuItem(key: 'thread', label: 'Open call thread'),
+        tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+        tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+      ]));
+    } catch (_) {}
   }
 
   Future<void> _restoreWindowAfterCall() async {
@@ -608,18 +626,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           _pendingIncomingDecision = null;
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
-          unawaited(_restoreWindowAfterCall());
           if (accepted && inter.callId == id &&
               inter.talkingTo?.id == peer.id) {
             // Media negotiation continues in Intercom; cosmetic window work
             // must never reject or close a successfully answered call.
-            try { await _showOngoingCall(peer, id, incomingVideo); }
+            try {
+              await _showOngoingCall(peer, id, incomingVideo);
+              if (Platform.isWindows) await _showActiveTrayMenu(peer);
+            }
             catch (e) {
               if (mounted) setState(() =>
                   error = 'Call connected, floating controls unavailable: $e');
             }
           } else {
             await _dismissDesktopCall();
+            await _restoreWindowAfterCall();
           }
           if (mounted) setState(() {});
         }
@@ -730,6 +751,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   void onTrayMenuItemClick(tray.MenuItem item) {
     if (item.key == 'answer' || item.key == 'decline') {
       _resolveIncomingDialog(item.key == 'answer');
+    } else if (item.key == 'mute') {
+      final call = intercom;
+      if (call != null) {
+        unawaited(call.setMuted(!call.muted));
+        final peer = call.talkingTo;
+        if (peer != null) unawaited(_showActiveTrayMenu(peer));
+      }
+    } else if (item.key == 'end') {
+      unawaited(intercom?.hangUp() ?? Future<void>.value());
+    } else if (item.key == 'thread') {
+      unawaited(_openCallThread());
     } else if (item.key == 'exit') {
       unawaited(_exitWindows());
     } else if (item.key == 'open') {
