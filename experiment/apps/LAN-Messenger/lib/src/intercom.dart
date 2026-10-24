@@ -4,6 +4,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter/services.dart';
 import 'identity.dart';
 import 'node.dart';
+import 'call_transport_gate.dart';
 import 'windows_remote_input.dart';
 import 'protocol.dart';
 
@@ -348,8 +349,7 @@ class Intercom {
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
         unawaited(_log('unexpected connection state $state'));
         unawaited(hangUp(notify: false));
-      } else if (state ==
-          RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+      } else if (CallTransportGate.mediaReady(state)) {
         // An SDP answer is not proof of a usable media path. Only the actual
         // WebRTC peer transport reaching Connected clears the call's
         // negotiating state and unlocks connected-call UI/PiP.
