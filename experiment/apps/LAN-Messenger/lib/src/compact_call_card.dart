@@ -17,6 +17,7 @@ class CompactCallCard extends StatelessWidget {
     required this.onMute,
     required this.onEnd,
     required this.onOpenThread,
+    this.onExpand,
     this.onDragStart,
     this.onDragUpdate,
   });
@@ -24,6 +25,7 @@ class CompactCallCard extends StatelessWidget {
   final bool video, incoming, connecting, muted;
   final RTCVideoRenderer? renderer;
   final VoidCallback onAnswer, onDecline, onMute, onEnd, onOpenThread;
+  final VoidCallback? onExpand;
   final GestureDragStartCallback? onDragStart;
   final GestureDragUpdateCallback? onDragUpdate;
 
@@ -123,6 +125,11 @@ class CompactCallCard extends StatelessWidget {
                   key: const Key('open-thread'),
                   icon: Icons.chat_bubble_outline_rounded,
                   title: 'Thread', onPressed: onOpenThread),
+                if (onExpand != null)
+                  _action(
+                    key: const Key('expand-call'),
+                    icon: Icons.open_in_full_rounded,
+                    title: 'Expand', onPressed: onExpand!),
               ]),
           ),
       ]),
