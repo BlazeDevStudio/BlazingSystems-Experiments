@@ -19,11 +19,11 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 120); do
-            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40065736368 --jq '.conclusion // ""')"
-            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40065736368 --jq '.head_sha')"
-            test "$commit" = "ccb64a071c1aaaf505823491c77b0e2daadeec47" || { echo "Unrecognized source SHA"; exit 1; }
+            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40066244240 --jq '.conclusion // ""')"
+            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40066244240 --jq '.head_sha')"
+            test "$commit" = "7ae1f7e391ef5c532e882452f5ab3c5ac9d0c588" || { echo "Unrecognized source SHA"; exit 1; }
             if [ "$conclusion" = "success" ]; then
-              echo "Verified successful full CI run 40065736368 for ccb64a071c1aaaf505823491c77b0e2daadeec47"
+              echo "Verified successful full CI run 40066244240 for 7ae1f7e391ef5c532e882452f5ab3c5ac9d0c588"
               exit 0
             fi
             if [ -n "$conclusion" ]; then
@@ -46,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh run download 40065736368 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40066244240 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
           New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
           Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
           if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
@@ -103,8 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p artifacts/android artifacts/windows dist
-          gh run download 40065736368 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
-          gh run download 40065736368 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40066244240 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 40066244240 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
       - uses: actions/download-artifact@v4
         with:
           name: LAN-Messenger-Windows-Installer-v0.2.9
@@ -155,14 +155,14 @@ jobs:
           - Build requires successful same-commit GitHub Actions Windows release, Flutter analyze/tests, Android APK signature/integrity verification and Android emulator installation/launch.
           - Live calling, background Android permissions on device-specific OEMs, floating HWND focus preservation and actual multiple-user video performance remain owner acceptance tests; CI cannot certify those.
           - Android APKs may use ephemeral preview signing and can require uninstall. Save any needed local files before changing installation. Windows installer is unsigned; portable ZIP must be fully extracted.
-          - CI: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40065736368
-          - Source: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/ccb64a071c1aaaf505823491c77b0e2daadeec47
+          - CI: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40066244240
+          - Source: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/7ae1f7e391ef5c532e882452f5ab3c5ac9d0c588
           EOF
       - name: Publish immutable GitHub prerelease assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create lan-messenger-v0.2.9-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --target ccb64a071c1aaaf505823491c77b0e2daadeec47 \
+            --repo "$GITHUB_REPOSITORY" --target 7ae1f7e391ef5c532e882452f5ab3c5ac9d0c588 \
             --title "LAN Messenger v0.2.9 - Call Repair and Group Preview" \
             --notes-file dist/RELEASE-NOTES.md --prerelease
