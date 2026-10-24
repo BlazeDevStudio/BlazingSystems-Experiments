@@ -17,6 +17,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/call_presentation_policy.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -501,9 +502,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         final readyPeer = inter.talkingTo;
         final readyId = inter.callId;
         if (readyId != null) _lastObservedCallId = readyId;
-        if (!_incomingDialogOpen && !inter.connecting && readyPeer != null &&
-            readyId != null && _activeCallUiId != readyId &&
-            _pendingPresentationId != readyId) {
+        if (readyId != null && CallPresentationPolicy.ready(
+              incomingPending: _incomingDialogOpen,
+              connecting: inter.connecting,
+              peerPresent: readyPeer != null,
+              alreadyShown: _activeCallUiId == readyId,
+              scheduled: _pendingPresentationId == readyId,
+            )) {
           _pendingPresentationId = readyId;
           unawaited(() async {
             try {
@@ -624,7 +629,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
           final background = await _isDesktopBackground();
-          _incomingUsesExternalSurface = background;
+          _incomingUsesExternalSurface =
+              CallPresentationPolicy.externalIncoming(
+                foreground: !background,
+                minimizedOrHidden: background,
+                android: false,
+              );
           _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
@@ -636,7 +646,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
-          _incomingUsesExternalSurface = !_inForeground;
+          _incomingUsesExternalSurface = CallPresentationPolicy.externalIncoming(
+            foreground: _inForeground,
+            minimizedOrHidden: false,
+            android: true,
+          );
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
           if (!_nativeIncomingAvailable) {
