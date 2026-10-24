@@ -37,15 +37,81 @@ bp_controller_uint() {
   [ "$value" -ge "$min" ] && [ "$value" -le "$max" ]
 }
 
+
+# PHX-L-CORE P0 #31: shared controller-paid admission linearization.
+# fd4 is distinct from paid fd6, member fd7, auth fd8, account fd9.
+# Callers must acquire this only AFTER any member/account writer lock,
+# and hold through the durable paid commit. Controller admin holds it
+# through its config write. Previously committed receipts are checked first.
+bp_controller_admission_lock() {
+  mkdir -p "$BP_RUN" || return 8
+  exec 4>"$BP_RUN/controller-admission.lock" || return 8
+  flock -w 10 4 || { exec 4>&-; return 8; }
+}
+bp_controller_admission_unlock() {
+  flock -u 4 2>/dev/null || true
+  exec 4>&-
+}
+bp_controller_paid_allowed() {
+  controller_id="$1"; operation="$2"
+  [ -f "$BP_CONTROLLERS" ] && [ ! -L "$BP_CONTROLLERS" ] || return 1
+  # Reject absent, duplicated or malformed controller rows; do not
+  # silently create/re-enable a controller at the financial decision.
+  awk -F '\t' -v d="$controller_id" -v op="$operation" '
+    # A paid admission needs the complete legacy 15-column registry row,
+    # not just three forged enabled fields. Match existing setter bounds.
+    function flag(v) { return v=="0" || v=="1" }
+    function uint(v, lo, hi) {
+      return v ~ /^[0-9]+$/ && v+0 >= lo && v+0 <= hi
+    }
+    function pin(v) { return v=="-1" || uint(v,0,63) }
+    function valid() {
+      return NF==15 && flag($2) && flag($3) && flag($4) && flag($5) &&
+        pin($6) && pin($7) && pin($8) && flag($9) && flag($10) && flag($11) &&
+        uint($12,1,2000) && uint($13,10,10000) && uint($14,1,60) &&
+        $15 ~ /^[0-9]+$/ && $15+0 >= 1
+    }
+    $1==d {
+      n++
+      if (!valid()) malformed=1
+      enabled=$2
+      coin_enabled=$3
+    }
+    END {
+      if (n!=1 || malformed || enabled!="1" ||
+          (op=="coin" && coin_enabled!="1")) exit 1
+    }
+  ' "$BP_CONTROLLERS"
+}
+
 bp_controller_write() {
   id="$1"; shift
   tmp="$BP_STATE/.controllers.$(bp_tmp_suffix)"
-  awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"
-  printf '%s' "$id" >> "$tmp"
-  for value in "$@"; do printf '\t%s' "$value" >> "$tmp"; done
-  printf '\n' >> "$tmp"
-  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS"
-  bp_durable_sync
+  # A failed copy or partial append must never replace the prior
+  # controller registry: it also carries enabled/coin-enabled admission.
+  if ! awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  if ! printf '%s' "$id" >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  for value in "$@"; do
+    if ! printf '\t%s' "$value" >> "$tmp"; then
+      rm -f "$tmp" 2>/dev/null || true
+      return 8
+    fi
+  done
+  if ! printf '\n' >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS" || {
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  }
+  bp_durable_sync || return 8
 }
 
 bp_controller_set() {
@@ -57,11 +123,17 @@ bp_controller_set() {
   bp_controller_uint "$debounce" 1 2000 || return 2
   bp_controller_uint "$group" 10 10000 || return 2
   bp_controller_uint "$retries" 1 60 || return 2
+  bp_controller_admission_lock || return 8
   line="$(bp_controller_line "$id")"
   rev="$(printf '%s' "$line" | cut -f15)"
   [ -n "$rev" ] || rev=0
   rev=$((rev+1))
-  bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"
+  if bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"; then
+    bp_controller_admission_unlock
+    return 0
+  fi
+  bp_controller_admission_unlock
+  return 8
 }
 
 bp_controller_json() {
