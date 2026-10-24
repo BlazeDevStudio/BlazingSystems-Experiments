@@ -41,7 +41,7 @@ It enumerates the serial devices currently visible to Windows and supports:
 - any available serial port;
 - optional legacy COM1 behavior.
 
-If Windows moves the same USB-RS232 adapter from `COM7` to `COM12`, exact-device mode can rediscover it by identity instead of requiring Device Manager renaming.
+If Windows moves the same USB-RS232 adapter from `COM7` to `COM12`, exact-device mode can rediscover it by identity instead of requiring Device Manager renaming. On the PHX-L-APPS issue #164 development branch, a missing/ambiguous hardware identity now **blocks ExactDevice** rather than silently accepting an unrelated adapter on the remembered COM port. ManualPort remains explicitly available for supervised operation. No serial pulse capture or paid financial durability is certified by this source-level guard.
 
 Supported modem-control inputs include DSR, CTS, carrier-detect and ring events. DTR and RTS are configurable outputs. Pulse debounce and minimum/maximum pulse widths are configurable.
 
