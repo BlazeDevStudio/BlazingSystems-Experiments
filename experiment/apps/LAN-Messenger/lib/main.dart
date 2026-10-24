@@ -1034,41 +1034,51 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
-  Widget _miniCall() {
+  Widget _compactCallCard({required bool desktop}) {
     final call = intercom!;
-    final width = MediaQuery.sizeOf(context).width;
-    final height = MediaQuery.sizeOf(context).height;
-    return Positioned(
-      left: _miniCallPosition.dx.clamp(0.0, (width - 195).clamp(0.0, width)),
-      top: _miniCallPosition.dy.clamp(0.0, (height - 145).clamp(0.0, height)),
-      child: GestureDetector(
-        onPanUpdate: (d) => setState(() {
-          _miniCallPosition += d.delta;
-        }),
-        child: Material(
-          elevation: 10, borderRadius: BorderRadius.circular(14),
-          color: const Color(0xff102b4e),
-          child: SizedBox(width: 190, height: 116, child: Stack(children: [
-            Positioned.fill(child: call.video && call.remoteRenderer != null
-              ? ClipRRect(borderRadius: BorderRadius.circular(14),
-                child: RTCVideoView(call.remoteRenderer!,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain))
-              : Center(child: Text(call.talkingTo?.name ?? 'Connected',
-                  style: const TextStyle(color: Colors.white)))),
-            Positioned(top: 0, right: 0, child: IconButton(
-              tooltip: 'Expand call', color: Colors.white,
-              icon: const Icon(Icons.open_in_full),
-              onPressed: () => setState(() => _callMinimized = false))),
-            Positioned(bottom: 0, right: 0, child: IconButton(
-              tooltip: 'End call', color: Colors.redAccent,
-              icon: const Icon(Icons.call_end),
-              onPressed: () => call.hangUp())),
-            const Positioned(bottom: 9, left: 9,
-              child: Icon(Icons.drag_indicator, size: 16, color: Colors.white70)),
-          ])),
-        ),
-      ),
+    return CompactCallCard(
+      peerName: (_ringingPeer ?? call.talkingTo)?.name ?? 'LAN Messenger',
+      incoming: _incomingDialogOpen,
+      video: !_incomingDialogOpen && call.video,
+      connecting: call.connecting,
+      muted: call.muted,
+      renderer: call.remoteRenderer,
+      onAnswer: () => _resolveIncomingDialog(true),
+      onDecline: () => _resolveIncomingDialog(false),
+      onMute: () => unawaited(call.setMuted(!call.muted)),
+      onEnd: () => unawaited(call.hangUp()),
+      onOpenThread: _openCallThread,
+      onDragStart: desktop ? (_) => unawaited(wm.windowManager.startDragging()) : null,
+      onDragUpdate: desktop ? null : (details) {
+        if (!mounted) return;
+        setState(() => _callToastOffset += details.delta);
+      },
     );
+  }
+
+  Widget _miniCall() {
+    final size = MediaQuery.sizeOf(context);
+    final width = (size.width - 24).clamp(220.0, 348.0).toDouble();
+    final height = intercom!.video ? 340.0 : 164.0;
+    final dx = _callToastOffset.dx.clamp(-size.width + width + 12,
+        (size.width - width - 12).clamp(0.0, double.infinity)).toDouble();
+    final dy = _callToastOffset.dy.clamp(-size.height + height + 12,
+        (size.height - height - 12).clamp(0.0, double.infinity)).toDouble();
+    return Positioned(
+      bottom: 12 - dy, right: 12 - dx, width: width,
+      child: _compactCallCard(desktop: false));
+  }
+
+  Widget _incomingCallToast() {
+    final size = MediaQuery.sizeOf(context);
+    final width = (size.width - 24).clamp(220.0, 348.0).toDouble();
+    return Positioned(
+      bottom: (18 - _callToastOffset.dy).clamp(6.0,
+          (size.height - 160).clamp(6.0, double.infinity)).toDouble(),
+      right: (12 - _callToastOffset.dx).clamp(6.0,
+          (size.width - width).clamp(6.0, double.infinity)).toDouble(),
+      width: width,
+      child: _compactCallCard(desktop: false));
   }
 
   Widget _activeCall() {
@@ -1216,17 +1226,28 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Widget build(BuildContext context) => Theme(
     data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
       useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
-    child: Stack(children: [
-    Scaffold(body: Column(children: [
-    _title(),
-    if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
-        style: const TextStyle(color: Colors.red))),
-    Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
-      selected == null ? _deviceList() : _chat()),
-  ])),
-    if (intercom?.talkingTo != null && !_incomingDialogOpen)
-      _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
-  ]));
+    child: _desktopCompact && Platform.isWindows
+        // Entire desktop OS window is only this small, draggable toast.
+        ? Scaffold(
+            backgroundColor: const Color(0xff10233e),
+            body: SafeArea(child: intercom != null
+                ? _compactCallCard(desktop: true)
+                : const Center(child: Text('LAN Messenger',
+                    style: TextStyle(color: Colors.white)))))
+        : Stack(children: [
+          Scaffold(body: Column(children: [
+            _title(),
+            if (error != null) Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(error!, style: const TextStyle(color: Colors.red))),
+            Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
+              selected == null ? _deviceList() : _chat()),
+          ])),
+          if (intercom?.talkingTo != null && _incomingDialogOpen)
+            _incomingCallToast(),
+          if (intercom?.talkingTo != null && !_incomingDialogOpen)
+            _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
+        ]));
 
   @override
   void dispose() {
