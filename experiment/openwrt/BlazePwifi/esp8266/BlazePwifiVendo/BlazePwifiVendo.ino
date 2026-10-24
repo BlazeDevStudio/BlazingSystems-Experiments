@@ -376,6 +376,9 @@ void loop(){
         pendingReady=true;
         Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
       }
+      // A full journal or failed flash reservation must inhibit intake now,
+      // not after the next poll or pulse group timeout.
+      if(pendingPulses>=20 || !fsReady || pendingReady) applyOutputs();
     }
   }
   lastCoin=active;
