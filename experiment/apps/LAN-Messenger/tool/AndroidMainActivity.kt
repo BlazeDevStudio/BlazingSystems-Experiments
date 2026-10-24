@@ -313,10 +313,40 @@ class MainActivity : FlutterActivity() {
             b.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
-        notifications.notify(7024, b.build())
-        Log.i("LANCallTrace", "incoming CallStyle notification 7024 posted")
+        var posted = false
+        try {
+            notifications.notify(7024, b.build())
+            Log.i("LANCallTrace", "incoming CallStyle notification 7024 posted")
+            posted = true
+        } catch (error: Exception) {
+            // Android 14+ can reject CallStyle notifications that are not
+            // themselves the foreground-service notification, even though
+            // LAN Messenger's separate FlutterBackground service is active.
+            // Preserve OS-level Answer/Decline actions and user choice instead
+            // of losing the incoming call entirely. Do not launch an Activity.
+            Log.w("LANCallTrace", "CallStyle unavailable; posting actionable heads-up fallback: ${error.message}")
+            try {
+                val fallback = builder(event)
+                    .setSmallIcon(android.R.drawable.ic_menu_call)
+                    .setContentTitle(caller)
+                    .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
+                    .setContentIntent(openApp())
+                    .setCategory(Notification.CATEGORY_CALL)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(false)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
+                    .addAction(android.R.drawable.ic_menu_call, "Answer", answer)
+                notifications.notify(7024, fallback.build())
+                Log.i("LANCallTrace", "fallback Answer/Decline notification 7024 posted")
+                posted = true
+            } catch (fallbackError: Exception) {
+                Log.e("LANCallTrace", "incoming notification fallback failed: ${fallbackError.message}")
+            }
+        }
         updateOverlay()
-        return true
+        return posted
     }
 
     private fun showOngoingCall(caller: String, callId: String,
