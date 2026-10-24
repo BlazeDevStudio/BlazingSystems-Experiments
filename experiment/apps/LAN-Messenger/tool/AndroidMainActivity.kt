@@ -6,6 +6,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.res.Configuration
+import android.graphics.drawable.Icon
+import android.util.Rational
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -31,7 +36,14 @@ class CallActionReceiver : BroadcastReceiver() {
         if (action !in listOf("answer", "decline", "end", "mute", "open")) return
         if (action == "answer" || action == "decline" || action == "end")
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
-        MainActivity.deliverCallAction(context, action, callId)
+        if (action == "open") {
+            val intent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("action", "open")
+                putExtra("callId", callId)
+            }
+            context.startActivity(intent)
+        } else MainActivity.deliverCallAction(context, action, callId)
     }
 }
 
@@ -44,19 +56,17 @@ class MainActivity : FlutterActivity() {
                 running.runOnUiThread { running.callBridge?.invokeMethod("callAction",
                     mapOf("action" to action, "callId" to callId)) }
             } else {
-                // This only reopens the UI; there is no unattended microphone start.
-                val intent = Intent(context, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    putExtra("action", action)
-                    putExtra("callId", callId)
-                }
-                context.startActivity(intent)
+                // With no live Flutter process the old WebRTC offer is gone.
+                // Do not launch a new Activity to answer a stale call.
             }
         }
     }
     private var lock: WifiManager.MulticastLock? = null
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
+    private var pipCallId: String? = null
+    private var pipVideo = false
+    private var pipMuted = false
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
@@ -64,7 +74,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         active = this
-        consumeAction(intent)
+        // The Flutter channel may not be initialized yet. No stale replays.
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -218,6 +228,53 @@ class MainActivity : FlutterActivity() {
         return true
     }
 
+    private fun pipActions(id: String): List<RemoteAction> {
+        fun action(name: String, label: String, icon: Int): RemoteAction =
+            RemoteAction(Icon.createWithResource(this, icon), label, label, callAction(name, id))
+        return listOf(
+            action("mute", if (pipMuted) "Unmute" else "Mute", android.R.drawable.ic_lock_silent_mode),
+            action("open", "Open thread", android.R.drawable.ic_menu_view),
+            action("end", "End", android.R.drawable.ic_menu_close_clear_cancel),
+        )
+    }
+
+    private fun pipParams(): PictureInPictureParams {
+        val builder = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+            .setActions(pipActions(pipCallId!!))
+        if (Build.VERSION.SDK_INT >= 31) builder.setAutoEnterEnabled(pipVideo)
+        return builder.build()
+    }
+
+    private fun configurePip(id: String, video: Boolean, muted: Boolean) {
+        pipCallId = id.takeIf { it.isNotBlank() }
+        pipVideo = video && pipCallId != null
+        pipMuted = muted
+        if (Build.VERSION.SDK_INT >= 26 && pipCallId != null) {
+            try { setPictureInPictureParams(pipParams()) } catch (_: Exception) {}
+        } else if (Build.VERSION.SDK_INT >= 31) {
+            setPictureInPictureParams(PictureInPictureParams.Builder()
+                .setAutoEnterEnabled(false).build())
+        }
+    }
+
+    private fun enterCallPip(): Boolean {
+        if (Build.VERSION.SDK_INT < 26 || !pipVideo || pipCallId == null ||
+            !packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) return false
+        return try { enterPictureInPictureMode(pipParams()) }
+        catch (_: Exception) { false }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT in 26..30 && pipVideo) enterCallPip()
+    }
+
+    override fun onPictureInPictureModeChanged(inPip: Boolean, config: Configuration) {
+        super.onPictureInPictureModeChanged(inPip, config)
+        callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
+    }
+
     private fun showEvent(event: String, title: String, body: String): Boolean {
         if (!canNotify()) return false
         val kind = if (event in listOf("message", "file")) event else "message"
@@ -248,6 +305,13 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false,
                         call.argument<Boolean>("muted") ?: false))
+                    "configurePip" -> {
+                        configurePip(call.argument<String>("callId") ?: "",
+                            call.argument<Boolean>("video") ?: false,
+                            call.argument<Boolean>("muted") ?: false)
+                        result.success(null)
+                    }
+                    "enterPip" -> result.success(enterCallPip())
                     "show" -> result.success(showEvent(
                         call.argument<String>("kind") ?: "message",
                         call.argument<String>("title") ?: "LAN Messenger",
