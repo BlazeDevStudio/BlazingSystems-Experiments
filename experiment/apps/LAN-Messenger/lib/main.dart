@@ -16,6 +16,7 @@ import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
 import 'src/group_rooms.dart';
+import 'src/call_surface_policy.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -422,8 +423,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
       n.onSignal = (peer, data) => unawaited(() async {
-        if (await group.incoming(peer, data)) return;
-        await inter.incomingSignal(peer, data);
+        try {
+          if (await group.incoming(peer, data)) return;
+          await inter.incomingSignal(peer, data);
+        } catch (e) {
+          if (mounted) setState(() => error = 'Call signaling error: $e');
+        }
       }());
       inter.onChanged = () {
         if (!mounted) return;
@@ -432,8 +437,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         // block raced WebRTC initialization and caused answer regressions.
         final readyId = inter.callId;
         final readyPeer = inter.talkingTo;
-        if (!_incomingDialogOpen && !_presentingCall && !inter.connecting &&
-            readyId != null && readyPeer != null && _activeCallUiId != readyId) {
+        if (readyId != null && readyPeer != null &&
+            CallSurfacePolicy.mayPresentOngoing(
+              incomingPending: _incomingDialogOpen,
+              connecting: inter.connecting,
+              hasPeer: true,
+              alreadyPresent: _activeCallUiId == readyId,
+              presenting: _presentingCall,
+            )) {
           _presentingCall = true;
           unawaited(() async {
             try {
@@ -531,8 +542,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _incomingBackground = Platform.isAndroid
-            ? !_androidForeground : await _isDesktopBackground();
+        _incomingBackground =
+            CallSurfacePolicy.incoming(
+              background: Platform.isAndroid
+                  ? !_androidForeground : await _isDesktopBackground(),
+              android: Platform.isAndroid,
+            ) != IncomingSurface.foregroundCall;
         _callMinimized = _incomingBackground;
         setState(() { selected = peer; showReceived = false; });
         // Never focus or restore the Windows app on an inbound call.
