@@ -67,6 +67,7 @@ class MainActivity : FlutterActivity() {
     private var pipCallId: String? = null
     private var pipVideo = false
     private var pipMuted = false
+    private val incomingOverlay by lazy { AndroidIncomingOverlay(applicationContext) }
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
@@ -153,7 +154,11 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showIncomingCall(caller: String, callId: String, video: Boolean): Boolean {
-        if (!canNotify() || callId.isEmpty() || caller.isBlank()) return false
+        if (callId.isEmpty() || caller.isBlank()) return false
+        val overlayShown = incomingOverlay.show(caller, video,
+            onAnswer = { deliverCallAction(this, "answer", callId) },
+            onDecline = { deliverCallAction(this, "decline", callId) })
+        if (!canNotify()) return overlayShown
         val event = if (video) "video_call" else "call"
         val answer = callAction("answer", callId)
         val decline = callAction("decline", callId)
@@ -299,7 +304,18 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
-                    "dismissIncoming" -> { notifications.cancel(7024); result.success(null) }
+                    "dismissIncoming" -> {
+                        incomingOverlay.dismiss()
+                        notifications.cancel(7024)
+                        result.success(null)
+                    }
+                    "dismissOverlay" -> { incomingOverlay.dismiss(); result.success(null) }
+                    "overlayAvailable" -> result.success(incomingOverlay.permitted())
+                    "openOverlaySettings" -> {
+                        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")))
+                        result.success(null)
+                    }
                     "ongoing" -> result.success(showOngoingCall(
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
@@ -420,6 +436,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        incomingOverlay.dismiss()
         if (active === this) active = null
         callBridge = null
         lock?.let { if (it.isHeld) it.release() }
