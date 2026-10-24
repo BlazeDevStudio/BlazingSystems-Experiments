@@ -20,6 +20,20 @@ adb shell am start -W -n com.example.lan_messenger/.MainActivity
 sleep 10
 echo "Running process PID:"
 adb shell pidof com.example.lan_messenger
+# Exercise the Activity resume/Answer entrypoint without another device.
+# A deliberately stale call ID must never crash or accidentally start capture.
+echo "Testing background -> notification Answer Activity lifecycle (stale ID)"
+adb shell input keyevent KEYCODE_HOME
+sleep 2
+adb shell am start -W -n com.example.lan_messenger/.MainActivity \
+  --es action answer --es callId smoke-stale-answer-1
+sleep 4
+adb shell pidof com.example.lan_messenger
+echo "Testing repeated Answer tap does not terminate Flutter"
+adb shell am start -W -n com.example.lan_messenger/.MainActivity \
+  --es action answer --es callId smoke-stale-answer-1
+sleep 2
+adb shell pidof com.example.lan_messenger
 echo "Recent app-specific crash evidence (if any):"
 if adb logcat -d -t 1600 | grep -E 'Process: com.example.lan_messenger|INSTALL_FAILED'; then
   echo "An installation or app crash was detected"
