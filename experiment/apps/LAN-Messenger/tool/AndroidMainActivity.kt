@@ -7,6 +7,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
 import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.graphics.drawable.Icon
 import android.content.res.Configuration
 import android.util.Rational
 import android.content.BroadcastReceiver
@@ -305,8 +307,28 @@ class MainActivity : FlutterActivity() {
         notifications.notify(7024, b.build())
         lastCaller = caller; lastCallId = callId
         lastVideo = video; lastMuted = muted; lastIncoming = false
+        if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
+            try {
+                setPictureInPictureParams(PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setActions(pictureActions(callId)).build())
+            } catch (_: Exception) { }
+        }
         updateOverlay()
         return true
+    }
+
+    private fun pictureActions(id: String): List<RemoteAction> {
+        fun control(name: String, label: String, icon: Int): RemoteAction {
+            return RemoteAction(Icon.createWithResource(this, icon),
+                label, label, callAction(name, id))
+        }
+        return listOf(
+            control("mute", if (lastMuted) "Unmute" else "Mute",
+                android.R.drawable.ic_lock_silent_mode),
+            control("end", "End call", android.R.drawable.ic_menu_close_clear_cancel),
+            control("open", "Open conversation", android.R.drawable.ic_menu_view),
+        )
     }
 
     private fun enterCallPictureInPicture(id: String): Boolean {
@@ -316,7 +338,8 @@ class MainActivity : FlutterActivity() {
             return false
         return try {
             enterPictureInPictureMode(PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(16, 9)).build())
+                .setAspectRatio(Rational(16, 9))
+                .setActions(pictureActions(id)).build())
         } catch (_: Exception) { false }
     }
 
