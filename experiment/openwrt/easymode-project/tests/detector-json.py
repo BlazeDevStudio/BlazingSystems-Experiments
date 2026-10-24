@@ -50,8 +50,10 @@ def check(shell, awk=None):
     with tempfile.TemporaryDirectory(prefix="easymode-json-") as temporary:
         if awk:
             # Select a second real awk implementation without changing product code.
+            executable = shutil.which(awk[0])
+            assert executable, "requested awk executable is required"
             shim = Path(temporary) / "awk"
-            shim.write_text("#!/bin/sh\nexec " + " ".join(shlex.quote(arg) for arg in awk) +
+            shim.write_text("#!/bin/sh\nexec " + " ".join(shlex.quote(arg) for arg in [executable, *awk[1:]]) +
                             ' "$@"\n', encoding="utf-8", newline="\n")
             shim.chmod(0o755)
             env["PATH"] = temporary + os.pathsep + env["PATH"]

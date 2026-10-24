@@ -1,22 +1,20 @@
 #!/bin/sh
 set -eu
 json_escape() {
-  # Sysinfo strings are untrusted text. Escape every JSON string metacharacter
-  # so a quote, backslash or control byte cannot break the detection object.
-  printf '%s' "$1" | awk 'BEGIN { RS = "\0"; ORS = "" }
+  # One framing LF lets default awk records preserve every supplied LF,
+  # including trailing ones. The C locale preserves other UTF-8 bytes.
+  printf '%s\n' "$1" | LC_ALL=C awk 'BEGIN {
+    for (n = 1; n < 32; n++) escape[sprintf("%c", n)] = sprintf("\\u%04x", n)
+    escape["\\"] = "\\\\"
+    escape["\""] = "\\\""
+  }
+  NR > 1 { printf "\\n" }
   {
-    out = ""
     n = length($0)
     for (i = 1; i <= n; i++) {
       c = substr($0, i, 1)
-      if (c == "\\") out = out "\\\\"
-      else if (c == "\"") out = out "\\\""
-      else if (c == "\n") out = out "\\n"
-      else if (c == "\r") out = out "\\r"
-      else if (c == "\t") out = out "\\t"
-      else out = out c
+      printf "%s", (c in escape ? escape[c] : c)
     }
-    printf "%s", out
   }'
 }
 board="unknown"; model="unknown"; release="unknown"; arch="unknown"

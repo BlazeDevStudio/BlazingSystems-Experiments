@@ -1,5 +1,23 @@
 # EasyMode 5.0.0-alpha.1 test report
 
+## Complete JSON-control regression (2026-10-25; Linux CI pending)
+
+`tests/detector-json.py` exercises the exact escape-function prefix and final
+production JSON writer with synthetic environment values and shell stdin.
+It runs no hardware probes and never creates, moves or replaces host sysinfo.
+The 45 cases cover all 31 non-NUL control characters, quote/backslash, empty,
+multiline/trailing-LF, literal shell syntax, valid UTF-8 and the writer schema.
+NUL is not representable in a shell variable. These tests preserve supplied
+shell values; existing `$(cat ...)` sysinfo reads still strip trailing file LF.
+
+The unchanged baseline failed 39 cases; partial PR182 failed 31 (28 individual
+controls plus combined cases). The completed serializer passed all45 locally
+with Windows GNU awk in binary I/O mode. The default Windows awk translates
+CRLF and lost CR in one mixed case; that host limitation is retained rather
+than changing the portable product to use a GNU-specific flag. Dedicated Linux
+GNU awk and BusyBox tests of unchanged source remain required before integration.
+This is serializer/static evidence, not hardware, installer or live-network acceptance.
+
 ## Current source regression checks (2026-10-25)
 
 The development fixtures are `tests/static-test.sh`, `tests/detector-run.sh`,

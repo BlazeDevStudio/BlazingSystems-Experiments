@@ -33,10 +33,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install GNU awk and BusyBox for serializer compatibility
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gawk busybox
       - name: Mandatory handover freshness
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Shell, manifests and offline page syntax
         run: sh experiment/openwrt/easymode-project/tests/static-test.sh
+      - name: GNU awk serializer and production JSON writer (no probes)
+        run: python3 experiment/openwrt/easymode-project/tests/detector-json.py --awk gawk
+      - name: BusyBox shell, awk and production JSON writer (no probes)
+        run: python3 experiment/openwrt/easymode-project/tests/detector-json.py --busybox busybox
       - name: Read-only detector entrypoints with mode 644 scripts
         run: sh experiment/openwrt/easymode-project/tests/detector-run.sh
       - name: Offline endpoint helper cases
