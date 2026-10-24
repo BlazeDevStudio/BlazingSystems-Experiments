@@ -330,12 +330,26 @@ echo 'PHX-L-CORE PASS: signed committed transfer receipt replay after sender dis
 # source-proof-to-member-lock revocation test, using only synthetic /tmp state.
 # The CGI is deliberately unchanged in this TEST-FIRST commit. Its pre-lock
 # auth check must not authorize NEW money mutation after admin disable/reset.
+# The first RED run exposed a fixture mistake: an expected bad payment can
+# leave a fail-closed paid-state-uncertain marker. Sharing that same synthetic
+# ledger across cases confounds later races and receipt-replay setup. Each
+# case must start from its own fresh private state, never clear quarantine.
+phx_br_fresh_state() {
+  phx_br_slot="$1"
+  export BP_STATE="$T/br-state-$phx_br_slot" BP_RUN="$T/br-run-$phx_br_slot"
+  mkdir -p "$BP_STATE" "$BP_RUN"
+  unset BP_MEMBERS BP_MEMBER_EVENTS BP_MEMBER_REVISION
+  . "$BP_LIB"
+  . "$PHX_REAL_MEMBER"
+  bp_member_init
+}
 phx_br_failed=0
 export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
 phx_br_n=0
 for phx_br_action in member_bank member_restore; do
   for phx_br_revoke in disabled password_reset; do
     phx_br_n=$((phx_br_n+1))
+    phx_br_fresh_state "$phx_br_n"
     phx_br_user="phxbruser$phx_br_n"
     phx_br_event="8888888888888888888888888888888$phx_br_n"
     phx_br_nonce="10000000000001a$phx_br_n"
@@ -397,6 +411,7 @@ done
 # revocation; replay is not a fresh paid mutation and must not re-credit.
 for phx_br_replay_action in member_bank member_restore; do
   phx_br_n=$((phx_br_n+1))
+  phx_br_fresh_state "$phx_br_n"
   phx_br_user="phxbruser$phx_br_n"
   phx_br_event="9999999999999999999999999999999$phx_br_n"
   phx_br_nonce="10000000000001b$phx_br_n"
