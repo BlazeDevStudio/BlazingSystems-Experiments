@@ -142,15 +142,25 @@ def wait_both_connected(timeout_seconds=85):
                       check=False).strip()
             if not pid:
                 raise RuntimeError(f"{serial} process exited during call")
-        success = [
-            contains(serial, "connected", "Connected • Local LAN")
-            for serial in (CALLER, RECEIVER)
-        ]
-        if all(success):
-            note("media", "PASS: both peers display Connected • Local LAN")
+        caller = snapshot(CALLER, "connected")
+        receiver = snapshot(RECEIVER, "connected")
+        caller_labels = " ".join(labels(n) for n in caller.iter("node")) if caller is not None else ""
+        receiver_labels = " ".join(labels(n) for n in receiver.iter("node")) if receiver is not None else ""
+        # Caller: only its WebRTC Connected state is accepted.
+        # Receiver: when a native system-overlay call surface is in use,
+        # it displays "Live" while the underlying call page displays the
+        # active call. It does not mirror the caller's status header.
+        caller_connected = "Connected • Local LAN" in caller_labels
+        receiver_connected = (
+            "Connected • Local LAN" in receiver_labels or
+            ("Call active • Use your microphone to talk" in receiver_labels
+             and "Live" in receiver_labels)
+        )
+        if caller_connected and receiver_connected:
+            note("media", "PASS: caller WebRTC Connected UI and receiver Live native-call controls")
             return
         time.sleep(3)
-    raise RuntimeError("Two-device call did not reach Connected state on both UIs")
+    raise RuntimeError("Caller ICE connected and receiver live-call UI were not both confirmed")
 
 
 def expand_notification_shade(serial, label):

@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq libpulse0
           if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: LAN Messenger Android CallStyle fallback background Answer acceptance
+      - name: LAN Messenger native background Answer, caller Connected and receiver Live
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
