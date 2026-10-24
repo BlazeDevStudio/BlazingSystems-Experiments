@@ -56,6 +56,14 @@ namespace System.IO.Ports
         public void Dispose() => Close();
         public void Raise(SerialPinChange change) =>
             PinChanged?.Invoke(this, new SerialPinChangedEventArgs(change));
+        // TEST-ONLY: snapshot a handler before Dispose()/unsubscribe and invoke
+        // it later to model an already-dispatched OS callback. This explicitly
+        // does NOT assert that Windows drivers really queue such callbacks.
+        public Action<SerialPinChange> CaptureDeferredPinCallback()
+        {
+            var captured = PinChanged;
+            return change => captured?.Invoke(this, new SerialPinChangedEventArgs(change));
+        }
         public void RaiseError() =>
             ErrorReceived?.Invoke(this, new SerialErrorReceivedEventArgs(SerialError.Frame));
     }
