@@ -296,6 +296,13 @@ public sealed class SerialHardware : IDisposable
             return;
         }
         SignalChanged?.Invoke();
+        // A SignalChanged subscriber can synchronously reconnect and replace
+        // the port/config while this old callback is on the stack. Never
+        // sample a replacement session using the old callback's settings.
+        // This protects reentrant listeners; parallel reconnects still need
+        // independently reviewed session-atomic capture and paid identity.
+        if (!ReferenceEquals(sender, _port) || !ReferenceEquals(cfg, _config) || _port?.IsOpen != true)
+            return;
 
         if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
         {
