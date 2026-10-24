@@ -288,4 +288,41 @@ for phx_revoke in disabled password_reset; do
 done
 echo 'PHX-L-CORE PASS: REAL signed Vendo refuses new transfer after source disable/password reset at lock handoff'
 
+
+# P0 #31: Revalidation protects NEW paid operations; it must not destroy
+# idempotent ACKs for transactions already durably RECEIPTED before source
+# account revocation. Real signed CGI, real admin writer, /tmp fixture.
+export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+phx_paid_event=77777777777777777777777777777771
+phx_paid_nonce=10000000000000e3
+phx_paid_hash="$(printf '%s' "$(bp_member_line racealice)" | cut -f6)"
+phx_paid_proof="$(proof_for "$phx_paid_hash" "$phx_paid_nonce")"
+phx_paid_response="$(call_vendo member_transfer "$phx_paid_nonce" 10 \
+  "racealice>racebob:$phx_paid_event:$phx_paid_proof")"
+printf '%s' "$phx_paid_response" | grep -Fq '"ok":true' || {
+  echo "PHX-L-CORE REPLAY SETUP INVALID: fresh signed transfer rejected: $phx_paid_response" >&2
+  exit 2
+}
+phx_paid_a="$(printf '%s' "$(bp_member_line racealice)" | cut -f8)"
+phx_paid_b="$(printf '%s' "$(bp_member_line racebob)" | cut -f8)"
+[ "$phx_paid_a:$phx_paid_b" = "590:10" ] || {
+  echo "PHX-L-CORE REPLAY SETUP INVALID: unexpected committed balances $phx_paid_a:$phx_paid_b" >&2
+  exit 2
+}
+bp_member_lock
+bp_member_patch racealice @keep 0 fixture >/dev/null
+bp_member_unlock
+phx_replayed_response="$(call_vendo member_transfer 10000000000000e4 10 \
+  "racealice>racebob:$phx_paid_event:replay")"
+if ! printf '%s' "$phx_replayed_response" | grep -Fq '"ok":true' ||
+   ! printf '%s' "$phx_replayed_response" | grep -Fq '"replayed":true' ||
+   [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f8)" != "$phx_paid_a" ] ||
+   [ "$(printf '%s' "$(bp_member_line racebob)" | cut -f8)" != "$phx_paid_b" ] ||
+   [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f3)" != 0 ] ||
+   [ "$(awk -F '\t' -v e="$phx_paid_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+  echo "PHX-L-CORE P0 REPLAY FAIL: committed transfer was lost, duplicated, or re-ACKed inconsistently after sender revocation: $phx_replayed_response" >&2
+  exit 1
+fi
+echo 'PHX-L-CORE PASS: signed committed transfer receipt replay after sender disable is idempotent'
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
