@@ -971,13 +971,148 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Widget _incomingBanner() {
+    final peer = _incomingPeer;
+    if (peer == null) return const SizedBox.shrink();
+    return Positioned(top: 10, left: 10, right: 10, child: SafeArea(
+      child: Material(
+        elevation: 14, borderRadius: BorderRadius.circular(20),
+        color: const Color(0xff142f54),
+        child: Padding(padding: const EdgeInsets.all(14),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              CircleAvatar(backgroundColor: Colors.white24,
+                child: Icon(_incomingVideo ? Icons.videocam : Icons.call,
+                  color: Colors.white)),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(peer.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 17,
+                      fontWeight: FontWeight.bold)),
+                  Text(_incomingVideo ? 'Incoming video call' : 'Incoming voice call',
+                    style: const TextStyle(color: Colors.white70)),
+                ])),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xffb92e43)),
+                onPressed: () => _resolveIncomingDialog(false),
+                icon: const Icon(Icons.call_end), label: const Text('Decline'))),
+              const SizedBox(width: 12),
+              Expanded(child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xff158e61)),
+                onPressed: () => _resolveIncomingDialog(true),
+                icon: const Icon(Icons.call), label: const Text('Answer'))),
+            ]),
+          ])),
+      ),
+    ));
+  }
+
+  /// These are native-window compact contents, not a full Messenger modal.
+  /// The Windows host window is positioned at the taskbar work-area corner
+  /// and shown without taking keyboard focus from the foreground app.
+  Widget _desktopCompactCall() {
+    final call = intercom;
+    final peer = _incomingPeer ?? call?.talkingTo;
+    final incoming = _desktopShell.mode == CompactCallMode.incoming &&
+        _incomingDialogOpen;
+    final video = incoming ? _incomingVideo : call?.video == true;
+    final name = peer?.name ?? 'LAN Messenger';
+    Widget dragHeader(String detail) => GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (_) => unawaited(wm.windowManager.startDragging()),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(children: [
+          const Icon(Icons.drag_indicator, color: Colors.white54, size: 18),
+          const SizedBox(width: 5),
+          CircleAvatar(radius: 15, backgroundColor: Colors.white24,
+            child: Icon(video ? Icons.videocam : Icons.call,
+              color: Colors.white, size: 17)),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            ])),
+          const Icon(Icons.open_with, color: Colors.white38, size: 17),
+        ]),
+      ),
+    );
+    if (incoming) {
+      return Material(color: const Color(0xff152b4c),
+        child: Padding(padding: const EdgeInsets.fromLTRB(13, 7, 13, 11),
+          child: Column(children: [
+            dragHeader(video ? 'Incoming video call' : 'Incoming voice call'),
+            const Spacer(),
+            const Text('LAN Messenger is calling',
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const Spacer(),
+            Row(children: [
+              Expanded(child: FilledButton.icon(
+                onPressed: () => _resolveIncomingDialog(false),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xffb72e45)),
+                icon: const Icon(Icons.call_end, size: 19),
+                label: const Text('Decline'))),
+              const SizedBox(width: 10),
+              Expanded(child: FilledButton.icon(
+                onPressed: () => _resolveIncomingDialog(true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xff138a62)),
+                icon: const Icon(Icons.call, size: 19),
+                label: const Text('Answer'))),
+            ]),
+          ])));
+    }
+    if (call == null || call.talkingTo == null) {
+      return const Material(color: Color(0xff152b4c),
+        child: Center(child: Text('Call ended',
+          style: TextStyle(color: Colors.white))));
+    }
+    return Material(color: const Color(0xff152b4c),
+      child: Padding(padding: const EdgeInsets.fromLTRB(10, 5, 10, 8),
+        child: Column(children: [
+          dragHeader(call.connecting ? 'Connecting…' :
+            'Call in progress • Drag to move'),
+          if (video) Expanded(child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: call.remoteRenderer != null
+              ? RTCVideoView(call.remoteRenderer!,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+              : const Center(child: Icon(Icons.videocam,
+                size: 46, color: Colors.white54)))),
+          if (!video) const Spacer(),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            IconButton.filledTonal(
+              tooltip: call.muted ? 'Unmute microphone' : 'Mute microphone',
+              onPressed: () => unawaited(call.setMuted(!call.muted)),
+              icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
+            IconButton.filledTonal(
+              tooltip: 'Open conversation thread',
+              onPressed: () => unawaited(_openCallThread()),
+              icon: const Icon(Icons.forum_outlined)),
+            IconButton.filled(
+              tooltip: 'End call',
+              style: IconButton.styleFrom(backgroundColor: Colors.red.shade700),
+              onPressed: () => unawaited(call.hangUp()),
+              icon: const Icon(Icons.call_end)),
+          ]),
+        ])));
+  }
+
   Widget _miniCall() {
     final call = intercom!;
     final width = MediaQuery.sizeOf(context).width;
     final height = MediaQuery.sizeOf(context).height;
     return Positioned(
-      left: _miniCallPosition.dx.clamp(0.0, (width - 195).clamp(0.0, width)),
-      top: _miniCallPosition.dy.clamp(0.0, (height - 145).clamp(0.0, height)),
+      left: _miniCallPosition.dx.clamp(0.0, (width - 220).clamp(0.0, width)),
+      top: _miniCallPosition.dy.clamp(0.0, (height - 148).clamp(0.0, height)),
       child: GestureDetector(
         onPanUpdate: (d) => setState(() {
           _miniCallPosition += d.delta;
@@ -985,23 +1120,39 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         child: Material(
           elevation: 10, borderRadius: BorderRadius.circular(14),
           color: const Color(0xff102b4e),
-          child: SizedBox(width: 190, height: 116, child: Stack(children: [
-            Positioned.fill(child: call.video && call.remoteRenderer != null
-              ? ClipRRect(borderRadius: BorderRadius.circular(14),
-                child: RTCVideoView(call.remoteRenderer!,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain))
-              : Center(child: Text(call.talkingTo?.name ?? 'Connected',
-                  style: const TextStyle(color: Colors.white)))),
-            Positioned(top: 0, right: 0, child: IconButton(
-              tooltip: 'Expand call', color: Colors.white,
-              icon: const Icon(Icons.open_in_full),
-              onPressed: () => setState(() => _callMinimized = false))),
-            Positioned(bottom: 0, right: 0, child: IconButton(
-              tooltip: 'End call', color: Colors.redAccent,
-              icon: const Icon(Icons.call_end),
-              onPressed: () => call.hangUp())),
-            const Positioned(bottom: 9, left: 9,
-              child: Icon(Icons.drag_indicator, size: 16, color: Colors.white70)),
+          child: SizedBox(width: 220, height: 148, child: Column(children: [
+            Expanded(child: Stack(children: [
+              Positioned.fill(child: call.video && call.remoteRenderer != null
+                ? ClipRRect(borderRadius: BorderRadius.circular(14),
+                  child: RTCVideoView(call.remoteRenderer!,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain))
+                : Center(child: Text(call.talkingTo?.name ?? 'Connected',
+                    style: const TextStyle(color: Colors.white)))),
+              const Positioned(top: 6, left: 6,
+                child: Icon(Icons.drag_indicator, size: 17, color: Colors.white70)),
+            ])),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              IconButton(
+                tooltip: call.muted ? 'Unmute' : 'Mute',
+                color: Colors.white, visualDensity: VisualDensity.compact,
+                icon: Icon(call.muted ? Icons.mic_off : Icons.mic),
+                onPressed: () => unawaited(call.setMuted(!call.muted))),
+              IconButton(
+                tooltip: 'Open thread', color: Colors.white,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.forum_outlined),
+                onPressed: () => unawaited(_openCallThread())),
+              IconButton(
+                tooltip: 'Expand call', color: Colors.white,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.open_in_full),
+                onPressed: () => setState(() => _callMinimized = false)),
+              IconButton(
+                tooltip: 'End call', color: Colors.redAccent,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.call_end),
+                onPressed: () => unawaited(call.hangUp())),
+            ]),
           ])),
         ),
       ),
@@ -1153,7 +1304,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Widget build(BuildContext context) => Theme(
     data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
       useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
-    child: Stack(children: [
+    child: Platform.isWindows && _desktopShell.isCompact
+      ? _desktopCompactCall()
+      : Stack(children: [
     Scaffold(body: Column(children: [
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
@@ -1163,6 +1316,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
       _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
+    if (_incomingDialogOpen) _incomingBanner(),
   ]));
 
   @override
