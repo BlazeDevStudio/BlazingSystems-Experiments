@@ -43,6 +43,7 @@ uint8_t pendingPulses=0;
 String activeTarget="aaaabbbbccccdddd",pendingTarget="";
 bool relayLogical=false,ledLogical=false;
 int relayWrites=0,ledWrites=0;
+void applyOutputs();
 void writeLogical(int pin,bool on,bool polarity) {
   // The test verifies the exact real output CALL contract, not electronics.
   (void)polarity;
