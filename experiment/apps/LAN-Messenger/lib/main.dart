@@ -15,6 +15,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/compact_call_window.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -65,8 +66,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ControlInputMode _controlMode = ControlInputMode.trackpad;
   Offset _miniCallPosition = const Offset(20, 110);
   bool _incomingDialogOpen = false;
-  BuildContext? _incomingDialogContext;
-  bool? _pendingIncomingDecision;
+  bool _incomingVideo = false;
+  Peer? _incomingPeer;
+  Completer<bool>? _incomingAnswer;
+  final CompactCallWindow _desktopShell = CompactCallWindow();
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -91,24 +94,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   void _resolveIncomingDialog(bool answered) {
-    if (!_incomingDialogOpen) return;
-    // A system banner or tray action may arrive before the Flutter dialog has
-    // completed its first frame; retain the answer until its route is ready.
-    _pendingIncomingDecision = answered;
-    _flushIncomingDecision();
-  }
-
-  void _flushIncomingDecision() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dialog = _incomingDialogContext;
-      final decision = _pendingIncomingDecision;
-      if (decision == null || !_incomingDialogOpen || !mounted) return;
-      if (dialog != null && dialog.mounted &&
-          ModalRoute.of(dialog)?.isCurrent == true) {
-        _pendingIncomingDecision = null;
-        Navigator.of(dialog).pop(decision);
-      }
-    });
+    final pending = _incomingAnswer;
+    if (!_incomingDialogOpen || pending == null || pending.isCompleted) return;
+    pending.complete(answered);
   }
 
   Future<bool> _showNativeIncoming(Peer peer, bool video) async {
@@ -130,38 +118,36 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<void> _raiseIncomingWindow(Peer peer) async {
     if (!Platform.isWindows) return;
-    try {
-      await wm.windowManager.ensureInitialized();
-      await wm.windowManager.show();
-      await wm.windowManager.restore();
-      await wm.windowManager.setAlwaysOnTop(true);
-      await wm.windowManager.focus();
-      if (_trayInitialized) {
-        await tray.trayManager.setToolTip('Incoming call from ${peer.name}');
-        await tray.trayManager.setContextMenu(tray.Menu(items: [
-          tray.MenuItem(key: 'answer', label: 'Answer ${peer.name}'),
-          tray.MenuItem(key: 'decline', label: 'Decline call'),
-          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
-          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
-        ]));
-      }
-    } catch (e) {
-      if (mounted) setState(() => error = 'Could not raise incoming call window: $e');
-    }
+    await _desktopShell.incoming(() {
+      if (mounted) setState(() {});
+    });
+    unawaited(_updateTrayMenu());
   }
 
-  Future<void> _restoreWindowAfterCall() async {
-    if (!Platform.isWindows) return;
+  Future<void> _updateTrayMenu() async {
+    if (!Platform.isWindows || !_trayInitialized) return;
+    final call = intercom;
+    final ringing = _incomingDialogOpen;
+    final active = call?.talkingTo != null && !ringing;
     try {
-      await wm.windowManager.setAlwaysOnTop(false);
-      if (_trayInitialized) {
-        await tray.trayManager.setToolTip('LAN Messenger — Local network');
-        await tray.trayManager.setContextMenu(tray.Menu(items: [
-          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
-          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
-        ]));
-      }
-    } catch (_) {}
+      await tray.trayManager.setToolTip(ringing
+        ? 'Incoming LAN Messenger call: ${_incomingPeer?.name ?? "Unknown"}'
+        : active ? 'LAN Messenger — Call with ${call?.talkingTo?.name}'
+        : 'LAN Messenger — Local network');
+      await tray.trayManager.setContextMenu(tray.Menu(items: [
+        if (ringing) ...[
+          tray.MenuItem(key: 'answer', label: 'Answer call'),
+          tray.MenuItem(key: 'decline', label: 'Decline call'),
+        ],
+        if (active) ...[
+          tray.MenuItem(key: 'mute', label: call!.muted ? 'Unmute microphone' : 'Mute microphone'),
+          tray.MenuItem(key: 'end', label: 'End call'),
+          tray.MenuItem(key: 'thread', label: 'Open call thread'),
+        ],
+        tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+        tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+      ]));
+    } catch (_) { /* An unavailable tray should not interrupt a call. */ }
   }
 
   Future<void> _initialize() async {
@@ -211,9 +197,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
-          // Remote hangup may race the dialog's creation.
           _resolveIncomingDialog(false);
+        } else if (!_incomingDialogOpen && inter.talkingTo == null &&
+            Platform.isWindows && _desktopShell.isCompact) {
+          unawaited(_desktopShell.restore(() {
+            if (mounted) setState(() {});
+          }).catchError((Object _) {}));
         }
+        if (Platform.isWindows) unawaited(_updateTrayMenu());
         setState(() {});
       };
       inter.onChooseDesktopSource = (sources) async {
@@ -270,38 +261,59 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       };
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
-        setState(() { selected = peer; showReceived = false; });
-        _incomingDialogOpen = true;
-        _pendingIncomingDecision = null;
-        _callMinimized = false;
-        // Ring immediately on Windows even if the window-manager plugin takes
-        // time to restore a hidden window. Android notification owns ringtone
-        // audio when a native call banner is available.
-        if (Platform.isWindows) {
-          unawaited(alerts.ring(incomingVideo
-              ? AlertKind.videoCall : AlertKind.call));
-          await _raiseIncomingWindow(peer);
-        }
-        final nativeShown = await _showNativeIncoming(peer, incomingVideo);
-        if (!nativeShown && !Platform.isWindows) {
-          unawaited(alerts.ring(incomingVideo
-              ? AlertKind.videoCall : AlertKind.call));
-        }
+        final decision = Completer<bool>();
+        setState(() {
+          selected = peer;
+          showReceived = false;
+          _incomingPeer = peer;
+          _incomingVideo = incomingVideo;
+          _incomingDialogOpen = true;
+          _incomingAnswer = decision;
+          // Answering must not force a full-screen call UI.
+          _callMinimized = true;
+        });
+        var accepted = false;
         try {
-          return await _ask(
-            title: incomingVideo ? 'Incoming video call' : 'Incoming voice call',
-            detail: '${peer.name} is calling.',
-            allowText: 'Answer',
-            incomingCall: true,
-          );
+          if (Platform.isWindows) {
+            unawaited(alerts.ring(incomingVideo
+                ? AlertKind.videoCall : AlertKind.call));
+            try {
+              await _raiseIncomingWindow(peer);
+            } catch (e) {
+              // Incoming call can still be answered from system tray.
+              unawaited(_updateTrayMenu());
+              if (mounted) setState(() => error = 'Compact call popup unavailable: $e');
+            }
+          }
+          final nativeShown = await _showNativeIncoming(peer, incomingVideo);
+          if (!nativeShown && !Platform.isWindows) {
+            unawaited(alerts.ring(incomingVideo
+                ? AlertKind.videoCall : AlertKind.call));
+          }
+          accepted = await decision.future;
+          // A canceled caller must never activate a floating window after
+          // the onChanged hangup already invalidated this offer.
+          if (accepted && inter.talkingTo?.id == peer.id &&
+              inter.callId != null && Platform.isWindows) {
+            await _desktopShell.active(video: incomingVideo, changed: () {
+              if (mounted) setState(() {});
+            });
+          }
+          return accepted && inter.talkingTo?.id == peer.id && inter.callId != null;
         } finally {
-          // Clearing all three paths also handles missed, declined and canceled calls.
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
-          unawaited(_restoreWindowAfterCall());
-          _incomingDialogOpen = false;
-          _incomingDialogContext = null;
-          _pendingIncomingDecision = null;
+          if (Platform.isWindows && (!accepted || inter.talkingTo == null)) {
+            unawaited(_desktopShell.restore(() {
+              if (mounted) setState(() {});
+            }).catchError((Object _) {}));
+          }
+          if (mounted) setState(() {
+            _incomingDialogOpen = false;
+            _incomingPeer = null;
+            _incomingAnswer = null;
+          });
+          if (Platform.isWindows) unawaited(_updateTrayMenu());
         }
       };
       await n.start();
@@ -392,10 +404,30 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   void _openWindow() {
     unawaited(() async {
+      if (_desktopShell.isCompact) {
+        await _openCallThread();
+        return;
+      }
       await wm.windowManager.show();
       await wm.windowManager.restore();
       await wm.windowManager.focus();
     }());
+  }
+
+  Future<void> _openCallThread() async {
+    if (mounted) setState(() {
+      selected = intercom?.talkingTo ?? selected;
+      showSettings = false;
+      showReceived = false;
+      _callMinimized = true;
+    });
+    if (Platform.isWindows && _desktopShell.isCompact) {
+      await _desktopShell.openThread(() {
+        if (mounted) setState(() {});
+      });
+    } else if (Platform.isWindows) {
+      _openWindow();
+    }
   }
 
   @override
@@ -405,6 +437,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   void onTrayMenuItemClick(tray.MenuItem item) {
     if (item.key == 'answer' || item.key == 'decline') {
       _resolveIncomingDialog(item.key == 'answer');
+    } else if (item.key == 'mute') {
+      final call = intercom;
+      if (call != null) unawaited(call.setMuted(!call.muted));
+    } else if (item.key == 'end') {
+      unawaited(intercom?.hangUp() ?? Future<void>.value());
+    } else if (item.key == 'thread') {
+      unawaited(_openCallThread());
     } else if (item.key == 'exit') {
       unawaited(_exitWindows());
     } else if (item.key == 'open') {
@@ -648,22 +687,19 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<bool> _ask({required String title, required String detail,
-      required String allowText, bool incomingCall = false}) async {
+      required String allowText}) async {
     if (!mounted) return false;
     return await showDialog<bool>(context: context, barrierDismissible: false,
-      builder: (context) {
-        if (incomingCall) {
-          _incomingDialogContext = context;
-          if (_pendingIncomingDecision != null) _flushIncomingDecision();
-        }
-        return AlertDialog(title: Text(title, style: const TextStyle(fontSize: 24)),
+      builder: (context) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontSize: 24)),
         content: Text(detail, style: const TextStyle(fontSize: 18)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Decline')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(allowText)),
+          TextButton(onPressed: () => Navigator.pop(context, false),
+            child: const Text('Decline')),
+          FilledButton(onPressed: () => Navigator.pop(context, true),
+            child: Text(allowText)),
         ],
-      );
-      }) ?? false;
+      )) ?? false;
   }
 
   void _toast(String message) {
