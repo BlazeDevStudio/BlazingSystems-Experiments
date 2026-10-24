@@ -83,6 +83,14 @@ var ring = Run(false, true, ModemSignal.RingIndicator, port => {
     port.Raise(SerialPinChange.Ring);
 }, minimumPulseMs: 500);
 
+var ringAfterOtherPin = Run(false, true, ModemSignal.RingIndicator, port => {
+    // Preserve the existing RI event-only path: unrelated DSR notifications
+    // should not disarm or fabricate a Ring event. Ring itself remains unsafe
+    // for unattended paid coin input until measured duration is available.
+    port.Raise(SerialPinChange.DsrChanged);
+    port.Raise(SerialPinChange.Ring);
+}, minimumPulseMs: 500);
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
@@ -90,7 +98,8 @@ var cases = new (string Name, int Actual, int Expected)[] {
     ("active_low_detach_reconnect_idle_no_coin", detachedWhileIdle.Accepted, 0),
     ("active_high_fault_mid_pulse_disarms", interruptedDuringPulse.Accepted, 0),
     ("delayed_callback_misses_pulse", delayed.Accepted, 0),
-    ("ring_without_measured_duration", ring.Accepted, 1)
+    ("ring_without_measured_duration", ring.Accepted, 1),
+    ("ring_after_unrelated_dsr_preserves_legacy_event", ringAfterOtherPin.Accepted, 1)
 };
 bool diagnosticFailed = false;
 foreach (var c in cases) {
@@ -110,5 +119,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 7/7 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 8/8 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
