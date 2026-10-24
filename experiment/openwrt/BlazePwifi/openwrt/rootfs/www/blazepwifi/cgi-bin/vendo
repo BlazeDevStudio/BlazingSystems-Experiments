@@ -296,8 +296,14 @@ case "$action" in
 
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$from" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
-    [ "$(printf '%s' "$(bp_member_line "$to")" | cut -f3)" = 1 ] || bp_fail "destination member disabled or missing"
     bp_member_lock || bp_fail "member state busy"
+    # PHX-L-CORE: destination eligibility is paid-authority input.
+    # Recheck under the same member writer lock as the actual transfer:
+    # an admin may have disabled this recipient after any pre-lock read.
+    if [ "$(printf '%s' "$(bp_member_line "$to")" | cut -f3)" != 1 ]; then
+      bp_member_unlock
+      bp_fail "destination member disabled or missing"
+    fi
     result="$(bp_member_transfer "$from" "$to" "$pulses" "softtimer:$id" "$event_id")"
     rc=$?
     bp_member_unlock
