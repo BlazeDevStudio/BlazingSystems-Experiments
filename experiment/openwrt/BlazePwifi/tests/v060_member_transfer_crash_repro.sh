@@ -54,3 +54,68 @@ case "$a:$b" in
   '60:200') echo 'P0 RED: power loss leaves 40 paid seconds missing from synthetic member balances' >&2; exit 1 ;;
   *) echo "REPRO SETUP FAILURE: unexpected balances a=$a b=$b" >&2; exit 2 ;;
 esac
+
+
+# PHX-L-CORE: distinct post-rename / pre-receipt process-death boundary.
+# The existing test above checks that one members.tsv rename never leaves
+# only one account debited. This second boundary checks the OTHER financial
+# invariant: after BOTH balances move but before the transfer receipt is
+# written, no ACK/retry/new payment may escape the persistent quarantine.
+# This is process-exit injection only; no physical power-cut proof.
+#
+# Restore synthetic initial accounts, revision and audit without any live
+# payment state. The previous scenario intentionally left uncertain state.
+rm -f "$BP_STATE/paid-state-uncertain"
+printf 'alice\tFixture A\t1\tsha256i\tsalt\thash\t4096\t100\t1\t123\tfixture\n' > "$BP_MEMBERS"
+printf 'bob\tFixture B\t1\tsha256i\tsalt\thash\t4096\t200\t1\t123\tfixture\n' >> "$BP_MEMBERS"
+printf '1\n' > "$BP_MEMBER_REVISION"
+: > "$BP_MEMBER_EVENTS"
+cat > "$T/postwrite-worker.sh" <<'POSTWRITE'
+#!/bin/sh
+set -u
+ROOT="$1"
+. "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/common.sh"
+bp_init_dirs() { :; }
+bp_cfg() { printf ''; }
+bp_tmp_suffix() { printf 'transfer-postwrite'; }
+bp_now() { printf '123457'; }
+bp_durable_sync() { :; }
+# Simulate the worker terminating AFTER atomic member balance rename and
+# durable-sync call, BEFORE its transfer event receipt is appended.
+bp_member_event_record() { exit 78; }
+. "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/member.sh"
+bp_member_transfer alice bob 40 fixture transfer-postwrite-0001 > /dev/null
+POSTWRITE
+post_rc=0
+sh "$T/postwrite-worker.sh" "$ROOT" > "$T/postwrite-stdout" 2> "$T/postwrite-stderr" || post_rc=$?
+if [ "$post_rc" -ne 78 ] || [ -s "$T/postwrite-stdout" ]; then
+  echo "REPRO SETUP FAILURE: postwrite worker rc=$post_rc or emitted an ACK" >&2
+  exit 2
+fi
+a="$(bp_member_line alice | cut -f8)"
+b="$(bp_member_line bob | cut -f8)"
+if [ "$a:$b" != '60:240' ]; then
+  echo "P0 FAIL: postwrite transfer conservation violated: $a:$b" >&2
+  exit 1
+fi
+if [ -s "$BP_MEMBER_EVENTS" ] || [ ! -f "$BP_STATE/paid-state-uncertain" ]; then
+  echo 'P0 FAIL: receipt unexpectedly exists or financial quarantine missing' >&2
+  exit 1
+fi
+post_sum="$(sha256sum "$BP_MEMBERS" "$BP_MEMBER_EVENTS")"
+retry_rc=0
+bp_member_transfer alice bob 40 fixture transfer-postwrite-0001 > "$T/postwrite-retry" 2>&1 || retry_rc=$?
+if [ "$retry_rc" -eq 0 ] || [ -s "$T/postwrite-retry" ] ||
+   [ "$post_sum" != "$(sha256sum "$BP_MEMBERS" "$BP_MEMBER_EVENTS")" ]; then
+  echo 'P0 FAIL: ambiguous paid transfer was re-ACKed or replayed' >&2
+  exit 1
+fi
+other_rc=0
+bp_member_transfer bob alice 10 fixture other-event-0002 > "$T/postwrite-other" 2>&1 || other_rc=$?
+if [ "$other_rc" -eq 0 ] || [ -s "$T/postwrite-other" ] ||
+   [ "$post_sum" != "$(sha256sum "$BP_MEMBERS" "$BP_MEMBER_EVENTS")" ]; then
+  echo 'P0 FAIL: an unrelated transfer bypassed global financial quarantine' >&2
+  exit 1
+fi
+echo 'PHX-L-CORE PASS: postwrite process death conserves both balances and blocks paid ACK/retry through persistent quarantine'
+echo 'P0 #31 remains OPEN: moved balances without an authoritative receipt; an installed crash-atomic v2 journal and physical proof are still required'
