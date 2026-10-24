@@ -82,19 +82,48 @@ public static class SerialDiscovery
 
     private static SerialDeviceInfo? ResolveExact(AppConfig config, IReadOnlyList<SerialDeviceInfo> devices)
     {
+        // A Windows COM number is not a permanent device identity. It may be
+        // reassigned to a different coin adapter after unplug or reboot.
+        // Never silently promote LastKnownComPort into an ExactDevice match.
         if (!string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
         {
-            var exact = devices.FirstOrDefault(d => d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase));
-            if (exact is not null) return exact;
+            var matches = devices.Where(d =>
+                    !string.IsNullOrWhiteSpace(d.PnpDeviceId) &&
+                    d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase))
+                .Take(2).ToArray();
+            if (matches.Length > 1) return null; // conflicting identities
+            if (matches.Length == 1)
+            {
+                var candidate = matches[0];
+                if (!string.IsNullOrWhiteSpace(config.PreferredVid) &&
+                    !candidate.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase)) return null;
+                if (!string.IsNullOrWhiteSpace(config.PreferredPid) &&
+                    !candidate.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase)) return null;
+                return candidate;
+            }
         }
-        if (!string.IsNullOrWhiteSpace(config.PreferredUsbSerial))
+
+        // A USB serial can remain stable across COM renumbering, but only when
+        // qualified by BOTH vendor and product IDs and observed exactly once.
+        // Unscoped, ambiguous and Windows location-generated IDs are unsafe.
+        if (!string.IsNullOrWhiteSpace(config.PreferredUsbSerial) &&
+            !config.PreferredUsbSerial.Contains('&') &&
+            !string.IsNullOrWhiteSpace(config.PreferredVid) &&
+            !string.IsNullOrWhiteSpace(config.PreferredPid))
         {
-            var serial = devices.FirstOrDefault(d => d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase)
-                && (string.IsNullOrWhiteSpace(config.PreferredVid) || d.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase))
-                && (string.IsNullOrWhiteSpace(config.PreferredPid) || d.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase)));
-            if (serial is not null) return serial;
+            var matches = devices.Where(d =>
+                    d.IsUsb && !string.IsNullOrWhiteSpace(d.UsbSerial) &&
+                    !d.UsbSerial.Contains('&') &&
+                    d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase) &&
+                    d.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase) &&
+                    d.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase))
+                .Take(2).ToArray();
+            return matches.Length == 1 ? matches[0] : null;
         }
-        return devices.FirstOrDefault(d => d.PortName.Equals(config.LastKnownComPort, StringComparison.OrdinalIgnoreCase));
+
+        // Identity-free legacy profiles must be explicitly rebound by the
+        // operator or deliberately switched to the separate ManualPort mode.
+        return null;
     }
 
     public static void BindExactDevice(AppConfig config, SerialDeviceInfo device)
@@ -113,7 +142,10 @@ public static class SerialDiscovery
     {
         if (!pnp.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase)) return string.Empty;
         var parts = pnp.Split('\\', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 3 ? parts[^1].Split('&')[0] : string.Empty;
+        // An instance such as 5&ABCDEF&0&2 encodes a Windows USB location,
+        // not a transportable adapter serial. Never truncate it to "5".
+        var instance = parts.Length >= 3 ? parts[^1] : string.Empty;
+        return instance.Contains('&') ? string.Empty : instance;
     }
 
     private static int PortNumber(string port)
