@@ -64,15 +64,28 @@ bp_controller_ensure vendo-02
 before_controllers="$(sha256sum "$BP_CONTROLLERS" | cut -d' ' -f1)"
 cat > "$T/bin/awk" <<'PHX_AWK_FAILURE'
 #!/bin/sh
+printf 'x' >> "$BP_STATE/awk-failure-invoked"
 exit 74
 PHX_AWK_FAILURE
 chmod +x "$T/bin/awk"
+# POSIX sh may cache /usr/bin/awk from earlier controller calls. Explicitly
+# invalidate that cache and prove BOTH controller_line + write-copy hit shim.
+hash -r
+controller_ack=0
 if bp_controller_set vendo-01 0 0 0 1 -1 5 14 1 1 1 55 450 9; then
-  rm -f "$T/bin/awk"
+  controller_ack=1
+fi
+rm -f "$T/bin/awk"
+hash -r
+invocations="$(wc -c < "$BP_STATE/awk-failure-invoked" 2>/dev/null || echo 0)"
+if [ "$invocations" -lt 2 ]; then
+  echo "PHX-L-CORE CONTROLLER_WRITE_COPY_FIXTURE_INVALID: awk failure not exercised twice" >&2
+  exit 2
+fi
+if [ "$controller_ack" = 1 ]; then
   echo "PHX-L-CORE CONTROLLER_WRITE_COPY_RED: awk failed but admin controller_set ACKed" >&2
   exit 1
 fi
-rm -f "$T/bin/awk"
 after_controllers="$(sha256sum "$BP_CONTROLLERS" | cut -d' ' -f1)"
 if [ "$before_controllers" != "$after_controllers" ]; then
   echo "PHX-L-CORE CONTROLLER_WRITE_COPY_RED: failed copy mutated registry" >&2
