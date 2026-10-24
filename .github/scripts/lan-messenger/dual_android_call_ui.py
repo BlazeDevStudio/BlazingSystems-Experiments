@@ -151,7 +151,36 @@ def main():
         if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
                    check=False).strip():
             raise RuntimeError(f"{serial} exited during hangup")
-    note("done", "PASS: cloud voice call answered, connected and hung up without crash")
+    note("foreground-call", "PASS: foreground Answer, connected, backgrounded, hung up")
+    # Regression for the original Answer crash: receiver must be backgrounded
+    # BEFORE a new incoming offer, without an OS overlay grant. Use Android's
+    # system notification action, not the in-app Answer button.
+    adb(RECEIVER, "shell", "input", "keyevent", "KEYCODE_HOME")
+    time.sleep(3)
+    foreground = adb(RECEIVER, "shell", "dumpsys", "activity", "activities",
+                     check=False).decode(errors="replace")
+    if re.search(r"topResumedActivity=.*com\\.example\\.lan_messenger", foreground):
+        raise RuntimeError("Receiver did not background before incoming call")
+    note("background-incoming", "Receiver moved to Android HOME before call")
+    tap_label(CALLER, "call-again", lambda text: "voice call" in text.lower(),
+              timeout_seconds=40)
+    # Native CallStyle/heads-up notification fallback for apps that are
+    # backgrounded without SYSTEM_ALERT_WINDOW permission.
+    adb(RECEIVER, "shell", "cmd", "statusbar", "expand-notifications",
+        check=False)
+    tap_label(RECEIVER, "notification-answer",
+              lambda text: text.strip().lower() == "answer",
+              timeout_seconds=55)
+    wait_both_connected()
+    note("background-answer", "PASS: native Android notification Answer connected both peers")
+    tap_label(RECEIVER, "hangup-background-call",
+              lambda text: text.strip().lower() == "end call",
+              timeout_seconds=25)
+    for serial in (CALLER, RECEIVER):
+        if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
+                   check=False).strip():
+            raise RuntimeError(f"{serial} died during background-Answer hangup")
+    note("done", "PASS: foreground and background notification Answer calls, WebRTC connected and hung up without app crash")
 
 
 if __name__ == "__main__":
