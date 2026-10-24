@@ -56,6 +56,30 @@ if bp_controller_set vendo-01 1 1 1 1 99 5 14 1 1 1 55 450 9; then
   echo "invalid controller pin unexpectedly accepted" >&2; exit 1
 fi
 
+# PHX-L-CORE P0 #31: fail an actual controller state-copy awk call while
+# bp_controller_set holds the real fd4 admission lock. The admin writer must
+# return failure AND preserve the prior complete controller registry.
+# This uses disposable /tmp state; no CGI, device, customer or power-cut proof.
+bp_controller_ensure vendo-02
+before_controllers="$(sha256sum "$BP_CONTROLLERS" | cut -d' ' -f1)"
+cat > "$T/bin/awk" <<'PHX_AWK_FAILURE'
+#!/bin/sh
+exit 74
+PHX_AWK_FAILURE
+chmod +x "$T/bin/awk"
+if bp_controller_set vendo-01 0 0 0 1 -1 5 14 1 1 1 55 450 9; then
+  rm -f "$T/bin/awk"
+  echo "PHX-L-CORE CONTROLLER_WRITE_COPY_RED: awk failed but admin controller_set ACKed" >&2
+  exit 1
+fi
+rm -f "$T/bin/awk"
+after_controllers="$(sha256sum "$BP_CONTROLLERS" | cut -d' ' -f1)"
+if [ "$before_controllers" != "$after_controllers" ]; then
+  echo "PHX-L-CORE CONTROLLER_WRITE_COPY_RED: failed copy mutated registry" >&2
+  exit 1
+fi
+echo "PHX-L-CORE CONTROLLER_WRITE_COPY_PASS: failed copy denied and registry preserved"
+
 DOC="$ROOT/docs/PROTOCOL.md"
 grep -q 'ESP8266' "$DOC"
 grep -q 'ESP32' "$DOC"
