@@ -37,6 +37,32 @@ bp_controller_uint() {
   [ "$value" -ge "$min" ] && [ "$value" -le "$max" ]
 }
 
+
+# PHX-L-CORE P0 #31: shared controller-paid admission linearization.
+# fd4 is distinct from paid fd6, member fd7, auth fd8, account fd9.
+# Callers must acquire this only AFTER any member/account writer lock,
+# and hold through the durable paid commit. Controller admin holds it
+# through its config write. Previously committed receipts are checked first.
+bp_controller_admission_lock() {
+  mkdir -p "$BP_RUN" || return 8
+  exec 4>"$BP_RUN/controller-admission.lock" || return 8
+  flock -w 10 4 || { exec 4>&-; return 8; }
+}
+bp_controller_admission_unlock() {
+  flock -u 4 2>/dev/null || true
+  exec 4>&-
+}
+bp_controller_paid_allowed() {
+  controller_id="$1"; operation="$2"
+  [ -f "$BP_CONTROLLERS" ] && [ ! -L "$BP_CONTROLLERS" ] || return 1
+  # Reject absent, duplicated or malformed controller rows; do not
+  # silently create/re-enable a controller at the financial decision.
+  awk -F '\t' -v d="$controller_id" -v op="$operation" '
+    $1==d { n++; enabled=$2; coin_enabled=$3 }
+    END { if (n!=1 || enabled!="1" || (op=="coin" && coin_enabled!="1")) exit 1 }
+  ' "$BP_CONTROLLERS"
+}
+
 bp_controller_write() {
   id="$1"; shift
   tmp="$BP_STATE/.controllers.$(bp_tmp_suffix)"
@@ -44,8 +70,11 @@ bp_controller_write() {
   printf '%s' "$id" >> "$tmp"
   for value in "$@"; do printf '\t%s' "$value" >> "$tmp"; done
   printf '\n' >> "$tmp"
-  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS"
-  bp_durable_sync
+  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS" || {
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  }
+  bp_durable_sync || return 8
 }
 
 bp_controller_set() {
@@ -57,11 +86,17 @@ bp_controller_set() {
   bp_controller_uint "$debounce" 1 2000 || return 2
   bp_controller_uint "$group" 10 10000 || return 2
   bp_controller_uint "$retries" 1 60 || return 2
+  bp_controller_admission_lock || return 8
   line="$(bp_controller_line "$id")"
   rev="$(printf '%s' "$line" | cut -f15)"
   [ -n "$rev" ] || rev=0
   rev=$((rev+1))
-  bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"
+  if bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"; then
+    bp_controller_admission_unlock
+    return 0
+  fi
+  bp_controller_admission_unlock
+  return 8
 }
 
 bp_controller_json() {
