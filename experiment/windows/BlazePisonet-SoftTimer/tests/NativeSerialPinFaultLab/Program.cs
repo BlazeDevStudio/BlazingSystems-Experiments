@@ -57,6 +57,18 @@ var detachedWhileIdle = Run(true, false, ModemSignal.Cts, port => {
     port.Open();
     port.Raise(SerialPinChange.CtsChanged);
 });
+var interruptedDuringPulse = Run(false, true, ModemSignal.Cts, port => {
+    // Previously, a read exception after a true assertion fabricated a
+    // valid falling edge and accepted a coin with no verified pulse ending.
+    port.CtsLevel = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.ThrowOnCtsRead = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    port.ThrowOnCtsRead = false;
+    port.CtsLevel = false;
+    port.Raise(SerialPinChange.CtsChanged);
+});
 var delayed = Run(false, true, ModemSignal.Cts, port => {
     // Physical CTS was high for a pulse but returned low before callbacks ran.
     port.CtsLevel = true;
@@ -76,6 +88,7 @@ var cases = new (string Name, int Actual, int Expected)[] {
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
     ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
     ("active_low_detach_reconnect_idle_no_coin", detachedWhileIdle.Accepted, 0),
+    ("active_high_fault_mid_pulse_disarms", interruptedDuringPulse.Accepted, 0),
     ("delayed_callback_misses_pulse", delayed.Accepted, 0),
     ("ring_without_measured_duration", ring.Accepted, 1)
 };
@@ -90,12 +103,12 @@ if (diagnosticFailed) {
     return 1;
 }
 if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
-    if (falseCoin.Accepted != 0 || selectedPinFault.Accepted != 0 || detachedWhileIdle.Accepted != 0) {
+    if (falseCoin.Accepted != 0 || selectedPinFault.Accepted != 0 || detachedWhileIdle.Accepted != 0 || interruptedDuringPulse.Accepted != 0) {
         Console.Error.WriteLine("READ_ERROR_SAFETY_RED: idle CTS fault/detach emitted CoinPulseAccepted.");
         return 2;
     }
-    Console.WriteLine("READ_ERROR_SAFETY_GREEN: 3/3 active-low read-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
+    Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 6/6 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 7/7 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
