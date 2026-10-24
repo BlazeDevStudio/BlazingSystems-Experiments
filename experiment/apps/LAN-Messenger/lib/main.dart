@@ -130,14 +130,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (action == 'open') _openWindow();
       return;
     }
-    if (id != intercom?.callId) return;
+    if (id != intercom?.callId) return false;
     if (action == 'answer' || action == 'decline') {
+      if (!_incomingDialogOpen || _incomingAnswer?.isCompleted != false) {
+        return false; // Stale or duplicate notification tap.
+      }
       if (action == 'answer' && data['wasBackground'] == true &&
           intercom?.video == true) {
         // Audio-only calls must not accidentally launch a blank video PiP.
         _autoPipCallId = id;
       }
       _resolveIncomingDialog(action == 'answer');
+      return true; // Native may now safely acknowledge/clear this Answer.
     } else if (!_incomingDialogOpen) {
       if (action == 'end') {
         unawaited(intercom?.hangUp() ?? Future<void>.value());
@@ -693,6 +697,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             unawaited(alerts.ring(incomingVideo
                 ? AlertKind.videoCall : AlertKind.call));
           }
+          // A notification Answer can resume this Activity before the WebRTC
+          // offer reaches Dart. Retry only after its completer is installed.
+          try {
+            await _notifications.invokeMethod<bool>(
+                'retryPendingAnswer', {'callId': id});
+          } catch (_) {}
         }
         bool accepted = false;
         try {
@@ -1310,6 +1320,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     return Container(color: const Color(0xff142d4d),
       padding: const EdgeInsets.all(8),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (call.mediaError != null) Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(call.mediaError!,
+            style: const TextStyle(color: Colors.orangeAccent))),
         Row(children: [
           const Icon(Icons.groups, color: Colors.white),
           const SizedBox(width: 6),
@@ -1328,9 +1342,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (call.video)
           SizedBox(height: 180, child: GridView.count(
             crossAxisCount: 2, childAspectRatio: 1.5, children: [
-              const ColoredBox(color: Color(0xff213958),
-                child: Center(child: Text('You',
-                  style: TextStyle(color: Colors.white)))),
+              ColoredBox(color: const Color(0xff213958),
+                child: call.localRenderer != null
+                    ? RTCVideoView(call.localRenderer!,
+                        mirror: true,
+                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+                    : const Center(child: Text('You • camera starting',
+                        style: TextStyle(color: Colors.white)))),
               for (final link in call.links.values)
                 ColoredBox(color: const Color(0xff213958),
                   child: link.remoteRenderer != null
