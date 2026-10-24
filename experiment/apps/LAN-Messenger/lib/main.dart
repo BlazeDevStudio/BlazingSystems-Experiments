@@ -580,6 +580,19 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   !inter.connecting) {
                 await _showOngoingCall(peer, sessionId, inter.video);
                 if (Platform.isWindows) await _showActiveTrayMenu(peer);
+                if (Platform.isAndroid && inter.video &&
+                    _autoPipCallId == sessionId && _inForeground &&
+                    mounted && inter.callId == sessionId) {
+                  // The native ongoing CallStyle state must exist BEFORE PiP
+                  // uses lastCallId. Otherwise a fast Answer can race setup.
+                  _autoPipCallId = null;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && inter.callId == sessionId &&
+                        !inter.connecting && _inForeground) {
+                      unawaited(_enterPipVideo());
+                    }
+                  });
+                }
               }
             } catch (e) {
               if (mounted) setState(() =>
@@ -588,14 +601,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               _pendingCallPresentation = false;
             }
           }());
-        }
-        if (Platform.isAndroid && inter.video && _autoPipCallId != null &&
-            _autoPipCallId == inter.callId && !inter.connecting &&
-            inter.talkingTo != null && _inForeground) {
-          _autoPipCallId = null;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_enterPipVideo());
-          });
         }
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
