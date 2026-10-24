@@ -44,8 +44,23 @@ class MainActivity : FlutterActivity() {
         fun deliverCallAction(context: Context, action: String, callId: String) {
             val running = active
             if (running != null) {
-                running.runOnUiThread { running.callBridge?.invokeMethod("callAction",
-                    mapOf("action" to action, "callId" to callId)) }
+                running.runOnUiThread {
+                    if (action == "answer" && !running.activityForeground) {
+                        // Android 14+ restricts starting a microphone/camera while
+                        // backgrounded. Restore the Activity only on explicit
+                        // Answer, defer capture until onResume, then Dart can
+                        // minimize it to PiP after negotiation.
+                        running.pendingAnswer = callId
+                        val open = Intent(context, MainActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        }
+                        context.startActivity(open)
+                    } else {
+                        running.callBridge?.invokeMethod("callAction",
+                            mapOf("action" to action, "callId" to callId))
+                    }
+                }
             } else {
                 // This only reopens the UI; there is no unattended microphone start.
                 val intent = Intent(context, MainActivity::class.java).apply {
@@ -67,19 +82,25 @@ class MainActivity : FlutterActivity() {
     private var lastVideo = false
     private var lastMuted = false
     private var lastIncoming = false
+    private var pendingAnswer: String? = null
 
     private fun overlay(): AndroidCallOverlay =
         incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
-            runOnUiThread {
-                callBridge?.invokeMethod("callAction",
-                    mapOf("action" to action, "callId" to id))
+            MainActivity.deliverCallAction(this, action, id)
+            if (action == "open") {
+                val open = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(open)
             }
         }.also { incomingOverlay = it }
 
     private fun updateOverlay() {
         val id = lastCallId
         val caller = lastCaller
-        if (activityForeground || id == null || caller == null) {
+        if (activityForeground || isInPictureInPictureMode ||
+            id == null || caller == null) {
             incomingOverlay?.dismiss()
             return
         }
@@ -90,12 +111,31 @@ class MainActivity : FlutterActivity() {
         super.onResume()
         activityForeground = true
         incomingOverlay?.dismiss()
+        if (lastIncoming) notifications.cancel(7024)
+        val id = pendingAnswer
+        if (id != null) {
+            pendingAnswer = null
+            window?.decorView?.post {
+                callBridge?.invokeMethod("callAction",
+                    mapOf("action" to "answer", "callId" to id,
+                        "wasBackground" to true))
+            }
+        }
     }
 
     override fun onPause() {
         activityForeground = false
         super.onPause()
-        window?.decorView?.post { if (!activityForeground) updateOverlay() }
+        window?.decorView?.post {
+            if (!activityForeground) {
+                val id = lastCallId
+                val caller = lastCaller
+                if (lastIncoming && id != null && caller != null) {
+                    showIncomingCall(caller, id, lastVideo)
+                }
+                updateOverlay()
+            }
+        }
     }
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -183,7 +223,14 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showIncomingCall(caller: String, callId: String, video: Boolean): Boolean {
-        if (!canNotify() || callId.isEmpty() || caller.isBlank()) return false
+        if (callId.isEmpty() || caller.isBlank()) return false
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = false; lastIncoming = true
+        if (activityForeground) return false // Flutter shows the in-app buttons.
+        if (!canNotify()) {
+            updateOverlay()
+            return false
+        }
         val event = if (video) "video_call" else "call"
         val answer = callAction("answer", callId)
         val decline = callAction("decline", callId)
@@ -211,8 +258,6 @@ class MainActivity : FlutterActivity() {
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
         notifications.notify(7024, b.build())
-        lastCaller = caller; lastCallId = callId
-        lastVideo = video; lastMuted = false; lastIncoming = true
         updateOverlay()
         return true
     }
