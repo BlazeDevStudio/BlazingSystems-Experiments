@@ -19,11 +19,11 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 120); do
-            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069103989 --jq '.conclusion // ""')"
-            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069103989 --jq '.head_sha')"
-            test "$commit" = "affac4af4b74a2ac302791fbedfc74a1b8f35c04" || { echo "Unrecognized source SHA"; exit 1; }
+            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069303820 --jq '.conclusion // ""')"
+            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069303820 --jq '.head_sha')"
+            test "$commit" = "5425003535ec36ac70ade4ff15347ad1e6f34075" || { echo "Unrecognized source SHA"; exit 1; }
             if [ "$conclusion" = "success" ]; then
-              echo "Verified successful full CI run 40069103989 for affac4af4b74a2ac302791fbedfc74a1b8f35c04"
+              echo "Verified successful full CI run 40069303820 for 5425003535ec36ac70ade4ff15347ad1e6f34075"
               exit 0
             fi
             if [ -n "$conclusion" ]; then
@@ -46,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh run download 40069103989 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40069303820 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
           New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
           Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
           if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
@@ -103,8 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p artifacts/android artifacts/windows dist
-          gh run download 40069103989 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
-          gh run download 40069103989 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          gh run download 40069303820 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 40069303820 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
       - uses: actions/download-artifact@v4
         with:
           name: LAN-Messenger-Windows-Installer-v0.2.10
@@ -157,14 +157,14 @@ jobs:
           - The crash trigger and native audio/video media state require hardware testing on Windows and Android. This release cannot be described as a production-safe intercom until such testing passes.
           - On Android, Display over other apps requires explicit user authorization; OEM policies control CallStyle and PiP. The system cannot grant permissions automatically.
           - Preview APK signing may differ from installed v0.2.9; uninstalling loses local in-app history. Preserve any files you need. Windows EXE is unsigned.
-          - Source build: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40069103989
-          - Source commit: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/affac4af4b74a2ac302791fbedfc74a1b8f35c04
+          - Source build: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40069303820
+          - Source commit: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/5425003535ec36ac70ade4ff15347ad1e6f34075
           EOF
       - name: Publish immutable GitHub prerelease assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create lan-messenger-v0.2.10-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --target affac4af4b74a2ac302791fbedfc74a1b8f35c04 \
+            --repo "$GITHUB_REPOSITORY" --target 5425003535ec36ac70ade4ff15347ad1e6f34075 \
             --title "LAN Messenger v0.2.10 - Answer-Time Crash Repair Preview" \
             --notes-file dist/RELEASE-NOTES.md --prerelease
