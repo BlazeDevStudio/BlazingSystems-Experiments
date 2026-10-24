@@ -19,6 +19,21 @@ class CompactCallWindow {
 
   bool get isCompact => mode != CompactCallMode.normal;
 
+  /// Anchor beside the taskbar clock, respecting logical work-area bounds.
+  /// Primary-display offsets need not be (0,0), e.g. vertically stacked PCs.
+  static Rect dockedRect(Rect workArea, Size preferred, {double margin = 12}) {
+    if (workArea.width <= 0 || workArea.height <= 0) {
+      return Rect.fromLTWH(0, 0, preferred.width, preferred.height);
+    }
+    final width = preferred.width.clamp(0.0, workArea.width).toDouble();
+    final height = preferred.height.clamp(0.0, workArea.height).toDouble();
+    final x = (workArea.right - width - margin)
+        .clamp(workArea.left, workArea.right - width).toDouble();
+    final y = (workArea.bottom - height - margin)
+        .clamp(workArea.top, workArea.bottom - height).toDouble();
+    return Rect.fromLTWH(x, y, width, height);
+  }
+
   Future<void> _queue(Future<void> Function() action) {
     final task = _serial.then((_) => action());
     _serial = task.catchError((Object _) {});
@@ -56,18 +71,13 @@ class CompactCallWindow {
       (display.visibleSize ?? display.size).width,
       (display.visibleSize ?? display.size).height,
     );
-    final point = Offset(
-      (area.right - size.width - 12).clamp(area.left, area.right).toDouble(),
-      (area.bottom - size.height - 12).clamp(area.top, area.bottom).toDouble(),
-    );
+    final target = dockedRect(area, size);
     await wm.windowManager.setMinimumSize(const Size(300, 112));
     await wm.windowManager.setResizable(false);
     await wm.windowManager.setTitleBarStyle(wm.TitleBarStyle.hidden);
     await wm.windowManager.setSkipTaskbar(true);
     await wm.windowManager.setAlwaysOnTop(true);
-    await wm.windowManager.setBounds(Rect.fromLTWH(
-      point.dx, point.dy, size.width, size.height,
-    ));
+    await wm.windowManager.setBounds(target);
     // Inactive show prevents the compact caller banner taking keyboard focus
     // away from whatever application the user is currently working in.
     await wm.windowManager.show(inactive: true);
