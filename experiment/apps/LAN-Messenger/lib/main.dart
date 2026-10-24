@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart' as wm;
+import 'package:screen_retriever/screen_retriever.dart';
 import 'package:tray_manager/tray_manager.dart' as tray;
 import 'package:flutter_background/flutter_background.dart';
 import 'src/settings.dart';
@@ -15,6 +16,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/compact_call_card.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -65,8 +67,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ControlInputMode _controlMode = ControlInputMode.trackpad;
   Offset _miniCallPosition = const Offset(20, 110);
   bool _incomingDialogOpen = false;
-  BuildContext? _incomingDialogContext;
-  bool? _pendingIncomingDecision;
+  Completer<bool>? _incomingAnswer;
+  Peer? _ringingPeer;
+  bool _ringingVideo = false;
+  Offset _callToastOffset = Offset.zero;
+
+  // Compact desktop calls occupy only a small, draggable corner window.
+  // All original window attributes are restored on Thread / end of call.
+  bool _desktopCompact = false;
+  bool _desktopRestoring = false;
+  bool _desktopPreviousVisible = false;
+  bool _desktopPreviousMaximized = false;
+  bool _desktopPreviousResizable = true;
+  bool _desktopPreviousSkipTaskbar = false;
+  Size? _desktopPreviousSize;
+  Offset? _desktopPreviousPosition;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -91,24 +106,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   void _resolveIncomingDialog(bool answered) {
-    if (!_incomingDialogOpen) return;
-    // A system banner or tray action may arrive before the Flutter dialog has
-    // completed its first frame; retain the answer until its route is ready.
-    _pendingIncomingDecision = answered;
-    _flushIncomingDecision();
-  }
-
-  void _flushIncomingDecision() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dialog = _incomingDialogContext;
-      final decision = _pendingIncomingDecision;
-      if (decision == null || !_incomingDialogOpen || !mounted) return;
-      if (dialog != null && dialog.mounted &&
-          ModalRoute.of(dialog)?.isCurrent == true) {
-        _pendingIncomingDecision = null;
-        Navigator.of(dialog).pop(decision);
-      }
-    });
+    final answer = _incomingAnswer;
+    if (!_incomingDialogOpen || answer == null || answer.isCompleted) return;
+    answer.complete(answered);
   }
 
   Future<bool> _showNativeIncoming(Peer peer, bool video) async {
@@ -128,40 +128,117 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     catch (_) {}
   }
 
-  Future<void> _raiseIncomingWindow(Peer peer) async {
-    if (!Platform.isWindows) return;
+  static const Size _desktopAudioToastSize = Size(348, 164);
+  static const Size _desktopVideoToastSize = Size(348, 360);
+
+  Future<void> _updateDesktopTray({Peer? incoming}) async {
+    if (!_trayInitialized) return;
+    await tray.trayManager.setToolTip(incoming == null
+        ? 'LAN Messenger — Local network'
+        : 'Incoming call from ${incoming.name}');
+    await tray.trayManager.setContextMenu(tray.Menu(items: [
+      if (incoming != null) ...[
+        tray.MenuItem(key: 'answer', label: 'Answer ${incoming.name}'),
+        tray.MenuItem(key: 'decline', label: 'Decline call'),
+      ],
+      tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
+      tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
+    ]));
+  }
+
+  Future<Offset> _desktopToastCorner(Size toast) async {
+    // visiblePosition/visibleSize exclude the Windows taskbar and scale with
+    // the active monitor. A margin prevents covering the taskbar clock.
+    final display = await screenRetriever.getPrimaryDisplay();
+    final origin = display.visiblePosition ?? Offset.zero;
+    final usable = display.visibleSize ?? display.size;
+    return Offset(
+      origin.dx + (usable.width - toast.width - 14).clamp(0.0, double.infinity),
+      origin.dy + (usable.height - toast.height - 14).clamp(0.0, double.infinity),
+    );
+  }
+
+  Future<void> _openCompactDesktopCall({required bool video}) async {
+    if (!Platform.isWindows || _desktopRestoring) return;
     try {
       await wm.windowManager.ensureInitialized();
-      await wm.windowManager.show();
-      await wm.windowManager.restore();
-      await wm.windowManager.setAlwaysOnTop(true);
-      await wm.windowManager.focus();
-      if (_trayInitialized) {
-        await tray.trayManager.setToolTip('Incoming call from ${peer.name}');
-        await tray.trayManager.setContextMenu(tray.Menu(items: [
-          tray.MenuItem(key: 'answer', label: 'Answer ${peer.name}'),
-          tray.MenuItem(key: 'decline', label: 'Decline call'),
-          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
-          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
-        ]));
+      if (!_desktopCompact) {
+        final visible = await wm.windowManager.isVisible();
+        _desktopPreviousVisible = visible && !(await wm.windowManager.isMinimized());
+        _desktopPreviousMaximized = await wm.windowManager.isMaximized();
+        _desktopPreviousSize = await wm.windowManager.getSize();
+        _desktopPreviousPosition = await wm.windowManager.getPosition();
+        _desktopPreviousSkipTaskbar = await wm.windowManager.isSkipTaskbar();
+        _desktopPreviousResizable = await wm.windowManager.isResizable();
+        // Hide before adjusting geometry to prevent full-size window flashes.
+        await wm.windowManager.hide();
+        if (_desktopPreviousMaximized) await wm.windowManager.unmaximize();
+        await wm.windowManager.setMinimumSize(const Size(240, 120));
+        await wm.windowManager.setResizable(false);
+        await wm.windowManager.setSkipTaskbar(true);
+        await wm.windowManager.setTitleBarStyle(
+            wm.TitleBarStyle.hidden, windowButtonVisibility: false);
+        _desktopCompact = true;
       }
+      final size = video ? _desktopVideoToastSize : _desktopAudioToastSize;
+      await wm.windowManager.setSize(size);
+      await wm.windowManager.setPosition(await _desktopToastCorner(size));
+      await wm.windowManager.setAlwaysOnTop(true);
+      if (mounted) setState(() {});
+      // Inactive prevents stealing focus from another Windows application.
+      await wm.windowManager.show(inactive: true);
     } catch (e) {
-      if (mounted) setState(() => error = 'Could not raise incoming call window: $e');
+      if (mounted) _toast('Call popup unavailable: $e');
+      // Retain an actionable tray Answer/Decline path on plugin failure.
     }
   }
 
-  Future<void> _restoreWindowAfterCall() async {
-    if (!Platform.isWindows) return;
+  Future<void> _restoreWindowAfterCall({bool openThread = false}) async {
+    if (!Platform.isWindows || _desktopRestoring) return;
+    _desktopRestoring = true;
     try {
-      await wm.windowManager.setAlwaysOnTop(false);
-      if (_trayInitialized) {
-        await tray.trayManager.setToolTip('LAN Messenger — Local network');
-        await tray.trayManager.setContextMenu(tray.Menu(items: [
-          tray.MenuItem(key: 'open', label: 'Open LAN Messenger'),
-          tray.MenuItem(key: 'exit', label: 'Exit LAN Messenger'),
-        ]));
+      await _updateDesktopTray();
+      if (_desktopCompact) {
+        await wm.windowManager.hide();
+        await wm.windowManager.setAlwaysOnTop(false);
+        await wm.windowManager.setTitleBarStyle(wm.TitleBarStyle.normal);
+        await wm.windowManager.setMinimumSize(const Size(240, 120));
+        await wm.windowManager.setResizable(_desktopPreviousResizable);
+        await wm.windowManager.setSkipTaskbar(_desktopPreviousSkipTaskbar);
+        final size = _desktopPreviousSize;
+        final position = _desktopPreviousPosition;
+        if (size != null) await wm.windowManager.setSize(size);
+        if (position != null) await wm.windowManager.setPosition(position);
+        if (_desktopPreviousMaximized) await wm.windowManager.maximize();
+        _desktopCompact = false;
+        if (openThread || _desktopPreviousVisible) {
+          await wm.windowManager.show(inactive: !openThread);
+          if (openThread) await wm.windowManager.focus();
+        }
+      } else {
+        await wm.windowManager.setAlwaysOnTop(false);
+        if (openThread) {
+          await wm.windowManager.show();
+          await wm.windowManager.restore();
+          await wm.windowManager.focus();
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) _toast('Could not restore Messenger window: $e');
+    } finally {
+      _desktopRestoring = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _openCallThread() {
+    _callMinimized = true;
+    final peer = intercom?.talkingTo;
+    if (peer != null) selected = peer;
+    if (mounted) setState(() => showSettings = false);
+    if (Platform.isWindows) {
+      unawaited(_restoreWindowAfterCall(openThread: true));
+    }
   }
 
   Future<void> _initialize() async {
