@@ -81,6 +81,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _nativeIncomingAvailable = false;
   bool _inForeground = true;
   bool _androidInPip = false;
+  String? _autoPipCallId;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   bool? _lastNativeMuted;
@@ -130,6 +131,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
     if (id != intercom?.callId) return;
     if (action == 'answer' || action == 'decline') {
+      if (action == 'answer' && data['wasBackground'] == true) {
+        _autoPipCallId = id; // Capture while foreground, float once connected.
+      }
       _resolveIncomingDialog(action == 'answer');
     } else if (!_incomingDialogOpen) {
       if (action == 'end') {
@@ -354,7 +358,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<void> _enterPipVideo() async {
     final call = intercom;
-    if (!Platform.isAndroid || call?.video != true || call?.callId == null) return;
+    if (!Platform.isAndroid || call?.callId == null) return;
     try {
       final ok = await _notifications.invokeMethod<bool>('enterPip',
           {'callId': call!.callId});
@@ -369,6 +373,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _endCallPresentation() async {
+    _autoPipCallId = null;
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
@@ -467,6 +472,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }));
       inter.onChanged = () {
         if (!mounted) return;
+        if (Platform.isAndroid && _autoPipCallId != null &&
+            _autoPipCallId == inter.callId && !inter.connecting &&
+            inter.talkingTo != null && _inForeground) {
+          _autoPipCallId = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_enterPipVideo());
+          });
+        }
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
