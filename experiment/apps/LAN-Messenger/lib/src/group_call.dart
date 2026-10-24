@@ -91,7 +91,7 @@ class GroupCallMesh {
     if (type == 'group-join') {
       if (!active || id != sessionId || roomId != activeRoom?.id ||
           activeRoom?.includes(sender.id) != true ||
-          sender.id == node.identity.id) return true;
+          sender.id == node.identity.id || data['video'] != video) return true;
       // Confirm our presence once to each new joiner. This prevents
       // deadlock if an earlier join broadcast arrived before they accepted.
       if (_announcedTo.add(sender.id)) {
@@ -112,7 +112,8 @@ class GroupCallMesh {
       return true;
     }
     if (type == 'group-leave') {
-      if (active && id == sessionId && roomId == activeRoom?.id) {
+      if (active && id == sessionId && roomId == activeRoom?.id &&
+          activeRoom?.includes(sender.id) == true) {
         final peer = links.remove(sender.id);
         if (peer != null) await peer.hangUp(notify: false);
         onChanged?.call();

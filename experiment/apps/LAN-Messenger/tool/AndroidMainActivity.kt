@@ -57,7 +57,14 @@ class MainActivity : FlutterActivity() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
                                 Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         }
-                        context.startActivity(open)
+                        try {
+                            context.startActivity(open)
+                        } catch (_: Exception) {
+                            // Android may forbid background launches. Keep the
+                            // CallStyle notification instead of crashing.
+                            running.pendingAnswer = null
+                            running.updateOverlay()
+                        }
                     } else {
                         running.callBridge?.invokeMethod("callAction",
                             mapOf("action" to action, "callId" to callId))
@@ -115,15 +122,7 @@ class MainActivity : FlutterActivity() {
         activityForeground = true
         incomingOverlay?.dismiss()
         if (lastIncoming) notifications.cancel(7024)
-        val id = pendingAnswer
-        if (id != null) {
-            pendingAnswer = null
-            window?.decorView?.post {
-                callBridge?.invokeMethod("callAction",
-                    mapOf("action" to "answer", "callId" to id,
-                        "wasBackground" to true))
-            }
-        }
+        window?.decorView?.post { deliverPendingAnswer() }
     }
 
     override fun onPause() {
@@ -158,7 +157,26 @@ class MainActivity : FlutterActivity() {
     private fun consumeAction(intent: Intent?) {
         val action = intent?.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        callBridge?.invokeMethod("callAction", mapOf("action" to action, "callId" to callId))
+        // Activity restarts/rotation must never replay an old Answer.
+        intent.removeExtra("action")
+        intent.removeExtra("callId")
+        if (action == "answer") {
+            pendingAnswer = callId
+            window?.decorView?.post { deliverPendingAnswer() }
+        } else {
+            callBridge?.invokeMethod("callAction",
+                mapOf("action" to action, "callId" to callId))
+        }
+    }
+
+    private fun deliverPendingAnswer() {
+        if (!activityForeground) return
+        val id = pendingAnswer ?: return
+        pendingAnswer = null
+        if (!lastIncoming || id != lastCallId) return
+        callBridge?.invokeMethod("callAction",
+            mapOf("action" to "answer", "callId" to id,
+                "wasBackground" to true))
     }
 
     private fun requestNotificationPermission() {
@@ -217,6 +235,18 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun callAction(action: String, callId: String): PendingIntent {
+        if (action == "answer") {
+            // Direct user-launched Activity PendingIntent: no Android 12+
+            // notification broadcast -> background Activity trampoline.
+            val open = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("action", action)
+                putExtra("callId", callId)
+            }
+            return PendingIntent.getActivity(this, (action + callId).hashCode(), open,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
         val intent = Intent(this, CallActionReceiver::class.java).apply {
             putExtra("action", action)
             putExtra("callId", callId)

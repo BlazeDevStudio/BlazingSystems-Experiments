@@ -132,8 +132,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
     if (id != intercom?.callId) return;
     if (action == 'answer' || action == 'decline') {
-      if (action == 'answer' && data['wasBackground'] == true) {
-        _autoPipCallId = id; // Capture while foreground, float once connected.
+      if (action == 'answer' && data['wasBackground'] == true &&
+          intercom?.video == true) {
+        // Audio-only calls must not accidentally launch a blank video PiP.
+        _autoPipCallId = id;
       }
       _resolveIncomingDialog(action == 'answer');
     } else if (!_incomingDialogOpen) {
@@ -262,6 +264,51 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           await wm.windowManager.isMinimized();
     } catch (_) { return false; }
   }
+
+  /// Reconcile the native Win32 toast when users minimize or restore while
+  /// the call is already ringing. An ordinary visible Messenger window must
+  /// never acquire a second floating Answer/Decline window.
+  Future<void> _syncDesktopCallSurface() async {
+    if (!Platform.isWindows || !mounted || _compactWindowsVideo) return;
+    final active = intercom;
+    final id = active?.callId;
+    final peer = _incomingPeer;
+    final background = await _isDesktopBackground();
+    if (!mounted || id == null || intercom?.callId != id) return;
+    if (_incomingDialogOpen && peer != null) {
+      final float = CallPresentationGate.externalIncoming(
+          appForeground: !background, awaitingDecision: true);
+      _incomingUsesExternalSurface = float;
+      _callMinimized = float;
+      if (float) {
+        _nativeIncomingAvailable =
+            await _showDesktopIncoming(peer, _incomingVideo);
+        if (!_incomingDialogOpen || intercom?.callId != id) {
+          await _dismissDesktopCall();
+          return;
+        }
+      } else {
+        _nativeIncomingAvailable = false;
+        await _dismissDesktopCall();
+      }
+      if (mounted) setState(() {});
+    } else if (active?.talkingTo != null && !active!.connecting) {
+      if (background) {
+        await _showOngoingCall(active.talkingTo!, id, active.video);
+      } else {
+        await _dismissDesktopCall();
+      }
+    }
+  }
+
+  @override
+  void onWindowMinimize() => unawaited(_syncDesktopCallSurface());
+
+  @override
+  void onWindowRestore() => unawaited(_syncDesktopCallSurface());
+
+  @override
+  void onWindowFocus() => unawaited(_syncDesktopCallSurface());
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -525,7 +572,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             }
           }());
         }
-        if (Platform.isAndroid && _autoPipCallId != null &&
+        if (Platform.isAndroid && inter.video && _autoPipCallId != null &&
             _autoPipCallId == inter.callId && !inter.connecting &&
             inter.talkingTo != null && _inForeground) {
           _autoPipCallId = null;
@@ -623,8 +670,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
           final background = await _isDesktopBackground();
-          _incomingUsesExternalSurface = background;
-          _callMinimized = background;
+          _incomingUsesExternalSurface = CallPresentationGate.externalIncoming(
+              appForeground: !background, awaitingDecision: true);
+          _callMinimized = _incomingUsesExternalSurface;
           _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
@@ -636,7 +684,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
-          _incomingUsesExternalSurface = !_inForeground;
+          _incomingUsesExternalSurface = CallPresentationGate.externalIncoming(
+              appForeground: _inForeground, awaitingDecision: true);
           _callMinimized = _incomingUsesExternalSurface;
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
@@ -754,7 +803,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows) return;
     if ((intercom?.talkingTo != null || groupCall?.active == true ||
         _incomingDialogOpen || settings.minimizeToTray) && !_exitRequested) {
-      unawaited(wm.windowManager.hide());
+      unawaited(wm.windowManager.hide().then((_) => _syncDesktopCallSurface()));
     } else {
       unawaited(_exitWindows());
     }
@@ -772,6 +821,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await wm.windowManager.show();
       await wm.windowManager.restore();
       await wm.windowManager.focus();
+      await _syncDesktopCallSurface();
     }());
   }
 

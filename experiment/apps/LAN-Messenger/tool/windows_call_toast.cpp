@@ -76,6 +76,13 @@ WindowsCallToast::WindowsCallToast(flutter::BinaryMessenger* messenger,
           result->Error("BAD_CALL", "A caller and call ID are required");
           return;
         }
+        // Native safeguard against late Dart calls after restoring Messenger.
+        if (main_window_ && IsWindow(main_window_) &&
+            IsWindowVisible(main_window_) && !IsIconic(main_window_)) {
+          Hide();
+          result->Success(flutter::EncodableValue(false));
+          return;
+        }
         Show(call.method_name() == "incoming", BoolArg(*args, "video"),
              BoolArg(*args, "muted"), id, caller);
         result->Success(flutter::EncodableValue(hwnd_ != nullptr));
@@ -153,7 +160,10 @@ void WindowsCallToast::Show(bool incoming, bool video, bool muted,
   if (new_call || !IsWindowVisible(hwnd_)) {
     MONITORINFO monitor = {};
     monitor.cbSize = sizeof(monitor);
-    GetMonitorInfoW(MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY),
+    // Place near the clock on Messenger's monitor, not necessarily primary.
+    const HWND monitor_owner =
+        (main_window_ && IsWindow(main_window_)) ? main_window_ : GetDesktopWindow();
+    GetMonitorInfoW(MonitorFromWindow(monitor_owner, MONITOR_DEFAULTTONEAREST),
                     &monitor);
     const RECT& r = monitor.rcWork;
     const int x = r.right - kWidth - 14;
