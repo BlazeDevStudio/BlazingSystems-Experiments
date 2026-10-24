@@ -473,7 +473,7 @@ fun AveeShell(model: StudioModel) {
             while (true) { kotlinx.coroutines.delay(500); tick++ }
         }
         val report = remember(tick, check) { model.visualizerReport() }
-        val pcm = PlaybackPcmPreview.state.value
+        val pcm by PlaybackPcmPreview.state.collectAsState()
         val canvas = PreviewCanvasHealth.status
         AlertDialog(
             onDismissRequest = { showVisualizerCheck = false },
