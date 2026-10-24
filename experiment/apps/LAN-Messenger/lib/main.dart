@@ -69,7 +69,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Offset _videoPosition = const Offset(16, 20);
   ControlInputMode _controlMode = ControlInputMode.trackpad;
   Offset _miniCallPosition = const Offset(20, 110);
-  Offset _incomingPopupPosition = const Offset(16, 55);
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
   bool? _pendingIncomingDecision;
@@ -1489,60 +1488,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             icon: const Icon(Icons.call), label: const Text('Answer')),
         ]),
       ])));
-  }
-
-  Widget _incomingPopup() {
-    final peer = _incomingPeer;
-    if (peer == null || !_incomingDialogOpen) {
-      return const SizedBox.shrink();
-    }
-    final size = MediaQuery.sizeOf(context);
-    const width = 308.0;
-    return Positioned(
-      right: _incomingPopupPosition.dx.clamp(4.0, size.width - 24.0),
-      top: _incomingPopupPosition.dy.clamp(4.0, size.height - 130.0),
-      width: width.clamp(0, size.width - 8.0).toDouble(),
-      child: Material(
-        elevation: 11, borderRadius: BorderRadius.circular(18),
-        color: const Color(0xff132a48),
-        child: GestureDetector(
-          onPanUpdate: (details) => setState(() {
-            _incomingPopupPosition = Offset(
-              (_incomingPopupPosition.dx - details.delta.dx).clamp(
-                  4.0, size.width - 24.0).toDouble(),
-              (_incomingPopupPosition.dy + details.delta.dy).clamp(
-                  4.0, size.height - 130.0).toDouble());
-          }),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                const Icon(Icons.call_received, color: Colors.lightBlueAccent),
-                const SizedBox(width: 8),
-                Expanded(child: Text(peer.name,
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white,
-                        fontWeight: FontWeight.bold, fontSize: 16))),
-                const Icon(Icons.drag_indicator, color: Colors.white54),
-              ]),
-              Text(_incomingVideo ? 'Incoming video call' : 'Incoming voice call',
-                  style: const TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                  onPressed: () => _resolveIncomingDialog(true),
-                  icon: const Icon(Icons.call), label: const Text('Answer')),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-                  onPressed: () => _resolveIncomingDialog(false),
-                  icon: const Icon(Icons.call_end), label: const Text('Decline')),
-              ]),
-            ]),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _miniCall() {
