@@ -101,7 +101,8 @@ class MainActivity : FlutterActivity() {
     private fun updateOverlay() {
         val id = lastCallId
         val caller = lastCaller
-        if (activityForeground || isInPictureInPictureMode ||
+        if (activityForeground ||
+            (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) ||
             id == null || caller == null) {
             incomingOverlay?.dismiss()
             return
