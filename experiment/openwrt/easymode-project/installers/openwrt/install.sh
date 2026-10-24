@@ -9,16 +9,17 @@ BACKUP=/tmp/easymode-backup-$STAMP
 log(){ printf '[EasyMode] %s\n' "$*"; }
 fail(){ log "ERROR: $*"; exit 1; }
 need(){ command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"; }
+HERE=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+DETECT=$HERE/core/detect.sh
+[ -f "$DETECT" ] || fail "Missing detector"
+if [ "${1:-}" = --check-detector ]; then sh "$DETECT"; exit 0; fi
 [ "$(id -u)" = 0 ] || fail "Run as root on OpenWrt"
 need sh; need uci; need ubus
 PM=none; command -v apk >/dev/null 2>&1 && PM=apk; command -v opkg >/dev/null 2>&1 && [ "$PM" = none ] && PM=opkg
 [ "$PM" != none ] || fail "Neither apk nor opkg found"
 FREE=$(df -k /overlay 2>/dev/null | awk 'NR==2{print $4}'); [ -n "${FREE:-}" ] || FREE=0
 [ "$FREE" -ge 256 ] || fail "Less than 256 KiB free overlay space"
-HERE=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-DETECT=$HERE/core/detect.sh
-[ -x "$DETECT" ] || fail "Missing detector"
-INFO=$($DETECT); log "Device: $INFO"
+INFO=$(sh "$DETECT"); log "Device: $INFO"
 if [ "$EDITION" = auto ]; then EDITION=$(printf '%s' "$INFO" | sed -n 's/.*"recommended":"\([^"]*\)".*/\1/p'); fi
 case "$EDITION" in cellular|ap|router|switch|pc|generic) :;; *) fail "Unknown edition: $EDITION";; esac
 mkdir -p "$BACKUP" "$STATE"
@@ -38,7 +39,7 @@ OLD=/tmp/easymode-old-$STAMP
 mkdir -p "$(dirname "$PREFIX")"
 if mv "$STAGE" "$PREFIX"; then
   printf '%s\n' "$EDITION" > "$STATE/profile"
-  if "$PREFIX/core/detect.sh" >/dev/null 2>&1; then
+  if sh "$PREFIX/core/detect.sh" >/dev/null 2>&1; then
     rm -rf "$OLD"; log "Installed EasyMode $VERSION ($EDITION)"; log "Backup: $BACKUP"; exit 0
   fi
 fi

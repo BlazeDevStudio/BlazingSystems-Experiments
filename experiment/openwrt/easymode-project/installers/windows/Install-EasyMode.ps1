@@ -8,6 +8,6 @@ if(-not (Test-Path $bundle)){ throw "Missing $bundle." }
 Write-Host "Testing SSH connection to $User@$Router..."
 & $ssh "$User@$Router" "ubus call system board"; if($LASTEXITCODE){ throw "SSH/ubus test failed" }
 Write-Host "Uploading..."; & $scp $bundle "$User@${Router}:/tmp/easymode-upload.tar.gz"; if($LASTEXITCODE){ throw "SCP upload failed" }
-$cmd="rm -rf /tmp/easymode-upload; mkdir -p /tmp/easymode-upload; tar -xzf /tmp/easymode-upload.tar.gz -C /tmp/easymode-upload; /tmp/easymode-upload/installers/openwrt/install.sh $Edition"
+$cmd="rm -rf /tmp/easymode-upload; mkdir -p /tmp/easymode-upload; tar -xzf /tmp/easymode-upload.tar.gz -C /tmp/easymode-upload; sh /tmp/easymode-upload/installers/openwrt/install.sh $Edition"
 & $ssh "$User@$Router" $cmd; if($LASTEXITCODE){ throw "Router installer failed or rolled back" }
 Write-Host "EasyMode installation completed."
