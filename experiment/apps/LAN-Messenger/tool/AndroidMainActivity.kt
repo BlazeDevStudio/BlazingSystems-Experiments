@@ -37,7 +37,18 @@ class CallActionReceiver : BroadcastReceiver() {
         if (action == "answer" || action == "decline") {
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
         }
-        MainActivity.deliverCallAction(context, action, callId)
+        if (action == "thread") {
+            // Explicit PiP action: bring the conversation into the foreground.
+            val open = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra("action", action)
+                putExtra("callId", callId)
+            }
+            context.startActivity(open)
+        } else {
+            MainActivity.deliverCallAction(context, action, callId)
+        }
     }
 }
 
@@ -220,6 +231,29 @@ class MainActivity : FlutterActivity() {
         if (!isInPictureInPictureMode) pipCallId = null
     }
 
+    private fun showOngoingCall(caller: String, callId: String, video: Boolean): Boolean {
+        if (!canNotify() || callId.isEmpty()) return false
+        val end = callAction("end", callId)
+        val b = builder(if (video) "video_call" else "call")
+            .setSmallIcon(android.R.drawable.ic_menu_call)
+            .setContentTitle(caller)
+            .setContentText(if (video) "Video call in progress" else "Voice call in progress")
+            .setContentIntent(openApp())
+            .setCategory(Notification.CATEGORY_CALL)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+        if (Build.VERSION.SDK_INT >= 31) {
+            b.setStyle(Notification.CallStyle.forOngoingCall(
+                Person.Builder().setName(caller).build(), end))
+        } else {
+            b.addAction(android.R.drawable.ic_menu_close_clear_cancel,
+                "End call", end)
+        }
+        notifications.notify(7026, b.build())
+        return true
+    }
+
     private fun showEvent(event: String, title: String, body: String): Boolean {
         if (!canNotify()) return false
         val kind = if (event in listOf("message", "file")) event else "message"
@@ -245,6 +279,11 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
                     "dismissIncoming" -> { notifications.cancel(7024); result.success(null) }
+                    "ongoing" -> result.success(showOngoingCall(
+                        call.argument<String>("caller") ?: "LAN Messenger",
+                        call.argument<String>("callId") ?: "",
+                        call.argument<Boolean>("video") ?: false))
+                    "dismissOngoing" -> { notifications.cancel(7026); result.success(null) }
                     "enterPip" -> result.success(enterCompactVideo(
                         call.argument<String>("callId") ?: ""))
                     "pipMuted" -> {
