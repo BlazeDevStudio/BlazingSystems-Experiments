@@ -1,24 +1,25 @@
-# PHX-L-APPS #164 — source-linked native C# modem-pin fault lab
+# PHX-L-APPS #164 — proposed read-error guard (stacked test + app-only draft)
 
-**Test-only, no production application change.** `NativeSerialPinFaultLab.csproj` compiles the repository's **actual unmodified** `src/BlazePisonet.SoftTimer/SerialHardware.cs` with .NET 8. `FakeOsAndAppTypes.cs` replaces only the external `System.IO.Ports` and `System.Management` dependencies plus minimal application configuration/logging with in-process test doubles. No COM kernel driver, USB adapter, coin acceptor, money writer, device, or protected key is accessed.
+**THIS BRANCH IS NOT MERGED OR RELEASED.** Builds the previously source-linked native C# fake-OS harness from test-only PR #176 into a narrowly scoped source correction. Previous owner-closed PR #175 stays unmerged and is not revived.
 
-The fixture is intentionally different from the earlier Python **behavioral model**: this test executes the actual C# source methods and callback handlers in the .NET CLR, while the OS-facing modem-status implementation remains fake. It is still **not** an actual Windows driver timing test or electrical pulse measurement.
+## Source RED → proposed GREEN contract
 
-## Commands
+- Historical **real C# source-linked expected RED** (unmodified `SerialHardware.cs`): PR #176 at SHA `9f29470f7ba6287b140b19a7b1db856f6e9638b5`, [Windows #40100726703](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40100726703). Native controlled API status read failure with physically idle active-low CTS emitted one spurious `CoinPulseAccepted`; the test explicitly expected safety RED.
+- This proposed guarded branch tests **six actual C# source-linked fake-OS traces**: normal 50 ms CTS accepted (1), unrelated pin event during active-low CTS read exception (0), selected-pin CTS read exception (0), port Close/reopen with no coin (0), delayed callback missing actual pulse (0; **still a known lost-pulse risk**), and Ring callback without pulse width (1; **still a known false-credit risk**).
+- `--diagnostic` must reproduce the exact six expected results; `--safety-gate` must return 0 with `READ_ERROR_SAFETY_GREEN` for the three fault/detach scenarios. Both commands are mandatory in Windows CI. This is **only the no-false-credit-on-status-failure gate**, not general coin or safety acceptance.
 
 ```powershell
 dotnet run --project experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj -c Release -- --diagnostic
 dotnet run --project experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj -c Release --no-restore -- --safety-gate
 ```
 
-Diagnostic mode expects four *currently unsafe/limited source behaviors*, not four safe outcomes: one normal 50ms CTS pulse accepted; one **false** active-low coin after a transient status-read exception with CTS physically idle; one lost 50ms pulse whose callbacks arrive after release; and one ring notification accepted despite no duration measurement. If the source differs, diagnostic fails instead of manufacturing a pass.
+### Proposed implementation boundary
 
-Safety-gate mode is deliberately **expected RED exit 2** on the false-coin scenario. The Windows CI wrapper asserts this explicit exit, logs `EXPECTED_SAFETY_RED_CONFIRMED`, and does **not** claim the product is safe. If the code changes and no longer reproduces, update the diagnostic contract and turn this into a proper no-false-credit GREEN gate after independent review. Do not hide the expected RED behind the overall workflow success.
+In `SerialHardware.cs`, paid coin capture uses a new trusted/unknown modem-level read rather than inverting a UI-oriented `false` on read failure. A failure/closed/stale session **disarms current pulse**, then requires a verified idle input before rearming. No change to billing/ledger writer, admin configuration, COM-binding modes, packet wire protocol, Android apps, firmware or production credentials. Existing read-only UI method `GetSignal()` retains its published Boolean contract.
 
-## Safety and limits
+**Further blockers:** serial callback scheduling is not a hardware edge timestamp; control-line notifications are not guaranteed queued; Ring event acceptance without measured level remains unqualified. No real serial adapter/coin acceptor, driver timing, electrical level/coin inhibit, monotonic sequence or durability, real 150 power cuts, 24h/30-device soak has been tested. No paid acceptance/release/merge.
 
-- No installed application source is modified; PR #175 remains **closed unmerged**.
-- The fake COM9 device uses a controllable `CtsHolding` exception and in-process `PinChanged` event. It cannot establish Windows kernel event ordering, USB chip behavior, voltage isolation, lossless pulse capture or power-fail durability.
-- A production repair must distinguish `unavailable/failed status read` from `valid false`, disarm capture on read failure or detach, and prove that no `CoinPulseAccepted` event occurs on errors. Do not treat a callback as a durable paid event.
-- The fixture deliberately sleeps 50ms to exercise the actual `DateTimeOffset.UtcNow` width measurement. It tests only controlled process scheduling, not physical edge timestamps.
-- Next: classify exact-source Windows CI and request MASTER/VERIFY review; if approved, implement a narrowly scoped fail-closed source change on a separate role branch and verify native C# safety GREEN. Hardware/electrical and financial acceptance are separate gates.
+## Native test limits
+
+The test compiles **actual C# application `SerialHardware.cs` source** against in-process stand-ins for `System.IO.Ports`, `System.Management` and minimal config. It runs .NET methods and synthetic callbacks, not real Windows serial chip timing. No external proprietary code or kernel driver was imported. MASTER/VERIFY must review exact source and CI before any integration decision.
+
