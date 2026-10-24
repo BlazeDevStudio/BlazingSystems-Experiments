@@ -101,7 +101,6 @@ class StudioModel @JvmOverloads constructor(
     @Volatile private var audioFeatures: AudioFeatures? = null
     @Volatile private var audioFeatureSourceUri: String? = null
     private val quickPreview = MutableStateFlow(QuickPreviewFrames())
-    private data class QuickRequest(val uri: String, val bucket: Long, val profile: JsonObject)
     private var previewLease: DecodedAudioLease? = null
     private var rawNotes: List<NoteEvent> = emptyList()
     // A snapshot for track B must never replace pending edits for track A.
@@ -200,40 +199,22 @@ class StudioModel @JvmOverloads constructor(
                 }
         }
         viewModelScope.launch {
-            var previous: QuickRequest? = null
-            combine(playback, state) { playing, current ->
+            val positions = combine(playback, state) { playing, current ->
                 val source = current.queue.firstOrNull { it.uri == playing.sourceUri }
                     ?: current.project?.source?.takeIf { it.uri == playing.sourceUri }
                 if (source == null || !source.hasAudio || current.analysisReady &&
                     current.project?.source?.uri == source.uri) null
-                else QuickRequest(source.uri, playing.sourceTimeUs / 1_000_000, current.scene.aveeAudio)
-            }.distinctUntilChanged().collectLatest { request ->
-                if (request == null) {
-                    previous = null
-                    quickPreview.value = QuickPreviewFrames()
-                    return@collectLatest
-                }
-                val old = previous
-                if (old == null || old.uri != request.uri || request.bucket < old.bucket ||
-                    request.bucket - old.bucket > 1 || old.profile != request.profile)
-                    quickPreview.value = QuickPreviewFrames(request.uri)
-                previous = request
-                try {
-                    QuickNotePreview(context()).frames(request.uri,
-                        (request.bucket * 1_000_000 - 250_000).coerceAtLeast(0), profile = request.profile,
-                    ).collect { frame ->
-                        ensureActive()
-                        quickPreview.update { it.withFrame(request.uri, frame) }
-                    }
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
+                else QuickPreviewPosition(source.uri, playing.sourceTimeUs, profile = current.scene.aveeAudio)
+            }.stateIn(this, SharingStarted.Eagerly, null)
+            quickPreviewPlayback(positions,
+                { uri, start, duration, profile -> QuickNotePreview(context()).frames(uri, start, duration, profile) },
+                { uri, _ ->
                     mutable.update { current ->
-                        if (current.project?.source?.uri == request.uri && !current.analysisReady)
+                        if (current.project?.source?.uri == uri && !current.analysisReady)
                             current.copy(status = "Preparing detailed notes · quick preview unavailable") else current
                     }
-                }
-            }
+                },
+            ).collect { quickPreview.value = it }
         }
         viewModelScope.launch {
             initialized.await()
