@@ -11,6 +11,8 @@ import 'src/settings.dart';
 import 'src/alerts.dart';
 import 'src/identity.dart';
 import 'src/intercom.dart';
+import 'src/groups.dart';
+import 'src/group_call.dart';
 import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
@@ -54,6 +56,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _trayInitialized = false;
   Intercom? intercom;
   Peer? selected;
+  GroupMessaging? groups;
+  GroupCallMesh? groupCall;
+  GroupRoom? selectedGroup;
+  final groupInput = TextEditingController();
   final input = TextEditingController();
   final scroll = ScrollController();
   final Map<String, List<ChatMessage>> chats = {};
@@ -74,6 +80,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _incomingVideo = false;
   bool _nativeIncomingAvailable = false;
   bool _inForeground = true;
+  bool _androidInPip = false;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   bool? _lastNativeMuted;
@@ -100,12 +107,28 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
-    if (call.method != 'callAction' || !mounted) return;
+    if (!mounted) return;
+    if (call.method == 'pipState') {
+      setState(() => _androidInPip = call.arguments is Map &&
+          (call.arguments as Map)['active'] == true);
+      return;
+    }
+    if (call.method != 'callAction') return;
     final data = call.arguments;
     if (data is! Map) return;
     final id = data['callId'];
     final action = data['action'];
-    if (id is! String || id != intercom?.callId) return;
+    if (id is! String) return;
+    if (id == groupCall?.sessionId) {
+      if (action == 'end') unawaited(groupCall?.leave() ?? Future<void>.value());
+      if (action == 'mute') {
+        final mesh = groupCall;
+        if (mesh != null) unawaited(mesh.setMuted(!mesh.muted));
+      }
+      if (action == 'open') _openWindow();
+      return;
+    }
+    if (id != intercom?.callId) return;
     if (action == 'answer' || action == 'decline') {
       _resolveIncomingDialog(action == 'answer');
     } else if (!_incomingDialogOpen) {
@@ -330,6 +353,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _endCallPresentation() async {
+    if (Platform.isAndroid) {
+      try { await _notifications.invokeMethod<void>('dismissCall'); }
+      catch (_) {}
+    }
     await _dismissNativeIncoming();
     await _dismissDesktopCall();
     if (Platform.isWindows) await _restoreCompactVideo();
@@ -361,6 +388,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
       await _restoreChats();
       final inter = Intercom(n);
+      final groupMessages = GroupMessaging(n);
+      final mesh = GroupCallMesh(n, groupMessages);
+      groupMessages.onChanged = () { if (mounted) setState(() {}); };
+      mesh.onChanged = () { if (mounted) setState(() {}); };
+      groupMessages.onInvitation = (sender, title, count) => _ask(
+        title: 'Join group chat?', detail:
+        '${sender.name} invited you to "$title" with $count members. '
+        'Accept only trusted local devices.', allowText: 'Join group');
+      mesh.onInvitation = (sender, room, withVideo) async {
+        if (inter.talkingTo != null) return false;
+        return _ask(title: withVideo ? 'Join group video?' : 'Join group voice?',
+          detail: '${sender.name} invited you to a call in ${room.name}. '
+            'Your microphone${withVideo ? " and camera" : ""} activate only after you join.',
+          allowText: 'Join call');
+      };
       n.onPeersChanged = () { if (mounted) setState(() {}); };
       n.onChat = (peer, message) {
         if (!mounted) return;
@@ -392,7 +434,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.onFileOffer = (peer, name, size) async => _ask(
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
-      n.onSignal = (peer, data) => unawaited(inter.incomingSignal(peer, data));
+      n.onSignal = (peer, data) => unawaited(() async {
+        if (await groupMessages.receive(peer, data)) return;
+        if (await mesh.handle(peer, data)) return;
+        if (mesh.active && data['type'] == 'offer') {
+          // A direct inbound call while the user is in a group is busy.
+          final callId = data['callId'];
+          if (callId is String) {
+            await n.signal(peer, {'type': 'hangup', 'callId': callId});
+          }
+          return;
+        }
+        await inter.incomingSignal(peer, data);
+      }().catchError((Object e) {
+        if (mounted) setState(() => error = 'LAN signal ignored: $e');
+      }));
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
@@ -540,7 +596,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         }
       };
       await n.start();
-      if (mounted) setState(() { node = n; intercom = inter; });
+      await groupMessages.load();
+      if (mounted) setState(() {
+        node = n; intercom = inter;
+        groups = groupMessages; groupCall = mesh;
+      });
       if (Platform.isWindows) {
         unawaited(_initializeDesktop());
       } else if (Platform.isAndroid) {
@@ -935,6 +995,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _startCall({bool video = false}) async {
+    if (groupCall?.active == true) {
+      _toast('Leave the group call before starting a private call.');
+      return;
+    }
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
     _callMinimized = false;
@@ -1498,6 +1562,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       unawaited(FlutterBackground.disableBackgroundExecution());
     }
     input.dispose();
+    groupInput.dispose();
+    unawaited(groupCall?.leave() ?? Future<void>.value());
     scroll.dispose();
     super.dispose();
   }
