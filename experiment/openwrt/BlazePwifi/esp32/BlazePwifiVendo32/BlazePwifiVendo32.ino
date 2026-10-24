@@ -310,7 +310,10 @@ void loop(){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
+  // Avoid blocking a coin edge or cutting power while a multi-pulse group is still settling.
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 &&
+     !(pendingPulses && !pendingReady) &&
+     (runCoinActiveLow ? digitalRead(runCoinPin) : !digitalRead(runCoinPin))){
     wifiFailures=0; pollIntakeSuspended=true; applyOutputs(); String r=post("poll"); pollIntakeSuspended=false; insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
     applyOutputs(); lastPoll=millis();
   }
