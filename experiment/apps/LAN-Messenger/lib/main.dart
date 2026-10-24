@@ -17,6 +17,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/call_presentation_gate.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -227,6 +228,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _showOngoingCall(Peer peer, String id, bool video) async {
+    if (intercom?.callId != id || intercom?.talkingTo?.id != peer.id ||
+        intercom?.connecting == true) return;
     final args = {
       'caller': peer.name, 'callId': id,
       'video': video, 'muted': intercom?.muted ?? false,
@@ -495,9 +498,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         // Wait for signaling to leave the connecting state.
         final readyId = inter.callId;
         final readyPeer = inter.talkingTo;
-        if (!_incomingDialogOpen && !_pendingCallPresentation &&
-            readyId != null && readyPeer != null &&
-            _activeCallUiId != readyId && !inter.connecting) {
+        if (CallPresentationGate.ready(
+          awaitingDecision: _incomingDialogOpen,
+          connecting: inter.connecting,
+          validSession: readyId != null && readyPeer != null,
+          alreadyPresented: readyId != null && _activeCallUiId == readyId,
+          pendingPresentation: _pendingCallPresentation,
+        )) {
           _pendingCallPresentation = true;
           unawaited(() async {
             try {
