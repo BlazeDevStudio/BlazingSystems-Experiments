@@ -352,6 +352,22 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Future<void> _enterPipVideo() async {
+    final call = intercom;
+    if (!Platform.isAndroid || call?.video != true || call?.callId == null) return;
+    try {
+      final ok = await _notifications.invokeMethod<bool>('enterPip',
+          {'callId': call!.callId});
+      if (ok != true) _toast('Video PiP unavailable. Check Android picture-in-picture settings.');
+    } catch (e) { _toast('Could not float video: $e'); }
+  }
+
+  Future<void> _enableAndroidOverlay() async {
+    if (!Platform.isAndroid) return;
+    try { await _notifications.invokeMethod<void>('openOverlaySettings'); }
+    catch (e) { _toast('Could not open floating-window settings: $e'); }
+  }
+
   Future<void> _endCallPresentation() async {
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
@@ -671,7 +687,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   @override
   void onWindowClose() {
     if (!Platform.isWindows) return;
-    if (settings.minimizeToTray && !_exitRequested) {
+    if ((intercom?.talkingTo != null || groupCall?.active == true ||
+        _incomingDialogOpen || settings.minimizeToTray) && !_exitRequested) {
       unawaited(wm.windowManager.hide());
     } else {
       unawaited(_exitWindows());
@@ -912,6 +929,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         'Not active — allow system permissions to keep listening'),
       value: settings.backgroundMode,
       onChanged: (value) => _setBackground(value)),
+    if (Platform.isAndroid) ListTile(
+      leading: const Icon(Icons.picture_in_picture),
+      title: const Text('Floating call window permission'),
+      subtitle: const Text('Optional Android Display over other apps access. '
+        'Shows draggable Answer/Decline only when outside Messenger; '
+        'system call notifications remain available without this permission.'),
+      onTap: _enableAndroidOverlay),
     const Padding(padding: EdgeInsets.all(16), child: Text(
       'Internet is not required, but devices must share a reachable LAN. '
       'Android may suspend the application after force-stop or under battery restrictions. '
@@ -1523,6 +1547,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             IconButton(tooltip: 'Open conversation thread',
               icon: const Icon(Icons.forum_outlined, color: Colors.white),
               onPressed: () => unawaited(_openCallThread())),
+            if (Platform.isAndroid && call.video)
+              IconButton(tooltip: 'Float video picture-in-picture',
+                icon: const Icon(Icons.picture_in_picture, color: Colors.white),
+                onPressed: () => unawaited(_enterPipVideo())),
             IconButton(tooltip: 'Expand call controls',
               icon: const Icon(Icons.open_in_full, color: Colors.white),
               onPressed: () => setState(() => _callMinimized = false)),
@@ -1696,6 +1724,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     style: IconButton.styleFrom(backgroundColor: Colors.deepOrange),
                     onPressed: () => unawaited(call.revokeRemoteControl()),
                     icon: const Icon(Icons.gpp_bad)),
+                if (call.video && Platform.isAndroid)
+                  IconButton.filledTonal(
+                    tooltip: 'Float video above other apps',
+                    onPressed: () => unawaited(_enterPipVideo()),
+                    icon: const Icon(Icons.picture_in_picture_alt)),
                 if (call.video)
                   IconButton.filledTonal(
                     tooltip: call.sharingScreen ? 'Stop screen sharing' : 'Share my screen',
@@ -1712,13 +1745,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     );
   }
 
+  Widget _pipVideo() {
+    final call = intercom;
+    return Material(color: Colors.black, child: Center(
+      child: call?.remoteRenderer != null
+          ? RTCVideoView(call!.remoteRenderer!,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+          : const Icon(Icons.call, size: 50, color: Colors.white)));
+  }
+
   @override
   Widget build(BuildContext context) => Theme(
     data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
       useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
     child: _compactWindowsVideo
       ? _compactVideoView()
-      : Stack(children: [
+      : Platform.isAndroid && _androidInPip
+        ? _pipVideo()
+        : Stack(children: [
     Scaffold(body: Column(children: [
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
