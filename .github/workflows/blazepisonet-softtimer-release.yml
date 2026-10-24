@@ -80,6 +80,12 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: PHX-L-APPS #164: serial ExactDevice identity fail-closed (synthetic LAB)
+        shell: pwsh
+        run: |
+          dotnet run --project "$env:PROJECT_DIR/tests/SerialIdentityBindingLab/SerialIdentityBindingLab.csproj" -c Release -- --selftest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Restore win-x64
         shell: pwsh
         run: |
@@ -94,12 +100,6 @@ jobs:
           dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --no-restore -warnaserror
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: PHX-L-APPS #164: serial ExactDevice identity fail-closed (synthetic LAB)
-        shell: pwsh
-        run: |
-          dotnet run --project "$env:PROJECT_DIR/tests/SerialIdentityBindingLab/SerialIdentityBindingLab.csproj" -c Release -- --selftest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: PAY-0719 compiled SoftTimer V2-required protocol no-downgrade (no network)
