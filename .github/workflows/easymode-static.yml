@@ -1,0 +1,45 @@
+name: EasyMode static and offline fixtures
+
+on:
+  push:
+    paths:
+      - 'experiment/openwrt/easymode-project/**'
+      - '.github/workflows/easymode-static.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/easymode-project/**'
+      - '.github/workflows/easymode-static.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Mandatory handover freshness
+        run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
+      - name: Shell, manifests and offline page syntax
+        run: sh experiment/openwrt/easymode-project/tests/static-test.sh
+      - name: Read-only detector entrypoints with mode 644 scripts
+        run: sh experiment/openwrt/easymode-project/tests/detector-run.sh
+      - name: Offline endpoint helper cases
+        run: sh experiment/openwrt/easymode-project/tests/ubus-url.sh
+      - name: Shipped offline page RPC behavior (no network)
+        run: node experiment/openwrt/easymode-project/tests/ubus-rpc.cjs
