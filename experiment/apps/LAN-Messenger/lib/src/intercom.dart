@@ -259,7 +259,11 @@ class Intercom {
   Timer? _answerTimeout;
   void Function()? onChanged;
   Future<bool> Function(Peer, bool video)? onIncoming;
-  Intercom(this.node);
+  /// Group calls may reuse one audio/video capture across several RTCPeerConnections.
+  /// A link does not own streams obtained from this provider: the room owns
+  /// their lifetime, so one departing peer cannot stop everyone's camera.
+  final Future<MediaStream> Function()? sharedMediaProvider;
+  Intercom(this.node, {this.sharedMediaProvider});
 
   Future<void> _log(String message) async {
     try {
@@ -272,22 +276,28 @@ class Intercom {
 
   Future<void> _prepare(Peer peer, String id) async {
     await _log('start media platform=${Platform.operatingSystem} video=$video');
-    final stream = await navigator.mediaDevices.getUserMedia({
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
-      'video': video ? {
-        'facingMode': 'user',
-        'width': {'ideal': 640},
-        'height': {'ideal': 480},
-        'frameRate': {'ideal': 15},
-      } : false,
-    });
+    final stream = sharedMediaProvider != null
+        ? await sharedMediaProvider!()
+        : await navigator.mediaDevices.getUserMedia({
+            'audio': {
+              'echoCancellation': true,
+              'noiseSuppression': true,
+              'autoGainControl': true,
+            },
+            'video': video
+                ? {
+                    'facingMode': 'user',
+                    'width': {'ideal': 640},
+                    'height': {'ideal': 480},
+                    'frameRate': {'ideal': 15},
+                  }
+                : false,
+          });
     if (callId != id || _closing) {
-      for (final track in stream.getTracks()) { track.stop(); }
-      await stream.dispose();
+      if (sharedMediaProvider == null) {
+        for (final track in stream.getTracks()) { await track.stop(); }
+        await stream.dispose();
+      }
       return;
     }
     _localStream = stream;
@@ -608,7 +618,7 @@ class Intercom {
     }
     // Stop live capture synchronously before any native peer disposal await.
     // Otherwise a slow Windows WebRTC close() can hold the microphone open.
-    if (stream != null) {
+    if (stream != null && sharedMediaProvider == null) {
       for (final track in stream.getTracks()) {
         try {
           track.enabled = false;
@@ -648,7 +658,7 @@ class Intercom {
       try { await const MethodChannel('lan_messenger/projection')
           .invokeMethod<void>('stop'); } catch (_) {}
     }
-    if (stream != null) {
+    if (stream != null && sharedMediaProvider == null) {
       for (final track in stream.getTracks()) {
         try { await track.dispose().timeout(const Duration(seconds: 3)); }
         catch (e) { await _log('track dispose error: $e'); }
