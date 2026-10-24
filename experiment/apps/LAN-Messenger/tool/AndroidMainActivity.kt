@@ -6,6 +6,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -57,6 +60,43 @@ class MainActivity : FlutterActivity() {
     private var lock: WifiManager.MulticastLock? = null
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
+    private var activityForeground = true
+    private var incomingOverlay: AndroidCallOverlay? = null
+    private var lastCaller: String? = null
+    private var lastCallId: String? = null
+    private var lastVideo = false
+    private var lastMuted = false
+    private var lastIncoming = false
+
+    private fun overlay(): AndroidCallOverlay =
+        incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
+            runOnUiThread {
+                callBridge?.invokeMethod("callAction",
+                    mapOf("action" to action, "callId" to id))
+            }
+        }.also { incomingOverlay = it }
+
+    private fun updateOverlay() {
+        val id = lastCallId
+        val caller = lastCaller
+        if (activityForeground || id == null || caller == null) {
+            incomingOverlay?.dismiss()
+            return
+        }
+        overlay().show(caller, id, lastVideo, lastIncoming, lastMuted)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activityForeground = true
+        incomingOverlay?.dismiss()
+    }
+
+    override fun onPause() {
+        activityForeground = false
+        super.onPause()
+        window?.decorView?.post { if (!activityForeground) updateOverlay() }
+    }
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
@@ -171,6 +211,9 @@ class MainActivity : FlutterActivity() {
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
         notifications.notify(7024, b.build())
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = false; lastIncoming = true
+        updateOverlay()
         return true
     }
 
@@ -215,7 +258,28 @@ class MainActivity : FlutterActivity() {
         b.addAction(android.R.drawable.ic_menu_view, "Open thread",
             callAction("open", callId))
         notifications.notify(7024, b.build())
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = muted; lastIncoming = false
+        updateOverlay()
         return true
+    }
+
+    private fun enterCallPictureInPicture(id: String): Boolean {
+        if (Build.VERSION.SDK_INT < 26 || id.isEmpty() ||
+            id != lastCallId || !activityForeground ||
+            !packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
+            return false
+        return try {
+            enterPictureInPictureMode(PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9)).build())
+        } catch (_: Exception) { false }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        inPip: Boolean, configuration: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(inPip, configuration)
+        callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
     }
 
     private fun showEvent(event: String, title: String, body: String): Boolean {
@@ -242,7 +306,34 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
-                    "dismissIncoming" -> { notifications.cancel(7024); result.success(null) }
+                    "dismissIncoming" -> {
+                        // Don't dismiss the accepted call's ongoing controls.
+                        if (lastIncoming) {
+                            lastCallId = null; lastCaller = null
+                            incomingOverlay?.dismiss()
+                            notifications.cancel(7024)
+                        }
+                        result.success(null)
+                    }
+                    "dismissCall" -> {
+                        notifications.cancel(7024)
+                        lastCallId = null; lastCaller = null
+                        lastIncoming = false; incomingOverlay?.dismiss()
+                        result.success(null)
+                    }
+                    "foreground" -> {
+                        activityForeground = call.argument<Boolean>("visible") ?: true
+                        updateOverlay()
+                        result.success(null)
+                    }
+                    "overlayEnabled" -> result.success(overlay().permitted())
+                    "openOverlaySettings" -> {
+                        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")))
+                        result.success(null)
+                    }
+                    "enterPip" -> result.success(enterCallPictureInPicture(
+                        call.argument<String>("callId") ?: ""))
                     "ongoing" -> result.success(showOngoingCall(
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
@@ -358,6 +449,8 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         if (active === this) active = null
         callBridge = null
+        incomingOverlay?.dismiss()
+        incomingOverlay = null
         lock?.let { if (it.isHeld) it.release() }
         lock = null
         super.onDestroy()
