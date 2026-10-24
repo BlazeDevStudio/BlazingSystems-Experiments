@@ -48,6 +48,12 @@ Each entry MUST contain:
 - **UX:** no hidden failure behind decorative success states; no false live data. Offline-first, responsive and usable with a keyboard; avoid a stale HTML wrapper masquerading as a native Android launcher.
 - **Release:** never tag a `0.5.3` build as `0.6.0`. A versioned production release requires versionCode/migrations, exact green full CI, matching signed APK/rescue, checksums, installers, verified physical acceptance and provenance. Any skipped critical gate blocks release.
 
+## Mandatory >=200 MB artifact storage — owner-directed Google Drive destination
+
+**Owner-approved 2026-10-24:** all Blaze coin-operated ecosystem files **200,000,000 bytes or larger** (200 MB, inclusive) are to be placed in the designated Google Drive folder as part of build/release/archive handoff: https://drive.google.com/drive/folders/15jHh7-ZFcsdIkRY3YOk2XxRxzkDEcd-g
+
+Read and follow [LARGE_ARTIFACT_DRIVE_POLICY.md](LARGE_ARTIFACT_DRIVE_POLICY.md) **before** creating, publishing, archiving, deleting or reporting a qualifying large file. Record actual byte size, original source/build provenance, SHA-256, verified Drive file ID/link and security/release impact. Treat upload and full-byte verification as distinct gates; a Drive policy entry is not evidence of an upload. Do not delete originals or publish secrets, customer financial records, or improperly licensed material. Provisioning the authorized uploader and transferring the backlog are separate pending operations; current CI, signing, financial durability and real-device release gates remain unchanged.
+
 ## Test and CI handover freshness gate
 
 `tests/handover_gate.sh` is the repository consistency check. In CI, checkout must fetch full history. It requires all three canonical files and checks that the most recent meaningful source/workflow modification is **included in or precedes** the last canonical handover update. A code edit made *after* the latest documentation checkpoint fails. This is a safeguard, not proof that a document is factually complete; reviewers still verify the ledger against file diffs and exact run IDs.
