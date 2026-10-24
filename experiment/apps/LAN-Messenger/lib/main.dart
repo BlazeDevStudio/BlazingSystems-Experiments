@@ -404,6 +404,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               if (_incomingBackground) {
                 await _showOngoingCall(readyPeer, readyId, inter.video);
               } else if (mounted) {
+                _activeCallUiId = readyId;
+                _lastNativeMuted = inter.muted;
                 setState(() => _callMinimized = false);
               }
             } catch (e) {
@@ -420,7 +422,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           _activeCallUiId = null;
           _lastNativeMuted = null;
           unawaited(_endCallPresentation());
-        } else if (_activeCallUiId == inter.callId &&
+        } else if (_incomingBackground && _activeCallUiId == inter.callId &&
             _lastNativeMuted != inter.muted) {
           _lastNativeMuted = inter.muted;
           final currentPeer = inter.talkingTo;
