@@ -57,7 +57,13 @@ class MainActivity : FlutterActivity() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
                                 Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         }
-                        context.startActivity(open)
+                        try {
+                            context.startActivity(open)
+                        } catch (_: Exception) {
+                            // Android may block background launches. Do not
+                            // start camera/microphone until user opens the app.
+                            running.pendingAnswer = null
+                        }
                     } else {
                         running.callBridge?.invokeMethod("callAction",
                             mapOf("action" to action, "callId" to callId))
@@ -70,7 +76,10 @@ class MainActivity : FlutterActivity() {
                     putExtra("action", action)
                     putExtra("callId", callId)
                 }
-                context.startActivity(intent)
+                // A dead Flutter process no longer owns the original WebRTC
+                // offer. Never reopen Messenger on a stale Answer/Decline.
+                (context.getSystemService(Context.NOTIFICATION_SERVICE)
+                    as NotificationManager).cancel(7024)
             }
         }
     }
@@ -267,7 +276,23 @@ class MainActivity : FlutterActivity() {
 
     private fun showOngoingCall(caller: String, callId: String,
                                 video: Boolean, muted: Boolean): Boolean {
-        if (!canNotify() || callId.isBlank()) return false
+        if (callId.isBlank()) return false
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = muted; lastIncoming = false
+        // Picture-in-picture is independent of notification permission.
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                setPictureInPictureParams(PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setAutoEnterEnabled(video)
+                    .apply { if (video) setActions(pictureActions(callId)) }
+                    .build())
+            } catch (_: Exception) {}
+        }
+        if (!canNotify()) {
+            updateOverlay()
+            return true
+        }
         // Active calls must not play the incoming ringtone again.
         // A separate low-importance channel preserves in-call actions without
         // silently overriding the owner's high-priority incoming-call settings.
@@ -306,8 +331,6 @@ class MainActivity : FlutterActivity() {
         b.addAction(android.R.drawable.ic_menu_view, "Open thread",
             callAction("open", callId))
         notifications.notify(7024, b.build())
-        lastCaller = caller; lastCallId = callId
-        lastVideo = video; lastMuted = muted; lastIncoming = false
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
             try {
                 setPictureInPictureParams(PictureInPictureParams.Builder()
@@ -330,6 +353,14 @@ class MainActivity : FlutterActivity() {
             control("end", "End call", android.R.drawable.ic_menu_close_clear_cancel),
             control("open", "Open conversation", android.R.drawable.ic_menu_view),
         )
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT in 26..30 && !lastIncoming &&
+            lastVideo && lastCallId != null) {
+            enterCallPictureInPicture(lastCallId!!)
+        }
     }
 
     private fun enterCallPictureInPicture(id: String): Boolean {
@@ -385,6 +416,12 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "dismissCall" -> {
+                        if (Build.VERSION.SDK_INT >= 31) {
+                            try {
+                                setPictureInPictureParams(PictureInPictureParams.Builder()
+                                    .setAutoEnterEnabled(false).build())
+                            } catch (_: Exception) {}
+                        }
                         notifications.cancel(7024)
                         lastCallId = null; lastCaller = null
                         lastIncoming = false; incomingOverlay?.dismiss()
