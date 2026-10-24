@@ -329,6 +329,8 @@ void loop(){
     if(pendingTarget==activeTarget && pendingPulses<20){
       pendingPulses++; lastEdge=millis();
       if(!savePending()){ fsReady=false; pendingReady=true; Serial.println("CRITICAL: pending journal write failed; relay disabled."); }
+      // Refuse another coin immediately after a full journal or flash error.
+      if(pendingPulses>=20 || !fsReady || pendingReady) applyOutputs();
     }
   }
   lastCoin=active;
