@@ -14,6 +14,10 @@ Select:
 
 SoftTimer converts each accepted serial-control pulse to `SecondsPerCoin` and owns the countdown.
 
+**Exact-device identity guard (PHX-L-APPS / issue #164, development only):** ExactDevice matches a unique PnP instance identity, or a unique real USB serial number with matching VID/PID after COM renumbering. It will **not** fall back to the remembered COM number after a device disappears or is replaced. Unidentified ports cannot be bound as ExactDevice; an operator may deliberately select ManualPort after inspecting the physical device. A numbered COM port alone is not proof of coin-input hardware identity.
+
+**Electrical and capture limitation:** Never connect an unknown 12 V coin-acceptor output directly to PC serial control inputs. Verify an optoisolated, correctly level-conditioned adapter and explicit signal polarity. `.NET SerialPort.PinChanged` is asynchronous and does not provide a durable per-coin pulse buffer; these synthetic identity tests cannot prove lossless physical coin capture, crash durability, power-cut safety, or commercial readiness. Consider a hardware escrow/latch/counter and documented acceptor protocol for unattended use.
+
 ### External timer board
 
 `Coinslot -> Allan/Piso timer board -> USB-RS232 -> SoftTimer`
