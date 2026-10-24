@@ -84,6 +84,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   String? _pendingPresentationId;
+  String? _lastObservedCallId;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
   bool _restoringCompactWindow = false;
@@ -499,6 +500,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         // getUserMedia/WebRTC was initialized and could crash on Answer.
         final readyPeer = inter.talkingTo;
         final readyId = inter.callId;
+        if (readyId != null) _lastObservedCallId = readyId;
         if (!_incomingDialogOpen && !inter.connecting && readyPeer != null &&
             readyId != null && _activeCallUiId != readyId &&
             _pendingPresentationId != readyId) {
@@ -531,8 +533,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
-        if (_activeCallUiId != null && inter.talkingTo == null) {
+        if ((_activeCallUiId != null || _lastObservedCallId != null) &&
+            inter.talkingTo == null) {
           _activeCallUiId = null;
+          _lastObservedCallId = null;
+          _pendingPresentationId = null;
           _lastNativeMuted = null;
           unawaited(_endCallPresentation().catchError((Object e) {
             if (mounted) setState(() => error = 'Call controls could not close: $e');
