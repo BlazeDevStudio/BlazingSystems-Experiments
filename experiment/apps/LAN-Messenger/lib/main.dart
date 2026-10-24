@@ -83,6 +83,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   String? _autoPipCallId;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
+  bool _pendingCallPresentation = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
   bool _restoringCompactWindow = false;
@@ -489,6 +490,30 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }));
       inter.onChanged = () {
         if (!mounted) return;
+        // Never create a native in-call window from onIncoming's finally:
+        // that callback resolves BEFORE Intercom acquires media/sets SDP.
+        // Wait for signaling to leave the connecting state.
+        final readyId = inter.callId;
+        final readyPeer = inter.talkingTo;
+        if (!_incomingDialogOpen && !_pendingCallPresentation &&
+            readyId != null && readyPeer != null &&
+            _activeCallUiId != readyId && !inter.connecting) {
+          _pendingCallPresentation = true;
+          unawaited(() async {
+            try {
+              if (inter.callId == readyId && inter.talkingTo?.id == readyPeer.id &&
+                  !inter.connecting) {
+                await _showOngoingCall(readyPeer, readyId, inter.video);
+                if (Platform.isWindows) await _showActiveTrayMenu(readyPeer);
+              }
+            } catch (e) {
+              if (mounted) setState(() =>
+                  error = 'Call connected, controls unavailable: $e');
+            } finally {
+              _pendingCallPresentation = false;
+            }
+          }());
+        }
         if (Platform.isAndroid && _autoPipCallId != null &&
             _autoPipCallId == inter.callId && !inter.connecting &&
             inter.talkingTo != null && _inForeground) {
@@ -579,7 +604,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _callMinimized = true;
+        _callMinimized = false;
         setState(() { selected = peer; showReceived = false; });
         // Never focus or restore the Windows app on an inbound call.
         // Android uses a system CallStyle heads-up notification with actions.
@@ -588,6 +613,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               ? AlertKind.videoCall : AlertKind.call));
           final background = await _isDesktopBackground();
           _incomingUsesExternalSurface = background;
+          _callMinimized = background;
           _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
@@ -600,6 +626,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           }
         } else {
           _incomingUsesExternalSurface = !_inForeground;
+          _callMinimized = _incomingUsesExternalSurface;
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
           if (!_nativeIncomingAvailable) {
@@ -626,19 +653,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           _pendingIncomingDecision = null;
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
-          if (accepted && inter.callId == id &&
-              inter.talkingTo?.id == peer.id) {
-            // Media negotiation continues in Intercom; cosmetic window work
-            // must never reject or close a successfully answered call.
-            try {
-              await _showOngoingCall(peer, id, incomingVideo);
-              if (Platform.isWindows) await _showActiveTrayMenu(peer);
-            }
-            catch (e) {
-              if (mounted) setState(() =>
-                  error = 'Call connected, floating controls unavailable: $e');
-            }
-          } else {
+          // The accepted call is not negotiated here: this callback returns
+          // to Intercom, which then acquires media and exchanges SDP. Opening
+          // PiP/native windows before that point raced media setup and could
+          // terminate the call/app. onChanged presents controls after ready.
+          if (!accepted || inter.callId != id ||
+              inter.talkingTo?.id != peer.id) {
             await _dismissDesktopCall();
             await _restoreWindowAfterCall();
           }
