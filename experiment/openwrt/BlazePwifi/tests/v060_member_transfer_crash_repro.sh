@@ -80,10 +80,11 @@ bp_cfg() { printf ''; }
 bp_tmp_suffix() { printf 'transfer-postwrite'; }
 bp_now() { printf '123457'; }
 bp_durable_sync() { :; }
-# Simulate the worker terminating AFTER atomic member balance rename and
-# durable-sync call, BEFORE its transfer event receipt is appended.
-bp_member_event_record() { exit 78; }
 . "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/member.sh"
+# Override AFTER sourcing the installed function; otherwise member.sh's
+# definition replaces the mock and silently skips the injected exit.
+# Simulate death after atomic account rename/before receipt append.
+bp_member_event_record() { exit 78; }
 bp_member_transfer alice bob 40 fixture transfer-postwrite-0001 > /dev/null
 POSTWRITE
 post_rc=0
