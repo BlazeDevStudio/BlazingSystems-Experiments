@@ -6,6 +6,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.graphics.drawable.Icon
+import android.content.res.Configuration
+import android.util.Rational
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -28,8 +33,10 @@ class CallActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        if (action != "answer" && action != "decline") return
-        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
+        if (action !in listOf("answer", "decline", "mute", "end", "thread")) return
+        if (action == "answer" || action == "decline") {
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
+        }
         MainActivity.deliverCallAction(context, action, callId)
     }
 }
@@ -56,6 +63,8 @@ class MainActivity : FlutterActivity() {
     private var lock: WifiManager.MulticastLock? = null
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
+    private var pipCallId: String? = null
+    private var pipMuted = false
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
@@ -173,6 +182,44 @@ class MainActivity : FlutterActivity() {
         return true
     }
 
+    private fun pipActions(callId: String): List<RemoteAction> {
+        fun action(name: String, title: String, iconRes: Int): RemoteAction {
+            val intent = callAction(name, callId)
+            return RemoteAction(Icon.createWithResource(this, iconRes),
+                title, title, intent)
+        }
+        return listOf(
+            action("mute", if (pipMuted) "Unmute" else "Mute",
+                android.R.drawable.ic_lock_silent_mode),
+            action("thread", "Open thread", android.R.drawable.ic_menu_view),
+            action("end", "End call", android.R.drawable.ic_menu_close_clear_cancel),
+        )
+    }
+
+    private fun enterCompactVideo(callId: String): Boolean {
+        if (Build.VERSION.SDK_INT < 26 || callId.isEmpty() ||
+            !packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+            return false
+        }
+        pipCallId = callId
+        return try {
+            val params = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+                .setActions(pipActions(callId))
+                .build()
+            enterPictureInPictureMode(params)
+        } catch (_: Exception) { false }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean, newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        callBridge?.invokeMethod("pipState",
+            mapOf("active" to isInPictureInPictureMode))
+        if (!isInPictureInPictureMode) pipCallId = null
+    }
+
     private fun showEvent(event: String, title: String, body: String): Boolean {
         if (!canNotify()) return false
         val kind = if (event in listOf("message", "file")) event else "message"
@@ -198,6 +245,19 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
                     "dismissIncoming" -> { notifications.cancel(7024); result.success(null) }
+                    "enterPip" -> result.success(enterCompactVideo(
+                        call.argument<String>("callId") ?: ""))
+                    "pipMuted" -> {
+                        pipMuted = call.argument<Boolean>("muted") == true
+                        val id = pipCallId
+                        if (Build.VERSION.SDK_INT >= 26 && id != null &&
+                            isInPictureInPictureMode) {
+                            setPictureInPictureParams(PictureInPictureParams.Builder()
+                                .setAspectRatio(Rational(16, 9))
+                                .setActions(pipActions(id)).build())
+                        }
+                        result.success(null)
+                    }
                     "show" -> result.success(showEvent(
                         call.argument<String>("kind") ?: "message",
                         call.argument<String>("title") ?: "LAN Messenger",
