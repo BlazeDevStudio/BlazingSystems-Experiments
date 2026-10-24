@@ -1,0 +1,170 @@
+name: LAN Messenger v0.2.10 - call answer crash repair preview
+on:
+  push:
+    branches: [release/lan-messenger-v0210-publisher]
+    paths: [.github/workflows/lan-messenger-publish-v0210.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  verify-compiled-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Require successful cross-platform source build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 120); do
+            conclusion="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069103989 --jq '.conclusion // ""')"
+            commit="$(gh api repos/$GITHUB_REPOSITORY/actions/runs/40069103989 --jq '.head_sha')"
+            test "$commit" = "affac4af4b74a2ac302791fbedfc74a1b8f35c04" || { echo "Unrecognized source SHA"; exit 1; }
+            if [ "$conclusion" = "success" ]; then
+              echo "Verified successful full CI run 40069103989 for affac4af4b74a2ac302791fbedfc74a1b8f35c04"
+              exit 0
+            fi
+            if [ -n "$conclusion" ]; then
+              echo "Build concluded $conclusion, refusing release"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "Timed out verifying compiled cross-platform candidate"
+          exit 1
+
+  windows-installer:
+    needs: verify-compiled-candidate
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve tested Windows portable app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh run download 40069103989 --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          New-Item -ItemType Directory -Force -Path windows-payload | Out-Null
+          Expand-Archive artifacts/windows/LAN-Messenger-Windows-Optimized.zip -DestinationPath windows-payload -Force
+          if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Missing Windows executable" }
+      - name: Assemble user-level EXE installer (no administrative rights needed)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (!(Test-Path $iscc)) { throw "Inno Setup 6 not found" }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          @'
+          [Setup]
+          AppId=BlazingSystems.LANMessenger
+          AppName=LAN Messenger
+          AppVersion=0.2.9
+          DefaultDirName={localappdata}\Programs\LAN Messenger
+          DefaultGroupName=LAN Messenger
+          PrivilegesRequired=lowest
+          ArchitecturesAllowed=x64compatible
+          OutputDir=dist
+          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.2.10
+          Compression=lzma2
+          SolidCompression=yes
+          UninstallDisplayName=LAN Messenger
+          SetupIconFile=windows-payload\data\flutter_assets\assets\icons\lan_messenger.ico
+          [Files]
+          Source: "windows-payload\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+          [Icons]
+          Name: "{autoprograms}\LAN Messenger"; Filename: "{app}\lan_messenger.exe"
+          [Run]
+          Filename: "{app}\lan_messenger.exe"; Description: "Launch LAN Messenger"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content -Path installer.iss -Encoding UTF8
+          & $iscc installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
+          $setup = Get-ChildItem dist -Filter '*Setup*.exe' | Select-Object -First 1
+          if (!$setup -or $setup.Length -lt 100000) { throw "Installer missing or too small" }
+          $h = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Installer bytes: $($setup.Length), SHA256: $h"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.10
+          path: dist/LAN-Messenger-Windows-Setup-v0.2.10.exe
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch optimized compiled platform builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/android artifacts/windows dist
+          gh run download 40069103989 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download 40069103989 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Installer-v0.2.10
+          path: artifacts/installer
+      - name: Check checksums, stage downloads and prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, zipfile
+          checks = [
+            ('artifacts/android/app-arm64-v8a-release.apk','LAN-Messenger-Android-arm64-v0.2.10.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-armeabi-v7a-release.apk','LAN-Messenger-Android-arm32-v0.2.10.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/android/app-x86_64-release.apk','LAN-Messenger-Android-x86_64-v0.2.10.apk','artifacts/android/SHA256SUMS.txt'),
+            ('artifacts/windows/LAN-Messenger-Windows-Optimized.zip','LAN-Messenger-Windows-Portable-v0.2.10.zip','artifacts/windows/SHA256SUMS.txt'),
+          ]
+          for src, dst, sums in checks:
+            p=Path(src)
+            expected={line.split()[1].removeprefix('*'):line.split()[0].lower() for line in Path(sums).read_text(encoding='utf-8-sig').splitlines()}
+            actual=hashlib.sha256(p.read_bytes()).hexdigest()
+            assert expected.get(p.name)==actual, f'CI hash mismatch: {src}'
+            if p.suffix=='.zip':
+              with zipfile.ZipFile(p) as z: assert z.testzip() is None
+            shutil.copy2(p,Path('dist')/dst)
+          setup=Path('artifacts/installer/LAN-Messenger-Windows-Setup-v0.2.10.exe')
+          assert setup.stat().st_size>100000, 'Missing Windows installer'
+          shutil.copy2(setup, Path('dist')/setup.name)
+          PY
+          (cd dist && sha256sum *.apk *.zip *.exe > SHA256SUMS.txt)
+          cat > dist/RELEASE-NOTES.md <<'EOF'
+          # LAN Messenger v0.2.10 — Answer-Time Crash Repair Preview
+
+          **Experimental owner-test preview** based on the existing v0.2.9 group calling and chat release.
+
+          ## Direct-call crash and focus repair
+          - FIX: Incoming Answer no longer attempts to create the ongoing native Windows call viewer or video surface in the incoming-offer finalizer, before WebRTC acquires media and completes SDP negotiation.
+          - Incoming calls now show the ongoing video/audio controls only after the media call transitions out of Connecting and the active peer/call ID still matches. One-presentation-at-a-time state guards reject stale/double window activation.
+          - Answering while the main Windows/Android app is already visible keeps its integrated call UI, rather than opening a floating mini-call unnecessarily. Native Windows toast remains for minimized/hidden app.
+          - Regression tests cover unanswered offers, SDP still connecting, successful ready state, duplicate presentation and ended calls.
+          - Existing Windows native focus-safe draggable Answer/Decline toast, Android optional draggable background overlay, Android system CallStyle fallback, Android video PiP and ongoing in-call actions are retained.
+
+          ## Existing v0.2.9 group support preserved
+          - Encrypted local group chat for up to eight invited users, explicit group invitations, local chat history and message deduplication.
+          - Experimental WebRTC mesh voice/video for 3-4 LAN participants. Joining microphone/camera requires user consent. This is not yet physically validated.
+          - Avoid simultaneous one-to-one and group calls; honor existing member/room limits.
+
+          ## Verified build criteria and real-world limits
+          - Publish only after a single source SHA passes both Flutter analyzers and tests, Android APK compilation/signing and emulator launch, Windows release compilation, and a Windows EXE installer build. Output SHA-256 hashes accompany the assets.
+          - The crash trigger and native audio/video media state require hardware testing on Windows and Android. This release cannot be described as a production-safe intercom until such testing passes.
+          - On Android, Display over other apps requires explicit user authorization; OEM policies control CallStyle and PiP. The system cannot grant permissions automatically.
+          - Preview APK signing may differ from installed v0.2.9; uninstalling loses local in-app history. Preserve any files you need. Windows EXE is unsigned.
+          - Source build: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40069103989
+          - Source commit: https://github.com/BlazingSystems/BlazingSystems-Experiments/commit/affac4af4b74a2ac302791fbedfc74a1b8f35c04
+          EOF
+      - name: Publish immutable GitHub prerelease assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create lan-messenger-v0.2.10-preview.1 dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target affac4af4b74a2ac302791fbedfc74a1b8f35c04 \
+            --title "LAN Messenger v0.2.10 - Answer-Time Crash Repair Preview" \
+            --notes-file dist/RELEASE-NOTES.md --prerelease
