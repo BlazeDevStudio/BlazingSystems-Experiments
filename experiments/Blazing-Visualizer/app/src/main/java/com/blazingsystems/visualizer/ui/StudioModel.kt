@@ -185,7 +185,7 @@ class StudioModel @JvmOverloads constructor(
                     val (player, snapshot, mic) = input
                     val frame = mic ?: withContext(Dispatchers.Default) {
                         val detailed = snapshot.third != null && snapshot.third == player.sourceUri
-                        val immediate = quick.at(player.sourceUri, player.sourceTimeUs)
+                        val immediate = quick.at(player.sourceUri, player.sourceTimeUs, player.positionVersion)
                         val notes = if (detailed) snapshot.second else immediate?.notes.orEmpty()
                         if (!detailed && immediate != null) immediate.copy(sourceTimeUs = player.sourceTimeUs)
                         else runCatching {
@@ -204,11 +204,12 @@ class StudioModel @JvmOverloads constructor(
                     ?: current.project?.source?.takeIf { it.uri == playing.sourceUri }
                 if (source == null || !source.hasAudio || current.analysisReady &&
                     current.project?.source?.uri == source.uri) null
-                else QuickPreviewPosition(source.uri, playing.sourceTimeUs, profile = current.scene.aveeAudio)
+                else QuickPreviewPosition(source.uri, playing.sourceTimeUs, playing.positionVersion, current.scene.aveeAudio)
             }.stateIn(this, SharingStarted.Eagerly, null)
             quickPreviewPlayback(positions,
                 { uri, start, duration, profile -> QuickNotePreview(context()).frames(uri, start, duration, profile) },
-                { uri, _ ->
+                { uri, failure ->
+                    android.util.Log.e("QuickNotePreview", "Could not decode the selected track for note preview", failure)
                     mutable.update { current ->
                         if (current.project?.source?.uri == uri && !current.analysisReady)
                             current.copy(status = "Preparing detailed notes · quick preview unavailable") else current

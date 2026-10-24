@@ -36,6 +36,27 @@ jobs:
       - name: Lint and Android APK assemblies
         timeout-minutes: 12
         run: ./gradlew :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --console=plain --stacktrace
+      - name: Package production DSP probe for private local music tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil, zipfile
+          output=Path('local-pcm-probe'); output.mkdir()
+          roots=[Path('app/build/tmp/kotlin-classes/debug'),Path('app/build/tmp/kotlin-classes/debugUnitTest'),Path('app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes')]
+          with zipfile.ZipFile(output/'production-classes.jar','w',zipfile.ZIP_DEFLATED) as archive:
+              for root in roots:
+                  assert root.is_dir(), root
+                  for file in root.rglob('*.class'): archive.write(file,file.relative_to(root))
+          cache=Path.home()/'.gradle/caches/modules-2/files-2.1'
+          for name in ['kotlin-stdlib-2.3.20.jar','kotlinx-serialization-core-jvm-1.9.0.jar','kotlinx-serialization-json-jvm-1.9.0.jar']:
+              matches=list(cache.rglob(name)); assert matches, name
+              shutil.copyfile(matches[0],output/name)
+          (output/'README.txt').write_text('Local-only float32 PCM probe. No network calls.\njava -Xmx192m -cp "*" com.blazingsystems.visualizer.LocalPcmProbe file.f32 44100 2 15\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Blazing-Visualizer-local-PCM-probe
+          path: experiments/Blazing-Visualizer/local-pcm-probe/
       - uses: actions/upload-artifact@v4
         with:
           name: Blazing-Visualizer-preview-APK
@@ -89,7 +110,7 @@ jobs:
             mv app/build/reports/androidTests/connected app/build/reports/androidTests/permission
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.notClass=com.blazingsystems.visualizer.MusicPermissionTest --no-daemon
             mkdir -p ../../device-evidence && adb exec-out run-as com.blazingsystems.visualizer tar -C files -cf - acceptance > ../../device-evidence/acceptance.tar
-            python3 -c 'import tarfile; t=tarfile.open("../../device-evidence/acceptance.tar"); assert {"acceptance/model-parity.json", "acceptance/graph-chord_3d.png", "acceptance/graph-radial.png", "acceptance/quick-preview.json", "acceptance/video-background-preview.png"} <= set(t.getnames()), "Missing native evidence"'
+            python3 -c 'import tarfile; t=tarfile.open("../../device-evidence/acceptance.tar"); assert {"acceptance/model-parity.json", "acceptance/graph-chord_3d.png", "acceptance/graph-radial.png", "acceptance/quick-preview.json", "acceptance/mp3-note-preview.json", "acceptance/mp3-note-preview.png", "acceptance/video-background-preview.png"} <= set(t.getnames()), "Missing native evidence"'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

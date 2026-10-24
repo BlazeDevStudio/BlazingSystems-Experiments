@@ -16,7 +16,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /** Temporary source-clock features. Never serialized into projects or the analysis cache. */
-data class QuickPreviewFrames(val sourceUri: String? = null, val frames: List<FeatureFrame> = emptyList()) {
+data class QuickPreviewFrames(val sourceUri: String? = null, val frames: List<FeatureFrame> = emptyList(),
+                             val positionVersion: Long = 0) {
     fun withFrame(uri: String, frame: FeatureFrame): QuickPreviewFrames {
         if (uri != sourceUri) return this
         val next = (frames.filterNot { it.sourceTimeUs == frame.sourceTimeUs } + frame)
@@ -24,18 +25,18 @@ data class QuickPreviewFrames(val sourceUri: String? = null, val frames: List<Fe
         return copy(frames = next)
     }
 
-    fun at(uri: String?, sourceTimeUs: Long): FeatureFrame? {
-        if (uri == null || uri != sourceUri) return null
+    fun at(uri: String?, sourceTimeUs: Long, version: Long = 0): FeatureFrame? {
+        if (uri == null || uri != sourceUri || version != positionVersion) return null
         return frames.lastOrNull { it.sourceTimeUs <= sourceTimeUs }
             ?.takeIf { sourceTimeUs - it.sourceTimeUs <= 150_000 }
     }
 }
 
-/** Bounded decode + FFT/YIN feedback, independent of full-file hashing and neural inference. */
+/** Streaming FFT/YIN feedback; playback applies bounded lookahead through flow backpressure. */
 class QuickNotePreview(private val context: Context) {
-    fun frames(uri: String, startUs: Long, durationUs: Long = 2_000_000,
+    fun frames(uri: String, startUs: Long, durationUs: Long? = 2_000_000,
                profile: JsonObject = JsonObject(emptyMap())): Flow<FeatureFrame> = flow {
-        require(startUs >= 0 && durationUs in 1..3_000_000)
+        require(startUs >= 0 && (durationUs == null || durationUs in 1..3_000_000))
         var resampler: PcmResampler? = null
         var tracker = LiveNoteTracker()
         var bank = LiveSpectrum2()

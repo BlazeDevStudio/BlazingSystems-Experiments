@@ -22,6 +22,7 @@ data class PlaybackState(
     val connected: Boolean = false,
     val repeatMode: Int = Player.REPEAT_MODE_ALL,
     val shuffle: Boolean = false,
+    val positionVersion: Long = 0,
 )
 
 data class LoopRange(val startUs: Long, val endUs: Long) {
@@ -59,6 +60,7 @@ class PlayerController(context: Context) : AutoCloseable {
     private var desiredSpeed = 1f
     private var practiceSourceUri: String? = null
     private var closed = false
+    private var positionVersion = 0L
     private val future =
         MediaController.Builder(
                 context,
@@ -96,6 +98,7 @@ class PlayerController(context: Context) : AutoCloseable {
                                             player: Player,
                                             events: Player.Events,
                                         ) {
+                                            if (events.contains(Player.EVENT_POSITION_DISCONTINUITY)) positionVersion++
                                             flushPreparedSeek(player)
                                             if (events.contains(Player.EVENT_VIDEO_SIZE_CHANGED)) updateVideoTransform()
                                             update()
@@ -400,6 +403,7 @@ class PlayerController(context: Context) : AutoCloseable {
                     true,
                     p.repeatMode,
                     p.shuffleModeEnabled,
+                    positionVersion,
                 )
         }
     }

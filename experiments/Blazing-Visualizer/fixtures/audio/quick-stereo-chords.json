@@ -1,0 +1,22 @@
+{
+  "file": "quick-stereo-chords.mp3",
+  "origin": "Original generated sines; no supplied music or excerpts",
+  "license": "CC0-1.0",
+  "sampleRate": 44100,
+  "channels": 2,
+  "durationSeconds": 16,
+  "silentIntroSeconds": 0.6,
+  "firstChordMidi": [
+    69,
+    73,
+    76
+  ],
+  "secondChordMidi": [
+    72,
+    76,
+    79
+  ],
+  "changeSeconds": 5,
+  "sha256": "9c2b95a7bf00d305e350fdbe1cd3dedf87c3a05976677e900826ab2d23b25f6a",
+  "bitrate": 32000
+}
