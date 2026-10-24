@@ -153,8 +153,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     final origin = display.visiblePosition ?? Offset.zero;
     final usable = display.visibleSize ?? display.size;
     return Offset(
-      origin.dx + (usable.width - toast.width - 14).clamp(0.0, double.infinity),
-      origin.dy + (usable.height - toast.height - 14).clamp(0.0, double.infinity),
+      origin.dx + (usable.width - toast.width - 14)
+          .clamp(0.0, double.infinity).toDouble(),
+      origin.dy + (usable.height - toast.height - 14)
+          .clamp(0.0, double.infinity).toDouble(),
     );
   }
 
@@ -389,8 +391,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           if (mounted) setState(() {});
           if (Platform.isWindows) {
             await _updateDesktopTray();
-            if (decision.isCompleted && decision.future != null &&
-                (inter.talkingTo == null || !identical(inter.talkingTo, peer))) {
+            if (inter.talkingTo == null ||
+                inter.talkingTo?.id != peer.id) {
               unawaited(_restoreWindowAfterCall());
             }
           }
@@ -747,14 +749,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<bool> _ask({required String title, required String detail,
-      required String allowText, bool incomingCall = false}) async {
+      required String allowText}) async {
     if (!mounted) return false;
     return await showDialog<bool>(context: context, barrierDismissible: false,
       builder: (context) {
-        if (incomingCall) {
-          _incomingDialogContext = context;
-          if (_pendingIncomingDecision != null) _flushIncomingDecision();
-        }
         return AlertDialog(title: Text(title, style: const TextStyle(fontSize: 24)),
         content: Text(detail, style: const TextStyle(fontSize: 18)),
         actions: [
