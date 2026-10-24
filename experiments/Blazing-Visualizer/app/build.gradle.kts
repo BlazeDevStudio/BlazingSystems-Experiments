@@ -3,7 +3,7 @@ import java.util.Base64
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id("org.jetbrains.kotlin.plugin.compose"); id("org.jetbrains.kotlin.plugin.serialization") }
 android {
  namespace="com.blazingsystems.visualizer"; compileSdk=36; buildToolsVersion="36.0.0"
- defaultConfig { applicationId="com.blazingsystems.visualizer"; minSdk=26; targetSdk=36; versionCode=5; versionName="1.0.0-preview.5"; testInstrumentationRunner="androidx.test.runner.AndroidJUnitRunner"; ndk { abiFilters+=listOf("arm64-v8a","x86_64") } }
+ defaultConfig { applicationId="com.blazingsystems.visualizer"; minSdk=26; targetSdk=36; versionCode=6; versionName="1.0.0-preview.6"; testInstrumentationRunner="androidx.test.runner.AndroidJUnitRunner"; ndk { abiFilters+=listOf("arm64-v8a","x86_64") } }
  // Public preview identity, deliberately not a production signing credential.
  val previewStore = rootProject.file(".gradle/preview-signing.p12")
  previewStore.parentFile.mkdirs()

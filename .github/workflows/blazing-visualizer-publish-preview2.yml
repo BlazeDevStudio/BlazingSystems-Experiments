@@ -1,4 +1,4 @@
-name: Publish Blazing Visualizer Preview 5
+name: Publish Blazing Visualizer Preview 6
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: blazing-visualizer-preview-5-publication
+  group: blazing-visualizer-preview-6-publication
   cancel-in-progress: false
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.5'
+      RELEASE_TAG: 'blazing-visualizer-v1.0.0-preview.6'
       EXPECTED_CERT: '64f9fbd13d72bb5ef88bccdc4602a487fea21fb73a13298b93a0f2b1f6c2109c'
     steps:
       - name: Require full successful JDK17 / SDK36 / API26 / API36 on this exact source
@@ -95,10 +95,10 @@ jobs:
           sdkmanager 'build-tools;36.0.0'
           test -f candidate/app-debug.apk
           mkdir -p dist
-          cp candidate/app-debug.apk dist/Blazing-Visualizer-preview-5.apk
+          cp candidate/app-debug.apk dist/Blazing-Visualizer-preview-6.apk
           python3 - <<'PY'
           import pathlib, zipfile
-          p=pathlib.Path('dist/Blazing-Visualizer-preview-5.apk')
+          p=pathlib.Path('dist/Blazing-Visualizer-preview-6.apk')
           assert p.stat().st_size >= 20_000_000, 'unexpected APK size'
           with zipfile.ZipFile(p) as z:
               assert z.testzip() is None, 'invalid archive'
@@ -108,8 +108,8 @@ jobs:
               assert any(x.startswith('lib/x86_64/') for x in names)
           print('APK byte structure and ABIs verified')
           PY
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs             dist/Blazing-Visualizer-preview-5.apk | tee signature.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging             dist/Blazing-Visualizer-preview-5.apk > badging.txt
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs             dist/Blazing-Visualizer-preview-6.apk | tee signature.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging             dist/Blazing-Visualizer-preview-6.apk > badging.txt
           python3 - <<'PY'
           import os,re
           certs=open('signature.txt').read()
@@ -118,44 +118,46 @@ jobs:
           assert match.group(1).replace(':','').lower()==os.environ['EXPECTED_CERT'], 'unexpected signing certificate'
           package=open('badging.txt').read()
           assert "name='com.blazingsystems.visualizer'" in package, 'wrong app package'
-          assert "versionCode='5'" in package, 'wrong version code'
-          assert "versionName='1.0.0-preview.5'" in package, 'wrong preview version'
+          assert "versionCode='6'" in package, 'wrong version code'
+          assert "versionName='1.0.0-preview.6'" in package, 'wrong preview version'
           print('APK signing identity, app ID, version verified')
           PY
-          (cd dist && sha256sum Blazing-Visualizer-preview-5.apk > SHA256SUMS.txt)
+          (cd dist && sha256sum Blazing-Visualizer-preview-6.apk > SHA256SUMS.txt)
 
-      - name: Publish separately versioned direct-download preview 5
+      - name: Publish separately versioned direct-download preview 6
         shell: bash
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
-            echo "::error::Preview 5 release tag already exists. Refusing overwrite."
+            echo "::error::Preview 6 release tag already exists. Refusing overwrite."
             exit 1
           fi
           cat > release-notes.md <<'NOTES'
-          Blazing Visualizer 1.0.0-preview.5 — owner-requested Android preview update.
+          Blazing Visualizer 1.0.0-preview.6 — owner-requested Android preview update.
 
-          Fixes a quick-note scheduling failure where decoder startup and repeated one-second restarts could leave note-driven visualizers idle. Preview decoding now continues across playback seconds, stays within bounded lookahead and restarts on actual seeks or track/profile changes. Late or future notes are still rejected.
+          Visualizer feedback now observes PCM actually consumed by the existing Media3 playback session. This removes the independent file decoder from the normal live-note input path. DSP runs off the audio thread, with bounded buffering, source-time clocks and seek/source invalidation. Detailed notes and saved exports remain independent.
 
-          Generated stereo MP3 regression coverage checks ongoing visible notes, quiet introductions, seeks and full-analysis independence. Temporary estimates remain separate from saved corrections, MIDI and detailed export analysis.
+          Check visualizer in the playback menu reports audio reception, notes and actual canvas presentations, and copies a measurements-only diagnostic report. No audio, filenames or file addresses are included. It runs a bounded file check locally. Resampler phase coefficients are cached without changing the filter, reducing CPU work for stereo music.
+
+          The owner reported that Preview 5 remained blank on their phone despite passing emulator tests. Preview 6 changes that input path; owner-phone verification remains required. Generated MP3 tests verify playback PCM, changing notes, seeks, canvas pixels and diagnostic copy on API26/API36. Supplied test songs were used only locally and are not bundled or uploaded.
 
           Existing native presets, Avee subset import, queue/repeat/shuffle, microphone mode, editing and export layouts remain included. Avee compatibility remains partial; arbitrary shaders, all modern presets and exact effects are not reproduced. Actual instrument stem separation is researched but not included; video-to-graph tracing is deferred.
 
           Android 8.0+, arm64-v8a and x86_64. Offline core, no account. Live estimates can confuse overlapping harmonics and dense/noisy music. Physical-phone note accuracy, thermal performance and latency remain unverified. Video export backgrounds support source frames up to 4096px/8.8MP and decode a bounded output frame; long-GOP seeking can be slow. This is a development preview.
 
-          INSTALLATION: Preview 5 can update Preview 2, Preview 3 or Preview 4 in place using the retained public debug-only signing identity. Preview 1 used a different key: export wanted presets, uninstall Preview 1, then install this APK. This public preview signer must never be used for production.
+          INSTALLATION: Preview 6 can update Preview 2, Preview 3, Preview 4 or Preview 5 in place using the retained public debug-only signing identity. Preview 1 used a different key: export wanted presets, uninstall Preview 1, then install this APK. This public preview signer must never be used for production.
 
           This exact APK was built from the validated GitHub source commit linked by this release and verified using JDK17 / SDK36 host/lint/assemble + Android API26/API36. Its SHA256SUMS.txt is included.
           NOTES
-          gh release create "$RELEASE_TAG"             dist/Blazing-Visualizer-preview-5.apk dist/SHA256SUMS.txt             --target "$VALIDATED_SHA"             --title 'Blazing Visualizer 1.0.0-preview.5'             --prerelease --notes-file release-notes.md
+          gh release create "$RELEASE_TAG"             dist/Blazing-Visualizer-preview-6.apk dist/SHA256SUMS.txt             --target "$VALIDATED_SHA"             --title 'Blazing Visualizer 1.0.0-preview.6'             --prerelease --notes-file release-notes.md
 
       - name: Verify published release and exact downloadable APK bytes
         shell: bash
         run: |
           set -euo pipefail
           mkdir verified
-          gh release download "$RELEASE_TAG" --dir verified             --pattern 'Blazing-Visualizer-preview-5.apk' --pattern SHA256SUMS.txt
-          cmp dist/Blazing-Visualizer-preview-5.apk verified/Blazing-Visualizer-preview-5.apk
+          gh release download "$RELEASE_TAG" --dir verified             --pattern 'Blazing-Visualizer-preview-6.apk' --pattern SHA256SUMS.txt
+          cmp dist/Blazing-Visualizer-preview-6.apk verified/Blazing-Visualizer-preview-6.apk
           cmp dist/SHA256SUMS.txt verified/SHA256SUMS.txt
-          echo "Verified direct APK download: https://github.com/$GH_REPO/releases/download/$RELEASE_TAG/Blazing-Visualizer-preview-5.apk"
+          echo "Verified direct APK download: https://github.com/$GH_REPO/releases/download/$RELEASE_TAG/Blazing-Visualizer-preview-6.apk"
           cat dist/SHA256SUMS.txt

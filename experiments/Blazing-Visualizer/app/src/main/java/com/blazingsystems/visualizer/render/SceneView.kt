@@ -15,6 +15,7 @@ class SceneView(context: Context) : TextureView(context), TextureView.SurfaceTex
     var assets = File(context.filesDir, "assets")
 
     private class SurfaceRun(val texture: SurfaceTexture, var width: Int, var height: Int) {
+        val healthId = PreviewCanvasHealth.available()
         var running = true
         var destroyed = false
         var finished = false
@@ -68,6 +69,7 @@ class SceneView(context: Context) : TextureView(context), TextureView.SurfaceTex
                 active = null
                 run.running = false
                 run.destroyed = true
+                PreviewCanvasHealth.destroyed(run.healthId)
                 lock.notifyAll()
                 run.finished
             }
@@ -110,9 +112,14 @@ class SceneView(context: Context) : TextureView(context), TextureView.SurfaceTex
                 }
                 renderer!!.render(frame.scene, target!!, transparentBackground = frame.transparent)
                 target.present()
+                PreviewCanvasHealth.presented(run.healthId, frame.scene)
                 last = frame
             }
-        } catch (_: Exception) {
+        } catch (failure: Exception) {
+            if (!run.destroyed) {
+                PreviewCanvasHealth.failed(run.healthId, failure.localizedMessage ?: failure.javaClass.simpleName)
+                android.util.Log.e("VisualizerCanvas", "Preview rendering stopped", failure)
+            }
             // A disappearing surface may interrupt a frame; its resources still belong to this run.
         } finally {
             try { renderer?.close() } finally {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
@@ -11,6 +12,10 @@ import java.util.ArrayList
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 internal class StartupSafeRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
+    override fun buildAudioSink(context: Context, enableFloatOutput: Boolean,
+        enableAudioTrackPlaybackParams: Boolean): AudioSink? =
+        super.buildAudioSink(context, enableFloatOutput, enableAudioTrackPlaybackParams)?.let { PreviewAudioSink(it) }
+
     override fun buildVideoRenderers(
         context: Context,
         extensionRendererMode: Int,

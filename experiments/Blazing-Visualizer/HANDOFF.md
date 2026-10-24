@@ -2,6 +2,16 @@
 
 Updated 24 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
 
+## Current owner report: Preview 5 is still blank; Preview 6 repair in progress
+
+The owner explicitly tested Preview 5 and reported that visualization is still blank. Treat the phone issue as unresolved despite successful emulator checks. Do not tell them the fix is confirmed on their phone. Three supplied MP3s are strictly local test inputs; never commit or upload them, excerpts or decoded PCM.
+
+Preview 5 release source `96c5d3d0bec6f5fad20eb753fea9afdca5d3f8ee`, full validation `40053385999`, publisher `40053386012`. Host122/21suites and API26/API36 each31general+1permission passed. It removed repeated quick-decoder cancellation and completed conflated frame evaluation. Actual local production DSP emits notes for all three supplied files; the first15seconds produced319frames each, with313/180/133 active-note frames for beats/piano/vocals. This is not phone display evidence.
+
+Current work: observe PCM consumed by the existing Media3 audio sink, bounded background DSP, source-time/partial-write/generation protection, exact cached resampler kernels, live fallback for an empty unedited detailed result, and one-tap Check visualizer reporting sound/notes/canvas without audio or filenames. Generated MP3 native tests require playback PCM and actual canvas pixels. See [active plan](docs/plans/2026-10-24-playback-pcm-notes.md). Preview6 needs full verification and a separately versioned release; owner-phone confirmation or a copied check report remains necessary.
+
+The Preview4 sections below are historical evidence and do not prove the owner's reported problem is resolved.
+
 ## Preview 4: mixed media and faster initial note feedback
 
 Status: **Published and independently verified**. Full validation [40009120574](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40009120574) and publisher [40009120823](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40009120823) passed on the exact release source.

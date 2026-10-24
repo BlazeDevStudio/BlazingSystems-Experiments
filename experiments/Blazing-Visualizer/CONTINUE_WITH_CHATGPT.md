@@ -9,6 +9,10 @@ PR: https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/133
 
 Read `HANDOFF.md`, `README.md`, `docs/acceptance/preview-4-evidence.md` and the latest mixed-media design/plan first. `HANDOVER.md`, Preview 3 evidence and older reviews are historical. Inspect recent commits and resume; do not recreate the app. Preserve playback, offline Basic Pitch analysis, Practice, corrections, presets, layouts, MP4 export and upstream license notices.
 
+## Latest owner feedback and active repair
+
+The owner confirms Preview5 still shows no visualization on their phone. Do not call it fixed based on emulator results. Preview6 is in progress: actual playback PCM -> bounded DSP -> canvas, with a one-tap measurements-only diagnostic report and optimized resampler. Read `docs/plans/2026-10-24-playback-pcm-notes.md` and current HANDOFF first. Supplied songs/excerpts/PCM must remain local, strictly for testing. Never upload them into GitHub/CI. The Preview4/5 successful checks below are historical, not owner-phone acceptance.
+
 ## Current checkpoint and immediate priorities
 
 Preview 4 adds mixed audio/video selection, source video behind the existing visualizer through one Media3 session, source-time video export, silent-video support and independent bounded quick note feedback. Quick estimates never become verified analysis, saved note edits or export note data. Detailed results replace them when ready.

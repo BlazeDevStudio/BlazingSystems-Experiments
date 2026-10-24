@@ -4,11 +4,16 @@ import kotlin.math.*
 
 /** Bounded, streaming windowed-sinc low-pass resampling with an absolute sample clock. */
 class PcmResampler(val sampleRate: Int, val channels: Int, val targetRate: Int = 22050) {
+    private data class Kernel(val weights: DoubleArray, val weightSum: Double)
+
     private var buffer = FloatArray(0)
     private var base = 0L
     private var received = 0L
     private var produced = 0L
     private var ended = false
+    private val kernels = object : LinkedHashMap<Int, Kernel>(16, .75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Kernel>?): Boolean = size > 512
+    }
 
     init {
         require(sampleRate > 0 && channels in 1..8 && targetRate > 0)
@@ -32,28 +37,35 @@ class PcmResampler(val sampleRate: Int, val channels: Int, val targetRate: Int =
         val output = FloatArray((maxCount - produced).coerceAtLeast(0).toInt())
         val cutoff = min(1.0, targetRate.toDouble() / sampleRate) * .94
         output.indices.forEach { index ->
-            val position = produced * step
             if (sampleRate == targetRate) output[index] = buffer[(produced - base).toInt()]
             else {
-                val center = floor(position).toLong()
-                var sum = 0.0
-                var weightSum = 0.0
-                for (tap in -31..32) {
-                    val distance = position - (center + tap)
-                    val x = distance * cutoff
-                    val sinc = if (abs(x) < 1e-10) 1.0 else sin(PI * x) / (PI * x)
-                    val window = if (abs(distance) <= 32) .5 + .5 * cos(PI * distance / 32) else 0.0
-                    val weight = cutoff * sinc * window
-                    val relative = center + tap - base
-                    if (relative >= 0 && relative < buffer.size)
-                        sum += buffer[relative.toInt()] * weight
-                    weightSum += weight
+                val numerator = produced * sampleRate
+                val center = numerator / targetRate
+                val phase = (numerator % targetRate).toInt()
+                // Integer clocks give 44.1 kHz one phase and 48 kHz 147 phases at 22.05 kHz.
+                val kernel = kernels.getOrPut(phase) {
+                    val fraction = phase.toDouble() / targetRate
+                    var weightSum = 0.0
+                    val weights = DoubleArray(64) { tapIndex ->
+                        val distance = fraction - (tapIndex - 31)
+                        val x = distance * cutoff
+                        val sinc = if (abs(x) < 1e-10) 1.0 else sin(PI * x) / (PI * x)
+                        val window = if (abs(distance) <= 32) .5 + .5 * cos(PI * distance / 32) else 0.0
+                        (cutoff * sinc * window).also { weightSum += it }
+                    }
+                    Kernel(weights, weightSum)
                 }
-                output[index] = (sum / weightSum).toFloat()
+                var sum = 0.0
+                for (tapIndex in kernel.weights.indices) {
+                    val relative = center + tapIndex - 31 - base
+                    if (relative >= 0 && relative < buffer.size)
+                        sum += buffer[relative.toInt()] * kernel.weights[tapIndex]
+                }
+                output[index] = (sum / kernel.weightSum).toFloat()
             }
             produced++
         }
-        val keep = max(base, floor(produced * step).toLong() - 32).coerceAtMost(received)
+        val keep = max(base, produced * sampleRate / targetRate - 32).coerceAtMost(received)
         buffer = buffer.copyOfRange((keep - base).toInt(), buffer.size)
         base = keep
         ended = end

@@ -43,7 +43,11 @@ data class StudioState(
     val previewAspect: Float = 1f,
     val ready: Boolean = false,
     val analysisReady: Boolean = false,
+    val analysisNoteCount: Int? = null,
 ) {
+    fun prefersDetailedNotes(): Boolean = analysisReady &&
+        (analysisNoteCount != 0 || notes.isNotEmpty() || project?.edits?.isNotEmpty() == true)
+
     fun displayScene(): Scene {
         val display = if (editingExportLayout && project != null)
             SceneLayouts.forExport(project.copy(scene = scene)) else if(scene.originalAvee!=null)
@@ -74,6 +78,15 @@ internal fun micVisualFeatures(
     )
 }
 
+data class VisualizerCheck(
+    val running: Boolean = false,
+    val frames: Int = 0,
+    val noteFrames: Int = 0,
+    val peakRms: Float = 0f,
+    val error: String? = null,
+    val completed: Boolean = false,
+)
+
 class StudioModel @JvmOverloads constructor(
     app: Application,
     private val persistenceDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -101,6 +114,9 @@ class StudioModel @JvmOverloads constructor(
     @Volatile private var audioFeatures: AudioFeatures? = null
     @Volatile private var audioFeatureSourceUri: String? = null
     private val quickPreview = MutableStateFlow(QuickPreviewFrames())
+    val visualizerCheck = MutableStateFlow(VisualizerCheck())
+    private var visualizerCheckJob: Job? = null
+    private var previewInputMode = "Waiting for audio"
     private var previewLease: DecodedAudioLease? = null
     private var rawNotes: List<NoteEvent> = emptyList()
     // A snapshot for track B must never replace pending edits for track A.
@@ -178,14 +194,16 @@ class StudioModel @JvmOverloads constructor(
             combine(
                 playback,
                 state.map { Triple(it.displayScene(), it.notes,
-                    it.project?.source?.uri?.takeIf { _ -> it.analysisReady }) }.distinctUntilChanged(),
+                    it.project?.source?.uri?.takeIf { _ -> it.prefersDetailedNotes() }) }.distinctUntilChanged(),
                 microphoneFeatures,
                 quickPreview,
-            ) { player, snapshot, mic, quick -> Pair(Triple(player, snapshot, mic), quick) }
+                PlaybackPcmPreview.state,
+            ) { player, snapshot, mic, quick, pcm -> Triple(Triple(player, snapshot, mic), quick, pcm) }
                 // Finish one evaluation even when the next clock tick arrives. Cancelling
                 // every 40 ms can prevent any frame from publishing on a busy device.
-                .conflate().collect { (input, quick) ->
+                .conflate().collect { (input, quick, pcm) ->
                     val (player, snapshot, mic) = input
+                    val fromPlayback = pcm.frames.at(player.sourceUri, player.sourceTimeUs, pcm.generation)
                     val diagnose = com.blazingsystems.visualizer.BuildConfig.DEBUG &&
                         player.sourceTimeUs / 1_000_000 != diagnosticBucket
                     if (diagnose) {
@@ -196,9 +214,9 @@ class StudioModel @JvmOverloads constructor(
                     }
                     val frame = mic ?: withContext(Dispatchers.Default) {
                         val detailed = snapshot.third != null && snapshot.third == player.sourceUri
-                        val immediate = quick.at(player.sourceUri, player.sourceTimeUs, player.positionVersion)
+                        val immediate = fromPlayback ?: quick.at(player.sourceUri, player.sourceTimeUs, player.positionVersion)
                         val notes = if (detailed) snapshot.second else immediate?.notes.orEmpty()
-                        if (!detailed && immediate != null) immediate.copy(sourceTimeUs = player.sourceTimeUs)
+                        if (immediate != null) immediate.copy(sourceTimeUs = player.sourceTimeUs, notes = notes)
                         else runCatching {
                             audioFeatures?.takeIf { audioFeatureSourceUri == player.sourceUri }
                                 ?.at(player.sourceTimeUs, notes, snapshot.first.aveeAudio)
@@ -206,17 +224,29 @@ class StudioModel @JvmOverloads constructor(
                     }
                     val current = playback.value
                     if (current.sourceUri == player.sourceUri && current.positionVersion == player.positionVersion &&
-                        (mic == null) == (microphoneFeatures.value == null)) {
+                        (mic == null) == (microphoneFeatures.value == null) &&
+                        (fromPlayback == null || PlaybackPcmPreview.state.value.generation == pcm.generation)) {
                         rendered.value = SceneEvaluator.evaluate(snapshot.first, frame, frame.sourceTimeUs)
+                        previewInputMode = when {
+                            mic != null -> "Microphone"
+                            snapshot.third == player.sourceUri && snapshot.third != null -> "Detailed notes"
+                            fromPlayback != null -> "Playback audio"
+                            quick.at(player.sourceUri, player.sourceTimeUs, player.positionVersion) != null -> "File preview"
+                            else -> "Waiting for note input"
+                        }
                         if (diagnose) android.util.Log.d("NotePreview", "present=${frame.sourceTimeUs} notes=${rendered.value.activeNotes.size}")
                     }
                 }
         }
         viewModelScope.launch {
-            val positions = combine(playback, state) { playing, current ->
+            val positions = combine(playback, state, PlaybackPcmPreview.state) { playing, current, pcm ->
                 val source = current.queue.firstOrNull { it.uri == playing.sourceUri }
                     ?: current.project?.source?.takeIf { it.uri == playing.sourceUri }
-                if (source == null || !source.hasAudio || current.analysisReady &&
+                val playbackInputReady = source != null && pcm.uri == source.uri &&
+                    pcm.featureFrames > 0 && pcm.error == null &&
+                    pcm.frames.at(playing.sourceUri, playing.sourceTimeUs, pcm.generation) != null &&
+                    pcm.lastReceivedMs?.let { android.os.SystemClock.elapsedRealtime() - it < 2_000 } == true
+                if (source == null || !source.hasAudio || playbackInputReady || current.prefersDetailedNotes() &&
                     current.project?.source?.uri == source.uri) null
                 else QuickPreviewPosition(source.uri, playing.sourceTimeUs, playing.positionVersion, current.scene.aveeAudio)
             }.stateIn(this, SharingStarted.Eagerly, null)
@@ -230,6 +260,9 @@ class StudioModel @JvmOverloads constructor(
                     }
                 },
             ).collect { quickPreview.value = it }
+        }
+        viewModelScope.launch {
+            state.map { it.scene.aveeAudio }.distinctUntilChanged().collect(PlaybackPcmPreview::setProfile)
         }
         viewModelScope.launch {
             initialized.await()
@@ -255,6 +288,67 @@ class StudioModel @JvmOverloads constructor(
     }
 
     private fun context() = getApplication<Application>()
+
+    fun checkVisualizer() {
+        visualizerCheckJob?.cancel()
+        val uri = playback.value.sourceUri ?: mutable.value.project?.source?.uri
+        if (uri == null) {
+            visualizerCheck.value = VisualizerCheck(error = "Choose a track first", completed = true)
+            return
+        }
+        val start = playback.value.sourceTimeUs
+        val profile = mutable.value.scene.aveeAudio
+        visualizerCheck.value = VisualizerCheck(running = true)
+        visualizerCheckJob = viewModelScope.launch {
+            try {
+                withTimeout(15_000) {
+                    QuickNotePreview(context()).frames(uri, start, 3_000_000, profile).collect { frame ->
+                        visualizerCheck.update { it.copy(frames = it.frames + 1,
+                            noteFrames = it.noteFrames + if (frame.notes.isEmpty()) 0 else 1,
+                            peakRms = maxOf(it.peakRms, frame.rms)) }
+                    }
+                }
+                visualizerCheck.update { it.copy(running = false, completed = true) }
+            } catch (timeout: TimeoutCancellationException) {
+                visualizerCheck.update { it.copy(running = false, completed = true, error = "File note check timed out") }
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (failure: Exception) {
+                visualizerCheck.update { it.copy(running = false, completed = true,
+                    error = "File note check failed (${failure.javaClass.simpleName})") }
+            }
+        }
+    }
+
+    fun visualizerReport(): String {
+        val player = playback.value
+        val pcm = PlaybackPcmPreview.state.value
+        val canvas = PreviewCanvasHealth.status
+        val quick = quickPreview.value
+        val check = visualizerCheck.value
+        val report = buildString {
+            appendLine("Blazing Visualizer ${com.blazingsystems.visualizer.BuildConfig.VERSION_NAME}")
+            appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}; Android API ${android.os.Build.VERSION.SDK_INT}")
+            appendLine("Playing: ${player.isPlaying}; timeUs=${player.sourceTimeUs}; positionVersion=${player.positionVersion}")
+            appendLine("Input: $previewInputMode; selectedSourceMatchesPlayer=${state.value.project?.source?.uri == player.sourceUri}")
+            appendLine("Playback PCM: matches=${pcm.uri == player.sourceUri}; generation=${pcm.generation}; rate=${pcm.sampleRate}; channels=${pcm.channels}")
+            appendLine("PCM chunks=${pcm.receivedChunks}; featureFrames=${pcm.featureFrames}; lastTimeUs=${pcm.lastSourceTimeUs}; rms=${pcm.rms}; problem=${pcm.error ?: "none"}")
+            appendLine("File preview: frames=${quick.frames.size}; version=${quick.positionVersion}; range=${quick.frames.firstOrNull()?.sourceTimeUs}..${quick.frames.lastOrNull()?.sourceTimeUs}")
+            appendLine("Detailed analysis: ready=${state.value.analysisReady}; rawNotes=${state.value.analysisNoteCount}; notes=${state.value.notes.size}; progress=${state.value.progress}")
+            appendLine("Evaluated: timeUs=${rendered.value.sourceTimeUs}; notes=${rendered.value.activeNotes.size}")
+            appendLine("Canvas: available=${canvas.available}; presented=${canvas.presentedFrames}; timeUs=${canvas.sourceTimeUs}; notes=${canvas.activeNotes}; problem=${canvas.error ?: "none"}")
+            appendLine("File check: running=${check.running}; frames=${check.frames}; noteFrames=${check.noteFrames}; peakRms=${check.peakRms}; problem=${check.error ?: "none"}")
+            appendLine("No audio, filenames or file addresses are included.")
+        }
+        val source = state.value.project?.source
+        var clean = report.replace(Regex("(?:content|file)://[^\\s]+"), "[media address]")
+        listOfNotNull(player.sourceUri, source?.uri, source?.title?.takeIf { it.length > 3 && it != "Untitled" })
+            .forEach { clean = clean.replace(it, "[selected media]") }
+        source?.uri?.let { uri ->
+            Uri.parse(uri).lastPathSegment?.takeIf { it.length > 6 && it.contains('.') }
+                ?.let { clean = clean.replace(it, "[media file]") }
+        }
+        return clean
+    }
 
     fun dismissError() {
         mutable.value = mutable.value.copy(error = null)
@@ -420,6 +514,8 @@ class StudioModel @JvmOverloads constructor(
 
     /** Library selection creates a listening queue; Queue selection preserves its order. */
     fun select(source: SourceRef, startPlayback: Boolean = true, fromLibrary: Boolean = false) {
+        visualizerCheckJob?.cancel()
+        visualizerCheck.value = VisualizerCheck()
         if(startPlayback) stopTuner()
         if (startPlayback) coordinator.expectPlayback(source.uri)
         val preparation = preanalysisJob
@@ -451,6 +547,7 @@ class StudioModel @JvmOverloads constructor(
                     status = "Quick note preview · preparing detailed analysis",
                     progress = 0f,
                     analysisReady = false,
+                    analysisNoteCount = null,
                     error = null,
                     layoutEditing = false,
                     editingExportLayout = false,
@@ -516,9 +613,12 @@ class StudioModel @JvmOverloads constructor(
                     it.copy(
                         project = project,
                         notes = applyNoteEdits(rawNotes, project.edits),
-                        status = "${result.rawNotes.size} estimated notes • tap Practice to follow",
+                        status = if (result.rawNotes.isEmpty() && project.edits.isEmpty())
+                            "No detailed notes found · live estimates remain available"
+                            else "${result.rawNotes.size} estimated notes • tap Practice to follow",
                         progress = null,
                         analysisReady = true,
+                        analysisNoteCount = result.rawNotes.size,
                         preparations = it.preparations + (source.uri to "Notes ready"),
                     )
                 }
@@ -1023,6 +1123,7 @@ class StudioModel @JvmOverloads constructor(
     }
 
     override fun onCleared() {
+        visualizerCheckJob?.cancel()
         persist()
         trackJob?.cancel()
         preanalysisJob?.cancel()

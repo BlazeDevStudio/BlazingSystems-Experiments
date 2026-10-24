@@ -29,6 +29,9 @@ import androidx.compose.ui.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import com.blazingsystems.visualizer.audio.PlaybackPcmPreview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
@@ -69,6 +72,7 @@ fun AveeShell(model: StudioModel) {
         if(s.layoutEditing) model.finishLayoutEdit() else fullscreen=false
     }
     var playbackOptions by remember { mutableStateOf(false) }
+    var showVisualizerCheck by remember { mutableStateOf(false) }
     var panel by rememberSaveable { mutableStateOf<String?>(null) }
     var viewportAspect by remember { mutableFloatStateOf(1f) }
     val microphonePermission = rememberLauncherForActivityResult(
@@ -186,6 +190,15 @@ fun AveeShell(model: StudioModel) {
                                     else "Shuffle off · tap to enable") },
                                 leadingIcon = { Icon(Icons.Rounded.Shuffle, null) },
                                 onClick = { model.player.toggleShuffle(); playbackOptions = false },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Check visualizer") },
+                                leadingIcon = { Icon(Icons.Rounded.Troubleshoot, null) },
+                                onClick = {
+                                    playbackOptions = false
+                                    showVisualizerCheck = true
+                                    model.checkVisualizer()
+                                },
                             )
                         }
                     }
@@ -451,6 +464,42 @@ fun AveeShell(model: StudioModel) {
                 }
             }
         }
+    if (showVisualizerCheck) {
+        val clipboard = LocalClipboardManager.current
+        val check by model.visualizerCheck.collectAsState()
+        var tick by remember { mutableIntStateOf(0) }
+        var copied by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            while (true) { kotlinx.coroutines.delay(500); tick++ }
+        }
+        val report = remember(tick, check) { model.visualizerReport() }
+        val pcm = PlaybackPcmPreview.state.value
+        val canvas = PreviewCanvasHealth.status
+        AlertDialog(
+            onDismissRequest = { showVisualizerCheck = false },
+            title = { Text("Check visualizer") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(com.blazingsystems.visualizer.BuildConfig.VERSION_NAME)
+                    Text(if (pcm.receivedChunks > 0 && pcm.uri == p.sourceUri)
+                        "Audio is reaching the visualizer" else "Waiting for playback audio")
+                    Text("Notes on canvas: ${canvas.activeNotes}")
+                    Text("Canvas updates: ${canvas.presentedFrames}")
+                    if (check.running) Text("Checking this part of the track…")
+                    else if (check.completed) Text(check.error ?: "File check: ${check.noteFrames} frames with notes")
+                    (pcm.error ?: canvas.error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    Text("Play the problem track, then copy the report into the chat. It contains no music, filenames or file addresses.",
+                        fontSize = 13.sp)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(report)); copied = true }) {
+                    Text(if (copied) "Copied" else "Copy report")
+                }
+            },
+            dismissButton = { TextButton(onClick = { showVisualizerCheck = false }) { Text("Close") } },
+        )
+    }
     s.error?.let {
         AlertDialog(
             onDismissRequest = model::dismissError,
