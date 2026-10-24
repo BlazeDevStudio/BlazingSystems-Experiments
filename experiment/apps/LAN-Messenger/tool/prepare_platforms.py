@@ -23,6 +23,11 @@ if manifest.exists():
                       if f'android:name="{p}"' not in text)
     text = text.replace('<application', missing + '    <application', 1)
     text = re.sub(r'android:label="[^"]*"', 'android:label="LAN Messenger"', text, count=1)
+    # Video calls may be explicitly reduced to OS-managed, user-movable PiP.
+    # This flag changes only our generated MainActivity, never other activities.
+    text = text.replace('android:name=".MainActivity"',
+        'android:name=".MainActivity" android:supportsPictureInPicture="true" '
+        'android:resizeableActivity="true"', 1)
     text = text.replace('<application', '<application android:usesCleartextTraffic="true"', 1)
     service = ('        <service android:name="de.julianassmann.flutter_background.IsolateHolderService" '
                'android:exported="false" android:foregroundServiceType="connectedDevice" />\n')
