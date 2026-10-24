@@ -32,7 +32,48 @@ jobs:
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - name: Host regression suite
         timeout-minutes: 15
-        run: timeout --signal=TERM --kill-after=30s 12m ./gradlew clean :app:testDebugUnitTest --no-daemon --console=plain --stacktrace --info
+        run: |
+          diagnostic_dir=app/build/reports/host-diagnostics
+          init_script="$RUNNER_TEMP/visualizer-test-events.init.gradle"
+          cat > "$init_script" <<'GROOVY'
+          import org.gradle.api.tasks.testing.Test
+          gradle.beforeProject { project ->
+              project.tasks.withType(Test).configureEach { task ->
+                  task.beforeTest { descriptor ->
+                      task.logger.lifecycle("HOST_TEST_START ${descriptor.className}#${descriptor.name}")
+                  }
+                  task.afterTest { descriptor, result ->
+                      task.logger.lifecycle("HOST_TEST_END ${descriptor.className}#${descriptor.name}: ${result.resultType}")
+                  }
+              }
+          }
+          GROOVY
+          (
+            sleeper_pid=''
+            trap 'if [[ -n "$sleeper_pid" ]]; then kill "$sleeper_pid" 2>/dev/null || true; fi; exit' TERM
+            for snapshot in 1 2; do
+              sleep 300 &
+              sleeper_pid=$!
+              wait "$sleeper_pid"
+              sleeper_pid=''
+              mkdir -p "$diagnostic_dir"
+              date -u > "$diagnostic_dir/snapshot-$snapshot-time.txt"
+              jcmd -l > "$diagnostic_dir/snapshot-$snapshot-jvms.txt" 2>&1 || true
+              while read -r pid main; do
+                case "$main" in
+                  *GradleWorkerMain*|*GradleDaemon*|*GradleWrapperMain*)
+                    timeout 15s jcmd "$pid" Thread.print -l > "$diagnostic_dir/snapshot-$snapshot-$pid-threads.txt" 2>&1 || true
+                    timeout 15s jcmd "$pid" VM.system_properties 2>&1 |
+                      awk -F= '$1=="java.version" || $1=="java.home" || $1=="robolectric.dependency.repo.url" || $1=="robolectric.dependency.repo.id" || $1=="robolectric.dependency.dir" || $1=="robolectric.offline" || $1=="robolectric.logging.enabled"' > "$diagnostic_dir/snapshot-$snapshot-$pid-sdk-properties.txt" || true
+                    ;;
+                esac
+              done < "$diagnostic_dir/snapshot-$snapshot-jvms.txt"
+              find "$HOME/.m2/repository/org/robolectric" "$HOME/.robolectric" -type f -printf '%TY-%Tm-%TdT%TH:%TM:%TS %s %p\n' > "$diagnostic_dir/snapshot-$snapshot-sdk-files.txt" 2>&1 || true
+            done
+          ) &
+          monitor_pid=$!
+          trap 'kill "$monitor_pid" 2>/dev/null || true; wait "$monitor_pid" 2>/dev/null || true' EXIT
+          timeout --signal=TERM --kill-after=30s 12m ./gradlew --init-script "$init_script" clean :app:testDebugUnitTest --no-daemon --console=plain --stacktrace --info
       - name: Lint and Android APK assemblies
         timeout-minutes: 12
         run: ./gradlew :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --console=plain --stacktrace
