@@ -41,6 +41,22 @@ var falseCoin = Run(true, false, ModemSignal.Cts, port => {
     port.ThrowOnCtsRead = false;
     port.Raise(SerialPinChange.DsrChanged);
 });
+var selectedPinFault = Run(true, false, ModemSignal.Cts, port => {
+    // Also ensure the selected CTS notification cannot manufacture a coin.
+    port.ThrowOnCtsRead = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.ThrowOnCtsRead = false;
+    port.Raise(SerialPinChange.CtsChanged);
+});
+var detachedWhileIdle = Run(true, false, ModemSignal.Cts, port => {
+    // SerialPort loss must never be mistaken for a low-active coin pulse.
+    port.Close();
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.Open();
+    port.Raise(SerialPinChange.CtsChanged);
+});
 var delayed = Run(false, true, ModemSignal.Cts, port => {
     // Physical CTS was high for a pulse but returned low before callbacks ran.
     port.CtsLevel = true;
@@ -57,7 +73,9 @@ var ring = Run(false, true, ModemSignal.RingIndicator, port => {
 
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
-    ("active_low_read_error_false_coin", falseCoin.Accepted, 1),
+    ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
+    ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
+    ("active_low_detach_reconnect_idle_no_coin", detachedWhileIdle.Accepted, 0),
     ("delayed_callback_misses_pulse", delayed.Accepted, 0),
     ("ring_without_measured_duration", ring.Accepted, 1)
 };
@@ -72,12 +90,12 @@ if (diagnosticFailed) {
     return 1;
 }
 if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
-    if (falseCoin.Accepted != 0) {
-        Console.Error.WriteLine("EXPECTED_SAFETY_RED: no physical coin, but source emitted CoinPulseAccepted after active-low CTS read failure.");
+    if (falseCoin.Accepted != 0 || selectedPinFault.Accepted != 0 || detachedWhileIdle.Accepted != 0) {
+        Console.Error.WriteLine("READ_ERROR_SAFETY_RED: idle CTS fault/detach emitted CoinPulseAccepted.");
         return 2;
     }
-    Console.WriteLine("SAFETY_GATE_GREEN: no false credit in injected scenario.");
+    Console.WriteLine("READ_ERROR_SAFETY_GREEN: 3/3 active-low read-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 4/4 controlled in-process API traces reproduced. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 6/6 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
