@@ -2,6 +2,8 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 find "$ROOT/core" "$ROOT/modules" "$ROOT/installers" -name '*.sh' -type f -exec sh -n {} \;
+# Exercise only the shipped serializer; never replace host /tmp/sysinfo.
+python3 "$ROOT/tests/detector-json.py"
 for f in "$ROOT"/editions/*/manifest.json; do python3 -m json.tool "$f" >/dev/null; done
 if command -v node >/dev/null 2>&1; then
   python3 - "$ROOT/installers/offline-html/EasyMode-Installer.html" <<'PY'

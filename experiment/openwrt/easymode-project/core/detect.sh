@@ -1,6 +1,22 @@
 #!/bin/sh
 set -eu
-json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g;s/"/\\"/g'; }
+json_escape() {
+  # One framing LF lets default awk records preserve every supplied LF,
+  # including trailing ones. The C locale preserves other UTF-8 bytes.
+  printf '%s\n' "$1" | LC_ALL=C awk 'BEGIN {
+    for (n = 1; n < 32; n++) escape[sprintf("%c", n)] = sprintf("\\u%04x", n)
+    escape["\\"] = "\\\\"
+    escape["\""] = "\\\""
+  }
+  NR > 1 { printf "\\n" }
+  {
+    n = length($0)
+    for (i = 1; i <= n; i++) {
+      c = substr($0, i, 1)
+      printf "%s", (c in escape ? escape[c] : c)
+    }
+  }'
+}
 board="unknown"; model="unknown"; release="unknown"; arch="unknown"
 [ -r /tmp/sysinfo/board_name ] && board=$(cat /tmp/sysinfo/board_name)
 [ -r /tmp/sysinfo/model ] && model=$(cat /tmp/sysinfo/model)

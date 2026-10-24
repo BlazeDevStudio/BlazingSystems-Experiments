@@ -3122,3 +3122,55 @@ Rollback: source revert through reviewed development PR only; no device/state mi
 **ECO-EASYMODE-CHECKPOINT-PUBLISH-20261025:** Metadata PR189 is draft at3689340ef, based on verified520a4df2, changing only the three canonical handovers. An initial PR-create request returned422 invalid head while the ordinary branch push was still pending; after that same push completed successfully, normal retry created189. No permission/security bypass or source replacement occurred. This publication note preserves the failure/success sequence. NEXT: independently review final three-document bytes and local gate, then publish the metadata checkpoint with expected head; no new application-CI result is asserted.
 
 Application/source snapshot is still exact520; this note is metadata only.
+
+## 2026-10-25 — ECO-EASYMODE-JSON-INTENT
+
+**ECO-EASYMODE-JSON-20261025 — IN PROGRESS:** Fresh development is4cb13aeee9d3773564f22634e51899cdf653ce06; active PR182 remains392dfeaae1a40cda3b226f40dbf00a993010c15b, not merged. PR188/189 and185/186 remain completed. Fresh API classifies extra finalef push40113128445 as CANCELLED at2026-10-24T16:58:09Z; no actor/cause or success is inferred. The successful exact finalPR and merged520 fixtures remain separate source proof. Closed90/87 remain closed; new serial drafts190/191/195 and financial/controller peer work are outside this bounded change.
+>
+**Intent / isolated branch / affected surfaces:** codex/easymode-json-20261025 will preserve PR182 history while completing JSON-control escaping in EasyMode core/detect.sh, replace its host-mutating static-test block with a safe stdlib serializer fixture, and add that fixture to the dedicated EasyMode workflow/TEST-REPORT. First track actual old-code RED for all31 representable non-NUL controls, quote/backslash, empty/multiline/trailing-LF/Unicode controls; recheck partial182 retains28 failures. Tests execute only the exact escape function and final production JSON writer with synthetic variables, without full hardware probes or altering /tmp/sysinfo. No product test-path override, extra resident runtime, installer execution or device access is needed.
+>
+**Hazards / proof / rollback / NEXT:** Prefer POSIX awk default records with one framing newline, reconstructing each original LF and escaping all other controls by character map under LC_ALL=C. Require actual local RED/GREEN, unchanged surrounding detection/profile logic, GNU/BusyBox Linux CI, independent review and literal-head proof before guarded development integration. Preserve frozen snapshots, branding, money/signing/witness/migration/physical gates and all failed/cancelled history. Rollback is source-only revert of serializer/fixture/workflow changes; no device state exists for this batch. Host PowerShell startup is delayed; CMD/direct runtime probes are a local diagnostic, never a route around the rejected router session. NEXT EXACT ACTION: commit a safe serializer RED, adopt182 without executing its unsafe test, complete portable escaping/replace test, independently review and run exact EasyMode Linux CI. No qualifying >=200000000-byte artifact or Drive upload is created.
+
+
+
+## 2026-10-25 — ECO-EASYMODE-JSON-RED
+
+**ECO-EASYMODE-JSON-20261025 — TRACKED BASE RED REPRODUCED:** New tests/detector-json.py executes only the exact shipped escape-function prefix and final production JSON writer with environment-fed synthetic values and shell source on stdin. On unchanged4cb detector it reports45 cases,39 failures/6passes, exit1: all31 individual controls fail, combined/mixed/newline cases fail, and whole-writer controls/trailing-LF fail. No hardware probe, installer, network or host sysinfo write occurs. Raw NUL is unrepresentable in shell variables and is explicitly outside these inputs. Existing sysinfo command substitution strips trailing file LF before serialization; supplied-shell-value tests do not change or claim otherwise.
+>
+**NEXT:** commit this actual RED, merge original182 history without executing its unsafe static fixture, and rerun this same safe test to retain the28-control partial-fix failure before implementation. Then use portable framing-newline/default-awk-record escaping and replace the unsafe static block. Independent prototype passed10 corrected stdin/environment-fed cases; earlier Windows argv/raw-CR harness artifacts and timeout are not product evidence. Literal Linux GNU/BusyBox CI and final independent review remain required; no production/device action.
+
+
+
+## 2026-10-25 — ECO-EASYMODE-JSON-PARTIAL-RED
+
+**ECO-EASYMODE-JSON-20261025 — PARTIAL FIX RED RETAINED:** Actual safe RED committed001c0e769; original PR182/392dfeaa was merged into isolated branch at2cb9f9a06 with both parents/history preserved. No unsafe static test was executed. The unchanged safe fixture still fails45cases/31failures:28 individual controls, combined controls, whole-writer controls and a mixed CR/LF case. The mixed-case round-trip discrepancy is being independently checked for Windows/MSYS text-mode CRLF conversion; no Linux product conclusion is inferred from that host-specific discrepancy. Base RED45/39 and partial RED45/31 outputs are retained privately in work/easymode-json-proof.
+>
+**NEXT:** complete all-control escaping with default awk records/framing newline, replace the unsafe sysinfo block with the safe fixture, then run Linux GNU/BusyBox proof and independently review. Surrounding detection/profiles, original deployment state, frozen snapshots and production gates remain unchanged.
+
+
+
+## 2026-10-25 — ECO-EASYMODE-JSON-FIX-COMMITTED
+
+**ECO-EASYMODE-JSON-20261025 — COMPLETE SOURCE COMMITTED; EXACT LINUX CI/REVIEW PENDING:** Fixfb88cbdd7ca1d83afd047172a0e1cd8613f3bfae completes the preserved182 change: default awk records plus one framing LF preserve supplied LF, character mapping escapes all31 non-NUL controls/quote/backslash, LC_ALL=C preserves valid UTF-8 bytes. The remaining detection/profile logic is unchanged. Unsafe host-sysinfo replacement was removed from static-test.sh and replaced by45 safe serializer/writer cases. Dedicated EasyMode CI adds actual GNU awk and BusyBox shell/awk checks; no new product runtime, probe, install, accounting, signer, branding or frozen snapshot change.
+>
+**Actual evidence / limits:** Base RED001c0e769 reports45/39failed; preserved182 merge2cb9f9a06 reports45/31failed (28individual controls plus combined cases). Default Windows GNUawk completed fix45/1failed because it translates CRLF; an independent byte-copy probe confirmed that behavior and the real GNU BINMODE=3 control preserved bytes. A private test-only binary-I/O selection passed all45 on unchanged product source; no GNU-specific flag entered product. Stdin scripts/environment payloads avoid earlier Windows argv/raw-CR harness corruption. Optional PyYAML remains unavailable; literal Linux CI must verify the actual workflow and unchanged serializer under GNU/BusyBox. Do not call these Windows probes OpenWrt/installer/physical acceptance.
+>
+**NEXT EXACT ACTION:** publish this synchronized candidate after local syntax/endpoint/handover/whitespace checks, open a draft development PR and classify literal-head EasyMode GNU/BusyBox runs; require independent complete-diff review and exact success before guarded integration. Fresh source/current peer work and closed90/87 boundaries must be checked again. Extra40113128445 is now confirmed CANCELLED, not success. No qualifying large artifact, Drive upload, router access, device installation, paid admission or production release occurred; P0/signing/witness/migration/physical gates remain open. New-chat resume: work/BlazingSystems-Experiments, codex/easymode-json-20261025, these three handovers and outputs/BlazeSystem-ecosystem-rollout.md; sourcefb88, review/CI pending.
+
+
+
+## 2026-10-25 — ECO-EASYMODE-JSON-HOST-LIMIT
+
+**ECO-EASYMODE-JSON-20261025 — HOST VALIDATION LIMIT RECORDED; NATIVE CI REQUIRED:** Synchronized candidatea35941c8a contains unchanged sourcefb88. The additional local validation completed Python AST and both changed-shell syntax checks, then timed out after60seconds waiting for existing ubus-url.sh. Its "ubus url passed" line arrived after timeout and is not counted as a completed pass. Later node/handover/whitespace steps in that command were not executed; the chained push also did not run. Default PowerShell and some CMD reads are delayed too. This is a host execution limit, not an asserted product failure or successful suite. Prior45-case byte-preserving proof and both RED histories remain valid within scope.
+>
+**NEXT:** publish the draft through the ordinary git push separately, then use literal-head native Linux EasyMode CI for actual static/GNU/BusyBox/endpoint/handover proof and independent connector-based complete-diff review. No gate is waived or bypassed; keep PR draft/unmerged until actual CI/review success. No device access or installation occurs.
+
+
+
+## 2026-10-25 — ECO-EASYMODE-JSON-NATIVE-CI
+
+**ECO-EASYMODE-JSON-20261025 — NATIVE EXACT SOURCE VERIFIED; FINAL PR INTEGRATION GATE PENDING:** Draft PR199 at6005cdf62fafb59bee3abb2821f4dd4b6fdce2e5 contains reviewed sourcefb88 with only three handover docs afterward. Exact native Linux push40141198789/job121013124258 COMPLETED SUCCESS. Root and independent reviewer verified actual literal6005 checkout and outputs:45/0 in static fixture,45/0 with explicit GNU gawk,45/0 with BusyBox shell/awk, plus handover, static, mode644 detector, endpoint helper and12 actual offline-page cases. No probe/sysinfo mutation or installation occurred in the serializer fixture. Independent complete source/final6005 review found no blockers and confirmed no runtime/test/workflow difference afterfb88. Prior root Windows timeout, default text-mode one-case failure and private binary-mode45pass remain honestly scoped; Linux supplies the native proof.
+>
+**NEXT EXACT ACTION:** publish this evidence/TEST-REPORT synchronization, recheck final exact PR199 head and native Linux CI, independently review the metadata-only successor and fresh base, then guarded merge with expected head. Preserve original182 ancestry and both RED outcomes; do not reapply188/189/185/186. Require actual merge-head classification afterward. P0/payment/signing/witness/migration/physical boundaries, owner branding/frozen snapshots and closed90/87 stay unchanged; no device installation or production release.
+
+
