@@ -350,9 +350,13 @@ class Intercom {
         unawaited(hangUp(notify: false));
       } else if (state ==
           RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        // An SDP answer is not proof of a usable media path. Only the actual
+        // WebRTC peer transport reaching Connected clears the call's
+        // negotiating state and unlocks connected-call UI/PiP.
         connecting = false;
         _answerTimeout?.cancel();
         _answerTimeout = null;
+        unawaited(_log('webrtc_transport_connected callId=$id'));
       }
       onChanged?.call();
     };
@@ -432,7 +436,14 @@ class Intercom {
         });
         await pc.setLocalDescription(answer);
         await node.signal(peer, {'type': 'answer', 'callId': id, 'sdp': answer.sdp});
-        connecting = false;
+        // SDP exchange completed, but ICE/DTLS may still be disconnected.
+        // Keep "Connecting" until the peer connection callback fires.
+        if (callId == id && connecting && !_closing) {
+          _answerTimeout?.cancel();
+          _answerTimeout = Timer(const Duration(seconds: 45), () {
+            if (callId == id && connecting) unawaited(hangUp());
+          });
+        }
         onChanged?.call();
       } catch (e) {
         await _log('incoming call error: $e');
@@ -543,11 +554,12 @@ class Intercom {
       try {
         await _connection?.setRemoteDescription(
             RTCSessionDescription(data['sdp'] as String, 'answer'));
+        if (callId != id || _closing) return;
         _remoteDescriptionReady = true;
         await _flushIce(id);
-        connecting = false;
-        _answerTimeout?.cancel();
-        _answerTimeout = null;
+        if (callId != id || _closing) return;
+        // The remote SDP is now accepted, not the media connection.
+        // The 45-second outgoing timeout remains armed until WebRTC Connected.
         onChanged?.call();
       } catch (e) {
         await _log('answer error: $e');
