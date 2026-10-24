@@ -47,6 +47,7 @@ bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true,lastCoin=false;
 bool pollIntakeSuspended=false,relayOn=false,relayDuringPoll=false;
 int saves=0,polls=0;
+bool failNextSave=false;
 uint32_t pulseFrom=1600,pulseUntil=1680;
 String activeTarget="1234567890123456",pendingTarget,pendingNonce;
 struct Config {
@@ -70,7 +71,7 @@ void applyRemoteConfig(const String&){}
 bool jsonTrue(const String&s,const char*){return !s.empty();}
 String jsonString(const String&s,const char*){return s.empty()?String(""):String("1234567890123456");}
 String freshNonce(){return String("abcdefabcdefabcd");}
-bool savePending(){saves++;return true;}
+bool savePending(){saves++;return !failNextSave;}
 bool clearPending(bool){pendingPulses=0;pendingReady=false;return true;}
 String post(const String& action,const String& pulse="0",const String& target="",const String& nonce=""){
  if(action=="poll") {polls++;relayDuringPoll=relayOn;now_ms+=3500;return String("");}
@@ -105,7 +106,34 @@ int main(){
  insertMode=true;applyOutputs();loop();
  bool pendingGroupDeferred=(polls==0&&pendingPulses==1);
  std::cout<<" pending_group_deferred="<<pendingGroupDeferred<<"\n";
- return (blockedPollGuard&&activeEdgeRecorded&&pendingGroupDeferred)?0:19;
+ // The 20th detected pulse consumes the final journal slot.
+ // Existing applyOutputs predicate forbids more intake, but the real loop
+ // must actually call applyOutputs after changing pendingPulses.
+ now_ms=5200;lastPoll=5200;lastEdge=4000;lastSend=5200;
+ pulseFrom=5200;pulseUntil=5280;
+ pendingPulses=19;pendingTarget=activeTarget;
+ pendingReady=false;fsReady=true;pollIntakeSuspended=false;
+ lastCoin=false;saves=0;polls=0;failNextSave=false;
+ applyOutputs();bool capInitiallyOn=relayOn;
+ loop();
+ bool capInhibited=capInitiallyOn&&pendingPulses==20&&saves==1&&!relayOn;
+ std::cout<<" cap_last_pulse_relay_off="<<capInhibited
+          <<" pulse_count="<<(int)pendingPulses<<"\n";
+ // A forced flash write error makes the journal unusable. Coin relay must
+ // drop immediately in the SAME loop(), before another poll or retry.
+ now_ms=6200;lastPoll=6200;lastEdge=4000;lastSend=6200;
+ pulseFrom=6200;pulseUntil=6280;
+ pendingPulses=0;pendingTarget="";pendingNonce="";
+ pendingReady=false;fsReady=true;pollIntakeSuspended=false;
+ lastCoin=false;saves=0;polls=0;failNextSave=true;
+ applyOutputs();bool beforeFailureOn=relayOn;
+ loop();
+ bool flashFailInhibited=beforeFailureOn&&pendingPulses==1&&saves==1&&
+                         !fsReady&&pendingReady&&!relayOn;
+ std::cout<<" flash_save_failure_relay_off="<<flashFailInhibited
+          <<" fs_ready="<<fsReady<<" pending_ready="<<pendingReady<<"\n";
+ return (blockedPollGuard&&activeEdgeRecorded&&pendingGroupDeferred&&
+         capInhibited&&flashFailInhibited)?0:19;
 }
 """
 
@@ -133,5 +161,5 @@ for chip, path in SOURCES.items():
         if ran.returncode:
             failed.append(chip)
 if failed:
-    sys.exit("P0 #177: energized coin acceptor during blocking poll: " + ",".join(failed))
+    sys.exit("P0 #177: real loop output transition safety RED: " + ",".join(failed))
 print("PHX-177: source loop/output guard PASS 2/2; NOT real hardware or physical acceptance")
