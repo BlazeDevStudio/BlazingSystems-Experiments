@@ -325,4 +325,114 @@ if ! printf '%s' "$phx_replayed_response" | grep -Fq '"ok":true' ||
 fi
 echo 'PHX-L-CORE PASS: signed committed transfer receipt replay after sender disable is idempotent'
 
+
+# PHX-L-CORE P0 #31: real signed member_bank/member_restore CGI
+# source-proof-to-member-lock revocation test, using only synthetic /tmp state.
+# The CGI is deliberately unchanged in this TEST-FIRST commit. Its pre-lock
+# auth check must not authorize NEW money mutation after admin disable/reset.
+phx_br_failed=0
+export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+phx_br_n=0
+for phx_br_action in member_bank member_restore; do
+  for phx_br_revoke in disabled password_reset; do
+    phx_br_n=$((phx_br_n+1))
+    phx_br_user="phxbruser$phx_br_n"
+    phx_br_event="8888888888888888888888888888888$phx_br_n"
+    phx_br_nonce="10000000000001a$phx_br_n"
+    bp_member_lock
+    bp_member_create "$phx_br_user" "PHX bank restore fixture" 'fixture-pass-123' fixture >/dev/null
+    if [ "$phx_br_action" = member_restore ]; then
+      bp_member_balance_change "$phx_br_user" add 600 fixture "phx-br-fund-$phx_br_n" >/dev/null
+    fi
+    bp_member_unlock
+    phx_br_before="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+    phx_br_hash="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f6)"
+    phx_br_proof="$(proof_for "$phx_br_hash" "$phx_br_nonce")"
+    rm -f "$PHX_REACHED" "$PHX_RELEASE"
+    export BP_MEMBER_LIB="$T/member-race-wrapper.sh"
+    if [ "$phx_br_action" = member_bank ]; then
+      phx_br_seconds=30
+    else
+      phx_br_seconds=0
+    fi
+    call_vendo "$phx_br_action" "$phx_br_nonce" "$phx_br_seconds" \
+      "$phx_br_user:$phx_br_event:$phx_br_proof" > "$T/bank-restore-$phx_br_n" &
+    phx_br_pid=$!
+    phx_br_wait=0
+    while [ ! -f "$PHX_REACHED" ] && [ "$phx_br_wait" -lt 100 ]; do
+      sleep 0.05
+      phx_br_wait=$((phx_br_wait+1))
+    done
+    if [ ! -f "$PHX_REACHED" ]; then
+      : > "$PHX_RELEASE"
+      wait "$phx_br_pid" 2>/dev/null || :
+      echo "PHX-L-CORE BANK_RESTORE SETUP INVALID: $phx_br_action/$phx_br_revoke did not reach member writer lock" >&2
+      exit 2
+    fi
+    # Parent retains the genuine member.sh lock and real admin mutation.
+    export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+    bp_member_lock
+    if [ "$phx_br_revoke" = disabled ]; then
+      bp_member_patch "$phx_br_user" @keep 0 fixture >/dev/null
+    else
+      bp_member_set_password "$phx_br_user" 'new-fixture-pass-123' fixture >/dev/null
+    fi
+    bp_member_unlock
+    : > "$PHX_RELEASE"
+    wait "$phx_br_pid" || :
+    phx_br_response="$(cat "$T/bank-restore-$phx_br_n")"
+    phx_br_after="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+    if ! printf '%s' "$phx_br_response" | grep -Fq '"ok":false' ||
+       [ "$phx_br_before" != "$phx_br_after" ] ||
+       [ -n "$(bp_member_event_line "$phx_br_event")" ]; then
+      echo "PHX-L-CORE P0 BANK_RESTORE_SOURCE_PROOF_RED: $phx_br_action/$phx_br_revoke new money mutation survived admin revocation (before=$phx_br_before after=$phx_br_after): $phx_br_response" >&2
+      phx_br_failed=$((phx_br_failed+1))
+    else
+      echo "PHX-L-CORE BANK_RESTORE_SOURCE_PROOF_PASS: $phx_br_action/$phx_br_revoke denied under lock"
+    fi
+  done
+done
+
+# Already COMMITTED receipts must remain idempotently replayable after
+# revocation; replay is not a fresh paid mutation and must not re-credit.
+for phx_br_replay_action in member_bank member_restore; do
+  phx_br_n=$((phx_br_n+1))
+  phx_br_user="phxbruser$phx_br_n"
+  phx_br_event="9999999999999999999999999999999$phx_br_n"
+  phx_br_nonce="10000000000001b$phx_br_n"
+  bp_member_lock
+  bp_member_create "$phx_br_user" "PHX receipt replay fixture" 'fixture-pass-123' fixture >/dev/null
+  if [ "$phx_br_replay_action" = member_restore ]; then
+    bp_member_balance_change "$phx_br_user" add 600 fixture "phx-br-fund-$phx_br_n" >/dev/null
+    phx_br_seconds=0
+  else
+    phx_br_seconds=30
+  fi
+  bp_member_unlock
+  phx_br_hash="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f6)"
+  phx_br_proof="$(proof_for "$phx_br_hash" "$phx_br_nonce")"
+  phx_br_first="$(call_vendo "$phx_br_replay_action" "$phx_br_nonce" "$phx_br_seconds" \
+    "$phx_br_user:$phx_br_event:$phx_br_proof")"
+  if ! printf '%s' "$phx_br_first" | grep -Fq '"ok":true'; then
+    echo "PHX-L-CORE BANK_RESTORE REPLAY SETUP INVALID: $phx_br_replay_action $phx_br_first" >&2
+    exit 2
+  fi
+  phx_br_committed="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+  bp_member_lock
+  bp_member_patch "$phx_br_user" @keep 0 fixture >/dev/null
+  bp_member_unlock
+  phx_br_replay="$(call_vendo "$phx_br_replay_action" "10000000000001c$phx_br_n" "$phx_br_seconds" \
+    "$phx_br_user:$phx_br_event:replay")"
+  if ! printf '%s' "$phx_br_replay" | grep -Fq '"ok":true' ||
+     ! printf '%s' "$phx_br_replay" | grep -Fq '"replayed":true' ||
+     [ "$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)" != "$phx_br_committed" ] ||
+     [ "$(awk -F '\t' -v e="$phx_br_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+    echo "PHX-L-CORE P0 BANK_RESTORE_REPLAY_FAIL: $phx_br_replay_action $phx_br_replay" >&2
+    exit 1
+  fi
+  echo "PHX-L-CORE BANK_RESTORE_REPLAY_PASS: $phx_br_replay_action committed receipt remains idempotent after disable"
+done
+
+[ "$phx_br_failed" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
