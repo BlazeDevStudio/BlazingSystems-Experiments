@@ -77,7 +77,12 @@ class MainActivity : FlutterActivity() {
                     putExtra("action", action)
                     putExtra("callId", callId)
                 }
-                context.startActivity(intent)
+                try {
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    // A broadcast from a terminated process cannot legitimately
+                    // force-open an Activity on modern Android; never crash.
+                }
             }
         }
     }
