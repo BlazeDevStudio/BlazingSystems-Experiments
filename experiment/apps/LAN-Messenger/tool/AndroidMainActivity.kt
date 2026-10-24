@@ -89,7 +89,10 @@ class MainActivity : FlutterActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun eventChannel(event: String): String = "lan_v026_" + event
+    // Android notification-channel importance is immutable after creation.
+    // v0.2.8 uses a fresh high-priority call channel so legacy disabled or
+    // misconfigured preview channels do not silently suppress popup actions.
+    private fun eventChannel(event: String): String = "lan_v028_" + event
 
     private fun createChannel(event: String) {
         if (Build.VERSION.SDK_INT < 26) return
