@@ -80,6 +80,27 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: PHX-L-APPS #164 native source-linked serial fault diagnostic (expected safety RED)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab = "$env:PROJECT_DIR/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj"
+          # This compiles the actual unmodified SerialHardware.cs against
+          # in-process test doubles. No driver, device, or paid event is used.
+          dotnet run --project $lab -c Release -- --diagnostic
+          if ($LASTEXITCODE -ne 0) { throw "Native C# diagnostic failed: $LASTEXITCODE" }
+          # Preserve a known RED: unsafe behavior MUST NOT be mistaken for
+          # passing financial/hardware acceptance. This is not a safety pass.
+          dotnet run --project $lab -c Release --no-restore -- --safety-gate
+          $safetyExit = $LASTEXITCODE
+          if ($safetyExit -ne 2) {
+            throw "Expected explicit safety RED (exit 2), got $safetyExit; inspect source and fixture."
+          }
+          Write-Host 'EXPECTED_SAFETY_RED_CONFIRMED: source-linked C# emitted false coin in fault injection; release remains blocked.'
+          # GitHub pwsh wrapper otherwise propagates dotnet's deliberate exit 2.
+          exit 0
+
       - name: Restore win-x64
         shell: pwsh
         run: |
