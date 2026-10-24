@@ -11,6 +11,7 @@ import android.app.RemoteAction
 import android.graphics.drawable.Icon
 import android.content.res.Configuration
 import android.util.Rational
+import android.util.Log
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -277,6 +278,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showIncomingCall(caller: String, callId: String, video: Boolean): Boolean {
+        Log.i("LANCallTrace", "showIncoming invoked foreground=$activityForeground canNotify=${canNotify()}")
         if (callId.isEmpty() || caller.isBlank()) return false
         lastCaller = caller; lastCallId = callId
         lastVideo = video; lastMuted = false; lastIncoming = true
@@ -312,6 +314,7 @@ class MainActivity : FlutterActivity() {
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
         notifications.notify(7024, b.build())
+        Log.i("LANCallTrace", "incoming CallStyle notification 7024 posted")
         updateOverlay()
         return true
     }

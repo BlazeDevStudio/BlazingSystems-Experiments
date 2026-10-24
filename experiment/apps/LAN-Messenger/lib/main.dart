@@ -200,12 +200,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<bool> _showNativeIncoming(Peer peer, bool video) async {
     if (!Platform.isAndroid || !settings.headsUpNotifications) return false;
     try {
-      return await _notifications.invokeMethod<bool>('incoming', {
+      print('LAN_CALL_TRACE native_incoming_method_started');
+      final posted = await _notifications.invokeMethod<bool>('incoming', {
         'caller': peer.name,
         'callId': intercom?.callId ?? '',
         'video': video,
       }) ?? false;
-    } catch (_) { return false; }
+      print('LAN_CALL_TRACE native_incoming_result=$posted');
+      return posted;
+    } catch (error) {
+      print('LAN_CALL_TRACE native_incoming_method_error=$error');
+      return false;
+    }
   }
 
   Future<void> _dismissNativeIncoming() async {
@@ -541,6 +547,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
       n.onSignal = (peer, data) => unawaited(() async {
+        if (data['type'] == 'offer') {
+          print('LAN_CALL_TRACE inbound_offer_flutter_dispatched');
+        }
         if (await groupMessages.receive(peer, data)) return;
         if (await mesh.handle(peer, data)) return;
         if (mesh.active && data['type'] == 'offer') {

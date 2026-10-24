@@ -269,8 +269,15 @@ class LanNode {
   }
 
   Future<void> signal(Peer peer, Map<String, dynamic> payload) async {
+    // Diagnostic only: no peer IDs, keys, SDP, or other private data in logs.
+    if (payload['type'] == 'offer') {
+      print('LAN_CALL_TRACE outgoing_offer_post_started');
+    }
     final result = await _event(peer, {'kind': 'signal', ...payload});
     if (result['ok'] != true) throw StateError('Signaling unavailable');
+    if (payload['type'] == 'offer') {
+      print('LAN_CALL_TRACE outgoing_offer_http_accepted');
+    }
   }
 
   Future<Map<String, dynamic>> _handleEvent(Peer peer, Map<String, dynamic> event) async {
@@ -290,6 +297,9 @@ class LanNode {
         return {'ok': true};
       case 'signal':
         if (jsonEncode(event).length > 28000) return {'ok': false};
+        if (event['type'] == 'offer') {
+          print('LAN_CALL_TRACE inbound_offer_http_authenticated');
+        }
         onSignal?.call(peer, event);
         return {'ok': true};
       case 'file-offer':

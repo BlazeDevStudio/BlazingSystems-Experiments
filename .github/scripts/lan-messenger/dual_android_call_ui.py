@@ -244,6 +244,16 @@ if __name__ == "__main__":
         note("FAILED", str(exc))
         for serial in (CALLER, RECEIVER):
             snapshot(serial, "failure")
+            # Capture logs AFTER the failed offer, not the discovery-only logs.
+            try:
+                (OUT / f"{serial}-call-failure-logcat.txt").write_bytes(
+                    adb(serial, "logcat", "-d", "-t", "9000",
+                        timeout=30, check=False))
+                (OUT / f"{serial}-call-failure-activity.txt").write_bytes(
+                    adb(serial, "shell", "dumpsys", "activity", "activities",
+                        timeout=25, check=False))
+            except Exception as capture_error:
+                note("evidence", f"{serial}: {capture_error}")
         raise
     finally:
         (OUT / "voice-call-report.json").write_text(
