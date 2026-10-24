@@ -44,7 +44,9 @@ BP_VENDOS="$T/run/vendos.tsv"; : > "$BP_VENDOS"
 . "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/controller.sh"
 bp_controller_ensure vendo-01
 JSON="$(bp_controller_json vendo-01)"
-printf '%s' "$JSON" | grep -q '"enabled":1'
+# Auto-registered controllers must stay fail-closed until explicit admin enable.
+printf '%s' "$JSON" | grep -q '"enabled":0'
+printf '%s' "$JSON" | grep -q '"coin_enabled":0'
 printf '%s' "$JSON" | grep -q '"max_wifi_retries":6'
 bp_controller_set vendo-01 1 1 0 1 -1 5 14 1 1 1 55 450 9
 JSON="$(bp_controller_json vendo-01)"

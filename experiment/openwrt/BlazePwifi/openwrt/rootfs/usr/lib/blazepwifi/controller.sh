@@ -15,7 +15,10 @@ bp_controller_ensure() {
   id="$1"
   bp_controller_init
   grep -q "^$id$(printf '\t')" "$BP_CONTROLLERS" 2>/dev/null || {
-    printf '%s\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t1\n' "$id" >> "$BP_CONTROLLERS"
+    # Unknown/recovered controller identities are UNENROLLED: neither coin
+    # intake nor signed paid admission may be activated by heartbeat alone.
+    # Re-enabling needs an explicit authenticated admin controller_set.
+    printf '%s\t0\t0\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t1\n' "$id" >> "$BP_CONTROLLERS"
     chmod 600 "$BP_CONTROLLERS"
     bp_durable_sync
   }
@@ -55,11 +58,31 @@ bp_controller_admission_unlock() {
 bp_controller_paid_allowed() {
   controller_id="$1"; operation="$2"
   [ -f "$BP_CONTROLLERS" ] && [ ! -L "$BP_CONTROLLERS" ] || return 1
-  # Reject absent, duplicated or malformed controller rows; do not
-  # silently create/re-enable a controller at the financial decision.
-  awk -F '\t' -v d="$controller_id" -v op="$operation" '
-    $1==d { n++; enabled=$2; coin_enabled=$3 }
-    END { if (n!=1 || enabled!="1" || (op=="coin" && coin_enabled!="1")) exit 1 }
+  # Do not admit an automatically created row, a torn/truncated row,
+  # malformed controller policy, or duplicate controller identity.
+  # This validates the entire 15-column persisted controller policy;
+  # config/revision rollback protection STILL needs an independent witness.
+  LC_ALL=C awk -F '\t' -v d="$controller_id" -v op="$operation" '
+    function uint(s, lo, hi) {
+      return s ~ /^(0|[1-9][0-9]*)$/ && length(s)<=10 &&
+        s+0>=lo && s+0<=hi
+    }
+    function bit(s) { return s=="0" || s=="1" }
+    function pin(s) { return s=="-1" || uint(s, 0, 63) }
+    $1==d {
+      n++
+      if (NF!=15 ||
+          !bit($2) || !bit($3) || !bit($4) || !bit($5) ||
+          !pin($6) || !pin($7) || !pin($8) ||
+          !bit($9) || !bit($10) || !bit($11) ||
+          !uint($12, 1, 2000) || !uint($13, 10, 10000) ||
+          !uint($14, 1, 60) || !uint($15, 1, 2147483647)) bad=1
+      enabled=$2; coin_enabled=$3
+    }
+    END {
+      if (n!=1 || bad || enabled!="1" ||
+          (op=="coin" && coin_enabled!="1")) exit 1
+    }
   ' "$BP_CONTROLLERS"
 }
 
