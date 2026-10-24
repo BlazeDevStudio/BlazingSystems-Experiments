@@ -84,7 +84,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   String? _pendingPresentationId;
-  bool _incomingAnsweredInBackground = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
   bool _restoringCompactWindow = false;
@@ -379,7 +378,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<void> _endCallPresentation() async {
     _autoPipCallId = null;
     _pendingPresentationId = null;
-    _incomingAnsweredInBackground = false;
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
@@ -612,9 +610,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _incomingAnsweredInBackground = Platform.isWindows
+        _callMinimized = Platform.isWindows
             ? await _isDesktopBackground() : !_inForeground;
-        _callMinimized = _incomingAnsweredInBackground;
         setState(() { selected = peer; showReceived = false; });
         // Never focus or restore the Windows app on an inbound call.
         // Android uses a system CallStyle heads-up notification with actions.
