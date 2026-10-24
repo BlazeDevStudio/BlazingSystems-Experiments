@@ -159,7 +159,7 @@ def main():
     time.sleep(3)
     foreground = adb(RECEIVER, "shell", "dumpsys", "activity", "activities",
                      check=False).decode(errors="replace")
-    if re.search(r"topResumedActivity=.*com\\.example\\.lan_messenger", foreground):
+    if re.search(r"topResumedActivity=.*com\.example\.lan_messenger", foreground):
         raise RuntimeError("Receiver did not background before incoming call")
     note("background-incoming", "Receiver moved to Android HOME before call")
     tap_label(CALLER, "call-again", lambda text: "voice call" in text.lower(),
