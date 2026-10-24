@@ -18,7 +18,7 @@ class FakeLanNode extends LanNode {
     sent.add({...data});
     final remote = network?[peer.id];
     if (remote == null) throw StateError('offline');
-    final sender = remote.peers[identity.id]!;
+    final sender = remote.peers[this.identity.id]!;
     remote.onSignal?.call(sender, data);
   }
 }
