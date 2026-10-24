@@ -3082,3 +3082,9 @@
 
 
 Code/fixture/workflow not committed yet. Fresh PR90 closure supersedes earlier reconciliation intent; existing source failure evidence remains historical. New-chat resume: read these three canonical entries and current branch/source; run the actual RPC RED before combining185/186, then dedicated EasyMode exact-head CI.
+
+## 2026-10-25 — ECO-EASYMODE-RPC-RED (P2, failed as intended)
+
+**ECO-EASYMODE-20261025 — TRACKED RPC RED REPRODUCED:** After a private python3 runtime shim resolved the host alias, unchanged development static-test.sh passed. New tests/ubus-rpc.cjs exercises the actual entire inline installer script with DOM/fetch fixtures and no network. On unchanged old HTML it fails at the existing /ubus address: both real RPC calls target /ubus/ubus instead of /ubus (assertion exit1). This is the intended behavioral RED; original helper-only fixture is not substituted. The test has nine valid endpoint forms plus blank, HTTP-error and failed-login controls. NEXT: commit this RED then combine reviewed185/186 without source rewriting; require all12 page cases and existing detector/helper/static fixtures to pass on the combined source and exact Ubuntu CI.
+
+Source fix not yet combined; no router/installer execution.
