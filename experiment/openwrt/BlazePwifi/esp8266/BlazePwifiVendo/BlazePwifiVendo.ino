@@ -267,7 +267,11 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady && !pollIntakeSuspended;
+  // Do not energize the coin acceptor if the next physical pulse cannot
+  // be associated with the selected target and durably journaled.
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+    !pendingReady && !pollIntakeSuspended && activeTarget.length()!=0 &&
+    pendingPulses<20 && (pendingPulses==0 || pendingTarget==activeTarget);
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
