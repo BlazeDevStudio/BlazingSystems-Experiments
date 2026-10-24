@@ -58,8 +58,29 @@ bp_controller_paid_allowed() {
   # Reject absent, duplicated or malformed controller rows; do not
   # silently create/re-enable a controller at the financial decision.
   awk -F '\t' -v d="$controller_id" -v op="$operation" '
-    $1==d { n++; enabled=$2; coin_enabled=$3 }
-    END { if (n!=1 || enabled!="1" || (op=="coin" && coin_enabled!="1")) exit 1 }
+    # A paid admission needs the complete legacy 15-column registry row,
+    # not just three forged enabled fields. Match existing setter bounds.
+    function flag(v) { return v=="0" || v=="1" }
+    function uint(v, lo, hi) {
+      return v ~ /^[0-9]+$/ && v+0 >= lo && v+0 <= hi
+    }
+    function pin(v) { return v=="-1" || uint(v,0,63) }
+    function valid() {
+      return NF==15 && flag($2) && flag($3) && flag($4) && flag($5) &&
+        pin($6) && pin($7) && pin($8) && flag($9) && flag($10) && flag($11) &&
+        uint($12,1,2000) && uint($13,10,10000) && uint($14,1,60) &&
+        $15 ~ /^[0-9]+$/ && $15+0 >= 1
+    }
+    $1==d {
+      n++
+      if (!valid()) malformed=1
+      enabled=$2
+      coin_enabled=$3
+    }
+    END {
+      if (n!=1 || malformed || enabled!="1" ||
+          (op=="coin" && coin_enabled!="1")) exit 1
+    }
   ' "$BP_CONTROLLERS"
 }
 
