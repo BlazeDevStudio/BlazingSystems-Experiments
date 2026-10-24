@@ -108,4 +108,44 @@ void main() {
     }), isTrue);
     expect(mesh.active, isFalse);
   });
+
+  test('group media join policy, mute and idempotent leave without capture', () async {
+    final identities = await Future.wait([
+      identity('Host'), identity('Member B'), identity('Member C'),
+    ]);
+    final node = FakeLanNode(identities[0]);
+    final rooms = GroupMessaging(node);
+    final room = GroupRoom(
+      id: 'room-media-policy', name: 'Group video',
+      ownerId: identities[0].id,
+      members: identities.map((id) => id.id).toList(),
+    );
+    rooms.rooms[room.id] = room;
+    final mesh = GroupCallMesh(node, rooms);
+    await mesh.start(room, withVideo: true);
+    expect(mesh.active, isTrue);
+    expect(mesh.participants, 1);
+    expect(mesh.localRenderer, isNull); // No camera until a peer joins.
+    final sessionId = mesh.sessionId;
+    await mesh.handle(peer(identities[1]), {
+      'type': 'group-join', 'groupId': room.id,
+      'sessionId': sessionId, 'video': false,
+    });
+    expect(mesh.links, isEmpty); // Video/audio mismatch is not joined.
+    await mesh.handle(Peer(
+      id: 'uninvited', name: 'Outsider', key: 'dummy',
+      host: '127.0.0.1', port: 1234, seen: DateTime.now()), {
+      'type': 'group-leave', 'groupId': room.id,
+      'sessionId': sessionId,
+    });
+    expect(mesh.active, isTrue); // A stranger cannot end the room.
+    await mesh.setMuted(true);
+    expect(mesh.muted, isTrue);
+    await mesh.leave();
+    await mesh.leave();
+    expect(mesh.active, isFalse);
+    expect(mesh.muted, isFalse);
+    expect(mesh.localRenderer, isNull);
+  });
+
 }
