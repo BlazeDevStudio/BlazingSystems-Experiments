@@ -205,8 +205,28 @@ case "$action" in
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
     bp_member_lock || bp_fail "member state busy"
+    # PHX-L-CORE P0 #31: admin may revoke this sender between the original
+    # signed proof check and member writer lock. Check the same proof again
+    # INSIDE the lock before any NEW bank/restore paid mutation. Previously
+    # committed receipt replay above remains unchanged and idempotent.
+    if ! bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof"; then
+      bp_member_unlock
+      bp_fail "member authentication failed"
+    fi
+    # A controller disabled by admin before this paid linearization point
+    # cannot authorize a NEW mutation; exact committed replay is above.
+    if ! bp_controller_admission_lock; then
+      bp_member_unlock
+      bp_fail "controller admission busy"
+    fi
+    if ! bp_controller_paid_allowed "$id" member_bank; then
+      bp_controller_admission_unlock
+      bp_member_unlock
+      bp_fail "controller disabled"
+    fi
     result="$(bp_member_balance_change "$user" add "$pulses" "softtimer:$id" "$event_id")"
     rc=$?
+    bp_controller_admission_unlock
     bp_member_unlock
     [ "$rc" -eq 0 ] || bp_fail "member bank failed"
     result_seconds="$(printf '%s' "$result" | cut -f1)"
@@ -245,8 +265,28 @@ case "$action" in
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
     bp_member_lock || bp_fail "member state busy"
+    # PHX-L-CORE P0 #31: admin may revoke this sender between the original
+    # signed proof check and member writer lock. Check the same proof again
+    # INSIDE the lock before any NEW bank/restore paid mutation. Previously
+    # committed receipt replay above remains unchanged and idempotent.
+    if ! bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof"; then
+      bp_member_unlock
+      bp_fail "member authentication failed"
+    fi
+    # A controller disabled by admin before this paid linearization point
+    # cannot authorize a NEW mutation; exact committed replay is above.
+    if ! bp_controller_admission_lock; then
+      bp_member_unlock
+      bp_fail "controller admission busy"
+    fi
+    if ! bp_controller_paid_allowed "$id" member_restore; then
+      bp_controller_admission_unlock
+      bp_member_unlock
+      bp_fail "controller disabled"
+    fi
     result="$(bp_member_balance_change "$user" restore_all 0 "softtimer:$id" "$event_id")"
     rc=$?
+    bp_controller_admission_unlock
     bp_member_unlock
     [ "$rc" -eq 0 ] || bp_fail "member restore failed"
     result_seconds="$(printf '%s' "$result" | cut -f1)"
@@ -312,8 +352,18 @@ case "$action" in
       bp_member_unlock
       bp_fail "destination member disabled or missing"
     fi
+    if ! bp_controller_admission_lock; then
+      bp_member_unlock
+      bp_fail "controller admission busy"
+    fi
+    if ! bp_controller_paid_allowed "$id" member_transfer; then
+      bp_controller_admission_unlock
+      bp_member_unlock
+      bp_fail "controller disabled"
+    fi
     result="$(bp_member_transfer "$from" "$to" "$pulses" "softtimer:$id" "$event_id")"
     rc=$?
+    bp_controller_admission_unlock
     bp_member_unlock
     case "$rc" in
       0) ;;
@@ -370,6 +420,17 @@ case "$action" in
         bp_unlock
         bp_fail "rental progress out of range; no coin credited"
       }
+      # Rental duplicate receipts cannot bypass a disabled controller until
+      # v2 lease/receipt atomicity is proven: deny rather than speculative ACK.
+      if ! bp_controller_admission_lock; then
+        bp_unlock
+        bp_fail "controller admission busy"
+      fi
+      if ! bp_controller_paid_allowed "$id" coin; then
+        bp_controller_admission_unlock
+        bp_unlock
+        bp_fail "controller disabled or coin intake disabled"
+      fi
       result="$(bp_rental_apply_coin "$device" "$id" "$nonce" "$target" "$pulses")"
       rc=$?
       [ "$rc" -eq 0 ] || { bp_unlock; bp_fail "rental target not found"; }
@@ -393,6 +454,7 @@ case "$action" in
           bp_fail "rental progress commit failed; paid state uncertain"
         fi
       fi
+      bp_controller_admission_unlock
       bp_unlock
       unit="$(bp_cfg pulse_value_centavos)"; [ -n "$unit" ] || unit=100
       case "$unit" in ''|*[!0-9]*) unit=100;; esac
@@ -446,6 +508,17 @@ case "$action" in
     fi
     bp_paid_replay_read_unlock
 
+    # Only a NEW ordinary coin credit needs controller admission. An exact
+    # already-committed duplicate above stays read-only after disable.
+    if ! bp_controller_admission_lock; then
+      bp_unlock
+      bp_fail "controller admission busy"
+    fi
+    if ! bp_controller_paid_allowed "$id" coin; then
+      bp_controller_admission_unlock
+      bp_unlock
+      bp_fail "controller disabled or coin intake disabled"
+    fi
     line="$(bp_account_line "$device")"
     [ -n "$line" ] || { bp_unlock; bp_fail "target account not found"; }
     credit="$(printf '%s' "$line" | cut -f2)"
@@ -476,6 +549,7 @@ case "$action" in
       bp_unlock
       bp_fail "coin credit durability failed; operator reconciliation required"
     fi
+    bp_controller_admission_unlock
     bp_unlock
     body="$(printf '{"ok":true,"duplicate":false,"credited_cents":%s,"credit_cents":%s,"target_nonce":"%s"}' "$add" "$newcredit" "$(bp_json_escape "$target")")"
     bp_json "$body"

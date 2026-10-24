@@ -325,4 +325,304 @@ if ! printf '%s' "$phx_replayed_response" | grep -Fq '"ok":true' ||
 fi
 echo 'PHX-L-CORE PASS: signed committed transfer receipt replay after sender disable is idempotent'
 
+
+# PHX-L-CORE P0 #31: real signed member_bank/member_restore CGI
+# source-proof-to-member-lock revocation test, using only synthetic /tmp state.
+# The CGI is deliberately unchanged in this TEST-FIRST commit. Its pre-lock
+# auth check must not authorize NEW money mutation after admin disable/reset.
+# The first RED run exposed a fixture mistake: an expected bad payment can
+# leave a fail-closed paid-state-uncertain marker. Sharing that same synthetic
+# ledger across cases confounds later races and receipt-replay setup. Each
+# case must start from its own fresh private state, never clear quarantine.
+phx_br_fresh_state() {
+  phx_br_slot="$1"
+  export BP_STATE="$T/br-state-$phx_br_slot" BP_RUN="$T/br-run-$phx_br_slot"
+  mkdir -p "$BP_STATE" "$BP_RUN"
+  unset BP_MEMBERS BP_MEMBER_EVENTS BP_MEMBER_REVISION
+  . "$BP_LIB"
+  . "$PHX_REAL_MEMBER"
+  bp_member_init
+}
+phx_br_failed=0
+export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+phx_br_n=0
+for phx_br_action in member_bank member_restore; do
+  for phx_br_revoke in disabled password_reset; do
+    phx_br_n=$((phx_br_n+1))
+    phx_br_fresh_state "$phx_br_n"
+    phx_br_user="phxbruser$phx_br_n"
+    phx_br_event="8888888888888888888888888888888$phx_br_n"
+    phx_br_nonce="10000000000001a$phx_br_n"
+    bp_member_lock
+    bp_member_create "$phx_br_user" "PHX bank restore fixture" 'fixture-pass-123' fixture >/dev/null
+    if [ "$phx_br_action" = member_restore ]; then
+      bp_member_balance_change "$phx_br_user" add 600 fixture "phx-br-fund-$phx_br_n" >/dev/null
+    fi
+    bp_member_unlock
+    phx_br_before="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+    phx_br_hash="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f6)"
+    phx_br_proof="$(proof_for "$phx_br_hash" "$phx_br_nonce")"
+    rm -f "$PHX_REACHED" "$PHX_RELEASE"
+    export BP_MEMBER_LIB="$T/member-race-wrapper.sh"
+    if [ "$phx_br_action" = member_bank ]; then
+      phx_br_seconds=30
+    else
+      phx_br_seconds=0
+    fi
+    call_vendo "$phx_br_action" "$phx_br_nonce" "$phx_br_seconds" \
+      "$phx_br_user:$phx_br_event:$phx_br_proof" > "$T/bank-restore-$phx_br_n" &
+    phx_br_pid=$!
+    phx_br_wait=0
+    while [ ! -f "$PHX_REACHED" ] && [ "$phx_br_wait" -lt 100 ]; do
+      sleep 0.05
+      phx_br_wait=$((phx_br_wait+1))
+    done
+    if [ ! -f "$PHX_REACHED" ]; then
+      : > "$PHX_RELEASE"
+      wait "$phx_br_pid" 2>/dev/null || :
+      echo "PHX-L-CORE BANK_RESTORE SETUP INVALID: $phx_br_action/$phx_br_revoke did not reach member writer lock" >&2
+      exit 2
+    fi
+    # Parent retains the genuine member.sh lock and real admin mutation.
+    export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+    bp_member_lock
+    if [ "$phx_br_revoke" = disabled ]; then
+      bp_member_patch "$phx_br_user" @keep 0 fixture >/dev/null
+    else
+      bp_member_set_password "$phx_br_user" 'new-fixture-pass-123' fixture >/dev/null
+    fi
+    bp_member_unlock
+    : > "$PHX_RELEASE"
+    wait "$phx_br_pid" || :
+    phx_br_response="$(cat "$T/bank-restore-$phx_br_n")"
+    phx_br_after="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+    if ! printf '%s' "$phx_br_response" | grep -Fq '"ok":false' ||
+       [ "$phx_br_before" != "$phx_br_after" ] ||
+       [ -n "$(bp_member_event_line "$phx_br_event")" ]; then
+      echo "PHX-L-CORE P0 BANK_RESTORE_SOURCE_PROOF_RED: $phx_br_action/$phx_br_revoke new money mutation survived admin revocation (before=$phx_br_before after=$phx_br_after): $phx_br_response" >&2
+      phx_br_failed=$((phx_br_failed+1))
+    else
+      echo "PHX-L-CORE BANK_RESTORE_SOURCE_PROOF_PASS: $phx_br_action/$phx_br_revoke denied under lock"
+    fi
+  done
+done
+
+# Already COMMITTED receipts must remain idempotently replayable after
+# revocation; replay is not a fresh paid mutation and must not re-credit.
+for phx_br_replay_action in member_bank member_restore; do
+  phx_br_n=$((phx_br_n+1))
+  phx_br_fresh_state "$phx_br_n"
+  phx_br_user="phxbruser$phx_br_n"
+  phx_br_event="9999999999999999999999999999999$phx_br_n"
+  phx_br_nonce="10000000000001b$phx_br_n"
+  bp_member_lock
+  bp_member_create "$phx_br_user" "PHX receipt replay fixture" 'fixture-pass-123' fixture >/dev/null
+  if [ "$phx_br_replay_action" = member_restore ]; then
+    bp_member_balance_change "$phx_br_user" add 600 fixture "phx-br-fund-$phx_br_n" >/dev/null
+    phx_br_seconds=0
+  else
+    phx_br_seconds=30
+  fi
+  bp_member_unlock
+  phx_br_hash="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f6)"
+  phx_br_proof="$(proof_for "$phx_br_hash" "$phx_br_nonce")"
+  phx_br_first="$(call_vendo "$phx_br_replay_action" "$phx_br_nonce" "$phx_br_seconds" \
+    "$phx_br_user:$phx_br_event:$phx_br_proof")"
+  if ! printf '%s' "$phx_br_first" | grep -Fq '"ok":true'; then
+    echo "PHX-L-CORE BANK_RESTORE REPLAY SETUP INVALID: $phx_br_replay_action $phx_br_first" >&2
+    exit 2
+  fi
+  phx_br_committed="$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)"
+  bp_member_lock
+  bp_member_patch "$phx_br_user" @keep 0 fixture >/dev/null
+  bp_member_unlock
+  phx_br_replay="$(call_vendo "$phx_br_replay_action" "10000000000001c$phx_br_n" "$phx_br_seconds" \
+    "$phx_br_user:$phx_br_event:replay")"
+  if ! printf '%s' "$phx_br_replay" | grep -Fq '"ok":true' ||
+     ! printf '%s' "$phx_br_replay" | grep -Fq '"replayed":true' ||
+     [ "$(printf '%s' "$(bp_member_line "$phx_br_user")" | cut -f8)" != "$phx_br_committed" ] ||
+     [ "$(awk -F '\t' -v e="$phx_br_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+    echo "PHX-L-CORE P0 BANK_RESTORE_REPLAY_FAIL: $phx_br_replay_action $phx_br_replay" >&2
+    exit 1
+  fi
+  echo "PHX-L-CORE BANK_RESTORE_REPLAY_PASS: $phx_br_replay_action committed receipt remains idempotent after disable"
+done
+
+[ "$phx_br_failed" -eq 0 ] || exit 1
+
+
+# PHX-L-CORE P0 #31: MASTER #172 controller-disable NEW paid-admission
+# contract, TEST FIRST. These requests invoke the actual signed Vendo CGI
+# and actual bp_controller_set writer used by authenticated admin CGI, but
+# NOT the admin HTTP/session/CSRF path. All financial state is private /tmp.
+# Each case has its own state: never erase a paid-state-uncertain marker.
+phx_ctl_fresh_state() {
+  phx_ctl_slot="$1"
+  export BP_STATE="$T/ctl-state-$phx_ctl_slot" BP_RUN="$T/ctl-run-$phx_ctl_slot"
+  mkdir -p "$BP_STATE" "$BP_RUN" "$BP_STATE/targets"
+  unset BP_MEMBERS BP_MEMBER_EVENTS BP_MEMBER_REVISION
+  . "$BP_LIB"
+  . "$PHX_REAL_MEMBER"
+  . "$BP_CONTROLLER_LIB"
+  bp_member_init
+  bp_controller_ensure softtimer-01
+}
+phx_ctl_config() {
+  bp_controller_set softtimer-01 "$1" "$2" 1 1 -1 -1 -1 1 1 1 40 400 6
+}
+phx_ctl_digest() {
+  sha256sum "$BP_MEMBERS" "$BP_MEMBER_EVENTS" "$BP_MEMBER_REVISION" "$BP_ACCOUNTS" |
+    sha256sum | awk '{print $1}'
+}
+phx_ctl_setup_coin() {
+  phx_ctl_device=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  phx_ctl_target=1122334455667788
+  phx_ctl_now="$(date +%s)"
+  printf '%s\t100\t0\t0\t0\t0\taa:bb:cc:dd:ee:ff\t10.0.0.50\t\n' \
+    "$phx_ctl_device" > "$BP_ACCOUNTS"
+  printf '%s\taa:bb:cc:dd:ee:ff\t%s\t%s\tsofttimer-01\thotspot\n' \
+    "$phx_ctl_device" "$phx_ctl_target" "$((phx_ctl_now+600))" \
+    > "$BP_TARGET_DIR/softtimer-01.tsv"
+}
+phx_ctl_failures=0
+phx_ctl_i=0
+for phx_ctl_action in member_bank member_restore member_transfer coin; do
+  phx_ctl_i=$((phx_ctl_i+1))
+  phx_ctl_fresh_state "$phx_ctl_i"
+  phx_ctl_nonce="10000000000002d$phx_ctl_i"
+  phx_ctl_event="ddddddddddddddddddddddddddddddd$phx_ctl_i"
+  if [ "$phx_ctl_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_ctl_target_arg="$phx_ctl_target"
+    phx_ctl_amount=1
+  else
+    phx_ctl_user="phxctluser$phx_ctl_i"
+    bp_member_lock
+    bp_member_create "$phx_ctl_user" "Controller disabled test" 'fixture-pass-123' fixture >/dev/null
+    if [ "$phx_ctl_action" = member_restore ] || [ "$phx_ctl_action" = member_transfer ]; then
+      bp_member_balance_change "$phx_ctl_user" add 600 fixture "ctl-fund-$phx_ctl_i" >/dev/null
+    fi
+    if [ "$phx_ctl_action" = member_transfer ]; then
+      bp_member_create phxctldest "Controller destination" 'fixture-pass-456' fixture >/dev/null
+    fi
+    bp_member_unlock
+    phx_ctl_hash="$(printf '%s' "$(bp_member_line "$phx_ctl_user")" | cut -f6)"
+    phx_ctl_proof="$(proof_for "$phx_ctl_hash" "$phx_ctl_nonce")"
+    case "$phx_ctl_action" in
+      member_bank) phx_ctl_amount=30; phx_ctl_target_arg="$phx_ctl_user:$phx_ctl_event:$phx_ctl_proof" ;;
+      member_restore) phx_ctl_amount=0; phx_ctl_target_arg="$phx_ctl_user:$phx_ctl_event:$phx_ctl_proof" ;;
+      member_transfer) phx_ctl_amount=30; phx_ctl_target_arg="$phx_ctl_user>phxctldest:$phx_ctl_event:$phx_ctl_proof" ;;
+    esac
+  fi
+  # Real admin controller backend disables before the NEW signed request.
+  phx_ctl_config 0 1
+  phx_ctl_before="$(phx_ctl_digest)"
+  phx_ctl_reply="$(call_vendo "$phx_ctl_action" "$phx_ctl_nonce" "$phx_ctl_amount" "$phx_ctl_target_arg")"
+  if ! printf '%s' "$phx_ctl_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_ctl_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_DISABLED_RED: $phx_ctl_action fresh signed paid ACK/mutation after admin disable: $phx_ctl_reply" >&2
+    phx_ctl_failures=$((phx_ctl_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_DISABLED_PASS: $phx_ctl_action rejected after controller disable"
+  fi
+done
+
+# coin_enabled=0 is a separate physical coin-intake gate even while enabled=1.
+phx_ctl_fresh_state coin-disabled
+phx_ctl_setup_coin
+phx_ctl_config 1 0
+phx_ctl_before="$(phx_ctl_digest)"
+phx_ctl_reply="$(call_vendo coin 10000000000002ee 1 "$phx_ctl_target")"
+if ! printf '%s' "$phx_ctl_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_ctl_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_COIN_DISABLED_RED: coin_enabled=0 accepted signed coin: $phx_ctl_reply" >&2
+  phx_ctl_failures=$((phx_ctl_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_COIN_DISABLED_PASS: disabled coin intake rejected'
+fi
+
+# Disable while a genuine signed bank request is paused BEFORE its real
+# member writer lock. The controller writer does not use member.lock today.
+phx_ctl_fresh_state controller-race
+bp_member_lock
+bp_member_create phxctlrace "Controller race" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_ctl_nonce=10000000000002ef
+phx_ctl_event=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+phx_ctl_hash="$(printf '%s' "$(bp_member_line phxctlrace)" | cut -f6)"
+phx_ctl_proof="$(proof_for "$phx_ctl_hash" "$phx_ctl_nonce")"
+export PHX_REACHED="$T/ctl-lock-reached" PHX_RELEASE="$T/ctl-lock-release"
+rm -f "$PHX_REACHED" "$PHX_RELEASE"
+export BP_MEMBER_LIB="$T/member-race-wrapper.sh"
+call_vendo member_bank "$phx_ctl_nonce" 30 \
+  "phxctlrace:$phx_ctl_event:$phx_ctl_proof" > "$T/ctl-lock-reply" &
+phx_ctl_pid=$!
+phx_ctl_wait=0
+while [ ! -f "$PHX_REACHED" ] && [ "$phx_ctl_wait" -lt 100 ]; do
+  sleep 0.05
+  phx_ctl_wait=$((phx_ctl_wait+1))
+done
+if [ ! -f "$PHX_REACHED" ]; then
+  : > "$PHX_RELEASE"
+  wait "$phx_ctl_pid" 2>/dev/null || :
+  echo 'PHX-L-CORE CONTROLLER_RACE_SETUP_INVALID: signed CGI never reached member lock' >&2
+  exit 2
+fi
+export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+phx_ctl_config 0 1
+phx_ctl_before="$(phx_ctl_digest)"
+: > "$PHX_RELEASE"
+wait "$phx_ctl_pid" || :
+phx_ctl_reply="$(cat "$T/ctl-lock-reply")"
+if ! printf '%s' "$phx_ctl_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_ctl_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_LOCK_RACE_RED: signed bank paid after controller_set disable: $phx_ctl_reply" >&2
+  phx_ctl_failures=$((phx_ctl_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_LOCK_RACE_PASS: disable-before-writer-lock denied'
+fi
+
+# Previously committed receipts may be replayed read-only after disable;
+# this is not permission for a NEW mutation, nor physical witness evidence.
+for phx_ctl_replay_action in member_bank coin; do
+  phx_ctl_fresh_state "replay-$phx_ctl_replay_action"
+  phx_ctl_nonce=10000000000002f1
+  if [ "$phx_ctl_replay_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_ctl_amount=1
+    phx_ctl_target_arg="$phx_ctl_target"
+  else
+    bp_member_lock
+    bp_member_create phxctlreplay "Controller replay" 'fixture-pass-123' fixture >/dev/null
+    bp_member_unlock
+    phx_ctl_hash="$(printf '%s' "$(bp_member_line phxctlreplay)" | cut -f6)"
+    phx_ctl_proof="$(proof_for "$phx_ctl_hash" "$phx_ctl_nonce")"
+    phx_ctl_amount=30
+    phx_ctl_target_arg="phxctlreplay:ffffffffffffffffffffffffffffffff:$phx_ctl_proof"
+  fi
+  phx_ctl_first="$(call_vendo "$phx_ctl_replay_action" "$phx_ctl_nonce" "$phx_ctl_amount" "$phx_ctl_target_arg")"
+  if ! printf '%s' "$phx_ctl_first" | grep -Fq '"ok":true'; then
+    echo "PHX-L-CORE CONTROLLER_REPLAY_SETUP_INVALID: $phx_ctl_replay_action $phx_ctl_first" >&2
+    exit 2
+  fi
+  phx_ctl_config 0 1
+  phx_ctl_before="$(phx_ctl_digest)"
+  if [ "$phx_ctl_replay_action" = member_bank ]; then
+    phx_ctl_target_arg="phxctlreplay:ffffffffffffffffffffffffffffffff:replay"
+    phx_ctl_nonce=10000000000002f2
+  fi
+  phx_ctl_reply="$(call_vendo "$phx_ctl_replay_action" "$phx_ctl_nonce" "$phx_ctl_amount" "$phx_ctl_target_arg")"
+  if ! printf '%s' "$phx_ctl_reply" | grep -Fq '"ok":true' ||
+     [ "$(phx_ctl_digest)" != "$phx_ctl_before" ] ||
+     { [ "$phx_ctl_replay_action" = member_bank ] &&
+       ! printf '%s' "$phx_ctl_reply" | grep -Fq '"replayed":true'; } ||
+     { [ "$phx_ctl_replay_action" = coin ] &&
+       ! printf '%s' "$phx_ctl_reply" | grep -Fq '"duplicate":true'; }; then
+    echo "PHX-L-CORE CONTROLLER_REPLAY_FAIL: $phx_ctl_replay_action $phx_ctl_reply" >&2
+    exit 1
+  fi
+  echo "PHX-L-CORE CONTROLLER_REPLAY_PASS: $phx_ctl_replay_action immutable committed receipt"
+done
+[ "$phx_ctl_failures" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
