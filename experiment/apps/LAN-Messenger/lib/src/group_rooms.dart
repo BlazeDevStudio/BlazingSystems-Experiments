@@ -85,9 +85,12 @@ class GroupCoordinator {
   final Set<String> _handledInvites = {};
   Future<void> _saveQueue = Future.value();
 
+  Future<Directory> _storage() async =>
+      node.storageDirectory ?? Identity.appDirectory();
+
   Future<void> load() async {
     try {
-      final dir = await Identity.appDirectory();
+      final dir = await _storage();
       final file = File('${dir.path}${Platform.pathSeparator}groups.json');
       if (!await file.exists()) return;
       final data = jsonDecode(await file.readAsString());
@@ -113,7 +116,7 @@ class GroupCoordinator {
 
   void persist() {
     _saveQueue = _saveQueue.then((_) async {
-      final dir = await Identity.appDirectory();
+      final dir = await _storage();
       final file = File('${dir.path}${Platform.pathSeparator}groups.json');
       await file.writeAsString(jsonEncode(
           rooms.values.map((r) => r.toJson()).toList()), flush: true);
