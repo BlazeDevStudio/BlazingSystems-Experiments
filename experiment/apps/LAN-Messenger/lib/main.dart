@@ -490,11 +490,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         '${sender.name} invited you to "$title" with $count members. '
         'Accept only trusted local devices.', allowText: 'Join group');
       mesh.onInvitation = (sender, room, withVideo) async {
-        if (inter.talkingTo != null) return false;
-        return _ask(title: withVideo ? 'Join group video?' : 'Join group voice?',
+        if (inter.talkingTo != null || !mounted) return false;
+        final approved = await _ask(
+          title: withVideo ? 'Join group video?' : 'Join group voice?',
           detail: '${sender.name} invited you to a call in ${room.name}. '
-            'Your microphone${withVideo ? " and camera" : ""} activate only after you join.',
-          allowText: 'Join call');
+              'Your microphone${withVideo ? " and camera" : ""} activate only after you join.',
+          allowText: 'Join call',
+        );
+        if (approved && mounted) {
+          // Opening the accepted room is necessary: the group video tiles and
+          // Leave/Mute controls live in its conversation, not the prior DM.
+          setState(() {
+            selectedGroup = room;
+            selected = null;
+            showSettings = false;
+            showReceived = false;
+          });
+        }
+        return approved;
       };
       n.onPeersChanged = () { if (mounted) setState(() {}); };
       n.onChat = (peer, message) {
