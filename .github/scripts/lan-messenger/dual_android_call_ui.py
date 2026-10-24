@@ -124,8 +124,42 @@ def wait_both_connected(timeout_seconds=85):
     raise RuntimeError("Two-device call did not reach Connected state on both UIs")
 
 
+def first_background_incoming_test():
+    """One fresh background-incoming call, with no prior WebRTC teardown."""
+    note("background-setup", "Receiver is HOME before the FIRST call")
+    adb(RECEIVER, "shell", "input", "keyevent", "KEYCODE_HOME")
+    time.sleep(3)
+    activity = adb(RECEIVER, "shell", "dumpsys", "activity", "activities",
+                   check=False).decode(errors="replace")
+    if re.search(r"topResumedActivity=.*com\.example\.lan_messenger", activity):
+        raise RuntimeError("Receiver still foreground before background call")
+    tap_label(CALLER, "background-first-call",
+              lambda text: "voice call" in text.lower())
+    time.sleep(3)
+    adb(RECEIVER, "shell", "cmd", "statusbar", "expand-notifications",
+        check=False)
+    root = snapshot(RECEIVER, "background-first-3seconds")
+    if root is not None:
+        note("notification-early", "UI labels: " +
+             repr([labels(n) for n in root.iter("node") if labels(n)][:40]))
+    (OUT / "android-first-background-notification.txt").write_bytes(
+        adb(RECEIVER, "shell", "dumpsys", "notification", "--noredact",
+            timeout=20, check=False))
+    tap_label(RECEIVER, "notification-answer",
+              lambda text: "answer" in text.lower(), timeout_seconds=30)
+    wait_both_connected()
+    note("background-first-connected", "PASS: first native Answer connected WebRTC")
+    tap_label(RECEIVER, "hangup",
+              lambda text: text.lower().strip() == "end call", timeout_seconds=28)
+    for serial in (CALLER, RECEIVER):
+        if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
+                   check=False).strip():
+            raise RuntimeError(f"{serial} exited during notification Answer")
+    note("done", "PASS: background-first Answer -> WebRTC -> hangup, no crash")
+
+
 def main():
-    note("setup", "Starting actual Android↔Android foreground voice call UI test")
+    note("setup", "Starting actual Android↔Android voice call UI test")
     for serial in (CALLER, RECEIVER):
         if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
                    check=False).strip():
@@ -133,6 +167,9 @@ def main():
     tap_label(CALLER, "choose-peer",
               lambda text: "online" in text.lower() and
               "looking for nearby" not in text.lower())
+    if os.environ.get("LAN_MESSENGER_SCENARIO") == "background-first":
+        first_background_incoming_test()
+        return
     tap_label(CALLER, "call", lambda text: "voice call" in text.lower())
     tap_label(RECEIVER, "answer", lambda text: text.lower().strip() == "answer",
               timeout_seconds=55)

@@ -34,7 +34,14 @@ if [[ "$completed" != "1" ]]; then
 fi
 adb devices | tee "$OUT/adb-devices.txt"
 for serial in emulator-5554 emulator-5556; do
-  adb -s "$serial" shell ip -f inet addr show wlan0 | tee "$OUT/$serial-wifi.txt" || true
+  # Wait for netsim Wi-Fi DHCP; simultaneous cloud AVDs can boot before IPv4.
+  for wifi_try in $(seq 1 25); do
+    adb -s "$serial" shell ip -f inet addr show wlan0 >"$OUT/$serial-wifi.txt" 2>/dev/null || true
+    if grep -Eq 'inet ([0-9]+\.){3}[0-9]+/' "$OUT/$serial-wifi.txt"; then break; fi
+    if [[ "$wifi_try" == 5 ]]; then adb -s "$serial" shell svc wifi enable || true; fi
+    sleep 2
+  done
+  cat "$OUT/$serial-wifi.txt"
   adb -s "$serial" install -r "$APK"
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.POST_NOTIFICATIONS || true
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.RECORD_AUDIO || true
@@ -81,6 +88,14 @@ for attempt in $(seq 1 10); do
     adb -s "$serial" shell uiautomator dump /sdcard/lan_smoke.xml >/dev/null 2>&1 || true
     adb -s "$serial" exec-out cat /sdcard/lan_smoke.xml >"$OUT/$serial-hierarchy.xml" 2>/dev/null || true
     adb -s "$serial" exec-out screencap -p >"$OUT/$serial-screen.png" 2>/dev/null || true
+    # Pixel Launcher can show its ANR *over* a healthy Messenger process.
+    if grep -Fq "Pixel Launcher isn't responding" "$OUT/$serial-hierarchy.xml"; then
+      echo "$serial: dismissing cloud Pixel Launcher ANR obscuring Messenger"
+      adb -s "$serial" shell input keyevent KEYCODE_BACK || true
+      adb -s "$serial" shell am start -n com.example.lan_messenger/.MainActivity || true
+      both=0
+      continue
+    fi
     if [[ "$attempt" == 1 || "$attempt" == 10 ]]; then
       python3 - "$OUT/$serial-hierarchy.xml" "$serial" <<'PYINFO'
 import sys, xml.etree.ElementTree as ET
