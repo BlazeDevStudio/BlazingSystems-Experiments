@@ -1,3 +1,11 @@
+## 2026-10-25 — QR-WIFI Device Owner QR Wi-Fi framing
+
+- Scope: offline Device Owner QR page only. Not payment, signing, migration, or hardware.
+- Defect: `tools/BlazeRental-QR-Setup.template.html` stored an unquoted SSID and accepted WPA with no usable password, then reported the QR ready.
+- Fix: refuse WPA passwords outside 8..63 characters, refuse an SSID over 32 bytes, and quote the SSID. Open networks do not get a password field.
+- Evidence: `sh tests/qr_setup.sh` exited 0 locally and executed the page function under Node. No device was provisioned.
+- NEXT: review the isolated branch only. Do not treat this as a payment or release change.
+
 ## 2026-10-24 — STORAGE-200MB-DRIVE / P3 — owner-directed external artifact handoff
 - **Status:** DOCUMENTED, UPLOAD PENDING. Scope: Blaze coin-operated ecosystem (Full/Standalone BlazePwifi, BlazeRental, BlazePisonet SoftTimer, ESP controllers, supported OS/system images and ecosystem archives). Threshold: actual file byte size >=200,000,000. Destination: https://drive.google.com/drive/folders/15jHh7-ZFcsdIkRY3YOk2XxRxzkDEcd-g (ID `15jHh7-ZFcsdIkRY3YOk2XxRxzkDEcd-g`).
 - **Files:** `docs/handover/LARGE_ARTIFACT_DRIVE_POLICY.md`, `docs/handover/HANDOVER_POLICY.md`, `PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`, on isolated `docs/coin-ecosystem-large-assets-drive-20261024` branch. Policy creation commit `94f3834c1765015e21db8ed38aa093bca08d066c`, mandatory handover-policy update commit `c86ad024024facdaecea0f7d13a9bfb6ab8274b1` (remaining document commit SHAs are recorded by GitHub history/PR).

@@ -87,4 +87,58 @@ grep -q 'Standard Binding QR' "$TMP"
 
 python3 "$ROOT/tests/test_provisioning_url_ports.py"
 python3 "$ROOT/tests/test_rental_qr_branding.py"
+# Android WifiConfiguration requires a quoted SSID, and WPA-PSK rejects
+# passwords outside 8..63 characters. Execute the page function, not a grep.
+node --input-type=commonjs - "$PROVISION_T" <<'JS'
+const fs = require("fs");
+const html = fs.readFileSync(process.argv[2], "utf8");
+const start = html.lastIndexOf("<script>");
+const end = html.lastIndexOf("</script>");
+if (start < 0 || end < start) throw new Error("provisioning script missing");
+const script = html.slice(start + 8, end)
+  .replaceAll("__APK_URL__", "https://example.invalid/a.apk")
+  .replaceAll("__APK_CHECKSUM__", "abc");
+function run(values) {
+  const out = {};
+  const els = {};
+  global.document = {getElementById(id) {
+    if (!els[id]) {
+      const el = {value: values[id] || ""};
+      Object.defineProperty(el, "textContent", {set(v) { out[id] = v; }, get() { return out[id] || ""; }});
+      Object.defineProperty(el, "innerHTML", {set(v) { out[id + "_html"] = v; }, get() { return ""; }});
+      els[id] = el;
+    }
+    return els[id];
+  }};
+  global.qrcode = () => ({addData(s) { out.payload = s; }, make() {}, createSvgTag() { return "<svg/>"; }});
+  eval(script);
+  generateQr();
+  return out;
+}
+const base = {token:"tok", server:"https://192.168.1.1:8443", name:"Phone", certPin:""};
+const empty = run({...base, security:"WPA", ssid:"Cafe WiFi", wifiPass:""});
+if (empty.payload || !String(empty.state).includes("8 to 63")) {
+  console.error("WPA QR accepted an empty password", empty.state);
+  process.exit(1);
+}
+const short = run({...base, security:"WPA", ssid:"Cafe WiFi", wifiPass:"short"});
+if (short.payload) {
+  console.error("WPA QR accepted a short password");
+  process.exit(1);
+}
+const ok = run({...base, security:"WPA", ssid:"Cafe WiFi", wifiPass:"correct-horse"});
+const payload = JSON.parse(ok.payload);
+if (payload["android.app.extra.PROVISIONING_WIFI_SSID"] !== '"Cafe WiFi"') {
+  console.error("SSID was not quoted for Android", payload["android.app.extra.PROVISIONING_WIFI_SSID"]);
+  process.exit(1);
+}
+if (payload["android.app.extra.PROVISIONING_WIFI_PASSWORD"] !== "correct-horse") process.exit(1);
+const open = run({...base, security:"NONE", ssid:'Room "A"', wifiPass:""});
+const openPayload = JSON.parse(open.payload);
+if (openPayload["android.app.extra.PROVISIONING_WIFI_SSID"] !== '"Room \\"A\\""') {
+  console.error("open SSID quoting failed", openPayload["android.app.extra.PROVISIONING_WIFI_SSID"]);
+  process.exit(1);
+}
+if ("android.app.extra.PROVISIONING_WIFI_PASSWORD" in openPayload) process.exit(1);
+JS
 echo "BlazeRental split binding / Device Owner QR tool checks passed"
