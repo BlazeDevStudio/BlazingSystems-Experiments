@@ -65,7 +65,7 @@ def choose(root, criterion):
         candidate = item
         while candidate is not None:
             if candidate.attrib.get("clickable") == "true" and re.match(
-                r"\\[\\d+,\\d+\\]\\[\\d+,\\d+\\]",
+                r"\[\d+,\d+\]\[\d+,\d+\]",
                 candidate.attrib.get("bounds", "")
             ):
                 return candidate
@@ -77,7 +77,7 @@ def choose(root, criterion):
 
 def tap(serial, node, stage):
     bounds = node.attrib.get("bounds", "")
-    points = [int(i) for i in re.findall(r"\\d+", bounds)]
+    points = [int(i) for i in re.findall(r"\d+", bounds)]
     if len(points) != 4:
         raise RuntimeError(f"{stage}: no tappable bounds ({bounds})")
     x, y = (points[0] + points[2]) // 2, (points[1] + points[3]) // 2
