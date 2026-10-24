@@ -405,6 +405,14 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp8266 experiment/openwrt/BlazePwifi/dist/esp8266
           arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/dist/esp8266/source/BlazePwifiVendo
           (cd experiment/openwrt/BlazePwifi/dist/esp8266 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: VERIFY-LIGHT SHA256 integrity and nonempty compiled esp8266 binary before artifact upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=experiment/openwrt/BlazePwifi/dist/esp8266
+          test -s "$output/SHA256SUMS"
+          test -n "$(find "$output" -maxdepth 1 -type f -name '*.bin' -size +0c -print -quit)"
+          (cd "$output" && sha256sum -c SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: BlazePwifi-esp8266-firmware
@@ -451,6 +459,14 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 experiment/openwrt/BlazePwifi/dist/esp32
           arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/dist/esp32/source/BlazePwifiVendo32
           (cd experiment/openwrt/BlazePwifi/dist/esp32 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: VERIFY-LIGHT SHA256 integrity and nonempty compiled esp32 binary before artifact upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=experiment/openwrt/BlazePwifi/dist/esp32
+          test -s "$output/SHA256SUMS"
+          test -n "$(find "$output" -maxdepth 1 -type f -name '*.bin' -size +0c -print -quit)"
+          (cd "$output" && sha256sum -c SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
           name: BlazePwifi-esp32-firmware
