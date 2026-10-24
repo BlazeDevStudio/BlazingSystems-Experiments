@@ -625,4 +625,93 @@ for phx_ctl_replay_action in member_bank coin; do
 done
 [ "$phx_ctl_failures" -eq 0 ] || exit 1
 
+
+# PHX-L-CORE P0 #31 / MASTER #172: REAL signed Vendo heartbeat currently
+# auto-ensures an absent controller entry as ENABLED (coin_enabled=1).
+# Force controller-registry loss/torn rows after a genuine ADMIN DISABLE
+# and verify every fresh signed paid event fails closed. Private /tmp only.
+# Keep first enrollment separate: an unknown ID must not automatically
+# become paid-enabled just because it holds a controller request signature.
+phx_reg_failures=0
+phx_reg_index=0
+for phx_reg_case in \
+  missing-bank missing-coin empty-coin torn-bank torn-coin first-enrollment-bank; do
+  phx_reg_index=$((phx_reg_index+1))
+  phx_ctl_fresh_state "registry-$phx_reg_index"
+  phx_reg_nonce="$(printf '10000000000003%02x' "$phx_reg_index")"
+  phx_reg_event="$(printf '%032x' "$((8000+phx_reg_index))")"
+  case "$phx_reg_case" in
+    *-bank)
+      phx_reg_user="phxreg$phx_reg_index"
+      bp_member_lock
+      bp_member_create "$phx_reg_user" "Registry guard" 'fixture-pass-123' fixture >/dev/null
+      bp_member_unlock
+      phx_reg_hash="$(printf '%s' "$(bp_member_line "$phx_reg_user")" | cut -f6)"
+      phx_reg_proof="$(proof_for "$phx_reg_hash" "$phx_reg_nonce")"
+      phx_reg_op=member_bank
+      phx_reg_count=30
+      phx_reg_target="$phx_reg_user:$phx_reg_event:$phx_reg_proof"
+      ;;
+    *-coin)
+      phx_ctl_setup_coin
+      phx_reg_op=coin
+      phx_reg_count=1
+      phx_reg_target="$phx_ctl_target"
+      ;;
+  esac
+  # Start with an actual disabled controller revision > 1. For first
+  # enrollment there is deliberately no prior disabled revision.
+  if [ "$phx_reg_case" != first-enrollment-bank ]; then
+    phx_ctl_config 0 0
+    phx_reg_old_rev="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f15)"
+    [ "$phx_reg_old_rev" -ge 2 ] || {
+      echo 'PHX-L-CORE CONTROLLER_REGISTRY_SETUP_INVALID: no prior disable' >&2; exit 2;
+    }
+  fi
+  case "$phx_reg_case" in
+    missing-*) rm -f "$BP_CONTROLLERS" ;;
+    empty-*) : > "$BP_CONTROLLERS" ;;
+    torn-*) printf 'softtimer-01\t1\t1\n' > "$BP_CONTROLLERS" ;;
+    first-enrollment-*) rm -f "$BP_CONTROLLERS" ;;
+  esac
+  phx_reg_before="$(phx_ctl_digest)"
+  phx_reg_reply="$(call_vendo "$phx_reg_op" "$phx_reg_nonce" "$phx_reg_count" "$phx_reg_target")"
+  phx_reg_after="$(phx_ctl_digest)"
+  phx_reg_row="$(bp_controller_line softtimer-01)"
+  phx_reg_enabled="$(printf '%s' "$phx_reg_row" | cut -f2)"
+  phx_reg_coins="$(printf '%s' "$phx_reg_row" | cut -f3)"
+  if ! printf '%s' "$phx_reg_reply" | grep -Fq '"ok":false' ||
+     [ "$phx_reg_before" != "$phx_reg_after" ] ||
+     { [ "$phx_reg_case" != torn-bank ] &&
+       [ "$phx_reg_case" != torn-coin ] &&
+       [ "$phx_reg_enabled:$phx_reg_coins" = "1:1" ]; }; then
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_RED: $phx_reg_case auto-admitted fresh signed paid event after lost/torn/unknown registry: $phx_reg_reply" >&2
+    phx_reg_failures=$((phx_reg_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_PASS: $phx_reg_case denied fresh signed coin/bank"
+  fi
+done
+
+# Explicit authenticated admin enable remains the positive control. It
+# is not equivalent to automatic re-enrollment on signed heartbeat.
+phx_ctl_fresh_state registry-explicit-enabled
+bp_member_lock
+bp_member_create phxregpositive "Registry enabled" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_ctl_config 1 1
+phx_reg_nonce=10000000000003f0
+phx_reg_event=88888888888888888888888888888880
+phx_reg_hash="$(printf '%s' "$(bp_member_line phxregpositive)" | cut -f6)"
+phx_reg_proof="$(proof_for "$phx_reg_hash" "$phx_reg_nonce")"
+phx_reg_reply="$(call_vendo member_bank "$phx_reg_nonce" 30 \
+  "phxregpositive:$phx_reg_event:$phx_reg_proof")"
+if ! printf '%s' "$phx_reg_reply" | grep -Fq '"ok":true' ||
+   [ "$(printf '%s' "$(bp_member_line phxregpositive)" | cut -f8)" != 30 ] ||
+   [ "$(awk -F '\t' -v e="$phx_reg_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+  echo "PHX-L-CORE CONTROLLER_REGISTRY_SETUP_INVALID: explicit admin enable denied: $phx_reg_reply" >&2
+  exit 2
+fi
+echo 'PHX-L-CORE CONTROLLER_REGISTRY_PASS: explicit admin enable admits exactly one new signed paid event'
+[ "$phx_reg_failures" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
