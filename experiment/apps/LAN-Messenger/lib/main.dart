@@ -505,13 +505,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           alreadyPresented: readyId != null && _activeCallUiId == readyId,
           pendingPresentation: _pendingCallPresentation,
         )) {
+          // The gate accepts a live session, but the predicate is a pure
+          // boolean and Dart cannot promote the nullable references through it.
+          final sessionId = readyId!;
+          final peer = readyPeer!;
           _pendingCallPresentation = true;
           unawaited(() async {
             try {
-              if (inter.callId == readyId && inter.talkingTo?.id == readyPeer.id &&
+              if (inter.callId == sessionId && inter.talkingTo?.id == peer.id &&
                   !inter.connecting) {
-                await _showOngoingCall(readyPeer, readyId, inter.video);
-                if (Platform.isWindows) await _showActiveTrayMenu(readyPeer);
+                await _showOngoingCall(peer, sessionId, inter.video);
+                if (Platform.isWindows) await _showActiveTrayMenu(peer);
               }
             } catch (e) {
               if (mounted) setState(() =>
