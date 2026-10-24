@@ -47,6 +47,7 @@ bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true,lastCoin=false;
 bool pollIntakeSuspended=false,relayOn=false,relayDuringPoll=false;
 int saves=0,polls=0;
+uint32_t pulseFrom=1600,pulseUntil=1680;
 String activeTarget="1234567890123456",pendingTarget,pendingNonce;
 struct Config {
 #ifdef TARGET_ESP32
@@ -62,7 +63,7 @@ struct Web {void handleClient(){}} web;
 struct SerialMock {void println(const char*){}} Serial;
 uint32_t millis(){return now_ms;}
 void delay(int n){now_ms+=(uint32_t)n;}
-int digitalRead(int){return 1600<=now_ms && now_ms<1680?0:1;}
+int digitalRead(int){return pulseFrom<=now_ms && now_ms<pulseUntil?0:1;}
 void startSetupAp(){}
 void writeLogical(int pin,bool on,bool){if(pin==runRelayPin) relayOn=on;}
 void applyRemoteConfig(const String&){}
@@ -87,7 +88,24 @@ int main(){
  loop();
  std::cout<<"polls="<<polls<<" relay_during_poll="<<relayDuringPoll
   <<" unrecorded_pulse="<<(pendingPulses==0&&saves==0)<<"\n";
- return (control&&polls==1&&!relayDuringPoll)?0:19;
+ bool blockedPollGuard=(control&&polls==1&&!relayDuringPoll);
+ // A pulse began before scheduled polling: network IO must be deferred
+ // until that active pulse has been sampled into the persistent journal.
+ pulseFrom=1490;pulseUntil=1570;
+ now_ms=1501;lastPoll=0;lastEdge=0;lastSend=0;
+ insertMode=true;pendingReady=false;pendingPulses=0;lastCoin=false;saves=0;polls=0;
+ activeTarget="1234567890123456";applyOutputs();loop();
+ bool activeEdgeRecorded=(polls==0&&pendingPulses==1&&saves==1);
+ std::cout<<" active_edge_saved="<<activeEdgeRecorded;
+ // A pulse train with an active journal group must settle before HTTP poll
+ // can suspend the relay (avoid cutting a multi-pulse coin sequence).
+ pulseFrom=4000;pulseUntil=4080;
+ now_ms=1501;lastPoll=0;lastEdge=1450;lastSend=0;
+ pendingPulses=1;pendingReady=false;lastCoin=false;saves=0;polls=0;
+ insertMode=true;applyOutputs();loop();
+ bool pendingGroupDeferred=(polls==0&&pendingPulses==1);
+ std::cout<<" pending_group_deferred="<<pendingGroupDeferred<<"\n";
+ return (blockedPollGuard&&activeEdgeRecorded&&pendingGroupDeferred)?0:19;
 }
 """
 
@@ -97,7 +115,7 @@ for chip, path in SOURCES.items():
     assert "h.setTimeout(3500)" in sketch, "HTTP timeout contract changed: re-audit"
     loop = source_function(sketch, "loop")
     outputs = source_function(sketch, "applyOutputs")
-    assert loop.index('post("poll")') < loop.index("digitalRead(runCoinPin)"), "poll order changed: re-audit"
+    assert loop.index('post("poll")') < loop.index("bool raw=digitalRead(runCoinPin)"), "poll order changed: re-audit"
     code = ("#define TARGET_ESP32\n" if chip == "ESP32" else "") + STUBS + outputs + loop + MAIN
     with tempfile.TemporaryDirectory(prefix="blaze-esp-host-lab-") as folder:
         cpp = Path(folder) / "test.cpp"
