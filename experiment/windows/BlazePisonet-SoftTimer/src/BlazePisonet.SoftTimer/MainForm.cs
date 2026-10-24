@@ -628,10 +628,26 @@ public sealed class MainForm : Form
 
     private void BindExactDevice()
     {
-        if (_serialDevices.SelectedItem is not SerialDeviceItem item) { MessageBox.Show("Select a serial device first."); return; }
-        SerialDiscovery.BindExactDevice(_controller.Config, item.Device);
+        if (_serialDevices.SelectedItem is not SerialDeviceItem item)
+        {
+            _serialStatus.Text = "Select a serial device before exact binding.";
+            MessageBox.Show(_serialStatus.Text, "Exact binding refused", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        // The previously displayed COM row can be stale after hot-unplug.
+        // Re-enumerate now and refuse ambiguous, identity-free or changed
+        // adapter rows BEFORE mutating the live configuration.
+        var fresh = SerialDiscovery.Enumerate();
+        if (!SerialDiscovery.TryBindExactDevice(_controller.Config, item.Device, fresh, out var reason))
+        {
+            _serialStatus.Text = "Exact binding refused: " + reason;
+            MessageBox.Show(reason, "Exact binding refused", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         _serialMode.SelectedItem = SerialSelectionMode.ExactDevice;
-        _serialStatus.Text = $"Bound to {item.Device.Display}\nPnP: {item.Device.PnpDeviceId}\nVID/PID: {item.Device.Vid}/{item.Device.Pid}";
+        _serialStatus.Text = $"Exact device identity selected: {item.Device.Display}\nPnP: {item.Device.PnpDeviceId}\nVID/PID: {item.Device.Vid}/{item.Device.Pid}\nNot yet hardware-verified. Reconnect and test before accepting coins.";
     }
 
     private async Task DiscoverTimers()
