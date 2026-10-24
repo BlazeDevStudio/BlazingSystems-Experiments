@@ -725,4 +725,74 @@ fi
 echo 'PHX-L-CORE CONTROLLER_REGISTRY_PASS: explicit admin enable admits exactly one new signed paid event'
 [ "$phx_reg_failures" -eq 0 ] || exit 1
 
+
+# PHX-L-CORE P0 / MASTER UTC22: real sourced controller_set may rename an
+# ENABLED registry row, then report failure because durability sync returned
+# an error. A fresh signed Vendo payment MUST fail closed after ambiguous
+# admin persistence, even though the new row is locally visible.
+# Private /tmp per-case fixture; no real filesystem powercut or money.
+phx_sync_failures=0
+phx_sync_i=0
+for phx_sync_action in member_bank coin; do
+  phx_sync_i=$((phx_sync_i+1))
+  phx_ctl_fresh_state "controller-sync-$phx_sync_i"
+  phx_ctl_config 0 0 || {
+    echo "PHX-L-CORE CONTROLLER_SYNC_SETUP_INVALID: cannot disable prior to fault" >&2
+    exit 2
+  }
+  phx_sync_nonce="$(printf '10000000000004%02x' "$phx_sync_i")"
+  if [ "$phx_sync_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_sync_target="$phx_ctl_target"
+    phx_sync_pulses=1
+  else
+    phx_sync_user="phxsync$phx_sync_i"
+    bp_member_lock
+    bp_member_create "$phx_sync_user" "Controller sync failure fixture" 'fixture-pass-123' fixture >/dev/null
+    bp_member_unlock
+    phx_sync_event="$(printf '%032x' "$((9000+phx_sync_i))")"
+    phx_sync_hash="$(printf '%s' "$(bp_member_line "$phx_sync_user")" | cut -f6)"
+    phx_sync_proof="$(proof_for "$phx_sync_hash" "$phx_sync_nonce")"
+    phx_sync_target="$phx_sync_user:$phx_sync_event:$phx_sync_proof"
+    phx_sync_pulses=30
+  fi
+  # The hook is on the REAL controller.sh writer call, not Vendo's new
+  # process: it proves the admin sync was reached and whether the enabled
+  # row was visible after mv. The CGI uses the unchanged real common.sh.
+  export PHX_SYNC_CALLED="$BP_RUN/sync-called"
+  export PHX_SYNC_POSTMV="$BP_RUN/sync-postmv-enabled-visible"
+  bp_durable_sync() {
+    : > "$PHX_SYNC_CALLED"
+    phx_sync_visible="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)"
+    [ "$phx_sync_visible" != 1 ] || : > "$PHX_SYNC_POSTMV"
+    return 74
+  }
+  phx_sync_admin_rc=0
+  if phx_ctl_config 1 1; then
+    phx_sync_admin_rc=0
+  else
+    phx_sync_admin_rc=$?
+  fi
+  # Restore the original unmodified production source function before
+  # driving the separate signed CGI process.
+  . "$BP_LIB"
+  if [ "$phx_sync_admin_rc" -ne 8 ] || [ ! -f "$PHX_SYNC_CALLED" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_SETUP_INVALID: real admin writer did not report injected sync EIO ($phx_sync_admin_rc)" >&2
+    exit 2
+  fi
+  if [ -f "$PHX_SYNC_POSTMV" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_OBSERVED: $phx_sync_action enabled policy locally visible during injected EIO"
+  fi
+  phx_sync_before="$(phx_ctl_digest)"
+  phx_sync_reply="$(call_vendo "$phx_sync_action" "$phx_sync_nonce" "$phx_sync_pulses" "$phx_sync_target")"
+  if ! printf '%s' "$phx_sync_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_sync_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_RED: $phx_sync_action fresh signed money accepted after failed admin controller enable durability sync: $phx_sync_reply" >&2
+    phx_sync_failures=$((phx_sync_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_PASS: $phx_sync_action fresh signed money denied after ambiguous controller sync"
+  fi
+done
+[ "$phx_sync_failures" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
