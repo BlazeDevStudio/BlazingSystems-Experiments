@@ -14,8 +14,12 @@ It reproduced `/ubus/ubus` on the old page before the endpoint fix.
 Local Windows/Git-shell checks passed syntax/manifests, endpoint helper cases,
 all 12 page cases, read-only detector entrypoints and PowerShell parsing.
 The local mode-644 fixture could not run because this Git shell lacks `chmod`;
-real POSIX permission proof must come from the dedicated Linux CI. This entry
-does not claim that pending CI has passed or establish hardware acceptance.
+the dedicated Linux CI supplies that POSIX permission proof. Exact source
+`eb91170e79a21b05f6750d49cefffc65f8311e08` passed push run
+[40112898303](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40112898303)
+and PR run [40112909733](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40112909733).
+Their static, detector mode-644, helper and 12 actual-page cases passed.
+These checks do not establish hardware or live-network acceptance.
 
 ## Reconciliation
 - Canonical real-hardware baseline: EasyMode 4.1.4.
