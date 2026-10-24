@@ -110,6 +110,10 @@ CG="$(printf '%s' "$COIN" | sed -n 's/.*"coin_window_sig":"\([^"]*\)".*/\1/p')"
 
 # Send one signed 2-pulse coin event through the real Vendo CGI, then replay
 # the exact same event. Only the first may increase lease/progress.
+# PHX-L-CORE P0: an authenticated operator deliberately enrolled this
+# synthetic controller. Signed heartbeat alone now leaves unknown IDs off.
+bp_controller_ensure vendo-02
+bp_controller_set vendo-02 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 VENDO_CGI="$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
 TARGET="$(printf '%s' "$COIN" | sed -n 's/.*"target_nonce":"\([^"]*\)".*/\1/p')"
 VN=aabbccdd

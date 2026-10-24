@@ -27,6 +27,11 @@ export BP_RENTAL_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/rental.sh"
 export BP_CONTROLLER_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/controller.sh"
 export BP_MEMBER_LIB="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/member.sh"
 export REQUEST_METHOD=POST SERVER_PORT=4455 REMOTE_ADDR=10.0.0.9
+# One explicit admin enable for the genuine signed coin positive-control.
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+bp_controller_ensure vendo-01
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 VENDO="$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
 DEVICE=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 TARGET=1122334455667788

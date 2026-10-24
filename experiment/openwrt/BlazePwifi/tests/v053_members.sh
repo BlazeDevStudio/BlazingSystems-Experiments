@@ -30,7 +30,11 @@ export SERVER_PORT=4455 REMOTE_ADDR=10.0.0.50
 . "$BP_LIB"
 . "$BP_AUTH_LIB"
 . "$BP_MEMBER_LIB"
+. "$BP_CONTROLLER_LIB"
 bp_member_init
+# Positive signed member tests require an explicit admin-enabled controller.
+bp_controller_ensure softtimer-01
+bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 
 bp_member_lock
 bp_member_create alice "Alice Member" 'alpha123' test >/dev/null
@@ -342,7 +346,10 @@ phx_br_fresh_state() {
   unset BP_MEMBERS BP_MEMBER_EVENTS BP_MEMBER_REVISION
   . "$BP_LIB"
   . "$PHX_REAL_MEMBER"
+  . "$BP_CONTROLLER_LIB"
   bp_member_init
+  bp_controller_ensure softtimer-01
+  bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 }
 phx_br_failed=0
 export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
@@ -467,6 +474,9 @@ phx_ctl_fresh_state() {
   . "$BP_CONTROLLER_LIB"
   bp_member_init
   bp_controller_ensure softtimer-01
+  # The fixture explicitly authorizes normal positive controller payments.
+  # Negative cases below still invoke real bp_controller_set disable.
+  bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 }
 phx_ctl_config() {
   bp_controller_set softtimer-01 "$1" "$2" 1 1 -1 -1 -1 1 1 1 40 400 6
