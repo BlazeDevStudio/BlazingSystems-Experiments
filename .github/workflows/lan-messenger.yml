@@ -103,15 +103,19 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq libpulse0
           if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: Two Android emulators — real shared virtual Wi-Fi discovery
+      - name: Two Android emulators — background incoming Answer and real WebRTC transport
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
           target: google_apis
           profile: pixel_2
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh"
+          # Voice tests must not disable virtual audio for the caller/callee.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim
+          # Use THIS workflow's freshly built APK, not an older cached build:
+          # source the LAN discovery stage and then exercise OS Answer, peer
+          # transport readiness and hangup on two real emulator processes.
+          script: bash "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/run_dual_android_voice_e2e.sh"
       - name: Upload dual-emulator network evidence
         if: always()
         uses: actions/upload-artifact@v4
