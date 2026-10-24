@@ -19,7 +19,7 @@ class FakeLanNode extends LanNode {
     final remote = network?[peer.id];
     if (remote == null) throw StateError('offline');
     final sender = remote.peers[identity.id]!;
-    await remote.onSignal?.call(sender, data);
+    remote.onSignal?.call(sender, data);
   }
 }
 Future<Identity> identity(String name) async {
@@ -42,7 +42,7 @@ void main() {
       'when': DateTime.now().toUtc().toIso8601String(),
     }), isNotNull);
     expect(GroupChatEntry.fromJson({
-      'id': 'm', 'from': 'a', 'body': 'X' * 4001,
+      'id': 'm', 'from': 'a', 'body': List.filled(4001, 'X').join(),
       'when': DateTime.now().toUtc().toIso8601String(),
     }), isNull);
   });
@@ -59,9 +59,10 @@ void main() {
     }
     final groups = nodes.map(GroupMessaging.new).toList();
     for (var i = 0; i < groups.length; i++) {
+      final index = i;
       groups[i].onInvitation = (_, __, ___) async => true;
       nodes[i].onSignal = (sender, msg) {
-        unawaited(groups[i].receive(sender, msg));
+        unawaited(groups[index].receive(sender, msg));
       };
     }
     final room = await groups[0].create('Study group',
