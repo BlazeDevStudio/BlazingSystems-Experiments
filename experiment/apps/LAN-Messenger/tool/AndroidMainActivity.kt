@@ -156,11 +156,10 @@ class MainActivity : FlutterActivity() {
             .setAutoCancel(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-        // Full screen intents are restricted by Android 14's user-controlled
-        // Special App Access, but enable a heads-up call banner when allowed.
-        if (Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()) {
-            b.setFullScreenIntent(openApp(), true)
-        }
+        // Use the native Android heads-up call card with Answer and Decline.
+        // Do NOT attach a full-screen launch intent: that would steal focus,
+        // open the entire chat UI and hide the inline call actions. Android
+        // controls whether the heads-up banner is permitted by user settings.
         if (Build.VERSION.SDK_INT >= 31) {
             b.setStyle(Notification.CallStyle.forIncomingCall(
                 Person.Builder().setName(caller).build(), decline, answer))
