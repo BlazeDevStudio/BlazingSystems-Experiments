@@ -1045,7 +1045,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     return CompactCallCard(
       peerName: (_ringingPeer ?? call.talkingTo)?.name ?? 'LAN Messenger',
       incoming: _incomingDialogOpen,
-      video: !_incomingDialogOpen && call.video,
+      video: _incomingDialogOpen ? _ringingVideo : call.video,
       connecting: call.connecting,
       muted: call.muted,
       renderer: call.remoteRenderer,
