@@ -1,4 +1,4 @@
-# LAN Messenger (BlazingSystems) — v0.2.1 stability and video-call preview
+# LAN Messenger (BlazingSystems) — v0.3.0 development preview
 
 **Independent project:** a clean-room LAN messenger, file sender, and audio intercom influenced by SHAREit's ease of file sharing, not its proprietary code or assets.
 
@@ -22,7 +22,7 @@ flutter test
 flutter run -d windows  # or a connected Android device
 ```
 
-GitHub Actions also generates an Android debug APK and Windows portable debug ZIP when the branch is pushed. **Artifacts are developer previews, not signed release installers.** No fabricated testing claims.
+GitHub Actions compiles release-mode Android APKs (debug-key signed, not permanent production signing) and a portable Windows release ZIP; it also runs Flutter analysis/tests and Android emulator install/launch checks. **These are developer previews, not field-tested production installers.**
 
 ## Implemented in source
 
@@ -30,7 +30,8 @@ GitHub Actions also generates an Android debug APK and Windows portable debug ZI
 - P2P local HTTP listener on an ephemeral TCP port, advertised through the discovery packet.
 - X25519 shared secret + HKDF-SHA256 + AES-256-GCM for chat, call signaling, file offers, and encrypted file chunks. Device ID is SHA-256 of its static X25519 public key; no external PKI or cloud relay.
 - Text messaging, photos and files as persistent conversation bubbles, file picker within the conversation, open-file action, automatic receive with 512 MB per-file / four-concurrent-transfer limits, chunked transfers, retries, SHA-256 check, and app-private `Received` folder.
-- One-to-one audio/video call foundation with WebRTC using **LAN host candidates only**, no public STUN or TURN.
+- One-to-one audio/video calling via WebRTC using **LAN host candidates only**, no public STUN or TURN. Native background-only Answer/Decline via Windows Win32 toast or optional Android system overlay/CallStyle notification; video PiP is an ongoing-call feature.
+- Experimental LAN group chat (3–8 members) with local history, and 3–4-person group voice/video mesh. Each participant must accept an invitation; one camera/microphone capture is reused across links for a group session.
 - Large touch targets, readable text, automatic hostname-based device name, optional rename (e.g. PC-03), clear declined/connection feedback, incoming-call alert sound, unanswered-call timeout.
 
 ## Limitations / known issues
@@ -38,11 +39,11 @@ GitHub Actions also generates an Android debug APK and Windows portable debug ZI
 - **Preview code has not been tested with physical Android and Windows pairs.** Real device voice/video calling, the Windows native crash and discovery stability remain unverified.
 - Android foreground service supports continued network listening while active; a force-stop still terminates it. Incoming-call notifications/lock-screen answer behavior and battery optimizations remain to be tested. This is not a system dialer.
 - Received files remain in app-private storage. Tapping an attachment requests the OS to open it. On Android this is not an explicit save/export-to-Downloads operation. Do not uninstall expecting these files to survive.
-- Local chat history is cached on the device in app-private storage (not encrypted at rest); groups, push-to-talk broadcast, directory transfers, off-LAN calls, and network-crossing discovery are not implemented.
+- Local chat history is cached on the device in app-private storage (not encrypted at rest). Group chat and small group calling are experimental; push-to-talk broadcast, directory transfers, off-LAN calls, and network-crossing discovery are not implemented.
 - Discovery fails if local networks block multicast and broadcast, client/AP isolation is enabled, VLANs cannot route between each other, or OS firewalls block incoming traffic. The first Windows inbound connection may trigger a firewall prompt.
 - **Security qualification:** transfer content is encrypted against passive LAN observers. Device names are self-declared, first contact is **not independently authenticated**, and no key-verification UI exists. First-contact impersonation and malicious LAN peers are still possible. Cryptographic implementation and protocol need third-party review before production.
-- Transfers are limited to individual files of up to 1TB with sequential 64KiB chunks and no restart-safe resume; sending a directory as a directory and high-performance bulk transfer optimization are not implemented.
-- CI builds Android and Windows debug previews. They do not guarantee headset/background audio, Windows firewall traversal, USB sound device routing, or physical network acceptance.
+- Transfers are limited to individual files by the configured receive cap (512 MiB default) with sequential 64KiB chunks and no restart-safe resume; sending a directory as a directory and high-performance bulk transfer optimization are not implemented.
+- CI builds release-mode binaries using non-production signing and validates emulator launch. It does not guarantee headset/background audio, Windows firewall traversal, USB sound device routing, full incoming call negotiation, or physical network acceptance.
 
 ## Source layout
 
@@ -87,3 +88,10 @@ This is original preview source, not a SHAREit fork. Dependencies retain their s
 - Android opt-in foreground service attempts to keep discovery, chat and receiving available; it requires Android's notification and service permissions. Microphone/video background support varies by OS and is not production-tested.
 
 Build from a clean clone: first run `python tool/generate_assets.py` before `flutter create` and `flutter pub get`. GitHub Actions does this automatically.
+
+## v0.3.0 development acceptance
+
+- Incoming call **foreground**: in-app Answer/Decline only. **Windows minimized/tray**: separate small draggable Win32 toast near the taskbar clock, not a Flutter child popup. **Android background**: opt-in system overlay (Display over other apps) and CallStyle notification fallback; notification Answer is delivered to Flutter after a matching incoming offer is ready. Android video PiP is for connected video, not a ringing audio call.
+- The Android emulator smoke includes a HOME → Answer Activity resume with a deliberately stale call ID and a repeated tap; this checks for native Activity termination, **not** a real call.
+- Group camera/mic is captured once and shared across room peer connections, then released on leave. Group video previews the local camera and remote participant streams as available. Group chat uses authenticated LAN peers, with no central server.
+- **Unverified:** answering between physical Windows/Android devices, OS-specific camera/audio permission edge cases, minimized Windows toast behavior in a running game, and 3–4 person synchronized voice/video quality. These require real-device field testing; passing CI cannot replace it.
