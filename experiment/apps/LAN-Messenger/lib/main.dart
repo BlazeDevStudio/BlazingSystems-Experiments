@@ -17,6 +17,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/call_presentation_policy.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -83,6 +84,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   String? _autoPipCallId;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
+  String? _pendingPresentationId;
+  String? _lastObservedCallId;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
   bool _restoringCompactWindow = false;
@@ -226,6 +229,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _showOngoingCall(Peer peer, String id, bool video) async {
+    // A late native window callback must not revive an ended or replaced call.
+    if (intercom?.callId != id || intercom?.talkingTo?.id != peer.id ||
+        intercom?.connecting == true) return;
     final args = {
       'caller': peer.name, 'callId': id,
       'video': video, 'muted': intercom?.muted ?? false,
@@ -373,6 +379,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<void> _endCallPresentation() async {
     _autoPipCallId = null;
+    _pendingPresentationId = null;
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
@@ -489,19 +496,53 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }));
       inter.onChanged = () {
         if (!mounted) return;
-        if (Platform.isAndroid && _autoPipCallId != null &&
-            _autoPipCallId == inter.callId && !inter.connecting &&
-            inter.talkingTo != null && _inForeground) {
-          _autoPipCallId = null;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_enterPipVideo());
-          });
+        // Intercom calls onChanged only after SDP negotiation completes.
+        // The old onIncoming.finally created native video windows before
+        // getUserMedia/WebRTC was initialized and could crash on Answer.
+        final readyPeer = inter.talkingTo;
+        final readyId = inter.callId;
+        if (readyId != null) _lastObservedCallId = readyId;
+        if (readyId != null && readyPeer != null && CallPresentationPolicy.ready(
+              incomingPending: _incomingDialogOpen,
+              connecting: inter.connecting,
+              peerPresent: true,
+              alreadyShown: _activeCallUiId == readyId,
+              scheduled: _pendingPresentationId == readyId,
+            )) {
+          _pendingPresentationId = readyId;
+          unawaited(() async {
+            try {
+              await _showOngoingCall(readyPeer, readyId, inter.video);
+              if (Platform.isWindows && inter.callId == readyId) {
+                await _showActiveTrayMenu(readyPeer);
+              }
+              if (Platform.isAndroid && _autoPipCallId == readyId &&
+                  inter.callId == readyId && _inForeground) {
+                _autoPipCallId = null;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && inter.callId == readyId) {
+                    unawaited(_enterPipVideo());
+                  }
+                });
+              }
+            } catch (e) {
+              if (mounted) setState(() =>
+                error = 'Call connected, controls unavailable: $e');
+            } finally {
+              if (_pendingPresentationId == readyId) {
+                _pendingPresentationId = null;
+              }
+            }
+          }());
         }
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
-        if (_activeCallUiId != null && inter.talkingTo == null) {
+        if ((_activeCallUiId != null || _lastObservedCallId != null) &&
+            inter.talkingTo == null) {
           _activeCallUiId = null;
+          _lastObservedCallId = null;
+          _pendingPresentationId = null;
           _lastNativeMuted = null;
           unawaited(_endCallPresentation().catchError((Object e) {
             if (mounted) setState(() => error = 'Call controls could not close: $e');
@@ -579,7 +620,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _callMinimized = true;
+        _callMinimized = Platform.isWindows
+            ? await _isDesktopBackground() : !_inForeground;
         setState(() { selected = peer; showReceived = false; });
         // Never focus or restore the Windows app on an inbound call.
         // Android uses a system CallStyle heads-up notification with actions.
@@ -587,7 +629,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
           final background = await _isDesktopBackground();
-          _incomingUsesExternalSurface = background;
+          _incomingUsesExternalSurface =
+              CallPresentationPolicy.externalIncoming(
+                foreground: !background,
+                minimizedOrHidden: background,
+                android: false,
+              );
           _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
@@ -599,7 +646,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
-          _incomingUsesExternalSurface = !_inForeground;
+          _incomingUsesExternalSurface = CallPresentationPolicy.externalIncoming(
+            foreground: _inForeground,
+            minimizedOrHidden: false,
+            android: true,
+          );
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
           if (!_nativeIncomingAvailable) {
@@ -626,19 +677,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           _pendingIncomingDecision = null;
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
-          if (accepted && inter.callId == id &&
-              inter.talkingTo?.id == peer.id) {
-            // Media negotiation continues in Intercom; cosmetic window work
-            // must never reject or close a successfully answered call.
-            try {
-              await _showOngoingCall(peer, id, incomingVideo);
-              if (Platform.isWindows) await _showActiveTrayMenu(peer);
-            }
-            catch (e) {
-              if (mounted) setState(() =>
-                  error = 'Call connected, floating controls unavailable: $e');
-            }
-          } else {
+          // On an accepted offer Intercom has NOT acquired microphone,
+          // camera, renderers or SDP yet. Do not present native video here.
+          // onChanged will perform that step after the answer is negotiated.
+          if (!accepted || inter.callId != id ||
+              inter.talkingTo?.id != peer.id) {
             await _dismissDesktopCall();
             await _restoreWindowAfterCall();
           }
