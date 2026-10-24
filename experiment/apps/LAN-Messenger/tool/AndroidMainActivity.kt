@@ -156,9 +156,13 @@ class MainActivity : FlutterActivity() {
             .setAutoCancel(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-        // Full screen intents are restricted by Android 14's user-controlled
-        // Special App Access, but enable a heads-up call banner when allowed.
-        if (Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()) {
+        // While unlocked, CallStyle + HIGH channel produce a non-disruptive
+        // heads-up banner with Answer and Decline on supported Android builds.
+        // Do not take over the foreground screen just to present an incoming
+        // call. Only a locked device may use an OS-approved full-screen intent.
+        val keyguard = getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+        val locked = keyguard.isKeyguardLocked
+        if (locked && (Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent())) {
             b.setFullScreenIntent(openApp(), true)
         }
         if (Build.VERSION.SDK_INT >= 31) {
