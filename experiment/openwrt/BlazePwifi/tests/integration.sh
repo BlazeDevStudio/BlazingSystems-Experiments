@@ -86,6 +86,21 @@ REG2SIG="$(printf 'vendokey|register|vendo-02|%s|0||vendokey' "$REG2NONCE" | sha
 OUT="$(printf 'action=register&id=vendo-02&nonce=%s&pulses=0&target=&sig=%s' "$REG2NONCE" "$REG2SIG" | sh "$VENDO")"
 echo "$OUT" | grep -q '"ok":true'
 
+# PHX-L-CORE: newly signed-registered controllers are deliberately disabled.
+# Exercise positive coin/accounting behavior only after explicit operator
+# enable through the real controller backend, not a heartbeat auto-enable.
+# GET is scoped to this subshell so sourcing common.sh does not read empty
+# CGI POST stdin under set -eu; all actual Vendo requests remain POST.
+(
+  REQUEST_METHOD=GET
+  . "$BP_LIB"
+  . "$BP_CONTROLLER_LIB"
+  bp_controller_ensure vendo-01
+  bp_controller_ensure vendo-02
+  bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+  bp_controller_set vendo-02 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+)
+
 OUT="$(printf 'action=me&device=%s' "$DEVICE" | sh "$API")"
 echo "$OUT" | grep -q '"credit_cents":0'
 echo "$OUT" | grep -q '"mac":"aa:bb:cc:dd:ee:ff"'
