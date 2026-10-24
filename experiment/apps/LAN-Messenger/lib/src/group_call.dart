@@ -20,8 +20,9 @@ class GroupCallMesh {
   void Function()? onChanged;
 
   bool get active => activeRoom != null && sessionId != null;
+  // A pending WebRTC offer is not yet a joined participant.
   int get participants => 1 + links.values
-      .where((link) => link.talkingTo != null).length;
+      .where((link) => link.talkingTo != null && !link.connecting).length;
   static bool canCall(GroupRoom room) => room.members.length >= 3 &&
       room.members.length <= 4;
 
@@ -114,6 +115,7 @@ class GroupCallMesh {
     if (type == 'group-leave') {
       if (active && id == sessionId && roomId == activeRoom?.id &&
           activeRoom?.includes(sender.id) == true) {
+        _announcedTo.remove(sender.id);
         final peer = links.remove(sender.id);
         if (peer != null) await peer.hangUp(notify: false);
         onChanged?.call();

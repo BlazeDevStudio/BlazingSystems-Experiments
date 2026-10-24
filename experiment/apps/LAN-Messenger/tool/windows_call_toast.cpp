@@ -8,10 +8,10 @@
 
 namespace {
 constexpr wchar_t kToastClass[] = L"BlazingSystems.LanMessenger.CallToast.v028";
-constexpr int kWidth = 338;
-constexpr int kHeight = 148;
-constexpr int kTitleHeight = 78;
-constexpr int kButtonTop = 96;
+constexpr int kWidth = 304;
+constexpr int kHeight = 134;
+constexpr int kTitleHeight = 76;
+constexpr int kButtonTop = 88;
 std::wstring ToWide(const std::string& source) {
   if (source.empty()) return L"LAN Messenger";
   const auto count = MultiByteToWideChar(CP_UTF8, 0, source.c_str(),
@@ -132,7 +132,13 @@ void WindowsCallToast::ResizeButtons() {
     captions[1] = L"End call";
     captions[2] = L"Open thread";
   }
-  for (int i = 0; i < 3; ++i) {
+  // Incoming is deliberately TWO actions, like a Messenger call.
+  // The third Open Thread action belongs only to an ongoing conversation.
+  if (incoming_ && buttons_[2]) ShowWindow(buttons_[2], SW_HIDE);
+  const int count = incoming_ ? 2 : 3;
+  const int gap = 8;
+  const int width = (kWidth - 24 - gap * (count - 1)) / count;
+  for (int i = 0; i < count; ++i) {
     if (!buttons_[i]) {
       buttons_[i] = CreateWindowExW(0, L"BUTTON", captions[i],
           WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
@@ -143,7 +149,9 @@ void WindowsCallToast::ResizeButtons() {
           reinterpret_cast<WPARAM>(GetStockObject(DEFAULT_GUI_FONT)), TRUE);
     }
     SetWindowTextW(buttons_[i], captions[i]);
-    MoveWindow(buttons_[i], 12 + i * 107, kButtonTop, 100, 34, TRUE);
+    MoveWindow(buttons_[i], 12 + i * (width + gap),
+               kButtonTop, width, 34, TRUE);
+    ShowWindow(buttons_[i], SW_SHOWNA);
   }
 }
 
