@@ -629,7 +629,12 @@ public sealed class MainForm : Form
     private void BindExactDevice()
     {
         if (_serialDevices.SelectedItem is not SerialDeviceItem item) { MessageBox.Show("Select a serial device first."); return; }
-        SerialDiscovery.BindExactDevice(_controller.Config, item.Device);
+        if (!SerialDiscovery.BindExactDevice(_controller.Config, item.Device))
+        {
+            _serialStatus.Text = "Exact binding unavailable: Windows did not report a device identity.";
+            MessageBox.Show("This COM port has no stable PnP identity. Exact-device binding was not enabled. Verify the adapter and select ManualPort explicitly if appropriate; never attach an unconditioned coin wire directly to a serial pin.");
+            return;
+        }
         _serialMode.SelectedItem = SerialSelectionMode.ExactDevice;
         _serialStatus.Text = $"Bound to {item.Device.Display}\nPnP: {item.Device.PnpDeviceId}\nVID/PID: {item.Device.Vid}/{item.Device.Pid}";
     }
