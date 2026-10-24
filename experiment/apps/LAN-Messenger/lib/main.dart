@@ -288,8 +288,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       inter.onChanged = () {
         if (!mounted) return;
         if (_incomingDialogOpen && inter.talkingTo == null) {
-          // Remote hangup may race the dialog's creation.
+          // Remote hangup or timeout must release the incoming decision.
           _resolveIncomingDialog(false);
+        }
+        if (inter.talkingTo == null && !_incomingDialogOpen && _desktopCompact) {
+          unawaited(_restoreWindowAfterCall());
         }
         setState(() {});
       };
@@ -347,38 +350,50 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       };
       inter.onIncoming = (peer, incomingVideo) async {
         if (!mounted) return false;
-        setState(() { selected = peer; showReceived = false; });
+        if (_incomingDialogOpen) return false;
+        final decision = Completer<bool>();
+        _incomingAnswer = decision;
         _incomingDialogOpen = true;
-        _pendingIncomingDecision = null;
-        _callMinimized = false;
-        // Ring immediately on Windows even if the window-manager plugin takes
-        // time to restore a hidden window. Android notification owns ringtone
-        // audio when a native call banner is available.
+        _ringingPeer = peer;
+        _ringingVideo = incomingVideo;
+        _callToastOffset = Offset.zero;
+        // Incoming call never expands the main UI automatically.
+        _callMinimized = true;
+        setState(() { selected = peer; showReceived = false; });
+
         if (Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
-          await _raiseIncomingWindow(peer);
+          await _updateDesktopTray(incoming: peer);
+          await _openCompactDesktopCall(video: false);
         }
+        // Android notification uses native CallStyle with explicit Answer and
+        // Decline actions; the foreground UI simultaneously draws both buttons.
         final nativeShown = await _showNativeIncoming(peer, incomingVideo);
         if (!nativeShown && !Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
         }
         try {
-          return await _ask(
-            title: incomingVideo ? 'Incoming video call' : 'Incoming voice call',
-            detail: '${peer.name} is calling.',
-            allowText: 'Answer',
-            incomingCall: true,
-          );
+          final accepted = await decision.future;
+          if (accepted && mounted && Platform.isWindows) {
+            await _openCompactDesktopCall(video: incomingVideo);
+          }
+          return accepted;
         } finally {
-          // Clearing all three paths also handles missed, declined and canceled calls.
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
-          unawaited(_restoreWindowAfterCall());
           _incomingDialogOpen = false;
-          _incomingDialogContext = null;
-          _pendingIncomingDecision = null;
+          _incomingAnswer = null;
+          _ringingPeer = null;
+          if (mounted) setState(() {});
+          if (Platform.isWindows) {
+            await _updateDesktopTray();
+            if (decision.isCompleted && decision.future != null &&
+                (inter.talkingTo == null || !identical(inter.talkingTo, peer))) {
+              unawaited(_restoreWindowAfterCall());
+            }
+          }
         }
       };
       await n.start();
@@ -453,7 +468,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   @override
   void onWindowClose() {
     if (!Platform.isWindows) return;
-    if (settings.minimizeToTray && !_exitRequested) {
+    if (_desktopCompact) {
+      // Closing the compact shell never terminates an active call.
+      unawaited(wm.windowManager.hide());
+    } else if (settings.minimizeToTray && !_exitRequested) {
       unawaited(wm.windowManager.hide());
     } else {
       unawaited(_exitWindows());
@@ -468,6 +486,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   void _openWindow() {
+    if (_desktopCompact) {
+      _openCallThread();
+      return;
+    }
     unawaited(() async {
       await wm.windowManager.show();
       await wm.windowManager.restore();
