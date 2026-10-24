@@ -42,7 +42,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayListener {
+class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayListener, WidgetsBindingObserver {
   LanNode? node;
   AppSettings settings = AppSettings();
   final Alerts alerts = Alerts();
@@ -73,6 +73,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Peer? _incomingPeer;
   bool _incomingVideo = false;
   bool _nativeIncomingAvailable = false;
+  bool _androidForeground = true;
+  bool _incomingBackground = false;
+  bool _presentingCall = false;
+  bool _androidInPip = false;
   String? _activeCallUiId;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
@@ -87,6 +91,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (Platform.isAndroid) {
       _notifications.setMethodCallHandler(_handleNativeCallAction);
     }
@@ -96,8 +101,28 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     unawaited(_initialize());
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _androidForeground = state == AppLifecycleState.resumed;
+    if (mounted && Platform.isAndroid) setState(() {});
+  }
+
+  Future<bool> _isDesktopBackground() async {
+    if (!Platform.isWindows) return false;
+    try {
+      return !(await wm.windowManager.isVisible()) ||
+          await wm.windowManager.isMinimized();
+    } catch (_) { return false; }
+  }
+
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
-    if (call.method != 'callAction' || !mounted) return;
+    if (!mounted) return;
+    if (call.method == 'pipState') {
+      if (mounted) setState(() => _androidInPip =
+          call.arguments is Map && (call.arguments as Map)['active'] == true);
+      return;
+    }
+    if (call.method != 'callAction') return;
     final data = call.arguments;
     if (data is! Map) return;
     final id = data['callId'];
@@ -366,6 +391,28 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.onSignal = (peer, data) => unawaited(inter.incomingSignal(peer, data));
       inter.onChanged = () {
         if (!mounted) return;
+        // Present the ongoing call only after media setup/SDP negotiation
+        // succeeds. Showing native windows inside the incoming-offer finally
+        // block raced WebRTC initialization and caused answer regressions.
+        final readyId = inter.callId;
+        final readyPeer = inter.talkingTo;
+        if (!_incomingDialogOpen && !_presentingCall && !inter.connecting &&
+            readyId != null && readyPeer != null && _activeCallUiId != readyId) {
+          _presentingCall = true;
+          unawaited(() async {
+            try {
+              if (_incomingBackground) {
+                await _showOngoingCall(readyPeer, readyId, inter.video);
+              } else if (mounted) {
+                setState(() => _callMinimized = false);
+              }
+            } catch (e) {
+              if (mounted) setState(() => error = 'Call UI error: $e');
+            } finally {
+              _presentingCall = false;
+            }
+          }());
+        }
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
@@ -446,14 +493,16 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _incomingVideo = incomingVideo;
         _incomingDialogOpen = true;
         _pendingIncomingDecision = null;
-        _callMinimized = true;
+        _incomingBackground = Platform.isAndroid
+            ? !_androidForeground : await _isDesktopBackground();
+        _callMinimized = _incomingBackground;
         setState(() { selected = peer; showReceived = false; });
         // Never focus or restore the Windows app on an inbound call.
         // Android uses a system CallStyle heads-up notification with actions.
         if (Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
-          _nativeIncomingAvailable =
+          _nativeIncomingAvailable = _incomingBackground &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
             unawaited(tray.trayManager.setContextMenu(tray.Menu(items: [
@@ -464,7 +513,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
-          _nativeIncomingAvailable =
+          _nativeIncomingAvailable = _incomingBackground &&
               await _showNativeIncoming(peer, incomingVideo);
           if (!_nativeIncomingAvailable) {
             unawaited(alerts.ring(incomingVideo
@@ -490,12 +539,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           await _dismissNativeIncoming();
           unawaited(alerts.stopRing());
           unawaited(_restoreWindowAfterCall());
-          if (accepted && inter.callId == id &&
-              inter.talkingTo?.id == peer.id) {
-            await _showOngoingCall(peer, id, incomingVideo);
-          } else {
-            await _dismissDesktopCall();
-          }
+          // Never create a video viewer here. Negotiation and media acquisition
+          // begin only AFTER this incoming callback returns to Intercom.
+          if (!accepted) await _dismissDesktopCall();
           if (mounted) setState(() {});
         }
       };
@@ -1130,6 +1176,33 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Widget _foregroundIncomingCall() {
+    final peer = _incomingPeer;
+    if (peer == null) return const SizedBox.shrink();
+    return Material(color: const Color(0xff102b4e), child: SafeArea(
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        CircleAvatar(radius: 47, backgroundColor: Colors.white24,
+          child: Icon(_incomingVideo ? Icons.videocam : Icons.call,
+            color: Colors.white, size: 48)),
+        const SizedBox(height: 24),
+        Text(peer.name, textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 26, color: Colors.white,
+            fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Text(_incomingVideo ? 'Incoming video call' : 'Incoming voice call',
+          style: const TextStyle(color: Colors.white70, fontSize: 16)),
+        const SizedBox(height: 38),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          FilledButton.icon(onPressed: () => _resolveIncomingDialog(false),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            icon: const Icon(Icons.call_end), label: const Text('Decline')),
+          FilledButton.icon(onPressed: () => _resolveIncomingDialog(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            icon: const Icon(Icons.call), label: const Text('Answer')),
+        ]),
+      ])));
+  }
+
   Widget _incomingPopup() {
     final peer = _incomingPeer;
     if (peer == null || !_incomingDialogOpen) {
@@ -1430,15 +1503,15 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
       selected == null ? _deviceList() : _chat()),
   ])),
-    if (_incomingDialogOpen && _incomingPeer != null &&
-        (!Platform.isWindows || !_nativeIncomingAvailable))
-      _incomingPopup(),
+    if (_incomingDialogOpen && _incomingPeer != null && !_incomingBackground)
+      Positioned.fill(child: _foregroundIncomingCall()),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
       _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
   ]));
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(intercom?.hangUp(notify: false) ?? Future<void>.value());
     unawaited(node?.dispose() ?? Future<void>.value());
     unawaited(alerts.dispose());
