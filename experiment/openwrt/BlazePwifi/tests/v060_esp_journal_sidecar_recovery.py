@@ -94,12 +94,11 @@ int main() {
          LittleFS.files.count("/pending.dat")==1 &&
          LittleFS.files.count("/pending.new")==0,
          "recover flushed pending.new with second pulse instead of stale dat");
- // A valid sidecar must not make recovered state look successful when its
- // promotion to canonical flash path fails.
- reset();LittleFS.files["/pending.dat"]=event(1);
- LittleFS.files["/pending.new"]=event(2);
- LittleFS.failRename=true;
- require(!loadPending(), "block startup when new sidecar cannot be promoted");
+ // A stale sidecar with fewer pulses must never override a newer primary.
+ // PR #150 independently owns validation and fail-closed promotion failures.
+ reset();LittleFS.files["/pending.dat"]=event(2);
+ LittleFS.files["/pending.new"]=event(1);
+ require(!loadPending(), "quarantine regressed pulse count in sidecar");
  // Known valid but different event identity at equal sequence/epoch should
  // never silently rebind paid pulses. Quarantine until operator reconciliation.
  reset();LittleFS.files["/pending.dat"]=event(1);
