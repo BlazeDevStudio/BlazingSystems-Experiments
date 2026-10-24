@@ -34,7 +34,10 @@ class CallActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        if (action !in listOf("answer", "decline", "end", "mute", "open")) return
+        // An old notification action must not cancel the NEW call's shared
+        // notification ID 7024. Validate against the currently live session
+        // before changing notification state or forwarding anything to Dart.
+        if (!MainActivity.isCurrentCallAction(action, callId)) return
         if (action == "answer" || action == "decline" || action == "end")
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
         MainActivity.deliverCallAction(context, action, callId)
@@ -44,7 +47,25 @@ class CallActionReceiver : BroadcastReceiver() {
 class MainActivity : FlutterActivity() {
     companion object {
         @Volatile private var active: MainActivity? = null
+
+        /**
+         * Reject stale taps from earlier notification instances. Android
+         * reuses ID 7024 for a newer call, so canceling before this test can
+         * silently remove the current user's Answer and Decline buttons.
+         */
+        fun isCurrentCallAction(action: String, callId: String): Boolean {
+            val running = active ?: return false
+            if (callId.isEmpty() || callId != running.lastCallId) return false
+            return when (action) {
+                "answer", "decline" -> running.lastIncoming
+                "end", "mute" -> !running.lastIncoming
+                "open" -> true
+                else -> false
+            }
+        }
+
         fun deliverCallAction(context: Context, action: String, callId: String) {
+            if (!isCurrentCallAction(action, callId)) return
             val running = active
             if (running != null) {
                 running.runOnUiThread {
