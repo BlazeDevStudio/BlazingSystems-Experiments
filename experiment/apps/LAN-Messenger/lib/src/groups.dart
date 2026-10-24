@@ -62,9 +62,12 @@ class GroupMessaging {
   void Function()? onChanged;
   Future<void> _pending = Future<void>.value();
 
+  Future<Directory> _storage() async =>
+      node.storageDirectory ?? Identity.appDirectory();
+
   Future<void> load() async {
     try {
-      final folder = await Identity.appDirectory();
+      final folder = await _storage();
       final file = File('${folder.path}${Platform.pathSeparator}groups.json');
       if (!await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
@@ -78,7 +81,7 @@ class GroupMessaging {
   }
   void _save() {
     _pending = _pending.then((_) async {
-      final folder = await Identity.appDirectory();
+      final folder = await _storage();
       final file = File('${folder.path}${Platform.pathSeparator}groups.json');
       final temp = File('${file.path}.pending');
       await temp.writeAsString(jsonEncode(rooms.values.map((r) => r.toJson()).toList()),
