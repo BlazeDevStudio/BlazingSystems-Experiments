@@ -15,6 +15,7 @@ import 'src/node.dart';
 import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
+import 'src/group_rooms.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -53,6 +54,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _exitRequested = false;
   bool _trayInitialized = false;
   Intercom? intercom;
+  GroupCoordinator? groups;
+  String? selectedGroupId;
   Peer? selected;
   final input = TextEditingController();
   final scroll = ScrollController();
@@ -377,6 +380,16 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
       await _restoreChats();
       final inter = Intercom(n);
+      final group = GroupCoordinator(n);
+      group.onChanged = () { if (mounted) setState(() {}); };
+      group.onCallInvite = (room, inviter, video) async {
+        if (!mounted || inter.talkingTo != null) return false;
+        return _ask(title: video ? 'Join group video call?' : 'Join group voice call?',
+          detail: '${inviter.name} invited you to ${room.name} (${room.members.length} devices). '
+              'Only accept from trusted LAN devices.',
+          allowText: 'Join call');
+      };
+      await group.load();
       n.onPeersChanged = () { if (mounted) setState(() {}); };
       n.onChat = (peer, message) {
         if (!mounted) return;
@@ -408,7 +421,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.onFileOffer = (peer, name, size) async => _ask(
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
-      n.onSignal = (peer, data) => unawaited(inter.incomingSignal(peer, data));
+      n.onSignal = (peer, data) => unawaited(() async {
+        if (await group.incoming(peer, data)) return;
+        await inter.incomingSignal(peer, data);
+      }());
       inter.onChanged = () {
         if (!mounted) return;
         // Present the ongoing call only after media setup/SDP negotiation
@@ -568,7 +584,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         }
       };
       await n.start();
-      if (mounted) setState(() { node = n; intercom = inter; });
+      if (mounted) setState(() { node = n; intercom = inter; groups = group; });
       if (Platform.isWindows) {
         unawaited(_initializeDesktop());
       } else if (Platform.isAndroid) {
@@ -965,6 +981,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<void> _startCall({bool video = false}) async {
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
+    if (groups?.activeCall != null) {
+      _toast('Finish the group call before calling one device.');
+      return;
+    }
     _callMinimized = false;
     try { await intercom!.call(peer, withVideo: video); }
     catch (e) { _toast('Could not start call: $e'); }
@@ -1037,7 +1057,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           tooltip: 'Received files', onPressed: _viewReceived),
       IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 21),
           tooltip: 'Settings', onPressed: () => setState(() {
-            showSettings = true; selected = null; showReceived = false;
+            showSettings = true; selected = null; selectedGroupId = null; showReceived = false;
           })),
     ])));
 
@@ -1060,6 +1080,23 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         IconButton(onPressed: () => node?.announce(), tooltip: 'Refresh',
           icon: const Icon(Icons.refresh, size: 28)),
       ])),
+      ListTile(leading: const Icon(Icons.group_add),
+        title: const Text('New group chat'),
+        subtitle: const Text('2–3 other devices • voice and video conferences'),
+        onTap: _createGroup),
+      if (groups != null)
+        for (final room in groups!.rooms.values)
+          ListTile(
+            leading: const Icon(Icons.groups_2_outlined),
+            title: Text(room.name, maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+            subtitle: Text('${room.members.length} devices • '
+              '${room.messages.length} messages'),
+            onTap: () => setState(() {
+              selectedGroupId = room.id;
+              selected = null; showReceived = false;
+            }),
+          ),
       Expanded(child: peers.isEmpty ? Center(child: Padding(
         padding: const EdgeInsets.all(30), child: Column(mainAxisSize: MainAxisSize.min,
           children: [Icon(Icons.wifi_tethering_rounded, size: 68,
@@ -1087,6 +1124,176 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           })),
     ]);
   }
+
+  Future<void> _createGroup() async {
+    final live = node?.peers.values.where((p) => node!.isOnline(p)).toList() ?? <Peer>[];
+    if (live.length < 2) {
+      _toast('Connect at least two other devices to create a group.');
+      return;
+    }
+    final name = TextEditingController(text: 'My LAN group');
+    final selectedIds = <String>{};
+    final accepted = await showDialog<bool>(context: context,
+      builder: (dialog) => StatefulBuilder(builder: (context, change) =>
+        AlertDialog(title: const Text('Create LAN group'),
+          content: SizedBox(width: 390, height: 380,
+            child: Column(children: [
+              TextField(controller: name, maxLength: 60,
+                decoration: const InputDecoration(labelText: 'Group name')),
+              const Text('Choose 2–3 other devices. Messages are encrypted for each peer.'),
+              Expanded(child: ListView(children: [
+                for (final peer in live)
+                  CheckboxListTile(title: Text(peer.name), dense: true,
+                    value: selectedIds.contains(peer.id),
+                    onChanged: (yes) => change(() {
+                      if (yes == true && selectedIds.length < 3) {
+                        selectedIds.add(peer.id);
+                      } else if (yes == false) { selectedIds.remove(peer.id); }
+                    })),
+              ])),
+            ])),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Cancel')),
+            FilledButton(onPressed: selectedIds.length < 2 ? null :
+              () => Navigator.pop(dialog, true), child: const Text('Create')),
+          ])));
+    Future<void>.delayed(const Duration(milliseconds: 550), name.dispose);
+    if (accepted != true) return;
+    try {
+      final members = live.where((p) => selectedIds.contains(p.id)).toList();
+      final room = await groups!.create(name.text, members);
+      if (mounted) setState(() {
+        selectedGroupId = room.id;
+        selected = null; showReceived = false;
+      });
+    } catch (e) { _toast('Group creation failed: $e'); }
+  }
+
+  Widget _groupChat(GroupRoom room) {
+    final session = groups?.activeCall;
+    return Column(children: [
+      ListTile(
+        leading: IconButton(icon: const Icon(Icons.arrow_back),
+          onPressed: () => setState(() => selectedGroupId = null)),
+        title: Text(room.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text('${room.members.length} LAN devices • E2E peer encrypted'),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(tooltip: 'Group voice call', icon: const Icon(Icons.call),
+            onPressed: session != null || intercom?.talkingTo != null
+              ? null : () => unawaited(_startGroupCall(room, false))),
+          IconButton(tooltip: 'Group video call', icon: const Icon(Icons.videocam),
+            onPressed: session != null || intercom?.talkingTo != null
+              ? null : () => unawaited(_startGroupCall(room, true))),
+        ]),
+      ),
+      Expanded(child: room.messages.isEmpty
+        ? const Center(child: Text('This group has no messages yet.'))
+        : ListView.builder(padding: const EdgeInsets.all(12),
+          itemCount: room.messages.length,
+          itemBuilder: (_, i) {
+            final msg = room.messages[i];
+            final mine = msg.senderId == node?.identity.id;
+            final sender = mine ? 'You' : node?.peers[msg.senderId]?.name ??
+                msg.senderId.substring(0, 8);
+            return Align(alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 390),
+                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: mine ? const Color(0xffd8ebff) : Colors.white,
+                  borderRadius: BorderRadius.circular(15)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(sender, style: const TextStyle(fontSize: 12,
+                    fontWeight: FontWeight.bold)),
+                  Text(msg.text),
+                ])));
+          })),
+      SafeArea(top: false, child: Padding(padding: const EdgeInsets.all(10),
+        child: Row(children: [
+          Expanded(child: TextField(controller: input,
+            maxLength: 4000, minLines: 1, maxLines: 3,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (_) => unawaited(_sendGroupText(room)),
+            decoration: const InputDecoration(hintText: 'Message the group',
+              counterText: '', border: OutlineInputBorder()))),
+          const SizedBox(width: 8),
+          IconButton.filled(icon: const Icon(Icons.send),
+            onPressed: () => unawaited(_sendGroupText(room))),
+        ]))),
+    ]);
+  }
+
+  Future<void> _sendGroupText(GroupRoom room) async {
+    final value = input.text.trim();
+    if (value.isEmpty) return;
+    try {
+      await groups!.sendText(room, value);
+      if (mounted) input.clear();
+    } catch (e) { _toast('Cannot send group message: $e'); }
+  }
+
+  Future<void> _startGroupCall(GroupRoom room, bool video) async {
+    if (intercom?.talkingTo != null) {
+      _toast('Finish the current call before joining a group.');
+      return;
+    }
+    try { await groups!.startCall(room, video: video); }
+    catch (e) { _toast('Group call could not start: $e'); }
+  }
+
+  Widget _groupCallUI(GroupMediaCall call) {
+    return Material(color: const Color(0xff122744),
+      child: SafeArea(child: Column(children: [
+        ListTile(title: Text(call.room.name, style: const TextStyle(color: Colors.white)),
+          subtitle: Text('Group ${call.video ? "video" : "voice"} • '
+            '${call.participantCount} connected/joining',
+            style: const TextStyle(color: Colors.white70)),
+          trailing: IconButton(tooltip: 'Leave group call',
+            color: Colors.redAccent, icon: const Icon(Icons.call_end),
+            onPressed: () => unawaited(groups!.endCall()))),
+        Expanded(child: call.video
+          ? GridView.count(crossAxisCount: 2,
+            childAspectRatio: 1.1, children: [
+              _groupVideoTile('You', call.localVideo),
+              for (final memberId in call.room.members)
+                if (memberId != node?.identity.id)
+                  _groupVideoTile(node?.peers[memberId]?.name ?? 'Device',
+                    call.remoteVideos[memberId]),
+            ])
+          : Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.groups, size: 85, color: Colors.white70),
+              const SizedBox(height: 20),
+              Text('Voice conference • ${call.participantCount}/${call.room.members.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            ]))),
+        Padding(padding: const EdgeInsets.all(12), child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          IconButton.filledTonal(tooltip: call.muted ? 'Unmute' : 'Mute',
+            onPressed: () => unawaited(call.setMuted(!call.muted)),
+            icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
+          IconButton.filled(tooltip: 'End group call',
+            style: IconButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => unawaited(groups!.endCall()),
+            icon: const Icon(Icons.call_end)),
+        ])),
+      ])));
+  }
+
+  Widget _groupVideoTile(String name, RTCVideoRenderer? renderer) =>
+    Padding(padding: const EdgeInsets.all(4),
+      child: ClipRRect(borderRadius: BorderRadius.circular(11),
+        child: Stack(children: [
+          Positioned.fill(child: renderer == null
+            ? const ColoredBox(color: Colors.black38,
+                child: Center(child: Icon(Icons.videocam_off,
+                  color: Colors.white70, size: 33)))
+            : RTCVideoView(renderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)),
+          Positioned(bottom: 7, left: 7,
+            child: Text(name, style: const TextStyle(color: Colors.white))),
+        ])));
 
   Widget _attachmentBubble(ChatMessage message) => InlineAttachment(
     key: ValueKey(message.id), path: message.filePath,
@@ -1543,18 +1750,23 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
         style: const TextStyle(color: Colors.red))),
     Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
-      selected == null ? _deviceList() : _chat()),
+      selectedGroupId != null && groups?.rooms[selectedGroupId] != null
+        ? _groupChat(groups!.rooms[selectedGroupId]!)
+        : selected == null ? _deviceList() : _chat()),
   ])),
     if (_incomingDialogOpen && _incomingPeer != null && !_incomingBackground)
       Positioned.fill(child: _foregroundIncomingCall()),
     if (intercom?.talkingTo != null && !_incomingDialogOpen)
       _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
+    if (groups?.activeCall != null && groups!.activeCall!.joined)
+      Positioned.fill(child: _groupCallUI(groups!.activeCall!)),
   ]));
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(intercom?.hangUp(notify: false) ?? Future<void>.value());
+    unawaited(groups?.endCall() ?? Future<void>.value());
     unawaited(node?.dispose() ?? Future<void>.value());
     unawaited(alerts.dispose());
     if (Platform.isAndroid) _notifications.setMethodCallHandler(null);
