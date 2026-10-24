@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq libpulse0
           if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: Launch two AVDs, bypass test-device battery prompt and check discovery
+      - name: Two real Android emulators — discovery, voice Answer and hangup
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -46,7 +46,7 @@ jobs:
           target: google_apis
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh"
+          script: bash "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/run_dual_android_voice_e2e.sh"
       - name: Upload screenshots, UI hierarchy and network logs
         if: always()
         uses: actions/upload-artifact@v4
