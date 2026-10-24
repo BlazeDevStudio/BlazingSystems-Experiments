@@ -116,8 +116,16 @@ bool savePending(){
 bool loadPending(){
   BpPendingSequence r{}; bool legacy=false; const char *chosen=nullptr;
   bool any=LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.new") || LittleFS.exists("/pending.bak");
-  if(readPendingFile("/pending.dat",r,legacy)) chosen="/pending.dat";
-  else if(readPendingFile("/pending.new",r,legacy)) chosen="/pending.new";
+  // Interrupted /pending.new can hold an extra flushed coin pulse or
+  // a later ACK/abandon state; require an identity-consistent successor.
+  BpPendingSequence canonical, sidecar;
+  bool canonicalLegacy=false, sidecarLegacy=false;
+  bool canonicalOK=readPendingFile("/pending.dat",canonical,canonicalLegacy);
+  bool sidecarOK=readPendingFile("/pending.new",sidecar,sidecarLegacy);
+  if(canonicalOK && sidecarOK &&
+     !bp_pending_sequence_is_successor(&canonical,&sidecar)) return false;
+  if(sidecarOK){r=sidecar;legacy=sidecarLegacy;chosen="/pending.new";}
+  else if(canonicalOK){r=canonical;legacy=canonicalLegacy;chosen="/pending.dat";}
   else if(readPendingFile("/pending.bak",r,legacy)) chosen="/pending.bak";
   if(!chosen){
     if(any) return false;
