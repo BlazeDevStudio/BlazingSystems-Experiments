@@ -292,11 +292,13 @@ public sealed class SerialHardware : IDisposable
         }
         SignalChanged?.Invoke();
 
-        if (cfg.CoinInputSignal == ModemSignal.RingIndicator && e.EventType == SerialPinChange.Ring)
+        if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
         {
-            // Existing RI event behavior retained for compatibility. It is
-            // NOT proven reliable or safe for unattended coin acceptance.
-            AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
+            // RI is event-only in System.IO.Ports; unrelated pin notifications
+            // must not enter the level-read failure/disarm path. RI acceptance
+            // remains UNQUALIFIED for unattended monetary input.
+            if (e.EventType == SerialPinChange.Ring)
+                AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
             return;
         }
 
