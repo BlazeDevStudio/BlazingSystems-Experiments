@@ -193,6 +193,35 @@ using (var sut = new SerialHardware()) {
     replacement.Raise(SerialPinChange.CtsChanged);
 }
 
+// PHX-L-APPS #164 UTC19: TEST-ONLY exact identity negative fixture.
+// Actual production SerialDiscovery.ResolveExact is compiled into this .NET
+// project; these device records are synthetic, not real WMI or USB hardware.
+// An explicit ManualPort selection remains valid, but an ExactDevice binding
+// MUST NOT silently move to a different adapter just because COM9 was reused.
+var pinned = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredPnpDeviceId = @"USB\VID_1234&PID_5678\COIN-A",
+    PreferredUsbSerial = "COIN-A", PreferredVid = "1234", PreferredPid = "5678",
+    LastKnownComPort = "COM9"
+};
+var originalDevice = new SerialDeviceInfo("COM9", "Original adapter", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-A", "1234", "5678", "COIN-A");
+var replacementDevice = new SerialDeviceInfo("COM9", "Different adapter", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-B", "1234", "5678", "COIN-B");
+var duplicateDevice = new SerialDeviceInfo("COM10", "Duplicate claimed identity", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-A", "1234", "5678", "COIN-A");
+var exactComReused = SerialDiscovery.Resolve(pinned, new[] { replacementDevice });
+var exactDuplicate = SerialDiscovery.Resolve(pinned, new[] { originalDevice, duplicateDevice });
+var exactUnique = SerialDiscovery.Resolve(pinned, new[] { originalDevice });
+var manual = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM9" };
+var manualExplicit = SerialDiscovery.Resolve(manual, new[] { replacementDevice });
+var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
+    ("exact_pnp_missing_com_recycled_must_refuse", exactComReused is not null, false),
+    ("exact_duplicate_pnp_must_refuse_ambiguity", exactDuplicate is not null, false),
+    ("exact_unique_pnp_control", exactUnique?.PortName == "COM9", true),
+    ("manual_com9_explicit_control", manualExplicit?.PortName == "COM9", true)
+};
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
@@ -211,13 +240,18 @@ var cases = new (string Name, int Actual, int Expected)[] {
     ("reentrant_reconnect_idle_cts_must_not_credit", reentrantReconnectIdleFalseCoin, 0)
 };
 bool diagnosticFailed = false;
+foreach (var c in identityCases) {
+    var pass = c.Resolved == c.ExpectedResolved;
+    Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: resolved={c.Resolved}, expected_resolved={c.ExpectedResolved}");
+    diagnosticFailed |= !pass;
+}
 foreach (var c in cases) {
     var pass = c.Actual == c.Expected;
     Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: accepted={c.Actual}, expected_source_behavior={c.Expected}");
     diagnosticFailed |= !pass;
 }
 if (diagnosticFailed) {
-    Console.Error.WriteLine("NATIVE_DIAGNOSTIC_MISMATCH: source behavior changed or harness failed.");
+    Console.Error.WriteLine("NATIVE_DIAGNOSTIC_MISMATCH: source behavior changed or harness failed; identity negatives may be intentionally RED.");
     return 1;
 }
 if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
@@ -228,5 +262,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 15/15 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 19/19 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
