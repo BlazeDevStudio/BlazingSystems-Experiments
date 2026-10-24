@@ -105,6 +105,9 @@ jobs:
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build windows --release --tree-shake-icons
+      - name: Cloud Windows runtime, minimize, restore and close-to-tray smoke
+        shell: pwsh
+        run: ./tool/windows_runtime_smoke.ps1
       - name: Include application-local Microsoft VC++ runtime dependencies
         shell: pwsh
         run: |
