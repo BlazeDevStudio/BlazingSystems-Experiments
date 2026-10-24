@@ -107,8 +107,38 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!Platform.isAndroid) return;
     _androidForeground = state == AppLifecycleState.resumed;
-    if (mounted && Platform.isAndroid) setState(() {});
+    if (_incomingDialogOpen && _incomingPeer != null) {
+      if (_androidForeground) {
+        _incomingBackground = false;
+        unawaited(_notifications.invokeMethod<void>('dismissOverlay')
+            .catchError((Object _) {}));
+      } else {
+        _incomingBackground = true;
+        unawaited(_showNativeIncoming(_incomingPeer!, _incomingVideo));
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void onWindowMinimize() {
+    if (_incomingDialogOpen && _incomingPeer != null && !_nativeIncomingAvailable) {
+      _incomingBackground = true;
+      unawaited(_showDesktopIncoming(_incomingPeer!, _incomingVideo)
+        .then((ok) { if (mounted) setState(() => _nativeIncomingAvailable = ok); }));
+    }
+  }
+
+  @override
+  void onWindowRestore() {
+    if (_incomingDialogOpen) {
+      _incomingBackground = false;
+      _nativeIncomingAvailable = false;
+      unawaited(_dismissDesktopCall());
+      if (mounted) setState(() {});
+    }
   }
 
   Future<bool> _isDesktopBackground() async {
@@ -745,6 +775,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     } catch (e) { _toast('Could not open Android settings: $e'); }
   }
 
+  Future<void> _openAndroidOverlaySettings() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notifications.invokeMethod<void>('openOverlaySettings');
+    } catch (e) { _toast('Cannot open Android floating-call settings: $e'); }
+  }
+
   Future<void> _openAndroidCallNotificationSettings() async {
     if (!Platform.isAndroid) return;
     try {
@@ -862,6 +899,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (v) unawaited(_notifications.invokeMethod<void>('setup').catchError((_) {}));
         unawaited(_saveSettings());
       }),
+    if (Platform.isAndroid) ListTile(
+      leading: const Icon(Icons.picture_in_picture_alt),
+      title: const Text('Floating incoming calls above other apps'),
+      subtitle: const Text('Optional: grant Display over other apps to show draggable '
+        'Answer/Decline when Messenger is minimized. Otherwise use Android call notifications.'),
+      trailing: const Icon(Icons.open_in_new),
+      onTap: _openAndroidOverlaySettings),
     if (Platform.isAndroid) ListTile(
       leading: const Icon(Icons.call),
       title: const Text('Incoming call banners'),
