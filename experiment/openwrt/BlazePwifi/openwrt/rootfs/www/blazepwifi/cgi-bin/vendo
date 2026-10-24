@@ -205,6 +205,14 @@ case "$action" in
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
     bp_member_lock || bp_fail "member state busy"
+    # PHX-L-CORE P0 #31: admin may revoke this sender between the original
+    # signed proof check and member writer lock. Check the same proof again
+    # INSIDE the lock before any NEW bank/restore paid mutation. Previously
+    # committed receipt replay above remains unchanged and idempotent.
+    if ! bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof"; then
+      bp_member_unlock
+      bp_fail "member authentication failed"
+    fi
     result="$(bp_member_balance_change "$user" add "$pulses" "softtimer:$id" "$event_id")"
     rc=$?
     bp_member_unlock
@@ -245,6 +253,14 @@ case "$action" in
     printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
     bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
     bp_member_lock || bp_fail "member state busy"
+    # PHX-L-CORE P0 #31: admin may revoke this sender between the original
+    # signed proof check and member writer lock. Check the same proof again
+    # INSIDE the lock before any NEW bank/restore paid mutation. Previously
+    # committed receipt replay above remains unchanged and idempotent.
+    if ! bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof"; then
+      bp_member_unlock
+      bp_fail "member authentication failed"
+    fi
     result="$(bp_member_balance_change "$user" restore_all 0 "softtimer:$id" "$event_id")"
     rc=$?
     bp_member_unlock
