@@ -1129,6 +1129,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           content: SizedBox(width: 400, child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               TextField(controller: name, maxLength: 60,
+                onChanged: (_) => redraw(() {}),
                 decoration: const InputDecoration(labelText: 'Group name')),
               const Text('Select 2–7 trusted devices. Group calls support up to 4 people.',
                 style: TextStyle(fontSize: 12)),
