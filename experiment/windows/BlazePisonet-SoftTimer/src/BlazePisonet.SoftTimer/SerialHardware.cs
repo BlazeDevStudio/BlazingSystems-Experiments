@@ -284,7 +284,12 @@ public sealed class SerialHardware : IDisposable
         if (cfg is null) return;
         // A callback can arrive after unplug/dispose or from an old COM session.
         // Fail closed; it must not be interpreted as an active-low assertion.
-        if (!ReferenceEquals(sender, _port) || _port?.IsOpen != true)
+        // A deferred callback from an old COM session must not modify the
+        // NEW session's in-progress pulse or verified-idle arm state.
+        if (!ReferenceEquals(sender, _port)) return;
+        // A callback from the current port that is now closed is different:
+        // its own in-progress pulse must be abandoned until verified idle.
+        if (_port?.IsOpen != true)
         {
             _pulseStarted = null;
             _requireVerifiedIdle = true;
