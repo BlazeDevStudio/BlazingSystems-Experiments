@@ -3078,3 +3078,9 @@
 - **Evidence:** committed GitHub source; CI/PR at this checkpoint **NOT YET VERIFIED**. Exact issue and workflow links belong in subsequent checkpoint after actual responses. No real device, customer record, physical power failure, or production money was touched.
 - **Limit / rollback:** exposed unresolved dual-object atomicity (account snapshot versus event receipt); off-device conservative quarantine cannot solve it. Revert role branch/test commit if incorrect. Independent #43 witness, #31/#32 native migration and physical #34 remain mandatory.
 - **Next:** inspect exact-head Full validate, obtain independent review, report on existing issue #31; do not merge/release without stated gate authority.
+
+## 2026-10-24 — PHX-L-CORE #174 first CI failure and injection-order repair
+- **Failure evidence:** exact PR head `e84a9def727ec5ee5540eaf5a96d7df27f9b37e4`, Full Actions https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40095812814 **FAILURE**, mandatory validate step `BlazePwifi v0.6 synthetic crash-atomic member transfer` exit 2 with `REPRO SETUP FAILURE: postwrite worker rc=0 or emitted an ACK`. Existing earlier transfer boundary passed.
+- **Root cause:** test worker mocked `bp_member_event_record()` **before** `. member.sh`; sourcing installed module replaced the mock, so the worker exited successfully without injecting process-death.
+- **Actual narrow repair:** isolated test commit `e199d21a1f48080644951c048e4b7b2b75281e52` moves mock below `. member.sh` so the postrename/no-receipt boundary is reachable; the production paid writer is unchanged.
+- **Status:** GitHub Actions rerun at revised PR head remains to be checked; do not claim GREEN. P0 #31/#32/#43/#34, production money and physical witness gates remain OPEN.
