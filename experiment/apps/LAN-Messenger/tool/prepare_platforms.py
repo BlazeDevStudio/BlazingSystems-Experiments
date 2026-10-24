@@ -17,6 +17,7 @@ if manifest.exists():
         'android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE',
         'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
         'android.permission.POST_NOTIFICATIONS',
+        'android.permission.SYSTEM_ALERT_WINDOW',
     ]
     missing = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in permissions
                       if f'android:name="{p}"' not in text)
@@ -60,6 +61,9 @@ if manifest.exists():
     # Native NotificationManager is intentionally used instead of a heavy plugin:
     # heads-up notifications need no network, account or background polling SDK.
     main_activity.write_text((root / 'tool/AndroidMainActivity.kt').read_text(encoding='utf-8'), encoding='utf-8')
+    (main_activity.parent / 'AndroidIncomingOverlay.kt').write_text(
+        (root / 'tool/AndroidIncomingOverlay.kt').read_text(encoding='utf-8'),
+        encoding='utf-8')
     projection_target = main_activity.parent / 'ScreenProjectionService.kt'
     projection_target.write_text((root / 'tool/ScreenProjectionService.kt').read_text(encoding='utf-8'), encoding='utf-8')
     touch_target = main_activity.parent / 'RemoteTouchService.kt'
