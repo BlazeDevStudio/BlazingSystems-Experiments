@@ -16,3 +16,9 @@ The supplied music remains local and strictly for testing. The actual production
 ## Verification investigation
 
 Candidate `59cf2211` passed the host suite but required a scoped Media3 API opt-in correction for lint. Candidate `f16b5486`, with those annotations, then stalled in the host task in both attempts of run `40066386802` and hit the existing 12-minute limit. The last logged test boundary was AveeCompositionTest; no completed XML report was produced. That does not establish which test or runtime operation was stuck. The production changes and assertions remain unchanged while the workflow adds per-test start/end logging and bounded Java thread/SDK-state snapshots before the same timeout. Both incomplete attempt artifacts remain available.
+
+## Execution result
+
+The diagnostic candidate passed the host suite, then lint identified a direct StateFlow read in the new check dialog. Final source `a718e2a45e798038885a9c52f38a89b5a2f623e5` collects that state reactively. Validation `40085323906` passed 129 host tests / 24 suites, lint/APK, and 31 general + 1 fresh-permission native case on each of API26/API36. Both actual MP3 canvas images show active notes; coverage was 1.0 for both chords, including empty-cache fallback and seeking. Exact-source local DSP retained the measured counts/RMS/pitches for all three supplied clips while reducing resampler work. Single-run total elapsed time improved for two clips and was slightly worse for the beats clip; this is not a phone performance claim.
+
+Publisher `40085323837` produced a separate Preview 6 release, and independently downloaded public bytes matched CI exactly. The owner-phone problem remains unconfirmed until a phone test or copied check report. See [Preview 6 evidence](../acceptance/preview-6-evidence.md) for exact hashes, jobs and measurements.

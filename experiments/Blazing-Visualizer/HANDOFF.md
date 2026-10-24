@@ -2,13 +2,19 @@
 
 Updated 24 October 2026 (Asia/Manila). Continue this existing Android app; do not restart or overwrite concurrent work.
 
-## Current owner report: Preview 5 is still blank; Preview 6 repair in progress
+## Current checkpoint: Preview 6 published; owner-phone confirmation pending
 
 The owner explicitly tested Preview 5 and reported that visualization is still blank. Treat the phone issue as unresolved despite successful emulator checks. Do not tell them the fix is confirmed on their phone. Three supplied MP3s are strictly local test inputs; never commit or upload them, excerpts or decoded PCM.
 
 Preview 5 release source `96c5d3d0bec6f5fad20eb753fea9afdca5d3f8ee`, full validation `40053385999`, publisher `40053386012`. Host122/21suites and API26/API36 each31general+1permission passed. It removed repeated quick-decoder cancellation and completed conflated frame evaluation. Actual local production DSP emits notes for all three supplied files; the first15seconds produced319frames each, with313/180/133 active-note frames for beats/piano/vocals. This is not phone display evidence.
 
-Current work: observe PCM consumed by the existing Media3 audio sink, bounded background DSP, source-time/partial-write/generation protection, exact cached resampler kernels, live fallback for an empty unedited detailed result, and one-tap Check visualizer reporting sound/notes/canvas without audio or filenames. Generated MP3 native tests require playback PCM and actual canvas pixels. See [active plan](docs/plans/2026-10-24-playback-pcm-notes.md). Preview6 needs full verification and a separately versioned release; owner-phone confirmation or a copied check report remains necessary.
+Preview 6 observes PCM consumed by the existing Media3 audio sink, with bounded background DSP, source-time/partial-write/generation protection, exact cached resampler kernels, live fallback for an empty unedited detailed result, and one-tap Check visualizer reporting sound/notes/canvas without audio or filenames. Generated MP3 native tests require playback PCM and actual canvas pixels. See the [plan](docs/plans/2026-10-24-playback-pcm-notes.md) and [Preview 6 evidence](docs/acceptance/preview-6-evidence.md). Owner-phone confirmation or a copied check report remains necessary.
+
+Published source `a718e2a45e798038885a9c52f38a89b5a2f623e5`; versionCode 6 / `1.0.0-preview.6`. [Validation 40085323906](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40085323906) and [publisher 40085323837](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40085323837) succeeded. Host: 129 tests / 24 suites; API26 and API36: each 31 general tests plus 1 fresh-permission test; all zero failures/errors/skips. Both generated-MP3 chord coverages were 1.0; actual canvas images show active notes. The three local supplied clips retained 319 feature frames each, with 313/180/133 frames containing notes. This does not prove the owner's phone display or transcription accuracy.
+
+[Direct Preview 6 APK](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.6/Blazing-Visualizer-preview-6.apk): 31,900,372 bytes, SHA-256 `14e67d1225e76e3bcfefaa73ceaf3ae0d9d1dc6245b7624dd8f7e06d0577f532`. Public bytes independently matched CI; ZIP, package/version, both ABIs/model and retained v2 signer passed. Valid local output is `outputs/Blazing-Visualizer-preview-6.apk`, with `outputs/SHA256SUMS-preview-6.txt` outside the repository. Keep older releases intact. If it remains blank while playing, ask for **Check visualizer → Copy report**; do not ask again which preview the owner had already tested.
+
+Earlier host stalls remain unexplained; the final source retains per-test/Java thread diagnostics and the original timeout/assertions. Failed candidates, scoped Media3 opt-in and reactive dialog correction are recorded in the evidence document.
 
 The Preview4 sections below are historical evidence and do not prove the owner's reported problem is resolved.
 

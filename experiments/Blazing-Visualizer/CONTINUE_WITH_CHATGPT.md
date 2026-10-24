@@ -7,13 +7,15 @@ Branch: `blazing-visualizer`
 Project: `experiments/Blazing-Visualizer`
 PR: https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/133
 
-Read `HANDOFF.md`, `README.md`, `docs/acceptance/preview-4-evidence.md` and the latest mixed-media design/plan first. `HANDOVER.md`, Preview 3 evidence and older reviews are historical. Inspect recent commits and resume; do not recreate the app. Preserve playback, offline Basic Pitch analysis, Practice, corrections, presets, layouts, MP4 export and upstream license notices.
+Read `HANDOFF.md`, `README.md`, `docs/acceptance/preview-6-evidence.md` and `docs/plans/2026-10-24-playback-pcm-notes.md` first. `HANDOVER.md`, Preview 3/4/5 evidence and older reviews are historical. Inspect recent commits and resume; do not recreate the app. Preserve playback, offline Basic Pitch analysis, Practice, corrections, presets, layouts, MP4 export and upstream license notices.
 
 ## Latest owner feedback and active repair
 
-The owner confirms Preview5 still shows no visualization on their phone. Do not call it fixed based on emulator results. Preview6 is in progress: actual playback PCM -> bounded DSP -> canvas, with a one-tap measurements-only diagnostic report and optimized resampler. Read `docs/plans/2026-10-24-playback-pcm-notes.md` and current HANDOFF first. Supplied songs/excerpts/PCM must remain local, strictly for testing. Never upload them into GitHub/CI. The Preview4/5 successful checks below are historical, not owner-phone acceptance.
+The owner confirmed Preview 5 still shows no visualization on their phone. Preview 6 is now published and independently verified, but owner-phone confirmation remains pending. It uses actual playback PCM → bounded DSP → canvas, with a one-tap measurements-only diagnostic report and cached resampler coefficients. Published source `a718e2a45e798038885a9c52f38a89b5a2f623e5`; validation `40085323906` and publisher `40085323837` succeeded. Host 129/24 suites; API26/API36 each 31 general + 1 permission case, all zero failures/errors/skips. Read `docs/acceptance/preview-6-evidence.md` and current HANDOFF first.
 
-## Current checkpoint and immediate priorities
+Direct APK: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.6/Blazing-Visualizer-preview-6.apk — 31,900,372 bytes; SHA-256 `14e67d1225e76e3bcfefaa73ceaf3ae0d9d1dc6245b7624dd8f7e06d0577f532`. It updates Preview 2/3/4/5 in place. If still blank, play a track, open **Check visualizer**, wait for its local check, choose **Copy report**, then inspect the pasted measurements before guessing another fix. Supplied songs/excerpts/PCM must remain local, strictly for testing; never upload them into GitHub/CI. Earlier successful emulator checks below are historical, not owner-phone acceptance.
+
+## Historical Preview 4 checkpoint
 
 Preview 4 adds mixed audio/video selection, source video behind the existing visualizer through one Media3 session, source-time video export, silent-video support and independent bounded quick note feedback. Quick estimates never become verified analysis, saved note edits or export note data. Detailed results replace them when ready.
 
@@ -28,7 +30,7 @@ Host: `118` tests / `20` suites, failures/errors/skips `0 / 0 / 0`; lint/APK `pa
 Verified direct APK: `https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.4/Blazing-Visualizer-preview-4.apk`.
 Final-source CI APK bytes / SHA-256: `31,867,604` / `9026659db4866793fc963297d69ac357c4eb26069e74432d63a4874f289e860f`.
 
-Preview 3 remains available at its original tag/asset, source `b9db4c115b5fc42905b7ede9e844a67c2f76acf2`. Its 108 host tests and API 26/36 results are historical. Keep all older releases intact; use a separately versioned Preview 5 for the next APK.
+Preview 3 remains available at its original tag/asset, source `b9db4c115b5fc42905b7ede9e844a67c2f76acf2`. Its 108 host tests and API 26/36 results are historical. Keep all older releases intact; never overwrite a published tag or APK.
 
 Latest owner priorities are mixed media and startup responsiveness, then genuine Avee preset interoperability, phone validation and production hardening. Preserve the native presets they like. Source-video backgrounds are now requested; the separate video-to-graph tracing/Bezier idea remains **last** and must not delay player improvements. Equations stay off by default.
 

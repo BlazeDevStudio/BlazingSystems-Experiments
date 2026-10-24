@@ -4,7 +4,7 @@ An Android local media player and visualizer with an Avee-style Library / Visual
 
 - Mixed local audio/video imports, one Media3 playback session and background controls. Video appears behind the visualizer and follows pause, seek and Practice speed; audio-only media removes the background.
 - An early video seek recreates a decoder that has not produced its first output format, preserving codec setup and the requested source position; later seeks retain normal Media3 flushing.
-- Bounded quick source-time note estimates while whole-file Basic Pitch analysis prepares. Detailed results take precedence; temporary feedback is kept out of saved corrections and final exports.
+- Live source-time note estimates from PCM consumed by the existing playback audio sink, with a bounded file-decoder fallback while whole-file Basic Pitch analysis prepares. Nonempty detailed results and explicit edits take precedence; an empty unedited result leaves live estimates available. Temporary feedback is kept out of saved corrections and final exports.
 - Bundled Spotify Basic Pitch model; note wheel, chord links, keyboard and piano-roll guides. Videos without audio play/export without fabricated detected notes.
 - Practice at 0.5–1.5× without changing pitch; A/B loop, written-instrument display transposition, editable note estimates, MIDI and CSV.
 - Editable image, text, spectrum, shape, waveform, particle, glow and note layers. Attributed Avee DSP supplies the spectrum and circle-path foundation.
@@ -16,7 +16,7 @@ An Android local media player and visualizer with an Avee-style Library / Visual
 - Original Harmonic flow, Orbital voices and Wave garden presets plus five optional motion presets: trails, spatial chords, shared-cursor reveal, rhythm gates and radial contours. Equations are off by default. Graphs display up to 12 simultaneous pitches; Practice retains complete detailed note detection.
 - Main-canvas microphone toggle with conservative simultaneous estimates and precise single-note YIN readings. Capture time drives animation independently of playback; background/disable/exit releases capture.
 
-Current verified download: [Preview 4 APK](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.4/Blazing-Visualizer-preview-4.apk). It can update Preview 2/3 in place. See [HANDOFF.md](HANDOFF.md) for exact-source evidence and remaining work.
+Current verified download: [Preview 6 APK](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazing-visualizer-v1.0.0-preview.6/Blazing-Visualizer-preview-6.apk). It can update Preview 2/3/4/5 in place. Host, lint/APK and API26/API36 checks passed, and the public APK matches CI bytes. The owner reported Preview 5 still blank; Preview 6 owner-phone confirmation remains pending. See [Preview 6 evidence](docs/acceptance/preview-6-evidence.md) and [HANDOFF.md](HANDOFF.md).
 
 ## Build
 
@@ -27,7 +27,7 @@ Use JDK 17, Android SDK platform 36 and build-tools 36.0.0. Android 8.0 / API 26
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-The debug APK is `app/build/outputs/apk/debug/app-debug.apk`; CI uploads **Blazing-Visualizer-preview-APK**. Preview 4 is versionCode 4 / `1.0.0-preview.4` and retains Preview 2/3's public debug-only identity from [config/README.md](config/README.md). Preview 1 used a different key and requires a one-time uninstall/reinstall; export wanted BlazeViz presets first. Production signing/store publication remain separate work.
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`; CI uploads **Blazing-Visualizer-preview-APK**. Preview 6 is versionCode 6 / `1.0.0-preview.6` and retains Preview 2/3/4/5's public debug-only identity from [config/README.md](config/README.md). Preview 1 used a different key and requires a one-time uninstall/reinstall; export wanted BlazeViz presets first. Production signing/store publication remain separate work.
 
 CI separates bounded host tests, lint and both APK assemblies, then validates API 26 and API 36. `MusicPermissionTest` runs independently on a fresh install with `freshAudioPermission=true`; the general native suite excludes that class. On an already-granted local install, reset permissions to exercise denial independently.
 
@@ -37,6 +37,8 @@ Allow music access to discover audio in Library, or use the open-media action to
 
 Choose **Harmonic compass**, a graph or a motion preset from the thumbnail grid. Fullscreen hides player chrome. The note wheel has editable idle text and shows every detected note class when no chord matches. Tap **Practice** to follow or correct detailed notes; settings and loops save per track. The pencil opens layers, note bands, colors and effects. Turn on **Include math equations** only if wanted. Hold the canvas to arrange, drag to move and use the white corner to resize; tap Done to save. Rotation ends an active preview arrangement before fitting the new viewport.
 
+If live visualization stays idle while music plays, open the playback menu and choose **Check visualizer**. Wait for its local check, then choose **Copy report** to share build/device details and audio/note/canvas measurements. The report contains no audio, filenames or file addresses; it sends nothing automatically.
+
 The export action offers landscape, portrait and square with dimensions and an output preview. Choose optimized layout, contain, cover or stretch; follow preview placement or use **Separate arrangement**. Video export uses source time and original speed even while Practice playback runs slower. Wait for detailed preparation before exporting. The microphone toggle listens on the same canvas while playback may continue; choosing another track exits monitoring. Imported presets and attached images stay local.
 
 Note estimates are suggestions, especially on dense mixes. Corrections stay separate from raw model results and survive reopening. Replacing the contents behind a file URI clears stale corrections and requires fresh analysis. Older timeline caches are rebuilt for the corrected decoder. MIDI always exports sounding concert pitch. Frequency bands are not isolated instruments; no stem-separation feature is implemented.
@@ -45,7 +47,7 @@ Detailed audio analysis is limited by device heap, up to 30 minutes. Source-vide
 
 ## Verification and provenance
 
-Final Preview 4 validation: [run 40009120574](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40009120574), status `success`; host `118` tests / `20` suites, failures/errors/skips `0 / 0 / 0`; lint/APK `passed` in build job `120604607048`. API 26 `passed 30 general cases plus one fresh-permission case, with zero failures/errors/skips`, API 36 `passed 30 general cases plus one fresh-permission case, with zero failures/errors/skips`. Publication: [run 40009120823](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40009120823), job `120604608420`, status `success`. Final-source CI APK: `31,867,604` bytes; SHA-256 `9026659db4866793fc963297d69ac357c4eb26069e74432d63a4874f289e860f`.
+Current Preview 6 validation and publication results are recorded in [Preview 6 evidence](docs/acceptance/preview-6-evidence.md). Owner-phone acceptance remains pending. Historical Preview 4 validation: [run 40009120574](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40009120574), status `success`; host `118` tests / `20` suites, failures/errors/skips `0 / 0 / 0`; API26/API36 each passed 30 general cases plus one fresh-permission case. Its successful emulator results did not resolve the later owner-phone blank-preview report.
 
 The earlier `b0675314` candidate passed host/lint/build and API 36, but API 26 timed out while a test generated its color-video input. Fixture-only `5073c272` retained all assertions and passed API 26, while API 36 exposed an early seek before decoder output: the first red-frame assertion timed out with missing SPS/PPS logs. Both publishers correctly blocked release. The renderer correction keeps those valid inputs and assertions unchanged; the regression passes on both APIs in exact-source run `40009120574`.
 
