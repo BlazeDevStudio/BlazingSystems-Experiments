@@ -47,6 +47,7 @@ object PlaybackPcmPreview {
         hub.offer(format, bytes, sourceTimeUs)
 }
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 internal data class PlaybackPcmFormat(val sampleRate: Int, val channels: Int, val encoding: Int) {
     val sampleBytes: Int get() = when (encoding) {
         C.ENCODING_PCM_8BIT -> 1
@@ -60,6 +61,7 @@ internal data class PlaybackPcmFormat(val sampleRate: Int, val channels: Int, va
 }
 
 /** Media3 raw PCM uses little endian samples. Invalid floating samples must not poison the FFT. */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 internal fun decodePlaybackPcm(bytes: ByteArray, encoding: Int): FloatArray {
     val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
     val size = when (encoding) {
