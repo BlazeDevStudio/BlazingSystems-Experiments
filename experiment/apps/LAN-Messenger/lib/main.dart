@@ -505,7 +505,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (readyId != null && readyPeer != null && CallPresentationPolicy.ready(
               incomingPending: _incomingDialogOpen,
               connecting: inter.connecting,
-              peerPresent: readyPeer != null,
+              peerPresent: true,
               alreadyShown: _activeCallUiId == readyId,
               scheduled: _pendingPresentationId == readyId,
             )) {
