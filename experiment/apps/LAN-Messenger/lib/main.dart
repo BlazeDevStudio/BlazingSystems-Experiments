@@ -71,7 +71,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Offset _videoPosition = const Offset(16, 20);
   ControlInputMode _controlMode = ControlInputMode.trackpad;
   Offset _miniCallPosition = const Offset(20, 110);
-  Offset _incomingPopupPosition = const Offset(16, 55);
   bool _incomingDialogOpen = false;
   BuildContext? _incomingDialogContext;
   bool? _pendingIncomingDecision;
@@ -604,6 +603,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           _incomingDialogOpen = false;
           _incomingPeer = null;
           _nativeIncomingAvailable = false;
+          _incomingUsesExternalSurface = false;
           _incomingDialogContext = null;
           _pendingIncomingDecision = null;
           await _dismissNativeIncoming();
@@ -1463,58 +1463,32 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
-  Widget _incomingPopup() {
+  Widget _inlineIncomingCall() {
     final peer = _incomingPeer;
-    if (peer == null || !_incomingDialogOpen) {
-      return const SizedBox.shrink();
-    }
-    final size = MediaQuery.sizeOf(context);
-    const width = 308.0;
-    return Positioned(
-      right: _incomingPopupPosition.dx.clamp(4.0, size.width - 24.0),
-      top: _incomingPopupPosition.dy.clamp(4.0, size.height - 130.0),
-      width: width.clamp(0, size.width - 8.0).toDouble(),
-      child: Material(
-        elevation: 11, borderRadius: BorderRadius.circular(18),
-        color: const Color(0xff132a48),
-        child: GestureDetector(
-          onPanUpdate: (details) => setState(() {
-            _incomingPopupPosition = Offset(
-              (_incomingPopupPosition.dx - details.delta.dx).clamp(
-                  4.0, size.width - 24.0).toDouble(),
-              (_incomingPopupPosition.dy + details.delta.dy).clamp(
-                  4.0, size.height - 130.0).toDouble());
-          }),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                const Icon(Icons.call_received, color: Colors.lightBlueAccent),
-                const SizedBox(width: 8),
-                Expanded(child: Text(peer.name,
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white,
-                        fontWeight: FontWeight.bold, fontSize: 16))),
-                const Icon(Icons.drag_indicator, color: Colors.white54),
-              ]),
+    if (peer == null) return const SizedBox.shrink();
+    return Material(color: const Color(0xffe3eefc),
+      child: Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Row(children: [
+          Icon(_incomingVideo ? Icons.videocam : Icons.call,
+            color: const Color(0xff23518d)),
+          const SizedBox(width: 8),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(peer.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
               Text(_incomingVideo ? 'Incoming video call' : 'Incoming voice call',
-                  style: const TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                  onPressed: () => _resolveIncomingDialog(true),
-                  icon: const Icon(Icons.call), label: const Text('Answer')),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-                  onPressed: () => _resolveIncomingDialog(false),
-                  icon: const Icon(Icons.call_end), label: const Text('Decline')),
-              ]),
-            ]),
-          ),
-        ),
-      ),
-    );
+                style: const TextStyle(fontSize: 12)),
+            ])),
+          IconButton.filled(
+            tooltip: 'Decline', onPressed: () => _resolveIncomingDialog(false),
+            style: IconButton.styleFrom(backgroundColor: Colors.red.shade700),
+            icon: const Icon(Icons.call_end)),
+          const SizedBox(width: 8),
+          IconButton.filled(
+            tooltip: 'Answer', onPressed: () => _resolveIncomingDialog(true),
+            style: IconButton.styleFrom(backgroundColor: Colors.green.shade700),
+            icon: const Icon(Icons.call)),
+        ])));
   }
 
   Widget _miniCall() {
@@ -1778,17 +1752,15 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         : Stack(children: [
     Scaffold(body: Column(children: [
     _title(),
+    if (_incomingDialogOpen && _incomingPeer != null &&
+        (Platform.isWindows ? !_incomingUsesExternalSurface : _inForeground))
+      _inlineIncomingCall(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
         style: const TextStyle(color: Colors.red))),
     Expanded(child: showSettings ? _settingsPanel() : showReceived ? _files() :
       selectedGroup != null ? _groupChat() :
       selected == null ? _deviceList() : _chat()),
   ])),
-    if (_incomingDialogOpen && _incomingPeer != null &&
-        (Platform.isWindows
-          ? !_incomingUsesExternalSurface || !_nativeIncomingAvailable
-          : _inForeground))
-      _incomingPopup(),
     if (intercom?.talkingTo != null && !_incomingDialogOpen &&
         (Platform.isWindows || _inForeground))
       _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
