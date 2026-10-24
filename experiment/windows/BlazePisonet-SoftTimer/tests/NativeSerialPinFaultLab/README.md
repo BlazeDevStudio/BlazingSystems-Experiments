@@ -5,8 +5,8 @@
 ## Source RED → proposed GREEN contract
 
 - Historical **real C# source-linked expected RED** (unmodified `SerialHardware.cs`): PR #176 at SHA `9f29470f7ba6287b140b19a7b1db856f6e9638b5`, [Windows #40100726703](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40100726703). Native controlled API status read failure with physically idle active-low CTS emitted one spurious `CoinPulseAccepted`; the test explicitly expected safety RED.
-- This proposed guarded branch tests **six actual C# source-linked fake-OS traces**: normal 50 ms CTS accepted (1), unrelated pin event during active-low CTS read exception (0), selected-pin CTS read exception (0), port Close/reopen with no coin (0), delayed callback missing actual pulse (0; **still a known lost-pulse risk**), and Ring callback without pulse width (1; **still a known false-credit risk**).
-- `--diagnostic` must reproduce the exact six expected results; `--safety-gate` must return 0 with `READ_ERROR_SAFETY_GREEN` for the three fault/detach scenarios. Both commands are mandatory in Windows CI. This is **only the no-false-credit-on-status-failure gate**, not general coin or safety acceptance.
+- This proposed guarded branch tests **seven actual C# source-linked fake-OS traces**: normal 50 ms CTS accepted (1), unrelated pin event during active-low CTS read exception (0), selected-pin CTS read exception (0), port Close/reopen with no coin (0), active-high mid-pulse read failure (0), delayed callback missing actual pulse (0; **still a known lost-pulse risk**), and Ring callback without pulse width (1; **still a known false-credit risk**).
+- `--diagnostic` must reproduce the exact seven expected results; `--safety-gate` must return 0 with `READ_ERROR_SAFETY_GREEN` for the four status-fault/detach scenarios. Both commands are mandatory in Windows CI. This is **only the no-false-credit-on-status-failure gate**, not general coin or safety acceptance.
 
 ```powershell
 dotnet run --project experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj -c Release -- --diagnostic
