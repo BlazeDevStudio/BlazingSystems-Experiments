@@ -246,9 +246,12 @@ if __name__ == "__main__":
             snapshot(serial, "failure")
             # Capture logs AFTER the failed offer, not the discovery-only logs.
             try:
-                (OUT / f"{serial}-call-failure-logcat.txt").write_bytes(
-                    adb(serial, "logcat", "-d", "-t", "9000",
-                        timeout=30, check=False))
+                log = adb(serial, "logcat", "-d", "-t", "9000",
+                          timeout=30, check=False)
+                (OUT / f"{serial}-call-failure-logcat.txt").write_bytes(log)
+                markers = [line for line in log.decode(errors="replace").splitlines()
+                           if "LAN_CALL_TRACE" in line or "LANCallTrace" in line]
+                note("signaling-trace", f"{serial} last trace markers: {markers[-18:]}")
                 (OUT / f"{serial}-call-failure-activity.txt").write_bytes(
                     adb(serial, "shell", "dumpsys", "activity", "activities",
                         timeout=25, check=False))

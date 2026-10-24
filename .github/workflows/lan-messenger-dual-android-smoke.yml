@@ -9,7 +9,7 @@ on:
         description: 'Prior GitHub Actions run containing LAN-Messenger-Android-Optimized APK'
         type: string
         required: true
-        default: '40086084493'
+        default: '40087505920'
 
 # This is an infrastructure/e2e test. Reuse a built v0.3.0 APK so
 # iterating emulator setup does not waste another 10-minute Flutter rebuild.
@@ -27,7 +27,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LAN-Messenger-Android-Optimized
-          run-id: ${{ inputs.source_run_id || '40086084493' }}
+          run-id: ${{ inputs.source_run_id || '40087505920' }}
           repository: BlazingSystems/BlazingSystems-Experiments
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: android-apk
@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq libpulse0
           if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: LAN Messenger call signaling diagnostics in background
+      - name: LAN Messenger instrumented background incoming Answer trace
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
