@@ -852,4 +852,101 @@ fi
 echo 'PHX-L-CORE CONTROLLER_WORKER_EXIT_PASS: admin process exit after rename keeps separate signed CGI and retry fail-closed'
 
 
+
+# PHX-L-CORE P0 #31 TEST-FIRST: BP_RUN is volatile. This is a simulated
+# tmpfs/runtime-directory reset after a real sourced controller writer
+# post-rename failure, NOT a router reboot or physical power interruption.
+# New signed paid admissions must stay blocked even if controllers.tsv still
+# contains a locally visible enabled row. No independent witness exists yet.
+phx_recovery_failures=0
+[ -f "$BP_RUN/controller-update-unsettled" ] &&
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 1 ] || {
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_SETUP_INVALID: no ambiguous enabled row and runtime barrier' >&2
+  exit 2
+}
+rm -rf "$BP_RUN"
+mkdir -p "$BP_RUN"
+phx_recovery_before="$(phx_ctl_digest)"
+phx_recovery_reply="$(call_vendo member_bank "$phx_crash_nonce" 30 "$phx_crash_target")"
+if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_COLD_RUNTIME_RED: signed member_bank accepted after simulated BP_RUN loss: $phx_recovery_reply" >&2
+  phx_recovery_failures=$((phx_recovery_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_PASS: signed member_bank denied after simulated BP_RUN loss'
+fi
+
+# Independent second path: injected sync EIO, locally visible enabled row,
+# then simulated loss of runtime barrier before a new signed coin request.
+phx_ctl_fresh_state cold-runtime-coin
+phx_ctl_setup_coin
+phx_ctl_config 0 0
+bp_durable_sync() { return 74; }
+phx_recovery_admin_rc=0
+phx_ctl_config 1 1 || phx_recovery_admin_rc=$?
+. "$BP_LIB"
+if [ "$phx_recovery_admin_rc" -ne 8 ] ||
+   [ ! -f "$BP_RUN/controller-update-unsettled" ] ||
+   [ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" != 1 ]; then
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_SETUP_INVALID: coin sync fault not established' >&2
+  exit 2
+fi
+rm -rf "$BP_RUN"
+mkdir -p "$BP_RUN"
+phx_recovery_before="$(phx_ctl_digest)"
+phx_recovery_reply="$(call_vendo coin 10000000000005f0 1 "$phx_ctl_target")"
+if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_COLD_RUNTIME_RED: signed coin accepted after simulated BP_RUN loss: $phx_recovery_reply" >&2
+  phx_recovery_failures=$((phx_recovery_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_PASS: signed coin denied after simulated BP_RUN loss'
+fi
+
+# Restore a formerly valid enabled registry snapshot after a real successful
+# admin disable. This is a synthetic OLD VALID SNAPSHOT rollback, NOT an
+# actual flash recovery or proof of a durable independent revision witness.
+for phx_recovery_action in member_bank coin; do
+  phx_ctl_fresh_state "valid-snapshot-rollback-$phx_recovery_action"
+  if [ "$phx_recovery_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_recovery_target="$phx_ctl_target"
+    phx_recovery_pulses=1
+  else
+    bp_member_lock
+    bp_member_create phxrollback "Controller rollback fixture" 'fixture-pass-123' fixture >/dev/null
+    bp_member_unlock
+    phx_recovery_nonce=10000000000005f1
+    phx_recovery_hash="$(printf '%s' "$(bp_member_line phxrollback)" | cut -f6)"
+    phx_recovery_proof="$(proof_for "$phx_recovery_hash" "$phx_recovery_nonce")"
+    phx_recovery_target="phxrollback:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef:$phx_recovery_proof"
+    phx_recovery_pulses=30
+  fi
+  phx_recovery_snapshot="$T/old-valid-controller-$phx_recovery_action.tsv"
+  cp "$BP_CONTROLLERS" "$phx_recovery_snapshot"
+  phx_recovery_old_rev="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f15)"
+  phx_ctl_config 0 0
+  phx_recovery_new_rev="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f15)"
+  [ "$phx_recovery_new_rev" -gt "$phx_recovery_old_rev" ] || {
+    echo 'PHX-L-CORE CONTROLLER_ROLLBACK_SETUP_INVALID: disable did not advance revision' >&2
+    exit 2
+  }
+  cp "$phx_recovery_snapshot" "$BP_CONTROLLERS"
+  [ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 1 ] || {
+    echo 'PHX-L-CORE CONTROLLER_ROLLBACK_SETUP_INVALID: old enabled snapshot not restored' >&2
+    exit 2
+  }
+  phx_recovery_before="$(phx_ctl_digest)"
+  if [ "$phx_recovery_action" = coin ]; then phx_recovery_nonce=10000000000005f2; fi
+  phx_recovery_reply="$(call_vendo "$phx_recovery_action" "$phx_recovery_nonce" "$phx_recovery_pulses" "$phx_recovery_target")"
+  if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_VALID_ROLLBACK_RED: $phx_recovery_action accepted after previously disabled registry was rolled back: $phx_recovery_reply" >&2
+    phx_recovery_failures=$((phx_recovery_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_VALID_ROLLBACK_PASS: $phx_recovery_action denied after old enabled snapshot rollback"
+  fi
+done
+[ "$phx_recovery_failures" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
