@@ -2,7 +2,7 @@ name: LAN Messenger v0.2.8 - floating call owner preview
 on:
   push:
     branches: [release/lan-messenger-v028-floating-calls]
-    paths: [.github/workflows/lan-messenger-publish-v027.yml]
+    paths: [.github/workflows/lan-messenger-publish-v028.yml]
   workflow_dispatch:
 permissions:
   actions: read
