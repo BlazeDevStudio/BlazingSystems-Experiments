@@ -32,6 +32,7 @@ function generateQr(){
   const token=v('token'),server=v('server'),name=v('name')||'Rental phone',certPin=v('certPin').replace(/:/g,'').toLowerCase();
   if(!token||!server){document.getElementById('state').textContent='Server URL and enrollment token are required.';return}
   if(!/^https:\/\//i.test(server)){document.getElementById('state').textContent='Device Owner provisioning requires an HTTPS BlazePwifi server URL.';return}
+  try{if(!new URL(server).hostname)throw new Error()}catch(_){document.getElementById('state').textContent='Server URL is invalid. Check the hostname and optional port.';return}
   if(certPin&&!/^[0-9a-f]{64}$/.test(certPin)){document.getElementById('state').textContent='TLS certificate SHA-256 must be exactly 64 hex characters.';return}
   const d={
     "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":"com.blazesystems.blazerental/.BlazeDeviceAdminReceiver",
