@@ -92,6 +92,7 @@ class MainActivity : FlutterActivity() {
     private var lastMuted = false
     private var lastIncoming = false
     private var pendingAnswer: String? = null
+    private var answerDispatching = false
 
     private fun overlay(): AndroidCallOverlay =
         incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
@@ -170,13 +171,28 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun deliverPendingAnswer() {
-        if (!activityForeground) return
+        // Do not consume an Answer until Flutter acknowledges that it has a
+        // live matching incoming offer. Activity resume can precede Flutter
+        // widget initialization or LAN signal delivery on slow Android phones.
+        if (!activityForeground || answerDispatching) return
         val id = pendingAnswer ?: return
-        pendingAnswer = null
         if (!lastIncoming || id != lastCallId) return
-        callBridge?.invokeMethod("callAction",
+        val bridge = callBridge ?: return
+        answerDispatching = true
+        bridge.invokeMethod("callAction",
             mapOf("action" to "answer", "callId" to id,
-                "wasBackground" to true))
+                "wasBackground" to true), object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    answerDispatching = false
+                    if (result == true && pendingAnswer == id) pendingAnswer = null
+                }
+                override fun error(code: String, message: String?, details: Any?) {
+                    answerDispatching = false
+                }
+                override fun notImplemented() {
+                    answerDispatching = false
+                }
+            })
     }
 
     private fun requestNotificationPermission() {
@@ -405,10 +421,18 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
+                    "retryPendingAnswer" -> {
+                        // Dart calls this only after its incoming decision
+                        // completer is installed; this closes the resume race.
+                        val id = call.argument<String>("callId")
+                        if (id != null && id == lastCallId) deliverPendingAnswer()
+                        result.success(pendingAnswer == id)
+                    }
                     "dismissIncoming" -> {
                         // Don't dismiss the accepted call's ongoing controls.
                         if (lastIncoming) {
                             lastCallId = null; lastCaller = null
+                            pendingAnswer = null
                             incomingOverlay?.dismiss()
                             notifications.cancel(7024)
                         }
@@ -417,7 +441,8 @@ class MainActivity : FlutterActivity() {
                     "dismissCall" -> {
                         notifications.cancel(7024)
                         lastCallId = null; lastCaller = null
-                        lastIncoming = false; incomingOverlay?.dismiss()
+                        lastIncoming = false; pendingAnswer = null
+                        incomingOverlay?.dismiss()
                         result.success(null)
                     }
                     "foreground" -> {
