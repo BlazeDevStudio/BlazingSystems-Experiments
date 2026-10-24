@@ -65,7 +65,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _callMinimized = false;
   Offset _videoPosition = const Offset(16, 20);
   ControlInputMode _controlMode = ControlInputMode.trackpad;
-  Offset _miniCallPosition = const Offset(20, 110);
   bool _incomingDialogOpen = false;
   Completer<bool>? _incomingAnswer;
   Peer? _ringingPeer;
