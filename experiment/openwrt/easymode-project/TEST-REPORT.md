@@ -1,6 +1,6 @@
 # EasyMode 5.0.0-alpha.1 test report
 
-## Complete JSON-control regression (2026-10-25; Linux CI pending)
+## Complete JSON-control regression (2026-10-25)
 
 `tests/detector-json.py` exercises the exact escape-function prefix and final
 production JSON writer with synthetic environment values and shell stdin.
@@ -14,8 +14,11 @@ The unchanged baseline failed 39 cases; partial PR182 failed 31 (28 individual
 controls plus combined cases). The completed serializer passed all45 locally
 with Windows GNU awk in binary I/O mode. The default Windows awk translates
 CRLF and lost CR in one mixed case; that host limitation is retained rather
-than changing the portable product to use a GNU-specific flag. Dedicated Linux
-GNU awk and BusyBox tests of unchanged source remain required before integration.
+than changing the portable product to use a GNU-specific flag. Exact source
+`6005cdf62fafb59bee3abb2821f4dd4b6fdce2e5` passed native Linux
+[run40141198789](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40141198789):
+all45 cases passed with GNU awk and BusyBox shell/awk. Static, mode-644 detector,
+endpoint helper,12 offline-page cases and handover checks also passed.
 This is serializer/static evidence, not hardware, installer or live-network acceptance.
 
 ## Current source regression checks (2026-10-25)
