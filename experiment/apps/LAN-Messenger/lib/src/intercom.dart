@@ -349,7 +349,8 @@ class Intercom {
     await _log('peer connection prepared');
   }
 
-  Future<void> call(Peer peer, {bool withVideo = false}) async {
+  Future<void> call(Peer peer, {bool withVideo = false,
+      String? groupId, String? groupSessionId}) async {
     if (talkingTo != null || _closing) throw StateError('Already in a call');
     final id = randomId();
     talkingTo = peer;
@@ -370,6 +371,9 @@ class Intercom {
       await pc.setLocalDescription(offer);
       await node.signal(peer, {
         'type': 'offer', 'callId': id, 'sdp': offer.sdp, 'video': withVideo,
+        if (groupId != null && groupSessionId != null) ...{
+          'groupId': groupId, 'groupSessionId': groupSessionId,
+        },
       });
       _answerTimeout = Timer(const Duration(seconds: 45), () {
         if (callId == id && connecting) unawaited(hangUp());
