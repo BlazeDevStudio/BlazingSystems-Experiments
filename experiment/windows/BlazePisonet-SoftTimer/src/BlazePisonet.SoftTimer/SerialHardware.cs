@@ -82,23 +82,39 @@ public static class SerialDiscovery
 
     private static SerialDeviceInfo? ResolveExact(AppConfig config, IReadOnlyList<SerialDeviceInfo> devices)
     {
+        // A COM number is an address, never a device identity: Windows can reuse it
+        // for a different USB adapter after unplug/replug. Reject ambiguous matches.
         if (!string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
         {
-            var exact = devices.FirstOrDefault(d => d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase));
-            if (exact is not null) return exact;
+            var matches = devices.Where(d =>
+                !string.IsNullOrWhiteSpace(d.PnpDeviceId)
+                && d.PnpDeviceId.Equals(config.PreferredPnpDeviceId, StringComparison.OrdinalIgnoreCase))
+                .Take(2).ToArray();
+            if (matches.Length > 1) return null;
+            if (matches.Length == 1) return matches[0];
         }
         if (!string.IsNullOrWhiteSpace(config.PreferredUsbSerial))
         {
-            var serial = devices.FirstOrDefault(d => d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase)
+            var matches = devices.Where(d =>
+                d.IsUsb
+                && !string.IsNullOrWhiteSpace(d.UsbSerial)
+                && d.UsbSerial.Equals(config.PreferredUsbSerial, StringComparison.OrdinalIgnoreCase)
                 && (string.IsNullOrWhiteSpace(config.PreferredVid) || d.Vid.Equals(config.PreferredVid, StringComparison.OrdinalIgnoreCase))
-                && (string.IsNullOrWhiteSpace(config.PreferredPid) || d.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase)));
-            if (serial is not null) return serial;
+                && (string.IsNullOrWhiteSpace(config.PreferredPid) || d.Pid.Equals(config.PreferredPid, StringComparison.OrdinalIgnoreCase)))
+                .Take(2).ToArray();
+            return matches.Length == 1 ? matches[0] : null;
         }
-        return devices.FirstOrDefault(d => d.PortName.Equals(config.LastKnownComPort, StringComparison.OrdinalIgnoreCase));
+        // Legacy ExactDevice profiles without durable identity must be rebound by
+        // an operator; they may explicitly choose ManualPort instead.
+        return null;
     }
 
-    public static void BindExactDevice(AppConfig config, SerialDeviceInfo device)
+    public static bool BindExactDevice(AppConfig config, SerialDeviceInfo device)
     {
+        // A WMI-unidentified COM entry cannot be bound "exactly". Never pretend
+        // it is safe simply because the port name stays the same.
+        if (string.IsNullOrWhiteSpace(device.PnpDeviceId)
+            && string.IsNullOrWhiteSpace(device.UsbSerial)) return false;
         config.SerialSelection = SerialSelectionMode.ExactDevice;
         config.PreferredPnpDeviceId = device.PnpDeviceId;
         config.PreferredVid = device.Vid;
@@ -107,13 +123,18 @@ public static class SerialDiscovery
         config.PreferredFriendlyName = device.FriendlyName;
         config.LastKnownComPort = device.PortName;
         config.ManualComPort = device.PortName;
+        return true;
     }
 
     private static string ExtractUsbSerial(string pnp)
     {
         if (!pnp.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase)) return string.Empty;
         var parts = pnp.Split('\\', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 3 ? parts[^1].Split('&')[0] : string.Empty;
+        // USB instance IDs containing '&' are often Windows location-generated
+        // (e.g. 5&123456&0&2), not the adapter's actual hardware serial number.
+        // Treat them as non-portable instead of incorrectly extracting "5".
+        var instanceId = parts.Length >= 3 ? parts[^1] : string.Empty;
+        return instanceId.Contains('&') ? string.Empty : instanceId;
     }
 
     private static int PortNumber(string port)
