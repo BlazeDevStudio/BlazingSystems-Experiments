@@ -66,10 +66,26 @@ bp_controller_paid_allowed() {
 bp_controller_write() {
   id="$1"; shift
   tmp="$BP_STATE/.controllers.$(bp_tmp_suffix)"
-  awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"
-  printf '%s' "$id" >> "$tmp"
-  for value in "$@"; do printf '\t%s' "$value" >> "$tmp"; done
-  printf '\n' >> "$tmp"
+  # A failed copy or partial append must never replace the prior
+  # controller registry: it also carries enabled/coin-enabled admission.
+  if ! awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  if ! printf '%s' "$id" >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  for value in "$@"; do
+    if ! printf '\t%s' "$value" >> "$tmp"; then
+      rm -f "$tmp" 2>/dev/null || true
+      return 8
+    fi
+  done
+  if ! printf '\n' >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
   chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS" || {
     rm -f "$tmp" 2>/dev/null || true
     return 8
