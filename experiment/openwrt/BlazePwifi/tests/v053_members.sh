@@ -155,4 +155,69 @@ grep -Fq 'member_snapshot)' "$VENDO"
 ! grep -Fq '\${BP_AUTH_MUST_CHANGE' "$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/admin"
 ! grep -Fq '"hash":"%s"' "$ROOT/openwrt/rootfs/usr/lib/blazepwifi/member.sh"
 
+# PHX-L-CORE P0: signed CGI must recheck recipient.enabled under the
+# member writer lock. A distinct authorized admin writer can disable the
+# recipient after the original pre-lock check, while the transfer waits.
+# This is a bounded interprocess race on private fixture files, not hardware.
+bp_member_lock
+bp_member_create racealice 'Race source' 'racepass123' fixture >/dev/null
+bp_member_create racebob 'Race target' 'racepass456' fixture >/dev/null
+bp_member_balance_change racealice add 600 fixture race-funding-0001 >/dev/null
+bp_member_unlock
+RACE_NONCE=10000000000000ff
+RACE_EVENT=55555555555555555555555555555555
+RACE_HASH="$(printf '%s' "$(bp_member_line racealice)" | cut -f6)"
+RACE_PROOF="$(proof_for "$RACE_HASH" "$RACE_NONCE")"
+export PHX_REAL_MEMBER="$BP_MEMBER_LIB"
+export PHX_REACHED="$T/transfer-lock-reached" PHX_RELEASE="$T/transfer-lock-release"
+cat > "$T/member-race-wrapper.sh" <<'PHXWRAPPER'
+. "$PHX_REAL_MEMBER"
+bp_member_lock() {
+  # Preserve the production lock semantics, with one deterministic wait
+  # inserted just before taking the lock: pre-lock checks already ran.
+  : > "$PHX_REACHED"
+  n=0
+  while [ ! -f "$PHX_RELEASE" ] && [ "$n" -lt 100 ]; do
+    sleep 0.05
+    n=$((n+1))
+  done
+  [ -f "$PHX_RELEASE" ] || return 1
+  mkdir -p "$BP_RUN" || return 1
+  exec 7>"$BP_RUN/member.lock" || return 1
+  flock -w 10 7 || { exec 7>&-; return 1; }
+  [ ! -e "$BP_STATE/paid-state-uncertain" ] ||
+    { bp_member_unlock; return 9; }
+}
+PHXWRAPPER
+export BP_MEMBER_LIB="$T/member-race-wrapper.sh"
+call_vendo member_transfer "$RACE_NONCE" 30 "racealice>racebob:$RACE_EVENT:$RACE_PROOF" > "$T/race-output" &
+race_pid=$!
+n=0
+while [ ! -f "$PHX_REACHED" ] && [ "$n" -lt 100 ]; do
+  sleep 0.05
+  n=$((n+1))
+done
+if [ ! -f "$PHX_REACHED" ]; then
+  : > "$PHX_RELEASE"
+  wait "$race_pid" 2>/dev/null || :
+  echo 'PHX-L-CORE RACE SETUP FAIL: signed request never reached member lock' >&2
+  exit 2
+fi
+# Concurrent admin mutation uses the real member store and its real locks.
+bp_member_lock
+bp_member_patch racebob @keep 0 fixture >/dev/null
+bp_member_unlock
+: > "$PHX_RELEASE"
+wait "$race_pid" || :
+response="$(cat "$T/race-output")"
+if ! printf '%s' "$response" | grep -Fq '"ok":false' ||
+   [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f8)" != 600 ] ||
+   [ "$(printf '%s' "$(bp_member_line racebob)" | cut -f8)" != 0 ] ||
+   [ "$(printf '%s' "$(bp_member_line racebob)" | cut -f3)" != 0 ] ||
+   [ -n "$(bp_member_event_line "$RACE_EVENT")" ]; then
+  echo "PHX-L-CORE P0 RED: disabled destination received transfer after check-to-lock race: $response" >&2
+  exit 1
+fi
+echo 'PHX-L-CORE PASS: REAL signed Vendo rejects transfer when destination disabled while waiting on member lock'
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
