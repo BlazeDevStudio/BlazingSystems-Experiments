@@ -162,15 +162,32 @@ def main():
     if re.search(r"topResumedActivity=.*com\.example\.lan_messenger", foreground):
         raise RuntimeError("Receiver did not background before incoming call")
     note("background-incoming", "Receiver moved to Android HOME before call")
+    # An old call leaves both RTCPeerConnection objects disposing after the
+    # visible End Call control disappears. Wait for both peers to finish
+    # teardown, otherwise the next offer may legitimately be rejected as BUSY.
+    note("redial-gate", "Allowing 18 seconds for two-device WebRTC teardown")
+    time.sleep(18)
     tap_label(CALLER, "call-again", lambda text: "voice call" in text.lower(),
               timeout_seconds=40)
-    # Native CallStyle/heads-up notification fallback for apps that are
-    # backgrounded without SYSTEM_ALERT_WINDOW permission.
+    # Capture the *first* notification state before the incoming decision
+    # timeout clears it. Previously only the last (~55-second) snapshot
+    # survived, which cannot prove what Android showed at ring time.
+    time.sleep(3)
     adb(RECEIVER, "shell", "cmd", "statusbar", "expand-notifications",
         check=False)
+    root = snapshot(RECEIVER, "incoming-3-seconds")
+    if root is not None:
+        note("notification-3-seconds", "Visible labels: " +
+             repr([labels(n) for n in root.iter("node") if labels(n)][:35]))
+    (OUT / "android-notification-state.txt").write_bytes(
+        adb(RECEIVER, "shell", "dumpsys", "notification", "--noredact",
+            timeout=20, check=False))
+    # Android CallStyle actions vary in accessible wording between API levels.
+    # Never turn a timeout into a pass; retain UI, system notification,
+    # caller/receiver logs if a real Answer control cannot be found.
     tap_label(RECEIVER, "notification-answer",
-              lambda text: text.strip().lower() == "answer",
-              timeout_seconds=55)
+              lambda text: "answer" in text.lower(),
+              timeout_seconds=26)
     wait_both_connected()
     note("background-answer", "PASS: native Android notification Answer connected both peers")
     tap_label(RECEIVER, "hangup-background-call",
