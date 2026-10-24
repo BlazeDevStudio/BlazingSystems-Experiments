@@ -243,6 +243,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  void _expandCall() {
+    _callMinimized = false;
+    if (mounted) setState(() {});
+    if (Platform.isWindows) {
+      unawaited(_restoreWindowAfterCall(openThread: true));
+    }
+  }
+
   Future<void> _initialize() async {
     try {
       settings = await AppSettings.load();
@@ -1046,6 +1054,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       onMute: () => unawaited(call.setMuted(!call.muted)),
       onEnd: () => unawaited(call.hangUp()),
       onOpenThread: _openCallThread,
+      onExpand: _expandCall,
       onDragStart: desktop ? (_) => unawaited(wm.windowManager.startDragging()) : null,
       onDragUpdate: desktop ? null : (details) {
         if (!mounted) return;
