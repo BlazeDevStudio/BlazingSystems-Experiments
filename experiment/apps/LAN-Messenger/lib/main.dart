@@ -70,6 +70,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Peer? _incomingPeer;
   Completer<bool>? _incomingAnswer;
   final CompactCallWindow _desktopShell = CompactCallWindow();
+  bool _androidInPip = false;
+  String? _nativeOngoingId;
   List<File> received = [];
   Future<void> _historyQueue = Future<void>.value();
 
@@ -83,14 +85,29 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
-    if (call.method != 'callAction' || !mounted || !_incomingDialogOpen) return;
+    if (!mounted) return;
+    if (call.method == 'pipState') {
+      final active = call.arguments is Map &&
+          (call.arguments as Map)['active'] == true;
+      setState(() => _androidInPip = active);
+      return;
+    }
+    if (call.method != 'callAction') return;
     final data = call.arguments;
     if (data is! Map) return;
     final id = data['callId'];
     final action = data['action'];
-    if (id is! String || id != intercom?.callId ||
-        (action != 'answer' && action != 'decline')) return;
-    _resolveIncomingDialog(action == 'answer');
+    if (id is! String || id != intercom?.callId) return;
+    if (action == 'answer' || action == 'decline') {
+      _resolveIncomingDialog(action == 'answer');
+    } else if (!_incomingDialogOpen && action == 'end') {
+      unawaited(intercom?.hangUp() ?? Future<void>.value());
+    } else if (!_incomingDialogOpen && action == 'mute') {
+      final current = intercom;
+      if (current != null) unawaited(current.setMuted(!current.muted));
+    } else if (!_incomingDialogOpen && action == 'thread') {
+      unawaited(_openCallThread());
+    }
   }
 
   void _resolveIncomingDialog(bool answered) {
@@ -114,6 +131,40 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isAndroid) return;
     try { await _notifications.invokeMethod<void>('dismissIncoming'); }
     catch (_) {}
+  }
+
+  Future<void> _enterAndroidPip() async {
+    final call = intercom;
+    if (!Platform.isAndroid || call?.video != true || call?.callId == null) return;
+    try {
+      final ok = await _notifications.invokeMethod<bool>(
+        'enterPip', {'callId': call!.callId});
+      if (ok != true) _toast('Picture-in-picture is unavailable or disabled on this device.');
+    } catch (e) { _toast('Could not open floating video: $e'); }
+  }
+
+  void _syncAndroidOngoing(Intercom call) {
+    if (!Platform.isAndroid) return;
+    final id = call.talkingTo == null ? null : call.callId;
+    if (id == _nativeOngoingId) {
+      if (id != null && _androidInPip) {
+        unawaited(_notifications.invokeMethod<void>(
+          'pipMuted', {'muted': call.muted}).catchError((Object _) {}));
+      }
+      return;
+    }
+    _nativeOngoingId = id;
+    if (id == null) {
+      unawaited(_notifications.invokeMethod<void>('dismissOngoing')
+          .catchError((Object _) {}));
+      if (_androidInPip && mounted) setState(() => _androidInPip = false);
+    } else {
+      unawaited(_notifications.invokeMethod<bool>('ongoing', {
+        'caller': call.talkingTo?.name ?? 'LAN Messenger',
+        'callId': id,
+        'video': call.video,
+      }).catchError((Object _) => false));
+    }
   }
 
   Future<void> _raiseIncomingWindow(Peer peer) async {
@@ -205,6 +256,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           }).catchError((Object _) {}));
         }
         if (Platform.isWindows) unawaited(_updateTrayMenu());
+        if (Platform.isAndroid && !_incomingDialogOpen) _syncAndroidOngoing(inter);
         setState(() {});
       };
       inter.onChooseDesktopSource = (sources) async {
@@ -314,6 +366,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             _incomingAnswer = null;
           });
           if (Platform.isWindows) unawaited(_updateTrayMenu());
+          if (Platform.isAndroid && accepted) _syncAndroidOngoing(inter);
         }
       };
       await n.start();
@@ -1142,6 +1195,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.forum_outlined),
                 onPressed: () => unawaited(_openCallThread())),
+              if (Platform.isAndroid && call.video)
+                IconButton(
+                  tooltip: 'Float video over other apps', color: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.picture_in_picture_alt),
+                  onPressed: () => unawaited(_enterAndroidPip())),
               IconButton(
                 tooltip: 'Expand call', color: Colors.white,
                 visualDensity: VisualDensity.compact,
@@ -1252,6 +1311,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 IconButton.filledTonal(tooltip: call.muted ? 'Unmute' : 'Mute',
                   onPressed: () => call.setMuted(!call.muted),
                   icon: Icon(call.muted ? Icons.mic_off : Icons.mic)),
+                if (Platform.isAndroid && call.video)
+                  IconButton.filledTonal(tooltip: 'Float video (Android picture-in-picture)',
+                    onPressed: () => unawaited(_enterAndroidPip()),
+                    icon: const Icon(Icons.picture_in_picture_alt)),
                 if (call.video && call.canSwitchCamera)
                   IconButton.filledTonal(tooltip: 'Switch camera (also double tap preview)',
                     onPressed: () => unawaited(_switchCamera()),
@@ -1300,13 +1363,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     );
   }
 
+  Widget _androidPipVideo() {
+    final call = intercom;
+    return Material(color: Colors.black, child: Center(
+      child: call?.remoteRenderer != null
+        ? RTCVideoView(call!.remoteRenderer!,
+          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+        : const Icon(Icons.call, color: Colors.white, size: 45)));
+  }
+
   @override
   Widget build(BuildContext context) => Theme(
     data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
       useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
     child: Platform.isWindows && _desktopShell.isCompact
       ? _desktopCompactCall()
-      : Stack(children: [
+      : Platform.isAndroid && _androidInPip
+        ? _androidPipVideo()
+        : Stack(children: [
     Scaffold(body: Column(children: [
     _title(),
     if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!,
@@ -1326,6 +1400,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     unawaited(alerts.dispose());
     if (Platform.isAndroid) _notifications.setMethodCallHandler(null);
     unawaited(_dismissNativeIncoming());
+    if (Platform.isAndroid) {
+      unawaited(_notifications.invokeMethod<void>('dismissOngoing')
+        .catchError((Object _) {}));
+    }
     if (_trayInitialized) {
       tray.trayManager.removeListener(this);
       unawaited(tray.trayManager.destroy());
