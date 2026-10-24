@@ -91,7 +91,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Native C# source-linked diagnostic failed: $LASTEXITCODE" }
           dotnet run --project $lab -c Release --no-restore -- --safety-gate
           if ($LASTEXITCODE -ne 0) { throw "READ_ERROR_SAFETY_GATE_RED: false credit or test failure, exit=$LASTEXITCODE" }
-          Write-Host 'ACTIVE_LOW_READ_ERROR_GATE_GREEN: 3/3 status-fault/detach cases denied in the fake OS harness. Other coin risks not cleared.'
+          Write-Host 'ACTIVE_LOW_READ_ERROR_GATE_GREEN: 4/4 status-fault/detach cases denied in the fake OS harness. Other coin risks not cleared.'
 
       - name: Restore win-x64
         shell: pwsh
