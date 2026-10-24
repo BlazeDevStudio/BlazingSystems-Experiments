@@ -19,6 +19,35 @@ OUT = pathlib.Path(os.environ.get("GITHUB_WORKSPACE", ".")) / "android-lan-evide
 OUT.mkdir(parents=True, exist_ok=True)
 CALLER, RECEIVER = "emulator-5554", "emulator-5556"
 EVENTS = []
+LOG_PROCESSES = []
+
+
+def start_continuous_call_logs():
+    """Stream just app/native call tags from both emulators before dialing.
+
+    Dumping the last N Android logcat lines at failure loses the decisive
+    incoming offer on noisy Android 35 emulator images.
+    """
+    for serial in (CALLER, RECEIVER):
+        target = open(OUT / f"{serial}-call-signaling-stream.txt", "wb")
+        process = subprocess.Popen([
+            "adb", "-s", serial, "logcat", "-v", "threadtime",
+            "flutter:I", "LANCallTrace:I", "AndroidRuntime:E", "*:S"
+        ], stdout=target, stderr=subprocess.DEVNULL)
+        LOG_PROCESSES.append((process, target))
+    note("logging", "Streaming filtered signaling/native logs from BOTH devices")
+
+
+def stop_continuous_call_logs():
+    for process, target in LOG_PROCESSES:
+        process.terminate()
+        try:
+            process.wait(timeout=4)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=3)
+        target.close()
+    LOG_PROCESSES.clear()
 
 
 def adb(serial, *args, timeout=45, check=True):
@@ -124,6 +153,22 @@ def wait_both_connected(timeout_seconds=85):
     raise RuntimeError("Two-device call did not reach Connected state on both UIs")
 
 
+def expand_notification_shade(serial, label):
+    """System UI can ignore the first shade request while Launcher is busy."""
+    adb(serial, "shell", "cmd", "statusbar", "expand-notifications", check=False)
+    time.sleep(1)
+    root = snapshot(serial, label + "-first-shade")
+    found = root is not None and any(
+        "LAN Messenger" in labels(n) and "notification" not in labels(n).lower()
+        for n in root.iter("node"))
+    if not found:
+        adb(serial, "shell", "input", "swipe", "540", "1", "540", "1450", "460",
+            timeout=12, check=False)
+        time.sleep(1)
+        root = snapshot(serial, label + "-swipe-shade")
+    return root
+
+
 def first_background_incoming_test():
     """One fresh background-incoming call, with no prior WebRTC teardown."""
     note("background-setup", "Receiver is HOME before the FIRST call")
@@ -136,9 +181,7 @@ def first_background_incoming_test():
     tap_label(CALLER, "background-first-call",
               lambda text: "voice call" in text.lower())
     time.sleep(3)
-    adb(RECEIVER, "shell", "cmd", "statusbar", "expand-notifications",
-        check=False)
-    root = snapshot(RECEIVER, "background-first-3seconds")
+    root = expand_notification_shade(RECEIVER, "background-first-3seconds")
     if root is not None:
         note("notification-early", "UI labels: " +
              repr([labels(n) for n in root.iter("node") if labels(n)][:40]))
@@ -239,6 +282,7 @@ def main():
 
 if __name__ == "__main__":
     try:
+        start_continuous_call_logs()
         main()
     except Exception as exc:
         note("FAILED", str(exc))
@@ -259,5 +303,6 @@ if __name__ == "__main__":
                 note("evidence", f"{serial}: {capture_error}")
         raise
     finally:
+        stop_continuous_call_logs()
         (OUT / "voice-call-report.json").write_text(
             json.dumps({"events": EVENTS}, indent=2), encoding="utf-8")
