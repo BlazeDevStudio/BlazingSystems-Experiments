@@ -39,7 +39,7 @@ const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC=0x42505732;
 
 bool insertMode=false;
-bool lastCoin=false;
+bool lastCoin=false, pollIntakeSuspended=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -267,7 +267,7 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -351,7 +351,7 @@ void loop(){
   }
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;String r=post("poll");insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);applyOutputs();lastPoll=millis();
+    wifiFailures=0;pollIntakeSuspended=true;applyOutputs();String r=post("poll");pollIntakeSuspended=false;insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);applyOutputs();lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
