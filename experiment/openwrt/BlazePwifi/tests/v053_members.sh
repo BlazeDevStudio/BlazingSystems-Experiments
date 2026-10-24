@@ -220,4 +220,72 @@ if ! printf '%s' "$response" | grep -Fq '"ok":false' ||
 fi
 echo 'PHX-L-CORE PASS: REAL signed Vendo rejects transfer when destination disabled while waiting on member lock'
 
+
+# PHX-L-CORE P0 #31 MASTER review: initial signed source proof may become
+# invalid when an authorized member admin disables/resets its credentials
+# BETWEEN that check and the member writer lock. Test the real CGI shell
+# with real bp_member_patch/bp_member_set_password under real locks.
+# The fixture-only hook above pauses at this exact boundary; no device/coin.
+bp_member_lock
+bp_member_patch racebob @keep 1 fixture >/dev/null
+bp_member_unlock
+for phx_revoke in disabled password_reset; do
+  rm -f "$PHX_REACHED" "$PHX_RELEASE"
+  case "$phx_revoke" in
+    disabled)
+      phx_nonce=10000000000000e1
+      phx_event=66666666666666666666666666666661
+      ;;
+    password_reset)
+      phx_nonce=10000000000000e2
+      phx_event=66666666666666666666666666666662
+      ;;
+  esac
+  phx_hash="$(printf '%s' "$(bp_member_line racealice)" | cut -f6)"
+  phx_proof="$(proof_for "$phx_hash" "$phx_nonce")"
+  phx_alice_before="$(printf '%s' "$(bp_member_line racealice)" | cut -f8)"
+  phx_bob_before="$(printf '%s' "$(bp_member_line racebob)" | cut -f8)"
+  call_vendo member_transfer "$phx_nonce" 40 \
+    "racealice>racebob:$phx_event:$phx_proof" > "$T/transfer-source-$phx_revoke" &
+  phx_pid=$!
+  n=0
+  while [ ! -f "$PHX_REACHED" ] && [ "$n" -lt 100 ]; do
+    sleep 0.05
+    n=$((n+1))
+  done
+  if [ ! -f "$PHX_REACHED" ]; then
+    : > "$PHX_RELEASE"
+    wait "$phx_pid" 2>/dev/null || :
+    echo "PHX-L-CORE REPRO INVALID: $phx_revoke never reached locked boundary" >&2
+    exit 2
+  fi
+  # Real admin updates use the unchanged production member module.
+  bp_member_lock
+  case "$phx_revoke" in
+    disabled)
+      bp_member_patch racealice @keep 0 fixture >/dev/null
+      ;;
+    password_reset)
+      bp_member_set_password racealice 'revoked-pass-2026' fixture >/dev/null
+      ;;
+  esac
+  bp_member_unlock
+  : > "$PHX_RELEASE"
+  wait "$phx_pid" || :
+  phx_response="$(cat "$T/transfer-source-$phx_revoke")"
+  if ! printf '%s' "$phx_response" | grep -Fq '"ok":false' ||
+     [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f8)" != "$phx_alice_before" ] ||
+     [ "$(printf '%s' "$(bp_member_line racebob)" | cut -f8)" != "$phx_bob_before" ] ||
+     [ -n "$(bp_member_event_line "$phx_event")" ]; then
+    echo "PHX-L-CORE P0 SOURCE-PROOF RED: $phx_revoke after initial proof was paid-ACKed or changed balances: $phx_response" >&2
+    exit 1
+  fi
+  if [ "$phx_revoke" = disabled ]; then
+    bp_member_lock
+    bp_member_patch racealice @keep 1 fixture >/dev/null
+    bp_member_unlock
+  fi
+done
+echo 'PHX-L-CORE PASS: REAL signed Vendo refuses new transfer after source disable/password reset at lock handoff'
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
