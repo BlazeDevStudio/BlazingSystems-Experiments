@@ -1179,6 +1179,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
+    if (intercom!.closing) {
+      _toast('Previous call is still ending. Try again shortly.');
+      return;
+    }
     _callMinimized = false;
     try { await intercom!.call(peer, withVideo: video); }
     catch (e) { _toast('Could not start call: $e'); }
@@ -1524,7 +1528,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ? IconButton(tooltip: 'End call', onPressed: () => intercom?.hangUp(),
               icon: const Icon(Icons.call_end, color: Colors.red, size: 30))
           : Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true
+              IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true || intercom?.closing == true
                   ? null : () => _startCall(),
                 icon: const Icon(Icons.call_rounded, color: Color(0xff1a8c62), size: 29)),
               PopupMenuButton<int>(tooltip: 'Conversation theme', icon: const Icon(Icons.palette_outlined, size: 22),
@@ -1532,7 +1536,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     child: Row(children: [CircleAvatar(radius: 9, backgroundColor: Color(v)),
                       const SizedBox(width: 8), const Text('Thread theme')]))).toList(),
                 onSelected: (v) { settings.threadAccents[p.id] = v; unawaited(_saveSettings()); }),
-              IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true
+              IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true || intercom?.closing == true
                   ? null : () => _startCall(video: true),
                 icon: const Icon(Icons.videocam_rounded, color: Color(0xff1a8c62), size: 29)),
             ]),

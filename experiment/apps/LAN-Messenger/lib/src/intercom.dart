@@ -14,6 +14,10 @@ class Intercom {
   String? callId;
   bool video = false;
   bool connecting = false;
+  /// True while the previous call's native WebRTC tracks and peer connection
+  /// are being torn down. A second dial during that interval can be rejected
+  /// by either device before its incoming notification is posted.
+  bool get closing => _closing;
   bool muted = false;
   bool sharingScreen = false;
   bool peerSharingScreen = false;
@@ -671,5 +675,9 @@ class Intercom {
     try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
     catch (e) { await _log('remote renderer dispose error: $e'); }
     _closing = false;
+    // The UI previously re-enabled Call as soon as talkingTo became null,
+    // despite pending asynchronous native WebRTC disposal. Repaint only after
+    // the previous session is actually safe to redial.
+    onChanged?.call();
   }
 }
