@@ -215,11 +215,50 @@ var exactDuplicate = SerialDiscovery.Resolve(pinned, new[] { originalDevice, dup
 var exactUnique = SerialDiscovery.Resolve(pinned, new[] { originalDevice });
 var manual = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort, ManualComPort = "COM9" };
 var manualExplicit = SerialDiscovery.Resolve(manual, new[] { replacementDevice });
+// PR #194 proposed exact-device admission hardening: all below execute
+// SerialDiscovery.Resolve from the linked real C# application source. Synthetic
+// USB descriptors only, no live WMI/USB or paid acceptance.
+var movedPort = new SerialDeviceInfo("COM14", "Same physical adapter", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-A", "1234", "5678", "COIN-A");
+var bogusVendor = new SerialDeviceInfo("COM14", "Counterfeit descriptor", "Lab",
+    @"USB\VID_AAAA&PID_5678\COIN-A", "AAAA", "5678", "COIN-A");
+var duplicateSerial1 = new SerialDeviceInfo("COM14", "Adapter 1", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-A", "1234", "5678", "COIN-A");
+var duplicateSerial2 = new SerialDeviceInfo("COM15", "Adapter 2", "Lab",
+    @"USB\VID_1234&PID_5678\COIN-A-OTHERPNP", "1234", "5678", "COIN-A");
+var usbOnlyPinned = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredUsbSerial = "COIN-A", PreferredVid = "1234", PreferredPid = "5678",
+    LastKnownComPort = "COM9"
+};
+var unqualifiedSerial = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredUsbSerial = "COIN-A", LastKnownComPort = "COM9"
+};
+var comOnlyPinned = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    LastKnownComPort = "COM9"
+};
+var reflectedExtractor = typeof(SerialDiscovery).GetMethod("ExtractUsbSerial",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+    ?? throw new Exception("Actual USB serial parser not found");
+var locationGeneratedSerial = (string?)reflectedExtractor.Invoke(null,
+    new object[] { @"USB\VID_1234&PID_5678\5&ABCDEF&0&2" });
+var realUsbSerial = (string?)reflectedExtractor.Invoke(null,
+    new object[] { @"USB\VID_1234&PID_5678\COIN-A" });
+
 var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("exact_pnp_missing_com_recycled_must_refuse", exactComReused is not null, false),
     ("exact_duplicate_pnp_must_refuse_ambiguity", exactDuplicate is not null, false),
     ("exact_unique_pnp_control", exactUnique?.PortName == "COM9", true),
-    ("manual_com9_explicit_control", manualExplicit?.PortName == "COM9", true)
+    ("manual_com9_explicit_control", manualExplicit?.PortName == "COM9", true),
+    ("exact_same_pnp_renumbered_com14_control", SerialDiscovery.Resolve(pinned, new[] { movedPort })?.PortName == "COM14", true),
+    ("exact_usb_serial_reenumerated_unique_control", SerialDiscovery.Resolve(usbOnlyPinned, new[] { movedPort })?.PortName == "COM14", true),
+    ("exact_usb_serial_duplicate_must_refuse", SerialDiscovery.Resolve(usbOnlyPinned, new[] { duplicateSerial1, duplicateSerial2 }) is not null, false),
+    ("exact_usb_serial_wrong_vid_must_refuse", SerialDiscovery.Resolve(usbOnlyPinned, new[] { bogusVendor }) is not null, false),
+    ("exact_usb_serial_without_vidpid_must_refuse", SerialDiscovery.Resolve(unqualifiedSerial, new[] { movedPort }) is not null, false),
+    ("exact_com_only_legacy_must_refuse", SerialDiscovery.Resolve(comOnlyPinned, new[] { replacementDevice }) is not null, false),
+    ("usb_location_instance_must_not_be_stable_serial", !string.IsNullOrEmpty(locationGeneratedSerial) || realUsbSerial != "COIN-A", false)
 };
 
 var cases = new (string Name, int Actual, int Expected)[] {
@@ -262,5 +301,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 19/19 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 26/26 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
