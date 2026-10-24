@@ -74,7 +74,9 @@ class Mp3PreviewPlaybackTest {
             assertTrue("Playback did not advance: ${model().playback.value}", model().playback.value.sourceTimeUs >= 8_000_000)
             fun coverage(start: Long, end: Long, expected: Set<Int>): Double {
                 val section = samples.filter { it.first in start..end }
-                assertTrue("Insufficient source-time samples in $start..$end: ${section.size}", section.size >= 8)
+                assertTrue("Insufficient source-time samples in $start..$end: ${section.size}; total=${samples.size} " +
+                    "renderRange=${samples.minOfOrNull { it.first }}..${samples.maxOfOrNull { it.first }} " +
+                    "player=${model().playback.value} status=${model().state.value.status}", section.size >= 8)
                 return section.count { it.second.intersect(expected).size >= 2 }.toDouble() / section.size
             }
             val first = coverage(1_500_000, 4_500_000, setOf(69, 73, 76))

@@ -174,6 +174,7 @@ class StudioModel @JvmOverloads constructor(
             saved.third?.let { select(it.source, false) }
         }
         viewModelScope.launch {
+            var diagnosticBucket = -1L
             combine(
                 playback,
                 state.map { Triple(it.displayScene(), it.notes,
@@ -181,8 +182,18 @@ class StudioModel @JvmOverloads constructor(
                 microphoneFeatures,
                 quickPreview,
             ) { player, snapshot, mic, quick -> Pair(Triple(player, snapshot, mic), quick) }
-                .collectLatest { (input, quick) ->
+                // Finish one evaluation even when the next clock tick arrives. Cancelling
+                // every 40 ms can prevent any frame from publishing on a busy device.
+                .conflate().collect { (input, quick) ->
                     val (player, snapshot, mic) = input
+                    val diagnose = com.blazingsystems.visualizer.BuildConfig.DEBUG &&
+                        player.sourceTimeUs / 1_000_000 != diagnosticBucket
+                    if (diagnose) {
+                        diagnosticBucket = player.sourceTimeUs / 1_000_000
+                        android.util.Log.d("NotePreview", "clock=${player.sourceTimeUs} version=${player.positionVersion} " +
+                            "cacheVersion=${quick.positionVersion} cache=${quick.frames.firstOrNull()?.sourceTimeUs}..${quick.frames.lastOrNull()?.sourceTimeUs} " +
+                            "detailed=${snapshot.third != null} mic=${mic != null}")
+                    }
                     val frame = mic ?: withContext(Dispatchers.Default) {
                         val detailed = snapshot.third != null && snapshot.third == player.sourceUri
                         val immediate = quick.at(player.sourceUri, player.sourceTimeUs, player.positionVersion)
@@ -193,9 +204,12 @@ class StudioModel @JvmOverloads constructor(
                                 ?.at(player.sourceTimeUs, notes, snapshot.first.aveeAudio)
                         }.getOrNull() ?: FeatureFrame(player.sourceTimeUs, notes = notes)
                     }
-                    rendered.value = SceneEvaluator.evaluate(
-                        snapshot.first, frame, frame.sourceTimeUs,
-                    )
+                    val current = playback.value
+                    if (current.sourceUri == player.sourceUri && current.positionVersion == player.positionVersion &&
+                        (mic == null) == (microphoneFeatures.value == null)) {
+                        rendered.value = SceneEvaluator.evaluate(snapshot.first, frame, frame.sourceTimeUs)
+                        if (diagnose) android.util.Log.d("NotePreview", "present=${frame.sourceTimeUs} notes=${rendered.value.activeNotes.size}")
+                    }
                 }
         }
         viewModelScope.launch {
