@@ -70,4 +70,59 @@ OUT="$(printf 'action=portal_config' | sh "$API")"
 echo "$OUT" | grep -q '"brand":"Family Hotspot"'
 ! echo "$OUT" | grep -q 'missing or invalid device token'
 
+# Portal editor must application/x-www-form-urlencoded encode values.
+# bp_param splits on raw & and =, then decodes + and %XX. The previous
+# encoder only turned spaces into +, so "C++ Hotspot" was stored as
+# "C   Hotspot" and "Cafe & Games" was truncated to "Cafe " before
+# bp_portal_safe_text could reject the ampersand.
+node - "$EDITOR" <<'JS'
+const fs = require('fs');
+const html = fs.readFileSync(process.argv[2], 'utf8');
+const start = html.indexOf('function rawBody(');
+if (start < 0) throw new Error('rawBody missing');
+let i = html.indexOf('{', start);
+let depth = 0;
+let end = -1;
+for (; i < html.length; i++) {
+  if (html[i] === '{') depth++;
+  else if (html[i] === '}' && --depth === 0) { end = i + 1; break; }
+}
+if (end < 0) throw new Error('rawBody unterminated');
+const rawBody = new Function('return ' + html.slice(start, end))();
+function urlDecode(s) {
+  const bytes = [];
+  for (let n = 0; n < s.length; n++) {
+    const c = s[n];
+    if (c === '%' && n + 2 < s.length && /^[0-9a-fA-F]{2}$/.test(s.slice(n + 1, n + 3))) {
+      bytes.push(parseInt(s.slice(n + 1, n + 3), 16));
+      n += 2;
+      continue;
+    }
+    bytes.push((c === '+' ? ' ' : c).charCodeAt(0));
+  }
+  return Buffer.from(bytes).toString('utf8');
+}
+function bpParam(data, key) {
+  for (const line of String(data).split('&')) {
+    const eq = line.indexOf('=');
+    const k = eq < 0 ? line : line.slice(0, eq);
+    if (k === key) return urlDecode(eq < 0 ? '' : line.slice(eq + 1));
+  }
+  return '';
+}
+const samples = ['C++ Hotspot', 'Cafe & Games', "Joe's Wi-Fi", 'hello world', 'sale%2F', 'a=b', 'plain'];
+for (const value of samples) {
+  const body = rawBody({action: 'portal_set', key: 'brand', value});
+  if (body.includes(' ') || body.includes('\n')) throw new Error('unencoded whitespace: ' + body);
+  for (const key of ['action', 'key', 'value']) {
+    const got = bpParam(body, key);
+    const want = key === 'action' ? 'portal_set' : key === 'key' ? 'brand' : value;
+    if (got !== want) throw new Error(key + ' decoded ' + JSON.stringify(got) + ' from ' + body);
+  }
+}
+JS
+
+bp_portal_set brand 'C++ Hotspot'
+[ "$(bp_portal_get brand)" = 'C++ Hotspot' ]
+
 echo "BlazePwifi v0.3 portal checks passed"
