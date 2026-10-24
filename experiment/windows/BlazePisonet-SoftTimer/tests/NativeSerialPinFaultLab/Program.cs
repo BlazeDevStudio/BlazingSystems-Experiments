@@ -96,7 +96,7 @@ var ringAfterOtherPin = Run(false, true, ModemSignal.RingIndicator, port => {
 // possible race and is NOT evidence that any Windows driver delivers it.
 SerialPort.InitialCtsLevel = false;
 var lifecycleCfg = new AppConfig { CoinInputSignal = ModemSignal.Cts, MinimumPulseMs = 10 };
-int lifecycleAccepted = 0;
+int lifecycleAccepted = 0, oldSessionIncompletePulse = 0;
 using (var sut = new SerialHardware()) {
     sut.CoinPulseAccepted += () => lifecycleAccepted++;
     if (!sut.Connect(lifecycleCfg)) throw new Exception("First lifecycle COM failed");
@@ -110,7 +110,7 @@ using (var sut = new SerialHardware()) {
     newPort.CtsLevel = false;
     newPort.Raise(SerialPinChange.CtsChanged);
     // Incomplete pulse from old session MUST NOT become a new coin.
-    if (lifecycleAccepted != 0) throw new Exception("Old-session unfinished pulse was credited");
+    oldSessionIncompletePulse = lifecycleAccepted;
     // A genuine complete pulse on the replacement port must still work.
     newPort.CtsLevel = true;
     newPort.Raise(SerialPinChange.CtsChanged);
@@ -166,7 +166,7 @@ var cases = new (string Name, int Actual, int Expected)[] {
     ("delayed_callback_misses_pulse", delayed.Accepted, 0),
     ("ring_without_measured_duration", ring.Accepted, 1),
     ("ring_after_unrelated_dsr_preserves_legacy_event", ringAfterOtherPin.Accepted, 1),
-    ("old_session_incomplete_cts_not_credited", 0, 0),
+    ("old_session_incomplete_cts_not_credited", oldSessionIncompletePulse, 0),
     ("fresh_cts_after_reconnect", freshAfterReconnect, 1),
     ("stale_ring_after_disconnect", staleRingAfterDisconnect, 0),
     ("stale_ring_after_replacement", staleRingAfterReplacement, 0),
