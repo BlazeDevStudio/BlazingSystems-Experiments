@@ -795,4 +795,61 @@ for phx_sync_action in member_bank coin; do
 done
 [ "$phx_sync_failures" -eq 0 ] || exit 1
 
+
+# PHX-L-CORE P0 #31: a killed admin writer does not return through the
+# bp_controller_set error path. Its shared fd4 lock is released by the OS,
+# so a DIFFERENT signed CGI must still see a fail-closed runtime barrier.
+# This tests process exit, NOT a physical powercut or post-reboot recovery.
+phx_ctl_fresh_state controller-worker-exit
+phx_ctl_config 0 0
+phx_crash_user=phxsynccrash
+bp_member_lock
+bp_member_create "$phx_crash_user" "Controller worker crash" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_crash_nonce=10000000000004f0
+phx_crash_event=ddddddddddddddddddddddddddddddd0
+phx_crash_hash="$(printf '%s' "$(bp_member_line "$phx_crash_user")" | cut -f6)"
+phx_crash_proof="$(proof_for "$phx_crash_hash" "$phx_crash_nonce")"
+phx_crash_target="$phx_crash_user:$phx_crash_event:$phx_crash_proof"
+phx_crash_before="$(phx_ctl_digest)"
+export PHX_CRASH_REACHED="$BP_RUN/controller-worker-exit-reached"
+export PHX_CRASH_AFTER_RENAME="$BP_RUN/controller-worker-exit-enabled-visible"
+(
+  bp_durable_sync() {
+    : > "$PHX_CRASH_REACHED"
+    phx_visible="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)"
+    [ "$phx_visible" != 1 ] || : > "$PHX_CRASH_AFTER_RENAME"
+    exit 77
+  }
+  phx_ctl_config 1 1
+) > "$T/controller-worker-exit-output" 2>&1 &
+phx_worker_pid=$!
+phx_worker_rc=0
+wait "$phx_worker_pid" || phx_worker_rc=$?
+if [ "$phx_worker_rc" -ne 77 ] ||
+   [ ! -f "$PHX_CRASH_REACHED" ] ||
+   [ ! -f "$PHX_CRASH_AFTER_RENAME" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_SETUP_INVALID: no real post-rename worker exit $phx_worker_rc" >&2
+  exit 2
+fi
+phx_crash_reply="$(call_vendo member_bank "$phx_crash_nonce" 30 "$phx_crash_target")"
+phx_crash_after="$(phx_ctl_digest)"
+if ! printf '%s' "$phx_crash_reply" | grep -Fq '"ok":false' ||
+   [ "$phx_crash_after" != "$phx_crash_before" ] ||
+   [ -n "$(bp_member_event_line "$phx_crash_event")" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_RED: paid ACK after admin exited post-rename before durable sync: $phx_crash_reply" >&2
+  exit 1
+fi
+# No unrelated retry is permitted to accidentally remove a pending
+# controller-write barrier; explicit operator recovery is separate.
+phx_retry_rc=0
+phx_ctl_config 1 1 || phx_retry_rc=$?
+if [ "$phx_retry_rc" -ne 8 ] ||
+   [ "$(phx_ctl_digest)" != "$phx_crash_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_RED: admin retry erased unsafe barrier" >&2
+  exit 1
+fi
+echo 'PHX-L-CORE CONTROLLER_WORKER_EXIT_PASS: admin process exit after rename keeps separate signed CGI and retry fail-closed'
+
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
