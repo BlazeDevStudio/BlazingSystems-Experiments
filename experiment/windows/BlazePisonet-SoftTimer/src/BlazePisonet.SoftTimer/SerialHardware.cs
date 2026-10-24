@@ -129,6 +129,9 @@ public sealed class SerialHardware : IDisposable
     private SerialPort? _port;
     private AppConfig? _config;
     private bool _lastCoinActive;
+    // After a failed/unknown status sample, wait for a verified idle level
+    // before arming another pulse. A missing modem read is NEVER a low level.
+    private bool _requireVerifiedIdle = true;
     private DateTimeOffset? _pulseStarted;
     private DateTimeOffset _lastAccepted = DateTimeOffset.MinValue;
 
@@ -170,7 +173,24 @@ public sealed class SerialHardware : IDisposable
                 config.LastKnownComPort = selected.PortName;
                 if (config.SerialSelection == SerialSelectionMode.ExactDevice && string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
                     SerialDiscovery.BindExactDevice(config, selected);
-                _lastCoinActive = IsSignalActive(config.CoinInputSignal, config.CoinInputActiveHigh);
+                _pulseStarted = null;
+                _lastAccepted = DateTimeOffset.MinValue;
+                _lastCoinActive = false;
+                _requireVerifiedIdle = false;
+                if (config.CoinInputSignal != ModemSignal.RingIndicator)
+                {
+                    if (!TryReadCoinActive(config, out var initialActive))
+                    {
+                        Storage.Log($"Serial coin input {selected.PortName}: no trusted status at connection");
+                        DisconnectInternal();
+                        ConnectionChanged?.Invoke("Serial coin input unavailable; cannot arm pulse capture");
+                        return false;
+                    }
+                    _lastCoinActive = initialActive;
+                    // If connected while an asserted pulse is in progress,
+                    // do not infer its beginning or credit an incomplete coin.
+                    _requireVerifiedIdle = initialActive;
+                }
                 ConnectionChanged?.Invoke($"Connected to {selected.Display}");
                 return true;
             }
@@ -220,19 +240,92 @@ public sealed class SerialHardware : IDisposable
         lock (_gate) if (_port?.IsOpen == true) _port.RtsEnable = enabled;
     }
 
+    // Unlike GetSignal (a read-only UI API returning false on failure), paid
+    // pulse capture needs a tri-state result: valid high/low OR unknown.
+    // Unknown, detached or throwing modem status must never become an edge.
+    private bool TryReadCoinActive(AppConfig cfg, out bool active)
+    {
+        active = false;
+        lock (_gate)
+        {
+            var port = _port;
+            if (port?.IsOpen != true) return false;
+            try
+            {
+                bool raw;
+                switch (cfg.CoinInputSignal)
+                {
+                    case ModemSignal.Dsr:
+                        raw = port.DsrHolding;
+                        break;
+                    case ModemSignal.Cts:
+                        raw = port.CtsHolding;
+                        break;
+                    case ModemSignal.CarrierDetect:
+                        raw = port.CDHolding;
+                        break;
+                    default:
+                        return false; // Ring is an unmeasured event, not a level.
+                }
+                active = cfg.CoinInputActiveHigh ? raw : !raw;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Storage.Log("Serial coin status read failed (capture disarmed): " + ex.Message);
+                return false;
+            }
+        }
+    }
+
     private void OnPinChanged(object? sender, SerialPinChangedEventArgs e)
     {
         var cfg = _config;
         if (cfg is null) return;
+        // A callback can arrive after unplug/dispose or from an old COM session.
+        // Fail closed; it must not be interpreted as an active-low assertion.
+        // A deferred callback from an old COM session must not modify the
+        // NEW session's in-progress pulse or verified-idle arm state.
+        if (!ReferenceEquals(sender, _port)) return;
+        // A callback from the current port that is now closed is different:
+        // its own in-progress pulse must be abandoned until verified idle.
+        if (_port?.IsOpen != true)
+        {
+            _pulseStarted = null;
+            _requireVerifiedIdle = true;
+            return;
+        }
         SignalChanged?.Invoke();
 
-        if (cfg.CoinInputSignal == ModemSignal.RingIndicator && e.EventType == SerialPinChange.Ring)
+        if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
         {
-            AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
+            // RI is event-only in System.IO.Ports; unrelated pin notifications
+            // must not enter the level-read failure/disarm path. RI acceptance
+            // remains UNQUALIFIED for unattended monetary input.
+            if (e.EventType == SerialPinChange.Ring)
+                AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
             return;
         }
 
-        var active = IsSignalActive(cfg.CoinInputSignal, cfg.CoinInputActiveHigh);
+        if (!TryReadCoinActive(cfg, out var active))
+        {
+            // Do not treat false from an exception as a physical pin level.
+            _pulseStarted = null;
+            _lastCoinActive = false;
+            _requireVerifiedIdle = true;
+            return;
+        }
+
+        if (_requireVerifiedIdle)
+        {
+            // The fault could have happened mid-pulse. Never resume counting
+            // an edge whose true start/end may have been lost.
+            _pulseStarted = null;
+            _lastCoinActive = active;
+            if (!active) _requireVerifiedIdle = false;
+            return;
+        }
+
         if (active == _lastCoinActive) return;
         _lastCoinActive = active;
 
@@ -250,6 +343,7 @@ public sealed class SerialHardware : IDisposable
 
     private void AcceptCoinIfDebounced(AppConfig cfg, int widthMs)
     {
+        if (_port?.IsOpen != true || _requireVerifiedIdle) return;
         var now = DateTimeOffset.UtcNow;
         if ((now - _lastAccepted).TotalMilliseconds < Math.Max(10, cfg.DebounceMs)) return;
         if (widthMs < Math.Max(1, cfg.MinimumPulseMs)) return;
@@ -279,6 +373,10 @@ public sealed class SerialHardware : IDisposable
             try { _port.Dispose(); } catch { }
         }
         _port = null;
+        _config = null;
+        _pulseStarted = null;
+        _lastCoinActive = false;
+        _requireVerifiedIdle = true;
         ConnectedDevice = null;
     }
 

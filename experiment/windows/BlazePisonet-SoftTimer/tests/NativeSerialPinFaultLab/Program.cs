@@ -41,6 +41,34 @@ var falseCoin = Run(true, false, ModemSignal.Cts, port => {
     port.ThrowOnCtsRead = false;
     port.Raise(SerialPinChange.DsrChanged);
 });
+var selectedPinFault = Run(true, false, ModemSignal.Cts, port => {
+    // Also ensure the selected CTS notification cannot manufacture a coin.
+    port.ThrowOnCtsRead = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.ThrowOnCtsRead = false;
+    port.Raise(SerialPinChange.CtsChanged);
+});
+var detachedWhileIdle = Run(true, false, ModemSignal.Cts, port => {
+    // SerialPort loss must never be mistaken for a low-active coin pulse.
+    port.Close();
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.Open();
+    port.Raise(SerialPinChange.CtsChanged);
+});
+var interruptedDuringPulse = Run(false, true, ModemSignal.Cts, port => {
+    // Previously, a read exception after a true assertion fabricated a
+    // valid falling edge and accepted a coin with no verified pulse ending.
+    port.CtsLevel = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    port.ThrowOnCtsRead = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    port.ThrowOnCtsRead = false;
+    port.CtsLevel = false;
+    port.Raise(SerialPinChange.CtsChanged);
+});
 var delayed = Run(false, true, ModemSignal.Cts, port => {
     // Physical CTS was high for a pulse but returned low before callbacks ran.
     port.CtsLevel = true;
@@ -55,11 +83,95 @@ var ring = Run(false, true, ModemSignal.RingIndicator, port => {
     port.Raise(SerialPinChange.Ring);
 }, minimumPulseMs: 500);
 
+var ringAfterOtherPin = Run(false, true, ModemSignal.RingIndicator, port => {
+    // Preserve the existing RI event-only path: unrelated DSR notifications
+    // should not disarm or fabricate a Ring event. Ring itself remains unsafe
+    // for unattended paid coin input until measured duration is available.
+    port.Raise(SerialPinChange.DsrChanged);
+    port.Raise(SerialPinChange.Ring);
+}, minimumPulseMs: 500);
+
+// PHX-L-APPS #164: lifecycle cases are source-linked, in-process only.
+// Deferred callbacks are manually injected after unsubscribe; this models a
+// possible race and is NOT evidence that any Windows driver delivers it.
+SerialPort.InitialCtsLevel = false;
+var lifecycleCfg = new AppConfig { CoinInputSignal = ModemSignal.Cts, MinimumPulseMs = 10 };
+int lifecycleAccepted = 0, oldSessionIncompletePulse = 0;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => lifecycleAccepted++;
+    if (!sut.Connect(lifecycleCfg)) throw new Exception("First lifecycle COM failed");
+    var oldPort = SerialPort.LastCreated ?? throw new Exception("Missing first lifecycle port");
+    oldPort.CtsLevel = true;
+    oldPort.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    sut.Disconnect();
+    if (!sut.Connect(lifecycleCfg)) throw new Exception("Second lifecycle COM failed");
+    var newPort = SerialPort.LastCreated ?? throw new Exception("Missing second lifecycle port");
+    newPort.CtsLevel = false;
+    newPort.Raise(SerialPinChange.CtsChanged);
+    // Incomplete pulse from old session MUST NOT become a new coin.
+    oldSessionIncompletePulse = lifecycleAccepted;
+    // A genuine complete pulse on the replacement port must still work.
+    newPort.CtsLevel = true;
+    newPort.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    newPort.CtsLevel = false;
+    newPort.Raise(SerialPinChange.CtsChanged);
+}
+var freshAfterReconnect = lifecycleAccepted;
+
+int staleRingAfterDisconnect = 0, staleRingAfterReplacement = 0, freshRingAfterStale = 0;
+SerialPort.InitialCtsLevel = false;
+var ringCfg = new AppConfig { CoinInputSignal = ModemSignal.RingIndicator, MinimumPulseMs = 10 };
+using (var sut = new SerialHardware()) {
+    int count = 0;
+    sut.CoinPulseAccepted += () => count++;
+    if (!sut.Connect(ringCfg)) throw new Exception("First RI COM failed");
+    var oldPort = SerialPort.LastCreated ?? throw new Exception("Missing first RI port");
+    var deferred = oldPort.CaptureDeferredPinCallback();
+    sut.Disconnect();
+    deferred(SerialPinChange.Ring);
+    staleRingAfterDisconnect = count;
+    if (!sut.Connect(ringCfg)) throw new Exception("Second RI COM failed");
+    var newPort = SerialPort.LastCreated ?? throw new Exception("Missing second RI port");
+    deferred(SerialPinChange.Ring);
+    staleRingAfterReplacement = count;
+    newPort.Raise(SerialPinChange.Ring);
+    freshRingAfterStale = count;
+}
+
+int staleCtsDuringFreshPulse = 0;
+SerialPort.InitialCtsLevel = false;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => staleCtsDuringFreshPulse++;
+    if (!sut.Connect(lifecycleCfg)) throw new Exception("First CTS COM failed");
+    var oldPort = SerialPort.LastCreated ?? throw new Exception("Missing first CTS port");
+    var deferred = oldPort.CaptureDeferredPinCallback();
+    if (!sut.Connect(lifecycleCfg)) throw new Exception("Second CTS COM failed");
+    var newPort = SerialPort.LastCreated ?? throw new Exception("Missing second CTS port");
+    newPort.CtsLevel = true;
+    newPort.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(50);
+    deferred(SerialPinChange.DsrChanged);
+    newPort.CtsLevel = false;
+    newPort.Raise(SerialPinChange.CtsChanged);
+}
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("normal_50ms_cts", normal.Accepted, 1),
-    ("active_low_read_error_false_coin", falseCoin.Accepted, 1),
+    ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
+    ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
+    ("active_low_detach_reconnect_idle_no_coin", detachedWhileIdle.Accepted, 0),
+    ("active_high_fault_mid_pulse_disarms", interruptedDuringPulse.Accepted, 0),
     ("delayed_callback_misses_pulse", delayed.Accepted, 0),
-    ("ring_without_measured_duration", ring.Accepted, 1)
+    ("ring_without_measured_duration", ring.Accepted, 1),
+    ("ring_after_unrelated_dsr_preserves_legacy_event", ringAfterOtherPin.Accepted, 1),
+    ("old_session_incomplete_cts_not_credited", oldSessionIncompletePulse, 0),
+    ("fresh_cts_after_reconnect", freshAfterReconnect, 1),
+    ("stale_ring_after_disconnect", staleRingAfterDisconnect, 0),
+    ("stale_ring_after_replacement", staleRingAfterReplacement, 0),
+    ("fresh_ring_after_stale_sender", freshRingAfterStale, 1),
+    ("stale_cts_callback_does_not_cancel_fresh_pulse", staleCtsDuringFreshPulse, 1)
 };
 bool diagnosticFailed = false;
 foreach (var c in cases) {
@@ -72,12 +184,12 @@ if (diagnosticFailed) {
     return 1;
 }
 if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
-    if (falseCoin.Accepted != 0) {
-        Console.Error.WriteLine("EXPECTED_SAFETY_RED: no physical coin, but source emitted CoinPulseAccepted after active-low CTS read failure.");
+    if (falseCoin.Accepted != 0 || selectedPinFault.Accepted != 0 || detachedWhileIdle.Accepted != 0 || interruptedDuringPulse.Accepted != 0) {
+        Console.Error.WriteLine("READ_ERROR_SAFETY_RED: idle CTS fault/detach emitted CoinPulseAccepted.");
         return 2;
     }
-    Console.WriteLine("SAFETY_GATE_GREEN: no false credit in injected scenario.");
+    Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 4/4 controlled in-process API traces reproduced. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 14/14 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
