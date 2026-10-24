@@ -96,9 +96,12 @@ jobs:
         with:
           name: LAN-Messenger-Android-Optimized
           path: android-apk
-      - name: Enable KVM for two cloud Android emulators
+      - name: Install cloud emulator runtime libraries and enable KVM
         shell: bash
         run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0
           if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
       - name: Two Android emulators — real shared virtual Wi-Fi discovery
         uses: reactivecircus/android-emulator-runner@v2
