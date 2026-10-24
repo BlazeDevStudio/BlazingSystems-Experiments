@@ -39,7 +39,19 @@ for serial in emulator-5554 emulator-5556; do
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.POST_NOTIFICATIONS || true
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.RECORD_AUDIO || true
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.CAMERA || true
+  # The app requests opt-in background service battery exemption on startup.
+  # First-run Android Settings can steal focus and hide the peer list entirely.
+  # Grant the exemption in this disposable emulator, not in production builds.
+  adb -s "$serial" shell cmd deviceidle whitelist +com.example.lan_messenger || true
   adb -s "$serial" shell am start -W -n com.example.lan_messenger/.MainActivity
+  sleep 3
+  resumed="$(adb -s "$serial" shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -2 || true)"
+  echo "$serial resumed activities: $resumed"
+  if echo "$resumed" | grep -q 'com.android.settings'; then
+    echo "Dismissing temporary Android battery-optimization request on $serial"
+    adb -s "$serial" shell input keyevent KEYCODE_BACK || true
+    adb -s "$serial" shell am start -W -n com.example.lan_messenger/.MainActivity
+  fi
 done
 echo "Shared virtual Wi-Fi addresses:"
 python3 - "$OUT" <<'PY'
@@ -69,6 +81,18 @@ for attempt in $(seq 1 10); do
     adb -s "$serial" shell uiautomator dump /sdcard/lan_smoke.xml >/dev/null 2>&1 || true
     adb -s "$serial" exec-out cat /sdcard/lan_smoke.xml >"$OUT/$serial-hierarchy.xml" 2>/dev/null || true
     adb -s "$serial" exec-out screencap -p >"$OUT/$serial-screen.png" 2>/dev/null || true
+    if [[ "$attempt" == 1 || "$attempt" == 10 ]]; then
+      python3 - "$OUT/$serial-hierarchy.xml" "$serial" <<'PYINFO'
+import sys, xml.etree.ElementTree as ET
+try:
+    root=ET.parse(sys.argv[1]).getroot()
+    labels=[(node.attrib.get("text","") + " " + node.attrib.get("content-desc","")).strip()
+            for node in root.iter("node")]
+    print(sys.argv[2], "visible UI labels:", [x for x in labels if x][:25])
+except Exception as error:
+    print(sys.argv[2], "UI hierarchy unreadable:", error)
+PYINFO
+    fi
     if ! python3 - "$OUT/$serial-hierarchy.xml" <<'PY'
 import pathlib, sys, xml.etree.ElementTree as ET
 try:
