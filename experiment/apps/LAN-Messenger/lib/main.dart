@@ -42,7 +42,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayListener {
+class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayListener, WidgetsBindingObserver {
   LanNode? node;
   AppSettings settings = AppSettings();
   final Alerts alerts = Alerts();
@@ -73,6 +73,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Peer? _incomingPeer;
   bool _incomingVideo = false;
   bool _nativeIncomingAvailable = false;
+  bool _inForeground = true;
+  bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
@@ -90,6 +92,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (Platform.isAndroid) {
       _notifications.setMethodCallHandler(_handleNativeCallAction);
     }
+    WidgetsBinding.instance.addObserver(this);
     if (Platform.isWindows) {
       _desktopCalls.setMethodCallHandler(_handleDesktopCallAction);
     }
@@ -207,14 +210,40 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       try { await _notifications.invokeMethod<bool>('ongoing', args); }
       catch (_) {}
     } else if (Platform.isWindows) {
-      if (video) {
+      final background = await _isDesktopBackground();
+      if (!background && !_compactWindowsVideo) {
+        await _dismissDesktopCall();
+        return; // The user is already viewing the in-app call controls.
+      }
+      if (video && background) {
         await _dismissDesktopCall();
         await _openCompactVideoWindow();
-      } else {
+      } else if (background) {
         try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
         catch (_) {}
       }
     }
+  }
+
+  Future<bool> _isDesktopBackground() async {
+    if (!Platform.isWindows) return false;
+    try {
+      return !await wm.windowManager.isVisible() ||
+          await wm.windowManager.isMinimized();
+    } catch (_) { return false; }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!Platform.isAndroid || !mounted) return;
+    final foreground = state == AppLifecycleState.resumed;
+    if (_inForeground != foreground) {
+      setState(() => _inForeground = foreground);
+    }
+    // A native call overlay is permission-gated; notification stays fallback.
+    unawaited(_notifications.invokeMethod<void>('foreground', {
+      'visible': foreground,
+    }).catchError((Object _) {}));
   }
 
   Future<void> _openCompactVideoWindow() async {
@@ -372,7 +401,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (_activeCallUiId != null && inter.talkingTo == null) {
           _activeCallUiId = null;
           _lastNativeMuted = null;
-          unawaited(_endCallPresentation());
+          unawaited(_endCallPresentation().catchError((Object e) {
+            if (mounted) setState(() => error = 'Call controls could not close: $e');
+          }));
         } else if (_activeCallUiId == inter.callId &&
             _lastNativeMuted != inter.muted) {
           _lastNativeMuted = inter.muted;
@@ -453,7 +484,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (Platform.isWindows) {
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
-          _nativeIncomingAvailable =
+          final background = await _isDesktopBackground();
+          _incomingUsesExternalSurface = background;
+          _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
             unawaited(tray.trayManager.setContextMenu(tray.Menu(items: [
@@ -464,6 +497,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
+          _incomingUsesExternalSurface = !_inForeground;
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
           if (!_nativeIncomingAvailable) {
@@ -492,7 +526,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(_restoreWindowAfterCall());
           if (accepted && inter.callId == id &&
               inter.talkingTo?.id == peer.id) {
-            await _showOngoingCall(peer, id, incomingVideo);
+            // Media negotiation continues in Intercom; cosmetic window work
+            // must never reject or close a successfully answered call.
+            try { await _showOngoingCall(peer, id, incomingVideo); }
+            catch (e) {
+              if (mounted) setState(() =>
+                  error = 'Call connected, floating controls unavailable: $e');
+            }
           } else {
             await _dismissDesktopCall();
           }
@@ -1431,14 +1471,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       selected == null ? _deviceList() : _chat()),
   ])),
     if (_incomingDialogOpen && _incomingPeer != null &&
-        (!Platform.isWindows || !_nativeIncomingAvailable))
+        (Platform.isWindows
+          ? !_incomingUsesExternalSurface || !_nativeIncomingAvailable
+          : _inForeground))
       _incomingPopup(),
-    if (intercom?.talkingTo != null && !_incomingDialogOpen)
+    if (intercom?.talkingTo != null && !_incomingDialogOpen &&
+        (Platform.isWindows || _inForeground))
       _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
   ]));
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(intercom?.hangUp(notify: false) ?? Future<void>.value());
     unawaited(node?.dispose() ?? Future<void>.value());
     unawaited(alerts.dispose());
