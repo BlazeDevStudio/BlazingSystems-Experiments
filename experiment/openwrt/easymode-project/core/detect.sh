@@ -1,6 +1,24 @@
 #!/bin/sh
 set -eu
-json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g;s/"/\\"/g'; }
+json_escape() {
+  # Sysinfo strings are untrusted text. Escape every JSON string metacharacter
+  # so a quote, backslash or control byte cannot break the detection object.
+  printf '%s' "$1" | awk 'BEGIN { RS = "\0"; ORS = "" }
+  {
+    out = ""
+    n = length($0)
+    for (i = 1; i <= n; i++) {
+      c = substr($0, i, 1)
+      if (c == "\\") out = out "\\\\"
+      else if (c == "\"") out = out "\\\""
+      else if (c == "\n") out = out "\\n"
+      else if (c == "\r") out = out "\\r"
+      else if (c == "\t") out = out "\\t"
+      else out = out c
+    }
+    printf "%s", out
+  }'
+}
 board="unknown"; model="unknown"; release="unknown"; arch="unknown"
 [ -r /tmp/sysinfo/board_name ] && board=$(cat /tmp/sysinfo/board_name)
 [ -r /tmp/sysinfo/model ] && model=$(cat /tmp/sysinfo/model)
