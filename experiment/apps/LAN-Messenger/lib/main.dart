@@ -1066,10 +1066,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     final size = MediaQuery.sizeOf(context);
     final width = (size.width - 24).clamp(220.0, 348.0).toDouble();
     final height = intercom!.video ? 340.0 : 164.0;
-    final dx = _callToastOffset.dx.clamp(-size.width + width + 12,
-        (size.width - width - 12).clamp(0.0, double.infinity)).toDouble();
-    final dy = _callToastOffset.dy.clamp(-size.height + height + 12,
-        (size.height - height - 12).clamp(0.0, double.infinity)).toDouble();
+    // Keep the whole touch controller card on-screen even after dragging.
+    final dx = _callToastOffset.dx.clamp(
+        (width + 12 - size.width).clamp(double.negativeInfinity, 0.0),
+        12.0).toDouble();
+    final dy = _callToastOffset.dy.clamp(
+        (height + 12 - size.height).clamp(double.negativeInfinity, 0.0),
+        12.0).toDouble();
     return Positioned(
       bottom: 12 - dy, right: 12 - dx, width: width,
       child: _compactCallCard(desktop: false));
