@@ -623,6 +623,73 @@ for phx_ctl_replay_action in member_bank coin; do
   fi
   echo "PHX-L-CORE CONTROLLER_REPLAY_PASS: $phx_ctl_replay_action immutable committed receipt"
 done
+
+# PHX-L-CORE P0 #31: test-first real signed CGI admission against malformed
+# controller registry rows. Synthetic /tmp state, not flash/hardware.
+for phx_canon_case in short3 short14 rev_negative rev_zero rev_text gpio_text; do
+  phx_ctl_fresh_state "canonical-$phx_canon_case"
+  bp_member_lock
+  bp_member_create phxcanonical "Canonicality fixture" 'fixture-pass-789' fixture >/dev/null
+  bp_member_unlock
+  case "$phx_canon_case" in
+    short3)
+      printf 'softtimer-01\t1\t1\n' > "$BP_CONTROLLERS" ;;
+    short14)
+      printf 'softtimer-01\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\n' > "$BP_CONTROLLERS" ;;
+    rev_negative)
+      printf 'softtimer-01\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t-7\n' > "$BP_CONTROLLERS" ;;
+    rev_zero)
+      printf 'softtimer-01\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t0\n' > "$BP_CONTROLLERS" ;;
+    rev_text)
+      printf 'softtimer-01\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\tbogus\n' > "$BP_CONTROLLERS" ;;
+    gpio_text)
+      printf 'softtimer-01\t1\t1\t1\t1\tbogus\t-1\t-1\t1\t1\t1\t40\t400\t6\t3\n' > "$BP_CONTROLLERS" ;;
+  esac
+  phx_canon_nonce=10000000000003a1
+  phx_canon_event=cccccccccccccccccccccccccccccccc
+  phx_canon_hash="$(printf '%s' "$(bp_member_line phxcanonical)" | cut -f6)"
+  phx_canon_proof="$(proof_for "$phx_canon_hash" "$phx_canon_nonce")"
+  phx_canon_before="$(phx_ctl_digest)"
+  phx_canon_reply="$(call_vendo member_bank "$phx_canon_nonce" 30 \
+    "phxcanonical:$phx_canon_event:$phx_canon_proof")"
+  if ! printf '%s' "$phx_canon_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_canon_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_CANONICAL_RED: $phx_canon_case signed NEW bank ACK/mutation: $phx_canon_reply" >&2
+    phx_ctl_failures=$((phx_ctl_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_CANONICAL_PASS: $phx_canon_case denied"
+  fi
+done
+
+# Registry-loss recovery is intentionally separate from malformed-row
+# validation: the current heartbeat auto-ensures an enabled row. Do not
+# silently change first enrollment/migration semantics without review.
+for phx_loss_case in deleted zeroed; do
+  phx_ctl_fresh_state "registry-loss-$phx_loss_case"
+  bp_member_lock
+  bp_member_create phxregistryloss "Registry loss fixture" 'fixture-pass-789' fixture >/dev/null
+  bp_member_unlock
+  phx_ctl_config 0 0
+  case "$phx_loss_case" in
+    deleted) rm -f "$BP_CONTROLLERS" ;;
+    zeroed) : > "$BP_CONTROLLERS" ;;
+  esac
+  phx_loss_nonce=10000000000003b1
+  phx_loss_event=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  phx_loss_hash="$(printf '%s' "$(bp_member_line phxregistryloss)" | cut -f6)"
+  phx_loss_proof="$(proof_for "$phx_loss_hash" "$phx_loss_nonce")"
+  phx_loss_before="$(phx_ctl_digest)"
+  phx_loss_reply="$(call_vendo member_bank "$phx_loss_nonce" 30 \
+    "phxregistryloss:$phx_loss_event:$phx_loss_proof")"
+  if ! printf '%s' "$phx_loss_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_loss_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_LOSS_RED: $phx_loss_case disabled controller resurrected paid ACK: $phx_loss_reply" >&2
+    phx_ctl_failures=$((phx_ctl_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_REGISTRY_LOSS_PASS: $phx_loss_case denied"
+  fi
+done
+
 [ "$phx_ctl_failures" -eq 0 ] || exit 1
 
 echo 'BlazePwifi centralized SoftTimer member checks passed'
