@@ -996,7 +996,62 @@ else
   phx_finance_rollback_failures=0
 fi
 
+# PHX-L-CORE P0 #32 / T20 TEST-FIRST signed rental lease/receipt tear.
+# This is the REAL sourced Vendo CGI against synthetic /tmp state, not a
+# physical process death or durable financial witness. A first signed rental
+# coin must create both a paid lease and an immutable receipt. Then simulate
+# an old/torn receipt corpus (only the receipt disappears, lease stays paid)
+# and retry the EXACT same signed event. A safe authority must fail closed:
+# no success ACK, no additional paid lease, progress or receipt mutation.
+phx_torn_failures=0
+phx_ctl_fresh_state rental-torn-receipt
+. "$BP_RENTAL_LIB"
+bp_rental_init
+phx_torn_did=bbbbbbbbbbbbbbbbbbbbbbbb
+phx_torn_secret=cccccccccccccccccccccccccccccccccccccccccccccccc
+phx_torn_nonce=10000000000006b0
+phx_torn_target=feedfeed12345678
+bp_rental_device_write "$phx_torn_did" "$phx_torn_secret" 2000000000 'Torn receipt fixture' 2000000000
+phx_torn_expiry="$(($(bp_now)+600))"
+printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$phx_torn_did" 'aa:bb:cc:dd:ee:ff' \
+  "$phx_torn_target" "$phx_torn_expiry" softtimer-01 rental > "$BP_TARGET_DIR/softtimer-01.tsv"
+printf '0\n' > "$BP_TARGET_DIR/softtimer-01.progress"
+phx_torn_first="$(call_vendo coin "$phx_torn_nonce" 1 "$phx_torn_target")"
+phx_torn_event="r:$(printf 'rental|%s|%s|%s' softtimer-01 "$phx_torn_nonce" "$phx_torn_target" | bp_sha256)"
+if ! printf '%s' "$phx_torn_first" | grep -Fq '"ok":true' ||
+   ! printf '%s' "$phx_torn_first" | grep -Fq '"duplicate":false' ||
+   [ "$(cat "$BP_TARGET_DIR/softtimer-01.progress")" != 1 ] ||
+   [ -z "$(bp_rental_paid_receipt_snapshot "$phx_torn_event")" ]; then
+  echo "PHX-L-CORE RENTAL_TORN_RECEIPT_SETUP_INVALID: first signed paid rental coin not committed: $phx_torn_first" >&2
+  exit 2
+fi
+phx_torn_before_lease="$(printf '%s' "$(bp_rental_device_line "$phx_torn_did")" | cut -f3)"
+# Remove exactly the already-committed paid receipt, preserving the valid
+# advanced lease and progress; no source, controller policy or signer changed.
+awk -F '\t' -v e="$phx_torn_event" '$1!=e {print}' "$BP_RENTAL_EVENTS" > "$T/phx-torn-receipt-corpus"
+mv "$T/phx-torn-receipt-corpus" "$BP_RENTAL_EVENTS"
+if [ -n "$(bp_rental_paid_receipt_snapshot "$phx_torn_event")" ]; then
+  echo 'PHX-L-CORE RENTAL_TORN_RECEIPT_SETUP_INVALID: old paid receipt still present' >&2
+  exit 2
+fi
+phx_torn_before_progress="$(cat "$BP_TARGET_DIR/softtimer-01.progress")"
+phx_torn_before_paid_count="$(awk -F '\t' '$1 ~ /^r:/ {n++} END {print n+0}' "$BP_RENTAL_EVENTS")"
+phx_torn_retry="$(call_vendo coin "$phx_torn_nonce" 1 "$phx_torn_target")"
+phx_torn_after_lease="$(printf '%s' "$(bp_rental_device_line "$phx_torn_did")" | cut -f3)"
+phx_torn_after_progress="$(cat "$BP_TARGET_DIR/softtimer-01.progress")"
+phx_torn_after_paid_count="$(awk -F '\t' '$1 ~ /^r:/ {n++} END {print n+0}' "$BP_RENTAL_EVENTS")"
+if printf '%s' "$phx_torn_retry" | grep -Fq '"ok":true' ||
+   [ "$phx_torn_after_lease" != "$phx_torn_before_lease" ] ||
+   [ "$phx_torn_after_progress" != "$phx_torn_before_progress" ] ||
+   [ "$phx_torn_after_paid_count" != "$phx_torn_before_paid_count" ]; then
+  echo "PHX-L-CORE RENTAL_TORN_RECEIPT_RED: missing receipt caused signed retry ACK or second paid mutation: $phx_torn_retry" >&2
+  phx_torn_failures=1
+else
+  echo 'PHX-L-CORE RENTAL_TORN_RECEIPT_PASS: signed retry denied without second paid mutation'
+fi
+
 [ "$phx_recovery_failures" -eq 0 ] || exit 1
 [ "$phx_finance_rollback_failures" -eq 0 ] || exit 1
+[ "$phx_torn_failures" -eq 0 ] || exit 1
 
 echo 'BlazePwifi centralized SoftTimer member checks passed'
