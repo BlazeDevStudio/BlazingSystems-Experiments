@@ -1,4 +1,10 @@
 
+## 2026-10-25T04:00Z — PHX-L-CORE P0 #31/#43 signed CGI financial snapshot rollback test-only
+- **State:** TEST_ONLY_COMMITTED_CI_PENDING; source-linked signed Vendo `member_bank` first commit, local valid old member+receipt+revision rollback, new signed nonce same event; expect unsafe re-ACK RED, no witness implemented.
+- **Scope/commits:** `tests/v053_members.sh` only at `e52d6307b13bdf5703a83b7bcf06aa1a94d9482b`, corrected fatal gate at `f812bfb7cb5e361de2f5c822793e3b473c920adf` blob `e914ed49ad4ad64da78df413f49091bec3c0a801`. Precode IN PROGRESS checkpoint `bcc101f8f57280e06b2ca7f0c9c29996b79f44b4`. Actual source/firmware unchanged.
+- **Prior exact CI:** [#40156518421](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40156518421) validate FAILURE from four prior controller REDs; **new test CI not yet observed**. No physical rollback, customer funds, real witness, signer, migration, hardware, or release.
+- **Next:** classify new exact-head Full logs for named FINANCE_LEDGER_ROLLBACK_RED vs setup; extend separate rental torn-lease/receipt and lost-witness ACK fixtures after independent review. PR #198 DRAFT UNMERGED; #31/#32/#43/#34 NO-GO.
+
 
 ## 2026-10-25T06:08+08:00 — PHX-L-CORE real signed CGI controller-enable postrename sync EIO, test-first
 - **Status:** TEST_ONLY_COMMITTED_EXPECTED_RED. Master [#172](https://github.com/BlazingSystems/BlazingSystems-Experiments/issues/172#issuecomment-6390110869) requested actual sourced `bp_controller_set` plus signed fresh member_bank and coin fault injection after `controllers.tsv` rename / failed `bp_durable_sync`; Master 15/15 disposable source-ported host assertions found conditional admin-error/new-money inconsistency. It was not actual installed CGI or physical disk EIO.
