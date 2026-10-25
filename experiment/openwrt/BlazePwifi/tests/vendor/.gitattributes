@@ -1,0 +1,3 @@
+# Preserve the exact upstream bytes checked by the decoder provenance hashes.
+jsqr-1.4.0/jsQR.js -text
+jsqr-1.4.0/LICENSE -text
