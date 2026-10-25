@@ -234,6 +234,7 @@ const validWifi = [
   ['eight two-byte Unicode WPA characters', 'Cafe', 'é'.repeat(8)],
   ['63-byte Unicode WPA password', 'Cafe', 'é'.repeat(31) + 'a'],
   ['eight four-byte Unicode WPA characters', 'Cafe', '😀'.repeat(8)],
+  ['four supplementary WPA characters meet Android UTF-16 minimum', 'Cafe', '😀'.repeat(4)],
   ['32-byte two-byte Unicode SSID', 'é'.repeat(16), '12345678'],
   ['32-byte three-byte Unicode SSID', '网'.repeat(10) + 'ab', '12345678'],
   ['32-byte four-byte Unicode SSID', '😀'.repeat(8), '12345678'],
@@ -253,7 +254,7 @@ const invalidWifi = [
   ['64-character WPA password', {wifiPass: 'a'.repeat(64)}, /password/i],
   ['64-character WPA password including leading space', {wifiPass: ' ' + 'a'.repeat(63)}, /password/i],
   ['four WPA characters despite eight UTF-8 bytes', {wifiPass: 'é'.repeat(4)}, /password/i],
-  ['seven WPA characters despite 28 UTF-8 bytes', {wifiPass: '😀'.repeat(7)}, /password/i],
+  ['seven UTF-16 WPA units despite 13 UTF-8 bytes', {wifiPass: '😀'.repeat(3) + 'a'}, /password/i],
   ['64-byte Unicode WPA password', {wifiPass: 'é'.repeat(31) + 'ab'}, /password/i],
   ['64-byte four-byte Unicode WPA password', {wifiPass: '😀'.repeat(16)}, /password/i]
 ];
