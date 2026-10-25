@@ -23,6 +23,7 @@ body{font:15px system-ui;margin:0;background:#07111f;color:#eef6ff}.wrap{max-wid
 </div>
 <script>__QRCODE_JS__</script>
 <script>
+qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
 const APK_URL="__APK_URL__", APK_CHECKSUM="__APK_CHECKSUM__";
 function v(id){return document.getElementById(id).value.trim()}
 function generateQr(){
@@ -41,13 +42,12 @@ function generateQr(){
     "android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE":{"server_url":server,"enrollment_token":token,"device_name":name}
   };
   if(certPin)d["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_cert_sha256"]=certPin;
-  const security=v('security'),ssid=v('ssid'),wifiPass=v('wifiPass');
+  const security=v('security'),ssid=document.getElementById('ssid').value,wifiPass=document.getElementById('wifiPass').value;
   if((security==='WPA'||security==='NONE')&&!ssid){document.getElementById('state').textContent='Wi-Fi SSID is required when Wi-Fi security is selected.';return}
-  if(security==='WPA'&&(wifiPass.length<8||wifiPass.length>63)){document.getElementById('state').textContent='WPA provisioning requires a Wi-Fi password of 8 to 63 characters.';return}
+  if(security==='WPA'&&(wifiPass.length<8||new TextEncoder().encode(wifiPass).length>63||/[\x00-\x1f\x7f]/.test(wifiPass))){document.getElementById('state').textContent='WPA provisioning requires a Wi-Fi password of 8 to 63 characters within 63 UTF-8 bytes, without control characters.';return}
   if(security&&ssid){
     if(new TextEncoder().encode(ssid).length>32){document.getElementById('state').textContent='Wi-Fi SSID must be 1 to 32 bytes.';return}
-    const quoted=(ssid.length>=2&&ssid.startsWith('"')&&ssid.endsWith('"'))?ssid:'"'+ssid.replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';
-    d["android.app.extra.PROVISIONING_WIFI_SSID"]=quoted;
+    d["android.app.extra.PROVISIONING_WIFI_SSID"]=ssid;
     d["android.app.extra.PROVISIONING_WIFI_SECURITY_TYPE"]=security;
     if(security!=='NONE')d["android.app.extra.PROVISIONING_WIFI_PASSWORD"]=wifiPass;
   }
