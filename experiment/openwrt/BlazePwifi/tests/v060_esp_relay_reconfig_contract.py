@@ -170,6 +170,31 @@ int main(){
  applyRemoteConfig(R"({"config_revision":1,"enabled":0,"coin_enabled":0,"relay_enabled":0,"led_enabled":0,"coin_pin":4,"relay_pin":5,"led_pin":14})");
  check("bootstrap_positive_disabled_config_accepted",
   remoteRevision==1&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
+
+ // A positive integer alone does not authenticate an enabling config response.
+ // This is an untrusted response-body test, not a forged network packet.
+ reset();
+ remoteRevision=4;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"config_revision":5,"enabled":1,"coin_enabled":1,"relay_enabled":1,"led_enabled":1,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("untrusted_positive_revision_cannot_enable_coin",
+  remoteRevision==4&&!controllerEnabled&&!coinEnabled&&!insertMode&&
+  levels[5]==LOW&&first('M')<0);
+
+ // Actual firmware declares remoteRevision=0 on boot, with no protected
+ // persistent highwater. Model power-cycle by resetting RAM, retaining only
+ // the knowledge that a prior revision 10 disabled intake.
+ reset();
+ remoteRevision=10;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ reset(); // simulated cold reboot; the sketch initializes remoteRevision=0
+ remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"config_revision":2,"enabled":1,"coin_enabled":1,"relay_enabled":1,"led_enabled":1,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("cold_reboot_older_positive_revision_cannot_enable_coin",
+  remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&
+  levels[5]==LOW&&first('M')<0);
+
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<" physical_verified=0\n";
  return fails?18:0;
 }
