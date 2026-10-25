@@ -125,6 +125,24 @@ int main(){
  check("relay_led_alias_denied_before_pin_mode",
   first('M')<0&&levels[5]==LOW&&levels[14]==LOW&&remoteRevision==1&&
   !controllerEnabled&&!coinEnabled&&!insertMode);
+ reset();
+ remoteRevision=3;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig("{\\"config_revision\\":2,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_enabled\\":1,\\"led_enabled\\":1,\\"coin_pin\\":4,\\"relay_pin\\":5,\\"led_pin\\":14}");
+ check("stale_revision_cannot_reenable_coin",
+  remoteRevision==3&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
+ reset();
+ remoteRevision=3;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig("{\\"config_revision\\":0,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_enabled\\":1,\\"led_enabled\\":1,\\"coin_pin\\":4,\\"relay_pin\\":5,\\"led_pin\\":14}");
+ check("zero_revision_cannot_reenable_coin",
+  remoteRevision==3&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
+ reset();
+ remoteRevision=3;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig("{\\"config_revision\\":4,\\"enabled\\":0,\\"coin_enabled\\":0,\\"relay_enabled\\":0,\\"led_enabled\\":0,\\"coin_pin\\":4,\\"relay_pin\\":5,\\"led_pin\\":14}");
+ check("higher_revision_disabled_config_accepted",
+  remoteRevision==4&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<" physical_verified=0\n";
  return fails?18:0;
 }
