@@ -190,8 +190,9 @@ int jsonInt(const String &r,const String &k,int def){
 }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
-  if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
-  if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+  // Drive OLD outputs OFF with OLD polarity before any pinMode or rebind.
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
@@ -208,9 +209,21 @@ void applyRemoteConfig(const String &r){
   int nextCoin=(cp>=0&&cp<=39)?cp:cfg.coinPin;
   int nextRelay=(rp>=0&&rp<=39)?rp:cfg.relayPin;
   int nextLed=(lp>=0&&lp<=39)?lp:cfg.insertLedPin;
+  // Live polarity flips and pin aliases are unsafe without electrical reprovision.
+  // Keep the existing GPIO mapping and journal intact, inhibit all coin intake.
+  const bool proposedRelayHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
+  const bool proposedLedHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
+  if(proposedRelayHigh!=runRelayActiveHigh || proposedLedHigh!=runLedActiveHigh ||
+     nextCoin==nextRelay || nextCoin==nextLed || nextRelay==nextLed){
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+    insertMode=false;
+    return;
+  }
   runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=jsonInt(r,"relay_active_high",cfg.relayActiveHigh?1:0)!=0;
-  runLedActiveHigh=jsonInt(r,"led_active_high",cfg.ledActiveHigh?1:0)!=0;
+  runRelayActiveHigh=proposedRelayHigh;
+  runLedActiveHigh=proposedLedHigh;
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
   runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
