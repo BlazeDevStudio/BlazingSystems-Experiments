@@ -55,8 +55,18 @@ bp_controller_admission_unlock() {
   flock -u 4 2>/dev/null || true
   exec 4>&-
 }
+# Runtime-only admission barrier. Created BEFORE an admin controller write
+# while the shared fd4 admission lock is held. If registry replacement or its
+# durability sync fails, the barrier remains and subsequent signed NEW paid
+# admissions fail closed even if the new enabled row is locally visible.
+# BP_RUN is volatile: this is NOT independent antirollback/powercycle proof.
+bp_controller_update_unsettled() {
+  [ -e "$BP_RUN/controller-update-unsettled" ] ||
+    [ -L "$BP_RUN/controller-update-unsettled" ]
+}
 bp_controller_paid_allowed() {
   controller_id="$1"; operation="$2"
+  bp_controller_update_unsettled && return 1
   [ -f "$BP_CONTROLLERS" ] && [ ! -L "$BP_CONTROLLERS" ] || return 1
   # Do not admit an automatically created row, a torn/truncated row,
   # malformed controller policy, or duplicate controller identity.
@@ -126,14 +136,34 @@ bp_controller_set() {
   bp_controller_uint "$group" 10 10000 || return 2
   bp_controller_uint "$retries" 1 60 || return 2
   bp_controller_admission_lock || return 8
+  # Never auto-clear a previous ambiguous controller write. Operator recovery
+  # and a protected witness are separate production P0 requirements.
+  if bp_controller_update_unsettled; then
+    bp_controller_admission_unlock
+    return 8
+  fi
+  # This marker is in the runtime directory, NOT on the failed durable disk.
+  # Establish it under the same lock before any registry replacement.
+  # A failure to establish the barrier must prevent the admin write.
+  if ! (umask 077; : > "$BP_RUN/controller-update-unsettled"); then
+    bp_controller_admission_unlock
+    return 8
+  fi
   line="$(bp_controller_line "$id")"
   rev="$(printf '%s' "$line" | cut -f15)"
   [ -n "$rev" ] || rev=0
   rev=$((rev+1))
   if bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"; then
-    bp_controller_admission_unlock
-    return 0
+    # A truly successful durable write can release the runtime barrier.
+    # If removal fails, retain denial instead of falsely declaring success.
+    if rm -f "$BP_RUN/controller-update-unsettled" &&
+       ! bp_controller_update_unsettled; then
+      bp_controller_admission_unlock
+      return 0
+    fi
   fi
+  # No cleanup on ambiguous failure; an enabled row can be visible after
+  # mv succeeded but bp_durable_sync returned an error.
   bp_controller_admission_unlock
   return 8
 }

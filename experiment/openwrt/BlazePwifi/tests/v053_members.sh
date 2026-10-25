@@ -725,4 +725,391 @@ fi
 echo 'PHX-L-CORE CONTROLLER_REGISTRY_PASS: explicit admin enable admits exactly one new signed paid event'
 [ "$phx_reg_failures" -eq 0 ] || exit 1
 
+
+# PHX-L-CORE P0 / MASTER UTC22: real sourced controller_set may rename an
+# ENABLED registry row, then report failure because durability sync returned
+# an error. A fresh signed Vendo payment MUST fail closed after ambiguous
+# admin persistence, even though the new row is locally visible.
+# Private /tmp per-case fixture; no real filesystem powercut or money.
+phx_sync_failures=0
+phx_sync_i=0
+for phx_sync_action in member_bank coin; do
+  phx_sync_i=$((phx_sync_i+1))
+  phx_ctl_fresh_state "controller-sync-$phx_sync_i"
+  phx_ctl_config 0 0 || {
+    echo "PHX-L-CORE CONTROLLER_SYNC_SETUP_INVALID: cannot disable prior to fault" >&2
+    exit 2
+  }
+  phx_sync_nonce="$(printf '10000000000004%02x' "$phx_sync_i")"
+  if [ "$phx_sync_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_sync_target="$phx_ctl_target"
+    phx_sync_pulses=1
+  else
+    phx_sync_user="phxsync$phx_sync_i"
+    bp_member_lock
+    bp_member_create "$phx_sync_user" "Controller sync failure fixture" 'fixture-pass-123' fixture >/dev/null
+    bp_member_unlock
+    phx_sync_event="$(printf '%032x' "$((9000+phx_sync_i))")"
+    phx_sync_hash="$(printf '%s' "$(bp_member_line "$phx_sync_user")" | cut -f6)"
+    phx_sync_proof="$(proof_for "$phx_sync_hash" "$phx_sync_nonce")"
+    phx_sync_target="$phx_sync_user:$phx_sync_event:$phx_sync_proof"
+    phx_sync_pulses=30
+  fi
+  # The hook is on the REAL controller.sh writer call, not Vendo's new
+  # process: it proves the admin sync was reached and whether the enabled
+  # row was visible after mv. The CGI uses the unchanged real common.sh.
+  export PHX_SYNC_CALLED="$BP_RUN/sync-called"
+  export PHX_SYNC_POSTMV="$BP_RUN/sync-postmv-enabled-visible"
+  bp_durable_sync() {
+    : > "$PHX_SYNC_CALLED"
+    phx_sync_visible="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)"
+    [ "$phx_sync_visible" != 1 ] || : > "$PHX_SYNC_POSTMV"
+    return 74
+  }
+  phx_sync_admin_rc=0
+  if phx_ctl_config 1 1; then
+    phx_sync_admin_rc=0
+  else
+    phx_sync_admin_rc=$?
+  fi
+  # Restore the original unmodified production source function before
+  # driving the separate signed CGI process.
+  . "$BP_LIB"
+  if [ "$phx_sync_admin_rc" -ne 8 ] || [ ! -f "$PHX_SYNC_CALLED" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_SETUP_INVALID: real admin writer did not report injected sync EIO ($phx_sync_admin_rc)" >&2
+    exit 2
+  fi
+  if [ -f "$PHX_SYNC_POSTMV" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_OBSERVED: $phx_sync_action enabled policy locally visible during injected EIO"
+  fi
+  phx_sync_before="$(phx_ctl_digest)"
+  phx_sync_reply="$(call_vendo "$phx_sync_action" "$phx_sync_nonce" "$phx_sync_pulses" "$phx_sync_target")"
+  if ! printf '%s' "$phx_sync_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_sync_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_RED: $phx_sync_action fresh signed money accepted after failed admin controller enable durability sync: $phx_sync_reply" >&2
+    phx_sync_failures=$((phx_sync_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_SYNC_POSTMV_PASS: $phx_sync_action fresh signed money denied after ambiguous controller sync"
+  fi
+done
+[ "$phx_sync_failures" -eq 0 ] || exit 1
+
+
+# PHX-L-CORE P0 #31: a killed admin writer does not return through the
+# bp_controller_set error path. Its shared fd4 lock is released by the OS,
+# so a DIFFERENT signed CGI must still see a fail-closed runtime barrier.
+# This tests process exit, NOT a physical powercut or post-reboot recovery.
+phx_ctl_fresh_state controller-worker-exit
+phx_ctl_config 0 0
+phx_crash_user=phxsynccrash
+bp_member_lock
+bp_member_create "$phx_crash_user" "Controller worker crash" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_crash_nonce=10000000000004f0
+phx_crash_event=ddddddddddddddddddddddddddddddd0
+phx_crash_hash="$(printf '%s' "$(bp_member_line "$phx_crash_user")" | cut -f6)"
+phx_crash_proof="$(proof_for "$phx_crash_hash" "$phx_crash_nonce")"
+phx_crash_target="$phx_crash_user:$phx_crash_event:$phx_crash_proof"
+phx_crash_before="$(phx_ctl_digest)"
+export PHX_CRASH_REACHED="$BP_RUN/controller-worker-exit-reached"
+export PHX_CRASH_AFTER_RENAME="$BP_RUN/controller-worker-exit-enabled-visible"
+(
+  bp_durable_sync() {
+    : > "$PHX_CRASH_REACHED"
+    phx_visible="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)"
+    [ "$phx_visible" != 1 ] || : > "$PHX_CRASH_AFTER_RENAME"
+    exit 77
+  }
+  phx_ctl_config 1 1
+) > "$T/controller-worker-exit-output" 2>&1 &
+phx_worker_pid=$!
+phx_worker_rc=0
+wait "$phx_worker_pid" || phx_worker_rc=$?
+if [ "$phx_worker_rc" -ne 77 ] ||
+   [ ! -f "$PHX_CRASH_REACHED" ] ||
+   [ ! -f "$PHX_CRASH_AFTER_RENAME" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_SETUP_INVALID: no real post-rename worker exit $phx_worker_rc" >&2
+  exit 2
+fi
+phx_crash_reply="$(call_vendo member_bank "$phx_crash_nonce" 30 "$phx_crash_target")"
+phx_crash_after="$(phx_ctl_digest)"
+if ! printf '%s' "$phx_crash_reply" | grep -Fq '"ok":false' ||
+   [ "$phx_crash_after" != "$phx_crash_before" ] ||
+   [ -n "$(bp_member_event_line "$phx_crash_event")" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_RED: paid ACK after admin exited post-rename before durable sync: $phx_crash_reply" >&2
+  exit 1
+fi
+# No unrelated retry is permitted to accidentally remove a pending
+# controller-write barrier; explicit operator recovery is separate.
+phx_retry_rc=0
+phx_ctl_config 1 1 || phx_retry_rc=$?
+if [ "$phx_retry_rc" -ne 8 ] ||
+   [ "$(phx_ctl_digest)" != "$phx_crash_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_WORKER_EXIT_RED: admin retry erased unsafe barrier" >&2
+  exit 1
+fi
+echo 'PHX-L-CORE CONTROLLER_WORKER_EXIT_PASS: admin process exit after rename keeps separate signed CGI and retry fail-closed'
+
+
+
+# PHX-L-CORE P0 #31 TEST-FIRST: BP_RUN is volatile. This is a simulated
+# tmpfs/runtime-directory reset after a real sourced controller writer
+# post-rename failure, NOT a router reboot or physical power interruption.
+# New signed paid admissions must stay blocked even if controllers.tsv still
+# contains a locally visible enabled row. No independent witness exists yet.
+phx_recovery_failures=0
+[ -f "$BP_RUN/controller-update-unsettled" ] &&
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 1 ] || {
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_SETUP_INVALID: no ambiguous enabled row and runtime barrier' >&2
+  exit 2
+}
+rm -rf "$BP_RUN"
+mkdir -p "$BP_RUN"
+phx_recovery_before="$(phx_ctl_digest)"
+phx_recovery_reply="$(call_vendo member_bank "$phx_crash_nonce" 30 "$phx_crash_target")"
+if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_COLD_RUNTIME_RED: signed member_bank accepted after simulated BP_RUN loss: $phx_recovery_reply" >&2
+  phx_recovery_failures=$((phx_recovery_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_PASS: signed member_bank denied after simulated BP_RUN loss'
+fi
+
+# Independent second path: injected sync EIO, locally visible enabled row,
+# then simulated loss of runtime barrier before a new signed coin request.
+phx_ctl_fresh_state cold-runtime-coin
+phx_ctl_setup_coin
+phx_ctl_config 0 0
+bp_durable_sync() { return 74; }
+phx_recovery_admin_rc=0
+phx_ctl_config 1 1 || phx_recovery_admin_rc=$?
+. "$BP_LIB"
+if [ "$phx_recovery_admin_rc" -ne 8 ] ||
+   [ ! -f "$BP_RUN/controller-update-unsettled" ] ||
+   [ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" != 1 ]; then
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_SETUP_INVALID: coin sync fault not established' >&2
+  exit 2
+fi
+rm -rf "$BP_RUN"
+mkdir -p "$BP_RUN"
+phx_recovery_before="$(phx_ctl_digest)"
+phx_recovery_reply="$(call_vendo coin 10000000000005f0 1 "$phx_ctl_target")"
+if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+   [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+  echo "PHX-L-CORE CONTROLLER_COLD_RUNTIME_RED: signed coin accepted after simulated BP_RUN loss: $phx_recovery_reply" >&2
+  phx_recovery_failures=$((phx_recovery_failures+1))
+else
+  echo 'PHX-L-CORE CONTROLLER_COLD_RUNTIME_PASS: signed coin denied after simulated BP_RUN loss'
+fi
+
+# Restore a formerly valid enabled registry snapshot after a real successful
+# admin disable. This is a synthetic OLD VALID SNAPSHOT rollback, NOT an
+# actual flash recovery or proof of a durable independent revision witness.
+for phx_recovery_action in member_bank coin; do
+  phx_ctl_fresh_state "valid-snapshot-rollback-$phx_recovery_action"
+  if [ "$phx_recovery_action" = coin ]; then
+    phx_ctl_setup_coin
+    phx_recovery_target="$phx_ctl_target"
+    phx_recovery_pulses=1
+  else
+    bp_member_lock
+    bp_member_create phxrollback "Controller rollback fixture" 'fixture-pass-123' fixture >/dev/null
+    bp_member_unlock
+    phx_recovery_nonce=10000000000005f1
+    phx_recovery_hash="$(printf '%s' "$(bp_member_line phxrollback)" | cut -f6)"
+    phx_recovery_proof="$(proof_for "$phx_recovery_hash" "$phx_recovery_nonce")"
+    phx_recovery_target="phxrollback:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeef:$phx_recovery_proof"
+    phx_recovery_pulses=30
+  fi
+  phx_recovery_snapshot="$T/old-valid-controller-$phx_recovery_action.tsv"
+  cp "$BP_CONTROLLERS" "$phx_recovery_snapshot"
+  phx_recovery_old_rev="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f15)"
+  phx_ctl_config 0 0
+  phx_recovery_new_rev="$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f15)"
+  [ "$phx_recovery_new_rev" -gt "$phx_recovery_old_rev" ] || {
+    echo 'PHX-L-CORE CONTROLLER_ROLLBACK_SETUP_INVALID: disable did not advance revision' >&2
+    exit 2
+  }
+  cp "$phx_recovery_snapshot" "$BP_CONTROLLERS"
+  [ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 1 ] || {
+    echo 'PHX-L-CORE CONTROLLER_ROLLBACK_SETUP_INVALID: old enabled snapshot not restored' >&2
+    exit 2
+  }
+  phx_recovery_before="$(phx_ctl_digest)"
+  if [ "$phx_recovery_action" = coin ]; then phx_recovery_nonce=10000000000005f2; fi
+  phx_recovery_reply="$(call_vendo "$phx_recovery_action" "$phx_recovery_nonce" "$phx_recovery_pulses" "$phx_recovery_target")"
+  if ! printf '%s' "$phx_recovery_reply" | grep -Fq '"ok":false' ||
+     [ "$(phx_ctl_digest)" != "$phx_recovery_before" ]; then
+    echo "PHX-L-CORE CONTROLLER_VALID_ROLLBACK_RED: $phx_recovery_action accepted after previously disabled registry was rolled back: $phx_recovery_reply" >&2
+    phx_recovery_failures=$((phx_recovery_failures+1))
+  else
+    echo "PHX-L-CORE CONTROLLER_VALID_ROLLBACK_PASS: $phx_recovery_action denied after old enabled snapshot rollback"
+  fi
+done
+# PHX-L-CORE P0 #31/#43 T16/T18 TEST-FIRST: the controller can remain
+# legitimately enabled while a separately committed financial ledger and
+# receipt corpus are restored to an older, individually well-formed snapshot.
+# A new signed transport nonce for the SAME paid event must not create a
+# second paid ACK or mutation. This is a synthetic /tmp rollback, not flash
+# or proof of an independent witness. The earlier commit really succeeded.
+phx_ctl_fresh_state finance-ledger-rollback-bank
+bp_member_lock
+bp_member_create phxfinance "Financial rollback fixture" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_finance_event=abababababababababababababababab
+phx_finance_first_nonce=10000000000006a0
+phx_finance_retry_nonce=10000000000006a1
+phx_finance_hash="$(printf '%s' "$(bp_member_line phxfinance)" | cut -f6)"
+cp "$BP_MEMBERS" "$T/finance-older-members.tsv"
+cp "$BP_MEMBER_EVENTS" "$T/finance-older-events.tsv"
+cp "$BP_MEMBER_REVISION" "$T/finance-older-revision"
+phx_finance_first_proof="$(proof_for "$phx_finance_hash" "$phx_finance_first_nonce")"
+phx_finance_first_reply="$(call_vendo member_bank "$phx_finance_first_nonce" 30 \
+  "phxfinance:$phx_finance_event:$phx_finance_first_proof")"
+if ! printf '%s' "$phx_finance_first_reply" | grep -Fq '"ok":true' ||
+   [ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" != 30 ] ||
+   [ "$(awk -F '\t' -v e="$phx_finance_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: initial signed payment not durably visible: $phx_finance_first_reply" >&2
+  exit 2
+fi
+# Only the financial files are rolled back: controller policy remains
+# enabled and the older financial snapshot remains structurally valid.
+cp "$T/finance-older-members.tsv" "$BP_MEMBERS"
+cp "$T/finance-older-events.tsv" "$BP_MEMBER_EVENTS"
+cp "$T/finance-older-revision" "$BP_MEMBER_REVISION"
+[ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" = 0 ] &&
+[ -z "$(bp_member_event_line "$phx_finance_event")" ] || {
+  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: old snapshot not restored' >&2
+  exit 2
+}
+phx_finance_before="$(phx_ctl_digest)"
+phx_finance_retry_proof="$(proof_for "$phx_finance_hash" "$phx_finance_retry_nonce")"
+phx_finance_retry_reply="$(call_vendo member_bank "$phx_finance_retry_nonce" 30 \
+  "phxfinance:$phx_finance_event:$phx_finance_retry_proof")"
+if printf '%s' "$phx_finance_retry_reply" | grep -Fq '"ok":true' ||
+   [ "$(phx_ctl_digest)" != "$phx_finance_before" ]; then
+  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_RED: previously committed signed event re-ACKed or re-credited after old valid financial snapshot restored: $phx_finance_retry_reply" >&2
+  phx_finance_rollback_failures=1
+else
+  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_PASS: previously committed event not re-ACKed after old valid financial snapshot'
+  phx_finance_rollback_failures=0
+fi
+
+# PHX-L-CORE P0 #32 / T20 TEST-FIRST signed rental lease/receipt tear.
+# This is the REAL sourced Vendo CGI against synthetic /tmp state, not a
+# physical process death or durable financial witness. A first signed rental
+# coin must create both a paid lease and an immutable receipt. Then simulate
+# an old/torn receipt corpus (only the receipt disappears, lease stays paid)
+# and retry the EXACT same signed event. A safe authority must fail closed:
+# no success ACK, no additional paid lease, progress or receipt mutation.
+phx_torn_failures=0
+phx_ctl_fresh_state rental-torn-receipt
+. "$BP_RENTAL_LIB"
+bp_rental_init
+phx_torn_did=bbbbbbbbbbbbbbbbbbbbbbbb
+phx_torn_secret=cccccccccccccccccccccccccccccccccccccccccccccccc
+phx_torn_nonce=10000000000006b0
+phx_torn_target=feedfeed12345678
+bp_rental_device_write "$phx_torn_did" "$phx_torn_secret" 2000000000 'Torn receipt fixture' 2000000000
+phx_torn_expiry="$(($(bp_now)+600))"
+printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$phx_torn_did" 'aa:bb:cc:dd:ee:ff' \
+  "$phx_torn_target" "$phx_torn_expiry" softtimer-01 rental > "$BP_TARGET_DIR/softtimer-01.tsv"
+printf '0\n' > "$BP_TARGET_DIR/softtimer-01.progress"
+phx_torn_first="$(call_vendo coin "$phx_torn_nonce" 1 "$phx_torn_target")"
+phx_torn_event="r:$(printf 'rental|%s|%s|%s' softtimer-01 "$phx_torn_nonce" "$phx_torn_target" | bp_sha256)"
+if ! printf '%s' "$phx_torn_first" | grep -Fq '"ok":true' ||
+   ! printf '%s' "$phx_torn_first" | grep -Fq '"duplicate":false' ||
+   [ "$(cat "$BP_TARGET_DIR/softtimer-01.progress")" != 1 ] ||
+   [ -z "$(bp_rental_paid_receipt_snapshot "$phx_torn_event")" ]; then
+  echo "PHX-L-CORE RENTAL_TORN_RECEIPT_SETUP_INVALID: first signed paid rental coin not committed: $phx_torn_first" >&2
+  exit 2
+fi
+phx_torn_before_lease="$(printf '%s' "$(bp_rental_device_line "$phx_torn_did")" | cut -f3)"
+# Remove exactly the already-committed paid receipt, preserving the valid
+# advanced lease and progress; no source, controller policy or signer changed.
+awk -F '\t' -v e="$phx_torn_event" '$1!=e {print}' "$BP_RENTAL_EVENTS" > "$T/phx-torn-receipt-corpus"
+mv "$T/phx-torn-receipt-corpus" "$BP_RENTAL_EVENTS"
+if [ -n "$(bp_rental_paid_receipt_snapshot "$phx_torn_event")" ]; then
+  echo 'PHX-L-CORE RENTAL_TORN_RECEIPT_SETUP_INVALID: old paid receipt still present' >&2
+  exit 2
+fi
+phx_torn_before_progress="$(cat "$BP_TARGET_DIR/softtimer-01.progress")"
+phx_torn_before_paid_count="$(awk -F '\t' '$1 ~ /^r:/ {n++} END {print n+0}' "$BP_RENTAL_EVENTS")"
+phx_torn_retry="$(call_vendo coin "$phx_torn_nonce" 1 "$phx_torn_target")"
+phx_torn_after_lease="$(printf '%s' "$(bp_rental_device_line "$phx_torn_did")" | cut -f3)"
+phx_torn_after_progress="$(cat "$BP_TARGET_DIR/softtimer-01.progress")"
+phx_torn_after_paid_count="$(awk -F '\t' '$1 ~ /^r:/ {n++} END {print n+0}' "$BP_RENTAL_EVENTS")"
+if printf '%s' "$phx_torn_retry" | grep -Fq '"ok":true' ||
+   [ "$phx_torn_after_lease" != "$phx_torn_before_lease" ] ||
+   [ "$phx_torn_after_progress" != "$phx_torn_before_progress" ] ||
+   [ "$phx_torn_after_paid_count" != "$phx_torn_before_paid_count" ]; then
+  echo "PHX-L-CORE RENTAL_TORN_RECEIPT_RED: missing receipt caused signed retry ACK or second paid mutation: $phx_torn_retry" >&2
+  phx_torn_failures=1
+else
+  echo 'PHX-L-CORE RENTAL_TORN_RECEIPT_PASS: signed retry denied without second paid mutation'
+fi
+
+
+# PHX-L-CORE #31/#43 T19 TEST-FIRST / PROVISIONAL CONTRACT PROBE.
+# The installed CGI does not yet implement a financial witness adapter.
+# This mock is NOT an independent witness. It would durably record a synthetic
+# COMMIT and deliberately lose its response IF the backend called the proposed
+# test-only command interface. Until the hook exists, report HOOK_ABSENT_RED,
+# NOT a reproduced lost-ACK fault. No production keys, files or money.
+phx_wack_failures=0
+phx_ctl_fresh_state finance-witness-ack-loss
+bp_member_lock
+bp_member_create phxwack "Witness ACK fixture" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_wack_event=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+phx_wack_nonce=10000000000006c0
+phx_wack_retry_nonce=10000000000006c1
+phx_wack_hash="$(printf '%s' "$(bp_member_line phxwack)" | cut -f6)"
+export BP_FINANCE_WITNESS_TEST_LOG="$T/finance-witness-calls.log"
+export BP_FINANCE_WITNESS_CMD="$T/bin/phx-finance-witness"
+: > "$BP_FINANCE_WITNESS_TEST_LOG"
+cat > "$BP_FINANCE_WITNESS_CMD" <<'PHX_WITNESS_MOCK'
+#!/bin/sh
+# PROPOSED TEST ADAPTER ONLY: prepare succeeds, commit records locally then
+# drops its ACK; subsequent read remains unavailable. No cryptographic trust.
+case "${1:-}" in
+  prepare|PREPARE) printf 'PREPARE\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 0 ;;
+  commit|COMMIT) printf 'COMMIT_ACK_LOST\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 75 ;;
+  *) printf 'UNAVAILABLE\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 75 ;;
+esac
+PHX_WITNESS_MOCK
+chmod +x "$BP_FINANCE_WITNESS_CMD"
+phx_wack_proof="$(proof_for "$phx_wack_hash" "$phx_wack_nonce")"
+phx_wack_first="$(call_vendo member_bank "$phx_wack_nonce" 30 \
+  "phxwack:$phx_wack_event:$phx_wack_proof")"
+phx_wack_balance_before_retry="$(printf '%s' "$(bp_member_line phxwack)" | cut -f8)"
+phx_wack_events_before_retry="$(awk -F '\t' -v e="$phx_wack_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")"
+phx_wack_retry_proof="$(proof_for "$phx_wack_hash" "$phx_wack_retry_nonce")"
+phx_wack_retry="$(call_vendo member_bank "$phx_wack_retry_nonce" 30 \
+  "phxwack:$phx_wack_event:$phx_wack_retry_proof")"
+phx_wack_balance_after_retry="$(printf '%s' "$(bp_member_line phxwack)" | cut -f8)"
+phx_wack_events_after_retry="$(awk -F '\t' -v e="$phx_wack_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")"
+if [ ! -s "$BP_FINANCE_WITNESS_TEST_LOG" ]; then
+  echo "PHX-L-CORE FINANCE_WITNESS_HOOK_ABSENT_RED: signed CGI did not invoke proposed witness adapter; first=$phx_wack_first retry=$phx_wack_retry" >&2
+  phx_wack_failures=1
+elif ! grep -Fq 'COMMIT_ACK_LOST' "$BP_FINANCE_WITNESS_TEST_LOG"; then
+  echo 'PHX-L-CORE FINANCE_WITNESS_ACK_SETUP_INCOMPLETE: mock called but no post-commit ACK loss injected; do not claim T19 reproduced' >&2
+  exit 2
+elif printf '%s' "$phx_wack_first" | grep -Fq '"ok":true' ||
+     printf '%s' "$phx_wack_retry" | grep -Fq '"ok":true' ||
+     [ "$phx_wack_balance_after_retry" != "$phx_wack_balance_before_retry" ] ||
+     [ "$phx_wack_events_after_retry" != "$phx_wack_events_before_retry" ]; then
+  echo "PHX-L-CORE FINANCE_WITNESS_ACK_LOSS_RED: terminal ACK or second money mutation despite lost witness COMMIT ACK: first=$phx_wack_first retry=$phx_wack_retry" >&2
+  phx_wack_failures=1
+else
+  echo 'PHX-L-CORE FINANCE_WITNESS_ACK_LOSS_PASS: mock COMMIT ACK lost, no terminal ACK or second money mutation (synthetic only)'
+fi
+unset BP_FINANCE_WITNESS_CMD BP_FINANCE_WITNESS_TEST_LOG
+
+[ "$phx_recovery_failures" -eq 0 ] || exit 1
+[ "$phx_finance_rollback_failures" -eq 0 ] || exit 1
+[ "$phx_torn_failures" -eq 0 ] || exit 1
+[ "$phx_wack_failures" -eq 0 ] || exit 1
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
