@@ -29,6 +29,8 @@ def start_continuous_call_logs():
     incoming offer on noisy Android 35 emulator images.
     """
     for serial in (CALLER, RECEIVER):
+        # Do not accept a stale transport marker from a previous call.
+        adb(serial, "logcat", "-c", check=False)
         target = open(OUT / f"{serial}-call-signaling-stream.txt", "wb")
         process = subprocess.Popen([
             "adb", "-s", serial, "logcat", "-v", "threadtime",
@@ -134,6 +136,17 @@ def contains(serial, stage, needle):
     return needle.lower() in " ".join(labels(n) for n in root.iter("node")).lower()
 
 
+def transport_connected_in_log(serial):
+    """Read this endpoint's WebRTC connection callback from its own log."""
+    path = OUT / f"{serial}-call-signaling-stream.txt"
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except FileNotFoundError:
+        return False
+    return any("LAN_CALL_TRACE webrtc_transport_connected" in line
+               for line in lines)
+
+
 def wait_both_connected(timeout_seconds=85):
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
@@ -156,11 +169,20 @@ def wait_both_connected(timeout_seconds=85):
             ("Call active • Use your microphone to talk" in receiver_labels
              and "Live" in receiver_labels)
         )
-        if caller_connected and receiver_connected:
-            note("media", "PASS: caller WebRTC Connected UI and receiver Live native-call controls")
+        caller_transport = transport_connected_in_log(CALLER)
+        receiver_transport = transport_connected_in_log(RECEIVER)
+        if caller_connected and receiver_connected and caller_transport and receiver_transport:
+            note("media", "PASS: BOTH WebRTC endpoints reported Connected; caller and receiver live UI confirmed")
+            (OUT / "webrtc-two-endpoint-transport-proof.json").write_text(
+                json.dumps({"caller": CALLER, "receiver": RECEIVER,
+                            "caller_transport_connected": caller_transport,
+                            "receiver_transport_connected": receiver_transport,
+                            "caller_connected_ui": caller_connected,
+                            "receiver_live_ui": receiver_connected}, indent=2),
+                encoding="utf-8")
             return
         time.sleep(3)
-    raise RuntimeError("Caller ICE connected and receiver live-call UI were not both confirmed")
+    raise RuntimeError("BOTH WebRTC transport-connected events and both call interfaces were not confirmed")
 
 
 def expand_notification_shade(serial, label):
