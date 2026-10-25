@@ -853,55 +853,6 @@ echo 'PHX-L-CORE CONTROLLER_WORKER_EXIT_PASS: admin process exit after rename ke
 
 
 
-# PHX-L-CORE P0 #31/#43 T16/T18 TEST-FIRST: the controller can remain
-# legitimately enabled while a separately committed financial ledger and
-# receipt corpus are restored to an older, individually well-formed snapshot.
-# A new signed transport nonce for the SAME paid event must not create a
-# second paid ACK or mutation. This is a synthetic /tmp rollback, not flash
-# or proof of an independent witness. The earlier commit really succeeded.
-phx_ctl_fresh_state finance-ledger-rollback-bank
-bp_member_lock
-bp_member_create phxfinance "Financial rollback fixture" 'fixture-pass-123' fixture >/dev/null
-bp_member_unlock
-phx_finance_event=abababababababababababababababab
-phx_finance_first_nonce=10000000000006a0
-phx_finance_retry_nonce=10000000000006a1
-phx_finance_hash="$(printf '%s' "$(bp_member_line phxfinance)" | cut -f6)"
-cp "$BP_MEMBERS" "$T/finance-older-members.tsv"
-cp "$BP_MEMBER_EVENTS" "$T/finance-older-events.tsv"
-cp "$BP_MEMBER_REVISION" "$T/finance-older-revision"
-phx_finance_first_proof="$(proof_for "$phx_finance_hash" "$phx_finance_first_nonce")"
-phx_finance_first_reply="$(call_vendo member_bank "$phx_finance_first_nonce" 30 \
-  "phxfinance:$phx_finance_event:$phx_finance_first_proof")"
-if ! printf '%s' "$phx_finance_first_reply" | grep -Fq '"ok":true' ||
-   [ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" != 30 ] ||
-   [ "$(awk -F '\t' -v e="$phx_finance_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
-  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: initial signed payment not durably visible: $phx_finance_first_reply" >&2
-  exit 2
-fi
-# Only the financial files are rolled back: controller policy remains
-# enabled and the older financial snapshot remains structurally valid.
-cp "$T/finance-older-members.tsv" "$BP_MEMBERS"
-cp "$T/finance-older-events.tsv" "$BP_MEMBER_EVENTS"
-cp "$T/finance-older-revision" "$BP_MEMBER_REVISION"
-[ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" = 0 ] &&
-[ -z "$(bp_member_event_line "$phx_finance_event")" ] || {
-  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: old snapshot not restored' >&2
-  exit 2
-}
-phx_finance_before="$(phx_ctl_digest)"
-phx_finance_retry_proof="$(proof_for "$phx_finance_hash" "$phx_finance_retry_nonce")"
-phx_finance_retry_reply="$(call_vendo member_bank "$phx_finance_retry_nonce" 30 \
-  "phxfinance:$phx_finance_event:$phx_finance_retry_proof")"
-if printf '%s' "$phx_finance_retry_reply" | grep -Fq '"ok":true' ||
-   [ "$(phx_ctl_digest)" != "$phx_finance_before" ]; then
-  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_RED: previously committed signed event re-ACKed or re-credited after old valid financial snapshot restored: $phx_finance_retry_reply" >&2
-  phx_finance_rollback_failures=1
-else
-  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_PASS: previously committed event not re-ACKed after old valid financial snapshot'
-  phx_finance_rollback_failures=0
-fi
-
 # PHX-L-CORE P0 #31 TEST-FIRST: BP_RUN is volatile. This is a simulated
 # tmpfs/runtime-directory reset after a real sourced controller writer
 # post-rename failure, NOT a router reboot or physical power interruption.
@@ -996,6 +947,55 @@ for phx_recovery_action in member_bank coin; do
     echo "PHX-L-CORE CONTROLLER_VALID_ROLLBACK_PASS: $phx_recovery_action denied after old enabled snapshot rollback"
   fi
 done
+# PHX-L-CORE P0 #31/#43 T16/T18 TEST-FIRST: the controller can remain
+# legitimately enabled while a separately committed financial ledger and
+# receipt corpus are restored to an older, individually well-formed snapshot.
+# A new signed transport nonce for the SAME paid event must not create a
+# second paid ACK or mutation. This is a synthetic /tmp rollback, not flash
+# or proof of an independent witness. The earlier commit really succeeded.
+phx_ctl_fresh_state finance-ledger-rollback-bank
+bp_member_lock
+bp_member_create phxfinance "Financial rollback fixture" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_finance_event=abababababababababababababababab
+phx_finance_first_nonce=10000000000006a0
+phx_finance_retry_nonce=10000000000006a1
+phx_finance_hash="$(printf '%s' "$(bp_member_line phxfinance)" | cut -f6)"
+cp "$BP_MEMBERS" "$T/finance-older-members.tsv"
+cp "$BP_MEMBER_EVENTS" "$T/finance-older-events.tsv"
+cp "$BP_MEMBER_REVISION" "$T/finance-older-revision"
+phx_finance_first_proof="$(proof_for "$phx_finance_hash" "$phx_finance_first_nonce")"
+phx_finance_first_reply="$(call_vendo member_bank "$phx_finance_first_nonce" 30 \
+  "phxfinance:$phx_finance_event:$phx_finance_first_proof")"
+if ! printf '%s' "$phx_finance_first_reply" | grep -Fq '"ok":true' ||
+   [ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" != 30 ] ||
+   [ "$(awk -F '\t' -v e="$phx_finance_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ]; then
+  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: initial signed payment not durably visible: $phx_finance_first_reply" >&2
+  exit 2
+fi
+# Only the financial files are rolled back: controller policy remains
+# enabled and the older financial snapshot remains structurally valid.
+cp "$T/finance-older-members.tsv" "$BP_MEMBERS"
+cp "$T/finance-older-events.tsv" "$BP_MEMBER_EVENTS"
+cp "$T/finance-older-revision" "$BP_MEMBER_REVISION"
+[ "$(printf '%s' "$(bp_member_line phxfinance)" | cut -f8)" = 0 ] &&
+[ -z "$(bp_member_event_line "$phx_finance_event")" ] || {
+  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_SETUP_INVALID: old snapshot not restored' >&2
+  exit 2
+}
+phx_finance_before="$(phx_ctl_digest)"
+phx_finance_retry_proof="$(proof_for "$phx_finance_hash" "$phx_finance_retry_nonce")"
+phx_finance_retry_reply="$(call_vendo member_bank "$phx_finance_retry_nonce" 30 \
+  "phxfinance:$phx_finance_event:$phx_finance_retry_proof")"
+if printf '%s' "$phx_finance_retry_reply" | grep -Fq '"ok":true' ||
+   [ "$(phx_ctl_digest)" != "$phx_finance_before" ]; then
+  echo "PHX-L-CORE FINANCE_LEDGER_ROLLBACK_RED: previously committed signed event re-ACKed or re-credited after old valid financial snapshot restored: $phx_finance_retry_reply" >&2
+  phx_finance_rollback_failures=1
+else
+  echo 'PHX-L-CORE FINANCE_LEDGER_ROLLBACK_PASS: previously committed event not re-ACKed after old valid financial snapshot'
+  phx_finance_rollback_failures=0
+fi
+
 [ "$phx_recovery_failures" -eq 0 ] || exit 1
 [ "$phx_finance_rollback_failures" -eq 0 ] || exit 1
 
