@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'experiment/apps/LAN-Messenger/**'
+      - '.github/scripts/lan-messenger/**'
       - '.github/workflows/lan-messenger.yml'
   workflow_dispatch:
 
