@@ -143,6 +143,33 @@ int main(){
  applyRemoteConfig("{\"config_revision\":4,\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"coin_pin\":4,\"relay_pin\":5,\"led_pin\":14}");
  check("higher_revision_disabled_config_accepted",
   remoteRevision==4&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
+
+ // Cold-boot admission: revision 0 is untrusted, and missing/nonpositive
+ // revisions must not bootstrap a previously disabled coin acceptor.
+ reset();
+ remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"enabled":1,"coin_enabled":1,"relay_enabled":1,"led_enabled":1,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("bootstrap_missing_revision_denied",
+  remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
+ reset();
+ remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"config_revision":0,"enabled":1,"coin_enabled":1,"relay_enabled":1,"led_enabled":1,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("bootstrap_zero_revision_denied",
+  remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
+ reset();
+ remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"config_revision":-1,"enabled":1,"coin_enabled":1,"relay_enabled":1,"led_enabled":1,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("bootstrap_negative_revision_denied",
+  remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
+ reset();
+ remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
+ digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+ applyRemoteConfig(R"({"config_revision":1,"enabled":0,"coin_enabled":0,"relay_enabled":0,"led_enabled":0,"coin_pin":4,"relay_pin":5,"led_pin":14})");
+ check("bootstrap_positive_disabled_config_accepted",
+  remoteRevision==1&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<" physical_verified=0\n";
  return fails?18:0;
 }
