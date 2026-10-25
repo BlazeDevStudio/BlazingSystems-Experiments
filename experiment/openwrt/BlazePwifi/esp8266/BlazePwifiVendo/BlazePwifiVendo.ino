@@ -247,7 +247,8 @@ void applyRemoteConfig(const String&r){
   const bool proposedRelayHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
   const bool proposedLedHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   if(proposedRelayHigh!=runRelayActiveHigh || proposedLedHigh!=runLedActiveHigh ||
-     nextCoin==nextRelay || nextCoin==nextLed || nextRelay==nextLed){
+     nextCoin==nextRelay || nextCoin==nextLed || nextRelay==nextLed ||
+     nextCoin!=runCoinPin || nextRelay!=runRelayPin || nextLed!=runLedPin){
     writeLogical(runRelayPin,false,runRelayActiveHigh);
     writeLogical(runLedPin,false,runLedActiveHigh);
     controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
