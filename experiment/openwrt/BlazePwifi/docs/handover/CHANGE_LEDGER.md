@@ -1,4 +1,7 @@
 
+### UTC04 fixture-order correction (same test-only task)
+- Corrected placement after four controller recovery cases: `c8853362bc62fff77b6025c0431223fdd6a7deb5`, blob `fe3b46bb8acb6e7f84b7ff55209d1a58b31325d9`. Initial `f812bfb7` order clobbered required BP_RUN setup, so do not use intermediate CI as behavioral evidence. **Exact corrected-head Full CI pending**; no paid source changed.
+
 ## 2026-10-25T04:00Z — PHX-L-CORE P0 #31/#43 signed CGI financial snapshot rollback test-only
 - **State:** TEST_ONLY_COMMITTED_CI_PENDING; source-linked signed Vendo `member_bank` first commit, local valid old member+receipt+revision rollback, new signed nonce same event; expect unsafe re-ACK RED, no witness implemented.
 - **Scope/commits:** `tests/v053_members.sh` only at `e52d6307b13bdf5703a83b7bcf06aa1a94d9482b`, corrected fatal gate at `f812bfb7cb5e361de2f5c822793e3b473c920adf` blob `e914ed49ad4ad64da78df413f49091bec3c0a801`. Precode IN PROGRESS checkpoint `bcc101f8f57280e06b2ca7f0c9c29996b79f44b4`. Actual source/firmware unchanged.
