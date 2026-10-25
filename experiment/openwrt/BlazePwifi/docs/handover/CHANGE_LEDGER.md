@@ -1,3 +1,7 @@
+## 2026-10-25 — PHX-L-APPS UTC03 exact source-linked fake-OS RED verified
+
+- Windows #40156873843 at literal PR #197 source SHA `5d5a7bcdc7e0ef9f1691bcbcb55b397e172b7290`, synthetic merge `c45ffb06` into parent `25adff35`: handover job 121060227458 SUCCESS, fresh/stale/partial gate PASS; Windows 121060260163 FAILURE specifically native PHX-L-APPS 27/29 matched, two expected unsafe negatives: substituted adapter CONNECTED true and synthetic CTS emitted 1 `CoinPulseAccepted` despite expected 0. Native fixture 0 compile errors, PAY-0717/0718 PASS; build/NSIS/artifact/release SKIPPED. This proves app-level synthetic callback hazard, not real coin or paid ledger. No production source correction; MASTER/VERIFY review pending, production NO-GO. Docs-only successor exact-head CI not yet classified.
+
 ## 2026-10-25 — PHX-L-APPS UTC03 test-only source-linked negative committed, CI pending
 
 - Added one native C# fake-OS test on DRAFT PR #197: `exact_open_time_swapped_adapter_must_not_emit_coin_pulse` expects 0 callbacks from substituted COM9 physical adapter, alongside existing `exact_open_time_adapter_swap_must_refuse`. Harness count 28 -> 29. No production source change, no paid credit, no hardware; new exact-head Windows CI conclusion pending. MASTER/VERIFY handle-bound identity review required; WMI recheck is not proof. Prior #40148317381 27/28 intended RED remains historical evidence.
