@@ -377,10 +377,47 @@ System.Management.ManagementObjectSearcher.FakeDevices =
     Array.Empty<System.Management.ManagementObject>();
 SerialPort.PhysicalPnpAtOpen = null;
 
+// PHX-L-APPS UTC06 TEST ONLY: a verified first ExactDevice session cannot
+// authorize a second opened COM handle with UNKNOWN physical adapter identity.
+// A deferred callback from the old session must not promote the new session.
+// The fake OpenedPhysicalPnp field is NOT a real Windows handle identity API.
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
+SerialPort.InitialCtsLevel = false;
+int unknownReconnectPulseAccepted = 0;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => unknownReconnectPulseAccepted++;
+    if (!sut.Connect(openConfig))
+        throw new Exception("Fake verified initial COM9 session failed");
+    var first = SerialPort.LastCreated ?? throw new Exception("Missing first COM9");
+    if (first.OpenedPhysicalPnp != openPinnedPnp)
+        throw new Exception("Initial fake adapter identity was not pinned");
+    var staleCallback = first.CaptureDeferredPinCallback();
+    sut.Disconnect();
+    SerialPort.PhysicalPnpAtOpen = null;
+    if (sut.TryReconnect(openConfig)) {
+        var second = SerialPort.LastCreated ?? throw new Exception("Missing reopened COM9");
+        if (ReferenceEquals(first, second) || second.OpenedPhysicalPnp is not null)
+            throw new Exception("Reopened fake COM9 unexpectedly proved adapter identity");
+        staleCallback(SerialPinChange.CtsChanged);
+        second.CtsLevel = true;
+        second.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        second.CtsLevel = false;
+        second.Raise(SerialPinChange.CtsChanged);
+    }
+}
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+SerialPort.PhysicalPnpAtOpen = null;
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_must_not_emit_coin_pulse", unverifiableHandlePulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_ring_must_not_emit_coin_pulse", unknownHandleRingPulseAccepted, 0),
+    ("exact_reconnect_unknown_handle_after_stale_callback_must_not_emit_coin_pulse", unknownReconnectPulseAccepted, 0),
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
     ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
@@ -425,5 +462,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 31/31 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 32/32 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
