@@ -317,8 +317,39 @@ var openTimeCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("exact_open_time_stable_adapter_control", connectedToStableAdapter, true)
 };
 
+// PHX-L-APPS #164 UTC04: an opened COM handle with UNVERIFIABLE physical
+// identity must never be a coin admission authority. WMI still reports the
+// selected pinned adapter; the fake opened handle provides NO identity proof.
+// Rejecting Connect or allowing read-only connection with coin inhibit are
+// both acceptable. This is a deterministic API model, NOT a real OS handle.
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+SerialPort.PhysicalPnpAtOpen = null;
+SerialPort.InitialCtsLevel = false;
+int unverifiableHandlePulseAccepted = 0;
+bool unverifiableHandleConnected;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => unverifiableHandlePulseAccepted++;
+    unverifiableHandleConnected = sut.Connect(openConfig);
+    if (unverifiableHandleConnected) {
+        var opened = SerialPort.LastCreated ?? throw new Exception("Missing unverified COM9");
+        if (opened.OpenedPhysicalPnp is not null)
+            throw new Exception("Fake opened handle unexpectedly had physical identity proof");
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
+}
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+SerialPort.PhysicalPnpAtOpen = null;
+
 var cases = new (string Name, int Actual, int Expected)[] {
     ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
+    ("exact_open_time_unverifiable_handle_must_not_emit_coin_pulse", unverifiableHandlePulseAccepted, 0),
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
     ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
@@ -363,5 +394,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 29/29 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 30/30 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;
