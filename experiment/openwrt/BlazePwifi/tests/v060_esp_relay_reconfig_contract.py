@@ -47,7 +47,7 @@ void digitalWrite(int pin,int value){trace.push_back({'W',pin,value});levels[pin
 void pinMode(int pin,int mode){trace.push_back({'M',pin,mode});}
 int constrain(int n,int lo,int hi){return n<lo?lo:(n>hi?hi:n);}
 int jsonInt(const String& body,const char* key,int fallback){
- std::regex rx(String("\\"")+key+"\\"\\s*:\\s*(-?[0-9]+)");
+ std::regex rx(String("\\\"")+key+"\\\"\\s*:\\s*(-?[0-9]+)");
  std::smatch m;
  return std::regex_search(body,m,rx)?std::stoi(m[1].str()):fallback;
 }
