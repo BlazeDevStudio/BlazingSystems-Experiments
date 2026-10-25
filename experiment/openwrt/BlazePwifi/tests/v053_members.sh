@@ -997,5 +997,6 @@ for phx_recovery_action in member_bank coin; do
   fi
 done
 [ "$phx_recovery_failures" -eq 0 ] || exit 1
+[ "$phx_finance_rollback_failures" -eq 0 ] || exit 1
 
 echo 'BlazePwifi centralized SoftTimer member checks passed'
