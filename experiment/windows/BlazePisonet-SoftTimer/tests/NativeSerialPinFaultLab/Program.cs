@@ -261,7 +261,163 @@ var identityCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
     ("usb_location_instance_must_not_be_stable_serial", !string.IsNullOrEmpty(locationGeneratedSerial) || realUsbSerial != "COIN-A", false)
 };
 
+// PHX-L-APPS #164 UTC22: TEST-ONLY Open-time COM adapter substitution.
+// The real SerialHardware.Connect() is linked; only WMI/SerialPort are fake.
+// WMI reports the pinned adapter on COM9, then the fake COM9 physical
+// mapping is changed before SerialPort.Open(). The selected descriptor
+// remains stale even though the newly opened adapter is different.
+// This is NOT evidence of actual Windows driver behavior or real coin money.
+var openPinnedPnp = @"USB\VID_1234&PID_5678\COIN-A";
+var openReplacementPnp = @"USB\VID_1234&PID_5678\COIN-B";
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+var openConfig = new AppConfig {
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredPnpDeviceId = openPinnedPnp,
+    PreferredUsbSerial = "COIN-A", PreferredVid = "1234", PreferredPid = "5678",
+    CoinInputSignal = ModemSignal.Cts
+};
+SerialPort.InitialCtsLevel = false;
+SerialPort.PhysicalPnpAtOpen = openReplacementPnp;
+int substitutedAdapterPulseAccepted = 0;
+bool connectedToSubstitutedAdapter;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => substitutedAdapterPulseAccepted++;
+    connectedToSubstitutedAdapter = sut.Connect(openConfig);
+    var opened = SerialPort.LastCreated ?? throw new Exception("Missing swapped COM9");
+    if (opened.OpenedPhysicalPnp != openReplacementPnp)
+        throw new Exception("Fake COM mapping did not change at Open");
+    if (connectedToSubstitutedAdapter && sut.ConnectedDevice?.PnpDeviceId != openPinnedPnp)
+        throw new Exception("Unexpected descriptor: stale WMI selection was not retained");
+    // TEST ONLY: a substituted physical adapter must never be allowed to
+    // manufacture a coin callback merely because COM9 opened successfully.
+    // This is synthetic CTS, not a real coin or paid ledger operation.
+    if (connectedToSubstitutedAdapter) {
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
+}
+SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
+bool connectedToStableAdapter;
+using (var sut = new SerialHardware()) {
+    connectedToStableAdapter = sut.Connect(openConfig);
+    var opened = SerialPort.LastCreated ?? throw new Exception("Missing stable COM9");
+    if (opened.OpenedPhysicalPnp != openPinnedPnp)
+        throw new Exception("Fake stable COM mapping invalid");
+}
+SerialPort.PhysicalPnpAtOpen = null;
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+var openTimeCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
+    ("exact_open_time_adapter_swap_must_refuse", connectedToSubstitutedAdapter, false),
+    ("exact_open_time_stable_adapter_control", connectedToStableAdapter, true)
+};
+
+// PHX-L-APPS #164 UTC04: an opened COM handle with UNVERIFIABLE physical
+// identity must never be a coin admission authority. WMI still reports the
+// selected pinned adapter; the fake opened handle provides NO identity proof.
+// Rejecting Connect or allowing read-only connection with coin inhibit are
+// both acceptable. This is a deterministic API model, NOT a real OS handle.
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+SerialPort.PhysicalPnpAtOpen = null;
+SerialPort.InitialCtsLevel = false;
+int unverifiableHandlePulseAccepted = 0;
+bool unverifiableHandleConnected;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => unverifiableHandlePulseAccepted++;
+    unverifiableHandleConnected = sut.Connect(openConfig);
+    if (unverifiableHandleConnected) {
+        var opened = SerialPort.LastCreated ?? throw new Exception("Missing unverified COM9");
+        if (opened.OpenedPhysicalPnp is not null)
+            throw new Exception("Fake opened handle unexpectedly had physical identity proof");
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
+}
+// PHX-L-APPS UTC05 TEST ONLY: the event-only RI path must also be coin-
+// inhibited when a successful COM Open has NO opened-handle identity proof.
+// The existing CTS negative does not exercise the Ring-specific path.
+// Fake OS mapping only; no real Windows driver or paid credit is modeled.
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+SerialPort.PhysicalPnpAtOpen = null;
+int unknownHandleRingPulseAccepted = 0;
+bool unknownHandleRingConnected;
+using (var sut = new SerialHardware()) {
+    var ringUnknownConfig = new AppConfig {
+        SerialSelection = SerialSelectionMode.ExactDevice,
+        PreferredPnpDeviceId = openPinnedPnp,
+        PreferredUsbSerial = "COIN-A", PreferredVid = "1234", PreferredPid = "5678",
+        CoinInputSignal = ModemSignal.RingIndicator, MinimumPulseMs = 500
+    };
+    sut.CoinPulseAccepted += () => unknownHandleRingPulseAccepted++;
+    unknownHandleRingConnected = sut.Connect(ringUnknownConfig);
+    if (unknownHandleRingConnected) {
+        var opened = SerialPort.LastCreated ?? throw new Exception("Missing unverified RI COM9");
+        if (opened.OpenedPhysicalPnp is not null)
+            throw new Exception("Fake RI opened handle unexpectedly has identity proof");
+        opened.Raise(SerialPinChange.Ring);
+    }
+}
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+SerialPort.PhysicalPnpAtOpen = null;
+
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+SerialPort.PhysicalPnpAtOpen = null;
+
+// PHX-L-APPS UTC06 TEST ONLY: a verified first ExactDevice session cannot
+// authorize a second opened COM handle with UNKNOWN physical adapter identity.
+// A deferred callback from the old session must not promote the new session.
+// The fake OpenedPhysicalPnp field is NOT a real Windows handle identity API.
+System.Management.ManagementObjectSearcher.FakeDevices = new[] {
+    new System.Management.ManagementObject("Coin Adapter (COM9)", "Lab", openPinnedPnp, "COM9")
+};
+SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
+SerialPort.InitialCtsLevel = false;
+int unknownReconnectPulseAccepted = 0;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => unknownReconnectPulseAccepted++;
+    if (!sut.Connect(openConfig))
+        throw new Exception("Fake verified initial COM9 session failed");
+    var first = SerialPort.LastCreated ?? throw new Exception("Missing first COM9");
+    if (first.OpenedPhysicalPnp != openPinnedPnp)
+        throw new Exception("Initial fake adapter identity was not pinned");
+    var staleCallback = first.CaptureDeferredPinCallback();
+    sut.Disconnect();
+    SerialPort.PhysicalPnpAtOpen = null;
+    if (sut.TryReconnect(openConfig)) {
+        var second = SerialPort.LastCreated ?? throw new Exception("Missing reopened COM9");
+        if (ReferenceEquals(first, second) || second.OpenedPhysicalPnp is not null)
+            throw new Exception("Reopened fake COM9 unexpectedly proved adapter identity");
+        staleCallback(SerialPinChange.CtsChanged);
+        second.CtsLevel = true;
+        second.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        second.CtsLevel = false;
+        second.Raise(SerialPinChange.CtsChanged);
+    }
+}
+System.Management.ManagementObjectSearcher.FakeDevices =
+    Array.Empty<System.Management.ManagementObject>();
+SerialPort.PhysicalPnpAtOpen = null;
+
 var cases = new (string Name, int Actual, int Expected)[] {
+    ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
+    ("exact_open_time_unverifiable_handle_must_not_emit_coin_pulse", unverifiableHandlePulseAccepted, 0),
+    ("exact_open_time_unverifiable_handle_ring_must_not_emit_coin_pulse", unknownHandleRingPulseAccepted, 0),
+    ("exact_reconnect_unknown_handle_after_stale_callback_must_not_emit_coin_pulse", unknownReconnectPulseAccepted, 0),
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
     ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
@@ -284,6 +440,11 @@ foreach (var c in identityCases) {
     Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: resolved={c.Resolved}, expected_resolved={c.ExpectedResolved}");
     diagnosticFailed |= !pass;
 }
+foreach (var c in openTimeCases) {
+    var pass = c.Resolved == c.ExpectedResolved;
+    Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: connected={c.Resolved}, expected_connected={c.ExpectedResolved}");
+    diagnosticFailed |= !pass;
+}
 foreach (var c in cases) {
     var pass = c.Actual == c.Expected;
     Console.WriteLine($"{(pass ? "REPRODUCED" : "UNEXPECTED")} {c.Name}: accepted={c.Actual}, expected_source_behavior={c.Expected}");
@@ -301,5 +462,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 26/26 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 32/32 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;

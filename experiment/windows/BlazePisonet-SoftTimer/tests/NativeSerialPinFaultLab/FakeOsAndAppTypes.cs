@@ -25,6 +25,10 @@ namespace System.IO.Ports
     {
         public static bool InitialCtsLevel { get; set; }
         public static SerialPort? LastCreated { get; private set; }
+        // TEST ONLY: the physical adapter currently mapped to a COM port may
+        // differ from the PnP identity previously enumerated by WMI.
+        public static string? PhysicalPnpAtOpen { get; set; }
+        public string? OpenedPhysicalPnp { get; private set; }
         public static string[] GetPortNames() => new[] { "COM9" };
         public string PortName { get; }
         public bool IsOpen { get; private set; }
@@ -51,7 +55,11 @@ namespace System.IO.Ports
             CtsLevel = InitialCtsLevel;
             LastCreated = this;
         }
-        public void Open() => IsOpen = true;
+        public void Open()
+        {
+            OpenedPhysicalPnp = PhysicalPnpAtOpen;
+            IsOpen = true;
+        }
         public void Close() => IsOpen = false;
         public void Dispose() => Close();
         public void Raise(SerialPinChange change) =>
@@ -72,12 +80,24 @@ namespace System.Management
 {
     public sealed class ManagementObject
     {
-        public object? this[string key] => null;
+        private readonly Dictionary<string, object?> _properties;
+        public ManagementObject(string name, string manufacturer, string pnp, string deviceId)
+        {
+            _properties = new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Name"] = name, ["Manufacturer"] = manufacturer,
+                ["PNPDeviceID"] = pnp, ["DeviceID"] = deviceId
+            };
+        }
+        public object? this[string key] =>
+            _properties.TryGetValue(key, out var value) ? value : null;
     }
     public sealed class ManagementObjectSearcher : IDisposable
     {
+        public static IReadOnlyList<ManagementObject> FakeDevices { get; set; } =
+            Array.Empty<ManagementObject>();
         public ManagementObjectSearcher(string query) { }
-        public IEnumerable<ManagementObject> Get() => Array.Empty<ManagementObject>();
+        public IEnumerable<ManagementObject> Get() => FakeDevices;
         public void Dispose() { }
     }
 }
