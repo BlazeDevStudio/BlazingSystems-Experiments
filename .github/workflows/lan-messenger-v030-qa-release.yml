@@ -89,10 +89,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compile failed' }
           $setup = (Resolve-Path dist/LAN-Messenger-Windows-Setup-v0.3.0-preview.1.exe).Path
           if ((Get-Item $setup).Length -lt 1000000) { throw 'Installer too small' }
-          & $setup /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-          if ($LASTEXITCODE -ne 0) { throw 'Installation smoke failed' }
-          if (!(Test-Path (Join-Path $env:LOCALAPPDATA 'Programs\LAN Messenger\lan_messenger.exe'))) { throw 'Installed EXE missing' }
-          Write-Host 'PASS: real Windows Setup EXE installed the tested binary under LocalAppData'
+          # Windows GUI-subsystem installers can return control to PowerShell
+          # before their installation child process completes. Start-Process
+          # -Wait observes the process tree; checking file existence before
+          # completion causes a false-negative smoke result.
+          $installerProcess = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
+          if ($installerProcess.ExitCode -ne 0) { throw "Installation smoke failed: exit $($installerProcess.ExitCode)" }
+          $installed = Join-Path $env:LOCALAPPDATA 'Programs\LAN Messenger\lan_messenger.exe'
+          if (!(Test-Path $installed)) {
+            Write-Host "Expected installed executable: $installed"
+            Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs') -ErrorAction SilentlyContinue | Select-Object Name,FullName
+            throw 'Installed EXE missing after installer process exit'
+          }
+          Write-Host "PASS: Setup EXE installed tested binary: $installed"
       - uses: actions/upload-artifact@v4
         with:
           name: LAN-Messenger-Windows-Setup-v0.3.0-preview.1
