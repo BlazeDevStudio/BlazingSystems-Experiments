@@ -200,7 +200,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 
 void applyRemoteConfig(const String &r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0) return;
+  // Reject absent/nonpositive, stale, and equal revisions before touching GPIO.
+  // This RAM-only comparison is NOT authenticated or reboot rollback protection.
+  if(rev<=0 || rev<=remoteRevision) return;
   controllerEnabled=jsonInt(r,"enabled",1)!=0;
   coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0;
