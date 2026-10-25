@@ -2,6 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lan_messenger/src/call_presentation_gate.dart';
 
 void main() {
+  test('foreground offer uses the inline Answer/Decline row', () {
+    expect(CallPresentationGate.externalIncoming(
+        appForeground: true, awaitingDecision: true), isFalse);
+  });
+  test('external incoming HUD exists only in background while ringing', () {
+    expect(CallPresentationGate.externalIncoming(
+        appForeground: false, awaitingDecision: true), isTrue);
+    expect(CallPresentationGate.externalIncoming(
+        appForeground: false, awaitingDecision: false), isFalse);
+  });
   test('never opens floating video during an unanswered offer', () {
     expect(CallPresentationGate.ready(awaitingDecision: true,
       connecting: true, validSession: true,

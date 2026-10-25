@@ -130,12 +130,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (action == 'open') _openWindow();
       return;
     }
-    if (id != intercom?.callId) return;
+    if (id != intercom?.callId) return false;
     if (action == 'answer' || action == 'decline') {
-      if (action == 'answer' && data['wasBackground'] == true) {
-        _autoPipCallId = id; // Capture while foreground, float once connected.
+      if (!_incomingDialogOpen || _incomingAnswer?.isCompleted != false) {
+        return false; // Stale or duplicate notification tap.
+      }
+      if (action == 'answer' && data['wasBackground'] == true &&
+          intercom?.video == true) {
+        // Audio-only calls must not accidentally launch a blank video PiP.
+        _autoPipCallId = id;
       }
       _resolveIncomingDialog(action == 'answer');
+      return true; // Native may now safely acknowledge/clear this Answer.
     } else if (!_incomingDialogOpen) {
       if (action == 'end') {
         unawaited(intercom?.hangUp() ?? Future<void>.value());
@@ -194,12 +200,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<bool> _showNativeIncoming(Peer peer, bool video) async {
     if (!Platform.isAndroid || !settings.headsUpNotifications) return false;
     try {
-      return await _notifications.invokeMethod<bool>('incoming', {
+      print('LAN_CALL_TRACE native_incoming_method_started');
+      final posted = await _notifications.invokeMethod<bool>('incoming', {
         'caller': peer.name,
         'callId': intercom?.callId ?? '',
         'video': video,
       }) ?? false;
-    } catch (_) { return false; }
+      print('LAN_CALL_TRACE native_incoming_result=$posted');
+      return posted;
+    } catch (error) {
+      print('LAN_CALL_TRACE native_incoming_method_error=$error');
+      return false;
+    }
   }
 
   Future<void> _dismissNativeIncoming() async {
@@ -262,6 +274,51 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           await wm.windowManager.isMinimized();
     } catch (_) { return false; }
   }
+
+  /// Reconcile the native Win32 toast when users minimize or restore while
+  /// the call is already ringing. An ordinary visible Messenger window must
+  /// never acquire a second floating Answer/Decline window.
+  Future<void> _syncDesktopCallSurface() async {
+    if (!Platform.isWindows || !mounted || _compactWindowsVideo) return;
+    final active = intercom;
+    final id = active?.callId;
+    final peer = _incomingPeer;
+    final background = await _isDesktopBackground();
+    if (!mounted || id == null || intercom?.callId != id) return;
+    if (_incomingDialogOpen && peer != null) {
+      final float = CallPresentationGate.externalIncoming(
+          appForeground: !background, awaitingDecision: true);
+      _incomingUsesExternalSurface = float;
+      _callMinimized = float;
+      if (float) {
+        _nativeIncomingAvailable =
+            await _showDesktopIncoming(peer, _incomingVideo);
+        if (!_incomingDialogOpen || intercom?.callId != id) {
+          await _dismissDesktopCall();
+          return;
+        }
+      } else {
+        _nativeIncomingAvailable = false;
+        await _dismissDesktopCall();
+      }
+      if (mounted) setState(() {});
+    } else if (active?.talkingTo != null && !active!.connecting) {
+      if (background) {
+        await _showOngoingCall(active.talkingTo!, id, active.video);
+      } else {
+        await _dismissDesktopCall();
+      }
+    }
+  }
+
+  @override
+  void onWindowMinimize() => unawaited(_syncDesktopCallSurface());
+
+  @override
+  void onWindowRestore() => unawaited(_syncDesktopCallSurface());
+
+  @override
+  void onWindowFocus() => unawaited(_syncDesktopCallSurface());
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -439,11 +496,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         '${sender.name} invited you to "$title" with $count members. '
         'Accept only trusted local devices.', allowText: 'Join group');
       mesh.onInvitation = (sender, room, withVideo) async {
-        if (inter.talkingTo != null) return false;
-        return _ask(title: withVideo ? 'Join group video?' : 'Join group voice?',
+        if (inter.talkingTo != null || !mounted) return false;
+        final approved = await _ask(
+          title: withVideo ? 'Join group video?' : 'Join group voice?',
           detail: '${sender.name} invited you to a call in ${room.name}. '
-            'Your microphone${withVideo ? " and camera" : ""} activate only after you join.',
-          allowText: 'Join call');
+              'Your microphone${withVideo ? " and camera" : ""} activate only after you join.',
+          allowText: 'Join call',
+        );
+        if (approved && mounted) {
+          // Opening the accepted room is necessary: the group video tiles and
+          // Leave/Mute controls live in its conversation, not the prior DM.
+          setState(() {
+            selectedGroup = room;
+            selected = null;
+            showSettings = false;
+            showReceived = false;
+          });
+        }
+        return approved;
       };
       n.onPeersChanged = () { if (mounted) setState(() {}); };
       n.onChat = (peer, message) {
@@ -477,6 +547,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           title: 'Receive a file?', detail: '${peer.name} wants to send:\n$name\n${_bytes(size)}',
           allowText: 'Receive');
       n.onSignal = (peer, data) => unawaited(() async {
+        if (data['type'] == 'offer') {
+          print('LAN_CALL_TRACE inbound_offer_flutter_dispatched');
+        }
         if (await groupMessages.receive(peer, data)) return;
         if (await mesh.handle(peer, data)) return;
         if (mesh.active && data['type'] == 'offer') {
@@ -516,6 +589,19 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   !inter.connecting) {
                 await _showOngoingCall(peer, sessionId, inter.video);
                 if (Platform.isWindows) await _showActiveTrayMenu(peer);
+                if (Platform.isAndroid && inter.video &&
+                    _autoPipCallId == sessionId && _inForeground &&
+                    mounted && inter.callId == sessionId) {
+                  // The native ongoing CallStyle state must exist BEFORE PiP
+                  // uses lastCallId. Otherwise a fast Answer can race setup.
+                  _autoPipCallId = null;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && inter.callId == sessionId &&
+                        !inter.connecting && _inForeground) {
+                      unawaited(_enterPipVideo());
+                    }
+                  });
+                }
               }
             } catch (e) {
               if (mounted) setState(() =>
@@ -524,14 +610,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               _pendingCallPresentation = false;
             }
           }());
-        }
-        if (Platform.isAndroid && _autoPipCallId != null &&
-            _autoPipCallId == inter.callId && !inter.connecting &&
-            inter.talkingTo != null && _inForeground) {
-          _autoPipCallId = null;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_enterPipVideo());
-          });
         }
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
@@ -623,8 +701,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           unawaited(alerts.ring(incomingVideo
               ? AlertKind.videoCall : AlertKind.call));
           final background = await _isDesktopBackground();
-          _incomingUsesExternalSurface = background;
-          _callMinimized = background;
+          _incomingUsesExternalSurface = CallPresentationGate.externalIncoming(
+              appForeground: !background, awaitingDecision: true);
+          _callMinimized = _incomingUsesExternalSurface;
           _nativeIncomingAvailable = background &&
               await _showDesktopIncoming(peer, incomingVideo);
           if (_trayInitialized) {
@@ -636,7 +715,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             ])));
           }
         } else {
-          _incomingUsesExternalSurface = !_inForeground;
+          _incomingUsesExternalSurface = CallPresentationGate.externalIncoming(
+              appForeground: _inForeground, awaitingDecision: true);
           _callMinimized = _incomingUsesExternalSurface;
           _nativeIncomingAvailable =
               await _showNativeIncoming(peer, incomingVideo);
@@ -644,6 +724,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
             unawaited(alerts.ring(incomingVideo
                 ? AlertKind.videoCall : AlertKind.call));
           }
+          // A notification Answer can resume this Activity before the WebRTC
+          // offer reaches Dart. Retry only after its completer is installed.
+          try {
+            await _notifications.invokeMethod<bool>(
+                'retryPendingAnswer', {'callId': id});
+          } catch (_) {}
         }
         bool accepted = false;
         try {
@@ -754,7 +840,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows) return;
     if ((intercom?.talkingTo != null || groupCall?.active == true ||
         _incomingDialogOpen || settings.minimizeToTray) && !_exitRequested) {
-      unawaited(wm.windowManager.hide());
+      unawaited(wm.windowManager.hide().then((_) => _syncDesktopCallSurface()));
     } else {
       unawaited(_exitWindows());
     }
@@ -772,6 +858,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await wm.windowManager.show();
       await wm.windowManager.restore();
       await wm.windowManager.focus();
+      await _syncDesktopCallSurface();
     }());
   }
 
@@ -1101,6 +1188,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
     final peer = node?.peers[selected?.id];
     if (peer == null || intercom == null) return;
+    if (intercom!.closing) {
+      _toast('Previous call is still ending. Try again shortly.');
+      return;
+    }
     _callMinimized = false;
     try { await intercom!.call(peer, withVideo: video); }
     catch (e) { _toast('Could not start call: $e'); }
@@ -1260,6 +1351,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     return Container(color: const Color(0xff142d4d),
       padding: const EdgeInsets.all(8),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (call.mediaError != null) Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(call.mediaError!,
+            style: const TextStyle(color: Colors.orangeAccent))),
         Row(children: [
           const Icon(Icons.groups, color: Colors.white),
           const SizedBox(width: 6),
@@ -1278,9 +1373,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (call.video)
           SizedBox(height: 180, child: GridView.count(
             crossAxisCount: 2, childAspectRatio: 1.5, children: [
-              const ColoredBox(color: Color(0xff213958),
-                child: Center(child: Text('You',
-                  style: TextStyle(color: Colors.white)))),
+              ColoredBox(color: const Color(0xff213958),
+                child: call.localRenderer != null
+                    ? RTCVideoView(call.localRenderer!,
+                        mirror: true,
+                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
+                    : const Center(child: Text('You • camera starting',
+                        style: TextStyle(color: Colors.white)))),
               for (final link in call.links.values)
                 ColoredBox(color: const Color(0xff213958),
                   child: link.remoteRenderer != null
@@ -1438,7 +1537,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           ? IconButton(tooltip: 'End call', onPressed: () => intercom?.hangUp(),
               icon: const Icon(Icons.call_end, color: Colors.red, size: 30))
           : Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true
+              IconButton(tooltip: 'Voice call', onPressed: node?.isOnline(p) != true || intercom?.closing == true
                   ? null : () => _startCall(),
                 icon: const Icon(Icons.call_rounded, color: Color(0xff1a8c62), size: 29)),
               PopupMenuButton<int>(tooltip: 'Conversation theme', icon: const Icon(Icons.palette_outlined, size: 22),
@@ -1446,7 +1545,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     child: Row(children: [CircleAvatar(radius: 9, backgroundColor: Color(v)),
                       const SizedBox(width: 8), const Text('Thread theme')]))).toList(),
                 onSelected: (v) { settings.threadAccents[p.id] = v; unawaited(_saveSettings()); }),
-              IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true
+              IconButton(tooltip: 'Video call', onPressed: node?.isOnline(p) != true || intercom?.closing == true
                   ? null : () => _startCall(video: true),
                 icon: const Icon(Icons.videocam_rounded, color: Color(0xff1a8c62), size: 29)),
             ]),

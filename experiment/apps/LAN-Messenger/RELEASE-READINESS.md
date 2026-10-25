@@ -1,11 +1,11 @@
-# LAN Messenger v0.2.5 — release acceptance and handover
+# LAN Messenger v0.3.0 — release acceptance and handover
 
 Target permanent repository: BlazingSystems/BlazingSystems-Projects.
 
 **Status: development preview. Do not yet transfer to Projects or mark production.**
 Preserve build workflows, attribution, acceptance evidence, and app history.
 
-## Features in the new video/share branch
+## Current implemented features (experimental)
 
 - Active video calls detect cameras. Switch using the button when multiple
   are available, or double tap the draggable local preview.
@@ -24,8 +24,9 @@ Preserve build workflows, attribution, acceptance evidence, and app history.
 
 ## Release acceptance checklist
 
-- [ ] Android and Windows CI pass format, analyze, unit tests, native release builds,
-      signature/integrity checks and an actual emulator install/launch.
+- [ ] Final v0.3.0 commit: Android and Windows CI pass analysis, unit tests, native release builds, APK integrity checks, and emulator install/launch including stale Answer resume regression.
+- [ ] Windows ↔ Android: foreground Answer/Decline, minimized/tray Windows draggable native Answer toast, Android background system overlay/CallStyle Answer; no process termination on answer.
+- [ ] 3–4 physical devices: group voice/video mesh, camera capture sharing, local/remote video tiles, group chat, invites, mute, leave, rejoin, and power/network interruptions.
 - [ ] Two Android phones: front/back camera switching and device rotation, including
       orientation changes from one remote peer during video call.
 - [ ] Windows with multiple webcams: switching and safe handling of removal.

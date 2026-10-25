@@ -11,6 +11,7 @@ import android.app.RemoteAction
 import android.graphics.drawable.Icon
 import android.content.res.Configuration
 import android.util.Rational
+import android.util.Log
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,7 +34,10 @@ class CallActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        if (action !in listOf("answer", "decline", "end", "mute", "open")) return
+        // An old notification action must not cancel the NEW call's shared
+        // notification ID 7024. Validate against the currently live session
+        // before changing notification state or forwarding anything to Dart.
+        if (!MainActivity.isCurrentCallAction(action, callId)) return
         if (action == "answer" || action == "decline" || action == "end")
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(7024)
         MainActivity.deliverCallAction(context, action, callId)
@@ -43,7 +47,25 @@ class CallActionReceiver : BroadcastReceiver() {
 class MainActivity : FlutterActivity() {
     companion object {
         @Volatile private var active: MainActivity? = null
+
+        /**
+         * Reject stale taps from earlier notification instances. Android
+         * reuses ID 7024 for a newer call, so canceling before this test can
+         * silently remove the current user's Answer and Decline buttons.
+         */
+        fun isCurrentCallAction(action: String, callId: String): Boolean {
+            val running = active ?: return false
+            if (callId.isEmpty() || callId != running.lastCallId) return false
+            return when (action) {
+                "answer", "decline" -> running.lastIncoming
+                "end", "mute" -> !running.lastIncoming
+                "open" -> true
+                else -> false
+            }
+        }
+
         fun deliverCallAction(context: Context, action: String, callId: String) {
+            if (!isCurrentCallAction(action, callId)) return
             val running = active
             if (running != null) {
                 running.runOnUiThread {
@@ -57,7 +79,14 @@ class MainActivity : FlutterActivity() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
                                 Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                         }
-                        context.startActivity(open)
+                        try {
+                            context.startActivity(open)
+                        } catch (_: Exception) {
+                            // Android may forbid background launches. Keep the
+                            // CallStyle notification instead of crashing.
+                            running.pendingAnswer = null
+                            running.updateOverlay()
+                        }
                     } else {
                         running.callBridge?.invokeMethod("callAction",
                             mapOf("action" to action, "callId" to callId))
@@ -70,7 +99,12 @@ class MainActivity : FlutterActivity() {
                     putExtra("action", action)
                     putExtra("callId", callId)
                 }
-                context.startActivity(intent)
+                try {
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    // A broadcast from a terminated process cannot legitimately
+                    // force-open an Activity on modern Android; never crash.
+                }
             }
         }
     }
@@ -85,6 +119,7 @@ class MainActivity : FlutterActivity() {
     private var lastMuted = false
     private var lastIncoming = false
     private var pendingAnswer: String? = null
+    private var answerDispatching = false
 
     private fun overlay(): AndroidCallOverlay =
         incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
@@ -115,15 +150,7 @@ class MainActivity : FlutterActivity() {
         activityForeground = true
         incomingOverlay?.dismiss()
         if (lastIncoming) notifications.cancel(7024)
-        val id = pendingAnswer
-        if (id != null) {
-            pendingAnswer = null
-            window?.decorView?.post {
-                callBridge?.invokeMethod("callAction",
-                    mapOf("action" to "answer", "callId" to id,
-                        "wasBackground" to true))
-            }
-        }
+        window?.decorView?.post { deliverPendingAnswer() }
     }
 
     override fun onPause() {
@@ -158,7 +185,41 @@ class MainActivity : FlutterActivity() {
     private fun consumeAction(intent: Intent?) {
         val action = intent?.getStringExtra("action") ?: return
         val callId = intent.getStringExtra("callId") ?: return
-        callBridge?.invokeMethod("callAction", mapOf("action" to action, "callId" to callId))
+        // Activity restarts/rotation must never replay an old Answer.
+        intent.removeExtra("action")
+        intent.removeExtra("callId")
+        if (action == "answer") {
+            pendingAnswer = callId
+            window?.decorView?.post { deliverPendingAnswer() }
+        } else {
+            callBridge?.invokeMethod("callAction",
+                mapOf("action" to action, "callId" to callId))
+        }
+    }
+
+    private fun deliverPendingAnswer() {
+        // Do not consume an Answer until Flutter acknowledges that it has a
+        // live matching incoming offer. Activity resume can precede Flutter
+        // widget initialization or LAN signal delivery on slow Android phones.
+        if (!activityForeground || answerDispatching) return
+        val id = pendingAnswer ?: return
+        if (!lastIncoming || id != lastCallId) return
+        val bridge = callBridge ?: return
+        answerDispatching = true
+        bridge.invokeMethod("callAction",
+            mapOf("action" to "answer", "callId" to id,
+                "wasBackground" to true), object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    answerDispatching = false
+                    if (result == true && pendingAnswer == id) pendingAnswer = null
+                }
+                override fun error(code: String, message: String?, details: Any?) {
+                    answerDispatching = false
+                }
+                override fun notImplemented() {
+                    answerDispatching = false
+                }
+            })
     }
 
     private fun requestNotificationPermission() {
@@ -217,6 +278,18 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun callAction(action: String, callId: String): PendingIntent {
+        if (action == "answer") {
+            // Direct user-launched Activity PendingIntent: no Android 12+
+            // notification broadcast -> background Activity trampoline.
+            val open = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("action", action)
+                putExtra("callId", callId)
+            }
+            return PendingIntent.getActivity(this, (action + callId).hashCode(), open,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
         val intent = Intent(this, CallActionReceiver::class.java).apply {
             putExtra("action", action)
             putExtra("callId", callId)
@@ -226,6 +299,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showIncomingCall(caller: String, callId: String, video: Boolean): Boolean {
+        Log.i("LANCallTrace", "showIncoming invoked foreground=$activityForeground canNotify=${canNotify()}")
         if (callId.isEmpty() || caller.isBlank()) return false
         lastCaller = caller; lastCallId = callId
         lastVideo = video; lastMuted = false; lastIncoming = true
@@ -260,9 +334,40 @@ class MainActivity : FlutterActivity() {
             b.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
             b.addAction(android.R.drawable.ic_menu_call, "Answer", answer)
         }
-        notifications.notify(7024, b.build())
+        var posted = false
+        try {
+            notifications.notify(7024, b.build())
+            Log.i("LANCallTrace", "incoming CallStyle notification 7024 posted")
+            posted = true
+        } catch (error: Exception) {
+            // Android 14+ can reject CallStyle notifications that are not
+            // themselves the foreground-service notification, even though
+            // LAN Messenger's separate FlutterBackground service is active.
+            // Preserve OS-level Answer/Decline actions and user choice instead
+            // of losing the incoming call entirely. Do not launch an Activity.
+            Log.w("LANCallTrace", "CallStyle unavailable; posting actionable heads-up fallback: ${error.message}")
+            try {
+                val fallback = builder(event)
+                    .setSmallIcon(android.R.drawable.ic_menu_call)
+                    .setContentTitle(caller)
+                    .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
+                    .setContentIntent(openApp())
+                    .setCategory(Notification.CATEGORY_CALL)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(false)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
+                    .addAction(android.R.drawable.ic_menu_call, "Answer", answer)
+                notifications.notify(7024, fallback.build())
+                Log.i("LANCallTrace", "fallback Answer/Decline notification 7024 posted")
+                posted = true
+            } catch (fallbackError: Exception) {
+                Log.e("LANCallTrace", "incoming notification fallback failed: ${fallbackError.message}")
+            }
+        }
         updateOverlay()
-        return true
+        return posted
     }
 
     private fun showOngoingCall(caller: String, callId: String,
@@ -375,10 +480,18 @@ class MainActivity : FlutterActivity() {
                         call.argument<String>("caller") ?: "LAN Messenger",
                         call.argument<String>("callId") ?: "",
                         call.argument<Boolean>("video") ?: false))
+                    "retryPendingAnswer" -> {
+                        // Dart calls this only after its incoming decision
+                        // completer is installed; this closes the resume race.
+                        val id = call.argument<String>("callId")
+                        if (id != null && id == lastCallId) deliverPendingAnswer()
+                        result.success(pendingAnswer == id)
+                    }
                     "dismissIncoming" -> {
                         // Don't dismiss the accepted call's ongoing controls.
                         if (lastIncoming) {
                             lastCallId = null; lastCaller = null
+                            pendingAnswer = null
                             incomingOverlay?.dismiss()
                             notifications.cancel(7024)
                         }
@@ -387,7 +500,8 @@ class MainActivity : FlutterActivity() {
                     "dismissCall" -> {
                         notifications.cancel(7024)
                         lastCallId = null; lastCaller = null
-                        lastIncoming = false; incomingOverlay?.dismiss()
+                        lastIncoming = false; pendingAnswer = null
+                        incomingOverlay?.dismiss()
                         result.success(null)
                     }
                     "foreground" -> {

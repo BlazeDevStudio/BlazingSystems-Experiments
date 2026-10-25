@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'intercom.dart';
 import 'groups.dart';
 import 'node.dart';
@@ -16,22 +17,93 @@ class GroupCallMesh {
   bool video = false;
   final Map<String, Intercom> links = {};
   final Set<String> _announcedTo = {};
+  // Share one OS capture across every pair in a 3–4 person mesh. Reopening the
+  // same camera for each peer fails on devices with exclusive camera access.
+  Future<MediaStream>? _captureFuture;
+  MediaStream? _capture;
+  RTCVideoRenderer? localRenderer;
+  bool _leaving = false;
+  bool _muted = false;
+  String? mediaError;
   Future<bool> Function(Peer, GroupRoom, bool)? onInvitation;
   void Function()? onChanged;
 
   bool get active => activeRoom != null && sessionId != null;
+  // A pending WebRTC offer is not yet a joined participant.
   int get participants => 1 + links.values
-      .where((link) => link.talkingTo != null).length;
+      .where((link) => link.talkingTo != null && !link.connecting).length;
   static bool canCall(GroupRoom room) => room.members.length >= 3 &&
       room.members.length <= 4;
 
+  Future<MediaStream> _sharedMedia() {
+    if (!active || _leaving) {
+      return Future<MediaStream>.error(StateError('Group session ended'));
+    }
+    return _captureFuture ??= _acquireMedia();
+  }
+
+  Future<MediaStream> _acquireMedia() async {
+    MediaStream? captured;
+    RTCVideoRenderer? preview;
+    try {
+      captured = await navigator.mediaDevices.getUserMedia({
+        'audio': {
+          'echoCancellation': true,
+          'noiseSuppression': true,
+          'autoGainControl': true,
+        },
+        'video': video
+            ? {
+                'facingMode': 'user',
+                'width': {'ideal': 640},
+                'height': {'ideal': 480},
+                'frameRate': {'ideal': 15},
+              }
+            : false,
+      });
+      if (!active || _leaving) throw StateError('Group ended during capture');
+      if (_muted) {
+        for (final track in captured.getAudioTracks()) {
+          track.enabled = false;
+        }
+      }
+      if (video) {
+        preview = RTCVideoRenderer();
+        await preview.initialize();
+        if (!active || _leaving) throw StateError('Group ended during preview');
+        preview.srcObject = captured;
+      }
+      _capture = captured;
+      localRenderer = preview;
+      mediaError = null;
+      onChanged?.call();
+      return captured;
+    } catch (e) {
+      if (preview != null) {
+        try { preview.srcObject = null; await preview.dispose(); } catch (_) {}
+      }
+      if (captured != null) {
+        for (final track in captured.getTracks()) {
+          try { await track.stop(); } catch (_) {}
+        }
+        try { await captured.dispose(); } catch (_) {}
+      }
+      _captureFuture = null; // Allow retry after camera-permission failures.
+      mediaError = 'Microphone/camera unavailable: $e';
+      onChanged?.call();
+      rethrow;
+    }
+  }
+
   Future<void> start(GroupRoom room, {required bool withVideo}) async {
-    if (active || !canCall(room) ||
+    if (active || _leaving || !canCall(room) ||
         messaging.rooms[room.id] != room ||
         !room.includes(node.identity.id)) {
       throw StateError('Group calls support one active room with 3–4 members');
     }
     _announcedTo.clear();
+    _muted = false;
+    mediaError = null;
     activeRoom = room;
     sessionId = randomId();
     video = withVideo;
@@ -56,7 +128,7 @@ class GroupCallMesh {
 
   Intercom _link(Peer peer) {
     return links.putIfAbsent(peer.id, () {
-      final call = Intercom(node);
+      final call = Intercom(node, sharedMediaProvider: _sharedMedia);
       call.onIncoming = (caller, requestedVideo) async =>
           active && activeRoom?.includes(caller.id) == true &&
           caller.id == peer.id && requestedVideo == video;
@@ -74,13 +146,15 @@ class GroupCallMesh {
     if (type == 'group-start') {
       if (roomId is! String || id is! String || id.isEmpty || id.length > 64) return true;
       final room = messaging.rooms[roomId];
-      if (active || room == null || !room.includes(sender.id) ||
+      if (active || _leaving || room == null || !room.includes(sender.id) ||
           !canCall(room)) return true;
       final requestedVideo = data['video'] == true;
       final accepted = await (onInvitation?.call(sender, room, requestedVideo) ??
           Future<bool>.value(false));
       if (!accepted || active) return true;
       _announcedTo.clear();
+      _muted = false;
+      mediaError = null;
       activeRoom = room;
       sessionId = id;
       video = requestedVideo;
@@ -91,7 +165,7 @@ class GroupCallMesh {
     if (type == 'group-join') {
       if (!active || id != sessionId || roomId != activeRoom?.id ||
           activeRoom?.includes(sender.id) != true ||
-          sender.id == node.identity.id) return true;
+          sender.id == node.identity.id || data['video'] != video) return true;
       // Confirm our presence once to each new joiner. This prevents
       // deadlock if an earlier join broadcast arrived before they accepted.
       if (_announcedTo.add(sender.id)) {
@@ -112,7 +186,9 @@ class GroupCallMesh {
       return true;
     }
     if (type == 'group-leave') {
-      if (active && id == sessionId && roomId == activeRoom?.id) {
+      if (active && id == sessionId && roomId == activeRoom?.id &&
+          activeRoom?.includes(sender.id) == true) {
+        _announcedTo.remove(sender.id);
         final peer = links.remove(sender.id);
         if (peer != null) await peer.hangUp(notify: false);
         onChanged?.call();
@@ -138,20 +214,61 @@ class GroupCallMesh {
     return false;
   }
 
+  bool get muted => _muted;
+
   Future<void> setMuted(bool muted) async {
+    _muted = muted;
+    final stream = _capture;
+    if (stream != null) {
+      for (final track in stream.getAudioTracks()) {
+        track.enabled = !muted;
+      }
+    }
     await Future.wait(links.values.map((link) => link.setMuted(muted)));
     onChanged?.call();
   }
-  bool get muted => links.isNotEmpty &&
-      links.values.every((link) => link.muted);
+
   Future<void> leave() async {
-    if (!active) return;
-    await _broadcast('group-leave');
-    final old = links.values.toList();
-    links.clear();
-    _announcedTo.clear();
-    activeRoom = null; sessionId = null; video = false;
-    onChanged?.call();
-    await Future.wait(old.map((link) => link.hangUp(notify: false)));
+    if (!active || _leaving) return;
+    _leaving = true;
+    try {
+      await _broadcast('group-leave');
+      final old = links.values.toList();
+      links.clear();
+      _announcedTo.clear();
+      activeRoom = null;
+      sessionId = null;
+      video = false;
+      _muted = false;
+      onChanged?.call();
+      // Each link owns only its PeerConnection and renderers, not the capture.
+      await Future.wait(old.map((link) async {
+        try { await link.hangUp(notify: false); } catch (_) {}
+      }));
+    } finally {
+      // A capture can still be resolving while the room is shutting down.
+      final pending = _captureFuture;
+      if (pending != null) {
+        try { await pending; } catch (_) {}
+      }
+      _captureFuture = null;
+      final preview = localRenderer;
+      localRenderer = null;
+      if (preview != null) {
+        try { preview.srcObject = null; await preview.dispose(); } catch (_) {}
+      }
+      final stream = _capture;
+      _capture = null;
+      if (stream != null) {
+        for (final track in stream.getTracks()) {
+          try { await track.stop(); } catch (_) {}
+          try { await track.dispose(); } catch (_) {}
+        }
+        try { await stream.dispose(); } catch (_) {}
+      }
+      _leaving = false;
+      mediaError = null;
+      onChanged?.call();
+    }
   }
 }

@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'experiment/apps/LAN-Messenger/**'
+      - '.github/scripts/lan-messenger/**'
       - '.github/workflows/lan-messenger.yml'
   workflow_dispatch:
 
@@ -86,6 +87,45 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: bash "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_install_smoke.sh"
+  android-pair-lan:
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Optimized
+          path: android-apk
+      - name: Install cloud emulator runtime libraries and enable KVM
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0
+          if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Two Android emulators — background incoming Answer and real WebRTC transport
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          # Voice tests must not disable virtual audio for the caller/callee.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim
+          # Use THIS workflow's freshly built APK, not an older cached build:
+          # source the LAN discovery stage and then exercise OS Answer, peer
+          # transport readiness and hangup on two real emulator processes.
+          script: bash "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/run_dual_android_voice_e2e.sh"
+      - name: Upload dual-emulator network evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Peer-LAN-Evidence
+          path: android-lan-evidence/
+          if-no-files-found: ignore
+          retention-days: 14
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 35
@@ -105,6 +145,9 @@ jobs:
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build windows --release --tree-shake-icons
+      - name: Cloud Windows runtime, minimize, restore and close-to-tray smoke
+        shell: pwsh
+        run: ./tool/windows_runtime_smoke.ps1
       - name: Include application-local Microsoft VC++ runtime dependencies
         shell: pwsh
         run: |

@@ -4,6 +4,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter/services.dart';
 import 'identity.dart';
 import 'node.dart';
+import 'call_transport_gate.dart';
 import 'windows_remote_input.dart';
 import 'protocol.dart';
 
@@ -14,6 +15,10 @@ class Intercom {
   String? callId;
   bool video = false;
   bool connecting = false;
+  /// True while the previous call's native WebRTC tracks and peer connection
+  /// are being torn down. A second dial during that interval can be rejected
+  /// by either device before its incoming notification is posted.
+  bool get closing => _closing;
   bool muted = false;
   bool sharingScreen = false;
   bool peerSharingScreen = false;
@@ -259,7 +264,11 @@ class Intercom {
   Timer? _answerTimeout;
   void Function()? onChanged;
   Future<bool> Function(Peer, bool video)? onIncoming;
-  Intercom(this.node);
+  /// Group calls may reuse one audio/video capture across several RTCPeerConnections.
+  /// A link does not own streams obtained from this provider: the room owns
+  /// their lifetime, so one departing peer cannot stop everyone's camera.
+  final Future<MediaStream> Function()? sharedMediaProvider;
+  Intercom(this.node, {this.sharedMediaProvider});
 
   Future<void> _log(String message) async {
     try {
@@ -272,22 +281,28 @@ class Intercom {
 
   Future<void> _prepare(Peer peer, String id) async {
     await _log('start media platform=${Platform.operatingSystem} video=$video');
-    final stream = await navigator.mediaDevices.getUserMedia({
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
-      'video': video ? {
-        'facingMode': 'user',
-        'width': {'ideal': 640},
-        'height': {'ideal': 480},
-        'frameRate': {'ideal': 15},
-      } : false,
-    });
+    final stream = sharedMediaProvider != null
+        ? await sharedMediaProvider!()
+        : await navigator.mediaDevices.getUserMedia({
+            'audio': {
+              'echoCancellation': true,
+              'noiseSuppression': true,
+              'autoGainControl': true,
+            },
+            'video': video
+                ? {
+                    'facingMode': 'user',
+                    'width': {'ideal': 640},
+                    'height': {'ideal': 480},
+                    'frameRate': {'ideal': 15},
+                  }
+                : false,
+          });
     if (callId != id || _closing) {
-      for (final track in stream.getTracks()) { track.stop(); }
-      await stream.dispose();
+      if (sharedMediaProvider == null) {
+        for (final track in stream.getTracks()) { await track.stop(); }
+        await stream.dispose();
+      }
       return;
     }
     _localStream = stream;
@@ -334,11 +349,19 @@ class Intercom {
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
         unawaited(_log('unexpected connection state $state'));
         unawaited(hangUp(notify: false));
-      } else if (state ==
-          RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+      } else if (CallTransportGate.mediaReady(state)) {
+        // An SDP answer is not proof of a usable media path. Only the actual
+        // WebRTC peer transport reaching Connected clears the call's
+        // negotiating state and unlocks connected-call UI/PiP.
         connecting = false;
         _answerTimeout?.cancel();
         _answerTimeout = null;
+        // Distinct, privacy-safe native log marker for both endpoints.
+        // E2E acceptance checks this on the caller AND receiver: a ringing
+        // notification or one endpoint's live UI does not prove two-way
+        // WebRTC transport establishment.
+        print('LAN_CALL_TRACE webrtc_transport_connected');
+        unawaited(_log('webrtc_transport_connected callId=$id'));
       }
       onChanged?.call();
     };
@@ -418,7 +441,14 @@ class Intercom {
         });
         await pc.setLocalDescription(answer);
         await node.signal(peer, {'type': 'answer', 'callId': id, 'sdp': answer.sdp});
-        connecting = false;
+        // SDP exchange completed, but ICE/DTLS may still be disconnected.
+        // Keep "Connecting" until the peer connection callback fires.
+        if (callId == id && connecting && !_closing) {
+          _answerTimeout?.cancel();
+          _answerTimeout = Timer(const Duration(seconds: 45), () {
+            if (callId == id && connecting) unawaited(hangUp());
+          });
+        }
         onChanged?.call();
       } catch (e) {
         await _log('incoming call error: $e');
@@ -529,11 +559,12 @@ class Intercom {
       try {
         await _connection?.setRemoteDescription(
             RTCSessionDescription(data['sdp'] as String, 'answer'));
+        if (callId != id || _closing) return;
         _remoteDescriptionReady = true;
         await _flushIce(id);
-        connecting = false;
-        _answerTimeout?.cancel();
-        _answerTimeout = null;
+        if (callId != id || _closing) return;
+        // The remote SDP is now accepted, not the media connection.
+        // The 45-second outgoing timeout remains armed until WebRTC Connected.
         onChanged?.call();
       } catch (e) {
         await _log('answer error: $e');
@@ -608,7 +639,7 @@ class Intercom {
     }
     // Stop live capture synchronously before any native peer disposal await.
     // Otherwise a slow Windows WebRTC close() can hold the microphone open.
-    if (stream != null) {
+    if (stream != null && sharedMediaProvider == null) {
       for (final track in stream.getTracks()) {
         try {
           track.enabled = false;
@@ -648,7 +679,7 @@ class Intercom {
       try { await const MethodChannel('lan_messenger/projection')
           .invokeMethod<void>('stop'); } catch (_) {}
     }
-    if (stream != null) {
+    if (stream != null && sharedMediaProvider == null) {
       for (final track in stream.getTracks()) {
         try { await track.dispose().timeout(const Duration(seconds: 3)); }
         catch (e) { await _log('track dispose error: $e'); }
@@ -661,5 +692,9 @@ class Intercom {
     try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
     catch (e) { await _log('remote renderer dispose error: $e'); }
     _closing = false;
+    // The UI previously re-enabled Call as soon as talkingTo became null,
+    // despite pending asynchronous native WebRTC disposal. Repaint only after
+    // the previous session is actually safe to redial.
+    onChanged?.call();
   }
 }
