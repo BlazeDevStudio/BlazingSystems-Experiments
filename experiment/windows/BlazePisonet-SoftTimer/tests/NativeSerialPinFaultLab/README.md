@@ -1,3 +1,7 @@
+## 2026-10-25 UTC03 — test-only substituted-adapter coin callback denial (pending exact-head CI)
+
+This source-linked fake-OS test extends the previous 28 cases with one negative: after ExactDevice discovery identifies pinned USB adapter A on COM9 but fake `SerialPort.Open()` maps COM9 to adapter B, synthetic CTS transitions must emit **zero** `CoinPulseAccepted` callbacks. The test observes the existing app event only, not a paid ledger. A source rejection would satisfy both existing `exact_open_time_adapter_swap_must_refuse` and new event-admission test. **Expected test-first RED; not yet CI-verified at this commit.** Stable adapter control remains. Fake WMI does not expose a reliable opened-handle identity; a WMI-only reread cannot prove the physical adapter. MASTER/VERIFY review required before any source fix. No firmware, actual coin, release or merge.
+
 # PHX-L-APPS #164 — proposed read-error guard (stacked test + app-only draft)
 
 **THIS BRANCH IS NOT MERGED OR RELEASED.** Builds the previously source-linked native C# fake-OS harness from test-only PR #176 into a narrowly scoped source correction. Previous owner-closed PR #175 stays unmerged and is not revived.

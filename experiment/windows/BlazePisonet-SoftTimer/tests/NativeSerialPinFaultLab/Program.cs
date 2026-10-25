@@ -280,14 +280,26 @@ var openConfig = new AppConfig {
 };
 SerialPort.InitialCtsLevel = false;
 SerialPort.PhysicalPnpAtOpen = openReplacementPnp;
+int substitutedAdapterPulseAccepted = 0;
 bool connectedToSubstitutedAdapter;
 using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => substitutedAdapterPulseAccepted++;
     connectedToSubstitutedAdapter = sut.Connect(openConfig);
     var opened = SerialPort.LastCreated ?? throw new Exception("Missing swapped COM9");
     if (opened.OpenedPhysicalPnp != openReplacementPnp)
         throw new Exception("Fake COM mapping did not change at Open");
     if (connectedToSubstitutedAdapter && sut.ConnectedDevice?.PnpDeviceId != openPinnedPnp)
         throw new Exception("Unexpected descriptor: stale WMI selection was not retained");
+    // TEST ONLY: a substituted physical adapter must never be allowed to
+    // manufacture a coin callback merely because COM9 opened successfully.
+    // This is synthetic CTS, not a real coin or paid ledger operation.
+    if (connectedToSubstitutedAdapter) {
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(50);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
 }
 SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
 bool connectedToStableAdapter;
@@ -306,6 +318,7 @@ var openTimeCases = new (string Name, bool Resolved, bool ExpectedResolved)[] {
 };
 
 var cases = new (string Name, int Actual, int Expected)[] {
+    ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
     ("normal_50ms_cts", normal.Accepted, 1),
     ("active_low_read_error_no_coin", falseCoin.Accepted, 0),
     ("active_low_selected_pin_read_error_no_coin", selectedPinFault.Accepted, 0),
@@ -350,5 +363,5 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 28/28 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 29/29 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
 return 0;

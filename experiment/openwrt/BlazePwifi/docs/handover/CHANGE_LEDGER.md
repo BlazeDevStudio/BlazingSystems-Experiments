@@ -1,3 +1,7 @@
+## 2026-10-25 — PHX-L-APPS UTC03 test-only source-linked negative committed, CI pending
+
+- Added one native C# fake-OS test on DRAFT PR #197: `exact_open_time_swapped_adapter_must_not_emit_coin_pulse` expects 0 callbacks from substituted COM9 physical adapter, alongside existing `exact_open_time_adapter_swap_must_refuse`. Harness count 28 -> 29. No production source change, no paid credit, no hardware; new exact-head Windows CI conclusion pending. MASTER/VERIFY handle-bound identity review required; WMI recheck is not proof. Prior #40148317381 27/28 intended RED remains historical evidence.
+
 ## 2026-10-25 — PHX-L-APPS UTC03 test-only IN PROGRESS
 
 - Planned: add one native fake-OS negative regression requiring zero `CoinPulseAccepted` after ExactDevice COM adapter substitution. Historical 27/28 RED preserved; no production source fix; MASTER/VERIFY handle-bound identity review pending. Evidence/run outcome pending.
