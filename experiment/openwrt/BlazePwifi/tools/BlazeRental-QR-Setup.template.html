@@ -42,10 +42,14 @@ function generateQr(){
   };
   if(certPin)d["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_cert_sha256"]=certPin;
   const security=v('security'),ssid=v('ssid'),wifiPass=v('wifiPass');
+  if((security==='WPA'||security==='NONE')&&!ssid){document.getElementById('state').textContent='Wi-Fi SSID is required when Wi-Fi security is selected.';return}
+  if(security==='WPA'&&(wifiPass.length<8||wifiPass.length>63)){document.getElementById('state').textContent='WPA provisioning requires a Wi-Fi password of 8 to 63 characters.';return}
   if(security&&ssid){
-    d["android.app.extra.PROVISIONING_WIFI_SSID"]=ssid;
+    if(new TextEncoder().encode(ssid).length>32){document.getElementById('state').textContent='Wi-Fi SSID must be 1 to 32 bytes.';return}
+    const quoted=(ssid.length>=2&&ssid.startsWith('"')&&ssid.endsWith('"'))?ssid:'"'+ssid.replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';
+    d["android.app.extra.PROVISIONING_WIFI_SSID"]=quoted;
     d["android.app.extra.PROVISIONING_WIFI_SECURITY_TYPE"]=security;
-    if(security!=='NONE'&&wifiPass)d["android.app.extra.PROVISIONING_WIFI_PASSWORD"]=wifiPass;
+    if(security!=='NONE')d["android.app.extra.PROVISIONING_WIFI_PASSWORD"]=wifiPass;
   }
   const s=JSON.stringify(d),qr=qrcode(0,'M');qr.addData(s);qr.make();
   document.getElementById('qr').innerHTML=qr.createSvgTag({cellSize:5,margin:20,scalable:true});
