@@ -1,0 +1,22 @@
+{
+  "name": "jsqr",
+  "version": "1.4.0",
+  "purpose": "Test-only independent QR image decoder; never shipped with product pages.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/cozmo/jsQR",
+  "tarball": "https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz",
+  "tarball_sha256": "b5299b37917a1fe7a8cab9dd5cc6b8accf82663add80abe5bf7761a921cc6602",
+  "tarball_integrity": "sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==",
+  "files": {
+    "jsQR.js": {
+      "source_path": "package/dist/jsQR.js",
+      "bytes": 256885,
+      "sha256": "bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859"
+    },
+    "LICENSE": {
+      "source_path": "package/LICENSE",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    }
+  }
+}

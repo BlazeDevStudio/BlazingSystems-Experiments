@@ -20,6 +20,7 @@ body{font:15px system-ui;margin:0;background:#07111f;color:#eef6ff}.wrap{max-wid
 </div>
 <script>__QRCODE_JS__</script>
 <script>
+qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
 function v(id){return document.getElementById(id).value.trim()}
 function generateQr(){
   document.getElementById('qr').innerHTML='';
