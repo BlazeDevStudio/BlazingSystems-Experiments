@@ -47,7 +47,7 @@ void digitalWrite(int pin,int value){trace.push_back({'W',pin,value});levels[pin
 void pinMode(int pin,int mode){trace.push_back({'M',pin,mode});}
 int constrain(int n,int lo,int hi){return n<lo?lo:(n>hi?hi:n);}
 int jsonInt(const String& body,const char* key,int fallback){
- std::regex rx(String("\\\"")+key+"\\\"\\s*:\\s*(-?[0-9]+)");
+ std::regex rx(String("\\"")+key+"\\"\\s*:\\s*(-?[0-9]+)");
  std::smatch m;
  return std::regex_search(body,m,rx)?std::stoi(m[1].str()):fallback;
 }
@@ -116,12 +116,12 @@ int main(){
   runRelayPin==5&&runLedPin==14&&remoteRevision==1&&
   !controllerEnabled&&!coinEnabled&&!insertMode);
  reset();
- applyRemoteConfig("{\\"config_revision\\":2,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_active_high\\":1,\\"led_active_high\\":1,\\"coin_pin\\":5,\\"relay_pin\\":5,\\"led_pin\\":14}");
+ applyRemoteConfig("{\"config_revision\":2,\"enabled\":1,\"coin_enabled\":1,\"relay_active_high\":1,\"led_active_high\":1,\"coin_pin\":5,\"relay_pin\":5,\"led_pin\":14}");
  check("coin_relay_alias_denied_before_pin_mode",
   first('M')<0&&levels[5]==LOW&&remoteRevision==1&&
   !controllerEnabled&&!coinEnabled&&!insertMode);
  reset();
- applyRemoteConfig("{\\"config_revision\\":2,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_active_high\\":1,\\"led_active_high\\":1,\\"coin_pin\\":4,\\"relay_pin\\":14,\\"led_pin\\":14}");
+ applyRemoteConfig("{\"config_revision\":2,\"enabled\":1,\"coin_enabled\":1,\"relay_active_high\":1,\"led_active_high\":1,\"coin_pin\":4,\"relay_pin\":14,\"led_pin\":14}");
  check("relay_led_alias_denied_before_pin_mode",
   first('M')<0&&levels[5]==LOW&&levels[14]==LOW&&remoteRevision==1&&
   !controllerEnabled&&!coinEnabled&&!insertMode);
