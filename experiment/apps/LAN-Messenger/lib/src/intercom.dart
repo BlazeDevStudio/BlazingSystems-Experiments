@@ -356,6 +356,11 @@ class Intercom {
         connecting = false;
         _answerTimeout?.cancel();
         _answerTimeout = null;
+        // Distinct, privacy-safe native log marker for both endpoints.
+        // E2E acceptance checks this on the caller AND receiver: a ringing
+        // notification or one endpoint's live UI does not prove two-way
+        // WebRTC transport establishment.
+        print('LAN_CALL_TRACE webrtc_transport_connected');
         unawaited(_log('webrtc_transport_connected callId=$id'));
       }
       onChanged?.call();
