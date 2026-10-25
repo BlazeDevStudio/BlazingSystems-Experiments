@@ -1,3 +1,10 @@
+## 2026-10-25 UTC20 — PHX-L-VERIFY held-active input at pulse-group expiry host QA (review blocked)
+- **ID:** PHX-L-VERIFY-20261025T20-GROUP-EXPIRY; **scope:** both ESP Vendo sketches, source read + local host test + documentation only; no source patch, merge, flash, payment or release.
+- **Exact baseline:** #193 `9cdb4cc3dd494bd2729aec6a9980eeeb378c4138`, ESP8266 `a64dd08ec`, ESP32 `7b2d3a9c`. Both group-expiry branches ignore active coin input and set pendingReady, then applyOutputs inhibits relay.
+- **Executed:** strict manually source-transcribed C++17 model **20/20 matched, 6 modeled held-input relay ON→OFF transitions**; no electrical/physical proof. Harness SHA256 `3d329e8d4df40474d26064185e0c1f6cc93c2fbe55ea40c6d59a9b92153d56a7`; log `51909755f9983207e6f95e2f61fa782cd2a02d502348c5d62fdf6ab609ac16a8`.
+- **CI:** Full #40228334969 FAILURE validate 121274528655 (2 existing config-auth/reboot RED per board, both ESP compilers success), Native #40228334959 SUCCESS. Report `docs/handover/2026-10-25-PHX-L-VERIFY-UTC20-GROUP-EXPIRY-HELD-INPUT.md`.
+- **Decision:** MASTER/CORE review held-input expiry and stuck-line policy, then isolated bench telemetry; no firmware correction before approval. P0 #31/#32/#34/#43 and physical/signing/migration gates remain PRODUCTION NO-GO.
+
 ## 2026-10-25 UTC19 — PHX-L-VERIFY coin-input polarity transition phantom-edge host QA (P0, review blocked)
 - **ID:** PHX-L-VERIFY-20261025T19-COIN-POLARITY; **status:** executed host-model RED / awaiting MASTER+CORE policy decision; **scope:** both ESP Vendo sketches in DRAFT #193 stacked #179, documentation only. No source, finance, app, signer, customer or release change.
 - **Source:** pre-report #193 HEAD `f4fd66756f673ae3e6f818fd63f46197c8ddca24`; ESP8266 blob `a64dd08ecb4eaa71da3b29b43d86ffa8a58df5b5`, ESP32 blob `7b2d3a9c9c0ea076992265bdf1113a6db75a350f`. Both `applyRemoteConfig()` accept live coin-active-low change but guard relay/LED polarity; `loop()` may interpret unchanged idle input as new `!lastCoin` edge.
