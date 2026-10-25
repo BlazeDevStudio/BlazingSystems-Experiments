@@ -1050,8 +1050,66 @@ else
   echo 'PHX-L-CORE RENTAL_TORN_RECEIPT_PASS: signed retry denied without second paid mutation'
 fi
 
+
+# PHX-L-CORE #31/#43 T19 TEST-FIRST / PROVISIONAL CONTRACT PROBE.
+# The installed CGI does not yet implement a financial witness adapter.
+# This mock is NOT an independent witness. It would durably record a synthetic
+# COMMIT and deliberately lose its response IF the backend called the proposed
+# test-only command interface. Until the hook exists, report HOOK_ABSENT_RED,
+# NOT a reproduced lost-ACK fault. No production keys, files or money.
+phx_wack_failures=0
+phx_ctl_fresh_state finance-witness-ack-loss
+bp_member_lock
+bp_member_create phxwack "Witness ACK fixture" 'fixture-pass-123' fixture >/dev/null
+bp_member_unlock
+phx_wack_event=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+phx_wack_nonce=10000000000006c0
+phx_wack_retry_nonce=10000000000006c1
+phx_wack_hash="$(printf '%s' "$(bp_member_line phxwack)" | cut -f6)"
+export BP_FINANCE_WITNESS_TEST_LOG="$T/finance-witness-calls.log"
+export BP_FINANCE_WITNESS_CMD="$T/bin/phx-finance-witness"
+: > "$BP_FINANCE_WITNESS_TEST_LOG"
+cat > "$BP_FINANCE_WITNESS_CMD" <<'PHX_WITNESS_MOCK'
+#!/bin/sh
+# PROPOSED TEST ADAPTER ONLY: prepare succeeds, commit records locally then
+# drops its ACK; subsequent read remains unavailable. No cryptographic trust.
+case "${1:-}" in
+  prepare|PREPARE) printf 'PREPARE\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 0 ;;
+  commit|COMMIT) printf 'COMMIT_ACK_LOST\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 75 ;;
+  *) printf 'UNAVAILABLE\n' >> "$BP_FINANCE_WITNESS_TEST_LOG"; exit 75 ;;
+esac
+PHX_WITNESS_MOCK
+chmod +x "$BP_FINANCE_WITNESS_CMD"
+phx_wack_proof="$(proof_for "$phx_wack_hash" "$phx_wack_nonce")"
+phx_wack_first="$(call_vendo member_bank "$phx_wack_nonce" 30 \
+  "phxwack:$phx_wack_event:$phx_wack_proof")"
+phx_wack_balance_before_retry="$(printf '%s' "$(bp_member_line phxwack)" | cut -f8)"
+phx_wack_events_before_retry="$(awk -F '\t' -v e="$phx_wack_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")"
+phx_wack_retry_proof="$(proof_for "$phx_wack_hash" "$phx_wack_retry_nonce")"
+phx_wack_retry="$(call_vendo member_bank "$phx_wack_retry_nonce" 30 \
+  "phxwack:$phx_wack_event:$phx_wack_retry_proof")"
+phx_wack_balance_after_retry="$(printf '%s' "$(bp_member_line phxwack)" | cut -f8)"
+phx_wack_events_after_retry="$(awk -F '\t' -v e="$phx_wack_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")"
+if [ ! -s "$BP_FINANCE_WITNESS_TEST_LOG" ]; then
+  echo "PHX-L-CORE FINANCE_WITNESS_HOOK_ABSENT_RED: signed CGI did not invoke proposed witness adapter; first=$phx_wack_first retry=$phx_wack_retry" >&2
+  phx_wack_failures=1
+elif ! grep -Fq 'COMMIT_ACK_LOST' "$BP_FINANCE_WITNESS_TEST_LOG"; then
+  echo 'PHX-L-CORE FINANCE_WITNESS_ACK_SETUP_INCOMPLETE: mock called but no post-commit ACK loss injected; do not claim T19 reproduced' >&2
+  exit 2
+elif printf '%s' "$phx_wack_first" | grep -Fq '"ok":true' ||
+     printf '%s' "$phx_wack_retry" | grep -Fq '"ok":true' ||
+     [ "$phx_wack_balance_after_retry" != "$phx_wack_balance_before_retry" ] ||
+     [ "$phx_wack_events_after_retry" != "$phx_wack_events_before_retry" ]; then
+  echo "PHX-L-CORE FINANCE_WITNESS_ACK_LOSS_RED: terminal ACK or second money mutation despite lost witness COMMIT ACK: first=$phx_wack_first retry=$phx_wack_retry" >&2
+  phx_wack_failures=1
+else
+  echo 'PHX-L-CORE FINANCE_WITNESS_ACK_LOSS_PASS: mock COMMIT ACK lost, no terminal ACK or second money mutation (synthetic only)'
+fi
+unset BP_FINANCE_WITNESS_CMD BP_FINANCE_WITNESS_TEST_LOG
+
 [ "$phx_recovery_failures" -eq 0 ] || exit 1
 [ "$phx_finance_rollback_failures" -eq 0 ] || exit 1
 [ "$phx_torn_failures" -eq 0 ] || exit 1
+[ "$phx_wack_failures" -eq 0 ] || exit 1
 
 echo 'BlazePwifi centralized SoftTimer member checks passed'
