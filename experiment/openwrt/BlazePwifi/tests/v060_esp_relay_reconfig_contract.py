@@ -111,11 +111,20 @@ int main(){
  reset();
  applyRemoteConfig("{\"config_revision\":2,\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"relay_active_high\":1,\"led_active_high\":1,\"coin_pin\":4,\"relay_pin\":12,\"led_pin\":13}");
  mode=first('M');
- check("moved_pin_old_outputs_off_before_mode",
-  mode>=0&&first('W',5,LOW)>=0&&first('W',14,LOW)>=0&&
-  first('W',5,LOW)<mode&&first('W',14,LOW)<mode&&
-  levels[5]==LOW&&levels[14]==LOW&&levels[12]==LOW&&levels[13]==LOW&&
-  runRelayPin==12&&runLedPin==13&&remoteRevision==2);
+ check("live_pin_move_rejected_until_hardware_reprovision",
+  first('M')<0&&levels[5]==LOW&&levels[14]==LOW&&
+  runRelayPin==5&&runLedPin==14&&remoteRevision==1&&
+  !controllerEnabled&&!coinEnabled&&!insertMode);
+ reset();
+ applyRemoteConfig("{\\"config_revision\\":2,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_active_high\\":1,\\"led_active_high\\":1,\\"coin_pin\\":5,\\"relay_pin\\":5,\\"led_pin\\":14}");
+ check("coin_relay_alias_denied_before_pin_mode",
+  first('M')<0&&levels[5]==LOW&&remoteRevision==1&&
+  !controllerEnabled&&!coinEnabled&&!insertMode);
+ reset();
+ applyRemoteConfig("{\\"config_revision\\":2,\\"enabled\\":1,\\"coin_enabled\\":1,\\"relay_active_high\\":1,\\"led_active_high\\":1,\\"coin_pin\\":4,\\"relay_pin\\":14,\\"led_pin\\":14}");
+ check("relay_led_alias_denied_before_pin_mode",
+  first('M')<0&&levels[5]==LOW&&levels[14]==LOW&&remoteRevision==1&&
+  !controllerEnabled&&!coinEnabled&&!insertMode);
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<" physical_verified=0\n";
  return fails?18:0;
 }
