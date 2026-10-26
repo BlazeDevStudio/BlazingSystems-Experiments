@@ -1,0 +1,49 @@
+name: BlazeNetMonitor Windows Installer
+on:
+  push:
+    branches: [feature/blazenetmonitor-v0.1.0]
+    paths: ['.github/workflows/blazenetmonitor-v1-installer.yml','expiremental/BlazeNetMonitor/installer/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  installer:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: expiremental/BlazeNetMonitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test
+        run: dotnet run --project tests/BlazeNetMonitor.Tests/BlazeNetMonitor.Tests.csproj -c Release
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o dist/win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'App publish failed' }
+      - name: Create support QR
+        shell: pwsh
+        run: |
+          $app = (Resolve-Path dist/win-x64/BlazeNetMonitor.exe).Path
+          $bmp = Join-Path (Get-Location).Path 'dist/support-qr.bmp'
+          $p = Start-Process $app -ArgumentList @('--export-installer-qr',('"' + $bmp + '"')) -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or !(Test-Path $bmp)) { throw 'QR export failed' }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+      - name: Compile Windows installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $compiler installer/BlazeNetMonitor.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compiler failed' }
+          if (!(Test-Path 'artifacts/BlazeNetMonitor-Setup-v1.0.0.exe')) { throw 'Installer missing' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeNetMonitor-Setup-v1.0.0
+          path: expiremental/BlazeNetMonitor/artifacts/BlazeNetMonitor-Setup-v1.0.0.exe
