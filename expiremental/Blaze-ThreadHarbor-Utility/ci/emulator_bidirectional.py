@@ -41,7 +41,20 @@ def tap(item):
 
 def run():
     start = dump()
-    assert nodes(start, text="Observed 2 fixture messages"), "Bridge did not load initial fixture DOM"
+    assert nodes(start, text="Tabs: 1"), "Real browser did not open as home"
+    assert nodes(start, text="Bookmarks"), "Browser bookmarks control missing"
+    assert nodes(start, text="History"), "Browser history control missing"
+    add = nodes(start, text="+ Tab")
+    assert len(add) == 1, "Browser tab creation unavailable"
+    tap(add[0])
+    time.sleep(0.6)
+    assert nodes(dump(), text="Tabs: 2"), "Second browser tab not created"
+    lab = nodes(dump(), text="Chats (Lab)")
+    assert len(lab) == 1, "Controlled semantic lab not accessible"
+    tap(lab[0])
+    time.sleep(3)
+    fixture_view = dump()
+    assert nodes(fixture_view, text="Observed 2 fixture messages"), "Bridge did not load initial fixture DOM"
     fields = nodes(start, **{"class":"android.widget.EditText"})
     assert len(fields) == 1, "Expected exactly one native compose reply input"
     tap(fields[0])
@@ -71,6 +84,12 @@ def run():
         if any(value == "Last action: OBSERVED_IN_FIXTURE" for value in rendered):
             assert any(value == PROBE for value in rendered), "Action observed but no message bubble"
             print("PASS: Native reply resulted in observed fixture DOM mutation and UI confirmation")
+            browser = nodes(current, text="Browser")
+            assert len(browser) == 1, "Could not return to the real browser"
+            tap(browser[0])
+            time.sleep(0.7)
+            assert nodes(dump(), text="Tabs: 2"), "Browser tabs lost across native tool navigation"
+            print("PASS: Browser tabs survive a switch to the native messaging lab")
             return
     print("Last visible post-submit UI entries: " + repr(last_text), file=sys.stderr)
     raise AssertionError("No visible verified pending action despite observed fixture reply")
