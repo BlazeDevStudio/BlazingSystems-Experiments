@@ -299,7 +299,7 @@ internal sealed class SettingsForm : Form
         about.Controls.Add(new Label { Left = 119, Top = 26, Width = 360, Height = 33,
             Text = "BlazeNetMonitor", Font = new Font("Segoe UI Semibold", 18, FontStyle.Bold) });
         about.Controls.Add(new Label { Left = 120, Top = 69, Width = 365, Height = 24,
-            Text = "v0.2.9 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
+            Text = "v1.0.0  |  Blaze Systems", ForeColor = Theme.Muted });
         about.Controls.Add(new Label {
             Left = 24, Top = 120, Width = 458, Height = 68,
             Text = "Live network speeds, customizable graphs, and two connection health targets."

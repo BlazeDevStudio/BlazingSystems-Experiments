@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Drawing.Imaging;
 using System.Threading;
 
 namespace BlazeNetMonitor;
@@ -20,6 +21,22 @@ internal static class Program
     private static int Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        // Used only while building the installer; the QR destination is unchanged.
+        if (args.Length == 2 && args[0] == "--export-installer-qr")
+        {
+            try
+            {
+                using var bitmap = DonationAssets.CreateQrBitmap(340);
+                bitmap.Save(args[1], ImageFormat.Bmp);
+                return 0;
+            }
+            catch (Exception e)
+            {
+                File.WriteAllText(Path.Combine(Path.GetTempPath(),
+                    "BlazeNetMonitor-installer-image-error.txt"), e.ToString());
+                return 3;
+            }
+        }
         // Real GDI+ QR and WinForms layout checks on the Windows CI runner.
         if (args.Contains("--verify-qr-render", StringComparer.OrdinalIgnoreCase))
             return VerifyQrRendering();
@@ -31,6 +48,10 @@ internal static class Program
         using var acknowledged = new EventWaitHandle(false, EventResetMode.AutoReset, RequestAckName);
         if (!owner)
         {
+            // A Startup-folder shortcut and optional app-level autostart may
+            // both trigger. Duplicate startup launches must exit quietly.
+            if (args.Contains("--startup", StringComparer.OrdinalIgnoreCase))
+                return 0;
             // Reopen the running instance's settings instead of spawning duplicates.
             if (ShowSettingsMessage != 0)
                 PostMessage((nint)0xFFFF, ShowSettingsMessage, 0, 0); // HWND_BROADCAST
