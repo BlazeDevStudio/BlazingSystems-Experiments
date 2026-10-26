@@ -85,6 +85,8 @@ jobs:
             adb shell uiautomator dump /sdcard/window.xml
             adb shell cat /sdcard/window.xml | grep -F "Blaze ThreadHarbor"
             adb exec-out screencap -p > threadharbor-smoke.png
+            python3 expiremental/Blaze-ThreadHarbor-Utility/ci/emulator_bidirectional.py
+            adb exec-out screencap -p > threadharbor-native-reply.png
       - name: Preserve emulator smoke screenshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,5 +94,6 @@ jobs:
           name: ThreadHarbor-Emulator-Smoke
           path: |
             threadharbor-smoke.png
+            threadharbor-native-reply.png
             threadharbor-logcat.txt
           if-no-files-found: ignore

@@ -18,3 +18,6 @@ Install uploaded debug APK on Android emulator, start MainActivity, assert runni
 
 ## Not run / unsupported
 Real Facebook messaging, real-account DOM observation, authenticated downloads, weak-network resumption, camera/microphone/calls, background voicemail, file manager edit/move, SD revocation, 100 kbps simulator, physical Android device launch.
+
+## Android bidirectional UI smoke
+Script: `python3 ci/emulator_bidirectional.py` runs on an actual Android emulator after the app is installed and the page-to-Compose observation is verified. It discovers Compose input/button bounds using Android UI hierarchy; sends a unique fixed probe, verifies the action yields a new native message bubble **and** `OBSERVED_IN_FIXTURE` status. Do not claim Meta transport or physical device acceptance.
