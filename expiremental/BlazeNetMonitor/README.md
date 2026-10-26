@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.7 — owner PayPal donation splash preview
+# BlazeNetMonitor v0.2.8 — full QR visibility and About cleanup preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,14 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.8 — PayPal splash clarity and About QR crop fix (October 27, 2026)
+
+- **Startup card:** Removed opacity animation entirely so the complete center-screen QR remains **fully opaque**, visible for 11 seconds unless closed by Esc, Not now, or Open PayPal. This avoids the barely-visible flash observed in v0.2.7.
+- **About:** Fixed the real clipping cause: v0.2.7's QR renderer always allocated at least **200x200** while About displayed it in a **154x154** image box, clipping portions of the matrix. New image is rendered to its requested dimensions, at **240x240** in a 240x240 Zoom-mode PictureBox. The surrounding panel scrolls at nonstandard DPI.
+- Removed the **Show donation QR card** button and **Every launch / First launch / Never** dropdown from About. The QR is already fully visible in About. The donation splash still has a "Don't show on startup" checkbox, and can still be reopened using the right-click tray menu.
+- Owner-specific PayPal destination and two independent network monitoring targets remain unchanged.
+- **CI gate:** Windows GDI+ QR raster checks at 154/240/352px, splash alpha/layout inspection and About no-crop/no-selector check precede release packaging. Automated tests do not establish real-world PayPal scanning on a mobile phone.
 
 ## v0.2.7 — Creator donation QR finalized (October 26, 2026)
 

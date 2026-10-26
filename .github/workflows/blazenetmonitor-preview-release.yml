@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.7-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.2.8-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,7 +34,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.7-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.2.8-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
@@ -45,8 +45,19 @@ jobs:
           dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o dist/win-x64-lite
           if ($LASTEXITCODE -ne 0) { throw 'Lite framework-dependent publish failed' }
           if (-not (Test-Path 'dist/win-x64-lite/BlazeNetMonitor.exe')) { throw 'Lite EXE missing' }
-          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.7-win-x64-lite.zip' -CompressionLevel Optimal -Force
-          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.7-win-x64-lite.zip' -Algorithm SHA256 | Format-List
+          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip' -CompressionLevel Optimal -Force
+          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip' -Algorithm SHA256 | Format-List
+      - name: Windows QR visibility and uncropped About image check
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/win-x64/BlazeNetMonitor.exe').Path
+          $check = Start-Process -FilePath $exe -ArgumentList '--verify-qr-render' -PassThru -Wait
+          if ($check.ExitCode -ne 0) {
+            $failure = Join-Path $env:TEMP 'BlazeNetMonitor-QR-render-failure.txt'
+            if (Test-Path $failure) { Get-Content $failure }
+            throw "Windows QR render and UI geometry self-test failed with exit code $($check.ExitCode)"
+          }
+          Write-Host 'PASS Windows GDI+ QR image exact sizes, opaque splash, uncropped About QR, settings removed'
       - name: Windows x64 GUI process launch smoke check
         shell: pwsh
         run: |
@@ -67,5 +78,5 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.7-win-x64.zip artifacts/BlazeNetMonitor-v0.2.7-win-x86.zip artifacts/BlazeNetMonitor-v0.2.7-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.7-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.7 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.7 PREVIEW: the Blaze Systems owner PayPal QR is now permanently embedded with the exact donation destination decoded from the supplied image. All installed copies display the same owner QR; users cannot import a replacement. Polished centered startup donation card (7-second fade and dismiss), optional Every launch/First launch/Never setting, and always-available manual PayPal QR card from About and tray. Updated About includes creator Facebook link and Open PayPal button. Monitoring continues normally. The QR is rendered from an embedded 41x41 ECC-H matrix, not as the original uploaded screenshot pixels. Build and automated tests are validated in GitHub CI; visual device testing and actual payment checkout are not performed. Windows 10 native DeskBand remains unshipped.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.8-win-x64.zip artifacts/BlazeNetMonitor-v0.2.8-win-x86.zip artifacts/BlazeNetMonitor-v0.2.8-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.8 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.8 PREVIEW: fixes PayPal QR crop in About caused by 200px renderer minimum with a smaller PictureBox. About now shows full 240x240 QR; removed donation QR viewer button and startup frequency controls from About. Startup PayPal card is fully opaque and stable for 11 seconds (early dismiss allowed) rather than a transparency animation that made the code difficult to see. Existing donor QR, PayPal URL, and optional opt-out in the splash remain intact. Windows CI validates rendered bitmap dimensions, all QR finder marks, opaque splash, About image bounds and absence of startup selector. Real hardware QR scan and UI testing remain recommended.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }
