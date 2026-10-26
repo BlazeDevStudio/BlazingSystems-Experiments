@@ -33,14 +33,8 @@ suspend fun importIntoAuthorizedFolder(
         target = created
         resolver.openInputStream(source)?.use { input ->
             resolver.openOutputStream(created.uri, "wt")?.use { output ->
-                val buffer = ByteArray(64 * 1024)
-                while (true) {
-                    coroutineContext.ensureActive()
-                    val length = input.read(buffer)
-                    if (length < 0) break
-                    if (length > 0) output.write(buffer, 0, length)
-                }
-                output.flush()
+                val cancellationContext = coroutineContext
+                copyStreams(input, output) { cancellationContext.ensureActive() }
             } ?: error("Cannot write imported file")
         } ?: error("Cannot read picked document")
         Result.success(filename)
