@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebView
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -336,6 +338,8 @@ private fun FilesScreen(context: Context) {
     var entryName by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<DocumentFile?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var importing by remember { mutableStateOf(false) }
+    val fileScope = rememberCoroutineScope()
 
     val choose = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) try {
@@ -360,32 +364,29 @@ private fun FilesScreen(context: Context) {
         }
     }
     val current = path.lastOrNull()
-    val records = remember(current, refresh) {
-        try {
-            current?.listFiles()?.sortedWith(
-                compareBy<DocumentFile> { !it.isDirectory }.thenBy { it.name?.lowercase() }
-            ) ?: emptyList()
-        } catch (_: Exception) { emptyList() }
+    val records by produceState<List<DocumentFile>>(emptyList(), current, refresh) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                current?.listFiles()?.sortedWith(
+                    compareBy<DocumentFile> { !it.isDirectory }.thenBy { it.name?.lowercase() }
+                ) ?: emptyList()
+            } catch (_: Exception) { emptyList() }
+        }
     }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val destination = path.lastOrNull()
-        if (uri != null && destination != null) {
-            try {
-                val name = DocumentFile.fromSingleUri(context, uri)?.name ?: "imported-file"
-                val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
-                val created = destination.createFile(mime, name)
-                    ?: error("Provider rejected file creation")
-                try {
-                    val input = requireNotNull(context.contentResolver.openInputStream(uri))
-                    val output = requireNotNull(context.contentResolver.openOutputStream(created.uri))
-                    input.use { source -> output.use { destinationStream -> source.copyTo(destinationStream) } }
-                    feedback = "Imported " + name
-                } catch (exc: Exception) {
-                    created.delete()
-                    throw exc
-                }
+        if (uri != null && destination != null && !importing) {
+            importing = true
+            feedback = "Importing selected document..."
+            fileScope.launch {
+                val outcome = importIntoAuthorizedFolder(context, uri, destination)
+                importing = false
+                feedback = outcome.fold(
+                    onSuccess = { "Imported " + it },
+                    onFailure = { "Import failed: " + (it.message ?: "storage error") }
+                )
                 refresh++
-            } catch (_: Exception) { feedback = "Import failed: folder write access or space unavailable" }
+            }
         }
     }
 
@@ -445,7 +446,7 @@ private fun FilesScreen(context: Context) {
                 }) { Text(if (selected == null) "Create" else "Rename") }
             }
             Row {
-                Button(onClick = { importPicker.launch(arrayOf("*/*")) }) { Text("Import file") }
+                Button(enabled = !importing, onClick = { importPicker.launch(arrayOf("*/*")) }) { Text(if (importing) "Importing..." else "Import file") }
                 if (selected != null) {
                     TextButton(onClick = { selected = null; entryName = "" }) { Text("Deselect") }
                     TextButton(onClick = { confirmDelete = true }) { Text("Delete") }
