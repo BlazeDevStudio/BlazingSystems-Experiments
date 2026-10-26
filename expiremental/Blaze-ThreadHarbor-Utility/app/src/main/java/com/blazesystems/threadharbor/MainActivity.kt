@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,25 +35,33 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun HarborShell(context: Context, fixture: FixtureRuntime) {
-    val tabs = listOf("Chats","Calls","Gallery","Downloads","Files","Inspection","Browser","Settings")
-    var current by remember { mutableStateOf("Chats") }
+    val tabs = listOf("Browser","Chats (Lab)","Downloads","Files","Gallery","Inspection","Calls","Settings")
+    var current by remember { mutableStateOf("Browser") }
+    BackHandler(enabled = current != "Browser") { current = "Browser" }
     // Keep message input and Send above the Android software keyboard (IME).
     Column(Modifier.fillMaxSize().imePadding()) {
-        Text("Blaze ThreadHarbor  •  0.1.0 Preview",
+        Text("Blaze ThreadHarbor  •  Experimental Browser",
             style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(12.dp))
         ScrollableTabRow(selectedTabIndex=tabs.indexOf(current),edgePadding=0.dp) {
             tabs.forEach {name->Tab(selected=current==name,onClick={current=name},text={Text(name)})}
         }
         Box(Modifier.weight(1f)) {
-            when(current) {
-                "Chats" -> ChatsScreen(fixture){current="Browser"}
-                "Calls" -> Notice("Calls unavailable","Website calling, voicemail and recording are unsupported until authorized capabilities are demonstrated.")
-                "Gallery" -> GalleryScreen()
-                "Downloads" -> DownloadsScreen(context)
-                "Files" -> FilesScreen(context)
-                "Inspection" -> InspectionScreen(context)
-                "Browser" -> BrowserScreen(context)
-                "Settings" -> SettingsScreen(context){current="Browser"}
+            // Browser remains composed at zero size while other tools are open.
+            // Its WebViews and in-memory back stacks therefore survive navigation.
+            // Unlike a hidden full-screen overlay it cannot steal touches.
+            if (current != "Browser") {
+                when(current) {
+                    "Chats (Lab)" -> ChatsScreen(fixture){current="Browser"}
+                    "Calls" -> Notice("Calls unavailable","Website calling, voicemail and recording are unsupported until authorized capabilities are demonstrated.")
+                    "Gallery" -> GalleryScreen()
+                    "Downloads" -> DownloadsScreen(context)
+                    "Files" -> FilesScreen(context)
+                    "Inspection" -> InspectionScreen(context)
+                    "Settings" -> SettingsScreen(context){current="Browser"}
+                }
+            }
+            Box(if (current == "Browser") Modifier.fillMaxSize() else Modifier.size(0.dp)) {
+                BrowserScreen(context, visible = current == "Browser")
             }
         }
         // Stays attached independently of Compose chat UI; no third-party browsing bridge.
