@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.4 — graph customization, reliable settings and favicon preview
+# BlazeNetMonitor v0.2.5 — general website favicon preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,16 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.5 — General website favicon support (October 26, 2026)
+
+- **Not limited to Cloudflare and Google:** Enter an ordinary domain such as `www.facebook.com`, `www.wikipedia.org`, `github.com`, or a complete HTTPS URL as a health target. The two special DNS resolver IP mappings remain solely to provide meaningful vendor icons for numeric DNS endpoints.
+- With **Settings → Metrics → Show round website favicons** enabled, the application first checks each target's public HTTPS `/favicon.ico`. If the server redirects to a public CDN, up to four validated HTTPS redirects are followed. If missing or unreadable, the official homepage's `<link rel="icon" href="...">` and related icon declarations are checked, including relative and HTTPS CDN URLs.
+- Circular 32×32 normalized images appear beside their **separately colored** network status dot. If the icon cannot be loaded, only the dot appears; the monitoring probe still works. Supported images depend on Windows GDI+ decoders (ICO, PNG, JPEG, GIF).
+- For narrower user-resized widgets, icon rendering is now allowed from about 150–160 logical pixels. If both icon and speed readout appear cramped, increase the widget width.
+- Right-click the widget or tray menu → **Refresh website favicons** to retry a previously unavailable logo. Logos are retrieved only when opted in, on startup, when the target/settings change, or upon explicit retry.
+- Privacy and safety: Public HTTPS origins only; no private/local addresses or redirected credentials, non-HTTPS downgrades, or unusual ports; DNS addresses are checked before connecting. Icons are decoded to small memory-only bitmaps; images and HTML have byte limits. No third-party favicon retrieval API or remote database.
+- Some websites deny automated retrieval, rely exclusively on SVG icons, or do not publish a usable icon. Those cases retain the normal status dot. Real-world Facebook favicon retrieval has not yet been confirmed on the user's machine.
 
 ## v0.2.4 preview changes (October 26, 2026)
 
