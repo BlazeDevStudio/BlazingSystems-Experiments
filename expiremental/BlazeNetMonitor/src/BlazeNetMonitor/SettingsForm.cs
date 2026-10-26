@@ -8,6 +8,10 @@ internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
     private readonly ComboBox _adapter, _unit, _placement, _themeMode;
+    private readonly ComboBox _graphStyle, _graphWindow, _metricMode, _unitMode;
+    private readonly Button _upGraphColor, _downGraphColor;
+    private string _upColorValue, _downColorValue;
+    private readonly CheckBox _showFavicons;
     private readonly TrackBar _opacity, _hoverOpacity;
     private readonly Label _opacityValue, _hoverOpacityValue;
     private readonly CheckBox _showGraphs, _systemAccent, _fullscreen, _transparent;
@@ -38,8 +42,10 @@ internal sealed class SettingsForm : Form
         var general = new TabPage("General") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var targets = new TabPage("Health targets") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var appearance = new TabPage("Appearance") { BackColor = Theme.Panel, ForeColor = Theme.Text };
+        var graphs = new TabPage("Graphs") { BackColor = Theme.Panel, ForeColor = Theme.Text };
+        var metrics = new TabPage("Metrics") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var about = new TabPage("About") { BackColor = Theme.Panel, ForeColor = Theme.Text };
-        tabs.TabPages.AddRange([general, appearance, targets, about]);
+        tabs.TabPages.AddRange([general, appearance, graphs, metrics, targets, about]);
         Controls.Add(tabs);
         _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)", .._adapters.Select(a => a.Name)]);
         _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == settings.AdapterId) + 1);
@@ -103,16 +109,81 @@ internal sealed class SettingsForm : Form
 
         _opacity.ValueChanged += (_, _) => { _opacityValue.Text = _opacity.Value + "%"; RaisePreview(); };
         _hoverOpacity.ValueChanged += (_, _) => { _hoverOpacityValue.Text = _hoverOpacity.Value + "%"; RaisePreview(); HoverPreviewRequested?.Invoke(); };
-        _themeMode.SelectedIndexChanged += (_, _) => RaisePreview();
+        _themeMode.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _themeMode.DropDownClosed += (_, _) =>
+        {
+            if (!IsDisposed && IsHandleCreated) BeginInvoke(new Action(ApplyEditorTheme));
+        };
         _systemAccent.CheckedChanged += (_, _) => RaisePreview();
         _showGraphs.CheckedChanged += (_, _) => RaisePreview();
         _fullscreen.CheckedChanged += (_, _) => RaisePreview();
         _transparent.CheckedChanged += (_, _) => RaisePreview();
-        _unit.SelectedIndexChanged += (_, _) => RaisePreview();
-        _adapter.SelectedIndexChanged += (_, _) => RaisePreview();
-        _placement.SelectedIndexChanged += (_, _) => RaisePreview();
+        _unit.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _adapter.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _placement.SelectionChangeCommitted += (_, _) => RaisePreview();
         _offset.ValueChanged += (_, _) => RaisePreview();
         _interval.ValueChanged += (_, _) => RaisePreview();
+
+        // Graph customization deliberately lives in its own tab, to avoid
+        // crowded appearance controls and dropdown focus/handle destruction.
+        _graphStyle = Choice(graphs, "Graph drawing type", 22,
+            ["Line", "Filled", "Bars", "Steps"]);
+        _graphStyle.SelectedItem = DisplayPreferences.NormalizeGraphStyle(settings.GraphStyle);
+        _graphWindow = Choice(graphs, "History duration", 98,
+            ["Auto adaptive", "15 seconds", "30 seconds", "60 seconds",
+             "120 seconds", "300 seconds", "600 seconds"]);
+        var graphValues = new[] { 0, 15, 30, 60, 120, 300, 600 };
+        int graphIndex = Array.IndexOf(graphValues, settings.GraphHistorySeconds);
+        _graphWindow.SelectedIndex = Math.Max(0, graphIndex);
+        _upColorValue = settings.GraphUploadColor;
+        _downColorValue = settings.GraphDownloadColor;
+        _upGraphColor = new Button { Left = 24, Top = 205, Width = 214, Height = 42,
+            Text = "Upload graph color..." };
+        _downGraphColor = new Button { Left = 249, Top = 205, Width = 214, Height = 42,
+            Text = "Download graph color..." };
+        _upGraphColor.Click += (_, _) => ChooseGraphColor(true);
+        _downGraphColor.Click += (_, _) => ChooseGraphColor(false);
+        graphs.Controls.AddRange([_upGraphColor, _downGraphColor]);
+        graphs.Controls.Add(new Label { Left = 24, Top = 270, Width = 465, Height = 120,
+            Text = "Graphs adapt to the widget dimensions, even at a 24-pixel taskbar height.\n" +
+                "Auto history uses approximately 30 s in compact mode, 60 s in normal mode\n" +
+                "and 120 s in wide mode. Graph colors are independent of health-dot colors.",
+            ForeColor = Theme.Muted });
+
+        _metricMode = Choice(metrics, "Extra information shown on the widget", 22,
+            ["Auto adaptive", "Speed only", "Latency", "Packet loss", "Jitter", "Daily totals"]);
+        _metricMode.SelectedIndex = settings.MetricMode switch
+        {
+            "Speed" => 1, "Latency" => 2, "Loss" => 3, "Jitter" => 4, "Totals" => 5, _ => 0
+        };
+        _unitMode = Choice(metrics, "Speed units", 98,
+            ["Auto adaptive", "Bits per second", "Bytes per second"]);
+        _unitMode.SelectedIndex = settings.UnitMode switch
+        {
+            "Bits" => 1, "Bytes" => 2, _ => 0
+        };
+        metrics.Controls.Add(new Label { Left = 24, Top = 175, Width = 476, Height = 95,
+            ForeColor = Theme.Muted,
+            Text = "Auto adaptive always prioritizes both live transfer rates in compact mode.\n" +
+                "As height/width increase, secondary metrics become available.\n" +
+                "Health dots reflect probe history, not whether you're downloading data." });
+        _showFavicons = new CheckBox { Left = 24, Top = 290, Width = 490, Height = 50,
+            Text = "Show round website favicons beside health dots (opt-in network fetch)",
+            Checked = settings.ShowFavicons };
+        metrics.Controls.Add(_showFavicons);
+        metrics.Controls.Add(new Label { Left = 24, Top = 352, Width = 465, Height = 75,
+            ForeColor = Theme.Muted,
+            Text = "Only configured public HTTPS targets are fetched. Images are memory-cached;\n" +
+                "private/local addresses and untrusted redirects are blocked.\n" +
+                "If a site has no readable favicon.ico, only the health dot appears." });
+
+        _graphStyle.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _graphWindow.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _metricMode.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _unitMode.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _showFavicons.CheckedChanged += (_, _) => RaisePreview();
+        _upGraphColor.Text = "Upload: " + _upColorValue;
+        _downGraphColor.Text = "Download: " + _downColorValue;
 
         for (int i = 0; i < 2; i++)
         {
@@ -181,14 +252,53 @@ internal sealed class SettingsForm : Form
         next.HoverOpacityPercent = _hoverOpacity.Value;
         next.UseSystemAccent = _systemAccent.Checked;
         next.ShowGraphs = _showGraphs.Checked;
+        next.GraphStyle = _graphStyle.SelectedItem?.ToString() ?? "Line";
+        next.GraphHistorySeconds = _graphWindow.SelectedIndex switch
+        {
+            1 => 15, 2 => 30, 3 => 60, 4 => 120, 5 => 300, 6 => 600, _ => 0
+        };
+        next.GraphUploadColor = _upColorValue;
+        next.GraphDownloadColor = _downColorValue;
+        next.MetricMode = _metricMode.SelectedIndex switch
+        {
+            1 => "Speed", 2 => "Latency", 3 => "Loss", 4 => "Jitter", 5 => "Totals", _ => "Auto"
+        };
+        next.UnitMode = _unitMode.SelectedIndex switch
+        {
+            1 => "Bits", 2 => "Bytes", _ => "Auto"
+        };
+        next.ShowFavicons = _showFavicons.Checked;
         next.AutoHideForFullscreen = _fullscreen.Checked;
         return next;
     }
 
     private void RaisePreview()
     {
+        // Do not restyle all live controls here: doing so closes an open native
+        // ComboBox dropdown before the user can finish choosing a value.
         PreviewChanged?.Invoke(BuildPreview());
-        ApplyEditorTheme();
+    }
+
+    private void ChooseGraphColor(bool upload)
+    {
+        // ColorDialog is modal by design; only Apply the resulting color,
+        // never recreate any ComboBox handle while a native dropdown is open.
+        var current = upload ? _upColorValue : _downColorValue;
+        using var picker = new ColorDialog { FullOpen = true, AnyColor = true };
+        if (DisplayPreferences.TryGraphColor(current, out var parsed)) picker.Color = parsed;
+        if (picker.ShowDialog(this) != DialogResult.OK) return;
+        string value = $"#{picker.Color.R:X2}{picker.Color.G:X2}{picker.Color.B:X2}";
+        if (upload)
+        {
+            _upColorValue = value;
+            _upGraphColor.Text = "Upload: " + value;
+        }
+        else
+        {
+            _downColorValue = value;
+            _downGraphColor.Text = "Download: " + value;
+        }
+        RaisePreview();
     }
 
     public void ApplyEditorTheme()
