@@ -3,6 +3,7 @@ package com.blazesystems.threadharbor
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -38,6 +39,9 @@ suspend fun importIntoAuthorizedFolder(
             } ?: error("Cannot write imported file")
         } ?: error("Cannot read picked document")
         Result.success(filename)
+    } catch (failure: CancellationException) {
+        try { target?.delete() } catch (_: Exception) {}
+        throw failure
     } catch (failure: Exception) {
         try { target?.delete() } catch (_: Exception) {}
         Result.failure(failure)
