@@ -23,6 +23,8 @@ internal static class Program
         // Real GDI+ QR and WinForms layout checks on the Windows CI runner.
         if (args.Contains("--verify-qr-render", StringComparer.OrdinalIgnoreCase))
             return VerifyQrRendering();
+        if (args.Contains("--verify-network-connections", StringComparer.OrdinalIgnoreCase))
+            return VerifyNetworkConnections();
         using var single = new Mutex(true, @"Local\BlazeSystems.BlazeNetMonitor", out var owner);
         using var acknowledged = new EventWaitHandle(false, EventResetMode.AutoReset, RequestAckName);
         if (!owner)
@@ -85,6 +87,40 @@ internal static class Program
         {
             File.WriteAllText(Path.Combine(Path.GetTempPath(),
                 "BlazeNetMonitor-QR-render-failure.txt"), ex.ToString());
+            return 3;
+        }
+    }
+
+    private static int VerifyNetworkConnections()
+    {
+        try
+        {
+            var defaults = WindowsConnectionsView.Enumerate(false, out bool fromShell);
+            var advanced = WindowsConnectionsView.Enumerate(true, out _);
+            if (fromShell)
+            {
+                if (!WindowsConnectionsView.TryReadNetworkConnections(out var names))
+                    throw new InvalidOperationException("Shell folder unavailable on second read");
+                if (defaults.Any(n => !names.Contains(n.Name, StringComparer.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException("Default adapter is absent from ncpa.cpl");
+            }
+            else if (defaults.Count != 0)
+            {
+                throw new InvalidOperationException("Default list leaked guessed interfaces");
+            }
+
+            File.WriteAllText(Path.Combine(Path.GetTempPath(),
+                "BlazeNetMonitor-adapter-check.txt"),
+                $"Network Connections shell available: {fromShell}\n" +
+                $"Default listed: {defaults.Count}\n" +
+                $"Advanced listed: {advanced.Count}\n" +
+                string.Join("\n", defaults.Select(n => n.Label)));
+            return 0;
+        }
+        catch (Exception e)
+        {
+            File.WriteAllText(Path.Combine(Path.GetTempPath(),
+                "BlazeNetMonitor-adapter-check.txt"), e.ToString());
             return 3;
         }
     }

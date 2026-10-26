@@ -63,8 +63,7 @@ internal static class WindowsConnectionsView
             displayNames = names.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             return true;
         }
-        catch (Exception e) when (e is COMException or InvalidCastException or
-            System.Reflection.TargetInvocationException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+        catch (Exception)
         {
             // In restricted shells the native folder may be unavailable.
             // Caller explicitly labels fallback; never silently treat every
@@ -89,8 +88,8 @@ internal static class WindowsConnectionsView
             const string networkKey = @"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}";
             using var key = Registry.LocalMachine.OpenSubKey(
                 networkKey + @"\{" + guid.ToString("D").ToUpperInvariant() + @"}\Connection");
-            return key?.GetValue("Name") as string is { Length: > 0 } label
-                ? label : nic.Name;
+            var label = key?.GetValue("Name") as string;
+            return !string.IsNullOrWhiteSpace(label) ? label : nic.Name;
         }
         catch (Exception) { return nic.Name; }
     }
@@ -103,12 +102,11 @@ internal static class WindowsConnectionsView
         matchedShell = TryReadNetworkConnections(out var names);
         if (!matchedShell)
         {
-            // A clearly marked conservative fallback (not misrepresented as ncpa).
-            var fallback = all.Where(n => advanced ||
-                AdapterUiPolicy.IsVisible(n.Name, n.Description,
-                    n.NetworkInterfaceType, showAll: false));
-            return fallback
-                .OrderBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
+            // If the Windows Shell cannot report ncpa.cpl items, don't flood
+            // the default selector with guessed devices. The user can explicitly
+            // choose Advanced to access all .NET-visible interfaces.
+            if (!advanced) return [];
+            return all.OrderBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(n => new Choice(n.Name, n)).ToArray();
         }
 
