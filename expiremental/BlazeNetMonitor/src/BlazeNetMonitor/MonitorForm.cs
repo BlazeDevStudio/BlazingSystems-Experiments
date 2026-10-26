@@ -374,27 +374,58 @@ internal sealed class MonitorForm : Form
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(Theme.Background);
-        using (var border = new Pen(Theme.Border, 1f)) g.DrawRectangle(border, 0, 0, Width - 1, Height - 1);
+
+        bool showGraphs = _data.Settings.ShowGraphs && Height >= 82;
+        float textScale = Math.Clamp(Width / 35f, 8.5f, 12f);
+        using var speedFont = new Font("Segoe UI Semibold", textScale, FontStyle.Bold, GraphicsUnit.Point);
+        using var accentBrush = new SolidBrush(Theme.Accent);
+        using var textBrush = new SolidBrush(Theme.Text);
+        using var border = new Pen(_editingGeometry ? Theme.Accent : Theme.Border, _editingGeometry ? 2f : 1f);
+        using var format = new StringFormat { Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center };
+
+        g.DrawRectangle(border, 1, 1, Width - 3, Height - 3);
+        // Health indicator order never changes: first target above second target.
         for (int i = 0; i < 2; i++)
         {
-            var c = Theme.State(_snapshots[i].State);
-            using var brush = new SolidBrush(c);
-            g.FillEllipse(brush, 13, 11 + i * 23, 14, 14);
-            using var light = new Pen(Color.FromArgb(120, c), 1f);
-            g.DrawEllipse(light, 12, 10 + i * 23, 16, 16);
+            float cy = Height / 2f + (i == 0 ? -12 : 12);
+            using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
+            g.FillEllipse(dot, 12, cy - 6, 12, 12);
+            using var ring = new Pen(Theme.Border, 1);
+            g.DrawEllipse(ring, 11, cy - 7, 14, 14);
         }
-        using (var divider = new Pen(Theme.Border)) { g.DrawLine(divider, 40, 4, 40, Height - 5); g.DrawLine(divider, 237, 8, 237, Height - 9); }
-        using var bold = new Font("Segoe UI Semibold", 11.5f, FontStyle.Bold, GraphicsUnit.Point);
-        using var small = new Font("Segoe UI", 7.2f, FontStyle.Regular, GraphicsUnit.Point);
-        using var accent = new SolidBrush(Theme.Accent);
-        using var muted = new SolidBrush(Theme.Muted);
-        g.DrawString("↑", bold, accent, 45, 4);
-        g.DrawString(MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits), bold, accent, 68, 4);
-        g.DrawString("↓", bold, accent, 242, 4);
-        g.DrawString(MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits), bold, accent, 265, 4);
-        Graph(g, _upSamples, new Rectangle(55, 32, 171, 18));
-        Graph(g, _downSamples, new Rectangle(253, 32, 185, 18));
-        using var pen = new Pen(Theme.Border); g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
+        using (var line = new Pen(Theme.Border)) g.DrawLine(line, 34, 5, 34, Height - 5);
+
+        float contentX = 40f;
+        float contentWidth = Math.Max(20, Width - contentX - 7);
+        float half = contentWidth / 2f;
+        float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 12f;
+        float y = showGraphs ? 4f : 6f;
+        var upRect = new RectangleF(contentX, y, half - 5, labelHeight);
+        var downRect = new RectangleF(contentX + half, y, half - 5, labelHeight);
+
+        var up = "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
+        var down = "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
+        g.DrawString(up, speedFont, textBrush, upRect, format);
+        g.DrawString(down, speedFont, textBrush, downRect, format);
+
+        if (showGraphs)
+        {
+            int graphY = Math.Max(27, Height - 31);
+            var graphWidth = (int)Math.Max(14, half - 12);
+            Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
+            Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
+        }
+
+        if (_editingGeometry)
+        {
+            // In edit mode the perimeter and handles are visible and Windows resizes via WM_NCHITTEST.
+            int h = 8;
+            foreach (var pt in new[] {
+                new Point(0, 0), new Point(Width - h - 1, 0),
+                new Point(0, Height - h - 1), new Point(Width - h - 1, Height - h - 1) })
+                g.FillRectangle(accentBrush, pt.X, pt.Y, h, h);
+        }
     }
 
     private static void Graph(Graphics g, Queue<double> samples, Rectangle r)
