@@ -55,7 +55,7 @@ app.whenReady().then(()=>{
       const prop=document.querySelector('#nodeInspector input[data-param="ms"]');
       if(!prop)throw Error('Node selection did not show inspector');
       prop.value='75';prop.dispatchEvent(new Event('input',{bubbles:true}));
-      if(!added.querySelector('.ndesc').textContent.includes('75'))throw Error('Inspector input did not update canvas');
+      if(!document.querySelector('[data-node="'+added.dataset.node+'"] .ndesc')?.textContent.includes('75'))throw Error('Inspector input did not update canvas');
       document.getElementById('save').click();
       await pause(350);
       const savedItems=await api.listProjects();
