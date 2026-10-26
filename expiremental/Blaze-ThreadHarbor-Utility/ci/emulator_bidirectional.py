@@ -52,19 +52,37 @@ def run():
     send = nodes(typed, text="Send")
     assert len(send) == 1, "Send button missing after text input"
     tap(send[0])
+    # Compose may keep the IME open and clip the action-status row.
+    # Closing the IME does not constitute message success.
+    adb("shell", "input", "keyevent", "4")
     deadline = time.monotonic() + 18
+    last_text = []
     while time.monotonic() < deadline:
         time.sleep(1)
         current = dump()
         rendered = [n.get("text", "") for n in current.iter("node")]
+        last_text = [v for v in rendered if v and (PROBE in v or
+                     "fixture" in v.lower() or "unverified" in v.lower())]
         if any("OBSERVED_IN_FIXTURE: " + PROBE in value for value in rendered):
             assert any(value == PROBE for value in rendered), "Action observed but no message bubble"
             print("PASS: Native reply resulted in observed fixture DOM mutation and UI confirmation")
             return
+    print("Last visible post-submit UI entries: " + repr(last_text), file=sys.stderr)
     raise AssertionError("No observed fixture confirmation within 18 seconds")
+def save_evidence():
+    try:
+        with open("threadharbor-native-reply.png", "wb") as dest:
+            subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=dest, check=True)
+        with open("threadharbor-native-hierarchy.xml", "w", encoding="utf-8") as dest:
+            dest.write(adb("shell", "cat", "/sdcard/window.xml"))
+    except Exception as exc:
+        print("Evidence capture failure: " + str(exc), file=sys.stderr)
+
 if __name__ == "__main__":
     try:
         run()
     except Exception as exc:
         print("FAIL: " + str(exc), file=sys.stderr)
         raise
+    finally:
+        save_evidence()
