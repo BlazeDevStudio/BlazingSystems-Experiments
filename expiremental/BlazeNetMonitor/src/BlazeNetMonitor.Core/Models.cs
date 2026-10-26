@@ -30,6 +30,8 @@ public sealed class AppSettings
     public int WidgetWidth { get; set; } = 312;
     public int WidgetHeight { get; set; } = 64;
     public int WidgetOpacityPercent { get; set; } = 100;
+    public int HoverOpacityPercent { get; set; } = 92;
+    public bool AutoHideForFullscreen { get; set; } = true;
     public string ThemeMode { get; set; } = "System";
     public bool ShowGraphs { get; set; } = true;
     public bool UseSystemAccent { get; set; } = true;
@@ -38,6 +40,15 @@ public sealed class AppSettings
         new() { Name = "Primary DNS", Protocol = TargetProtocol.Icmp, Address = "1.1.1.1" },
         new() { Name = "Secondary DNS", Protocol = TargetProtocol.Icmp, Address = "8.8.8.8" }
     ];
+
+    public AppSettings Copy()
+    {
+        var copy = (AppSettings)MemberwiseClone();
+        copy.Targets = Targets.Select(t => new ProbeTarget {
+            Name = t.Name, Protocol = t.Protocol, Address = t.Address, Port = t.Port
+        }).ToArray();
+        return copy;
+    }
 }
 
 public sealed class TargetHistory

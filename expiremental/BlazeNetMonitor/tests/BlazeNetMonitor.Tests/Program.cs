@@ -80,4 +80,16 @@ Check(!WindowsVersionPolicy.IsNativeHostReady(new Version(10, 0, 19045), false),
     "OS detection alone cannot claim native integration");
 Check(WindowsVersionPolicy.ShellFamily(new Version(6, 1, 7601)) == "Unknown",
     "unsupported older Windows family rejected");
+var work = new System.Drawing.Rectangle(0, 0, 1366, 720);
+var safe = WidgetGeometry.Constrain(new System.Drawing.Rectangle(2, 705, 312, 64), work);
+Check(safe.Bottom <= 720 - 5, "geometry never hides its bottom behind taskbar");
+var fromLeft = WidgetGeometry.Constrain(new System.Drawing.Rectangle(-450, -50, 312, 64), work);
+Check(fromLeft.Left >= 0 && fromLeft.Top >= 0, "offscreen geometry recovers");
+var pos = WidgetGeometry.Constrain(new System.Drawing.Rectangle(100, 160, 260, 72), work);
+Check(pos.Left == 100 && pos.Top == 160, "valid freeform geometry preserved");
+var raw = new AppSettings { HoverOpacityPercent = 58, AutoHideForFullscreen = false };
+var clone = raw.Copy();
+clone.Targets[0].Address = "changed.local";
+Check(raw.Targets[0].Address == "1.1.1.1" && clone.HoverOpacityPercent == 58 &&
+      !clone.AutoHideForFullscreen, "settings preview copy isolates targets");
 Console.WriteLine($"RESULT {passed} tests passed");
