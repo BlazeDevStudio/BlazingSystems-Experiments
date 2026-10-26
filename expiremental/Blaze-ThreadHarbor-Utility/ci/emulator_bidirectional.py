@@ -13,13 +13,42 @@ PROBE = "THRPROBE20261026"
 def adb(*arguments):
     return subprocess.check_output(["adb", *arguments], text=True, stderr=subprocess.STDOUT)
 
+launcher_anr_recoveries = 0
+
 def dump():
-    adb("shell", "uiautomator", "dump", "/sdcard/window.xml")
-    raw = adb("shell", "cat", "/sdcard/window.xml")
-    start = raw.find("<?xml")
-    if start < 0:
-        raise AssertionError("No Android accessibility XML")
-    return ET.fromstring(raw[start:])
+    global launcher_anr_recoveries
+    for _ in range(3):
+        adb("shell", "uiautomator", "dump", "/sdcard/window.xml")
+        raw = adb("shell", "cat", "/sdcard/window.xml")
+        start = raw.find("<?xml")
+        if start < 0:
+            raise AssertionError("No Android accessibility XML")
+        tree = ET.fromstring(raw[start:])
+        visible = [n.get("text", "") for n in tree.iter("node")]
+        stalled = [value for value in visible if "isn't responding" in value]
+        if not stalled:
+            return tree
+        # Don't hide an app ANR: explicitly allow only the Google Pixel Launcher
+        # in the emulator, and preserve the screen before acknowledging it.
+        if stalled != ["Pixel Launcher isn't responding"]:
+            raise AssertionError("Non-launcher ANR shown: " + repr(stalled))
+        launcher_anr_recoveries += 1
+        if launcher_anr_recoveries > 2:
+            raise AssertionError("Repeated Pixel Launcher ANRs; emulator not reliable")
+        if launcher_anr_recoveries == 1:
+            try:
+                with open("threadharbor-launcher-anr.png", "wb") as out:
+                    subprocess.run(["adb", "exec-out", "screencap", "-p"],
+                                   stdout=out, check=True)
+            except Exception as exc:
+                print("Could not capture launcher ANR: " + str(exc), file=sys.stderr)
+        options = [n for n in tree.iter("node") if n.get("text") == "Wait"]
+        if len(options) != 1:
+            raise AssertionError("Pixel Launcher ANR cannot be dismissed safely")
+        tap(options[0])
+        print("INFRA: dismissed Pixel Launcher ANR, preserving fail-on-app-ANR")
+        time.sleep(1)
+    raise AssertionError("System overlay persisted after permitted recovery")
 
 def nodes(tree, **attributes):
     return [
