@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.6 — UX cleanup and blue-brand preview
+# BlazeNetMonitor v0.2.7 — owner PayPal donation splash preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,20 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.7 — Creator donation QR finalized (October 26, 2026)
+
+This release corrects the earlier donor-QR design. The image attached by Blaze Systems owner Loumer Cabaluna Manreal was decoded and verified to contain a PayPal QR destination. The same destination is now hardcoded for **every** copy of the app. Visitors never choose, upload, or replace the donation QR. To prevent losing scan quality at different DPI, the app renders a crisp 41x41 error-correction-H QR matrix corresponding to that verified uploaded image; the visual pixels are reconstructed, not an exact photographic copy of the original image. The owner name is displayed above the QR and the colors mirror the supplied black/blue/white QR.
+
+- Start app: display a **center-screen** card for about 7 seconds with fade-in/out, owner QR, and: **“Your support helps keep this free project improving. Any amount is deeply appreciated.”**
+- The card is dismissible immediately via **Not now** / Esc; **Open PayPal** opens the official destination and closes the card; **Don't show on startup** permanently disables automatic startup prompts.
+- **Settings → About** allows **Every launch (default)**, **First launch only**, or **Never**. Old installations will display the card on the next launch unless opted out; the user's saved network settings remain untouched.
+- **Tray / widget right-click → Support development · PayPal QR** always reopens the donation card, even when automatic prompts are disabled.
+- About shows a small QR, "Open creator's PayPal", the Facebook link `https://fb.me/manrealloumer`, and a donation card preview. No donation-QR file browser remains.
+- The QR destination is stored offline in `DonationSplashPolicy.cs`; no network request is needed to draw or scan the code. The optional Open PayPal action launches the destination through the user's normal browser; no automatic donation takes place.
+- The network widget, probe timers, session tracking and status lights continue operating while the splash is displayed.
+- **Privacy:** The PayPal URL is a public payment destination, not a credential; the app does not collect card details, accept payments itself, or route through Blaze Systems servers.
+- **Testing:** Core unit tests enforce one fixed donation destination, QR finder matrix, and popup policy. GitHub CI packages x64/x86/ARM64 and Lite. Actual Windows desktop interactions and payment processing have not been certified.
 
 ## v0.2.6 UX cleanup and install options (October 26, 2026)
 
@@ -161,3 +175,4 @@ Windows 10 (NT 10 build 10240–21999) is classified as **eligible for classic D
 ## Attribution
 
 Independent project by Blaze Systems. Original historical NetSpeedMonitor by Florian Gilles; referenced for user-facing functional concepts only. Do not redistribute original NetSpeedMonitor binaries or artwork as part of this application.
+\n> Historical notice: v0.2.6's QR import feature was retired in v0.2.7. Visitors cannot replace the creator's PayPal destination.\n
