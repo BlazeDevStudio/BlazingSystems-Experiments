@@ -54,7 +54,7 @@ internal sealed class TopAppsUsageService : IDisposable
             else
             {
                 Leaders = [];
-                Status = "App usage history unavailable";
+                Status = "Import Windows usage CSV from tray menu";
                 return;
             }
 
