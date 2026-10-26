@@ -79,7 +79,26 @@ jobs:
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo 'Tag already published; refusing to overwrite'; exit 1
           fi
-          gh release create "$RELEASE_TAG" artifacts/*.apk artifacts/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title 'BlazeNetMonitor Android v0.1.0 Preview APK' --prerelease \
-            --notes 'Native Android 8+ preview of BlazeNetMonitor, a separate port of completed Windows v1.0.0. Device-wide network speed and graph, monitored session/day/month totals, two configurable DNS/TCP/HTTPS/reachability checks, persistent notification and opt-in draggable overlay. Includes creator PayPal QR. This DEBUG-signed APK is for sideload testing, not a Play Store production release. No per-app Top Five yet; Android restricts cross-app traffic stats. Foreground service and overlay permissions require user interaction. Physical-device visual and background-mode tests remain outstanding.'
+          notes='Native Android 8+ preview of BlazeNetMonitor, a separate port of completed Windows v1.0.0. Device-wide network speed and graph, monitored session/day/month totals, two configurable DNS/TCP/HTTPS/reachability checks, persistent notification and opt-in draggable overlay. Includes creator PayPal QR. This DEBUG-signed APK is for sideload testing, not a Play Store production release. No per-app Top Five yet; Android restricts cross-app traffic stats. Foreground service and overlay permissions require user interaction. Physical-device visual and background-mode tests remain outstanding.'
+          for attempt in 1 2 3 4; do
+            if gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.0 Preview APK' \
+              --prerelease --notes "$notes"; then break; fi
+            if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              sleep $((attempt*5))
+            else
+              echo 'Release appears after retry; proceeding to upload'
+              break
+            fi
+          done
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          for attempt in 1 2 3 4; do
+            if gh release upload "$RELEASE_TAG" artifacts/*.apk artifacts/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --clobber; then break; fi
+            sleep $((attempt*5))
+          done
+          assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
+          echo "$assets" | jq -e '.assets | map(.name) |
+            index("BlazeNetMonitor-Android-v0.1.0-preview.1.apk") != null' >/dev/null
+          echo "$assets" | jq -e '.assets | map(.name) | index("SHA256SUMS.txt") != null' >/dev/null
+          echo 'PASS GitHub release and downloadable APK/sha256 assets verified'
