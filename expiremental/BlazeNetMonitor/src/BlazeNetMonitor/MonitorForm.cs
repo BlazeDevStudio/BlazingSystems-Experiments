@@ -892,8 +892,10 @@ internal sealed class MonitorForm : Form
                 float half = availableWidth / 2f;
                 int width = Math.Max(4, (int)half - 4);
                 int y = Height - graphHeight - 2;
-                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight), Theme.Accent);
-                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight), Theme.Muted);
+                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight),
+                    uploadColor, graphStyle, historySeconds);
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight),
+                    downloadColor, graphStyle, historySeconds);
             }
         }
 
