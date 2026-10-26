@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.webkit.CookieManager
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -125,40 +126,126 @@ private fun SettingsScreen(context:Context,openBrowser:()->Unit) {
         Text("Authentication, 2FA and encryption PINs remain entirely website-managed. ThreadHarbor never receives them through the semantic bridge.")
     }
 }
+private data class DownloadInfo(
+    val name: String, val state: Int, val bytes: Long, val total: Long,
+    val reason: Int, val url: String
+)
+
 @Composable
-private fun DownloadsScreen(context:Context) {
-    val pref=remember{context.getSharedPreferences("downloads",Context.MODE_PRIVATE)}
-    val dm=remember{context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager}
-    var refresh by remember{mutableIntStateOf(0)}
-    val ids=remember(refresh){pref.getString("ids","").orEmpty().split(",")
-        .mapNotNull{it.toLongOrNull()}.reversed()}
-    Column(Modifier.padding(16.dp)){
-        Text("Download Manager",style=MaterialTheme.typography.titleLarge)
-        Text("Android system queue; pause/resume and custom Save As are not yet implemented.")
-        TextButton(onClick={refresh++}){Text("Refresh status")}
-        LazyColumn{
-            items(ids){id->
-                val state=try{
-                    dm.query(DownloadManager.Query().setFilterById(id))?.use{c->
-                        if(!c.moveToFirst())return@use "Unavailable"
-                        val status=c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                        val bytes=c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-                        val total=c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                        val name=when(status){
-                            DownloadManager.STATUS_SUCCESSFUL->"COMPLETE"
-                            DownloadManager.STATUS_FAILED->"FAILED"
-                            DownloadManager.STATUS_PAUSED->"PAUSED BY SYSTEM"
-                            DownloadManager.STATUS_RUNNING->"RUNNING"
-                            else->"QUEUED"
+private fun DownloadsScreen(context: Context) {
+    val prefs = remember { context.getSharedPreferences("downloads", Context.MODE_PRIVATE) }
+    val manager = remember { context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager }
+    var refresh by remember { mutableIntStateOf(0) }
+    var feedback by remember { mutableStateOf("") }
+    val ids = remember(refresh) {
+        prefs.getString("ids", "").orEmpty().split(",")
+            .mapNotNull { it.toLongOrNull() }.distinct().reversed()
+    }
+    fun untrack(id: Long) {
+        val remaining = prefs.getString("ids", "").orEmpty().split(",").filter {
+            it.toLongOrNull() != null && it != id.toString()
+        }
+        prefs.edit().putString("ids", remaining.joinToString(",")).apply()
+    }
+    Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Text("Downloads", style = MaterialTheme.typography.titleLarge)
+        Text("Android system transfers. Custom Save As and user-controlled pause/resume remain unsupported.",
+            style = MaterialTheme.typography.bodySmall)
+        Row {
+            TextButton(onClick = { refresh++ }) { Text("Refresh") }
+            TextButton(onClick = {
+                try { context.startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) }
+                catch (_: Exception) { feedback = "System Downloads unavailable" }
+            }) { Text("System downloads") }
+        }
+        if (feedback.isNotEmpty()) Text(feedback, color = MaterialTheme.colorScheme.error)
+        if (ids.isEmpty()) Text("No transfers yet. Start a download in Browser.")
+        LazyColumn {
+            items(ids, key = { it }) { id ->
+                val info = remember(id, refresh) {
+                    try {
+                        manager.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
+                            if (!cursor.moveToFirst()) null else DownloadInfo(
+                                name = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE)) ?: "Download",
+                                state = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)),
+                                bytes = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                                total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)),
+                                reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)),
+                                url = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI)) ?: ""
+                            )
                         }
-                        name + " — " + bytes + "/" + total + " bytes"
-                    }?:"Unavailable"
-                }catch(_:Exception){"Query failed"}
-                Text("Transfer #" + id + "  " + state,modifier=Modifier.padding(vertical=8.dp))
+                    } catch (_: Exception) { null }
+                }
+                Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(info?.name ?: ("Unavailable transfer #" + id),
+                            style = MaterialTheme.typography.titleSmall)
+                        if (info != null) {
+                            val label = when (info.state) {
+                                DownloadManager.STATUS_SUCCESSFUL -> "Complete"
+                                DownloadManager.STATUS_FAILED -> "Failed, reason " + info.reason
+                                DownloadManager.STATUS_PAUSED -> "Paused by Android, reason " + info.reason
+                                DownloadManager.STATUS_RUNNING -> "Downloading"
+                                else -> "Queued"
+                            }
+                            Text(label + " • " + info.bytes + " / " +
+                                (if (info.total >= 0) info.total.toString() else "unknown") + " bytes")
+                            Row {
+                                if (info.state == DownloadManager.STATUS_SUCCESSFUL) {
+                                    TextButton(onClick = {
+                                        try {
+                                            val uri = manager.getUriForDownloadedFile(id)
+                                            if (uri == null) {
+                                                feedback = "File no longer available"
+                                            } else context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            })
+                                        } catch (_: Exception) { feedback = "No file viewer available" }
+                                    }) { Text("Open") }
+                                }
+                                if (info.state == DownloadManager.STATUS_FAILED &&
+                                    (info.url.startsWith("https://") || info.url.startsWith("http://"))) {
+                                    TextButton(onClick = {
+                                        try {
+                                            val request = DownloadManager.Request(Uri.parse(info.url))
+                                                .setTitle(info.name)
+                                                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                            CookieManager.getInstance().getCookie(info.url)?.takeIf {
+                                                it.isNotBlank()
+                                            }?.let { request.addRequestHeader("Cookie", it) }
+                                            val retryId = manager.enqueue(request)
+                                            val oldIds = prefs.getString("ids", "").orEmpty()
+                                            prefs.edit().putString("ids",
+                                                (oldIds + "," + retryId).trim(',')).apply()
+                                            refresh++
+                                        } catch (_: Exception) { feedback = "Download retry failed" }
+                                    }) { Text("Retry") }
+                                }
+                                if (info.state == DownloadManager.STATUS_RUNNING ||
+                                    info.state == DownloadManager.STATUS_PENDING ||
+                                    info.state == DownloadManager.STATUS_PAUSED) {
+                                    TextButton(onClick = {
+                                        try {
+                                            manager.remove(id)
+                                            untrack(id)
+                                            refresh++
+                                        } catch (_: Exception) { feedback = "Cancel failed" }
+                                    }) { Text("Cancel") }
+                                } else {
+                                    TextButton(onClick = { untrack(id); refresh++ }) { Text("Hide") }
+                                }
+                            }
+                        } else {
+                            TextButton(onClick = { untrack(id); refresh++ }) { Text("Remove entry") }
+                        }
+                    }
+                }
             }
         }
     }
 }
+
 @Composable
 private fun FilesScreen(context: Context) {
     val prefs = remember { context.getSharedPreferences("file_tree_v1", Context.MODE_PRIVATE) }
