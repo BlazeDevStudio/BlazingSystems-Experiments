@@ -98,8 +98,8 @@ public sealed class QualityTracker
         var jitter = successful.Length > 1 ? successful.Zip(successful.Skip(1), (a, b) => Math.Abs(a - b)).Average() : 0;
         ConnectionState state;
         if (!result.Success && History.ConsecutiveFailures >= 2) state = ConnectionState.Down;
-        else if (!result.Success || (recent.Count >= 4 && loss >= 20) || avg > 350 || jitter > 100) state = ConnectionState.Unstable;
-        else if ((recent.Count >= 4 && loss >= 5) || avg > 180 || jitter > 60) state = ConnectionState.Degraded;
+        else if (!result.Success || (recent.Count >= 4 && loss >= 20) || result.LatencyMs > 350 || avg > 350 || jitter > 100) state = ConnectionState.Unstable;
+        else if ((recent.Count >= 4 && loss >= 5) || result.LatencyMs > 180 || avg > 180 || jitter > 60) state = ConnectionState.Degraded;
         else state = ConnectionState.Stable;
 
         if (state == ConnectionState.Stable)
