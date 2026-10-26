@@ -49,12 +49,15 @@ def run():
     time.sleep(1.5)
     typed = dump()
     assert nodes(typed, text=PROBE), "Keyboard input did not update the Compose text field"
-    send = nodes(typed, text="Send")
-    assert len(send) == 1, "Send button missing after text input"
+    # The previous RED left the draft untouched: a tap while the IME was open
+    # could hit keyboard content instead of the Compose button. Close IME FIRST.
+    adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1)
+    ready = dump()
+    assert nodes(ready, text=PROBE), "Draft lost when closing software keyboard"
+    send = nodes(ready, text="Send")
+    assert len(send) == 1, "Send button missing after keyboard dismissed"
     tap(send[0])
-    # Compose may keep the IME open and clip the action-status row.
-    # Closing the IME does not constitute message success.
-    adb("shell", "input", "keyevent", "4")
     deadline = time.monotonic() + 18
     last_text = []
     while time.monotonic() < deadline:
