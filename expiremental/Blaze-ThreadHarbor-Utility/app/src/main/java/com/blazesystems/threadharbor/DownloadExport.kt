@@ -37,18 +37,9 @@ suspend fun exportCompletedDownload(
             input.use { stream ->
                 val output = resolver.openOutputStream(destination, "wt")
                     ?: error("Cannot write selected destination")
+                val cancellationContext = coroutineContext
                 output.use { sink ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        coroutineContext.ensureActive()
-                        val count = stream.read(buffer)
-                        if (count < 0) break
-                        if (count > 0) {
-                            sink.write(buffer, 0, count)
-                            bytes += count
-                        }
-                    }
-                    sink.flush()
+                    bytes = copyStreams(stream, sink) { cancellationContext.ensureActive() }
                 }
             }
             Result.success(bytes)
