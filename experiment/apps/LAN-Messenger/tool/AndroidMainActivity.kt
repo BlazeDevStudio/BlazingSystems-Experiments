@@ -112,7 +112,7 @@ class MainActivity : FlutterActivity() {
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
     private var activityForeground = true
-    private var incomingOverlay: AndroidCallOverlay? = null
+
     private var lastCaller: String? = null
     private var lastCallId: String? = null
     private var lastVideo = false
@@ -123,36 +123,21 @@ class MainActivity : FlutterActivity() {
     private var pipEnabledForCall = false
     private var incomingNotificationPosted = false
 
-    private fun overlay(): AndroidCallOverlay =
-        incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
-            MainActivity.deliverCallAction(this, action, id)
-            if (action == "open") {
-                val open = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
-                startActivity(open)
-            }
-        }.also { incomingOverlay = it }
-
     private fun updateOverlay() {
         // Android has exactly ONE external call presentation surface:
         // a native CallStyle notification while ringing, then system PiP
         // for connected video. Never add our TYPE_APPLICATION_OVERLAY HUD,
         // including while the notification shade or settings are visible.
-        incomingOverlay?.dismiss()
     }
 
     override fun onStart() {
         super.onStart()
         activityForeground = true
-        incomingOverlay?.dismiss()
     }
 
     override fun onResume() {
         super.onResume()
         activityForeground = true
-        incomingOverlay?.dismiss()
         if (lastIncoming) notifications.cancel(7024)
         window?.decorView?.post { deliverPendingAnswer() }
     }
@@ -167,7 +152,6 @@ class MainActivity : FlutterActivity() {
         super.onStop()
         activityForeground = false
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
-            incomingOverlay?.dismiss()
             return
         }
         val id = lastCallId
@@ -316,7 +300,6 @@ class MainActivity : FlutterActivity() {
         lastVideo = video; lastMuted = false; lastIncoming = true
         if (activityForeground) {
             incomingNotificationPosted = false
-            incomingOverlay?.dismiss()
             return false // Flutter shows the in-app buttons.
         }
         if (!canNotify()) {
@@ -504,7 +487,6 @@ class MainActivity : FlutterActivity() {
     ) {
         super.onPictureInPictureModeChanged(inPip, configuration)
         Log.i("LANCallTrace", "pip_state_changed active=$inPip")
-        incomingOverlay?.dismiss()
         callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
     }
 
@@ -545,7 +527,6 @@ class MainActivity : FlutterActivity() {
                             lastCallId = null; lastCaller = null
                             pendingAnswer = null
                             incomingNotificationPosted = false
-                            incomingOverlay?.dismiss()
                             notifications.cancel(7024)
                         }
                         result.success(null)
@@ -562,7 +543,6 @@ class MainActivity : FlutterActivity() {
                                     .setAutoEnterEnabled(false).build())
                             } catch (_: Exception) { }
                         }
-                        incomingOverlay?.dismiss()
                         result.success(null)
                     }
                     "foreground" -> {
@@ -699,8 +679,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         if (active === this) active = null
         callBridge = null
-        incomingOverlay?.dismiss()
-        incomingOverlay = null
         lock?.let { if (it.isHeld) it.release() }
         lock = null
         super.onDestroy()
