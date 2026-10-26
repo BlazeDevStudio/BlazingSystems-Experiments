@@ -18,6 +18,7 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -81,6 +82,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
     }
     var bookmarksExpanded by remember { mutableStateOf(false) }
     var historyExpanded by remember { mutableStateOf(false) }
+    var toolsExpanded by remember { mutableStateOf(false) }
 
     fun saveUrls() {
         fun encode(values: List<String>) = JSONArray().apply { values.forEach { put(it) } }.toString()
@@ -243,7 +245,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
 
     if (reader != null) {
         NativeReaderScreen(reader!!) { reader = null }
-    } else Column(Modifier.fillMaxSize()) {
+    } else Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Text("Tabs: ${tabs.size}", style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState())) {
@@ -267,52 +269,80 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
             }) { Text("Close") }
         }
         Row {
-            OutlinedTextField(
+            TextField(
                 value = address, onValueChange = { address = it }, singleLine = true,
-                modifier = Modifier.weight(1f), label = { Text("Address / search") }
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Website or search") }
             )
             Button(onClick = { active.view.loadUrl(normalizeAddress(address)) }) { Text("Go") }
         }
-        Row {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             TextButton(onClick = { if (active.view.canGoBack()) active.view.goBack() }) { Text("Back") }
             TextButton(onClick = { if (active.view.canGoForward()) active.view.goForward() }) { Text("Next") }
             TextButton(onClick = { active.view.reload() }) { Text("Reload") }
-            TextButton(onClick = { active.view.loadUrl("about:blank") }) { Text("Home") }
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState())) {
-            val saved = bookmarks.contains(active.address)
-            TextButton(onClick = {
-                if (saved) bookmarks.remove(active.address)
-                else if (active.address.startsWith("https://") || active.address.startsWith("http://")) {
-                    bookmarks.add(0, active.address)
-                    while (bookmarks.size > 100) bookmarks.removeAt(bookmarks.lastIndex)
-                }
-                saveUrls()
-            }) { Text(if (saved) "★ Saved" else "☆ Save") }
             Box {
-                TextButton(onClick = { bookmarksExpanded = true }) { Text("Bookmarks") }
-                DropdownMenu(
-                    expanded = bookmarksExpanded,
-                    onDismissRequest = { bookmarksExpanded = false }
-                ) {
+                TextButton(onClick = { toolsExpanded = true }) { Text("More") }
+                DropdownMenu(expanded = toolsExpanded, onDismissRequest = { toolsExpanded = false }) {
+                    DropdownMenuItem(text = { Text("Home") }, onClick = {
+                        toolsExpanded = false
+                        active.view.loadUrl("about:blank")
+                    })
+                    val saved = bookmarks.contains(active.address)
+                    DropdownMenuItem(text = {
+                        Text(if (saved) "Remove bookmark" else "Bookmark this page")
+                    }, onClick = {
+                        toolsExpanded = false
+                        if (saved) bookmarks.remove(active.address)
+                        else if (active.address.startsWith("https://") || active.address.startsWith("http://")) {
+                            bookmarks.add(0, active.address)
+                            while (bookmarks.size > 100) bookmarks.removeAt(bookmarks.lastIndex)
+                        }
+                        saveUrls()
+                    })
+                    DropdownMenuItem(text = { Text("Bookmarks") }, onClick = {
+                        toolsExpanded = false
+                        bookmarksExpanded = true
+                    })
+                    DropdownMenuItem(text = { Text("History") }, onClick = {
+                        toolsExpanded = false
+                        historyExpanded = true
+                    })
+                    DropdownMenuItem(text = { Text("Native Reader") }, onClick = {
+                        toolsExpanded = false
+                        if (active.error != null) {
+                            status = "Cannot interpret a page that failed to load"
+                        } else {
+                            interpretVisiblePage(active.view) { snapshot ->
+                                if (snapshot == null) status = "This page cannot be interpreted in native reading mode"
+                                else reader = snapshot
+                            }
+                        }
+                    })
+                    DropdownMenuItem(text = { Text("Open externally") }, onClick = {
+                        toolsExpanded = false
+                        openExternal(active.address)
+                    })
+                }
+                DropdownMenu(expanded = bookmarksExpanded, onDismissRequest = { bookmarksExpanded = false }) {
                     if (bookmarks.isEmpty()) DropdownMenuItem(
-                        text = { Text("No saved bookmarks") }, onClick = { bookmarksExpanded = false }
+                        text = { Text("No saved bookmarks") },
+                        onClick = { bookmarksExpanded = false }
                     )
-                    bookmarks.take(20).forEach { url ->
+                    bookmarks.take(40).forEach { url ->
                         DropdownMenuItem(text = { Text(url, maxLines = 1) }, onClick = {
                             active.view.loadUrl(url)
                             bookmarksExpanded = false
                         })
                     }
                 }
-            }
-            Box {
-                TextButton(onClick = { historyExpanded = true }) { Text("History") }
                 DropdownMenu(expanded = historyExpanded, onDismissRequest = { historyExpanded = false }) {
                     if (history.isEmpty()) DropdownMenuItem(
                         text = { Text("History is empty") }, onClick = { historyExpanded = false }
                     )
-                    history.take(20).forEach { url ->
+                    history.take(40).forEach { url ->
                         DropdownMenuItem(text = { Text(url, maxLines = 1) }, onClick = {
                             active.view.loadUrl(url)
                             historyExpanded = false
@@ -325,17 +355,6 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                     })
                 }
             }
-            TextButton(onClick = {
-                if (active.error != null) {
-                    status = "Cannot interpret a page that failed to load"
-                    return@TextButton
-                }
-                interpretVisiblePage(active.view) { snapshot ->
-                    if (snapshot == null) status = "This page cannot be interpreted in native reading mode"
-                    else reader = snapshot
-                }
-            }) { Text("Native Reader") }
-            TextButton(onClick = { openExternal(active.address) }) { Text("External") }
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 8.dp)) }
