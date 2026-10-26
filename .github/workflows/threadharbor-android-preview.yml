@@ -83,7 +83,6 @@ jobs:
             adb logcat -d -v time > threadharbor-logcat.txt
             adb shell pidof com.blazesystems.threadharbor | grep -Eq '[0-9]+'
             adb shell uiautomator dump /sdcard/window.xml
-            adb shell cat /sdcard/window.xml | grep -F "Blaze ThreadHarbor"
             adb exec-out screencap -p > threadharbor-smoke.png
             python3 expiremental/Blaze-ThreadHarbor-Utility/ci/emulator_bidirectional.py
             adb exec-out screencap -p > threadharbor-native-reply.png
