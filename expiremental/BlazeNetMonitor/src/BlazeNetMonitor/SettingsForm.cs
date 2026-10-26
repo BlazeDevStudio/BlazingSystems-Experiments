@@ -7,7 +7,7 @@ namespace BlazeNetMonitor;
 internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
-    private readonly ComboBox _adapter, _placement, _themeMode;
+    private readonly ComboBox _adapter, _placement, _themeMode, _donationMode;
     private readonly ComboBox _graphStyle, _graphWindow, _graphRefresh, _metricMode, _unitMode;
     private readonly Button _upGraphColor, _downGraphColor;
     private string _upColorValue, _downColorValue;
@@ -279,7 +279,7 @@ internal sealed class SettingsForm : Form
         about.Controls.Add(new Label { Left = 119, Top = 26, Width = 360, Height = 33,
             Text = "BlazeNetMonitor", Font = new Font("Segoe UI Semibold", 18, FontStyle.Bold) });
         about.Controls.Add(new Label { Left = 120, Top = 69, Width = 365, Height = 24,
-            Text = "v0.2.6 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
+            Text = "v0.2.7 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
         about.Controls.Add(new Label { Left = 24, Top = 120, Width = 458, Height = 95,
             Text = "A small, configurable network speed and connection-health monitor. " +
                 "Supports two independent targets, adaptive graphs and local traffic records.\n\n" +
@@ -288,27 +288,63 @@ internal sealed class SettingsForm : Form
             Text = "Developer · fb.me/manrealloumer", LinkColor = Branding.BlazeBlue };
         profile.LinkClicked += (_, _) => OpenWeb("https://fb.me/manrealloumer");
         about.Controls.Add(profile);
-        about.Controls.Add(new Label { Left = 24, Top = 265, Width = 460, Height = 23,
-            Text = "Support development (optional)", Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold) });
-        var donationView = new PictureBox { Left = 24, Top = 298, Width = 116, Height = 116,
-            SizeMode = PictureBoxSizeMode.Zoom, Image = DonationAssets.TryLoad() };
-        var donationStatus = new Label { Left = 157, Top = 302, Width = 325, Height = 68,
-            Text = donationView.Image is null
-                ? "PayPal donation QR not configured. An authentic QR must be imported."
-                : "Scan the creator's PayPal donation QR to support this independent project.",
-            ForeColor = Theme.Muted };
-        var importQR = new Button { Left = 157, Top = 381, Width = 246, Height = 34,
-            Text = "Import authentic PayPal QR..." };
-        importQR.Click += (_, _) =>
-        {
-            if (!DonationAssets.ImportFromPicker(this)) return;
-            donationView.Image?.Dispose();
-            donationView.Image = DonationAssets.TryLoad();
-            donationStatus.Text = donationView.Image is null
-                ? "Donation QR could not be loaded." : "Creator's local donation QR is configured.";
+        about.Controls.Add(new Label {
+            Left = 24, Top = 261, Width = 456, Height = 25,
+            Text = "Support independent development (optional)",
+            Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold)
+        });
+        var qrView = new PictureBox {
+            Left = 24, Top = 296, Width = 154, Height = 154,
+            Image = DonationAssets.CreateQrBitmap(154), BackColor = Color.White,
+            SizeMode = PictureBoxSizeMode.Normal
         };
-        about.Controls.AddRange([donationView, donationStatus, importQR]);
-        about.Controls.Add(new Label { Left = 24, Top = 462, Width = 475, Height = 57,
+        about.Controls.Add(qrView);
+        about.Controls.Add(new Label {
+            Left = 198, Top = 297, Width = 283, Height = 57,
+            Text = "This is the official PayPal QR of the BlazeNetMonitor creator. " +
+                "Everyone sees the same donation destination.",
+            ForeColor = Theme.Muted
+        });
+        var openPayPal = new Button {
+            Left = 198, Top = 360, Width = 195, Height = 33,
+            Text = "Open creator's PayPal"
+        };
+        openPayPal.Click += (_, _) => DonationAssets.OpenPayPal(this);
+        about.Controls.Add(openPayPal);
+        var showQR = new Button {
+            Left = 198, Top = 403, Width = 195, Height = 32,
+            Text = "Show donation QR card"
+        };
+        showQR.Click += (_, _) =>
+        {
+            var card = new DonationSplashForm(() => { _donationMode.SelectedIndex = 2; });
+            card.FormClosed += (_, _) => card.Dispose();
+            card.Show();
+        };
+        about.Controls.Add(showQR);
+        var donateLabel = new Label {
+            Left = 24, Top = 459, Width = 460, Height = 19,
+            Text = "Startup donation card"
+        };
+        about.Controls.Add(donateLabel);
+        _donationMode = new ComboBox {
+            Left = 24, Top = 482, Width = 438,
+            DropDownStyle = ComboBoxStyle.DropDownList
+        };
+        _donationMode.Items.AddRange([
+            "Every launch (7 seconds)",
+            "First launch only",
+            "Never (About / tray still available)"
+        ]);
+        _donationMode.SelectedIndex = DonationSplashPolicy.Normalize(settings.DonationSplashMode) switch
+        {
+            DonationSplashPolicy.FirstLaunch => 1,
+            DonationSplashPolicy.Never => 2,
+            _ => 0
+        };
+        _donationMode.SelectionChangeCommitted += (_, _) => RaisePreview();
+        about.Controls.Add(_donationMode);
+        about.Controls.Add(new Label { Left = 24, Top = 528, Width = 475, Height = 29,
             Text = WindowsVersionPolicy.ShellFamily(Environment.OSVersion.Version) switch
             {
                 "Windows10Classic" => "Windows 10 detected · classic DeskBand integration remains a future feature.",
@@ -451,6 +487,11 @@ internal sealed class SettingsForm : Form
             1 => "Bits", 2 => "Bytes", _ => "Auto"
         };
         next.ShowFavicons = _showFavicons.Checked;
+        next.DonationSplashMode = _donationMode.SelectedIndex switch {
+            1 => DonationSplashPolicy.FirstLaunch,
+            2 => DonationSplashPolicy.Never,
+            _ => DonationSplashPolicy.EveryLaunch
+        };
         next.UseBits = next.UnitMode switch
         {
             "Bytes" => false, "Bits" => true, _ => _settings.UseBits
