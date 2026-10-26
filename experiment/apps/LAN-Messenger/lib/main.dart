@@ -824,9 +824,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows) return;
     if ((intercom?.talkingTo != null || groupCall?.active == true ||
         _incomingDialogOpen || settings.minimizeToTray) && !_exitRequested) {
-      unawaited(wm.windowManager.hide().then((_) => _syncDesktopCallSurface()));
+      unawaited(() async {
+        try {
+          await wm.windowManager.hide();
+          await _syncDesktopCallSurface();
+        } catch (e) {
+          // Native window transitions can race media capture/remote mouse
+          // events. Do not allow an unhandled Future to terminate the app.
+          if (mounted) setState(() => error = 'Window could not minimize: $e');
+        }
+      }());
     } else {
-      unawaited(_exitWindows());
+      unawaited(_exitWindows().catchError((Object e) {
+        if (mounted) setState(() => error = 'Exit action failed: $e');
+      }));
     }
   }
 
@@ -846,10 +857,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   void _openWindow() {
     unawaited(() async {
-      await wm.windowManager.show();
-      await wm.windowManager.restore();
-      await wm.windowManager.focus();
-      await _syncDesktopCallSurface();
+      try {
+        await wm.windowManager.show();
+        await wm.windowManager.restore();
+        await wm.windowManager.focus();
+        await _syncDesktopCallSurface();
+      } catch (e) {
+        if (mounted) setState(() => error = 'Could not restore app window: $e');
+      }
     }());
   }
 
