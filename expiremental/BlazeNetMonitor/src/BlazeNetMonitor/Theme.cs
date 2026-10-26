@@ -33,7 +33,7 @@ internal static class Theme
 
         var requested = options.ThemeMode;
         IsDark = requested.Equals("Dark", StringComparison.OrdinalIgnoreCase) ||
-            (!requested.Equals("Light", StringComparison.OrdinalIgnoreCase) && IsWindowsDarkMode(options.DockInsideTaskbar && !options.FreeformPositioned));
+            (!requested.Equals("Light", StringComparison.OrdinalIgnoreCase) && IsWindowsDarkMode(WidgetGeometry.ResolvePlacement(options) == WidgetGeometry.InsideTaskbar));
 
         Background = IsDark ? Color.FromArgb(28, 32, 40) : Color.FromArgb(245, 247, 251);
         Panel = IsDark ? Color.FromArgb(38, 43, 54) : Color.White;
