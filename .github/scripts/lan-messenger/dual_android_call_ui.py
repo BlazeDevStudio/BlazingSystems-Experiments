@@ -213,6 +213,16 @@ def first_background_incoming_test():
     tap_label(CALLER, "background-first-call",
               lambda text: "voice call" in text.lower())
     time.sleep(3)
+    # Even with SYSTEM_ALERT_WINDOW granted, a successfully posted CallStyle
+    # notification must NOT create a duplicate app-owned Answer/Decline HUD.
+    before_shade = snapshot(RECEIVER, "ringing-overlay-suppressed")
+    if before_shade is not None:
+        leaked = [n for n in before_shade.iter("node")
+                  if n.attrib.get("package") == "com.example.lan_messenger"
+                  and labels(n).strip().lower() in ("answer", "decline")]
+        if leaked:
+            raise RuntimeError("Duplicate application-owned Answer/Decline overlay while system notification is visible")
+    note("ringing-surface", "PASS: no app-owned duplicate incoming buttons over HOME")
     root = expand_notification_shade(RECEIVER, "background-first-3seconds")
     if root is not None:
         note("notification-early", "UI labels: " +
