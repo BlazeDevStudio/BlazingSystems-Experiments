@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory() as tmp:
   # The first console prompt can appear before OpenWrt finishes generating its
   # initial UCI network configuration. Wait for it before changing the VM LAN.
   vm.sendline("for i in $(seq 1 90); do uci -q get network.lan.ipaddr >/dev/null 2>&1 && break; sleep 1; done; if uci -q get network.lan.ipaddr >/dev/null 2>&1; then printf '\\nEASYMODE_NETWORK_READY\\n'; else printf '\\nEASYMODE_NETWORK_MISSING\\n'; cat /etc/config/network; ip -br link; fi")
-  vm.expect(r'\r\nEASYMODE_NETWORK_(READY|MISSING)\r\n',timeout=120)
+  vm.expect(r'\r+\nEASYMODE_NETWORK_(READY|MISSING)\r+\n',timeout=120)
   if vm.match.group(1)=='MISSING':raise RuntimeError('VM LAN configuration missing after first-boot wait: '+str(vm.before)[-4000:])
   vm.expect(r'root@[^\r\n]*#')
   # This password exists only in the disposable test copy, never the release image.
