@@ -8,7 +8,7 @@ internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
     private readonly ComboBox _adapter, _unit, _placement, _themeMode;
-    private readonly ComboBox _graphStyle, _graphWindow, _metricMode, _unitMode;
+    private readonly ComboBox _graphStyle, _graphWindow, _graphRefresh, _metricMode, _unitMode;
     private readonly Button _upGraphColor, _downGraphColor;
     private string _upColorValue, _downColorValue;
     private readonly CheckBox _showFavicons;
@@ -135,16 +135,22 @@ internal sealed class SettingsForm : Form
         var graphValues = new[] { 0, 15, 30, 60, 120, 300, 600 };
         int graphIndex = Array.IndexOf(graphValues, settings.GraphHistorySeconds);
         _graphWindow.SelectedIndex = Math.Max(0, graphIndex);
+        _graphRefresh = Choice(graphs, "Graph update interval", 180,
+            ["Every second (live)", "Every 2 seconds", "Every 5 seconds"]);
+        _graphRefresh.SelectedIndex = settings.GraphRefreshSeconds switch
+        {
+            2 => 1, 5 => 2, _ => 0
+        };
         _upColorValue = settings.GraphUploadColor;
         _downColorValue = settings.GraphDownloadColor;
-        _upGraphColor = new Button { Left = 24, Top = 205, Width = 214, Height = 42,
+        _upGraphColor = new Button { Left = 24, Top = 284, Width = 214, Height = 42,
             Text = "Upload graph color..." };
-        _downGraphColor = new Button { Left = 249, Top = 205, Width = 214, Height = 42,
+        _downGraphColor = new Button { Left = 249, Top = 284, Width = 214, Height = 42,
             Text = "Download graph color..." };
         _upGraphColor.Click += (_, _) => ChooseGraphColor(true);
         _downGraphColor.Click += (_, _) => ChooseGraphColor(false);
         graphs.Controls.AddRange([_upGraphColor, _downGraphColor]);
-        graphs.Controls.Add(new Label { Left = 24, Top = 270, Width = 465, Height = 120,
+        graphs.Controls.Add(new Label { Left = 24, Top = 354, Width = 465, Height = 120,
             Text = "Graphs adapt to the widget dimensions, even at a 24-pixel taskbar height.\n" +
                 "Auto history uses approximately 30 s in compact mode, 60 s in normal mode\n" +
                 "and 120 s in wide mode. Graph colors are independent of health-dot colors.",
@@ -179,6 +185,7 @@ internal sealed class SettingsForm : Form
 
         _graphStyle.SelectionChangeCommitted += (_, _) => RaisePreview();
         _graphWindow.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _graphRefresh.SelectionChangeCommitted += (_, _) => RaisePreview();
         _metricMode.SelectionChangeCommitted += (_, _) => RaisePreview();
         _unitMode.SelectionChangeCommitted += (_, _) => RaisePreview();
         _showFavicons.CheckedChanged += (_, _) => RaisePreview();
@@ -253,6 +260,10 @@ internal sealed class SettingsForm : Form
         next.UseSystemAccent = _systemAccent.Checked;
         next.ShowGraphs = _showGraphs.Checked;
         next.GraphStyle = _graphStyle.SelectedItem?.ToString() ?? "Line";
+        next.GraphRefreshSeconds = _graphRefresh.SelectedIndex switch
+        {
+            1 => 2, 2 => 5, _ => 1
+        };
         next.GraphHistorySeconds = _graphWindow.SelectedIndex switch
         {
             1 => 15, 2 => 30, 3 => 60, 4 => 120, 5 => 300, 6 => 600, _ => 0

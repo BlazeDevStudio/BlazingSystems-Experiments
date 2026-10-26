@@ -170,6 +170,7 @@ internal sealed class MonitorForm : Form
         if (backgroundless) TransparencyKey = backdrop;
         Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
+        _trafficTimer.Interval = Math.Clamp(_data.Settings.GraphRefreshSeconds, 1, 5) * 1000;
         // IMPORTANT: live preview must not restyle native ComboBoxes while dropped down.
         Invalidate();
     }
@@ -805,10 +806,13 @@ internal sealed class MonitorForm : Form
         bool showMetricLine = metric != "Speed" && Height >= 66;
         float extraHeight = showMetricLine ? 16f : 0f;
         float textHeight = Math.Max(11f, Height - graphHeight - extraHeight - 4f);
-        bool showBadges = _data.Settings.ShowFavicons && _favicons.Any(b => b is not null);
+        bool showBadges = _data.Settings.ShowFavicons &&
+            Width >= (Height < 39 ? 220 : 195) && _favicons.Any(b => b is not null);
         bool useBits = DisplayPreferences.UseBits(_data.Settings, Width, Height);
         int historySeconds = DisplayPreferences.GraphWindowSeconds(
             _data.Settings.GraphHistorySeconds, Width, Height);
+        int historySamples = Math.Max(2, (int)Math.Ceiling(
+            (double)historySeconds / Math.Clamp(_data.Settings.GraphRefreshSeconds, 1, 5)));
         string graphStyle = DisplayPreferences.NormalizeGraphStyle(_data.Settings.GraphStyle);
         Color uploadColor = DisplayPreferences.TryGraphColor(_data.Settings.GraphUploadColor, out var parsedUp)
             ? parsedUp : Theme.Accent;
@@ -875,9 +879,9 @@ internal sealed class MonitorForm : Form
                 int width = Math.Max(4, (int)half - 5);
                 int y = Height - graphHeight - 2;
                 Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight),
-                    uploadColor, graphStyle, historySeconds);
+                    uploadColor, graphStyle, historySamples);
                 Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight),
-                    downloadColor, graphStyle, historySeconds);
+                    downloadColor, graphStyle, historySamples);
             }
         }
         else
@@ -893,9 +897,9 @@ internal sealed class MonitorForm : Form
                 int width = Math.Max(4, (int)half - 4);
                 int y = Height - graphHeight - 2;
                 Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight),
-                    uploadColor, graphStyle, historySeconds);
+                    uploadColor, graphStyle, historySamples);
                 Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight),
-                    downloadColor, graphStyle, historySeconds);
+                    downloadColor, graphStyle, historySamples);
             }
         }
 

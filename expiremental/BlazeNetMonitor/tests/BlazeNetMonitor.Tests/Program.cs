@@ -173,4 +173,6 @@ badRtt.Add(new ProbeResult(baseTime.AddSeconds(10), true, 520, "slow"), 5);
 Check(badRtt.History.State == ConnectionState.Unstable, "outlier RTT raises orange warning immediately");
 Check(badRtt.History.LatencyBaselineMs > 0 && badRtt.History.LatencyBaselineMs < 40,
       "outlier RTT does not poison learned baseline");
+Check(new AppSettings { GraphRefreshSeconds = 5 }.Copy().GraphRefreshSeconds == 5,
+    "sampling and graph refresh preference persistence");
 Console.WriteLine($"RESULT {passed} tests passed");

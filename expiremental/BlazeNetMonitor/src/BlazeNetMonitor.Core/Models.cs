@@ -42,6 +42,7 @@ public sealed class AppSettings
     public string GraphUploadColor { get; set; } = "#40C9F4";
     public string GraphDownloadColor { get; set; } = "#FFB360";
     public int GraphHistorySeconds { get; set; } = 0; // zero = Auto adaptive
+    public int GraphRefreshSeconds { get; set; } = 1; // 1, 2 or 5 seconds
     public string MetricMode { get; set; } = "Auto"; // Auto, Speed, Latency, Loss, Jitter, Totals
     public string UnitMode { get; set; } = "Auto";  // Auto, Bits, Bytes
     public bool ShowFavicons { get; set; } = false; // opt-in outbound HTTPS favicon fetch
