@@ -241,14 +241,13 @@ internal sealed class MonitorForm : Form
         if (!_dragActive)
         {
             var edge = FindDragEdges(e.Location);
-            Cursor = edge switch
-            {
-                DragEdges.Left or DragEdges.Right => Cursors.SizeWE,
-                DragEdges.Top or DragEdges.Bottom => Cursors.SizeNS,
-                DragEdges.Left | DragEdges.Top or DragEdges.Right | DragEdges.Bottom => Cursors.SizeNWSE,
-                DragEdges.Left | DragEdges.Bottom or DragEdges.Right | DragEdges.Top => Cursors.SizeNESW,
-                _ => Cursors.SizeAll
-            };
+            if (edge is DragEdges.Left or DragEdges.Right) Cursor = Cursors.SizeWE;
+            else if (edge is DragEdges.Top or DragEdges.Bottom) Cursor = Cursors.SizeNS;
+            else if (edge == (DragEdges.Left | DragEdges.Top) ||
+                     edge == (DragEdges.Right | DragEdges.Bottom)) Cursor = Cursors.SizeNWSE;
+            else if (edge == (DragEdges.Left | DragEdges.Bottom) ||
+                     edge == (DragEdges.Right | DragEdges.Top)) Cursor = Cursors.SizeNESW;
+            else Cursor = Cursors.SizeAll;
             return;
         }
 
