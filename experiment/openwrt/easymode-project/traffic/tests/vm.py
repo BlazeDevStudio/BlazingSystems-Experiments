@@ -53,7 +53,7 @@ with tempfile.TemporaryDirectory() as tmp:
   vm.expect(r'root@[^\r\n]*#')
   # This password exists only in the disposable test copy, never the release image.
   vm.sendline('passwd');vm.expect('[Nn]ew password:');vm.sendline(password);vm.expect('[Rr]etype password:');vm.sendline(password);vm.expect(r'root@[^\r\n]*#')
-  vm.sendline("uci set network.lan.ipaddr=192.168.77.1; uci commit network; /etc/init.d/network restart")
+  vm.sendline("uci set network.lan.ipaddr=192.168.77.1; uci set network.wan=interface; uci set network.wan.device=eth1; uci set network.wan.proto=dhcp; uci commit network; /etc/init.d/network restart")
   vm.expect(r'root@[^\r\n]*#');time.sleep(8)
   ssh=paramiko.SSHClient();ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   for attempt in range(15):
@@ -66,6 +66,12 @@ with tempfile.TemporaryDirectory() as tmp:
    if rc:raise RuntimeError(f'VM command failed ({rc}): {command}\n{out}\n{err}')
    return out
   check('24.10.8' in run('cat /etc/openwrt_release'),'official OpenWrt 24.10.8 boots')
+  for attempt in range(30):
+   wan=json.loads(run("ubus call network.interface.wan status 2>/dev/null || echo '{}'"))
+   if wan.get('up') and wan.get('l3_device')=='eth1':break
+   time.sleep(2)
+  else:raise RuntimeError('VM WAN DHCP unavailable: '+json.dumps(wan))
+  check(True,'disposable VM has an independent NAT WAN')
   for attempt in range(30):
    try:
     with socket.create_connection(('192.168.77.1',80),timeout=2):break
