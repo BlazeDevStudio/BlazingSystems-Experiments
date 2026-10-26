@@ -721,93 +721,97 @@ internal sealed class MonitorForm : Form
         base.OnPaint(e);
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.Clear(Theme.Background);
+        g.Clear(IsBackgroundless ? TransparentCanvas : Theme.Background);
 
-        bool micro = Height < 39;
-        bool narrow = Width < 275;
-        bool showGraphs = _data.Settings.ShowGraphs && Height >= (narrow ? 130 : 82);
-        float textScale = micro
-            ? Math.Clamp(Height * 0.26f, 6.5f, 9f)
-            : Math.Clamp(Math.Min(Width / (narrow ? 28f : 35f), Height / 4f), 8f, 12f);
-        using var speedFont = new Font("Segoe UI Semibold", textScale, FontStyle.Bold, GraphicsUnit.Point);
-        using var accentBrush = new SolidBrush(Theme.Accent);
+        bool inline = Height < 58 || Width >= 275 || Width < 180;
+        bool compact = Height < 45 || Width < 190;
+        int graphHeight = WidgetGeometry.GraphHeight(Height, _data.Settings.ShowGraphs);
+        float textHeight = Math.Max(11f, Height - graphHeight - 4f);
+        float size = compact
+            ? Math.Clamp(Math.Min(textHeight * 0.48f, Width / 20f), 6.5f, 10f)
+            : Math.Clamp(Math.Min(inline ? Width / 35f : Width / 25f,
+                inline ? textHeight * 0.55f : textHeight * 0.3f), 8f, 12f);
+
+        using var speedFont = new Font("Segoe UI Semibold", size, FontStyle.Bold, GraphicsUnit.Point);
         using var textBrush = new SolidBrush(Theme.Text);
+        using var gripBrush = new SolidBrush(Theme.Accent);
         using var border = new Pen(_editingGeometry ? Theme.Accent : Theme.Border, _editingGeometry ? 2f : 1f);
-        using var format = new StringFormat {
-            Trimming = StringTrimming.EllipsisCharacter,
-            FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center
-        };
+        using var fmt = new StringFormat { Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center };
 
-        g.DrawRectangle(border, 1, 1, Width - 3, Height - 3);
-        // At taskbar height the two independent status targets sit horizontally;
-        // taller layouts retain the original vertical pair.
-        if (micro)
+        if (!IsBackgroundless)
+            g.DrawRectangle(border, 1, 1, Width - 3, Height - 3);
+
+        // Two independent targets retain their ordering in all layout profiles.
+        if (Height < 39)
         {
-            for (int i = 0; i < 2; i++)
+            for (int k = 0; k < 2; k++)
             {
-                using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
-                g.FillEllipse(dot, 6 + i * 13, Height / 2f - 5, 10, 10);
+                using var dot = new SolidBrush(Theme.State(_snapshots[k].State));
+                g.FillEllipse(dot, 6 + k * 13, (Height - 10) / 2f, 10, 10);
             }
         }
         else
         {
-            for (int i = 0; i < 2; i++)
+            for (int k = 0; k < 2; k++)
             {
-                float cy = Height / 2f + (i == 0 ? -12 : 12);
-                using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
-                g.FillEllipse(dot, 12, cy - 6, 12, 12);
-                using var ring = new Pen(Theme.Border);
-                g.DrawEllipse(ring, 11, cy - 7, 14, 14);
+                using var dot = new SolidBrush(Theme.State(_snapshots[k].State));
+                float center = Height / 2f + (k == 0 ? -12f : 12f);
+                g.FillEllipse(dot, 12, center - 6, 12, 12);
             }
         }
-        float contentX = micro ? 34f : 40f;
-        using (var line = new Pen(Theme.Border))
-            g.DrawLine(line, contentX - 5f, 4, contentX - 5f, Height - 5);
-        float contentWidth = Math.Max(20, Width - contentX - 7);
-        var up = micro
+
+        float contentX = Height < 39 ? 34f : 39f;
+        float availableWidth = Math.Max(20f, Width - contentX - 5f);
+        bool abbreviate = compact || (inline && Width < 260);
+        string up = abbreviate
             ? "↑" + CompactRate(_speed.UploadBytesPerSecond, _data.Settings.UseBits)
             : "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
-        var down = micro
+        string down = abbreviate
             ? "↓" + CompactRate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits)
             : "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
 
-        if (micro || !narrow)
+        if (inline)
         {
-            float half = contentWidth / 2f;
-            float y = showGraphs ? 4f : 4f;
-            float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 8f;
+            float half = availableWidth / 2f;
             g.DrawString(up, speedFont, textBrush,
-                new RectangleF(contentX, y, half - 3, labelHeight), format);
+                new RectangleF(contentX, 2, Math.Max(14, half - 3), textHeight), fmt);
             g.DrawString(down, speedFont, textBrush,
-                new RectangleF(contentX + half, y, half - 3, labelHeight), format);
-            if (showGraphs)
+                new RectangleF(contentX + half, 2, Math.Max(14, half - 3), textHeight), fmt);
+            if (graphHeight > 0)
             {
-                int graphY = Math.Max(27, Height - 31);
-                var graphWidth = (int)Math.Max(14, half - 12);
-                Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
-                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
+                int width = Math.Max(4, (int)half - 5);
+                int y = Height - graphHeight - 2;
+                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight), Theme.Accent);
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight), Theme.Muted);
             }
         }
         else
         {
-            float rowHeight = (showGraphs ? Height - 35f : Height - 8f) / 2f;
+            float row = textHeight / 2f;
             g.DrawString(up, speedFont, textBrush,
-                new RectangleF(contentX, 4f, contentWidth, rowHeight), format);
+                new RectangleF(contentX, 2, availableWidth, row), fmt);
             g.DrawString(down, speedFont, textBrush,
-                new RectangleF(contentX, 4f + rowHeight, contentWidth, rowHeight), format);
-            if (showGraphs)
-                Graph(g, _downSamples, new Rectangle((int)contentX + 2, Height - 29,
-                    (int)contentWidth - 5, 21));
+                new RectangleF(contentX, row + 2, availableWidth, row), fmt);
+            if (graphHeight > 0)
+            {
+                float half = availableWidth / 2f;
+                int width = Math.Max(4, (int)half - 4);
+                int y = Height - graphHeight - 2;
+                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight), Theme.Accent);
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight), Theme.Muted);
+            }
         }
 
         if (_editingGeometry)
         {
-            // In edit mode the perimeter and handles are visible and Windows resizes via WM_NCHITTEST.
-            int h = 8;
+            // The background is temporarily opaque during resizing for hit-testing.
+            const int handle = 7;
             foreach (var pt in new[] {
-                new Point(0, 0), new Point(Width - h - 1, 0),
-                new Point(0, Height - h - 1), new Point(Width - h - 1, Height - h - 1) })
-                g.FillRectangle(accentBrush, pt.X, pt.Y, h, h);
+                new Point(0, 0), new Point(Width - handle - 1, 0),
+                new Point(0, Height - handle - 1),
+                new Point(Width - handle - 1, Height - handle - 1) })
+                g.FillRectangle(gripBrush, pt.X, pt.Y, handle, handle);
         }
     }
 
@@ -824,13 +828,23 @@ internal sealed class MonitorForm : Form
         return $"{value:0.#}{suffixes[index]}";
     }
 
-    private static void Graph(Graphics g, Queue<double> samples, Rectangle r)
+    private static void Graph(Graphics g, Queue<double> samples, Rectangle rect, Color color)
     {
-        if (samples.Count < 2) return;
-        var nums = samples.ToArray();
-        var max = Math.Max(1, nums.Max());
-        var points = nums.Select((v, i) => new PointF(r.Left + i * r.Width / (float)Math.Max(1, nums.Length - 1), r.Bottom - (float)(v / max) * r.Height)).ToArray();
-        using var pen = new Pen(Theme.Accent, 1.35f);
+        if (rect.Height < 3 || rect.Width < 3) return;
+        using var pen = new Pen(color, rect.Height <= 6 ? 1f : 1.35f);
+        var numbers = samples.ToArray();
+        if (numbers.Length < 2)
+        {
+            // Show a real graph track even before the first two traffic samples.
+            float baseline = rect.Bottom - Math.Max(1, rect.Height / 3f);
+            g.DrawLine(pen, rect.Left, baseline, rect.Right, baseline);
+            return;
+        }
+        double peak = Math.Max(1d, numbers.Max());
+        var points = numbers.Select((v, index) => new PointF(
+            rect.Left + (float)index / Math.Max(1, numbers.Length - 1) * rect.Width,
+            rect.Bottom - 1 - (float)(Math.Max(0, v) / peak) * Math.Max(1, rect.Height - 1)
+        )).ToArray();
         g.DrawLines(pen, points);
     }
 
