@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.0-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.2.1-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,15 +34,30 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.0-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.2.1-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
+          }
+      - name: Windows x64 GUI process launch smoke check
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "dist/win-x64/BlazeNetMonitor.exe").Path
+          $app = Start-Process -FilePath $exe -PassThru
+          try {
+            Start-Sleep -Seconds 7
+            $app.Refresh()
+            if ($app.HasExited) { throw "BlazeNetMonitor exited during launch smoke test (code $($app.ExitCode))" }
+            Write-Host "PASS GUI process remained alive for 7 seconds on Windows runner"
+          }
+          finally {
+            $app.Refresh()
+            if (-not $app.HasExited) { Stop-Process -Id $app.Id -Force }
           }
       - name: Publish GitHub pre-release (not production-certified)
         shell: pwsh
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.0-win-x64.zip artifacts/BlazeNetMonitor-v0.2.0-win-x86.zip artifacts/BlazeNetMonitor-v0.2.0-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.0 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.0 experimental freeform UX: resize/move with bounds, opacity, auto theme, contrast-aware and adaptive layout. Windows 10 DeskBand installation is NOT available in this build; OS compatibility checks do not install Explorer extensions. This preview passed build/test gates but needs real desktop QA. Extract ZIP and run BlazeNetMonitor.exe.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.1-win-x64.zip artifacts/BlazeNetMonitor-v0.2.1-win-x86.zip artifacts/BlazeNetMonitor-v0.2.1-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.1 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.1 preview: fixes dragging behind taskbar via working-area clipping, smaller nonactivating hover panel with independent opacity, modeless settings with live theme and opacity preview, Save/Cancel preview rollback and fullscreen foreground auto-hide. Windows x64 launch smoke and algorithm tests run in CI; real-world desktop drag/F11/game validation is not yet complete. Windows 10 classic DeskBand COM integration remains unimplemented. Extract the ZIP and run BlazeNetMonitor.exe.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }

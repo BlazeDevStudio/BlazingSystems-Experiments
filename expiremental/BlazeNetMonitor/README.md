@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.0 — freeform UX development preview
+# BlazeNetMonitor v0.2.1 — freeform UX bugfix preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,21 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.1 QA-driven fixes (October 26, 2026)
+
+- **Taskbar occlusion:** move/resize and saved freeform locations are confined to the actual Windows **working area**, with 6 px handle safety padding. The old overlay-inside-taskbar mode is intentionally disabled until real shell integration is implemented.
+- **At-a-glance:** smaller 356 × 226 px nonactivating status card with independently configurable 40–100% opacity.
+- **Live settings:** dialog is **modeless**; the widget remains visible, counters and health probes keep running, and appearance/opacity/adapter/units preview immediately. Cancel restores prior behavior. Autosave persists the original settings until explicit Save.
+- **Hover preview:** moving the at-a-glance opacity slider briefly shows the small panel at the current setting, then dismisses it automatically.
+- **Fullscreen apps:** an independent visibility timer detects an external fullscreen foreground window on the widget's monitor and temporarily hides the widget and popup. Network sampling continues; it reappears without activating or stealing focus when the fullscreen foreground window is left. Enabled by default, configurable under Appearance.
+- **Theme:** settings editor follows light/dark/high-contrast palette changes more consistently.
+- Existing settings and dual target color rules are preserved; user hardware verification is still required.
+
+### QA gates
+- Pure regression checks cover screen bounds, fullscreen rectangle geometry, independent preview copy, theme/hover alpha persistence, quality logic and network counters.
+- Windows CI compiles x64/x86/ARM64 self-contained EXEs and runs a 7-second x64 process launch smoke check.
+- A Windows runner does **not** validate manual resizing, Z-order behavior on a real Windows 11 taskbar, UAC/Explorer interactions, fullscreen games, F11 browsing, mixed-DPI displays or accessibility. This remains a preview, not an accepted production release.
 
 ## Status-dot semantics
 
@@ -64,7 +79,7 @@ Windows 10 (NT 10 build 10240–21999) is classified as **eligible for classic D
 - **Hover** the widget for glance status and transfer counters.
 - **Click one of the two dots** to configure the checks; **right-click** for the context menu.
 - Tray icon **double click** to configure even if the overlay is obscured.
-- General settings supports **above-taskbar** (recommended) or **taskbar-area overlay** (experimental, could overlap taskbar icons). The latter is **not native shell/deskband integration**.
+- Taskbar-adjacent placement is constrained to usable desktop space. The legacy inside-taskbar overlay option is **disabled for safety**; it is not native DeskBand integration.
 
 ## Compatibility and limitations
 
