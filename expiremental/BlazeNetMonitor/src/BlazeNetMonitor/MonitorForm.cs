@@ -801,7 +801,19 @@ internal sealed class MonitorForm : Form
         bool inline = Height < 58 || Width >= 275 || Width < 180;
         bool compact = Height < 45 || Width < 190;
         int graphHeight = WidgetGeometry.GraphHeight(Height, _data.Settings.ShowGraphs);
-        float textHeight = Math.Max(11f, Height - graphHeight - 4f);
+        string metric = DisplayPreferences.EffectiveMetric(_data.Settings.MetricMode, Width, Height);
+        bool showMetricLine = metric != "Speed" && Height >= 66;
+        float extraHeight = showMetricLine ? 16f : 0f;
+        float textHeight = Math.Max(11f, Height - graphHeight - extraHeight - 4f);
+        bool showBadges = _data.Settings.ShowFavicons && _favicons.Any(b => b is not null);
+        bool useBits = DisplayPreferences.UseBits(_data.Settings, Width, Height);
+        int historySeconds = DisplayPreferences.GraphWindowSeconds(
+            _data.Settings.GraphHistorySeconds, Width, Height);
+        string graphStyle = DisplayPreferences.NormalizeGraphStyle(_data.Settings.GraphStyle);
+        Color uploadColor = DisplayPreferences.TryGraphColor(_data.Settings.GraphUploadColor, out var parsedUp)
+            ? parsedUp : Theme.Accent;
+        Color downloadColor = DisplayPreferences.TryGraphColor(_data.Settings.GraphDownloadColor, out var parsedDown)
+            ? parsedDown : Theme.Muted;
         float size = compact
             ? Math.Clamp(Math.Min(textHeight * 0.48f, Width / 20f), 6.5f, 10f)
             : Math.Clamp(Math.Min(inline ? Width / 35f : Width / 25f,
@@ -824,6 +836,8 @@ internal sealed class MonitorForm : Form
             {
                 using var dot = new SolidBrush(Theme.State(_snapshots[k].State));
                 g.FillEllipse(dot, 6 + k * 13, (Height - 10) / 2f, 10, 10);
+                if (showBadges) DrawCircularFavicon(g, _favicons[k],
+                    35 + k * 15, (Height - 13) / 2f, 13);
             }
         }
         else
@@ -833,18 +847,21 @@ internal sealed class MonitorForm : Form
                 using var dot = new SolidBrush(Theme.State(_snapshots[k].State));
                 float center = Height / 2f + (k == 0 ? -12f : 12f);
                 g.FillEllipse(dot, 12, center - 6, 12, 12);
+                if (showBadges) DrawCircularFavicon(g, _favicons[k], 29, center - 7, 14);
             }
         }
 
-        float contentX = Height < 39 ? 34f : 39f;
+        float contentX = Height < 39
+            ? (showBadges ? 68f : 34f)
+            : (showBadges ? 48f : 39f);
         float availableWidth = Math.Max(20f, Width - contentX - 5f);
         bool abbreviate = compact || (inline && Width < 260);
         string up = abbreviate
-            ? "↑" + CompactRate(_speed.UploadBytesPerSecond, _data.Settings.UseBits)
-            : "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
+            ? "↑" + CompactRate(_speed.UploadBytesPerSecond, useBits)
+            : "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, useBits);
         string down = abbreviate
-            ? "↓" + CompactRate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits)
-            : "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
+            ? "↓" + CompactRate(_speed.DownloadBytesPerSecond, useBits)
+            : "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, useBits);
 
         if (inline)
         {
@@ -857,8 +874,10 @@ internal sealed class MonitorForm : Form
             {
                 int width = Math.Max(4, (int)half - 5);
                 int y = Height - graphHeight - 2;
-                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight), Theme.Accent);
-                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight), Theme.Muted);
+                Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight),
+                    uploadColor, graphStyle, historySeconds);
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight),
+                    downloadColor, graphStyle, historySeconds);
             }
         }
         else
@@ -876,6 +895,16 @@ internal sealed class MonitorForm : Form
                 Graph(g, _upSamples, new Rectangle((int)contentX + 1, y, width, graphHeight), Theme.Accent);
                 Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 1, y, width, graphHeight), Theme.Muted);
             }
+        }
+
+        if (showMetricLine)
+        {
+            using var metricFont = new Font("Segoe UI", 8f, FontStyle.Regular, GraphicsUnit.Point);
+            using var metricBrush = new SolidBrush(Theme.Muted);
+            string extra = CurrentExtraMetric(metric);
+            float y = Height - graphHeight - extraHeight - 1;
+            g.DrawString(extra, metricFont, metricBrush,
+                new RectangleF(contentX, y, Math.Max(12, availableWidth), extraHeight), fmt);
         }
 
         if (_editingGeometry)
@@ -903,24 +932,72 @@ internal sealed class MonitorForm : Form
         return $"{value:0.#}{suffixes[index]}";
     }
 
-    private static void Graph(Graphics g, Queue<double> samples, Rectangle rect, Color color)
+    private static void Graph(Graphics g, Queue<double> samples, Rectangle rect,
+        Color color, string style, int historySeconds)
     {
         if (rect.Height < 3 || rect.Width < 3) return;
-        using var pen = new Pen(color, rect.Height <= 6 ? 1f : 1.35f);
-        var numbers = samples.ToArray();
-        if (numbers.Length < 2)
+        using var pen = new Pen(color, rect.Height <= 6 ? 1f : 1.45f);
+        var values = samples.TakeLast(Math.Clamp(historySeconds, 10, 600)).ToArray();
+        if (values.Length < 2)
         {
-            // Show a real graph track even before the first two traffic samples.
             float baseline = rect.Bottom - Math.Max(1, rect.Height / 3f);
             g.DrawLine(pen, rect.Left, baseline, rect.Right, baseline);
             return;
         }
-        double peak = Math.Max(1d, numbers.Max());
-        var points = numbers.Select((v, index) => new PointF(
-            rect.Left + (float)index / Math.Max(1, numbers.Length - 1) * rect.Width,
+
+        double peak = Math.Max(1d, values.Max());
+        var points = values.Select((v, index) => new PointF(
+            rect.Left + (float)index / Math.Max(1, values.Length - 1) * (rect.Width - 1),
             rect.Bottom - 1 - (float)(Math.Max(0, v) / peak) * Math.Max(1, rect.Height - 1)
         )).ToArray();
-        g.DrawLines(pen, points);
+
+        switch (style)
+        {
+            case "Filled":
+            {
+                using var shade = new SolidBrush(Color.FromArgb(85, color));
+                using var polygon = new GraphicsPath();
+                polygon.AddLines(points);
+                polygon.AddLine(points[^1].X, points[^1].Y, points[^1].X, rect.Bottom);
+                polygon.AddLine(points[^1].X, rect.Bottom, points[0].X, rect.Bottom);
+                polygon.CloseFigure();
+                g.FillPath(shade, polygon);
+                g.DrawLines(pen, points);
+                break;
+            }
+            case "Bars":
+            {
+                int bars = Math.Min(values.Length, Math.Max(2, rect.Width / 3));
+                float barWidth = Math.Max(1f, rect.Width / (float)bars - 1f);
+                using var brush = new SolidBrush(color);
+                for (int i = 0; i < bars; i++)
+                {
+                    int source = values.Length - bars + i;
+                    float normalized = (float)(Math.Max(0d, values[source]) / peak);
+                    float height = Math.Max(1f, normalized * (rect.Height - 1));
+                    float x = rect.Left + i * rect.Width / (float)bars;
+                    g.FillRectangle(brush, x, rect.Bottom - height, barWidth, height);
+                }
+                break;
+            }
+            case "Steps":
+            {
+                using var path = new GraphicsPath();
+                path.StartFigure();
+                for (int i = 1; i < points.Length; i++)
+                {
+                    path.AddLine(points[i - 1].X, points[i - 1].Y,
+                        points[i].X, points[i - 1].Y);
+                    path.AddLine(points[i].X, points[i - 1].Y,
+                        points[i].X, points[i].Y);
+                }
+                g.DrawPath(pen, path);
+                break;
+            }
+            default:
+                g.DrawLines(pen, points);
+                break;
+        }
     }
 
     private void SaveSafe()
