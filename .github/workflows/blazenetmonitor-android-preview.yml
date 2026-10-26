@@ -1,0 +1,79 @@
+name: BlazeNetMonitor Android Preview APK
+on:
+  push:
+    branches:
+      - feature/blazenetmonitor-android-v0.1.0
+    paths:
+      - .github/workflows/blazenetmonitor-android-preview.yml
+      - expiremental/BlazeNetMonitorAndroid/**
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  android-preview:
+    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: expiremental/BlazeNetMonitorAndroid
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: blazenetmonitor-android-v0.1.0-preview.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Prepare Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - name: Native unit tests and APK build
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Validate Android package, SDK levels and service permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          "$AAPT" dump badging "$APK" | tee /tmp/blazenetmonitor-package.txt
+          grep -q "package: name='com.blazesystems.blazenetmonitor'" /tmp/blazenetmonitor-package.txt
+          grep -q "sdkVersion:'26'" /tmp/blazenetmonitor-package.txt
+          grep -q "targetSdkVersion:'35'" /tmp/blazenetmonitor-package.txt
+          "$AAPT" dump permissions "$APK" | tee /tmp/blazenetmonitor-permissions.txt
+          grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' /tmp/blazenetmonitor-permissions.txt
+          grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/blazenetmonitor-permissions.txt
+          if grep -q 'android.permission.QUERY_ALL_PACKAGES' /tmp/blazenetmonitor-permissions.txt; then
+            echo 'Unexpected broad installed-app inventory permission'; exit 1
+          fi
+          mkdir -p artifacts
+          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.0-preview.1.apk
+          sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeNetMonitor-Android-v0.1.0-preview.1-APK
+          path: expiremental/BlazeNetMonitorAndroid/artifacts/
+          retention-days: 60
+      - name: Publish signed-debug APK preview release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Tag already published; refusing to overwrite'; exit 1
+          fi
+          gh release create "$RELEASE_TAG" artifacts/*.apk artifacts/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title 'BlazeNetMonitor Android v0.1.0 Preview APK' --prerelease \
+            --notes 'Native Android 8+ preview of BlazeNetMonitor, a separate port of completed Windows v1.0.0. Device-wide network speed and graph, monitored session/day/month totals, two configurable DNS/TCP/HTTPS/reachability checks, persistent notification and opt-in draggable overlay. Includes creator PayPal QR. This DEBUG-signed APK is for sideload testing, not a Play Store production release. No per-app Top Five yet; Android restricts cross-app traffic stats. Foreground service and overlay permissions require user interaction. Physical-device visual and background-mode tests remain outstanding.'
