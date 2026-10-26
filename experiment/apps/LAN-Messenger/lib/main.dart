@@ -1782,11 +1782,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     unawaited(call.sendRemoteInput(action, x, y, wheel)),
                 child: Center(child: AspectRatio(
                   aspectRatio: sourceRatio,
-                  child: call.remoteRenderer != null
-                      ? RTCVideoView(call.remoteRenderer!,
-                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
-                      : const Center(child: Icon(Icons.videocam,
-                          color: Colors.white54, size: 70)))))),
+                  child: Stack(fit: StackFit.expand, children: [
+                    if (call.remoteRenderer != null)
+                      RTCVideoView(call.remoteRenderer!,
+                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+                    if (remoteWidth == 0 || remoteHeight == 0)
+                      const Center(child: Column(
+                        mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.videocam_off_outlined,
+                              color: Colors.white70, size: 50),
+                          SizedBox(height: 8),
+                          Text('Waiting for remote video frames…',
+                              style: TextStyle(color: Colors.white70)),
+                        ])),
+                  ]))))),
               if (call.localRenderer != null)
                 Positioned(
                   left: _videoPosition.dx.clamp(0.0,
