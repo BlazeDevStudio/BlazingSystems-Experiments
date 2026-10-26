@@ -18,7 +18,7 @@ data class ReaderSnapshot(
     val sections: List<String>
 )
 
-private val readerScript = String.raw`(function() {
+private val readerScript = """(function() {
   'use strict';
   var visible = [];
   var nodes = document.querySelectorAll('article h1, article h2, article h3, article p, main h1, main h2, main h3, main p, h1, h2, p');
@@ -36,7 +36,7 @@ private val readerScript = String.raw`(function() {
     url:String(location.href).slice(0,4096),
     sections:visible
   });
-})()`
+})()"""
 
 /**
  * Reads only visible H1/H2/H3/P text when the user taps the action.
