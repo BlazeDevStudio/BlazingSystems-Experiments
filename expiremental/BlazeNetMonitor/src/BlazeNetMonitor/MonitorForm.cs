@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using BlazeNetMonitor.Core;
 
 namespace BlazeNetMonitor;
@@ -9,6 +10,10 @@ internal sealed class MonitorForm : Form
 {
     private readonly Storage _storage = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlazeSystems", "BlazeNetMonitor", "state.json"));
     private readonly PersistedData _data;
+    private SettingsForm? _settingsForm;
+    private AppSettings? _settingsBeforeEdit;
+    private readonly System.Windows.Forms.Timer _fullscreenTimer = new() { Interval = 750 };
+    private bool _hiddenForFullscreen;
     private readonly NetworkMonitor _network = new();
     private readonly System.Windows.Forms.Timer _trafficTimer = new() { Interval = 1000 };
     private readonly System.Windows.Forms.Timer _probeTimer = new();
@@ -91,9 +96,16 @@ internal sealed class MonitorForm : Form
         _trafficTimer.Tick += (_, _) => SampleTraffic();
         _probeTimer.Tick += async (_, _) => await ProbeTargets();
         _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
-        Shown += async (_, _) => { RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start(); await ProbeTargets(); };
+        _fullscreenTimer.Tick += (_, _) => RefreshFullscreenState();
+        Shown += async (_, _) =>
+        {
+            RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start();
+            _fullscreenTimer.Start(); await ProbeTargets();
+        };
         SystemEventsHook();
     }
+
+    protected override bool ShowWithoutActivation => true;
 
     protected override CreateParams CreateParams
     {
@@ -123,51 +135,79 @@ internal sealed class MonitorForm : Form
         Invalidate();
     }
 
+    private static Rectangle SafeBounds(Rectangle candidate, Screen screen)
+        => WidgetGeometry.Constrain(candidate, screen.WorkingArea, MinimumWidgetWidth, MinimumWidgetHeight);
+
     private void RestoreGeometry()
     {
         Width = Math.Clamp(_data.Settings.WidgetWidth, MinimumWidgetWidth, MaximumSize.Width);
         Height = Math.Clamp(_data.Settings.WidgetHeight, MinimumWidgetHeight, MaximumSize.Height);
         if (_data.Settings.FreeformPositioned && _data.Settings.WidgetX != -1 && _data.Settings.WidgetY != -1)
-        {
             Location = new Point(_data.Settings.WidgetX, _data.Settings.WidgetY);
-            Reposition();  // Clamp to whichever monitor still intersects, only when necessary.
-        }
-        else Reposition();
+        Reposition();
     }
 
     private void Reposition()
     {
-        if (_editingGeometry || !Visible && IsHandleCreated) return;
+        if (_editingGeometry || IsDisposed) return;
         if (_data.Settings.FreeformPositioned)
         {
-            // Preserve freeform position; re-home only when monitor was unplugged / offscreen.
-            if (Screen.AllScreens.Any(s =>
-            {
-                var inside = Rectangle.Intersect(s.WorkingArea, Bounds);
-                return inside.Width >= Math.Min(80, Width / 2) &&
-                       inside.Height >= Math.Min(30, Height / 2);
-            })) return;
-            var fallback = Screen.PrimaryScreen?.WorkingArea ?? Screen.FromControl(this).WorkingArea;
-            Location = new Point(fallback.Left + Math.Max(0, fallback.Width - Width - 20),
-                fallback.Top + Math.Max(0, fallback.Height - Height - 20));
+            Bounds = SafeBounds(Bounds, Screen.FromRectangle(Bounds));
             return;
         }
-
         var screen = Screen.PrimaryScreen ?? Screen.FromControl(this);
         var work = screen.WorkingArea;
-        var bounds = screen.Bounds;
-        int x = Math.Clamp(bounds.Right - Width - _data.Settings.HorizontalOffset,
-            bounds.Left, Math.Max(bounds.Left, bounds.Right - Width));
-        int y = _data.Settings.DockInsideTaskbar ? bounds.Bottom - Height : work.Bottom - Height;
-        if (work.Bottom == bounds.Bottom && work.Top > bounds.Top)
-            y = _data.Settings.DockInsideTaskbar ? bounds.Top : work.Top;
-        Location = new Point(x, Math.Clamp(y, bounds.Top, Math.Max(bounds.Top, bounds.Bottom - Height)));
+        // Never overlay the taskbar, including old saved DockInsideTaskbar preferences.
+        Bounds = SafeBounds(new Rectangle(
+            work.Right - Width - _data.Settings.HorizontalOffset,
+            work.Bottom - Height, Width, Height), screen);
+    }
+
+    private void RefreshFullscreenState()
+    {
+        if (IsDisposed || !IsHandleCreated) return;
+        bool hide = _data.Settings.AutoHideForFullscreen && !_editingGeometry &&
+            _settingsForm is null && IsForegroundFullscreen();
+        if (hide == _hiddenForFullscreen) return;
+        _hiddenForFullscreen = hide;
+        if (hide)
+        {
+            _info.Hide(); _showHover = false; _hoverTimer.Stop(); Hide();
+        }
+        else
+        {
+            Show(); Reposition(); // ShowWithoutActivation preserves foreground focus.
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WinRect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")]
+    private static extern nint GetForegroundWindow();
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(nint window, out uint process);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(nint window, out WinRect rect);
+
+    private bool IsForegroundFullscreen()
+    {
+        var foreground = GetForegroundWindow();
+        if (foreground == 0) return false;
+        GetWindowThreadProcessId(foreground, out uint process);
+        if (process == (uint)Environment.ProcessId ||
+            !GetWindowRect(foreground, out var r)) return false;
+        var screen = Screen.FromHandle(foreground);
+        if (screen.DeviceName != Screen.FromRectangle(Bounds).DeviceName) return false;
+        return WidgetGeometry.CoversScreen(
+            Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom), screen.Bounds);
     }
 
     private void BeginGeometryEdit()
     {
         if (_editingGeometry) return;
         _editOriginalBounds = Bounds;
+        Bounds = SafeBounds(Bounds, Screen.FromRectangle(Bounds));
         _wasFreeform = _data.Settings.FreeformPositioned;
         _editingGeometry = true;
         _info.Hide();
@@ -185,6 +225,7 @@ internal sealed class MonitorForm : Form
         _dragActive = false;
         Capture = false;
         Cursor = Cursors.Hand;
+        Bounds = SafeBounds(Bounds, Screen.FromRectangle(Bounds));
         _data.Settings.FreeformPositioned = true;
         _data.Settings.WidgetX = Left;
         _data.Settings.WidgetY = Top;
@@ -202,7 +243,7 @@ internal sealed class MonitorForm : Form
         _dragActive = false;
         Capture = false;
         _data.Settings.FreeformPositioned = _wasFreeform;
-        Bounds = _editOriginalBounds;
+        Bounds = SafeBounds(_editOriginalBounds, Screen.FromRectangle(_editOriginalBounds));
         Cursor = Cursors.Hand;
         BuildMenu();
         Invalidate();
@@ -256,7 +297,8 @@ internal sealed class MonitorForm : Form
         var b = _dragStartBounds;
         if (_dragEdges == DragEdges.Move)
         {
-            Bounds = new Rectangle(b.X + dx, b.Y + dy, b.Width, b.Height);
+            Bounds = SafeBounds(new Rectangle(b.X + dx, b.Y + dy, b.Width, b.Height),
+                Screen.FromPoint(Cursor.Position));
             return;
         }
 
@@ -275,7 +317,8 @@ internal sealed class MonitorForm : Form
             if ((_dragEdges & DragEdges.Top) != 0) top = bottom - MaximumSize.Height;
             else bottom = top + MaximumSize.Height;
         }
-        Bounds = Rectangle.FromLTRB(left, top, right, bottom);
+        Bounds = SafeBounds(Rectangle.FromLTRB(left, top, right, bottom),
+            Screen.FromPoint(Cursor.Position));
     }
 
     private void StopDrag(object? sender, MouseEventArgs e)
@@ -380,14 +423,18 @@ internal sealed class MonitorForm : Form
 
     private void UpdateHover()
     {
-        if (IsDisposed || _editingGeometry) return;
+        if (IsDisposed || _editingGeometry || _hiddenForFullscreen) return;
         var uptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
         _info.RefreshInfo(_network, _data, _snapshots, _speed, uptime);
-        var screen = Screen.FromControl(this).WorkingArea;
-        int x = Math.Clamp(Left + Width - _info.Width, screen.Left, Math.Max(screen.Left, screen.Right - _info.Width));
-        int y = Top - _info.Height - 5;
-        if (y < screen.Top) y = Bottom + 5;
-        _info.Location = new Point(x, y);
+        var area = Screen.FromRectangle(Bounds).WorkingArea;
+        int x = Math.Clamp(Left + Width - _info.Width, area.Left,
+            Math.Max(area.Left, area.Right - _info.Width));
+        int above = Top - _info.Height - 8;
+        int below = Bottom + 8;
+        int y = above >= area.Top ? above :
+            (below + _info.Height <= area.Bottom ? below : area.Top);
+        _info.Location = new Point(x, Math.Clamp(y, area.Top,
+            Math.Max(area.Top, area.Bottom - _info.Height)));
         if (!_info.Visible) _info.Show(this);
     }
 
@@ -521,7 +568,16 @@ internal sealed class MonitorForm : Form
 
     private void SaveSafe()
     {
-        try { _storage.Save(_data); }
+        try
+        {
+            if (_settingsBeforeEdit is null) _storage.Save(_data);
+            else _storage.Save(new PersistedData
+            {
+                Settings = _settingsBeforeEdit.Copy(),
+                Totals = _data.Totals,
+                Histories = _data.Histories
+            });
+        }
         catch (Exception ex) { Debug.WriteLine("Settings persistence error: " + ex); }
     }
 
@@ -529,7 +585,8 @@ internal sealed class MonitorForm : Form
     {
         if (_editingGeometry) CancelGeometryEdit();
         _stop.Cancel();
-        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop();
+        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop();
+        if (_settingsForm is { IsDisposed: false }) _settingsForm.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnPreferenceChanged;
         SaveSafe();

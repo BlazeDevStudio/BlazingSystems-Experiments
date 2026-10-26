@@ -8,6 +8,16 @@ namespace BlazeNetMonitor.Core;
 /// </summary>
 public static class WidgetGeometry
 {
+    public static bool CoversScreen(Rectangle window, Rectangle screen, int tolerance = 3)
+    {
+        if (window.Width <= 0 || window.Height <= 0 ||
+            screen.Width <= 0 || screen.Height <= 0) return false;
+        return window.Left <= screen.Left + tolerance &&
+               window.Top <= screen.Top + tolerance &&
+               window.Right >= screen.Right - tolerance &&
+               window.Bottom >= screen.Bottom - tolerance;
+    }
+
     public static Rectangle Constrain(Rectangle proposed, Rectangle workingArea, int minWidth = 210, int minHeight = 52)
     {
         if (workingArea.Width <= 0 || workingArea.Height <= 0)
