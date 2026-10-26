@@ -133,6 +133,8 @@ internal sealed class MonitorForm : Form
             PromoteOptionalOverlay();
             if (_data.Settings.ShowFavicons) _ = ReloadFaviconsAsync();
             await ProbeTargets();
+            if (!_data.WelcomeAcknowledged && !IsDisposed)
+                BeginInvoke(new Action(ShowWelcomeOnce));
         };
         SystemEventsHook();
     }
