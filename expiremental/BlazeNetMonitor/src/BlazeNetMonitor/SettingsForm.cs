@@ -404,6 +404,23 @@ internal sealed class SettingsForm : Form
             : "Network Connections unavailable — showing filtered interfaces";
     }
 
+    private void SwitchTargetProtocol(int index)
+    {
+        if (_protocols[index].SelectedItem is null) return;
+        var next = Enum.Parse<TargetProtocol>(_protocols[index].SelectedItem!.ToString()!);
+        var previous = _lastProtocols[index];
+        _targetDrafts[index][previous] = _addresses[index].Text;
+        if (previous != next)
+        {
+            // The first edit reveals the grey placeholder without writing a
+            // sample address; switching back restores the actual draft.
+            _addresses[index].Text = _targetDrafts[index].TryGetValue(next, out var draft)
+                ? draft : "";
+            _lastProtocols[index] = next;
+        }
+        RefreshTargetUi(index);
+    }
+
     private void RefreshTargetUi(int index)
     {
         if (_protocols[index].SelectedItem is null) return;
