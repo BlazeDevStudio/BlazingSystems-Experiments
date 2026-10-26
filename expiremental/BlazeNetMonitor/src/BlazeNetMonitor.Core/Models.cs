@@ -19,6 +19,8 @@ public sealed class AppSettings
     public string AdapterId { get; set; } = "auto";
     public bool UseBits { get; set; } = true;
     public bool StartWithWindows { get; set; }
+    // Owner's fixed donation QR is embedded in the application; no visitor substitution.
+    public string DonationSplashMode { get; set; } = "EveryLaunch";
     public bool DockInsideTaskbar { get; set; }
     // Auto migrates older installations: freeform or legacy taskbar placement.
     public string PlacementMode { get; set; } = "Auto";
@@ -233,6 +235,7 @@ public sealed class PersistedData
     public AppSettings Settings { get; set; } = new();
     public TrafficTotals Totals { get; set; } = new();
     public bool WelcomeAcknowledged { get; set; }
+    public bool DonationSplashViewed { get; set; }
     public TargetHistory[] Histories { get; set; } = [new(), new()];
 }
 

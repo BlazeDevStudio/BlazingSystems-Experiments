@@ -236,4 +236,19 @@ Check(!AdapterUiPolicy.IsVisible("vEthernet (Default Switch)", "Hyper-V Virtual"
 Check(AdapterUiPolicy.IsVisible("vEthernet", "Virtual",
       System.Net.NetworkInformation.NetworkInterfaceType.Ethernet,true),
       "expanded adapter list retains optional virtual adapters");
+Check(DonationSplashPolicy.ShouldShow("EveryLaunch", false) &&
+      DonationSplashPolicy.ShouldShow("EveryLaunch", true), "owner donation splash every launch");
+Check(DonationSplashPolicy.ShouldShow("FirstLaunch", false) &&
+      !DonationSplashPolicy.ShouldShow("FirstLaunch", true), "donation first-only honors saved history");
+Check(!DonationSplashPolicy.ShouldShow("Never", false) &&
+      !DonationSplashPolicy.ShouldShow("Never", true), "never setting disables automatic QR");
+Check(DonationSplashPolicy.Normalize("unrecognized") == DonationSplashPolicy.EveryLaunch,
+      "unknown donation mode falls back to standard prompt");
+Check(DonationSplashPolicy.MatchesOwner(new Uri(DonationSplashPolicy.OwnerPayPalUrl)) &&
+      !DonationSplashPolicy.MatchesOwner(new Uri("https://example.com/")),
+      "owner QR payment destination is fixed");
+var matrix = DonationSplashPolicy.ModuleMatrix();
+Check(matrix.GetLength(0) == 41 && matrix.GetLength(1) == 41 &&
+      matrix[0,0] && matrix[0,6] && matrix[6,0] && matrix[6,6],
+      "embedded PayPal QR matrices retain finder boundaries");
 Console.WriteLine($"RESULT {passed} tests passed");
