@@ -1,6 +1,7 @@
 'use strict';
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let boardLoading=null;
 let project=null,projects=[],boards=[],selected=null,pending=null,tab='graph',unsaved=false,saveTimer=null,saveInFlight=null,changeRevision=0,codeRequest=0,simulation=null,lastCompilation=null,simInputs={},simBreaks=[];
 const labels={loopStart:'Loop Start',pinMode:'Pin Mode',digitalWrite:'Digital Write',delay:'Delay',comment:'Comment'};
 function log(text){const box=$('#log');box.textContent+='\n'+String(text);box.scrollTop=box.scrollHeight;}
@@ -56,12 +57,18 @@ function updateBoardChoiceStatus(){
 function showModal(){
  $('#newModal').classList.remove('hidden');
  renderBoardList();$('#newName').focus();
+ if(!boards.length){$('#boardChoiceStatus').textContent='Loading board catalog from Arduino CLI…';discover().catch(e=>log('Board catalog loading failed: '+e.message));}
 }
 async function discover(){
- const r=await window.blaze.boards();boards=r.boards||[];
- renderBoardList();
- if(!r.ok)log('Board discovery error: '+r.stderr);
- else log(`Discovered ${boards.filter(b=>b.installed).length} installed boards and ${boards.filter(b=>!b.installed).length} optional starter targets. Additional boards require installing their cores.`);
+ if(boardLoading)return boardLoading;
+ boardLoading=(async()=>{
+  const r=await window.blaze.boards();boards=r.boards||[];
+  renderBoardList();
+  if(!r.ok)log('Board discovery error: '+r.stderr);
+  else log(`Discovered ${boards.filter(b=>b.installed).length} installed boards and ${boards.filter(b=>!b.installed).length} optional starter targets. Additional boards require installing their cores.`);
+  return r;
+ })();
+ try{return await boardLoading;}finally{boardLoading=null;}
 }
 async function installCoreFor(core){
  if(!/^[\w.-]+:[\w.-]+$/.test(core))throw Error('Invalid core ID');
