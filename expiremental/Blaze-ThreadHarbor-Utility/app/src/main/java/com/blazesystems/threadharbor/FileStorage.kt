@@ -28,10 +28,11 @@ suspend fun importIntoAuthorizedFolder(
         val filename = DocumentFile.fromSingleUri(context, source)?.name
             ?.take(180)?.ifBlank { "imported-file" } ?: "imported-file"
         val type = resolver.getType(source) ?: "application/octet-stream"
-        target = directory.createFile(type, filename)
+        val created = directory.createFile(type, filename)
             ?: error("Document provider rejected new file")
+        target = created
         resolver.openInputStream(source)?.use { input ->
-            resolver.openOutputStream(target.uri, "wt")?.use { output ->
+            resolver.openOutputStream(created.uri, "wt")?.use { output ->
                 val buffer = ByteArray(64 * 1024)
                 while (true) {
                     coroutineContext.ensureActive()
