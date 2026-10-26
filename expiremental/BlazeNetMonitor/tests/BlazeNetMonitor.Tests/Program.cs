@@ -49,10 +49,35 @@ try
 {
     var store = new Storage(path);
     var state = new PersistedData(); state.Settings.Targets[0].Address = "example.com";
+    state.Settings.WidgetOpacityPercent = 67;
+    state.Settings.WidgetWidth = 420;
+    state.Settings.WidgetHeight = 98;
+    state.Settings.WidgetX = 123;
+    state.Settings.WidgetY = 234;
+    state.Settings.ThemeMode = "Light";
+    state.Settings.FreeformPositioned = true;
+    state.Settings.ShowGraphs = false;
     store.Save(state);
     Check(store.Load().Settings.Targets[0].Address == "example.com", "atomic settings roundtrip");
+    var loadedSettings = store.Load().Settings;
+    Check(loadedSettings.FreeformPositioned && loadedSettings.WidgetX == 123 &&
+          loadedSettings.WidgetY == 234 && loadedSettings.WidgetWidth == 420 &&
+          loadedSettings.WidgetHeight == 98, "freeform geometry roundtrip");
+    Check(loadedSettings.WidgetOpacityPercent == 67 &&
+          loadedSettings.ThemeMode == "Light" && !loadedSettings.ShowGraphs,
+          "appearance settings roundtrip");
     File.WriteAllText(path, "{INVALID JSON");
     Check(store.Load().Settings.Targets.Length == 2, "corrupt settings fail safe");
 }
 finally { Directory.Delete(Path.GetDirectoryName(path)!, true); }
+Check(WindowsVersionPolicy.CanUseClassicDeskBand(new Version(10, 0, 19045)),
+    "Windows 10 classic deskband eligible");
+Check(!WindowsVersionPolicy.CanUseClassicDeskBand(new Version(10, 0, 22631)),
+    "Windows 11 deskband fail closed");
+Check(!WindowsVersionPolicy.CanUseClassicDeskBand(new Version(10, 0, 26100)),
+    "modern Windows 11 deskband fail closed");
+Check(!WindowsVersionPolicy.IsNativeHostReady(new Version(10, 0, 19045), false),
+    "OS detection alone cannot claim native integration");
+Check(WindowsVersionPolicy.ShellFamily(new Version(6, 1, 7601)) == "Unknown",
+    "unsupported older Windows family rejected");
 Console.WriteLine($"RESULT {passed} tests passed");
