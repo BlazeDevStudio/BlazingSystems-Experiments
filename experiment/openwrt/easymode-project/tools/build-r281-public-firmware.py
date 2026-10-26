@@ -176,7 +176,9 @@ exit 0
                     copy_item.devmajor = 1280
                 dst.addfile(copy_item, src.extractfile(item) if item.isfile() else None)
     squash = out / "root.squashfs"
-    command = [args.mksquashfs, "-", str(squash), "-tar", "-noappend", "-nopad", "-numeric-owner", "-default-mode", "0755", "-default-uid", "0", "-default-gid", "0", "-comp", "xz", "-b", "262144", "-no-xattrs", "-mkfs-time", str(EPOCH), "-all-time", str(EPOCH), "-processors", "2", "-no-progress"]
+    command = [args.mksquashfs, "-", str(squash), "-tar", "-noappend", "-nopad", "-default-mode", "0755", "-default-uid", "0", "-default-gid", "0", "-comp", "xz", "-b", "262144", "-no-xattrs", "-mkfs-time", str(EPOCH), "-all-time", str(EPOCH), "-processors", "2", "-no-progress"]
+    if sys.platform == "win32":
+        command.insert(5, "-numeric-owner")
     with tar_input.open("rb") as stream:
         process = subprocess.run(command, stdin=stream, capture_output=True)
     (out / "mksquashfs.log").write_bytes(process.stdout + process.stderr)
