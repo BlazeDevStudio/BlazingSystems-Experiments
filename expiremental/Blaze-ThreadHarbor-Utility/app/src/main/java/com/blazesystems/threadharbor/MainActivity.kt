@@ -81,11 +81,14 @@ private fun HarborShell(context: Context, fixture: FixtureRuntime) {
                 BrowserScreen(context, visible = current == "Browser")
             }
         }
-        // Stays attached independently of Compose chat UI; no third-party browsing bridge.
-        AndroidView(factory={
-            (fixture.webView.parent as? android.view.ViewGroup)?.removeView(fixture.webView)
-            fixture.webView
-        },modifier=Modifier.size(1.dp))
+        // Only mount the privileged app-owned fixture during explicit developer diagnostics.
+        // It never shares a WebView or bridge with actual third-party browsing.
+        if (current == "Developer Lab") {
+            AndroidView(factory={
+                (fixture.webView.parent as? android.view.ViewGroup)?.removeView(fixture.webView)
+                fixture.webView
+            },modifier=Modifier.size(1.dp))
+        }
     }
 }
 @Composable
