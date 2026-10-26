@@ -101,4 +101,22 @@ var clone = raw.Copy();
 clone.Targets[0].Address = "changed.local";
 Check(raw.Targets[0].Address == "1.1.1.1" && clone.HoverOpacityPercent == 58 &&
       !clone.AutoHideForFullscreen, "settings preview copy isolates targets");
+var taskbar = new System.Drawing.Rectangle(0, 720, 1366, 48);
+var screen = new System.Drawing.Rectangle(0, 0, 1366, 768);
+var above = WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(200, 734, 185, 34),
+    screen, work, WidgetGeometry.AboveTaskbar);
+Check(above.Bottom <= work.Bottom, "above mode cannot cover taskbar");
+var within = WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(200, 734, 185, 34),
+    screen, work, WidgetGeometry.InsideTaskbar);
+Check(within.Top == 734 && within.Height == 34, "inside mode reaches taskbar pixels");
+var dock = WidgetGeometry.DockPosition(new System.Drawing.Rectangle(200, 0, 185, 32),
+    work, taskbar, WidgetGeometry.InsideTaskbar, 150);
+Check(dock.Top == 728 && dock.Bottom == 760, "inside mode vertically centers 32px widget in 48px taskbar");
+Check(WidgetGeometry.ResolvePlacement(new AppSettings { DockInsideTaskbar = true, FreeformPositioned = false })
+    == WidgetGeometry.InsideTaskbar, "legacy inside placement migrates");
+Check(WidgetGeometry.ResolvePlacement(new AppSettings { FreeformPositioned = true })
+    == WidgetGeometry.Floating, "legacy custom freeform position migrates");
+var compact = WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(30, 735, 126, 24),
+    screen, work, WidgetGeometry.InsideTaskbar);
+Check(compact.Height == 24 && compact.Width == 126, "24px compact resize retained");
 Console.WriteLine($"RESULT {passed} tests passed");

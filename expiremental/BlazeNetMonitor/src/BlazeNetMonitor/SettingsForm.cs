@@ -45,9 +45,14 @@ internal sealed class SettingsForm : Form
         _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == settings.AdapterId) + 1);
         _unit = Choice(general, "Speed units", 97, ["Mbps / Kbps (bits)", "MB/s / KB/s (bytes)"]);
         _unit.SelectedIndex = settings.UseBits ? 0 : 1;
-        _placement = Choice(general, "Taskbar location", 170,
-            ["Above taskbar (safe)", "Legacy overlay (disabled for safety)"]);
-        _placement.SelectedIndex = settings.DockInsideTaskbar ? 1 : 0;
+        _placement = Choice(general, "Widget placement", 170,
+            ["Floating (desktop + taskbar area)", "Above taskbar (dock)", "Inside taskbar (overlay)"]);
+        _placement.SelectedIndex = WidgetGeometry.ResolvePlacement(settings) switch
+        {
+            WidgetGeometry.Floating => 0,
+            WidgetGeometry.InsideTaskbar => 2,
+            _ => 1
+        };
         LabelAt(general, "Horizontal offset from right edge (px)", 246);
         _offset = new NumericUpDown { Left = 24, Top = 269, Width = 116, Minimum = 0, Maximum = 4000, Value = Math.Clamp(settings.HorizontalOffset, 0, 4000) };
         general.Controls.Add(_offset);
@@ -153,7 +158,15 @@ internal sealed class SettingsForm : Form
         var next = _settings.Copy();
         next.AdapterId = _adapter.SelectedIndex < 1 ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
         next.UseBits = _unit.SelectedIndex == 0;
-        next.DockInsideTaskbar = _placement.SelectedIndex == 1;
+        next.PlacementMode = _placement.SelectedIndex switch
+        {
+            0 => WidgetGeometry.Floating,
+            2 => WidgetGeometry.InsideTaskbar,
+            _ => WidgetGeometry.AboveTaskbar
+        };
+        next.DockInsideTaskbar = next.PlacementMode == WidgetGeometry.InsideTaskbar;
+        // Selecting a dock mode anchors it correctly. Freeform retains last position.
+        next.FreeformPositioned = next.PlacementMode == WidgetGeometry.Floating;
         next.HorizontalOffset = (int)_offset.Value;
         next.ProbeIntervalSeconds = (int)_interval.Value;
         next.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";

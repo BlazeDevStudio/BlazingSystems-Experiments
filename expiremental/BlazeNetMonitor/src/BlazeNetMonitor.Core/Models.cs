@@ -20,6 +20,8 @@ public sealed class AppSettings
     public bool UseBits { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public bool DockInsideTaskbar { get; set; }
+    // Auto migrates older installations: freeform or legacy taskbar placement.
+    public string PlacementMode { get; set; } = "Auto";
     public int HorizontalOffset { get; set; } = 170;
     public int SamplingSeconds { get; set; } = 1;
     public int ProbeIntervalSeconds { get; set; } = 5;
