@@ -1,0 +1,54 @@
+name: LAN Messenger Android two-camera and OS PiP acceptance
+on:
+  push:
+    branches:
+      - release/lan-messenger-v030-android-sidetest
+    paths:
+      - .github/workflows/lan-messenger-v030-android-video-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  dual-android-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8d444bd747aed173527fbc3fe88a6050aa4fc34e
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          repository: BlazingSystems/BlazingSystems-Experiments
+          run-id: 40334265121
+          github-token: ${{ github.token }}
+          name: LAN-Messenger-Android-Optimized
+          path: android-apk
+      - name: Install virtual audio and emulator runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0
+          if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Test BOTH decoded camera feeds and real OS PiP, independently of grouped notification UI
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-front emulated
+          script: |
+            set -e
+            python3 -m py_compile "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py"
+            source "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh"
+            LAN_MESSENGER_SCENARIO=video python3 "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LAN-Messenger-Android-PR212-Two-Camera-PiP-Evidence
+          path: android-lan-evidence/
+          retention-days: 14
+          if-no-files-found: ignore
