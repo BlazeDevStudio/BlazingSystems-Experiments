@@ -31,8 +31,10 @@ jobs:
           SDKMGR="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
           test -n "$SDKMGR"
           "$SDKMGR" --install 'platforms;android-36' 'build-tools;35.0.0'
-      - name: Verify controlled DOM adapter protocol (Node)
-        run: node tests/fixture.test.cjs
+      - name: Verify controlled DOM adapter and opt-in reader protocols (Node)
+        run: |
+          node tests/fixture.test.cjs
+          node tests/reader.test.cjs
       - name: Compile debug APK and run unit tests
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
       - name: Check APK identity and SHA-256
