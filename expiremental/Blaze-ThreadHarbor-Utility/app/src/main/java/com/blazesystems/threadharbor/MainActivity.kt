@@ -4,7 +4,6 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.webkit.CookieManager
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -211,9 +210,7 @@ private fun DownloadsScreen(context: Context) {
                                             val request = DownloadManager.Request(Uri.parse(info.url))
                                                 .setTitle(info.name)
                                                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                                            CookieManager.getInstance().getCookie(info.url)?.takeIf {
-                                                it.isNotBlank()
-                                            }?.let { request.addRequestHeader("Cookie", it) }
+                                            // Never put session cookies in redirect-uncontrolled retry requests.
                                             val retryId = manager.enqueue(request)
                                             val oldIds = prefs.getString("ids", "").orEmpty()
                                             prefs.edit().putString("ids",
