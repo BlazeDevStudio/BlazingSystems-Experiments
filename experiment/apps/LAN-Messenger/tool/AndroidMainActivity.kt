@@ -3,6 +3,7 @@ package com.example.lan_messenger
 import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
+import android.app.AppOpsManager
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
@@ -112,7 +113,7 @@ class MainActivity : FlutterActivity() {
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
     private var activityForeground = true
-    private var incomingOverlay: AndroidCallOverlay? = null
+
     private var lastCaller: String? = null
     private var lastCallId: String? = null
     private var lastVideo = false
@@ -123,43 +124,21 @@ class MainActivity : FlutterActivity() {
     private var pipEnabledForCall = false
     private var incomingNotificationPosted = false
 
-    private fun overlay(): AndroidCallOverlay =
-        incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
-            MainActivity.deliverCallAction(this, action, id)
-            if (action == "open") {
-                val open = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
-                startActivity(open)
-            }
-        }.also { incomingOverlay = it }
-
     private fun updateOverlay() {
-        val id = lastCallId
-        val caller = lastCaller
-        if (activityForeground ||
-            (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) ||
-            // The system's Answer/Decline notification is sufficient; never
-            // stack our own floating call banner underneath it.
-            (lastIncoming && incomingNotificationPosted) ||
-            id == null || caller == null) {
-            incomingOverlay?.dismiss()
-            return
-        }
-        overlay().show(caller, id, lastVideo, lastIncoming, lastMuted)
+        // Android has exactly ONE external call presentation surface:
+        // a native CallStyle notification while ringing, then system PiP
+        // for connected video. Never add our TYPE_APPLICATION_OVERLAY HUD,
+        // including while the notification shade or settings are visible.
     }
 
     override fun onStart() {
         super.onStart()
         activityForeground = true
-        incomingOverlay?.dismiss()
     }
 
     override fun onResume() {
         super.onResume()
         activityForeground = true
-        incomingOverlay?.dismiss()
         if (lastIncoming) notifications.cancel(7024)
         window?.decorView?.post { deliverPendingAnswer() }
     }
@@ -174,12 +153,12 @@ class MainActivity : FlutterActivity() {
         super.onStop()
         activityForeground = false
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
-            incomingOverlay?.dismiss()
             return
         }
         val id = lastCallId
         val caller = lastCaller
-        if (lastIncoming && id != null && caller != null) {
+        if (lastIncoming && id != null && caller != null &&
+            !incomingNotificationPosted) {
             showIncomingCall(caller, id, lastVideo)
         }
         updateOverlay()
@@ -322,7 +301,6 @@ class MainActivity : FlutterActivity() {
         lastVideo = video; lastMuted = false; lastIncoming = true
         if (activityForeground) {
             incomingNotificationPosted = false
-            incomingOverlay?.dismiss()
             return false // Flutter shows the in-app buttons.
         }
         if (!canNotify()) {
@@ -389,13 +367,33 @@ class MainActivity : FlutterActivity() {
             }
         }
         incomingNotificationPosted = posted
+        // No second Answer/Decline UI. If notifications are unavailable,
+        // a returning user can answer from the inline Messenger call controls.
         updateOverlay()
         return posted
     }
 
     private fun showOngoingCall(caller: String, callId: String,
                                 video: Boolean, muted: Boolean): Boolean {
-        if (!canNotify() || callId.isBlank()) return false
+        if (callId.isBlank()) return false
+        // PiP availability must never depend on notification permission.
+        // Samsung/Android users can decline alerts and still use video PiP.
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = muted; lastIncoming = false
+        incomingNotificationPosted = false
+        pipEnabledForCall = video
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                setPictureInPictureParams(PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setActions(pictureActions(callId))
+                    .setAutoEnterEnabled(video)
+                    .build())
+            } catch (e: Exception) {
+                Log.w("LANCallTrace", "could not configure video PiP: ${e.message}")
+            }
+        }
+        if (!canNotify()) return false
         // Active calls must not play the incoming ringtone again.
         // A separate low-importance channel preserves in-call actions without
         // silently overriding the owner's high-priority incoming-call settings.
@@ -434,23 +432,6 @@ class MainActivity : FlutterActivity() {
         b.addAction(android.R.drawable.ic_menu_view, "Open thread",
             callAction("open", callId))
         notifications.notify(7024, b.build())
-        lastCaller = caller; lastCallId = callId
-        lastVideo = video; lastMuted = muted; lastIncoming = false
-        incomingNotificationPosted = false
-        pipEnabledForCall = video
-        if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                // Android 12+ moves the actual video Activity into system PiP
-                // when Home is used. No TYPE_APPLICATION_OVERLAY substitute.
-                setPictureInPictureParams(PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(16, 9))
-                    .setActions(pictureActions(callId))
-                    .setAutoEnterEnabled(video)
-                    .build())
-            } catch (e: Exception) {
-                Log.w("LANCallTrace", "could not configure automatic PiP: ${e.message}")
-            }
-        }
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
             try {
                 setPictureInPictureParams(PictureInPictureParams.Builder()
@@ -473,6 +454,39 @@ class MainActivity : FlutterActivity() {
             control("end", "End call", android.R.drawable.ic_menu_close_clear_cancel),
             control("open", "Open conversation", android.R.drawable.ic_menu_view),
         )
+    }
+
+    private fun pipFailureReason(): String {
+        if (Build.VERSION.SDK_INT < 26) return "Android 8 or newer is required for video PiP."
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
+            return "This Android device does not support picture-in-picture."
+        try {
+            val ops = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            @Suppress("DEPRECATION")
+            val mode = ops.checkOpNoThrow(
+                AppOpsManager.OPSTR_PICTURE_IN_PICTURE, applicationInfo.uid, packageName)
+            if (mode == AppOpsManager.MODE_IGNORED || mode == AppOpsManager.MODE_ERRORED)
+                return "Picture-in-picture is blocked in Android app settings. 'Appear on top' is a different permission."
+        } catch (_: Exception) {
+            // Device-specific AppOps failures do not imply disabled PiP.
+        }
+        if (lastIncoming || lastCallId == null || !pipEnabledForCall)
+            return "PiP is available only after connecting an active video call."
+        if (!activityForeground)
+            return "Open LAN Messenger's active video call before starting PiP."
+        return "Android did not enter PiP. Try Home from an active video call."
+    }
+
+    private fun openPipSettings() {
+        // OEMs may expose a dedicated PiP settings screen. Fall back to the
+        // app details page when the action is absent; never request overlay.
+        val picture = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS").apply {
+            data = Uri.parse("package:$packageName")
+        }
+        val destination = if (picture.resolveActivity(packageManager) != null) picture
+                          else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                              Uri.parse("package:$packageName"))
+        startActivity(destination)
     }
 
     private fun enterCallPictureInPicture(id: String): Boolean {
@@ -508,7 +522,6 @@ class MainActivity : FlutterActivity() {
     ) {
         super.onPictureInPictureModeChanged(inPip, configuration)
         Log.i("LANCallTrace", "pip_state_changed active=$inPip")
-        incomingOverlay?.dismiss()
         callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
     }
 
@@ -549,7 +562,6 @@ class MainActivity : FlutterActivity() {
                             lastCallId = null; lastCaller = null
                             pendingAnswer = null
                             incomingNotificationPosted = false
-                            incomingOverlay?.dismiss()
                             notifications.cancel(7024)
                         }
                         result.success(null)
@@ -566,18 +578,28 @@ class MainActivity : FlutterActivity() {
                                     .setAutoEnterEnabled(false).build())
                             } catch (_: Exception) { }
                         }
-                        incomingOverlay?.dismiss()
                         result.success(null)
                     }
                     "foreground" -> {
-                        activityForeground = call.argument<Boolean>("visible") ?: true
+                        // Flutter resumed/inactive/paused is NOT authoritative
+                        // for the native Activity visibility. A notification
+                        // shade or transient permission prompt must not change
+                        // the native onStart/onStop state.
                         updateOverlay()
                         result.success(null)
                     }
-                    "overlayEnabled" -> result.success(overlay().permitted())
+                    "overlayEnabled" -> result.success(false)
                     "openOverlaySettings" -> {
-                        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        // Historical API kept so prior Dart clients receive
+                        // a safe destination. No longer request the unrelated
+                        // draw-over-apps permission for video PiP.
+                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.parse("package:$packageName")))
+                        result.success(null)
+                    }
+                    "pipDiagnostic" -> result.success(pipFailureReason())
+                    "openPipSettings" -> {
+                        openPipSettings()
                         result.success(null)
                     }
                     "enterPip" -> result.success(enterCallPictureInPicture(
@@ -697,8 +719,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         if (active === this) active = null
         callBridge = null
-        incomingOverlay?.dismiss()
-        incomingOverlay = null
         lock?.let { if (it.isHeld) it.release() }
         lock = null
         super.onDestroy()
