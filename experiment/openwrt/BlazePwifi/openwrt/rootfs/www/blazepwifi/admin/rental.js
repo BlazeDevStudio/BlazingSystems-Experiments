@@ -75,8 +75,16 @@ function renderQrResult(x){
   // Do not show a secret QR until the renderer has successfully completed.
   let svg;
   try{
-    const qr=qrcode(0,'M');qr.addData(x.qr_payload);qr.make();
-    svg=qr.createSvgTag({cellSize:5,margin:3,scalable:true});
+    const previousEncoder=qrcode.stringToBytes,utf8Encoder=qrcode.stringToBytesFuncs['UTF-8'];
+    if(typeof utf8Encoder!=='function')throw new Error('UTF-8 QR encoder is unavailable');
+    // Keep the encoding change local to this synchronous rental render.
+    try{
+      qrcode.stringToBytes=utf8Encoder;
+      const qr=qrcode(0,'M');qr.addData(x.qr_payload);qr.make();
+      svg=qr.createSvgTag({cellSize:5,margin:3,scalable:true});
+    }finally{
+      qrcode.stringToBytes=previousEncoder;
+    }
   }catch(e){
     C().toast('QR renderer failed: '+(e&&e.message?e.message:'unknown renderer error'),true);
     return false;
