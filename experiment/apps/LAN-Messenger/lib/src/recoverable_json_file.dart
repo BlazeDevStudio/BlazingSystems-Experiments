@@ -25,7 +25,19 @@ class RecoverableJsonFile {
     for (final candidate in [file, backupOf(file)]) {
       try {
         final decoded = jsonDecode(await candidate.readAsString());
-        if (isValid(decoded)) return decoded;
+        if (isValid(decoded)) {
+          if (candidate.path != file.path) {
+            // Restore the last valid backup while KEEPING the backup intact.
+            // Otherwise the next save could replace the only good .bak with
+            // a corrupt primary before promoting the new JSON file.
+            try {
+              await candidate.copy(file.path);
+            } catch (_) {
+              // The backup is still intact and can be read on next startup.
+            }
+          }
+          return decoded;
+        }
       } catch (_) {
         // Try the last complete version. Do not delete or overwrite either
         // copy; retain damaged input for later diagnostics/recovery.
