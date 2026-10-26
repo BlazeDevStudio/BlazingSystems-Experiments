@@ -5,6 +5,10 @@ on:
     branches: [easymode-v7-production]
     paths:
       - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/root/**'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/*.md'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/VERSION'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/install.sh'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/tests/**'
       - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/SOURCE-MANIFEST.json'
       - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/openwrt/*app-update*.tar.gz'
       - 'experiment/openwrt/easymode-project/traffic/root/**'
@@ -15,6 +19,7 @@ on:
       - 'experiment/openwrt/easymode-project/traffic/README.md'
       - 'experiment/openwrt/easymode-project/tools/build-r281-public-firmware.py'
       - 'experiment/openwrt/easymode-project/tools/build-r281-luci-restore.py'
+      - 'experiment/openwrt/easymode-project/tools/build-r281-app.py'
       - 'experiment/openwrt/easymode-project/firmware/r281/**'
       - '.github/workflows/easymode-r281-public-release.yml'
   workflow_dispatch:
@@ -38,6 +43,8 @@ jobs:
           git clone https://git.openwrt.org/project/fwtool.git /tmp/easymode-fwtool
           git -C /tmp/easymode-fwtool checkout 04cd252e4e9394ffacd51f56f1f124abc534f715
           cc -O2 -Wall -Wextra -o /tmp/easymode-fwtool/fwtool /tmp/easymode-fwtool/fwtool.c
+      - name: Build matching R281 application updater
+        run: python3 tools/build-r281-app.py
       - name: Build and read back credential-free R281 filesystem
         run: |
           python3 tools/build-r281-public-firmware.py \

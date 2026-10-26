@@ -19,14 +19,14 @@
     {
       "path": "HANDOFF.md",
       "mode": "0644",
-      "bytes": 2695,
-      "sha256": "f81f3bc8d9ded10d1b530b636da2f5ddc5b25170702cf07a3b6edaa4a6dd24ca"
+      "bytes": 4604,
+      "sha256": "19883710f40bd8133d468ebd1bea2f36e23b56982d235c22d8b78dd0a58b8c2e"
     },
     {
       "path": "README.md",
       "mode": "0644",
-      "bytes": 2892,
-      "sha256": "40eaf0f6a01fe940bdbd8d67ff055eb3529ac01f61a3e77735f0959bf1092c32"
+      "bytes": 3953,
+      "sha256": "02935b603f6bcaa4f1b12c53d4362352d81513ae396045c6b1512a36b594f907"
     },
     {
       "path": "VERSION",
