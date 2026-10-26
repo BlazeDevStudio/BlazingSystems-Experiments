@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.3 — transparent and taskbar recovery development preview
+# BlazeNetMonitor v0.2.4 — graph customization, reliable settings and favicon preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,21 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.4 preview changes (October 26, 2026)
+
+- **Settings dropdown stability:** live-preview changes no longer restyle ComboBox controls during selection. Theme dialog restyling is deferred until its native dropdown is closed; the taskbar overlay's periodic topmost promotion is also suspended while Settings is open.
+- **Graphs:** Four types (**Line**, **Filled**, **Bars**, **Steps**), separate upload and download HEX colors, optional graph duration (**Auto**, 15/30/60/120/300/600 seconds) and refresh speed (**1/2/5 seconds**). History-window sizes use the selected refresh interval, and graph samples reset if cadence changes; traffic totals do not.
+- **Metrics:** A separate Metrics tab offers **Auto adaptive**, speed-only, latency, packet loss, jitter and today's totals. At micro/taskbar sizes the live upload and download rates take priority; secondary metrics appear when the window has room. Automatic history choices prefer 30/60/120 seconds by layout. The rate-unit selection includes Auto/Bits/Bytes.
+- **Dot history:** Status tracks the most recent 12 probes (latency trends) and 6 probes (recent packet loss/jitter), with baseline latency, two consecutive failed probes for red, severe issues for orange, moderate degradation or recovery for yellow, green after healthy recovery, and blue only after a continuous verified streak lasting at least 24h and crossing a local calendar day. A missed sampling gap revokes the blue streak.
+- **Circular favicon badges:** Metrics → **Show round website favicons** is off by default. When enabled, favicon icons are fetched once upon app start or settings save from the official target origin's HTTPS `/favicon.ico` URL. IPv4 DNS targets 1.1.1.1/1.0.0.1 map to one.one.one.one, and 8.8.8.8/8.8.4.4 map to dns.google. All other numeric IPs and local/internal targets are rejected for icon fetching. Hostname connections validate public resolved addresses before connecting; no redirects, a 96 KiB image cap, a short timeout, and memory-only decoded icons. Unsupported hosts or absent favicon.ico simply retain the status dot.
+- **Privacy/security:** Favicons make optional outbound HTTPS requests distinct from probes. They are never fetched when disabled and their image cache is memory-only. Redirects are prohibited and no third-party favicon aggregation service is used.
+- **Continued limitations:** A result of green or yellow does not prove or disprove the connection's streaming capacity. ICMP-blocking networks may require a different probe protocol. On Windows 11 the taskbar mode remains an independent overlay rather than genuine Explorer integration.
+
+### Validation boundaries
+
+GitHub CI compiles self-contained Windows x86/x64/ARM64 executables, runs algorithm and settings persistence checks and an x64 GUI process launch smoke check. Real-world settings dropdown interaction, diskless favicon fetching, taskbar overlap, color-key transparency, multi-monitor behavior and 24h blue status require Windows hardware testing.
+
 
 ## v0.2.3 Transparent widget, graphs and recovery (October 26, 2026)
 

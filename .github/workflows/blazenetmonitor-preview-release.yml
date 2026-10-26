@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.3-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.2.4-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,7 +34,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.3-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.2.4-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
@@ -59,5 +59,5 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.3-win-x64.zip artifacts/BlazeNetMonitor-v0.2.3-win-x86.zip artifacts/BlazeNetMonitor-v0.2.3-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.3 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.3 preview: backgroundless transparency, compact visible dual live graphs, opt-in taskbar overlay Z-order recovery, tray safety fallback and already-running instance handoff. All are experimental desktop-UI behaviors; CI compiles and smoke-launches on Windows but actual Explorer taskbar overlay and color-key hit testing are NOT physically validated. Old running versions must be exited using the tray icon before launching this update. Windows 10 native COM DeskBand remains unimplemented.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.4-win-x64.zip artifacts/BlazeNetMonitor-v0.2.4-win-x86.zip artifacts/BlazeNetMonitor-v0.2.4-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.4 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.4 PREVIEW: addresses premature Settings dropdown closing; adds customizable line/filled/bars/steps graphs with separate colors, time span and sampling cadence; auto-adaptive live metrics; rolling per-target health scoring; opt-in secure public-origin circular favicon badges. Tests and Windows CI compilation are verified by this workflow. UI interaction, Windows Explorer taskbar layering, HTTPS favicon availability and physical-device use are NOT certified. Previous 0.2.x users should quit the existing tray instance before launching. Windows 10 native DeskBand remains a separate future feature.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }
