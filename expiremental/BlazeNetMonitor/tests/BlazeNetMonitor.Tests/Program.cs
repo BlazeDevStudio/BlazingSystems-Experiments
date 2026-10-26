@@ -125,4 +125,14 @@ Check(WidgetGeometry.ResolvePlacement(migrated) == WidgetGeometry.InsideTaskbar,
 Check(WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(8, 736, 125, 24),
     screen, work, WidgetGeometry.Floating).Top == 736,
     "floating mode is allowed in taskbar region");
+Check(WidgetGeometry.GraphHeight(24, true) >= 4,
+    "taskbar 24px compact graph always receives a visible band");
+Check(WidgetGeometry.GraphHeight(40, true) >= 7,
+    "resized 40px graph receives more space");
+Check(WidgetGeometry.GraphHeight(60, false) == 0,
+    "user-hidden graph draws no band");
+var transparent = new AppSettings { TransparentBackground = true, WidgetOpacityPercent = 65 };
+var transparentCopy = transparent.Copy();
+Check(transparentCopy.TransparentBackground && transparentCopy.WidgetOpacityPercent == 65,
+    "transparent appearance persists in settings clone");
 Console.WriteLine($"RESULT {passed} tests passed");

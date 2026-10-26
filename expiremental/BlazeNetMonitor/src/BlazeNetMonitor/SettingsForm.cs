@@ -10,7 +10,7 @@ internal sealed class SettingsForm : Form
     private readonly ComboBox _adapter, _unit, _placement, _themeMode;
     private readonly TrackBar _opacity, _hoverOpacity;
     private readonly Label _opacityValue, _hoverOpacityValue;
-    private readonly CheckBox _showGraphs, _systemAccent, _fullscreen;
+    private readonly CheckBox _showGraphs, _systemAccent, _fullscreen, _transparent;
     public event Action<AppSettings>? PreviewChanged;
     public event Action? HoverPreviewRequested;
     public AppSettings? SavedSettings { get; private set; }
@@ -84,16 +84,19 @@ internal sealed class SettingsForm : Form
         _systemAccent = new CheckBox { Left = 24, Top = 274, Width = 420, Height = 25,
             Text = "Follow Windows accent color", Checked = settings.UseSystemAccent };
         _showGraphs = new CheckBox { Left = 24, Top = 307, Width = 420, Height = 25,
-            Text = "Show speed graphs when the widget fits", Checked = settings.ShowGraphs };
+            Text = "Show live upload/download graphs (even in compact mode)", Checked = settings.ShowGraphs };
         _fullscreen = new CheckBox { Left = 24, Top = 340, Width = 460, Height = 25,
             Text = "Automatically hide on fullscreen apps and games", Checked = settings.AutoHideForFullscreen };
-        appearance.Controls.AddRange([_systemAccent, _showGraphs, _fullscreen]);
+        _transparent = new CheckBox { Left = 24, Top = 374, Width = 430, Height = 25,
+            Text = "Transparent background (text, dots and graphs only)",
+            Checked = settings.TransparentBackground };
+        appearance.Controls.AddRange([_systemAccent, _showGraphs, _fullscreen, _transparent]);
 
-        var resize = new Button { Left = 24, Top = 379, Width = 265, Height = 36,
+        var resize = new Button { Left = 24, Top = 413, Width = 265, Height = 36,
             Text = "Save and resize / move widget" };
         resize.Click += (_, _) => { ResizeAfterSave = true; Save(); };
         appearance.Controls.Add(resize);
-        appearance.Controls.Add(new Label { Left = 24, Top = 432, Width = 475, Height = 62,
+        appearance.Controls.Add(new Label { Left = 24, Top = 462, Width = 485, Height = 58,
             ForeColor = Theme.Muted,
             Text = "Drag the highlighted corners or edges to resize, the center to move.\n" +
                 "Double-click or right-click → Finish to save; Esc cancels." });
@@ -104,6 +107,7 @@ internal sealed class SettingsForm : Form
         _systemAccent.CheckedChanged += (_, _) => RaisePreview();
         _showGraphs.CheckedChanged += (_, _) => RaisePreview();
         _fullscreen.CheckedChanged += (_, _) => RaisePreview();
+        _transparent.CheckedChanged += (_, _) => RaisePreview();
         _unit.SelectedIndexChanged += (_, _) => RaisePreview();
         _adapter.SelectedIndexChanged += (_, _) => RaisePreview();
         _placement.SelectedIndexChanged += (_, _) => RaisePreview();
@@ -173,6 +177,7 @@ internal sealed class SettingsForm : Form
         next.ProbeIntervalSeconds = (int)_interval.Value;
         next.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";
         next.WidgetOpacityPercent = _opacity.Value;
+        next.TransparentBackground = _transparent.Checked;
         next.HoverOpacityPercent = _hoverOpacity.Value;
         next.UseSystemAccent = _systemAccent.Checked;
         next.ShowGraphs = _showGraphs.Checked;

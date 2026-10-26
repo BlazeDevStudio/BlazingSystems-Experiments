@@ -32,6 +32,8 @@ public sealed class AppSettings
     public int WidgetWidth { get; set; } = 312;
     public int WidgetHeight { get; set; } = 64;
     public int WidgetOpacityPercent { get; set; } = 100;
+    // Color-key transparency for the main widget, independent of form opacity.
+    public bool TransparentBackground { get; set; }
     public int HoverOpacityPercent { get; set; } = 92;
     public bool AutoHideForFullscreen { get; set; } = true;
     public string ThemeMode { get; set; } = "System";

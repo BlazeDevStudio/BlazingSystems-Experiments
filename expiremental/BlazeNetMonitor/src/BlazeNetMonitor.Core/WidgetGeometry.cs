@@ -10,6 +10,12 @@ public static class WidgetGeometry
 {
     public const int CompactMinimumWidth = 124;
     public const int CompactMinimumHeight = 24;
+    // A micrograph remains visible in 24px taskbar-height layouts.
+    public static int GraphHeight(int widgetHeight, bool enabled)
+    {
+        if (!enabled || widgetHeight < CompactMinimumHeight) return 0;
+        return Math.Clamp(widgetHeight / 5, 4, 18);
+    }
     public const string Floating = "Floating";
     public const string AboveTaskbar = "AboveTaskbar";
     public const string InsideTaskbar = "InsideTaskbar";
