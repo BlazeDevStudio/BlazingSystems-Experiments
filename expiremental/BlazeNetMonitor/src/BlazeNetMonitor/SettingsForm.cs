@@ -97,11 +97,12 @@ internal sealed class SettingsForm : Form
         about.Controls.Add(new Label { Left = 24, Top = 28, Width = 455, Height = 310, ForeColor = Theme.Text, Text = "BlazeNetMonitor v0.2.0 development\nBlaze Systems · Windows 10/11 x86/x64/Arm64\n\nIndependent implementation inspired by the functionality of classic NetSpeedMonitor by Florian Gilles. No original code or artwork bundled.\n\nStatus thresholds are latency, jitter, and packet-loss estimates, not an internet speed test. Firewalls may block ICMP; choose HTTPS for those networks.\n\nWorks without administrator rights. All settings and totals are stored locally." });
         about.Controls.Add(new Label { Left = 24, Top = 338, Width = 460, Height = 50,
             ForeColor = Theme.Muted,
-            Text = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)
-                ? "Windows 11 detected · native deskband unavailable. Freeform/tray supported."
-                : OperatingSystem.IsWindowsVersionAtLeast(10)
-                    ? "Windows 10 detected · classic deskband integration is planned, not installed."
-                    : "Windows version unknown · freeform/tray fallback." });
+            Text = WindowsVersionPolicy.ShellFamily(Environment.OSVersion.Version) switch
+            {
+                "Windows10Classic" => "Windows 10 detected · classic deskband integration planned, not installed.",
+                "Windows11OrLater" => "Windows 11+ detected · freeform/tray fallback, no native deskband.",
+                _ => "Unrecognized Windows build · safe freeform/tray fallback."
+            } });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };
         var ok = new Button { Text = "Save", Width = 85, DialogResult = DialogResult.None };
         ok.Click += (_, _) => Save();
