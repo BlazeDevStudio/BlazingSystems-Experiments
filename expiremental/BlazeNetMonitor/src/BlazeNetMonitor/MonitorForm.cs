@@ -988,6 +988,30 @@ internal sealed class MonitorForm : Form
 
         switch (style)
         {
+            case "Smooth":
+            {
+                // Smooth is kept separate from Line: Catmull-Rom interpolation.
+                if (points.Length < 3) g.DrawLines(pen, points);
+                else g.DrawCurve(pen, points, 0.28f);
+                break;
+            }
+            case "Dots":
+            {
+                using var dotsBrush = new SolidBrush(color);
+                int stride = Math.Max(1, (int)Math.Ceiling(points.Length / (double)Math.Max(4, rect.Width / 3)));
+                float radius = rect.Height < 10 ? 0.75f : 1.5f;
+                for (int i = 0; i < points.Length; i += stride)
+                    g.FillEllipse(dotsBrush, points[i].X - radius, points[i].Y - radius,
+                        radius * 2, radius * 2);
+                break;
+            }
+            case "Impulse":
+            {
+                int stride = Math.Max(1, (int)Math.Ceiling(points.Length / (double)Math.Max(4, rect.Width / 2)));
+                for (int i = 0; i < points.Length; i += stride)
+                    g.DrawLine(pen, points[i].X, rect.Bottom - 1, points[i].X, points[i].Y);
+                break;
+            }
             case "Filled":
             {
                 using var shade = new SolidBrush(Color.FromArgb(85, color));

@@ -255,4 +255,8 @@ Check(DonationSplashPolicy.ModuleMatrix().GetLength(0) == DonationSplashPolicy.Q
       "QR matrix dimensions preserved for exact-size scan view");
 Check(DonationSplashPolicy.OwnerPayPalUrl.StartsWith("https://www.paypal.com/qrcodes/", StringComparison.Ordinal),
       "official PayPal destination retained after UX changes");
+Check(DisplayPreferences.NormalizeGraphStyle("Smooth") == "Smooth", "smooth graph style supported");
+Check(DisplayPreferences.NormalizeGraphStyle("Dots") == "Dots", "dots graph style supported");
+Check(DisplayPreferences.NormalizeGraphStyle("Impulse") == "Impulse", "impulse graph style supported");
+Check(DisplayPreferences.NormalizeGraphStyle("Curve with unknown style") == "Line", "invalid graph style uses line");
 Console.WriteLine($"RESULT {passed} tests passed");

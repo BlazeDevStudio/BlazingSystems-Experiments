@@ -27,7 +27,7 @@ public static class DisplayPreferences
     };
 
     public static string NormalizeGraphStyle(string? style) =>
-        style is "Filled" or "Bars" or "Steps" ? style : "Line";
+        style is "Filled" or "Bars" or "Steps" or "Smooth" or "Dots" or "Impulse" ? style : "Line";
 
     public static bool TryGraphColor(string? raw, out Color color)
     {
