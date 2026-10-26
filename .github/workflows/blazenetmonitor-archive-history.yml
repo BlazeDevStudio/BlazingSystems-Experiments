@@ -1,0 +1,64 @@
+name: Archive BlazeNetMonitor historical releases
+on:
+  push:
+    branches: [feature/blazenetmonitor-v0.1.0]
+    paths: ['.github/workflows/blazenetmonitor-archive-history.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        tag:
+          - blazenetmonitor-v0.1.0-preview.1
+          - blazenetmonitor-v0.2.0-preview.1
+          - blazenetmonitor-v0.2.1-preview.1
+          - blazenetmonitor-v0.2.2-preview.1
+          - blazenetmonitor-v0.2.3-preview.1
+          - blazenetmonitor-v0.2.4-preview.1
+          - blazenetmonitor-v0.2.5-preview.1
+          - blazenetmonitor-v0.2.6-preview.1
+          - blazenetmonitor-v0.2.7-preview.1
+          - blazenetmonitor-v0.2.8-preview.1
+          - blazenetmonitor-v0.2.9-preview.1
+          - blazenetmonitor-v0.3.0-preview.1
+          - blazenetmonitor-v1.0.0
+    steps:
+      - name: Collect original release metadata and all assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ matrix.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > backup/release-metadata.json
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir backup
+          count="$(find backup -maxdepth 1 -type f ! -name 'release-metadata.json' | wc -l)"
+          expected="$(jq '.assets|length' backup/release-metadata.json)"
+          if [ "$count" -ne "$expected" ] || [ "$count" -lt 1 ]; then
+            echo "Asset count mismatch tag=$TAG expected=$expected actual=$count"
+            exit 1
+          fi
+          (cd backup && sha256sum * > SHA256SUMS.txt)
+          cat > backup/SOURCE.txt <<EOF
+          Project: BlazeNetMonitor
+          Original GitHub repository: $GITHUB_REPOSITORY
+          Release tag: $TAG
+          Original release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG
+          Archived with original release metadata, all attachments and SHA256SUMS.
+          EOF
+          ls -lah backup
+      - name: Package immutable version backup for Drive transfer
+        uses: actions/upload-artifact@v4
+        with:
+          name: blaze-netmonitor-history-${{ matrix.tag }}
+          path: backup/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
