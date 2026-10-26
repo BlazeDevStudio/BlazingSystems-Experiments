@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -33,21 +34,22 @@ suspend fun exportCompletedDownload(
             ?: error("Download is unavailable or not complete")
         val resolver = context.contentResolver
         val input = resolver.openInputStream(source) ?: error("Cannot read the completed download")
-        try {
-            input.use { stream ->
-                val output = resolver.openOutputStream(destination, "wt")
-                    ?: error("Cannot write selected destination")
-                val cancellationContext = coroutineContext
-                output.use { sink ->
-                    bytes = copyStreams(stream, sink) { cancellationContext.ensureActive() }
-                }
+        input.use { stream ->
+            val output = resolver.openOutputStream(destination, "wt")
+                ?: error("Cannot write selected destination")
+            val cancellationContext = coroutineContext
+            output.use { sink ->
+                bytes = copyStreams(stream, sink) { cancellationContext.ensureActive() }
             }
-            Result.success(bytes)
-        } catch (problem: Exception) {
-            try { DocumentsContract.deleteDocument(resolver, destination) } catch (_: Exception) {}
-            throw problem
         }
+        Result.success(bytes)
+    } catch (problem: CancellationException) {
+        try { DocumentsContract.deleteDocument(context.contentResolver, destination) } catch (_: Exception) {}
+        throw problem
     } catch (problem: Exception) {
+        if (destination.scheme == "content") {
+            try { DocumentsContract.deleteDocument(context.contentResolver, destination) } catch (_: Exception) {}
+        }
         Result.failure(problem)
     }
 }
