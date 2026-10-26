@@ -31,6 +31,8 @@ jobs:
           SDKMGR="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
           test -n "$SDKMGR"
           "$SDKMGR" --install 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Verify controlled DOM adapter protocol (Node)
+        run: node tests/fixture.test.cjs
       - name: Compile debug APK and run unit tests
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
       - name: Check APK identity and SHA-256
@@ -46,3 +48,47 @@ jobs:
             expiremental/Blaze-ThreadHarbor-Utility/APK-SHA256.txt
           if-no-files-found: error
           retention-days: 14
+
+  emulator-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: Blaze-ThreadHarbor-0.1.0-preview-debug
+          path: preview
+      - name: Allow emulator KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install, launch and inspect Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          disable-animations: true
+          script: |
+            adb install preview/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n com.blazesystems.threadharbor/.MainActivity
+            sleep 12
+            PID="$(adb shell pidof com.blazesystems.threadharbor | tr -d '\r')"
+            test -n "$PID"
+            adb shell uiautomator dump /sdcard/window.xml
+            adb shell cat /sdcard/window.xml | grep -F "Blaze ThreadHarbor"
+            adb exec-out screencap -p > threadharbor-smoke.png
+      - name: Preserve emulator smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ThreadHarbor-Emulator-Smoke
+          path: threadharbor-smoke.png
+          if-no-files-found: ignore
