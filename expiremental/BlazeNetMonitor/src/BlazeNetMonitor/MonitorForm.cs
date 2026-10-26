@@ -29,6 +29,12 @@ internal sealed class MonitorForm : Form
     private bool _wasFreeform;
     private Rectangle _editOriginalBounds;
     private const int ResizeMargin = 11;
+    [Flags]
+    private enum DragEdges { None = 0, Left = 1, Top = 2, Right = 4, Bottom = 8, Move = 16 }
+    private DragEdges _dragEdges;
+    private Rectangle _dragStartBounds;
+    private Point _dragStartPoint;
+    private bool _dragActive;
     private const int MinimumWidgetWidth = 210;
     private const int MinimumWidgetHeight = 52;
 
@@ -61,6 +67,9 @@ internal sealed class MonitorForm : Form
             else _showHover = !_showHover;
         };
         MouseDoubleClick += (_, _) => { if (_editingGeometry) FinishGeometryEdit(); };
+        MouseDown += StartDrag;
+        MouseMove += ContinueDrag;
+        MouseUp += StopDrag;
         KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.Escape && _editingGeometry) { CancelGeometryEdit(); e.Handled = true; }
@@ -173,6 +182,8 @@ internal sealed class MonitorForm : Form
     {
         if (!_editingGeometry) return;
         _editingGeometry = false;
+        _dragActive = false;
+        Capture = false;
         Cursor = Cursors.Hand;
         _data.Settings.FreeformPositioned = true;
         _data.Settings.WidgetX = Left;
@@ -188,6 +199,8 @@ internal sealed class MonitorForm : Form
     {
         if (!_editingGeometry) return;
         _editingGeometry = false;
+        _dragActive = false;
+        Capture = false;
         _data.Settings.FreeformPositioned = _wasFreeform;
         Bounds = _editOriginalBounds;
         Cursor = Cursors.Hand;
@@ -202,26 +215,76 @@ internal sealed class MonitorForm : Form
         return base.ProcessCmdKey(ref msg, keyData);
     }
 
-    protected override void WndProc(ref Message m)
+    private DragEdges FindDragEdges(Point p)
     {
-        const int WM_NCHITTEST = 0x84;
-        if (m.Msg == WM_NCHITTEST && _editingGeometry)
+        var result = DragEdges.None;
+        if (p.X < ResizeMargin) result |= DragEdges.Left;
+        if (p.X >= Width - ResizeMargin) result |= DragEdges.Right;
+        if (p.Y < ResizeMargin) result |= DragEdges.Top;
+        if (p.Y >= Height - ResizeMargin) result |= DragEdges.Bottom;
+        return result == DragEdges.None ? DragEdges.Move : result;
+    }
+
+    private void StartDrag(object? sender, MouseEventArgs e)
+    {
+        if (!_editingGeometry || e.Button != MouseButtons.Left) return;
+        _dragEdges = FindDragEdges(e.Location);
+        _dragStartPoint = Cursor.Position;
+        _dragStartBounds = Bounds;
+        _dragActive = true;
+        Capture = true;
+    }
+
+    private void ContinueDrag(object? sender, MouseEventArgs e)
+    {
+        if (!_editingGeometry) return;
+        if (!_dragActive)
         {
-            base.WndProc(ref m);
-            long packed = m.LParam.ToInt64();
-            var pos = PointToClient(new Point(unchecked((short)(packed & 0xFFFF)),
-                unchecked((short)((packed >> 16) & 0xFFFF))));
-            int hit = 2; // HTCAPTION: dragging the center moves the widget.
-            bool left = pos.X <= ResizeMargin, right = pos.X >= Width - ResizeMargin;
-            bool top = pos.Y <= ResizeMargin, bottom = pos.Y >= Height - ResizeMargin;
-            if (left && top) hit = 13; else if (right && top) hit = 14;
-            else if (left && bottom) hit = 16; else if (right && bottom) hit = 17;
-            else if (left) hit = 10; else if (right) hit = 11;
-            else if (top) hit = 12; else if (bottom) hit = 15;
-            m.Result = (nint)hit;
+            var edge = FindDragEdges(e.Location);
+            Cursor = edge switch
+            {
+                DragEdges.Left or DragEdges.Right => Cursors.SizeWE,
+                DragEdges.Top or DragEdges.Bottom => Cursors.SizeNS,
+                DragEdges.Left | DragEdges.Top or DragEdges.Right | DragEdges.Bottom => Cursors.SizeNWSE,
+                DragEdges.Left | DragEdges.Bottom or DragEdges.Right | DragEdges.Top => Cursors.SizeNESW,
+                _ => Cursors.SizeAll
+            };
             return;
         }
-        base.WndProc(ref m);
+
+        int dx = Cursor.Position.X - _dragStartPoint.X;
+        int dy = Cursor.Position.Y - _dragStartPoint.Y;
+        var b = _dragStartBounds;
+        if (_dragEdges == DragEdges.Move)
+        {
+            Bounds = new Rectangle(b.X + dx, b.Y + dy, b.Width, b.Height);
+            return;
+        }
+
+        int left = b.Left, top = b.Top, right = b.Right, bottom = b.Bottom;
+        if ((_dragEdges & DragEdges.Left) != 0) left = Math.Min(right - MinimumWidgetWidth, b.Left + dx);
+        if ((_dragEdges & DragEdges.Right) != 0) right = Math.Max(left + MinimumWidgetWidth, b.Right + dx);
+        if ((_dragEdges & DragEdges.Top) != 0) top = Math.Min(bottom - MinimumWidgetHeight, b.Top + dy);
+        if ((_dragEdges & DragEdges.Bottom) != 0) bottom = Math.Max(top + MinimumWidgetHeight, b.Bottom + dy);
+        if (right - left > MaximumSize.Width)
+        {
+            if ((_dragEdges & DragEdges.Left) != 0) left = right - MaximumSize.Width;
+            else right = left + MaximumSize.Width;
+        }
+        if (bottom - top > MaximumSize.Height)
+        {
+            if ((_dragEdges & DragEdges.Top) != 0) top = bottom - MaximumSize.Height;
+            else bottom = top + MaximumSize.Height;
+        }
+        Bounds = Rectangle.FromLTRB(left, top, right, bottom);
+    }
+
+    private void StopDrag(object? sender, MouseEventArgs e)
+    {
+        if (!_dragActive) return;
+        _dragActive = false;
+        Capture = false;
+        Invalidate();
     }
 
     private void BuildMenu()
