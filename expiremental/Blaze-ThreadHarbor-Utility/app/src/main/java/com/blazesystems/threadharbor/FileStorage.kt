@@ -1,0 +1,50 @@
+package com.blazesystems.threadharbor
+
+import android.content.Context
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
+
+/**
+ * All SAF provider calls and document streaming belong off the Compose UI thread.
+ * Uses the user's explicit source selection and explicit authorized tree.
+ * A partially written destination is deleted on most failures; process death is
+ * not transactional and must still be handled at a higher level.
+ */
+suspend fun importIntoAuthorizedFolder(
+    context: Context,
+    source: Uri,
+    directory: DocumentFile
+): Result<String> = withContext(Dispatchers.IO) {
+    var target: DocumentFile? = null
+    try {
+        require(directory.isDirectory && directory.canWrite()) {
+            "Selected folder is not writable"
+        }
+        val resolver = context.contentResolver
+        val filename = DocumentFile.fromSingleUri(context, source)?.name
+            ?.take(180)?.ifBlank { "imported-file" } ?: "imported-file"
+        val type = resolver.getType(source) ?: "application/octet-stream"
+        target = directory.createFile(type, filename)
+            ?: error("Document provider rejected new file")
+        resolver.openInputStream(source)?.use { input ->
+            resolver.openOutputStream(target.uri, "wt")?.use { output ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    coroutineContext.ensureActive()
+                    val length = input.read(buffer)
+                    if (length < 0) break
+                    if (length > 0) output.write(buffer, 0, length)
+                }
+                output.flush()
+            } ?: error("Cannot write imported file")
+        } ?: error("Cannot read picked document")
+        Result.success(filename)
+    } catch (failure: Exception) {
+        try { target?.delete() } catch (_: Exception) {}
+        Result.failure(failure)
+    }
+}
