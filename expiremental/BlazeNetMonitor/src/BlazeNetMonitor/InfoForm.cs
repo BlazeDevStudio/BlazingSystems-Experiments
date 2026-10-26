@@ -1,4 +1,6 @@
 using System.Drawing.Drawing2D;
+using Microsoft.Win32;
+using System.Diagnostics;
 using BlazeNetMonitor.Core;
 
 namespace BlazeNetMonitor;
@@ -69,10 +71,61 @@ internal sealed class InfoForm : Form
         Invalidate();
     }
 
+    private static string? ResolveAppPath(AppUsageEntry usage)
+    {
+        if (Path.IsPathFullyQualified(usage.ExecutablePath) &&
+            !usage.ExecutablePath.StartsWith(@"\\", StringComparison.Ordinal) &&
+            File.Exists(usage.ExecutablePath))
+            return usage.ExecutablePath;
+
+        var baseName = usage.AppName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? usage.AppName : usage.AppName + ".exe";
+        if (baseName.Contains('\\') || baseName.Contains('/') ||
+            baseName.Contains(':') || baseName.Length > 100) return null;
+
+        // Registered App Paths survive after an app exits, unlike a process list.
+        const string appPaths = @"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\";
+        foreach (var root in new[] { Registry.CurrentUser, Registry.LocalMachine })
+        {
+            try
+            {
+                using var key = root.OpenSubKey(appPaths + baseName);
+                string? path = key?.GetValue(null) as string;
+                if (!string.IsNullOrWhiteSpace(path) &&
+                    Path.IsPathFullyQualified(path) &&
+                    !path.StartsWith(@"\\", StringComparison.Ordinal) &&
+                    File.Exists(path)) return path;
+            }
+            catch (Exception) { }
+        }
+
+        // Best effort for running desktop apps; stopped apps get a generic icon
+        // when Windows exposes neither path nor registered App Paths.
+        try
+        {
+            foreach (var process in Process.GetProcessesByName(
+                Path.GetFileNameWithoutExtension(baseName)).Take(10))
+            {
+                using (process)
+                {
+                    try
+                    {
+                        var path = process.MainModule?.FileName;
+                        if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                            return path;
+                    }
+                    catch (Exception) { }
+                }
+            }
+        }
+        catch (Exception) { }
+        return null;
+    }
+
     private Bitmap IconFor(AppUsageEntry usage)
     {
-        var path = usage.ExecutablePath;
-        string key = string.IsNullOrWhiteSpace(path) ? "default" : path;
+        var path = ResolveAppPath(usage);
+        string key = path ?? usage.AppName;
         if (_icons.TryGetValue(key, out var bitmap)) return bitmap;
         Bitmap? result = null;
         try
