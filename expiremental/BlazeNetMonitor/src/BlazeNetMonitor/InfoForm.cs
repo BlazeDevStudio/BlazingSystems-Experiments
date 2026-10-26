@@ -11,7 +11,7 @@ internal sealed class InfoForm : Form
         ShowInTaskbar = false;
         TopMost = true;
         BackColor = Theme.Panel;
-        ClientSize = new Size(420, 312);
+        ClientSize = new Size(460, 340);
         Padding = new Padding(15);
         _body = new Label { Dock = DockStyle.Fill, ForeColor = Theme.Text, Font = new Font("Segoe UI", 9.5f), AutoSize = false };
         Controls.Add(_body);
@@ -20,6 +20,17 @@ internal sealed class InfoForm : Form
     {
         get { var p = base.CreateParams; p.ExStyle |= 0x80; return p; } // WS_EX_TOOLWINDOW; no Alt+Tab window
     }
+    public void ApplyAppearance(AppSettings settings)
+    {
+        BackColor = Theme.Panel;
+        ForeColor = Theme.Text;
+        _body.ForeColor = Theme.Text;
+        _body.BackColor = Theme.Panel;
+        // Keep the information panel fully legible even when the tiny speed widget is translucent.
+        Opacity = 1.0;
+        Invalidate(true);
+    }
+
     public void RefreshInfo(NetworkMonitor net, PersistedData data, TargetSnapshot[] snaps, SpeedSample speed, TimeSpan uptime)
     {
         var t = data.Totals;
