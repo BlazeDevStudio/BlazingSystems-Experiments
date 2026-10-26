@@ -443,8 +443,9 @@ internal sealed class MonitorForm : Form
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(Theme.Background);
 
-        bool showGraphs = _data.Settings.ShowGraphs && Height >= 82;
-        float textScale = Math.Clamp(Width / 35f, 8.5f, 12f);
+        bool narrow = Width < 275;
+        bool showGraphs = _data.Settings.ShowGraphs && Height >= (narrow ? 130 : 82);
+        float textScale = Math.Clamp(Width / (narrow ? 28f : 35f), 8.5f, 12f);
         using var speedFont = new Font("Segoe UI Semibold", textScale, FontStyle.Bold, GraphicsUnit.Point);
         using var accentBrush = new SolidBrush(Theme.Accent);
         using var textBrush = new SolidBrush(Theme.Text);
@@ -453,7 +454,6 @@ internal sealed class MonitorForm : Form
             FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center };
 
         g.DrawRectangle(border, 1, 1, Width - 3, Height - 3);
-        // Health indicator order never changes: first target above second target.
         for (int i = 0; i < 2; i++)
         {
             float cy = Height / 2f + (i == 0 ? -12 : 12);
@@ -466,23 +466,36 @@ internal sealed class MonitorForm : Form
 
         float contentX = 40f;
         float contentWidth = Math.Max(20, Width - contentX - 7);
-        float half = contentWidth / 2f;
-        float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 12f;
-        float y = showGraphs ? 4f : 6f;
-        var upRect = new RectangleF(contentX, y, half - 5, labelHeight);
-        var downRect = new RectangleF(contentX + half, y, half - 5, labelHeight);
+        string up = "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
+        string down = "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
 
-        var up = "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
-        var down = "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
-        g.DrawString(up, speedFont, textBrush, upRect, format);
-        g.DrawString(down, speedFont, textBrush, downRect, format);
-
-        if (showGraphs)
+        if (narrow)
         {
-            int graphY = Math.Max(27, Height - 31);
-            var graphWidth = (int)Math.Max(14, half - 12);
-            Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
-            Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
+            float rowHeight = (showGraphs ? Height - 35f : Height - 8f) / 2f;
+            g.DrawString(up, speedFont, textBrush,
+                new RectangleF(contentX, 4f, contentWidth, rowHeight), format);
+            g.DrawString(down, speedFont, textBrush,
+                new RectangleF(contentX, 4f + rowHeight, contentWidth, rowHeight), format);
+            if (showGraphs)
+                Graph(g, _downSamples, new Rectangle((int)contentX + 2, Height - 29,
+                    (int)contentWidth - 5, 21));
+        }
+        else
+        {
+            float half = contentWidth / 2f;
+            float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 12f;
+            float y = showGraphs ? 4f : 6f;
+            g.DrawString(up, speedFont, textBrush,
+                new RectangleF(contentX, y, half - 5, labelHeight), format);
+            g.DrawString(down, speedFont, textBrush,
+                new RectangleF(contentX + half, y, half - 5, labelHeight), format);
+            if (showGraphs)
+            {
+                int graphY = Math.Max(27, Height - 31);
+                var graphWidth = (int)Math.Max(14, half - 12);
+                Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
+            }
         }
 
         if (_editingGeometry)
