@@ -68,8 +68,15 @@ def run():
     fixture_deadline = time.monotonic() + 30
     fixture_view = dump()
     while time.monotonic() < fixture_deadline and not nodes(fixture_view, text="Observed 2 fixture messages"):
+        active_packages = {n.get("package") for n in fixture_view.iter("node")}
+        if PACKAGE not in active_packages:
+            raise AssertionError(
+                "App lost the foreground during diagnostic navigation; probable crash. "
+                "Inspect FATAL EXCEPTION in uploaded logcat, packages=" + repr(active_packages)
+            )
         time.sleep(2)
         fixture_view = dump()
+    assert nodes(fixture_view, text="Developer adapter diagnostics"), "Diagnostic lab was not displayed"
     assert nodes(fixture_view, text="Observed 2 fixture messages"), "Bridge did not load initial fixture DOM"
     # The browser address bar is on the START snapshot, but this screen is
     # the diagnostic lab. Selecting from start would tap stale browser coords.
