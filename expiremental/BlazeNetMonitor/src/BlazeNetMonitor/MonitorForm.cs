@@ -170,7 +170,15 @@ internal sealed class MonitorForm : Form
         if (backgroundless) TransparencyKey = backdrop;
         Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
-        _trafficTimer.Interval = Math.Clamp(_data.Settings.GraphRefreshSeconds, 1, 5) * 1000;
+        int newInterval = Math.Clamp(_data.Settings.GraphRefreshSeconds, 1, 5) * 1000;
+        if (_trafficTimer.Interval != newInterval)
+        {
+            // Historical graph samples have the old cadence; reset graph only,
+            // never the user's accumulated traffic totals.
+            _upSamples.Clear();
+            _downSamples.Clear();
+            _trafficTimer.Interval = newInterval;
+        }
         // IMPORTANT: live preview must not restyle native ComboBoxes while dropped down.
         Invalidate();
     }
@@ -202,7 +210,8 @@ internal sealed class MonitorForm : Form
     {
         // Opt-in taskbar overlay is independent of Explorer. Do not steal focus.
         if (WidgetGeometry.ResolvePlacement(_data.Settings) != WidgetGeometry.InsideTaskbar ||
-            !Visible || _hiddenForFullscreen || !IsHandleCreated) return;
+            !Visible || _hiddenForFullscreen || !IsHandleCreated ||
+            _settingsForm is not null) return; // never raise widget over an open Settings dropdown
         const uint flags = 0x0001 | 0x0002 | 0x0010; // NOSIZE | NOMOVE | NOACTIVATE
         SetWindowPos(Handle, (nint)(-1), 0, 0, 0, 0, flags);
     }
