@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.5 — general website favicon preview
+# BlazeNetMonitor v0.2.6 — UX cleanup and blue-brand preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,21 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.6 UX cleanup and install options (October 26, 2026)
+
+- **Health targets:** Default labels are now **Target 1** and **Target 2**. Legacy default labels `Primary DNS`/`Secondary DNS` migrate visibly, preserving custom names. Each protocol selection changes the grey `PlaceholderText` and label; it never writes the example as an address. Input drafts persist within the edit session across protocol switches.
+  - ICMP: `1.1.1.1 or example.com`
+  - HTTPS: `https://www.example.com`
+  - TCP: `example.com` plus visible **Port**
+  - DNS: `example.com`
+  - TCP Port disappears for ICMP/HTTPS/DNS, with protocol-specific validation upon saving.
+- **Adapter dropdown:** Only currently enumerated physical Ethernet/Wi-Fi adapters by default, whether connected or disconnected. Virtual/VPN/tunnel/loopback interfaces are hidden to avoid clutter, with **Also show virtual, VPN and tunnel adapters** opt-in. Device Manager-disabled adapters that Windows does not expose via NetworkInterface cannot be enumerated by this version.
+- **Streamlined controls:** Removed the duplicate speed-unit selector from General; Metrics remains the single place to configure units. Horizontal offset hides when freeform mode is selected. Windows-themed tabs and a small blue network-speed icon now follow the Blaze Systems blue palette.
+- **First-run experience:** Shows only on a fresh installation and only once. Upgrading earlier settings never triggers the welcome screen again. Donation QR is optional; **the original verified PayPal QR was not found in recoverable prior files** and the installer contains no fabricated payment URL. If the authentic QR is imported using About → Import authentic PayPal QR, the QR is stored locally under `%LOCALAPPDATA%\\BlazeSystems\\BlazeNetMonitor\\paypal-donation.png`, or may be packaged as `paypal-donation.png` beside the EXE after verification.
+- **About:** Creator and Facebook link `https://fb.me/manrealloumer`, donation QR image if available, and clear version / integration disclosures.
+- **Package size:** x64 **lite** uses a framework-dependent .NET 10 Windows Desktop Runtime app and is smaller at the cost of installing the matching .NET Desktop Runtime. The full x64/x86/ARM64 portable packages remain self-contained. Avoid trimming WinForms blindly because it is not a safely supported size reduction.
+- **QA:** Added deterministic input/placeholder/adapter-filter checks; Windows GUI build and launch checks do not prove all real pointer, DPI, combobox or onboarding behavior.
 
 ## v0.2.5 — General website favicon support (October 26, 2026)
 

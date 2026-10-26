@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.5-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.2.6-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,11 +34,19 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.5-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.2.6-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
           }
+      - name: Build small framework-dependent Windows x64 package
+        shell: pwsh
+        run: |
+          dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o dist/win-x64-lite
+          if ($LASTEXITCODE -ne 0) { throw 'Lite framework-dependent publish failed' }
+          if (-not (Test-Path 'dist/win-x64-lite/BlazeNetMonitor.exe')) { throw 'Lite EXE missing' }
+          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.6-win-x64-lite.zip' -CompressionLevel Optimal -Force
+          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.6-win-x64-lite.zip' -Algorithm SHA256 | Format-List
       - name: Windows x64 GUI process launch smoke check
         shell: pwsh
         run: |
@@ -59,5 +67,5 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.5-win-x64.zip artifacts/BlazeNetMonitor-v0.2.5-win-x86.zip artifacts/BlazeNetMonitor-v0.2.5-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.5 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.5 Preview: website favicon support for arbitrary public hostnames including www.facebook.com, not only Cloudflare or Google. Secure HTTPS /favicon.ico lookup follows up to four public HTTPS CDN redirects and falls back to official HTML rel=icon links; no arbitrary private-IP redirects, no third-party icon lookup service. Adds in-widget favicon refresh control and supports tighter compact layouts. Existing independent colored health dots remain visible beside circular logos. CI build/tests and a Windows x64 process smoke check pass before publishing; actual website access and interactive UI behavior remain to be confirmed on the users Windows desktop.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.6-win-x64.zip artifacts/BlazeNetMonitor-v0.2.6-win-x86.zip artifacts/BlazeNetMonitor-v0.2.6-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.6-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.6 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.6 UI cleanup PREVIEW: gray non-input protocol examples with preserved protocol drafts, TCP-only port control, Target 1/2 default names, filtered physical adapter dropdown including disconnected interfaces and optional show-all toggle, Blue Blaze Systems network-speed icon, first-run welcome only on fresh installs, About page with fb.me/manrealloumer and honest operator-supplied PayPal QR import. No fabricated donation destination or QR is distributed. Adds a small x64 framework-dependent package that requires the .NET 10 Desktop Runtime, alongside full portable self-contained packages. Windows build, tests and basic process-launch smoke checks run in CI; physical UI/device interactions remain unverified.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }
