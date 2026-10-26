@@ -41,8 +41,8 @@ internal sealed class MonitorForm : Form
     private Rectangle _dragStartBounds;
     private Point _dragStartPoint;
     private bool _dragActive;
-    private const int MinimumWidgetWidth = 210;
-    private const int MinimumWidgetHeight = 52;
+    private const int MinimumWidgetWidth = WidgetGeometry.CompactMinimumWidth;
+    private const int MinimumWidgetHeight = WidgetGeometry.CompactMinimumHeight;
 
     public MonitorForm()
     {
@@ -155,14 +155,59 @@ internal sealed class MonitorForm : Form
         Invalidate();
     }
 
-    private static Rectangle SafeBounds(Rectangle candidate, Screen screen)
-        => WidgetGeometry.Constrain(candidate, screen.WorkingArea, MinimumWidgetWidth, MinimumWidgetHeight);
+    private Rectangle SafeBounds(Rectangle candidate, Screen screen)
+        => WidgetGeometry.ConstrainToMode(candidate, screen.Bounds, screen.WorkingArea,
+            WidgetGeometry.ResolvePlacement(_data.Settings));
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AppBarData
+    {
+        public uint cbSize;
+        public nint hWnd;
+        public uint callbackMessage;
+        public uint edge;
+        public WinRect rc;
+        public nint lParam;
+    }
+
+    [DllImport("shell32.dll", SetLastError = true)]
+    private static extern nuint SHAppBarMessage(uint message, ref AppBarData appBar);
+
+    private static Rectangle TaskbarBounds(Screen screen)
+    {
+        // ABM_GETTASKBARPOS = 5. Primary system taskbar only.
+        if (screen.Primary)
+        {
+            var data = new AppBarData { cbSize = (uint)Marshal.SizeOf<AppBarData>() };
+            if (SHAppBarMessage(5u, ref data) != 0)
+            {
+                var r = Rectangle.FromLTRB(data.rc.Left, data.rc.Top, data.rc.Right, data.rc.Bottom);
+                if (r.Width > 0 && r.Height > 0 && screen.Bounds.IntersectsWith(r))
+                    return r;
+            }
+        }
+
+        // Secondary-monitor and shell fallback: derive from actual work-area
+        // exclusion; do not assume the taskbar is always 48 pixels high.
+        var bounds = screen.Bounds;
+        var work = screen.WorkingArea;
+        if (work.Bottom < bounds.Bottom)
+            return new Rectangle(bounds.Left, work.Bottom, bounds.Width, bounds.Bottom - work.Bottom);
+        if (work.Top > bounds.Top)
+            return new Rectangle(bounds.Left, bounds.Top, bounds.Width, work.Top - bounds.Top);
+        if (work.Left > bounds.Left)
+            return new Rectangle(bounds.Left, bounds.Top, work.Left - bounds.Left, bounds.Height);
+        if (work.Right < bounds.Right)
+            return new Rectangle(work.Right, bounds.Top, bounds.Right - work.Right, bounds.Height);
+        return Rectangle.Empty;
+    }
 
     private void RestoreGeometry()
     {
         Width = Math.Clamp(_data.Settings.WidgetWidth, MinimumWidgetWidth, MaximumSize.Width);
         Height = Math.Clamp(_data.Settings.WidgetHeight, MinimumWidgetHeight, MaximumSize.Height);
-        if (_data.Settings.FreeformPositioned && _data.Settings.WidgetX != -1 && _data.Settings.WidgetY != -1)
+        if (_data.Settings.FreeformPositioned &&
+            _data.Settings.WidgetX != -1 && _data.Settings.WidgetY != -1)
             Location = new Point(_data.Settings.WidgetX, _data.Settings.WidgetY);
         Reposition();
     }
@@ -170,17 +215,45 @@ internal sealed class MonitorForm : Form
     private void Reposition()
     {
         if (_editingGeometry || IsDisposed) return;
-        if (_data.Settings.FreeformPositioned)
+        var mode = WidgetGeometry.ResolvePlacement(_data.Settings);
+        var screen = _data.Settings.FreeformPositioned
+            ? Screen.FromRectangle(Bounds)
+            : (Screen.PrimaryScreen ?? Screen.FromControl(this));
+        var next = Bounds;
+        if (!_data.Settings.FreeformPositioned)
         {
-            Bounds = SafeBounds(Bounds, Screen.FromRectangle(Bounds));
+            var positionMode = mode == WidgetGeometry.Floating ? WidgetGeometry.AboveTaskbar : mode;
+            next = WidgetGeometry.DockPosition(Bounds, screen.WorkingArea,
+                TaskbarBounds(screen), positionMode, _data.Settings.HorizontalOffset);
+        }
+        Bounds = SafeBounds(next, screen);
+    }
+
+    private void FitTaskbarHeight()
+    {
+        var screen = Screen.FromRectangle(Bounds);
+        var bar = TaskbarBounds(screen);
+        if (bar.IsEmpty || bar.Width < bar.Height)
+        {
+            MessageBox.Show("Unable to determine a horizontal taskbar on this monitor. " +
+                "Use Resize / move to set the dimensions manually.", "BlazeNetMonitor");
             return;
         }
-        var screen = Screen.PrimaryScreen ?? Screen.FromControl(this);
-        var work = screen.WorkingArea;
-        // Never overlay the taskbar, including old saved DockInsideTaskbar preferences.
-        Bounds = SafeBounds(new Rectangle(
-            work.Right - Width - _data.Settings.HorizontalOffset,
-            work.Bottom - Height, Width, Height), screen);
+
+        _data.Settings.PlacementMode = WidgetGeometry.InsideTaskbar;
+        _data.Settings.DockInsideTaskbar = true;
+        int newHeight = Math.Clamp(bar.Height - 4, MinimumWidgetHeight, MaximumSize.Height);
+        int x = _data.Settings.FreeformPositioned ? Left :
+            bar.Right - _data.Settings.HorizontalOffset - Width;
+        Bounds = SafeBounds(new Rectangle(x,
+            bar.Top + (bar.Height - newHeight) / 2, Width, newHeight), screen);
+        _data.Settings.FreeformPositioned = true;
+        _data.Settings.WidgetX = Left;
+        _data.Settings.WidgetY = Top;
+        _data.Settings.WidgetWidth = Width;
+        _data.Settings.WidgetHeight = Height;
+        SaveSafe();
+        Invalidate();
     }
 
     private void RefreshFullscreenState()
@@ -279,10 +352,11 @@ internal sealed class MonitorForm : Form
     private DragEdges FindDragEdges(Point p)
     {
         var result = DragEdges.None;
-        if (p.X < ResizeMargin) result |= DragEdges.Left;
-        if (p.X >= Width - ResizeMargin) result |= DragEdges.Right;
-        if (p.Y < ResizeMargin) result |= DragEdges.Top;
-        if (p.Y >= Height - ResizeMargin) result |= DragEdges.Bottom;
+        int margin = Math.Clamp(Math.Min(Width, Height) / 5, 5, ResizeMargin);
+        if (p.X < margin) result |= DragEdges.Left;
+        if (p.X >= Width - margin) result |= DragEdges.Right;
+        if (p.Y < margin) result |= DragEdges.Top;
+        if (p.Y >= Height - margin) result |= DragEdges.Bottom;
         return result == DragEdges.None ? DragEdges.Move : result;
     }
 
@@ -355,6 +429,7 @@ internal sealed class MonitorForm : Form
         _menu.Items.Add(_editingGeometry ? "Finish resize / move (Enter)" : "Resize / move widget",
             null, (_, _) => { if (_editingGeometry) FinishGeometryEdit(); else BeginGeometryEdit(); });
         if (_editingGeometry) _menu.Items.Add("Cancel resize (Esc)", null, (_, _) => CancelGeometryEdit());
+        _menu.Items.Add("Match taskbar height (overlay)", null, (_, _) => FitTaskbarHeight());
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("BlazeNetMonitor · Settings", null, (_, _) => EditSettings());
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
