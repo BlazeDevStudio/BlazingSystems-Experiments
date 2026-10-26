@@ -5,12 +5,15 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Message
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -21,108 +24,301 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import org.json.JSONArray
 import java.net.URLEncoder
 
 private class BrowserTab(val view: WebView, val id: Int) {
-    var address by mutableStateOf("https://example.org")
-    var title by mutableStateOf("Tab")
+    var address by mutableStateOf("about:blank")
+    var title by mutableStateOf("New tab")
 }
+
 private fun normalizeAddress(value: String): String {
     val input = value.trim()
     return when {
-        input.startsWith("https://") || input.startsWith("http://") -> input
-        !input.contains(" ") && input.contains(".") -> "https://" + input
+        input.isBlank() -> "about:blank"
+        input.startsWith("https://", true) || input.startsWith("http://", true) -> input
+        !input.contains(" ") && (input.contains(".") || input.startsWith("localhost")) ->
+            "https://$input"
         else -> "https://www.google.com/search?q=" + URLEncoder.encode(input, "UTF-8")
     }
 }
 
+private fun readStoredUrls(raw: String?, maximum: Int): List<String> = try {
+    val values = JSONArray(raw ?: "[]")
+    (0 until minOf(values.length(), maximum)).mapNotNull { index ->
+        values.optString(index).takeIf {
+            (it.startsWith("https://") || it.startsWith("http://")) && it.length <= 4096
+        }
+    }
+} catch (_: Exception) { emptyList() }
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun BrowserScreen(context: Context) {
+fun BrowserScreen(context: Context, visible: Boolean = true) {
+    val preferences = remember { context.getSharedPreferences("browser_v2", Context.MODE_PRIVATE) }
     var upload by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         upload?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data))
         upload = null
     }
     val tabs = remember { mutableStateListOf<BrowserTab>() }
-    var selected by remember { mutableIntStateOf(0) }
+    var selected by remember { mutableIntStateOf(preferences.getInt("selected", 0)) }
     var counter by remember { mutableIntStateOf(0) }
-    fun newTab(): BrowserTab {
+    var status by remember { mutableStateOf<String?>(null) }
+    val bookmarks = remember {
+        mutableStateListOf<String>().apply {
+            addAll(readStoredUrls(preferences.getString("bookmarks", null), 100))
+        }
+    }
+    val history = remember {
+        mutableStateListOf<String>().apply {
+            addAll(readStoredUrls(preferences.getString("history", null), 200))
+        }
+    }
+    var bookmarksExpanded by remember { mutableStateOf(false) }
+    var historyExpanded by remember { mutableStateOf(false) }
+
+    fun saveUrls() {
+        fun encode(values: List<String>) = JSONArray().apply { values.forEach { put(it) } }.toString()
+        preferences.edit().putString("bookmarks", encode(bookmarks))
+            .putString("history", encode(history)).apply()
+    }
+
+    fun saveSession() {
+        val urls = JSONArray().apply {
+            tabs.forEach { tab ->
+                if (tab.address.startsWith("https://") || tab.address.startsWith("http://")) {
+                    put(tab.address)
+                } else {
+                    put("https://www.google.com/")
+                }
+            }
+        }
+        preferences.edit().putString("tabs", urls.toString())
+            .putInt("selected", selected).apply()
+    }
+
+    fun recordHistory(url: String) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")) return
+        history.remove(url)
+        history.add(0, url)
+        while (history.size > 200) history.removeAt(history.lastIndex)
+        saveUrls()
+    }
+
+    fun openExternal(url: String): Boolean = try {
+        val parsed = Uri.parse(url)
+        val scheme = parsed.scheme?.lowercase()
+        if (scheme !in setOf("https", "http", "mailto", "tel", "geo", "market")) {
+            status = "Blocked an unsupported external link"
+            false
+        } else {
+            context.startActivity(Intent(Intent.ACTION_VIEW, parsed)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        }
+    } catch (_: Exception) {
+        status = "No app available to open that link"
+        false
+    }
+
+    fun enqueueDownload(url: String, agent: String?, disposition: String?, mime: String?) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            status = "Only HTTP(S) downloads are supported"
+            return
+        }
+        try {
+            val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle(URLUtil.guessFileName(url, disposition, mime))
+                .setDescription(Uri.parse(url).host ?: "Website download")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            if (!mime.isNullOrBlank()) request.setMimeType(mime)
+            // DownloadManager does not automatically share the WebView cookie jar.
+            // Cookies are attached only to the exact requested URL and never stored
+            // in app preferences, logs, inspection export or UI.
+            CookieManager.getInstance().getCookie(url)?.takeIf { it.isNotBlank() }?.let {
+                request.addRequestHeader("Cookie", it)
+            }
+            agent?.takeIf { it.isNotBlank() }?.let { request.addRequestHeader("User-Agent", it) }
+            val id = (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+            val pref = context.getSharedPreferences("downloads", Context.MODE_PRIVATE)
+            val ids = pref.getString("ids", "").orEmpty().split(",")
+                .filter { it.toLongOrNull() != null }.takeLast(99)
+            pref.edit().putString("ids", (ids + id.toString()).joinToString(",")).apply()
+            status = "Download queued — see Downloads"
+        } catch (_: Exception) {
+            status = "Download could not be started; use External browser"
+        }
+    }
+
+    fun newTab(initial: String): BrowserTab {
         val web = WebView(context)
         val tab = BrowserTab(web, counter++)
+        tab.address = initial
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.settings.allowFileAccess = false
         web.settings.allowContentAccess = true
+        web.settings.setSupportMultipleWindows(true)
+        web.settings.javaScriptCanOpenWindowsAutomatically = false
+        web.settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
         CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, false)
         web.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView, url: String) { tab.address = url }
+            override fun onPageFinished(view: WebView, url: String) {
+                tab.address = url
+                recordHistory(url)
+                saveSession()
+            }
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val scheme = request.url.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https" || scheme == "about") return false
+                if (request.isForMainFrame) openExternal(request.url.toString())
+                return true
+            }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onReceivedTitle(view: WebView?, title: String?) {
-                tab.title = title?.take(20) ?: "Tab"
+                tab.title = title?.take(25)?.ifBlank { "New tab" } ?: "New tab"
             }
             override fun onShowFileChooser(view: WebView?, cb: ValueCallback<Array<Uri>>,
                                            params: FileChooserParams): Boolean {
                 upload?.onReceiveValue(null)
                 upload = cb
-                return try { picker.launch(params.createIntent()); true }
-                catch (_: Exception) { upload?.onReceiveValue(null); upload = null; false }
+                return try {
+                    picker.launch(params.createIntent())
+                    true
+                } catch (_: Exception) {
+                    upload?.onReceiveValue(null)
+                    upload = null
+                    false
+                }
+            }
+            override fun onCreateWindow(view: WebView?, isDialog: Boolean,
+                                        isUserGesture: Boolean, resultMsg: Message?): Boolean {
+                if (!isUserGesture || tabs.size >= 12 || resultMsg == null) return false
+                val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
+                val child = newTab("about:blank")
+                tabs.add(child)
+                selected = tabs.lastIndex
+                transport.webView = child.view
+                resultMsg.sendToTarget()
+                saveSession()
+                return true
             }
         }
-        web.setDownloadListener { url, _, disposition, mime, _ ->
-            if (!url.startsWith("https://") && !url.startsWith("http://")) return@setDownloadListener
-            try {
-                val request = DownloadManager.Request(Uri.parse(url))
-                    .setTitle(URLUtil.guessFileName(url, disposition, mime))
-                    .setMimeType(mime)
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                val id = dm.enqueue(request)
-                val pref = context.getSharedPreferences("downloads",Context.MODE_PRIVATE)
-                val previous = pref.getString("ids","").orEmpty().split(",").filter{it.isNotBlank()}.takeLast(99)
-                pref.edit().putString("ids",(previous + id.toString()).joinToString(",")).apply()
-            } catch (_: Exception) { /* Leave original site download fallback available */ }
+        web.setDownloadListener { url, agent, disposition, mime, _ ->
+            enqueueDownload(url, agent, disposition, mime)
         }
-        web.loadUrl("https://example.org")
+        web.loadUrl(initial)
         return tab
     }
-    if(tabs.isEmpty()) tabs.add(newTab())
+
+    if (tabs.isEmpty()) {
+        val restored = readStoredUrls(preferences.getString("tabs", null), 12)
+            .ifEmpty { listOf("https://www.google.com/") }
+        restored.forEach { tabs.add(newTab(it)) }
+        selected = selected.coerceIn(0, tabs.lastIndex)
+    }
+
     val active = tabs.getOrNull(selected) ?: tabs.first()
     var address by remember(active.id) { mutableStateOf(active.address) }
-    LaunchedEffect(active.address) { address = active.address }
+    LaunchedEffect(active.id, active.address) { address = active.address }
+    LaunchedEffect(tabs.size, selected) { saveSession() }
+    BackHandler(enabled = visible && active.view.canGoBack()) { active.view.goBack() }
+
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.horizontalScroll(rememberScrollState())) {
-            tabs.forEachIndexed { i, tab ->
-                TextButton(onClick={selected=i}){ Text((if(i==selected)"● " else "") + tab.title) }
+            tabs.forEachIndexed { index, tab ->
+                TextButton(onClick = { selected = index }) {
+                    Text((if (index == selected) "● " else "") + tab.title, maxLines = 1)
+                }
             }
-            TextButton(onClick={tabs.add(newTab());selected=tabs.lastIndex}){Text("+ Tab")}
-            TextButton(onClick={
-                if(tabs.size>1) { active.view.destroy(); tabs.removeAt(selected); selected=selected.coerceAtMost(tabs.lastIndex) }
-            }){Text("Close")}
+            TextButton(enabled = tabs.size < 12, onClick = {
+                tabs.add(newTab("https://www.google.com/"))
+                selected = tabs.lastIndex
+            }) { Text("+ Tab") }
+            TextButton(enabled = tabs.size > 1, onClick = {
+                active.view.destroy()
+                tabs.removeAt(selected)
+                selected = selected.coerceAtMost(tabs.lastIndex)
+                saveSession()
+            }) { Text("Close") }
         }
         Row {
-            OutlinedTextField(value=address,onValueChange={address=it},singleLine=true,
-                modifier=Modifier.weight(1f),label={Text("Address / search")})
-            Button(onClick={active.view.loadUrl(normalizeAddress(address))}){Text("Go")}
+            OutlinedTextField(
+                value = address, onValueChange = { address = it }, singleLine = true,
+                modifier = Modifier.weight(1f), label = { Text("Address / search") }
+            )
+            Button(onClick = { active.view.loadUrl(normalizeAddress(address)) }) { Text("Go") }
         }
-        Row {
-            TextButton(onClick={if(active.view.canGoBack())active.view.goBack()}){Text("Back")}
-            TextButton(onClick={if(active.view.canGoForward())active.view.goForward()}){Text("Next")}
-            TextButton(onClick={active.view.reload()}){Text("Reload")}
-            TextButton(onClick={
-                try {context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(active.address))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))}catch(_:Exception){}
-            }){Text("External")}
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            TextButton(onClick = { if (active.view.canGoBack()) active.view.goBack() }) { Text("Back") }
+            TextButton(onClick = { if (active.view.canGoForward()) active.view.goForward() }) { Text("Next") }
+            TextButton(onClick = { active.view.reload() }) { Text("Reload") }
+            TextButton(onClick = { active.view.loadUrl("https://www.google.com/") }) { Text("Home") }
+            val saved = bookmarks.contains(active.address)
+            TextButton(onClick = {
+                if (saved) bookmarks.remove(active.address)
+                else if (active.address.startsWith("https://") || active.address.startsWith("http://")) {
+                    bookmarks.add(0, active.address)
+                    while (bookmarks.size > 100) bookmarks.removeAt(bookmarks.lastIndex)
+                }
+                saveUrls()
+            }) { Text(if (saved) "★ Saved" else "☆ Save") }
+            Box {
+                TextButton(onClick = { bookmarksExpanded = true }) { Text("Bookmarks") }
+                DropdownMenu(
+                    expanded = bookmarksExpanded,
+                    onDismissRequest = { bookmarksExpanded = false }
+                ) {
+                    if (bookmarks.isEmpty()) DropdownMenuItem(
+                        text = { Text("No saved bookmarks") }, onClick = { bookmarksExpanded = false }
+                    )
+                    bookmarks.take(20).forEach { url ->
+                        DropdownMenuItem(text = { Text(url, maxLines = 1) }, onClick = {
+                            active.view.loadUrl(url)
+                            bookmarksExpanded = false
+                        })
+                    }
+                }
+            }
+            Box {
+                TextButton(onClick = { historyExpanded = true }) { Text("History") }
+                DropdownMenu(expanded = historyExpanded, onDismissRequest = { historyExpanded = false }) {
+                    if (history.isEmpty()) DropdownMenuItem(
+                        text = { Text("History is empty") }, onClick = { historyExpanded = false }
+                    )
+                    history.take(20).forEach { url ->
+                        DropdownMenuItem(text = { Text(url, maxLines = 1) }, onClick = {
+                            active.view.loadUrl(url)
+                            historyExpanded = false
+                        })
+                    }
+                    DropdownMenuItem(text = { Text("Clear URL history") }, onClick = {
+                        history.clear()
+                        saveUrls()
+                        historyExpanded = false
+                    })
+                }
+            }
+            TextButton(onClick = { openExternal(active.address) }) { Text("External") }
         }
+        status?.let { Text(it, style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 8.dp)) }
         key(active.id) {
-            AndroidView(factory={
+            AndroidView(factory = {
                 (active.view.parent as? android.view.ViewGroup)?.removeView(active.view)
                 active.view
-            },modifier=Modifier.fillMaxWidth().weight(1f))
+            }, modifier = Modifier.fillMaxWidth().weight(1f))
         }
     }
     DisposableEffect(Unit) {
-        onDispose { upload?.onReceiveValue(null); tabs.forEach{it.view.destroy()}; tabs.clear() }
+        onDispose {
+            saveSession()
+            upload?.onReceiveValue(null)
+            tabs.forEach { it.view.destroy() }
+            tabs.clear()
+        }
     }
 }
