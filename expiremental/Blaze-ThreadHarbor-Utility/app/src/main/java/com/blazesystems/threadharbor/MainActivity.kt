@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun HarborShell(context: Context, fixture: FixtureRuntime) {
-    val tabs = listOf("Browser","Chats (Lab)","Downloads","Files","Gallery","Inspection","Calls","Settings")
+    val tabs = listOf("Browser","Chats","Downloads","Files","Gallery","Inspection","Calls","Settings")
     var current by remember { mutableStateOf("Browser") }
     BackHandler(enabled = current != "Browser") { current = "Browser" }
     // Keep message input and Send above the Android software keyboard (IME).
@@ -51,7 +51,9 @@ private fun HarborShell(context: Context, fixture: FixtureRuntime) {
             // Unlike a hidden full-screen overlay it cannot steal touches.
             if (current != "Browser") {
                 when(current) {
-                    "Chats (Lab)" -> ChatsScreen(fixture){current="Browser"}
+                    "Chats" -> ChatsStatusScreen(openBrowser = { current = "Browser" },
+                        openLab = { current = "Developer Lab" })
+                    "Developer Lab" -> ChatsScreen(fixture){current="Browser"}
                     "Calls" -> Notice("Calls unavailable","Website calling, voicemail and recording are unsupported until authorized capabilities are demonstrated.")
                     "Gallery" -> GalleryScreen()
                     "Downloads" -> DownloadsScreen(context)
@@ -79,10 +81,25 @@ private fun Notice(title:String,body:String) {
     }
 }
 @Composable
+private fun ChatsStatusScreen(openBrowser: () -> Unit, openLab: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Chats", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(12.dp))
+        Text("No compatible messaging site adapter is connected.")
+        Spacer(Modifier.height(8.dp))
+        Text("ThreadHarbor will not invent conversations or claim website messages were sent. The independent native chat interface stays disconnected until real-site compatibility and permission have been verified.")
+        Spacer(Modifier.height(20.dp))
+        Button(onClick = openBrowser) { Text("Browse an authentic website") }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = openLab) { Text("Open controlled adapter diagnostics") }
+    }
+}
+
+@Composable
 private fun ChatsScreen(fixture:FixtureRuntime,openBrowser:()->Unit) {
     var draft by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().padding(12.dp)){
-        Text("Native messaging — controlled fixture",style=MaterialTheme.typography.titleLarge)
+        Text("Developer adapter diagnostics",style=MaterialTheme.typography.titleLarge)
         Text("DEMO WEBSITE, NOT FACEBOOK OR REAL INBOX",color=MaterialTheme.colorScheme.error)
         Text(fixture.status,style=MaterialTheme.typography.bodySmall)
         fixture.pending.lastOrNull()?.let { action ->
