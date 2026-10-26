@@ -484,6 +484,13 @@ internal sealed class MonitorForm : Form
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("BlazeNetMonitor · Settings", null, (_, _) => EditSettings());
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
+        _menu.Items.Add("Refresh website favicons", null, (_, _) =>
+        {
+            if (!_data.Settings.ShowFavicons)
+                MessageBox.Show("Enable circular website favicons in Settings → Metrics first.",
+                    "BlazeNetMonitor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            else _ = ReloadFaviconsAsync();
+        });
         _menu.Items.Add("Reset session totals", null, (_, _) => { _data.Totals.ResetSession(); Invalidate(); SaveSafe(); });
         _menu.Items.Add("Copy status", null, (_, _) => CopyStatus());
         _menu.Items.Add(_data.Settings.TransparentBackground ? "Disable backgroundless mode" : "Enable backgroundless mode",
@@ -816,7 +823,7 @@ internal sealed class MonitorForm : Form
         float extraHeight = showMetricLine ? 16f : 0f;
         float textHeight = Math.Max(11f, Height - graphHeight - extraHeight - 4f);
         bool showBadges = _data.Settings.ShowFavicons &&
-            Width >= (Height < 39 ? 220 : 195) && _favicons.Any(b => b is not null);
+            Width >= (Height < 39 ? 160 : 150) && _favicons.Any(b => b is not null);
         bool useBits = DisplayPreferences.UseBits(_data.Settings, Width, Height);
         int historySeconds = DisplayPreferences.GraphWindowSeconds(
             _data.Settings.GraphHistorySeconds, Width, Height);
