@@ -1,3 +1,11 @@
+## v0.4.3 — typed-state source and sensor control (Windows gate pending)
+- Typed global variables with safe numeric/boolean literals, declaration manager, persistence and scoped symbols.
+- Analog Uno A0–A5 sampling into long variables; conditional threshold output with actual comparison C++.
+- Virtual ADC injection and typed variable debugger; explicit unmodeled physical peripherals.
+- First-use sensor threshold project template; separate empty visual template.
+- Wire/ADC shared A4/A5 conflicts validated; Arduino AVR Uno/Mega/Nano compilation gates extended.
+- Packaged GUI smoke extended with full typed variable create, graph block insertion, save/reopen, C++ generation and virtual sensor/output test.
+
 ## v0.4.2 — curated executable Arduino library adapter under testing
 - Wire I2C register-write Uno adapter, PWM output, Serial print, strict byte validation and dependency-aware .ino export.
 - Added virtual unsupported-peripheral warnings and compiler-gated sample; expanded GUI smoke to library insertion and source edit.

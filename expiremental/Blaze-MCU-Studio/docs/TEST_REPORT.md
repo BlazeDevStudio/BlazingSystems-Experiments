@@ -1,3 +1,11 @@
+## v0.4.3 source acceptance checkpoint
+- 101/101 Node.js 22 tests passed locally in current implementation checkpoint.
+- New tests cover typed variable declarations, undeclared references, literal injection rejection, analog A0–A5 bounds, template scoping, per-session ADC injection, virtual threshold output, Wire/analog resource collision, project persistence and non-overwriting Arduino sketch export.
+- Host C++ syntax check against explicit Arduino stub was executed, **not counted as real Arduino compilation**.
+- Real Windows Arduino CLI Uno sensor/threshold compilation and Mega/Nano Blink compilations are **pending exact-head GitHub CI**.
+- Packaged Windows DOM interaction/IPC test extended with Variables tab and sensor-to-output pipeline; **pending exact-head GitHub CI**.
+- Still no physical MCU or 2 GB Windows acceptance.
+
 # v0.4.1 interaction repair — source and Windows gate
 
 - Source-based local Node.js 22 test runner: run `npm test`; inspect persisted log in `evidence/local-tests.txt`.

@@ -1,3 +1,14 @@
+## v0.4.3 — typed state and sensor-to-output control (development, requires Windows acceptance)
+
+- **Variables tab:** add persistent `long`, `float`, `bool` project variables with literal initial values, identity validation and dependency-aware deletion. Variables survive save/reload/export, use namespaced `blazeVar_` symbols, and are not reverse-parsed from custom C++.
+- **Three executable graph blocks:** Set Variable, Analog Sample (Uno A0–A5 to `long`), Threshold Output (numeric comparison drives Uno D0–D13, plus warning on UART pins). All generate Arduino C++ through the shared engine and are available in the node canvas Inspector.
+- **Template:** choose **Uno Analog Threshold Controller** during New Project to get an immediately connected A0→`sensorValue`≥512→D8 control circuit; the existing Blink and an Empty visual template remain.
+- **Logic simulator:** inject independent virtual analog readings (0..1023), see typed variable state and resulting HIGH/LOW output; unset analog inputs are explicitly simulated as zero, **not measured values**.
+- **Safety:** known conflicts with `Wire` on Uno A4/A5 are rejected; variables reject arbitrary C++ expressions; mismatched target types and unknown board mappings fail closed. No electrical behavior or analog noise is emulated.
+- **Toolchain gate:** real Arduino CLI must compile the generated sensor threshold on Uno, plus generated Blink projects for Arduino Mega and Nano. Mega/Nano compilation does not certify electrical pin mapping. Actual Windows GUI input/edit/persist/virtual behavior acceptance required.
+
+**Remaining:** full typed multi-port graph, graph branching/reconvergence, BALIE universal verified adapters, hardware simulation, WYSIWYG web editor, resource measurements on 2 GB PCs, and ESP8266/ESP32 compiler gating. This is not a production release.
+
 ## v0.4.2 executable library work (new checkpoint)
 
 - Added user-editable **Wire I2C register-write** node restricted to Arduino Uno pending a real CI compilation gate; bounded address/register/value and captured endTransmission status.

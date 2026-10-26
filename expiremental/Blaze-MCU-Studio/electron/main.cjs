@@ -78,6 +78,29 @@ app.whenReady().then(()=>{
       const wireGenerated=await api.generate(await api.openProject(saved.id));
       if(!wireGenerated.source?.includes('Wire.beginTransmission((uint8_t)61)'))throw Error('Wire visual edit did not generate real Arduino library call');
 
+      // User-visible sensor-to-variable-to-output workflow, including project persistence.
+      document.querySelector('[data-tab="variables"]').click();
+      if(document.getElementById('variablesView').classList.contains('hidden'))throw Error('Variables editor absent');
+      document.getElementById('varName').value='sensorValue';
+      document.getElementById('varType').value='long';
+      document.getElementById('varInitial').value='0';
+      document.getElementById('varAdd').click();
+      for(let i=0;i<40&&!document.getElementById('variableList').textContent.includes('sensorValue');i++)await pause(50);
+      if(!document.getElementById('variableList').textContent.includes('sensorValue'))throw Error('Variable manager did not create typed declaration');
+      document.querySelector('[data-add="readAnalog"]').click();
+      document.querySelector('[data-add="thresholdOutput"]').click();
+      document.getElementById('save').click();
+      await pause(650);
+      const sensorProject=await api.openProject(saved.id);
+      if(sensorProject.variables?.[0]?.name!=='sensorValue'||!sensorProject.graph.nodes.some(n=>n.type==='readAnalog')||!sensorProject.graph.nodes.some(n=>n.type==='thresholdOutput'))throw Error('Variable and ADC threshold blocks not persisted');
+      const sensorGenerated=await api.generate(sensorProject);
+      if(!sensorGenerated.source?.includes('blazeVar_sensorValue = analogRead(A0)')||!sensorGenerated.source?.includes('digitalWrite(8, (blazeVar_sensorValue >= 512L) ? HIGH : LOW)'))throw Error('Variable sensor pipeline not compiled into firmware source');
+      const sensorVirtual=await api.simCreate(sensorProject,{});
+      await api.simAnalog(sensorVirtual.id,{A0:700});
+      const sensorTrace=await api.simRun(sensorVirtual.id,100);
+      if(sensorTrace.variables.sensorValue!==700||sensorTrace.outputs['8']!=='HIGH')throw Error('Simulated analog threshold did not drive output');
+      await api.simDispose(sensorVirtual.id);
+
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -87,7 +110,7 @@ app.whenReady().then(()=>{
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}
@@ -95,7 +118,7 @@ app.whenReady().then(()=>{
   });
  }
 
- register('project:list',()=>store.list());register('project:create',(name,fqbn)=>store.create(name,fqbn));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
+ register('project:list',()=>store.list());register('project:create',(name,fqbn,template)=>store.create(name,fqbn,template));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
  register('project:validate',p=>{const d=generateSketch(p).diagnostics;return {...d,ordered:(d.ordered||[]).map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
  register('project:rename',(id,name)=>store.rename(id,name));register('project:duplicate',id=>store.duplicate(id));register('project:trash',id=>store.trash(id));register('project:recoveryList',()=>store.recoveryList());register('project:recover',id=>store.recover(id));
  register('board:migration',(p,target)=>board.analyzeBoardChange(p,target));
@@ -106,6 +129,8 @@ app.whenReady().then(()=>{
  register('sim:step',id=>simulations.step(id));
  register('sim:run',(id,budget)=>simulations.run(id,{maxSteps:budget}));
  register('sim:inputs',(id,inputs)=>simulations.inputs(id,inputs));
+ register('sim:analog',(id,inputs)=>simulations.analog(id,inputs));
+ register('project:validateVariables',list=>require('../core/variables.cjs').validate(list).errors.length?{errors:require('../core/variables.cjs').validate(list).errors}:{errors:[]});
  register('sim:breakpoints',(id,ids)=>simulations.breakpoints(id,ids));
  register('sim:dispose',id=>simulations.dispose(id));
  register('resources:analyze',(p,compilation,config)=>resources.analyzeResources(p,compilation,config));

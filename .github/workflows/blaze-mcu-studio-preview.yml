@@ -1,4 +1,4 @@
-name: Blaze MCU Studio v0.4.2 Wire/PWM/Serial Compiler and UI Gate
+name: Blaze MCU Studio v0.4.3 Typed Sensor Controller and Multi-AVR UI Gate
 on:
   pull_request:
     paths:
@@ -69,6 +69,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedWirePWMSerial" 2>&1 | Tee-Object "$env:RUNNER_TEMP/wire-pwm-serial-compile.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile typed variable and analog-threshold firmware on Uno
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-sensor.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedSensorThreshold" 2>&1 | Tee-Object "$env:RUNNER_TEMP/sensor-threshold-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate generated Blink compilation on Arduino Mega and Nano
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-avr-targets.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:mega --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedMegaBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/mega-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:nano --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedNanoBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/nano-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build actual portable Windows EXE
         shell: pwsh
         working-directory: expiremental/Blaze-MCU-Studio
@@ -100,12 +120,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v042-wire-adapter-and-build-evidence
+          name: blaze-mcu-v043-sensor-variables-and-build-evidence
           path: |
             expiremental/Blaze-MCU-Studio/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
             ${{ runner.temp }}/flowchart-compile.log
             ${{ runner.temp }}/wire-pwm-serial-compile.log
+            ${{ runner.temp }}/sensor-threshold-compile.log
+            ${{ runner.temp }}/mega-compile.log
+            ${{ runner.temp }}/nano-compile.log
             ${{ runner.temp }}/arduino-reference-compile.log
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
