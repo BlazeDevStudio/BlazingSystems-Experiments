@@ -25,20 +25,28 @@ internal sealed class MonitorForm : Form
     private bool _probing;
     private int _ticks;
     private bool _showHover;
+    private bool _editingGeometry;
+    private bool _wasFreeform;
+    private Rectangle _editOriginalBounds;
+    private const int ResizeMargin = 11;
+    private const int MinimumWidgetWidth = 210;
+    private const int MinimumWidgetHeight = 52;
 
     public MonitorForm()
     {
         _data = _storage.Load();
         _data.Totals.ResetSession();
+        Theme.Apply(_data.Settings);
         _trackers = [new QualityTracker(_data.Histories[0]), new QualityTracker(_data.Histories[1])];
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         TopMost = true;
         BackColor = Theme.Background;
         DoubleBuffered = true;
-        ClientSize = new Size(452, 55);
-        MinimumSize = ClientSize;
-        MaximumSize = ClientSize;
+        ClientSize = new Size(312, 64);
+        MinimumSize = new Size(MinimumWidgetWidth, MinimumWidgetHeight);
+        MaximumSize = new Size(1050, 300);
+        Opacity = Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         Cursor = Cursors.Hand;
         AccessibleName = "BlazeNetMonitor live traffic widget";
         _tray = new NotifyIcon { Text = "BlazeNetMonitor", Icon = MakeIcon(), Visible = true, ContextMenuStrip = _menu };
@@ -47,10 +55,19 @@ internal sealed class MonitorForm : Form
         MouseClick += (_, e) =>
         {
             if (e.Button == MouseButtons.Right) _menu.Show(Cursor.Position);
+            else if (_editingGeometry) return;
             else if (e.X <= 40) EditSettings();
             else _showHover = !_showHover;
         };
-        MouseEnter += (_, _) => { _showHover = true; _hoverTimer.Stop(); UpdateHover(); };
+        MouseDoubleClick += (_, _) => { if (_editingGeometry) FinishGeometryEdit(); };
+        KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == Keys.Escape && _editingGeometry) { CancelGeometryEdit(); e.Handled = true; }
+            else if (e.KeyCode == Keys.Enter && _editingGeometry) { FinishGeometryEdit(); e.Handled = true; }
+        };
+        ResizeEnd += (_, _) => { if (_editingGeometry) Invalidate(); };
+        SizeChanged += (_, _) => Invalidate();
+        MouseEnter += (_, _) => { if (!_editingGeometry) { _showHover = true; _hoverTimer.Stop(); UpdateHover(); } };
         MouseLeave += (_, _) => _hoverTimer.Start();
         _info.MouseEnter += (_, _) => _hoverTimer.Stop();
         _info.MouseLeave += (_, _) => _hoverTimer.Start();
@@ -64,7 +81,7 @@ internal sealed class MonitorForm : Form
         _trafficTimer.Tick += (_, _) => SampleTraffic();
         _probeTimer.Tick += async (_, _) => await ProbeTargets();
         _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
-        Shown += async (_, _) => { Reposition(); _trafficTimer.Start(); _probeTimer.Start(); await ProbeTargets(); };
+        Shown += async (_, _) => { RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start(); await ProbeTargets(); };
         SystemEventsHook();
     }
 
@@ -84,26 +101,130 @@ internal sealed class MonitorForm : Form
     }
     private void OnPreferenceChanged(object? sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
     {
-        if (!IsDisposed && IsHandleCreated) BeginInvoke(new Action(Reposition));
+        if (!IsDisposed && IsHandleCreated) BeginInvoke(new Action(() => { ApplyAppearance(); Reposition(); }));
+    }
+
+    private void ApplyAppearance()
+    {
+        Theme.Apply(_data.Settings);
+        BackColor = Theme.Background;
+        Opacity = Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
+        _info.ApplyAppearance(_data.Settings);
+        Invalidate();
+    }
+
+    private void RestoreGeometry()
+    {
+        Width = Math.Clamp(_data.Settings.WidgetWidth, MinimumWidgetWidth, MaximumSize.Width);
+        Height = Math.Clamp(_data.Settings.WidgetHeight, MinimumWidgetHeight, MaximumSize.Height);
+        if (_data.Settings.FreeformPositioned && _data.Settings.WidgetX != -1 && _data.Settings.WidgetY != -1)
+        {
+            Location = new Point(_data.Settings.WidgetX, _data.Settings.WidgetY);
+            Reposition();  // Clamp to whichever monitor still intersects, only when necessary.
+        }
+        else Reposition();
     }
 
     private void Reposition()
     {
-        var screen = Screen.PrimaryScreen;
-        if (screen == null) return;
+        if (_editingGeometry || !Visible && IsHandleCreated) return;
+        if (_data.Settings.FreeformPositioned)
+        {
+            // Preserve freeform position; re-home only when monitor was unplugged / offscreen.
+            if (Screen.AllScreens.Any(s => s.WorkingArea.IntersectsWith(Bounds))) return;
+            var fallback = Screen.PrimaryScreen?.WorkingArea ?? Screen.FromControl(this).WorkingArea;
+            Location = new Point(fallback.Left + Math.Max(0, fallback.Width - Width - 20),
+                fallback.Top + Math.Max(0, fallback.Height - Height - 20));
+            return;
+        }
+
+        var screen = Screen.FromPoint(Cursor.Position);
         var work = screen.WorkingArea;
         var bounds = screen.Bounds;
-        int x = Math.Clamp(bounds.Right - Width - _data.Settings.HorizontalOffset, bounds.Left, bounds.Right - Width);
-        // 'On taskbar' is an intentionally optional overlay, not a legacy Explorer deskband.
+        int x = Math.Clamp(bounds.Right - Width - _data.Settings.HorizontalOffset,
+            bounds.Left, Math.Max(bounds.Left, bounds.Right - Width));
         int y = _data.Settings.DockInsideTaskbar ? bounds.Bottom - Height : work.Bottom - Height;
-        if (work.Bottom == bounds.Bottom && work.Top > bounds.Top) y = _data.Settings.DockInsideTaskbar ? bounds.Top : work.Top;
-        Location = new Point(x, Math.Clamp(y, bounds.Top, bounds.Bottom - Height));
-        if (_showHover) UpdateHover();
+        if (work.Bottom == bounds.Bottom && work.Top > bounds.Top)
+            y = _data.Settings.DockInsideTaskbar ? bounds.Top : work.Top;
+        Location = new Point(x, Math.Clamp(y, bounds.Top, Math.Max(bounds.Top, bounds.Bottom - Height)));
+    }
+
+    private void BeginGeometryEdit()
+    {
+        if (_editingGeometry) return;
+        _editOriginalBounds = Bounds;
+        _wasFreeform = _data.Settings.FreeformPositioned;
+        _editingGeometry = true;
+        _info.Hide();
+        _showHover = false;
+        _hoverTimer.Stop();
+        Cursor = Cursors.SizeAll;
+        BuildMenu();
+        Invalidate();
+    }
+
+    private void FinishGeometryEdit()
+    {
+        if (!_editingGeometry) return;
+        _editingGeometry = false;
+        Cursor = Cursors.Hand;
+        _data.Settings.FreeformPositioned = true;
+        _data.Settings.WidgetX = Left;
+        _data.Settings.WidgetY = Top;
+        _data.Settings.WidgetWidth = Width;
+        _data.Settings.WidgetHeight = Height;
+        SaveSafe();
+        BuildMenu();
+        Invalidate();
+    }
+
+    private void CancelGeometryEdit()
+    {
+        if (!_editingGeometry) return;
+        _editingGeometry = false;
+        _data.Settings.FreeformPositioned = _wasFreeform;
+        Bounds = _editOriginalBounds;
+        Cursor = Cursors.Hand;
+        BuildMenu();
+        Invalidate();
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (_editingGeometry && keyData == Keys.Escape) { CancelGeometryEdit(); return true; }
+        if (_editingGeometry && keyData == Keys.Enter) { FinishGeometryEdit(); return true; }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WM_NCHITTEST = 0x84;
+        if (m.Msg == WM_NCHITTEST && _editingGeometry)
+        {
+            base.WndProc(ref m);
+            long packed = m.LParam.ToInt64();
+            var pos = PointToClient(new Point(unchecked((short)(packed & 0xFFFF)),
+                unchecked((short)((packed >> 16) & 0xFFFF))));
+            int hit = 2; // HTCAPTION: dragging the center moves the widget.
+            bool left = pos.X <= ResizeMargin, right = pos.X >= Width - ResizeMargin;
+            bool top = pos.Y <= ResizeMargin, bottom = pos.Y >= Height - ResizeMargin;
+            if (left && top) hit = 13; else if (right && top) hit = 14;
+            else if (left && bottom) hit = 16; else if (right && bottom) hit = 17;
+            else if (left) hit = 10; else if (right) hit = 11;
+            else if (top) hit = 12; else if (bottom) hit = 15;
+            m.Result = (nint)hit;
+            return;
+        }
+        base.WndProc(ref m);
     }
 
     private void BuildMenu()
     {
         _menu.Items.Clear();
+        _menu.Items.Add(_editingGeometry ? "Finish resize / move (Enter)" : "Resize / move widget",
+            null, (_, _) => { if (_editingGeometry) FinishGeometryEdit(); else BeginGeometryEdit(); });
+        if (_editingGeometry) _menu.Items.Add("Cancel resize (Esc)", null, (_, _) => CancelGeometryEdit());
+        _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("BlazeNetMonitor · Settings", null, (_, _) => EditSettings());
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
         _menu.Items.Add("Reset session totals", null, (_, _) => { _data.Totals.ResetSession(); Invalidate(); SaveSafe(); });
@@ -155,7 +276,7 @@ internal sealed class MonitorForm : Form
         AppendSample(_upSamples, speed.UploadBytesPerSecond);
         AppendSample(_downSamples, speed.DownloadBytesPerSecond);
         _ticks++;
-        if (_ticks % 5 == 0) Reposition();
+        // Never snap a user-positioned widget back to the taskbar during polling.
         if (_ticks % 30 == 0) SaveSafe();
         _tray.Text = "BlazeNetMonitor " + MonitorMath.Rate(speed.DownloadBytesPerSecond, _data.Settings.UseBits);
         if (_showHover) UpdateHover();
@@ -191,7 +312,7 @@ internal sealed class MonitorForm : Form
 
     private void UpdateHover()
     {
-        if (IsDisposed) return;
+        if (IsDisposed || _editingGeometry) return;
         var uptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
         _info.RefreshInfo(_network, _data, _snapshots, _speed, uptime);
         var screen = Screen.FromControl(this).WorkingArea;
@@ -215,11 +336,13 @@ internal sealed class MonitorForm : Form
             _trackers = [new QualityTracker(_data.Histories[0]), new QualityTracker(_data.Histories[1])];
             Array.Clear(_snapshots, 0, _snapshots.Length);
             _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
+            ApplyAppearance();
             SaveSafe();
-            Reposition();
+            if (_data.Settings.FreeformPositioned) Reposition(); else RestoreGeometry();
             _ = ProbeTargets();
         }
         _trafficTimer.Start(); _probeTimer.Start();
+        if (settings.DialogResult == DialogResult.OK && settings.ResizeAfterSave) BeginGeometryEdit();
     }
 
     private void ShowConnections()
@@ -292,6 +415,7 @@ internal sealed class MonitorForm : Form
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        if (_editingGeometry) CancelGeometryEdit();
         _stop.Cancel();
         _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
