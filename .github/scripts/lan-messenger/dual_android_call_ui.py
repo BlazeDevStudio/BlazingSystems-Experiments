@@ -233,8 +233,58 @@ def first_background_incoming_test():
     note("done", "PASS: background-first Answer -> WebRTC -> hangup, no crash")
 
 
+def video_call_test():
+    """Never mistake signaling for video: require decoded frames at both ends."""
+    note("video", "Testing video camera frames, Android foreground UI and Home PiP")
+    tap_label(CALLER, "video-call", lambda text: "video call" in text.lower(),
+              timeout_seconds=40)
+    tap_label(RECEIVER, "video-answer",
+              lambda text: text.lower().strip() == "answer", timeout_seconds=50)
+    wait_both_connected()
+    deadline = time.monotonic() + 70
+    while time.monotonic() < deadline:
+        if all("LAN_CALL_TRACE remote_video_frame_decoded" in
+               (OUT / f"{serial}-call-signaling-stream.txt").read_text(
+                   encoding="utf-8", errors="replace")
+               for serial in (CALLER, RECEIVER)):
+            note("video", "PASS: both Android peers decoded remote camera frames")
+            break
+        time.sleep(2)
+    else:
+        raise RuntimeError("Video call connected but both decoded-frame callbacks were not observed")
+    # In-app mini view must NOT cover the screen. Navigation back to call is
+    # handled by a small titlebar action, not a video overlay over Settings.
+    tap_label(RECEIVER, "video-minimize",
+              lambda text: "minimize; call stays connected" in text.lower())
+    if contains(RECEIVER, "video-in-app-mini", "Expand call controls"):
+        raise RuntimeError("Legacy floating video mini-view still visible inside Messenger")
+    tap_label(RECEIVER, "return-to-call",
+              lambda text: "return to active call" in text.lower())
+    adb(RECEIVER, "shell", "input", "keyevent", "KEYCODE_HOME")
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        pip_events = (OUT / f"{RECEIVER}-call-signaling-stream.txt").read_text(
+            encoding="utf-8", errors="replace")
+        if "pip_state_changed active=true" in pip_events:
+            note("pip", "PASS: Android native OS confirmed real PiP after HOME")
+            break
+        time.sleep(2)
+    else:
+        raise RuntimeError("Home did not enter Android native PiP even though a live video call exists")
+    adb(RECEIVER, "shell", "am", "start", "-W",
+        "-n", "com.example.lan_messenger/.MainActivity", timeout=30)
+    tap_label(RECEIVER, "video-hangup",
+              lambda text: text.lower().strip() == "end call",
+              timeout_seconds=30)
+    for serial in (CALLER, RECEIVER):
+        if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
+                   check=False).strip():
+            raise RuntimeError(f"{serial} exited during video/PiP test")
+    note("video", "PASS: real dual-decoded video + OS PiP + hangup survived")
+
+
 def main():
-    note("setup", "Starting actual Android↔Android voice call UI test")
+    note("setup", "Starting actual Android↔Android voice/video call UI test")
     for serial in (CALLER, RECEIVER):
         if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
                    check=False).strip():
@@ -244,6 +294,9 @@ def main():
               "looking for nearby" not in text.lower())
     if os.environ.get("LAN_MESSENGER_SCENARIO") == "background-first":
         first_background_incoming_test()
+        return
+    if os.environ.get("LAN_MESSENGER_SCENARIO") == "video":
+        video_call_test()
         return
     tap_label(CALLER, "call", lambda text: "voice call" in text.lower())
     tap_label(RECEIVER, "answer", lambda text: text.lower().strip() == "answer",
