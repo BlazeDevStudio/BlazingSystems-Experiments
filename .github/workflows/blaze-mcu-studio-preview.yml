@@ -1,4 +1,4 @@
-name: Blaze MCU Studio v0.3.0 Windows Preview
+name: Blaze MCU Studio v0.4.0 Windows Preview
 on:
   pull_request:
     paths:
@@ -73,10 +73,25 @@ jobs:
           $exe=Get-ChildItem dist -Filter '*.exe'
           if (-not $exe) { throw 'Windows EXE artifact missing' }
           $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
+      - name: Packaged Windows GUI and IPC runtime smoke
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:BLAZE_MCU_SMOKE_FILE="$env:RUNNER_TEMP/blaze-mcu-gui-smoke.json"
+          $exe=(Get-ChildItem dist -Filter '*.exe' | Select-Object -First 1).FullName
+          if (-not $exe) { throw 'Portable GUI binary missing before smoke' }
+          $process=Start-Process -FilePath $exe -PassThru
+          $deadline=(Get-Date).AddSeconds(120)
+          while(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE) -and (Get-Date) -lt $deadline){ Start-Sleep -Seconds 2 }
+          if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
+          $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
+          Get-Content $env:BLAZE_MCU_SMOKE_FILE
+          if(-not $report.passed) { throw "Packaged GUI IPC smoke failed: $($report.error)" }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v030-windows-and-evidence
+          name: blaze-mcu-v040-windows-and-evidence
           path: |
             expiremental/Blaze-MCU-Studio/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
@@ -84,5 +99,6 @@ jobs:
             ${{ runner.temp }}/arduino-reference-compile.log
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
+            ${{ runner.temp }}/blaze-mcu-gui-smoke.json
           if-no-files-found: warn
           retention-days: 14

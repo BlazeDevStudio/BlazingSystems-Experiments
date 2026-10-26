@@ -1,23 +1,7 @@
-# Test evidence ledger
+# v0.4.0 test report — source checkpoint, pre-Windows gate
 
-## Local Linux
-
-2026-10-26: `npm test` on Node.js v22.16.0: 24/24 passed after correcting a real export-parent-directory regression. `node --check renderer/app.js`, `node --check electron/main.cjs`, and `node --check scripts/export-example.cjs` completed without syntax errors. `node scripts/export-example.cjs <temp directory>` generated `GeneratedBlink/GeneratedBlink.ino` through project IR. See `evidence/local-tests.txt`.
-
-Actual Arduino CLI board compilation remains **not run**: CLI unavailable locally, and this sandbox lacks DNS access to GitHub release artifacts. Windows GUI and portable EXE have not been tested or built.
-
-## Windows
-
-When run successfully, the Windows build job outputs portable `Blaze-MCU-Studio-0.1.0-Windows-x64.exe`; the workflow explicitly fails if an EXE is missing. It also downloads a pinned Arduino CLI, installs `arduino:avr`, compiles an independent Blink sketch, and uploads CLI logs plus SHA-256. This is a compile-only check, not a physical board flash or full GUI smoke test. An Actions *artifact* is not a GitHub Release.
-
-## Post-audit corrections (2026-10-26)
-
-- Export refuses existing sketch directories rather than replacing a user-owned `.ino`.
-- Windows workflow now compiles both an IR-generated `GeneratedBlink` sketch and the independent checked-in Blink reference. The previously configured workflow compiled only the reference sketch.
-- Project validation rejects whitespace-only names and invalid layout coordinates.
-- GUI autosave serializes pending saves, snapshots each payload, and uses change revisions to avoid silently dropping edits during an in-flight save; board changes first persist the previous project.
-- These changes require fresh local test evidence and a Windows runner before release.
-
-## v0.3.0 continuation — pre-Windows gate
-
-New tests exercise structured branch/repeat firmware emission, deterministic trace and user-code ownership; BALIE metadata/hash/architecture parsing and bounded scanning; migration warnings and reversible project trash. The Windows gate additionally compiles an IR-generated flowchart sketch with real Arduino CLI. **See GitHub Actions run evidence for actual status; do not infer pass from this plan.**
+- Source-based local Node.js 22 test runner: run `npm test`; inspect persisted log in `evidence/local-tests.txt`.
+- New regression coverage: bounded simulation, virtual input injection and defaults, pause/resume breakpoints, branch/repeat/end semantics, memory text parser, 7/30-day storage forecasting, unknown board capacities, I2C address duplication, SPI bus sharing versus chip select collisions, active graph GPIO conflicts, and UI selector coverage.
+- Windows CI: see `.github/workflows/blaze-mcu-studio-preview.yml` for exact steps; **results must be verified against an actual workflow run**. It compiles generated Blink and generated branch/repeat sketches with the actual Arduino CLI and packages a portable Windows EXE.
+- Packaged GUI smoke sends IPC calls through the actual renderer/preload/main chain after `did-finish-load` for create/open project, code generation, virtual logic simulation, resource forecast. CI must fail if no GUI sentinel or failed test.
+- No real board-level electrical/hardware tests or 2 GB Windows physical benchmark exist. Hardware emulator remains not implemented.

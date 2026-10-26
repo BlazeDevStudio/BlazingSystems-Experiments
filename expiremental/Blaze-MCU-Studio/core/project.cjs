@@ -2,6 +2,7 @@
 const { randomUUID } = require('node:crypto');
 const SCHEMA_VERSION = 1;
 const flow=require('./flowchart.cjs');
+const peripherals=require('./peripherals.cjs');
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,62}$/;
 const FQBN_RE = /^[\w.-]+:[\w.-]+:[\w.-]+(?::[\w.,=~-]+)?$/;
 function sketchName(text) {
@@ -16,7 +17,7 @@ function starterGraph() { return {
 function createProject(name, fqbn='arduino:avr:uno') {
   if (!FQBN_RE.test(fqbn)) throw new Error('Choose a valid board FQBN');
   if (!name || !String(name).trim() || String(name).trim().length > 80) throw new Error('Project name must be 1–80 characters');
-  return { schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [],visualMode:'nodes',flowchart:flow.sampleFlowchart() };
+  return { schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [],visualMode:'nodes',flowchart:flow.sampleFlowchart(),peripherals:[] };
 }
 function verifyProject(p) {
   if (!p || p.schemaVersion !== SCHEMA_VERSION || !/^[0-9a-f-]{36}$/i.test(p.id) || !FQBN_RE.test(p.fqbn)) throw new Error('Invalid project metadata');
@@ -32,6 +33,7 @@ function verifyProject(p) {
   }
   if(p.visualMode!==undefined&&!['nodes','flowchart'].includes(p.visualMode))throw Error('Invalid visual editor mode');
   if(p.flowchart!==undefined)flow.ensureFlowchart(p.flowchart);
+  if(p.peripherals!==undefined && (!Array.isArray(p.peripherals)||p.peripherals.length>40))throw Error('Invalid peripheral assignments');
   return p;
 }
 const PIN_PROFILES = {
@@ -56,6 +58,7 @@ function pinDiagnostics(p) {
     }
   }
   if(p.visualMode==='flowchart'&&p.flowchart){const fd=flow.validateFlowchart(p.flowchart,{boardPins:pins,boardFqbn:p.fqbn});errors.push(...fd.errors);warnings.push(...fd.warnings);}
+  if(p.peripherals?.length){const plan=peripherals.plan(p);errors.push(...plan.errors);warnings.push(...plan.warnings);}
   return {errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
 }
 function analyzeGraph(p) {
@@ -93,6 +96,7 @@ function generateSketch(p) {
   if(p.source.mode==='manual') return {source:p.source.manualSource, diagnostics:{ok:true,errors:[],warnings:['Manual mode: graphical blocks do not affect this source'],ordered:[]}};
   const isFlow=p.visualMode==='flowchart';
   const diagnostics=isFlow?flow.validateFlowchart(p.flowchart||flow.sampleFlowchart(),{boardPins:PIN_PROFILES[p.fqbn],boardFqbn:p.fqbn}):analyzeGraph(p);
+  if(isFlow && p.peripherals?.length){const resourcePlan=peripherals.plan(p);diagnostics.errors.push(...resourcePlan.errors);diagnostics.warnings.push(...resourcePlan.warnings);diagnostics.ok=diagnostics.errors.length===0;}
   if(!diagnostics.ok) return {source:null,diagnostics};
   const setup=[],loop=[];
   function addGraph(targetSetup,targetLoop) {

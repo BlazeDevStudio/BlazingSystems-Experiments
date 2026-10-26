@@ -1,32 +1,31 @@
-# Blaze MCU Studio — v0.3.0 Preview (Development, not production)
+# Blaze MCU Studio 0.4.0 — Windows Preview
 
-Blaze Systems · Windows 10/11 x64 · offline-first visual Arduino firmware IDE.
+Blaze Systems · Offline-first Arduino-compatible desktop IDE · **preview, not production or a universal hardware simulator**.
 
-**Readiness:** Expanded beyond v0.1.0 but NOT the complete master-directive product. A version label is not a claim of 50% functionality. The project deliberately lacks full Clang-based C++ understanding, trusted universal pin mappings, a general purpose typed node graph, mature graphical flowchart editor, and physical board acceptance. Consult `docs/KNOWN_LIMITATIONS.md` before use.
+## Actual work you can do with this build
 
-## Implemented in this preview
+1. Create a project and choose an installed Arduino CLI board FQBN.
+2. Use the node editor or structured flowchart to assemble pin output, timed behaviors and conditional input logic. Flowcharts generate Arduino C++ and are independently checked by real Arduino CLI compilation on a Windows runner.
+3. Use **Simulate** for step-by-step virtual GPIO state, branching, virtual time, breakpoints, and replay of the currently selected visual program. Change D2 from LOW to HIGH and watch a decision change paths. This models visual logic, not MCU instructions or electrical behavior.
+4. Use **Resources** to inspect compiler-reported flash/global RAM (after an actual successful compilation), estimate storage growth with configurable logging interval/record size/free space/retention, and validate an I2C/SPI GPIO resource plan. `Plan SPI SD card` proposes physical Uno R3 pins only when conflict-free; it does not generate SD firmware.
+5. Compile using actual Arduino CLI, then export standard Arduino IDE-compatible `.ino` sketches. Your manual C++ code remains user-owned, while generated code is read-only with protected custom regions.
+6. Inspect installed Arduino libraries with BALIE's **inferred, read-only** C++ signature scanner; it does NOT yet generate universal executable library adapters.
+7. Rename/duplicate/deactivate/recover local projects. No cloud login is needed.
 
-- Real portable Windows desktop EXE packaging (Electron), local project creation/open/save, rename, duplicate, recoverable deletion, five history snapshots, non-overwriting `.ino` export.
-- Selected target FQBN via dynamic Arduino CLI discovery; installed board-core management and real Arduino CLI firmware compilation with actual target compiler.
-- Arduino Uno partial digital pin model, deterministic linear node C++ generation, user-owned manual C++ editing and protected custom C++ regions.
-- **Structured flowchart editor** with executable steps, GPIO output, delay, digital-input branch, bounded repeat, return and optional graph function call; the same source exporter/compiler pipeline; bounded step traces, not hardware simulation.
-- **BALIE read-only foundation:** installed-sketchbook and explicitly chosen library directory indexing, `library.properties` architecture metadata, bounded C++ header declaration inspection, SHA-256 fingerprint, candidate function-node definitions. Output is **inferred** and requires a verified adapter before code generation; no arbitrary imported library execution during indexing.
-- Board migration warning report before switching, unknown board pin model never silently verified.
+## What's *not* supported
 
-## Installation / operation
+- No full board electrical simulator, timing-accurate MCU emulator, Arduino peripheral driver emulation or physical hardware verification.
+- Board pin profiles are conservative; Uno R3 digital pins and Uno SPI/I²C planning only, unknown board GPIO is **Unknown / Verification Required**. Board compilation capability and pinout verification are distinct.
+- No full Clang-based BALIE or automatic initialization logic, no arbitrary typed multi-branch graph reconstruction, no advanced Monaco editor, no WYSIWYG web UI designer, no multimedia asset studio.
+- RAM budget on physical 2 GB Windows devices is not benchmarked; 99 MB EXE size is largely Electron/Arduino CLI packaging and is **not** feature-completion evidence.
+- No SD driver/codegen or power-loss safe filesystem logger. SD increases data storage only, never program flash or SRAM.
 
-Windows users: download the portable `Blaze-MCU-Studio-0.3.0-Windows-x64.exe` from the verified GitHub Actions artifact/Google Drive. No Node/Python/PowerShell is needed to start the application. The executable is unsigned; Windows may warn. The Arduino CLI binary is bundled, but board cores and third-party libraries must be installed or cached separately. Initial installs can require internet; subsequent editing and compilation can be offline.
+## Operating instructions
 
-Source: Node.js 22+; `npm install`, `npm test`, `npm start`, `npm run dist:win`. No subscription or cloud login required.
+Portable Windows EXE: launch directly, no Python or PowerShell script is needed. Board cores are installed through Arduino CLI as needed (requires connectivity for first install). The binary is unsigned. The project uses local storage and makes no unauthorized changes to devices; physical flashing remains optional outside the studio.
 
-## Critical boundaries
+For source development, install Node.js 22+, run `npm install && npm test && npm start`; `npm run dist:win` packages Windows portable EXE. The GitHub CI job additionally compiles two generated Arduino Uno programs and performs packaged GUI IPC smoke testing (see exact CI evidence before relying on any result).
 
-- Full user-owned manual C++ never reverse-parsed; visual edits cannot silently overwrite it.
-- Flowchart decision and repeat are structured AST blocks; arbitrary wire-based reconvergence and interrupt handling are not implemented.
-- BALIE header signatures can be incomplete or incorrect under preprocessor macros, overloads and templates. Marked Inferred, never Verified without board compilation.
-- Digital-input flowchart branch defaults to `INPUT`, requiring external circuit stabilization. Electrical safety requires physical inspection.
-- Core installation and firmware compilation may execute code from third-party platforms; never use untrusted dependencies without isolation.
-- Project deletion moves data to a local recoverable `_recovery` folder; backup that folder with your projects.
-- Do not interpret passing Windows build/tests as hardware simulation, 2 GB memory certification, or a production release.
+## License / sources
 
-Documentation and tests live under `docs/` and `tests/`.
+Application source MIT; Electron MIT; Arduino CLI Apache-2.0; installed Arduino libraries and board packages carry their own licenses. No third-party graphical assets are embedded. UI graphics are CSS and simple original shapes. The master roadmap is in `docs/DEVELOPMENT_ROADMAP.md`; version labels do **not** certify missing features.

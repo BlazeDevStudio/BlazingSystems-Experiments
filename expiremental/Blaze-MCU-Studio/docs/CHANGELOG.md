@@ -22,3 +22,13 @@
 - Add actual node-generated Arduino CLI compilation gate to Windows workflow.
 - Remove duplicated renderer-only code generator, retain core as sole generation authority.
 - Harden autosave concurrency, stale source requests, and project model validation.
+
+## 0.4.0 Preview (2026-10-26)
+
+- Added bounded logic execution sessions for node and flowchart editors, virtual GPIO inputs/outputs, timing, step/run, breakpoints, trace and reset.
+- Added compiler-measured program flash/static SRAM parsing and unknown-aware board capacities.
+- Added configurable logging storage forecast, retention guidance and explicit SD-vs-RAM/flash distinction.
+- Added I2C/SPI/GPIO resource planner with known collision detection and allowed shared-bus semantics; detects active visual GPIO collisions.
+- Added Simulate and Resources UI tabs, virtual input injection, planning controls, and Uno SD SPI pin proposal (planning only, no drivers generated).
+- Added packaged Windows GUI smoke gate (renderer DOM, IPC, project create/open, generated source, simulator, advisor) in CI, in addition to actual Arduino CLI firmware compilation.
+- Added model-level regressions; full physical MCU simulation, executable BALIE adapters, memory benchmark and all later milestones remain not implemented.
