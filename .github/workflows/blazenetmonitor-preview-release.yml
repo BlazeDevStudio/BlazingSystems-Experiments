@@ -2,7 +2,7 @@ name: BlazeNetMonitor Preview Download
 on:
   push:
     branches:
-      - feature/blazenetmonitor-v0.2.0
+      - feature/blazenetmonitor-v0.1.0
     paths:
       - .github/workflows/blazenetmonitor-preview-release.yml
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 jobs:
   publish-preview:
-    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments' && github.ref == 'refs/heads/feature/blazenetmonitor-v0.2.0'
+    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments' && github.ref == 'refs/heads/feature/blazenetmonitor-v0.1.0'
     runs-on: windows-latest
     defaults:
       run:
