@@ -507,6 +507,8 @@ class MainActivity : FlutterActivity() {
         inPip: Boolean, configuration: Configuration
     ) {
         super.onPictureInPictureModeChanged(inPip, configuration)
+        Log.i("LANCallTrace", "pip_state_changed active=$inPip")
+        incomingOverlay?.dismiss()
         callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
     }
 
