@@ -53,7 +53,11 @@ class MainActivity : ComponentActivity() {
                     onSurfaceVariant = Color(0xFFC0CEDA),
                     error = Color(0xFFFF7373)
                 )
-            ) { HarborShell(this, fixture) }
+            ) {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    HarborShell(this, fixture)
+                }
+            }
         }
     }
     override fun onDestroy() { fixture.close(); super.onDestroy() }
