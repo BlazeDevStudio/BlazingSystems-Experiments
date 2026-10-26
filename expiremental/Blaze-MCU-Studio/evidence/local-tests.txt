@@ -1,440 +1,470 @@
 
-> blaze-mcu-studio@0.4.0 test
+> blaze-mcu-studio@0.4.1 test
 > node --test tests/*.test.cjs
 
 TAP version 13
 # Subtest: runner executes real child processes and returns exit status
 ok 1 - runner executes real child processes and returns exit status
   ---
-  duration_ms: 147.02716
+  duration_ms: 42.738592
   type: 'test'
   ...
 # Subtest: runner returns nonzero for compiler-like failures
 ok 2 - runner returns nonzero for compiler-like failures
   ---
-  duration_ms: 68.281871
+  duration_ms: 40.659367
   type: 'test'
   ...
 # Subtest: CLI discovery reports missing binary instead of inventing boards
 ok 3 - CLI discovery reports missing binary instead of inventing boards
   ---
-  duration_ms: 7.455781
+  duration_ms: 3.632538
   type: 'test'
   ...
 # Subtest: core installer rejects shell characters before process launch
 ok 4 - core installer rejects shell characters before process launch
   ---
-  duration_ms: 0.555706
+  duration_ms: 1.23094
   type: 'test'
   ...
 # Subtest: invalid visual graph stops prior to compiler
 ok 5 - invalid visual graph stops prior to compiler
   ---
-  duration_ms: 3.235515
+  duration_ms: 2.145073
   type: 'test'
   ...
 # Subtest: BALIE parses metadata and C-style API signatures without execution
 ok 6 - BALIE parses metadata and C-style API signatures without execution
   ---
-  duration_ms: 5.917738
+  duration_ms: 5.377824
   type: 'test'
   ...
 # Subtest: architecture incompatibility remains visible
 ok 7 - architecture incompatibility remains visible
   ---
-  duration_ms: 1.527136
+  duration_ms: 1.448573
   type: 'test'
   ...
 # Subtest: library changes invalidate content hash
 ok 8 - library changes invalidate content hash
   ---
-  duration_ms: 2.334691
+  duration_ms: 3.143209
   type: 'test'
   ...
 # Subtest: sketchbook library scanning indexes only directories with metadata
 ok 9 - sketchbook library scanning indexes only directories with metadata
   ---
-  duration_ms: 1.437251
+  duration_ms: 2.332841
   type: 'test'
   ...
 # Subtest: overlarge untrusted header rejected but library metadata retained
 ok 10 - overlarge untrusted header rejected but library metadata retained
   ---
-  duration_ms: 28.245561
+  duration_ms: 2.634877
   type: 'test'
   ...
 # Subtest: board migration never asserts unknown pin capability
 ok 11 - board migration never asserts unknown pin capability
   ---
-  duration_ms: 4.626927
+  duration_ms: 2.464825
+  type: 'test'
+  ...
+# Subtest: core-provided libraries discovered under Arduino15 installed platform roots
+ok 12 - core-provided libraries discovered under Arduino15 installed platform roots
+  ---
+  duration_ms: 3.154375
+  type: 'test'
+  ...
+# Subtest: fresh install catalog includes ESP8266 and ESP32 with honest uninstalled status
+ok 13 - fresh install catalog includes ESP8266 and ESP32 with honest uninstalled status
+  ---
+  duration_ms: 10.8108
+  type: 'test'
+  ...
+# Subtest: boards discovered through CLI installed platform override starter entries
+ok 14 - boards discovered through CLI installed platform override starter entries
+  ---
+  duration_ms: 0.606517
+  type: 'test'
+  ...
+# Subtest: unrecognized CLI FQBN entries are not shown as installed
+ok 15 - unrecognized CLI FQBN entries are not shown as installed
+  ---
+  duration_ms: 0.217091
+  type: 'test'
+  ...
+# Subtest: third-party starter core URLs come from known project upstream, no auto download
+ok 16 - third-party starter core URLs come from known project upstream, no auto download
+  ---
+  duration_ms: 0.209009
   type: 'test'
   ...
 # Subtest: never overwrite existing user Arduino sketch during export
-ok 12 - never overwrite existing user Arduino sketch during export
+ok 17 - never overwrite existing user Arduino sketch during export
   ---
-  duration_ms: 20.995339
+  duration_ms: 6.580032
   type: 'test'
   ...
 # Subtest: reject whitespace project names and corrupted coordinates
-ok 13 - reject whitespace project names and corrupted coordinates
+ok 18 - reject whitespace project names and corrupted coordinates
   ---
-  duration_ms: 1.889011
+  duration_ms: 0.348936
   type: 'test'
   ...
 # Subtest: generator output and exported sketch are byte-for-byte identical
-ok 14 - generator output and exported sketch are byte-for-byte identical
+ok 19 - generator output and exported sketch are byte-for-byte identical
   ---
-  duration_ms: 5.954022
+  duration_ms: 3.638471
   type: 'test'
   ...
 # Subtest: original node generator remains selectable
-ok 15 - original node generator remains selectable
+ok 20 - original node generator remains selectable
   ---
-  duration_ms: 6.981789
+  duration_ms: 5.175985
   type: 'test'
   ...
 # Subtest: sample flowchart generates full Arduino executable logic
-ok 16 - sample flowchart generates full Arduino executable logic
+ok 21 - sample flowchart generates full Arduino executable logic
   ---
-  duration_ms: 1.481388
+  duration_ms: 1.60935
   type: 'test'
   ...
 # Subtest: branch and repeat produce actual bounded Arduino control flow
-ok 17 - branch and repeat produce actual bounded Arduino control flow
+ok 22 - branch and repeat produce actual bounded Arduino control flow
   ---
-  duration_ms: 0.495145
+  duration_ms: 0.542903
   type: 'test'
   ...
 # Subtest: trace deterministically takes YES/NO and repeats
-ok 18 - trace deterministically takes YES/NO and repeats
+ok 23 - trace deterministically takes YES/NO and repeats
   ---
-  duration_ms: 0.634234
+  duration_ms: 0.411649
   type: 'test'
   ...
 # Subtest: duplicate or nested invalid flowchart IDs fail closed
-ok 19 - duplicate or nested invalid flowchart IDs fail closed
+ok 24 - duplicate or nested invalid flowchart IDs fail closed
   ---
-  duration_ms: 0.900774
+  duration_ms: 0.637412
   type: 'test'
   ...
 # Subtest: unavailable Uno pin fails without source output
-ok 20 - unavailable Uno pin fails without source output
+ok 25 - unavailable Uno pin fails without source output
   ---
-  duration_ms: 0.23896
+  duration_ms: 0.27016
   type: 'test'
   ...
 # Subtest: unsupported target emits explicit unknown capability warnings
-ok 21 - unsupported target emits explicit unknown capability warnings
+ok 26 - unsupported target emits explicit unknown capability warnings
   ---
-  duration_ms: 1.169589
+  duration_ms: 0.348085
   type: 'test'
   ...
 # Subtest: manual code ownership supersedes flowchart without rewriting
-ok 22 - manual code ownership supersedes flowchart without rewriting
+ok 27 - manual code ownership supersedes flowchart without rewriting
   ---
-  duration_ms: 0.233
+  duration_ms: 0.195099
   type: 'test'
   ...
 # Subtest: node graph can be explicitly invoked once by flowchart
-ok 23 - node graph can be explicitly invoked once by flowchart
+ok 28 - node graph can be explicitly invoked once by flowchart
   ---
-  duration_ms: 0.894315
+  duration_ms: 0.677952
   type: 'test'
   ...
 # Subtest: source rejects arbitrary code-like flowchart IDs
-ok 24 - source rejects arbitrary code-like flowchart IDs
+ok 29 - source rejects arbitrary code-like flowchart IDs
   ---
-  duration_ms: 3.094733
+  duration_ms: 0.564034
   type: 'test'
   ...
 # Subtest: two I2C devices on same Wire bus can share SDA/SCL
-ok 25 - two I2C devices on same Wire bus can share SDA/SCL
+ok 30 - two I2C devices on same Wire bus can share SDA/SCL
   ---
-  duration_ms: 6.019842
+  duration_ms: 2.541018
   type: 'test'
   ...
 # Subtest: duplicate 7 bit I2C addresses on same bus rejected
-ok 26 - duplicate 7 bit I2C addresses on same bus rejected
+ok 31 - duplicate 7 bit I2C addresses on same bus rejected
   ---
-  duration_ms: 2.278115
+  duration_ms: 0.572416
   type: 'test'
   ...
 # Subtest: SPI clock and data signals can share but CS must be exclusive
-ok 27 - SPI clock and data signals can share but CS must be exclusive
+ok 32 - SPI clock and data signals can share but CS must be exclusive
   ---
-  duration_ms: 1.914779
+  duration_ms: 0.349787
   type: 'test'
   ...
 # Subtest: SPI chip select cannot collide with other bus function
-ok 28 - SPI chip select cannot collide with other bus function
+ok 33 - SPI chip select cannot collide with other bus function
   ---
-  duration_ms: 0.59188
+  duration_ms: 0.213927
   type: 'test'
   ...
 # Subtest: SPI and I2C same numbered GPIO triggers conflict, not blanket shared permission
-ok 29 - SPI and I2C same numbered GPIO triggers conflict, not blanket shared permission
+ok 34 - SPI and I2C same numbered GPIO triggers conflict, not blanket shared permission
   ---
-  duration_ms: 3.453222
+  duration_ms: 0.243731
   type: 'test'
   ...
 # Subtest: unknown target reports unknown electrical capabilities
-ok 30 - unknown target reports unknown electrical capabilities
+ok 35 - unknown target reports unknown electrical capabilities
   ---
-  duration_ms: 0.29241
+  duration_ms: 0.269108
   type: 'test'
   ...
 # Subtest: peripheral collision prevents generated source but never erases manual owned code
-ok 31 - peripheral collision prevents generated source but never erases manual owned code
+ok 36 - peripheral collision prevents generated source but never erases manual owned code
   ---
-  duration_ms: 4.424042
+  duration_ms: 1.530513
   type: 'test'
   ...
 # Subtest: active Blink GPIO D13 collides with SPI SCK, inactive editor does not
-ok 32 - active Blink GPIO D13 collides with SPI SCK, inactive editor does not
+ok 37 - active Blink GPIO D13 collides with SPI SCK, inactive editor does not
   ---
-  duration_ms: 0.45231
+  duration_ms: 0.350518
   type: 'test'
   ...
 # Subtest: flowchart callNodes also reserves GPIO pins from invoked graph
-ok 33 - flowchart callNodes also reserves GPIO pins from invoked graph
+ok 38 - flowchart callNodes also reserves GPIO pins from invoked graph
   ---
-  duration_ms: 0.989368
+  duration_ms: 0.714016
   type: 'test'
   ...
 # Subtest: rename duplicate trash and recover keep distinct project IDs and source ownership
-ok 34 - rename duplicate trash and recover keep distinct project IDs and source ownership
+ok 39 - rename duplicate trash and recover keep distinct project IDs and source ownership
   ---
-  duration_ms: 48.098091
+  duration_ms: 22.833051
   type: 'test'
   ...
 # Subtest: new Arduino Uno project has board identity and graph
-ok 35 - new Arduino Uno project has board identity and graph
+ok 40 - new Arduino Uno project has board identity and graph
   ---
-  duration_ms: 4.846637
+  duration_ms: 2.076712
   type: 'test'
   ...
 # Subtest: generated blink sketch drives D13, waits and exports setup/loop
-ok 36 - generated blink sketch drives D13, waits and exports setup/loop
+ok 41 - generated blink sketch drives D13, waits and exports setup/loop
   ---
-  duration_ms: 6.436568
+  duration_ms: 2.172263
   type: 'test'
   ...
 # Subtest: fully manual source is preserved verbatim despite visual changes
-ok 37 - fully manual source is preserved verbatim despite visual changes
+ok 42 - fully manual source is preserved verbatim despite visual changes
   ---
-  duration_ms: 2.156242
+  duration_ms: 1.603442
   type: 'test'
   ...
 # Subtest: user C++ regions survive node change
-ok 38 - user C++ regions survive node change
+ok 43 - user C++ regions survive node change
   ---
-  duration_ms: 2.838499
+  duration_ms: 0.540429
   type: 'test'
   ...
 # Subtest: unavailable digital pin is rejected on Uno
-ok 39 - unavailable digital pin is rejected on Uno
+ok 44 - unavailable digital pin is rejected on Uno
   ---
-  duration_ms: 1.101586
+  duration_ms: 0.261677
   type: 'test'
   ...
 # Subtest: unknown board cannot silently pass pin verification
-ok 40 - unknown board cannot silently pass pin verification
+ok 45 - unknown board cannot silently pass pin verification
   ---
-  duration_ms: 0.343937
+  duration_ms: 0.222789
   type: 'test'
   ...
 # Subtest: serial-shared pins produce warning
-ok 41 - serial-shared pins produce warning
+ok 46 - serial-shared pins produce warning
   ---
-  duration_ms: 0.643908
+  duration_ms: 0.299083
   type: 'test'
   ...
 # Subtest: dangling edges and execution cycle blocked
-ok 42 - dangling edges and execution cycle blocked
+ok 47 - dangling edges and execution cycle blocked
   ---
-  duration_ms: 0.391479
+  duration_ms: 0.443035
   type: 'test'
   ...
 # Subtest: unreachable nodes identified
-ok 43 - unreachable nodes identified
+ok 48 - unreachable nodes identified
   ---
-  duration_ms: 1.361928
+  duration_ms: 0.569613
   type: 'test'
   ...
 # Subtest: invalid delay cannot generate firmware
-ok 44 - invalid delay cannot generate firmware
+ok 49 - invalid delay cannot generate firmware
   ---
-  duration_ms: 9.258902
+  duration_ms: 0.517225
   type: 'test'
   ...
 # Subtest: malformed project fails closed
-ok 45 - malformed project fails closed
+ok 50 - malformed project fails closed
   ---
-  duration_ms: 4.323941
+  duration_ms: 0.502674
   type: 'test'
   ...
 # Subtest: sketch name is filesystem-safe
-ok 46 - sketch name is filesystem-safe
+ok 51 - sketch name is filesystem-safe
   ---
-  duration_ms: 1.449239
+  duration_ms: 0.200897
   type: 'test'
   ...
 # Subtest: 10 second logger predicts storage growth from explicit assumptions
-ok 47 - 10 second logger predicts storage growth from explicit assumptions
+ok 52 - 10 second logger predicts storage growth from explicit assumptions
   ---
-  duration_ms: 3.084398
+  duration_ms: 1.490385
   type: 'test'
   ...
 # Subtest: retention below capacity produces no alarm
-ok 48 - retention below capacity produces no alarm
+ok 53 - retention below capacity produces no alarm
   ---
-  duration_ms: 2.327439
+  duration_ms: 0.221918
   type: 'test'
   ...
 # Subtest: invalid forecast assumptions rejected
-ok 49 - invalid forecast assumptions rejected
+ok 54 - invalid forecast assumptions rejected
   ---
-  duration_ms: 1.019392
+  duration_ms: 0.543985
   type: 'test'
   ...
 # Subtest: compile stdout program flash and globals parsed as measured
-ok 50 - compile stdout program flash and globals parsed as measured
+ok 55 - compile stdout program flash and globals parsed as measured
   ---
-  duration_ms: 1.00438
+  duration_ms: 0.548722
   type: 'test'
   ...
 # Subtest: unknown board does not invent memory limits
-ok 51 - unknown board does not invent memory limits
+ok 56 - unknown board does not invent memory limits
   ---
-  duration_ms: 13.773401
+  duration_ms: 3.162978
   type: 'test'
   ...
 # Subtest: source byte size must not masquerade as compiled firmware
-ok 52 - source byte size must not masquerade as compiled firmware
+ok 57 - source byte size must not masquerade as compiled firmware
   ---
-  duration_ms: 2.783596
+  duration_ms: 0.580609
   type: 'test'
   ...
 # Subtest: failed compilation does not report measured bytes
-ok 53 - failed compilation does not report measured bytes
+ok 58 - failed compilation does not report measured bytes
   ---
-  duration_ms: 2.254519
+  duration_ms: 0.39883
   type: 'test'
   ...
 # Subtest: successful compilation flags RAM pressure without claiming runtime peak
-ok 54 - successful compilation flags RAM pressure without claiming runtime peak
+ok 59 - successful compilation flags RAM pressure without claiming runtime peak
   ---
-  duration_ms: 2.968273
+  duration_ms: 0.424107
   type: 'test'
   ...
 # Subtest: SD advice never claims extra program flash or RAM
-ok 55 - SD advice never claims extra program flash or RAM
+ok 60 - SD advice never claims extra program flash or RAM
   ---
-  duration_ms: 6.113012
+  duration_ms: 1.731521
   type: 'test'
   ...
 # Subtest: simulation HIGH branch and repeated delays deterministic, not physical emulation
-ok 56 - simulation HIGH branch and repeated delays deterministic, not physical emulation
+ok 61 - simulation HIGH branch and repeated delays deterministic, not physical emulation
   ---
-  duration_ms: 17.671872
+  duration_ms: 6.698317
   type: 'test'
   ...
 # Subtest: LOW branch selects else without executing repeat
-ok 57 - LOW branch selects else without executing repeat
+ok 62 - LOW branch selects else without executing repeat
   ---
-  duration_ms: 1.358743
+  duration_ms: 0.813654
   type: 'test'
   ...
 # Subtest: missing GPIO input transparently defaults LOW rather than fabricating measurement
-ok 58 - missing GPIO input transparently defaults LOW rather than fabricating measurement
+ok 63 - missing GPIO input transparently defaults LOW rather than fabricating measurement
   ---
-  duration_ms: 1.054946
+  duration_ms: 0.467752
   type: 'test'
   ...
 # Subtest: breakpoint pauses before physical effects; resume progresses exactly once
-ok 59 - breakpoint pauses before physical effects; resume progresses exactly once
+ok 64 - breakpoint pauses before physical effects; resume progresses exactly once
   ---
-  duration_ms: 2.390966
+  duration_ms: 0.571976
   type: 'test'
   ...
 # Subtest: virtual input can change between steps
-ok 60 - virtual input can change between steps
+ok 65 - virtual input can change between steps
   ---
-  duration_ms: 24.363388
+  duration_ms: 1.883896
   type: 'test'
   ...
 # Subtest: manual source cannot be misrepresented as simulated
-ok 61 - manual source cannot be misrepresented as simulated
+ok 66 - manual source cannot be misrepresented as simulated
   ---
-  duration_ms: 8.443877
+  duration_ms: 0.548802
   type: 'test'
   ...
 # Subtest: nested step budget bounds execution and requests
-ok 62 - nested step budget bounds execution and requests
+ok 67 - nested step budget bounds execution and requests
   ---
-  duration_ms: 4.954069
+  duration_ms: 0.421623
   type: 'test'
   ...
 # Subtest: invalid input values and IDs refused
-ok 63 - invalid input values and IDs refused
+ok 68 - invalid input values and IDs refused
   ---
-  duration_ms: 34.021835
+  duration_ms: 0.444747
   type: 'test'
   ...
 # Subtest: old node-graph blink supports step/run virtual GPIO
-ok 64 - old node-graph blink supports step/run virtual GPIO
+ok 69 - old node-graph blink supports step/run virtual GPIO
   ---
-  duration_ms: 18.158674
+  duration_ms: 1.160196
   type: 'test'
   ...
 # Subtest: end block terminates an active nested branch simulation
-ok 65 - end block terminates an active nested branch simulation
+ok 70 - end block terminates an active nested branch simulation
   ---
-  duration_ms: 3.180041
+  duration_ms: 1.002653
   type: 'test'
   ...
 # Subtest: create, reload and isolated projects
-ok 66 - create, reload and isolated projects
+ok 71 - create, reload and isolated projects
   ---
-  duration_ms: 33.73799
+  duration_ms: 17.270815
   type: 'test'
   ...
 # Subtest: save creates recoverable history snapshots
-ok 67 - save creates recoverable history snapshots
+ok 72 - save creates recoverable history snapshots
   ---
-  duration_ms: 2.80642
+  duration_ms: 2.360231
   type: 'test'
   ...
 # Subtest: export writes Arduino sketch folder and board metadata
-ok 68 - export writes Arduino sketch folder and board metadata
+ok 73 - export writes Arduino sketch folder and board metadata
   ---
-  duration_ms: 3.749918
+  duration_ms: 2.67083
   type: 'test'
   ...
 # Subtest: invalid id traversal rejected
-ok 69 - invalid id traversal rejected
+ok 74 - invalid id traversal rejected
   ---
-  duration_ms: 0.616737
+  duration_ms: 1.030494
   type: 'test'
   ...
 # Subtest: all static UI selectors reference existing unique elements
-ok 70 - all static UI selectors reference existing unique elements
+ok 75 - all static UI selectors reference existing unique elements
   ---
-  duration_ms: 10.165947
+  duration_ms: 2.079656
   type: 'test'
   ...
 # Subtest: flowchart and library editor tabs have dedicated views
-ok 71 - flowchart and library editor tabs have dedicated views
+ok 76 - flowchart and library editor tabs have dedicated views
   ---
-  duration_ms: 7.585416
+  duration_ms: 0.339151
   type: 'test'
   ...
-1..71
-# tests 71
+1..76
+# tests 76
 # suites 0
-# pass 71
+# pass 76
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1440.151251
+# duration_ms 401.550161

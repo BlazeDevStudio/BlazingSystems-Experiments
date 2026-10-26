@@ -1,31 +1,27 @@
-# Blaze MCU Studio 0.4.0 — Windows Preview
+# Blaze MCU Studio v0.4.1 — Interaction Repair (development branch)
 
-Blaze Systems · Offline-first Arduino-compatible desktop IDE · **preview, not production or a universal hardware simulator**.
+**This update repairs concrete failures demonstrated on Windows v0.4.0. It is not a complete universal visual MCU IDE or production release.**
 
-## Actual work you can do with this build
+## First-run and board selection
 
-1. Create a project and choose an installed Arduino CLI board FQBN.
-2. Use the node editor or structured flowchart to assemble pin output, timed behaviors and conditional input logic. Flowcharts generate Arduino C++ and are independently checked by real Arduino CLI compilation on a Windows runner.
-3. Use **Simulate** for step-by-step virtual GPIO state, branching, virtual time, breakpoints, and replay of the currently selected visual program. Change D2 from LOW to HIGH and watch a decision change paths. This models visual logic, not MCU instructions or electrical behavior.
-4. Use **Resources** to inspect compiler-reported flash/global RAM (after an actual successful compilation), estimate storage growth with configurable logging interval/record size/free space/retention, and validate an I2C/SPI GPIO resource plan. `Plan SPI SD card` proposes physical Uno R3 pins only when conflict-free; it does not generate SD firmware.
-5. Compile using actual Arduino CLI, then export standard Arduino IDE-compatible `.ino` sketches. Your manual C++ code remains user-owned, while generated code is read-only with protected custom regions.
-6. Inspect installed Arduino libraries with BALIE's **inferred, read-only** C++ signature scanner; it does NOT yet generate universal executable library adapters.
-7. Rename/duplicate/deactivate/recover local projects. No cloud login is needed.
+- The New Project dialog now lists *installed* board FQBNs discovered from Arduino CLI and seven explicitly labeled **uninstalled starter targets**, including ESP8266 Generic, NodeMCU, ESP32 Dev Module, and ESP32-S3 Dev Module. Starter targets are only installation entry points, **not a claim of installed support**.
+- Search/filter board names or FQBNs in the New Project dialog. The selected target is changeable later through migration warnings.
+- **Install selected core** runs real Arduino CLI index refresh and core installation after user confirmation. The ESP8266 and ESP32 paths use official third-party package URLs passed per invocation instead of silently changing Arduino global configuration. Installation needs network access unless cached.
+- Installing the platform reveals the actual dynamic board list returned by Arduino CLI. Future boards are not hardcoded; unrecognized boards may be supplied by installed package cores.
+- The IDE can create a project targeting an uninstalled board, but **compilation will fail until the matching toolchain is installed**.
 
-## What's *not* supported
+## Visual block interaction
 
-- No full board electrical simulator, timing-accurate MCU emulator, Arduino peripheral driver emulation or physical hardware verification.
-- Board pin profiles are conservative; Uno R3 digital pins and Uno SPI/I²C planning only, unknown board GPIO is **Unknown / Verification Required**. Board compilation capability and pinout verification are distinct.
-- No full Clang-based BALIE or automatic initialization logic, no arbitrary typed multi-branch graph reconstruction, no advanced Monaco editor, no WYSIWYG web UI designer, no multimedia asset studio.
-- RAM budget on physical 2 GB Windows devices is not benchmarked; 99 MB EXE size is largely Electron/Arduino CLI packaging and is **not** feature-completion evidence.
-- No SD driver/codegen or power-loss safe filesystem logger. SD increases data storage only, never program flash or SRAM.
+- On an open visual project, **drag Pin mode, Digital write, Delay or Comment from the left palette onto Nodes**. Blocks are inserted at the drop position, appended to a supported linear execution chain, selected and their properties shown in Inspector.
+- A simple click on a palette item also appends a block, for keyboard and pointer fallback. Click a canvas node or Edit to select it; change values in Inspector and save; select Output and Input connectors to reconnect a linear chain; drag an existing node header to reposition it.
+- Visual modes are intentionally limited to linear node chains and a separately structured flowchart. This is **not** the future full typed multi-port programming network.
 
-## Operating instructions
+## Library discovery
 
-Portable Windows EXE: launch directly, no Python or PowerShell script is needed. Board cores are installed through Arduino CLI as needed (requires connectivity for first install). The binary is unsigned. The project uses local storage and makes no unauthorized changes to devices; physical flashing remains optional outside the studio.
+Read-only BALIE now searches installed sketchbook libraries and installed Arduino package-core `libraries/` folders from Arduino15, plus manually inspected library directories. Header signatures remain **inferred** and cannot be inserted as verified executable adapter nodes. No third-party code is executed during scanning.
 
-For source development, install Node.js 22+, run `npm install && npm test && npm start`; `npm run dist:win` packages Windows portable EXE. The GitHub CI job additionally compiles two generated Arduino Uno programs and performs packaged GUI IPC smoke testing (see exact CI evidence before relying on any result).
+## Evidence and limitations
 
-## License / sources
+Source regression coverage includes board status parsing, source ownership, graphs, simulators, peripheral resource checks, and actual library roots. The Windows workflow runs a packaged Electron **DOM interaction gate** for create-project dialog, board catalog, palette drag-and-drop, inspector editing and persistence, in addition to actual Arduino Uno firmware compilation and EXE packaging. A synthetic DOM drag is not proof of every physical mouse or touch driver behavior, but tests real application UI handlers rather than only IPC.
 
-Application source MIT; Electron MIT; Arduino CLI Apache-2.0; installed Arduino libraries and board packages carry their own licenses. No third-party graphical assets are embedded. UI graphics are CSS and simple original shapes. The master roadmap is in `docs/DEVELOPMENT_ROADMAP.md`; version labels do **not** certify missing features.
+No ESP8266/ESP32 core or library is preinstalled in the portable executable. RAM use on a physical 2 GB machine, physical MCU flashing, verified third-party library adapters, arbitrary graph branches, hardware emulation, and WYSIWYG remain unverified or unimplemented. Source is MIT and Electron/Arduino CLI retain their respective licenses.

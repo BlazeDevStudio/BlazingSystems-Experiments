@@ -22,6 +22,47 @@ app.whenReady().then(()=>{
       const api=window.blaze;
       if(missing.length)throw Error('Missing renderer elements '+missing.join(','));
       if(!api?.createProject||!api?.simCreate||!api?.resourceAnalyze)throw Error('IPC preload API unavailable');
+      // Exercise the actual DOM handlers: first-project modal, board catalog, sidebar
+      // drag/drop, node selection and inspector input (not merely backend IPC).
+      const boardCatalog=await api.boards();
+      if(!boardCatalog.boards.some(b=>b.fqbn==='esp8266:esp8266:generic'&&!b.installed))throw Error('Missing explicitly labeled optional ESP8266 target');
+      document.getElementById('newProject').click();
+      if(document.getElementById('newModal').classList.contains('hidden'))throw Error('New project dialog did not open');
+      document.getElementById('boardSearch').value='ESP8266';
+      document.getElementById('boardSearch').dispatchEvent(new Event('input',{bubbles:true}));
+      if(!Array.from(document.getElementById('newBoard').options).some(o=>o.value==='esp8266:esp8266:generic'))throw Error('ESP8266 missing from displayed selectable starter targets');
+      document.getElementById('boardSearch').value='';
+      document.getElementById('boardSearch').dispatchEvent(new Event('input',{bubbles:true}));
+      document.getElementById('newName').value='GuiSmoke';
+      document.getElementById('newBoard').value='arduino:avr:uno';
+      document.getElementById('newBoard').dispatchEvent(new Event('change',{bubbles:true}));
+      document.getElementById('confirmNew').click();
+      const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+      for(let i=0;i<80&&(document.getElementById('projectTitle').textContent!=='GuiSmoke'||document.getElementById('workspace').classList.contains('hidden'));i++)await pause(100);
+      if(document.getElementById('projectTitle').textContent!=='GuiSmoke')throw Error('New project UI did not create/open project');
+      const startCount=document.querySelectorAll('#nodeLayer [data-node]').length;
+      const block=document.querySelector('[data-add="delay"]');
+      const transfer=new DataTransfer();
+      block.dispatchEvent(new DragEvent('dragstart',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+      const canvas=document.getElementById('graphCanvas');
+      const bounds=canvas.getBoundingClientRect();
+      canvas.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:transfer,clientX:bounds.x+300,clientY:bounds.y+350}));
+      canvas.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer,clientX:bounds.x+300,clientY:bounds.y+350}));
+      if(document.querySelectorAll('#nodeLayer [data-node]').length!==startCount+1)throw Error('Dragged palette block did not create a node');
+      const added=[...document.querySelectorAll('#nodeLayer [data-node]')].find(n=>n.dataset.node.startsWith('delay_'));
+      if(!added)throw Error('Dropped delay block not visible');
+      added.querySelector('[data-select]').click();
+      const prop=document.querySelector('#nodeInspector input[data-param="ms"]');
+      if(!prop)throw Error('Node selection did not show inspector');
+      prop.value='75';prop.dispatchEvent(new Event('input',{bubbles:true}));
+      if(!added.querySelector('.ndesc').textContent.includes('75'))throw Error('Inspector input did not update canvas');
+      document.getElementById('save').click();
+      await pause(350);
+      const savedItems=await api.listProjects();
+      const saved=savedItems.find(x=>x.name==='GuiSmoke');
+      if(!saved)throw Error('UI created project not persisted');
+      const savedProject=await api.openProject(saved.id);
+      if(!savedProject.graph.nodes.some(n=>n.type==='delay'&&Number(n.params.ms)===75))throw Error('Inspector edit not persisted');
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -31,7 +72,7 @@ app.whenReady().then(()=>{
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,generation:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}

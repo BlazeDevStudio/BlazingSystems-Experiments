@@ -25,14 +25,38 @@ function inspectLibrary(folder,architecture='*'){
  const unique=[...new Map(api.map(a=>[a.header+'|'+a.signature,a])).values()];
  return {name:props.name||path.basename(real),version,architectures,boardCompatible,properties:{depends:props.depends||'',includes:props.includes||'',category:props.category||'',license:props.license||''},directory:real,sourceHash:digest.digest('hex'),headers:headers.map(h=>path.basename(h)),api:unique.slice(0,150),warnings,analysis:'inferred',verifiedForBoard:false};
 }
-function scanInstalled({sketchbook,architecture='*',additionalPaths=[]}={}){
+function platformLibraryRoots(dataDirectory){
+ const roots=[],base=dataDirectory||process.env.ARDUINO_DIRECTORIES_DATA||(
+   process.platform==='win32'?path.join(process.env.LOCALAPPDATA||path.join(os.homedir(),'AppData','Local'),'Arduino15'):
+   process.platform==='darwin'?path.join(os.homedir(),'Library','Arduino15'):
+   path.join(os.homedir(),'.arduino15'));
+ const packages=path.join(base,'packages');if(!fs.existsSync(packages))return roots;
+ for(const vendor of fs.readdirSync(packages,{withFileTypes:true})){
+   if(!vendor.isDirectory()||vendor.isSymbolicLink())continue;
+   const hardware=path.join(packages,vendor.name,'hardware');if(!fs.existsSync(hardware))continue;
+   for(const arch of fs.readdirSync(hardware,{withFileTypes:true})){
+     if(!arch.isDirectory()||arch.isSymbolicLink())continue;
+     for(const version of fs.readdirSync(path.join(hardware,arch.name),{withFileTypes:true})){
+       if(!version.isDirectory()||version.isSymbolicLink())continue;
+       const lib=path.join(hardware,arch.name,version.name,'libraries');if(fs.existsSync(lib))roots.push(lib);
+       if(roots.length>=30)return roots;
+     }
+   }
+ }
+ return roots;
+}
+function scanInstalled({sketchbook,architecture='*',additionalPaths=[],dataDirectory}={}){
  const roots=[];const sketch=sketchbook||path.join(os.homedir(),'Documents','Arduino');roots.push(path.join(sketch,'libraries'));
+ roots.push(...platformLibraryRoots(dataDirectory));
  for(const p of additionalPaths){if(typeof p==='string'&&p.length<1024)roots.push(path.resolve(p));}
- const libraries=[],errors=[];
- for(const root of roots){if(!fs.existsSync(root))continue;for(const entry of fs.readdirSync(root,{withFileTypes:true})){if(libraries.length>=MAX_LIBRARIES){errors.push('Library scan limit reached');break;}if(!entry.isDirectory()||entry.isSymbolicLink())continue;
- const folder=path.join(root,entry.name);if(!fs.existsSync(path.join(folder,'library.properties')))continue;
- try{libraries.push(inspectLibrary(folder,architecture));}catch(e){errors.push(entry.name+': '+e.message);}}}
- return {libraries,errors,roots,coverage:'sketchbook and explicitly provided library directories; platform libraries require separately indexed platform paths'};
+ const libraries=[],errors=[],visited=new Set();
+ for(const root of roots){if(!fs.existsSync(root))continue;for(const entry of fs.readdirSync(root,{withFileTypes:true})){
+  if(libraries.length>=MAX_LIBRARIES){errors.push('Library scan limit reached');break;}
+  if(!entry.isDirectory()||entry.isSymbolicLink())continue;
+  const folder=path.join(root,entry.name);if(!fs.existsSync(path.join(folder,'library.properties')))continue;
+  try{const real=fs.realpathSync(folder);if(visited.has(real))continue;visited.add(real);libraries.push(inspectLibrary(real,architecture));}catch(e){errors.push(entry.name+': '+e.message);}
+ }}
+ return {libraries,errors,roots,coverage:'sketchbook and installed Arduino platform bundled libraries (bounded scan), plus optional selected directories'};
 }
 function libraryNodes(library){return library.api.map((f,i)=>({id:library.sourceHash.slice(0,10)+'-'+i,name:f.name,category:'Library / '+library.name,source:f.signature,header:f.header,confidence:f.confidence,boardCompatible:library.boardCompatible,codegen:'manual-adapter-required'}));}
-module.exports={properties,signatures,inspectLibrary,scanInstalled,libraryNodes};
+module.exports={properties,signatures,inspectLibrary,scanInstalled,platformLibraryRoots,libraryNodes};

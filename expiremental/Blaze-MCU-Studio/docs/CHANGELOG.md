@@ -1,3 +1,11 @@
+## v0.4.1 — first-use interaction repair (source awaiting CI)
+
+- Discover actual installed boards; add clearly marked uninstalled ESP/Arduino starter targets and core installer with verified upstream ESP package index URLs.
+- Enable drag-and-drop palette onto node canvas, visible selection, inspector editing and persistence in UI acceptance tests.
+- Scan installed platform-core libraries in Arduino15 for BALIE read-only indexing.
+- Require packaged Windows renderer interaction gate before artifact acceptance.
+- See INTERACTION_AUDIT.md for defects and known gaps.
+
 # Changelog
 
 ## 0.3.0 Preview — source under test
