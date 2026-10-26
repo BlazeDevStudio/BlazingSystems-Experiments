@@ -153,7 +153,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
         }
     }
 
-    fun newTab(initial: String): BrowserTab {
+    fun newTab(initial: String, loadInitial: Boolean = true): BrowserTab {
         val web = WebView(context)
         val tab = BrowserTab(web, counter++)
         tab.address = initial
@@ -211,7 +211,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                                         isUserGesture: Boolean, resultMsg: Message?): Boolean {
                 if (!isUserGesture || tabs.size >= 12 || resultMsg == null) return false
                 val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
-                val child = newTab("about:blank")
+                val child = newTab("about:blank", loadInitial = false)
                 tabs.add(child)
                 selected = tabs.lastIndex
                 transport.webView = child.view
@@ -223,7 +223,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
         web.setDownloadListener { url, agent, disposition, mime, _ ->
             enqueueDownload(url, agent, disposition, mime)
         }
-        web.loadUrl(initial)
+        if (loadInitial) web.loadUrl(initial)
         return tab
     }
 
@@ -257,6 +257,9 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                 selected = tabs.lastIndex
             }) { Text("+ Tab") }
             TextButton(enabled = tabs.size > 1, onClick = {
+                // An Android WebView must be detached before destruction.
+                (active.view.parent as? android.view.ViewGroup)?.removeView(active.view)
+                active.view.stopLoading()
                 active.view.destroy()
                 tabs.removeAt(selected)
                 selected = selected.coerceAtMost(tabs.lastIndex)
@@ -375,7 +378,11 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
         onDispose {
             saveSession()
             upload?.onReceiveValue(null)
-            tabs.forEach { it.view.destroy() }
+            tabs.forEach { tab ->
+                (tab.view.parent as? android.view.ViewGroup)?.removeView(tab.view)
+                tab.view.stopLoading()
+                tab.view.destroy()
+            }
             tabs.clear()
         }
     }
