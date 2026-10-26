@@ -1,6 +1,6 @@
 'use strict';
 const {app,BrowserWindow,ipcMain,dialog,session}=require('electron');const path=require('node:path');
-const {WorkspaceStore}=require('../core/storage.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');
+const {WorkspaceStore}=require('../core/storage.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');const balie=require('../core/balie.cjs');const board=require('../core/board.cjs');const flow=require('../core/flowchart.cjs');
 let win,store,cli;
 function checkedSender(event){if(!win || event.sender!==win.webContents)throw Error('Untrusted IPC sender');}
 function register(channel,fn){ipcMain.handle(channel,(event,...args)=>{checkedSender(event);return fn(...args);});}
@@ -11,7 +11,12 @@ app.whenReady().then(()=>{
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
  win.loadFile(path.join(__dirname,'../renderer/index.html'));win.once('ready-to-show',()=>win.show());
  register('project:list',()=>store.list());register('project:create',(name,fqbn)=>store.create(name,fqbn));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
- register('project:validate',p=>{const d=analyzeGraph(p);return {...d,ordered:d.ordered.map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
+ register('project:validate',p=>{const d=generateSketch(p).diagnostics;return {...d,ordered:(d.ordered||[]).map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
+ register('project:rename',(id,name)=>store.rename(id,name));register('project:duplicate',id=>store.duplicate(id));register('project:trash',id=>store.trash(id));register('project:recoveryList',()=>store.recoveryList());register('project:recover',id=>store.recover(id));
+ register('board:migration',(p,target)=>board.analyzeBoardChange(p,target));
+ register('flow:trace',(p,input)=>flow.traceFlowchart(p.flowchart||flow.sampleFlowchart(),input,1000));
+ register('library:scan',p=>balie.scanInstalled({architecture:p.fqbn.split(':')[1]}));
+ register('library:inspect',async p=>{const result=await dialog.showOpenDialog(win,{properties:['openDirectory'],title:'Inspect installed Arduino library directory (read-only)'});if(result.canceled)return {canceled:true};return balie.inspectLibrary(result.filePaths[0],p.fqbn.split(':')[1]);});
  register('project:export',async p=>{const result=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory'],title:'Export Arduino-compatible sketch'});return result.canceled?{canceled:true}:store.export(p,result.filePaths[0]);});
  register('cli:status',()=>arduino.run(cli,['version']));register('cli:boards',()=>arduino.boardList(cli));register('cli:install',id=>arduino.platformInstall(cli,id));register('cli:compile',p=>arduino.compile(cli,p));
 });app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit()});

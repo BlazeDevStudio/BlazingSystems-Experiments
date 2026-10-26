@@ -1,6 +1,7 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
 const SCHEMA_VERSION = 1;
+const flow=require('./flowchart.cjs');
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,62}$/;
 const FQBN_RE = /^[\w.-]+:[\w.-]+:[\w.-]+(?::[\w.,=~-]+)?$/;
 function sketchName(text) {
@@ -15,7 +16,7 @@ function starterGraph() { return {
 function createProject(name, fqbn='arduino:avr:uno') {
   if (!FQBN_RE.test(fqbn)) throw new Error('Choose a valid board FQBN');
   if (!name || !String(name).trim() || String(name).trim().length > 80) throw new Error('Project name must be 1–80 characters');
-  return { schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [] };
+  return { schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [],visualMode:'nodes',flowchart:flow.sampleFlowchart() };
 }
 function verifyProject(p) {
   if (!p || p.schemaVersion !== SCHEMA_VERSION || !/^[0-9a-f-]{36}$/i.test(p.id) || !FQBN_RE.test(p.fqbn)) throw new Error('Invalid project metadata');
@@ -29,6 +30,8 @@ function verifyProject(p) {
     if (!Number.isFinite(n.x) || !Number.isFinite(n.y) || n.x < 0 || n.y < 0 || n.x > 20000 || n.y > 20000) throw new Error('Invalid node coordinates');
     seen.add(n.id);
   }
+  if(p.visualMode!==undefined&&!['nodes','flowchart'].includes(p.visualMode))throw Error('Invalid visual editor mode');
+  if(p.flowchart!==undefined)flow.ensureFlowchart(p.flowchart);
   return p;
 }
 const PIN_PROFILES = {
@@ -52,6 +55,7 @@ function pinDiagnostics(p) {
       modes.set(pin, n.params.mode);
     }
   }
+  if(p.visualMode==='flowchart'&&p.flowchart){const fd=flow.validateFlowchart(p.flowchart,{boardPins:pins,boardFqbn:p.fqbn});errors.push(...fd.errors);warnings.push(...fd.warnings);}
   return {errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
 }
 function analyzeGraph(p) {
@@ -87,18 +91,23 @@ function analyzeGraph(p) {
 function generateSketch(p) {
   verifyProject(p);
   if(p.source.mode==='manual') return {source:p.source.manualSource, diagnostics:{ok:true,errors:[],warnings:['Manual mode: graphical blocks do not affect this source'],ordered:[]}};
-  const diagnostics=analyzeGraph(p);
+  const isFlow=p.visualMode==='flowchart';
+  const diagnostics=isFlow?flow.validateFlowchart(p.flowchart||flow.sampleFlowchart(),{boardPins:PIN_PROFILES[p.fqbn],boardFqbn:p.fqbn}):analyzeGraph(p);
   if(!diagnostics.ok) return {source:null,diagnostics};
   const setup=[],loop=[];
-  for(const n of diagnostics.ordered) {
-    const pin=Number(n.params.pin);
-    switch(n.type) {
-      case 'pinMode': setup.push(`  pinMode(${pin}, ${n.params.mode}); // node:${n.id}`); break;
-      case 'digitalWrite': loop.push(`  digitalWrite(${pin}, ${n.params.value}); // node:${n.id}`); break;
-      case 'delay': loop.push(`  delay(${Number(n.params.ms)}UL); // node:${n.id}`); break;
-      case 'comment': loop.push(`  // ${String(n.params.text||'').replace(/[\r\n]/g,' ').replace(/\*\//g,'')} // node:${n.id}`); break;
-    }
+  function addGraph(targetSetup,targetLoop) {
+    const graph=analyzeGraph(p);if(!graph.ok)return graph;
+    for(const n of graph.ordered){const pin=Number(n.params.pin);
+      switch(n.type){case 'pinMode':targetSetup.push(`  pinMode(${pin}, ${n.params.mode}); // node:${n.id}`);break;
+      case 'digitalWrite':targetLoop.push(`  digitalWrite(${pin}, ${n.params.value}); // node:${n.id}`);break;
+      case 'delay':targetLoop.push(`  delay(${Number(n.params.ms)}UL); // node:${n.id}`);break;
+      case 'comment':targetLoop.push(`  // ${String(n.params.text||'').replace(/[\r\n]/g,' ').replace(/\*\//g,'')} // node:${n.id}`);break;}
+    }return graph;
   }
-  return {source:`// Blaze MCU Studio v0.1.0 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${p.source.userPrelude}\n\nvoid setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics};
+  let graphFunction='';
+  if(isFlow){const generated=flow.flowchartSource(p.flowchart||flow.sampleFlowchart());setup.push(...generated.setup);loop.push(...generated.loop);
+    if(generated.needsNodeCall){const extraSetup=[],extraLoop=[];const g=addGraph(extraSetup,extraLoop);if(!g.ok)return {source:null,diagnostics:g};setup.push(...extraSetup);graphFunction=`void blazeNodesTick() {\n${extraLoop.join('\n')}\n}\n\n`;}
+  }else addGraph(setup,loop);
+  return {source:`// Blaze MCU Studio v0.3.0 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics};
 }
 module.exports={SCHEMA_VERSION, FQBN_RE, NAME_RE, createProject, verifyProject, analyzeGraph, generateSketch, pinDiagnostics, sketchName, PIN_PROFILES};

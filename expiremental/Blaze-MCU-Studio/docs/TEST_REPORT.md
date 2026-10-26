@@ -17,3 +17,7 @@ When run successfully, the Windows build job outputs portable `Blaze-MCU-Studio-
 - Project validation rejects whitespace-only names and invalid layout coordinates.
 - GUI autosave serializes pending saves, snapshots each payload, and uses change revisions to avoid silently dropping edits during an in-flight save; board changes first persist the previous project.
 - These changes require fresh local test evidence and a Windows runner before release.
+
+## v0.3.0 continuation — pre-Windows gate
+
+New tests exercise structured branch/repeat firmware emission, deterministic trace and user-code ownership; BALIE metadata/hash/architecture parsing and bounded scanning; migration warnings and reversible project trash. The Windows gate additionally compiles an IR-generated flowchart sketch with real Arduino CLI. **See GitHub Actions run evidence for actual status; do not infer pass from this plan.**

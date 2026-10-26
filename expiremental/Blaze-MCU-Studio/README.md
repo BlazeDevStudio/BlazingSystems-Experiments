@@ -1,26 +1,32 @@
-# Blaze MCU Studio — v0.1.0 Preview (development)
+# Blaze MCU Studio — v0.3.0 Preview (Development, not production)
 
-**Blaze Systems · Windows 10/11 x64 · offline-first Arduino graphical IDE**
+Blaze Systems · Windows 10/11 x64 · offline-first visual Arduino firmware IDE.
 
-An independently implemented, lightweight Electron desktop foundation with a node canvas, project history, a target-board picker based on Arduino CLI, conservative pin checks, user-owned C++ source preservation, real compiler invocation and standard `.ino` export.
+**Readiness:** Expanded beyond v0.1.0 but NOT the complete master-directive product. A version label is not a claim of 50% functionality. The project deliberately lacks full Clang-based C++ understanding, trusted universal pin mappings, a general purpose typed node graph, mature graphical flowchart editor, and physical board acceptance. Consult `docs/KNOWN_LIMITATIONS.md` before use.
 
-**Important status:** Initial code is development-stage. No physical board verification is claimed. See [TEST_REPORT](docs/TEST_REPORT.md) for actual evidence. No public release should be labeled working until a Windows runner produces an EXE and the required Arduino Uno compile passes.
+## Implemented in this preview
 
-## Build / run
+- Real portable Windows desktop EXE packaging (Electron), local project creation/open/save, rename, duplicate, recoverable deletion, five history snapshots, non-overwriting `.ino` export.
+- Selected target FQBN via dynamic Arduino CLI discovery; installed board-core management and real Arduino CLI firmware compilation with actual target compiler.
+- Arduino Uno partial digital pin model, deterministic linear node C++ generation, user-owned manual C++ editing and protected custom C++ regions.
+- **Structured flowchart editor** with executable steps, GPIO output, delay, digital-input branch, bounded repeat, return and optional graph function call; the same source exporter/compiler pipeline; bounded step traces, not hardware simulation.
+- **BALIE read-only foundation:** installed-sketchbook and explicitly chosen library directory indexing, `library.properties` architecture metadata, bounded C++ header declaration inspection, SHA-256 fingerprint, candidate function-node definitions. Output is **inferred** and requires a verified adapter before code generation; no arbitrary imported library execution during indexing.
+- Board migration warning report before switching, unknown board pin model never silently verified.
 
-Install Node.js 22+ and Git, then run `npm install`, `npm test`, `npm start`. The Windows build workflow packages a **portable EXE**, not a PowerShell launcher, with a bundled Arduino CLI binary (board cores must be installed or cached). Run `npm run dist:win` on Windows to build the EXE. When CLI binaries/board cores are already installed, normal sketch editing and compilation are offline.
+## Installation / operation
 
-## First complete example
+Windows users: download the portable `Blaze-MCU-Studio-0.3.0-Windows-x64.exe` from the verified GitHub Actions artifact/Google Drive. No Node/Python/PowerShell is needed to start the application. The executable is unsigned; Windows may warn. The Arduino CLI binary is bundled, but board cores and third-party libraries must be installed or cached separately. Initial installs can require internet; subsequent editing and compilation can be offline.
 
-1. Create a project named `Blink` and select **Arduino Uno** (or another installed FQBN).
-2. If the Arduino AVR core is missing, open **Board Manager** and install `arduino:avr`. This step requires connectivity unless packages are already cached.
-3. In **Nodes**, inspect `Loop Start → Pin Mode D13 OUTPUT → Write HIGH → Delay 1000 → Write LOW → Delay 1000`.
-4. Select **Validate**. Switch to **C++ Source** to review generated `.ino` and optionally insert user-owned code.
-5. Select **Compile** to invoke the installed actual Arduino toolchain. Output and errors appear in the diagnostic panel.
-6. Select **Export .ino** and choose a folder; open `<folder>/Blink/Blink.ino` in Arduino IDE. The export operates without the studio running. Existing exported sketch folders are never overwritten; choose a new destination.
+Source: Node.js 22+; `npm install`, `npm test`, `npm start`, `npm run dist:win`. No subscription or cloud login required.
 
-## Scope and safeguards
+## Critical boundaries
 
-The preview supports a *linear execution chain*; branches, conditional semantics, flowchart round-tripping, hardware simulation, external library semantic indexing and WYSIWYG web composition are scheduled for later milestones. Switching to manual-source ownership stores an independent full sketch and never reverse-parses C++. Unknown pin profiles are explicitly reported as unknown. No hidden firmware upload or hardware switching is performed by the studio.
+- Full user-owned manual C++ never reverse-parsed; visual edits cannot silently overwrite it.
+- Flowchart decision and repeat are structured AST blocks; arbitrary wire-based reconvergence and interrupt handling are not implemented.
+- BALIE header signatures can be incomplete or incorrect under preprocessor macros, overloads and templates. Marked Inferred, never Verified without board compilation.
+- Digital-input flowchart branch defaults to `INPUT`, requiring external circuit stabilization. Electrical safety requires physical inspection.
+- Core installation and firmware compilation may execute code from third-party platforms; never use untrusted dependencies without isolation.
+- Project deletion moves data to a local recoverable `_recovery` folder; backup that folder with your projects.
+- Do not interpret passing Windows build/tests as hardware simulation, 2 GB memory certification, or a production release.
 
-All source files are original except third-party runtime/toolchain dependencies downloaded during the controlled Windows build. Electron is MIT licensed. Arduino CLI is Apache-2.0 licensed. The application includes no copied Arduino IDE images or official logos.
+Documentation and tests live under `docs/` and `tests/`.

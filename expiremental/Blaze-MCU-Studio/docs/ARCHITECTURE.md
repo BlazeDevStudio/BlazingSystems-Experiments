@@ -1,11 +1,14 @@
-# Architecture v0.1.0
+# Architecture v0.3.0
 
 **Reasoned stack choice:** Electron/Chromium + plain JavaScript/HTML/CSS for the v0.1.0 vertical slice instead of the initially proposed Tauri 2 + React + Monaco + Rete. This retains a normal Windows EXE and OS-native dialogs while avoiding multiple UI runtimes and Rust dependencies in the foundational release; runtime RAM under 2 GB is an unverified target, not a measured claim. Electron single instance WebContents; renderer sandbox with context isolation, narrowly allowed IPC channels, no network surface. Assets are pure CSS, no proprietary icon dependencies. Future editor replacements retain the versioned IR.
 
 - `renderer/` UI node canvas, property inspector, board manager, source editor and diagnostics.
 - `electron/` audited IPC allowlist, dialogs and isolated preload.
-- `core/project.cjs` shared v1 project IR, compile codegen and conservative static validation.
+- `core/project.cjs` shared backward-compatible project IR, compile codegen and conservative static validation.
 - `core/storage.cjs` local project storage, atomic JSON replacement, bounded snapshots and deterministic sketch export.
+- `core/flowchart.cjs` structured branch/repeat AST, validation, C++ and bounded logic trace; shares target/source ownership with node engine.
+- `core/balie.cjs` read-only library metadata/header indexing; no code execution; inferred confidence only.
+- `core/board.cjs` migration preflight, conservative per-FQBN pin support.
 - `core/arduino.cjs` process-isolated argv-only invocation, bounded output/time and dynamic board discovery.
 - `tests/` Node built-in test runner, no external testing dependency.
 
