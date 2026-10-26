@@ -51,6 +51,7 @@ internal sealed class MonitorForm : Form
         AccessibleName = "BlazeNetMonitor live traffic widget";
         _tray = new NotifyIcon { Text = "BlazeNetMonitor", Icon = MakeIcon(), Visible = true, ContextMenuStrip = _menu };
         BuildMenu();
+        ApplyAppearance();
         _tray.DoubleClick += (_, _) => EditSettings();
         MouseClick += (_, e) =>
         {
@@ -108,7 +109,7 @@ internal sealed class MonitorForm : Form
     {
         Theme.Apply(_data.Settings);
         BackColor = Theme.Background;
-        Opacity = Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
+        Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
         Invalidate();
     }
@@ -131,14 +132,19 @@ internal sealed class MonitorForm : Form
         if (_data.Settings.FreeformPositioned)
         {
             // Preserve freeform position; re-home only when monitor was unplugged / offscreen.
-            if (Screen.AllScreens.Any(s => s.WorkingArea.IntersectsWith(Bounds))) return;
+            if (Screen.AllScreens.Any(s =>
+            {
+                var inside = Rectangle.Intersect(s.WorkingArea, Bounds);
+                return inside.Width >= Math.Min(80, Width / 2) &&
+                       inside.Height >= Math.Min(30, Height / 2);
+            })) return;
             var fallback = Screen.PrimaryScreen?.WorkingArea ?? Screen.FromControl(this).WorkingArea;
             Location = new Point(fallback.Left + Math.Max(0, fallback.Width - Width - 20),
                 fallback.Top + Math.Max(0, fallback.Height - Height - 20));
             return;
         }
 
-        var screen = Screen.FromPoint(Cursor.Position);
+        var screen = Screen.PrimaryScreen ?? Screen.FromControl(this);
         var work = screen.WorkingArea;
         var bounds = screen.Bounds;
         int x = Math.Clamp(bounds.Right - Width - _data.Settings.HorizontalOffset,
