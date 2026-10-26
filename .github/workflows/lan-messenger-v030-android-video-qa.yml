@@ -40,11 +40,14 @@ jobs:
           target: google_apis
           profile: pixel_2
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-front emulated
-          script: |
-            set -e
-            python3 -m py_compile "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py"
-            source "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh"
-            LAN_MESSENGER_SCENARIO=video python3 "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py"
+          # Android emulator runner executes script through /bin/sh.
+          # Explicit Bash is essential: the shared emulator peer2 has an
+          # EXIT trap and must be sourced into the SAME Bash process.
+          script: >-
+            bash -c 'set -euo pipefail;
+            python3 -m py_compile "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py";
+            source "$GITHUB_WORKSPACE/experiment/apps/LAN-Messenger/tool/android_dual_lan_smoke.sh";
+            LAN_MESSENGER_SCENARIO=video python3 "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/dual_android_call_ui.py"'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
