@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.9 — streamlined settings and Windows Connections selector
+# BlazeNetMonitor v0.3.0 — per-app historical network usage preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,24 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.3.0 — Top five apps in At-a-glance (October 27, 2026)
+
+The at-a-glance hover includes the **five applications that have consumed the most recorded network bytes since Windows last started**, rather than currently connected processes. Each row shows its app name, executable icon when Windows can resolve one (otherwise a generic icon), and **total data = uploaded + downloaded bytes**. Apps that have exited remain eligible. It shows fewer than five if Windows has fewer recorded applications.
+
+### Historical source and limitations
+
+- Uses **Windows SRUM Network Data Usage** records, which record data usage per application in approximately hourly buckets. The latest interval may not be published yet. The first partial hourly interval that overlaps system startup is excluded to avoid including preboot traffic. The view is therefore **complete recorded hours since restart**, not precise live data or guaranteed whole-boot accounting.
+- Windows provides no simple, reliable, unprivileged, built-in .NET API for historical per-app usage. **No third-party binary is bundled or downloaded automatically.**
+- If the operator already has the separately distributed NirSoft `NetworkUsageView.exe`, place the unmodified file beside `BlazeNetMonitor.exe` or in `%LOCALAPPDATA%\\BlazeSystems\\BlazeNetMonitor\\`; BlazeNetMonitor can request a local CSV export through its documented command-line interface. The reader may need administrator permissions to access locked SRUM data. NirSoft source: https://www.nirsoft.net/utils/network_usage_view.html
+- Alternatively, export the **Network Data Usage** table from a local SRUM reader to CSV (columns **Timestamp, App Name, Bytes Sent, Bytes Received**) and use **right-click tray → Import app network history (CSV)**. CSV input is local-only, file-size-bounded, and parsed without network requests.
+- When access is missing, the hover shows **Import Windows usage CSV from tray menu**, not fabricated totals, active sockets, per-adapter traffic, or unrelated disk statistics.
+- Hover refresh is asynchronous and cached; history access never blocks the monitoring widget. Executable icons are read from local program paths and Windows App Paths when available, without icon web queries.
+- **No exact live per-app data** is promised; a fully automatic and exact counter from reboot requires an additional privileged measurement service or reliable SRUM access, subject to separate design and field validation.
+
+### QA boundaries
+
+Automated tests check CSV parsing, filtering by reboot time, ranking and top-five truncation. Windows UI CI checks the 5-row hover size and GDI+ drawing while retaining previous QR, adapter and launch smoke tests. Real SRUM access/elevation/desktop display still need validation.
 
 ## v0.2.9 — concise settings, graph types and Windows Connections (October 27, 2026)
 

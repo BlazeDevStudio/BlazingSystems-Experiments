@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.9-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.3.0-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,7 +34,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.9-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.3.0-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
@@ -45,8 +45,8 @@ jobs:
           dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o dist/win-x64-lite
           if ($LASTEXITCODE -ne 0) { throw 'Lite framework-dependent publish failed' }
           if (-not (Test-Path 'dist/win-x64-lite/BlazeNetMonitor.exe')) { throw 'Lite EXE missing' }
-          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip' -CompressionLevel Optimal -Force
-          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip' -Algorithm SHA256 | Format-List
+          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.3.0-win-x64-lite.zip' -CompressionLevel Optimal -Force
+          Get-FileHash 'artifacts/BlazeNetMonitor-v0.3.0-win-x64-lite.zip' -Algorithm SHA256 | Format-List
       - name: Windows QR visibility and uncropped About image check
         shell: pwsh
         run: |
@@ -69,6 +69,17 @@ jobs:
             throw "Network Connections adapter listing failed exit $($check.ExitCode)"
           }
           Write-Host 'PASS default adapters match native Network Connections when available'
+      - name: Windows top-apps hover and historical ranking check
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/win-x64/BlazeNetMonitor.exe').Path
+          $check = Start-Process -FilePath $exe -ArgumentList '--verify-top-apps' -PassThru -Wait
+          $trace = Join-Path $env:TEMP 'BlazeNetMonitor-top-apps-check.txt'
+          if (Test-Path $trace) { Get-Content $trace }
+          if ($check.ExitCode -ne 0) {
+            throw "Top-apps layout failed with exit code $($check.ExitCode)"
+          }
+          Write-Host 'PASS top five historical apps with icons and compact hover fallback'
       - name: Windows x64 GUI process launch smoke check
         shell: pwsh
         run: |
@@ -89,5 +100,5 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.9-win-x64.zip artifacts/BlazeNetMonitor-v0.2.9-win-x86.zip artifacts/BlazeNetMonitor-v0.2.9-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.9 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.9 PREVIEW: About copy cleaned, all Auto adaptive labels changed to Adaptive, seven graph drawing types (Line, Smooth, Filled, Bars, Steps, Dots, Impulse). Network adapter dropdown defaults to names enumerated from Windows Network Connections shell folder, matching ncpa.cpl rather than guessing from network interface type; disconnected connections remain present. Advanced network adapters checkbox exposes virtual/VPN/tunnel and other interfaces. If the shell folder cannot be read, default shows no guessed adapters rather than a cluttered list; Advanced remains available. CI verifies core graph/selection rules, Windows COM shell adapter enumeration, QR layout and x64 launch; physical Windows 10/11 desktop adapter results remain to be checked. Windows 10 native DeskBand is not part of this preview.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.3.0-win-x64.zip artifacts/BlazeNetMonitor-v0.3.0-win-x86.zip artifacts/BlazeNetMonitor-v0.3.0-win-arm64.zip artifacts/BlazeNetMonitor-v0.3.0-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.3.0 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.3.0 PREVIEW: adds Top 5 Apps by cumulative Windows network data since restart to the compact at-a-glance hover, using SRUM hourly history rather than currently active connections. Shows icons extracted from app executables or registered app paths, app names, and combined up/down bytes; retains past apps that are no longer running. The historical source is optional: operator-supplied NetworkUsageView.exe beside the app (not redistributed), or Import app network history (CSV) from the tray. Without a trusted source, the UI explicitly states history is unavailable rather than fabricating per-app bytes. SRUM aggregation is delayed; the reboot-boundary partial hour is excluded. This is not exact per-packet accounting. Existing dots, traffic graphs, QR and adapter options remain intact. Windows CI verifies source-level ranking, the five-row visual layout and native GUI launch; elevation and actual SRUM access remain to be tested on end-user Windows hardware.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }
