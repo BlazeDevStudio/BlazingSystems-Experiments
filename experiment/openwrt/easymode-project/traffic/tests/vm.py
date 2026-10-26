@@ -81,7 +81,7 @@ with tempfile.TemporaryDirectory() as tmp:
    (DIST/'VM-UEFI-TEST-RESULTS.json').write_text(json.dumps({'hardware':'QEMU x86_64 UEFI; NOT PHYSICAL HARDWARE VERIFIED','checks':results},indent=2)+'\n');sys.exit(0)
   check((lambda r:r.get('error',{}).get('code')==-32002 or r.get('result',[None])[0]==6)(rpc('action',{'action':'configure','payload':'{"enabled":false}'})),'unauthenticated mutation rejected')
   invalid=rpc('action',{'action':'configure','payload':'{"wan":["wan;touch /tmp/injected"]}'},token)['result'][1];check(not invalid['ok'] and run('test ! -e /tmp/injected && echo safe').strip()=='safe','input injection rejected')
-  check(run('stat -c %a /tmp/easymode-traffic/state.json').strip()=='600','history file is private')
+  check(run("ls -ld /tmp/easymode-traffic/state.json | awk '{print $1}'").strip()=='-rw-------','history file is private')
   # Install real opkg artifacts, then repeat the same install as an upgrade.
   for path in [DIST/f'EasyMode-v{VERSION}-Core-all.ipk',DIST/f'EasyMode-v{VERSION}-Pc-all.ipk']:
    i,o,e=ssh.exec_command('umask 077; cat > /tmp/'+path.name);i.write(path.read_bytes());i.channel.shutdown_write();check(o.channel.recv_exit_status()==0,'package transfer '+path.name)
