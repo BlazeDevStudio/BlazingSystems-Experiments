@@ -1,0 +1,57 @@
+#!/bin/sh
+# Last-resort cellular recovery. The durable budget survives a router reboot.
+set -eu
+[ ! -e /tmp/blaze-maintenance.lock ] || exit 1
+
+STATE=/etc/blaze/watchdog-reboots
+NOW=$(date +%s)
+UP=$(cut -d. -f1 /proc/uptime)
+case "$NOW:$UP" in *[!0-9:]*|:*|*:) exit 1;; esac
+[ "$NOW" -ge 1704067200 ] || { logger -t BlazeSystems 'Watchdog reboot deferred: router clock is not set.'; exit 1; }
+[ "$UP" -ge 600 ] || { logger -t BlazeSystems 'Watchdog reboot deferred: router has not been up for ten minutes.'; exit 1; }
+[ "$(uci -q get blaze.main.watchdog_reboot_enabled || echo 1)" = 1 ] || exit 1
+[ ! -s /etc/blaze/mode-pending ] && [ ! -e /etc/blaze/wifi-pending ] && [ ! -s /etc/blaze/band-pending ] || exit 1
+
+# Refuse reboot if any independently checked backup uplink is healthy.
+HEALTH=$(cat /tmp/blaze-health.json 2>/dev/null || true)
+for SOURCE in wired wifi; do
+ VALUE=$(printf '%s' "$HEALTH" | jsonfilter -e "@.$SOURCE" 2>/dev/null || true)
+ [ "$VALUE" = true ] && exit 1
+done
+
+mkdir -p /etc/blaze
+umask 077
+RECENT=''
+COUNT=0
+LAST=0
+if [ -f "$STATE" ]; then
+ while IFS= read -r ENTRY; do
+  case "$ENTRY" in ''|*[!0-9]*) continue;; esac
+  if [ "$ENTRY" -le "$NOW" ] && [ $((NOW - ENTRY)) -lt 86400 ]; then
+   RECENT="${RECENT}${ENTRY}
+"
+   COUNT=$((COUNT + 1))
+   LAST=$ENTRY
+  fi
+ done <"$STATE"
+fi
+[ "$COUNT" -lt 2 ] || { logger -t BlazeSystems 'Watchdog reboot blocked: two automatic reboots in 24 hours.'; exit 1; }
+[ "$LAST" -eq 0 ] || [ $((NOW - LAST)) -ge 5400 ] || { logger -t BlazeSystems 'Watchdog reboot cooling down for 90 minutes.'; exit 1; }
+
+# A final independent check avoids rebooting after a transient probe failure.
+DEV=$(ubus call network.interface.wwan_4 status 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null || true)
+[ -n "$DEV" ] || DEV=$(ubus call network.interface.wwan status 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null || true)
+[ -n "$DEV" ] || DEV=eth1
+. /usr/share/blaze/connectivity.sh
+if [ -e "/sys/class/net/$DEV" ] && probe_link "$DEV"; then
+ logger -t BlazeSystems 'Watchdog reboot cancelled: cellular internet recovered on final probe.'
+ exit 1
+fi
+
+printf '%s%s\n' "$RECENT" "$NOW" >"$STATE.new"
+chmod 600 "$STATE.new"
+mv "$STATE.new" "$STATE"
+sync
+logger -t BlazeSystems 'Watchdog reboot: cellular data and radio recovery failed; no backup uplink is healthy.'
+(sleep 3; /sbin/reboot) </dev/null >/dev/null 2>&1 &
+exit 0

@@ -1,4 +1,4 @@
-# EasyMode 7.0 — Traffic Intelligence
+# EasyMode 7.0.2 — Traffic Intelligence
 
 Release candidate under validation. Do not infer production readiness from a filename.
 

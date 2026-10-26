@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+/usr/libexec/blaze-relay-firewall
+if [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" != relay ];then
+ ip rule del pref 0 iif lo lookup 16800 suppress_prefixlength 0 2>/dev/null || true
+ ip rule del pref 1 iif lo lookup main 2>/dev/null || true
+ exit 0
+fi
+J=$(ubus call network.interface.wifiwan status)
+A=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address')
+G=$(printf '%s' "$J" | jsonfilter -e '@.route[@.target="0.0.0.0"].nexthop' | head -1)
+M=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].mask')
+case "$A:$G:$M" in *[!0-9.:]*|::*|*::*) exit 1;;esac
+[ -n "$A" ] && [ -n "$G" ] && [ -n "$M" ] || exit 1
+# relayd requires a distinct management subnet. Abort safely on overlap.
+printf '%s' "$J" | ucode /usr/share/blaze/relay-check.uc || exit 1
+# Preserve relayd's learned host routes, but let router-originated internet and
+# management replies follow the normal policy. The existing local rule stays
+# first at priority 0. Avoid priority 1/table 16800: relayd temporarily owns it.
+ip rule show | grep -q '^0:.*iif lo lookup 16800 suppress_prefixlength 0' || ip rule add pref 0 iif lo lookup 16800 suppress_prefixlength 0
+ip rule show | grep -q '^1:.*iif lo lookup main' || ip rule add pref 1 iif lo lookup main
+if [ "$(uci -q get network.blaze_relay.ipaddr || true)" != "$A" ] || [ "$(uci -q get network.blaze_relay.gateway || true)" != "$G" ];then
+ uci set network.blaze_relay.ipaddr="$A"
+ uci set network.blaze_relay.gateway="$G"
+ uci commit network
+ /etc/init.d/relayd enable
+ /etc/init.d/relayd restart
+fi
+pidof relayd >/dev/null || /etc/init.d/relayd restart
+for N in 1 2 3 4 5;do pidof relayd >/dev/null && exit 0;sleep 1;done
+exit 1

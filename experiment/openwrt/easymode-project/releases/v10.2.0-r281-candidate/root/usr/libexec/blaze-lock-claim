@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+umask 077
+case "$1" in job|message) KIND=$1;; *) exit 2;;esac
+REAP=0
+case "$2" in --reap) REAP=1;; ''|*[!0-9]*) exit 2;;esac
+LOCK=/tmp/blaze-$KIND.lock
+exec 8>/var/lock/blaze-launch.lock
+flock -x 8
+if [ -d "$LOCK" ];then
+ PID=$(cat "$LOCK/pid" 2>/dev/null || true)
+ LIVE=0
+ case "$PID" in ''|*[!0-9]*) ;; *)
+  if kill -0 "$PID" 2>/dev/null;then
+   CMD=$(tr '\000' ' ' <"/proc/$PID/cmdline" 2>/dev/null || true)
+   case "$CMD" in *blaze-job*|*blaze-launch*|*blaze-message-launch*|*blaze/message.uc*) LIVE=1;;esac
+  fi;;esac
+ STAMP=$(ucode -e 'import {stat} from "fs";print(int(stat(ARGV[0]).mtime));' "$LOCK")
+ AGE=$(($(date +%s)-STAMP))
+ if [ "$LIVE" = 1 ] || { [ -z "$PID" ] && [ "$AGE" -lt 10 ]; };then
+  echo 'Another operation is running. Wait for its result.';exit 1
+ fi
+ if [ "$KIND" = message ];then
+  ID=$(cat "$LOCK/id" 2>/dev/null || true)
+  case "$ID" in ''|*[!0-9a-f-]*) ;; *)
+   mkdir -p /tmp/blaze-messages
+   printf '{"id":"%s","pending":false,"ok":false,"message":"The message worker stopped. A send may have reached the network; do not resend automatically."}' "$ID" >/tmp/blaze-messages/"$ID".json
+   cp /tmp/blaze-messages/"$ID".json /tmp/blaze-message.json;;esac
+ fi
+ # Only the fixed private lock directory is removed, under the launch mutex.
+ rm -rf "$LOCK"
+fi
+[ "$REAP" = 0 ] || exit 0
+mkdir "$LOCK"
+printf '%s' "$2" >"$LOCK/pid"

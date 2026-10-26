@@ -1,0 +1,10 @@
+#!/usr/bin/ucode
+import {sin,abs} from 'math';
+import {checked} from '/usr/share/blaze/common.uc';
+let result=checked("/usr/bin/sms_tool -d /dev/ttyACM0 at 'AT+CGSN'");
+let matches=match(result,/(^|[^0-9])([0-9]{15})([^0-9]|$)/g);
+if(length(matches)!=1)die('Cannot derive modem initialization: identity response ambiguous');
+let imei=matches[0][2],a=int(substr(imei,12,3)),b=int(substr(imei,7,5)),v=a+sin(b);
+let first=int(abs(sin(v+2*sin(a*7.3484692283495345+b+0.2332)))*100000000);
+let second=int(abs(sin(v+3*sin(a*7.483314773547883+b+0.2332)))*100000000);
+printf('%08d%08d',first,second);

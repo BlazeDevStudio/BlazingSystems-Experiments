@@ -1,0 +1,10 @@
+#!/bin/sh
+set -u
+
+# Poll through the authenticated local RPC path; the modem lock serializes this
+# read with sends and other modem operations. This keeps archiving independent
+# of whether an administrator has the SMS page open.
+while :; do
+	/usr/bin/ubus call blaze inbox '{}' >/dev/null 2>&1 || true
+	sleep 60
+done

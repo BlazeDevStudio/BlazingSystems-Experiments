@@ -20,7 +20,28 @@ function uniqueWAN(interfaces, overrides, edition) {
  return values(out);
 }
 function appFor(domain) {
- let rules = { 'youtube.com':'YouTube', 'googlevideo.com':'YouTube', 'ytimg.com':'YouTube', 'facebook.com':'Facebook', 'fbcdn.net':'Facebook', 'messenger.com':'Messenger', 'tiktok.com':'TikTok', 'tiktokcdn.com':'TikTok', 'netflix.com':'Netflix', 'nflxvideo.net':'Netflix', 'steampowered.com':'Online gaming', 'steamcontent.com':'Online gaming', 'dropbox.com':'Cloud storage', 'windowsupdate.com':'Software updates', 'update.microsoft.com':'Software updates', 'whatsapp.net':'Messaging and calls', 'signal.org':'Messaging and calls' };
+ // Only brand-specific hostnames are mapped. Shared CDNs remain unknown or
+ // provider-level services; a DNS query never proves that an app was opened.
+ let rules = {
+  'youtube.com':'YouTube','googlevideo.com':'YouTube','ytimg.com':'YouTube',
+  'facebook.com':'Facebook','messenger.com':'Messenger','fbcdn.net':'Meta services',
+  'instagram.com':'Instagram','cdninstagram.com':'Instagram',
+  'tiktok.com':'TikTok','tiktokcdn.com':'TikTok','tiktokv.com':'TikTok',
+  'netflix.com':'Netflix','nflxvideo.net':'Netflix','nflximg.net':'Netflix',
+  'spotify.com':'Spotify','scdn.co':'Spotify',
+  'discord.com':'Discord','discord.gg':'Discord','discordapp.net':'Discord',
+  'whatsapp.com':'WhatsApp','whatsapp.net':'WhatsApp',
+  'telegram.org':'Telegram','t.me':'Telegram',
+  'steampowered.com':'Steam','steamcontent.com':'Steam','steamstatic.com':'Steam',
+  'roblox.com':'Roblox','rbxcdn.com':'Roblox',
+  'epicgames.com':'Epic Games','zoom.us':'Zoom','zoom.com':'Zoom',
+  'teams.microsoft.com':'Microsoft Teams',
+  'twitter.com':'X','x.com':'X','twimg.com':'X',
+  'reddit.com':'Reddit','redd.it':'Reddit',
+  'chatgpt.com':'ChatGPT','openai.com':'OpenAI services','claude.ai':'Claude',
+  'dropbox.com':'Dropbox','signal.org':'Signal',
+  'windowsupdate.com':'Software updates','update.microsoft.com':'Software updates'
+ };
  for (let suffix, app in rules) if (domain == suffix || substr(domain, -length(suffix)-1) == '.'+suffix) return app;
  return 'Unknown applications';
 }
@@ -35,6 +56,7 @@ function observeDNS(old, lines, now, limit) {
   if (r && query && match(r[3],/[.:]/)) {let key=query.client+'|'+lc(r[3]); if(!bindings[key])bindings[key]={domains:{},expires:now+60}; bindings[key].domains[query.domain]=true;}
  }
  // Retain only short-lived associations; repeated lines are never counted as bytes.
+ for(let o in values(observations))o.service=appFor(o.domain);
  for(let key,b in old.bindings || {}) if(b.expires>now) {if(!bindings[key])bindings[key]=b;else for(let d in keys(b.domains))bindings[key].domains[d]=true;}
  let order=sort(keys(observations),(a,b)=>observations[b].last-observations[a].last);
  for(let n=limit;n<length(order);n++)delete observations[order[n]];
@@ -57,7 +79,7 @@ function advance(old, sample, cfg) {
  state.activity=old.activity || {};
  function activity(client,domain,kind,stamp){
   if(!client || domain=='Other/Unknown')return;
-  let key=client+'|'+domain,a=state.activity[key] || {client_id:client,domain,app:appFor(domain),first:stamp,last_dns:0,last_flow:0};
+  let key=client+'|'+domain,a=state.activity[key] || {client_id:client,domain,first:stamp,last_dns:0,last_flow:0};a.app=appFor(domain);
   a[kind]=max(a[kind] || 0,stamp);state.activity[key]=a;
  }
  if(cfg.domains)for(let o in values(sample.dns?.observations || {}))if(o.client_id)activity(o.client_id,o.domain,'last_dns',o.last);
@@ -89,7 +111,7 @@ function advance(old, sample, cfg) {
   let a=cfg.domains?attribution(sample.dns,f.client,f.remote,sample.time):{domain:'Other/Unknown',app:'Unknown applications',confidence:'Domain observation disabled'};
   add(bucket.domains,a.domain,down,up);add(bucket.apps,a.app,down,up);
   if(count>0 && cfg.domains)activity(f.client_id,a.domain,'last_flow',sample.time);
-  if(count>0 && cfg.domains && a.domain!='Other/Unknown') {let info=state.domains[a.domain] || {first:sample.time,clients:{},download:0,upload:0};info.last=sample.time;info.download+=down;info.upload+=up;info.confidence=a.confidence;if(d && (info.clients[d.id] || length(keys(info.clients))<cfg.limit))info.clients[d.id]=true;state.domains[a.domain]=info;}
+  if(count>0 && cfg.domains && a.domain!='Other/Unknown') {let info=state.domains[a.domain] || {first:sample.time,clients:{},download:0,upload:0};info.last=sample.time;info.download+=down;info.upload+=up;info.confidence=a.confidence;info.service=a.app;if(d && (info.clients[d.id] || length(keys(info.clients))<cfg.limit))info.clients[d.id]=true;state.domains[a.domain]=info;}
  }
  let order=sort(keys(state.days),(a,b)=>int(b)-int(a));for(let i=cfg.retention;i<length(order);i++)delete state.days[order[i]];
  for(let key in keys(state.recent))if(int(key)<int(slot)-288)delete state.recent[key];

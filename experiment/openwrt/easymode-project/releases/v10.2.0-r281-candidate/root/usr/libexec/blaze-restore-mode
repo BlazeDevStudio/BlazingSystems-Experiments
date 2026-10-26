@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+for f in network firewall wireless dhcp blaze;do
+ test -s "/etc/blaze/$f-before"
+ cp "/etc/blaze/$f-before" "/etc/config/$f"
+done
+/etc/init.d/network reload
+/etc/init.d/firewall reload
+/etc/init.d/dnsmasq reload
+wifi reload

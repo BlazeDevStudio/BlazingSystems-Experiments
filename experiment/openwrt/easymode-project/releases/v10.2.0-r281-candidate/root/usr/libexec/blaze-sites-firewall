@@ -1,0 +1,3 @@
+#!/bin/sh
+umask 077
+exec flock -x /var/lock/blaze-sites-firewall.lock ucode /usr/share/blaze/sites-firewall.uc

@@ -7,7 +7,8 @@ $archive = Join-Path $env:TEMP ('easymode-' + [guid]::NewGuid().ToString('N') + 
 try {
  $packages = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ipk' -File | Select-Object -ExpandProperty Name)
  if ($packages.Count -ne 2) { throw 'Extract exactly one edition archive into its own directory.' }
- & tar -czf $archive -- @packages install.sh
+ if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'PACKAGE-SHA256SUMS'))) { throw 'Package checksum file is missing.' }
+ & tar -czf $archive -- @packages install.sh PACKAGE-SHA256SUMS
  if ($LASTEXITCODE) { throw 'Could not prepare package archive' }
  & scp -O $archive "root@${Router}:/tmp/easymode-v7.tar.gz"
  if ($LASTEXITCODE) { throw 'SSH transfer failed; no installation attempted' }

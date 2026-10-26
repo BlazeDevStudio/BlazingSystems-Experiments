@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Create the EasyMode 10 R281 source snapshot and reversible app update."""
-import hashlib, json, pathlib, re, shutil, sys
+import hashlib, json, os, pathlib, re, shutil, sys
 from build import tar
 
 BASE = pathlib.Path(__file__).resolve().parents[2]
@@ -9,7 +9,7 @@ OUT = BASE / 'releases/v10.0.0-r281'
 ROOT = OUT / 'root'
 ARCHIVE_DIR = OUT / 'openwrt'
 ARCHIVE = ARCHIVE_DIR / 'EasyMode-v10.0.0-R281-app-update.tar.gz'
-PRIVATE = ['mnbvcxZ123', 'Blaze061200', 'Chaze103017', '09852361361', '639852361361']
+PRIVATE = [value for value in os.environ.get('EASYMODE_PRIVATE_MARKERS', '').splitlines() if value]
 
 INSTALL = r'''#!/bin/sh
 set -eu

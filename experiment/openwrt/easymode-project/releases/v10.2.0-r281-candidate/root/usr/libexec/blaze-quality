@@ -1,0 +1,81 @@
+#!/bin/sh
+# Independent cellular quality samples. All history stays in bounded RAM.
+. /usr/share/libubox/jshn.sh
+umask 077
+
+device() {
+ for IFACE in wwan_4 wwan; do
+  J=$(ubus call "network.interface.$IFACE" status 2>/dev/null || true)
+  D=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null || true)
+  [ -n "$D" ] && ip -4 addr show dev "$D" 2>/dev/null | grep -q 'inet ' && { printf '%s' "$D"; return 0; }
+ done
+ ip -4 addr show dev eth1 2>/dev/null | grep -q 'inet ' && { printf eth1; return 0; }
+ return 1
+}
+sample() {
+ TARGET=$1
+ LOSS=100; AVG=0
+ [ -n "$DEV" ] || return 0
+ OUT=$(timeout 12 ping -I "$DEV" -c 4 -W 2 "$TARGET" 2>&1 || true)
+ FOUND=$(printf '%s\n' "$OUT" | sed -n 's/.* \([0-9][0-9]*\)% packet loss.*/\1/p' | tail -1)
+ case "$FOUND" in ''|*[!0-9]*) ;; *) LOSS=$FOUND;; esac
+ FOUND=$(printf '%s\n' "$OUT" | awk -F'=' '/round-trip min\/avg\/max|rtt min\/avg\/max/ {split($2,a,"/");printf "%.0f",a[2]}' | tail -1)
+ case "$FOUND" in ''|*[!0-9]*) ;; *) AVG=$FOUND;; esac
+}
+while :; do
+ NOW=$(date +%s)
+ DEV=$(device || true)
+ sample 1.1.1.1; LOSS_A=$LOSS; AVG_A=$AVG
+ sample 8.8.8.8; LOSS_B=$LOSS; AVG_B=$AVG
+ HTTP=0
+ if [ -n "$DEV" ]; then
+  CODE=$(curl -4 --interface "$DEV" --noproxy '*' --connect-timeout 3 --max-time 8 --silent -o /dev/null -w '%{http_code}' 'https://www.gstatic.com/generate_204' 2>/dev/null || true)
+  case "$CODE" in 200|204|301|302) HTTP=1;; esac
+ fi
+ if [ "$LOSS_A" -eq 100 ] && [ "$LOSS_B" -eq 100 ] && [ "$HTTP" -eq 0 ]; then QUALITY=offline
+ elif [ "$LOSS_A" -ge 25 ] || [ "$LOSS_B" -ge 25 ] || [ "$AVG_A" -ge 500 ] || [ "$AVG_B" -ge 500 ]; then QUALITY=degraded
+ else QUALITY=good; fi
+ json_init
+ json_add_int time "$NOW"
+ json_add_string source sim
+ json_add_string device "$DEV"
+ json_add_string quality "$QUALITY"
+ json_add_int loss_a "$LOSS_A"
+ json_add_int avg_a_ms "$AVG_A"
+ json_add_int loss_b "$LOSS_B"
+ json_add_int avg_b_ms "$AVG_B"
+ json_add_boolean https "$HTTP"
+ json_dump >/tmp/blaze-quality.json.new && mv /tmp/blaze-quality.json.new /tmp/blaze-quality.json
+ printf '%s,%s,%s,%s,%s,%s\n' "$NOW" "$LOSS_A" "$AVG_A" "$LOSS_B" "$AVG_B" "$HTTP" >>/tmp/blaze-quality.csv
+ if [ "$(wc -l </tmp/blaze-quality.csv)" -gt 720 ]; then
+  tail -720 /tmp/blaze-quality.csv >/tmp/blaze-quality.csv.new && mv /tmp/blaze-quality.csv.new /tmp/blaze-quality.csv
+ fi
+ # Record signal history without another modem query. The radio collector
+ # already publishes this cache; sampling it avoids serial-port contention.
+ RADIO=/tmp/blaze-radio.json
+ if [ -r "$RADIO" ]; then
+  RSRP=$(jsonfilter -i "$RADIO" -e '@.rsrp' 2>/dev/null || true)
+  RSRQ=$(jsonfilter -i "$RADIO" -e '@.rsrq' 2>/dev/null || true)
+  SINR=$(jsonfilter -i "$RADIO" -e '@.sinr' 2>/dev/null || true)
+  RSSI=$(jsonfilter -i "$RADIO" -e '@.rssi' 2>/dev/null || true)
+  case "$RSRP:$RSRQ:$SINR:$RSSI" in *[!0-9:.-]*|:*|*::*) ;; *)
+   printf '%s,%s,%s,%s,%s\n' "$NOW" "$RSRP" "$RSRQ" "$SINR" "$RSSI" >>/tmp/blaze-signal.csv
+   if [ "$(wc -l </tmp/blaze-signal.csv)" -gt 720 ]; then
+    tail -720 /tmp/blaze-signal.csv >/tmp/blaze-signal.csv.new && mv /tmp/blaze-signal.csv.new /tmp/blaze-signal.csv
+   fi
+  ;; esac
+  OPERATOR=$(jsonfilter -i "$RADIO" -e '@.operator' 2>/dev/null | tr -cd 'A-Za-z0-9' || true)
+  MODE=$(jsonfilter -i "$RADIO" -e '@.mode' 2>/dev/null | tr -cd 'A-Za-z0-9+ -' || true)
+  PCI=$(jsonfilter -i "$RADIO" -e '@.carriers[0].pci' 2>/dev/null | tr -cd '0-9' || true)
+  BAND_A=$(jsonfilter -i "$RADIO" -e '@.carriers[0].band' 2>/dev/null | tr -cd '0-9' || true)
+  BAND_B=$(jsonfilter -i "$RADIO" -e '@.carriers[1].band' 2>/dev/null | tr -cd '0-9' || true)
+  CELL="$OPERATOR/$MODE/PCI$PCI/B$BAND_A${BAND_B:+ +B$BAND_B}"
+  PRIOR=$(cat /tmp/blaze-cell-last 2>/dev/null || true)
+  if [ -n "$PRIOR" ] && [ "$CELL" != "$PRIOR" ] && [ -n "$PCI" ]; then
+   printf '%s|cell|%s -> %s\n' "$NOW" "$PRIOR" "$CELL" >>/tmp/blaze-events.log
+   if [ "$(wc -l </tmp/blaze-events.log)" -gt 200 ]; then tail -200 /tmp/blaze-events.log >/tmp/blaze-events.log.new && mv /tmp/blaze-events.log.new /tmp/blaze-events.log; fi
+  fi
+  [ -z "$PCI" ] || printf '%s\n' "$CELL" >/tmp/blaze-cell-last
+ fi
+ sleep 120
+done

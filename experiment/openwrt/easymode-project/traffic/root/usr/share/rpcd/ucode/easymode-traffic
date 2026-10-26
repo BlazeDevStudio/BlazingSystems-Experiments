@@ -1,7 +1,7 @@
 import {readfile,writefile} from 'fs';
 import {cursor} from 'uci';
 import {settings,loadState,readJSON,atomic} from '/usr/share/easymode-traffic/runtime.uc';
-function snapshot(){let s=loadState(),cfg=settings();delete s.previous;delete s.flows;delete s.dns?.bindings;return {version:'7.0.0',config:cfg,fresh:cfg.enabled && time()-int(s.time || 0)<max(90,cfg.interval*3),age_seconds:s.time?time()-s.time:null,data:s,aliases:readJSON('/etc/easymode-traffic/aliases.json',{})};}
+function snapshot(){let s=loadState(),cfg=settings();delete s.previous;delete s.flows;delete s.dns?.bindings;return {version:'7.0.2',config:cfg,fresh:cfg.enabled && time()-int(s.time || 0)<max(90,cfg.interval*3),age_seconds:s.time?time()-s.time:null,data:s,aliases:readJSON('/etc/easymode-traffic/aliases.json',{})};}
 function configure(p){
  if(type(p)!='object')die('Object required');let u=cursor();
  for(let key,value in p){

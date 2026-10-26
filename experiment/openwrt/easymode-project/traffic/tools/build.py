@@ -2,7 +2,7 @@
 """Deterministic interpreted OpenWrt packages. No target binaries are fabricated."""
 import argparse, gzip, hashlib, io, json, pathlib, re, tarfile
 BASE=pathlib.Path(__file__).resolve().parents[2]
-VERSION='7.0.0'
+VERSION='7.0.2'
 EDITIONS=['generic','ap','router','cellular','switch','pc']
 DEPS='ucode, ucode-mod-fs, ucode-mod-uci, ucode-mod-ubus, rpcd, rpcd-mod-ucode, uhttpd-mod-ubus, nftables-json'
 def tar(files):
@@ -30,7 +30,7 @@ def check():
  for name,(data,_) in files.items():
   assert not name.startswith('/') and '..' not in pathlib.PurePosixPath(name).parts
   assert b'\r\n' not in data,name+' must use LF'
-  assert not re.search(rb'(mnbvcxZ123|Blaze061200|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]+)',data),name
+  assert not re.search(rb'(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]+|-----BEGIN (?:OPENSSH |RSA |EC )?PRIVATE KEY-----)',data),name
   if name.endswith('.json'):json.loads(data)
  assert set(EDITIONS)=={p.name for p in (BASE/'editions').iterdir() if p.is_dir()}
  print(f'PASS: {len(files)} payload files, {sum(len(v[0]) for v in files.values())} bytes; paths, JSON, line endings and credential scan')
@@ -51,9 +51,10 @@ exit 0
 '''.encode()
   marker={'usr/share/easymode-traffic/edition-'+edition:(edition.encode(),0o644)}
   other=', '.join('easymode-'+e for e in EDITIONS if e!=edition)
-  data=package('easymode-'+edition,marker,'easymode-traffic (= 7.0.0-1)',f'Provides: easymode-edition\nConflicts: {other}\n',{'postinst':(script,0o755)})
+  data=package('easymode-'+edition,marker,f'easymode-traffic (= {VERSION}-1)',f'Provides: easymode-edition\nConflicts: {other}\n',{'postinst':(script,0o755)})
   name=f'EasyMode-v{VERSION}-{edition.title()}-all.ipk';(out/name).write_bytes(data)
-  bundle={core_name:(core,0o644),name:(data,0o644),'install.sh':((BASE/'traffic/tools/install.sh').read_bytes(),0o755),'README.md':((BASE/'traffic/README.md').read_bytes(),0o644),'Update-EasyMode.ps1':((BASE/'traffic/tools/Update-EasyMode.ps1').read_bytes(),0o644),'Update-EasyMode.bat':(b'@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Update-EasyMode.ps1"\r\npause\r\n',0o644)}
+  sums=f'{hashlib.sha256(core).hexdigest()}  {core_name}\n{hashlib.sha256(data).hexdigest()}  {name}\n'.encode()
+  bundle={core_name:(core,0o644),name:(data,0o644),'PACKAGE-SHA256SUMS':(sums,0o644),'install.sh':((BASE/'traffic/tools/install.sh').read_bytes(),0o755),'README.md':((BASE/'traffic/README.md').read_bytes(),0o644),'Update-EasyMode.ps1':((BASE/'traffic/tools/Update-EasyMode.ps1').read_bytes(),0o644),'Update-EasyMode.bat':(b'@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Update-EasyMode.ps1"\r\npause\r\n',0o644)}
   (out/f'EasyMode-v{VERSION}-{edition.title()}-offline.tar.gz').write_bytes(tar(bundle))
  manifest={'version':VERSION,'package_architecture':'all','format':'OpenWrt opkg IPK','runtime':'OpenWrt 24.10, ucode/rpcd','editions':EDITIONS,'hardware_tests':'R281 OpenWrt 24.10.8 preview installation and live API/browser checks passed; other hardware NOT HARDWARE VERIFIED; see TEST-REPORT.md','files':[]}
  for p in sorted(out.glob('*')):

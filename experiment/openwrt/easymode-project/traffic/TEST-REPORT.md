@@ -1,5 +1,17 @@
 # EasyMode 7.0 validation record
 
+## 2026-10-26 — 7.0.2 attribution and small-screen update
+- The shared backend recognizes additional app-specific domains and uses a neutral Meta-services label for shared `fbcdn` traffic. DNS observations without byte evidence are shown separately; no website/app traffic is fabricated from a hostname alone.
+- On the R281, 39 accounting assertions passed before installation. The Cellular edition reports 7.0.2-1 for both core and edition packages, its service is running, and `wwan_4` remained up. The other five editions were rebuilt and checked offline, not installed on their target hardware.
+- The live 390 px Websites and Apps screens show named-traffic coverage, the latest router DNS lookup, and DNS-only rows. The observed named coverage was 1% of 3.83 GB; encrypted DNS and cached client lookups limit attribution. A ChatGPT DNS-only row and a Facebook estimated-traffic row appeared in the Apps view.
+- OpenWrt reported a pre-existing update-guard permission warning and a package post-install `Command failed: Not found` message. Services subsequently ran, but those warnings and full restore/rollback remain open validation items.
+
+## 2026-10-26 — 7.0.1 navigation and installer update
+- Shared Traffic UI now uses a native view picker at 390 px; the R281 browser switched Overview to Devices and rendered live device data. Wider navigation remains available.
+- All six edition archives were rebuilt with package SHA-256 files and checked for package contents and checksums. The Cellular edition was installed on the R281; both packages report 7.0.1-1, the service is running and the cellular default route stayed active. The other five editions are build-verified only.
+- The installer now requires exactly one edition package in its folder, verifies both package hashes, and backs up settings. During the live install, OpenWrt's backup reported a permission warning for the pre-existing `/etc/init.d/blazepwifi-update-guard`; package installation continued and the backup archive was created. That unrelated guard and rollback restoration have not been repaired or tested here.
+- The old `/traffic/` document remained in browser cache after the package update; the EasyMode link uses `/traffic/?v=7.0.1-mobile2` to request the latest mobile page and assets.
+
 ## 2026-10-19 R281 log audit and EasyMode v10 application profile
 - Read-only capture reviewed current-boot `logread`, `dmesg`, cellular and Wi-Fi interface status, address/route state, health history, services, processes, memory and storage. The R281 was online via SIM at capture: 30,252 KiB MemAvailable and 90,624 KiB overlay free. No modem USB reset/error or memory exhaustion appeared in the captured kernel log.
 - Health history recorded 51 failed probe samples during 16h37 uptime, including a six-sample burst, and two recovery attempts. Current-boot logs did not establish a cell-tower fault or correlate a rotating SIM address with the burst. Historical DHCP renewal losses reacquired the same private address after a brief lease gap.
