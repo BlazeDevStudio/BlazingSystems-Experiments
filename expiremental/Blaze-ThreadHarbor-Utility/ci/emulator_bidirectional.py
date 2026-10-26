@@ -40,8 +40,12 @@ def tap(item):
     adb("shell", "input", "tap", str(x), str(y))
 
 def run():
+    deadline = time.monotonic() + 40
     start = dump()
-    assert nodes(start, text="Tabs: 1"), "Real browser did not open as home"
+    while time.monotonic() < deadline and not nodes(start, text="Tabs: 1"):
+        time.sleep(2)
+        start = dump()
+    assert nodes(start, text="Tabs: 1"), "Real browser did not become ready as home"
     assert nodes(start, text="Bookmarks"), "Browser bookmarks control missing"
     assert nodes(start, text="History"), "Browser history control missing"
     add = nodes(start, text="+ Tab")
