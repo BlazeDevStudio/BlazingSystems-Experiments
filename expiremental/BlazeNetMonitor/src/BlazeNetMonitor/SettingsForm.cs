@@ -166,7 +166,9 @@ internal sealed class SettingsForm : Form
         };
         next.DockInsideTaskbar = next.PlacementMode == WidgetGeometry.InsideTaskbar;
         // Selecting a dock mode anchors it correctly. Freeform retains last position.
-        next.FreeformPositioned = next.PlacementMode == WidgetGeometry.Floating;
+        next.FreeformPositioned = next.PlacementMode == WidgetGeometry.ResolvePlacement(_settings)
+            ? _settings.FreeformPositioned
+            : next.PlacementMode == WidgetGeometry.Floating;
         next.HorizontalOffset = (int)_offset.Value;
         next.ProbeIntervalSeconds = (int)_interval.Value;
         next.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";
