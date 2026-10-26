@@ -10,6 +10,9 @@ internal sealed class InfoForm : Form
     private string _today = "", _month = "", _uptime = "";
     private readonly string[] _targetNames = new string[2];
     private readonly TargetSnapshot[] _targetStates = new TargetSnapshot[2];
+    private IReadOnlyList<AppUsageEntry> _topApps = [];
+    private string _topStatus = "Windows usage history unavailable";
+    private readonly Dictionary<string, Bitmap> _icons = new(StringComparer.OrdinalIgnoreCase);
 
     public InfoForm()
     {
@@ -17,7 +20,7 @@ internal sealed class InfoForm : Form
         ShowInTaskbar = false;
         TopMost = true;
         DoubleBuffered = true;
-        ClientSize = new Size(356, 226);
+        ClientSize = new Size(356, 289);
         AccessibleName = "BlazeNetMonitor network status at a glance";
     }
     protected override bool ShowWithoutActivation => true;
@@ -55,6 +58,46 @@ internal sealed class InfoForm : Form
             _targetStates[i] = snaps[i];
         }
         Invalidate();
+    }
+
+    public void RefreshTopApps(IReadOnlyList<AppUsageEntry> top, string status)
+    {
+        _topApps = top.Take(5).ToArray();
+        _topStatus = status;
+        int desiredHeight = _topApps.Count > 0 ? 408 : 296;
+        if (ClientSize.Height != desiredHeight) ClientSize = new Size(356, desiredHeight);
+        Invalidate();
+    }
+
+    private Bitmap IconFor(AppUsageEntry usage)
+    {
+        var path = usage.ExecutablePath;
+        string key = string.IsNullOrWhiteSpace(path) ? "default" : path;
+        if (_icons.TryGetValue(key, out var bitmap)) return bitmap;
+        Bitmap? result = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(path) &&
+                Path.IsPathFullyQualified(path) &&
+                !path.StartsWith(@"\\", StringComparison.Ordinal) &&
+                File.Exists(path))
+            {
+                using var icon = Icon.ExtractAssociatedIcon(path);
+                result = icon?.ToBitmap();
+            }
+        }
+        catch (Exception) { /* Installed app may be removed or protected. */ }
+        return _icons[key] = result ?? SystemIcons.Application.ToBitmap();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            foreach (var image in _icons.Values) image.Dispose();
+            _icons.Clear();
+        }
+        base.Dispose(disposing);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -97,5 +140,33 @@ internal sealed class InfoForm : Form
         g.DrawLine(border, 12, 183, Width - 12, 183);
         g.DrawString(_today, small, text, new RectangleF(14, 189, Width - 27, 16), fmt);
         g.DrawString(_month, small, muted, new RectangleF(14, 207, Width - 27, 16), fmt);
+
+        g.DrawLine(border, 12, 231, Width - 12, 231);
+        g.DrawString("TOP APPS · SINCE RESTART", title, text,
+            new RectangleF(15, 239, Width - 30, 20), fmt);
+        if (_topApps.Count == 0)
+        {
+            g.DrawString(_topStatus, small, muted,
+                new RectangleF(15, 266, Width - 30, 20), fmt);
+            return;
+        }
+        using var numberAlign = new StringFormat {
+            Alignment = StringAlignment.Far,
+            LineAlignment = StringAlignment.Center,
+            Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.NoWrap
+        };
+        for (int i = 0; i < _topApps.Count; i++)
+        {
+            var app = _topApps[i];
+            int y = 266 + 26 * i;
+            g.DrawImage(IconFor(app), new Rectangle(16, y, 19, 19));
+            g.DrawString(app.AppName, regular, text,
+                new RectangleF(43, y - 1, 189, 22), fmt);
+            g.DrawString(MonitorMath.Bytes(app.TotalBytes), regular, text,
+                new RectangleF(237, y - 1, 102, 22), numberAlign);
+        }
+        g.DrawString("Recorded hours only · newest usage may be delayed",
+            small, muted, new RectangleF(15, 395, Width - 28, 13), fmt);
     }
 }
