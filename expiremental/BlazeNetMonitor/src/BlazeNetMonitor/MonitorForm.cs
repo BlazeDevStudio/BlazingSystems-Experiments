@@ -14,6 +14,12 @@ internal sealed class MonitorForm : Form
     private AppSettings? _settingsBeforeEdit;
     private readonly System.Windows.Forms.Timer _fullscreenTimer = new() { Interval = 750 };
     private readonly System.Windows.Forms.Timer _glancePreviewTimer = new() { Interval = 2300 };
+    // Periodic reassertion is limited to explicitly selected taskbar overlay mode.
+    private readonly System.Windows.Forms.Timer _overlayGuardTimer = new() { Interval = 1900 };
+    private static readonly Color TransparentKeyDark = Color.FromArgb(9, 10, 11);
+    private static readonly Color TransparentKeyLight = Color.FromArgb(250, 251, 252);
+    private bool IsBackgroundless => _data.Settings.TransparentBackground && !_editingGeometry && !Theme.HighContrast;
+    private Color TransparentCanvas => Theme.IsDark ? TransparentKeyDark : TransparentKeyLight;
     private bool _hiddenForFullscreen;
     private readonly NetworkMonitor _network = new();
     private readonly System.Windows.Forms.Timer _trafficTimer = new() { Interval = 1000 };
@@ -107,6 +113,7 @@ internal sealed class MonitorForm : Form
         _probeTimer.Tick += async (_, _) => await ProbeTargets();
         _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
         _fullscreenTimer.Tick += (_, _) => RefreshFullscreenState();
+        _overlayGuardTimer.Tick += (_, _) => PromoteOptionalOverlay();
         _glancePreviewTimer.Tick += (_, _) =>
         {
             _glancePreviewTimer.Stop();
@@ -119,7 +126,8 @@ internal sealed class MonitorForm : Form
         Shown += async (_, _) =>
         {
             RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start();
-            _fullscreenTimer.Start(); await ProbeTargets();
+            _fullscreenTimer.Start(); _overlayGuardTimer.Start();
+            PromoteOptionalOverlay(); await ProbeTargets();
         };
         SystemEventsHook();
     }
@@ -148,7 +156,13 @@ internal sealed class MonitorForm : Form
     private void ApplyAppearance()
     {
         Theme.Apply(_data.Settings);
-        BackColor = Theme.Background;
+        bool backgroundless = IsBackgroundless;
+        var backdrop = backgroundless ? TransparentCanvas : Theme.Background;
+        // A true color-keyed hole in this form, not a semi-transparent rectangle.
+        // During resize editing, backgroundless mode is suspended so handles remain clickable.
+        if (!backgroundless) TransparencyKey = Color.Empty;
+        BackColor = backdrop;
+        if (backgroundless) TransparencyKey = backdrop;
         Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
         _settingsForm?.ApplyEditorTheme();
@@ -319,6 +333,7 @@ internal sealed class MonitorForm : Form
         Bounds = SafeBounds(Bounds, Screen.FromRectangle(Bounds));
         _wasFreeform = _data.Settings.FreeformPositioned;
         _editingGeometry = true;
+        ApplyAppearance();
         _info.Hide();
         _showHover = false;
         _hoverTimer.Stop();
@@ -341,6 +356,7 @@ internal sealed class MonitorForm : Form
         _data.Settings.WidgetWidth = Width;
         _data.Settings.WidgetHeight = Height;
         SaveSafe();
+        ApplyAppearance();
         PromoteOptionalOverlay();
         BuildMenu();
         Invalidate();
@@ -355,6 +371,7 @@ internal sealed class MonitorForm : Form
         _data.Settings.FreeformPositioned = _wasFreeform;
         Bounds = SafeBounds(_editOriginalBounds, Screen.FromRectangle(_editOriginalBounds));
         Cursor = Cursors.Hand;
+        ApplyAppearance();
         BuildMenu();
         Invalidate();
     }
@@ -447,13 +464,60 @@ internal sealed class MonitorForm : Form
             null, (_, _) => { if (_editingGeometry) FinishGeometryEdit(); else BeginGeometryEdit(); });
         if (_editingGeometry) _menu.Items.Add("Cancel resize (Esc)", null, (_, _) => CancelGeometryEdit());
         _menu.Items.Add("Match taskbar height (overlay)", null, (_, _) => FitTaskbarHeight());
+        _menu.Items.Add("Bring widget in front", null, (_, _) => RecoverWidget(false));
+        _menu.Items.Add("Recover above taskbar (safe)", null, (_, _) => RecoverWidget(true));
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("BlazeNetMonitor · Settings", null, (_, _) => EditSettings());
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
         _menu.Items.Add("Reset session totals", null, (_, _) => { _data.Totals.ResetSession(); Invalidate(); SaveSafe(); });
         _menu.Items.Add("Copy status", null, (_, _) => CopyStatus());
+        _menu.Items.Add(_data.Settings.TransparentBackground ? "Disable backgroundless mode" : "Enable backgroundless mode",
+            null, (_, _) =>
+            {
+                _data.Settings.TransparentBackground = !_data.Settings.TransparentBackground;
+                ApplyAppearance();
+                SaveSafe();
+                BuildMenu();
+            });
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("Exit BlazeNetMonitor", null, (_, _) => Close());
+    }
+
+    private void RecoverWidget(bool switchToSafePosition)
+    {
+        if (switchToSafePosition)
+        {
+            _data.Settings.PlacementMode = WidgetGeometry.AboveTaskbar;
+            _data.Settings.DockInsideTaskbar = false;
+            _data.Settings.FreeformPositioned = false;
+        }
+        if (_hiddenForFullscreen && _data.Settings.AutoHideForFullscreen)
+        {
+            // Avoid disrupting a game. Recovery can occur after fullscreen closes.
+            return;
+        }
+        if (_editingGeometry) FinishGeometryEdit();
+        if (!Visible) Show();
+        Reposition();
+        PromoteOptionalOverlay();
+        Invalidate();
+        if (switchToSafePosition) SaveSafe();
+    }
+
+    protected override void WndProc(ref Message msg)
+    {
+        if (msg.Msg != 0 && (uint)msg.Msg == Program.ShowSettingsMessage)
+        {
+            try
+            {
+                using var reply = EventWaitHandle.OpenExisting(Program.RequestAckName);
+                reply.Set();
+            }
+            catch (WaitHandleCannotBeOpenedException) { }
+            BeginInvoke(new Action(EditSettings));
+            return;
+        }
+        base.WndProc(ref msg);
     }
 
     private static Icon MakeIcon()
@@ -789,7 +853,7 @@ internal sealed class MonitorForm : Form
     {
         if (_editingGeometry) CancelGeometryEdit();
         _stop.Cancel();
-        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop(); _glancePreviewTimer.Stop();
+        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop(); _glancePreviewTimer.Stop(); _overlayGuardTimer.Stop();
         if (_settingsForm is { IsDisposed: false }) _settingsForm.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnPreferenceChanged;
