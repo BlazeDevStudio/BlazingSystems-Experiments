@@ -7,7 +7,7 @@ namespace BlazeNetMonitor;
 internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
-    private readonly ComboBox _adapter, _placement, _themeMode, _donationMode;
+    private readonly ComboBox _adapter, _placement, _themeMode;
     private readonly ComboBox _graphStyle, _graphWindow, _graphRefresh, _metricMode, _unitMode;
     private readonly Button _upGraphColor, _downGraphColor;
     private string _upColorValue, _downColorValue;
@@ -279,7 +279,7 @@ internal sealed class SettingsForm : Form
         about.Controls.Add(new Label { Left = 119, Top = 26, Width = 360, Height = 33,
             Text = "BlazeNetMonitor", Font = new Font("Segoe UI Semibold", 18, FontStyle.Bold) });
         about.Controls.Add(new Label { Left = 120, Top = 69, Width = 365, Height = 24,
-            Text = "v0.2.7 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
+            Text = "v0.2.8 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
         about.Controls.Add(new Label { Left = 24, Top = 120, Width = 458, Height = 95,
             Text = "A small, configurable network speed and connection-health monitor. " +
                 "Supports two independent targets, adaptive graphs and local traffic records.\n\n" +
@@ -293,64 +293,36 @@ internal sealed class SettingsForm : Form
             Text = "Support independent development (optional)",
             Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold)
         });
+        // The owner QR is completely visible here; no extra "view full QR"
+        // button or startup-frequency control. Keep the QR image and its
+        // PictureBox the same size to prevent implicit clipping.
+        const int aboutQrSize = 240;
         var qrView = new PictureBox {
-            Left = 24, Top = 296, Width = 154, Height = 154,
-            Image = DonationAssets.CreateQrBitmap(154), BackColor = Color.White,
-            SizeMode = PictureBoxSizeMode.Normal
+            Left = 24, Top = 282, Width = aboutQrSize, Height = aboutQrSize,
+            Image = DonationAssets.CreateQrBitmap(aboutQrSize),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Color.White
         };
         about.Controls.Add(qrView);
         about.Controls.Add(new Label {
-            Left = 198, Top = 297, Width = 283, Height = 57,
-            Text = "This is the official PayPal QR of the BlazeNetMonitor creator. " +
-                "Everyone sees the same donation destination.",
+            Left = 280, Top = 293, Width = 202, Height = 100,
+            Text = "Scan to support the continued development of BlazeNetMonitor. " +
+                   "Any amount is appreciated.\n\n" +
+                   "Recipient:\nLoumer Cabaluna Manreal",
             ForeColor = Theme.Muted
         });
         var openPayPal = new Button {
-            Left = 198, Top = 360, Width = 195, Height = 33,
-            Text = "Open creator's PayPal"
+            Left = 280, Top = 417, Width = 197, Height = 36,
+            Text = "Open PayPal"
         };
         openPayPal.Click += (_, _) => DonationAssets.OpenPayPal(this);
         about.Controls.Add(openPayPal);
-        var showQR = new Button {
-            Left = 198, Top = 403, Width = 195, Height = 32,
-            Text = "Show donation QR card"
-        };
-        showQR.Click += (_, _) =>
-        {
-            var card = new DonationSplashForm(() => { _donationMode.SelectedIndex = 2; });
-            card.FormClosed += (_, _) => card.Dispose();
-            card.Show();
-        };
-        about.Controls.Add(showQR);
-        var donateLabel = new Label {
-            Left = 24, Top = 459, Width = 460, Height = 19,
-            Text = "Startup donation card"
-        };
-        about.Controls.Add(donateLabel);
-        _donationMode = new ComboBox {
-            Left = 24, Top = 482, Width = 438,
-            DropDownStyle = ComboBoxStyle.DropDownList
-        };
-        _donationMode.Items.AddRange([
-            "Every launch (7 seconds)",
-            "First launch only",
-            "Never (About / tray still available)"
-        ]);
-        _donationMode.SelectedIndex = DonationSplashPolicy.Normalize(settings.DonationSplashMode) switch
-        {
-            DonationSplashPolicy.FirstLaunch => 1,
-            DonationSplashPolicy.Never => 2,
-            _ => 0
-        };
-        _donationMode.SelectionChangeCommitted += (_, _) => RaisePreview();
-        about.Controls.Add(_donationMode);
-        about.Controls.Add(new Label { Left = 24, Top = 528, Width = 475, Height = 29,
-            Text = WindowsVersionPolicy.ShellFamily(Environment.OSVersion.Version) switch
-            {
-                "Windows10Classic" => "Windows 10 detected · classic DeskBand integration remains a future feature.",
-                "Windows11OrLater" => "Windows 11+ detected · uses the freeform/taskbar-overlay mode.",
-                _ => "Unrecognized Windows version · conservative freeform/tray fallback."
-            }, ForeColor = Theme.Muted });
+        about.Controls.Add(new Label {
+            Left = 24, Top = 532, Width = 475, Height = 36,
+            Text = "The same official QR is bundled with every copy.\n" +
+                   "You can also reopen it from the system tray menu.",
+            ForeColor = Theme.Muted
+        });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };
         var ok = new Button { Text = "Save", Width = 85, DialogResult = DialogResult.None };
         ok.Click += (_, _) => Save();
@@ -487,11 +459,7 @@ internal sealed class SettingsForm : Form
             1 => "Bits", 2 => "Bytes", _ => "Auto"
         };
         next.ShowFavicons = _showFavicons.Checked;
-        next.DonationSplashMode = _donationMode.SelectedIndex switch {
-            1 => DonationSplashPolicy.FirstLaunch,
-            2 => DonationSplashPolicy.Never,
-            _ => DonationSplashPolicy.EveryLaunch
-        };
+        // Preserve the existing opt-out state; About no longer edits it.
         next.UseBits = next.UnitMode switch
         {
             "Bytes" => false, "Bits" => true, _ => _settings.UseBits

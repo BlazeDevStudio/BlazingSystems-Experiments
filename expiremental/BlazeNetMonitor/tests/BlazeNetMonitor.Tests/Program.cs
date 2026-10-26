@@ -251,4 +251,8 @@ var matrix = DonationSplashPolicy.ModuleMatrix();
 Check(matrix.GetLength(0) == 41 && matrix.GetLength(1) == 41 &&
       matrix[0,0] && matrix[0,6] && matrix[6,0] && matrix[6,6],
       "embedded PayPal QR matrices retain finder boundaries");
+Check(DonationSplashPolicy.ModuleMatrix().GetLength(0) == DonationSplashPolicy.QrModules,
+      "QR matrix dimensions preserved for exact-size scan view");
+Check(DonationSplashPolicy.OwnerPayPalUrl.StartsWith("https://www.paypal.com/qrcodes/", StringComparison.Ordinal),
+      "official PayPal destination retained after UX changes");
 Console.WriteLine($"RESULT {passed} tests passed");

@@ -15,7 +15,10 @@ internal static class DonationAssets
 
     public static Bitmap CreateQrBitmap(int size)
     {
-        size = Math.Clamp(size, 200, 900);
+        // Render at the caller's exact pixel dimensions. A previous 200px
+        // lower bound silently created a 200x200 image in a 154x154
+        // PictureBox (Normal mode), clipping the right and bottom QR modules.
+        size = Math.Clamp(size, 96, 900);
         var bitmap = new Bitmap(size, size);
         using var g = Graphics.FromImage(bitmap);
         g.Clear(Color.White);

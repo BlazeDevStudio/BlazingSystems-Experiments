@@ -8,12 +8,12 @@ namespace BlazeNetMonitor;
 /// </summary>
 internal sealed class DonationSplashForm : Form
 {
-    private readonly System.Windows.Forms.Timer _timer = new() { Interval = 70 };
+    private readonly System.Windows.Forms.Timer _timer = new() { Interval = 100 };
     private readonly CheckBox _dontShow;
     private readonly Action _disable;
     private readonly PictureBox _qr;
     private long _startMs;
-    private const int DisplayMs = 7000;
+    private const int DisplayMs = 11000;
 
     public DonationSplashForm(Action disable)
     {
@@ -44,9 +44,11 @@ internal sealed class DonationSplashForm : Form
         });
 
         _qr = new PictureBox { Left = 69, Top = 93, Size = new Size(352, 352),
-            SizeMode = PictureBoxSizeMode.Normal, Image = DonationAssets.CreateQrBitmap(352),
+            SizeMode = PictureBoxSizeMode.Zoom, Image = DonationAssets.CreateQrBitmap(352),
             BackColor = Color.White };
         Controls.Add(_qr);
+        // Maintain white high-contrast QR surface regardless of application theme.
+        _qr.Visible = true;
 
         Controls.Add(new Label {
             Text = "Your support helps keep this free project improving.",
@@ -71,19 +73,22 @@ internal sealed class DonationSplashForm : Form
         Controls.AddRange([dismiss, donate]);
         AcceptButton = donate;
         CancelButton = dismiss;
+        // Keep the entire window fully opaque throughout the scan period.
+        // The earlier opacity animation could leave the donation card visually
+        // washed out, particularly when the owner QR is first painted or when
+        // the UI thread misses a 70ms tick under startup load.
+        Opacity = 1d;
         _timer.Tick += (_, _) =>
         {
-            long elapsed = Environment.TickCount64 - _startMs;
-            if (elapsed < 230)
-                Opacity = Math.Clamp(elapsed / 230d, 0.05, 1);
-            else if (elapsed > DisplayMs - 360)
-                Opacity = Math.Clamp((DisplayMs - elapsed) / 360d, 0.02, 1);
-            if (elapsed >= DisplayMs) Close();
+            if (Environment.TickCount64 - _startMs >= DisplayMs)
+                Close();
         };
         Shown += (_, _) =>
         {
+            Opacity = 1d;
+            _qr.BringToFront();
+            _qr.Refresh();
             _startMs = Environment.TickCount64;
-            Opacity = Theme.HighContrast ? 1 : 0.08;
             _timer.Start();
         };
         FormClosed += (_, _) =>
