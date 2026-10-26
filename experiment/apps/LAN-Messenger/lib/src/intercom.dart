@@ -67,29 +67,63 @@ class Intercom {
 
   Future<void> sendRemoteClick(double x, double y) async {
     final peer = talkingTo;
-    if (!remoteControlActive || !peerSharingScreen ||
-        peer == null || callId == null ||
-        !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
-    await node.signal(peer, {
-      'type': 'control-click', 'callId': callId, 'x': x, 'y': y,
-    });
+    final id = callId;
+    if (!remoteControlActive || !peerSharingScreen || peer == null ||
+        id == null || !x.isFinite || !y.isFinite ||
+        x < 0 || x > 1 || y < 0 || y > 1) return;
+    try {
+      // Keep the older control-click envelope for mixed preview versions.
+      await node.signal(peer, {
+        'type': 'control-click', 'callId': id, 'x': x, 'y': y,
+      });
+    } catch (e) {
+      unawaited(_log('legacy remote click delivery failed: ${e.runtimeType}'));
+    }
   }
 
   /// Allowed input events are session-bound and checked by the receiving host.
+  DateTime? _lastOutgoingMove;
+  bool _outgoingMovePending = false;
+
   Future<void> sendRemoteInput(String action, double x, double y, [int wheel = 0]) async {
     final peer = talkingTo;
+    final id = callId;
     const allowed = {'move', 'down', 'up', 'click', 'right', 'middle', 'scroll'};
     if (!remoteControlActive || !peerSharingScreen || peer == null ||
-        callId == null || !allowed.contains(action) ||
+        id == null || !allowed.contains(action) ||
         !x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) return;
-    await node.signal(peer, {
-      'type': 'control-input', 'callId': callId,
-      'action': action, 'x': x, 'y': y,
-      'wheel': wheel.clamp(-120, 120),
-    });
+    // Pointer moves are high frequency. Avoid piling up HTTP requests when
+    // the remote host is busy, but NEVER drop mouse-button releases.
+    final motion = action == 'move' || action == 'scroll';
+    final now = DateTime.now();
+    if (motion && (_outgoingMovePending ||
+        (_lastOutgoingMove != null &&
+         now.difference(_lastOutgoingMove!) <
+             const Duration(milliseconds: 45)))) return;
+    if (motion) {
+      _lastOutgoingMove = now;
+      _outgoingMovePending = true;
+    }
+    try {
+      await node.signal(peer, {
+        'type': 'control-input', 'callId': id,
+        'action': action, 'x': x, 'y': y,
+        'wheel': wheel.clamp(-120, 120),
+      });
+    } catch (e) {
+      // RemoteControlSurface invokes this from an unawaited pointer callback.
+      // A refused/late network request must NEVER become an uncaught error
+      // that terminates an active call or its Flutter process.
+      unawaited(_log('remote input delivery failed: ${e.runtimeType}'));
+    } finally {
+      if (motion) _outgoingMovePending = false;
+    }
   }
 
   MediaStream? _displayStream;
+  MediaStream? _remoteFallbackStream;
+  bool _remoteHasNativeStream = false;
+  bool _remoteVideoFrameObserved = false;
   List<MediaDeviceInfo> availableCameras = <MediaDeviceInfo>[];
   int activeCameraIndex = 0;
   bool get canSwitchCamera => video && !sharingScreen &&
@@ -316,7 +350,18 @@ class Intercom {
       // Frame sizes change when the remote phone rotates or shares a screen.
       // Rebuild the AspectRatio on actual decoded-frame resize, not just
       // the local device OrientationBuilder callback.
-      remoteRenderer!.onResize = () => onChanged?.call();
+      _remoteVideoFrameObserved = false;
+      remoteRenderer!.onResize = () {
+        if (callId != id || _closing) return;
+        if (!_remoteVideoFrameObserved &&
+            (remoteRenderer?.videoWidth ?? 0) > 0 &&
+            (remoteRenderer?.videoHeight ?? 0) > 0) {
+          _remoteVideoFrameObserved = true;
+          print('LAN_CALL_TRACE remote_video_frame_decoded');
+          unawaited(_log('decoded first remote video frame'));
+        }
+        onChanged?.call();
+      };
       localRenderer!.srcObject = stream;
     }
     final pc = await createPeerConnection({
@@ -336,12 +381,41 @@ class Intercom {
           'candidate': candidate.candidate, 'mid': candidate.sdpMid,
           'mLine': candidate.sdpMLineIndex}).catchError((_) {}));
     };
+    _remoteHasNativeStream = false;
+    pc.onAddStream = (remote) {
+      if (callId != id || _closing || !video ||
+          remote.getVideoTracks().isEmpty) return;
+      _remoteHasNativeStream = true;
+      remoteRenderer?.srcObject = remote;
+      unawaited(_log('remote video attached via onAddStream'));
+      onChanged?.call();
+    };
     pc.onTrack = (event) {
-      if (callId != id || _closing || !video) return;
-      if (event.track.kind == 'video' && event.streams.isNotEmpty) {
+      if (callId != id || _closing || !video ||
+          event.track.kind != 'video') return;
+      if (event.streams.isNotEmpty) {
+        _remoteHasNativeStream = true;
         remoteRenderer?.srcObject = event.streams.first;
+        unawaited(_log('remote video attached via onTrack'));
         onChanged?.call();
+        return;
       }
+      // Unified Plan peers can supply a streamless video track. Older code
+      // ignored it entirely, leaving a connected call with a blank feed.
+      unawaited(() async {
+        try {
+          final fallback = _remoteFallbackStream ??
+              await createLocalMediaStream('lan-received-video-$id');
+          _remoteFallbackStream = fallback;
+          await fallback.addTrack(event.track);
+          if (callId != id || _closing || _remoteHasNativeStream) return;
+          remoteRenderer?.srcObject = fallback;
+          unawaited(_log('remote streamless video track attached'));
+          onChanged?.call();
+        } catch (e) {
+          unawaited(_log('remote video attachment failed: ${e.runtimeType}'));
+        }
+      }());
     };
     pc.onConnectionState = (state) {
       if (callId != id || _closing) return;
@@ -628,6 +702,12 @@ class Intercom {
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
+    final fallback = _remoteFallbackStream;
+    _remoteFallbackStream = null;
+    _remoteHasNativeStream = false;
+    _remoteVideoFrameObserved = false;
+    _lastOutgoingMove = null;
+    _outgoingMovePending = false;
     _connection = null;
     _localStream = null;
     localRenderer = null;
@@ -662,6 +742,7 @@ class Intercom {
         pc.onIceCandidate = null;
         pc.onConnectionState = null;
         pc.onTrack = null;
+        pc.onAddStream = null;
         try { await pc.close().timeout(const Duration(seconds: 5)); }
         catch (e) { await _log('peer close error: $e'); }
         try { await pc.dispose().timeout(const Duration(seconds: 5)); }
@@ -691,6 +772,10 @@ class Intercom {
     catch (e) { await _log('local renderer dispose error: $e'); }
     try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
     catch (e) { await _log('remote renderer dispose error: $e'); }
+    if (fallback != null) {
+      try { await fallback.dispose(); }
+      catch (e) { await _log('streamless remote media cleanup error: $e'); }
+    }
     _closing = false;
     // The UI previously re-enabled Call as soon as talkingTo became null,
     // despite pending asynchronous native WebRTC disposal. Repaint only after

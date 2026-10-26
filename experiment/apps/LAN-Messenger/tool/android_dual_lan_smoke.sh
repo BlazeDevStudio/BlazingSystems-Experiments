@@ -16,7 +16,7 @@ if [[ ! -x "$AVD_MANAGER" ]]; then AVD_MANAGER="$(command -v avdmanager)"; fi
 if [[ ! -x "$AVD_MANAGER" ]]; then echo "avdmanager unavailable"; exit 1; fi
 echo no | "$AVD_MANAGER" create avd -n lan_peer2 -k 'system-images;android-35;google_apis;x86_64' --device pixel_2 --force
 "$EMULATOR" -avd lan_peer2 -port 5556 -no-window -gpu swiftshader_indirect \
-  -no-snapshot -no-boot-anim >"$OUT/emulator-peer2.log" 2>&1 &
+  -no-snapshot -no-boot-anim -camera-front emulated >"$OUT/emulator-peer2.log" 2>&1 &
 SECOND_PID=$!
 cleanup() {
   kill "$SECOND_PID" 2>/dev/null || true
@@ -46,6 +46,10 @@ for serial in emulator-5554 emulator-5556; do
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.POST_NOTIFICATIONS || true
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.RECORD_AUDIO || true
   adb -s "$serial" shell pm grant com.example.lan_messenger android.permission.CAMERA || true
+  adb -s "$serial" shell appops set com.example.lan_messenger PICTURE_IN_PICTURE allow || true
+  # Exercise the duplicate-overlay bug with native draw-over-apps explicitly
+  # granted on disposable test emulators (not the user's phone).
+  adb -s "$serial" shell appops set com.example.lan_messenger SYSTEM_ALERT_WINDOW allow || true
   # The app requests opt-in background service battery exemption on startup.
   # First-run Android Settings can steal focus and hide the peer list entirely.
   # Grant the exemption in this disposable emulator, not in production builds.

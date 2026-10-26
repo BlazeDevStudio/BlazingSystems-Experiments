@@ -120,6 +120,8 @@ class MainActivity : FlutterActivity() {
     private var lastIncoming = false
     private var pendingAnswer: String? = null
     private var answerDispatching = false
+    private var pipEnabledForCall = false
+    private var incomingNotificationPosted = false
 
     private fun overlay(): AndroidCallOverlay =
         incomingOverlay ?: AndroidCallOverlay(this) { action, id ->
@@ -138,11 +140,20 @@ class MainActivity : FlutterActivity() {
         val caller = lastCaller
         if (activityForeground ||
             (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) ||
+            // The system's Answer/Decline notification is sufficient; never
+            // stack our own floating call banner underneath it.
+            (lastIncoming && incomingNotificationPosted) ||
             id == null || caller == null) {
             incomingOverlay?.dismiss()
             return
         }
         overlay().show(caller, id, lastVideo, lastIncoming, lastMuted)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        activityForeground = true
+        incomingOverlay?.dismiss()
     }
 
     override fun onResume() {
@@ -154,18 +165,24 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
-        activityForeground = false
+        // Pause can occur for OS permissions, the shade, or transient system
+        // overlays while Messenger remains visible. Do not show another HUD.
         super.onPause()
-        window?.decorView?.post {
-            if (!activityForeground) {
-                val id = lastCallId
-                val caller = lastCaller
-                if (lastIncoming && id != null && caller != null) {
-                    showIncomingCall(caller, id, lastVideo)
-                }
-                updateOverlay()
-            }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        activityForeground = false
+        if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
+            incomingOverlay?.dismiss()
+            return
         }
+        val id = lastCallId
+        val caller = lastCaller
+        if (lastIncoming && id != null && caller != null) {
+            showIncomingCall(caller, id, lastVideo)
+        }
+        updateOverlay()
     }
     private val notifications by lazy {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -303,8 +320,13 @@ class MainActivity : FlutterActivity() {
         if (callId.isEmpty() || caller.isBlank()) return false
         lastCaller = caller; lastCallId = callId
         lastVideo = video; lastMuted = false; lastIncoming = true
-        if (activityForeground) return false // Flutter shows the in-app buttons.
+        if (activityForeground) {
+            incomingNotificationPosted = false
+            incomingOverlay?.dismiss()
+            return false // Flutter shows the in-app buttons.
+        }
         if (!canNotify()) {
+            incomingNotificationPosted = false
             updateOverlay()
             return false
         }
@@ -366,6 +388,7 @@ class MainActivity : FlutterActivity() {
                 Log.e("LANCallTrace", "incoming notification fallback failed: ${fallbackError.message}")
             }
         }
+        incomingNotificationPosted = posted
         updateOverlay()
         return posted
     }
@@ -413,6 +436,21 @@ class MainActivity : FlutterActivity() {
         notifications.notify(7024, b.build())
         lastCaller = caller; lastCallId = callId
         lastVideo = video; lastMuted = muted; lastIncoming = false
+        incomingNotificationPosted = false
+        pipEnabledForCall = video
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                // Android 12+ moves the actual video Activity into system PiP
+                // when Home is used. No TYPE_APPLICATION_OVERLAY substitute.
+                setPictureInPictureParams(PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setActions(pictureActions(callId))
+                    .setAutoEnterEnabled(video)
+                    .build())
+            } catch (e: Exception) {
+                Log.w("LANCallTrace", "could not configure automatic PiP: ${e.message}")
+            }
+        }
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
             try {
                 setPictureInPictureParams(PictureInPictureParams.Builder()
@@ -439,20 +477,38 @@ class MainActivity : FlutterActivity() {
 
     private fun enterCallPictureInPicture(id: String): Boolean {
         if (Build.VERSION.SDK_INT < 26 || id.isEmpty() ||
-            id != lastCallId || !activityForeground ||
-            !packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
+            id != lastCallId || !activityForeground || !pipEnabledForCall) {
+            Log.w("LANCallTrace", "PiP rejected: no foreground connected video call")
             return false
+        }
         return try {
-            enterPictureInPictureMode(PictureInPictureParams.Builder()
+            val params = PictureInPictureParams.Builder()
                 .setAspectRatio(Rational(16, 9))
-                .setActions(pictureActions(id)).build())
-        } catch (_: Exception) { false }
+                .setActions(pictureActions(id)).build()
+            val entered = enterPictureInPictureMode(params)
+            if (!entered) Log.w("LANCallTrace", "System refused PiP transition")
+            entered
+        } catch (e: Exception) {
+            Log.w("LANCallTrace", "PiP transition rejected: ${e.message}")
+            false
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Android 8-11 does not support setAutoEnterEnabled.
+        if (Build.VERSION.SDK_INT in 26..30 && pipEnabledForCall &&
+            lastVideo && !lastIncoming && lastCallId != null) {
+            enterCallPictureInPicture(lastCallId!!)
+        }
     }
 
     override fun onPictureInPictureModeChanged(
         inPip: Boolean, configuration: Configuration
     ) {
         super.onPictureInPictureModeChanged(inPip, configuration)
+        Log.i("LANCallTrace", "pip_state_changed active=$inPip")
+        incomingOverlay?.dismiss()
         callBridge?.invokeMethod("pipState", mapOf("active" to inPip))
     }
 
@@ -492,6 +548,7 @@ class MainActivity : FlutterActivity() {
                         if (lastIncoming) {
                             lastCallId = null; lastCaller = null
                             pendingAnswer = null
+                            incomingNotificationPosted = false
                             incomingOverlay?.dismiss()
                             notifications.cancel(7024)
                         }
@@ -501,6 +558,14 @@ class MainActivity : FlutterActivity() {
                         notifications.cancel(7024)
                         lastCallId = null; lastCaller = null
                         lastIncoming = false; pendingAnswer = null
+                        pipEnabledForCall = false
+                        incomingNotificationPosted = false
+                        if (Build.VERSION.SDK_INT >= 31) {
+                            try {
+                                setPictureInPictureParams(PictureInPictureParams.Builder()
+                                    .setAutoEnterEnabled(false).build())
+                            } catch (_: Exception) { }
+                        }
                         incomingOverlay?.dismiss()
                         result.success(null)
                     }

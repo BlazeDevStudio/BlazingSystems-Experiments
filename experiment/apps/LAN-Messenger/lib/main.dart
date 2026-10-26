@@ -81,7 +81,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _nativeIncomingAvailable = false;
   bool _inForeground = true;
   bool _androidInPip = false;
-  String? _autoPipCallId;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   bool _pendingCallPresentation = false;
@@ -134,11 +133,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (action == 'answer' || action == 'decline') {
       if (!_incomingDialogOpen || _incomingAnswer?.isCompleted != false) {
         return false; // Stale or duplicate notification tap.
-      }
-      if (action == 'answer' && data['wasBackground'] == true &&
-          intercom?.video == true) {
-        // Audio-only calls must not accidentally launch a blank video PiP.
-        _autoPipCallId = id;
       }
       _resolveIncomingDialog(action == 'answer');
       return true; // Native may now safely acknowledge/clear this Answer.
@@ -323,7 +317,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!Platform.isAndroid || !mounted) return;
-    final foreground = state == AppLifecycleState.resumed;
+    // Temporary loss of focus (notification shade/permission dialog) does
+    // not mean the app is offscreen; don't open a duplicate native overlay.
+    final foreground = state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
     if (_inForeground != foreground) {
       setState(() => _inForeground = foreground);
     }
@@ -422,7 +419,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       final ok = await _notifications.invokeMethod<bool>('enterPip',
           {'callId': call!.callId});
-      if (ok != true) _toast('Video PiP unavailable. Check Android picture-in-picture settings.');
+      if (ok != true) _toast('Android could not start PiP for this video call. '
+          'Return to the active call and try again.');
     } catch (e) { _toast('Could not float video: $e'); }
   }
 
@@ -433,7 +431,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _endCallPresentation() async {
-    _autoPipCallId = null;
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
@@ -589,19 +586,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   !inter.connecting) {
                 await _showOngoingCall(peer, sessionId, inter.video);
                 if (Platform.isWindows) await _showActiveTrayMenu(peer);
-                if (Platform.isAndroid && inter.video &&
-                    _autoPipCallId == sessionId && _inForeground &&
-                    mounted && inter.callId == sessionId) {
-                  // The native ongoing CallStyle state must exist BEFORE PiP
-                  // uses lastCallId. Otherwise a fast Answer can race setup.
-                  _autoPipCallId = null;
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && inter.callId == sessionId &&
-                        !inter.connecting && _inForeground) {
-                      unawaited(_enterPipVideo());
-                    }
-                  });
-                }
               }
             } catch (e) {
               if (mounted) setState(() =>
@@ -840,14 +824,32 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows) return;
     if ((intercom?.talkingTo != null || groupCall?.active == true ||
         _incomingDialogOpen || settings.minimizeToTray) && !_exitRequested) {
-      unawaited(wm.windowManager.hide().then((_) => _syncDesktopCallSurface()));
+      unawaited(() async {
+        try {
+          await wm.windowManager.hide();
+          await _syncDesktopCallSurface();
+        } catch (e) {
+          // Native window transitions can race media capture/remote mouse
+          // events. Do not allow an unhandled Future to terminate the app.
+          if (mounted) setState(() => error = 'Window could not minimize: $e');
+        }
+      }());
     } else {
-      unawaited(_exitWindows());
+      unawaited(_exitWindows().catchError((Object e) {
+        if (mounted) setState(() => error = 'Exit action failed: $e');
+      }));
     }
   }
 
   Future<void> _exitWindows() async {
     if (_exitRequested) return;
+    // A remote controller can physically click the host's tray or window.
+    // Never let an approved remote session terminate the sharing host.
+    // The OWNER can revoke control or end the call before exiting.
+    if (intercom?.remoteControlApproved == true) {
+      _toast('Revoke remote control or end the call before exiting.');
+      return;
+    }
     _exitRequested = true;
     await wm.windowManager.setPreventClose(false);
     await wm.windowManager.close();
@@ -855,10 +857,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   void _openWindow() {
     unawaited(() async {
-      await wm.windowManager.show();
-      await wm.windowManager.restore();
-      await wm.windowManager.focus();
-      await _syncDesktopCallSurface();
+      try {
+        await wm.windowManager.show();
+        await wm.windowManager.restore();
+        await wm.windowManager.focus();
+        await _syncDesktopCallSurface();
+      } catch (e) {
+        if (mounted) setState(() => error = 'Could not restore app window: $e');
+      }
     }());
   }
 
@@ -1260,6 +1266,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       const Expanded(child: Text('LAN Messenger',
           maxLines: 1, overflow: TextOverflow.ellipsis,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white))),
+      if (Platform.isAndroid && intercom?.talkingTo != null && _callMinimized)
+        IconButton(
+          tooltip: 'Return to active call',
+          icon: const Icon(Icons.call, color: Colors.white, size: 22),
+          onPressed: () => setState(() => _callMinimized = false)),
       IconButton(icon: const Icon(Icons.folder_outlined, color: Colors.white, size: 21),
           tooltip: 'Received files', onPressed: _viewReceived),
       IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 21),
@@ -1790,14 +1801,26 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 mode: _controlMode,
                 sourceRatio: sourceRatio,
                 onInput: (action, x, y, wheel) =>
-                    unawaited(call.sendRemoteInput(action, x, y, wheel)),
+                    unawaited(call.sendRemoteInput(action, x, y, wheel)
+                        .catchError((Object _) {
+                      // No pointer event may propagate an unhandled Future.
+                    })),
                 child: Center(child: AspectRatio(
                   aspectRatio: sourceRatio,
-                  child: call.remoteRenderer != null
-                      ? RTCVideoView(call.remoteRenderer!,
-                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
-                      : const Center(child: Icon(Icons.videocam,
-                          color: Colors.white54, size: 70)))))),
+                  child: Stack(fit: StackFit.expand, children: [
+                    if (call.remoteRenderer != null)
+                      RTCVideoView(call.remoteRenderer!,
+                          objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+                    if (remoteWidth == 0 || remoteHeight == 0)
+                      const Center(child: Column(
+                        mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.videocam_off_outlined,
+                              color: Colors.white70, size: 50),
+                          SizedBox(height: 8),
+                          Text('Waiting for remote video frames…',
+                              style: TextStyle(color: Colors.white70)),
+                        ])),
+                  ]))))),
               if (call.localRenderer != null)
                 Positioned(
                   left: _videoPosition.dx.clamp(0.0,
@@ -1926,7 +1949,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen &&
         (Platform.isWindows || _inForeground))
-      _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
+      _callMinimized
+          ? (Platform.isWindows ? _miniCall() : const SizedBox.shrink())
+          : Positioned.fill(child: _activeCall()),
   ]));
 
   @override
