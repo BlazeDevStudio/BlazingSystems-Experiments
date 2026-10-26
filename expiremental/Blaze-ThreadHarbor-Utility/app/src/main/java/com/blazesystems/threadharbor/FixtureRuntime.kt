@@ -3,6 +3,7 @@ package com.blazesystems.threadharbor
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -35,6 +36,10 @@ class FixtureRuntime(context: Context) {
 
     @SuppressLint("SetJavaScriptEnabled")
     val webView = WebView(context).apply {
+        // The diagnostics-only hidden page must not steal IME or accessibility focus.
+        isFocusable = false
+        isFocusableInTouchMode = false
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = false
         settings.allowFileAccess = false
@@ -45,6 +50,7 @@ class FixtureRuntime(context: Context) {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                 request.url.toString() != fixtureUrl
             override fun onPageFinished(view: WebView, url: String) {
+                view.clearFocus()
                 status = if (url == fixtureUrl) "Fixture loaded" else "Fixture navigation blocked"
             }
         }
