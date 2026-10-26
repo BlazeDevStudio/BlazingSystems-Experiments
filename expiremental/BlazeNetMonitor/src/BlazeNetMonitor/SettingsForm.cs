@@ -25,6 +25,8 @@ internal sealed class SettingsForm : Form
     private readonly TextBox[] _names = new TextBox[2], _addresses = new TextBox[2];
     private readonly ComboBox[] _protocols = new ComboBox[2];
     private readonly NumericUpDown[] _ports = new NumericUpDown[2];
+    private readonly Dictionary<TargetProtocol, string>[] _targetDrafts = [new(), new()];
+    private readonly TargetProtocol[] _lastProtocols = new TargetProtocol[2];
     private readonly List<NetworkInterface> _adapters = [];
     private readonly CheckBox _includeVirtual;
     private readonly Label[] _addressLabels = new Label[2], _portLabels = new Label[2], _targetExamples = new Label[2];
@@ -41,7 +43,22 @@ internal sealed class SettingsForm : Form
         MaximizeBox = false;
         ClientSize = new Size(545, 585);
         // Rebuild only on explicit expand; disconnected physical NICs stay visible.
-        var tabs = new TabControl { Dock = DockStyle.Fill };
+        var tabs = new TabControl { Dock = DockStyle.Fill, DrawMode = TabDrawMode.OwnerDrawFixed,
+            SizeMode = TabSizeMode.Normal, ItemSize = new Size(76, 32) };
+        tabs.DrawItem += (_, e) =>
+        {
+            var active = e.Index == tabs.SelectedIndex;
+            var rect = tabs.GetTabRect(e.Index);
+            using var background = new SolidBrush(active ? Theme.Panel : Theme.Background);
+            using var foreground = new SolidBrush(active ? Theme.Text : Theme.Muted);
+            e.Graphics.FillRectangle(background, rect);
+            TextRenderer.DrawText(e.Graphics, tabs.TabPages[e.Index].Text,
+                Font, rect, active ? Theme.Text : Theme.Muted,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            if (active)
+                using (var accent = new SolidBrush(Branding.BlazeBlue))
+                    e.Graphics.FillRectangle(accent, rect.Left + 4, rect.Bottom - 3, rect.Width - 8, 3);
+        };
         var general = new TabPage("General") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var targets = new TabPage("Health targets") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var appearance = new TabPage("Appearance") { BackColor = Theme.Panel, ForeColor = Theme.Text };
@@ -225,6 +242,8 @@ internal sealed class SettingsForm : Form
             };
             _protocols[i].Items.AddRange(Enum.GetNames<TargetProtocol>());
             _protocols[i].SelectedItem = target.Protocol.ToString();
+            _lastProtocols[i] = target.Protocol;
+            _targetDrafts[i][target.Protocol] = target.Address;
             _addressLabels[i] = LabelAt(targets, "Address", y + 70);
             _addresses[i] = new TextBox
             {
@@ -245,7 +264,7 @@ internal sealed class SettingsForm : Form
                 _names[i], _protocols[i], _addresses[i],
                 _portLabels[i], _ports[i], _targetExamples[i]
             ]);
-            _protocols[i].SelectionChangeCommitted += (_, _) => RefreshTargetUi(index);
+            _protocols[i].SelectionChangeCommitted += (_, _) => SwitchTargetProtocol(index);
             RefreshTargetUi(i);
             if (i == 0)
                 targets.Controls.Add(new Label
@@ -356,6 +375,22 @@ internal sealed class SettingsForm : Form
         }
         _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == requestedId) + 1);
         _adapter.EndUpdate();
+    }
+
+    private void SwitchTargetProtocol(int index)
+    {
+        if (_protocols[index].SelectedItem is null) return;
+        var next = Enum.Parse<TargetProtocol>(_protocols[index].SelectedItem!.ToString()!);
+        var previous = _lastProtocols[index];
+        _targetDrafts[index][previous] = _addresses[index].Text;
+        if (previous != next)
+        {
+            // A new protocol starts empty to reveal the gray example.
+            // Switching back restores the previous draft, never losing user input.
+            _addresses[index].Text = _targetDrafts[index].TryGetValue(next, out var draft) ? draft : "";
+            _lastProtocols[index] = next;
+        }
+        RefreshTargetUi(index);
     }
 
     private void RefreshTargetUi(int index)
