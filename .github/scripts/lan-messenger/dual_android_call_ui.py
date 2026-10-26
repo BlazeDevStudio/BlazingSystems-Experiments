@@ -129,6 +129,38 @@ def tap_label(serial, stage, criterion, timeout_seconds=35):
     raise RuntimeError(f"{stage}: expected interactive UI action absent")
 
 
+def tap_notification_answer(serial, stage, timeout_seconds=32):
+    """Expand a collapsed Android notification group, then tap REAL Answer.
+
+    Emulator 35 can group "LAN Messenger is ready" with the CallStyle alert.
+    A collapsed group shows an "Expand" node but hides its child actions.
+    Never invent an Answer or issue an intent in place of a user tap.
+    """
+    deadline = time.monotonic() + timeout_seconds
+    expanded_once = False
+    while time.monotonic() < deadline:
+        root = expand_notification_shade(serial, stage + "-shade")
+        if root is not None:
+            candidate = choose(root, lambda t: t.strip().lower() == "answer"
+                               or "answer" in t.lower() and "decline" not in t.lower())
+            if candidate is not None:
+                tap(serial, candidate, stage)
+                return
+            all_labels = " ".join(labels(n) for n in root.iter("node"))
+            if "LAN Messenger" in all_labels:
+                expander = choose(root, lambda t: t.strip().lower() == "expand")
+                if expander is not None and not expanded_once:
+                    tap(serial, expander, stage + "-expand-group")
+                    expanded_once = True
+                    time.sleep(1)
+                    continue
+        time.sleep(1)
+    (OUT / f"{serial}-{stage}-notification-dumpsys.txt").write_bytes(
+        adb(serial, "shell", "dumpsys", "notification", "--noredact",
+            timeout=20, check=False))
+    raise RuntimeError(f"{stage}: Android notification never exposed an actionable Answer after group expansion")
+
+
 def contains(serial, stage, needle):
     root = snapshot(serial, stage)
     if root is None:
@@ -230,8 +262,7 @@ def first_background_incoming_test():
     (OUT / "android-first-background-notification.txt").write_bytes(
         adb(RECEIVER, "shell", "dumpsys", "notification", "--noredact",
             timeout=20, check=False))
-    tap_label(RECEIVER, "notification-answer",
-              lambda text: "answer" in text.lower(), timeout_seconds=30)
+    tap_notification_answer(RECEIVER, "notification-answer", timeout_seconds=30)
     wait_both_connected()
     note("background-first-connected", "PASS: first native Answer connected WebRTC")
     tap_label(RECEIVER, "hangup",
@@ -362,9 +393,7 @@ def main():
     # Android CallStyle actions vary in accessible wording between API levels.
     # Never turn a timeout into a pass; retain UI, system notification,
     # caller/receiver logs if a real Answer control cannot be found.
-    tap_label(RECEIVER, "notification-answer",
-              lambda text: "answer" in text.lower(),
-              timeout_seconds=26)
+    tap_notification_answer(RECEIVER, "notification-answer", timeout_seconds=26)
     wait_both_connected()
     note("background-answer", "PASS: native Android notification Answer connected both peers")
     tap_label(RECEIVER, "hangup-background-call",
