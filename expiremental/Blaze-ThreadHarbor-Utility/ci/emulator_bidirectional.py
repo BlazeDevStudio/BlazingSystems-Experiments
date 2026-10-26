@@ -14,11 +14,32 @@ def adb(*arguments):
     return subprocess.check_output(["adb", *arguments], text=True, stderr=subprocess.STDOUT)
 
 launcher_anr_recoveries = 0
+uiautomator_recoveries = 0
 
 def dump():
-    global launcher_anr_recoveries
-    for _ in range(3):
-        adb("shell", "uiautomator", "dump", "/sdcard/window.xml")
+    global launcher_anr_recoveries, uiautomator_recoveries
+    for _ in range(4):
+        try:
+            adb("shell", "uiautomator", "dump", "/sdcard/window.xml")
+        except subprocess.CalledProcessError as exc:
+            # Android's own low-memory killer can kill the short-lived UIAutomator
+            # instrumentation process (exit 137). Do not confuse it with an
+            # application crash or silently treat an invalid dump as a pass.
+            if exc.returncode != 137:
+                raise
+            uiautomator_recoveries += 1
+            if uiautomator_recoveries == 1:
+                try:
+                    with open("threadharbor-uiautomator-killed.png", "wb") as out:
+                        subprocess.run(["adb", "exec-out", "screencap", "-p"],
+                                       stdout=out, check=True)
+                except Exception:
+                    pass
+            assert uiautomator_recoveries <= 2, "INCONCLUSIVE: repeated low-memory UIAutomator kills"
+            assert adb("shell", "pidof", PACKAGE).strip(), "Application process died during UIAutomator failure"
+            print("INFRA: UIAutomator exit 137 while application process lives; bounded retry")
+            time.sleep(2)
+            continue
         raw = adb("shell", "cat", "/sdcard/window.xml")
         start = raw.find("<?xml")
         if start < 0:
