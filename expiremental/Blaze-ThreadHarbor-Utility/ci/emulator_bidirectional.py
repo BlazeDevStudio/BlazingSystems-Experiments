@@ -62,12 +62,19 @@ def run():
     diagnostic = nodes(status, text="Open controlled adapter diagnostics")
     assert len(diagnostic) == 1, "Fixture must only be reachable by explicit diagnostic action"
     tap(diagnostic[0])
-    time.sleep(3)
+    fixture_deadline = time.monotonic() + 30
     fixture_view = dump()
+    while time.monotonic() < fixture_deadline and not nodes(fixture_view, text="Observed 2 fixture messages"):
+        time.sleep(2)
+        fixture_view = dump()
     assert nodes(fixture_view, text="Observed 2 fixture messages"), "Bridge did not load initial fixture DOM"
     fields = nodes(start, **{"class":"android.widget.EditText"})
     assert len(fields) == 1, "Expected exactly one native compose reply input"
     tap(fields[0])
+    focused = dump()
+    focused_fields = nodes(focused, **{"class":"android.widget.EditText"})
+    assert len(focused_fields) == 1 and focused_fields[0].get("focused") == "true", (
+        "Native reply field did not obtain keyboard focus; inspect hidden WebView focus")
     adb("shell", "input", "text", PROBE)
     time.sleep(1.5)
     typed = dump()
