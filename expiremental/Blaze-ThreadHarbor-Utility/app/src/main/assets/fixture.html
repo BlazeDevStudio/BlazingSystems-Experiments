@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ThreadHarbor controlled fixture</title></head>
+<body><strong>TEST FIXTURE ONLY — NOT REAL FACEBOOK MESSAGES</strong>
+<main id="messages" aria-label="Test conversation">
+<p class="message" data-id="fx-1" data-sender="Inspector">Have the inspection photos arrived?</p>
+<p class="message" data-id="fx-2" data-sender="You">I am reviewing the hatch images.</p>
+</main>
+<script>
+(()=>{
+"use strict";
+const root=document.querySelector("#messages");let queued=false;
+function publish(){
+ queued=false;
+ const messages=[...root.querySelectorAll(".message")].slice(-200).map(n=>({
+  id:n.dataset.id||"",sender:n.dataset.sender||"",text:(n.textContent||"").slice(0,4096)
+ }));
+ if(window.HarborBridge) HarborBridge.postMessage(JSON.stringify({type:"snapshot",adapter:"fixture-v1",messages}));
+}
+function schedule(){if(!queued){queued=true;setTimeout(publish,50)}}
+new MutationObserver(schedule).observe(root,{childList:true,subtree:true,characterData:true});
+window.harborAction=raw=>{
+ let v;try{v=JSON.parse(raw)}catch(_){return false}
+ if(v.action!=="send"||typeof v.id!=="string"||!/^[a-f0-9-]{36}$/.test(v.id)||typeof v.text!=="string"||!v.text.trim()||v.text.length>4096)return false;
+ if([...root.querySelectorAll(".message")].some(n=>n.dataset.id===v.id))return false;
+ const item=document.createElement("p");item.className="message";item.dataset.id=v.id;item.dataset.sender="You";item.textContent=v.text;root.appendChild(item);schedule();return true;
+};
+schedule();
+})();
+</script></body></html>
