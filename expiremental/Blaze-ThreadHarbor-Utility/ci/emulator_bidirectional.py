@@ -53,9 +53,15 @@ def run():
     tap(add[0])
     time.sleep(0.6)
     assert nodes(dump(), text="Tabs: 2"), "Second browser tab not created"
-    lab = nodes(dump(), text="Chats (Lab)")
-    assert len(lab) == 1, "Controlled semantic lab not accessible"
-    tap(lab[0])
+    chat = nodes(dump(), text="Chats")
+    assert len(chat) == 1, "Native Chats tab inaccessible"
+    tap(chat[0])
+    time.sleep(0.6)
+    status = dump()
+    assert nodes(status, text="No compatible messaging site adapter is connected."), "Chats must not fake a real account"
+    diagnostic = nodes(status, text="Open controlled adapter diagnostics")
+    assert len(diagnostic) == 1, "Fixture must only be reachable by explicit diagnostic action"
+    tap(diagnostic[0])
     time.sleep(3)
     fixture_view = dump()
     assert nodes(fixture_view, text="Observed 2 fixture messages"), "Bridge did not load initial fixture DOM"
