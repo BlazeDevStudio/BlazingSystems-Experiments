@@ -1,4 +1,7 @@
 name: ThreadHarbor Android Preview
+concurrency:
+  group: threadharbor-preview-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [feature/threadharbor-v0.1.0-preview]
