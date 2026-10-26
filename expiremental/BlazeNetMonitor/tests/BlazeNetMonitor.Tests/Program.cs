@@ -60,6 +60,12 @@ try
     state.Settings.HoverOpacityPercent = 61;
     state.Settings.AutoHideForFullscreen = false;
     store.Save(state);
+    Check(!store.Load().WelcomeAcknowledged, "fresh installation welcomes once");
+    var legacy = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+    legacy.Remove("WelcomeAcknowledged");
+    File.WriteAllText(path, legacy.ToJsonString());
+    Check(store.Load().WelcomeAcknowledged,
+        "existing pre-update settings never trigger first-run dialog");
     Check(store.Load().Settings.Targets[0].Address == "example.com", "atomic settings roundtrip");
     var loadedSettings = store.Load().Settings;
     Check(loadedSettings.FreeformPositioned && loadedSettings.WidgetX == 123 &&
