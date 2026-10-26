@@ -43,11 +43,11 @@ private fun normalizeAddress(value: String): String {
     }
 }
 
-private fun readStoredUrls(raw: String?, maximum: Int): List<String> = try {
+private fun readStoredUrls(raw: String?, maximum: Int, allowBlank: Boolean = false): List<String> = try {
     val values = JSONArray(raw ?: "[]")
     (0 until minOf(values.length(), maximum)).mapNotNull { index ->
         values.optString(index).takeIf {
-            (it.startsWith("https://") || it.startsWith("http://")) && it.length <= 4096
+            (it.startsWith("https://") || it.startsWith("http://") || (allowBlank && it == "about:blank")) && it.length <= 4096
         }
     }
 } catch (_: Exception) { emptyList() }
@@ -91,7 +91,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                 if (tab.address.startsWith("https://") || tab.address.startsWith("http://")) {
                     put(tab.address)
                 } else {
-                    put("https://www.google.com/")
+                    put("about:blank")
                 }
             }
         }
@@ -214,8 +214,8 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
     }
 
     if (tabs.isEmpty()) {
-        val restored = readStoredUrls(preferences.getString("tabs", null), 12)
-            .ifEmpty { listOf("https://www.google.com/") }
+        val restored = readStoredUrls(preferences.getString("tabs", null), 12, allowBlank = true)
+            .ifEmpty { listOf("about:blank") }
         restored.forEach { tabs.add(newTab(it)) }
         selected = selected.coerceIn(0, tabs.lastIndex)
     }
@@ -239,7 +239,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                 }
             }
             TextButton(enabled = tabs.size < 12, onClick = {
-                tabs.add(newTab("https://www.google.com/"))
+                tabs.add(newTab("about:blank"))
                 selected = tabs.lastIndex
             }) { Text("+ Tab") }
             TextButton(enabled = tabs.size > 1, onClick = {
@@ -256,11 +256,13 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
             )
             Button(onClick = { active.view.loadUrl(normalizeAddress(address)) }) { Text("Go") }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState())) {
+        Row {
             TextButton(onClick = { if (active.view.canGoBack()) active.view.goBack() }) { Text("Back") }
             TextButton(onClick = { if (active.view.canGoForward()) active.view.goForward() }) { Text("Next") }
             TextButton(onClick = { active.view.reload() }) { Text("Reload") }
-            TextButton(onClick = { active.view.loadUrl("https://www.google.com/") }) { Text("Home") }
+            TextButton(onClick = { active.view.loadUrl("about:blank") }) { Text("Home") }
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
             val saved = bookmarks.contains(active.address)
             TextButton(onClick = {
                 if (saved) bookmarks.remove(active.address)
@@ -316,7 +318,22 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 8.dp)) }
-        key(active.id) {
+        if (active.address == "about:blank") {
+            Column(Modifier.fillMaxWidth().weight(1f).padding(20.dp)) {
+                Text("Blaze ThreadHarbor", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(8.dp))
+                Text("Start browsing", style = MaterialTheme.typography.titleMedium)
+                Text("Type a website address or a search above. This start page works without an internet connection.")
+                Spacer(Modifier.height(24.dp))
+                Text("Saved sites", style = MaterialTheme.typography.titleMedium)
+                if (bookmarks.isEmpty()) Text("No bookmarks yet.")
+                bookmarks.take(8).forEach { url ->
+                    TextButton(onClick = { active.view.loadUrl(url) }) {
+                        Text(url, maxLines = 1)
+                    }
+                }
+            }
+        } else key(active.id) {
             AndroidView(factory = {
                 (active.view.parent as? android.view.ViewGroup)?.removeView(active.view)
                 active.view
