@@ -1,10 +1,10 @@
-# EasyMode v7.0.0 - Traffic Intelligence Edition
+# EasyMode R281 10.2.0 and Traffic Intelligence 7.0.2
 
-**Validation candidate. Publication follows successful integration checks.**
+**Public R281 candidate and six Traffic edition archives are published.** The R281 application and Cellular Traffic edition are running on one physical R281; the public firmware has passed its exact-device compatibility test but has not been flashed or boot-tested.
 
-The EasyMode application currently installed on the R281 has been copied and versioned as [EasyMode 10.0.0 — R281 app profile](releases/v10.0.0-r281/). It is an application update verified on Notion R281 / OpenWrt 24.10.8, not firmware. Its installer intentionally refuses other board profiles. Generic OpenWrt installs use the shared capability-based monitor below; full R281 management parity on other boards is not claimed.
+The EasyMode application currently installed on the R281 is [EasyMode 10.2.0 — R281 app profile](releases/v10.2.0-r281-candidate/). Its installer intentionally refuses other board profiles. Generic OpenWrt installs use the shared Traffic Intelligence monitor below; the six Traffic editions are **not** six full EasyMode management firmware variants. Full R281 management parity on other boards is not claimed.
 
-For a direct publication checklist, see [edition and R281 installer status](PUBLICATION-STATUS.md). The R281-specific management source is published, but a current one-click unlock-and-firmware installer and a reset-persistent R281 firmware image are not.
+For the current release, use the [R281 handoff](releases/v10.2.0-r281-candidate/HANDOFF.md), [public candidate assets](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/easymode-r281-v10.2.0-5b1e4ab15bf2) and [feature reconciliation](releases/v10.2.0-r281-candidate/FEATURE-GAP.md). A credential-free R281 firmware candidate is published; the device-specific reset-persistent image is held separately because it includes router identities. Neither image has been flashed.
 
 EasyMode Traffic Intelligence adds real WAN, WiFi, device, domain and inferred-service monitoring to the existing router management interface. One shared ucode backend and lightweight JavaScript dashboard serve all six editions. No React, Bootstrap, Node or Python runtime is installed on routers.
 
@@ -18,7 +18,7 @@ Open `/traffic/` on the router and sign in with OpenWrt administrator credential
 - [Current handover](HANDOVER-v7.md)
 - [GitHub build workflow](../../../.github/workflows/easymode-v7.yml)
 
-Run `python3 traffic/tools/build.py` to construct deterministic architecture-independent IPKs and one offline archive per edition. `sh traffic/tests/run.sh` runs accounting, UI-model and payload checks. `sh traffic/tools/image.sh` uses the pinned official OpenWrt 24.10.8 x86/64 ImageBuilder. GitHub Actions builds and boots disposable BIOS/UEFI images, installs the actual packages and tests the authenticated dashboard.
+Run `python3 traffic/tools/build.py` to construct deterministic architecture-independent IPKs and one offline archive per edition. `sh traffic/tests/run.sh` runs accounting, UI-model and payload checks. `sh traffic/tools/image.sh` uses the pinned official OpenWrt 24.10.8 x86/64 ImageBuilder. GitHub Actions builds disposable BIOS/UEFI images and exercises an integration test; current check results should be read before calling that VM gate passed. A separate workflow builds and publishes the credential-free R281 candidate on relevant source changes.
 
 The supported package runtime is OpenWrt 24.10, with exact integration verification on 24.10.8. APK-only systems and Chaos Calmer are not supported by these IPKs. Offline archives require matching runtime dependencies already installed; they are not universal firmware.
 
@@ -39,6 +39,6 @@ Eight views: Overview, WiFi, Internet Data, Devices, Websites, Apps, Reports and
 
 ## Preserved history
 
-The established R281 management source is preserved at [4.2.6 consolidated](releases/v4.2.6-r281-consolidated/); the installed, updated copy is [v10.0.0](releases/v10.0.0-r281/). Neither is a universal flash image. Earlier release directories are immutable history. The old 5.0 alpha toolkit was scaffolding; the shared Traffic Intelligence packages remain separately versioned as v7.0.0. Version numbers do not rank the completeness of historical branches.
+The established R281 management source is preserved at [4.2.6 consolidated](releases/v4.2.6-r281-consolidated/); the installed, updated copy is [v10.2.0](releases/v10.2.0-r281-candidate/). It is board-specific. Earlier release directories are history. The old 5.0 alpha toolkit was scaffolding; the shared Traffic Intelligence packages are separately versioned as v7.0.2. Version numbers do not rank the completeness of historical branches.
 
 No physical device is automatically flashed. Private passwords, SMS, live browsing metadata and personal recovery images are excluded from public artifacts.
