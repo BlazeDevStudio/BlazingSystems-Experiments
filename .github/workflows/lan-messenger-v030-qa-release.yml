@@ -8,9 +8,9 @@ permissions:
   actions: read
   contents: write
 env:
-  VERIFIED_RUN: '40187450176'
-  VERIFIED_SHA: '52969c4c4f298a7019d9a2054d68636824e30038'
-  RELEASE_TAG: 'lan-messenger-v0.3.0-preview.1'
+  VERIFIED_RUN: '40305812372'
+  VERIFIED_SHA: '49a13412f5a66ffd6d64c2973f81241027183c50'
+  RELEASE_TAG: 'lan-messenger-v0.3.0-preview.2'
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
           PrivilegesRequired=lowest
           ArchitecturesAllowed=x64compatible
           OutputDir=dist
-          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.3.0-preview.1
+          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.3.0-preview.2
           Compression=lzma2
           SolidCompression=yes
           UninstallDisplayName=LAN Messenger
@@ -87,7 +87,7 @@ jobs:
           '@ | Set-Content -Path installer.iss -Encoding UTF8
           & $iscc installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compile failed' }
-          $setup = (Resolve-Path dist/LAN-Messenger-Windows-Setup-v0.3.0-preview.1.exe).Path
+          $setup = (Resolve-Path dist/LAN-Messenger-Windows-Setup-v0.3.0-preview.2.exe).Path
           if ((Get-Item $setup).Length -lt 1000000) { throw 'Installer too small' }
           # Windows GUI-subsystem installers can return control to PowerShell
           # before their installation child process completes. Start-Process
@@ -104,8 +104,8 @@ jobs:
           Write-Host "PASS: Setup EXE installed tested binary: $installed"
       - uses: actions/upload-artifact@v4
         with:
-          name: LAN-Messenger-Windows-Setup-v0.3.0-preview.1
-          path: dist/LAN-Messenger-Windows-Setup-v0.3.0-preview.1.exe
+          name: LAN-Messenger-Windows-Setup-v0.3.0-preview.2
+          path: dist/LAN-Messenger-Windows-Setup-v0.3.0-preview.2.exe
           if-no-files-found: error
           retention-days: 30
   publish:
@@ -126,7 +126,7 @@ jobs:
           gh run download "$VERIFIED_RUN" --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Peer-LAN-Evidence --dir artifacts/evidence
       - uses: actions/download-artifact@v4
         with:
-          name: LAN-Messenger-Windows-Setup-v0.3.0-preview.1
+          name: LAN-Messenger-Windows-Setup-v0.3.0-preview.2
           path: artifacts/installer
       - name: Reject bad checksums and missing proof, stage direct downloads
         shell: bash
@@ -139,10 +139,10 @@ jobs:
           keys=('caller_transport_connected','receiver_transport_connected','caller_connected_ui','receiver_live_ui')
           assert all(proof.get(k) is True for k in keys), f'No independent two-endpoint proof: {proof}'
           entries=[
-            ('android','app-arm64-v8a-release.apk','LAN-Messenger-Android-arm64-v0.3.0-preview.1.apk'),
-            ('android','app-armeabi-v7a-release.apk','LAN-Messenger-Android-arm32-v0.3.0-preview.1.apk'),
-            ('android','app-x86_64-release.apk','LAN-Messenger-Android-x86_64-v0.3.0-preview.1.apk'),
-            ('windows','LAN-Messenger-Windows-Optimized.zip','LAN-Messenger-Windows-Portable-v0.3.0-preview.1.zip'),
+            ('android','app-arm64-v8a-release.apk','LAN-Messenger-Android-arm64-v0.3.0-preview.2.apk'),
+            ('android','app-armeabi-v7a-release.apk','LAN-Messenger-Android-arm32-v0.3.0-preview.2.apk'),
+            ('android','app-x86_64-release.apk','LAN-Messenger-Android-x86_64-v0.3.0-preview.2.apk'),
+            ('windows','LAN-Messenger-Windows-Optimized.zip','LAN-Messenger-Windows-Portable-v0.3.0-preview.2.zip'),
           ]
           dist=pathlib.Path('dist')
           for folder,name,dest in entries:
@@ -157,22 +157,29 @@ jobs:
               with zipfile.ZipFile(source) as z:
                 assert z.testzip() is None and 'lan_messenger.exe' in z.namelist()
             shutil.copy2(source,dist/dest)
-          installer=root/'installer/LAN-Messenger-Windows-Setup-v0.3.0-preview.1.exe'
+          installer=root/'installer/LAN-Messenger-Windows-Setup-v0.3.0-preview.2.exe'
           assert installer.exists() and installer.stat().st_size>1_000_000
           shutil.copy2(installer, dist/installer.name)
           shutil.copy2(root/'evidence/webrtc-two-endpoint-transport-proof.json',
                        dist/'WEbrtc-two-device-connected-proof.json')
-          print('PASS: checksums, native installer, 2 independent transport markers')
+          report=json.loads((root/'evidence/voice-call-report.json').read_text())
+          events='\\n'.join(report.get('events', []))
+          assert 'PASS: both Android peers decoded remote camera frames' in events, 'Missing actual decoded-frame evidence'
+          assert 'PASS: Android native OS confirmed real PiP after HOME' in events, 'Missing native PiP confirmation'
+          assert 'PASS: real dual-decoded video + OS PiP + hangup survived' in events, 'Missing video and PiP survival proof'
+          shutil.copy2(root/'evidence/voice-call-report.json',
+                       dist/'video-pip-e2e-report.json')
+          print('PASS: checksums, native installer, 2 WebRTC transports, two decoded video feeds and Android OS PiP')
           PY
           (cd dist && sha256sum *.apk *.zip *.exe > SHA256SUMS.txt)
           cat > dist/RELEASE-NOTES.md <<'EOF'
-          # LAN Messenger v0.3.0 — Verified Cloud Preview 1
+          # LAN Messenger v0.3.0 — Verified Cloud Preview 2
           
-          **Not a production-certified intercom.** Source commit `52969c4c4f298a7019d9a2054d68636824e30038`; all four cloud jobs must pass at https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40187450176.
+          **Not a production-certified intercom.** Source commit `49a13412f5a66ffd6d64c2973f81241027183c50`; all four cloud jobs must pass at https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40305812372.
           
           Android: choose the single APK for your CPU (normally arm64). CI APKs are development signed and may not upgrade previous preview installs; uninstalling removes app-private chats/files. Windows: choose Setup EXE (unsigned), or extract the entire portable ZIP before launching lan_messenger.exe. Windows might warn about unknown publisher.
           
-          **New acceptance evidence:** two Android emulators on one virtual LAN; receiver backgrounded before the call; native notification Answer/Decline displayed; actual Answer clicked; both peers independently emitted WebRTC Connected callback markers; caller Connected and receiver Live UI observed; call hangup without app crashes. Flutter tests, Android install smoke, and Windows native process/minimize/tray smoke passed.
+          **New acceptance evidence:** two Android emulators on one virtual LAN with overlay permission granted; background incoming Answer used only the system notification (no duplicate app-owned overlay), both peers independently reached WebRTC Connected, and a subsequent video call rendered decoded camera frames at BOTH endpoints. Android native PiP callback was observed after pressing Home, and the call survived hangup. The Windows installer is compiled and install-smoke tested. These are cloud emulators, not a real Samsung or Windows-to-Android physical call.
           
           **Not yet independently verified:** audible voice quality, Windows-to-Android media and draggable live-call toast on physical devices, Android OEM background/PiP behaviors, 3–4 participant group video, Bluetooth helmet audio routes, release signing/key migration, third-party security audit. This is a real compiled preview for field evaluation, not a final production deployment or motorcycle safety device.
           EOF
@@ -182,7 +189,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh release create "$RELEASE_TAG" dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt dist/WEbrtc-two-device-connected-proof.json \
+          gh release create "$RELEASE_TAG" dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt dist/WEbrtc-two-device-connected-proof.json dist/video-pip-e2e-report.json \
             --repo "$GITHUB_REPOSITORY" --target "$VERIFIED_SHA" \
-            --title "LAN Messenger v0.3.0 — Evidence-Gated Preview 1" \
+            --title "LAN Messenger v0.3.0 — Evidence-Gated Preview 2" \
             --notes-file dist/RELEASE-NOTES.md --prerelease
