@@ -112,7 +112,7 @@ jobs:
           target: google_apis
           profile: pixel_2
           # Voice tests must not disable virtual audio for the caller/callee.
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-front emulated
           # Use THIS workflow's freshly built APK, not an older cached build:
           # source the LAN discovery stage and then exercise OS Answer, peer
           # transport readiness and hangup on two real emulator processes.
