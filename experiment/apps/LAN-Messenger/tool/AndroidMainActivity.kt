@@ -3,6 +3,7 @@ package com.example.lan_messenger
 import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
+import android.app.AppOpsManager
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
@@ -455,6 +456,39 @@ class MainActivity : FlutterActivity() {
         )
     }
 
+    private fun pipFailureReason(): String {
+        if (Build.VERSION.SDK_INT < 26) return "Android 8 or newer is required for video PiP."
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
+            return "This Android device does not support picture-in-picture."
+        try {
+            val ops = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            @Suppress("DEPRECATION")
+            val mode = ops.checkOpNoThrow(
+                AppOpsManager.OPSTR_PICTURE_IN_PICTURE, applicationInfo.uid, packageName)
+            if (mode == AppOpsManager.MODE_IGNORED || mode == AppOpsManager.MODE_ERRORED)
+                return "Picture-in-picture is blocked in Android app settings. 'Appear on top' is a different permission."
+        } catch (_: Exception) {
+            // Device-specific AppOps failures do not imply disabled PiP.
+        }
+        if (lastIncoming || lastCallId == null || !pipEnabledForCall)
+            return "PiP is available only after connecting an active video call."
+        if (!activityForeground)
+            return "Open LAN Messenger's active video call before starting PiP."
+        return "Android did not enter PiP. Try Home from an active video call."
+    }
+
+    private fun openPipSettings() {
+        // OEMs may expose a dedicated PiP settings screen. Fall back to the
+        // app details page when the action is absent; never request overlay.
+        val picture = Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS").apply {
+            data = Uri.parse("package:$packageName")
+        }
+        val destination = if (picture.resolveActivity(packageManager) != null) picture
+                          else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                              Uri.parse("package:$packageName"))
+        startActivity(destination)
+    }
+
     private fun enterCallPictureInPicture(id: String): Boolean {
         if (Build.VERSION.SDK_INT < 26 || id.isEmpty() ||
             id != lastCallId || !activityForeground || !pipEnabledForCall) {
@@ -561,6 +595,11 @@ class MainActivity : FlutterActivity() {
                         // draw-over-apps permission for video PiP.
                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.parse("package:$packageName")))
+                        result.success(null)
+                    }
+                    "pipDiagnostic" -> result.success(pipFailureReason())
+                    "openPipSettings" -> {
+                        openPipSettings()
                         result.success(null)
                     }
                     "enterPip" -> result.success(enterCallPictureInPicture(
