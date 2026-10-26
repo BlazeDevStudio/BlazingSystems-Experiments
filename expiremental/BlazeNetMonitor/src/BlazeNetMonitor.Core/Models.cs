@@ -38,6 +38,13 @@ public sealed class AppSettings
     public bool AutoHideForFullscreen { get; set; } = true;
     public string ThemeMode { get; set; } = "System";
     public bool ShowGraphs { get; set; } = true;
+    public string GraphStyle { get; set; } = "Line";  // Line, Filled, Bars, Steps
+    public string GraphUploadColor { get; set; } = "#40C9F4";
+    public string GraphDownloadColor { get; set; } = "#FFB360";
+    public int GraphHistorySeconds { get; set; } = 0; // zero = Auto adaptive
+    public string MetricMode { get; set; } = "Auto"; // Auto, Speed, Latency, Loss, Jitter, Totals
+    public string UnitMode { get; set; } = "Auto";  // Auto, Bits, Bytes
+    public bool ShowFavicons { get; set; } = false; // opt-in outbound HTTPS favicon fetch
     public bool UseSystemAccent { get; set; } = true;
     public ProbeTarget[] Targets { get; set; } =
     [
@@ -61,6 +68,9 @@ public sealed class TargetHistory
     public DateTimeOffset? StableSinceUtc { get; set; }
     public DateTimeOffset? LastSampleUtc { get; set; }
     public int ConsecutiveFailures { get; set; }
+    public int ConsecutiveGood { get; set; }
+    public int ConsecutiveBad { get; set; }
+    public double LatencyBaselineMs { get; set; } = 0;
     public List<ProbeResult> Samples { get; set; } = [];
 }
 

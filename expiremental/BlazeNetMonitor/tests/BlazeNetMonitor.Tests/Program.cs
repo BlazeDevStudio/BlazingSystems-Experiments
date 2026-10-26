@@ -135,4 +135,17 @@ var transparent = new AppSettings { TransparentBackground = true, WidgetOpacityP
 var transparentCopy = transparent.Copy();
 Check(transparentCopy.TransparentBackground && transparentCopy.WidgetOpacityPercent == 65,
     "transparent appearance persists in settings clone");
+Check(DisplayPreferences.EffectiveMetric("Auto", 330, 82) == "Latency", "auto metric selects latency when space permits");
+Check(DisplayPreferences.EffectiveMetric("Loss", 140, 24) == "Speed", "micro display never overflows metrics");
+Check(DisplayPreferences.EffectiveMetric("Loss", 300, 70) == "Loss", "explicit loss metric respected");
+Check(DisplayPreferences.GraphWindowSeconds(0, 140, 26) == 30, "adaptive compact graph length");
+Check(DisplayPreferences.GraphWindowSeconds(0, 400, 100) == 120, "adaptive detailed graph length");
+Check(DisplayPreferences.GraphWindowSeconds(300, 140, 26) == 300, "explicit graph history length");
+Check(DisplayPreferences.NormalizeGraphStyle("Steps") == "Steps", "steps graph chosen");
+Check(DisplayPreferences.NormalizeGraphStyle("unknown") == "Line", "invalid graph style defaults to line");
+Check(DisplayPreferences.TryGraphColor("#33AAFF", out var color) && color.B == 255, "hex color parsing");
+Check(!DisplayPreferences.TryGraphColor("red", out _), "invalid color safely rejected");
+var prefs = new AppSettings { ShowFavicons = true, GraphStyle = "Bars", GraphHistorySeconds = 300, MetricMode = "Loss", UnitMode = "Bytes" };
+var cp = prefs.Copy();
+Check(cp.ShowFavicons && cp.GraphStyle == "Bars" && cp.GraphHistorySeconds == 300 && cp.MetricMode == "Loss" && !DisplayPreferences.UseBits(cp, 300, 70), "graph and display preferences roundtrip");
 Console.WriteLine($"RESULT {passed} tests passed");
