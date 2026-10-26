@@ -75,11 +75,18 @@ def run():
         time.sleep(2)
         start = dump()
     assert nodes(start, text="Tabs: 1"), "Real browser did not become ready as home"
-    assert nodes(start, text="Bookmarks"), "Browser bookmarks control missing"
-    # History is in a horizontally scrollable SECONDARY tool row. Android
-    # accessibility legitimately omits offscreen controls; do not require
-    # the offscreen item in the initial snapshot.
     assert nodes(start, text="Back"), "Primary browser controls missing"
+    more = nodes(start, text="More")
+    assert len(more) == 1, "Compact browser actions menu missing"
+    tap(more[0])
+    menu = dump()
+    for action in ("Home", "Bookmarks", "History", "Native Reader", "Open externally"):
+        assert nodes(menu, text=action), "Missing browser action: " + action
+    # Close the menu using its valid Home action, avoiding BACK (which can
+    # navigate Android itself if the soft-keyboard/window owns focus).
+    home = nodes(menu, text="Home")
+    tap(home[0])
+    start = dump()
     add = nodes(start, text="+ Tab")
     assert len(add) == 1, "Browser tab creation unavailable"
     tap(add[0])
