@@ -203,4 +203,31 @@ Check(FaviconSafety.FindIconLinks(
     "unquoted favicon link attributes recognized");
 Check(!FaviconSafety.IsPermittedIconUri(new Uri("https://user:pass@example.org/favicon.ico")),
     "favicon URL with embedded credentials rejected");
+Check(new AppSettings().Targets[0].Name == "Target 1" &&
+      new AppSettings().Targets[1].Name == "Target 2", "clean target default naming");
+Check(SettingsUiPolicy.DefaultName("Primary DNS",0) == "Target 1" &&
+      SettingsUiPolicy.DefaultName("Secondary DNS",1) == "Target 2",
+      "existing default labels migrate, custom names preserved");
+Check(SettingsUiPolicy.DefaultName("Office",1) == "Office","custom target name untouched");
+Check(SettingsUiPolicy.Placeholder(TargetProtocol.Https) == "https://www.example.com" &&
+      SettingsUiPolicy.Placeholder(TargetProtocol.Dns) == "example.com",
+      "protocol placeholder examples");
+Check(SettingsUiPolicy.ShowPort(TargetProtocol.Tcp) && !SettingsUiPolicy.ShowPort(TargetProtocol.Icmp) &&
+      !SettingsUiPolicy.ShowPort(TargetProtocol.Https) && !SettingsUiPolicy.ShowPort(TargetProtocol.Dns),
+      "only TCP reveals port");
+Check(SettingsUiPolicy.IsValidAddress(TargetProtocol.Https,"https://www.example.com",443) &&
+      !SettingsUiPolicy.IsValidAddress(TargetProtocol.Https,"http://www.example.com",443) &&
+      !SettingsUiPolicy.IsValidAddress(TargetProtocol.Https,"",443),
+      "correct HTTPS validation and empty placeholder handling");
+Check(!SettingsUiPolicy.IsValidAddress(TargetProtocol.Dns,"https://example.com",443) &&
+      SettingsUiPolicy.IsValidAddress(TargetProtocol.Dns,"example.com",443),
+      "DNS accepts domain not full URL");
+Check(!AdapterUiPolicy.IsVisible("vEthernet (Default Switch)", "Hyper-V Virtual",
+      System.Net.NetworkInformation.NetworkInterfaceType.Ethernet,false) &&
+      AdapterUiPolicy.IsVisible("Ethernet 2","Realtek PCIe Controller",
+      System.Net.NetworkInformation.NetworkInterfaceType.Ethernet,false),
+      "physical adapters shown and virtual noise hidden");
+Check(AdapterUiPolicy.IsVisible("vEthernet", "Virtual",
+      System.Net.NetworkInformation.NetworkInterfaceType.Ethernet,true),
+      "expanded adapter list retains optional virtual adapters");
 Console.WriteLine($"RESULT {passed} tests passed");

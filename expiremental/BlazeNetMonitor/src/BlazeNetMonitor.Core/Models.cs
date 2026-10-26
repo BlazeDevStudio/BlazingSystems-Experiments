@@ -49,8 +49,8 @@ public sealed class AppSettings
     public bool UseSystemAccent { get; set; } = true;
     public ProbeTarget[] Targets { get; set; } =
     [
-        new() { Name = "Primary DNS", Protocol = TargetProtocol.Icmp, Address = "1.1.1.1" },
-        new() { Name = "Secondary DNS", Protocol = TargetProtocol.Icmp, Address = "8.8.8.8" }
+        new() { Name = "Target 1", Protocol = TargetProtocol.Icmp, Address = "1.1.1.1" },
+        new() { Name = "Target 2", Protocol = TargetProtocol.Icmp, Address = "8.8.8.8" }
     ];
 
     public AppSettings Copy()
@@ -232,6 +232,7 @@ public sealed class PersistedData
 {
     public AppSettings Settings { get; set; } = new();
     public TrafficTotals Totals { get; set; } = new();
+    public bool WelcomeAcknowledged { get; set; }
     public TargetHistory[] Histories { get; set; } = [new(), new()];
 }
 
