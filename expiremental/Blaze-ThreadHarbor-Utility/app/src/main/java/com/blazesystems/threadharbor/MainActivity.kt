@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
 private fun HarborShell(context: Context, fixture: FixtureRuntime) {
     val tabs = listOf("Chats","Calls","Gallery","Downloads","Files","Inspection","Browser","Settings")
     var current by remember { mutableStateOf("Chats") }
-    Column(Modifier.fillMaxSize()) {
+    // Keep message input and Send above the Android software keyboard (IME).
+    Column(Modifier.fillMaxSize().imePadding()) {
         Text("Blaze ThreadHarbor  •  0.1.0 Preview",
             style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(12.dp))
         ScrollableTabRow(selectedTabIndex=tabs.indexOf(current),edgePadding=0.dp) {

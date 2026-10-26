@@ -49,15 +49,17 @@ def run():
     time.sleep(1.5)
     typed = dump()
     assert nodes(typed, text=PROBE), "Keyboard input did not update the Compose text field"
-    # The previous RED left the draft untouched: a tap while the IME was open
-    # could hit keyboard content instead of the Compose button. Close IME FIRST.
-    adb("shell", "input", "keyevent", "KEYCODE_BACK")
-    time.sleep(1)
+    # Never send BACK during this test: on this emulator it exits the app.
+    # Assert the Compose Send control stays available while input is focused.
     ready = dump()
-    assert nodes(ready, text=PROBE), "Draft lost when closing software keyboard"
+    assert nodes(ready, text=PROBE), "Draft changed unexpectedly before send"
     send = nodes(ready, text="Send")
-    assert len(send) == 1, "Send button missing after keyboard dismissed"
+    assert len(send) == 1, "Send control unavailable while composing"
     tap(send[0])
+    time.sleep(0.7)
+    immediate = dump()
+    immediate_text = [n.get("text","") for n in immediate.iter("node")]
+    print("After Send tap:", repr([v for v in immediate_text if PROBE in v or "fixture" in v.lower() or "unverified" in v.lower()]))
     deadline = time.monotonic() + 18
     last_text = []
     while time.monotonic() < deadline:
