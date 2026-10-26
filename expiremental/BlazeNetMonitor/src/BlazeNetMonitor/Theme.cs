@@ -33,7 +33,7 @@ internal static class Theme
 
         var requested = options.ThemeMode;
         IsDark = requested.Equals("Dark", StringComparison.OrdinalIgnoreCase) ||
-            (!requested.Equals("Light", StringComparison.OrdinalIgnoreCase) && IsWindowsDarkMode());
+            (!requested.Equals("Light", StringComparison.OrdinalIgnoreCase) && IsWindowsDarkMode(options.DockInsideTaskbar && !options.FreeformPositioned));
 
         Background = IsDark ? Color.FromArgb(28, 32, 40) : Color.FromArgb(245, 247, 251);
         Panel = IsDark ? Color.FromArgb(38, 43, 54) : Color.White;
@@ -44,13 +44,13 @@ internal static class Theme
             (IsDark ? Color.FromArgb(255, 177, 97) : Color.FromArgb(185, 95, 24));
     }
 
-    private static bool IsWindowsDarkMode()
+    private static bool IsWindowsDarkMode(bool useTaskbarTheme)
     {
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(
                 @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            var value = key?.GetValue("AppsUseLightTheme");
+            var value = key?.GetValue(useTaskbarTheme ? "SystemUsesLightTheme" : "AppsUseLightTheme") ?? key?.GetValue("AppsUseLightTheme");
             return value is int flag && flag == 0;
         }
         catch { return false; }
