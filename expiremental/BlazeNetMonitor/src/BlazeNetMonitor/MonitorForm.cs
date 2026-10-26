@@ -28,6 +28,7 @@ internal sealed class MonitorForm : Form
     private readonly System.Windows.Forms.Timer _hoverTimer = new() { Interval = 400 };
     private readonly NotifyIcon _tray;
     private readonly InfoForm _info = new();
+    private readonly TopAppsUsageService _appUsage = new();
     private QualityTracker[] _trackers;
     private readonly TargetSnapshot[] _snapshots = new TargetSnapshot[2];
     private readonly Queue<double> _upSamples = new();
@@ -490,6 +491,25 @@ internal sealed class MonitorForm : Form
         _menu.Items.Add("Support development · PayPal QR", null,
             (_, _) => ShowDonationSplash(force: true));
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
+        _menu.Items.Add("Import app network history (CSV)", null, (_, _) =>
+        {
+            if (TopAppsUsageService.ImportCsv(this))
+                _ = UpdateAppUsageAsync(force: true);
+        });
+        _menu.Items.Add("App usage source information", null, (_, _) =>
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                    "https://www.nirsoft.net/utils/network_usage_view.html") {
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Network usage");
+            }
+        });
         _menu.Items.Add("Refresh website favicons", null, (_, _) =>
         {
             if (!_data.Settings.ShowFavicons)
@@ -638,6 +658,8 @@ internal sealed class MonitorForm : Form
         if (IsDisposed || _editingGeometry || _hiddenForFullscreen) return;
         var uptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
         _info.RefreshInfo(_network, _data, _snapshots, _speed, uptime);
+        _info.RefreshTopApps(_appUsage.Leaders, _appUsage.Status);
+        _ = UpdateAppUsageAsync();
         var area = Screen.FromRectangle(Bounds).WorkingArea;
         int x = Math.Clamp(Left + Width - _info.Width, area.Left,
             Math.Max(area.Left, area.Right - _info.Width));
@@ -648,6 +670,26 @@ internal sealed class MonitorForm : Form
         _info.Location = new Point(x, Math.Clamp(y, area.Top,
             Math.Max(area.Top, area.Bottom - _info.Height)));
         if (!_info.Visible) _info.Show(this);
+    }
+
+    private async Task UpdateAppUsageAsync(bool force = false)
+    {
+        try
+        {
+            await _appUsage.RefreshAsync(force);
+            if (IsDisposed || !_info.Visible) return;
+            _info.RefreshTopApps(_appUsage.Leaders, _appUsage.Status);
+            // Reposition if the compact hover expands to fit five app rows.
+            var bounds = Screen.FromRectangle(Bounds).WorkingArea;
+            int top = Top - _info.Height - 8;
+            int y = top >= bounds.Top ? top :
+                (Bottom + _info.Height + 8 <= bounds.Bottom ? Bottom + 8 : bounds.Top);
+            _info.Location = new Point(
+                Math.Clamp(Left + Width - _info.Width, bounds.Left,
+                    Math.Max(bounds.Left, bounds.Right - _info.Width)),
+                Math.Clamp(y, bounds.Top, Math.Max(bounds.Top, bounds.Bottom - _info.Height)));
+        }
+        catch (Exception) { /* Missing historical usage is never a fatal error. */ }
     }
 
     private static bool TargetsDiffer(AppSettings before, AppSettings after)
@@ -1094,7 +1136,7 @@ internal sealed class MonitorForm : Form
         _tray.Dispose();
         _info.Close(); _info.Dispose();
         _menu.Dispose();
-        _network.Dispose(); _stop.Dispose();
+        _network.Dispose(); _appUsage.Dispose(); _stop.Dispose();
         base.OnFormClosed(e);
     }
 }
