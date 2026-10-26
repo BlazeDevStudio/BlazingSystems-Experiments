@@ -29,7 +29,7 @@ def nodes(tree, **attributes):
 
 def center(item):
     value = item.get("bounds", "")
-    groups = re.fullmatch(r"\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]", value)
+    groups = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", value)
     if not groups:
         raise AssertionError("No bounds: " + repr(value))
     x1, y1, x2, y2 = map(int, groups.groups())
