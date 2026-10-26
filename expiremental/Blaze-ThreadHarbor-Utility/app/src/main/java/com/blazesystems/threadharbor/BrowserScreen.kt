@@ -360,13 +360,18 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
             modifier = Modifier.padding(horizontal = 8.dp)) }
         if (active.address == "about:blank") {
             Column(Modifier.fillMaxWidth().weight(1f).padding(20.dp)) {
-                Text("Blaze ThreadHarbor", style = MaterialTheme.typography.headlineMedium)
+                Text("Blaze ThreadHarbor", color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(8.dp))
-                Text("Start browsing", style = MaterialTheme.typography.titleMedium)
-                Text("Type a website address or a search above. This start page works without an internet connection.")
+                Text("Start browsing", color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium)
+                Text("Type a website address or a search above. This start page works without an internet connection.",
+                    color = MaterialTheme.colorScheme.onBackground)
                 Spacer(Modifier.height(24.dp))
-                Text("Saved sites", style = MaterialTheme.typography.titleMedium)
-                if (bookmarks.isEmpty()) Text("No bookmarks yet.")
+                Text("Saved sites", color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium)
+                if (bookmarks.isEmpty()) Text("No bookmarks yet.",
+                    color = MaterialTheme.colorScheme.onBackground)
                 bookmarks.take(8).forEach { url ->
                     TextButton(onClick = { active.view.loadUrl(url) }) {
                         Text(url, maxLines = 1)
