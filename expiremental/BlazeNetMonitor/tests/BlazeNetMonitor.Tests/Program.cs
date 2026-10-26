@@ -87,6 +87,12 @@ var fromLeft = WidgetGeometry.Constrain(new System.Drawing.Rectangle(-450, -50, 
 Check(fromLeft.Left >= 0 && fromLeft.Top >= 0, "offscreen geometry recovers");
 var pos = WidgetGeometry.Constrain(new System.Drawing.Rectangle(100, 160, 260, 72), work);
 Check(pos.Left == 100 && pos.Top == 160, "valid freeform geometry preserved");
+Check(WidgetGeometry.CoversScreen(new System.Drawing.Rectangle(0, 0, 1366, 768),
+    new System.Drawing.Rectangle(0, 0, 1366, 768)), "full monitor coverage classifies fullscreen");
+Check(!WidgetGeometry.CoversScreen(new System.Drawing.Rectangle(0, 0, 1366, 720),
+    new System.Drawing.Rectangle(0, 0, 1366, 768)), "maximized taskbar-respecting app is not fullscreen");
+Check(!WidgetGeometry.CoversScreen(new System.Drawing.Rectangle(0, 0, 0, 768),
+    new System.Drawing.Rectangle(0, 0, 1366, 768)), "zero width foreground does not trigger fullscreen");
 var raw = new AppSettings { HoverOpacityPercent = 58, AutoHideForFullscreen = false };
 var clone = raw.Copy();
 clone.Targets[0].Address = "changed.local";

@@ -12,6 +12,7 @@ internal sealed class SettingsForm : Form
     private readonly Label _opacityValue, _hoverOpacityValue;
     private readonly CheckBox _showGraphs, _systemAccent, _fullscreen;
     public event Action<AppSettings>? PreviewChanged;
+    public event Action? HoverPreviewRequested;
     public AppSettings? SavedSettings { get; private set; }
     public bool ResizeAfterSave { get; private set; }
     private readonly NumericUpDown _offset, _interval;
@@ -92,7 +93,7 @@ internal sealed class SettingsForm : Form
                 "Double-click or right-click → Finish to save; Esc cancels." });
 
         _opacity.ValueChanged += (_, _) => { _opacityValue.Text = _opacity.Value + "%"; RaisePreview(); };
-        _hoverOpacity.ValueChanged += (_, _) => { _hoverOpacityValue.Text = _hoverOpacity.Value + "%"; RaisePreview(); };
+        _hoverOpacity.ValueChanged += (_, _) => { _hoverOpacityValue.Text = _hoverOpacity.Value + "%"; RaisePreview(); HoverPreviewRequested?.Invoke(); };
         _themeMode.SelectedIndexChanged += (_, _) => RaisePreview();
         _systemAccent.CheckedChanged += (_, _) => RaisePreview();
         _showGraphs.CheckedChanged += (_, _) => RaisePreview();

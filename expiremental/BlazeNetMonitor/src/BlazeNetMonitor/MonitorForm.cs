@@ -13,6 +13,7 @@ internal sealed class MonitorForm : Form
     private SettingsForm? _settingsForm;
     private AppSettings? _settingsBeforeEdit;
     private readonly System.Windows.Forms.Timer _fullscreenTimer = new() { Interval = 750 };
+    private readonly System.Windows.Forms.Timer _glancePreviewTimer = new() { Interval = 2300 };
     private bool _hiddenForFullscreen;
     private readonly NetworkMonitor _network = new();
     private readonly System.Windows.Forms.Timer _trafficTimer = new() { Interval = 1000 };
@@ -96,7 +97,8 @@ internal sealed class MonitorForm : Form
         _info.MouseLeave += (_, _) => _hoverTimer.Start();
         _hoverTimer.Tick += (_, _) =>
         {
-            if (!Bounds.Contains(Cursor.Position) && !_info.Bounds.Contains(Cursor.Position))
+            if (!_glancePreviewTimer.Enabled &&
+                !Bounds.Contains(Cursor.Position) && !_info.Bounds.Contains(Cursor.Position))
             {
                 _hoverTimer.Stop(); _info.Hide(); _showHover = false;
             }
@@ -105,6 +107,15 @@ internal sealed class MonitorForm : Form
         _probeTimer.Tick += async (_, _) => await ProbeTargets();
         _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
         _fullscreenTimer.Tick += (_, _) => RefreshFullscreenState();
+        _glancePreviewTimer.Tick += (_, _) =>
+        {
+            _glancePreviewTimer.Stop();
+            if (_settingsForm is not null)
+            {
+                _showHover = false;
+                _info.Hide();
+            }
+        };
         Shown += async (_, _) =>
         {
             RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start();
@@ -482,8 +493,19 @@ internal sealed class MonitorForm : Form
             ApplyAppearance();
             Reposition();
         };
+        editor.HoverPreviewRequested += () =>
+        {
+            if (_settingsForm != editor || _hiddenForFullscreen) return;
+            _showHover = true;
+            UpdateHover();
+            _glancePreviewTimer.Stop();
+            _glancePreviewTimer.Start();
+        };
         editor.FormClosed += (_, _) =>
         {
+            _glancePreviewTimer.Stop();
+            _showHover = false;
+            _info.Hide();
             bool commit = editor.DialogResult == DialogResult.OK && editor.SavedSettings is not null;
             var final = commit ? editor.SavedSettings! : original;
             bool targetChanged = commit && TargetsDiffer(original, final);
@@ -639,7 +661,7 @@ internal sealed class MonitorForm : Form
     {
         if (_editingGeometry) CancelGeometryEdit();
         _stop.Cancel();
-        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop();
+        _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop(); _glancePreviewTimer.Stop();
         if (_settingsForm is { IsDisposed: false }) _settingsForm.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnPreferenceChanged;
