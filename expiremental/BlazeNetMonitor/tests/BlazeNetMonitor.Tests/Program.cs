@@ -175,4 +175,32 @@ Check(badRtt.History.LatencyBaselineMs > 0 && badRtt.History.LatencyBaselineMs <
       "outlier RTT does not poison learned baseline");
 Check(new AppSettings { GraphRefreshSeconds = 5 }.Copy().GraphRefreshSeconds == 5,
     "sampling and graph refresh preference persistence");
+
+Check(FaviconSafety.OfficialHost("www.facebook.com") == "www.facebook.com",
+    "Facebook public hostname accepted independently of DNS vendor mappings");
+Check(FaviconSafety.OfficialHost("www.wikipedia.org") == "www.wikipedia.org",
+    "arbitrary public website hostname accepted");
+var facebookOrigin = new Uri("https://www.facebook.com/");
+var iconRedirect = FaviconSafety.SafeRedirect(new Uri("https://www.facebook.com/favicon.ico"),
+    "https://static.xx.fbcdn.net/rsrc.php/y1/r/example.ico");
+Check(iconRedirect?.Host == "static.xx.fbcdn.net", "public HTTPS favicon CDN redirect allowed");
+Check(FaviconSafety.SafeRedirect(facebookOrigin, "http://example.org/favicon.ico") is null,
+    "insecure downgrade redirect forbidden");
+Check(FaviconSafety.SafeRedirect(facebookOrigin, "https://192.168.0.1/icon.ico") is null &&
+      FaviconSafety.SafeRedirect(facebookOrigin, "https://localhost/icon.ico") is null,
+    "redirect to local/private host forbidden");
+Check(FaviconSafety.SafeRedirect(facebookOrigin, "https://example.org:8443/icon.ico") is null,
+    "nonstandard port favicon target forbidden");
+var iconHtml = "<html><head><link href='/favicon.ico' rel='shortcut icon' />" +
+    "<link sizes='32x32' type='image/png' href='https://static.xx.fbcdn.net/sample.png' rel='icon'>" +
+    "<link href='http://localhost/icon.ico' rel='icon'>" +
+    "</head><body><link href='https://evil.example/favicon.ico' rel='icon'></body></html>";
+var iconUrls = FaviconSafety.FindIconLinks(iconHtml, facebookOrigin);
+Check(iconUrls.Count == 2 && iconUrls[0].Host == "www.facebook.com" &&
+      iconUrls[1].Host == "static.xx.fbcdn.net", "HTML favicon discovery with relative and CDN paths");
+Check(FaviconSafety.FindIconLinks(
+    "<head><link rel=icon href=/apple-touch-icon.png></head>", facebookOrigin).Count == 1,
+    "unquoted favicon link attributes recognized");
+Check(!FaviconSafety.IsPermittedIconUri(new Uri("https://user:pass@example.org/favicon.ico")),
+    "favicon URL with embedded credentials rejected");
 Console.WriteLine($"RESULT {passed} tests passed");

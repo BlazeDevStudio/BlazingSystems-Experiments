@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 namespace BlazeNetMonitor.Core;
 
 /// <summary>Never make incidental icon fetches for local or link-local addresses.
@@ -58,5 +59,62 @@ public static class FaviconSafety
                 !(b.Take(12).All(x => x == 0)); // no unspecified / v4-compat
         }
         return false;
+    }
+
+    /// <summary>Validate icon URLs before any network request, including redirects and HTML links.</summary>
+    public static bool IsPermittedIconUri(Uri? uri) =>
+        uri is { IsAbsoluteUri: true } &&
+        uri.Scheme == Uri.UriSchemeHttps &&
+        uri.UserInfo.Length == 0 &&
+        uri.Port == 443 &&
+        OfficialHost(uri.Host) is not null;
+
+    /// <summary>Resolve redirects only to publicly routable HTTPS sites, including provider CDNs.</summary>
+    public static Uri? SafeRedirect(Uri current, string? location)
+    {
+        if (string.IsNullOrWhiteSpace(location)) return null;
+        if (!Uri.TryCreate(current, location.Trim(), out var next)) return null;
+        return IsPermittedIconUri(next) ? next : null;
+    }
+
+    /// <summary>
+    /// Extract site-declared official icons, whatever their CDN, without a third-party lookup.
+    /// Common link variants, attribute ordering, and relative URLs are supported.
+    /// </summary>
+    public static IReadOnlyList<Uri> FindIconLinks(string html, Uri page, int max = 8)
+    {
+        var urls = new List<Uri>();
+        if (!IsPermittedIconUri(page) || string.IsNullOrEmpty(html) || max <= 0) return urls;
+        // Only inspect head markup; avoid treating article/user-content links as official favicons.
+        int headEnd = html.IndexOf("</head", StringComparison.OrdinalIgnoreCase);
+        if (headEnd >= 0) html = html[..headEnd];
+        foreach (Match link in Regex.Matches(html, @"<link\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.Singleline,
+                     TimeSpan.FromMilliseconds(150)))
+        {
+            if (urls.Count >= Math.Min(12, max)) break;
+            var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Match attr in Regex.Matches(link.Value,
+                         @"(?<key>[a-z][\w:-]*)\s*=\s*(?:""(?<quoted>[^""]*)""|'(?<single>[^']*)'|(?<bare>[^\s>]+))",
+                         RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(150)))
+            {
+                var val = attr.Groups["quoted"].Success ? attr.Groups["quoted"].Value :
+                          attr.Groups["single"].Success ? attr.Groups["single"].Value :
+                          attr.Groups["bare"].Value;
+                attributes[attr.Groups["key"].Value] = WebUtility.HtmlDecode(val);
+            }
+            if (!attributes.TryGetValue("rel", out var rel) ||
+                !rel.Split(' ', '\t', '\n', '\r').Any(token =>
+                    token.Equals("icon", StringComparison.OrdinalIgnoreCase) ||
+                    token.Equals("apple-touch-icon", StringComparison.OrdinalIgnoreCase) ||
+                    token.Equals("apple-touch-icon-precomposed", StringComparison.OrdinalIgnoreCase)))
+                continue;
+            if (!attributes.TryGetValue("href", out var href) ||
+                href.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+                !Uri.TryCreate(page, href, out var url) || !IsPermittedIconUri(url) ||
+                url.AbsolutePath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (!urls.Contains(url)) urls.Add(url);
+        }
+        return urls;
     }
 }
