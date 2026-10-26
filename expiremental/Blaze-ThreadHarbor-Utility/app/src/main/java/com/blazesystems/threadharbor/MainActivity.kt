@@ -27,6 +27,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.documentfile.provider.DocumentFile
 import org.json.JSONObject
 
+/** A nested screen belongs to its parent tab; never give TabRow a negative index. */
+internal fun selectedHarborTabIndex(current: String, tabs: List<String>): Int {
+    val parent = if (current == "Developer Lab") "Chats" else current
+    return tabs.indexOf(parent).coerceAtLeast(0)
+}
+
 class MainActivity : ComponentActivity() {
     private lateinit var fixture: FixtureRuntime
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,8 +67,17 @@ private fun HarborShell(context: Context, fixture: FixtureRuntime) {
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
         Text("Blaze ThreadHarbor  •  Development",
             style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(12.dp))
-        ScrollableTabRow(selectedTabIndex=tabs.indexOf(current),edgePadding=0.dp) {
-            tabs.forEach {name->Tab(selected=current==name,onClick={current=name},text={Text(name,style=MaterialTheme.typography.labelSmall)})}
+        ScrollableTabRow(
+            selectedTabIndex = selectedHarborTabIndex(current, tabs),
+            edgePadding = 0.dp
+        ) {
+            tabs.forEach { name ->
+                Tab(
+                    selected = selectedHarborTabIndex(current, tabs) == tabs.indexOf(name),
+                    onClick = { current = name },
+                    text = { Text(name, style = MaterialTheme.typography.labelSmall) }
+                )
+            }
         }
         Box(Modifier.weight(1f)) {
             // Browser remains composed at zero size while other tools are open.
