@@ -24,7 +24,7 @@ internal sealed class NetworkMonitor : IDisposable
         {
             var interfaces = NetworkInterface.GetAllNetworkInterfaces();
             var selected = preferredId == "auto" ? interfaces.FirstOrDefault(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback && n.GetIPProperties().GatewayAddresses.Any(g => !IPAddress.Any.Equals(g.Address) && !IPAddress.IPv6Any.Equals(g.Address))) : interfaces.FirstOrDefault(n => n.Id == preferredId);
-            selected ??= interfaces.FirstOrDefault(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+            if (preferredId == "auto") selected ??= interfaces.FirstOrDefault(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback);
             if (selected == null || selected.OperationalStatus != OperationalStatus.Up)
             {
                 Reset(); AdapterName = "Disconnected"; Error = "No active network adapter";

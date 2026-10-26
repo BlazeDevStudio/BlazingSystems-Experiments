@@ -1,6 +1,6 @@
 # BlazeNetMonitor v0.1.0 — development preview
 
-**Blaze Systems** · Independent Windows 10 / Windows 11 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
+**Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
 ## What it does
 
@@ -26,7 +26,7 @@
 
 ## Build and run
 
-Requires .NET 8 SDK on a Windows machine (not required for the self-contained published EXE).
+Requires .NET 10 SDK on a Windows machine (not required for the self-contained published EXE).
 
 ```powershell
 cd src/BlazeNetMonitor
@@ -45,7 +45,7 @@ Publish a portable single-file 64-bit EXE:
 dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:SelfContained=true -o dist/win-x64
 ```
 
-GitHub Actions builds the test harness and a self-contained `BlazeNetMonitor.exe` for x64 and x86 and uploads each as an artifact. No third-party binaries or drivers.
+GitHub Actions builds the test harness and a self-contained `BlazeNetMonitor.exe` for x64, x86, and Arm64 and uploads each as an artifact. No third-party binaries or drivers.
 
 ## UI interaction
 
@@ -55,6 +55,9 @@ GitHub Actions builds the test harness and a self-contained `BlazeNetMonitor.exe
 - General settings supports **above-taskbar** (recommended) or **taskbar-area overlay** (experimental, could overlap taskbar icons). The latter is **not native shell/deskband integration**.
 
 ## Compatibility and limitations
+
+- .NET 10 LTS is actively supported through November 2028; regular Windows 10 Home/Pro reached end of OS support in October 2025. Windows 10 application runtime support is best-effort unless the Windows edition/build is still supported by Microsoft.
+
 
 - Intended Windows 10 and Windows 11 desktop (WinForms) with per-monitor DPI awareness. Builds on Windows hosted runners are **not Windows 10/11 installation tests**.
 - **Future Windows versions are a compatibility goal, not a guarantee.** Avoids undocumented Explorer injection, custom shell DLLs, privileged drivers, or taskbar reparenting. Placement may still require changes when Microsoft changes taskbar behavior.

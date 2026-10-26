@@ -2,4 +2,4 @@
 
 Implemented WinForms widget, hover panel, settings, connection table, core quality classification, JSON persistence, and core console test runner. No original binary disassembly, downloaded code, or copied artwork.
 
-**Execution evidence:** local Linux execution environment has no `dotnet`, `csc`, or `mcs` and outbound DNS access is unavailable. Code has been authored but **not compiled**, tested, or manually exercised on Windows from this environment. GitHub Actions is configured to build/test Windows upon push; wait for actual run evidence before changing status.
+**Execution evidence:** GitHub Windows CI run #40293805386 built self-contained x86 and x64 executables and completed headless core assertions on .NET 8. The current change retargets to .NET 10 LTS and adds an Arm64 publish target; these newer builds are pending independent CI evidence. Manual Windows 10/11 desktop and hardware testing remain **not run**. The local Linux authoring environment has no .NET SDK.

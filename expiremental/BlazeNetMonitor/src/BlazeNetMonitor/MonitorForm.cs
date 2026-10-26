@@ -193,7 +193,7 @@ internal sealed class MonitorForm : Form
     {
         if (IsDisposed) return;
         var uptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
-        _info.RefreshInfo(_network, _data, _snapshots, uptime);
+        _info.RefreshInfo(_network, _data, _snapshots, _speed, uptime);
         var screen = Screen.FromControl(this).WorkingArea;
         int x = Math.Clamp(Left + Width - _info.Width, screen.Left, Math.Max(screen.Left, screen.Right - _info.Width));
         int y = Top - _info.Height - 5;

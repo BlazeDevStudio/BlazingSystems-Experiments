@@ -1,6 +1,6 @@
 # Architecture — 2026-10-26
 
-**Stack:** .NET 8 WinForms (Windows-native application) and .NET 8 headless core. No NuGet dependencies and no elevated privileges. C# managed memory, no network driver or COM shell injection.
+**Stack:** .NET 10 WinForms (Windows-native application) and .NET 10 headless core. No NuGet dependencies and no elevated privileges. C# managed memory, no network driver or COM shell injection.
 
 **Flow:** `NetworkMonitor.Sample()` reads `NetworkInterface.GetIPv4Statistics()` monotonic adapter counters; `MonitorMath.Compute()` computes bytes/s from wall-independent `Stopwatch` duration. `NetworkMonitor.Probe()` independently probes targets in parallel via ICMP/HTTPS/DNS/TCP and updates `QualityTracker` states; `MonitorForm` paints speed and dot colors; `InfoForm` shows up-to-date hover stats. `Storage` saves locally as atomic-replace JSON, and `SettingsForm` edits settings.
 
