@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'identity.dart';
+import 'recoverable_json_file.dart';
 
 /// Intentional defaults: auto-receive known LAN peers, never auto-open files.
 /// Receiver quotas keep unsolicited files from consuming all device storage.
@@ -32,7 +33,8 @@ class AppSettings {
   static Future<AppSettings> load() async {
     final settings = AppSettings();
     try {
-      final map = jsonDecode(await (await _file()).readAsString());
+      final map = await RecoverableJsonFile.read(await _file(),
+          isValid: (value) => value is Map<String, dynamic>);
       if (map is Map<String,dynamic>) {
         settings.autoReceiveFiles = map['autoReceiveFiles'] is bool ? map['autoReceiveFiles'] : true;
         settings.maximumFileMb = map['maximumFileMb'] is int ?
@@ -64,7 +66,7 @@ class AppSettings {
 
   Future<void> save() async {
     final file = await _file();
-    await file.writeAsString(jsonEncode({
+    await RecoverableJsonFile.write(file, {
       'autoReceiveFiles': autoReceiveFiles,
       'maximumFileMb': maximumFileMb,
       'soundsEnabled': soundsEnabled,
@@ -79,7 +81,7 @@ class AppSettings {
       'fontScale': fontScale,
       'threadAccents': threadAccents,
       'soundPaths': soundPaths,
-    }), flush:true);
+    });
   }
 
   /// reg.exe uses the verb "add", not "/add"; this was the original Windows
