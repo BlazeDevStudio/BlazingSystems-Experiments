@@ -1,11 +1,13 @@
 package com.blazesystems.threadharbor
 
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebView
+import kotlinx.coroutines.launch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -171,6 +173,26 @@ private fun DownloadsScreen(context: Context) {
     val manager = remember { context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager }
     var refresh by remember { mutableIntStateOf(0) }
     var feedback by remember { mutableStateOf("") }
+    var pendingSaveId by remember { mutableStateOf<Long?>(null) }
+    var exporting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val savePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val downloadId = pendingSaveId
+        pendingSaveId = null
+        val destination = result.data?.data
+        if (result.resultCode == Activity.RESULT_OK && downloadId != null && destination != null) {
+            exporting = true
+            feedback = "Copying completed download to your selected document..."
+            scope.launch {
+                val outcome = exportCompletedDownload(context, manager, downloadId, destination)
+                exporting = false
+                feedback = outcome.fold(
+                    onSuccess = { "Saved successfully: " + it + " bytes" },
+                    onFailure = { "Save As failed: " + (it.message ?: "storage error") }
+                )
+            }
+        }
+    }
     val ids = remember(refresh) {
         prefs.getString("ids", "").orEmpty().split(",")
             .mapNotNull { it.toLongOrNull() }.distinct().reversed()
@@ -183,7 +205,7 @@ private fun DownloadsScreen(context: Context) {
     }
     Column(Modifier.fillMaxSize().padding(12.dp)) {
         Text("Downloads", style = MaterialTheme.typography.titleLarge)
-        Text("Android system transfers. Custom Save As and user-controlled pause/resume remain unsupported.",
+        Text("System transfers. Save As copies a completed file to your chosen location; network pause/resume remains unsupported.",
             style = MaterialTheme.typography.bodySmall)
         Row {
             TextButton(onClick = { refresh++ }) { Text("Refresh") }
@@ -237,6 +259,32 @@ private fun DownloadsScreen(context: Context) {
                                             })
                                         } catch (_: Exception) { feedback = "No file viewer available" }
                                     }) { Text("Open") }
+                                }
+                                if (info.state == DownloadManager.STATUS_SUCCESSFUL) {
+                                    TextButton(enabled = !exporting, onClick = {
+                                        val suggested = info.name.substringAfterLast('/')
+                                            .replace(':', '_').take(140).ifBlank { "download" }
+                                        val mime = try {
+                                            manager.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
+                                                if (cursor.moveToFirst()) {
+                                                    cursor.getString(cursor.getColumnIndexOrThrow(
+                                                        DownloadManager.COLUMN_MEDIA_TYPE
+                                                    ))
+                                                } else null
+                                            }
+                                        } catch (_: Exception) { null }
+                                        try {
+                                            pendingSaveId = id
+                                            savePicker.launch(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                                addCategory(Intent.CATEGORY_OPENABLE)
+                                                type = mime?.takeIf { it.contains("/") } ?: "application/octet-stream"
+                                                putExtra(Intent.EXTRA_TITLE, suggested)
+                                            })
+                                        } catch (_: Exception) {
+                                            pendingSaveId = null
+                                            feedback = "No document provider can create this file"
+                                        }
+                                    }) { Text("Save As") }
                                 }
                                 if (info.state == DownloadManager.STATUS_FAILED &&
                                     (info.url.startsWith("https://") || info.url.startsWith("http://"))) {
