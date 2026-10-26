@@ -65,6 +65,7 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
     var selected by remember { mutableIntStateOf(preferences.getInt("selected", 0)) }
     var counter by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf<String?>(null) }
+    var reader by remember { mutableStateOf<ReaderSnapshot?>(null) }
     val bookmarks = remember {
         mutableStateListOf<String>().apply {
             addAll(readStoredUrls(preferences.getString("bookmarks", null), 100))
@@ -223,9 +224,12 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
     var address by remember(active.id) { mutableStateOf(active.address) }
     LaunchedEffect(active.id, active.address) { address = active.address }
     LaunchedEffect(tabs.size, selected) { saveSession() }
-    BackHandler(enabled = visible && active.view.canGoBack()) { active.view.goBack() }
+    BackHandler(enabled = visible && reader != null) { reader = null }
+    BackHandler(enabled = visible && reader == null && active.view.canGoBack()) { active.view.goBack() }
 
-    Column(Modifier.fillMaxSize()) {
+    if (reader != null) {
+        NativeReaderScreen(reader!!) { reader = null }
+    } else Column(Modifier.fillMaxSize()) {
         Text("Tabs: ${tabs.size}", style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState())) {
@@ -302,6 +306,12 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                     })
                 }
             }
+            TextButton(onClick = {
+                interpretVisiblePage(active.view) { snapshot ->
+                    if (snapshot == null) status = "This page cannot be interpreted in native reading mode"
+                    else reader = snapshot
+                }
+            }) { Text("Native Reader") }
             TextButton(onClick = { openExternal(active.address) }) { Text("External") }
         }
         status?.let { Text(it, style = MaterialTheme.typography.bodySmall,
