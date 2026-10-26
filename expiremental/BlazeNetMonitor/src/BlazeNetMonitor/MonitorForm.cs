@@ -31,6 +31,9 @@ internal sealed class MonitorForm : Form
     private readonly TargetSnapshot[] _snapshots = new TargetSnapshot[2];
     private readonly Queue<double> _upSamples = new();
     private readonly Queue<double> _downSamples = new();
+    private readonly Bitmap?[] _favicons = new Bitmap?[2];
+    private CancellationTokenSource? _faviconLoad;
+    private int _faviconGeneration;
     private readonly CancellationTokenSource _stop = new();
     private readonly ContextMenuStrip _menu = new();
     private SpeedSample _speed;
@@ -127,7 +130,9 @@ internal sealed class MonitorForm : Form
         {
             RestoreGeometry(); _trafficTimer.Start(); _probeTimer.Start();
             _fullscreenTimer.Start(); _overlayGuardTimer.Start();
-            PromoteOptionalOverlay(); await ProbeTargets();
+            PromoteOptionalOverlay();
+            if (_data.Settings.ShowFavicons) _ = ReloadFaviconsAsync();
+            await ProbeTargets();
         };
         SystemEventsHook();
     }
@@ -165,7 +170,7 @@ internal sealed class MonitorForm : Form
         if (backgroundless) TransparencyKey = backdrop;
         Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
-        _settingsForm?.ApplyEditorTheme();
+        // IMPORTANT: live preview must not restyle native ComboBoxes while dropped down.
         Invalidate();
     }
 
@@ -565,7 +570,8 @@ internal sealed class MonitorForm : Form
         _ticks++;
         // Never snap a user-positioned widget back to the taskbar during polling.
         if (_ticks % 30 == 0) SaveSafe();
-        _tray.Text = "BlazeNetMonitor " + MonitorMath.Rate(speed.DownloadBytesPerSecond, _data.Settings.UseBits);
+        _tray.Text = "BlazeNetMonitor " + MonitorMath.Rate(speed.DownloadBytesPerSecond,
+            DisplayPreferences.UseBits(_data.Settings, Width, Height));
         if (_showHover) UpdateHover();
         Invalidate();
     }
@@ -573,7 +579,7 @@ internal sealed class MonitorForm : Form
     private static void AppendSample(Queue<double> list, double number)
     {
         list.Enqueue(number);
-        while (list.Count > 36) list.Dequeue();
+        while (list.Count > 620) list.Dequeue();
     }
 
     private async Task ProbeTargets()
@@ -666,6 +672,8 @@ internal sealed class MonitorForm : Form
             bool commit = editor.DialogResult == DialogResult.OK && editor.SavedSettings is not null;
             var final = commit ? editor.SavedSettings! : original;
             bool targetChanged = commit && TargetsDiffer(original, final);
+            bool faviconsChanged = commit && (targetChanged ||
+                original.ShowFavicons != final.ShowFavicons);
             _data.Settings = final.Copy();
             _settingsBeforeEdit = null;
             _settingsForm = null;
@@ -684,6 +692,7 @@ internal sealed class MonitorForm : Form
                 ApplyAppearance();
                 Reposition();
                 if (commit) SaveSafe();
+                if (faviconsChanged) _ = ReloadFaviconsAsync();
                 if (editNext) BeginGeometryEdit();
                 RefreshFullscreenState();
             }
@@ -691,6 +700,72 @@ internal sealed class MonitorForm : Form
         // Modeless means no pause in the traffic/probe timers, and the widget
         // remains visible while appearance controls preview against the real UI.
         editor.Show(this);
+    }
+
+    private async Task ReloadFaviconsAsync()
+    {
+        _faviconLoad?.Cancel();
+        _faviconLoad?.Dispose();
+        _faviconLoad = new CancellationTokenSource();
+        int generation = ++_faviconGeneration;
+        var ct = _faviconLoad.Token;
+        if (!_data.Settings.ShowFavicons)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                _favicons[i]?.Dispose();
+                _favicons[i] = null;
+            }
+            Invalidate();
+            return;
+        }
+
+        var targets = _data.Settings.Targets.Select(t => new ProbeTarget
+        {
+            Name = t.Name, Address = t.Address, Protocol = t.Protocol, Port = t.Port
+        }).ToArray();
+        var fetched = await Task.WhenAll(targets.Select(t => FaviconLoader.TryLoadAsync(t, ct)));
+        if (ct.IsCancellationRequested || generation != _faviconGeneration || IsDisposed)
+        {
+            foreach (var bitmap in fetched) bitmap?.Dispose();
+            return;
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            _favicons[i]?.Dispose();
+            _favicons[i] = fetched[i];
+        }
+        Invalidate();
+    }
+
+    private static void DrawCircularFavicon(Graphics g, Bitmap? favicon, float x, float y, float size)
+    {
+        if (favicon is null) return;
+        var state = g.Save();
+        try
+        {
+            using var clip = new GraphicsPath();
+            clip.AddEllipse(x, y, size, size);
+            g.SetClip(clip);
+            g.DrawImage(favicon, x, y, size, size);
+        }
+        finally { g.Restore(state); }
+    }
+
+    private string CurrentExtraMetric(string metric)
+    {
+        var samples = _snapshots.Where(s => s.State != ConnectionState.Unknown).ToArray();
+        if (metric == "Totals")
+            return $"Today ↑{MonitorMath.Bytes(_data.Totals.TodayUpload)} ↓{MonitorMath.Bytes(_data.Totals.TodayDownload)}";
+        if (samples.Length == 0) return "Waiting for connection checks";
+        return metric switch
+        {
+            "Latency" => $"Latency {samples.Average(s => s.LatencyMs):0} ms",
+            "Loss" => $"Packet loss {samples.Max(s => s.LossPercent):0.#}%",
+            "Jitter" => $"Jitter {samples.Max(s => s.JitterMs):0} ms",
+            _ => string.Empty
+        };
     }
 
     private void ShowConnections()
@@ -867,11 +942,15 @@ internal sealed class MonitorForm : Form
     {
         if (_editingGeometry) CancelGeometryEdit();
         _stop.Cancel();
+        ++_faviconGeneration;
+        _faviconLoad?.Cancel();
         _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop(); _glancePreviewTimer.Stop(); _overlayGuardTimer.Stop();
         if (_settingsForm is { IsDisposed: false }) _settingsForm.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnPreferenceChanged;
         SaveSafe();
+        foreach (var favicon in _favicons) favicon?.Dispose();
+        _faviconLoad?.Dispose();
         _tray.Visible = false;
         _tray.Dispose();
         _info.Close(); _info.Dispose();
