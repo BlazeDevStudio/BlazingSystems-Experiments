@@ -173,6 +173,20 @@ internal sealed class MonitorForm : Form
     [DllImport("shell32.dll", SetLastError = true)]
     private static extern nuint SHAppBarMessage(uint message, ref AppBarData appBar);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(nint window, nint insertAfter,
+        int x, int y, int cx, int cy, uint flags);
+
+    private void PromoteOptionalOverlay()
+    {
+        // Opt-in taskbar overlay is independent of Explorer. Do not steal focus.
+        if (WidgetGeometry.ResolvePlacement(_data.Settings) != WidgetGeometry.InsideTaskbar ||
+            !Visible || _hiddenForFullscreen || !IsHandleCreated) return;
+        const uint flags = 0x0001 | 0x0002 | 0x0010; // NOSIZE | NOMOVE | NOACTIVATE
+        SetWindowPos(Handle, (nint)(-1), 0, 0, 0, 0, flags);
+    }
+
     private static Rectangle TaskbarBounds(Screen screen)
     {
         // ABM_GETTASKBARPOS = 5. Primary system taskbar only.
@@ -227,6 +241,7 @@ internal sealed class MonitorForm : Form
                 TaskbarBounds(screen), positionMode, _data.Settings.HorizontalOffset);
         }
         Bounds = SafeBounds(next, screen);
+        PromoteOptionalOverlay();
     }
 
     private void FitTaskbarHeight()
@@ -253,6 +268,7 @@ internal sealed class MonitorForm : Form
         _data.Settings.WidgetWidth = Width;
         _data.Settings.WidgetHeight = Height;
         SaveSafe();
+        PromoteOptionalOverlay();
         Invalidate();
     }
 
@@ -325,6 +341,7 @@ internal sealed class MonitorForm : Form
         _data.Settings.WidgetWidth = Width;
         _data.Settings.WidgetHeight = Height;
         SaveSafe();
+        PromoteOptionalOverlay();
         BuildMenu();
         Invalidate();
     }
