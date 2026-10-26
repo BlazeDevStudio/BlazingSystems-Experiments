@@ -160,37 +160,161 @@ private fun DownloadsScreen(context:Context) {
     }
 }
 @Composable
-private fun FilesScreen(context:Context) {
-    var folder by remember{mutableStateOf<Uri?>(null)}
-    val choose=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()){uri->
-        if(uri!=null){
-            try{context.contentResolver.takePersistableUriPermission(uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)}catch(_:Exception){}
-            folder=uri
+private fun FilesScreen(context: Context) {
+    val prefs = remember { context.getSharedPreferences("file_tree_v1", Context.MODE_PRIVATE) }
+    var rootUri by remember { mutableStateOf(prefs.getString("tree", null)?.let(Uri::parse)) }
+    val path = remember { mutableStateListOf<DocumentFile>() }
+    var refresh by remember { mutableIntStateOf(0) }
+    var feedback by remember { mutableStateOf("") }
+    var entryName by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf<DocumentFile?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
+
+    val choose = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) try {
+            context.contentResolver.takePersistableUriPermission(
+                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            rootUri = uri
+            prefs.edit().putString("tree", uri.toString()).apply()
+            feedback = ""
+        } catch (_: Exception) { feedback = "The provider did not grant persistent folder access" }
+    }
+    LaunchedEffect(rootUri) {
+        path.clear()
+        selected = null
+        rootUri?.let { uri ->
+            val granted = context.contentResolver.persistedUriPermissions.any {
+                it.uri == uri && it.isReadPermission
+            }
+            if (granted) {
+                DocumentFile.fromTreeUri(context, uri)?.let { path.add(it) }
+            } else feedback = "Folder access expired. Please choose it again."
         }
     }
-    val dir=remember(folder){folder?.let{DocumentFile.fromTreeUri(context,it)}}
-    val records=remember(dir){try{dir?.listFiles()?.take(200)?.toList()?:emptyList()}
-        catch(_:Exception){emptyList()}}
-    Column(Modifier.padding(16.dp)){
-        Text("Files — user-authorized folder",style=MaterialTheme.typography.titleLarge)
-        Button(onClick={choose.launch(null)}){Text("Choose folder")}
-        if(dir==null)Text("No folder granted yet.")
-        else{
-            Text(dir.name?:"Folder")
-            LazyColumn{items(records){file->
-                TextButton(onClick={
-                    if(file.isFile)try{
-                        context.startActivity(Intent(Intent.ACTION_VIEW).apply{
-                            setDataAndType(file.uri,file.type?:"*/*")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                        })
-                    }catch(_:Exception){}
-                }){Text((if(file.isDirectory)"Folder: " else "File: ")+(file.name?:"unnamed"))}
-            }}
+    val current = path.lastOrNull()
+    val records = remember(current, refresh) {
+        try {
+            current?.listFiles()?.sortedWith(
+                compareBy<DocumentFile> { !it.isDirectory }.thenBy { it.name?.lowercase() }
+            ) ?: emptyList()
+        } catch (_: Exception) { emptyList() }
+    }
+    val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val destination = path.lastOrNull()
+        if (uri != null && destination != null) {
+            try {
+                val name = DocumentFile.fromSingleUri(context, uri)?.name ?: "imported-file"
+                val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                val created = destination.createFile(mime, name)
+                    ?: error("Provider rejected file creation")
+                try {
+                    val input = requireNotNull(context.contentResolver.openInputStream(uri))
+                    val output = requireNotNull(context.contentResolver.openOutputStream(created.uri))
+                    input.use { source -> output.use { destinationStream -> source.copyTo(destinationStream) } }
+                    feedback = "Imported " + name
+                } catch (exc: Exception) {
+                    created.delete()
+                    throw exc
+                }
+                refresh++
+            } catch (_: Exception) { feedback = "Import failed: folder write access or space unavailable" }
+        }
+    }
+
+    if (confirmDelete && selected != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete selected item?") },
+            text = { Text("Delete " + selected?.name + "? This may be permanent; no Trash is provided.") },
+            confirmButton = { TextButton(onClick = {
+                val item = selected
+                confirmDelete = false
+                if (item?.delete() == true) {
+                    selected = null
+                    entryName = ""
+                    feedback = "Deleted"
+                    refresh++
+                } else feedback = "Deletion failed or access was revoked"
+            }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } }
+        )
+    }
+
+    Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Text("Files • Android folder access", style = MaterialTheme.typography.titleLarge)
+        Row {
+            Button(onClick = { choose.launch(null) }) { Text("Choose folder") }
+            TextButton(onClick = { refresh++ }) { Text("Refresh") }
+            if (path.size > 1) TextButton(onClick = {
+                path.removeAt(path.lastIndex)
+                selected = null
+                entryName = ""
+            }) { Text("Up") }
+        }
+        if (feedback.isNotBlank()) Text(feedback, style = MaterialTheme.typography.bodySmall)
+        if (current == null) Text("Select a folder to browse, create, import and manage files.")
+        else {
+            Text(current.name ?: "Selected folder", style = MaterialTheme.typography.titleMedium)
+            Row {
+                OutlinedTextField(
+                    entryName, { entryName = it.take(160) },
+                    label = { Text(if (selected == null) "New folder name" else "Rename selected item") },
+                    modifier = Modifier.weight(1f), singleLine = true
+                )
+                TextButton(enabled = entryName.isNotBlank(), onClick = {
+                    val name = entryName.trim()
+                    if (name.isNotEmpty()) {
+                        val target = selected
+                        val success = if (target != null) target.renameTo(name)
+                                      else current.createDirectory(name) != null
+                        feedback = if (success) "Saved successfully" else "Operation failed"
+                        if (success) {
+                            selected = null
+                            entryName = ""
+                            refresh++
+                        }
+                    }
+                }) { Text(if (selected == null) "Create" else "Rename") }
+            }
+            Row {
+                Button(onClick = { importPicker.launch(arrayOf("*/*")) }) { Text("Import file") }
+                if (selected != null) {
+                    TextButton(onClick = { selected = null; entryName = "" }) { Text("Deselect") }
+                    TextButton(onClick = { confirmDelete = true }) { Text("Delete") }
+                }
+            }
+            LazyColumn {
+                items(records, key = { it.uri.toString() }) { file ->
+                    Row {
+                        TextButton(modifier = Modifier.weight(1f), onClick = {
+                            if (file.isDirectory) {
+                                path.add(file)
+                                selected = null
+                                entryName = ""
+                            } else {
+                                try {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(file.uri, file.type ?: "*/*")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    })
+                                } catch (_: Exception) { feedback = "No app available to open the file" }
+                            }
+                        }) {
+                            Text((if (file.isDirectory) "📁 " else "📄 ") + (file.name ?: "unnamed"),
+                                maxLines = 2)
+                        }
+                        TextButton(onClick = {
+                            selected = file
+                            entryName = file.name.orEmpty()
+                        }) { Text("Edit") }
+                    }
+                }
+            }
         }
     }
 }
+
 @Composable
 private fun GalleryScreen() {
     var uri by remember{mutableStateOf<Uri?>(null)}
