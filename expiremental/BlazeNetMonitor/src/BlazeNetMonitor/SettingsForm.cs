@@ -7,7 +7,7 @@ namespace BlazeNetMonitor;
 internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
-    private readonly ComboBox _adapter, _unit, _placement, _themeMode;
+    private readonly ComboBox _adapter, _placement, _themeMode;
     private readonly ComboBox _graphStyle, _graphWindow, _graphRefresh, _metricMode, _unitMode;
     private readonly Button _upGraphColor, _downGraphColor;
     private string _upColorValue, _downColorValue;
@@ -21,10 +21,13 @@ internal sealed class SettingsForm : Form
     public bool ResizeAfterSave { get; private set; }
     private readonly NumericUpDown _offset, _interval;
     private readonly CheckBox _autostart;
+    private readonly Label _offsetLabel;
     private readonly TextBox[] _names = new TextBox[2], _addresses = new TextBox[2];
     private readonly ComboBox[] _protocols = new ComboBox[2];
     private readonly NumericUpDown[] _ports = new NumericUpDown[2];
-    private readonly List<NetworkInterface> _adapters;
+    private readonly List<NetworkInterface> _adapters = [];
+    private readonly CheckBox _includeVirtual;
+    private readonly Label[] _addressLabels = new Label[2], _portLabels = new Label[2], _targetExamples = new Label[2];
 
     public SettingsForm(AppSettings settings)
     {
@@ -37,7 +40,7 @@ internal sealed class SettingsForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
         ClientSize = new Size(545, 585);
-        _adapters = NetworkInterface.GetAllNetworkInterfaces().ToList();
+        // Rebuild only on explicit expand; disconnected physical NICs stay visible.
         var tabs = new TabControl { Dock = DockStyle.Fill };
         var general = new TabPage("General") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var targets = new TabPage("Health targets") { BackColor = Theme.Panel, ForeColor = Theme.Text };
@@ -47,11 +50,8 @@ internal sealed class SettingsForm : Form
         var about = new TabPage("About") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         tabs.TabPages.AddRange([general, appearance, graphs, metrics, targets, about]);
         Controls.Add(tabs);
-        _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)", .._adapters.Select(a => a.Name)]);
-        _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == settings.AdapterId) + 1);
-        _unit = Choice(general, "Speed units", 97, ["Mbps / Kbps (bits)", "MB/s / KB/s (bytes)"]);
-        _unit.SelectedIndex = settings.UseBits ? 0 : 1;
-        _placement = Choice(general, "Widget placement", 170,
+        _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)"]);
+        _placement = Choice(general, "Widget placement", 127,
             ["Floating (desktop + taskbar area)", "Above taskbar (dock)", "Inside taskbar (overlay)"]);
         _placement.SelectedIndex = WidgetGeometry.ResolvePlacement(settings) switch
         {
@@ -59,14 +59,29 @@ internal sealed class SettingsForm : Form
             WidgetGeometry.InsideTaskbar => 2,
             _ => 1
         };
-        LabelAt(general, "Horizontal offset from right edge (px)", 246);
-        _offset = new NumericUpDown { Left = 24, Top = 269, Width = 116, Minimum = 0, Maximum = 4000, Value = Math.Clamp(settings.HorizontalOffset, 0, 4000) };
+        _offsetLabel = LabelAt(general, "Horizontal offset from right edge (px)", 211);
+        _offset = new NumericUpDown { Left = 24, Top = 237, Width = 116, Minimum = 0, Maximum = 4000, Value = Math.Clamp(settings.HorizontalOffset, 0, 4000) };
         general.Controls.Add(_offset);
-        LabelAt(general, "Probe interval (seconds)", 305);
-        _interval = new NumericUpDown { Left = 24, Top = 328, Width = 116, Minimum = 3, Maximum = 120, Value = Math.Clamp(settings.ProbeIntervalSeconds, 3, 120) };
+        LabelAt(general, "Probe interval (seconds)", 285);
+        _interval = new NumericUpDown { Left = 24, Top = 310, Width = 116, Minimum = 3, Maximum = 120, Value = Math.Clamp(settings.ProbeIntervalSeconds, 3, 120) };
         general.Controls.Add(_interval);
-        _autostart = new CheckBox { Text = "Start with Windows (current user)", Left = 24, Top = 370, AutoSize = true, Checked = settings.StartWithWindows };
-        general.Controls.Add(_autostart);
+        _autostart = new CheckBox { Text = "Start with Windows", Left = 24, Top = 361,
+            AutoSize = true, Checked = settings.StartWithWindows };
+        _includeVirtual = new CheckBox { Left = 24, Top = 401, Width = 430, Height = 28,
+            Text = "Also show virtual, VPN and tunnel adapters" };
+        general.Controls.AddRange([_autostart, _includeVirtual]);
+        _offset.Visible = _offsetLabel.Visible = _placement.SelectedIndex != 0;
+        _includeVirtual.Checked = settings.AdapterId != "auto" &&
+            !NetworkInterface.GetAllNetworkInterfaces().Any(a => a.Id == settings.AdapterId &&
+                AdapterUiPolicy.IsVisible(a.Name, a.Description, a.NetworkInterfaceType, false));
+        RebuildAdapters(settings.AdapterId);
+        _includeVirtual.CheckedChanged += (_, _) => { RebuildAdapters(); RaisePreview(); };
+        _placement.SelectionChangeCommitted += (_, _) =>
+        {
+            bool isDocked = _placement.SelectedIndex != 0;
+            _offset.Visible = isDocked;
+            _offsetLabel.Visible = isDocked;
+        };
         LabelAt(appearance, "Color theme", 22);
         _themeMode = new ComboBox { Left = 24, Top = 48, Width = 310, DropDownStyle = ComboBoxStyle.DropDownList };
         _themeMode.Items.AddRange(["System", "Light", "Dark"]);
@@ -118,7 +133,7 @@ internal sealed class SettingsForm : Form
         _showGraphs.CheckedChanged += (_, _) => RaisePreview();
         _fullscreen.CheckedChanged += (_, _) => RaisePreview();
         _transparent.CheckedChanged += (_, _) => RaisePreview();
-        _unit.SelectionChangeCommitted += (_, _) => RaisePreview();
+        // Speed units are configured once in Metrics (no duplicate control).
         _adapter.SelectionChangeCommitted += (_, _) => RaisePreview();
         _placement.SelectionChangeCommitted += (_, _) => RaisePreview();
         _offset.ValueChanged += (_, _) => RaisePreview();
@@ -194,17 +209,49 @@ internal sealed class SettingsForm : Form
 
         for (int i = 0; i < 2; i++)
         {
-            int y = 25 + i * 176;
-            LabelAt(targets, $"DOT {i + 1} · {settings.Targets[i].Name}", y);
-            _names[i] = new TextBox { Left = 24, Top = y + 27, Width = 156, Text = settings.Targets[i].Name };
-            _protocols[i] = new ComboBox { Left = 188, Top = y + 27, Width = 124, DropDownStyle = ComboBoxStyle.DropDownList };
+            int index = i;
+            int y = 22 + i * 232;
+            var target = settings.Targets[i];
+            LabelAt(targets, $"TARGET {i + 1}", y);
+            _names[i] = new TextBox
+            {
+                Left = 24, Top = y + 31, Width = 182,
+                Text = SettingsUiPolicy.DefaultName(target.Name, i)
+            };
+            _protocols[i] = new ComboBox
+            {
+                Left = 228, Top = y + 31, Width = 205,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
             _protocols[i].Items.AddRange(Enum.GetNames<TargetProtocol>());
-            _protocols[i].SelectedItem = settings.Targets[i].Protocol.ToString();
-            _ports[i] = new NumericUpDown { Left = 320, Top = y + 27, Width = 85, Minimum = 1, Maximum = 65535, Value = Math.Clamp(settings.Targets[i].Port, 1, 65535) };
-            _addresses[i] = new TextBox { Left = 24, Top = y + 66, Width = 380, Text = settings.Targets[i].Address };
-            targets.Controls.AddRange([_names[i], _protocols[i], _ports[i], _addresses[i]]);
-            var hint = new Label { Left = 24, Top = y + 103, Width = 456, Height = 48, ForeColor = Theme.Muted, Text = "Host or DNS: 1.1.1.1 / example.com   ·   HTTPS: https://example.com\nTCP uses Port. Green/blue require consistently good probes." };
-            targets.Controls.Add(hint);
+            _protocols[i].SelectedItem = target.Protocol.ToString();
+            _addressLabels[i] = LabelAt(targets, "Address", y + 70);
+            _addresses[i] = new TextBox
+            {
+                Left = 24, Top = y + 97, Width = 415, Text = target.Address,
+                AccessibleName = $"Target {i + 1} address"
+            };
+            _portLabels[i] = new Label { Left = 358, Top = y + 70, Width = 85, Height = 24, Text = "TCP port" };
+            _ports[i] = new NumericUpDown
+            {
+                Left = 354, Top = y + 97, Width = 85, Minimum = 1,
+                Maximum = 65535, Value = Math.Clamp(target.Port, 1, 65535)
+            };
+            _targetExamples[i] = new Label
+            {
+                Left = 24, Top = y + 139, Width = 458, Height = 48, ForeColor = Theme.Muted
+            };
+            targets.Controls.AddRange([
+                _names[i], _protocols[i], _addresses[i],
+                _portLabels[i], _ports[i], _targetExamples[i]
+            ]);
+            _protocols[i].SelectionChangeCommitted += (_, _) => RefreshTargetUi(index);
+            RefreshTargetUi(i);
+            if (i == 0)
+                targets.Controls.Add(new Label
+                {
+                    Left = 24, Top = y + 193, Width = 465, Height = 2, BackColor = Theme.Border
+                });
         }
         about.Controls.Add(new Label { Left = 24, Top = 28, Width = 455, Height = 310, ForeColor = Theme.Text, Text = "BlazeNetMonitor v0.2.0 development\nBlaze Systems · Windows 10/11 x86/x64/Arm64\n\nIndependent implementation inspired by the functionality of classic NetSpeedMonitor by Florian Gilles. No original code or artwork bundled.\n\nStatus thresholds are latency, jitter, and packet-loss estimates, not an internet speed test. Firewalls may block ICMP; choose HTTPS for those networks.\n\nWorks without administrator rights. All settings and totals are stored locally." });
         about.Controls.Add(new Label { Left = 24, Top = 338, Width = 460, Height = 50,
@@ -234,12 +281,54 @@ internal sealed class SettingsForm : Form
         parent.Controls.Add(box);
         return box;
     }
-    private static void LabelAt(Control parent, string text, int y) => parent.Controls.Add(new Label { Text = text, Left = 24, Top = y, Width = 445, Height = 24 });
+    private static Label LabelAt(Control parent, string text, int y)
+    {
+        var label = new Label { Text = text, Left = 24, Top = y, Width = 445, Height = 24 };
+        parent.Controls.Add(label);
+        return label;
+    }
+
+    private void RebuildAdapters(string? requestedId = null)
+    {
+        requestedId ??= _adapter.SelectedIndex > 0 && _adapter.SelectedIndex <= _adapters.Count
+            ? _adapters[_adapter.SelectedIndex - 1].Id : _settings.AdapterId;
+        _adapters.Clear();
+        _adapters.AddRange(NetworkInterface.GetAllNetworkInterfaces()
+            .Where(a => AdapterUiPolicy.IsVisible(a.Name, a.Description,
+                a.NetworkInterfaceType, _includeVirtual.Checked))
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+        _adapter.BeginUpdate();
+        _adapter.Items.Clear();
+        _adapter.Items.Add("Automatic (default route)");
+        foreach (var adapter in _adapters)
+        {
+            var state = adapter.OperationalStatus == OperationalStatus.Up
+                ? "Connected" : "Disconnected";
+            _adapter.Items.Add($"{adapter.Name}  ·  {state}");
+        }
+        _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == requestedId) + 1);
+        _adapter.EndUpdate();
+    }
+
+    private void RefreshTargetUi(int index)
+    {
+        if (_protocols[index].SelectedItem is null) return;
+        var protocol = Enum.Parse<TargetProtocol>(_protocols[index].SelectedItem!.ToString()!);
+        _addresses[index].PlaceholderText = SettingsUiPolicy.Placeholder(protocol);
+        _addressLabels[index].Text = SettingsUiPolicy.InputLabel(protocol);
+        _targetExamples[index].Text = $"Example: {SettingsUiPolicy.Placeholder(protocol)}" +
+            (protocol == TargetProtocol.Tcp ? "  ·  Port is required" :
+             protocol == TargetProtocol.Https ? "  ·  Secure URL required" : "");
+        bool tcp = SettingsUiPolicy.ShowPort(protocol);
+        _ports[index].Visible = _portLabels[index].Visible = tcp;
+        _addresses[index].Width = tcp ? 313 : 415;
+        _addresses[index].Invalidate();
+    }
     private AppSettings BuildPreview()
     {
         var next = _settings.Copy();
         next.AdapterId = _adapter.SelectedIndex < 1 ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
-        next.UseBits = _unit.SelectedIndex == 0;
+        next.UseBits = next.UnitMode switch { "Bytes" => false, "Bits" => true, _ => _settings.UseBits };
         next.PlacementMode = _placement.SelectedIndex switch
         {
             0 => WidgetGeometry.Floating,
@@ -279,6 +368,10 @@ internal sealed class SettingsForm : Form
             1 => "Bits", 2 => "Bytes", _ => "Auto"
         };
         next.ShowFavicons = _showFavicons.Checked;
+        next.UseBits = next.UnitMode switch
+        {
+            "Bytes" => false, "Bits" => true, _ => _settings.UseBits
+        };
         next.AutoHideForFullscreen = _fullscreen.Checked;
         return next;
     }
@@ -339,12 +432,12 @@ internal sealed class SettingsForm : Form
         {
             var address = _addresses[i].Text.Trim();
             var proto = Enum.Parse<TargetProtocol>(_protocols[i].SelectedItem!.ToString()!);
-            if (string.IsNullOrWhiteSpace(address) ||
-                (proto == TargetProtocol.Https &&
-                    (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || uri.Scheme != "https")))
+            if (!SettingsUiPolicy.IsValidAddress(proto, address, (int)_ports[i].Value))
             {
                 ResizeAfterSave = false;
-                MessageBox.Show($"Dot {i + 1}: enter a valid target. HTTPS requires an https:// URL.");
+                MessageBox.Show($"Target {i + 1}: enter a valid {SettingsUiPolicy.InputLabel(proto).ToLowerInvariant()}.\n" +
+                    $"Example: {SettingsUiPolicy.Placeholder(proto)}",
+                    "Invalid target", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
         }
