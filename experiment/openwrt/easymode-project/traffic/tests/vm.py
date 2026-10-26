@@ -95,10 +95,15 @@ with tempfile.TemporaryDirectory() as tmp:
   run(f'opkg install --force-reinstall /tmp/EasyMode-v{VERSION}-Core-all.ipk');time.sleep(3)
   token=rpc('login',{'username':'root','password':password},obj='session')['result'][1]['ubus_rpc_session'];check(snapshot()['config']['edition']=='pc','clean package installation and same-version reinstall preserve edition')
   run("uci set easymode_traffic.main.devices=1; uci set easymode_traffic.main.interval=5; uci commit easymode_traffic; /etc/init.d/easymode-traffic reload");time.sleep(7)
-  flow_capabilities=snapshot()['data']['capabilities']
+  # reload_service marks the worker for reconfiguration; it may still be in
+  # the previous collection interval when the UCI change is committed.
+  for attempt in range(12):
+   flow_capabilities=snapshot()['data']['capabilities']
+   if flow_capabilities['flow']:break
+   time.sleep(3)
   if not flow_capabilities['flow']:
    print('VM flow capabilities: '+json.dumps(flow_capabilities),flush=True)
-   print('VM flow setup diagnostics:\n'+run("uci show network; ubus call network.interface dump; cat /tmp/easymode-traffic/rules.nft 2>&1; nft -c -f /tmp/easymode-traffic/rules.nft 2>&1; true")[:12000],flush=True)
+   print('VM flow setup diagnostics:\n'+run("uci show easymode_traffic; ubus call network.interface.lan status; ubus call network.interface.wan status; cat /tmp/easymode-traffic/rules.nft 2>&1; nft -c -f /tmp/easymode-traffic/rules.nft 2>&1; true")[:12000],flush=True)
   check(flow_capabilities['flow'],'bounded nftables observation table created')
   server=socketserver.TCPServer(('127.0.0.1',8889),HTTP);threading.Thread(target=server.serve_forever,daemon=True).start()
   subprocess.run(['sudo','ip','route','add','10.0.2.2/32','via','192.168.77.1','dev','emti0'],check=True)
