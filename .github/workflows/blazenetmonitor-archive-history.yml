@@ -54,11 +54,35 @@ jobs:
           Archived with original release metadata, all attachments and SHA256SUMS.
           EOF
           ls -lah backup
-      - name: Package immutable version backup for Drive transfer
+      - name: Split x64 and other architectures for connector transfer limits
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p archive-x64 archive-other
+          cp backup/release-metadata.json backup/SOURCE.txt backup/SHA256SUMS.txt archive-x64/
+          cp backup/release-metadata.json backup/SOURCE.txt backup/SHA256SUMS.txt archive-other/
+          for file in backup/*; do
+            case "$(basename "$file")" in
+              *-win-x86.zip|*-win-arm64.zip) cp "$file" archive-other/ ;;
+              *.exe|*-win-x64.zip|*-win-x64-lite.zip) cp "$file" archive-x64/ ;;
+            esac
+          done
+          du -sh archive-x64 archive-other
+          if [ "$(du -sb archive-x64 | cut -f1)" -gt 100000000 ]; then echo "x64 archive exceeds transfer limit"; exit 1; fi
+          if [ "$(du -sb archive-other | cut -f1)" -gt 100000000 ]; then echo "other-arch archive exceeds transfer limit"; exit 1; fi
+      - name: Archive version x64 and metadata
         uses: actions/upload-artifact@v4
         with:
-          name: blaze-netmonitor-history-${{ matrix.tag }}
-          path: backup/
+          name: blaze-netmonitor-x64-${{ matrix.tag }}
+          path: archive-x64/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Archive version x86 ARM64 and metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: blaze-netmonitor-other-${{ matrix.tag }}
+          path: archive-other/
           compression-level: 0
           retention-days: 30
           if-no-files-found: error
