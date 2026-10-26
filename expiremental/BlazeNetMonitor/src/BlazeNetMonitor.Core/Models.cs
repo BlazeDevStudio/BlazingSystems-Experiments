@@ -23,6 +23,16 @@ public sealed class AppSettings
     public int HorizontalOffset { get; set; } = 170;
     public int SamplingSeconds { get; set; } = 1;
     public int ProbeIntervalSeconds { get; set; } = 5;
+    // v0.2: freeform canvas geometry is persisted separately from legacy taskbar placement.
+    public bool FreeformPositioned { get; set; }
+    public int WidgetX { get; set; } = -1;
+    public int WidgetY { get; set; } = -1;
+    public int WidgetWidth { get; set; } = 312;
+    public int WidgetHeight { get; set; } = 64;
+    public int WidgetOpacityPercent { get; set; } = 100;
+    public string ThemeMode { get; set; } = "System";
+    public bool ShowGraphs { get; set; } = true;
+    public bool UseSystemAccent { get; set; } = true;
     public ProbeTarget[] Targets { get; set; } =
     [
         new() { Name = "Primary DNS", Protocol = TargetProtocol.Icmp, Address = "1.1.1.1" },
