@@ -18,7 +18,7 @@ public sealed class AppSettings
 {
     public string AdapterId { get; set; } = "auto";
     public bool UseBits { get; set; } = true;
-    public bool StartWithWindows { get; set; }
+    public bool StartWithWindows { get; set; } = true;
     // Owner's fixed donation QR is embedded in the application; no visitor substitution.
     public string DonationSplashMode { get; set; } = "EveryLaunch";
     public bool DockInsideTaskbar { get; set; }

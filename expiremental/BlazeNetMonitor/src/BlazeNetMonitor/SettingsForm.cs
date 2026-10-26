@@ -567,7 +567,7 @@ internal sealed class SettingsForm : Form
         try
         {
             using var run = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-            if (_autostart.Checked) run?.SetValue("BlazeNetMonitor", $"\"{Application.ExecutablePath}\"");
+            if (_autostart.Checked) run?.SetValue("BlazeNetMonitor", $"\"{Application.ExecutablePath}\" --startup");
             else run?.DeleteValue("BlazeNetMonitor", false);
             saved.StartWithWindows = _autostart.Checked;
         }

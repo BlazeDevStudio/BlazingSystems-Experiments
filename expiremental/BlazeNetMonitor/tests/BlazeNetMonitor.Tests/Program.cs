@@ -278,4 +278,8 @@ Check(AppUsageRanking.TopFive("garbage", boot, checkedAt).Count == 0,
     "invalid SRUM schema fails closed");
 Check(AppUsageRanking.BootTimeUtc(checkedAt, TimeSpan.FromHours(5)) == boot,
     "boot time derived from uptime");
+Check(new AppSettings().StartWithWindows,
+    "new installation defaults startup enabled for shared Startup shortcut");
+Check(new AppSettings { StartWithWindows = false }.Copy().StartWithWindows == false,
+    "saved user startup preference can disable both startup paths");
 Console.WriteLine($"RESULT {passed} tests passed");

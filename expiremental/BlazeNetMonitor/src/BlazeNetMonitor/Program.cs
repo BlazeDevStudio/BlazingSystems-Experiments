@@ -64,6 +64,16 @@ internal static class Program
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             return 0;
         }
+        if (args.Contains("--startup", StringComparer.OrdinalIgnoreCase))
+        {
+            // Both the shared Startup shortcut and the optional per-user Run key
+            // defer to the same saved preference. Existing saved "off" is honored.
+            var statePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BlazeSystems", "BlazeNetMonitor", "state.json");
+            var state = new BlazeNetMonitor.Core.Storage(statePath).Load();
+            if (!state.Settings.StartWithWindows) return 0;
+        }
         Application.Run(new MonitorForm());
         return 0;
     }
