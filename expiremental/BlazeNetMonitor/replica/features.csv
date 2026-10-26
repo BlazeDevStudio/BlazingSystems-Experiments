@@ -1,0 +1,11 @@
+feature,area,priority,original,clone,notes
+Adapter upload download rates,widget,must,yes,partial,Implemented; hardware checks pending
+Live graph,widget,must,yes,partial,Custom independent sparkline; visual QA pending
+Two status dots,widget,must,no,partial,Configurable health; runtime tests pending
+Hover details,dashboard,must,yes,partial,Session day month counters and target status
+Network adapter selection,settings,must,yes,partial,Implemented; runtime tests pending
+Daily monthly usage counters,dashboard,must,yes,partial,Local JSON persistence
+Active connection table,connections,should,yes,partial,TCP and UDP endpoints not per-process ownership
+Startup and speed units,settings,should,yes,partial,HKCU only and alternate units
+Native Windows 11 deskband,taskbar,could,yes,skip,Unsupported classic model; above-taskbar overlay instead
+Automatic upload/download speed benchmark,quality,could,no,skip,Out of scope; cannot infer throughput from ping alone
