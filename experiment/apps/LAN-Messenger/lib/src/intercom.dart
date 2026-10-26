@@ -65,8 +65,21 @@ class Intercom {
     }
   }
 
-  Future<void> sendRemoteClick(double x, double y) =>
-      sendRemoteInput('click', x, y);
+  Future<void> sendRemoteClick(double x, double y) async {
+    final peer = talkingTo;
+    final id = callId;
+    if (!remoteControlActive || !peerSharingScreen || peer == null ||
+        id == null || !x.isFinite || !y.isFinite ||
+        x < 0 || x > 1 || y < 0 || y > 1) return;
+    try {
+      // Keep the older control-click envelope for mixed preview versions.
+      await node.signal(peer, {
+        'type': 'control-click', 'callId': id, 'x': x, 'y': y,
+      });
+    } catch (e) {
+      unawaited(_log('legacy remote click delivery failed: ${e.runtimeType}'));
+    }
+  }
 
   /// Allowed input events are session-bound and checked by the receiving host.
   DateTime? _lastOutgoingMove;
