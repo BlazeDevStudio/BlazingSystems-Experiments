@@ -28,6 +28,9 @@ app.whenReady().then(()=>{
       if(!boardCatalog.boards.some(b=>b.fqbn==='esp8266:esp8266:generic'&&!b.installed))throw Error('Missing explicitly labeled optional ESP8266 target');
       document.getElementById('newProject').click();
       if(document.getElementById('newModal').classList.contains('hidden'))throw Error('New project dialog did not open');
+      const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+      for(let i=0;i<70&&document.getElementById('newBoard').options.length<2;i++)await pause(100);
+      if(document.getElementById('newBoard').options.length<2)throw Error('Board catalog failed to load into UI after modal opened');
       document.getElementById('boardSearch').value='ESP8266';
       document.getElementById('boardSearch').dispatchEvent(new Event('input',{bubbles:true}));
       if(!Array.from(document.getElementById('newBoard').options).some(o=>o.value==='esp8266:esp8266:generic'))throw Error('ESP8266 missing from displayed selectable starter targets');
@@ -37,7 +40,6 @@ app.whenReady().then(()=>{
       document.getElementById('newBoard').value='arduino:avr:uno';
       document.getElementById('newBoard').dispatchEvent(new Event('change',{bubbles:true}));
       document.getElementById('confirmNew').click();
-      const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       for(let i=0;i<80&&(document.getElementById('projectTitle').textContent!=='GuiSmoke'||document.getElementById('workspace').classList.contains('hidden'));i++)await pause(100);
       if(document.getElementById('projectTitle').textContent!=='GuiSmoke')throw Error('New project UI did not create/open project');
       const startCount=document.querySelectorAll('#nodeLayer [data-node]').length;
