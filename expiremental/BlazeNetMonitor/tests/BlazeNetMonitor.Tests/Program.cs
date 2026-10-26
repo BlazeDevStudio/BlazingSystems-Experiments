@@ -157,4 +157,20 @@ Check(!FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("127.0.0.1")) &&
     !FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("10.0.0.2")) &&
     !FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("192.168.1.10")), "private IP blocked");
 Check(FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("1.1.1.1")), "Cloudflare public IP admitted");
+var transitions = new QualityTracker();
+var baseTime = DateTimeOffset.UtcNow;
+transitions.Add(new ProbeResult(baseTime, true, 26, "ok"), 5);
+transitions.Add(new ProbeResult(baseTime.AddSeconds(5), false, 0, "timeout"), 5);
+var failed = transitions.Add(new ProbeResult(baseTime.AddSeconds(10), false, 0, "timeout"), 5);
+Check(failed.State == ConnectionState.Down, "two consecutive failed probes show red");
+var firstRecovery = transitions.Add(new ProbeResult(baseTime.AddSeconds(15), true, 22, "ok"), 5);
+Check(firstRecovery.State != ConnectionState.Stable &&
+      firstRecovery.State != ConnectionState.LongStable, "first good sample cannot fake instant green recovery");
+var badRtt = new QualityTracker();
+badRtt.Add(new ProbeResult(baseTime, true, 23, "ok"), 5);
+badRtt.Add(new ProbeResult(baseTime.AddSeconds(5), true, 25, "ok"), 5);
+badRtt.Add(new ProbeResult(baseTime.AddSeconds(10), true, 520, "slow"), 5);
+Check(badRtt.History.State == ConnectionState.Unstable, "outlier RTT raises orange warning immediately");
+Check(badRtt.History.LatencyBaselineMs > 0 && badRtt.History.LatencyBaselineMs < 40,
+      "outlier RTT does not poison learned baseline");
 Console.WriteLine($"RESULT {passed} tests passed");

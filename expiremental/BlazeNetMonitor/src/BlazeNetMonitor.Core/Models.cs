@@ -114,40 +114,92 @@ public sealed class QualityTracker
 
     public TargetSnapshot Add(ProbeResult result, int intervalSeconds)
     {
-        // No fabricated uninterrupted stability after sleep, app shutdown, or missed probes.
-        var gap = History.LastSampleUtc.HasValue && (result.TimeUtc - History.LastSampleUtc.Value).TotalSeconds > Math.Max(15, intervalSeconds * 3);
-        if (gap || (History.LastSampleUtc.HasValue && result.TimeUtc <= History.LastSampleUtc.Value))
+        var elapsed = History.LastSampleUtc.HasValue
+            ? result.TimeUtc - History.LastSampleUtc.Value : TimeSpan.Zero;
+        bool gap = History.LastSampleUtc.HasValue &&
+            (elapsed.TotalSeconds > Math.Max(15, intervalSeconds * 3) ||
+             elapsed.TotalSeconds <= 0);
+        if (gap)
         {
+            // Sleep/network suspension breaks continuity; no invented blue streaks.
             History.Samples.Clear();
             History.StableSinceUtc = null;
             History.ConsecutiveFailures = 0;
+            History.ConsecutiveGood = 0;
+            History.ConsecutiveBad = 0;
+            History.LatencyBaselineMs = 0;
         }
+
         History.LastSampleUtc = result.TimeUtc;
         History.Samples.Add(result);
         if (History.Samples.Count > MaxHistory) History.Samples.RemoveAt(0);
         History.ConsecutiveFailures = result.Success ? 0 : History.ConsecutiveFailures + 1;
-        var recent = History.Samples;
-        var successful = recent.Where(s => s.Success).Select(s => s.LatencyMs).ToArray();
-        var loss = recent.Count == 0 ? 100d : recent.Count(s => !s.Success) * 100d / recent.Count;
-        var avg = successful.Length > 0 ? successful.Average() : 0;
-        var jitter = successful.Length > 1 ? successful.Zip(successful.Skip(1), (a, b) => Math.Abs(a - b)).Average() : 0;
-        ConnectionState state;
-        if (!result.Success && History.ConsecutiveFailures >= 2) state = ConnectionState.Down;
-        else if (!result.Success || (recent.Count >= 4 && loss >= 20) || result.LatencyMs > 350 || avg > 350 || (successful.Length >= 4 && jitter > 100)) state = ConnectionState.Unstable;
-        else if ((recent.Count >= 4 && loss >= 5) || result.LatencyMs > 180 || avg > 180 || (successful.Length >= 4 && jitter > 60)) state = ConnectionState.Degraded;
-        else state = ConnectionState.Stable;
 
-        if (state == ConnectionState.Stable)
+        // Two observations are used together:
+        // Last 12 for trend, last 6 for recent loss and jitter. Neither is a speed test.
+        var window = History.Samples.TakeLast(12).ToArray();
+        var recent = History.Samples.TakeLast(6).ToArray();
+        var latencies = window.Where(s => s.Success).Select(s => s.LatencyMs).ToArray();
+        var recentLatencies = recent.Where(s => s.Success).Select(s => s.LatencyMs).ToArray();
+        double loss = recent.Count(s => !s.Success) * 100d / recent.Length;
+        double average = latencies.Length > 0 ? latencies.Average() : 0;
+        double jitter = recentLatencies.Length > 1 ?
+            recentLatencies.Zip(recentLatencies.Skip(1), (a, b) => Math.Abs(a - b)).Average() : 0;
+
+        // Learn normal RTT slowly only during healthy probes. High RTT relative to
+        // established baseline is detected even when absolute thresholds are low.
+        if (result.Success && result.LatencyMs > 0 && result.LatencyMs < 180 &&
+            loss == 0 && jitter < 45)
+        {
+            History.LatencyBaselineMs = History.LatencyBaselineMs <= 0
+                ? result.LatencyMs
+                : History.LatencyBaselineMs * 0.97 + result.LatencyMs * 0.03;
+        }
+        var baseline = History.LatencyBaselineMs;
+        bool strongSpike = baseline > 12 && result.Success &&
+            result.LatencyMs > Math.Max(250, baseline * 5);
+        bool moderateSpike = baseline > 12 && result.Success &&
+            result.LatencyMs > Math.Max(140, baseline * 3);
+
+        // Red requires repeat failure. A single failure goes orange immediately.
+        // Orange/yellow severity is based on rolling records, not a single rate reading.
+        bool severe = !result.Success ||
+            (recent.Length >= 4 && loss >= 25) ||
+            average >= 350 || result.LatencyMs >= 350 ||
+            (recentLatencies.Length >= 4 && jitter >= 110) || strongSpike;
+        bool degraded = (recent.Length >= 4 && loss >= 8) ||
+            average >= 180 || result.LatencyMs >= 180 ||
+            (recentLatencies.Length >= 4 && jitter >= 60) || moderateSpike;
+
+        var proposed = History.ConsecutiveFailures >= 2 ? ConnectionState.Down :
+            severe ? ConnectionState.Unstable :
+            degraded ? ConnectionState.Degraded : ConnectionState.Stable;
+
+        bool cleanSample = result.Success && !severe && !degraded;
+        History.ConsecutiveGood = cleanSample ? History.ConsecutiveGood + 1 : 0;
+        History.ConsecutiveBad = cleanSample ? 0 : History.ConsecutiveBad + 1;
+
+        // Recovery hysteresis: don't flip to green on one lucky probe after a
+        // prolonged outage. The latest bad state is retained as degraded.
+        if (proposed == ConnectionState.Stable &&
+            History.State is ConnectionState.Down or ConnectionState.Unstable or ConnectionState.Degraded &&
+            History.ConsecutiveGood < 3)
+            proposed = ConnectionState.Degraded;
+
+        if (proposed == ConnectionState.Stable)
         {
             History.StableSinceUtc ??= result.TimeUtc;
             var localStart = History.StableSinceUtc.Value.ToLocalTime();
             var localNow = result.TimeUtc.ToLocalTime();
-            if (localStart.Date < localNow.Date && result.TimeUtc - History.StableSinceUtc.Value >= TimeSpan.FromHours(24))
-                state = ConnectionState.LongStable;
+            if (localStart.Date < localNow.Date &&
+                result.TimeUtc - History.StableSinceUtc.Value >= TimeSpan.FromHours(24))
+                proposed = ConnectionState.LongStable;
         }
         else History.StableSinceUtc = null;
-        History.State = state;
-        return new TargetSnapshot(state, result.LatencyMs, loss, jitter, result.Message, History.StableSinceUtc);
+
+        History.State = proposed;
+        return new TargetSnapshot(proposed, result.LatencyMs, loss, jitter, result.Message,
+            History.StableSinceUtc);
     }
 }
 
