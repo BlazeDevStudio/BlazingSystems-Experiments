@@ -1,0 +1,48 @@
+name: BlazeNetMonitor Preview Download
+on:
+  push:
+    branches:
+      - feature/blazenetmonitor-v0.1.0
+    paths:
+      - .github/workflows/blazenetmonitor-preview-release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish-preview:
+    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments' && github.ref == 'refs/heads/feature/blazenetmonitor-v0.1.0'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: expiremental/BlazeNetMonitor
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: blazenetmonitor-v0.1.0-preview.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check core behavior
+        run: dotnet run --project tests/BlazeNetMonitor.Tests/BlazeNetMonitor.Tests.csproj -c Release
+      - name: Build downloadable x64, x86, and ARM64 packages
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          foreach ($rid in @('win-x64', 'win-x86', 'win-arm64')) {
+            dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r $rid --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o "dist/$rid"
+            if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
+            $exe = "dist/$rid/BlazeNetMonitor.exe"
+            if (-not (Test-Path $exe)) { throw "Missing $exe" }
+            $zip = "artifacts/BlazeNetMonitor-v0.1.0-$rid.zip"
+            Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
+            if (-not (Test-Path $zip)) { throw "Missing $zip" }
+            Get-FileHash $zip -Algorithm SHA256 | Format-List
+          }
+      - name: Publish GitHub pre-release (not production-certified)
+        shell: pwsh
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.1.0-win-x64.zip artifacts/BlazeNetMonitor-v0.1.0-win-x86.zip artifacts/BlazeNetMonitor-v0.1.0-win-arm64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.1.0 Preview 1' --prerelease --notes 'Native Windows preview from GitHub Actions. x64 is recommended for standard Windows 10/11 PCs. Extract ZIP and run BlazeNetMonitor.exe. Core automated checks and packaging run in CI; actual desktop compatibility, target reachability, Windows startup, and UI behavior are NOT yet certified. This is an independent Blaze Systems project, not an official NetSpeedMonitor release.'
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }
