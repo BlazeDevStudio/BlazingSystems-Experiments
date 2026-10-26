@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -64,9 +65,12 @@ private fun HarborShell(context: Context, fixture: FixtureRuntime) {
     var current by remember { mutableStateOf("Browser") }
     BackHandler(enabled = current != "Browser") { current = "Browser" }
     // Keep message input and Send above the Android software keyboard (IME).
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        .statusBarsPadding().navigationBarsPadding().imePadding()) {
         Text("Blaze ThreadHarbor  •  Development",
-            style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(12.dp))
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
         ScrollableTabRow(
             selectedTabIndex = selectedHarborTabIndex(current, tabs),
             edgePadding = 0.dp
