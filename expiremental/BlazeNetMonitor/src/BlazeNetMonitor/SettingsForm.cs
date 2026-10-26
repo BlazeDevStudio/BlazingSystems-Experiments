@@ -7,7 +7,11 @@ namespace BlazeNetMonitor;
 internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
-    private readonly ComboBox _adapter, _unit, _placement;
+    private readonly ComboBox _adapter, _unit, _placement, _themeMode;
+    private readonly TrackBar _opacity;
+    private readonly Label _opacityValue;
+    private readonly CheckBox _showGraphs, _systemAccent;
+    public bool ResizeAfterSave { get; private set; }
     private readonly NumericUpDown _offset, _interval;
     private readonly CheckBox _autostart;
     private readonly TextBox[] _names = new TextBox[2], _addresses = new TextBox[2];
@@ -30,8 +34,9 @@ internal sealed class SettingsForm : Form
         var tabs = new TabControl { Dock = DockStyle.Fill };
         var general = new TabPage("General") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var targets = new TabPage("Health targets") { BackColor = Theme.Panel, ForeColor = Theme.Text };
+        var appearance = new TabPage("Appearance") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var about = new TabPage("About") { BackColor = Theme.Panel, ForeColor = Theme.Text };
-        tabs.TabPages.AddRange([general, targets, about]);
+        tabs.TabPages.AddRange([general, appearance, targets, about]);
         Controls.Add(tabs);
         _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)", .._adapters.Select(a => a.Name)]);
         _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == settings.AdapterId) + 1);
@@ -47,6 +52,33 @@ internal sealed class SettingsForm : Form
         general.Controls.Add(_interval);
         _autostart = new CheckBox { Text = "Start with Windows (current user)", Left = 24, Top = 370, AutoSize = true, Checked = settings.StartWithWindows };
         general.Controls.Add(_autostart);
+        LabelAt(appearance, "Color theme", 22);
+        _themeMode = new ComboBox { Left = 24, Top = 48, Width = 310, DropDownStyle = ComboBoxStyle.DropDownList };
+        _themeMode.Items.AddRange(["System", "Light", "Dark"]);
+        _themeMode.SelectedItem = settings.ThemeMode is "Light" or "Dark" ? settings.ThemeMode : "System";
+        appearance.Controls.Add(_themeMode);
+
+        LabelAt(appearance, "Widget opacity", 98);
+        _opacityValue = new Label { Left = 399, Top = 128, Width = 75, Height = 24, Text = Math.Clamp(settings.WidgetOpacityPercent, 40, 100) + "%" };
+        _opacity = new TrackBar { Left = 16, Top = 124, Width = 365, Minimum = 40, Maximum = 100,
+            TickFrequency = 10, Value = Math.Clamp(settings.WidgetOpacityPercent, 40, 100) };
+        _opacity.ValueChanged += (_, _) => _opacityValue.Text = _opacity.Value + "%";
+        appearance.Controls.AddRange([_opacity, _opacityValue]);
+
+        _systemAccent = new CheckBox { Left = 24, Top = 195, Width = 360, Height = 26,
+            Text = "Follow Windows accent color", Checked = settings.UseSystemAccent };
+        _showGraphs = new CheckBox { Left = 24, Top = 229, Width = 360, Height = 26,
+            Text = "Show traffic graphs when there is room", Checked = settings.ShowGraphs };
+        appearance.Controls.AddRange([_systemAccent, _showGraphs]);
+
+        var resize = new Button { Left = 24, Top = 282, Width = 254, Height = 38,
+            Text = "Save and resize / move widget" };
+        resize.Click += (_, _) => { ResizeAfterSave = true; Save(); };
+        appearance.Controls.Add(resize);
+        appearance.Controls.Add(new Label { Left = 24, Top = 334, Width = 475, Height = 64,
+            ForeColor = Theme.Muted,
+            Text = "Drag the highlighted corners or edges to resize. Drag the center to move. Double-click the widget or right-click and finish to save. ESC cancels the edit." });
+
 
         for (int i = 0; i < 2; i++)
         {
@@ -62,7 +94,14 @@ internal sealed class SettingsForm : Form
             var hint = new Label { Left = 24, Top = y + 103, Width = 456, Height = 48, ForeColor = Theme.Muted, Text = "Host or DNS: 1.1.1.1 / example.com   ·   HTTPS: https://example.com\nTCP uses Port. Green/blue require consistently good probes." };
             targets.Controls.Add(hint);
         }
-        about.Controls.Add(new Label { Left = 24, Top = 28, Width = 455, Height = 310, ForeColor = Theme.Text, Text = "BlazeNetMonitor v0.1.0\nBlaze Systems · Windows 10/11 x86/x64/Arm64\n\nIndependent implementation inspired by the functionality of classic NetSpeedMonitor by Florian Gilles. No original code or artwork bundled.\n\nStatus thresholds are latency, jitter, and packet-loss estimates, not an internet speed test. Firewalls may block ICMP; choose HTTPS for those networks.\n\nWorks without administrator rights. All settings and totals are stored locally." });
+        about.Controls.Add(new Label { Left = 24, Top = 28, Width = 455, Height = 310, ForeColor = Theme.Text, Text = "BlazeNetMonitor v0.2.0 development\nBlaze Systems · Windows 10/11 x86/x64/Arm64\n\nIndependent implementation inspired by the functionality of classic NetSpeedMonitor by Florian Gilles. No original code or artwork bundled.\n\nStatus thresholds are latency, jitter, and packet-loss estimates, not an internet speed test. Firewalls may block ICMP; choose HTTPS for those networks.\n\nWorks without administrator rights. All settings and totals are stored locally." });
+        about.Controls.Add(new Label { Left = 24, Top = 338, Width = 460, Height = 50,
+            ForeColor = Theme.Muted,
+            Text = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000)
+                ? "Windows 11 detected · native deskband unavailable. Freeform/tray supported."
+                : OperatingSystem.IsWindowsVersionAtLeast(10)
+                    ? "Windows 10 detected · classic deskband integration is planned, not installed."
+                    : "Windows version unknown · freeform/tray fallback." });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };
         var ok = new Button { Text = "Save", Width = 85, DialogResult = DialogResult.None };
         ok.Click += (_, _) => Save();
@@ -99,6 +138,10 @@ internal sealed class SettingsForm : Form
         _settings.DockInsideTaskbar = _placement.SelectedIndex == 1;
         _settings.HorizontalOffset = (int)_offset.Value;
         _settings.ProbeIntervalSeconds = (int)_interval.Value;
+        _settings.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";
+        _settings.WidgetOpacityPercent = _opacity.Value;
+        _settings.UseSystemAccent = _systemAccent.Checked;
+        _settings.ShowGraphs = _showGraphs.Checked;
         for (int i = 0; i < 2; i++)
         {
             _settings.Targets[i].Name = _names[i].Text.Trim().Length > 0 ? _names[i].Text.Trim() : $"Target {i + 1}";
