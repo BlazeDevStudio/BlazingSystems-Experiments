@@ -64,7 +64,10 @@ internal sealed class SettingsForm : Form
         var appearance = new TabPage("Appearance") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var graphs = new TabPage("Graphs") { BackColor = Theme.Panel, ForeColor = Theme.Text };
         var metrics = new TabPage("Metrics") { BackColor = Theme.Panel, ForeColor = Theme.Text };
-        var about = new TabPage("About") { BackColor = Theme.Panel, ForeColor = Theme.Text };
+        var about = new TabPage("About") {
+            BackColor = Theme.Panel, ForeColor = Theme.Text,
+            AutoScroll = true
+        };
         tabs.TabPages.AddRange([general, appearance, graphs, metrics, targets, about]);
         Controls.Add(tabs);
         _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)"]);
@@ -318,9 +321,8 @@ internal sealed class SettingsForm : Form
         openPayPal.Click += (_, _) => DonationAssets.OpenPayPal(this);
         about.Controls.Add(openPayPal);
         about.Controls.Add(new Label {
-            Left = 24, Top = 532, Width = 475, Height = 36,
-            Text = "The same official QR is bundled with every copy.\n" +
-                   "You can also reopen it from the system tray menu.",
+            Left = 280, Top = 466, Width = 199, Height = 55,
+            Text = "This official QR is bundled with every copy. Reopen it anytime from the tray menu.",
             ForeColor = Theme.Muted
         });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };

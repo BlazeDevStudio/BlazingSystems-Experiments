@@ -17,8 +17,12 @@ internal static class Program
         RegisterWindowMessage("BlazeSystems.BlazeNetMonitor.ShowSettings.v1");
 
     [STAThread]
-    private static void Main()
+    private static int Main(string[] args)
     {
+        ApplicationConfiguration.Initialize();
+        // Real GDI+ QR and WinForms layout checks on the Windows CI runner.
+        if (args.Contains("--verify-qr-render", StringComparer.OrdinalIgnoreCase))
+            return VerifyQrRendering();
         using var single = new Mutex(true, @"Local\BlazeSystems.BlazeNetMonitor", out var owner);
         using var acknowledged = new EventWaitHandle(false, EventResetMode.AutoReset, RequestAckName);
         if (!owner)
@@ -33,9 +37,52 @@ internal static class Program
                     "then launch this new version. Do not run both builds together.",
                     "BlazeNetMonitor · Already running",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
+            return 0;
         }
-        ApplicationConfiguration.Initialize();
         Application.Run(new MonitorForm());
+        return 0;
+    }
+
+    private static int VerifyQrRendering()
+    {
+        try
+        {
+            foreach (int size in new[] { 154, 240, 352 })
+            {
+                using var image = DonationAssets.CreateQrBitmap(size);
+                if (image.Width != size || image.Height != size)
+                    throw new InvalidOperationException($"QR size mismatch at {size}.");
+                if (image.GetPixel(0, 0).ToArgb() != Color.White.ToArgb())
+                    throw new InvalidOperationException("QR quiet-zone corner is not white.");
+                if (image.GetPixel(size / 2, size / 2).ToArgb() == Color.White.ToArgb())
+                    throw new InvalidOperationException("QR center mark is missing.");
+            }
+            using (var splash = new DonationSplashForm(() => { }))
+            {
+                var view = splash.Controls.OfType<PictureBox>().Single();
+                if (view.Image is null || view.Image.Width > view.ClientSize.Width ||
+                    view.Image.Height > view.ClientSize.Height || splash.Opacity != 1d)
+                    throw new InvalidOperationException("Splash QR is cropped or faded.");
+            }
+            using (var editor = new SettingsForm(new BlazeNetMonitor.Core.AppSettings()))
+            {
+                var tabs = editor.Controls.OfType<TabControl>().Single();
+                var about = tabs.TabPages.Cast<TabPage>().Single(t => t.Text == "About");
+                var qr = about.Controls.OfType<PictureBox>()
+                    .Single(p => p.Image is { Width: >= 200 });
+                if (qr.Image is null || qr.Image.Width > qr.Width || qr.Image.Height > qr.Height)
+                    throw new InvalidOperationException("About QR image is cropped.");
+                if (about.Controls.OfType<ComboBox>().Any(c => c.Items.Cast<object>()
+                        .Any(x => x.ToString()?.Contains("Every launch") == true)))
+                    throw new InvalidOperationException("About still contains startup settings.");
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            File.WriteAllText(Path.Combine(Path.GetTempPath(),
+                "BlazeNetMonitor-QR-render-failure.txt"), ex.ToString());
+            return 3;
+        }
     }
 }
