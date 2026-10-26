@@ -66,6 +66,13 @@ with tempfile.TemporaryDirectory() as tmp:
    if rc:raise RuntimeError(f'VM command failed ({rc}): {command}\n{out}\n{err}')
    return out
   check('24.10.8' in run('cat /etc/openwrt_release'),'official OpenWrt 24.10.8 boots')
+  for attempt in range(30):
+   try:
+    with socket.create_connection(('192.168.77.1',80),timeout=2):break
+   except OSError:time.sleep(2)
+  else:
+   detail=run("/etc/init.d/uhttpd status 2>&1; ls -l /etc/rc.d/*uhttpd 2>&1; logread | tail -30; true")
+   raise RuntimeError('VM web API unavailable after first-boot wait:\n'+detail)
   check((rpc('snapshot').get('error',{}).get('code')==-32002 or rpc('snapshot').get('result',[None])[0]==6),'unauthenticated API rejected')
   token=rpc('login',{'username':'root','password':password},obj='session')['result'][1]['ubus_rpc_session']
   def snapshot():return rpc('snapshot',token=token)['result'][1]
