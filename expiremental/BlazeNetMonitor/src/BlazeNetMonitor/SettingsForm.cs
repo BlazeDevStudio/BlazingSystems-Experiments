@@ -27,7 +27,8 @@ internal sealed class SettingsForm : Form
     private readonly NumericUpDown[] _ports = new NumericUpDown[2];
     private readonly Dictionary<TargetProtocol, string>[] _targetDrafts = [new(), new()];
     private readonly TargetProtocol[] _lastProtocols = new TargetProtocol[2];
-    private readonly List<NetworkInterface> _adapters = [];
+    private readonly List<WindowsConnectionsView.Choice> _adapters = [];
+    private readonly Label _adapterSource;
     private readonly CheckBox _includeVirtual;
     private readonly Label[] _addressLabels = new Label[2], _portLabels = new Label[2], _targetExamples = new Label[2];
 
@@ -71,6 +72,10 @@ internal sealed class SettingsForm : Form
         tabs.TabPages.AddRange([general, appearance, graphs, metrics, targets, about]);
         Controls.Add(tabs);
         _adapter = Choice(general, "Network adapter", 24, ["Automatic (default route)"]);
+        _adapterSource = new Label {
+            Left = 24, Top = 96, Width = 485, Height = 22, ForeColor = Theme.Muted
+        };
+        general.Controls.Add(_adapterSource);
         _placement = Choice(general, "Widget placement", 127,
             ["Floating (desktop + taskbar area)", "Above taskbar (dock)", "Inside taskbar (overlay)"]);
         _placement.SelectedIndex = WidgetGeometry.ResolvePlacement(settings) switch
@@ -88,12 +93,12 @@ internal sealed class SettingsForm : Form
         _autostart = new CheckBox { Text = "Start with Windows", Left = 24, Top = 361,
             AutoSize = true, Checked = settings.StartWithWindows };
         _includeVirtual = new CheckBox { Left = 24, Top = 401, Width = 430, Height = 28,
-            Text = "Also show virtual, VPN and tunnel adapters" };
+            Text = "Advanced network adapters" };
         general.Controls.AddRange([_autostart, _includeVirtual]);
         _offset.Visible = _offsetLabel.Visible = _placement.SelectedIndex != 0;
         _includeVirtual.Checked = settings.AdapterId != "auto" &&
-            !NetworkInterface.GetAllNetworkInterfaces().Any(a => a.Id == settings.AdapterId &&
-                AdapterUiPolicy.IsVisible(a.Name, a.Description, a.NetworkInterfaceType, false));
+            !WindowsConnectionsView.Enumerate(advanced: false, out _)
+                .Any(a => a.Id == settings.AdapterId);
         RebuildAdapters(settings.AdapterId);
         _includeVirtual.CheckedChanged += (_, _) => { RebuildAdapters(); RaisePreview(); };
         _placement.SelectionChangeCommitted += (_, _) =>
@@ -154,7 +159,19 @@ internal sealed class SettingsForm : Form
         _fullscreen.CheckedChanged += (_, _) => RaisePreview();
         _transparent.CheckedChanged += (_, _) => RaisePreview();
         // Speed units are configured once in Metrics (no duplicate control).
-        _adapter.SelectionChangeCommitted += (_, _) => RaisePreview();
+        _adapter.SelectionChangeCommitted += (_, _) =>
+        {
+            if (_adapter.SelectedIndex > 0 &&
+                !_adapters[_adapter.SelectedIndex - 1].Available)
+            {
+                MessageBox.Show(this,
+                    "This adapter is listed by Windows but currently unavailable. " +
+                    "Enable it in Network Connections, then reopen Settings.",
+                    "Adapter unavailable", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _adapter.SelectedIndex = 0;
+            }
+            RaisePreview();
+        };
         _placement.SelectionChangeCommitted += (_, _) => RaisePreview();
         _offset.ValueChanged += (_, _) => RaisePreview();
         _interval.ValueChanged += (_, _) => RaisePreview();
@@ -162,10 +179,10 @@ internal sealed class SettingsForm : Form
         // Graph customization deliberately lives in its own tab, to avoid
         // crowded appearance controls and dropdown focus/handle destruction.
         _graphStyle = Choice(graphs, "Graph drawing type", 22,
-            ["Line", "Filled", "Bars", "Steps"]);
+            ["Line", "Smooth", "Filled", "Bars", "Steps", "Dots", "Impulse"]);
         _graphStyle.SelectedItem = DisplayPreferences.NormalizeGraphStyle(settings.GraphStyle);
         _graphWindow = Choice(graphs, "History duration", 98,
-            ["Auto adaptive", "15 seconds", "30 seconds", "60 seconds",
+            ["Adaptive", "15 seconds", "30 seconds", "60 seconds",
              "120 seconds", "300 seconds", "600 seconds"]);
         var graphValues = new[] { 0, 15, 30, 60, 120, 300, 600 };
         int graphIndex = Array.IndexOf(graphValues, settings.GraphHistorySeconds);
@@ -192,20 +209,20 @@ internal sealed class SettingsForm : Form
             ForeColor = Theme.Muted });
 
         _metricMode = Choice(metrics, "Extra information shown on the widget", 22,
-            ["Auto adaptive", "Speed only", "Latency", "Packet loss", "Jitter", "Daily totals"]);
+            ["Adaptive", "Speed only", "Latency", "Packet loss", "Jitter", "Daily totals"]);
         _metricMode.SelectedIndex = settings.MetricMode switch
         {
             "Speed" => 1, "Latency" => 2, "Loss" => 3, "Jitter" => 4, "Totals" => 5, _ => 0
         };
         _unitMode = Choice(metrics, "Speed units", 98,
-            ["Auto adaptive", "Bits per second", "Bytes per second"]);
+            ["Adaptive", "Bits per second", "Bytes per second"]);
         _unitMode.SelectedIndex = settings.UnitMode switch
         {
             "Bits" => 1, "Bytes" => 2, _ => 0
         };
         metrics.Controls.Add(new Label { Left = 24, Top = 175, Width = 476, Height = 95,
             ForeColor = Theme.Muted,
-            Text = "Auto adaptive always prioritizes both live transfer rates in compact mode.\n" +
+            Text = "Adaptive always prioritizes both live transfer rates in compact mode.\n" +
                 "As height/width increase, secondary metrics become available.\n" +
                 "Health dots reflect probe history, not whether you're downloading data." });
         _showFavicons = new CheckBox { Left = 24, Top = 290, Width = 490, Height = 50,
@@ -282,18 +299,18 @@ internal sealed class SettingsForm : Form
         about.Controls.Add(new Label { Left = 119, Top = 26, Width = 360, Height = 33,
             Text = "BlazeNetMonitor", Font = new Font("Segoe UI Semibold", 18, FontStyle.Bold) });
         about.Controls.Add(new Label { Left = 120, Top = 69, Width = 365, Height = 24,
-            Text = "v0.2.8 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
-        about.Controls.Add(new Label { Left = 24, Top = 120, Width = 458, Height = 95,
-            Text = "A small, configurable network speed and connection-health monitor. " +
-                "Supports two independent targets, adaptive graphs and local traffic records.\n\n" +
-                "An independent Blaze Systems application; not affiliated with NetSpeedMonitor." });
-        var profile = new LinkLabel { Left = 24, Top = 224, Width = 360, Height = 26,
+            Text = "v0.2.9 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
+        about.Controls.Add(new Label {
+            Left = 24, Top = 120, Width = 458, Height = 68,
+            Text = "Live network speeds, customizable graphs, and two connection health targets."
+        });
+        var profile = new LinkLabel { Left = 24, Top = 208, Width = 360, Height = 26,
             Text = "Developer · fb.me/manrealloumer", LinkColor = Branding.BlazeBlue };
         profile.LinkClicked += (_, _) => OpenWeb("https://fb.me/manrealloumer");
         about.Controls.Add(profile);
         about.Controls.Add(new Label {
-            Left = 24, Top = 261, Width = 456, Height = 25,
-            Text = "Support independent development (optional)",
+            Left = 24, Top = 246, Width = 456, Height = 25,
+            Text = "Support BlazeNetMonitor",
             Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold)
         });
         // The owner QR is completely visible here; no extra "view full QR"
@@ -301,30 +318,25 @@ internal sealed class SettingsForm : Form
         // PictureBox the same size to prevent implicit clipping.
         const int aboutQrSize = 240;
         var qrView = new PictureBox {
-            Left = 24, Top = 282, Width = aboutQrSize, Height = aboutQrSize,
+            Left = 24, Top = 277, Width = aboutQrSize, Height = aboutQrSize,
             Image = DonationAssets.CreateQrBitmap(aboutQrSize),
             SizeMode = PictureBoxSizeMode.Zoom,
             BackColor = Color.White
         };
         about.Controls.Add(qrView);
         about.Controls.Add(new Label {
-            Left = 280, Top = 293, Width = 202, Height = 100,
+            Left = 280, Top = 284, Width = 202, Height = 100,
             Text = "Scan to support the continued development of BlazeNetMonitor. " +
                    "Any amount is appreciated.\n\n" +
                    "Recipient:\nLoumer Cabaluna Manreal",
             ForeColor = Theme.Muted
         });
         var openPayPal = new Button {
-            Left = 280, Top = 417, Width = 197, Height = 36,
+            Left = 280, Top = 413, Width = 197, Height = 36,
             Text = "Open PayPal"
         };
         openPayPal.Click += (_, _) => DonationAssets.OpenPayPal(this);
         about.Controls.Add(openPayPal);
-        about.Controls.Add(new Label {
-            Left = 280, Top = 466, Width = 199, Height = 55,
-            Text = "This official QR is bundled with every copy. Reopen it anytime from the tray menu.",
-            ForeColor = Theme.Muted
-        });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };
         var ok = new Button { Text = "Save", Width = 85, DialogResult = DialogResult.None };
         ok.Click += (_, _) => Save();
@@ -369,38 +381,27 @@ internal sealed class SettingsForm : Form
     {
         requestedId ??= _adapter.SelectedIndex > 0 && _adapter.SelectedIndex <= _adapters.Count
             ? _adapters[_adapter.SelectedIndex - 1].Id : _settings.AdapterId;
-        _adapters.Clear();
-        _adapters.AddRange(NetworkInterface.GetAllNetworkInterfaces()
-            .Where(a => AdapterUiPolicy.IsVisible(a.Name, a.Description,
-                a.NetworkInterfaceType, _includeVirtual.Checked))
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
-        _adapter.BeginUpdate();
-        _adapter.Items.Clear();
-        _adapter.Items.Add("Automatic (default route)");
-        foreach (var adapter in _adapters)
-        {
-            var state = adapter.OperationalStatus == OperationalStatus.Up
-                ? "Connected" : "Disconnected";
-            _adapter.Items.Add($"{adapter.Name}  ·  {state}");
-        }
-        _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == requestedId) + 1);
-        _adapter.EndUpdate();
-    }
 
-    private void SwitchTargetProtocol(int index)
-    {
-        if (_protocols[index].SelectedItem is null) return;
-        var next = Enum.Parse<TargetProtocol>(_protocols[index].SelectedItem!.ToString()!);
-        var previous = _lastProtocols[index];
-        _targetDrafts[index][previous] = _addresses[index].Text;
-        if (previous != next)
+        var choices = WindowsConnectionsView.Enumerate(
+            advanced: _includeVirtual.Checked, out bool fromConnections);
+        _adapters.Clear();
+        _adapters.AddRange(choices);
+
+        _adapter.BeginUpdate();
+        try
         {
-            // A new protocol starts empty to reveal the gray example.
-            // Switching back restores the previous draft, never losing user input.
-            _addresses[index].Text = _targetDrafts[index].TryGetValue(next, out var draft) ? draft : "";
-            _lastProtocols[index] = next;
+            _adapter.Items.Clear();
+            _adapter.Items.Add("Automatic (default route)");
+            foreach (var nic in _adapters) _adapter.Items.Add(nic.Label);
+            _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(n => n.Id == requestedId) + 1);
         }
-        RefreshTargetUi(index);
+        finally { _adapter.EndUpdate(); }
+
+        _adapterSource.Text = fromConnections
+            ? (_includeVirtual.Checked
+                ? "Windows Network Connections + advanced interfaces"
+                : "Showing adapters from Windows Network Connections")
+            : "Network Connections unavailable — showing filtered interfaces";
     }
 
     private void RefreshTargetUi(int index)
@@ -420,7 +421,9 @@ internal sealed class SettingsForm : Form
     private AppSettings BuildPreview()
     {
         var next = _settings.Copy();
-        next.AdapterId = _adapter.SelectedIndex < 1 ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
+        next.AdapterId = _adapter.SelectedIndex < 1 ||
+            !_adapters[_adapter.SelectedIndex - 1].Available
+                ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
         next.UseBits = next.UnitMode switch { "Bytes" => false, "Bits" => true, _ => _settings.UseBits };
         next.PlacementMode = _placement.SelectedIndex switch
         {
