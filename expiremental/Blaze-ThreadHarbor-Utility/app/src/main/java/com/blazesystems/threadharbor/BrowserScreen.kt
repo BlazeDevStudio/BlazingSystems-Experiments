@@ -5,6 +5,8 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.graphics.Bitmap
+import android.webkit.WebResourceError
 import android.os.Message
 import android.webkit.CookieManager
 import android.webkit.URLUtil
@@ -30,6 +32,7 @@ import java.net.URLEncoder
 private class BrowserTab(val view: WebView, val id: Int) {
     var address by mutableStateOf("about:blank")
     var title by mutableStateOf("New tab")
+    var error by mutableStateOf<String?>(null)
 }
 
 private fun normalizeAddress(value: String): String {
@@ -164,9 +167,20 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false)
         web.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                tab.error = null
+                tab.address = url
+            }
+            override fun onReceivedError(
+                view: WebView, request: WebResourceRequest, error: WebResourceError
+            ) {
+                if (request.isForMainFrame) {
+                    tab.error = error.description?.toString()?.take(200) ?: "Network error"
+                }
+            }
             override fun onPageFinished(view: WebView, url: String) {
                 tab.address = url
-                recordHistory(url)
+                if (tab.error == null) recordHistory(url)
                 saveSession()
             }
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -309,6 +323,10 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                 }
             }
             TextButton(onClick = {
+                if (active.error != null) {
+                    status = "Cannot interpret a page that failed to load"
+                    return@TextButton
+                }
                 interpretVisiblePage(active.view) { snapshot ->
                     if (snapshot == null) status = "This page cannot be interpreted in native reading mode"
                     else reader = snapshot
@@ -332,6 +350,19 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                         Text(url, maxLines = 1)
                     }
                 }
+            }
+        } else if (active.error != null) {
+            Column(Modifier.fillMaxWidth().weight(1f).padding(20.dp)) {
+                Text("Cannot open this webpage", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Text(active.address, maxLines = 2)
+                Text(active.error ?: "Network error")
+                Spacer(Modifier.height(12.dp))
+                Row {
+                    Button(onClick = { active.view.reload() }) { Text("Retry") }
+                    TextButton(onClick = { openExternal(active.address) }) { Text("Open externally") }
+                }
+                Text("Check your connection or try another address.")
             }
         } else key(active.id) {
             AndroidView(factory = {
