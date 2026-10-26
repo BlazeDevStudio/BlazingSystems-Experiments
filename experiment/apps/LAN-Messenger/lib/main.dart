@@ -81,7 +81,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _nativeIncomingAvailable = false;
   bool _inForeground = true;
   bool _androidInPip = false;
-  String? _autoPipCallId;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
   bool _pendingCallPresentation = false;
@@ -134,11 +133,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (action == 'answer' || action == 'decline') {
       if (!_incomingDialogOpen || _incomingAnswer?.isCompleted != false) {
         return false; // Stale or duplicate notification tap.
-      }
-      if (action == 'answer' && data['wasBackground'] == true &&
-          intercom?.video == true) {
-        // Audio-only calls must not accidentally launch a blank video PiP.
-        _autoPipCallId = id;
       }
       _resolveIncomingDialog(action == 'answer');
       return true; // Native may now safely acknowledge/clear this Answer.
@@ -323,7 +317,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!Platform.isAndroid || !mounted) return;
-    final foreground = state == AppLifecycleState.resumed;
+    // Temporary loss of focus (notification shade/permission dialog) does
+    // not mean the app is offscreen; don't open a duplicate native overlay.
+    final foreground = state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
     if (_inForeground != foreground) {
       setState(() => _inForeground = foreground);
     }
@@ -422,7 +419,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       final ok = await _notifications.invokeMethod<bool>('enterPip',
           {'callId': call!.callId});
-      if (ok != true) _toast('Video PiP unavailable. Check Android picture-in-picture settings.');
+      if (ok != true) _toast('Android could not start PiP for this video call. '
+          'Return to the active call and try again.');
     } catch (e) { _toast('Could not float video: $e'); }
   }
 
@@ -433,7 +431,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _endCallPresentation() async {
-    _autoPipCallId = null;
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
@@ -589,19 +586,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   !inter.connecting) {
                 await _showOngoingCall(peer, sessionId, inter.video);
                 if (Platform.isWindows) await _showActiveTrayMenu(peer);
-                if (Platform.isAndroid && inter.video &&
-                    _autoPipCallId == sessionId && _inForeground &&
-                    mounted && inter.callId == sessionId) {
-                  // The native ongoing CallStyle state must exist BEFORE PiP
-                  // uses lastCallId. Otherwise a fast Answer can race setup.
-                  _autoPipCallId = null;
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && inter.callId == sessionId &&
-                        !inter.connecting && _inForeground) {
-                      unawaited(_enterPipVideo());
-                    }
-                  });
-                }
               }
             } catch (e) {
               if (mounted) setState(() =>
@@ -1260,6 +1244,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       const Expanded(child: Text('LAN Messenger',
           maxLines: 1, overflow: TextOverflow.ellipsis,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white))),
+      if (Platform.isAndroid && intercom?.talkingTo != null && _callMinimized)
+        IconButton(
+          tooltip: 'Return to active call',
+          icon: const Icon(Icons.call, color: Colors.white, size: 22),
+          onPressed: () => setState(() => _callMinimized = false)),
       IconButton(icon: const Icon(Icons.folder_outlined, color: Colors.white, size: 21),
           tooltip: 'Received files', onPressed: _viewReceived),
       IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 21),
@@ -1926,7 +1915,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   ])),
     if (intercom?.talkingTo != null && !_incomingDialogOpen &&
         (Platform.isWindows || _inForeground))
-      _callMinimized ? _miniCall() : Positioned.fill(child: _activeCall()),
+      _callMinimized
+          ? (Platform.isWindows ? _miniCall() : const SizedBox.shrink())
+          : Positioned.fill(child: _activeCall()),
   ]));
 
   @override
