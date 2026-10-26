@@ -82,7 +82,15 @@ internal sealed class MonitorForm : Form
         };
         ResizeEnd += (_, _) => { if (_editingGeometry) Invalidate(); };
         SizeChanged += (_, _) => Invalidate();
-        MouseEnter += (_, _) => { if (!_editingGeometry) { _showHover = true; _hoverTimer.Stop(); UpdateHover(); } };
+        MouseEnter += (_, _) =>
+        {
+            if (!_editingGeometry && !_hiddenForFullscreen)
+            {
+                _showHover = true;
+                _hoverTimer.Stop();
+                UpdateHover();
+            }
+        };
         MouseLeave += (_, _) => _hoverTimer.Start();
         _info.MouseEnter += (_, _) => _hoverTimer.Stop();
         _info.MouseLeave += (_, _) => _hoverTimer.Start();
@@ -165,7 +173,7 @@ internal sealed class MonitorForm : Form
 
     private void RefreshFullscreenState()
     {
-        if (IsDisposed || !IsHandleCreated) return;
+        if (IsDisposed || Disposing || !IsHandleCreated) return;
         bool hide = _data.Settings.AutoHideForFullscreen && !_editingGeometry &&
             _settingsForm is null && IsForegroundFullscreen();
         if (hide == _hiddenForFullscreen) return;
@@ -438,26 +446,72 @@ internal sealed class MonitorForm : Form
         if (!_info.Visible) _info.Show(this);
     }
 
+    private static bool TargetsDiffer(AppSettings before, AppSettings after)
+    {
+        if (before.Targets.Length != after.Targets.Length) return true;
+        for (int i = 0; i < before.Targets.Length; i++)
+        {
+            var a = before.Targets[i]; var b = after.Targets[i];
+            if (a.Name != b.Name || a.Address != b.Address ||
+                a.Protocol != b.Protocol || a.Port != b.Port) return true;
+        }
+        return false;
+    }
+
     private void EditSettings()
     {
-        _info.Hide(); _showHover = false;
-        _trafficTimer.Stop(); _probeTimer.Stop();
-        using var settings = new SettingsForm(_data.Settings);
-        if (settings.ShowDialog(this) == DialogResult.OK)
+        if (_settingsForm is { IsDisposed: false })
         {
-            _network.Invalidate();
-            // A changed probe target must never inherit a previous target's green/blue streak.
-            _data.Histories = [new TargetHistory(), new TargetHistory()];
-            _trackers = [new QualityTracker(_data.Histories[0]), new QualityTracker(_data.Histories[1])];
-            Array.Clear(_snapshots, 0, _snapshots.Length);
-            _probeTimer.Interval = Math.Clamp(_data.Settings.ProbeIntervalSeconds, 3, 120) * 1000;
-            ApplyAppearance();
-            SaveSafe();
-            if (_data.Settings.FreeformPositioned) Reposition(); else RestoreGeometry();
-            _ = ProbeTargets();
+            _settingsForm.Activate();
+            return;
         }
-        _trafficTimer.Start(); _probeTimer.Start();
-        if (settings.DialogResult == DialogResult.OK && settings.ResizeAfterSave) BeginGeometryEdit();
+        if (_editingGeometry) FinishGeometryEdit();
+        _info.Hide();
+        _showHover = false;
+
+        var original = _data.Settings.Copy();
+        _settingsBeforeEdit = original;
+        var editor = new SettingsForm(original.Copy());
+        _settingsForm = editor;
+
+        editor.PreviewChanged += candidate =>
+        {
+            if (_settingsForm != editor || IsDisposed) return;
+            _data.Settings = candidate.Copy();
+            _probeTimer.Interval = Math.Clamp(candidate.ProbeIntervalSeconds, 3, 120) * 1000;
+            ApplyAppearance();
+            Reposition();
+        };
+        editor.FormClosed += (_, _) =>
+        {
+            bool commit = editor.DialogResult == DialogResult.OK && editor.SavedSettings is not null;
+            var final = commit ? editor.SavedSettings! : original;
+            bool targetChanged = commit && TargetsDiffer(original, final);
+            _data.Settings = final.Copy();
+            _settingsBeforeEdit = null;
+            _settingsForm = null;
+            _probeTimer.Interval = Math.Clamp(final.ProbeIntervalSeconds, 3, 120) * 1000;
+            _network.Invalidate();
+            if (targetChanged)
+            {
+                _data.Histories = [new TargetHistory(), new TargetHistory()];
+                _trackers = [new QualityTracker(_data.Histories[0]), new QualityTracker(_data.Histories[1])];
+                Array.Clear(_snapshots);
+            }
+            bool editNext = commit && editor.ResizeAfterSave;
+            editor.Dispose();
+            if (!IsDisposed && !Disposing)
+            {
+                ApplyAppearance();
+                Reposition();
+                if (commit) SaveSafe();
+                if (editNext) BeginGeometryEdit();
+                RefreshFullscreenState();
+            }
+        };
+        // Modeless means no pause in the traffic/probe timers, and the widget
+        // remains visible while appearance controls preview against the real UI.
+        editor.Show(this);
     }
 
     private void ShowConnections()
