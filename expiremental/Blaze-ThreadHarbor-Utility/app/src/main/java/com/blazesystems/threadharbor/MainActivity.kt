@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.documentfile.provider.DocumentFile
@@ -28,7 +29,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WebView.setWebContentsDebuggingEnabled(false)
         fixture = FixtureRuntime(this)
-        setContent { MaterialTheme { HarborShell(this,fixture) } }
+        setContent {
+            MaterialTheme(
+                colorScheme = darkColorScheme(
+                    primary = Color(0xFFFF982F),
+                    onPrimary = Color(0xFF141820),
+                    background = Color(0xFF10151D),
+                    onBackground = Color(0xFFF2F5F8),
+                    surface = Color(0xFF1A222D),
+                    onSurface = Color(0xFFF2F5F8),
+                    surfaceVariant = Color(0xFF273440),
+                    onSurfaceVariant = Color(0xFFC0CEDA),
+                    error = Color(0xFFFF7373)
+                )
+            ) { HarborShell(this, fixture) }
+        }
     }
     override fun onDestroy() { fixture.close(); super.onDestroy() }
 }
@@ -39,11 +54,11 @@ private fun HarborShell(context: Context, fixture: FixtureRuntime) {
     var current by remember { mutableStateOf("Browser") }
     BackHandler(enabled = current != "Browser") { current = "Browser" }
     // Keep message input and Send above the Android software keyboard (IME).
-    Column(Modifier.fillMaxSize().imePadding()) {
-        Text("Blaze ThreadHarbor  •  Experimental Browser",
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+        Text("Blaze ThreadHarbor  •  Development",
             style=MaterialTheme.typography.titleMedium,modifier=Modifier.padding(12.dp))
         ScrollableTabRow(selectedTabIndex=tabs.indexOf(current),edgePadding=0.dp) {
-            tabs.forEach {name->Tab(selected=current==name,onClick={current=name},text={Text(name)})}
+            tabs.forEach {name->Tab(selected=current==name,onClick={current=name},text={Text(name,style=MaterialTheme.typography.labelSmall)})}
         }
         Box(Modifier.weight(1f)) {
             // Browser remains composed at zero size while other tools are open.
