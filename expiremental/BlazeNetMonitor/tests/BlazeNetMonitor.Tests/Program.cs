@@ -119,4 +119,10 @@ Check(WidgetGeometry.ResolvePlacement(new AppSettings { FreeformPositioned = tru
 var compact = WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(30, 735, 126, 24),
     screen, work, WidgetGeometry.InsideTaskbar);
 Check(compact.Height == 24 && compact.Width == 126, "24px compact resize retained");
+var migrated = new AppSettings { FreeformPositioned = true, PlacementMode = WidgetGeometry.InsideTaskbar };
+Check(WidgetGeometry.ResolvePlacement(migrated) == WidgetGeometry.InsideTaskbar,
+    "explicit inside overlay retains placement despite prior freeform geometry");
+Check(WidgetGeometry.ConstrainToMode(new System.Drawing.Rectangle(8, 736, 125, 24),
+    screen, work, WidgetGeometry.Floating).Top == 736,
+    "floating mode is allowed in taskbar region");
 Console.WriteLine($"RESULT {passed} tests passed");

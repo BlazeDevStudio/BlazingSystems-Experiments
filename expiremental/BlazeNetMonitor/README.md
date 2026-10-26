@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.1 — freeform UX bugfix preview
+# BlazeNetMonitor v0.2.2 — taskbar overlay and compact resize preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,19 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.2 Taskbar placement and compact sizing (October 26, 2026)
+
+**This is an overlay, NOT native Explorer taskbar integration.** The window remains a separate process.
+
+- Three placement options in Settings → General: **Floating** (anywhere on the screen, including taskbar), **Above taskbar** (restricted to desktop working area), and **Inside taskbar (overlay)** (positions over the detected taskbar rectangle).
+- Win32 `SHAppBarMessage(ABM_GETTASKBARPOS)` is used for the primary system taskbar; secondary-monitor fallback derives from `Screen.WorkingArea` exclusions. Automatic placement requires an available taskbar rectangle; manual freeform mode remains possible.
+- Taskbar overlay is **explicitly user-selected** and can cover taskbar buttons or tray icons. No Explorer injection or COM registration.
+- Right-click **Match taskbar height (overlay)** to measure the currently detected horizontal taskbar and fit the widget height with 2px top and bottom gaps while preserving its width.
+- Resizing minimums changed from **210×52 px** to **124×24 logical pixels** (actual physical pixels depend on per-monitor DPI).
+- At heights below 39 pixels the status dots become horizontal and both rates render in one row using compact units; taller layouts retain stacked/full text and graphs where space permits.
+- Width/height, position and selected placement mode persist; changing opacity or theme in Settings does not reset the manual position in the same mode.
+- Foreground fullscreen auto-hide and independent compact hover opacity from 0.2.1 are retained.
 
 ## v0.2.1 QA-driven fixes (October 26, 2026)
 
@@ -79,7 +92,7 @@ Windows 10 (NT 10 build 10240–21999) is classified as **eligible for classic D
 - **Hover** the widget for glance status and transfer counters.
 - **Click one of the two dots** to configure the checks; **right-click** for the context menu.
 - Tray icon **double click** to configure even if the overlay is obscured.
-- Taskbar-adjacent placement is constrained to usable desktop space. The legacy inside-taskbar overlay option is **disabled for safety**; it is not native DeskBand integration.
+- Above-taskbar placement remains constrained to usable desktop space; inside-taskbar overlay is opt-in and constrained to monitor bounds, not Explorer child controls. Its Z-order is best-effort and cannot guarantee compatibility with taskbar updates.
 
 ## Compatibility and limitations
 
