@@ -133,12 +133,10 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
                 .setDescription(Uri.parse(url).host ?: "Website download")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             if (!mime.isNullOrBlank()) request.setMimeType(mime)
-            // DownloadManager does not automatically share the WebView cookie jar.
-            // Cookies are attached only to the exact requested URL and never stored
-            // in app preferences, logs, inspection export or UI.
-            CookieManager.getInstance().getCookie(url)?.takeIf { it.isNotBlank() }?.let {
-                request.addRequestHeader("Cookie", it)
-            }
+            // Deliberately do NOT forward WebView cookies to DownloadManager.
+            // Its redirect behavior is not enforced by our code: an HTTP redirect
+            // could otherwise carry a session cookie to a different host.
+            // Authenticated transfers require a future redirect-aware engine.
             agent?.takeIf { it.isNotBlank() }?.let { request.addRequestHeader("User-Agent", it) }
             val id = (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
             val pref = context.getSharedPreferences("downloads", Context.MODE_PRIVATE)
