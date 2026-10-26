@@ -1,0 +1,74 @@
+name: Blaze MCU Studio v0.1.0 Windows Preview
+on:
+  pull_request:
+    paths:
+      - 'expiremental/Blaze-MCU-Studio/**'
+      - '.github/workflows/blaze-mcu-studio-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation-windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: node --test tests/*.test.cjs
+      - name: Download pinned Arduino CLI
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -Force -ItemType Directory -Path BIN | Out-Null
+          $version='1.5.1'
+          $url="https://github.com/arduino/arduino-cli/releases/download/v$version/arduino-cli_${version}_Windows_64bit.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP/arduino-cli.zip"
+          Expand-Archive "$env:RUNNER_TEMP/arduino-cli.zip" -DestinationPath BIN -Force
+          & ./BIN/arduino-cli.exe version
+      - name: Install AVR and compile actual Arduino sketch
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          & ./BIN/arduino-cli.exe core update-index 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-update.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe core install arduino:avr 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-install.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/generated-sketches" | Out-Null
+          node scripts/export-example.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all examples/Blink 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-reference-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build actual portable Windows EXE
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm install --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run dist:win
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exe=Get-ChildItem dist -Filter '*.exe'
+          if (-not $exe) { throw 'Windows EXE artifact missing' }
+          $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blaze-mcu-preview-windows-and-evidence
+          path: |
+            expiremental/Blaze-MCU-Studio/dist/*.exe
+            ${{ runner.temp }}/arduino-compile.log
+            ${{ runner.temp }}/arduino-reference-compile.log
+            ${{ runner.temp }}/arduino-install.log
+            ${{ runner.temp }}/sha256.txt
+          if-no-files-found: warn
+          retention-days: 14
