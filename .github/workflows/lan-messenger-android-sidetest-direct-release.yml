@@ -1,0 +1,79 @@
+name: LAN Messenger SideTest APK direct GitHub download
+on:
+  push:
+    branches: [release/lan-messenger-v030-android-sidetest]
+    paths: [.github/workflows/lan-messenger-android-sidetest-direct-release.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish-direct-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Assert source is same verified PR212 Android fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/"$GITHUB_REPOSITORY"/actions/runs/40415809592 > run.json
+          gh api repos/"$GITHUB_REPOSITORY"/actions/runs/40415809592/jobs > jobs.json
+          python3 - <<'PY'
+          import json
+          run=json.load(open('run.json'))
+          jobs=json.load(open('jobs.json'))['jobs']
+          assert run['status']=='completed' and run['conclusion']=='success', 'APK source CI not green'
+          assert any(j['name']=='android-sidetest' and j['conclusion']=='success' for j in jobs), 'APK sidetest not verified'
+          PY
+      - name: Download exact tested side-by-side APK from Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p package direct
+          gh run download 40415809592 --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-PR212-SideTest-ARM64 --dir package
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil
+          apk=Path('package/LAN-Messenger-Android-PR212-SideTest-arm64.apk')
+          assert apk.stat().st_size>10_000_000,'APK unexpectedly small'
+          sha=hashlib.sha256(apk.read_bytes()).hexdigest()
+          assert sha=='577a4741b90f72f015903baaaeb791b292efb244d6bbc67123328d0d60143c9c',f'Wrong APK checksum: {sha}'
+          shutil.copy2(apk,'direct/LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk')
+          shutil.copy2('package/README.txt','direct/README.txt')
+          Path('direct/SHA256SUMS.txt').write_text(f'{sha}  LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk\n')
+          print('PASS exact APK SHA256:', sha)
+          PY
+      - name: Publish marked test-only prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > notes.md <<'EOF'
+          # LAN Messenger Android Test — PR #212
+          **Test APK ONLY — not a production upgrade.**
+
+          This Android ARM64 file was compiled from exact PR #212 source
+          `8d444bd747aed173527fbc3fe88a6050aa4fc34e`.
+          It is intentionally signed separately and has a separate Android
+          application ID, `com.blazingsystems.lanmessenger.sidetest`.
+          It installs as **LAN Messenger Test**, without replacing the prior
+          **LAN Messenger** application or erasing that app's local data.
+
+          Build, Flutter tests, signature/checksum packaging and independent
+          emulator installation smoke passed in [Actions #40415809592](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40415809592).
+          The separate [video/PiP emulator scenario](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40338163971) passed.
+          Physical Samsung results and background notification Answer remain unverified.
+
+          Before running the test app, fully stop the original LAN Messenger
+          app/background service to prevent LAN port conflicts. **Do not uninstall**
+          the original app. Do not use the test app as a production intercom.
+          EOF
+          gh release create lan-messenger-v0.3.0-sidetest-pr212 \
+            direct/LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk \
+            direct/README.txt direct/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target 8d444bd747aed173527fbc3fe88a6050aa4fc34e \
+            --title "LAN Messenger v0.3.0 — Android SideTest (PR212, TEST ONLY)" \
+            --notes-file notes.md --prerelease
