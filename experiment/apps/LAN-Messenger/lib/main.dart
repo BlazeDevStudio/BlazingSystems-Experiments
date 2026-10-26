@@ -322,12 +322,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     final foreground = state == AppLifecycleState.resumed ||
         state == AppLifecycleState.inactive;
     if (_inForeground != foreground) {
-      setState(() => _inForeground = foreground);
+      setState(() {
+        _inForeground = foreground;
+        // Returning to Messenger after an external call answer should show
+        // its REAL in-app call screen, never a floating video over Settings.
+        if (foreground && intercom?.talkingTo != null && !_incomingDialogOpen) {
+          _callMinimized = false;
+        }
+      });
     }
-    // A native call overlay is permission-gated; notification stays fallback.
-    unawaited(_notifications.invokeMethod<void>('foreground', {
-      'visible': foreground,
-    }).catchError((Object _) {}));
+    // Native onStart/onStop owns OS visibility. Flutter's paused/inactive
+    // status is not allowed to create or reposition a WindowManager overlay.
   }
 
   Future<void> _openCompactVideoWindow() async {
@@ -419,15 +424,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       final ok = await _notifications.invokeMethod<bool>('enterPip',
           {'callId': call!.callId});
-      if (ok != true) _toast('Android could not start PiP for this video call. '
-          'Return to the active call and try again.');
+      if (ok != true) {
+        String explanation = 'Android did not enter picture-in-picture.';
+        try {
+          explanation = await _notifications.invokeMethod<String>('pipDiagnostic')
+              ?? explanation;
+        } catch (_) {}
+        _toast(explanation);
+      }
     } catch (e) { _toast('Could not float video: $e'); }
   }
 
-  Future<void> _enableAndroidOverlay() async {
+  Future<void> _openAndroidPipSettings() async {
     if (!Platform.isAndroid) return;
-    try { await _notifications.invokeMethod<void>('openOverlaySettings'); }
-    catch (e) { _toast('Could not open floating-window settings: $e'); }
+    try { await _notifications.invokeMethod<void>('openPipSettings'); }
+    catch (e) { _toast('Could not open Android picture-in-picture settings: $e'); }
   }
 
   Future<void> _endCallPresentation() async {
@@ -1100,11 +1111,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       onChanged: (value) => _setBackground(value)),
     if (Platform.isAndroid) ListTile(
       leading: const Icon(Icons.picture_in_picture),
-      title: const Text('Floating call window permission'),
-      subtitle: const Text('Optional Android Display over other apps access. '
-        'Shows draggable Answer/Decline only when outside Messenger; '
-        'system call notifications remain available without this permission.'),
-      onTap: _enableAndroidOverlay),
+      title: const Text('Video picture-in-picture settings'),
+      subtitle: const Text('For connected video calls when you press Home or '
+        'switch apps. Android PiP is different from "Appear on top". '
+        'Incoming calls use Android notifications; no overlay permission needed.'),
+      onTap: _openAndroidPipSettings),
     const Padding(padding: EdgeInsets.all(16), child: Text(
       'Internet is not required, but devices must share a reachable LAN. '
       'Android may suspend the application after force-stop or under battery restrictions. '
@@ -1897,9 +1908,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                     style: IconButton.styleFrom(backgroundColor: Colors.deepOrange),
                     onPressed: () => unawaited(call.revokeRemoteControl()),
                     icon: const Icon(Icons.gpp_bad)),
-                if (call.video && Platform.isAndroid)
+                if (call.video && Platform.isAndroid && !call.connecting)
                   IconButton.filledTonal(
-                    tooltip: 'Float video above other apps',
+                    tooltip: 'Use Android picture-in-picture',
                     onPressed: () => unawaited(_enterPipVideo()),
                     icon: const Icon(Icons.picture_in_picture_alt)),
                 if (call.video)
