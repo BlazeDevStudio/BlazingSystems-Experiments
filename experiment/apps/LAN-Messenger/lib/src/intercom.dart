@@ -110,6 +110,7 @@ class Intercom {
   MediaStream? _displayStream;
   MediaStream? _remoteFallbackStream;
   bool _remoteHasNativeStream = false;
+  bool _remoteVideoFrameObserved = false;
   List<MediaDeviceInfo> availableCameras = <MediaDeviceInfo>[];
   int activeCameraIndex = 0;
   bool get canSwitchCamera => video && !sharingScreen &&
@@ -336,7 +337,18 @@ class Intercom {
       // Frame sizes change when the remote phone rotates or shares a screen.
       // Rebuild the AspectRatio on actual decoded-frame resize, not just
       // the local device OrientationBuilder callback.
-      remoteRenderer!.onResize = () => onChanged?.call();
+      _remoteVideoFrameObserved = false;
+      remoteRenderer!.onResize = () {
+        if (callId != id || _closing) return;
+        if (!_remoteVideoFrameObserved &&
+            (remoteRenderer?.videoWidth ?? 0) > 0 &&
+            (remoteRenderer?.videoHeight ?? 0) > 0) {
+          _remoteVideoFrameObserved = true;
+          print('LAN_CALL_TRACE remote_video_frame_decoded');
+          unawaited(_log('decoded first remote video frame'));
+        }
+        onChanged?.call();
+      };
       localRenderer!.srcObject = stream;
     }
     final pc = await createPeerConnection({
@@ -680,6 +692,7 @@ class Intercom {
     final fallback = _remoteFallbackStream;
     _remoteFallbackStream = null;
     _remoteHasNativeStream = false;
+    _remoteVideoFrameObserved = false;
     _lastOutgoingMove = null;
     _outgoingMovePending = false;
     _connection = null;
