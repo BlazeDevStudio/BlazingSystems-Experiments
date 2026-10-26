@@ -160,13 +160,13 @@ var
   ErrorCode: Integer;
 begin
   if (CurStep <> ssDone) or WizardSilent then Exit;
-  ; Open browser only after successful Finish, as the installing user.
+  // Open browser only after successful Finish, as the installing user.
   if not ShellExecAsOriginalUser('open',
     'https://fb.me/manrealloumer', '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode) then
     Log('Could not open creator Facebook page');
 
-  ; Then launch the installed app under the user's normal credentials, not elevated.
-  ; Its owner QR splash appears separately.
+  // Then launch the installed app under the user's normal credentials, not elevated.
+  // Its owner QR splash appears separately.
   if not ExecAsOriginalUser(
     ExpandConstant('{app}\BlazeNetMonitor.exe'), '', ExpandConstant('{app}'),
     SW_SHOWNORMAL, ewNoWait, ErrorCode) then
