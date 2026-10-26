@@ -56,7 +56,7 @@ jobs:
 
           This Android ARM64 file was compiled from exact PR #212 source
           `8d444bd747aed173527fbc3fe88a6050aa4fc34e`.
-          It is intentionally signed separately and has a separate Android
+          The release tag is a distribution pointer; exact compiled source is the PR212 commit above.\n          It is intentionally signed separately and has a separate Android
           application ID, `com.blazingsystems.lanmessenger.sidetest`.
           It installs as **LAN Messenger Test**, without replacing the prior
           **LAN Messenger** application or erasing that app's local data.
@@ -70,10 +70,28 @@ jobs:
           app/background service to prevent LAN port conflicts. **Do not uninstall**
           the original app. Do not use the test app as a production intercom.
           EOF
-          gh release create lan-messenger-v0.3.0-sidetest-pr212 \
-            direct/LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk \
-            direct/README.txt direct/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" \
-            --target 8d444bd747aed173527fbc3fe88a6050aa4fc34e \
-            --title "LAN Messenger v0.3.0 — Android SideTest (PR212, TEST ONLY)" \
-            --notes-file notes.md --prerelease
+          # Release tags for a commit modifying workflow files can be
+          # rejected by the Actions GITHUB_TOKEN. This tag is a distribution
+          # pointer on main; the binary provenance is the checked PR212 source
+          # SHA above, NOT the tag's checkout source. Fail closed on upload.
+          for attempt in 1 2 3; do
+            if gh release view lan-messenger-v0.3.0-sidetest-pr212 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload lan-messenger-v0.3.0-sidetest-pr212 \
+                direct/LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk \
+                direct/README.txt direct/SHA256SUMS.txt \
+                --repo "$GITHUB_REPOSITORY" --clobber && break
+            else
+              if gh release create lan-messenger-v0.3.0-sidetest-pr212 \
+                direct/LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk \
+                direct/README.txt direct/SHA256SUMS.txt \
+                --repo "$GITHUB_REPOSITORY" \
+                --target main \
+                --title "LAN Messenger v0.3.0 — Android SideTest (PR212, TEST ONLY)" \
+                --notes-file notes.md --prerelease; then break; fi
+            fi
+            if [ "$attempt" = 3 ]; then echo "Release upload did not succeed" >&2; exit 1; fi
+            sleep $((attempt*5))
+          done
+          gh release view lan-messenger-v0.3.0-sidetest-pr212 \
+            --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name' | grep -Fx LAN-Messenger-Test-v0.3.0-PR212-ARM64.apk
