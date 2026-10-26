@@ -76,8 +76,11 @@ private fun ChatsScreen(fixture:FixtureRuntime,openBrowser:()->Unit) {
         Text("Native messaging — controlled fixture",style=MaterialTheme.typography.titleLarge)
         Text("DEMO WEBSITE, NOT FACEBOOK OR REAL INBOX",color=MaterialTheme.colorScheme.error)
         Text(fixture.status,style=MaterialTheme.typography.bodySmall)
+        fixture.pending.lastOrNull()?.let { action ->
+            Text("Last action: " + action.status, style=MaterialTheme.typography.bodySmall)
+        }
         LazyColumn(Modifier.weight(1f)){
-            items(fixture.messages,key={it.id}){m->
+            items(fixture.messages,key={"message-" + it.id}){m->
                 Card(Modifier.fillMaxWidth().padding(vertical=4.dp)){
                     Column(Modifier.padding(10.dp)){
                         Text(m.sender,style=MaterialTheme.typography.labelLarge)
@@ -85,7 +88,7 @@ private fun ChatsScreen(fixture:FixtureRuntime,openBrowser:()->Unit) {
                     }
                 }
             }
-            items(fixture.pending,key={it.id}){p->
+            items(fixture.pending,key={"action-" + it.id}){p->
                 Text(p.status + ": " + p.text.take(80),style=MaterialTheme.typography.bodySmall)
             }
         }

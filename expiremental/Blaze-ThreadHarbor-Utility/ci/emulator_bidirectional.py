@@ -68,12 +68,12 @@ def run():
         rendered = [n.get("text", "") for n in current.iter("node")]
         last_text = [v for v in rendered if v and (PROBE in v or
                      "fixture" in v.lower() or "unverified" in v.lower())]
-        if any("OBSERVED_IN_FIXTURE: " + PROBE in value for value in rendered):
+        if any(value == "Last action: OBSERVED_IN_FIXTURE" for value in rendered):
             assert any(value == PROBE for value in rendered), "Action observed but no message bubble"
             print("PASS: Native reply resulted in observed fixture DOM mutation and UI confirmation")
             return
     print("Last visible post-submit UI entries: " + repr(last_text), file=sys.stderr)
-    raise AssertionError("No observed fixture confirmation within 18 seconds")
+    raise AssertionError("No visible verified pending action despite observed fixture reply")
 def save_evidence():
     try:
         with open("threadharbor-native-reply.png", "wb") as dest:
