@@ -374,7 +374,25 @@ class MainActivity : FlutterActivity() {
 
     private fun showOngoingCall(caller: String, callId: String,
                                 video: Boolean, muted: Boolean): Boolean {
-        if (!canNotify() || callId.isBlank()) return false
+        if (callId.isBlank()) return false
+        // PiP availability must never depend on notification permission.
+        // Samsung/Android users can decline alerts and still use video PiP.
+        lastCaller = caller; lastCallId = callId
+        lastVideo = video; lastMuted = muted; lastIncoming = false
+        incomingNotificationPosted = false
+        pipEnabledForCall = video
+        if (Build.VERSION.SDK_INT >= 31) {
+            try {
+                setPictureInPictureParams(PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setActions(pictureActions(callId))
+                    .setAutoEnterEnabled(video)
+                    .build())
+            } catch (e: Exception) {
+                Log.w("LANCallTrace", "could not configure video PiP: ${e.message}")
+            }
+        }
+        if (!canNotify()) return false
         // Active calls must not play the incoming ringtone again.
         // A separate low-importance channel preserves in-call actions without
         // silently overriding the owner's high-priority incoming-call settings.
@@ -413,23 +431,6 @@ class MainActivity : FlutterActivity() {
         b.addAction(android.R.drawable.ic_menu_view, "Open thread",
             callAction("open", callId))
         notifications.notify(7024, b.build())
-        lastCaller = caller; lastCallId = callId
-        lastVideo = video; lastMuted = muted; lastIncoming = false
-        incomingNotificationPosted = false
-        pipEnabledForCall = video
-        if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                // Android 12+ moves the actual video Activity into system PiP
-                // when Home is used. No TYPE_APPLICATION_OVERLAY substitute.
-                setPictureInPictureParams(PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(16, 9))
-                    .setActions(pictureActions(callId))
-                    .setAutoEnterEnabled(video)
-                    .build())
-            } catch (e: Exception) {
-                Log.w("LANCallTrace", "could not configure automatic PiP: ${e.message}")
-            }
-        }
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
             try {
                 setPictureInPictureParams(PictureInPictureParams.Builder()
