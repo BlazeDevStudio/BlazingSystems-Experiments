@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.3.0 — per-app historical network usage preview
+# BlazeNetMonitor v1.0.0 — Windows desktop network monitor
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,22 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## Version 1.0.0 — Windows installer
+
+**Windows 10/11 x64** installer: [BlazeNetMonitor-Setup-v1.0.0.exe](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/blazenetmonitor-v1.0.0/BlazeNetMonitor-Setup-v1.0.0.exe)
+
+The standalone installer bundles the application's .NET runtime and places BlazeNetMonitor in **Program Files** by default. It creates shortcuts in the Start menu, on the desktop and in the all-users Startup folder. Startup-folder and the app's optional per-user Run-key launches both use `--startup` to quietly suppress duplicates and honor the saved **Start with Windows** preference.
+
+After the initial welcome screen the setup wizard shows a PayPal support page with the creator's fixed QR, then the installation pages. Successful interactive completion shows a **Thank you** page with an optional (unchecked by default) **Delete installer file after setup** checkbox. On Finish, setup opens [the developer's Facebook page](https://fb.me/manrealloumer) in the user's browser and starts the installed application, which displays its own support QR according to its saved preference.
+
+- Cancelled or unattended installations do **not** open Facebook or automatically delete the source installer.
+- An uninstaller is included and removes both the installed app and installer-created shortcuts. User data under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor` is not deleted by default.
+- Installer deletion is best effort and only runs when explicitly checked; on Windows the running installer cannot remove its own executable directly, so a short-lived helper attempts the deletion after setup exits.
+- The installer executable is **unsigned**. Windows may display a publisher / SmartScreen warning. Download only from this repository's release page; do not disable system-wide security settings.
+- GitHub Windows CI passed **107 application tests**, Inno Setup compilation, silent installation, installed-app QR self-test, Startup-shortcut validation and uninstallation. The interactive wizard and automatic installer-file deletion have not yet been physically validated on the owner's Windows PC.
+
+The previously published portable v0.3.0 preview remains available separately. Do not install the new app while an older portable BlazeNetMonitor instance is still running; exit it from the tray first.
 
 ## v0.3.0 — Top five apps in At-a-glance (October 27, 2026)
 
