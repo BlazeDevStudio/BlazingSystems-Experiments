@@ -1,0 +1,126 @@
+name: LAN Messenger Android SideTest APK v2
+on:
+  push:
+    branches:
+      - release/lan-messenger-v030-android-sidetest
+    paths:
+      - .github/workflows/lan-messenger-android-sidetest-v2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-sidetest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Exact immutable bugfix HEAD. This workflow may not silently
+          # package another source revision or the earlier Preview 1.
+          ref: 8d444bd747aed173527fbc3fe88a6050aa4fc34e
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Create Android platform runner
+        working-directory: experiment/apps/LAN-Messenger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tool/generate_assets.py
+          flutter create --platforms=android --project-name lan_messenger .
+          python3 tool/prepare_platforms.py
+      - name: Make a uniquely installable, data-isolated Android test package
+        working-directory: experiment/apps/LAN-Messenger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          app_id = 'com.blazingsystems.lanmessenger.sidetest'
+          app = Path('android/app')
+          gradle = app / 'build.gradle.kts'
+          if not gradle.exists():
+              gradle = app / 'build.gradle'
+          src = gradle.read_text()
+          if gradle.suffix == '.kts':
+              old = 'applicationId = "com.example.lan_messenger"'
+              new = f'applicationId = "{app_id}"'
+          else:
+              old = 'applicationId "com.example.lan_messenger"'
+              new = f'applicationId "{app_id}"'
+          assert src.count(old) == 1, 'Unknown Gradle app ID: fail closed'
+          gradle.write_text(src.replace(old, new))
+          manifest = app / 'src/main/AndroidManifest.xml'
+          text = manifest.read_text()
+          for name in ('MainActivity','CallActionReceiver','ScreenProjectionService','RemoteTouchService'):
+              old = f'android:name=".{name}"'
+              new = f'android:name="com.example.lan_messenger.{name}"'
+              assert text.count(old) == 1, f'Missing exact component {name}'
+              text = text.replace(old, new)
+          assert 'android:label="LAN Messenger"' in text
+          text = text.replace('android:label="LAN Messenger"',
+                              'android:label="LAN Messenger Test"', 1)
+          assert 'SYSTEM_ALERT_WINDOW' not in text
+          assert 'android:supportsPictureInPicture="true"' in text
+          manifest.write_text(text)
+          print('PASS: side-by-side package; no data overwrite or overlay permission')
+          PY
+      - name: Compile and test actual Android source
+        working-directory: experiment/apps/LAN-Messenger
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-fatal-infos
+          flutter test
+          flutter build apk --release --split-per-abi --tree-shake-icons
+          test -s build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          test -s build/app/outputs/flutter-apk/app-x86_64-release.apk
+      - name: Package ARM64 direct-install APK
+        working-directory: experiment/apps/LAN-Messenger
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist/LAN-Messenger-Android-PR212-SideTest-arm64.apk
+          sha256sum dist/*.apk > dist/SHA256SUMS.txt
+          cat > dist/README.txt <<'EOF'
+          LAN Messenger Android PR #212 — isolated Android-only test package.
+          Source: 8d444bd747aed173527fbc3fe88a6050aa4fc34e
+          App ID: com.blazingsystems.lanmessenger.sidetest
+          Launcher: LAN Messenger Test
+          Unlike previous Preview 1, this installs separately and does not uninstall
+          or overwrite existing application data. Stop the previous LAN Messenger app
+          when running the test copy to avoid local UDP/TCP port conflicts.
+          This is NOT a production release: video and PiP physical acceptance pending.
+          The first Preview 1 installation must be retained for data preservation.
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Android-PR212-SideTest-ARM64
+          path: experiment/apps/LAN-Messenger/dist/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Install isolated APK on disposable Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: >-
+            bash -euo pipefail -c '
+            apk=experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/app-x86_64-release.apk;
+            test -s "$apk";
+            adb install -r "$apk";
+            adb shell pm grant com.blazingsystems.lanmessenger.sidetest android.permission.POST_NOTIFICATIONS || true;
+            adb shell am start -W -n com.blazingsystems.lanmessenger.sidetest/com.example.lan_messenger.MainActivity;
+            sleep 12;
+            adb shell pidof com.blazingsystems.lanmessenger.sidetest;
+            adb shell dumpsys activity activities | grep com.blazingsystems.lanmessenger.sidetest;
+            echo "PASS: independently installed and launched side-by-side Android test package";
+            '
