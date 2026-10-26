@@ -17,7 +17,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitor
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-v0.2.8-preview.1
+      RELEASE_TAG: blazenetmonitor-v0.2.9-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,7 +34,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $rid" }
             $exe = "dist/$rid/BlazeNetMonitor.exe"
             if (-not (Test-Path $exe)) { throw "Missing $exe" }
-            $zip = "artifacts/BlazeNetMonitor-v0.2.8-$rid.zip"
+            $zip = "artifacts/BlazeNetMonitor-v0.2.9-$rid.zip"
             Compress-Archive -Path $exe -DestinationPath $zip -CompressionLevel Optimal -Force
             if (-not (Test-Path $zip)) { throw "Missing $zip" }
             Get-FileHash $zip -Algorithm SHA256 | Format-List
@@ -45,8 +45,8 @@ jobs:
           dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -o dist/win-x64-lite
           if ($LASTEXITCODE -ne 0) { throw 'Lite framework-dependent publish failed' }
           if (-not (Test-Path 'dist/win-x64-lite/BlazeNetMonitor.exe')) { throw 'Lite EXE missing' }
-          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip' -CompressionLevel Optimal -Force
-          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip' -Algorithm SHA256 | Format-List
+          Compress-Archive -Path 'dist/win-x64-lite/*' -DestinationPath 'artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip' -CompressionLevel Optimal -Force
+          Get-FileHash 'artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip' -Algorithm SHA256 | Format-List
       - name: Windows QR visibility and uncropped About image check
         shell: pwsh
         run: |
@@ -58,6 +58,17 @@ jobs:
             throw "Windows QR render and UI geometry self-test failed with exit code $($check.ExitCode)"
           }
           Write-Host 'PASS Windows GDI+ QR image exact sizes, opaque splash, uncropped About QR, settings removed'
+      - name: Windows Network Connections enumeration regression
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/win-x64/BlazeNetMonitor.exe').Path
+          $check = Start-Process -FilePath $exe -ArgumentList '--verify-network-connections' -PassThru -Wait
+          $summary = Join-Path $env:TEMP 'BlazeNetMonitor-adapter-check.txt'
+          if (Test-Path $summary) { Get-Content $summary }
+          if ($check.ExitCode -ne 0) {
+            throw "Network Connections adapter listing failed exit $($check.ExitCode)"
+          }
+          Write-Host 'PASS default adapters match native Network Connections when available'
       - name: Windows x64 GUI process launch smoke check
         shell: pwsh
         run: |
@@ -78,5 +89,5 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw 'Preview release tag already exists; refusing to overwrite a published build.' }
-          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.8-win-x64.zip artifacts/BlazeNetMonitor-v0.2.8-win-x86.zip artifacts/BlazeNetMonitor-v0.2.8-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.8-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.8 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.8 PREVIEW: fixes PayPal QR crop in About caused by 200px renderer minimum with a smaller PictureBox. About now shows full 240x240 QR; removed donation QR viewer button and startup frequency controls from About. Startup PayPal card is fully opaque and stable for 11 seconds (early dismiss allowed) rather than a transparency animation that made the code difficult to see. Existing donor QR, PayPal URL, and optional opt-out in the splash remain intact. Windows CI validates rendered bitmap dimensions, all QR finder marks, opaque splash, About image bounds and absence of startup selector. Real hardware QR scan and UI testing remain recommended.'
+          gh release create $env:RELEASE_TAG artifacts/BlazeNetMonitor-v0.2.9-win-x64.zip artifacts/BlazeNetMonitor-v0.2.9-win-x86.zip artifacts/BlazeNetMonitor-v0.2.9-win-arm64.zip artifacts/BlazeNetMonitor-v0.2.9-win-x64-lite.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v0.2.9 Preview 1' --prerelease --notes 'BlazeNetMonitor v0.2.9 PREVIEW: About copy cleaned, all Auto adaptive labels changed to Adaptive, seven graph drawing types (Line, Smooth, Filled, Bars, Steps, Dots, Impulse). Network adapter dropdown defaults to names enumerated from Windows Network Connections shell folder, matching ncpa.cpl rather than guessing from network interface type; disconnected connections remain present. Advanced network adapters checkbox exposes virtual/VPN/tunnel and other interfaces. If the shell folder cannot be read, default shows no guessed adapters rather than a cluttered list; Advanced remains available. CI verifies core graph/selection rules, Windows COM shell adapter enumeration, QR layout and x64 launch; physical Windows 10/11 desktop adapter results remain to be checked. Windows 10 native DeskBand is not part of this preview.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub pre-release creation failed' }

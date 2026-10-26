@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.8 — full QR visibility and About cleanup preview
+# BlazeNetMonitor v0.2.9 — streamlined settings and Windows Connections selector
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,15 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.9 — concise settings, graph types and Windows Connections (October 27, 2026)
+
+- Removed the three unwanted marketing/disclaimer phrases from **About**. It now gives a short functional description, developer contact, PayPal QR and one Open PayPal action.
+- Display copy formerly saying **Auto adaptive** is now simply **Adaptive** in Graphs and Metrics, without changing the stored `Auto` preference or saved configurations.
+- **Seven graph drawing types:** Line, Smooth, Filled, Bars, Steps, Dots, and Impulse. Upload/download graph colors, history length, and refresh cadence continue working.
+- **Network adapter dropdown:** Defaults to the adapter names actually displayed by the Windows **Network Connections** shell folder (the virtual folder that `ncpa.cpl` opens). The names are discovered dynamically, never hardcoded to LAN/Wi-Fi. Adapters disconnected in Windows remain listed; an adapter which is visible but unavailable is shown as unavailable instead of silently selected. **Advanced network adapters** shows additional interfaces from `NetworkInterface.GetAllNetworkInterfaces()` including VPN/virtual/tunnel adapters.
+- If shell COM enumeration cannot run in a restricted Windows session, no guessed interfaces flood the default view. The UI explains the fallback, and Advanced mode gives access to the adapters exposed by .NET.
+- An exact-head Windows test checks the native Network Connections mapping when the shell is available; this is still subject to manual verification on machines where `ncpa.cpl` differs from the hosted Windows runner.
 
 ## v0.2.8 — PayPal splash clarity and About QR crop fix (October 27, 2026)
 
