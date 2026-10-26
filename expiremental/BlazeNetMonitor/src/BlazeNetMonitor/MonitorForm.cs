@@ -642,33 +642,72 @@ internal sealed class MonitorForm : Form
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(Theme.Background);
 
+        bool micro = Height < 39;
         bool narrow = Width < 275;
         bool showGraphs = _data.Settings.ShowGraphs && Height >= (narrow ? 130 : 82);
-        float textScale = Math.Clamp(Width / (narrow ? 28f : 35f), 8.5f, 12f);
+        float textScale = micro
+            ? Math.Clamp(Height * 0.26f, 6.5f, 9f)
+            : Math.Clamp(Math.Min(Width / (narrow ? 28f : 35f), Height / 4f), 8f, 12f);
         using var speedFont = new Font("Segoe UI Semibold", textScale, FontStyle.Bold, GraphicsUnit.Point);
         using var accentBrush = new SolidBrush(Theme.Accent);
         using var textBrush = new SolidBrush(Theme.Text);
         using var border = new Pen(_editingGeometry ? Theme.Accent : Theme.Border, _editingGeometry ? 2f : 1f);
-        using var format = new StringFormat { Trimming = StringTrimming.EllipsisCharacter,
-            FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center };
+        using var format = new StringFormat {
+            Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.NoWrap, LineAlignment = StringAlignment.Center
+        };
 
         g.DrawRectangle(border, 1, 1, Width - 3, Height - 3);
-        for (int i = 0; i < 2; i++)
+        // At taskbar height the two independent status targets sit horizontally;
+        // taller layouts retain the original vertical pair.
+        if (micro)
         {
-            float cy = Height / 2f + (i == 0 ? -12 : 12);
-            using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
-            g.FillEllipse(dot, 12, cy - 6, 12, 12);
-            using var ring = new Pen(Theme.Border, 1);
-            g.DrawEllipse(ring, 11, cy - 7, 14, 14);
+            for (int i = 0; i < 2; i++)
+            {
+                using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
+                g.FillEllipse(dot, 6 + i * 13, Height / 2f - 5, 10, 10);
+            }
         }
-        using (var line = new Pen(Theme.Border)) g.DrawLine(line, 34, 5, 34, Height - 5);
-
-        float contentX = 40f;
+        else
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                float cy = Height / 2f + (i == 0 ? -12 : 12);
+                using var dot = new SolidBrush(Theme.State(_snapshots[i].State));
+                g.FillEllipse(dot, 12, cy - 6, 12, 12);
+                using var ring = new Pen(Theme.Border);
+                g.DrawEllipse(ring, 11, cy - 7, 14, 14);
+            }
+        }
+        float contentX = micro ? 34f : 40f;
+        using (var line = new Pen(Theme.Border))
+            g.DrawLine(line, contentX - 5f, 4, contentX - 5f, Height - 5);
         float contentWidth = Math.Max(20, Width - contentX - 7);
-        string up = "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
-        string down = "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
+        var up = micro
+            ? "↑" + CompactRate(_speed.UploadBytesPerSecond, _data.Settings.UseBits)
+            : "↑ " + MonitorMath.Rate(_speed.UploadBytesPerSecond, _data.Settings.UseBits);
+        var down = micro
+            ? "↓" + CompactRate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits)
+            : "↓ " + MonitorMath.Rate(_speed.DownloadBytesPerSecond, _data.Settings.UseBits);
 
-        if (narrow)
+        if (micro || !narrow)
+        {
+            float half = contentWidth / 2f;
+            float y = showGraphs ? 4f : 4f;
+            float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 8f;
+            g.DrawString(up, speedFont, textBrush,
+                new RectangleF(contentX, y, half - 3, labelHeight), format);
+            g.DrawString(down, speedFont, textBrush,
+                new RectangleF(contentX + half, y, half - 3, labelHeight), format);
+            if (showGraphs)
+            {
+                int graphY = Math.Max(27, Height - 31);
+                var graphWidth = (int)Math.Max(14, half - 12);
+                Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
+                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
+            }
+        }
+        else
         {
             float rowHeight = (showGraphs ? Height - 35f : Height - 8f) / 2f;
             g.DrawString(up, speedFont, textBrush,
@@ -678,23 +717,6 @@ internal sealed class MonitorForm : Form
             if (showGraphs)
                 Graph(g, _downSamples, new Rectangle((int)contentX + 2, Height - 29,
                     (int)contentWidth - 5, 21));
-        }
-        else
-        {
-            float half = contentWidth / 2f;
-            float labelHeight = showGraphs ? Math.Min(38f, Height - 37f) : Height - 12f;
-            float y = showGraphs ? 4f : 6f;
-            g.DrawString(up, speedFont, textBrush,
-                new RectangleF(contentX, y, half - 5, labelHeight), format);
-            g.DrawString(down, speedFont, textBrush,
-                new RectangleF(contentX + half, y, half - 5, labelHeight), format);
-            if (showGraphs)
-            {
-                int graphY = Math.Max(27, Height - 31);
-                var graphWidth = (int)Math.Max(14, half - 12);
-                Graph(g, _upSamples, new Rectangle((int)contentX + 2, graphY, graphWidth, 21));
-                Graph(g, _downSamples, new Rectangle((int)(contentX + half) + 2, graphY, graphWidth, 21));
-            }
         }
 
         if (_editingGeometry)
@@ -706,6 +728,19 @@ internal sealed class MonitorForm : Form
                 new Point(0, Height - h - 1), new Point(Width - h - 1, Height - h - 1) })
                 g.FillRectangle(accentBrush, pt.X, pt.Y, h, h);
         }
+    }
+
+    private static string CompactRate(double bytesPerSecond, bool bits)
+    {
+        double value = Math.Max(0, bytesPerSecond) * (bits ? 8.0 : 1.0);
+        string[] suffixes = bits ? ["b", "Kb", "Mb", "Gb"] : ["B", "KB", "MB", "GB"];
+        int index = 0;
+        while (value >= 1000 && index < suffixes.Length - 1)
+        {
+            value /= 1000;
+            index++;
+        }
+        return $"{value:0.#}{suffixes[index]}";
     }
 
     private static void Graph(Graphics g, Queue<double> samples, Rectangle r)
