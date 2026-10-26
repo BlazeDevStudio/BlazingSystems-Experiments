@@ -41,7 +41,7 @@ internal sealed class SettingsForm : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
-        ClientSize = new Size(545, 585);
+        ClientSize = new Size(545, 642);
         // Rebuild only on explicit expand; disconnected physical NICs stay visible.
         var tabs = new TabControl { Dock = DockStyle.Fill, DrawMode = TabDrawMode.OwnerDrawFixed,
             SizeMode = TabSizeMode.Normal, ItemSize = new Size(76, 32) };

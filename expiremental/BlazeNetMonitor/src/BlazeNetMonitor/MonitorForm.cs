@@ -11,6 +11,7 @@ internal sealed class MonitorForm : Form
     private readonly Storage _storage = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlazeSystems", "BlazeNetMonitor", "state.json"));
     private readonly PersistedData _data;
     private SettingsForm? _settingsForm;
+    private DonationSplashForm? _donationSplash;
     private AppSettings? _settingsBeforeEdit;
     private readonly System.Windows.Forms.Timer _fullscreenTimer = new() { Interval = 750 };
     private readonly System.Windows.Forms.Timer _glancePreviewTimer = new() { Interval = 2300 };
@@ -133,8 +134,9 @@ internal sealed class MonitorForm : Form
             PromoteOptionalOverlay();
             if (_data.Settings.ShowFavicons) _ = ReloadFaviconsAsync();
             await ProbeTargets();
-            if (!_data.WelcomeAcknowledged && !IsDisposed)
-                BeginInvoke(new Action(ShowWelcomeOnce));
+            if (!IsDisposed && DonationSplashPolicy.ShouldShow(
+                _data.Settings.DonationSplashMode, _data.DonationSplashViewed))
+                BeginInvoke(new Action(() => ShowDonationSplash(force: false)));
         };
         SystemEventsHook();
     }
@@ -485,6 +487,8 @@ internal sealed class MonitorForm : Form
         _menu.Items.Add("Recover above taskbar (safe)", null, (_, _) => RecoverWidget(true));
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add("BlazeNetMonitor · Settings", null, (_, _) => EditSettings());
+        _menu.Items.Add("Support development · PayPal QR", null,
+            (_, _) => ShowDonationSplash(force: true));
         _menu.Items.Add("Open connection table", null, (_, _) => ShowConnections());
         _menu.Items.Add("Refresh website favicons", null, (_, _) =>
         {
@@ -546,13 +550,30 @@ internal sealed class MonitorForm : Form
 
     private static Icon MakeIcon() => Branding.MakeIcon();
 
-    private void ShowWelcomeOnce()
+    private void ShowDonationSplash(bool force)
     {
-        if (_data.WelcomeAcknowledged || IsDisposed) return;
-        using var welcome = new WelcomeForm();
-        welcome.ShowDialog();
-        _data.WelcomeAcknowledged = true;
-        SaveSafe();
+        if (IsDisposed || Disposing) return;
+        if (!force && !DonationSplashPolicy.ShouldShow(
+            _data.Settings.DonationSplashMode, _data.DonationSplashViewed)) return;
+        if (_donationSplash is { IsDisposed: false })
+        {
+            _donationSplash.Activate();
+            return;
+        }
+        _data.DonationSplashViewed = true;
+        SaveSafe(); // "first launch" is durably acknowledged as it is displayed.
+        var form = new DonationSplashForm(() =>
+        {
+            _data.Settings.DonationSplashMode = DonationSplashPolicy.Never;
+            SaveSafe();
+        });
+        _donationSplash = form;
+        form.FormClosed += (_, _) =>
+        {
+            if (ReferenceEquals(_donationSplash, form)) _donationSplash = null;
+            form.Dispose();
+        };
+        form.Show(); // modeless: the tiny network monitor keeps sampling.
     }
 
     private void CopyStatus()
@@ -1023,7 +1044,9 @@ internal sealed class MonitorForm : Form
             {
                 Settings = _settingsBeforeEdit.Copy(),
                 Totals = _data.Totals,
-                Histories = _data.Histories
+                Histories = _data.Histories,
+                WelcomeAcknowledged = _data.WelcomeAcknowledged,
+                DonationSplashViewed = _data.DonationSplashViewed
             });
         }
         catch (Exception ex) { Debug.WriteLine("Settings persistence error: " + ex); }
@@ -1037,6 +1060,7 @@ internal sealed class MonitorForm : Form
         _faviconLoad?.Cancel();
         _trafficTimer.Stop(); _probeTimer.Stop(); _hoverTimer.Stop(); _fullscreenTimer.Stop(); _glancePreviewTimer.Stop(); _overlayGuardTimer.Stop();
         if (_settingsForm is { IsDisposed: false }) _settingsForm.Close();
+        if (_donationSplash is { IsDisposed: false }) _donationSplash.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnPreferenceChanged;
         SaveSafe();
