@@ -228,6 +228,8 @@ fun BrowserScreen(context: Context, visible: Boolean = true) {
     BackHandler(enabled = visible && active.view.canGoBack()) { active.view.goBack() }
 
     Column(Modifier.fillMaxSize()) {
+        Text("Tabs: ${tabs.size}", style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState())) {
             tabs.forEachIndexed { index, tab ->
                 TextButton(onClick = { selected = index }) {
