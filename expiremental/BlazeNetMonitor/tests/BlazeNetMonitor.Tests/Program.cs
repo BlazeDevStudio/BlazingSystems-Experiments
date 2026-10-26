@@ -148,4 +148,13 @@ Check(!DisplayPreferences.TryGraphColor("red", out _), "invalid color safely rej
 var prefs = new AppSettings { ShowFavicons = true, GraphStyle = "Bars", GraphHistorySeconds = 300, MetricMode = "Loss", UnitMode = "Bytes" };
 var cp = prefs.Copy();
 Check(cp.ShowFavicons && cp.GraphStyle == "Bars" && cp.GraphHistorySeconds == 300 && cp.MetricMode == "Loss" && !DisplayPreferences.UseBits(cp, 300, 70), "graph and display preferences roundtrip");
+Check(FaviconSafety.OfficialHost("1.1.1.1") == "one.one.one.one", "Cloudflare resolver canonical favicon domain");
+Check(FaviconSafety.OfficialHost("8.8.8.8") == "dns.google", "Google resolver canonical favicon domain");
+Check(FaviconSafety.OfficialHost("https://example.org:443/path") == "example.org", "HTTPS favicon uses configured host");
+Check(FaviconSafety.OfficialHost("http://example.org/") is null, "reject insecure HTTP favicon target");
+Check(FaviconSafety.OfficialHost("192.168.1.1") is null && FaviconSafety.OfficialHost("router.local") is null, "never fetch private hostname or IP favicon");
+Check(!FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("127.0.0.1")) &&
+    !FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("10.0.0.2")) &&
+    !FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("192.168.1.10")), "private IP blocked");
+Check(FaviconSafety.IsPublicAddress(System.Net.IPAddress.Parse("1.1.1.1")), "Cloudflare public IP admitted");
 Console.WriteLine($"RESULT {passed} tests passed");
