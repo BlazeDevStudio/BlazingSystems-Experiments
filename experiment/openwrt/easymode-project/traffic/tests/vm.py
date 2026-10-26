@@ -3,6 +3,8 @@
 import gzip,hashlib,http.server,json,os,pathlib,secrets,shutil,socket,socketserver,struct,subprocess,sys,tempfile,threading,time,urllib.request,zlib
 import paramiko,pexpect
 BASE=pathlib.Path(__file__).resolve().parents[2];DIST=BASE/'dist-v7';password=secrets.token_urlsafe(24);results=[]
+sys.path.insert(0, str(BASE/'traffic/tools'))
+from build import VERSION
 print('::add-mask::'+password,flush=True)
 UEFI='--uefi' in sys.argv
 def check(ok,label):
@@ -30,7 +32,7 @@ with tempfile.TemporaryDirectory() as tmp:
  disk=pathlib.Path(tmp)/'disk.img'
  # OpenWrt appends fwtool metadata after the gzip member. Preserve the original
  # release artifact and decompress only its disk member for this disposable VM.
- raw=zlib.decompress((DIST/('EasyMode-v7.0.0-PC-x86_64-'+('UEFI' if UEFI else 'BIOS')+'.img.gz')).read_bytes(),31)
+ raw=zlib.decompress((DIST/(f'EasyMode-v{VERSION}-PC-x86_64-'+('UEFI' if UEFI else 'BIOS')+'.img.gz')).read_bytes(),31)
  check(raw[510:512]==b'\x55\xaa' and len(raw)>100*1024*1024,'compressed image has a valid disk member and partition signature')
  disk.write_bytes(raw);del raw
  subprocess.run(['sudo','ip','tuntap','add','dev','emti0','mode','tap','user',str(os.getuid())],check=True)
@@ -61,17 +63,17 @@ with tempfile.TemporaryDirectory() as tmp:
   check((rpc('snapshot').get('error',{}).get('code')==-32002 or rpc('snapshot').get('result',[None])[0]==6),'unauthenticated API rejected')
   token=rpc('login',{'username':'root','password':password},obj='session')['result'][1]['ubus_rpc_session']
   def snapshot():return rpc('snapshot',token=token)['result'][1]
-  time.sleep(16);s=snapshot();check(s['version']=='7.0.0' and s['fresh'],'supervised collection and authenticated API')
+  time.sleep(16);s=snapshot();check(s['version']==VERSION and s['fresh'],'supervised collection and authenticated API')
   if UEFI:
    (DIST/'VM-UEFI-TEST-RESULTS.json').write_text(json.dumps({'hardware':'QEMU x86_64 UEFI; NOT PHYSICAL HARDWARE VERIFIED','checks':results},indent=2)+'\n');sys.exit(0)
   check((lambda r:r.get('error',{}).get('code')==-32002 or r.get('result',[None])[0]==6)(rpc('action',{'action':'configure','payload':'{"enabled":false}'})),'unauthenticated mutation rejected')
   invalid=rpc('action',{'action':'configure','payload':'{"wan":["wan;touch /tmp/injected"]}'},token)['result'][1];check(not invalid['ok'] and run('test ! -e /tmp/injected && echo safe').strip()=='safe','input injection rejected')
   check(run('stat -c %a /tmp/easymode-traffic/state.json').strip()=='600','history file is private')
   # Install real opkg artifacts, then repeat the same install as an upgrade.
-  for path in [DIST/'EasyMode-v7.0.0-Core-all.ipk',DIST/'EasyMode-v7.0.0-PC-all.ipk']:
+  for path in [DIST/f'EasyMode-v{VERSION}-Core-all.ipk',DIST/f'EasyMode-v{VERSION}-Pc-all.ipk']:
    i,o,e=ssh.exec_command('umask 077; cat > /tmp/'+path.name);i.write(path.read_bytes());i.channel.shutdown_write();check(o.channel.recv_exit_status()==0,'package transfer '+path.name)
-  run('opkg install /tmp/EasyMode-v7.0.0-Core-all.ipk /tmp/EasyMode-v7.0.0-PC-all.ipk');time.sleep(3)
-  run('opkg install --force-reinstall /tmp/EasyMode-v7.0.0-Core-all.ipk');time.sleep(3)
+  run(f'opkg install /tmp/EasyMode-v{VERSION}-Core-all.ipk /tmp/EasyMode-v{VERSION}-Pc-all.ipk');time.sleep(3)
+  run(f'opkg install --force-reinstall /tmp/EasyMode-v{VERSION}-Core-all.ipk');time.sleep(3)
   token=rpc('login',{'username':'root','password':password},obj='session')['result'][1]['ubus_rpc_session'];check(snapshot()['config']['edition']=='pc','clean package installation and same-version reinstall preserve edition')
   run("uci set easymode_traffic.main.devices=1; uci set easymode_traffic.main.interval=5; uci commit easymode_traffic; /etc/init.d/easymode-traffic reload");time.sleep(7)
   check(snapshot()['data']['capabilities']['flow'],'bounded nftables observation table created')
@@ -97,7 +99,7 @@ with tempfile.TemporaryDirectory() as tmp:
   check(True,'real browser login, eight views, theme, export, mobile width and logout')
   for edition in ['generic','ap','router','cellular','switch','pc']:
    run('opkg remove easymode-pc easymode-generic easymode-ap easymode-router easymode-cellular easymode-switch 2>/dev/null || true')
-   path=DIST/f'EasyMode-v7.0.0-{edition.title()}-all.ipk';i,o,e=ssh.exec_command('cat > /tmp/edition.ipk');i.write(path.read_bytes());i.channel.shutdown_write();check(o.channel.recv_exit_status()==0,'edition transfer '+edition)
+   path=DIST/f'EasyMode-v{VERSION}-{edition.title()}-all.ipk';i,o,e=ssh.exec_command('cat > /tmp/edition.ipk');i.write(path.read_bytes());i.channel.shutdown_write();check(o.channel.recv_exit_status()==0,'edition transfer '+edition)
    run('opkg install /tmp/edition.ipk; ucode /usr/share/easymode-traffic/collect.uc')
    current=snapshot();check(current['config']['edition']==edition,'edition installation '+edition)
    if edition in ['ap','switch']:check(not current['data']['wan'],'bridge-only edition does not report invisible WAN: '+edition)

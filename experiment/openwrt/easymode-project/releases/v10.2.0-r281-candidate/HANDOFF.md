@@ -4,6 +4,18 @@
 
 The 10.2.0 application update is running on the R281. The installer created `/root/easymode-before-v10.2-20261026-165405.tar.gz`. The cellular default route stayed on `eth1`, the health and quality services remained active, and the authenticated desktop and 390 px mobile screens were checked. Signal history and the mobile section picker returned live data. No test outage, router reboot or firmware flash was performed.
 
+Traffic Intelligence 7.0.2 Cellular edition is also running. Its Websites and Apps views distinguish DNS observations from estimated bytes and display named-traffic coverage. The other five editions were built with the same shared code but have not been installed on their respective hardware.
+
+## Firmware and recovery
+
+The [public candidate release](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/easymode-r281-v10.2.0-5b1e4ab15bf2) includes a credential-free R281 image, a LuCI restore archive, all six Traffic edition bundles and checksums. The GitHub image is byte-identical to the local image that passed `sysupgrade -T` on this R281: SHA-256 `9f346961ebb4d984a480f44fa1bd8af56653a6c34b706c2eb2a7e5df8532fdba`. Neither image has been flashed or boot-tested.
+
+The device-specific reset-persistent candidate and full LuCI backup include current router settings and identities and are stored only in the owner's approved Experimental Projects Drive folder. The link-shared folder permits anyone with its link to read. A LuCI restore requires the router to boot and be reachable; it is not factory-reset persistence. The live router still runs from overlay and is not reset-persistent.
+
+## Memory and staged-image cleanup
+
+Firmware compatibility testing left three temporary images in `/tmp`, using about 27 MB of the 58 MB RAM-backed filesystem. After the verified files were removed, `/tmp` use fell from 29.0 to 2.6 MB and available RAM rose from 2.8 to 32.5 MB. No service was stopped. Any future remote `sysupgrade -T` workflow should remove the staged image after testing, including on failure. The current bounded health, signal and Traffic histories are small compared with those image files.
+
 Traffic Intelligence Cellular edition 7.0.2 was installed on the R281. The service remained active and the mobile view picker switched from Overview to Devices. Website and Apps views now report estimated naming coverage and show DNS-only activity without inventing traffic. The browser had retained the old `/traffic/` document; the EasyMode link now uses `/traffic/?v=7.0.2` to load the updated page. Generic, AP, Router, Switch and PC bundles were built and their package contents and checksums were verified offline, but not installed on those hardware types.
 
 ## Reset-persistent image

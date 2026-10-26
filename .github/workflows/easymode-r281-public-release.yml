@@ -4,8 +4,15 @@ on:
   push:
     branches: [easymode-v7-production]
     paths:
-      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/**'
-      - 'experiment/openwrt/easymode-project/traffic/**'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/root/**'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/SOURCE-MANIFEST.json'
+      - 'experiment/openwrt/easymode-project/releases/v10.2.0-r281-candidate/openwrt/*app-update*.tar.gz'
+      - 'experiment/openwrt/easymode-project/traffic/root/**'
+      - 'experiment/openwrt/easymode-project/traffic/editions/**'
+      - 'experiment/openwrt/easymode-project/traffic/tools/build.py'
+      - 'experiment/openwrt/easymode-project/traffic/tools/install.sh'
+      - 'experiment/openwrt/easymode-project/traffic/tools/Update-EasyMode.ps1'
+      - 'experiment/openwrt/easymode-project/traffic/README.md'
       - 'experiment/openwrt/easymode-project/tools/build-r281-public-firmware.py'
       - 'experiment/openwrt/easymode-project/tools/build-r281-luci-restore.py'
       - 'experiment/openwrt/easymode-project/firmware/r281/**'
