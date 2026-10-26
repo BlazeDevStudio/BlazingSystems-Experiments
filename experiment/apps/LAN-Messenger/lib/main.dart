@@ -832,6 +832,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<void> _exitWindows() async {
     if (_exitRequested) return;
+    // A remote controller can physically click the host's tray or window.
+    // Never let an approved remote session terminate the sharing host.
+    // The OWNER can revoke control or end the call before exiting.
+    if (intercom?.remoteControlApproved == true) {
+      _toast('Revoke remote control or end the call before exiting.');
+      return;
+    }
     _exitRequested = true;
     await wm.windowManager.setPreventClose(false);
     await wm.windowManager.close();
@@ -1779,7 +1786,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 mode: _controlMode,
                 sourceRatio: sourceRatio,
                 onInput: (action, x, y, wheel) =>
-                    unawaited(call.sendRemoteInput(action, x, y, wheel)),
+                    unawaited(call.sendRemoteInput(action, x, y, wheel)
+                        .catchError((Object _) {
+                      // No pointer event may propagate an unhandled Future.
+                    })),
                 child: Center(child: AspectRatio(
                   aspectRatio: sourceRatio,
                   child: Stack(fit: StackFit.expand, children: [
