@@ -262,12 +262,12 @@ Check(DisplayPreferences.NormalizeGraphStyle("Curve with unknown style") == "Lin
 var boot = new DateTimeOffset(2026, 10, 27, 3, 20, 0, TimeSpan.FromHours(8));
 var checkedAt = boot.AddHours(5);
 string sampleSrum = "Timestamp,App Name,Bytes Sent,Bytes Received\n" +
-    $"2026-10-27 03:40:00,old.exe,9000,9000\n" +
-    $"2026-10-27 04:40:00,chrome.exe,350,250\n" +
-    $"2026-10-27 05:40:00,chrome.exe,200,150\n" +
-    $"2026-10-27 04:40:00,firefox.exe,600,50\n" +
-    $"2026-10-27 05:40:00,\"other,app\",0,50\n" +
-    $"2026-10-27 06:40:00,svchost.exe,4,6\n";
+    $"2026-10-27 03:40:00+08:00,old.exe,9000,9000\n" +
+    $"2026-10-27 04:40:00+08:00,chrome.exe,350,250\n" +
+    $"2026-10-27 05:40:00+08:00,chrome.exe,200,150\n" +
+    $"2026-10-27 04:40:00+08:00,firefox.exe,600,50\n" +
+    $"2026-10-27 05:40:00+08:00,\"other,app\",0,50\n" +
+    $"2026-10-27 06:40:00+08:00,svchost.exe,4,6\n";
 var leaders = AppUsageRanking.TopFive(sampleSrum, boot, checkedAt);
 Check(leaders.Count == 4 && leaders[0].AppName == "chrome" &&
     leaders[0].TotalBytes == 950, "SRUM ranks historical app totals including closed apps");
