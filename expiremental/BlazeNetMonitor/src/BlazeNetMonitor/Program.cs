@@ -54,8 +54,11 @@ internal static class Program
                     throw new InvalidOperationException($"QR size mismatch at {size}.");
                 if (image.GetPixel(0, 0).ToArgb() != Color.White.ToArgb())
                     throw new InvalidOperationException("QR quiet-zone corner is not white.");
-                if (image.GetPixel(size / 2, size / 2).ToArgb() == Color.White.ToArgb())
-                    throw new InvalidOperationException("QR center mark is missing.");
+                // Verify finder blue is present; center letter artwork can have
+                // a white pixel at the precise center depending on GDI+ font metrics.
+                int finder = (int)Math.Round(size * .078 + (size * .844 / 41d) * 3.5);
+                if (image.GetPixel(finder, finder).ToArgb() == Color.White.ToArgb())
+                    throw new InvalidOperationException("QR finder mark is missing.");
             }
             using (var splash = new DonationSplashForm(() => { }))
             {
