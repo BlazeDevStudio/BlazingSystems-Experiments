@@ -91,5 +91,6 @@ jobs:
             threadharbor-smoke.png
             threadharbor-native-reply.png
             threadharbor-native-hierarchy.xml
+            threadharbor-launcher-anr.png
             threadharbor-logcat.txt
           if-no-files-found: ignore
