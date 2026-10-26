@@ -23,14 +23,14 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.6.0'
+          gradle-version: '8.13'
       - name: Install Android SDK platform
         run: |
           set -eu
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           SDKMGR="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
           test -n "$SDKMGR"
-          "$SDKMGR" --install 'platforms;android-37' 'build-tools;36.0.0'
+          "$SDKMGR" --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Compile debug APK and run unit tests
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
       - name: Check APK identity and SHA-256
