@@ -9,6 +9,7 @@ import android.provider.Settings;
 
 /** Persistent opt-in user-visible monitor; never starts automatically from boot. */
 public final class MonitorService extends Service {
+    public static volatile boolean ACTIVE = false;
     public static final String ACTION_START="com.blazesystems.blazenetmonitor.START";
     public static final String ACTION_STOP="com.blazesystems.blazenetmonitor.STOP";
     public static final String ACTION_WIDGET="com.blazesystems.blazenetmonitor.WIDGET";
@@ -59,6 +60,7 @@ public final class MonitorService extends Service {
             return;
         }
         running=true;
+        ACTIVE=true;
         if(getSharedPreferences("settings",0).getBoolean("overlay",false))bubble.show();
         handler.post(poll);
     }
@@ -96,6 +98,7 @@ public final class MonitorService extends Service {
     }
     @Override public void onDestroy(){
         running=false;
+        ACTIVE=false;
         handler.removeCallbacks(poll);
         if(bubble!=null)bubble.hide();
         if(probes!=null)probes.shutdownNow();
