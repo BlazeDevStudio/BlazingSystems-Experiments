@@ -75,7 +75,6 @@ begin
   SupportQr.Width := ScaleX(210);
   SupportQr.Height := ScaleY(210);
   SupportQr.Stretch := True;
-  SupportQr.Proportional := True;
   SupportQr.Bitmap.LoadFromFile(ExpandConstant('{tmp}\support-qr.bmp'));
 
   SupportTitle := TNewStaticText.Create(SupportPage);
