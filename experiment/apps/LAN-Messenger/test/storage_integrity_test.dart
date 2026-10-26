@@ -24,6 +24,11 @@ void main() {
       // a valid backup still protects the existing local data.
       await file.writeAsString('{', flush: true);
       expect((await RecoverableJsonFile.read(file, isValid: isValid))['n'], 1);
+      // Recovery must restore the primary without destroying the backup:
+      // a subsequent interrupted save must not replace the only valid copy
+      // with the old corrupt JSON contents.
+      expect(await file.exists(), isTrue);
+      expect(await RecoverableJsonFile.backupOf(file).exists(), isTrue);
     } finally {
       await dir.delete(recursive: true);
     }
