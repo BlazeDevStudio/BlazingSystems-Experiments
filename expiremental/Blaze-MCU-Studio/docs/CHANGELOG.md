@@ -1,3 +1,8 @@
+## v0.4.2 — curated executable Arduino library adapter under testing
+- Wire I2C register-write Uno adapter, PWM output, Serial print, strict byte validation and dependency-aware .ino export.
+- Added virtual unsupported-peripheral warnings and compiler-gated sample; expanded GUI smoke to library insertion and source edit.
+- Full BALIE/automatic universal adapters remain incomplete.
+
 ## v0.4.1 — first-use interaction repair (source awaiting CI)
 
 - Discover actual installed boards; add clearly marked uninstalled ESP/Arduino starter targets and core installer with verified upstream ESP package index URLs.

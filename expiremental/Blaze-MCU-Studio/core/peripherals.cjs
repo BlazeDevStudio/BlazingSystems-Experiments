@@ -28,8 +28,8 @@ function plan(project){
    const walk=steps=>{for(const n of steps||[]){if(['branch','write','setOutput'].includes(n.type))activePins.add(String(n.params.pin));walk(n.thenSteps);walk(n.elseSteps);}};
    walk(project.flowchart?.steps);
    const callsNodes=steps=>(steps||[]).some(n=>n.type==='callNodes'||callsNodes(n.thenSteps)||callsNodes(n.elseSteps));
-   if(callsNodes(project.flowchart?.steps))for(const n of project.graph?.nodes||[])if(['pinMode','digitalWrite'].includes(n.type))activePins.add(String(n.params.pin));
- }else for(const n of project.graph?.nodes||[])if(['pinMode','digitalWrite'].includes(n.type))activePins.add(String(n.params.pin));
+   if(callsNodes(project.flowchart?.steps))for(const n of project.graph?.nodes||[])if(['pinMode','digitalWrite','pwmWrite'].includes(n.type))activePins.add(String(n.params.pin));
+ }else for(const n of project.graph?.nodes||[])if(['pinMode','digitalWrite','pwmWrite'].includes(n.type))activePins.add(String(n.params.pin));
  for(const pin of activePins){if(!pinUsage.has(pin))continue;const logic={id:'active-logic',type:'gpio',pin,role:'program',bus:'project',shared:false};pinUsage.get(pin).push(logic);assignments.push(logic);}
  for(const [pin,usages] of pinUsage){for(let i=0;i<usages.length;i++)for(let j=i+1;j<usages.length;j++){
   const a=usages[i],b=usages[j];if(a.id===b.id&&a.role===b.role)continue;

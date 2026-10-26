@@ -1,4 +1,12 @@
-# Blaze MCU Studio v0.4.1 — Interaction Repair (development branch)
+## v0.4.2 executable library work (new checkpoint)
+
+- Added user-editable **Wire I2C register-write** node restricted to Arduino Uno pending a real CI compilation gate; bounded address/register/value and captured endTransmission status.
+- Added **PWM write** and **Serial print** editable nodes with generated Arduino C++ and virtual-trace semantics.
+- The Libraries view includes a separate curated Wire adapter insertion control, alongside BALIE read-only signature discovery.
+- Acceptance requires compiling generated Wire/PWM/Serial firmware through actual AVR core, and Windows GUI click/edit/save tests. **A Linux Node test pass alone is not proof of that gate.**
+- See [curated adapter contract](docs/CURATED_LIBRARY_ADAPTERS.md).
+
+# Blaze MCU Studio v0.4.2 — Interaction Repair (development branch)
 
 **This update repairs concrete failures demonstrated on Windows v0.4.0. It is not a complete universal visual MCU IDE or production release.**
 

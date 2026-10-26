@@ -57,7 +57,7 @@ app.whenReady().then(()=>{
       const prop=document.querySelector('#nodeInspector input[data-param="ms"]');
       if(!prop)throw Error('Node selection did not show inspector');
       prop.value='75';prop.dispatchEvent(new Event('input',{bubbles:true}));
-      if(!document.querySelector('[data-node="'+added.dataset.node+'"] .ndesc')?.textContent.includes('75'))throw Error('Inspector input did not update canvas');
+      if(!document.querySelector('[data-node=\"'+added.dataset.node+'\"] .ndesc')?.textContent.includes('75'))throw Error('Inspector input did not update canvas');
       document.getElementById('save').click();
       await pause(350);
       const savedItems=await api.listProjects();
@@ -65,6 +65,19 @@ app.whenReady().then(()=>{
       if(!saved)throw Error('UI created project not persisted');
       const savedProject=await api.openProject(saved.id);
       if(!savedProject.graph.nodes.some(n=>n.type==='delay'&&Number(n.params.ms)===75))throw Error('Inspector edit not persisted');
+      document.querySelector('[data-tab="libraries"]').click();
+      if(document.getElementById('curatedAdapter').classList.contains('hidden'))throw Error('Uno Wire adapter absent from Library palette');
+      document.getElementById('addWireAdapter').click();
+      const wireNode=[...document.querySelectorAll('#nodeLayer [data-node]')].find(n=>n.dataset.node.startsWith('wireWrite_'));
+      if(!wireNode)throw Error('Library adapter did not create a real editable visual node');
+      const addressField=document.querySelector('#nodeInspector [data-param="address"]');
+      if(!addressField)throw Error('Curated Wire node has no editable I2C address');
+      addressField.value='0x3D';addressField.dispatchEvent(new Event('input',{bubbles:true}));
+      document.getElementById('save').click();
+      await pause(350);
+      const wireGenerated=await api.generate(await api.openProject(saved.id));
+      if(!wireGenerated.source?.includes('Wire.beginTransmission((uint8_t)61)'))throw Error('Wire visual edit did not generate real Arduino library call');
+
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -74,7 +87,7 @@ app.whenReady().then(()=>{
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}

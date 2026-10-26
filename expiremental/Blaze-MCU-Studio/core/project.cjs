@@ -3,6 +3,7 @@ const { randomUUID } = require('node:crypto');
 const SCHEMA_VERSION = 1;
 const flow=require('./flowchart.cjs');
 const peripherals=require('./peripherals.cjs');
+const wire=require('./curated-adapters.cjs');
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,62}$/;
 const FQBN_RE = /^[\w.-]+:[\w.-]+:[\w.-]+(?::[\w.,=~-]+)?$/;
 function sketchName(text) {
@@ -27,7 +28,7 @@ function verifyProject(p) {
   for (const k of ['manualSource','userPrelude','userSetup','userLoop']) if (typeof p.source[k] !== 'string' || p.source[k].length > 500000) throw new Error('Invalid source text');
   const seen = new Set();
   for (const n of p.graph.nodes) {
-    if (typeof n.id !== 'string' || !/^[A-Za-z0-9_-]{1,60}$/.test(n.id) || seen.has(n.id) || !['loopStart','pinMode','digitalWrite','delay','comment'].includes(n.type) || typeof n.params !== 'object' || n.params === null) throw new Error('Invalid node');
+    if (typeof n.id !== 'string' || !/^[A-Za-z0-9_-]{1,60}$/.test(n.id) || seen.has(n.id) || !['loopStart','pinMode','digitalWrite','delay','comment','pwmWrite','serialPrint','wireWrite'].includes(n.type) || typeof n.params !== 'object' || n.params === null) throw new Error('Invalid node');
     if (!Number.isFinite(n.x) || !Number.isFinite(n.y) || n.x < 0 || n.y < 0 || n.x > 20000 || n.y > 20000) throw new Error('Invalid node coordinates');
     seen.add(n.id);
   }
@@ -44,13 +45,14 @@ function pinDiagnostics(p) {
   const pins=PIN_PROFILES[p.fqbn];
   const modes=new Map();
   for (const n of p.graph.nodes) {
-    if (!['digitalWrite','pinMode'].includes(n.type)) continue;
+    if (!['digitalWrite','pinMode','pwmWrite'].includes(n.type)) continue;
     const pin=String(n.params.pin ?? '').trim();
     if (!/^\d{1,3}$/.test(pin)) { errors.push(`${n.id}: GPIO must be a numeric digital pin`); continue; }
     if (pins) {
       if (!pins.pins.includes(pin)) errors.push(`${n.id}: D${pin} unavailable on Uno R3`);
       else if (pins.reserved.includes(pin)) warnings.push(`${n.id}: D${pin} shares the hardware serial interface`);
     } else warnings.push(`${n.id}: pin ${pin} compatibility unknown for ${p.fqbn}; verify the selected board pinout`);
+    if(n.type==='pwmWrite' && pins && !['3','5','6','9','10','11'].includes(pin))errors.push(`${n.id}: Uno R3 hardware PWM only on D3,D5,D6,D9,D10,D11`);
     if (n.type === 'pinMode') {
       const old=modes.get(pin);
       if (old && old !== n.params.mode) errors.push(`Conflicting modes for pin ${pin}`);
@@ -88,6 +90,12 @@ function analyzeGraph(p) {
     if(n.type==='digitalWrite' && !['HIGH','LOW'].includes(n.params.value)) errors.push(`${n.id}: invalid output level`);
     if(n.type==='delay' && (!Number.isSafeInteger(Number(n.params.ms)) || Number(n.params.ms)<0 || Number(n.params.ms)>4294967295)) errors.push(`${n.id}: delay must be 0–4294967295 milliseconds`);
   }
+  for(const n of ordered){
+    if(n.type==='wireWrite'){const d=wire.validate(n,p.fqbn);errors.push(...d.errors);warnings.push(...d.warnings);}
+    if(n.type==='pwmWrite'&&(!/^\d{1,3}$/.test(String(n.params.value))||Number(n.params.value)>255))errors.push(`${n.id}: PWM duty must be 0..255`);
+    if(n.type==='serialPrint'&&(typeof n.params.text!=='string'||n.params.text.length>160||![9600,19200,38400,57600,115200].includes(Number(n.params.baud))))errors.push(`${n.id}: serial message <=160 chars; baud must be 9600/19200/38400/57600/115200`);
+  }
+  if(new Set(ordered.filter(n=>n.type==='serialPrint').map(n=>String(n.params.baud))).size>1)errors.push('Serial nodes have conflicting baud rates');
   const pin=pinDiagnostics(p); errors.push(...pin.errors); warnings.push(...pin.warnings);
   return {ok:errors.length===0, errors, warnings, ordered};
 }
@@ -98,13 +106,16 @@ function generateSketch(p) {
   const diagnostics=isFlow?flow.validateFlowchart(p.flowchart||flow.sampleFlowchart(),{boardPins:PIN_PROFILES[p.fqbn],boardFqbn:p.fqbn}):analyzeGraph(p);
   if(isFlow && p.peripherals?.length){const resourcePlan=peripherals.plan(p);diagnostics.errors.push(...resourcePlan.errors);diagnostics.warnings.push(...resourcePlan.warnings);diagnostics.ok=diagnostics.errors.length===0;}
   if(!diagnostics.ok) return {source:null,diagnostics};
-  const setup=[],loop=[];
+  const setup=[],loop=[];let needsWire=false,serialBaud=null;
   function addGraph(targetSetup,targetLoop) {
     const graph=analyzeGraph(p);if(!graph.ok)return graph;
     for(const n of graph.ordered){const pin=Number(n.params.pin);
       switch(n.type){case 'pinMode':targetSetup.push(`  pinMode(${pin}, ${n.params.mode}); // node:${n.id}`);break;
       case 'digitalWrite':targetLoop.push(`  digitalWrite(${pin}, ${n.params.value}); // node:${n.id}`);break;
       case 'delay':targetLoop.push(`  delay(${Number(n.params.ms)}UL); // node:${n.id}`);break;
+      case 'pwmWrite':targetSetup.push(`  pinMode(${pin}, OUTPUT); // node:${n.id} PWM`);targetLoop.push(`  analogWrite(${pin}, ${Number(n.params.value)}); // node:${n.id}`);break;
+      case 'serialPrint':serialBaud=Number(n.params.baud);targetLoop.push(`  Serial.println(${JSON.stringify(n.params.text)}); // node:${n.id}`);break;
+      case 'wireWrite':needsWire=true;targetLoop.push(...wire.emit(n));break;
       case 'comment':targetLoop.push(`  // ${String(n.params.text||'').replace(/[\r\n]/g,' ').replace(/\*\//g,'')} // node:${n.id}`);break;}
     }return graph;
   }
@@ -112,6 +123,8 @@ function generateSketch(p) {
   if(isFlow){const generated=flow.flowchartSource(p.flowchart||flow.sampleFlowchart());setup.push(...generated.setup);loop.push(...generated.loop);
     if(generated.needsNodeCall){const extraSetup=[],extraLoop=[];const g=addGraph(extraSetup,extraLoop);if(!g.ok)return {source:null,diagnostics:g};setup.push(...extraSetup);graphFunction=`void blazeNodesTick() {\n${extraLoop.join('\n')}\n}\n\n`;}
   }else addGraph(setup,loop);
-  return {source:`// Blaze MCU Studio v0.3.0 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics};
+  if(needsWire)setup.unshift('  Wire.begin(); // curated core library');
+  if(serialBaud!==null)setup.unshift(`  Serial.begin(${serialBaud});`);
+  return {source:`// Blaze MCU Studio v0.4.2 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${needsWire?'#include <Wire.h>\nuint8_t blazeLastWireStatus = 0;\n':''}${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics,dependencies:needsWire?['Wire']:[]};
 }
 module.exports={SCHEMA_VERSION, FQBN_RE, NAME_RE, createProject, verifyProject, analyzeGraph, generateSketch, pinDiagnostics, sketchName, PIN_PROFILES};

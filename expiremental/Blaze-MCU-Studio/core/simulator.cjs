@@ -13,7 +13,7 @@ function normalizeInputs(inputs={}){
 }
 function preview(s){
  const next=peekStep(s)?.id||null;
- return {id:s.id,mode:s.mode,status:s.status,virtualTimeMs:s.time,stepCount:s.count,next,outputs:{...s.outputs},inputs:{...s.inputs},pinModes:{...s.pinModes},lastEvent:s.events.at(-1)||null,events:s.events.slice(),warnings:s.warnings.slice(),breakpoints:s.breakpoints.slice()};
+ return {id:s.id,mode:s.mode,status:s.status,virtualTimeMs:s.time,stepCount:s.count,next,outputs:{...s.outputs},inputs:{...s.inputs},pinModes:{...s.pinModes},pwm:{...s.pwm},lastEvent:s.events.at(-1)||null,events:s.events.slice(),warnings:s.warnings.slice(),breakpoints:s.breakpoints.slice()};
 }
 function frame(steps,repeat=1){return {steps,index:0,remaining:repeat};}
 function nextStep(s){while(s.frames.length){const top=s.frames.at(-1);if(top.index<top.steps.length)return top.steps[top.index++];if(--top.remaining>0){top.index=0;continue;}s.frames.pop();}return null;}
@@ -26,7 +26,7 @@ class SimulationController {
   if(this.sessions.size>=12)this.sessions.delete(this.sessions.keys().next().value);
   const mode=project.visualMode==='flowchart'?'flowchart':'nodes';
   const steps=mode==='flowchart'?(project.flowchart?.steps||[]):analyzeGraph(project).ordered.map(n=>({id:n.id,type:n.type,params:n.params}));
-  const s={id:randomUUID(),mode,status:'ready',frames:[frame(steps)],inputs:normalizeInputs(inputs),outputs:{},pinModes:{},time:0,count:0,events:[],warnings:['Logic model only: virtual GPIO does not emulate physical circuitry or MCU firmware.'],breakpoints:[],skipOnce:false};
+  const s={id:randomUUID(),mode,status:'ready',frames:[frame(steps)],inputs:normalizeInputs(inputs),outputs:{},pinModes:{},pwm:{},time:0,count:0,events:[],warnings:['Logic model only: virtual GPIO does not emulate physical circuitry or MCU firmware.'],breakpoints:[],skipOnce:false};
   this.sessions.set(s.id,s);return preview(s);
  }
  get(id){const s=this.sessions.get(id);if(!s)throw Error('Simulation session expired; reset simulation');return s;}
@@ -43,6 +43,9 @@ class SimulationController {
    case 'digitalWrite':case 'write':s.outputs[pin]=p.value;effect='D'+pin+'='+p.value;break;
    case 'branch':{const actual=s.inputs[pin]||'LOW';const yes=actual===p.equals;s.frames.push(frame(yes?n.thenSteps||[]:n.elseSteps||[]));effect='D'+pin+'='+actual+' → '+(yes?'YES':'NO')+(pin in s.inputs?'':' (unspecified input assumed LOW)');break;}
    case 'repeat':s.frames.push(frame(n.thenSteps||[],Number(p.count)));effect='repeat '+p.count+' times';break;
+   case 'pwmWrite':s.pinModes[pin]='OUTPUT';s.pwm[pin]=Number(p.value);effect='virtual D'+pin+' PWM '+p.value+'/255';break;
+   case 'serialPrint':effect='virtual Serial.println('+JSON.stringify(p.text)+'); no UART emulation';break;
+   case 'wireWrite':effect='Wire I2C transaction request; ACK and device result NOT emulated';if(!s.warnings.includes('Wire I2C response requires a hardware model'))s.warnings.push('Wire I2C response requires a hardware model');break;
    case 'delay':case 'wait':s.time+=Number(p.ms);effect='virtual delay '+p.ms+'ms';break;
    case 'callNodes':effect='node-graph call not emulated';s.warnings.push('callNodes requires its own simulation; this trace does not execute that call');break;
    case 'end':s.frames.length=0;effect='return to outer loop';break;
