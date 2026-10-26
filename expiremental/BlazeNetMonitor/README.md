@@ -1,4 +1,4 @@
-# BlazeNetMonitor v0.2.2 — taskbar overlay and compact resize preview
+# BlazeNetMonitor v0.2.3 — transparent and taskbar recovery development preview
 
 **Blaze Systems** · Independent Windows 10 / Windows 11 / Windows Arm64 network monitor inspired by the functional concept of Florian Gilles' classic NetSpeedMonitor. No original binary, source code, logo, or proprietary assets are included.
 
@@ -10,6 +10,18 @@
 - Startup toggle, bits vs bytes, connection table, and copyable diagnostic summary from tray/context menu.
 - Saves configuration and totals under `%LOCALAPPDATA%\BlazeSystems\BlazeNetMonitor\state.json` without admin privileges.
 - Entirely offline local administration; only target probes contact configured hosts.
+
+## v0.2.3 Transparent widget, graphs and recovery (October 26, 2026)
+
+- **Backgroundless mode:** Settings → Appearance → Transparent background (text, dots and graphs only). WinForms `TransparencyKey` makes the entire canvas transparent while keeping painted glyphs/indicators visible. **Important:** transparent/empty regions let pointer clicks pass to the underlying window; right-click the system-tray icon or use the painted widget content to open settings. Color-key anti-alias fringe behavior depends on Windows compositor/theme and needs device QA.
+- During **Resize / move** the form temporarily becomes opaque, restoring a complete draggable edit surface. Upon Finish/Cancel, the transparency setting is restored. High-contrast Windows accessibility settings override the backgroundless effect.
+- **Both live traffic sparklines display at every supported widget height (24 px and higher)** whenever Show Graphs is enabled, including in a narrow widget. A visible line track is shown until at least two traffic samples exist.
+- **Inside taskbar overlay:** an opt-in foreground Z-order guard attempts non-activating HWND_TOPMOST recovery approximately every two seconds and after placement events; it does not inject into Explorer. This cannot guarantee a position above every Windows 11 topmost taskbar element or reserve tray/icon space. **Use the tray menu → Recover above taskbar (safe)** when Windows 11 covers the overlay.
+- **Already running:** starting a second v0.2.3 EXE requests the existing v0.2.3 session to open Settings rather than launching another. When replacing **an older v0.2.x version**, manually exit the older session via the hidden tray icons first—older instances do not implement this request.
+- **Recovery:** context/tray menu includes Bring widget in front and Recover above taskbar (safe). Fullscreen application auto-hide remains enabled by default; the Z-order recovery does not intentionally bypass fullscreen suppression.
+- All existing two-dot quality states, freeform resize, theme and independent hover opacity settings are retained.
+
+**Validation:** algorithm and persistence tests plus Windows CI compilation and an x64 launch smoke check are automated. Taskbar overlap behavior, colored glyphs and graphs on transparent backgrounds, DPI changes and mouse hit testing **must be verified on a physical Windows desktop**.
 
 ## v0.2.2 Taskbar placement and compact sizing (October 26, 2026)
 
