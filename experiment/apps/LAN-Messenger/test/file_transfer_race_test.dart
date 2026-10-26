@@ -43,7 +43,18 @@ Future<Map<String, dynamic>> postEncrypted(
   }
 }
 
+class _LoopbackHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) =>
+      super.createHttpClient(context);
+}
+
 Future<void> withLanNodes(
+    Future<void> Function(LanNode sender, LanNode receiver, Directory dir)
+        testBody) => HttpOverrides.runWithHttpOverrides(
+            () => _withLanNodes(testBody), _LoopbackHttpOverrides());
+
+Future<void> _withLanNodes(
     Future<void> Function(LanNode sender, LanNode receiver, Directory dir)
         testBody) async {
   final dir = await Directory.systemTemp.createTemp('lan-file-race-');
