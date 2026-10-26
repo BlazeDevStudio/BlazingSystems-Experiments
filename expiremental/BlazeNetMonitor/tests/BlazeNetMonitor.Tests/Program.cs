@@ -57,6 +57,8 @@ try
     state.Settings.ThemeMode = "Light";
     state.Settings.FreeformPositioned = true;
     state.Settings.ShowGraphs = false;
+    state.Settings.HoverOpacityPercent = 61;
+    state.Settings.AutoHideForFullscreen = false;
     store.Save(state);
     Check(store.Load().Settings.Targets[0].Address == "example.com", "atomic settings roundtrip");
     var loadedSettings = store.Load().Settings;
@@ -64,7 +66,8 @@ try
           loadedSettings.WidgetY == 234 && loadedSettings.WidgetWidth == 420 &&
           loadedSettings.WidgetHeight == 98, "freeform geometry roundtrip");
     Check(loadedSettings.WidgetOpacityPercent == 67 &&
-          loadedSettings.ThemeMode == "Light" && !loadedSettings.ShowGraphs,
+          loadedSettings.ThemeMode == "Light" && !loadedSettings.ShowGraphs &&
+          loadedSettings.HoverOpacityPercent == 61 && !loadedSettings.AutoHideForFullscreen,
           "appearance settings roundtrip");
     File.WriteAllText(path, "{INVALID JSON");
     Check(store.Load().Settings.Targets.Length == 2, "corrupt settings fail safe");

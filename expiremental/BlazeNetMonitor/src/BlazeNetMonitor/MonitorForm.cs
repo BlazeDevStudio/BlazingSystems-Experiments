@@ -151,6 +151,7 @@ internal sealed class MonitorForm : Form
         BackColor = Theme.Background;
         Opacity = Theme.HighContrast ? 1d : Math.Clamp(_data.Settings.WidgetOpacityPercent, 40, 100) / 100d;
         _info.ApplyAppearance(_data.Settings);
+        _settingsForm?.ApplyEditorTheme();
         Invalidate();
     }
 

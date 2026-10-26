@@ -45,7 +45,8 @@ internal sealed class SettingsForm : Form
         _adapter.SelectedIndex = Math.Max(0, _adapters.FindIndex(a => a.Id == settings.AdapterId) + 1);
         _unit = Choice(general, "Speed units", 97, ["Mbps / Kbps (bits)", "MB/s / KB/s (bytes)"]);
         _unit.SelectedIndex = settings.UseBits ? 0 : 1;
-        _placement = Choice(general, "Taskbar location", 170, ["Above taskbar (safe, default)", "Overlay inside taskbar (may cover taskbar items)"]);
+        _placement = Choice(general, "Taskbar location", 170,
+            ["Above taskbar (safe)", "Legacy overlay (disabled for safety)"]);
         _placement.SelectedIndex = settings.DockInsideTaskbar ? 1 : 0;
         LabelAt(general, "Horizontal offset from right edge (px)", 246);
         _offset = new NumericUpDown { Left = 24, Top = 269, Width = 116, Minimum = 0, Maximum = 4000, Value = Math.Clamp(settings.HorizontalOffset, 0, 4000) };
@@ -136,6 +137,7 @@ internal sealed class SettingsForm : Form
         buttons.BringToFront();
         AcceptButton = ok;
         CancelButton = cancel;
+        ApplyEditorTheme();
     }
     private static ComboBox Choice(Control parent, string text, int y, string[] choices)
     {
@@ -163,7 +165,32 @@ internal sealed class SettingsForm : Form
         return next;
     }
 
-    private void RaisePreview() => PreviewChanged?.Invoke(BuildPreview());
+    private void RaisePreview()
+    {
+        PreviewChanged?.Invoke(BuildPreview());
+        ApplyEditorTheme();
+    }
+
+    public void ApplyEditorTheme()
+    {
+        Theme.Apply(BuildPreview());
+        BackColor = Theme.Background;
+        ForeColor = Theme.Text;
+
+        static void Restyle(Control parent)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                if (child is TabPage or Panel or FlowLayoutPanel or TrackBar or CheckBox)
+                    child.BackColor = Theme.Panel;
+                if (child is TextBox or ComboBox or NumericUpDown)
+                    child.BackColor = Theme.HighContrast ? SystemColors.Window : Theme.Panel;
+                child.ForeColor = child is Label && !child.Enabled ? Theme.Muted : Theme.Text;
+                Restyle(child);
+            }
+        }
+        Restyle(this);
+    }
 
     private void Save()
     {
