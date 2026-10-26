@@ -289,9 +289,11 @@ def main():
         if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
                    check=False).strip():
             raise RuntimeError(f"{serial} is not running")
-    tap_label(CALLER, "choose-peer",
-              lambda text: "online" in text.lower() and
-              "looking for nearby" not in text.lower())
+    if os.environ.get("LAN_MESSENGER_SCENARIO") != "video" or not contains(
+            CALLER, "video-peer-context", "Video call"):
+        tap_label(CALLER, "choose-peer",
+                  lambda text: "online" in text.lower() and
+                  "looking for nearby" not in text.lower())
     if os.environ.get("LAN_MESSENGER_SCENARIO") == "background-first":
         first_background_incoming_test()
         return
