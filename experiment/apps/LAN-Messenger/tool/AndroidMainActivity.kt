@@ -136,18 +136,11 @@ class MainActivity : FlutterActivity() {
         }.also { incomingOverlay = it }
 
     private fun updateOverlay() {
-        val id = lastCallId
-        val caller = lastCaller
-        if (activityForeground ||
-            (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) ||
-            // The system's Answer/Decline notification is sufficient; never
-            // stack our own floating call banner underneath it.
-            (lastIncoming && incomingNotificationPosted) ||
-            id == null || caller == null) {
-            incomingOverlay?.dismiss()
-            return
-        }
-        overlay().show(caller, id, lastVideo, lastIncoming, lastMuted)
+        // Android has exactly ONE external call presentation surface:
+        // a native CallStyle notification while ringing, then system PiP
+        // for connected video. Never add our TYPE_APPLICATION_OVERLAY HUD,
+        // including while the notification shade or settings are visible.
+        incomingOverlay?.dismiss()
     }
 
     override fun onStart() {
@@ -179,7 +172,8 @@ class MainActivity : FlutterActivity() {
         }
         val id = lastCallId
         val caller = lastCaller
-        if (lastIncoming && id != null && caller != null) {
+        if (lastIncoming && id != null && caller != null &&
+            !incomingNotificationPosted) {
             showIncomingCall(caller, id, lastVideo)
         }
         updateOverlay()
@@ -389,6 +383,8 @@ class MainActivity : FlutterActivity() {
             }
         }
         incomingNotificationPosted = posted
+        // No second Answer/Decline UI. If notifications are unavailable,
+        // a returning user can answer from the inline Messenger call controls.
         updateOverlay()
         return posted
     }
@@ -570,13 +566,19 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "foreground" -> {
-                        activityForeground = call.argument<Boolean>("visible") ?: true
+                        // Flutter resumed/inactive/paused is NOT authoritative
+                        // for the native Activity visibility. A notification
+                        // shade or transient permission prompt must not change
+                        // the native onStart/onStop state.
                         updateOverlay()
                         result.success(null)
                     }
-                    "overlayEnabled" -> result.success(overlay().permitted())
+                    "overlayEnabled" -> result.success(false)
                     "openOverlaySettings" -> {
-                        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        // Historical API kept so prior Dart clients receive
+                        // a safe destination. No longer request the unrelated
+                        // draw-over-apps permission for video PiP.
+                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.parse("package:$packageName")))
                         result.success(null)
                     }
