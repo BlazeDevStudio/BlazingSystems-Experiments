@@ -542,26 +542,16 @@ internal sealed class MonitorForm : Form
         base.WndProc(ref msg);
     }
 
-    private static Icon MakeIcon()
+    private static Icon MakeIcon() => Branding.MakeIcon();
+
+    private void ShowWelcomeOnce()
     {
-        using var bmp = new Bitmap(32, 32);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.Clear(Theme.Background);
-            using var a = new SolidBrush(Theme.Accent);
-            using var b = new SolidBrush(Color.FromArgb(72, 215, 144));
-            g.FillRectangle(a, 5, 19, 5, 9);
-            g.FillRectangle(a, 13, 11, 5, 17);
-            g.FillRectangle(b, 21, 5, 5, 23);
-        }
-        var handle = bmp.GetHicon();
-        using var temp = Icon.FromHandle(handle);
-        var clone = (Icon)temp.Clone();
-        DestroyIcon(handle);
-        return clone;
+        if (_data.WelcomeAcknowledged || IsDisposed) return;
+        using var welcome = new WelcomeForm();
+        welcome.ShowDialog();
+        _data.WelcomeAcknowledged = true;
+        SaveSafe();
     }
-    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyIcon(nint hIcon);
 
     private void CopyStatus()
     {

@@ -253,15 +253,49 @@ internal sealed class SettingsForm : Form
                     Left = 24, Top = y + 193, Width = 465, Height = 2, BackColor = Theme.Border
                 });
         }
-        about.Controls.Add(new Label { Left = 24, Top = 28, Width = 455, Height = 310, ForeColor = Theme.Text, Text = "BlazeNetMonitor v0.2.0 development\nBlaze Systems · Windows 10/11 x86/x64/Arm64\n\nIndependent implementation inspired by the functionality of classic NetSpeedMonitor by Florian Gilles. No original code or artwork bundled.\n\nStatus thresholds are latency, jitter, and packet-loss estimates, not an internet speed test. Firewalls may block ICMP; choose HTTPS for those networks.\n\nWorks without administrator rights. All settings and totals are stored locally." });
-        about.Controls.Add(new Label { Left = 24, Top = 338, Width = 460, Height = 50,
-            ForeColor = Theme.Muted,
+        // Lightweight branded About panel; no external embedded browser or web runtime.
+        var appIcon = new PictureBox { Left = 23, Top = 22, Width = 78, Height = 78,
+            Image = Branding.Bitmap(78), SizeMode = PictureBoxSizeMode.Zoom };
+        about.Controls.Add(appIcon);
+        about.Controls.Add(new Label { Left = 119, Top = 26, Width = 360, Height = 33,
+            Text = "BlazeNetMonitor", Font = new Font("Segoe UI Semibold", 18, FontStyle.Bold) });
+        about.Controls.Add(new Label { Left = 120, Top = 69, Width = 365, Height = 24,
+            Text = "v0.2.6 Preview  |  Blaze Systems", ForeColor = Theme.Muted });
+        about.Controls.Add(new Label { Left = 24, Top = 120, Width = 458, Height = 95,
+            Text = "A small, configurable network speed and connection-health monitor. " +
+                "Supports two independent targets, adaptive graphs and local traffic records.\n\n" +
+                "An independent Blaze Systems application; not affiliated with NetSpeedMonitor." });
+        var profile = new LinkLabel { Left = 24, Top = 224, Width = 360, Height = 26,
+            Text = "Developer · fb.me/manrealloumer", LinkColor = Branding.BlazeBlue };
+        profile.LinkClicked += (_, _) => OpenWeb("https://fb.me/manrealloumer");
+        about.Controls.Add(profile);
+        about.Controls.Add(new Label { Left = 24, Top = 265, Width = 460, Height = 23,
+            Text = "Support development (optional)", Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold) });
+        var donationView = new PictureBox { Left = 24, Top = 298, Width = 116, Height = 116,
+            SizeMode = PictureBoxSizeMode.Zoom, Image = DonationAssets.TryLoad() };
+        var donationStatus = new Label { Left = 157, Top = 302, Width = 325, Height = 68,
+            Text = donationView.Image is null
+                ? "PayPal donation QR not configured. An authentic QR must be imported."
+                : "Scan the creator's PayPal donation QR to support this independent project.",
+            ForeColor = Theme.Muted };
+        var importQR = new Button { Left = 157, Top = 381, Width = 246, Height = 34,
+            Text = "Import authentic PayPal QR..." };
+        importQR.Click += (_, _) =>
+        {
+            if (!DonationAssets.ImportFromPicker(this)) return;
+            donationView.Image?.Dispose();
+            donationView.Image = DonationAssets.TryLoad();
+            donationStatus.Text = donationView.Image is null
+                ? "Donation QR could not be loaded." : "Creator's local donation QR is configured.";
+        };
+        about.Controls.AddRange([donationView, donationStatus, importQR]);
+        about.Controls.Add(new Label { Left = 24, Top = 462, Width = 475, Height = 57,
             Text = WindowsVersionPolicy.ShellFamily(Environment.OSVersion.Version) switch
             {
-                "Windows10Classic" => "Windows 10 detected · classic deskband integration planned, not installed.",
-                "Windows11OrLater" => "Windows 11+ detected · freeform/tray fallback, no native deskband.",
-                _ => "Unrecognized Windows build · safe freeform/tray fallback."
-            } });
+                "Windows10Classic" => "Windows 10 detected · classic DeskBand integration remains a future feature.",
+                "Windows11OrLater" => "Windows 11+ detected · uses the freeform/taskbar-overlay mode.",
+                _ => "Unrecognized Windows version · conservative freeform/tray fallback."
+            }, ForeColor = Theme.Muted });
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 48, Padding = new Padding(7) };
         var ok = new Button { Text = "Save", Width = 85, DialogResult = DialogResult.None };
         ok.Click += (_, _) => Save();
@@ -273,6 +307,20 @@ internal sealed class SettingsForm : Form
         CancelButton = cancel;
         ApplyEditorTheme();
     }
+    private static void OpenWeb(string address)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(address)
+            { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Could not open browser: " + ex.Message,
+                "BlazeNetMonitor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+    }
+
     private static ComboBox Choice(Control parent, string text, int y, string[] choices)
     {
         LabelAt(parent, text, y);

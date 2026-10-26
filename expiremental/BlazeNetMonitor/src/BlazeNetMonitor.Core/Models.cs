@@ -248,7 +248,15 @@ public sealed class Storage
             if (File.Exists(FilePath))
             {
                 var data = JsonSerializer.Deserialize<PersistedData>(File.ReadAllText(FilePath), Options);
-                if (data != null && data.Settings.Targets?.Length == 2 && data.Histories?.Length == 2) return data;
+                if (data != null && data.Settings.Targets?.Length == 2 && data.Histories?.Length == 2)
+                {
+                    // Pre-v0.2.6 state means an existing installation: never
+                    // unexpectedly show first-run onboarding during an upgrade.
+                    using var parsed = JsonDocument.Parse(File.ReadAllText(FilePath));
+                    if (!parsed.RootElement.TryGetProperty("WelcomeAcknowledged", out _))
+                        data.WelcomeAcknowledged = true;
+                    return data;
+                }
             }
         }
         catch (Exception) { /* corrupt settings are archived on next save, never crash at startup */ }
