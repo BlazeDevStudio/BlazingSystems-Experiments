@@ -8,9 +8,11 @@ internal sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
     private readonly ComboBox _adapter, _unit, _placement, _themeMode;
-    private readonly TrackBar _opacity;
-    private readonly Label _opacityValue;
-    private readonly CheckBox _showGraphs, _systemAccent;
+    private readonly TrackBar _opacity, _hoverOpacity;
+    private readonly Label _opacityValue, _hoverOpacityValue;
+    private readonly CheckBox _showGraphs, _systemAccent, _fullscreen;
+    public event Action<AppSettings>? PreviewChanged;
+    public AppSettings? SavedSettings { get; private set; }
     public bool ResizeAfterSave { get; private set; }
     private readonly NumericUpDown _offset, _interval;
     private readonly CheckBox _autostart;
@@ -29,7 +31,7 @@ internal sealed class SettingsForm : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
-        ClientSize = new Size(545, 470);
+        ClientSize = new Size(545, 585);
         _adapters = NetworkInterface.GetAllNetworkInterfaces().ToList();
         var tabs = new TabControl { Dock = DockStyle.Fill };
         var general = new TabPage("General") { BackColor = Theme.Panel, ForeColor = Theme.Text };
@@ -62,23 +64,44 @@ internal sealed class SettingsForm : Form
         _opacityValue = new Label { Left = 399, Top = 128, Width = 75, Height = 24, Text = Math.Clamp(settings.WidgetOpacityPercent, 40, 100) + "%" };
         _opacity = new TrackBar { Left = 16, Top = 124, Width = 365, Minimum = 40, Maximum = 100,
             TickFrequency = 10, Value = Math.Clamp(settings.WidgetOpacityPercent, 40, 100) };
-        _opacity.ValueChanged += (_, _) => _opacityValue.Text = _opacity.Value + "%";
+        // Appearance callbacks are registered after every control is initialized.
         appearance.Controls.AddRange([_opacity, _opacityValue]);
 
-        _systemAccent = new CheckBox { Left = 24, Top = 195, Width = 360, Height = 26,
-            Text = "Follow Windows accent color", Checked = settings.UseSystemAccent };
-        _showGraphs = new CheckBox { Left = 24, Top = 229, Width = 360, Height = 26,
-            Text = "Show traffic graphs when there is room", Checked = settings.ShowGraphs };
-        appearance.Controls.AddRange([_systemAccent, _showGraphs]);
+        LabelAt(appearance, "At-a-glance opacity (independent)", 187);
+        _hoverOpacityValue = new Label { Left = 399, Top = 218, Width = 75, Height = 24,
+            Text = Math.Clamp(settings.HoverOpacityPercent, 40, 100) + "%" };
+        _hoverOpacity = new TrackBar { Left = 16, Top = 210, Width = 365, Minimum = 40,
+            Maximum = 100, TickFrequency = 10, Value = Math.Clamp(settings.HoverOpacityPercent, 40, 100) };
+        appearance.Controls.AddRange([_hoverOpacity, _hoverOpacityValue]);
 
-        var resize = new Button { Left = 24, Top = 282, Width = 254, Height = 38,
+        _systemAccent = new CheckBox { Left = 24, Top = 274, Width = 420, Height = 25,
+            Text = "Follow Windows accent color", Checked = settings.UseSystemAccent };
+        _showGraphs = new CheckBox { Left = 24, Top = 307, Width = 420, Height = 25,
+            Text = "Show speed graphs when the widget fits", Checked = settings.ShowGraphs };
+        _fullscreen = new CheckBox { Left = 24, Top = 340, Width = 460, Height = 25,
+            Text = "Automatically hide on fullscreen apps and games", Checked = settings.AutoHideForFullscreen };
+        appearance.Controls.AddRange([_systemAccent, _showGraphs, _fullscreen]);
+
+        var resize = new Button { Left = 24, Top = 379, Width = 265, Height = 36,
             Text = "Save and resize / move widget" };
         resize.Click += (_, _) => { ResizeAfterSave = true; Save(); };
         appearance.Controls.Add(resize);
-        appearance.Controls.Add(new Label { Left = 24, Top = 334, Width = 475, Height = 64,
+        appearance.Controls.Add(new Label { Left = 24, Top = 432, Width = 475, Height = 62,
             ForeColor = Theme.Muted,
-            Text = "Drag the highlighted corners or edges to resize. Drag the center to move. Double-click the widget or right-click and finish to save. ESC cancels the edit." });
+            Text = "Drag the highlighted corners or edges to resize, the center to move.\n" +
+                "Double-click or right-click → Finish to save; Esc cancels." });
 
+        _opacity.ValueChanged += (_, _) => { _opacityValue.Text = _opacity.Value + "%"; RaisePreview(); };
+        _hoverOpacity.ValueChanged += (_, _) => { _hoverOpacityValue.Text = _hoverOpacity.Value + "%"; RaisePreview(); };
+        _themeMode.SelectedIndexChanged += (_, _) => RaisePreview();
+        _systemAccent.CheckedChanged += (_, _) => RaisePreview();
+        _showGraphs.CheckedChanged += (_, _) => RaisePreview();
+        _fullscreen.CheckedChanged += (_, _) => RaisePreview();
+        _unit.SelectedIndexChanged += (_, _) => RaisePreview();
+        _adapter.SelectedIndexChanged += (_, _) => RaisePreview();
+        _placement.SelectedIndexChanged += (_, _) => RaisePreview();
+        _offset.ValueChanged += (_, _) => RaisePreview();
+        _interval.ValueChanged += (_, _) => RaisePreview();
 
         for (int i = 0; i < 2; i++)
         {
@@ -122,42 +145,62 @@ internal sealed class SettingsForm : Form
         return box;
     }
     private static void LabelAt(Control parent, string text, int y) => parent.Controls.Add(new Label { Text = text, Left = 24, Top = y, Width = 445, Height = 24 });
+    private AppSettings BuildPreview()
+    {
+        var next = _settings.Copy();
+        next.AdapterId = _adapter.SelectedIndex < 1 ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
+        next.UseBits = _unit.SelectedIndex == 0;
+        next.DockInsideTaskbar = _placement.SelectedIndex == 1;
+        next.HorizontalOffset = (int)_offset.Value;
+        next.ProbeIntervalSeconds = (int)_interval.Value;
+        next.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";
+        next.WidgetOpacityPercent = _opacity.Value;
+        next.HoverOpacityPercent = _hoverOpacity.Value;
+        next.UseSystemAccent = _systemAccent.Checked;
+        next.ShowGraphs = _showGraphs.Checked;
+        next.AutoHideForFullscreen = _fullscreen.Checked;
+        return next;
+    }
+
+    private void RaisePreview() => PreviewChanged?.Invoke(BuildPreview());
+
     private void Save()
     {
         for (int i = 0; i < 2; i++)
         {
             var address = _addresses[i].Text.Trim();
             var proto = Enum.Parse<TargetProtocol>(_protocols[i].SelectedItem!.ToString()!);
-            if (string.IsNullOrWhiteSpace(address) || (proto == TargetProtocol.Https && (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || uri.Scheme != "https")))
+            if (string.IsNullOrWhiteSpace(address) ||
+                (proto == TargetProtocol.Https &&
+                    (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || uri.Scheme != "https")))
             {
-                MessageBox.Show($"Dot {i + 1}: enter a valid target. HTTPS requires a full https:// URL.");
+                ResizeAfterSave = false;
+                MessageBox.Show($"Dot {i + 1}: enter a valid target. HTTPS requires an https:// URL.");
                 return;
             }
         }
-        _settings.AdapterId = _adapter.SelectedIndex < 1 ? "auto" : _adapters[_adapter.SelectedIndex - 1].Id;
-        _settings.UseBits = _unit.SelectedIndex == 0;
-        _settings.DockInsideTaskbar = _placement.SelectedIndex == 1;
-        _settings.HorizontalOffset = (int)_offset.Value;
-        _settings.ProbeIntervalSeconds = (int)_interval.Value;
-        _settings.ThemeMode = _themeMode.SelectedItem?.ToString() ?? "System";
-        _settings.WidgetOpacityPercent = _opacity.Value;
-        _settings.UseSystemAccent = _systemAccent.Checked;
-        _settings.ShowGraphs = _showGraphs.Checked;
+
+        var saved = BuildPreview();
         for (int i = 0; i < 2; i++)
         {
-            _settings.Targets[i].Name = _names[i].Text.Trim().Length > 0 ? _names[i].Text.Trim() : $"Target {i + 1}";
-            _settings.Targets[i].Address = _addresses[i].Text.Trim();
-            _settings.Targets[i].Protocol = Enum.Parse<TargetProtocol>(_protocols[i].SelectedItem!.ToString()!);
-            _settings.Targets[i].Port = (int)_ports[i].Value;
+            saved.Targets[i].Name = string.IsNullOrWhiteSpace(_names[i].Text) ? $"Target {i + 1}" : _names[i].Text.Trim();
+            saved.Targets[i].Address = _addresses[i].Text.Trim();
+            saved.Targets[i].Protocol = Enum.Parse<TargetProtocol>(_protocols[i].SelectedItem!.ToString()!);
+            saved.Targets[i].Port = (int)_ports[i].Value;
         }
         try
         {
             using var run = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
             if (_autostart.Checked) run?.SetValue("BlazeNetMonitor", $"\"{Application.ExecutablePath}\"");
             else run?.DeleteValue("BlazeNetMonitor", false);
-            _settings.StartWithWindows = _autostart.Checked;
+            saved.StartWithWindows = _autostart.Checked;
         }
-        catch (Exception ex) { MessageBox.Show("Could not configure Windows startup: " + ex.Message); return; }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Could not update Windows startup: " + ex.Message);
+            return;
+        }
+        SavedSettings = saved;
         DialogResult = DialogResult.OK;
         Close();
     }
