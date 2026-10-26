@@ -81,28 +81,7 @@ jobs:
           arch: x86_64
           profile: pixel_4
           disable-animations: true
-          script: |
-            set -eu
-            adb install preview/app/build/outputs/apk/debug/app-debug.apk
-            adb shell am start -W -n com.blazesystems.threadharbor/.MainActivity
-            # ADB can briefly disappear during Pixel launch. Retry connection,
-            # but never turn a dead app process into a PASS.
-            ready=0
-            for attempt in $(seq 1 12); do
-              if adb shell pidof com.blazesystems.threadharbor 2>/dev/null | grep -Eq '[0-9]+'; then
-                ready=1
-                break
-              fi
-              sleep 2
-            done
-            test "$ready" -eq 1
-            # Log capture is evidence only; a flaky logcat transport must not
-            # abort the substantive UI test before it can report a diagnosis.
-            adb logcat -d -v time > threadharbor-logcat.txt 2>/dev/null || true
-            python3 expiremental/Blaze-ThreadHarbor-Utility/ci/emulator_bidirectional.py
-            adb shell pidof com.blazesystems.threadharbor | grep -Eq '[0-9]+'
-            adb exec-out screencap -p > threadharbor-native-reply.png
-            adb logcat -d -v time >> threadharbor-logcat.txt 2>/dev/null || true
+          script: bash expiremental/Blaze-ThreadHarbor-Utility/ci/emulator_smoke.sh
       - name: Preserve emulator smoke screenshot
         if: always()
         uses: actions/upload-artifact@v4
