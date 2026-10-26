@@ -26,7 +26,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -34,8 +33,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
+          if [ -e "$ANDROID_HOME/platforms/android-35/android.jar" ] && [ -x "$ANDROID_HOME/build-tools/35.0.0/aapt" ]; then
+            echo "Required SDK already installed on GitHub runner"
+          else
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
+            "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+          fi
       - name: Native unit tests and APK build
         shell: bash
         run: |
