@@ -259,4 +259,23 @@ Check(DisplayPreferences.NormalizeGraphStyle("Smooth") == "Smooth", "smooth grap
 Check(DisplayPreferences.NormalizeGraphStyle("Dots") == "Dots", "dots graph style supported");
 Check(DisplayPreferences.NormalizeGraphStyle("Impulse") == "Impulse", "impulse graph style supported");
 Check(DisplayPreferences.NormalizeGraphStyle("Curve with unknown style") == "Line", "invalid graph style uses line");
+var boot = new DateTimeOffset(2026, 10, 27, 3, 20, 0, TimeSpan.FromHours(8));
+var checkedAt = boot.AddHours(5);
+string sampleSrum = "Timestamp,App Name,Bytes Sent,Bytes Received\n" +
+    $"2026-10-27 03:40:00,old.exe,9000,9000\n" +
+    $"2026-10-27 04:40:00,chrome.exe,350,250\n" +
+    $"2026-10-27 05:40:00,chrome.exe,200,150\n" +
+    $"2026-10-27 04:40:00,firefox.exe,600,50\n" +
+    $"2026-10-27 05:40:00,\"other,app\",0,50\n" +
+    $"2026-10-27 06:40:00,svchost.exe,4,6\n";
+var leaders = AppUsageRanking.TopFive(sampleSrum, boot, checkedAt);
+Check(leaders.Count == 4 && leaders[0].AppName == "chrome" &&
+    leaders[0].TotalBytes == 950, "SRUM ranks historical app totals including closed apps");
+Check(leaders.All(x => x.AppName != "old"), "reboot-boundary hourly bucket excluded");
+Check(leaders[2].AppName == "other,app", "quoted CSV app names parsed safely");
+Check(AppUsageRanking.TopFive("", boot, checkedAt).Count == 0, "missing SRUM evidence never invents results");
+Check(AppUsageRanking.TopFive("garbage", boot, checkedAt).Count == 0,
+    "invalid SRUM schema fails closed");
+Check(AppUsageRanking.BootTimeUtc(checkedAt, TimeSpan.FromHours(5)) == boot,
+    "boot time derived from uptime");
 Console.WriteLine($"RESULT {passed} tests passed");
