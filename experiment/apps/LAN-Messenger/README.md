@@ -1,4 +1,8 @@
-# LAN Messenger (BlazingSystems) — v0.3.0 development preview
+# LAN Messenger (BlazingSystems) — v0.3.1 preview candidate
+
+**Release candidate source:** built from v0.3.0 follow-up fixes. This remains a
+field-test preview, **not production-certified**. Review the companion
+`RELEASE_NOTES_v0.3.1-preview.1.md` for exact claims and blockers.
 
 **Independent project:** a clean-room LAN messenger, file sender, and audio intercom influenced by SHAREit's ease of file sharing, not its proprietary code or assets.
 
