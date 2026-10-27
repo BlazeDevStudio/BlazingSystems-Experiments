@@ -1,4 +1,4 @@
-# BlazeNetMonitor Android — v0.1.4 Preview
+# BlazeNetMonitor Android — v0.1.5 Preview
 
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
@@ -26,7 +26,7 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 
 ## Installation
 
-Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.4-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
+Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.5-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
 
 Do not install unknown third-party APKs claiming to be Blaze Systems. Source and hash are in the GitHub release.
 
@@ -45,7 +45,7 @@ The first CI verifies JVM traffic arithmetic tests, compiles the APK, checks SDK
 
 More reliable interface-specific byte accounting on supported Android API levels, optional per-app historical usage with explicit Usage Access, a stronger probe history tracker, user-selectable graph colors/period, and device/battery acceptance tests. These require Android-specific implementation and must not be claimed as shipping features of preview 0.1.0.
 
-## v0.1.4 notification layout acceptance
+## v0.1.5 notification layout acceptance
 
 - The **status bar shows changing numeric speeds** via two dynamic bitmap notification small icons, following the documented approach of Internet Speed Meter-like utilities; OS controls whether both fit and in what order.
 - In the notification shade, left and right health symbols indicate Target 1 and Target 2 quality, with **upload then download**, both refreshed regularly. The main At a Glance uses the standard Android template for stability.
@@ -53,14 +53,14 @@ More reliable interface-specific byte accounting on supported Android API levels
 - Android manifest no longer requests `SYSTEM_ALERT_WINDOW`. The obsolete floating overlay source is removed.
 - CI validates that the compiled package has no overlay permission and that all four compact notification fields exist in the correct order. Emulator launch and physical-device status bar behavior remain separate checks.
 
-## v0.1.4 monitoring startup and target logos
+## v0.1.5 monitoring startup and target logos
 
 - Initial service promotion uses a standard Android notification. Rich custom content is posted afterward to avoid delaying foreground-service startup. If a notification update fails synchronously, the OS notification replaces it and the error is logged.
 - Start failures are recorded and displayed in the Android activity rather than disappearing without feedback.
 - Expanded At a Glance includes the configured websites' official logos when compatible image data can be retrieved. ICO-only, SVG-only or blocking sites fall back to the globe. Target-colored dots remain in the compact strip.
 - Actual reproduction of the crash on the user's own Android device remains unverified until new APK field testing. Android emulator testing is an independent acceptance gate.
 
-## v0.1.4 — native notification crash correction (October 27, 2026)
+## v0.1.5 — native notification crash correction (October 27, 2026)
 
 - Removed all RemoteViews/custom notification inflation from the running service. The old custom notification contained a generic View divider, which can cause Android to kill the app asynchronously after posting the notification.
 - Notifications continue using OS-owned InboxStyle, not custom RemoteViews, to reduce Android SystemUI rejection. Two changing bitmap small icons render each numeric speed plus a tiny health mark in the status bar. Expanding the main notification shows both targets and session/day/month totals.
@@ -68,10 +68,17 @@ More reliable interface-specific byte accounting on supported Android API levels
 - Local uncaught-Java-exception recorder and About -> Crash diagnostics -> Copy diagnostics, private storage, manual copy only, max 10 KB; OS kills without Java errors may leave nothing.
 - Build/test acceptance does not establish stability on the user's specific phone. Please confirm real-world foreground monitoring after installing the new preview.
 
-## v0.1.4 — Live status-bar speed numbers
+## v0.1.5 — Live status-bar speed numbers
 
 - **Corrected prior limitation:** Android can show changing speed digits inside small notification icons. Internet speed meters achieve this by rasterizing text and updating `Notification.setSmallIcon(Icon.createWithBitmap(bitmap))`. BlazeNetMonitor now does that independently in native Java.
 - Two notifications supply the two icon slots: left is **health dot + upload**; right is **download + health dot**. The status-bar glyphs are *monochrome* and each icon is limited to a small 24dp logical slot; to fit, numbers are abbreviated (e.g., `1.2M`). The exact order and spacing are subject to SystemUI/OEM and the user's other notifications.
 - The main notification shade uses the full upload/download labels, health indicators and At a Glance summary. An extra low-importance download notification exists so the operating system has two changing small icons. Both are removed when monitoring stops.
 - Start Monitoring crash is still under investigation on the owner's device. The Java exception recorder in About → Crash diagnostics is available; compilation and unit tests are not evidence that the real-device crash is fixed.
 - Builds remain **debug-signed previews** and retain the completed Windows v1.0.0 untouched.
+
+## v0.1.5 — Safe foreground start with dynamic icons
+
+- Promotes the service immediately using a static framework icon so no bitmap generation can delay Android's foreground-service startup requirement.
+- Once running, uses the Android status-bar dynamic-small-icon technique for two numerical upload and download indicators, with tiny monochrome target health marks. The UI still shows full speeds and colored target states in the expanded notification.
+- SystemUI may coalesce, reorder or hide small icons based on status bar space and OEM configuration; this is a native Android status bar feature, not an overlay.
+- The user's prior service-termination report remains a field-verification gate. Debug-signed preview; see About → Crash diagnostics for Java crash information if the problem persists.
