@@ -23,6 +23,8 @@ public final class MainActivity extends Activity {
     private android.content.SharedPreferences pref;
     private TextView down,up,session,day,month,networkState,monitorButton;
     private final TextView[] status=new TextView[2],targetInfo=new TextView[2];
+    private final ImageView[] targetLogos=new ImageView[2];
+    private final TargetFavicons logos=new TargetFavicons();
     private SpeedGraph graph;
     private Spinner graphType,unit;
     private boolean activeUi;
@@ -119,6 +121,12 @@ public final class MainActivity extends Activity {
         for(int i=0;i<2;i++){
             final int j=i;
             LinearLayout targetRow=new LinearLayout(this);targetRow.setGravity(Gravity.CENTER_VERTICAL);
+            targetLogos[i]=new ImageView(this);
+            targetLogos[i].setImageResource(R.drawable.ic_target_globe);
+            targetLogos[i].setScaleType(ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams logoSize=new LinearLayout.LayoutParams(dp(24),dp(24));
+            logoSize.rightMargin=dp(10);
+            targetRow.addView(targetLogos[i],logoSize);
             LinearLayout cell=column();
             status[i]=text("● Target "+(i+1)+"   Waiting",15,WHITE);
             targetInfo[i]=text("No sample",11,MUTED);
@@ -257,6 +265,7 @@ public final class MainActivity extends Activity {
                 .putInt("port"+index,tcp).apply();
             MonitorState.INSTANCE.health(index,"Gray","Checking updated target");
             dialog.dismiss();
+            refreshLogos();
         }));
         dialog.show();
     }
@@ -275,6 +284,24 @@ public final class MainActivity extends Activity {
         try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}
         catch(Exception e){Toast.makeText(this,"Browser unavailable",Toast.LENGTH_SHORT).show();}
     }
-    @Override protected void onResume(){super.onResume();activeUi=true;ui.post(refresh);}
+    private void refreshLogos(){
+        logos.refresh(pref,()->ui.post(()->{
+            if(isFinishing()||isDestroyed())return;
+            for(int i=0;i<2;i++){
+                android.graphics.Bitmap icon=logos.icon(i);
+                if(targetLogos[i]!=null){
+                    if(icon!=null)targetLogos[i].setImageBitmap(icon);
+                    else targetLogos[i].setImageResource(R.drawable.ic_target_globe);
+                }
+            }
+        }));
+    }
+    @Override protected void onResume(){
+        super.onResume();
+        activeUi=true;
+        refreshLogos();
+        ui.post(refresh);
+    }
     @Override protected void onPause(){activeUi=false;ui.removeCallbacks(refresh);super.onPause();}
+    @Override protected void onDestroy(){logos.shutdown();super.onDestroy();}
 }
