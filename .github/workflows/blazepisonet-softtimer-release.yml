@@ -271,11 +271,11 @@ jobs:
           # NO production GitHub Release. A checksum alone proves no signer.
           # Verify the actual three binary signatures, version metadata and
           # portable ZIP member bytes, without executing installer/package.
-          $releaseGate="$env:PROJECT_DIR/tests/ReleaseProvenance/Verify-ProductionSignature.ps1"
-          & $releaseGate -SetupPath $setup -AppPath 'out/bundle/BlazePisonet.SoftTimer.exe' -WatchdogPath 'out/bundle/BlazePisonet.SoftTimer.Watchdog.exe' -PortableZipPath $zip -ExpectedVersion $env:VERSION -ExpectedSignerCertificateSha256 $env:SOFTTIMER_EXPECTED_SIGNER_SHA256
-          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "WIN-SIGN-P0 release proof failed" }
           $releaseTarget=(git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $releaseGate="$env:PROJECT_DIR/tests/ReleaseProvenance/Verify-ProductionSignature.ps1"
+          & $releaseGate -SetupPath $setup -AppPath 'out/bundle/BlazePisonet.SoftTimer.exe' -WatchdogPath 'out/bundle/BlazePisonet.SoftTimer.Watchdog.exe' -PortableZipPath $zip -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget -ExpectedSignerCertificateSha256 $env:SOFTTIMER_EXPECTED_SIGNER_SHA256
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "WIN-SIGN-P0 release proof failed" }
 
           if (gh release view $env:TAG *> $null) {
             throw "Immutable release tag $env:TAG already exists. Refusing asset replacement; bump version and TAG with a new candidate."
