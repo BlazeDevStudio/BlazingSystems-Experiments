@@ -110,7 +110,9 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo 'Tag already published; refusing to overwrite'; exit 1
+            echo 'Release tag already exists. Keeping the immutable preview release unchanged.'
+            echo 'This commit APK is available as this workflow run artifact, not as the older tagged release.'
+            exit 0
           fi
           notes='BlazeNetMonitor Android v0.1.5 preview: two dynamically generated numeric small notification icons show live upload/download values with outer target health marks directly in the Android status bar, using Icon.createWithBitmap as proven by other speed meter apps. Foreground service initially promotes with a simple static icon, then updates both live icons to reduce startup timing risk. OS can reorder, tint or suppress an icon depending on status-bar space. Expanded notification preserves At a Glance. No overlay. User-reported crash is not yet verified fixed on the specific phone, and Debug Crash Diagnostics remains available. Debug-signed testing preview.'
           for attempt in 1 2 3 4; do

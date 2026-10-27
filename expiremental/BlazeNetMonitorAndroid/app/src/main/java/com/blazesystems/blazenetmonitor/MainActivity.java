@@ -88,6 +88,9 @@ public final class MainActivity extends Activity {
         monitorButton=action("Start monitoring",row,()->{
             if(MonitorService.ACTIVE)stopMonitor();else startMonitor();
         });
+        // Stable Android view ID lets emulator tests tap the actual control,
+        // independent of screen density, orientation, status bars or scrolling.
+        monitorButton.setId(R.id.monitor_toggle_button);
         add(controls,text("Pull down notifications for At a glance. Expand the card for both targets and data totals.",11,MUTED),61);
 
         LinearLayout panel=card(body);
