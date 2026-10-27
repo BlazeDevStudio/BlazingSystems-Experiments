@@ -381,6 +381,19 @@ bp_unlock
   exit 2
 }
 [ -z "$(bp_member_event_line "$phx_ctrl_event")" ] || exit 2
+# Nonvacuous control BEFORE expected RED: a different, already committed
+# member transfer remains idempotently replayable under disabled controller.
+phx_prior_receipt="$(call_vendo member_transfer 10000000000000f2 10 \
+  "racealice>racebob:$phx_paid_event:replay")"
+if ! printf '%s' "$phx_prior_receipt" | grep -Fq '"ok":true' ||
+   ! printf '%s' "$phx_prior_receipt" | grep -Fq '"replayed":true' ||
+   [ "$(awk -F '\t' -v e="$phx_paid_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")" != 1 ] ||
+   [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f8):$(printf '%s' "$(bp_member_line racebob)" | cut -f8)" != "$phx_controller_before" ]; then
+  : > "$PHX_RELEASE"; wait "$phx_ctrl_pid" 2>/dev/null || :
+  echo "PHX-PAY31-TWOLOCK-CONTROL-INVALID committed receipt failed disabled-controller replay: $phx_prior_receipt" >&2
+  exit 2
+fi
+echo 'PHX-PAY31-TWOLOCK-CONTROL-PASS: old receipt replayed without new credit on disabled controller'
 : > "$PHX_RELEASE"
 wait "$phx_ctrl_pid" 2>/dev/null || :
 phx_ctrl_response="$(cat "$T/controller-handoff-response")"
