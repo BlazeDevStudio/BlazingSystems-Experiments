@@ -291,6 +291,21 @@ class Intercom {
   bool _closing = false;
   int reconnectGraceSeconds = 60;
   bool reconnecting = false;
+  DateTime? _reconnectUntil;
+  Timer? _reconnectUiPulse;
+  int get reconnectRemainingSeconds {
+    if (!reconnecting || _reconnectUntil == null) return 0;
+    final ms = _reconnectUntil!.difference(DateTime.now()).inMilliseconds;
+    return ms <= 0 ? 0 : (ms / 1000).ceil();
+  }
+
+  void _resetReconnectState() {
+    reconnecting = false;
+    _disconnectGrace.dispose();
+    _reconnectUiPulse?.cancel();
+    _reconnectUiPulse = null;
+    _reconnectUntil = null;
+  }
   late final LanDisconnectGrace _disconnectGrace = LanDisconnectGrace(() {
     if (callId != null && !_closing && reconnecting) {
       unawaited(_log('media reconnect grace expired'));
@@ -430,7 +445,14 @@ class Intercom {
       if (callId != id || _closing) return;
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
         // Keep tracks/renderers alive during transient Wi-Fi or router loss.
-        reconnecting = true;
+        if (!reconnecting) {
+          reconnecting = true;
+          _reconnectUntil = DateTime.now()
+              .add(Duration(seconds: reconnectGraceSeconds));
+          _reconnectUiPulse?.cancel();
+          _reconnectUiPulse = Timer.periodic(
+              const Duration(seconds: 1), (_) => onChanged?.call());
+        }
         _disconnectGrace.disconnected(
             Duration(seconds: reconnectGraceSeconds));
         unawaited(_log('media disconnected; grace=${reconnectGraceSeconds}s'));
@@ -441,8 +463,7 @@ class Intercom {
         unawaited(_log('terminal connection state $state'));
         unawaited(hangUp(notify: false));
       } else if (CallTransportGate.mediaReady(state)) {
-        _disconnectGrace.connected();
-        reconnecting = false;
+        _resetReconnectState();
         // An SDP answer is not proof of a usable media path. Only the actual
         // WebRTC peer transport reaching Connected clears the call's
         // negotiating state and unlocks connected-call UI/PiP.
@@ -475,8 +496,7 @@ class Intercom {
     muted = false;
     sharingScreen = false;
     connecting = true;
-    reconnecting = false;
-    _disconnectGrace.dispose();
+    _resetReconnectState();
     _remoteDescriptionReady = false;
     onChanged?.call();
     try {
@@ -696,8 +716,7 @@ class Intercom {
   Future<void> _hangUpOnce({required bool notify}) async {
     if (_closing) return;
     _closing = true;
-    reconnecting = false;
-    _disconnectGrace.dispose();
+    _resetReconnectState();
     _answerTimeout?.cancel();
     _answerTimeout = null;
     final peer = talkingTo;
