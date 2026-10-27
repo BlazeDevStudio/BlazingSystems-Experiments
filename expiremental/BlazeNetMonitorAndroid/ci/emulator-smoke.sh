@@ -18,10 +18,12 @@ sleep 5
 # On first install a donation dialog appears. BACK dismisses it.
 adb shell input keyevent KEYCODE_BACK
 sleep 1
-# Testing the exact foreground service without UIAutomator. On overloaded
-# emulator runners, UiAutomation itself crashes before tapping the app.
-# MainActivity's Start button sends this same ACTION_START intent.
-adb shell am start-foreground-service -n "$PKG/.MonitorService" -a "$PKG.START"
+# Instrument the service under the APP UID (the service is deliberately
+# exported=false). A plain "adb shell am" runs under the shell UID and is
+# rejected by Android even if the app itself is functioning.
+# UIAutomator on this runner timed out independently of the tested app.
+adb shell run-as "$PKG" /system/bin/am start-foreground-service \
+  -n "$PKG/.MonitorService" -a "$PKG.START"
 sleep 12
 pid=$(adb shell pidof "$PKG" | tr -d '\r')
 test -n "$pid" || { echo 'FAIL app process terminated after Start Monitoring'; exit 3; }
