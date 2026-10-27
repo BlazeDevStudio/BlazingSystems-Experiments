@@ -48,7 +48,7 @@ try {
   $global:BlazeTestStatus='Valid'
   Remove-Item -LiteralPath $paths[2] -Force
   Expect-Denied 'missing watchdog executable' { Invoke-Gate $pin }
-  $workflow=Get-Content -Raw (Join-Path $PSScriptRoot '../../../../.github/workflows/blazepisonet-softtimer-release.yml')
+  $workflow=Get-Content -Raw (Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepisonet-softtimer-release.yml')
   $publish=$workflow.Split('      - name: Publish GitHub Release')[1]
   if (-not $publish -or
       -not $publish.Contains('require-signed-candidates.ps1') -or
