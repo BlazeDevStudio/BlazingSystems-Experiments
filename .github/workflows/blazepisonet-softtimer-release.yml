@@ -80,6 +80,19 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: PHX-L-APPS #164 source-linked failed-COM-Open resource ownership safety gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $lab = "$env:PROJECT_DIR/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj"
+          # Test the actual app SerialHardware.cs with injected fake SerialPort.Open
+          # failure. Keep this isolated from #197's five separate opened-HANDLE REDs.
+          dotnet run --project $lab -c Release -- --open-failure-safety-gate
+          if ($LASTEXITCODE -ne 0) {
+            throw "FAILED_OPEN_RESOURCE_GATE: exit=$LASTEXITCODE (2=leaked candidate, 3=invalid setup, 1=unexpected); DO NOT PROMOTE"
+          }
+          Write-Host 'FAILED_OPEN_RESOURCE_GATE_GREEN: C# failed-open candidate disposed, no lingering PinChanged, valid retry positive.'
+
       - name: PHX-L-APPS #164 native C# active-low status-failure no-false-coin gate
         shell: pwsh
         run: |
