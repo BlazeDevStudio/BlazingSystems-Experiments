@@ -169,7 +169,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (action == 'answer' || action == 'decline') {
       _resolveIncomingDialog(action == 'answer');
     } else if (action == 'open') {
-      unawaited(_openCallThread());
+      // Native Windows call popup Open means return to the live call,
+      // not minimize it into a conversation. Ringing calls still show
+      // their pending Answer/Decline UI rather than bypassing consent.
+      if (_incomingDialogOpen) {
+        _openWindow();
+      } else {
+        unawaited(_expandActiveCall());
+      }
     } else if (!_incomingDialogOpen && action == 'end') {
       unawaited(intercom?.hangUp() ?? Future<void>.value());
     } else if (!_incomingDialogOpen && action == 'mute') {
