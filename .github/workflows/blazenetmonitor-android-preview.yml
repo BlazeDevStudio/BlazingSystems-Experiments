@@ -89,7 +89,7 @@ jobs:
           assert 'targetFavicons.refresh(' in src
           assert 'targetFavicons.icon(0),targetFavicons.icon(1)' in src
           canvas=Path('app/src/main/java/com/blazesystems/blazenetmonitor/NotificationCardRenderer.java').read_text()
-          assert 'c.drawCircle(42,top+54,12,p)' in canvas
+          assert 'c.drawCircle(42,top+45,12,p)' in canvas
           assert 'c.drawBitmap(icon' in canvas
           assert 'healthColor(health)' in canvas
           assert 'Bitmap.Config.RGB_565' in canvas
