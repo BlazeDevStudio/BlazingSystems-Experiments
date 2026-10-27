@@ -101,6 +101,15 @@ app.whenReady().then(()=>{
       if(sensorTrace.variables.sensorValue!==700||sensorTrace.outputs['8']!=='HIGH')throw Error('Simulated analog threshold did not drive output');
       await api.simDispose(sensorVirtual.id);
 
+      const espCreated=await api.createProject('ReviewedESP','esp32:esp32:esp32','blink');
+      const espSource=await api.generate(espCreated);
+      if(!espSource.source?.includes('pinMode(21, OUTPUT)'))throw Error('ESP32 safe default pin missing from generated sketch');
+      await openProject(espCreated.id);
+      document.querySelector('[data-tab="pins"]').click();
+      for(let i=0;i<50&&!document.getElementById('pinGrid').textContent.includes('INPUT ONLY');i++)await pause(100);
+      if(!document.getElementById('pinGrid').textContent.includes('GPIO34')||!document.getElementById('pinGrid').textContent.includes('FLASH / NO-GO'))throw Error('ESP32 Pin Manager failed to show input-only / reserved pins');
+      if((await api.boardProfile('esp32:esp32:esp32s3'))!==null)throw Error('Classic ESP32 profile incorrectly claimed on S3');
+
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -110,7 +119,7 @@ app.whenReady().then(()=>{
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,reviewedEspGpioUI:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}
@@ -121,7 +130,7 @@ app.whenReady().then(()=>{
  register('project:list',()=>store.list());register('project:create',(name,fqbn,template)=>store.create(name,fqbn,template));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
  register('project:validate',p=>{const d=generateSketch(p).diagnostics;return {...d,ordered:(d.ordered||[]).map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
  register('project:rename',(id,name)=>store.rename(id,name));register('project:duplicate',id=>store.duplicate(id));register('project:trash',id=>store.trash(id));register('project:recoveryList',()=>store.recoveryList());register('project:recover',id=>store.recover(id));
- register('board:migration',(p,target)=>board.analyzeBoardChange(p,target));
+ register('board:migration',(p,target)=>board.analyzeBoardChange(p,target));register('board:profile',fqbn=>board.profile(fqbn));
  register('flow:trace',(p,input)=>flow.traceFlowchart(p.flowchart||flow.sampleFlowchart(),input,1000));
  register('library:scan',p=>balie.scanInstalled({architecture:p.fqbn.split(':')[1]}));
  register('library:inspect',async p=>{const result=await dialog.showOpenDialog(win,{properties:['openDirectory'],title:'Inspect installed Arduino library directory (read-only)'});if(result.canceled)return {canceled:true};return balie.inspectLibrary(result.filePaths[0],p.fqbn.split(':')[1]);});

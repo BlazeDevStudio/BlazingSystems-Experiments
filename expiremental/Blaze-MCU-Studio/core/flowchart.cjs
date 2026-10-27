@@ -5,7 +5,7 @@ const NAME=/^[A-Za-z][\w]{0,63}$/;
 const PIN=/^\d{1,3}$/;
 const LEVEL=new Set(['HIGH','LOW']);
 function step(id,type,params={},thenSteps=[],elseSteps=[]){return {id,type,params,thenSteps,elseSteps};}
-function sampleFlowchart(){return {steps:[step('pinsetup','setOutput',{pin:'13'}),step('on','write',{pin:'13',value:'HIGH'}),step('pause1','wait',{ms:1000}),step('off','write',{pin:'13',value:'LOW'}),step('pause2','wait',{ms:1000})]};}
+function sampleFlowchart(pin='13'){return {steps:[step('pinsetup','setOutput',{pin}),step('on','write',{pin,value:'HIGH'}),step('pause1','wait',{ms:1000}),step('off','write',{pin,value:'LOW'}),step('pause2','wait',{ms:1000})]};}
 function ensureFlowchart(flow){if(!flow||!Array.isArray(flow.steps))throw Error('Missing flowchart steps');const seen=new Set();let count=0;
  function visit(list,depth){if(depth>12)throw Error('Flowchart nesting exceeds 12 levels');if(!Array.isArray(list))throw Error('Malformed flowchart step list');for(const n of list){if(++count>400)throw Error('Flowchart exceeds 400 blocks');if(!n||!NAME.test(n.id)||seen.has(n.id)||!TYPES.includes(n.type)||!n.params||typeof n.params!=='object'||Array.isArray(n.params))throw Error('Invalid flowchart block');seen.add(n.id);const p=n.params;
  if(['setOutput','write','branch'].includes(n.type)&&!PIN.test(String(p.pin??'')))throw Error(n.id+': invalid pin identifier');
@@ -20,7 +20,12 @@ function ensureFlowchart(flow){if(!flow||!Array.isArray(flow.steps))throw Error(
  }}visit(flow.steps,0);return true;}
 function usedPins(flow){ensureFlowchart(flow);const pins=[];function walk(items){for(const n of items){if(['setOutput','write','branch'].includes(n.type))pins.push({id:n.id,pin:String(n.params.pin),direction:n.type==='branch'?'input':'output'});walk(n.thenSteps||[]);walk(n.elseSteps||[]);}}walk(flow.steps);return pins;}
 function validateFlowchart(flow,{boardPins,boardFqbn}={}){const errors=[],warnings=[];try{ensureFlowchart(flow);}catch(e){return {ok:false,errors:[e.message],warnings};}
- const pins=usedPins(flow);for(const pin of pins){if(boardPins){if(!boardPins.pins.includes(pin.pin))errors.push(pin.id+': pin '+pin.pin+' unavailable on selected board');if(boardPins.reserved?.includes(pin.pin))warnings.push(pin.id+': pin '+pin.pin+' is shared with UART');}else warnings.push(pin.id+': pin '+pin.pin+' has Unknown / Verification Required capabilities for '+boardFqbn);}
+ const board=require('./board.cjs');const pins=usedPins(flow);
+ for(const pin of pins){
+  const check=board.pinCheck(boardFqbn||'unknown:unknown:unknown',pin.pin,pin.direction);
+  errors.push(...check.errors.map(message=>pin.id+': '+message));
+  warnings.push(...check.warnings.map(message=>pin.id+': '+message));
+ }
  return {ok:errors.length===0,errors:[...new Set(errors)],warnings:[...new Set(warnings)]};}
 function flowchartSource(flow){ensureFlowchart(flow);const setup=[],loop=[];let counter=0;let needsNodeCall=false;
  const readPins=[...new Set(usedPins(flow).filter(p=>p.direction==='input').map(p=>p.pin))];const outputPins=new Set(usedPins(flow).filter(p=>p.direction==='output').map(p=>p.pin));for(const pin of readPins){if(!outputPins.has(pin))setup.push('  pinMode('+Number(pin)+', INPUT); // flow:auto-input');}

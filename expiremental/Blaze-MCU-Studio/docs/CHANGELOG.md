@@ -1,3 +1,10 @@
+## v0.4.4 — ESP family pin safety and real core compile gates (pending acceptance)
+- Curated conservative GPIO maps for generic ESP8266, NodeMCU 1.0 and classic ESP32 only, with source provenance, flash pin no-go, input-only outputs blocked, bootstrap/UART warnings.
+- Board-specific safe default Blink GPIO (ESP8266 GPIO4; ESP32 GPIO21) and matching flowchart; unchanged Uno 13.
+- Pin Manager retrieves same board-profile source as backend; unsupported ESP32 variants explicitly unknown.
+- Separate Linux CI for ESP8266 3.1.2 and ESP32 3.0.7 actual compiler installations; Windows packaged GUI acceptance now tests ESP pin map.
+- Physical electrical testing, 2 GB RAM, full BALIE and S3/C-series maps still missing.
+
 ## v0.4.3 — typed-state source and sensor control (Windows gate pending)
 - Typed global variables with safe numeric/boolean literals, declaration manager, persistence and scoped symbols.
 - Analog Uno A0–A5 sampling into long variables; conditional threshold output with actual comparison C++.

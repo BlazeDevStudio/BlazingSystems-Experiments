@@ -5,6 +5,7 @@ const flow=require('./flowchart.cjs');
 const peripherals=require('./peripherals.cjs');
 const wire=require('./curated-adapters.cjs');
 const variables=require('./variables.cjs');
+const board=require('./board.cjs');
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,62}$/;
 const FQBN_RE = /^[\w.-]+:[\w.-]+:[\w.-]+(?::[\w.,=~-]+)?$/;
 function sketchName(text) {
@@ -12,8 +13,8 @@ function sketchName(text) {
   return result.substring(0, 60) || 'Sketch';
 }
 function node(id, type, params, x, y) { return { id, type, params, x, y }; }
-function starterGraph() { return {
-  nodes: [node('start', 'loopStart', {}, 70, 100), node('mode', 'pinMode', { pin: '13', mode: 'OUTPUT' }, 320, 90), node('on', 'digitalWrite', { pin: '13', value: 'HIGH' }, 570, 90), node('wait1', 'delay', { ms: 1000 }, 810, 90), node('off', 'digitalWrite', { pin: '13', value: 'LOW' }, 570, 285), node('wait2', 'delay', { ms: 1000 }, 810, 285)],
+function starterGraph(fqbn='arduino:avr:uno') { const selectedPin=board.profile(fqbn)?.safeDefault||'13'; return {
+  nodes: [node('start', 'loopStart', {}, 70, 100), node('mode', 'pinMode', { pin: selectedPin, mode: 'OUTPUT' }, 320, 90), node('on', 'digitalWrite', { pin: selectedPin, value: 'HIGH' }, 570, 90), node('wait1', 'delay', { ms: 1000 }, 810, 90), node('off', 'digitalWrite', { pin: selectedPin, value: 'LOW' }, 570, 285), node('wait2', 'delay', { ms: 1000 }, 810, 285)],
   edges: [['start','mode'],['mode','on'],['on','wait1'],['wait1','off'],['off','wait2']]
 }; }
 function createProject(name, fqbn='arduino:avr:uno', template='blink') {
@@ -21,7 +22,7 @@ function createProject(name, fqbn='arduino:avr:uno', template='blink') {
   if (!name || !String(name).trim() || String(name).trim().length > 80) throw new Error('Project name must be 1–80 characters');
   if(!['blink','empty','sensor-threshold'].includes(template))throw Error('Unknown project template');
   if(template==='sensor-threshold'&&fqbn!=='arduino:avr:uno')throw Error('Sensor threshold template currently requires Uno R3; other boards have unverified analog mapping');
-  const p={ schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [],visualMode:'nodes',flowchart:flow.sampleFlowchart(),peripherals:[],variables:[] };
+  const p={ schemaVersion: SCHEMA_VERSION, id: randomUUID(), name: String(name).trim(), fqbn, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), graph: starterGraph(fqbn), source: {mode:'visual',manualSource:'',userPrelude:'',userSetup:'',userLoop:''}, pins: [], libraryDependencies: [],visualMode:'nodes',flowchart:flow.sampleFlowchart(board.profile(fqbn)?.safeDefault||'13'),peripherals:[],variables:[] };
   if(template!=='blink'){
    p.graph={nodes:[node('start','loopStart',{},70,120)],edges:[]};
    if(template==='sensor-threshold'){
@@ -50,9 +51,7 @@ function verifyProject(p) {
   if(p.peripherals!==undefined && (!Array.isArray(p.peripherals)||p.peripherals.length>40))throw Error('Invalid peripheral assignments');
   return p;
 }
-const PIN_PROFILES = {
-  'arduino:avr:uno': { provenance:'Arduino Uno R3 ATmega328P reference / digital D0–D13, serial RX/TX D0/D1', pins: Array.from({length:14},(_,i)=>String(i)), reserved:['0','1'] }
-};
+const PIN_PROFILES=board.PROFILES;
 function pinDiagnostics(p) {
   const errors=[], warnings=[];
   const pins=PIN_PROFILES[p.fqbn];
@@ -61,11 +60,10 @@ function pinDiagnostics(p) {
     if (!['digitalWrite','pinMode','pwmWrite'].includes(n.type)) continue;
     const pin=String(n.params.pin ?? '').trim();
     if (!/^\d{1,3}$/.test(pin)) { errors.push(`${n.id}: GPIO must be a numeric digital pin`); continue; }
-    if (pins) {
-      if (!pins.pins.includes(pin)) errors.push(`${n.id}: D${pin} unavailable on Uno R3`);
-      else if (pins.reserved.includes(pin)) warnings.push(`${n.id}: D${pin} shares the hardware serial interface`);
-    } else warnings.push(`${n.id}: pin ${pin} compatibility unknown for ${p.fqbn}; verify the selected board pinout`);
-    if(n.type==='pwmWrite' && pins && !['3','5','6','9','10','11'].includes(pin))errors.push(`${n.id}: Uno R3 hardware PWM only on D3,D5,D6,D9,D10,D11`);
+    const op=n.type==='pwmWrite'?'pwm':(n.type==='pinMode'&&n.params.mode==='INPUT'?'input':(n.type==='pinMode'&&n.params.mode==='INPUT_PULLUP'?'pullup':'output'));
+    const check=board.pinCheck(p.fqbn,pin,op);
+    errors.push(...check.errors.map(x=>`${n.id}: ${x}`));
+    warnings.push(...check.warnings.map(x=>`${n.id}: ${x}`));
     if (n.type === 'pinMode') {
       const old=modes.get(pin);
       if (old && old !== n.params.mode) errors.push(`Conflicting modes for pin ${pin}`);
@@ -142,6 +140,6 @@ function generateSketch(p) {
   }else addGraph(setup,loop);
   if(needsWire)setup.unshift('  Wire.begin(); // curated core library');
   if(serialBaud!==null)setup.unshift(`  Serial.begin(${serialBaud});`);
-  return {source:`// Blaze MCU Studio v0.4.3 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${needsWire?'#include <Wire.h>\nuint8_t blazeLastWireStatus = 0;\n':''}${variables.declarations(p.variables||[])}\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics,dependencies:needsWire?['Wire']:[]};
+  return {source:`// Blaze MCU Studio v0.4.4 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${needsWire?'#include <Wire.h>\nuint8_t blazeLastWireStatus = 0;\n':''}${variables.declarations(p.variables||[])}\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics,dependencies:needsWire?['Wire']:[]};
 }
 module.exports={SCHEMA_VERSION, FQBN_RE, NAME_RE, createProject, verifyProject, analyzeGraph, generateSketch, pinDiagnostics, sketchName, PIN_PROFILES};

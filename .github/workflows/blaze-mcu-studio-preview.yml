@@ -1,4 +1,4 @@
-name: Blaze MCU Studio v0.4.3 Typed Sensor Controller and Multi-AVR UI Gate
+name: Blaze MCU Studio v0.4.4 reviewed ESP pin profiles and multi-core compilation gate
 on:
   pull_request:
     paths:
@@ -133,5 +133,72 @@ jobs:
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
             ${{ runner.temp }}/blaze-mcu-gui-smoke.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  esp-core-compile:
+    name: Compile genuine ESP firmware (${{ matrix.family }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - family: esp8266
+            platform: esp8266:esp8266@3.1.2
+            fqbn: esp8266:esp8266:generic
+            sketch: BlazeESP8266Blink
+            index: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          - family: esp32
+            platform: esp32:esp32@3.0.7
+            fqbn: esp32:esp32:esp32
+            sketch: BlazeESP32Blink
+            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run tested deterministic ESP graph generation
+        working-directory: expiremental/Blaze-MCU-Studio
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/esp-pin-profiles.test.cjs
+          mkdir -p "$RUNNER_TEMP/esp-generated"
+          node scripts/export-esp.cjs "$RUNNER_TEMP/esp-generated" | tee "$RUNNER_TEMP/generated-esp-manifest.txt"
+      - name: Install pinned Arduino CLI 1.5.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 "https://github.com/arduino/arduino-cli/releases/download/v1.5.1/arduino-cli_1.5.1_Linux_64bit.tar.gz" -o "$RUNNER_TEMP/arduino-cli.tar.gz"
+          mkdir -p "$RUNNER_TEMP/arduino-bin"
+          tar -xzf "$RUNNER_TEMP/arduino-cli.tar.gz" -C "$RUNNER_TEMP/arduino-bin" arduino-cli
+          echo "$RUNNER_TEMP/arduino-bin" >> "$GITHUB_PATH"
+      - name: Install pinned platform and compile generated target
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          FQBN: ${{ matrix.fqbn }}
+          SKETCH: ${{ matrix.sketch }}
+          INDEX: ${{ matrix.index }}
+        run: |
+          set -euo pipefail
+          arduino-cli version | tee "$RUNNER_TEMP/cli-version.txt"
+          arduino-cli core update-index --additional-urls "$INDEX" 2>&1 | tee "$RUNNER_TEMP/esp-core-update.log"
+          arduino-cli core install "$PLATFORM" --additional-urls "$INDEX" 2>&1 | tee "$RUNNER_TEMP/esp-core-install.log"
+          arduino-cli core list --json | tee "$RUNNER_TEMP/esp-core-versions.json"
+          arduino-cli compile --fqbn "$FQBN" --additional-urls "$INDEX" --warnings all "$RUNNER_TEMP/esp-generated/$SKETCH" 2>&1 | tee "$RUNNER_TEMP/esp-compile.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blaze-mcu-v044-${{ matrix.family }}-compile-evidence
+          path: |
+            ${{ runner.temp }}/cli-version.txt
+            ${{ runner.temp }}/generated-esp-manifest.txt
+            ${{ runner.temp }}/esp-core-update.log
+            ${{ runner.temp }}/esp-core-install.log
+            ${{ runner.temp }}/esp-core-versions.json
+            ${{ runner.temp }}/esp-compile.log
           if-no-files-found: warn
           retention-days: 14

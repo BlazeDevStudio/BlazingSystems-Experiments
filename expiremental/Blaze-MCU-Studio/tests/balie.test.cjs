@@ -6,7 +6,7 @@ test('architecture incompatibility remains visible',()=>fixture((d,root)=>{const
 test('library changes invalidate content hash',()=>fixture((d,root)=>{const old=balie.inspectLibrary(root);fs.appendFileSync(path.join(root,'src','TemperatureLab.h'),'int getHumidity();\n');const next=balie.inspectLibrary(root);assert.notEqual(next.sourceHash,old.sourceHash);}));
 test('sketchbook library scanning indexes only directories with metadata',()=>fixture((d,root)=>{const r=balie.scanInstalled({sketchbook:d,architecture:'avr'});assert.equal(r.libraries.length,1);}));
 test('overlarge untrusted header rejected but library metadata retained',()=>fixture((d,root)=>{fs.writeFileSync(path.join(root,'src','TemperatureLab.h'),'x'.repeat(600000));const r=balie.inspectLibrary(root);assert.match(r.warnings.join(' '),/too large/);}));
-test('board migration never asserts unknown pin capability',()=>{const p=createProject('Board','arduino:avr:uno');const report=board.analyzeBoardChange(p,'esp32:esp32:esp32');assert.equal(report.compatible,false);assert.match(report.warnings.join(' '),/not verified/);});
+test('board migration never asserts unknown pin capability',()=>{const p=createProject('Board','arduino:avr:uno');const report=board.analyzeBoardChange(p,'esp32:esp32:esp32s3');assert.equal(report.compatible,false);assert.match(report.warnings.join(' '),/Verification Required/);});
 test('core-provided libraries discovered under Arduino15 installed platform roots',()=>{
  const {platformLibraryRoots,scanInstalled}=require('../core/balie.cjs');
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'blaze-core-libs-'));

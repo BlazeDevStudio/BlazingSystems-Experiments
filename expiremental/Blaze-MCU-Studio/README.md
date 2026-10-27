@@ -1,3 +1,7 @@
+## v0.4.4 development checkpoint — ESP8266/ESP32 GPIO correctness
+
+ESP8266 Generic/NodeMCU and classic ESP32 now have conservatively reviewed GPIO admission, safer startup Blink templates and a Pin Manager that surfaces boot-sensitive, input-only and flash-reserved pins. `docs/ESP_GPIO_ADMISSION.md` records evidence and limitations. The actual Arduino CLI ESP compile gate must succeed before firmware compatibility can be described as verified.
+
 ## v0.4.3 — typed state and sensor-to-output control (development, requires Windows acceptance)
 
 - **Variables tab:** add persistent `long`, `float`, `bool` project variables with literal initial values, identity validation and dependency-aware deletion. Variables survive save/reload/export, use namespaced `blazeVar_` symbols, and are not reverse-parsed from custom C++.
