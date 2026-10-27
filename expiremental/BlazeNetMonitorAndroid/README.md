@@ -1,4 +1,4 @@
-# BlazeNetMonitor Android — v0.1.1 Preview
+# BlazeNetMonitor Android — v0.1.2 Preview
 
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
@@ -26,7 +26,7 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 
 ## Installation
 
-Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.1-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
+Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.2-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
 
 Do not install unknown third-party APKs claiming to be Blaze Systems. Source and hash are in the GitHub release.
 
@@ -45,10 +45,17 @@ The first CI verifies JVM traffic arithmetic tests, compiles the APK, checks SDK
 
 More reliable interface-specific byte accounting on supported Android API levels, optional per-app historical usage with explicit Usage Access, a stronger probe history tracker, user-selectable graph colors/period, and device/battery acceptance tests. These require Android-specific implementation and must not be claimed as shipping features of preview 0.1.0.
 
-## v0.1.1 notification layout acceptance
+## v0.1.2 notification layout acceptance
 
 - Standard Android **status bar remains OS-controlled**; no claim that an app may render arbitrary full-speed text next to the battery/Wi-Fi icons.
 - In the collapsed notification shade, left and right dots indicate Target 1 and Target 2 quality, with **upload then download**, both continuously refreshed.
-- The expanded card displays both target states and monitored totals. Notification shades vary by device manufacturer, and some may truncate custom collapsed content.
+- The expanded card displays target states, monitored totals, and each website's favicon if a supported HTTPS PNG/JPEG/WebP icon is available; otherwise a globe. Logos are fetched from the configured website's public icon links, without using a third-party favicon proxy. Notification shades vary by device manufacturer, and some may truncate custom collapsed content.
 - Android manifest no longer requests `SYSTEM_ALERT_WINDOW`. The obsolete floating overlay source is removed.
 - CI validates that the compiled package has no overlay permission and that all four compact notification fields exist in the correct order. Emulator launch and physical-device status bar behavior remain separate checks.
+
+## v0.1.2 monitoring startup and target logos
+
+- Initial service promotion uses a standard Android notification. Rich custom content is posted afterward to avoid delaying foreground-service startup. If a notification update fails synchronously, the OS notification replaces it and the error is logged.
+- Start failures are recorded and displayed in the Android activity rather than disappearing without feedback.
+- Expanded At a Glance includes the configured websites' official logos when compatible image data can be retrieved. ICO-only, SVG-only or blocking sites fall back to the globe. Target-colored dots remain in the compact strip.
+- Actual reproduction of the crash on the user's own Android device remains unverified until new APK field testing. Android emulator testing is an independent acceptance gate.
