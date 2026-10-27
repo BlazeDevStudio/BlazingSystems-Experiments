@@ -795,6 +795,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         } finally {
           _incomingAnswer = null;
           _incomingDialogOpen = false;
+          // The notification can bring Android to the foreground BEFORE the
+          // Answer completer resolves. The lifecycle resume handler correctly
+          // avoids changing call presentation while it is still ringing, but
+          // there may be no second resume event after acceptance. Clear the
+          // temporary external-surface minimization here as well, so the
+          // accepted call opens as a full live call rather than a chat thread.
+          if (accepted && id == inter.callId &&
+              inter.talkingTo?.id == peer.id && Platform.isAndroid) {
+            _callMinimized = false;
+            showSettings = false;
+            showReceived = false;
+            selectedGroup = null;
+            selected = peer;
+          }
           _incomingPeer = null;
           _nativeIncomingAvailable = false;
           _incomingUsesExternalSurface = false;
