@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android owns the top status-bar row. This layout appears in the compact
+     notification SHADE. Exact requested order: dot / up / down / dot. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="40dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="6dp"
+    android:paddingEnd="6dp">
+
+    <TextView
+        android:id="@+id/strip_dot_left"
+        android:layout_width="15dp"
+        android:layout_height="wrap_content"
+        android:text="●"
+        android:contentDescription="Target 1 health"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:textColor="#8C9CAD"/>
+
+    <TextView
+        android:id="@+id/strip_upload"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="#EF9E3D"
+        android:text="↑ 0.0 Kbps"/>
+
+    <TextView
+        android:id="@+id/strip_download"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="#008BD8"
+        android:text="↓ 0.0 Kbps"/>
+
+    <TextView
+        android:id="@+id/strip_dot_right"
+        android:layout_width="15dp"
+        android:layout_height="wrap_content"
+        android:text="●"
+        android:contentDescription="Target 2 health"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:textColor="#8C9CAD"/>
+</LinearLayout>

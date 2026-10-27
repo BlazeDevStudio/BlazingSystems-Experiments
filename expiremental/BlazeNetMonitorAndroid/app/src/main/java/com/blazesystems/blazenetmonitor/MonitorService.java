@@ -28,8 +28,8 @@ public final class MonitorService extends Service {
             MonitorState.INSTANCE.sample(MonitorService.this);
             ticks++;
             if(ticks%15==1)probeTargets();
-            // Periodic updates are best effort: Android/SystemUI may throttle
-            // how quickly notifications visually refresh.
+            // Periodic speed changes are delivered to the collapsed and
+            // expanded notification. The OS may throttle their presentation.
             if(ticks%2==0)publish();
             handler.postDelayed(this,1000);
         }
@@ -86,8 +86,23 @@ public final class MonitorService extends Service {
         }
     }
     private String speeds(MonitorState.Frame frame,boolean bits){
-        return "↓ "+TrafficMath.speed(frame.rx,bits)+
-            "    ↑ "+TrafficMath.speed(frame.tx,bits);
+        return "↑ "+TrafficMath.speed(frame.tx,bits)+
+            "    ↓ "+TrafficMath.speed(frame.rx,bits);
+    }
+
+    /** Left health dot, upload, download, right health dot.
+      * This is the COLLAPSED notification row, not the OS-owned status-bar strip. */
+    private RemoteViews compact(MonitorState.Frame frame,boolean bits){
+        RemoteViews row=new RemoteViews(getPackageName(),R.layout.notification_speed_strip);
+        row.setTextViewText(R.id.strip_dot_left,"●");
+        row.setTextViewText(R.id.strip_upload,
+            "↑ "+TrafficMath.speed(frame.tx,bits));
+        row.setTextViewText(R.id.strip_download,
+            "↓ "+TrafficMath.speed(frame.rx,bits));
+        row.setTextViewText(R.id.strip_dot_right,"●");
+        row.setTextColor(R.id.strip_dot_left,healthColor(frame.status[0]));
+        row.setTextColor(R.id.strip_dot_right,healthColor(frame.status[1]));
+        return row;
     }
     private static int healthColor(String value){
         if("Green".equals(value))return 0xff46bd86;
@@ -131,6 +146,7 @@ public final class MonitorService extends Service {
             .setContentTitle("BlazeNetMonitor · At a glance")
             .setContentText(speed)
             .setStyle(new Notification.DecoratedCustomViewStyle())
+            .setCustomContentView(compact(frame,bits))
             .setCustomBigContentView(expanded(frame,bits))
             .setContentIntent(open)
             .setOngoing(true)
