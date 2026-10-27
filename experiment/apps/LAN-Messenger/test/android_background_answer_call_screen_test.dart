@@ -17,8 +17,17 @@ void main() {
     // the UI for rejected, stale, or different sessions.
     final finalized = incoming.substring(incoming.indexOf('} finally {'));
     expect(finalized, contains('_incomingDialogOpen = false;'));
-    expect(finalized, contains('if (accepted && id == inter.callId &&'));
-    expect(finalized, contains('inter.talkingTo?.id == peer.id && Platform.isAndroid)'));
+    // dart format may wrap this boolean guard across any number of lines.
+    // Check the entire token sequence, including explicit session and OS
+    // conditions, instead of assuming a particular whitespace layout.
+    expect(
+      RegExp(
+        r'if\s*\(\s*accepted\s*&&\s*id\s*==\s*inter\.callId\s*&&'
+        r'\s*inter\.talkingTo\?\.id\s*==\s*peer\.id\s*&&'
+        r'\s*Platform\.isAndroid\s*\)',
+      ).hasMatch(finalized),
+      isTrue,
+    );
     expect(finalized, contains('_callMinimized = false;'));
     expect(finalized, contains('selected = peer;'));
   });
