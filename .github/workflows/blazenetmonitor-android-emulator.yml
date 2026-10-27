@@ -2,7 +2,10 @@ name: BlazeNetMonitor Android Emulator Smoke
 on:
   push:
     branches: [feature/blazenetmonitor-android-v0.1.0]
-    paths: ['.github/workflows/blazenetmonitor-android-emulator.yml']
+    paths:
+      - '.github/workflows/blazenetmonitor-android-emulator.yml'
+      - 'expiremental/BlazeNetMonitorAndroid/app/src/main/java/com/blazesystems/blazenetmonitor/MonitorService.java'
+      - 'expiremental/BlazeNetMonitorAndroid/ci/emulator-smoke.sh'
   workflow_dispatch:
 permissions:
   contents: read

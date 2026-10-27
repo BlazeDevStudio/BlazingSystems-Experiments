@@ -74,7 +74,7 @@ public final class MainActivity extends Activity {
         setContentView(scroller);
         TextView title=text("◉  BlazeNetMonitor",24,WHITE);
         title.setTypeface(null,1);add(body,title,41);
-        add(body,text("ANDROID  ·  PREVIEW 0.1.2",11,MUTED),24);
+        add(body,text("ANDROID  ·  PREVIEW 0.1.3",11,MUTED),24);
         LinearLayout speed=card(body);
         add(speed,text("DEVICE-WIDE NETWORK SPEED",12,MUTED),26);
         down=text("↓  —",25,Color.rgb(52,195,255));down.setTypeface(null,1);add(speed,down,44);
@@ -154,7 +154,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout about=card(body);
         add(about,text("BLAZE SYSTEMS",13,WHITE),33);
-        add(about,text("BlazeNetMonitor Android  ·  0.1.2 preview",12,MUTED),31);
+        add(about,text("BlazeNetMonitor Android  ·  0.1.3 preview",12,MUTED),31);
         LinearLayout links=new LinearLayout(this);add(about,links,47);
         action("Support",links,this::showSupport);
         action("Developer Facebook",links,()->open("https://fb.me/manrealloumer"));
