@@ -325,4 +325,85 @@ if ! printf '%s' "$phx_replayed_response" | grep -Fq '"ok":true' ||
 fi
 echo 'PHX-L-CORE PASS: signed committed transfer receipt replay after sender disable is idempotent'
 
+# PHX-PAY31-TWOLOCK-RED-20261027 — real signed CGI / two distinct
+# administrative and financial lock domains, synthetic /tmp state only.
+# PR #215's member fd7 lock protects sender and recipient from member admin
+# writes, but currently does NOT recheck disabled-controller policy under
+# the separate controller fd9 lock before fresh paid member transfer.
+# Expected RED: a newly signed transfer gets ACKed after fd9 committed a
+# disabled controller between CGI initial auth and fd7 acquisition.
+# An already committed event replay must stay idempotent and distinguishable.
+. "$BP_CONTROLLER_LIB"
+bp_controller_init
+bp_member_lock
+bp_member_patch racealice @keep 1 fixture >/dev/null
+bp_member_unlock
+bp_lock
+bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_unlock
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 1 ]
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f3)" = 1 ]
+phx_controller_before="$(printf '%s' "$(bp_member_line racealice)" | cut -f8):$(printf '%s' "$(bp_member_line racebob)" | cut -f8)"
+[ "$phx_controller_before" = '590:10' ] || {
+  echo "PHX-PAY31-TWOLOCK-SETUP-INVALID unexpected positive balances $phx_controller_before" >&2
+  exit 2
+}
+phx_ctrl_nonce=10000000000000f1
+phx_ctrl_event=88888888888888888888888888888881
+phx_ctrl_hash="$(printf '%s' "$(bp_member_line racealice)" | cut -f6)"
+phx_ctrl_proof="$(proof_for "$phx_ctrl_hash" "$phx_ctrl_nonce")"
+[ "$(printf '%s' "$phx_ctrl_proof" | wc -c)" -eq 64 ] || exit 2
+[ -z "$(bp_member_event_line "$phx_ctrl_event")" ] || exit 2
+export BP_MEMBER_LIB="$T/member-race-wrapper.sh"
+rm -f "$PHX_REACHED" "$PHX_RELEASE"
+call_vendo member_transfer "$phx_ctrl_nonce" 35 \
+  "racealice>racebob:$phx_ctrl_event:$phx_ctrl_proof" >"$T/controller-handoff-response" &
+phx_ctrl_pid=$!
+n=0
+while [ ! -f "$PHX_REACHED" ] && [ "$n" -lt 100 ]; do
+  sleep 0.05
+  n=$((n+1))
+done
+if [ ! -f "$PHX_REACHED" ]; then
+  : > "$PHX_RELEASE"
+  wait "$phx_ctrl_pid" 2>/dev/null || :
+  echo 'PHX-PAY31-TWOLOCK-SETUP-INVALID CGI never reached fd7 writer lock boundary' >&2
+  exit 2
+fi
+# Use real installed controller code, serialized through its fd9 lock.
+bp_lock || exit 2
+bp_controller_set softtimer-01 0 0 1 1 -1 -1 -1 1 1 1 40 400 6 || exit 2
+bp_unlock
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" = 0 ] &&
+[ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f3)" = 0 ] || {
+  echo 'PHX-PAY31-TWOLOCK-SETUP-INVALID controller disable not committed under fd9' >&2
+  : >"$PHX_RELEASE"; wait "$phx_ctrl_pid" 2>/dev/null || :
+  exit 2
+}
+[ -z "$(bp_member_event_line "$phx_ctrl_event")" ] || exit 2
+: > "$PHX_RELEASE"
+wait "$phx_ctrl_pid" 2>/dev/null || :
+phx_ctrl_response="$(cat "$T/controller-handoff-response")"
+phx_controller_after="$(printf '%s' "$(bp_member_line racealice)" | cut -f8):$(printf '%s' "$(bp_member_line racebob)" | cut -f8)"
+phx_ctrl_receipts="$(awk -F '\t' -v e="$phx_ctrl_event" '$1==e {n++} END {print n+0}' "$BP_MEMBER_EVENTS")"
+if ! printf '%s' "$phx_ctrl_response" | grep -Fq '"ok":false' ||
+   [ "$phx_controller_after" != "$phx_controller_before" ] ||
+   [ "$phx_ctrl_receipts" -ne 0 ]; then
+  echo "PHX-PAY31-TWOLOCK-RED: fresh signed transfer admitted after real fd9 controller disable; reply=$phx_ctrl_response; balances=$phx_controller_after; receipts=$phx_ctrl_receipts" >&2
+  exit 1
+fi
+echo 'PHX-PAY31-TWOLOCK-GREEN: fresh transfer refused after real controller disable'
+# An earlier committed receipt is distinct from a NEW event: refusing new
+# money may not invalidate a valid old idempotent replay. No second credit.
+export BP_MEMBER_LIB="$PHX_REAL_MEMBER"
+phx_ctrl_replay="$(call_vendo member_transfer 10000000000000f2 10 \
+  "racealice>racebob:$phx_paid_event:replay")"
+if ! printf '%s' "$phx_ctrl_replay" | grep -Fq '"ok":true' ||
+   ! printf '%s' "$phx_ctrl_replay" | grep -Fq '"replayed":true' ||
+   [ "$(printf '%s' "$(bp_member_line racealice)" | cut -f8):$(printf '%s' "$(bp_member_line racebob)" | cut -f8)" != "$phx_controller_before" ]; then
+  echo "PHX-PAY31-TWOLOCK-REPLAY-RED: committed receipt lost on disabled controller $phx_ctrl_replay" >&2
+  exit 1
+fi
+echo 'PHX-PAY31-TWOLOCK-REPLAY-GREEN: prior committed event replay stays idempotent'
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'
