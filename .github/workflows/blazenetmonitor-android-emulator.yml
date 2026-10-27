@@ -48,5 +48,8 @@ jobs:
         if: always()
         with:
           name: BlazeNetMonitor-Android35-emulator-log
-          path: /tmp/blaze-android-logcat.txt
+          path: |
+            /tmp/blaze-android-logcat.txt
+            /tmp/blaze-android-notification-after.txt
+            /tmp/blaze-android-expanded-shade.png
           if-no-files-found: ignore

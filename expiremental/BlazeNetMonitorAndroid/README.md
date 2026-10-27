@@ -1,4 +1,4 @@
-# BlazeNetMonitor Android — v0.1.6 Preview
+# BlazeNetMonitor Android — v0.1.7 Preview
 
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
@@ -26,7 +26,7 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 
 ## Installation
 
-Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.6-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
+Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.7-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
 
 Do not install unknown third-party APKs claiming to be Blaze Systems. Source and hash are in the GitHub release.
 
@@ -91,3 +91,12 @@ More reliable interface-specific byte accounting on supported Android API levels
 - One standard Android InboxStyle notification contains download and upload speeds, clearly named Target 1 and Target 2 health states, session/day/month totals, an optional large Blaze Systems logo and Stop.
 - Android can choose whether/how to display the large logo or expanded text. Neither custom RemoteViews nor floating overlays are used.
 - Android emulator regression checks the app's active notification records: exactly ID 101 and no 102 or extra auto-group summary. Device-specific legibility and reliability still require physical-device acceptance.
+
+
+## v0.1.7 — expanded notification target logo and health-dot correction
+
+- User field report: v0.1.6 removed tiny dots from the status bar, but this also left **no visible health dots or individual website logos inside the notification shade**. The one large notification icon was the app logo, not two independent website favicons.
+- Expanded notification now uses native Android **BigPictureStyle**, containing a bounded RGB_565 image with two large, real-colored Target 1 / Target 2 health dots, two separately loaded HTTPS site-favicon bitmaps when available, human-readable connection labels/details, both speeds and session/day/month traffic totals. An explicitly drawn globe is the fallback when a real favicon is not retrievable or supported. No proprietary/web icon is fabricated.
+- Favicons are fetched asynchronously from the configured sites, rechecked periodically and when their target settings change. Fetching cannot delay initial foreground-service promotion. A failure to render the rich image falls back to the standard text InboxStyle instead of crashing the service. Website icons are shown in the rich shade card, **not** in the tiny monochrome status bar.
+- One persistent notification ID 101 remains; legacy 102 is canceled. Download-only number stays in the status bar. The Blaze app logo still uses the standard notification largeIcon field, but OEM SystemUI may omit it independently of the rich card.
+- BigPictureStyle dimensions/scaling, rounded-corner clipping, notification collapse, typography and background throttling vary across Android versions/OEMs. Android 15 CI captures a screenshot of the expanded notification shade. CI launch, compilation and image attachment evidence cannot replace owner physical-device verification.

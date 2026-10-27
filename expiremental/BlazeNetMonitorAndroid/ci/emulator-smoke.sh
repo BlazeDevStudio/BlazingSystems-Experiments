@@ -82,6 +82,13 @@ if records!=['101']:
     sys.exit(3)
 print('PASS exactly one ongoing app notification')
 PY
+# Capture expanded shade as real OEM/SystemUI visual evidence.
+# Do not treat screenshot presence as proof of its legibility.
+adb shell cmd statusbar expand-notifications || true
+sleep 2
+adb exec-out screencap -p > /tmp/blaze-android-expanded-shade.png || true
+test -s /tmp/blaze-android-expanded-shade.png || echo 'WARN expanded screenshot unavailable'
+echo 'Captured expanded Android notification shade when supported'
 if grep -E 'FATAL EXCEPTION|RemoteServiceException|Bad notification' /tmp/blaze-android-logcat.txt 2>/dev/null | grep -q "$PKG"; then
   echo 'FAIL app exception detected'
   exit 3

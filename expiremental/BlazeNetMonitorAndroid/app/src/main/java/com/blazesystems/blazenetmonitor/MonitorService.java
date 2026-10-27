@@ -24,6 +24,7 @@ public final class MonitorService extends Service {
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
+    private final TargetFavicons targetFavicons=new TargetFavicons();
     private android.graphics.Bitmap logo;
     private boolean running=false;
     private int ticks=0;
@@ -104,6 +105,7 @@ public final class MonitorService extends Service {
         running=true;
         ACTIVE=true;
         handler.post(poll);
+        refreshTargetLogos();
         publish();
     }
 
@@ -129,7 +131,14 @@ public final class MonitorService extends Service {
         }
     }
 
-    /** OS template (InboxStyle), not user-supplied RemoteViews. */
+    /** Fetch site-hosted PNG icons off the UI thread, never block foreground promotion. */
+    private void refreshTargetLogos() {
+        targetFavicons.refresh(getSharedPreferences("settings",0), () ->
+            handler.post(() -> { if(running)publish(); }));
+    }
+
+    /** OS template with a BigPicture bitmap for visible target logos/dots.
+     *   No RemoteViews are added; text InboxStyle remains as safe fallback. */
     private Notification notification(boolean dynamicIcon) {
         MonitorState.Frame f=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
@@ -155,6 +164,22 @@ public final class MonitorService extends Service {
             .addLine("Month: ↓ "+TrafficMath.data(f.monthRx)+
                 "  ↑ "+TrafficMath.data(f.monthTx));
 
+        Notification.Style style=details;
+        if(dynamicIcon) {
+            try {
+                android.graphics.Bitmap card=NotificationCardRenderer.render(
+                    this,f,bits,getSharedPreferences("settings",0),
+                    targetFavicons.icon(0),targetFavicons.icon(1));
+                Notification.BigPictureStyle rich=new Notification.BigPictureStyle();
+                rich.bigPicture(card);
+                rich.setBigContentTitle("BlazeNetMonitor · At a glance");
+                rich.setSummaryText(strip);
+                style=rich;
+            } catch(RuntimeException e) {
+                Log.e(TAG,"Rich shade rendering failed, using text",e);
+            }
+        }
+
         return new Notification.Builder(this,CHANNEL)
             .setSmallIcon(dynamicIcon?liveIcon(f,bits):
                 android.graphics.drawable.Icon.createWithResource(
@@ -162,7 +187,7 @@ public final class MonitorService extends Service {
             .setContentTitle("BlazeNetMonitor · Network speed")
             .setContentText(strip)
             .setLargeIcon(logo)
-            .setStyle(details)
+            .setStyle(style)
             .setContentIntent(open)
             .setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -187,6 +212,7 @@ public final class MonitorService extends Service {
 
     private void probeTargets() {
         if(probes==null||probes.isShutdown())return;
+        refreshTargetLogos();
         for(int i=0;i<2;i++) {
             final int index=i;
             probes.execute(()->{
@@ -203,6 +229,7 @@ public final class MonitorService extends Service {
         ACTIVE=false;
         handler.removeCallbacks(poll);
         if(probes!=null)probes.shutdownNow();
+        targetFavicons.shutdown();
         NotificationManager manager=getSystemService(NotificationManager.class);
         if(manager!=null)manager.cancel(LEGACY_DOWNLOAD_ID);
         MonitorState.INSTANCE.save(this);

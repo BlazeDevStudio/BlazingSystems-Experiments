@@ -19,7 +19,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitorAndroid
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-android-v0.1.6-preview.1
+      RELEASE_TAG: blazenetmonitor-android-v0.1.7-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -84,6 +84,16 @@ jobs:
           assert 'manager.notify(NOTIFICATION_ID,notification(true));' in src
           assert 'manager.cancel(LEGACY_DOWNLOAD_ID)' in src
           assert '.setLargeIcon(logo)' in src
+          assert 'Notification.BigPictureStyle' in src
+          assert 'NotificationCardRenderer.render(' in src
+          assert 'targetFavicons.refresh(' in src
+          assert 'targetFavicons.icon(0),targetFavicons.icon(1)' in src
+          canvas=Path('app/src/main/java/com/blazesystems/blazenetmonitor/NotificationCardRenderer.java').read_text()
+          assert 'c.drawCircle(42,top+54,12,p)' in canvas
+          assert 'c.drawBitmap(icon' in canvas
+          assert 'healthColor(health)' in canvas
+          assert 'Bitmap.Config.RGB_565' in canvas
+          print('PASS visible two-dot, two-logo notification picture wiring')
           assert 'downloadNotification(' not in src
           dynamic=Path('app/src/main/java/com/blazesystems/blazenetmonitor/StatusSpeedIcon.java').read_text()
           assert 'Icon.createWithBitmap(' in dynamic
@@ -102,11 +112,11 @@ jobs:
             echo 'Unexpected broad installed-app inventory permission'; exit 1
           fi
           mkdir -p artifacts
-          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.6-preview.1.apk
+          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.7-preview.1.apk
           sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazeNetMonitor-Android-v0.1.6-preview.1-APK
+          name: BlazeNetMonitor-Android-v0.1.7-preview.1-APK
           path: expiremental/BlazeNetMonitorAndroid/artifacts/
           retention-days: 60
       - name: Publish signed-debug APK preview release
@@ -118,10 +128,10 @@ jobs:
             echo 'This commit APK is available as this workflow run artifact, not as the older tagged release.'
             exit 0
           fi
-          notes='BlazeNetMonitor Android v0.1.6 Preview: ONE ongoing BlazeNetMonitor notification only. In the status bar, a dynamically drawn DOWNLOAD speed number is displayed without tiny health dots or arrows. The notification shade includes labelled download/upload speeds, Target 1 and Target 2 named health states, session/day/month totals, a Stop action and a standard large Blaze Systems app icon where supported by the OEM. No custom RemoteViews, overlays, or redundant Download card. This is a debug-signed testing preview; emulator smoke and physical-device acceptance are separate gates.'
+          notes='BlazeNetMonitor Android v0.1.7 preview: one foreground notification, numeric DOWNLOAD-only small status icon. Expanded shade now uses Android standard BigPictureStyle with a rendered legible card: two large color-coded health dots and two independent website favicons fetched from each configured site via HTTPS, each with a drawn globe fallback if unavailable, plus speeds, target states and session/day/month totals. Standard inbox fallback for render failures, Blaze logo, and Stop action. No overlay, duplicate notification or custom RemoteViews. Debug-signed testing build; physical OEM appearance unverified.'
           for attempt in 1 2 3 4; do
             if gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.6 Preview APK' \
+              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.7 Preview APK' \
               --prerelease --notes "$notes"; then break; fi
             if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               sleep $((attempt*5))
@@ -138,6 +148,6 @@ jobs:
           done
           assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
           echo "$assets" | jq -e '.assets | map(.name) |
-            index("BlazeNetMonitor-Android-v0.1.6-preview.1.apk") != null' >/dev/null
+            index("BlazeNetMonitor-Android-v0.1.7-preview.1.apk") != null' >/dev/null
           echo "$assets" | jq -e '.assets | map(.name) | index("SHA256SUMS.txt") != null' >/dev/null
           echo 'PASS GitHub release and downloadable APK/sha256 assets verified'
