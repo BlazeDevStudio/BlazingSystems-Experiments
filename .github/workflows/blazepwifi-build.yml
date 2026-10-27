@@ -87,6 +87,10 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_pending_sequence.sh
       - name: PHX-VERIFY P0 refuse energized coin intake during ESP blocking HTTP poll (host lab)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_esp_poll_intake_guard.py
+      - name: PHX-VERIFY P0 refuse non-journalable coin target relay intake (source C++ lab)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_esp_target_intake_contract.py
+      - name: PHX-VERIFY P0 source-linked GPIO relay old-polarity-first reconfiguration (host lab)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_esp_relay_reconfig_contract.py
       - name: BlazePwifi v0.4 controller compatibility
         run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
       - name: Linux GPIO agent validation

@@ -1,0 +1,12 @@
+# PHX-L-VERIFY UTC12 — exact-source ESP artifact provenance (read-only, NO CODEX)
+**Date:** 2026-10-25T12Z. **PR:** draft #193 stacked on unmerged #179. **Literal source/docs HEAD:** `488c99ecb1181d308bad9ce40ebd0bbbbec33744`. **Full:** [#40191100778](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40191100778) **COMPLETED FAILURE** (15 success, validate failure, 13 skipped); **Native:** [#40191100773](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40191100773) SUCCESS. ESP8266 and ESP32 Arduino compile jobs SUCCESS; validate job `121162412176` **RED** on untrusted positive revision and cold-reboot older revision (2 RED per board).
+
+## Actual downloaded artifact ZIP bytes
+- ESP8266 ID `12598431279`, 2,194,583 bytes, independent ZIP SHA256 `00465154852f67feea973117cf210b2125e5e03e0f64dabbfb2bd9a0a765fa47` **matches GitHub metadata**.
+- ESP32 ID `12598365844`, 14,839,774 bytes, independent ZIP SHA256 `4473483932c4179f48234c8ca63c479a6eddff479c073b5625da9e89c52bd819` **matches GitHub metadata**.
+
+Executed offline read-only Python `zipfile`+hashlib verifier: **62/62 checks PASS** across two archives. ZIP CRC, unique/safe names, no symlinks, exact SHA256SUMS membership and hashes (**9/9 ESP8266, 23/23 ESP32**), source sketch and shared pending-header Git blob identities, root/source and ESP32 binary mirrors, and three integrity-negative assertions per board. Original source Git blob identities: ESP8266 `a64dd08ecb4eaa71da3b29b43d86ffa8a58df5b5`, ESP32 `7b2d3a9c9c0ea076992265bdf1113a6db75a350f`, shared header `aad7c52e9376e4ca2995e9d9b9cc8d5ed71c76d4`.
+
+Reproducible offline evidence package in PHX-L-VERIFY conversation: `phx_verify_utc12_provenance_evidence.zip` with `audit.py`, `results.json`, README. Script SHA256 `b155df4653e42acfce9d9bf761b34791442c496c6ff6329f77ce2257088c1e1c`; results SHA256 `495b885731eae9d47b38f2b8e7cebecd06a18073bca165c14d790bfcdd6ff316`.
+
+**Scope boundary:** This is independently rehashed GitHub artifact bytes, not a reproducible build, signer/trust proof, firmware runtime security GREEN, physical relay acceptance or paid finance verification. Packaged SHA256SUMS is self-generated and unauthenticated. Full CI remains **FAILED**. #31/#32/#34/#43, 150 power cuts, 30-device soak, external monotonic witness, migration, signer and commercial v0.6.0 remain **PRODUCTION NO-GO**. No code change, merge, firmware flash, secrets, customer funds or release.

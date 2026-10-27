@@ -227,8 +227,9 @@ int jsonInt(const String&r,const String&k,int def){
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
-  if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
-  if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+  // Drive OLD outputs OFF with OLD polarity before any pinMode or rebind.
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
@@ -236,13 +237,28 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 
 void applyRemoteConfig(const String&r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0)return;
+  // Reject absent/nonpositive, stale, and equal revisions before touching GPIO.
+  // This RAM-only comparison is NOT authenticated or reboot rollback protection.
+  if(rev<=0 || rev<=remoteRevision) return;
   controllerEnabled=jsonInt(r,"enabled",1)!=0; coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
   int nextCoin=(cp>=0&&cp<=16)?cp:cfg.coinPin, nextRelay=(rp>=0&&rp<=16)?rp:cfg.relayPin, nextLed=(lp>=0&&lp<=16)?lp:cfg.insertLedPin;
+  // Live polarity flips and pin aliases are unsafe without electrical reprovision.
+  // Keep the existing GPIO mapping and journal intact, inhibit all coin intake.
+  const bool proposedRelayHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
+  const bool proposedLedHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
+  if(proposedRelayHigh!=runRelayActiveHigh || proposedLedHigh!=runLedActiveHigh ||
+     nextCoin==nextRelay || nextCoin==nextLed || nextRelay==nextLed ||
+     nextCoin!=runCoinPin || nextRelay!=runRelayPin || nextLed!=runLedPin){
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+    insertMode=false;
+    return;
+  }
   runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=jsonInt(r,"relay_active_high",1)!=0; runLedActiveHigh=jsonInt(r,"led_active_high",1)!=0;
+  runRelayActiveHigh=proposedRelayHigh; runLedActiveHigh=proposedLedHigh;
   runDebounceMs=(uint16_t)constrain(jsonInt(r,"coin_debounce_ms",40),1,2000);
   runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
@@ -267,7 +283,11 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady && !pollIntakeSuspended;
+  // Do not energize the coin acceptor if the next physical pulse cannot
+  // be associated with the selected target and durably journaled.
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+    !pendingReady && !pollIntakeSuspended && activeTarget.length()!=0 &&
+    pendingPulses<20 && (pendingPulses==0 || pendingTarget==activeTarget);
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -372,6 +392,9 @@ void loop(){
         pendingReady=true;
         Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
       }
+      // A full journal or failed flash reservation must inhibit intake now,
+      // not after the next poll or pulse group timeout.
+      if(pendingPulses>=20 || !fsReady || pendingReady) applyOutputs();
     }
   }
   lastCoin=active;
