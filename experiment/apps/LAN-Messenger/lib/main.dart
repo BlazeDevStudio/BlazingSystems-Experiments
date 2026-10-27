@@ -500,6 +500,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   /// Dismissing a PiP Activity while its camera is still disposing can tear
   /// down the Flutter engine mid-cleanup and leave a frozen last frame.
   Future<void> _finalizeEndedCallPresentation(Intercom call) async {
+    // Closing media tracks may take several seconds on desktop. Once the
+    // session is invalidated, release Windows compact-window UI immediately;
+    // leaving the tiny last-frame window onscreen during native disposal looks
+    // like a frozen app and prevents normal window navigation. Unlike Android,
+    // no PiP Activity/Flutter-engine termination is involved in this restore.
+    if (Platform.isWindows) {
+      if (call.callId == null && mounted) await _endCallPresentation();
+      return;
+    }
+    // Android PiP can finish the Activity and tear down the Flutter engine:
+    // preserve its bounded native cleanup wait before dismissing it.
     for (var i = 0; i < 80 && call.closing; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 150));
     }
