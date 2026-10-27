@@ -1,4 +1,4 @@
-# BlazeNetMonitor Android — v0.1.7 Preview
+# BlazeNetMonitor Android — v0.1.8 Preview
 
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
@@ -26,7 +26,7 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 
 ## Installation
 
-Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.7-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
+Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.8-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
 
 Do not install unknown third-party APKs claiming to be Blaze Systems. Source and hash are in the GitHub release.
 
@@ -100,3 +100,10 @@ More reliable interface-specific byte accounting on supported Android API levels
 - Favicons are fetched asynchronously from the configured sites, rechecked periodically and when their target settings change. Fetching cannot delay initial foreground-service promotion. A failure to render the rich image falls back to the standard text InboxStyle instead of crashing the service. Website icons are shown in the rich shade card, **not** in the tiny monochrome status bar.
 - One persistent notification ID 101 remains; legacy 102 is canceled. Download-only number stays in the status bar. The Blaze app logo still uses the standard notification largeIcon field, but OEM SystemUI may omit it independently of the rich card.
 - BigPictureStyle dimensions/scaling, rounded-corner clipping, notification collapse, typography and background throttling vary across Android versions/OEMs. Android 15 CI captures a screenshot of the expanded notification shade. CI launch, compilation and image attachment evidence cannot replace owner physical-device verification.
+
+
+## v0.1.8 — compact rich shade and broader favicon support
+
+- An actual Android 15 emulator screenshot of v0.1.7 proved visible large health dots but showed the MONTH total cropped by SystemUI. The rich notification bitmap is now only 426px high and includes all three traffic totals.
+- Google and Cloudflare favicon requests failed with `UnknownHostException` in that emulator, so it showed honest globe fallbacks. Real logo retrieval still needs working HTTPS/DNS. The favicon loader now supports embedded PNG frames in .ico containers, with bounded-header validation and JVM tests.
+- One ID 101 foreground notification and download-only small status icon remain. OEM physical appearance is not yet accepted.

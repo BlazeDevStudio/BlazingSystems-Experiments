@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
  * Small cached HTTPS favicon reader, deliberately separate from live network probes.
  * Fetches the configured site's own publicly linked logo; never queries Google
  * favicon proxies or sends the selected host to a third-party icon API.
- * ICO-only/SVG-only websites fall back to a generic globe icon.
+ * PNG-in-ICO files are supported; unsupported site logos fall back to a globe.
  */
 final class TargetFavicons {
     private static final String TAG="BlazeNetMonitor.TargetIcon";
@@ -88,7 +88,7 @@ final class TargetFavicons {
 
     private static Bitmap findLogo(String host) throws Exception {
         URL root=new URL("https://"+host+"/");
-        for(String name:new String[]{"apple-touch-icon.png","favicon.png","favicon-32x32.png"}) {
+        for(String name:new String[]{"apple-touch-icon.png","favicon.png","favicon-32x32.png","favicon-96x96.png","favicon.ico"}) {
             Bitmap b=downloadBitmap(new URL(root,name));if(b!=null)return b;
         }
         byte[] html=download(root,98304);
@@ -124,11 +124,41 @@ final class TargetFavicons {
             byte[] data=download(url,131072);
             if(data==null)return null;
             Bitmap source=BitmapFactory.decodeByteArray(data,0,data.length);
+            if(source==null){
+                byte[] png=icoPngFrame(data);
+                if(png!=null)source=BitmapFactory.decodeByteArray(png,0,png.length);
+            }
             if(source==null)return null;
             Bitmap b=Bitmap.createScaledBitmap(source,64,64,true);
             if(source!=b)source.recycle();
             return b;
         }catch(Exception ignored){return null;}
+    }
+
+    /** Safely extract an embedded PNG frame from an ICO favicon. */
+    static byte[] icoPngFrame(byte[] ico){
+        if(ico==null||ico.length<22||ico[0]!=0||ico[1]!=0||
+           ico[2]!=1||ico[3]!=0)return null;
+        int count=(ico[4]&255)|((ico[5]&255)<<8);
+        if(count<1||count>64||6L+count*16L>ico.length)return null;
+        byte[] sig={(byte)137,80,78,71,13,10,26,10};
+        for(int i=0;i<count;i++){
+            int pos=6+16*i;
+            long length=readUint32(ico,pos+8),off=readUint32(ico,pos+12);
+            if(length<sig.length||off<6+16L*count||off>ico.length||
+               length>ico.length-off)continue;
+            int start=(int)off;
+            boolean valid=true;
+            for(int j=0;j<sig.length;j++)
+                if(ico[start+j]!=sig[j]){valid=false;break;}
+            if(valid)return java.util.Arrays.copyOfRange(ico,start,start+(int)length);
+        }
+        return null;
+    }
+
+    private static long readUint32(byte[] data,int i){
+        return (data[i]&255L)|((data[i+1]&255L)<<8)|
+               ((data[i+2]&255L)<<16)|((data[i+3]&255L)<<24);
     }
 
     private static byte[] download(URL url,int limit) throws Exception {

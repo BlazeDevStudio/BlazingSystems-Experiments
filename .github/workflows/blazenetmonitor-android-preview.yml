@@ -19,7 +19,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitorAndroid
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-android-v0.1.7-preview.1
+      RELEASE_TAG: blazenetmonitor-android-v0.1.8-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -59,7 +59,7 @@ jobs:
           grep -q "sdkVersion:'26'" /tmp/blazenetmonitor-package.txt
           grep -q "targetSdkVersion:'35'" /tmp/blazenetmonitor-package.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/blazenetmonitor-permissions.txt
-          grep -q "versionName='0.1.7-preview.1'" /tmp/blazenetmonitor-package.txt
+          grep -q "versionName='0.1.8-preview.1'" /tmp/blazenetmonitor-package.txt
           grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' /tmp/blazenetmonitor-permissions.txt
           if grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/blazenetmonitor-permissions.txt; then
             echo 'Floating overlay permission must not be present'; exit 1
@@ -93,6 +93,11 @@ jobs:
           assert 'c.drawBitmap(icon' in canvas
           assert 'healthColor(health)' in canvas
           assert 'Bitmap.Config.RGB_565' in canvas
+          assert 'WIDTH=720, HEIGHT=426' in canvas
+          assert '"MONTH     ↓ "' in canvas
+          fav=Path('app/src/main/java/com/blazesystems/blazenetmonitor/TargetFavicons.java').read_text()
+          assert 'icoPngFrame(data)' in fav
+          assert '"favicon.ico"' in fav
           print('PASS visible two-dot, two-logo notification picture wiring')
           assert 'downloadNotification(' not in src
           dynamic=Path('app/src/main/java/com/blazesystems/blazenetmonitor/StatusSpeedIcon.java').read_text()
@@ -112,11 +117,11 @@ jobs:
             echo 'Unexpected broad installed-app inventory permission'; exit 1
           fi
           mkdir -p artifacts
-          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.7-preview.1.apk
+          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.8-preview.1.apk
           sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazeNetMonitor-Android-v0.1.7-preview.1-APK
+          name: BlazeNetMonitor-Android-v0.1.8-preview.1-APK
           path: expiremental/BlazeNetMonitorAndroid/artifacts/
           retention-days: 60
       - name: Publish signed-debug APK preview release
@@ -128,10 +133,10 @@ jobs:
             echo 'This commit APK is available as this workflow run artifact, not as the older tagged release.'
             exit 0
           fi
-          notes='BlazeNetMonitor Android v0.1.7 preview: one foreground notification, numeric DOWNLOAD-only small status icon. Expanded shade now uses Android standard BigPictureStyle with a rendered legible card: two large color-coded health dots and two independent website favicons fetched from each configured site via HTTPS, each with a drawn globe fallback if unavailable, plus speeds, target states and session/day/month totals. Standard inbox fallback for render failures, Blaze logo, and Stop action. No overlay, duplicate notification or custom RemoteViews. Debug-signed testing build; physical OEM appearance unverified.'
+          notes='BlazeNetMonitor Android v0.1.8: one ongoing notification with download-only status-bar speed. In expanded BigPictureStyle, two large health dots, two independently fetched favicon images (including supported PNG-in-ICO), readable targets, both speeds and session/day/month totals. Height compacted after observing Android 15 clipping. Real favicon loading requires site DNS/HTTPS; drawn globe fallback shown if unavailable. No overlays, custom RemoteViews or duplicated cards. Debug preview; physical-device acceptance remains pending.'
           for attempt in 1 2 3 4; do
             if gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.7 Preview APK' \
+              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.8 Preview APK' \
               --prerelease --notes "$notes"; then break; fi
             if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               sleep $((attempt*5))
@@ -148,6 +153,6 @@ jobs:
           done
           assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
           echo "$assets" | jq -e '.assets | map(.name) |
-            index("BlazeNetMonitor-Android-v0.1.7-preview.1.apk") != null' >/dev/null
+            index("BlazeNetMonitor-Android-v0.1.8-preview.1.apk") != null' >/dev/null
           echo "$assets" | jq -e '.assets | map(.name) | index("SHA256SUMS.txt") != null' >/dev/null
           echo 'PASS GitHub release and downloadable APK/sha256 assets verified'
