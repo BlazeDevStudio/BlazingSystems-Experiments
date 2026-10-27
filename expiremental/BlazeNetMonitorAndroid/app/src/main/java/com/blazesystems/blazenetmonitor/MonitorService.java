@@ -97,14 +97,6 @@ public final class MonitorService extends Service {
         getSharedPreferences("settings",0).edit().putString(ERROR_KEY,message).apply();
     }
 
-    private static String dot(String health) {
-        if("Green".equals(health))return "🟢";
-        if("Yellow".equals(health))return "🟡";
-        if("Orange".equals(health))return "🟠";
-        if("Red".equals(health))return "🔴";
-        if("Blue".equals(health))return "🔵";
-        return "⚪";
-    }
 
     private String speed(MonitorState.Frame f,boolean bits) {
         return "↑ "+TrafficMath.speed(f.tx,bits)+
@@ -115,7 +107,8 @@ public final class MonitorService extends Service {
     private Notification notification() {
         MonitorState.Frame f=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-        String strip=dot(f.status[0])+"  "+speed(f,bits)+"  "+dot(f.status[1]);
+        String strip=StatusLabel.strip(f.status[0],
+            TrafficMath.speed(f.tx,bits),TrafficMath.speed(f.rx,bits),f.status[1]);
         PendingIntent open=PendingIntent.getActivity(this,12,
             new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
@@ -125,8 +118,8 @@ public final class MonitorService extends Service {
 
         Notification.InboxStyle details=new Notification.InboxStyle()
             .setBigContentTitle("At a glance · "+speed(f,bits))
-            .addLine(dot(f.status[0])+" Target 1  "+f.detail[0])
-            .addLine(dot(f.status[1])+" Target 2  "+f.detail[1])
+            .addLine(StatusLabel.dot(f.status[0])+" Target 1  "+f.detail[0])
+            .addLine(StatusLabel.dot(f.status[1])+" Target 2  "+f.detail[1])
             .addLine("Session  ↓ "+TrafficMath.data(f.sessionRx)+
                 "  ↑ "+TrafficMath.data(f.sessionTx))
             .addLine("Today     ↓ "+TrafficMath.data(f.dayRx)+
