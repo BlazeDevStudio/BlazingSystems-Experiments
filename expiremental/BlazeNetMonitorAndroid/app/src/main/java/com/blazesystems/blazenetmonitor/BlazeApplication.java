@@ -18,7 +18,7 @@ public final class BlazeApplication extends Application {
         Thread.setDefaultUncaughtExceptionHandler((thread,error)->{
             try {
                 String text=String.format(Locale.US,"BlazeNetMonitor Android %s | %s | %s\n",
-                    "0.1.3-preview.1",new Date(),thread.getName())+
+                    "0.1.4-preview.1",new Date(),thread.getName())+
                     Log.getStackTraceString(error);
                 if(text.length()>10000)text=text.substring(0,10000);
                 getSharedPreferences(PREFS,MODE_PRIVATE).edit()

@@ -1,4 +1,4 @@
-# BlazeNetMonitor Android — v0.1.3 Preview
+# BlazeNetMonitor Android — v0.1.4 Preview
 
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
@@ -11,7 +11,7 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 - Seven compact live graph styles: Smooth, Line, Filled, Bars, Steps, Dots, Impulse; blue download and orange upload.
 - Session counters (this monitoring process), daily and monthly counters for **monitored activity only** (persisted across app restarts), and Speed units Bits / Bytes.
 - Two independently configured health targets: HTTPS HEAD, TCP connect, DNS resolve, and **Reachability** (Android `InetAddress.isReachable` may not use raw ICMP).
-- Notification-backed foreground monitoring. The OS-managed **status bar** shows the monitoring notification icon. Pull down to see the compact live speed strip in this order: **Target 1 dot · upload speed · download speed · Target 2 dot**. Expand the notification for At a Glance health, session/day/month data totals, and a Stop action.
+- Notification-backed foreground monitoring with **two changing numerical status-bar icons**, using Android's supported `Icon.createWithBitmap` API. Left icon represents **Target 1 health + upload speed**; right icon represents **download speed + Target 2 health**. Pull down to see the combined live speed strip with two colored dots, and expand At a Glance for targets, session/day/month totals and Stop.
 - Both speeds and the two target-health colors update as new samples arrive (nominally every two seconds; Android System UI may throttle presentation). No floating widget, display-over-other-apps permission, or auto-start-at-boot.
 - Original fixed owner PayPal QR and developer Facebook profile. No donation recipient changes.
 
@@ -20,13 +20,13 @@ Original completed Windows source: https://github.com/BlazingSystems/BlazingSyst
 1. **Device-wide counters**: Android `TrafficStats.getTotalRxBytes/TxBytes` sum network-layer traffic over all device interfaces since boot. Speed is calculated from monotonic counter deltas each second. Traffic traversing VPNs or tethering might be counted differently from carrier billing. The interface deliberately does not claim per-adapter or per-application accuracy.
 2. **Top 5 apps since restart** is **not in this preview**. Android does not provide an ordinary third-party app unfettered historical per-application traffic; `TrafficStats` for other UIDs returns UNSUPPORTED on Android 7+. A later implementation would need the user to grant Usage Access for `NetworkStatsManager`, with OS and OEM-specific limits and no fabricated data.
 3. **Background policy**: Continuous monitoring is started by the user with a foreground notification, declared as `specialUse` with its explicit subtype for review. Android may stop background processing in battery-saving modes. There is no BOOT_COMPLETED receiver or background-start workaround. Distribution through Google Play may require an additional foreground-service eligibility review; this preview is for local sideloading/testing.
-4. **Status bar limitation:** Standard Android apps cannot place a four-part text-and-dot strip **inside the top status bar beside Wi-Fi/battery**. Android reserves that area for system-controlled indicators and small notification icons. This app provides your exact order and changing numbers in the compact **notification shade**, and the expanded shade is At a Glance. The small top-bar icon itself is monochrome and not a speed strip. No overlay or invasive accessibility-service workaround is used.
+4. **Status-bar speed icons:** Like other Android speed meter apps, BlazeNetMonitor renders each current speed as a monochrome bitmap used as a notification's `smallIcon`. Two notifications aim to show **[health-dot/upload] [download/health-dot]** as adjacent numeric icons. They update every two seconds, although Android/SystemUI may reorder, compress, tint or hide one/both icons when the status bar is crowded. This does not grant fixed placement beside the Wi-Fi/battery system indicators or change their layout. No floating overlays or accessibility shortcuts are used.
 5. **Internet probes** contact only the endpoints the user configured. HTTPS has a 2.5-second timeout and rejects cleartext; DNS is subject to the OS resolver and may block longer on some devices. This preview is not a network security auditor.
 6. Debug-signed APK, **not a Play Store signed production release**. Verify permission prompts and battery settings on your physical phone.
 
 ## Installation
 
-Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.3-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
+Use the APK from [BlazeNetMonitor Android Preview Releases](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.4-preview.1). Android must be allowed to install the downloaded APK. Open the app, tap **Start monitoring**, allow Notifications if requested, then swipe down on the notification shade to view live upload/download speeds and expand the card for At a Glance. The first time the donation card appears, it is optional; it can be reopened from Support.
 
 Do not install unknown third-party APKs claiming to be Blaze Systems. Source and hash are in the GitHub release.
 
@@ -45,25 +45,33 @@ The first CI verifies JVM traffic arithmetic tests, compiles the APK, checks SDK
 
 More reliable interface-specific byte accounting on supported Android API levels, optional per-app historical usage with explicit Usage Access, a stronger probe history tracker, user-selectable graph colors/period, and device/battery acceptance tests. These require Android-specific implementation and must not be claimed as shipping features of preview 0.1.0.
 
-## v0.1.3 notification layout acceptance
+## v0.1.4 notification layout acceptance
 
-- Standard Android **status bar remains OS-controlled**; no claim that an app may render arbitrary full-speed text next to the battery/Wi-Fi icons.
-- In the collapsed notification shade, left and right dots indicate Target 1 and Target 2 quality, with **upload then download**, both continuously refreshed.
+- The **status bar shows changing numeric speeds** via two dynamic bitmap notification small icons, following the documented approach of Internet Speed Meter-like utilities; OS controls whether both fit and in what order.
+- In the notification shade, left and right health symbols indicate Target 1 and Target 2 quality, with **upload then download**, both refreshed regularly. The main At a Glance uses the standard Android template for stability.
 - The expanded standard notification displays target states and totals. Target website favicons are in the main app's Connection Health section; the notification has status dots instead of website images. Logos are fetched from the configured website's public icon links, without using a third-party favicon proxy. Notification shades vary by device manufacturer, and some may truncate custom collapsed content.
 - Android manifest no longer requests `SYSTEM_ALERT_WINDOW`. The obsolete floating overlay source is removed.
 - CI validates that the compiled package has no overlay permission and that all four compact notification fields exist in the correct order. Emulator launch and physical-device status bar behavior remain separate checks.
 
-## v0.1.3 monitoring startup and target logos
+## v0.1.4 monitoring startup and target logos
 
 - Initial service promotion uses a standard Android notification. Rich custom content is posted afterward to avoid delaying foreground-service startup. If a notification update fails synchronously, the OS notification replaces it and the error is logged.
 - Start failures are recorded and displayed in the Android activity rather than disappearing without feedback.
 - Expanded At a Glance includes the configured websites' official logos when compatible image data can be retrieved. ICO-only, SVG-only or blocking sites fall back to the globe. Target-colored dots remain in the compact strip.
 - Actual reproduction of the crash on the user's own Android device remains unverified until new APK field testing. Android emulator testing is an independent acceptance gate.
 
-## v0.1.3 — native notification crash correction (October 27, 2026)
+## v0.1.4 — native notification crash correction (October 27, 2026)
 
 - Removed all RemoteViews/custom notification inflation from the running service. The old custom notification contained a generic View divider, which can cause Android to kill the app asynchronously after posting the notification.
-- Each notification now uses OS-owned InboxStyle with left health emoji, upload speed, download speed and right health emoji. Expanding shows both targets and session/day/month totals. The top status bar can only contain the system-managed small icon, not arbitrary live text beside Wi-Fi and battery.
+- Notifications continue using OS-owned InboxStyle, not custom RemoteViews, to reduce Android SystemUI rejection. Two changing bitmap small icons render each numeric speed plus a tiny health mark in the status bar. Expanding the main notification shows both targets and session/day/month totals.
 - Target website favicons are shown beside the two targets inside Connection Health, without sending images to SystemUI. A generic globe is used when no compatible icon is available.
 - Local uncaught-Java-exception recorder and About -> Crash diagnostics -> Copy diagnostics, private storage, manual copy only, max 10 KB; OS kills without Java errors may leave nothing.
 - Build/test acceptance does not establish stability on the user's specific phone. Please confirm real-world foreground monitoring after installing the new preview.
+
+## v0.1.4 — Live status-bar speed numbers
+
+- **Corrected prior limitation:** Android can show changing speed digits inside small notification icons. Internet speed meters achieve this by rasterizing text and updating `Notification.setSmallIcon(Icon.createWithBitmap(bitmap))`. BlazeNetMonitor now does that independently in native Java.
+- Two notifications supply the two icon slots: left is **health dot + upload**; right is **download + health dot**. The status-bar glyphs are *monochrome* and each icon is limited to a small 24dp logical slot; to fit, numbers are abbreviated (e.g., `1.2M`). The exact order and spacing are subject to SystemUI/OEM and the user's other notifications.
+- The main notification shade uses the full upload/download labels, health indicators and At a Glance summary. An extra low-importance download notification exists so the operating system has two changing small icons. Both are removed when monitoring stops.
+- Start Monitoring crash is still under investigation on the owner's device. The Java exception recorder in About → Crash diagnostics is available; compilation and unit tests are not evidence that the real-device crash is fixed.
+- Builds remain **debug-signed previews** and retain the completed Windows v1.0.0 untouched.
