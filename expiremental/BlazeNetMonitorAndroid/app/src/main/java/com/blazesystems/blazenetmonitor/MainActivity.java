@@ -184,7 +184,17 @@ public final class MainActivity extends Activity {
             Toast.makeText(this,"Could not start monitoring: "+e.getMessage(),
                 Toast.LENGTH_LONG).show();
         }
-        ui.postDelayed(this::update,350);
+        ui.postDelayed(()->{
+            update();
+            if(!MonitorService.ACTIVE){
+                String problem=pref.getString("service_start_error","");
+                if(!problem.isEmpty()){
+                    networkState.setText("Monitoring unavailable: "+problem);
+                    Toast.makeText(this,"Could not start monitoring. "+problem,
+                        Toast.LENGTH_LONG).show();
+                }
+            }
+        },1700);
     }
     private void stopMonitor(){
         stopService(new Intent(this,MonitorService.class));update();
@@ -207,8 +217,11 @@ public final class MainActivity extends Activity {
             status[i].setText("● Target "+(i+1)+"   "+q);
             status[i].setTextColor(color);targetInfo[i].setText(frame.detail[i]);
         }
+        String serviceError=pref.getString("service_start_error","");
         networkState.setText(MonitorService.ACTIVE?
-            "● Monitoring · Swipe down for At a glance":"Paused · Tap Start monitoring");
+            "● Monitoring · Swipe down for At a glance":
+            serviceError.isEmpty()?"Paused · Tap Start monitoring":
+                "Monitoring unavailable · "+serviceError);
     }
     private void editTarget(int index){
         LinearLayout box=column();box.setPadding(dp(20),dp(4),dp(20),0);
