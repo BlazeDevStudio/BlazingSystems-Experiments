@@ -1071,15 +1071,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Routed LAN device IP'),
-          content: const Text('Enter the private IPv4 address of a device '
-              'on another reachable LAN/subnet. Both router firewalls and '
-              'the return route must allow traffic. NAT or client isolation '
-              'may block incoming connections; this is NOT a relay.'),
-          actions: [
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Enter the private IPv4 address of a device '
+                'on another reachable LAN/subnet. Both router firewalls and '
+                'the return route must allow traffic. NAT or client isolation '
+                'may block incoming connections; this is NOT a relay.'),
+            const SizedBox(height: 12),
             TextField(controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                     hintText: '192.168.1.100')),
+          ]),
+          actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Cancel')),
             FilledButton(onPressed: () => Navigator.pop(
@@ -1886,15 +1889,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               Expanded(child: Text(call?.talkingTo?.name ?? 'Video call',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-              IconButton(tooltip: 'Open full conversation',
+              IconButton(tooltip: 'Expand full video call',
                 icon: const Icon(Icons.open_in_full, color: Colors.white, size: 18),
                 onPressed: () => unawaited(_expandActiveCall())),
             ])),
         ),
-        Expanded(child: call?.remoteRenderer == null
-          ? const Center(child: Icon(Icons.videocam, size: 48, color: Colors.white54))
-          : RTCVideoView(call!.remoteRenderer!,
-              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)),
+        Expanded(child: Stack(fit: StackFit.expand, children: [
+          if (call?.video == true && call?.remoteRenderer != null)
+            RTCVideoView(call!.remoteRenderer!,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+          if (call?.video != true ||
+              (call?.remoteRenderer?.videoWidth ?? 0) <= 0 ||
+              (call?.remoteRenderer?.videoHeight ?? 0) <= 0)
+            const Center(child: Text('Waiting for remote video frames…',
+                style: TextStyle(color: Colors.white70))),
+        ])),
         Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           IconButton.filledTonal(tooltip: call?.muted == true ? 'Unmute microphone' : 'Mute microphone',
             onPressed: call == null ? null : () => unawaited(call.setMuted(!call.muted)),
