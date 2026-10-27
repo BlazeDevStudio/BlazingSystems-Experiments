@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart' as wm;
 import 'package:tray_manager/tray_manager.dart' as tray;
 import 'package:flutter_background/flutter_background.dart';
 import 'src/settings.dart';
+import 'src/lan_reconnect_policy.dart';
 import 'src/alerts.dart';
 import 'src/identity.dart';
 import 'src/intercom.dart';
@@ -537,6 +538,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       final n = LanNode(identity);
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
+      n.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+      n.setRoutedPeerSeeds(settings.routedPeerAddresses);
       await _restoreChats();
       final inter = Intercom(n)
         ..reconnectGraceSeconds = settings.reconnectGraceSeconds;
@@ -1061,6 +1064,47 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (mounted) setState(() {});
   }
 
+  Future<void> _addRoutedPeerSeed() async {
+    final controller = TextEditingController();
+    try {
+      final inputIp = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Routed LAN device IP'),
+          content: const Text('Enter the private IPv4 address of a device '
+              'on another reachable LAN/subnet. Both router firewalls and '
+              'the return route must allow traffic. NAT or client isolation '
+              'may block incoming connections; this is NOT a relay.'),
+          actions: [
+            TextField(controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    hintText: '192.168.1.100')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(
+                dialogContext, controller.text), child: const Text('Add')),
+          ],
+        ),
+      );
+      if (inputIp == null || !mounted) return;
+      final seed = LanReconnectPolicy.privateIpv4Seed(inputIp);
+      if (seed == null) {
+        _toast('Enter a valid private IPv4 device address.');
+        return;
+      }
+      if (settings.routedPeerAddresses.contains(seed)) return;
+      if (settings.routedPeerAddresses.length >= 8) {
+        _toast('Maximum eight routed LAN seed addresses.');
+        return;
+      }
+      settings.routedPeerAddresses.add(seed);
+      await _saveSettings();
+    } finally {
+      controller.dispose();
+    }
+  }
+
   Widget _settingsPanel() => ListView(children: [
     ListTile(leading: IconButton(onPressed: () => setState(() => showSettings = false),
       icon: const Icon(Icons.arrow_back)),
@@ -1092,6 +1136,45 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         ListTile(title: const Text('This device name'),
       subtitle: Text(node?.identity.displayName ?? 'Starting'),
       trailing: const Icon(Icons.edit), onTap: _renameDevice),
+    ListTile(
+      leading: const Icon(Icons.timer_outlined),
+      title: const Text('Disconnected: wait before ending call or file transfer'),
+      subtitle: Text('Keep the session available for up to '
+          '${settings.reconnectGraceSeconds} seconds after temporary LAN loss. '
+          'Terminal WebRTC failure may still require a new call.'),
+      trailing: DropdownButton<int>(
+        value: settings.reconnectGraceSeconds,
+        items: LanReconnectPolicy.choicesSeconds.map((v) =>
+          DropdownMenuItem<int>(value: v, child: Text('${v}s'))).toList(),
+        onChanged: (v) {
+          if (v != null) {
+            settings.reconnectGraceSeconds = v;
+            unawaited(_saveSettings());
+          }
+        },
+      )),
+    ListTile(
+      leading: const Icon(Icons.route),
+      title: const Text('Routed LAN discovery (manual IP)'),
+      subtitle: const Text('Private IPv4 peers on reachable subnets. '
+          'Requires bidirectional routing/firewall access; no NAT traversal '
+          'or automatic network hopping.'),
+      trailing: IconButton(icon: const Icon(Icons.add),
+          tooltip: 'Add routed device IP',
+          onPressed: _addRoutedPeerSeed),
+      onTap: _addRoutedPeerSeed),
+    for (final address in settings.routedPeerAddresses)
+      ListTile(
+        dense: true,
+        leading: const Icon(Icons.lan),
+        title: Text(address),
+        trailing: IconButton(
+          tooltip: 'Remove routed discovery address',
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () {
+            settings.routedPeerAddresses.remove(address);
+            unawaited(_saveSettings());
+          })),
     SwitchListTile(title: const Text('Automatically receive files'),
       subtitle: const Text('Save nearby LAN attachments without popups. Never open automatically.'),
       value: settings.autoReceiveFiles,
@@ -1625,7 +1708,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (intercom?.talkingTo?.id == p.id)
         Container(color: const Color(0xffd7edff), width: double.infinity,
           padding: const EdgeInsets.all(12),
-          child: Text(intercom!.connecting ? 'Connecting call...' :
+          child: Text(intercom!.reconnecting
+                ? 'Reconnecting… ${intercom!.reconnectRemainingSeconds}s remaining'
+                : intercom!.connecting ? 'Connecting call...' :
                 'Call active • Use your microphone to talk', textAlign: TextAlign.center)),
       Expanded(child: entries.isEmpty ? const Center(child: Text('Say hello 👋',
           style: TextStyle(fontSize: 22))) : ListView.builder(
@@ -1645,8 +1730,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       for (final transfer in ongoing.take(2))
         ListTile(dense: true, title: Text('${transfer.incoming ? 'Receiving' : 'Sending'} ${transfer.name}'),
           subtitle: transfer.error != null ? Text(transfer.error!) :
-            LinearProgressIndicator(value: transfer.total == 0 ? 1 :
-                (transfer.done / transfer.total).clamp(0.0, 1.0))),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (transfer.waiting)
+                Text('Connection interrupted — retrying within '
+                    '${settings.reconnectGraceSeconds}s'),
+              LinearProgressIndicator(value: transfer.total == 0 ? 1 :
+                  (transfer.done / transfer.total).clamp(0.0, 1.0)),
+            ])),
       SafeArea(top: false, child: Padding(padding: const EdgeInsets.all(12),
         child: Row(children: [
           IconButton.filledTonal(iconSize: 28, tooltip: 'Send files',
@@ -1798,7 +1888,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
               IconButton(tooltip: 'Open full conversation',
                 icon: const Icon(Icons.open_in_full, color: Colors.white, size: 18),
-                onPressed: () => unawaited(_openCallThread())),
+                onPressed: () => unawaited(_expandActiveCall())),
             ])),
         ),
         Expanded(child: call?.remoteRenderer == null
@@ -1847,7 +1937,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 19, color: Colors.white,
                     fontWeight: FontWeight.bold)),
-              Text(call.sharingScreen ? 'Sharing your screen • Local LAN' :
+              Text(call.reconnecting
+                ? 'Connection lost • reconnecting '
+                    '(${call.reconnectRemainingSeconds}s left)'
+                : call.sharingScreen ? 'Sharing your screen • Local LAN' :
                 call.connecting ? 'Connecting…' : 'Connected • Local LAN',
                 style: const TextStyle(fontSize: 12, color: Colors.white70)),
             ])),
