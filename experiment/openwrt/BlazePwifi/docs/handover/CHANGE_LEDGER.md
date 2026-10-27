@@ -3248,3 +3248,20 @@ Application/source snapshot is still exact520; this note is metadata only.
 
 
 > **ECO-ADMIN-QR-UTF8-20261026 — METADATA REVIEW CORRECTION / 2026-10-27 Asia/Manila:** Independent662 review found that the older a928 pre-download Windows paragraph in the active prefixes could look current despite the final verified-byte proof below it. Explicitly label that paragraph historical in both current entry points; preserve its content and append-only ledger history. No executable/test/workflow or artifact bytes changed. Final integrity proof, signing/physical limits and read-only next action remain unchanged.
+
+---
+
+## PAY-LOCK-20261027 — SOURCE+TEST COMMITTED / CI NOT YET VERIFIED
+- Original [PR #178](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/178) is OPEN on an obsolete integration base; its RED #40102482541 and GREEN #40103674841 are real but not today's source. Prior main development PR #30 closed without merge October 24. Current dev parent SHA 1890e522843d262c33a5109dcea11768896c2e5f differs from Full-green source 5a8fe3ef only by the three canonical handovers (Full #40265142084 SUCCESS).
+- Source 41d2d3d2eaa0630f925916d47701120a957b5a70: openwrt/rootfs/www/blazepwifi/cgi-bin/vendo fresh signed member_transfer checks original sender proof and recipient.enabled AFTER writer lock; unlocks on refusal; leaves already-committed receipt replay unchanged.
+- Regression a3843464dbdcb3156e240427f89a6bb69bfcaeb3: tests/v053_members.sh matches PR178 verified fixture byte-for-byte; tests lock-handoff recipient disable, sender disable/password reset and original receipt replay after revocation.
+- Status IMPLEMENTED_UNTESTED at latest baseline: require new exact-SHA Full CI; independent MASTER/VERIFY review before any guarded development merge. No financial journal/counter witness/physical acceptance fix; P0 #31/#32/#34/#43 all OPEN; VERSION 0.5.3, production v0.6 release and paid customer migration BLOCKED.
+- NEXT: create draft PR from integration/pay31-transfer-revocation-20261027 to current development, verify named centralized SoftTimer member source fixture, Android and QEMU; inspect failures and don't suppress tests. Preserve original PR178 and its independent-review requirement. No live payments/devices/key material touched.
+
+---
+
+## 2026-10-27 — PAY-LOCK signed member transfer race forward-port CI evidence
+- Source parent dev 1890e522843d262c33a5109dcea11768896c2e5f. PR30 CLOSED without merge. Existing PR178 historical RED #40102482541/green #40103674841 reused rather than repeated. Current CGI source 41d2d3d2eaa0630f925916d47701120a957b5a70 checks sender proof and destination enabled after writer lock. Regression test a3843464dbdcb3156e240427f89a6bb69bfcaeb3 identical to PR178 test file.
+- **IMPLEMENTED_AND_VERIFIED_SOURCE_LEVEL:** exact PR215 source and initial handover SHA 1e271068856b11916648acde316af18ba4bfa42b; https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40447219409 COMPLETED SUCCESS, 26 green + 4 intentional skips. Actual validation logs confirm disabled destination, disabled source/password reset, and committed replay idempotency. Android emulator and x86 QEMU passed. No physical device tested.
+- BLOCKED_INDEPENDENT_REVIEW: PR215 draft/unmerged, cannot substitute same authenticated developer self-review for separate MASTER/VERIFY review required by old PR178. Remaining P0 #31/#32/#34/#43 and v0.6 migration/release gate untouched, VERSION=0.5.3, no business balances touched.
+- NEXT: independent code/test review on PR215; if authorized check branch head/concurrency and guarded development-only merge; do not merge main, release v0.6 or mark P0 #31 closed. Source rollback isolated branch.
