@@ -170,6 +170,14 @@ jobs:
           if (-not (Test-Path $setup)) { throw 'Native Setup EXE was not produced' }
           Get-Item $setup | Format-Table Name,Length
 
+      - name: SOFTTIMER-NSIS-UNICODE verify actual compiled LegalCopyright resource
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/InstallerMetadata/Verify-NsisLegalCopyright.ps1" -Setup $setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Smoke-test Setup EXE install and uninstall
         shell: pwsh
         run: |
