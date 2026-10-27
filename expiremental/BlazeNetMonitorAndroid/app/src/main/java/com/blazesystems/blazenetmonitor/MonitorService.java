@@ -70,7 +70,9 @@ public final class MonitorService extends Service {
         // Exactly the same standard Notification.Builder path is used on
         // the first start and EVERY subsequent update. No custom views.
         try {
-            Notification initial=notification();
+            // Promote within the OS deadline with a static, known-good icon.
+            // Live bitmap status icons are posted once foreground operation is active.
+            Notification initial=notification(false);
             if(Build.VERSION.SDK_INT>=34)
                 startForeground(NOTIFICATION_ID,initial,
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
@@ -135,7 +137,7 @@ public final class MonitorService extends Service {
     }
 
     /** OS template (InboxStyle), not user-supplied RemoteViews. */
-    private Notification notification() {
+    private Notification notification(boolean dynamicIcon) {
         MonitorState.Frame f=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
         String strip=StatusLabel.strip(f.status[0],
@@ -159,7 +161,9 @@ public final class MonitorService extends Service {
                 "  ↑ "+TrafficMath.data(f.monthTx));
 
         return new Notification.Builder(this,CHANNEL)
-            .setSmallIcon(liveIcon(f,bits,true))
+            .setSmallIcon(dynamicIcon?liveIcon(f,bits,true):
+                android.graphics.drawable.Icon.createWithResource(
+                    this,R.drawable.ic_notification_status))
             .setContentTitle("BlazeNetMonitor")
             .setContentText(strip)
             .setStyle(details)
@@ -177,7 +181,7 @@ public final class MonitorService extends Service {
             if(manager!=null) {
                 MonitorState.Frame frame=MonitorState.INSTANCE.frame();
                 boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-                manager.notify(NOTIFICATION_ID,notification());
+                manager.notify(NOTIFICATION_ID,notification(true));
                 manager.notify(DOWNLOAD_NOTIFICATION_ID,downloadNotification(frame,bits));
             }
         } catch(RuntimeException e) {
