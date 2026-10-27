@@ -18,8 +18,9 @@ class TransferProgress {
   final bool incoming;
   final bool finished;
   final String? error;
+  final bool waiting;
   const TransferProgress(this.id, this.peerId, this.name, this.done, this.total,
-      this.incoming, {this.finished = false, this.error});
+      this.incoming, {this.finished = false, this.error, this.waiting = false});
 }
 
 class _ReceiveState {
@@ -479,6 +480,13 @@ class LanNode {
       'name': name, 'size': total, 'sha256': sha});
     if (reply['ok'] != true) throw StateError('Receiver cannot accept file: ${reply['reason'] ?? 'unavailable'}');
     var index = (reply['next'] as int?) ?? 0;
+    final finalIndex = (total / chunkSize).ceil();
+    if (index < 0 || index > finalIndex) {
+      throw StateError('Receiver reported impossible transfer offset');
+    }
+    if (reply['done'] == true && index != finalIndex) {
+      throw StateError('Receiver reported inconsistent completion');
+    }
     try {
       final input = await file.open();
       try {
@@ -486,17 +494,45 @@ class LanNode {
         while (index * chunkSize < total) {
           final chunk = await input.read(min(chunkSize, total - index * chunkSize));
           if (chunk.isEmpty) throw const FileSystemException('Unable to read file');
-          var retries = 0;
-          while (true) {
+          DateTime? firstFailure;
+          var accepted = false;
+          while (!accepted) {
             try {
               final res = await _post(peer, '/v1/chunk', utf8.encode(jsonEncode({
                 'id': id, 'index': index, 'bytes': base64Encode(chunk),
               })));
-              if (res['ok'] != true) throw StateError('Peer rejected file chunk');
-              break;
-            } catch (_) {
-              if (++retries > 3) rethrow;
-              await Future<void>.delayed(Duration(milliseconds: 500 * retries));
+              if (res['ok'] != true) {
+                throw StateError('Receiver rejected file chunk');
+              }
+              accepted = true;
+            } catch (e) {
+              firstFailure ??= DateTime.now();
+              if (DateTime.now().difference(firstFailure) >=
+                  Duration(seconds: reconnectGraceSeconds)) rethrow;
+              _reportProgress(TransferProgress(id, peer.id, name,
+                  min(index * chunkSize, total), total, false, waiting: true));
+              // Preserve the same ID/chunk. An ACK may have been lost while
+              // the receiver already appended the chunk; query its signed
+              // next index before retrying to avoid appending it twice.
+              await Future<void>.delayed(const Duration(seconds: 1));
+              try {
+                final status = await _event(peer, {
+                  'kind': 'file-status', 'id': id,
+                });
+                if (status['ok'] == true) {
+                  final next = status['next'];
+                  if (next == index + 1) {
+                    accepted = true; // Receiver already acknowledged on disk.
+                  } else if (next != index) {
+                    throw StateError(
+                        'Transfer offset changed; retry requires a new file offer');
+                  }
+                }
+              } on StateError {
+                rethrow; // Never silently skip or duplicate missing bytes.
+              } catch (_) {
+                // Peer still unreachable: honor the same bounded deadline.
+              }
             }
           }
           index++;
