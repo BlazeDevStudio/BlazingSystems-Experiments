@@ -1,0 +1,19 @@
+# SoftTimer Windows production signing provenance gate
+
+**Work item:** WIN-SIGN-P0-20261027 · 2026-10-27 Asia/Manila  
+**Status:** code candidate, **NO production signing approval**. Existing `softtimer-v0.4.0` and all established binaries/tags are frozen.
+
+The current Windows workflow can compile .NET, publish self-contained Win-x64 binaries, build NSIS Setup, install/uninstall in CI, assemble a portable ZIP and publish SHA256SUMS. Those operations check build/install and archive integrity, **not Authenticode signer identity**. A successful workflow is not evidence that an installer is signed by Blaze Systems or safe for a paying customer.
+
+The future-release-only gate `tests/ReleaseProvenance/Verify-ProductionSignature.ps1` requires, before `gh release create`:
+
+- A **nonempty, explicitly owner-approved** SHA-256 hash of the actual signing certificate's DER bytes, supplied privately to GitHub Actions secret `SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256`. The secret contains **only the public certificate hash**; do not place private keys or PFX passwords in repository source, issue comments or logs. A fabricated/test pin cannot authorize a release.
+- Windows `Get-AuthenticodeSignature` reports `Valid` for the real Setup EXE, main SoftTimer EXE and Watchdog EXE, each with the **same exact approved certificate SHA-256**. Each must have an Authenticode timestamp and the code-signing EKU.
+- Each EXE's actual Windows resource FileVersion is `<VERSION>.0` and ProductVersion is `<VERSION>` or `<VERSION>.0`. A filename/tag/assembly declaration is not sufficient.
+- The portable ZIP contains exactly one root member for each application and Watchdog EXE, with SHA-256 bytes **identical to the signed binaries**. Packaging unsigned copies then signing another file does not count.
+
+The gate **cannot** sign files. For a future version, the approved signing/packaging process must sign all three binaries before the gate, rebuild the portable ZIP using the signed application binaries and maintain the existing immutable tag/version policy. In the present v0.4.0 workflow there is no such signing step; publishing remains intentionally skipped. Merely adding the certificate hash secret does not make unsigned files valid. A real production candidate requires a separately authorized signer, safe custody/rotation plan, timestamp availability, target Windows trust evaluation and a successful gate against actual final artifact bytes.
+
+**Negative-only CI:** `tests/ReleaseProvenance/negative-selftest.ps1` invokes the exact gate with synthetic unsigned files and rejects missing/malformed signer pin, malformed version, absent/reused paths and unsigned files. These controls do not claim to validate a positive signed production binary. Windows workflow runs them in CI; it calls the real gate only in the future gated publishing step. `VERSION=0.4.0` remains unchanged.
+
+**Production blockers beyond signatures:** signed controller/member/rental financial authority and independent rollback witness (issues #31/#32/#43), real hardware coin/USB-RS232/power-loss and 30-device acceptance (#34), and independent app signing/Device Owner tests. No production v0.6.0, no field migration, no release/tag mutation is authorized by this document or negative CI.

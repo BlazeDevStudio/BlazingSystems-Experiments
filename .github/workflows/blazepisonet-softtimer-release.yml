@@ -80,6 +80,12 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: WIN-SIGN-P0 validate release signature gate fail-closed negative controls
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseProvenance/negative-selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Restore win-x64
         shell: pwsh
         run: |
@@ -256,10 +262,18 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          SOFTTIMER_EXPECTED_SIGNER_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
         run: |
           $ErrorActionPreference='Stop'
           $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
           $zip="BlazePisonet-SoftTimer-v$env:VERSION-portable-win-x64.zip"
+          # WIN-SIGN-P0: no trusted, owner-pinned Windows certificate means
+          # NO production GitHub Release. A checksum alone proves no signer.
+          # Verify the actual three binary signatures, version metadata and
+          # portable ZIP member bytes, without executing installer/package.
+          $releaseGate="$env:PROJECT_DIR/tests/ReleaseProvenance/Verify-ProductionSignature.ps1"
+          & $releaseGate -SetupPath $setup -AppPath 'out/bundle/BlazePisonet.SoftTimer.exe' -WatchdogPath 'out/bundle/BlazePisonet.SoftTimer.Watchdog.exe' -PortableZipPath $zip -ExpectedVersion $env:VERSION -ExpectedSignerCertificateSha256 $env:SOFTTIMER_EXPECTED_SIGNER_SHA256
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "WIN-SIGN-P0 release proof failed" }
           $releaseTarget=(git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
