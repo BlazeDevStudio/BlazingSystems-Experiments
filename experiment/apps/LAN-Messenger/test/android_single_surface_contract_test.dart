@@ -15,6 +15,17 @@ void main() {
     expect(app.contains("Video picture-in-picture settings"), isTrue);
   });
 
+  test('every call alert has its own explicit group, unlike background service', () {
+    // On Android 35 the incoming call was auto-grouped with FlutterBackground
+    // and the real Answer action was hidden in an inaccessible summary.
+    final native = File('tool/AndroidMainActivity.kt').readAsStringSync();
+    expect(native.split('.setCategory(Notification.CATEGORY_CALL)').length - 1, 3);
+    expect(native.split('.setGroup(callNotificationGroup)').length - 1, 3);
+    expect(native.contains('private val callNotificationGroup = "lan-messenger-call-actions"'), isTrue);
+    // No full-screen intent is introduced; system notification remains the UI.
+    // Native tests still must click the REAL notification Answer action.
+  });
+
   test('video PiP state cannot depend on incoming notification access', () {
     final native = File('tool/AndroidMainActivity.kt').readAsStringSync();
     final start = native.indexOf('private fun showOngoingCall(');

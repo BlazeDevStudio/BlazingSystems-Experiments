@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart' as wm;
 import 'package:tray_manager/tray_manager.dart' as tray;
 import 'package:flutter_background/flutter_background.dart';
 import 'src/settings.dart';
+import 'src/lan_reconnect_policy.dart';
 import 'src/alerts.dart';
 import 'src/identity.dart';
 import 'src/intercom.dart';
@@ -83,6 +84,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _androidInPip = false;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
+  String? _observedCallId;
   bool _pendingCallPresentation = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
@@ -110,8 +112,19 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
     if (!mounted) return;
     if (call.method == 'pipState') {
-      setState(() => _androidInPip = call.arguments is Map &&
-          (call.arguments as Map)['active'] == true);
+      final nowInPip = call.arguments is Map &&
+          (call.arguments as Map)['active'] == true;
+      setState(() {
+        _androidInPip = nowInPip;
+        if (!nowInPip && intercom?.talkingTo != null) {
+          // Android PiP expand must show live VIDEO CALL, not conversation.
+          _callMinimized = false;
+          showSettings = false;
+          showReceived = false;
+          selectedGroup = null;
+          selected = intercom?.talkingTo;
+        }
+      });
       return;
     }
     if (call.method != 'callAction') return;
@@ -143,7 +156,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         unawaited(intercom?.setMuted(!(intercom?.muted ?? false)) ??
             Future<void>.value());
       } else if (action == 'open') {
-        unawaited(_openCallThread());
+        unawaited(_expandActiveCall());
       }
     }
   }
@@ -156,7 +169,14 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (action == 'answer' || action == 'decline') {
       _resolveIncomingDialog(action == 'answer');
     } else if (action == 'open') {
-      unawaited(_openCallThread());
+      // Native Windows call popup Open means return to the live call,
+      // not minimize it into a conversation. Ringing calls still show
+      // their pending Answer/Decline UI rather than bypassing consent.
+      if (_incomingDialogOpen) {
+        _openWindow();
+      } else {
+        unawaited(_expandActiveCall());
+      }
     } else if (!_incomingDialogOpen && action == 'end') {
       unawaited(intercom?.hangUp() ?? Future<void>.value());
     } else if (!_incomingDialogOpen && action == 'mute') {
@@ -401,6 +421,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Future<void> _expandActiveCall() async {
+    if (!mounted) return;
+    setState(() {
+      _callMinimized = false;
+      showSettings = false;
+      showReceived = false;
+      selectedGroup = null;
+      selected = intercom?.talkingTo ?? selected;
+    });
+    if (Platform.isWindows) {
+      if (_compactWindowsVideo) {
+        await _restoreCompactVideo(forceOpen: true);
+      } else {
+        _openWindow();
+      }
+    }
+  }
+
   Future<void> _openCallThread() async {
     if (!mounted) return;
     setState(() {
@@ -452,6 +490,31 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await _restoreCompactVideo();
       await _restoreWindowAfterCall();
     }
+    if (mounted) setState(() {
+      _androidInPip = false;
+      _callMinimized = false;
+    });
+  }
+
+  /// Wait for bounded native media teardown, not an indefinite plugin Future.
+  /// Dismissing a PiP Activity while its camera is still disposing can tear
+  /// down the Flutter engine mid-cleanup and leave a frozen last frame.
+  Future<void> _finalizeEndedCallPresentation(Intercom call) async {
+    // Closing media tracks may take several seconds on desktop. Once the
+    // session is invalidated, release Windows compact-window UI immediately;
+    // leaving the tiny last-frame window onscreen during native disposal looks
+    // like a frozen app and prevents normal window navigation. Unlike Android,
+    // no PiP Activity/Flutter-engine termination is involved in this restore.
+    if (Platform.isWindows) {
+      if (call.callId == null && mounted) await _endCallPresentation();
+      return;
+    }
+    // Android PiP can finish the Activity and tear down the Flutter engine:
+    // preserve its bounded native cleanup wait before dismissing it.
+    for (var i = 0; i < 80 && call.closing; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+    if (call.callId == null && mounted) await _endCallPresentation();
   }
 
   Future<void> _showActiveTrayMenu(Peer peer) async {
@@ -493,8 +556,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       final n = LanNode(identity);
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
+      n.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+      n.setRoutedPeerSeeds(settings.routedPeerAddresses);
       await _restoreChats();
-      final inter = Intercom(n);
+      final inter = Intercom(n)
+        ..reconnectGraceSeconds = settings.reconnectGraceSeconds;
       final groupMessages = GroupMessaging(n);
       final mesh = GroupCallMesh(n, groupMessages);
       groupMessages.onChanged = () { if (mounted) setState(() {}); };
@@ -574,6 +640,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }));
       inter.onChanged = () {
         if (!mounted) return;
+        if (inter.callId != null) _observedCallId = inter.callId;
         // Never create a native in-call window from onIncoming's finally:
         // that callback resolves BEFORE Intercom acquires media/sets SDP.
         // Wait for signaling to leave the connecting state.
@@ -609,10 +676,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
-        if (_activeCallUiId != null && inter.talkingTo == null) {
+        if (_observedCallId != null && inter.talkingTo == null) {
+          _observedCallId = null;
           _activeCallUiId = null;
           _lastNativeMuted = null;
-          unawaited(_endCallPresentation().catchError((Object e) {
+          unawaited(_finalizeEndedCallPresentation(inter).catchError((Object e) {
             if (mounted) setState(() => error = 'Call controls could not close: $e');
           }));
         } else if (_activeCallUiId == inter.callId &&
@@ -738,6 +806,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         } finally {
           _incomingAnswer = null;
           _incomingDialogOpen = false;
+          // The notification can bring Android to the foreground BEFORE the
+          // Answer completer resolves. The lifecycle resume handler correctly
+          // avoids changing call presentation while it is still ringing, but
+          // there may be no second resume event after acceptance. Clear the
+          // temporary external-surface minimization here as well, so the
+          // accepted call opens as a full live call rather than a chat thread.
+          if (accepted && id == inter.callId &&
+              inter.talkingTo?.id == peer.id && Platform.isAndroid) {
+            _callMinimized = false;
+            showSettings = false;
+            showReceived = false;
+            selectedGroup = null;
+            selected = peer;
+          }
           _incomingPeer = null;
           _nativeIncomingAvailable = false;
           _incomingUsesExternalSurface = false;
@@ -1005,10 +1087,57 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
     }
+    intercom?.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+    node?.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+    node?.setRoutedPeerSeeds(settings.routedPeerAddresses);
     _applySounds();
     if (!settings.soundsEnabled) unawaited(alerts.stopRing());
     await settings.save();
     if (mounted) setState(() {});
+  }
+
+  Future<void> _addRoutedPeerSeed() async {
+    final controller = TextEditingController();
+    try {
+      final inputIp = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Routed LAN device IP'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Enter the private IPv4 address of a device '
+                'on another reachable LAN/subnet. Both router firewalls and '
+                'the return route must allow traffic. NAT or client isolation '
+                'may block incoming connections; this is NOT a relay.'),
+            const SizedBox(height: 12),
+            TextField(controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    hintText: '192.168.1.100')),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(
+                dialogContext, controller.text), child: const Text('Add')),
+          ],
+        ),
+      );
+      if (inputIp == null || !mounted) return;
+      final seed = LanReconnectPolicy.privateIpv4Seed(inputIp);
+      if (seed == null) {
+        _toast('Enter a valid private IPv4 device address.');
+        return;
+      }
+      if (settings.routedPeerAddresses.contains(seed)) return;
+      if (settings.routedPeerAddresses.length >= 8) {
+        _toast('Maximum eight routed LAN seed addresses.');
+        return;
+      }
+      settings.routedPeerAddresses.add(seed);
+      await _saveSettings();
+    } finally {
+      controller.dispose();
+    }
   }
 
   Widget _settingsPanel() => ListView(children: [
@@ -1042,6 +1171,47 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         ListTile(title: const Text('This device name'),
       subtitle: Text(node?.identity.displayName ?? 'Starting'),
       trailing: const Icon(Icons.edit), onTap: _renameDevice),
+    ListTile(
+      leading: const Icon(Icons.timer_outlined),
+      title: const Text('Disconnected: wait before ending call or file transfer'),
+      subtitle: Text('Keep the session available for up to '
+          '${settings.reconnectGraceSeconds} seconds after temporary LAN loss. '
+          'Terminal WebRTC failure may still require a new call.'),
+      trailing: DropdownButton<int>(
+        value: settings.reconnectGraceSeconds,
+        items: LanReconnectPolicy.choicesSeconds.map((v) =>
+          DropdownMenuItem<int>(value: v, child: Text('${v}s'))).toList(),
+        onChanged: (v) {
+          if (v != null) {
+            settings.reconnectGraceSeconds = v;
+            unawaited(_saveSettings());
+          }
+        },
+      )),
+    ListTile(
+      leading: const Icon(Icons.route),
+      title: const Text('Routed LAN discovery (manual IP)'),
+      subtitle: Text('Private IPv4 peers on reachable subnets. '
+          'Permit UDP 39823 and TCP ${LanNode.preferredListenPort} '
+          'on both devices where routing/firewalls require rules. '
+          '${node?.usingPreferredListenPort == false ? "This device is using an alternative TCP port: ${node?.listenPort}. " : ""}'
+          'This is not a NAT relay or automatic network hop.'),
+      trailing: IconButton(icon: const Icon(Icons.add),
+          tooltip: 'Add routed device IP',
+          onPressed: _addRoutedPeerSeed),
+      onTap: _addRoutedPeerSeed),
+    for (final address in settings.routedPeerAddresses)
+      ListTile(
+        dense: true,
+        leading: const Icon(Icons.lan),
+        title: Text(address),
+        trailing: IconButton(
+          tooltip: 'Remove routed discovery address',
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () {
+            settings.routedPeerAddresses.remove(address);
+            unawaited(_saveSettings());
+          })),
     SwitchListTile(title: const Text('Automatically receive files'),
       subtitle: const Text('Save nearby LAN attachments without popups. Never open automatically.'),
       value: settings.autoReceiveFiles,
@@ -1575,7 +1745,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (intercom?.talkingTo?.id == p.id)
         Container(color: const Color(0xffd7edff), width: double.infinity,
           padding: const EdgeInsets.all(12),
-          child: Text(intercom!.connecting ? 'Connecting call...' :
+          child: Text(intercom!.reconnecting
+                ? 'Reconnecting… ${intercom!.reconnectRemainingSeconds}s remaining'
+                : intercom!.connecting ? 'Connecting call...' :
                 'Call active • Use your microphone to talk', textAlign: TextAlign.center)),
       Expanded(child: entries.isEmpty ? const Center(child: Text('Say hello 👋',
           style: TextStyle(fontSize: 22))) : ListView.builder(
@@ -1595,8 +1767,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       for (final transfer in ongoing.take(2))
         ListTile(dense: true, title: Text('${transfer.incoming ? 'Receiving' : 'Sending'} ${transfer.name}'),
           subtitle: transfer.error != null ? Text(transfer.error!) :
-            LinearProgressIndicator(value: transfer.total == 0 ? 1 :
-                (transfer.done / transfer.total).clamp(0.0, 1.0))),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (transfer.waiting)
+                Text('Connection interrupted — retrying within '
+                    '${settings.reconnectGraceSeconds}s'),
+              LinearProgressIndicator(value: transfer.total == 0 ? 1 :
+                  (transfer.done / transfer.total).clamp(0.0, 1.0)),
+            ])),
       SafeArea(top: false, child: Padding(padding: const EdgeInsets.all(12),
         child: Row(children: [
           IconButton.filledTonal(iconSize: 28, tooltip: 'Send files',
@@ -1746,15 +1923,21 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
               Expanded(child: Text(call?.talkingTo?.name ?? 'Video call',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-              IconButton(tooltip: 'Open full conversation',
+              IconButton(tooltip: 'Expand full video call',
                 icon: const Icon(Icons.open_in_full, color: Colors.white, size: 18),
-                onPressed: () => unawaited(_openCallThread())),
+                onPressed: () => unawaited(_expandActiveCall())),
             ])),
         ),
-        Expanded(child: call?.remoteRenderer == null
-          ? const Center(child: Icon(Icons.videocam, size: 48, color: Colors.white54))
-          : RTCVideoView(call!.remoteRenderer!,
-              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)),
+        Expanded(child: Stack(fit: StackFit.expand, children: [
+          if (call?.video == true && call?.remoteRenderer != null)
+            RTCVideoView(call!.remoteRenderer!,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain),
+          if (call?.video != true ||
+              (call?.remoteRenderer?.videoWidth ?? 0) <= 0 ||
+              (call?.remoteRenderer?.videoHeight ?? 0) <= 0)
+            const Center(child: Text('Waiting for remote video frames…',
+                style: TextStyle(color: Colors.white70))),
+        ])),
         Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
           IconButton.filledTonal(tooltip: call?.muted == true ? 'Unmute microphone' : 'Mute microphone',
             onPressed: call == null ? null : () => unawaited(call.setMuted(!call.muted)),
@@ -1797,7 +1980,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
                 maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 19, color: Colors.white,
                     fontWeight: FontWeight.bold)),
-              Text(call.sharingScreen ? 'Sharing your screen • Local LAN' :
+              Text(call.reconnecting
+                ? 'Connection lost • reconnecting '
+                    '(${call.reconnectRemainingSeconds}s left)'
+                : call.sharingScreen ? 'Sharing your screen • Local LAN' :
                 call.connecting ? 'Connecting…' : 'Connected • Local LAN',
                 style: const TextStyle(fontSize: 12, color: Colors.white70)),
             ])),

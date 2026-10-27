@@ -110,6 +110,10 @@ class MainActivity : FlutterActivity() {
         }
     }
     private var lock: WifiManager.MulticastLock? = null
+    // A separately keyed call notification must not be auto-bundled with
+    // FlutterBackground's persistent "LAN Messenger is ready" notification.
+    // Android 35 hid Answer/Decline behind that auto-group in actual CI.
+    private val callNotificationGroup = "lan-messenger-call-actions"
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
     private var activityForeground = true
@@ -317,6 +321,7 @@ class MainActivity : FlutterActivity() {
             .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
             .setContentIntent(openApp())
             .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setOngoing(true)
@@ -353,6 +358,7 @@ class MainActivity : FlutterActivity() {
                     .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
                     .setContentIntent(openApp())
                     .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
                     .setVisibility(Notification.VISIBILITY_PUBLIC)
                     .setAutoCancel(false)
                     .setOngoing(true)
@@ -418,6 +424,7 @@ class MainActivity : FlutterActivity() {
                 if (video) "Video call in progress" else "Voice call in progress")
             .setContentIntent(openApp())
             .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
         val end = callAction("end", callId)
@@ -572,6 +579,12 @@ class MainActivity : FlutterActivity() {
                         lastIncoming = false; pendingAnswer = null
                         pipEnabledForCall = false
                         incomingNotificationPosted = false
+                        // Disabling future auto-enter does NOT dismiss an
+                        // already-open PiP Activity. The call is fully ended:
+                        // remove just this floating Activity/task. A new
+                        // launcher activation creates a fresh app UI.
+                        val closeExistingPip =
+                            Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode
                         if (Build.VERSION.SDK_INT >= 31) {
                             try {
                                 setPictureInPictureParams(PictureInPictureParams.Builder()
@@ -579,6 +592,16 @@ class MainActivity : FlutterActivity() {
                             } catch (_: Exception) { }
                         }
                         result.success(null)
+                        if (closeExistingPip) {
+                            window?.decorView?.post {
+                                // Never finish an expanded foreground Activity.
+                                if (Build.VERSION.SDK_INT >= 26 &&
+                                    isInPictureInPictureMode && lastCallId == null) {
+                                    Log.i("LANCallTrace", "ended_call_pip_dismissed")
+                                    finish()
+                                }
+                            }
+                        }
                     }
                     "foreground" -> {
                         // Flutter resumed/inactive/paused is NOT authoritative

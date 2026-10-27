@@ -312,16 +312,46 @@ def video_call_test():
         time.sleep(2)
     else:
         raise RuntimeError("Home did not enter Android native PiP even though a live video call exists")
+    # Expand the real OS PiP and require the live CALL surface, not the
+    # conversation page. The native PiP state callback must restore it.
     adb(RECEIVER, "shell", "am", "start", "-W",
         "-n", "com.example.lan_messenger/.MainActivity", timeout=30)
-    tap_label(RECEIVER, "video-hangup",
+    if not contains(RECEIVER, "pip-expanded-call-screen", "End call"):
+        raise RuntimeError("Expanding PiP returned to conversation, not active call")
+
+    # Put the receiver in PiP again; the remote peer now ends the call.
+    # Old Android code disabled future PiP entry but left this PiP alive.
+    adb(RECEIVER, "shell", "input", "keyevent", "KEYCODE_HOME")
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        logs = (OUT / f"{RECEIVER}-call-signaling-stream.txt").read_text(
+            encoding="utf-8", errors="replace")
+        if logs.count("pip_state_changed active=true") >= 2:
+            break
+        time.sleep(1)
+    else:
+        raise RuntimeError("Expanded video call could not return to OS PiP")
+    tap_label(CALLER, "remote-hangup-while-receiver-pip",
               lambda text: text.lower().strip() == "end call",
               timeout_seconds=30)
-    for serial in (CALLER, RECEIVER):
-        if not adb(serial, "shell", "pidof", "com.example.lan_messenger",
-                   check=False).strip():
-            raise RuntimeError(f"{serial} exited during video/PiP test")
-    note("video", "PASS: real dual-decoded video + OS PiP + hangup survived")
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        logs = (OUT / f"{RECEIVER}-call-signaling-stream.txt").read_text(
+            encoding="utf-8", errors="replace")
+        if "ended_call_pip_dismissed" in logs:
+            note("pip", "PASS: remote Hangup explicitly dismissed live OS PiP")
+            break
+        time.sleep(1)
+    else:
+        raise RuntimeError("Android PiP stayed open after remote call ended")
+    # PiP close may finish the Flutter Activity, but reopening from launcher
+    # must remain possible without a stuck call or process crash.
+    adb(RECEIVER, "shell", "am", "start", "-W",
+        "-n", "com.example.lan_messenger/.MainActivity", timeout=30)
+    if not adb(RECEIVER, "shell", "pidof", "com.example.lan_messenger",
+               check=False).strip():
+        raise RuntimeError("Receiver could not reopen after closed PiP")
+    note("video", "PASS: two decoded video feeds, PiP expand, remote hangup and PiP close")
 
 
 def main():

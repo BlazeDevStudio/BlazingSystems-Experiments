@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'identity.dart';
+import 'lan_reconnect_policy.dart';
 
 /// Intentional defaults: auto-receive known LAN peers, never auto-open files.
 /// Receiver quotas keep unsolicited files from consuming all device storage.
 class AppSettings {
   bool autoReceiveFiles = true;
   int maximumFileMb = 512;
+  int reconnectGraceSeconds = 60;
+  final List<String> routedPeerAddresses = [];
   bool soundsEnabled = true;
   bool minimizeToTray = true;
   bool backgroundMode = true;
@@ -37,6 +40,18 @@ class AppSettings {
         settings.autoReceiveFiles = map['autoReceiveFiles'] is bool ? map['autoReceiveFiles'] : true;
         settings.maximumFileMb = map['maximumFileMb'] is int ?
             (map['maximumFileMb'] as int).clamp(16,2048).toInt() : 512;
+        settings.reconnectGraceSeconds =
+            LanReconnectPolicy.clampSeconds(map['reconnectGraceSeconds']);
+        if (map['routedPeerAddresses'] is List) {
+          for (final entry in (map['routedPeerAddresses'] as List).take(8)) {
+            if (entry is String) {
+              final seed = LanReconnectPolicy.privateIpv4Seed(entry);
+              if (seed != null && !settings.routedPeerAddresses.contains(seed)) {
+                settings.routedPeerAddresses.add(seed);
+              }
+            }
+          }
+        }
         settings.soundsEnabled = map['soundsEnabled'] is bool ? map['soundsEnabled'] : true;
         settings.minimizeToTray = map['minimizeToTray'] is bool ? map['minimizeToTray'] : true;
         settings.backgroundMode = map['backgroundMode'] is bool ? map['backgroundMode'] : true;
@@ -67,6 +82,8 @@ class AppSettings {
     await file.writeAsString(jsonEncode({
       'autoReceiveFiles': autoReceiveFiles,
       'maximumFileMb': maximumFileMb,
+      'reconnectGraceSeconds': reconnectGraceSeconds,
+      'routedPeerAddresses': routedPeerAddresses,
       'soundsEnabled': soundsEnabled,
       'minimizeToTray': minimizeToTray,
       'backgroundMode': backgroundMode,

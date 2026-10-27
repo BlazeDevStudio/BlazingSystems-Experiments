@@ -6,6 +6,7 @@ import 'identity.dart';
 import 'node.dart';
 import 'call_transport_gate.dart';
 import 'windows_remote_input.dart';
+import 'lan_reconnect_policy.dart';
 import 'protocol.dart';
 
 // Exactly one active call, shared for voice and video. No STUN/TURN or internet.
@@ -288,6 +289,29 @@ class Intercom {
     }
   }
   bool _closing = false;
+  int reconnectGraceSeconds = 60;
+  bool reconnecting = false;
+  DateTime? _reconnectUntil;
+  Timer? _reconnectUiPulse;
+  int get reconnectRemainingSeconds {
+    if (!reconnecting || _reconnectUntil == null) return 0;
+    final ms = _reconnectUntil!.difference(DateTime.now()).inMilliseconds;
+    return ms <= 0 ? 0 : (ms / 1000).ceil();
+  }
+
+  void _resetReconnectState() {
+    reconnecting = false;
+    _disconnectGrace.dispose();
+    _reconnectUiPulse?.cancel();
+    _reconnectUiPulse = null;
+    _reconnectUntil = null;
+  }
+  late final LanDisconnectGrace _disconnectGrace = LanDisconnectGrace(() {
+    if (callId != null && !_closing && reconnecting) {
+      unawaited(_log('media reconnect grace expired'));
+      unawaited(hangUp());
+    }
+  });
   bool _remoteDescriptionReady = false;
   Future<void>? _shutdown;
   RTCPeerConnection? _connection;
@@ -419,11 +443,27 @@ class Intercom {
     };
     pc.onConnectionState = (state) {
       if (callId != id || _closing) return;
-      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        // Keep tracks/renderers alive during transient Wi-Fi or router loss.
+        if (!reconnecting) {
+          reconnecting = true;
+          _reconnectUntil = DateTime.now()
+              .add(Duration(seconds: reconnectGraceSeconds));
+          _reconnectUiPulse?.cancel();
+          _reconnectUiPulse = Timer.periodic(
+              const Duration(seconds: 1), (_) => onChanged?.call());
+        }
+        _disconnectGrace.disconnected(
+            Duration(seconds: reconnectGraceSeconds));
+        unawaited(_log('media disconnected; grace=${reconnectGraceSeconds}s'));
+      } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
-        unawaited(_log('unexpected connection state $state'));
+        // ICE failure/close is terminal without a new negotiation.
+        _disconnectGrace.dispose();
+        unawaited(_log('terminal connection state $state'));
         unawaited(hangUp(notify: false));
       } else if (CallTransportGate.mediaReady(state)) {
+        _resetReconnectState();
         // An SDP answer is not proof of a usable media path. Only the actual
         // WebRTC peer transport reaching Connected clears the call's
         // negotiating state and unlocks connected-call UI/PiP.
@@ -456,6 +496,7 @@ class Intercom {
     muted = false;
     sharingScreen = false;
     connecting = true;
+    _resetReconnectState();
     _remoteDescriptionReady = false;
     onChanged?.call();
     try {
@@ -675,6 +716,7 @@ class Intercom {
   Future<void> _hangUpOnce({required bool notify}) async {
     if (_closing) return;
     _closing = true;
+    _resetReconnectState();
     _answerTimeout?.cancel();
     _answerTimeout = null;
     final peer = talkingTo;
@@ -752,7 +794,8 @@ class Intercom {
     // Each resource is released independently; one native plugin failure must
     // not skip the remaining stream or video renderer cleanup.
     if (display != null) {
-      for (final track in display.getTracks()) { track.stop(); }
+      // Tracks were already stopped above. Do not fire duplicate unawaited
+      // native stop() Futures during shutdown.
       try { await display.dispose().timeout(const Duration(seconds: 5)); }
       catch (e) { await _log('display stream dispose error: $e'); }
     }
@@ -768,12 +811,20 @@ class Intercom {
       try { await stream.dispose().timeout(const Duration(seconds: 5)); }
       catch (e) { await _log('stream dispose error: $e'); }
     }
-    try { if (local != null) { local.srcObject = null; await local.dispose(); } }
-    catch (e) { await _log('local renderer dispose error: $e'); }
-    try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
-    catch (e) { await _log('remote renderer dispose error: $e'); }
+    try {
+      if (local != null) {
+        local.srcObject = null;
+        await local.dispose().timeout(const Duration(seconds: 4));
+      }
+    } catch (e) { await _log('local renderer dispose error: $e'); }
+    try {
+      if (remote != null) {
+        remote.srcObject = null;
+        await remote.dispose().timeout(const Duration(seconds: 4));
+      }
+    } catch (e) { await _log('remote renderer dispose error: $e'); }
     if (fallback != null) {
-      try { await fallback.dispose(); }
+      try { await fallback.dispose().timeout(const Duration(seconds: 4)); }
       catch (e) { await _log('streamless remote media cleanup error: $e'); }
     }
     _closing = false;

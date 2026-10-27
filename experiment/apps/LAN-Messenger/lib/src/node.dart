@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart' as hash;
 import 'package:flutter/services.dart';
 import 'identity.dart';
 import 'protocol.dart';
+import 'lan_reconnect_policy.dart';
 
 class TransferProgress {
   final String id;
@@ -17,8 +18,9 @@ class TransferProgress {
   final bool incoming;
   final bool finished;
   final String? error;
+  final bool waiting;
   const TransferProgress(this.id, this.peerId, this.name, this.done, this.total,
-      this.incoming, {this.finished = false, this.error});
+      this.incoming, {this.finished = false, this.error, this.waiting = false});
 }
 
 class _ReceiveState {
@@ -32,6 +34,14 @@ class _ReceiveState {
   int get nextChunk => (written / chunkSize).ceil();
 }
 
+class _CompletedIncomingFile {
+  final String senderId;
+  final String checksum;
+  final int bytes;
+  _CompletedIncomingFile(this.senderId, this.checksum, this.bytes);
+  int get next => (bytes / chunkSize).ceil();
+}
+
 class LanNode {
   final Identity identity;
   late final PeerCipher cipher = PeerCipher(identity);
@@ -40,6 +50,24 @@ class LanNode {
   Timer? _ticker;
   final Map<String, Peer> peers = {};
   final Map<String, _ReceiveState> _incoming = {};
+  final Map<String, _CompletedIncomingFile> _completedIncoming = {};
+  final Set<String> _routedPeerSeeds = {};
+  int reconnectGraceSeconds = 60;
+
+  /// Manually configured IPv4 discovery destinations, not a NAT relay.
+  /// On separately routed networks both sides still need a return route,
+  /// permitted TCP ports and compatible ICE connectivity.
+  void setRoutedPeerSeeds(Iterable<String> targets) {
+    _routedPeerSeeds.clear();
+    for (final target in targets) {
+      final ip = LanReconnectPolicy.privateIpv4Seed(target);
+      if (ip != null && _routedPeerSeeds.length < 8) {
+        _routedPeerSeeds.add(ip);
+      }
+    }
+    announce();
+  }
+
   final Set<String> _seenMessages = {};
   // A peer's identity must outlive a missed UDP announcement. Presence is a
   // separate concept from whether we will authenticate its HTTP requests.
@@ -104,9 +132,23 @@ class LanNode {
 
   static const _wifiMulticast = MethodChannel('lan_messenger/multicast');
 
+  /// Stable TCP ingress simplifies an explicit firewall rule for a manually
+  /// routed subnet. The UDP discovery port remains discoveryPort (39823).
+  /// A second local process may use an ephemeral port, which is advertised
+  /// honestly in discovery rather than pretending that 39824 is reachable.
+  static const int preferredListenPort = 39824;
+  bool get usingPreferredListenPort => _server?.port == preferredListenPort;
+
   Future<void> start() async {
     try { await _wifiMulticast.invokeMethod<void>('acquire'); } catch (_) {}
-    _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+    try {
+      _server = await HttpServer.bind(
+          InternetAddress.anyIPv4, preferredListenPort);
+    } on SocketException {
+      // Keep local-LAN operation available if another local app owns 39824;
+      // discovery publishes the ACTUAL bound port in every announcement.
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+    }
     _server!.listen(_serve, onError: (_) {});
     try {
       _udp = await RawDatagramSocket.bind(InternetAddress.anyIPv4, discoveryPort,
@@ -149,6 +191,11 @@ class LanNode {
         identity.publicKeyB64, _server!.port));
     _udp!.send(message, InternetAddress(multicastIp), discoveryPort);
     _udp!.send(message, InternetAddress('255.255.255.255'), discoveryPort);
+    // Unicast packets can cross ordinary L3 subnets when firewall/router
+    // policy permits; multicast generally cannot. No brute force scanning.
+    for (final ip in _routedPeerSeeds) {
+      _udp!.send(message, InternetAddress(ip), discoveryPort);
+    }
   }
 
   void _handleAnnouncement(Datagram packet) {
@@ -163,7 +210,18 @@ class LanNode {
       if (old != null && old.key != peer.key) return;
       peers[peer.id] = peer;
       if (old == null || old.host != peer.host || old.port != peer.port ||
-          old.name != peer.name) onPeersChanged?.call();
+          old.name != peer.name) {
+        onPeersChanged?.call();
+        if (old == null && _udp != null) {
+          // Respond once to a new unicast discovery sender using its NAT
+          // source port, instead of assuming its source UDP port is 39823.
+          try {
+            _udp!.send(utf8.encode(announcement(identity.id,
+                identity.displayName, identity.publicKeyB64, _server!.port)),
+                packet.address, packet.port);
+          } catch (_) {}
+        }
+      }
     } catch (_) { /* Untrusted malformed multicast is ignored. */ }
   }
 
@@ -306,8 +364,14 @@ class LanNode {
         return _acceptOffer(peer, event);
       case 'file-status':
         final transfer = _incoming[event['id']];
-        return {'ok': transfer != null && transfer.senderId == peer.id,
-          'next': transfer?.senderId == peer.id ? transfer!.nextChunk : 0};
+        if (transfer != null && transfer.senderId == peer.id) {
+          return {'ok': true, 'next': transfer.nextChunk};
+        }
+        final receipt = _completedIncoming[event['id']];
+        if (receipt != null && receipt.senderId == peer.id) {
+          return {'ok': true, 'done': true, 'next': receipt.next};
+        }
+        return {'ok': false};
       default:
         return {'ok': false};
     }
@@ -322,6 +386,12 @@ class LanNode {
     if (_incoming.containsKey(id)) {
       final previous = _incoming[id]!;
       return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};
+    }
+    final finished = _completedIncoming[id];
+    if (finished != null) {
+      return {'ok': finished.senderId == peer.id &&
+          finished.checksum == sha && finished.bytes == total,
+          'done': true, 'next': finished.next};
     }
     if (_incoming.length >= maxConcurrentIncoming) return {'ok': false, 'reason': 'busy'};
     if (!autoReceiveFiles) {
@@ -350,7 +420,14 @@ class LanNode {
     final payload = data['bytes'];
     if (id is! String || idx is! int || payload is! String) return {'ok': false};
     final transfer = _incoming[id];
-    if (transfer == null || transfer.senderId != peer.id) return {'ok': false};
+    if (transfer == null) {
+      final finished = _completedIncoming[id];
+      return {'ok': finished != null && finished.senderId == peer.id,
+        if (finished != null && finished.senderId == peer.id) ...{
+          'done': true, 'next': finished.next,
+        }};
+    }
+    if (transfer.senderId != peer.id) return {'ok': false};
     if (idx < 0) return {'ok': false};
     if (idx < transfer.nextChunk) return {'ok': true, 'next': transfer.nextChunk};
     if (idx != transfer.nextChunk) return {'ok': false, 'next': transfer.nextChunk};
@@ -390,6 +467,13 @@ class LanNode {
     final completed = await transfer.temporary.rename(
         '${destination.path}${Platform.pathSeparator}$name');
     _incoming.remove(id);
+    // Volatile duplicate-completion witness for lost final HTTP response.
+    // Deliberately not claimed to survive process restart.
+    if (_completedIncoming.length >= 128) {
+      _completedIncoming.remove(_completedIncoming.keys.first);
+    }
+    _completedIncoming[id] = _CompletedIncomingFile(
+        transfer.senderId, transfer.checksum, transfer.total);
     _reportProgress(TransferProgress(id, transfer.senderId, name, transfer.total, transfer.total,
         true, finished: true));
     final sender = peers[transfer.senderId];
@@ -410,6 +494,13 @@ class LanNode {
       'name': name, 'size': total, 'sha256': sha});
     if (reply['ok'] != true) throw StateError('Receiver cannot accept file: ${reply['reason'] ?? 'unavailable'}');
     var index = (reply['next'] as int?) ?? 0;
+    final finalIndex = (total / chunkSize).ceil();
+    if (index < 0 || index > finalIndex) {
+      throw StateError('Receiver reported impossible transfer offset');
+    }
+    if (reply['done'] == true && index != finalIndex) {
+      throw StateError('Receiver reported inconsistent completion');
+    }
     try {
       final input = await file.open();
       try {
@@ -417,17 +508,45 @@ class LanNode {
         while (index * chunkSize < total) {
           final chunk = await input.read(min(chunkSize, total - index * chunkSize));
           if (chunk.isEmpty) throw const FileSystemException('Unable to read file');
-          var retries = 0;
-          while (true) {
+          DateTime? firstFailure;
+          var accepted = false;
+          while (!accepted) {
             try {
               final res = await _post(peer, '/v1/chunk', utf8.encode(jsonEncode({
                 'id': id, 'index': index, 'bytes': base64Encode(chunk),
               })));
-              if (res['ok'] != true) throw StateError('Peer rejected file chunk');
-              break;
-            } catch (_) {
-              if (++retries > 3) rethrow;
-              await Future<void>.delayed(Duration(milliseconds: 500 * retries));
+              if (res['ok'] != true) {
+                throw StateError('Receiver rejected file chunk');
+              }
+              accepted = true;
+            } catch (e) {
+              firstFailure ??= DateTime.now();
+              if (DateTime.now().difference(firstFailure) >=
+                  Duration(seconds: reconnectGraceSeconds)) rethrow;
+              _reportProgress(TransferProgress(id, peer.id, name,
+                  min(index * chunkSize, total), total, false, waiting: true));
+              // Preserve the same ID/chunk. An ACK may have been lost while
+              // the receiver already appended the chunk; query its signed
+              // next index before retrying to avoid appending it twice.
+              await Future<void>.delayed(const Duration(seconds: 1));
+              try {
+                final status = await _event(peer, {
+                  'kind': 'file-status', 'id': id,
+                });
+                if (status['ok'] == true) {
+                  final next = status['next'];
+                  if (next == index + 1) {
+                    accepted = true; // Receiver already acknowledged on disk.
+                  } else if (next != index) {
+                    throw StateError(
+                        'Transfer offset changed; retry requires a new file offer');
+                  }
+                }
+              } on StateError {
+                rethrow; // Never silently skip or duplicate missing bytes.
+              } catch (_) {
+                // Peer still unreachable: honor the same bounded deadline.
+              }
             }
           }
           index++;
