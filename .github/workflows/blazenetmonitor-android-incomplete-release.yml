@@ -1,0 +1,82 @@
+name: BlazeNetMonitor Android — label working preview INCOMPLETE
+on:
+  push:
+    branches:
+      - feature/blazenetmonitor-android-v0.1.0
+    paths:
+      - .github/workflows/blazenetmonitor-android-incomplete-release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  label-frozen-preview:
+    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_TAG: blazenetmonitor-android-v0.1.8-preview.1
+      INCOMPLETE_TAG: blazenetmonitor-android-v0.1.8-INCOMPLETE
+      SOURCE_SHA: dd3728b20408563f05f8038cbb64e6bf653b4b69
+      APK: BlazeNetMonitor-Android-v0.1.8-preview.1.apk
+      APK_SHA256: 2ad0bd08ce413233df3ca6bc6af8716b228c4eadb0e0061041bbdad28bfdf2ad
+    steps:
+      - name: Verify exact previously released source and binary (no rebuild)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feature/blazenetmonitor-android-v0.1.0'
+          target="$(gh release view "$SOURCE_TAG" --repo "$GITHUB_REPOSITORY" --json targetCommitish --jq '.targetCommitish')"
+          test "$target" = "$SOURCE_SHA" || { echo "FAIL source release target mismatch: $target"; exit 1; }
+          dir="$(mktemp -d)"
+          echo "OUTPUT_DIR=$dir" >> "$GITHUB_ENV"
+          gh release download "$SOURCE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$APK" --dir "$dir"
+          gh release download "$SOURCE_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'SHA256SUMS.txt' --dir "$dir"
+          test -s "$dir/$APK"
+          expected_from_release="$(awk 'NR==1{print $1}' "$dir/SHA256SUMS.txt")"
+          test "$expected_from_release" = "$APK_SHA256" || { echo 'FAIL original checksum record mismatch'; exit 1; }
+          actual="$(sha256sum "$dir/$APK" | cut -d ' ' -f 1)"
+          test "$actual" = "$APK_SHA256" || { echo "FAIL APK SHA256 mismatch: $actual"; exit 1; }
+          echo "PASS existing APK unchanged; source commit $SOURCE_SHA; checksum $actual"
+      - name: Publish immutable INCOMPLETE label as an additional Git tag and prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$OUTPUT_DIR/RELEASE_NOTES.md" <<'NOTES'
+          ## Release status: INCOMPLETE — notification visuals only
+          
+          **Owner-confirmed functionality: fully working for its intended monitoring use.** The INCOMPLETE tag concerns the requested fidelity of **target health dots and website logos on the owner's notification shade**, not overall monitoring operation.
+          
+          This is the **exact same v0.1.8-preview.1 debug-signed APK** (not a new build). Its internal Android version remains `0.1.8-preview.1`. No application code was changed for this release status.
+          
+          - APK source commit: `dd3728b20408563f05f8038cbb64e6bf653b4b69`.
+          - APK SHA-256: `2ad0bd08ce413233df3ca6bc6af8716b228c4eadb0e0061041bbdad28bfdf2ad`.
+          - Existing successful native APK / tests: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40442611630
+          - Existing successful Android 15 emulator smoke: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40442513301
+          - Original preview: https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.8-preview.1
+          - Outstanding visual acceptance: https://github.com/BlazingSystems/BlazingSystems-Experiments/issues/214
+          
+          **Repository:** BlazingSystems-Experiments / `expiremental/BlazeNetMonitorAndroid`. No transfer to completed/production repositories. Physical long-duration and OEM visual acceptance are not independently certified; this is an experimental sideloadable prerelease.
+          NOTES
+          if gh release view "$INCOMPLETE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'INCOMPLETE release already exists; do not overwrite its release notes or assets.'
+          else
+            gh release create "$INCOMPLETE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$SOURCE_SHA" \
+              --title '[INCOMPLETE] BlazeNetMonitor Android v0.1.8 — fully working, notification visuals pending' \
+              --notes-file "$OUTPUT_DIR/RELEASE_NOTES.md" --prerelease
+          fi
+          tag_head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$INCOMPLETE_TAG" --jq '.object.sha')"
+          test "$tag_head" = "$SOURCE_SHA" || { echo "FAIL incomplete tag points to unexpected commit $tag_head"; exit 1; }
+          for name in "$APK" 'SHA256SUMS.txt'; do
+            if gh release view "$INCOMPLETE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fxq "$name"; then
+              echo "Preserving existing INCOMPLETE release asset: $name"
+            else
+              gh release upload "$INCOMPLETE_TAG" "$OUTPUT_DIR/$name" --repo "$GITHUB_REPOSITORY"
+            fi
+          done
+          verify="$(mktemp -d)"
+          gh release download "$INCOMPLETE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "$APK" --dir "$verify"
+          downloaded_hash="$(sha256sum "$verify/$APK" | cut -d ' ' -f 1)"
+          test "$downloaded_hash" = "$APK_SHA256" || { echo 'FAIL released APK differs from original'; exit 1; }
+          echo "PASS INCOMPLETE release, correct source tag, exact unchanged downloadable APK: $downloaded_hash"

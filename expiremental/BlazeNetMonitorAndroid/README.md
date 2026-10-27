@@ -1,5 +1,17 @@
 # BlazeNetMonitor Android — v0.1.8 Preview
 
+## Final disposition — INCOMPLETE (nonblocking notification visuals)
+
+**Owner decision, 2026-10-27:** BlazeNetMonitor Android v0.1.8 is **fully working for the owner's monitoring use**, but the originally requested precision of the notification's target-health dots and target website logos is **INCOMPLETE** on the owner's device. The status describes visual polish and OEM-specific rendering, **not a broken monitoring function**.
+
+- **Repository remains experimental:** `BlazingSystems/BlazingSystems-Experiments`, folder `expiremental/BlazeNetMonitorAndroid/`. Do not migrate to the completed-project repository.
+- **Release tag:** [`blazenetmonitor-android-v0.1.8-INCOMPLETE`](https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/tag/blazenetmonitor-android-v0.1.8-INCOMPLETE).
+- **Freeze the proven working APK:** This release is a second label for the **identical, debug-signed v0.1.8-preview.1 APK**, built from source commit `dd3728b20408563f05f8038cbb64e6bf653b4b69`, SHA-256 `2ad0bd08ce413233df3ca6bc6af8716b228c4eadb0e0061041bbdad28bfdf2ad`. Do not rebuild and silently claim binary equivalence.
+- **Verified on CI:** Android APK build, JVM unit checks and Android 15 emulator foreground smoke. **Owner reports:** monitoring functionality works. These are distinct evidence types. Physical long-duration soak and universal OEM notification visual fidelity are not certified.
+- **Incomplete items:** exact readability/visibility of both independently colored health dots and target website logos in the notification shade on the owner's phone. Website-provided favicons and OEM notification scaling can vary; fallback globes may be used.
+- **No source/feature modifications** for this status decision. This is a preview release with an accepted visual limitation, not a Play Store production-signoff or a claim of verified device-wide behavior.
+
+
 **Blaze Systems · Native Android port of BlazeNetMonitor v1.0.0**
 
 Original completed Windows source: https://github.com/BlazingSystems/BlazingSystems-Projects/tree/main/networking/blazenetmonitor
