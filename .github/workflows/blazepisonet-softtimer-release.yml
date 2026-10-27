@@ -161,7 +161,9 @@ jobs:
           New-Item -ItemType Directory -Force release | Out-Null
           Push-Location "$env:PROJECT_DIR/installer"
           try {
-            & "$env:NSIS_EXE" /V3 "BlazePisonet-SoftTimer.nsi"
+            # NSIS treats BOM-less input as ANSI unless the charset is explicit.
+            # The source © is UTF-8; require literal U+00A9 in compiled Setup.
+            & "$env:NSIS_EXE" /INPUTCHARSET UTF8 /V3 "BlazePisonet-SoftTimer.nsi"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
