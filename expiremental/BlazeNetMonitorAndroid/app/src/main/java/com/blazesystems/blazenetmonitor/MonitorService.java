@@ -5,6 +5,7 @@ import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.os.*;
 import android.widget.RemoteViews;
+import android.util.Log;
 import java.util.concurrent.*;
 
 /**
@@ -17,6 +18,8 @@ public final class MonitorService extends Service {
     public static final String ACTION_START="com.blazesystems.blazenetmonitor.START";
     public static final String ACTION_STOP="com.blazesystems.blazenetmonitor.STOP";
     private static final int NOTIFICATION_ID=101;
+    private static final String TAG="BlazeNetMonitor.Service";
+    private static final String ERROR_KEY="service_start_error";
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
@@ -56,26 +59,76 @@ public final class MonitorService extends Service {
     }
     private void startMonitor(){
         if(running)return;
+        // Immediately promote using the standard OS notification first.
+        // A slow/custom RemoteViews layout cannot block the foreground-service
+        // promotion deadline or tear down monitoring before the first sample.
         try{
             if(Build.VERSION.SDK_INT>=34)
-                startForeground(NOTIFICATION_ID,notification(),
+                startForeground(NOTIFICATION_ID,safeNotification(),
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            else startForeground(NOTIFICATION_ID,notification());
-        }catch(Exception e){
+            else startForeground(NOTIFICATION_ID,safeNotification());
+        }catch(RuntimeException e){
+            Log.e(TAG,"Foreground service could not start",e);
+            getSharedPreferences("settings",0).edit().putString(ERROR_KEY,
+                e.getClass().getSimpleName()+": "+
+                (e.getMessage()==null?"service not permitted":e.getMessage())).apply();
             stopSelf();
             return;
         }
+        getSharedPreferences("settings",0).edit().remove(ERROR_KEY).apply();
         running=true;
         ACTIVE=true;
         handler.post(poll);
+    }
+
+    /** Always-valid OS-owned notification for initial foreground promotion and
+      * emergency fallback if a manufacturer's SystemUI rejects custom layouts. */
+    private Notification safeNotification(){
+        MonitorState.Frame frame=MonitorState.INSTANCE.frame();
+        boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
+        String speed=speeds(frame,bits);
+        PendingIntent open=PendingIntent.getActivity(this,12,
+            new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent stop=PendingIntent.getService(this,13,
+            new Intent(this,MonitorService.class).setAction(ACTION_STOP),
+            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        String[] quality=frame.status;
+        Notification.InboxStyle info=new Notification.InboxStyle()
+            .setBigContentTitle("BlazeNetMonitor · At a glance")
+            .addLine("● "+quality[0]+"   "+speed+"   ● "+quality[1])
+            .addLine("Session   ↓ "+TrafficMath.data(frame.sessionRx)+
+                "    ↑ "+TrafficMath.data(frame.sessionTx))
+            .addLine("Today     ↓ "+TrafficMath.data(frame.dayRx)+
+                "    ↑ "+TrafficMath.data(frame.dayTx))
+            .addLine("Month    ↓ "+TrafficMath.data(frame.monthRx)+
+                "    ↑ "+TrafficMath.data(frame.monthTx));
+        return new Notification.Builder(this,CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification_status)
+            .setContentTitle("BlazeNetMonitor · ● "+quality[0]+" / "+quality[1])
+            .setContentText(speed)
+            .setStyle(info)
+            .setContentIntent(open)
+            .setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .addAction(new Notification.Action.Builder(
+                android.R.drawable.ic_menu_close_clear_cancel,"Stop",stop).build())
+            .build();
     }
     private void publish(){
         try{
             NotificationManager manager=getSystemService(NotificationManager.class);
             if(manager!=null)manager.notify(NOTIFICATION_ID,notification());
-        }catch(Exception ignored){
-            // Notification permission or OEM restrictions can prevent rendering;
-            // avoid crashing the traffic collector.
+        }catch(RuntimeException e){
+            // Preserve foreground monitoring even when custom RemoteViews are
+            // rejected by an OEM. Record why the fallback was used.
+            Log.e(TAG,"Custom notification failed, using OS notification",e);
+            getSharedPreferences("settings",0).edit().putString(ERROR_KEY,
+                "Custom notification unavailable; basic monitoring active").apply();
+            try{
+                NotificationManager manager=getSystemService(NotificationManager.class);
+                if(manager!=null)manager.notify(NOTIFICATION_ID,safeNotification());
+            }catch(RuntimeException ignored){Log.e(TAG,"OS notification also unavailable",ignored);}
         }
     }
     private void probeTargets(){
