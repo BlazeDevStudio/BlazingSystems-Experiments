@@ -2,6 +2,7 @@
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let boardLoading=null;
+let currentWorkspaceId='',workspaces=[],openProjectIds=[];
 let project=null,projects=[],boards=[],selected=null,pending=null,pendingData=null,tab='graph',unsaved=false,saveTimer=null,saveInFlight=null,changeRevision=0,codeRequest=0,simulation=null,lastCompilation=null,simInputs={},simAnalogInputs={},simBreaks=[];
 const labels={setVariable:'Set Variable',readAnalog:'Analog Sample',thresholdOutput:'Threshold Output',loopStart:'Loop Start',pinMode:'Pin Mode',digitalWrite:'Digital Write',delay:'Delay',comment:'Comment',pwmWrite:'PWM Write',serialPrint:'Serial Print',wireWrite:'Wire I2C Write'};
 function log(text){const box=$('#log');box.textContent+='\n'+String(text);box.scrollTop=box.scrollHeight;}
@@ -24,9 +25,37 @@ async function save(){
  saveInFlight=job;
  try{await job;}finally{if(saveInFlight===job)saveInFlight=null;}
 }
-async function refreshProjects(update=true){projects=await window.blaze.listProjects();$('#projectList').innerHTML=projects.length?projects.map(p=>`<button class="projectlink ${project?.id===p.id?'active':''}" data-open="${p.id}"><strong>◫ ${escapeHTML(p.name)}</strong><small>${escapeHTML(p.fqbn)}</small></button>`).join(''):'<p class="muted">No projects yet</p>';if(update)log('Found '+projects.length+' local project(s).');}
-async function openProject(id){while(project&&unsaved)await save();project=await window.blaze.openProject(id);simulation=null;lastCompilation=null;simInputs={};simAnalogInputs={};simBreaks=[];selected=null;pending=null;pendingData=null;unsaved=false;$('#dirty').textContent='';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=false);$('#paletteHint').textContent='Drag a block onto Nodes, or click to append it. Select the block to edit.';$('#welcome').classList.add('hidden');$('#workspace').classList.remove('hidden');render();}
-function render(){if(!project)return;$('#projectTitle').textContent=project.name;$('#projectMeta').textContent=`${project.fqbn} · ${project.source.mode==='manual'?'Full manual C++':'Node-generated C++'}`;$('#activeBoard').textContent=project.fqbn;$$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$$('.view').forEach(v=>v.classList.add('hidden'));$('#'+tab+'View').classList.remove('hidden');renderGraph();renderInspector();renderCode().catch(e=>log('Source generation error: '+e.message));renderPins().catch(e=>log('Pin profile error: '+e.message));renderBoardList();renderFlowchart();renderLibraries();renderVariables();renderSim();renderResourcesSummary();refreshProjects(false);}
+async function refreshWorkspaces(){
+ workspaces=await window.blaze.listWorkspaces();
+ if(currentWorkspaceId&&!workspaces.some(w=>w.id===currentWorkspaceId))currentWorkspaceId='';
+ $('#workspaceSelect').innerHTML='<option value="">All projects</option>'+workspaces.map(w=>`<option value="${w.id}">${escapeHTML(w.name)} (${w.projectIds.length})</option>`).join('');
+ $('#workspaceSelect').value=currentWorkspaceId;
+ updateWorkspaceActions();
+}
+function updateWorkspaceActions(){
+ const w=workspaces.find(w=>w.id===currentWorkspaceId);
+ for(const id of ['workspaceRename','workspaceDelete','workspaceAddCurrent','workspaceRemoveCurrent'])$('#'+id).disabled=!w;
+ $('#workspaceAddCurrent').disabled=!w||!project||w.projectIds.includes(project.id);
+ $('#workspaceRemoveCurrent').disabled=!w||!project||!w.projectIds.includes(project.id);
+ $('#workspaceSummary').textContent=w?`${w.projectIds.length} independent targets${w.missingIds?.length?' · '+w.missingIds.length+' recoverable/missing':''}. Export/compile each separately.`:'Showing all projects. Each tab builds its own board target.';
+}
+function renderOpenProjectTabs(){
+ const lookup=new Map(projects.map(x=>[x.id,x]));
+ $('#openProjectTabs').innerHTML=openProjectIds.map(id=>{
+  const p=lookup.get(id);if(!p)return '';
+  return `<div class="projectTab ${project?.id===id?'active':''}"><button data-activate-project="${id}" title="${escapeHTML(p.fqbn)}">${escapeHTML(p.name)}</button><button class="closeTab" data-close-project="${id}" title="Close tab">×</button></div>`;
+ }).join('');
+}
+async function refreshProjects(update=true){
+ projects=await window.blaze.listProjects();
+ const workspace=workspaces.find(w=>w.id===currentWorkspaceId);
+ const visible=workspace?projects.filter(p=>workspace.projectIds.includes(p.id)):projects;
+ $('#projectList').innerHTML=visible.length?visible.map(p=>`<button class="projectlink ${project?.id===p.id?'active':''}" data-open="${p.id}"><strong>◫ ${escapeHTML(p.name)}</strong><small>${escapeHTML(p.fqbn)}</small></button>`).join(''):'<p class="muted">No active projects in this collection</p>';
+ renderOpenProjectTabs();updateWorkspaceActions();
+ if(update)log(`Found ${visible.length} visible project(s) in ${workspace?.name||'All projects'}.`);
+}
+async function openProject(id){while(project&&unsaved)await save();project=await window.blaze.openProject(id);if(!openProjectIds.includes(id))openProjectIds.push(id);simulation=null;lastCompilation=null;simInputs={};simAnalogInputs={};simBreaks=[];selected=null;pending=null;pendingData=null;unsaved=false;$('#dirty').textContent='';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=false);$('#paletteHint').textContent='Drag a block onto Nodes, or click to append it. Select the block to edit.';$('#welcome').classList.add('hidden');$('#workspace').classList.remove('hidden');render();}
+function render(){if(!project)return;renderOpenProjectTabs();updateWorkspaceActions();$('#projectTitle').textContent=project.name;$('#projectMeta').textContent=`${project.fqbn} · ${project.source.mode==='manual'?'Full manual C++':'Node-generated C++'}`;$('#activeBoard').textContent=project.fqbn;$$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$$('.view').forEach(v=>v.classList.add('hidden'));$('#'+tab+'View').classList.remove('hidden');renderGraph();renderInspector();renderCode().catch(e=>log('Source generation error: '+e.message));renderPins().catch(e=>log('Pin profile error: '+e.message));renderBoardList();renderFlowchart();renderLibraries();renderVariables();renderSim();renderResourcesSummary();refreshProjects(false);}
 function renderGraph(){if(!project)return;let html='';for(const n of project.graph.nodes){html+=`<div class="node ${n.type==='loopStart'?'start':''} ${selected===n.id?'selected':''}" data-node="${n.id}" style="left:${Math.max(0,Math.min(1400,n.x||0))}px;top:${Math.max(0,Math.min(1100,n.y||0))}px"><div class="ntitle" data-drag="${n.id}">${escapeHTML(labels[n.type])}</div><div class="ndesc">${escapeHTML(describe(n))}</div><div class="ports"><button data-select="${n.id}">Edit</button>${n.type!=='loopStart'?`<button data-target="${n.id}">Input</button>`:'<span></span>'}<button data-source="${n.id}" title="Connect next execution block">Output →</button></div>${['readAnalog','setVariable'].includes(n.type)?`<div class="dataPorts"><button draggable="true" data-data-output="${n.id}" title="Data value output. Click, then click a Value input; or drag onto it.">● Value out</button></div>`:''}${n.type==='thresholdOutput'?`<div class="dataPorts"><button data-data-input="${n.id}" title="Typed numeric measurement input">◉ Value in</button></div>`:''}</div>`;}$('#nodeLayer').innerHTML=html;drawWires();}
 function describe(n){switch(n.type){case 'loopStart':return 'Runs repeatedly';case 'pinMode':return `D${n.params.pin} → ${n.params.mode}`;case 'digitalWrite':return `D${n.params.pin} ← ${n.params.value}`;case 'delay':return `${n.params.ms} ms`;case 'pwmWrite':return `D${n.params.pin} PWM ${n.params.value}/255`;case 'serialPrint':return `Serial ${n.params.baud}: ${(n.params.text||'').slice(0,26)}`;case 'setVariable':return `${n.params.target} = ${n.params.value}`;case 'readAnalog':return `${n.params.target} ← ${n.params.pin}`;case 'thresholdOutput':return `D${n.params.pin}: ${n.params.variable} ${n.params.operator} ${n.params.threshold}`;case 'wireWrite':return `I2C ${n.params.address} register ${n.params.register} = ${n.params.value}`;case 'comment':return (n.params.text||'Annotation').slice(0,42);}}
 function renderInspector(){const n=project?.graph.nodes.find(n=>n.id===selected);$('#inspectorEmpty').classList.toggle('hidden',!!n);$('#nodeInspector').classList.toggle('hidden',!n);if(!n)return;let fields='';if(['pinMode','digitalWrite','pwmWrite'].includes(n.type))fields+=`<label>Digital pin<input type="text" data-param="pin" value="${escapeHTML(n.params.pin)}"></label>`;
@@ -127,7 +156,7 @@ async function connectData(from,to){
 }
 function connect(from,to){if(from===to){log('Self-connection rejected.');return;}const edges=project.graph.edges.filter(e=>e[0]!==from&&e[1]!==to);edges.push([from,to]);project.graph.edges=edges;pending=null;dirty();render();}
 function rearrange(){let ordered=[],seen=new Set(),cur='start';while(cur&&!seen.has(cur)){seen.add(cur);ordered.push(cur);cur=project.graph.edges.find(e=>e[0]===cur)?.[1];}for(const [i,id] of ordered.entries()){const n=project.graph.nodes.find(n=>n.id===id);if(n){n.x=55+(i%4)*255;n.y=90+Math.floor(i/4)*205;}}dirty();renderGraph();}
-$('#newProject').onclick=showModal;$('#welcomeNew').onclick=showModal;$('#cancelNew').onclick=()=>$('#newModal').classList.add('hidden');$('#confirmNew').onclick=async()=>{try{const created=await window.blaze.createProject($('#newName').value,$('#newBoard').value,$('#newTemplate').value);$('#newModal').classList.add('hidden');await openProject(created.id);log('Created '+created.name+' for '+created.fqbn);}catch(e){log('Project create error: '+e.message);}};
+$('#newProject').onclick=showModal;$('#welcomeNew').onclick=showModal;$('#cancelNew').onclick=()=>$('#newModal').classList.add('hidden');$('#confirmNew').onclick=async()=>{try{const created=await window.blaze.createProject($('#newName').value,$('#newBoard').value,$('#newTemplate').value);$('#newModal').classList.add('hidden');if(currentWorkspaceId){await window.blaze.addToWorkspace(currentWorkspaceId,created.id);await refreshWorkspaces();}await openProject(created.id);log('Created '+created.name+' for '+created.fqbn);}catch(e){log('Project create error: '+e.message);}};
 $('#refreshProjects').onclick=()=>refreshProjects();$('#save').onclick=()=>save();$('#validate').onclick=validate;$('#build').onclick=build;$('#export').onclick=async()=>{try{while(unsaved)await save();const r=await window.blaze.exportSketch(project);log(r.canceled?'Export canceled.':'Arduino sketch exported: '+r.filename);}catch(e){log('Export error: '+e.message);}};
 $('#manageBoards').onclick=()=>{if(!project){showModal();return;}tab='boards';render();};$('#refreshBoards').onclick=discover;
 $('#installCore').onclick=()=>installCoreFor($('#coreId').value.trim()).catch(e=>log('Core install error: '+e.message));
@@ -164,7 +193,7 @@ $('#nodeInspector').addEventListener('click',e=>{if(e.target.id==='disconnectDat
 $('#manualMode').onchange=async()=>{if(!project)return;if($('#manualMode').checked){if(!confirm('Take full manual source ownership? Visual changes will no longer generate this sketch. Existing blocks stay preserved.')){renderCode();return;}const generated=await window.blaze.generate(project);if(!generated.source){log('Cannot switch: graph validation errors: '+generated.diagnostics.errors.join('; '));renderCode();return;}project.source.manualSource=generated.source;project.source.mode='manual';}else{if(!confirm('Return to visual generation? Your manual source stays saved but is NOT compiled or exported while visual mode is active.')){renderCode();return;}project.source.mode='visual';}dirty();render();};
 $('#codeEditor').addEventListener('input',()=>{if(project?.source.mode==='manual'){project.source.manualSource=$('#codeEditor').value;dirty();}});
 for(const k of ['userPrelude','userSetup','userLoop'])$('#'+k).addEventListener('input',()=>{if(!project)return;project.source[k]=$('#'+k).value;dirty();});
-(async()=>{try{await refreshProjects();const status=await window.blaze.cliStatus();$('#cliLed').classList.toggle('ok',status.ok);$('#cliState').textContent=status.ok?'Arduino CLI detected':'Arduino CLI unavailable';logResult('Arduino CLI',status);if(status.ok)await discover();else renderBoardList();}catch(e){log('Initialization failed: '+e.message);$('#cliState').textContent='CLI unavailable';}})();
+(async()=>{try{await refreshWorkspaces();await refreshProjects();const status=await window.blaze.cliStatus();$('#cliLed').classList.toggle('ok',status.ok);$('#cliState').textContent=status.ok?'Arduino CLI detected':'Arduino CLI unavailable';logResult('Arduino CLI',status);if(status.ok)await discover();else renderBoardList();}catch(e){log('Initialization failed: '+e.message);$('#cliState').textContent='CLI unavailable';}})();
 
 // v0.3 structured flowchart and BALIE read-only library panels.
 const flowTitles={setOutput:'Configure output',write:'Digital output',wait:'Delay',branch:'Decision',repeat:'Repeat',note:'Comment',callNodes:'Call node graph',end:'End loop iteration'};
@@ -191,7 +220,7 @@ $('#addWireAdapter').onclick=()=>{if(!project||project.fqbn!=='arduino:avr:uno')
 $('#manageLibraries').onclick=()=>{if(!project){log('Create a project first');return;}tab='libraries';render();};
 $('#rename').onclick=async()=>{if(!project)return;const name=prompt('New project name',project.name);if(name===null)return;try{while(unsaved)await save();project=await window.blaze.renameProject(project.id,name);render();log('Renamed project');}catch(e){log('Rename failed: '+e.message);}};
 $('#duplicate').onclick=async()=>{if(!project)return;try{while(unsaved)await save();const p=await window.blaze.duplicateProject(project.id);await openProject(p.id);log('Project duplicated to '+p.name);}catch(e){log('Duplicate failed: '+e.message);}};
-$('#trash').onclick=async()=>{if(!project)return;if(!confirm('Move '+project.name+' to project recovery? This removes it from active projects.'))return;try{while(unsaved)await save();await window.blaze.trashProject(project.id);project=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);$('#paletteHint').textContent='Create a project to activate blocks.';await refreshProjects();log('Project moved to recoverable trash.');}catch(e){log('Delete failed: '+e.message);}};
+$('#trash').onclick=async()=>{if(!project)return;if(!confirm('Move '+project.name+' to project recovery? This removes it from active projects.'))return;try{while(unsaved)await save();await window.blaze.trashProject(project.id);openProjectIds=openProjectIds.filter(id=>id!==project.id);project=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);$('#paletteHint').textContent='Create a project to activate blocks.';await refreshProjects();log('Project moved to recoverable trash.');}catch(e){log('Delete failed: '+e.message);}};
 $('#recoverProject').onclick=async()=>{try{const items=await window.blaze.listRecovery();if(!items.length){log('No deleted projects available for recovery.');return;}const id=prompt('Paste the project ID to recover:\n'+items.map(p=>p.id).join('\n'),items[0].id);if(!id)return;const p=await window.blaze.recoverProject(id);await openProject(p.id);log('Restored '+p.name);}catch(e){log('Recovery failed: '+e.message);}};
 
 // v0.4.0 virtual logic simulator and forecast, both entirely optional to firmware generation.
@@ -240,3 +269,45 @@ $('#planSD').onclick=async()=>{if(!project)return;if(project.fqbn!=='arduino:avr
   project.peripherals=sample.peripherals;dirty();renderPeripherals();log('SD card SPI pin proposal saved. Library integration and physical SD acceptance NOT implemented.');
  }catch(e){log('SD pin proposal failed: '+e.message);}
 };
+
+// v0.4.6 multi-project workspace control. A collection never changes board identities.
+$('#workspaceSelect').onchange=async()=>{currentWorkspaceId=$('#workspaceSelect').value;await refreshProjects();};
+$('#workspaceCreate').onclick=async()=>{
+ const name=prompt('New workspace collection name (each project builds separately):','Home Automation');if(name===null)return;
+ try{const w=await window.blaze.createWorkspace(name);currentWorkspaceId=w.id;await refreshWorkspaces();await refreshProjects();log('Workspace created: '+w.name);}catch(e){log('Workspace creation failed: '+e.message);}
+};
+$('#workspaceRename').onclick=async()=>{
+ const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
+ const name=prompt('Rename workspace',w.name);if(name===null)return;
+ try{await window.blaze.renameWorkspace(w.id,name);await refreshWorkspaces();await refreshProjects();}catch(e){log('Workspace rename failed: '+e.message);}
+};
+$('#workspaceDelete').onclick=async()=>{
+ const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
+ if(!confirm(`Delete collection "${w.name}"? Its ${w.projectIds.length} firmware projects will NOT be deleted.`))return;
+ try{await window.blaze.deleteWorkspace(w.id);currentWorkspaceId='';await refreshWorkspaces();await refreshProjects();log('Workspace collection deleted. Firmware projects retained.');}catch(e){log('Workspace delete failed: '+e.message);}
+};
+$('#workspaceAddCurrent').onclick=async()=>{
+ if(!currentWorkspaceId||!project)return;
+ try{await window.blaze.addToWorkspace(currentWorkspaceId,project.id);await refreshWorkspaces();await refreshProjects();log('Linked '+project.name+' to workspace without modifying firmware.');}catch(e){log('Workspace association failed: '+e.message);}
+};
+$('#workspaceRemoveCurrent').onclick=async()=>{
+ if(!currentWorkspaceId||!project)return;
+ try{await window.blaze.removeFromWorkspace(currentWorkspaceId,project.id);await refreshWorkspaces();await refreshProjects();log('Unlinked project; firmware remains accessible in All projects.');}catch(e){log('Workspace unlink failed: '+e.message);}
+};
+$('#openProjectTabs').addEventListener('click',async e=>{
+ const close=e.target.closest('[data-close-project]');
+ if(close){
+  const id=close.dataset.closeProject,wasActive=project?.id===id;
+  try{
+   if(wasActive)while(unsaved)await save();
+   openProjectIds=openProjectIds.filter(x=>x!==id);
+   if(wasActive){
+    const next=openProjectIds.at(-1);if(next)await openProject(next);
+    else{project=null;selected=null;simulation=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$('#projectTitle').textContent='Start with a project';$('#projectMeta').textContent='Select a board and create your first sketch.';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);}
+   }
+   await refreshProjects(false);
+  }catch(err){log('Close tab failed: '+err.message);}
+  return;
+ }
+ const open=e.target.closest('[data-activate-project]');if(open)openProject(open.dataset.activateProject).catch(err=>log('Open tab failed: '+err.message));
+});

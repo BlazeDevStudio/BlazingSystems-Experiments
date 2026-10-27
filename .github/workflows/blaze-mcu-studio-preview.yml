@@ -1,4 +1,4 @@
-name: Blaze MCU Studio v0.4.5 typed data socket integration and cross-core compilation gate
+name: Blaze MCU Studio v0.4.6 workspaces, typed sockets and cross-core gates
 on:
   pull_request:
     paths:
@@ -125,11 +125,17 @@ jobs:
           if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
           $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
           Get-Content $env:BLAZE_MCU_SMOKE_FILE
-          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
+          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
+      - name: Archive exact checked-out source
+        shell: pwsh
+        if: always()
+        run: |
+          $items=@('expiremental/Blaze-MCU-Studio/core','expiremental/Blaze-MCU-Studio/renderer','expiremental/Blaze-MCU-Studio/electron','expiremental/Blaze-MCU-Studio/docs','expiremental/Blaze-MCU-Studio/tests','expiremental/Blaze-MCU-Studio/scripts','expiremental/Blaze-MCU-Studio/examples','expiremental/Blaze-MCU-Studio/package.json','expiremental/Blaze-MCU-Studio/README.md','.github/workflows/blaze-mcu-studio-preview.yml')
+          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v046-source.zip" -Force
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v045-typed-data-sockets-and-build-evidence
+          name: blaze-mcu-v046-workspaces-typed-sockets-build-evidence
           path: |
             expiremental/Blaze-MCU-Studio/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
@@ -143,6 +149,7 @@ jobs:
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
             ${{ runner.temp }}/blaze-mcu-gui-smoke.json
+            ${{ runner.temp }}/blaze-mcu-v046-source.zip
           if-no-files-found: warn
           retention-days: 14
 

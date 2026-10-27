@@ -17,3 +17,13 @@
 
 /* Real, persisted scalar sockets; separate from execution wires. */
 .node .dataPorts{display:flex;padding:0 9px 9px;justify-content:flex-end}.node .dataPorts button{font-size:10px;border-color:#9c7d3c;background:#493e2b;color:#ffdea1;padding:5px 8px;cursor:crosshair}.node .dataPorts button:hover{background:#59482f}.dataBinding{font-size:11px;border-left:3px solid #e6be7a;padding:8px;background:#3b3429;color:#f8dcaa;line-height:1.5}#disconnectData{margin-bottom:8px;color:#fbdca3}
+
+/* Independently buildable workspace collections and open-project tabs */
+.workspaceActions{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0;}
+.workspaceActions button{font-size:11px;padding:6px 7px;flex:1 1 auto;}
+#workspaceSelect{width:100%;margin:6px 0;min-width:0;}
+.projectTabs{display:flex;gap:6px;overflow-x:auto;padding:6px 12px;background:#151b26;border-bottom:1px solid #30394b;min-height:30px;}
+.projectTab{display:flex;align-items:center;gap:5px;border:1px solid #465064;border-radius:5px;background:#263144;flex:0 0 auto;}
+.projectTab.active{border-color:#58b7d9;background:#23475b;}
+.projectTab button{padding:5px 9px;font-size:12px;border:0;background:none;color:#e4ebf2;}
+.projectTab button.closeTab{font-weight:bold;padding:5px 8px;}

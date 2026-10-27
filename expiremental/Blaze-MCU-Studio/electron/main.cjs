@@ -1,11 +1,11 @@
 'use strict';
 const {app,BrowserWindow,ipcMain,dialog,session}=require('electron');const path=require('node:path');
-const {WorkspaceStore}=require('../core/storage.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');const balie=require('../core/balie.cjs');const board=require('../core/board.cjs');const flow=require('../core/flowchart.cjs');const {SimulationController}=require('../core/simulator.cjs');const resources=require('../core/resources.cjs');const peripheralPlanner=require('../core/peripherals.cjs');
-let win,store,cli;const simulations=new SimulationController();
+const {WorkspaceStore}=require('../core/storage.cjs');const {WorkspaceCatalog}=require('../core/workspaces.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');const balie=require('../core/balie.cjs');const board=require('../core/board.cjs');const flow=require('../core/flowchart.cjs');const {SimulationController}=require('../core/simulator.cjs');const resources=require('../core/resources.cjs');const peripheralPlanner=require('../core/peripherals.cjs');
+let win,store,cli,workspaceCatalog;const simulations=new SimulationController();
 function checkedSender(event){if(!win || event.sender!==win.webContents)throw Error('Untrusted IPC sender');}
 function register(channel,fn){ipcMain.handle(channel,(event,...args)=>{checkedSender(event);return fn(...args);});}
 app.whenReady().then(()=>{
- store=new WorkspaceStore(path.join(app.getPath('userData'),'projects'));cli=arduino.findCli(process.resourcesPath);
+ store=new WorkspaceStore(path.join(app.getPath('userData'),'projects'));workspaceCatalog=new WorkspaceCatalog(store);cli=arduino.findCli(process.resourcesPath);
  session.defaultSession.setPermissionRequestHandler((_w,_p,cb)=>cb(false));
  win=new BrowserWindow({width:1350,height:810,minWidth:900,minHeight:620,show:false,backgroundColor:'#121721',webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(__dirname,'preload.cjs'),webSecurity:true}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
@@ -135,6 +135,38 @@ app.whenReady().then(()=>{
       if(!document.getElementById('pinGrid').textContent.includes('GPIO34')||!document.getElementById('pinGrid').textContent.includes('FLASH / NO-GO'))throw Error('ESP32 Pin Manager failed to show input-only / reserved pins');
       if((await api.boardProfile('esp32:esp32:esp32s3'))!==null)throw Error('Classic ESP32 profile incorrectly claimed on S3');
 
+      // Exercise real sidebar handlers and project tabs, not workspace data APIs alone.
+      const oldPrompt=window.prompt;
+      window.prompt=()=>'CI Home Workspace';
+      document.getElementById('workspaceCreate').click();
+      await pause(400);
+      window.prompt=oldPrompt;
+      const workspaceList=await api.listWorkspaces();
+      const ws=workspaceList.find(w=>w.name==='CI Home Workspace');
+      if(!ws||document.getElementById('workspaceSelect').value!==ws.id)throw Error('New workspace UI did not persist/select collection');
+      document.getElementById('workspaceAddCurrent').click();
+      await pause(350);
+      if(!(await api.listWorkspaces()).find(w=>w.id===ws.id)?.projectIds.includes(saved.id))throw Error('Workspace UI did not link existing project');
+      const other=await api.createProject('GatewayTab','esp32:esp32:esp32');
+      await api.addToWorkspace(ws.id,other.id);
+      await refreshWorkspaces();await refreshProjects(false);
+      const otherButton=document.querySelector('#projectList [data-open="'+other.id+'"]');
+      if(!otherButton)throw Error('Workspace project not visible in scoped sidebar');
+      otherButton.click();
+      for(let i=0;i<30&&document.getElementById('projectTitle').textContent!=='GatewayTab';i++)await pause(80);
+      if(document.getElementById('projectTitle').textContent!=='GatewayTab')throw Error('Second project did not open in tab');
+      const tabFirst=document.querySelector('#openProjectTabs [data-activate-project="'+saved.id+'"]');
+      if(!tabFirst)throw Error('First project tab lost after opening second');
+      tabFirst.click();
+      for(let i=0;i<30&&document.getElementById('projectTitle').textContent!=='GuiSmoke';i++)await pause(80);
+      if(document.getElementById('projectTitle').textContent!=='GuiSmoke')throw Error('Project tab switching failed');
+      if((await api.openProject(saved.id)).fqbn!=='arduino:avr:uno'||(await api.openProject(other.id)).fqbn!=='esp32:esp32:esp32')throw Error('Workspace leaked board identity');
+      document.getElementById('workspaceRemoveCurrent').click();await pause(350);
+      if((await api.listWorkspaces()).find(w=>w.id===ws.id)?.projectIds.includes(saved.id))throw Error('UI unlink did not persist');
+      await api.deleteWorkspace(ws.id);
+      if((await api.listWorkspaces()).some(w=>w.id===ws.id))throw Error('Workspace deletion failed');
+      if(!(await api.openProject(saved.id))||!(await api.openProject(other.id)))throw Error('Workspace deletion altered project firmware');
+
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -144,7 +176,7 @@ app.whenReady().then(()=>{
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,reviewedEspGpioUI:true,typedDataLinkGUI:true,typedDataDragGUI:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,workspaceTabUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,reviewedEspGpioUI:true,typedDataLinkGUI:true,typedDataDragGUI:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}
@@ -152,7 +184,7 @@ app.whenReady().then(()=>{
   });
  }
 
- register('project:list',()=>store.list());register('project:create',(name,fqbn,template)=>store.create(name,fqbn,template));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
+ register('workspace:list',()=>workspaceCatalog.list());register('workspace:create',name=>workspaceCatalog.create(name));register('workspace:rename',(id,name)=>workspaceCatalog.rename(id,name));register('workspace:add',(id,pid)=>workspaceCatalog.add(id,pid));register('workspace:remove',(id,pid)=>workspaceCatalog.remove(id,pid));register('workspace:delete',id=>workspaceCatalog.delete(id));register('project:list',()=>store.list());register('project:create',(name,fqbn,template)=>store.create(name,fqbn,template));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
  register('project:validate',p=>{const d=generateSketch(p).diagnostics;return {...d,ordered:(d.ordered||[]).map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
  register('project:rename',(id,name)=>store.rename(id,name));register('project:duplicate',id=>store.duplicate(id));register('project:trash',id=>store.trash(id));register('project:recoveryList',()=>store.recoveryList());register('project:recover',id=>store.recover(id));
  register('board:migration',(p,target)=>board.analyzeBoardChange(p,target));register('board:profile',fqbn=>board.profile(fqbn));
