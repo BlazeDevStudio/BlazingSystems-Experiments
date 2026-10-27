@@ -4,6 +4,7 @@ const {randomUUID}=require('node:crypto');
 const {generateSketch,analyzeGraph,verifyProject}=require('./project.cjs');
 const flow=require('./flowchart.cjs');
 const variables=require('./variables.cjs');
+const dataLinks=require('./data-links.cjs');
 const MAX_STEPS=20000, MAX_EVENTS=300;
 const VALID_PIN=/^\d{1,3}$/;
 function normalizeInputs(inputs={}){
@@ -26,7 +27,9 @@ class SimulationController {
   const gen=generateSketch(project);if(!gen.diagnostics.ok)throw Error('Resolve source validation before simulation: '+gen.diagnostics.errors.join('; '));
   if(this.sessions.size>=12)this.sessions.delete(this.sessions.keys().next().value);
   const mode=project.visualMode==='flowchart'?'flowchart':'nodes';
-  const steps=mode==='flowchart'?(project.flowchart?.steps||[]):analyzeGraph(project).ordered.map(n=>({id:n.id,type:n.type,params:n.params}));
+  const ordered=mode==='nodes'?analyzeGraph(project).ordered:[];
+  const wired=mode==='nodes'?dataLinks.plan(project,ordered):null;
+  const steps=mode==='flowchart'?(project.flowchart?.steps||[]):ordered.map(n=>{const effective=dataLinks.effectiveNode(n,wired);return {id:n.id,type:n.type,params:effective.params};});
   const s={id:randomUUID(),mode,status:'ready',frames:[frame(steps)],inputs:normalizeInputs(inputs),outputs:{},pinModes:{},pwm:{},analogInputs:{},variables:variables.initialState(project.variables||[]),variableTypes:Object.fromEntries((project.variables||[]).map(v=>[v.name,v.type])),time:0,count:0,events:[],warnings:['Logic model only: virtual GPIO does not emulate physical circuitry or MCU firmware.'],breakpoints:[],skipOnce:false};
   this.sessions.set(s.id,s);return preview(s);
  }

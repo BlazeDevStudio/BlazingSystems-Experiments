@@ -1,3 +1,11 @@
+## v0.4.5 — actual scalar node socket connections (under Windows acceptance)
+
+- Draw amber scalar data wires from Analog Sample/Set Variable outputs to Threshold Output measurement inputs. The executable C++ and virtual simulator now resolve the linked variable instead of using a merely decorative wire.
+- The GUI permits click-to-link and native drag/drop, rejects unsupported numeric types and late producers, and preserves links in saved projects.
+- This is a first bounded **typed numeric link** foundation, **not** completed universal graph branching or multi-socket library intelligence.
+- A new Windows compiler gate builds the exported typed-link Uno sketch and the packaged GUI gate connects and persists a wire.
+- See `docs/TYPED_DATA_CONNECTIONS.md` for the contract and verification limits.
+
 ## v0.4.4 development checkpoint — ESP8266/ESP32 GPIO correctness
 
 ESP8266 Generic/NodeMCU and classic ESP32 now have conservatively reviewed GPIO admission, safer startup Blink templates and a Pin Manager that surfaces boot-sensitive, input-only and flash-reserved pins. `docs/ESP_GPIO_ADMISSION.md` records evidence and limitations. The actual Arduino CLI ESP compile gate must succeed before firmware compatibility can be described as verified.

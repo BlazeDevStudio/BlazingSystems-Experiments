@@ -1,4 +1,4 @@
-name: Blaze MCU Studio v0.4.4 reviewed ESP pin profiles and multi-core compilation gate
+name: Blaze MCU Studio v0.4.5 typed data socket integration and cross-core compilation gate
 on:
   pull_request:
     paths:
@@ -89,6 +89,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:nano --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedNanoBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/nano-compile.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile actual Uno scalar data-wire visual firmware
+        shell: pwsh
+        working-directory: expiremental/Blaze-MCU-Studio
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-data-links.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedTypedDataWire" 2>&1 | Tee-Object "$env:RUNNER_TEMP/data-links-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build actual portable Windows EXE
         shell: pwsh
         working-directory: expiremental/Blaze-MCU-Studio
@@ -120,13 +129,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v043-sensor-variables-and-build-evidence
+          name: blaze-mcu-v045-typed-data-sockets-and-build-evidence
           path: |
             expiremental/Blaze-MCU-Studio/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
             ${{ runner.temp }}/flowchart-compile.log
             ${{ runner.temp }}/wire-pwm-serial-compile.log
             ${{ runner.temp }}/sensor-threshold-compile.log
+            ${{ runner.temp }}/data-links-compile.log
             ${{ runner.temp }}/mega-compile.log
             ${{ runner.temp }}/nano-compile.log
             ${{ runner.temp }}/arduino-reference-compile.log

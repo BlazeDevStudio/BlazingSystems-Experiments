@@ -95,6 +95,18 @@ app.whenReady().then(()=>{
       if(sensorProject.variables?.[0]?.name!=='sensorValue'||!sensorProject.graph.nodes.some(n=>n.type==='readAnalog')||!sensorProject.graph.nodes.some(n=>n.type==='thresholdOutput'))throw Error('Variable and ADC threshold blocks not persisted');
       const sensorGenerated=await api.generate(sensorProject);
       if(!sensorGenerated.source?.includes('blazeVar_sensorValue = analogRead(A0)')||!sensorGenerated.source?.includes('digitalWrite(8, (blazeVar_sensorValue >= 512L) ? HIGH : LOW)'))throw Error('Variable sensor pipeline not compiled into firmware source');
+      // GUI exercise of persisted explicit typed sockets. No model-only substitute.
+      document.querySelector('[data-tab="graph"]').click();
+      const outputSocket=[...document.querySelectorAll('[data-data-output]')].find(n=>n.dataset.dataOutput===sensorProject.graph.nodes.find(n=>n.type==='readAnalog').id);
+      const inputSocket=[...document.querySelectorAll('[data-data-input]')].find(n=>n.dataset.dataInput===sensorProject.graph.nodes.find(n=>n.type==='thresholdOutput').id);
+      if(!outputSocket||!inputSocket)throw Error('Scalar output/input sockets missing from the visible GUI');
+      outputSocket.click();inputSocket.click();
+      for(let i=0;i<50&&!document.querySelector('#nodeInspector .dataBinding');i++)await pause(100);
+      if(!document.querySelector('#nodeInspector .dataBinding'))throw Error('Data port connection not reflected in inspector');
+      document.getElementById('save').click();await pause(500);
+      const wiredProject=await api.openProject(saved.id);
+      if(wiredProject.graph.dataEdges?.length!==1||wiredProject.graph.dataEdges[0].out!=='value')throw Error('Typed data connection was not persisted through desktop project save');
+      if(!(await api.generate(wiredProject)).source.includes('blazeVar_sensorValue >= 512L'))throw Error('Connected data input not present in firmware');
       const sensorVirtual=await api.simCreate(sensorProject,{});
       await api.simAnalog(sensorVirtual.id,{A0:700});
       const sensorTrace=await api.simRun(sensorVirtual.id,100);

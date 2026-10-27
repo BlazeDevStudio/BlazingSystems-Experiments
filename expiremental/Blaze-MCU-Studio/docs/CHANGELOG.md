@@ -1,3 +1,10 @@
+## v0.4.5 — first executable typed numeric data sockets (Windows gate pending)
+- Added saved `graph.dataEdges` IR for explicit scalar source/consumer ports.
+- Connected Analog Sample/Set Variable values override Threshold Output measurement source consistently in validation, C++ export and virtual simulation.
+- Added amber data-wire UI, link and disconnect controls, type/ordering/conflicting-driver diagnostics, legacy/manual preservation.
+- Added 8 deterministic wiring regressions, a generated Uno Arduino-CLI compile fixture and packaged Windows GUI port-link acceptance.
+- No arbitrary math graph, branching reconvergence, or unverified library auto-adapters claimed.
+
 ## v0.4.4 — ESP family pin safety and real core compile gates (pending acceptance)
 - Curated conservative GPIO maps for generic ESP8266, NodeMCU 1.0 and classic ESP32 only, with source provenance, flash pin no-go, input-only outputs blocked, bootstrap/UART warnings.
 - Board-specific safe default Blink GPIO (ESP8266 GPIO4; ESP32 GPIO21) and matching flowchart; unchanged Uno 13.

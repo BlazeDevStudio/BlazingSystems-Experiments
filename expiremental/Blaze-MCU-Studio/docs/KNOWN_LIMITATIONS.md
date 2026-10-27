@@ -11,3 +11,6 @@ A passing Windows build does not mean the universal MCU IDE is complete. **Sourc
 - Other project management functions such as ZIP import/export, workspace tabs and snapshot GUI remain incomplete.
 - Arduino CLI and board cores are third-party executables; treat installed dependencies and build scripts as potentially untrusted.
 - File integrity and recovery are not yet fully journaled/durable against sudden storage failure; backups are recommended.
+
+## v0.4.5 data-wiring scope
+The new value sockets accept only declared numeric outputs from `readAnalog`/`setVariable` into the `thresholdOutput` measurement socket, and require producer-before-consumer in a linear active graph. They do not implement general graph branching, math nodes, concurrent subscriptions, user-defined functions or reverse C++ parsing. GUI drag/drop is tested using renderer events and not every physical HID environment.
