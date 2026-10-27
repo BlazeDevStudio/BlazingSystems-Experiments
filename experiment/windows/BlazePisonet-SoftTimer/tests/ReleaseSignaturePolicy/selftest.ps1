@@ -49,11 +49,20 @@ try {
   Remove-Item -LiteralPath $paths[2] -Force
   Expect-Denied 'missing watchdog executable' { Invoke-Gate $pin }
   $workflow=Get-Content -Raw (Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepisonet-softtimer-release.yml')
-  $publish=$workflow.Split('      - name: Publish GitHub Release')[1]
-  if (-not $publish -or
-      -not $publish.Contains('require-signed-candidates.ps1') -or
+  # PowerShell String.Split(string) can bind the char[] overload, splitting
+  # at individual marker characters rather than the exact workflow step.
+  # Use an unambiguous ordinal substring to inspect the actual publish block.
+  $marker='      - name: Publish GitHub Release'
+  $offset=$workflow.IndexOf($marker, [StringComparison]::Ordinal)
+  if ($offset -lt 0) {
+    throw 'RELEASE-20261027 FAIL: release publication workflow step missing'
+  }
+  $publish=$workflow.Substring($offset)
+  $gatePos=$publish.IndexOf('require-signed-candidates.ps1', [StringComparison]::Ordinal)
+  $releasePos=$publish.IndexOf('gh release create', [StringComparison]::Ordinal)
+  if ($gatePos -lt 0 -or $releasePos -lt 0 -or
       -not $publish.Contains('SOFTTIMER_SIGNER_SHA1') -or
-      $publish.IndexOf('require-signed-candidates.ps1') -gt $publish.IndexOf('gh release create')) {
+      $gatePos -ge $releasePos) {
     throw 'RELEASE-20261027 FAIL: release publisher lacks pinned pre-publication gate'
   }
   Write-Output 'RELEASE-20261027 PASS: missing/invalid/wrong signer or executable blocks publication; three-signature positive POLICY control; future publish guard comes before release create'
