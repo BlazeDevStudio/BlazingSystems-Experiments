@@ -55,6 +55,11 @@ foreach ($file in $files) {
         $null -eq $signature.SignerCertificate) {
         Deny "$($file.Name) is not trusted Authenticode-signed"
     }
+    # Catalog trust on this runner is not a transportable signature on a
+    # downloaded EXE. Require an EMBEDDED Authenticode signature.
+    if ($signature.SignatureType.ToString() -cne 'Authenticode') {
+        Deny "$($file.Name) relies on catalog trust instead of an embedded signature"
+    }
     $actualPin = [Convert]::ToHexString(
         [Security.Cryptography.SHA256]::HashData($signature.SignerCertificate.RawData))
     if ($actualPin -cne $pin) {
@@ -64,9 +69,18 @@ foreach ($file in $files) {
     if ($null -eq $signature.TimeStamperCertificate) {
         Deny "$($file.Name) lacks an Authenticode timestamp"
     }
-    $eku = @($signature.SignerCertificate.EnhancedKeyUsageList |
-        ForEach-Object { $_.ObjectId.Value })
-    if ('1.3.6.1.5.5.7.3.3' -notin $eku) {
+    $codeSigningEku = $false
+    foreach ($extension in $signature.SignerCertificate.Extensions) {
+        if ($extension.Oid.Value -eq '2.5.29.37') {
+            $decoded = [Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new($extension, $extension.Critical)
+            foreach ($usage in $decoded.EnhancedKeyUsages) {
+                if ($usage.Value -ceq '1.3.6.1.5.5.7.3.3') {
+                    $codeSigningEku = $true
+                }
+            }
+        }
+    }
+    if (-not $codeSigningEku) {
         Deny "$($file.Name) certificate does not permit code signing"
     }
 }
