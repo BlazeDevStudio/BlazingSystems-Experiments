@@ -4,6 +4,12 @@
 using BlazePisonet.SoftTimer;
 using System.IO.Ports;
 
+if (args.Contains("--invalid-setup", StringComparer.Ordinal))
+{
+    Console.Error.WriteLine("INCONCLUSIVE_EXIT_3: explicit invalid-test-setup positive verifier.");
+    return 3;
+}
+
 try
 {
     var (normalCount, validSamples) = ValidPulseControl();
