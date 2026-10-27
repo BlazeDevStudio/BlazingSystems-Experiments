@@ -119,7 +119,7 @@ async function connectData(from,to){
  edges.push({from,to,out:'value',input:'measurement'});
  project.graph.dataEdges=edges;
  try{
-  const diagnostics=await window.blaze.validateProject(structuredClone(project));
+  const diagnostics=await window.blaze.validate(structuredClone(project));
   if(project!==original)return;
   if(!diagnostics.ok){project.graph.dataEdges=old;log('Data connection rejected: '+diagnostics.errors.join('; '));return;}
   pendingData=null;selected=to;dirty();render();log('Typed value linked '+from+' → '+to+'. Generated source and simulator now resolve the linked input.');

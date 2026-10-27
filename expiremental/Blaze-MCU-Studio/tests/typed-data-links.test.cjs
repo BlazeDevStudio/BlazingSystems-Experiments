@@ -65,3 +65,12 @@ test('legacy projects without dataEdges still compile and simulate',()=>{
  const p=createProject('Old','arduino:avr:uno','sensor-threshold');delete p.graph.dataEdges;
  assert.equal(plan(p,analyzeGraph(p).ordered).ok,true);assert.match(generateSketch(p).source,/blazeVar_sensorValue >= 512L/);
 });
+
+test('typed connection GUI calls a real exposed preload validation method',()=>{
+ const root=path.join(__dirname,'..');
+ const preload=fs.readFileSync(path.join(root,'electron/preload.cjs'),'utf8');
+ const renderer=fs.readFileSync(path.join(root,'renderer/app.js'),'utf8');
+ assert.match(preload,/validate:'project:validate'/);
+ assert.match(renderer,/window\.blaze\.validate\(structuredClone\(project\)\)/);
+ assert.doesNotMatch(renderer,/window\.blaze\.validateProject\(/);
+});
