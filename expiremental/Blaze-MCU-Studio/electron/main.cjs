@@ -136,6 +136,7 @@ app.whenReady().then(()=>{
       if((await api.boardProfile('esp32:esp32:esp32s3'))!==null)throw Error('Classic ESP32 profile incorrectly claimed on S3');
 
       // Exercise real sidebar handlers and project tabs, not workspace data APIs alone.
+      await openProject(saved.id); // Earlier ESP Pin Manager smoke intentionally changed the active project.
       const oldPrompt=window.prompt;
       window.prompt=()=>'CI Home Workspace';
       document.getElementById('workspaceCreate').click();
