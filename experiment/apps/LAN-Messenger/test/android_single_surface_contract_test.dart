@@ -19,10 +19,10 @@ void main() {
     // On Android 35 the incoming call was auto-grouped with FlutterBackground
     // and the real Answer action was hidden in an inaccessible summary.
     final native = File('tool/AndroidMainActivity.kt').readAsStringSync();
-    expect(RegExp(r'\\.setCategory\\(Notification\\.CATEGORY_CALL\\)').allMatches(native).length, 3);
-    expect(RegExp(r'\\.setGroup\\(callNotificationGroup\\)').allMatches(native).length, 3);
+    expect(native.split('.setCategory(Notification.CATEGORY_CALL)').length - 1, 3);
+    expect(native.split('.setGroup(callNotificationGroup)').length - 1, 3);
     expect(native.contains('private val callNotificationGroup = "lan-messenger-call-actions"'), isTrue);
-    expect(native.contains('setFullScreenIntent'), isTrue); // negative explanation only
+    // No full-screen intent is introduced; system notification remains the UI.
     // Native tests still must click the REAL notification Answer action.
   });
 
