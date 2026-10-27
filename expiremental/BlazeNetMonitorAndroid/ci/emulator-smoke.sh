@@ -18,19 +18,30 @@ sleep 5
 # On first install a donation dialog appears. BACK dismisses it.
 adb shell input keyevent KEYCODE_BACK
 sleep 1
-# Instrument the service under the APP UID (the service is deliberately
-# exported=false). A plain "adb shell am" runs under the shell UID and is
-# rejected by Android even if the app itself is functioning.
-# UIAutomator on this runner timed out independently of the tested app.
-adb shell run-as "$PKG" /system/bin/am start-foreground-service \
-  -n "$PKG/.MonitorService" -a "$PKG.START"
+# Tap the real Start monitoring button. On the fixed Pixel_2 emulator
+# the button occupies the center of the controls card at ~47% screen height.
+# UIAutomator previously hung before entering the tested application.
+SIZE="$(adb shell wm size | sed -n 's/.*: \([0-9]*\)x\([0-9]*\).*/\1 \2/p' | tail -1)"
+read -r WIDTH HEIGHT <<< "$SIZE"
+test -n "$WIDTH" && test -n "$HEIGHT"
+X=$((WIDTH/2))
+Y=$((HEIGHT*47/100))
+echo "Tapping Start monitoring at $X,$Y on $WIDTH x $HEIGHT"
+adb shell input tap "$X" "$Y"
 sleep 12
 pid=$(adb shell pidof "$PKG" | tr -d '\r')
 test -n "$pid" || { echo 'FAIL app process terminated after Start Monitoring'; exit 3; }
 adb shell dumpsys activity services | grep -F "$PKG/.MonitorService" || {
   echo 'FAIL foreground monitor service missing'; exit 3;
 }
+adb shell dumpsys notification --noredact > /tmp/blaze-android-notification-after.txt
+if ! grep -F "BlazeNetMonitor" /tmp/blaze-android-notification-after.txt; then
+  echo 'FAIL no BlazeNetMonitor notification after real UI Start'; exit 3
+fi
+if ! grep -E 'id=(101|102)' /tmp/blaze-android-notification-after.txt | grep -q '101'; then
+  echo 'WARN could not identify both notification IDs in OEM dumpsys format'
+fi
 adb logcat -d -v brief | grep -E 'E AndroidRuntime:.*(FATAL EXCEPTION|Process: com.blazesystems.blazenetmonitor)' && {
   echo 'FAIL unhandled Android service/UI exception';exit 3;
 } || true
-echo 'PASS foreground monitor service survived 12 seconds and app process remains alive'
+echo 'PASS real Start button, foreground process/service and network notification survive 12 seconds'

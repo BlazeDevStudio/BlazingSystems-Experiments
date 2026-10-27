@@ -30,7 +30,11 @@ jobs:
           test -f app/build.gradle
           gradle --no-daemon :app:assembleDebug
           test -s app/build/outputs/apk/debug/app-debug.apk
-      - name: Boot Android 35 emulator and verify foreground service survives
+      - name: Enable emulator KVM acceleration where available
+        shell: bash
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Boot Android 35 emulator and verify real Start monitoring click
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
