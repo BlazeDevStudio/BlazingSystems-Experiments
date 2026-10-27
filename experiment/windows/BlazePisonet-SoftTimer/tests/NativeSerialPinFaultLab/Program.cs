@@ -24,6 +24,63 @@ static (int Accepted, bool Connected) Run(bool initialCts, bool activeHigh,
     return (accepted, sut.IsConnected);
 }
 
+// PHX-L-APPS #164: isolated source-linked failed-open ownership regression.
+// A thrown SerialPort.Open is not a connection; candidate, subscriptions and
+// OS resources must be cleaned even though _port was never assigned.
+// Exit 2 = SOURCE SAFETY RED; 3 = INVALID harness/positive; 0 = narrow GREEN.
+if (args.Contains("--open-failure-safety-gate", StringComparer.Ordinal))
+{
+    System.Management.ManagementObjectSearcher.FakeDevices =
+        Array.Empty<System.Management.ManagementObject>();
+    SerialPort.InitialCtsLevel = false;
+    SerialPort.PhysicalPnpAtOpen = null;
+    SerialPort.ThrowOnNextOpen = true;
+    var cfg = new AppConfig { SerialSelection = SerialSelectionMode.ManualPort,
+        ManualComPort = "COM9", CoinInputSignal = ModemSignal.Cts, MinimumPulseMs = 10 };
+    using var subject = new SerialHardware();
+    int accepted = 0;
+    subject.CoinPulseAccepted += () => accepted++;
+    bool firstConnected = subject.Connect(cfg);
+    var failedPort = SerialPort.LastCreated;
+    if (firstConnected || failedPort is null || failedPort.OpenAttemptCount != 1 ||
+        failedPort.IsOpen || SerialPort.ThrowOnNextOpen || subject.IsConnected)
+    {
+        Console.Error.WriteLine("OPEN_FAILURE_INCONCLUSIVE: failure injection or initial status invalid");
+        return 3;
+    }
+    bool disposedAfterFault = failedPort.WasDisposed;
+    bool unsubscribedAfterFault = failedPort.PinSubscriberCount == 0;
+    if (!subject.Connect(cfg))
+    {
+        Console.Error.WriteLine("OPEN_FAILURE_INCONCLUSIVE: valid retry failed");
+        return 3;
+    }
+    var goodPort = SerialPort.LastCreated;
+    if (goodPort is null || ReferenceEquals(goodPort, failedPort) || !goodPort.IsOpen)
+    {
+        Console.Error.WriteLine("OPEN_FAILURE_INCONCLUSIVE: replacement port not distinct/open");
+        return 3;
+    }
+    goodPort.CtsLevel = true;
+    goodPort.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(70);
+    goodPort.CtsLevel = false;
+    goodPort.Raise(SerialPinChange.CtsChanged);
+    if (accepted != 1)
+    {
+        Console.Error.WriteLine($"OPEN_FAILURE_INCONCLUSIVE: real C# positive pulse={accepted}, expected=1");
+        return 3;
+    }
+    Console.WriteLine($"OPEN_FAILURE_CONTROL_PASS: injectedOpenAttempts=1 retryOpen=1 positivePulses={accepted}");
+    if (!disposedAfterFault || !unsubscribedAfterFault)
+    {
+        Console.Error.WriteLine($"OPEN_FAILURE_RESOURCE_RED: disposed={disposedAfterFault}, pinUnsubscribed={unsubscribedAfterFault}; unowned failed COM candidate leaked");
+        return 2;
+    }
+    Console.WriteLine("OPEN_FAILURE_RESOURCE_GREEN: failed candidate disposed and detached; positive reconnect pulse accepted");
+    return 0;
+}
+
 var normal = Run(false, true, ModemSignal.Cts, port => {
     port.CtsLevel = true;
     port.Raise(SerialPinChange.CtsChanged);
