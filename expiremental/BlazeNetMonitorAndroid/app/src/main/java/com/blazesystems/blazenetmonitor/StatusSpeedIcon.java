@@ -23,7 +23,7 @@ public final class StatusSpeedIcon {
         int tier=0;
         while(value>=1000&&tier<3){value/=1000;tier++;}
         if(value>=999.5&&tier<3){value/=1000;tier++;}
-        String number=value<10&&tier>0?
+        String number=value<4&&tier>0?
             String.format(Locale.US,"%.1f",value):
             String.format(Locale.US,"%.0f",value);
         return number+units[tier];
