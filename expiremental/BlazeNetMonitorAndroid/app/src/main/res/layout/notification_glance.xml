@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+    <TextView android:id="@+id/notif_header"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="AT A GLANCE · DEVICE TRAFFIC"
+        android:textSize="11sp" android:textStyle="bold"
+        android:textColor="#6E8297"/>
+    <TextView android:id="@+id/notif_speed"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:textSize="18sp" android:textStyle="bold"
+        android:textColor="#007FCC" android:singleLine="true"/>
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:layout_marginTop="7dp" android:layout_marginBottom="6dp"
+        android:background="#228899AA"/>
+    <TextView android:id="@+id/notif_target1"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="12sp" android:singleLine="true"
+        android:ellipsize="end"/>
+    <TextView android:id="@+id/notif_target2"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp" android:singleLine="true"
+        android:ellipsize="end"/>
+    <TextView android:id="@+id/notif_session"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="12sp" android:textColor="#515F6C" android:singleLine="true"/>
+    <TextView android:id="@+id/notif_today"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp" android:textColor="#515F6C" android:singleLine="true"/>
+    <TextView android:id="@+id/notif_month"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp" android:textColor="#515F6C" android:singleLine="true"/>
+</LinearLayout>

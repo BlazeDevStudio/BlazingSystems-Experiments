@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
 import java.util.Locale;
@@ -22,7 +21,7 @@ public final class MainActivity extends Activity {
         BLUE=Color.rgb(0,102,255), WHITE=Color.rgb(232,242,255), MUTED=Color.rgb(146,173,201);
     private final Handler ui=new Handler(Looper.getMainLooper());
     private android.content.SharedPreferences pref;
-    private TextView down,up,session,day,month,networkState,overlayButton,monitorButton;
+    private TextView down,up,session,day,month,networkState,monitorButton;
     private final TextView[] status=new TextView[2],targetInfo=new TextView[2];
     private SpeedGraph graph;
     private Spinner graphType,unit;
@@ -73,7 +72,7 @@ public final class MainActivity extends Activity {
         setContentView(scroller);
         TextView title=text("◉  BlazeNetMonitor",24,WHITE);
         title.setTypeface(null,1);add(body,title,41);
-        add(body,text("ANDROID  ·  PREVIEW 0.1.0",11,MUTED),24);
+        add(body,text("ANDROID  ·  PREVIEW 0.1.1",11,MUTED),24);
         LinearLayout speed=card(body);
         add(speed,text("DEVICE-WIDE NETWORK SPEED",12,MUTED),26);
         down=text("↓  —",25,Color.rgb(52,195,255));down.setTypeface(null,1);add(speed,down,44);
@@ -87,8 +86,7 @@ public final class MainActivity extends Activity {
         monitorButton=action("Start monitoring",row,()->{
             if(MonitorService.ACTIVE)stopMonitor();else startMonitor();
         });
-        overlayButton=action("Show floating speed",row,this::toggleOverlay);
-        add(controls,text("Uses a visible notification while monitoring. No automatic boot start.",11,MUTED),43);
+        add(controls,text("Pull down notifications for At a glance. Expand the card for both targets and data totals.",11,MUTED),61);
 
         LinearLayout panel=card(body);
         add(panel,text("LIVE GRAPH",13,WHITE),29);
@@ -148,7 +146,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout about=card(body);
         add(about,text("BLAZE SYSTEMS",13,WHITE),33);
-        add(about,text("BlazeNetMonitor Android  ·  0.1.0 preview",12,MUTED),31);
+        add(about,text("BlazeNetMonitor Android  ·  0.1.1 preview",12,MUTED),31);
         LinearLayout links=new LinearLayout(this);add(about,links,47);
         action("Support",links,this::showSupport);
         action("Developer Facebook",links,()->open("https://fb.me/manrealloumer"));
@@ -161,24 +159,35 @@ public final class MainActivity extends Activity {
     private void startMonitor(){
         if(Build.VERSION.SDK_INT>=33 &&
            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){
+            // The user specifically wants the status-bar icon and notification.
+            // Do not silently monitor without permission to display them.
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},41);
+            return;
         }
-        try{startForegroundService(new Intent(this,MonitorService.class).setAction(MonitorService.ACTION_START));}
-        catch(Exception e){Toast.makeText(this,"Could not start monitoring: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+        launchMonitor();
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results){
+        super.onRequestPermissionsResult(requestCode,permissions,results);
+        if(requestCode!=41)return;
+        if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED){
+            launchMonitor();
+        }else{
+            Toast.makeText(this,"Enable notifications to show BlazeNetMonitor in the status bar.",
+                Toast.LENGTH_LONG).show();
+        }
+    }
+    private void launchMonitor(){
+        try {
+            startForegroundService(new Intent(this,MonitorService.class)
+                .setAction(MonitorService.ACTION_START));
+        }catch(Exception e){
+            Toast.makeText(this,"Could not start monitoring: "+e.getMessage(),
+                Toast.LENGTH_LONG).show();
+        }
         ui.postDelayed(this::update,350);
     }
     private void stopMonitor(){
         stopService(new Intent(this,MonitorService.class));update();
-    }
-    private void toggleOverlay(){
-        if(!Settings.canDrawOverlays(this)){
-            Toast.makeText(this,"Grant Display over other apps to enable the floating widget.",Toast.LENGTH_LONG).show();
-            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));
-            return;
-        }
-        if(!MonitorService.ACTIVE){startMonitor();ui.postDelayed(this::toggleOverlay,600);return;}
-        startService(new Intent(this,MonitorService.class).setAction(MonitorService.ACTION_WIDGET));
-        ui.postDelayed(this::update,250);
     }
     private void update(){
         if(down==null||up==null)return;
@@ -191,7 +200,6 @@ public final class MainActivity extends Activity {
         month.setText("This month  ↓ "+TrafficMath.data(frame.monthRx)+"    ↑ "+TrafficMath.data(frame.monthTx));
         graph.data(frame,pref.getString("graph","Smooth"));
         monitorButton.setText(MonitorService.ACTIVE?"Stop monitoring":"Start monitoring");
-        overlayButton.setText(pref.getBoolean("overlay",false)?"Hide floating speed":"Show floating speed");
         for(int i=0;i<2;i++){
             String q=frame.status[i];
             int color=q.equals("Green")?0xff52D68A:q.equals("Yellow")?0xffffd26f:
@@ -199,7 +207,8 @@ public final class MainActivity extends Activity {
             status[i].setText("● Target "+(i+1)+"   "+q);
             status[i].setTextColor(color);targetInfo[i].setText(frame.detail[i]);
         }
-        networkState.setText(MonitorService.ACTIVE?"● Monitoring · All device interfaces":"Paused · Tap Start monitoring");
+        networkState.setText(MonitorService.ACTIVE?
+            "● Monitoring · Swipe down for At a glance":"Paused · Tap Start monitoring");
     }
     private void editTarget(int index){
         LinearLayout box=column();box.setPadding(dp(20),dp(4),dp(20),0);

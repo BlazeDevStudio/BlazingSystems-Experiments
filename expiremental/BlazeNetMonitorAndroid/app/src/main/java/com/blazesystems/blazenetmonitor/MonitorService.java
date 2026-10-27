@@ -4,103 +4,147 @@ import android.app.*;
 import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.os.*;
+import android.widget.RemoteViews;
 import java.util.concurrent.*;
-import android.provider.Settings;
 
-/** Persistent opt-in user-visible monitor; never starts automatically from boot. */
+/**
+ * User-started network monitor. The status bar is OS-managed: it displays
+ * our small notification icon, NOT arbitrary numbers beside Wi-Fi/battery.
+ * Expanded notification replaces Windows' At-a-glance hover.
+ */
 public final class MonitorService extends Service {
-    public static volatile boolean ACTIVE = false;
+    public static volatile boolean ACTIVE=false;
     public static final String ACTION_START="com.blazesystems.blazenetmonitor.START";
     public static final String ACTION_STOP="com.blazesystems.blazenetmonitor.STOP";
-    public static final String ACTION_WIDGET="com.blazesystems.blazenetmonitor.WIDGET";
+    private static final int NOTIFICATION_ID=101;
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
-    private FloatingWidget bubble;
     private boolean running=false;
     private int ticks=0;
     private final Runnable poll=new Runnable(){
         @Override public void run(){
             if(!running)return;
             MonitorState.INSTANCE.sample(MonitorService.this);
-            if(ticks++%4==0) {
-                NotificationManager mgr=getSystemService(NotificationManager.class);
-                if(mgr!=null)mgr.notify(101,notification());
-            }
-            if(ticks%15==1) probeTargets();
-            if(bubble!=null)bubble.update(MonitorState.INSTANCE.frame(),getSharedPreferences("settings",0));
+            ticks++;
+            if(ticks%15==1)probeTargets();
+            // Periodic updates are best effort: Android/SystemUI may throttle
+            // how quickly notifications visually refresh.
+            if(ticks%2==0)publish();
             handler.postDelayed(this,1000);
         }
     };
     @Override public void onCreate(){
         super.onCreate();
         probes=Executors.newFixedThreadPool(2);
-        bubble=new FloatingWidget(this);
-        NotificationChannel ch=new NotificationChannel(CHANNEL,"Active network monitor",NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("Device-wide speeds while you keep BlazeNetMonitor running");
-        getSystemService(NotificationManager.class).createNotificationChannel(ch);
+        NotificationChannel channel=new NotificationChannel(
+            CHANNEL,"Network speed · At a glance",NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Status bar indicator and expanded speed, health and data totals");
+        channel.setShowBadge(false);
+        getSystemService(NotificationManager.class).createNotificationChannel(channel);
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId){
         String action=intent==null?ACTION_START:intent.getAction();
         if(ACTION_STOP.equals(action)){stopSelf();return START_NOT_STICKY;}
-        if(ACTION_WIDGET.equals(action)){
-            setOverlay(!getSharedPreferences("settings",0).getBoolean("overlay",false));
-            if(!running)startMonitor();
-        }else if(!running)startMonitor();
-        return START_NOT_STICKY; // user must explicitly restart after OS kills process
+        if(!running)startMonitor();
+        return START_NOT_STICKY;
     }
     private void startMonitor(){
         if(running)return;
-        try {
+        try{
             if(Build.VERSION.SDK_INT>=34)
-                startForeground(101,notification(),ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            else startForeground(101,notification());
+                startForeground(NOTIFICATION_ID,notification(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            else startForeground(NOTIFICATION_ID,notification());
         }catch(Exception e){
             stopSelf();
             return;
         }
         running=true;
         ACTIVE=true;
-        if(getSharedPreferences("settings",0).getBoolean("overlay",false))bubble.show();
         handler.post(poll);
     }
-    private void setOverlay(boolean enabled){
-        if(enabled&&!Settings.canDrawOverlays(this))return;
-        getSharedPreferences("settings",0).edit().putBoolean("overlay",enabled).apply();
-        if(enabled)bubble.show();else bubble.hide();
+    private void publish(){
+        try{
+            NotificationManager manager=getSystemService(NotificationManager.class);
+            if(manager!=null)manager.notify(NOTIFICATION_ID,notification());
+        }catch(Exception ignored){
+            // Notification permission or OEM restrictions can prevent rendering;
+            // avoid crashing the traffic collector.
+        }
     }
     private void probeTargets(){
         if(probes==null||probes.isShutdown())return;
         for(int i=0;i<2;i++){
             final int index=i;
             probes.execute(()->{
-                HealthProbe.Result result=HealthProbe.run(getSharedPreferences("settings",0),index);
+                HealthProbe.Result result=HealthProbe.run(
+                    getSharedPreferences("settings",0),index);
                 MonitorState.INSTANCE.health(index,result.quality,result.message);
+                handler.post(()->{if(running)publish();});
             });
         }
+    }
+    private String speeds(MonitorState.Frame frame,boolean bits){
+        return "↓ "+TrafficMath.speed(frame.rx,bits)+
+            "    ↑ "+TrafficMath.speed(frame.tx,bits);
+    }
+    private static int healthColor(String value){
+        if("Green".equals(value))return 0xff46bd86;
+        if("Yellow".equals(value))return 0xffe6b64e;
+        if("Orange".equals(value))return 0xffff9d3b;
+        if("Red".equals(value))return 0xfff06e77;
+        return 0xff9baac0;
+    }
+    private RemoteViews expanded(MonitorState.Frame frame,boolean bits){
+        RemoteViews views=new RemoteViews(getPackageName(),R.layout.notification_glance);
+        views.setTextViewText(R.id.notif_speed,speeds(frame,bits));
+        views.setTextViewText(R.id.notif_target1,
+            "● Target 1 · "+frame.status[0]+"  ·  "+frame.detail[0]);
+        views.setTextViewText(R.id.notif_target2,
+            "● Target 2 · "+frame.status[1]+"  ·  "+frame.detail[1]);
+        views.setTextColor(R.id.notif_target1,healthColor(frame.status[0]));
+        views.setTextColor(R.id.notif_target2,healthColor(frame.status[1]));
+        views.setTextViewText(R.id.notif_session,
+            "Session   ↓ "+TrafficMath.data(frame.sessionRx)+
+            "    ↑ "+TrafficMath.data(frame.sessionTx));
+        views.setTextViewText(R.id.notif_today,
+            "Today     ↓ "+TrafficMath.data(frame.dayRx)+
+            "    ↑ "+TrafficMath.data(frame.dayTx));
+        views.setTextViewText(R.id.notif_month,
+            "Month    ↓ "+TrafficMath.data(frame.monthRx)+
+            "    ↑ "+TrafficMath.data(frame.monthTx));
+        return views;
     }
     private Notification notification(){
         MonitorState.Frame frame=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-        String speed="↓ "+TrafficMath.speed(frame.rx,bits)+"   ↑ "+TrafficMath.speed(frame.tx,bits);
-        Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent content=PendingIntent.getActivity(this,12,open,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-        Intent stop=new Intent(this,MonitorService.class).setAction(ACTION_STOP);
-        PendingIntent stopAction=PendingIntent.getService(this,13,stop,PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        String speed=speeds(frame,bits);
+        PendingIntent open=PendingIntent.getActivity(this,12,
+            new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent stop=PendingIntent.getService(this,13,
+            new Intent(this,MonitorService.class).setAction(ACTION_STOP),
+            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         return new Notification.Builder(this,CHANNEL)
-            .setSmallIcon(R.drawable.ic_blaze)
-            .setContentTitle("BlazeNetMonitor · Device traffic")
-            .setContentText(speed).setStyle(new Notification.BigTextStyle().bigText(speed))
-            .setContentIntent(content).setOngoing(true).setOnlyAlertOnce(true)
+            .setSmallIcon(R.drawable.ic_notification_status)
+            .setContentTitle("BlazeNetMonitor · At a glance")
+            .setContentText(speed)
+            .setStyle(new Notification.DecoratedCustomViewStyle())
+            .setCustomBigContentView(expanded(frame,bits))
+            .setContentIntent(open)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
+            .setCategory(Notification.CATEGORY_SERVICE)
             .addAction(new Notification.Action.Builder(
-                android.R.drawable.ic_menu_close_clear_cancel,"Stop",stopAction).build())
+                android.R.drawable.ic_menu_close_clear_cancel,"Stop",stop).build())
             .build();
     }
     @Override public void onDestroy(){
         running=false;
         ACTIVE=false;
         handler.removeCallbacks(poll);
-        if(bubble!=null)bubble.hide();
         if(probes!=null)probes.shutdownNow();
         MonitorState.INSTANCE.save(this);
         super.onDestroy();

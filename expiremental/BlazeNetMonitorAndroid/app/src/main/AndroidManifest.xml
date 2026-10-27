@@ -5,7 +5,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <application android:label="BlazeNetMonitor" android:allowBackup="false"
         android:supportsRtl="true" android:theme="@android:style/Theme.Material.NoActionBar"
         android:icon="@drawable/ic_blaze" android:usesCleartextTraffic="false">
@@ -18,7 +17,7 @@
         <service android:name=".MonitorService" android:exported="false"
             android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="user initiated persistent device network-speed monitoring and optional floating widget"/>
+                android:value="user initiated ongoing network-speed monitoring with an always-visible notification and expanded traffic/health statistics"/>
         </service>
     </application>
 </manifest>
