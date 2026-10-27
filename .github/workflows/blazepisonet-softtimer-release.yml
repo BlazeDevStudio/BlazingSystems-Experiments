@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify shared BlazePwifi and SoftTimer handover freshness
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Verify stale and partial handovers are rejected
@@ -43,6 +44,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -169,6 +171,12 @@ jobs:
           $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
           if (-not (Test-Path $setup)) { throw 'Native Setup EXE was not produced' }
           Get-Item $setup | Format-Table Name,Length
+
+      - name: Verify compiled Setup preserves exact Unicode owner text
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/InstallerMetadata/verify-copyright.ps1" -SetupPath "release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Smoke-test Setup EXE install and uninstall
         shell: pwsh
