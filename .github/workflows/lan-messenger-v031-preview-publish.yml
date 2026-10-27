@@ -1,0 +1,194 @@
+name: LAN Messenger v0.3.1 - publish evidence-gated preview
+on:
+  push:
+    branches:
+      - release/lan-messenger-v031-preview
+    paths:
+      - .github/workflows/lan-messenger-v031-preview-publish.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lan-messenger-v031-publish
+  cancel-in-progress: false
+
+env:
+  SOURCE_SHA: ab75584fcfc38b1bd4d39004d3784cc896104d8c
+  BUILD_RUN: "40512450657"
+  TAG: lan-messenger-v0.3.1-preview.1
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify successful exact-source CI run
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $build = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $build.conclusion -ne 'success' -or $build.head_sha -ne $env:SOURCE_SHA) {
+            throw "Not publishing a build without matching completed-success CI and source SHA"
+          }
+      - name: Retrieve Windows binary from successful source run
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh run download $env:BUILD_RUN --repo "$env:GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+          if ($LASTEXITCODE -ne 0) { throw "Windows build download failed" }
+          $zip = 'artifacts/windows/LAN-Messenger-Windows-Optimized.zip'
+          $lines = Get-Content 'artifacts/windows/SHA256SUMS.txt' -Encoding UTF8
+          $entry = $lines | Where-Object { $_ -match '^[0-9a-fA-F]{64}\s+\*?LAN-Messenger-Windows-Optimized\.zip$' } | Select-Object -First 1
+          if (!$entry) { throw "Windows source-run checksum missing" }
+          $expected = ($entry.Trim() -split '\s+')[0].ToLower()
+          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Windows portable checksum mismatch" }
+          Expand-Archive -Path $zip -DestinationPath windows-payload -Force
+          if (!(Test-Path windows-payload/lan_messenger.exe)) { throw "Release executable missing" }
+          if (!(Test-Path windows-payload/data/flutter_assets/assets/icons/lan_messenger.ico)) { throw "Installer icon missing" }
+      - name: Compile optional unsigned per-user Windows setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup installation failed" }
+          }
+          if (!(Test-Path $iscc)) { throw "Inno Setup 6 executable missing" }
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          @'
+          [Setup]
+          AppId=BlazingSystems.LANMessenger
+          AppName=LAN Messenger
+          AppVersion=0.3.1
+          DefaultDirName={localappdata}\Programs\LAN Messenger
+          DefaultGroupName=LAN Messenger
+          PrivilegesRequired=lowest
+          ArchitecturesAllowed=x64compatible
+          OutputDir=dist
+          OutputBaseFilename=LAN-Messenger-Windows-Setup-v0.3.1-preview.1
+          Compression=lzma2
+          SolidCompression=yes
+          UninstallDisplayName=LAN Messenger
+          SetupIconFile=windows-payload\data\flutter_assets\assets\icons\lan_messenger.ico
+
+          [Files]
+          Source: "windows-payload\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+
+          [Icons]
+          Name: "{autoprograms}\LAN Messenger"; Filename: "{app}\lan_messenger.exe"
+
+          [Run]
+          Filename: "{app}\lan_messenger.exe"; Description: "Launch LAN Messenger"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content -Path installer-v031.iss -Encoding UTF8
+          & $iscc installer-v031.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
+          $setup = 'dist/LAN-Messenger-Windows-Setup-v0.3.1-preview.1.exe'
+          if (!(Test-Path $setup) -or (Get-Item $setup).Length -lt 100000) { throw "Setup file absent or invalid" }
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
+          "$hash  LAN-Messenger-Windows-Setup-v0.3.1-preview.1.exe" | Out-File -FilePath dist/INSTALLER-SHA256SUMS.txt -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Setup-v031
+          path: |
+            dist/LAN-Messenger-Windows-Setup-v0.3.1-preview.1.exe
+            dist/INSTALLER-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm exact-head evidence and nonexisting release
+        env:
+          GH_TOKEN: \${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" --jq '.head_sha')"
+          conclusion="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" --jq '.conclusion')"
+          test "$actual" = "$SOURCE_SHA" && test "$conclusion" = success
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release tag already exists: refuse silently replacing binaries" >&2
+            exit 1
+          fi
+      - name: Download release binaries from verified single source run
+        env:
+          GH_TOKEN: \${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/android artifacts/windows
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Android-Optimized --dir artifacts/android
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name LAN-Messenger-Windows-Optimized --dir artifacts/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Windows-Setup-v031
+          path: artifacts/installer
+      - name: Verify CI checksums, native package structure and package handout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import zipfile
+          inputs = [
+            ('android/app-arm64-v8a-release.apk', 'LAN-Messenger-Android-arm64-v0.3.1-preview.1.apk', 'android/SHA256SUMS.txt'),
+            ('android/app-armeabi-v7a-release.apk', 'LAN-Messenger-Android-arm32-v0.3.1-preview.1.apk', 'android/SHA256SUMS.txt'),
+            ('android/app-x86_64-release.apk', 'LAN-Messenger-Android-x86_64-v0.3.1-preview.1.apk', 'android/SHA256SUMS.txt'),
+            ('windows/LAN-Messenger-Windows-Optimized.zip', 'LAN-Messenger-Windows-Portable-v0.3.1-preview.1.zip', 'windows/SHA256SUMS.txt'),
+          ]
+          for rel, name, checksums in inputs:
+            source = Path('artifacts') / rel
+            expected = {}
+            for line in (Path('artifacts') / checksums).read_text(encoding='utf-8-sig').splitlines():
+              columns = line.split()
+              if len(columns) == 2:
+                expected[columns[1].lstrip('*')] = columns[0].lower()
+            actual = hashlib.sha256(source.read_bytes()).hexdigest()
+            assert expected.get(source.name) == actual, f'CI hash mismatch for {source}'
+            with zipfile.ZipFile(source) as z:
+              assert z.testzip() is None, f'Corrupt archive {source}'
+              if source.suffix == '.zip':
+                assert 'lan_messenger.exe' in z.namelist(), 'Windows runnable missing'
+            shutil.copy2(source, Path('dist') / name)
+          installer = Path('artifacts/installer/LAN-Messenger-Windows-Setup-v0.3.1-preview.1.exe')
+          checksum = (Path('artifacts/installer/INSTALLER-SHA256SUMS.txt')
+            .read_text(encoding='utf-8-sig').split()[0].lower())
+          assert installer.stat().st_size > 100000
+          assert hashlib.sha256(installer.read_bytes()).hexdigest() == checksum, 'Installer checksum mismatch'
+          shutil.copy2(installer, Path('dist') / installer.name)
+          PY
+          cp experiment/apps/LAN-Messenger/RELEASE_NOTES_v0.3.1-preview.1.md dist/RELEASE-NOTES.md
+          {
+            printf '%s\n' "Evidence: https://github.com/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN"
+            printf '%s\n' "Pinned compiled source: $SOURCE_SHA"
+          } >> dist/RELEASE-NOTES.md
+          (cd dist && sha256sum *.apk *.zip *.exe > SHA256SUMS.txt)
+      - name: Publish immutable public v0.3.1 testing preview
+        env:
+          GH_TOKEN: \${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/*.apk dist/*.zip dist/*.exe dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$SOURCE_SHA" \
+            --title "LAN Messenger v0.3.1 - evidence-verified testing preview" \
+            --notes-file dist/RELEASE-NOTES.md \
+            --prerelease
