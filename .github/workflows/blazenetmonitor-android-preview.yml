@@ -59,7 +59,7 @@ jobs:
           grep -q "sdkVersion:'26'" /tmp/blazenetmonitor-package.txt
           grep -q "targetSdkVersion:'35'" /tmp/blazenetmonitor-package.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/blazenetmonitor-permissions.txt
-          grep -q "versionName='0.1.6-preview.1'" /tmp/blazenetmonitor-package.txt
+          grep -q "versionName='0.1.7-preview.1'" /tmp/blazenetmonitor-package.txt
           grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' /tmp/blazenetmonitor-permissions.txt
           if grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/blazenetmonitor-permissions.txt; then
             echo 'Floating overlay permission must not be present'; exit 1
@@ -73,7 +73,7 @@ jobs:
                       'R.layout.notification_glance','R.layout.notification_speed_strip'):
               assert bad not in src, f'Unsupported custom notification element: {bad}'
           assert 'new Notification.InboxStyle()' in src
-          assert '.setStyle(details)' in src
+          assert '.setStyle(style)' in src
           assert 'startForeground(NOTIFICATION_ID,initial' in src
           assert 'Notification initial=notification(false);' in src
           assert 'manager.notify(NOTIFICATION_ID,notification(true));' in src
