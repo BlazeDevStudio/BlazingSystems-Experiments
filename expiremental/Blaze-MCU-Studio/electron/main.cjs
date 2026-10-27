@@ -103,6 +103,19 @@ app.whenReady().then(()=>{
       outputSocket.click();inputSocket.click();
       for(let i=0;i<50&&!document.querySelector('#nodeInspector .dataBinding');i++)await pause(100);
       if(!document.querySelector('#nodeInspector .dataBinding'))throw Error('Data port connection not reflected in inspector');
+      // Native port-drag handlers must also work: disconnect, drag and reconnect.
+      const disconnect=document.getElementById('disconnectData');
+      if(!disconnect)throw Error('Connected socket cannot be disconnected from inspector');
+      disconnect.click();
+      if(document.querySelector('#nodeInspector .dataBinding'))throw Error('Disconnected input still shown as wired');
+      const dragOut=[...document.querySelectorAll('[data-data-output]')].find(n=>n.dataset.dataOutput===sensorProject.graph.nodes.find(n=>n.type==='readAnalog').id);
+      const dragIn=[...document.querySelectorAll('[data-data-input]')].find(n=>n.dataset.dataInput===sensorProject.graph.nodes.find(n=>n.type==='thresholdOutput').id);
+      const wireTransfer=new DataTransfer();
+      dragOut.dispatchEvent(new DragEvent('dragstart',{bubbles:true,cancelable:true,dataTransfer:wireTransfer}));
+      dragIn.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:wireTransfer}));
+      dragIn.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:wireTransfer}));
+      for(let i=0;i<50&&!document.querySelector('#nodeInspector .dataBinding');i++)await pause(100);
+      if(!document.querySelector('#nodeInspector .dataBinding'))throw Error('Native data-port drag handlers did not reconnect');
       document.getElementById('save').click();await pause(500);
       const wiredProject=await api.openProject(saved.id);
       if(wiredProject.graph.dataEdges?.length!==1||wiredProject.graph.dataEdges[0].out!=='value')throw Error('Typed data connection was not persisted through desktop project save');
