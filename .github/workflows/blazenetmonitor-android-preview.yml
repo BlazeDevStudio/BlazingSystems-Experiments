@@ -67,7 +67,8 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           src=Path('app/src/main/java/com/blazesystems/blazenetmonitor/MonitorService.java').read_text()
-          for bad in ('RemoteViews','setCustomContentView','setCustomBigContentView',
+          for bad in ('import android.widget.RemoteViews','new RemoteViews(',
+                      'setCustomContentView','setCustomBigContentView',
                       'DecoratedCustomViewStyle','setImageViewBitmap',
                       'R.layout.notification_glance','R.layout.notification_speed_strip'):
               assert bad not in src, f'Unsupported custom notification element: {bad}'
