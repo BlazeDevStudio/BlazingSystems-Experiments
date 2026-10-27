@@ -1159,9 +1159,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     ListTile(
       leading: const Icon(Icons.route),
       title: const Text('Routed LAN discovery (manual IP)'),
-      subtitle: const Text('Private IPv4 peers on reachable subnets. '
-          'Requires bidirectional routing/firewall access; no NAT traversal '
-          'or automatic network hopping.'),
+      subtitle: Text('Private IPv4 peers on reachable subnets. '
+          'Permit UDP 39823 and TCP ${LanNode.preferredListenPort} '
+          'on both devices where routing/firewalls require rules. '
+          '${node?.usingPreferredListenPort == false ? "This device is using an alternative TCP port: ${node?.listenPort}. " : ""}'
+          'This is not a NAT relay or automatic network hop.'),
       trailing: IconButton(icon: const Icon(Icons.add),
           tooltip: 'Add routed device IP',
           onPressed: _addRoutedPeerSeed),
