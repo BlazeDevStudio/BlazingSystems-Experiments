@@ -58,12 +58,16 @@ try {
     throw 'RELEASE-20261027 FAIL: release publication workflow step missing'
   }
   $publish=$workflow.Substring($offset)
-  $gatePos=$publish.IndexOf('require-signed-candidates.ps1', [StringComparison]::Ordinal)
-  $releasePos=$publish.IndexOf('gh release create', [StringComparison]::Ordinal)
-  if ($gatePos -lt 0 -or $releasePos -lt 0 -or
+  # Parse only executable command lines, not prose comments mentioning
+  # "gh release create" or helper names. An arbitrary comment must never
+  # count as a functioning pre-publication identity admission.
+  $gateCommand=[regex]::Match($publish, '(?m)^[ \t]*&[ \t]+\$signedGate[ \t]+-Setup[ \t]+')
+  $releaseCommand=[regex]::Match($publish, '(?m)^[ \t]*gh[ \t]+release[ \t]+create[ \t]+')
+  if (-not $gateCommand.Success -or -not $releaseCommand.Success -or
+      -not $publish.Contains('require-signed-candidates.ps1') -or
       -not $publish.Contains('SOFTTIMER_SIGNER_SHA1') -or
-      $gatePos -ge $releasePos) {
-    throw 'RELEASE-20261027 FAIL: release publisher lacks pinned pre-publication gate'
+      $gateCommand.Index -ge $releaseCommand.Index) {
+    throw "RELEASE-20261027 FAIL: actual publisher command lines not ordered (gate=$($gateCommand.Success), publish=$($releaseCommand.Success))"
   }
   Write-Output 'RELEASE-20261027 PASS: missing/invalid/wrong signer or executable blocks publication; three-signature positive POLICY control; future publish guard comes before release create'
 } finally {
