@@ -161,7 +161,9 @@ jobs:
           New-Item -ItemType Directory -Force release | Out-Null
           Push-Location "$env:PROJECT_DIR/installer"
           try {
-            & "$env:NSIS_EXE" /V3 "BlazePisonet-SoftTimer.nsi"
+            # NSIS treats BOM-less input as ANSI unless the charset is explicit.
+            # The source © is UTF-8; require literal U+00A9 in compiled Setup.
+            & "$env:NSIS_EXE" /INPUTCHARSET UTF8 /V3 "BlazePisonet-SoftTimer.nsi"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
@@ -169,6 +171,14 @@ jobs:
           $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
           if (-not (Test-Path $setup)) { throw 'Native Setup EXE was not produced' }
           Get-Item $setup | Format-Table Name,Length
+
+      - name: SOFTTIMER-NSIS-UNICODE verify actual compiled LegalCopyright resource
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/InstallerMetadata/Verify-NsisLegalCopyright.ps1" -Setup $setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Smoke-test Setup EXE install and uninstall
         shell: pwsh
