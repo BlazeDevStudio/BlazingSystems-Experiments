@@ -9,6 +9,7 @@ param(
     [Parameter(Mandatory=$true)][string]$WatchdogPath,
     [Parameter(Mandatory=$true)][string]$PortableZipPath,
     [Parameter(Mandatory=$true)][string]$ExpectedVersion,
+    [Parameter(Mandatory=$true)][string]$ExpectedSourceCommit,
     [Parameter(Mandatory=$true)][AllowEmptyString()][string]$ExpectedSignerCertificateSha256
 )
 $ErrorActionPreference = 'Stop'
@@ -20,6 +21,10 @@ function Deny([string]$Why) {
 if ($ExpectedVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
     Deny 'release version must be an explicit three-part numeric value'
 }
+if ($ExpectedSourceCommit -cnotmatch '^[A-Fa-f0-9]{40}$') {
+    Deny 'exact 40-hex Git source commit is required for Windows package provenance'
+}
+$expectedCommit = $ExpectedSourceCommit.ToLowerInvariant()
 if ($ExpectedSignerCertificateSha256 -cnotmatch '^[A-Fa-f0-9]{64}$') {
     Deny 'an independently approved SHA-256 signer certificate pin is mandatory'
 }
@@ -46,9 +51,19 @@ foreach ($file in $files) {
     if ($info.FileVersion -ne $expectedFileVersion) {
         Deny "$($file.Name) file version mismatch"
     }
-    if ($info.ProductVersion -ne $ExpectedVersion -and
-        $info.ProductVersion -ne $expectedFileVersion) {
-        Deny "$($file.Name) product version mismatch"
+    # NSIS embeds plain ProductVersion; .NET 8 SDK appends the full source
+    # revision to ProductVersion. Require the EXACT checkout SHA, not merely
+    # a matching major/minor version or an arbitrary +commit suffix.
+    if ($file.Name -eq 'Setup') {
+        if ($info.ProductVersion -ne $ExpectedVersion -and
+            $info.ProductVersion -ne $expectedFileVersion) {
+            Deny 'Setup product version mismatch'
+        }
+    } else {
+        $expectedProductVersion = "$ExpectedVersion+$expectedCommit"
+        if ($info.ProductVersion -cne $expectedProductVersion) {
+            Deny "$($file.Name) informational version does not match exact Git source commit"
+        }
     }
     $signature = Get-AuthenticodeSignature -LiteralPath $item.FullName -ErrorAction Stop
     if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or
