@@ -19,7 +19,7 @@ jobs:
         working-directory: expiremental/BlazeNetMonitorAndroid
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: blazenetmonitor-android-v0.1.0-preview.1
+      RELEASE_TAG: blazenetmonitor-android-v0.1.1-preview.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -59,17 +59,34 @@ jobs:
           grep -q "sdkVersion:'26'" /tmp/blazenetmonitor-package.txt
           grep -q "targetSdkVersion:'35'" /tmp/blazenetmonitor-package.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/blazenetmonitor-permissions.txt
+          grep -q "versionName='0.1.1-preview.1'" /tmp/blazenetmonitor-package.txt
           grep -q 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' /tmp/blazenetmonitor-permissions.txt
-          grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/blazenetmonitor-permissions.txt
+          if grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/blazenetmonitor-permissions.txt; then
+            echo 'Floating overlay permission must not be present'; exit 1
+          fi
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          p = 'app/src/main/res/layout/notification_speed_strip.xml'
+          root = ET.parse(p).getroot()
+          aid = '{http://schemas.android.com/apk/res/android}id'
+          ids = [v.attrib.get(aid,'').replace('@+id/','') for v in root]
+          expected = ['strip_dot_left','strip_upload','strip_download','strip_dot_right']
+          assert ids == expected, f'Incorrect notification strip order: {ids}'
+          assert root.attrib.get('{http://schemas.android.com/apk/res/android}orientation') == 'horizontal'
+          print('PASS compact shade layout: dot, upload, download, dot')
+          PY
+          if grep -R 'FloatingWidget\|ACTION_WIDGET\|Show floating speed' app/src/main/java/ app/src/main/AndroidManifest.xml; then
+            echo 'Obsolete floating widget reference detected'; exit 1
+          fi
           if grep -q 'android.permission.QUERY_ALL_PACKAGES' /tmp/blazenetmonitor-permissions.txt; then
             echo 'Unexpected broad installed-app inventory permission'; exit 1
           fi
           mkdir -p artifacts
-          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.0-preview.1.apk
+          cp "$APK" artifacts/BlazeNetMonitor-Android-v0.1.1-preview.1.apk
           sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BlazeNetMonitor-Android-v0.1.0-preview.1-APK
+          name: BlazeNetMonitor-Android-v0.1.1-preview.1-APK
           path: expiremental/BlazeNetMonitorAndroid/artifacts/
           retention-days: 60
       - name: Publish signed-debug APK preview release
@@ -79,10 +96,10 @@ jobs:
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo 'Tag already published; refusing to overwrite'; exit 1
           fi
-          notes='Native Android 8+ preview of BlazeNetMonitor, a separate port of completed Windows v1.0.0. Device-wide network speed and graph, monitored session/day/month totals, two configurable DNS/TCP/HTTPS/reachability checks, persistent notification and opt-in draggable overlay. Includes creator PayPal QR. This DEBUG-signed APK is for sideload testing, not a Play Store production release. No per-app Top Five yet; Android restricts cross-app traffic stats. Foreground service and overlay permissions require user interaction. Physical-device visual and background-mode tests remain outstanding.'
+          notes='BlazeNetMonitor Android v0.1.1 preview: compact live notification strip ordered Target 1 health dot / upload speed / download speed / Target 2 health dot. Expanded notification is At a Glance with two connection targets, and session/day/month traffic totals; Stop action available. Removes floating widget and SYSTEM_ALERT_WINDOW permission. Android controls the TOP status bar so arbitrary numeric fields beside Wi-Fi/battery cannot be inserted by a regular app; there will be a small notification icon in the top bar and live text within the notification shade. Debug-signed APK for testing, not Play Store production. No per-app Top 5, Android emulator and physical OEM shade checks remain pending.'
           for attempt in 1 2 3 4; do
             if gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.0 Preview APK' \
+              --target "$GITHUB_SHA" --title 'BlazeNetMonitor Android v0.1.1 Preview APK' \
               --prerelease --notes "$notes"; then break; fi
             if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               sleep $((attempt*5))
@@ -99,6 +116,6 @@ jobs:
           done
           assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets)"
           echo "$assets" | jq -e '.assets | map(.name) |
-            index("BlazeNetMonitor-Android-v0.1.0-preview.1.apk") != null' >/dev/null
+            index("BlazeNetMonitor-Android-v0.1.1-preview.1.apk") != null' >/dev/null
           echo "$assets" | jq -e '.assets | map(.name) | index("SHA256SUMS.txt") != null' >/dev/null
           echo 'PASS GitHub release and downloadable APK/sha256 assets verified'
