@@ -198,10 +198,10 @@ public sealed class SerialHardware : IDisposable
                     ReadTimeout = 250,
                     WriteTimeout = 250
                 };
-                port.PinChanged += OnPinChanged;
-                port.ErrorReceived += (_, e) => Storage.Log($"Serial error {selected.PortName}: {e.EventType}");
-                port.Open();
-                _port = port;
+                candidate.PinChanged += OnPinChanged;
+                candidate.ErrorReceived += (_, e) => Storage.Log($"Serial error {selected.PortName}: {e.EventType}");
+                candidate.Open();
+                _port = candidate;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
                 if (config.SerialSelection == SerialSelectionMode.ExactDevice && string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
