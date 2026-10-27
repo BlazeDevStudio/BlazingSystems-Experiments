@@ -794,7 +794,8 @@ class Intercom {
     // Each resource is released independently; one native plugin failure must
     // not skip the remaining stream or video renderer cleanup.
     if (display != null) {
-      for (final track in display.getTracks()) { track.stop(); }
+      // Tracks were already stopped above. Do not fire duplicate unawaited
+      // native stop() Futures during shutdown.
       try { await display.dispose().timeout(const Duration(seconds: 5)); }
       catch (e) { await _log('display stream dispose error: $e'); }
     }
@@ -810,12 +811,20 @@ class Intercom {
       try { await stream.dispose().timeout(const Duration(seconds: 5)); }
       catch (e) { await _log('stream dispose error: $e'); }
     }
-    try { if (local != null) { local.srcObject = null; await local.dispose(); } }
-    catch (e) { await _log('local renderer dispose error: $e'); }
-    try { if (remote != null) { remote.srcObject = null; await remote.dispose(); } }
-    catch (e) { await _log('remote renderer dispose error: $e'); }
+    try {
+      if (local != null) {
+        local.srcObject = null;
+        await local.dispose().timeout(const Duration(seconds: 4));
+      }
+    } catch (e) { await _log('local renderer dispose error: $e'); }
+    try {
+      if (remote != null) {
+        remote.srcObject = null;
+        await remote.dispose().timeout(const Duration(seconds: 4));
+      }
+    } catch (e) { await _log('remote renderer dispose error: $e'); }
     if (fallback != null) {
-      try { await fallback.dispose(); }
+      try { await fallback.dispose().timeout(const Duration(seconds: 4)); }
       catch (e) { await _log('streamless remote media cleanup error: $e'); }
     }
     _closing = false;
