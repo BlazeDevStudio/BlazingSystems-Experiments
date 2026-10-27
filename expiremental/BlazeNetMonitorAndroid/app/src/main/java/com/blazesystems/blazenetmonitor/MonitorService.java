@@ -4,14 +4,15 @@ import android.app.*;
 import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.os.*;
-import android.widget.RemoteViews;
 import android.util.Log;
 import java.util.concurrent.*;
 
 /**
- * User-started network monitor. The status bar is OS-managed: it displays
- * our small notification icon, NOT arbitrary numbers beside Wi-Fi/battery.
- * Expanded notification replaces Windows' At-a-glance hover.
+ * The system STATUS BAR can show our monochrome small notification icon only.
+ * The live speed/target status is rendered by the OS-owned notification template
+ * in the SHADE. Avoid ALL custom RemoteViews: invalid RemoteViews may kill
+ * Android processes asynchronously (RemoteServiceException / Bad notification)
+ * after notify() has already returned successfully.
  */
 public final class MonitorService extends Service {
     public static volatile boolean ACTIVE=false;
@@ -23,55 +24,60 @@ public final class MonitorService extends Service {
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
-    private TargetFavicons favicons;
     private boolean running=false;
     private int ticks=0;
-    private final Runnable poll=new Runnable(){
-        @Override public void run(){
+
+    private final Runnable poll=new Runnable() {
+        @Override public void run() {
             if(!running)return;
-            MonitorState.INSTANCE.sample(MonitorService.this);
-            ticks++;
-            if(ticks%15==1)probeTargets();
-            if(ticks%60==1 && favicons!=null)
-                favicons.refresh(getSharedPreferences("settings",0),
-                    ()->handler.post(()->{if(running)publish();}));
-            // Periodic speed changes are delivered to the collapsed and
-            // expanded notification. The OS may throttle their presentation.
-            if(ticks%2==0)publish();
-            handler.postDelayed(this,1000);
+            try {
+                MonitorState.INSTANCE.sample(MonitorService.this);
+                ++ticks;
+                if(ticks%15==1)probeTargets();
+                if(ticks%2==0)publish();
+            } catch (RuntimeException e) {
+                Log.e(TAG,"Monitor sampling error",e);
+                recordError(e.getClass().getSimpleName()+": "+safeMessage(e));
+            } finally {
+                if(running)handler.postDelayed(this,1000);
+            }
         }
     };
-    @Override public void onCreate(){
+
+    @Override public void onCreate() {
         super.onCreate();
         probes=Executors.newFixedThreadPool(2);
-        favicons=new TargetFavicons();
         NotificationChannel channel=new NotificationChannel(
             CHANNEL,"Network speed · At a glance",NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("Status bar indicator and expanded speed, health and data totals");
+        channel.setDescription("Network speeds and traffic summary in notification shade");
         channel.setShowBadge(false);
-        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        NotificationManager manager=getSystemService(NotificationManager.class);
+        if(manager!=null)manager.createNotificationChannel(channel);
     }
-    @Override public int onStartCommand(Intent intent,int flags,int startId){
+
+    @Override public int onStartCommand(Intent intent,int flags,int startId) {
         String action=intent==null?ACTION_START:intent.getAction();
-        if(ACTION_STOP.equals(action)){stopSelf();return START_NOT_STICKY;}
+        if(ACTION_STOP.equals(action)) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         if(!running)startMonitor();
         return START_NOT_STICKY;
     }
-    private void startMonitor(){
+
+    private void startMonitor() {
         if(running)return;
-        // Immediately promote using the standard OS notification first.
-        // A slow/custom RemoteViews layout cannot block the foreground-service
-        // promotion deadline or tear down monitoring before the first sample.
-        try{
+        // Exactly the same standard Notification.Builder path is used on
+        // the first start and EVERY subsequent update. No custom views.
+        try {
+            Notification initial=notification();
             if(Build.VERSION.SDK_INT>=34)
-                startForeground(NOTIFICATION_ID,safeNotification(),
+                startForeground(NOTIFICATION_ID,initial,
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            else startForeground(NOTIFICATION_ID,safeNotification());
-        }catch(RuntimeException e){
-            Log.e(TAG,"Foreground service could not start",e);
-            getSharedPreferences("settings",0).edit().putString(ERROR_KEY,
-                e.getClass().getSimpleName()+": "+
-                (e.getMessage()==null?"service not permitted":e.getMessage())).apply();
+            else startForeground(NOTIFICATION_ID,initial);
+        } catch(RuntimeException e) {
+            Log.e(TAG,"Foreground monitor start rejected",e);
+            recordError(e.getClass().getSimpleName()+": "+safeMessage(e));
             stopSelf();
             return;
         }
@@ -81,33 +87,58 @@ public final class MonitorService extends Service {
         handler.post(poll);
     }
 
-    /** Always-valid OS-owned notification for initial foreground promotion and
-      * emergency fallback if a manufacturer's SystemUI rejects custom layouts. */
-    private Notification safeNotification(){
-        MonitorState.Frame frame=MonitorState.INSTANCE.frame();
+    private static String safeMessage(Throwable e) {
+        String value=e.getMessage();
+        return value==null?"Android rejected the operation":
+            value.substring(0,Math.min(180,value.length()));
+    }
+
+    private void recordError(String message) {
+        getSharedPreferences("settings",0).edit().putString(ERROR_KEY,message).apply();
+    }
+
+    private static String dot(String health) {
+        if("Green".equals(health))return "🟢";
+        if("Yellow".equals(health))return "🟡";
+        if("Orange".equals(health))return "🟠";
+        if("Red".equals(health))return "🔴";
+        if("Blue".equals(health))return "🔵";
+        return "⚪";
+    }
+
+    private String speed(MonitorState.Frame f,boolean bits) {
+        return "↑ "+TrafficMath.speed(f.tx,bits)+
+            "    ↓ "+TrafficMath.speed(f.rx,bits);
+    }
+
+    /** OS template (InboxStyle), not user-supplied RemoteViews. */
+    private Notification notification() {
+        MonitorState.Frame f=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-        String speed=speeds(frame,bits);
+        String strip=dot(f.status[0])+"  "+speed(f,bits)+"  "+dot(f.status[1]);
         PendingIntent open=PendingIntent.getActivity(this,12,
             new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop=PendingIntent.getService(this,13,
             new Intent(this,MonitorService.class).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-        String[] quality=frame.status;
-        Notification.InboxStyle info=new Notification.InboxStyle()
-            .setBigContentTitle("BlazeNetMonitor · At a glance")
-            .addLine("● "+quality[0]+"   "+speed+"   ● "+quality[1])
-            .addLine("Session   ↓ "+TrafficMath.data(frame.sessionRx)+
-                "    ↑ "+TrafficMath.data(frame.sessionTx))
-            .addLine("Today     ↓ "+TrafficMath.data(frame.dayRx)+
-                "    ↑ "+TrafficMath.data(frame.dayTx))
-            .addLine("Month    ↓ "+TrafficMath.data(frame.monthRx)+
-                "    ↑ "+TrafficMath.data(frame.monthTx));
+
+        Notification.InboxStyle details=new Notification.InboxStyle()
+            .setBigContentTitle("At a glance · "+speed(f,bits))
+            .addLine(dot(f.status[0])+" Target 1  "+f.detail[0])
+            .addLine(dot(f.status[1])+" Target 2  "+f.detail[1])
+            .addLine("Session  ↓ "+TrafficMath.data(f.sessionRx)+
+                "  ↑ "+TrafficMath.data(f.sessionTx))
+            .addLine("Today     ↓ "+TrafficMath.data(f.dayRx)+
+                "  ↑ "+TrafficMath.data(f.dayTx))
+            .addLine("Month   ↓ "+TrafficMath.data(f.monthRx)+
+                "  ↑ "+TrafficMath.data(f.monthTx));
+
         return new Notification.Builder(this,CHANNEL)
             .setSmallIcon(R.drawable.ic_notification_status)
-            .setContentTitle("BlazeNetMonitor · ● "+quality[0]+" / "+quality[1])
-            .setContentText(speed)
-            .setStyle(info)
+            .setContentTitle("BlazeNetMonitor")
+            .setContentText(strip)
+            .setStyle(details)
             .setContentIntent(open)
             .setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -115,25 +146,22 @@ public final class MonitorService extends Service {
                 android.R.drawable.ic_menu_close_clear_cancel,"Stop",stop).build())
             .build();
     }
-    private void publish(){
-        try{
+
+    private void publish() {
+        try {
             NotificationManager manager=getSystemService(NotificationManager.class);
             if(manager!=null)manager.notify(NOTIFICATION_ID,notification());
-        }catch(RuntimeException e){
-            // Preserve foreground monitoring even when custom RemoteViews are
-            // rejected by an OEM. Record why the fallback was used.
-            Log.e(TAG,"Custom notification failed, using OS notification",e);
-            getSharedPreferences("settings",0).edit().putString(ERROR_KEY,
-                "Custom notification unavailable; basic monitoring active").apply();
-            try{
-                NotificationManager manager=getSystemService(NotificationManager.class);
-                if(manager!=null)manager.notify(NOTIFICATION_ID,safeNotification());
-            }catch(RuntimeException ignored){Log.e(TAG,"OS notification also unavailable",ignored);}
+        } catch(RuntimeException e) {
+            Log.e(TAG,"Notification update failed",e);
+            recordError("Notification error: "+safeMessage(e));
+            // Do not stop an already running service; no risky alternate
+            // rendering path that can cause an async Bad notification crash.
         }
     }
-    private void probeTargets(){
+
+    private void probeTargets() {
         if(probes==null||probes.isShutdown())return;
-        for(int i=0;i<2;i++){
+        for(int i=0;i<2;i++) {
             final int index=i;
             probes.execute(()->{
                 HealthProbe.Result result=HealthProbe.run(
@@ -143,91 +171,15 @@ public final class MonitorService extends Service {
             });
         }
     }
-    private String speeds(MonitorState.Frame frame,boolean bits){
-        return "↑ "+TrafficMath.speed(frame.tx,bits)+
-            "    ↓ "+TrafficMath.speed(frame.rx,bits);
-    }
 
-    /** Left health dot, upload, download, right health dot.
-      * This is the COLLAPSED notification row, not the OS-owned status-bar strip. */
-    private RemoteViews compact(MonitorState.Frame frame,boolean bits){
-        RemoteViews row=new RemoteViews(getPackageName(),R.layout.notification_speed_strip);
-        row.setTextViewText(R.id.strip_dot_left,"●");
-        row.setTextViewText(R.id.strip_upload,
-            "↑ "+TrafficMath.speed(frame.tx,bits));
-        row.setTextViewText(R.id.strip_download,
-            "↓ "+TrafficMath.speed(frame.rx,bits));
-        row.setTextViewText(R.id.strip_dot_right,"●");
-        row.setTextColor(R.id.strip_dot_left,healthColor(frame.status[0]));
-        row.setTextColor(R.id.strip_dot_right,healthColor(frame.status[1]));
-        return row;
-    }
-    private static int healthColor(String value){
-        if("Green".equals(value))return 0xff46bd86;
-        if("Yellow".equals(value))return 0xffe6b64e;
-        if("Orange".equals(value))return 0xffff9d3b;
-        if("Red".equals(value))return 0xfff06e77;
-        return 0xff9baac0;
-    }
-    private RemoteViews expanded(MonitorState.Frame frame,boolean bits){
-        RemoteViews views=new RemoteViews(getPackageName(),R.layout.notification_glance);
-        views.setTextViewText(R.id.notif_speed,speeds(frame,bits));
-        views.setTextViewText(R.id.notif_target1,
-            "● Target 1 · "+frame.status[0]+"  ·  "+frame.detail[0]);
-        views.setTextViewText(R.id.notif_target2,
-            "● Target 2 · "+frame.status[1]+"  ·  "+frame.detail[1]);
-        if(favicons!=null) {
-            android.graphics.Bitmap a=favicons.icon(0),b=favicons.icon(1);
-            if(a!=null)views.setImageViewBitmap(R.id.notif_logo1,a);
-            if(b!=null)views.setImageViewBitmap(R.id.notif_logo2,b);
-        }
-        views.setTextColor(R.id.notif_target1,healthColor(frame.status[0]));
-        views.setTextColor(R.id.notif_target2,healthColor(frame.status[1]));
-        views.setTextViewText(R.id.notif_session,
-            "Session   ↓ "+TrafficMath.data(frame.sessionRx)+
-            "    ↑ "+TrafficMath.data(frame.sessionTx));
-        views.setTextViewText(R.id.notif_today,
-            "Today     ↓ "+TrafficMath.data(frame.dayRx)+
-            "    ↑ "+TrafficMath.data(frame.dayTx));
-        views.setTextViewText(R.id.notif_month,
-            "Month    ↓ "+TrafficMath.data(frame.monthRx)+
-            "    ↑ "+TrafficMath.data(frame.monthTx));
-        return views;
-    }
-    private Notification notification(){
-        MonitorState.Frame frame=MonitorState.INSTANCE.frame();
-        boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-        String speed=speeds(frame,bits);
-        PendingIntent open=PendingIntent.getActivity(this,12,
-            new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-        PendingIntent stop=PendingIntent.getService(this,13,
-            new Intent(this,MonitorService.class).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-        return new Notification.Builder(this,CHANNEL)
-            .setSmallIcon(R.drawable.ic_notification_status)
-            .setContentTitle("BlazeNetMonitor · At a glance")
-            .setContentText(speed)
-            .setStyle(new Notification.DecoratedCustomViewStyle())
-            .setCustomContentView(compact(frame,bits))
-            .setCustomBigContentView(expanded(frame,bits))
-            .setContentIntent(open)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .addAction(new Notification.Action.Builder(
-                android.R.drawable.ic_menu_close_clear_cancel,"Stop",stop).build())
-            .build();
-    }
-    @Override public void onDestroy(){
+    @Override public void onDestroy() {
         running=false;
         ACTIVE=false;
         handler.removeCallbacks(poll);
         if(probes!=null)probes.shutdownNow();
-        if(favicons!=null)favicons.shutdown();
         MonitorState.INSTANCE.save(this);
         super.onDestroy();
     }
+
     @Override public IBinder onBind(Intent intent){return null;}
 }
