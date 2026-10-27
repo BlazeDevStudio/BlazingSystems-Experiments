@@ -110,6 +110,10 @@ class MainActivity : FlutterActivity() {
         }
     }
     private var lock: WifiManager.MulticastLock? = null
+    // A separately keyed call notification must not be auto-bundled with
+    // FlutterBackground's persistent "LAN Messenger is ready" notification.
+    // Android 35 hid Answer/Decline behind that auto-group in actual CI.
+    private val callNotificationGroup = "lan-messenger-call-actions"
     private var nextNotification = 1100
     private var callBridge: MethodChannel? = null
     private var activityForeground = true
@@ -317,6 +321,7 @@ class MainActivity : FlutterActivity() {
             .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
             .setContentIntent(openApp())
             .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setOngoing(true)
@@ -353,6 +358,7 @@ class MainActivity : FlutterActivity() {
                     .setContentText(if (video) "Incoming LAN video call" else "Incoming LAN voice call")
                     .setContentIntent(openApp())
                     .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
                     .setVisibility(Notification.VISIBILITY_PUBLIC)
                     .setAutoCancel(false)
                     .setOngoing(true)
@@ -418,6 +424,7 @@ class MainActivity : FlutterActivity() {
                 if (video) "Video call in progress" else "Voice call in progress")
             .setContentIntent(openApp())
             .setCategory(Notification.CATEGORY_CALL)
+            .setGroup(callNotificationGroup)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
         val end = callAction("end", callId)
