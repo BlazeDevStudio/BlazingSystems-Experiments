@@ -62,6 +62,12 @@ jobs:
           dotnet --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: RELEASE-20261027 reject missing, untrusted or mismatched Authenticode signer before future publishing
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSignaturePolicy/selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Verify local build stops after each failed dotnet command
         shell: pwsh
         run: |
@@ -256,6 +262,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          SOFTTIMER_SIGNER_SHA1: ${{ vars.SOFTTIMER_SIGNER_SHA1 }}
         run: |
           $ErrorActionPreference='Stop'
           $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
@@ -266,5 +273,13 @@ jobs:
           if (gh release view $env:TAG *> $null) {
             throw "Immutable release tag $env:TAG already exists. Refusing asset replacement; bump version and TAG with a new candidate."
           }
+          # RELEASE-20261027: GitHub Actions success + SHA256SUMS do NOT
+          # establish who signed the binaries. No new version is published
+          # unless the Setup and both shipped EXEs have Windows-trusted
+          # Authenticode signatures matching the explicitly pinned owner cert.
+          # Missing pin/signatures -> throw BEFORE gh release creates a tag.
+          $signedGate="$env:PROJECT_DIR/tests/ReleaseSignaturePolicy/require-signed-candidates.ps1"
+          & $signedGate -Setup $setup -App 'out/bundle/BlazePisonet.SoftTimer.exe' -Watchdog 'out/bundle/BlazePisonet.SoftTimer.Watchdog.exe' -ExpectedThumbprint "$env:SOFTTIMER_SIGNER_SHA1"
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'RELEASE BLOCKED: executable publisher identity verification failed' }
           gh release create $env:TAG $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
