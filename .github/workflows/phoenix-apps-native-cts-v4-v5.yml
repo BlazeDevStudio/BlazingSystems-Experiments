@@ -49,7 +49,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
           $lab = 'experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/NativeSerialReconnectGuard.csproj'
-          dotnet run --project $lab -c Release --no-launch-profile
+          # A bogus setup MUST return explicit INCONCLUSIVE 3. This makes
+          # the failed-setup path non-vacuous on the actual Windows CLR.
+          dotnet run --project $lab -c Release --no-launch-profile -- --invalid-setup
+          $invalidSetupExit = $LASTEXITCODE
+          if ($invalidSetupExit -ne 3) {
+            Write-Error "INVALID_SETUP_SENTINEL_FAILED: expected exit 3, got $invalidSetupExit"
+            exit 1
+          }
+          Write-Host 'NATIVE_INCONCLUSIVE_EXIT_3_CONTROL_PASS: deliberately invalid setup denied.'
+          dotnet run --project $lab -c Release --no-build --no-launch-profile
           $code = $LASTEXITCODE
           if ($code -eq 3) {
             Write-Error 'INCONCLUSIVE_EXIT_3: invalid sentinel, setup, timeout, missing positive control or fake-port scenario.'
