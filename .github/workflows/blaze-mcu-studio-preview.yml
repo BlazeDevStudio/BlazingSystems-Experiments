@@ -125,7 +125,7 @@ jobs:
           if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
           $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
           Get-Content $env:BLAZE_MCU_SMOKE_FILE
-          if(-not $report.passed) { throw "Packaged GUI IPC smoke failed: $($report.error)" }
+          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
