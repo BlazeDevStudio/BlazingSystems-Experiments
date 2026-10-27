@@ -83,6 +83,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _androidInPip = false;
   bool _incomingUsesExternalSurface = false;
   String? _activeCallUiId;
+  String? _observedCallId;
   bool _pendingCallPresentation = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
@@ -110,8 +111,19 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<dynamic> _handleNativeCallAction(MethodCall call) async {
     if (!mounted) return;
     if (call.method == 'pipState') {
-      setState(() => _androidInPip = call.arguments is Map &&
-          (call.arguments as Map)['active'] == true);
+      final nowInPip = call.arguments is Map &&
+          (call.arguments as Map)['active'] == true;
+      setState(() {
+        _androidInPip = nowInPip;
+        if (!nowInPip && intercom?.talkingTo != null) {
+          // Android PiP expand must show live VIDEO CALL, not conversation.
+          _callMinimized = false;
+          showSettings = false;
+          showReceived = false;
+          selectedGroup = null;
+          selected = intercom?.talkingTo;
+        }
+      });
       return;
     }
     if (call.method != 'callAction') return;
@@ -143,7 +155,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         unawaited(intercom?.setMuted(!(intercom?.muted ?? false)) ??
             Future<void>.value());
       } else if (action == 'open') {
-        unawaited(_openCallThread());
+        unawaited(_expandActiveCall());
       }
     }
   }
@@ -401,6 +413,24 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     }
   }
 
+  Future<void> _expandActiveCall() async {
+    if (!mounted) return;
+    setState(() {
+      _callMinimized = false;
+      showSettings = false;
+      showReceived = false;
+      selectedGroup = null;
+      selected = intercom?.talkingTo ?? selected;
+    });
+    if (Platform.isWindows) {
+      if (_compactWindowsVideo) {
+        await _restoreCompactVideo(forceOpen: true);
+      } else {
+        _openWindow();
+      }
+    }
+  }
+
   Future<void> _openCallThread() async {
     if (!mounted) return;
     setState(() {
@@ -452,6 +482,20 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await _restoreCompactVideo();
       await _restoreWindowAfterCall();
     }
+    if (mounted) setState(() {
+      _androidInPip = false;
+      _callMinimized = false;
+    });
+  }
+
+  /// Wait for bounded native media teardown, not an indefinite plugin Future.
+  /// Dismissing a PiP Activity while its camera is still disposing can tear
+  /// down the Flutter engine mid-cleanup and leave a frozen last frame.
+  Future<void> _finalizeEndedCallPresentation(Intercom call) async {
+    for (var i = 0; i < 80 && call.closing; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+    if (call.callId == null && mounted) await _endCallPresentation();
   }
 
   Future<void> _showActiveTrayMenu(Peer peer) async {
@@ -494,7 +538,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
       await _restoreChats();
-      final inter = Intercom(n);
+      final inter = Intercom(n)
+        ..reconnectGraceSeconds = settings.reconnectGraceSeconds;
       final groupMessages = GroupMessaging(n);
       final mesh = GroupCallMesh(n, groupMessages);
       groupMessages.onChanged = () { if (mounted) setState(() {}); };
@@ -574,6 +619,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }));
       inter.onChanged = () {
         if (!mounted) return;
+        if (inter.callId != null) _observedCallId = inter.callId;
         // Never create a native in-call window from onIncoming's finally:
         // that callback resolves BEFORE Intercom acquires media/sets SDP.
         // Wait for signaling to leave the connecting state.
@@ -609,10 +655,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         if (_incomingDialogOpen && inter.talkingTo == null) {
           _resolveIncomingDialog(false);
         }
-        if (_activeCallUiId != null && inter.talkingTo == null) {
+        if (_observedCallId != null && inter.talkingTo == null) {
+          _observedCallId = null;
           _activeCallUiId = null;
           _lastNativeMuted = null;
-          unawaited(_endCallPresentation().catchError((Object e) {
+          unawaited(_finalizeEndedCallPresentation(inter).catchError((Object e) {
             if (mounted) setState(() => error = 'Call controls could not close: $e');
           }));
         } else if (_activeCallUiId == inter.callId &&
@@ -1005,6 +1052,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       n.autoReceiveFiles = settings.autoReceiveFiles;
       n.maxIncomingFileBytes = settings.maximumFileMb * 1024 * 1024;
     }
+    intercom?.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+    node?.reconnectGraceSeconds = settings.reconnectGraceSeconds;
+    node?.setRoutedPeerSeeds(settings.routedPeerAddresses);
     _applySounds();
     if (!settings.soundsEnabled) unawaited(alerts.stopRing());
     await settings.save();
