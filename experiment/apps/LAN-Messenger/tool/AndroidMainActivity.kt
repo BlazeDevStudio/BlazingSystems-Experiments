@@ -572,6 +572,12 @@ class MainActivity : FlutterActivity() {
                         lastIncoming = false; pendingAnswer = null
                         pipEnabledForCall = false
                         incomingNotificationPosted = false
+                        // Disabling future auto-enter does NOT dismiss an
+                        // already-open PiP Activity. The call is fully ended:
+                        // remove just this floating Activity/task. A new
+                        // launcher activation creates a fresh app UI.
+                        val closeExistingPip =
+                            Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode
                         if (Build.VERSION.SDK_INT >= 31) {
                             try {
                                 setPictureInPictureParams(PictureInPictureParams.Builder()
@@ -579,6 +585,16 @@ class MainActivity : FlutterActivity() {
                             } catch (_: Exception) { }
                         }
                         result.success(null)
+                        if (closeExistingPip) {
+                            window?.decorView?.post {
+                                // Never finish an expanded foreground Activity.
+                                if (Build.VERSION.SDK_INT >= 26 &&
+                                    isInPictureInPictureMode && lastCallId == null) {
+                                    Log.i("LANCallTrace", "ended_call_pip_dismissed")
+                                    finish()
+                                }
+                            }
+                        }
                     }
                     "foreground" -> {
                         // Flutter resumed/inactive/paused is NOT authoritative
