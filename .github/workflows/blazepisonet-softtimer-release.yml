@@ -80,6 +80,25 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/V2PendingSequenceLab/windows-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      # TEST ONLY: both methods are extracted verbatim from exact Git-blob-guarded
+      # production C# files and compiled by .NET 8 with fake await/network boundaries.
+      # Run diagnostic before the existing 5-RED opened-handle safety fixture so
+      # both native results are retained on the same Windows job.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: PHX-L-APPS #164 source-linked native C# async target/session dispatch RED
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $lab = "$env:PROJECT_DIR/tests/NativeCoinDispatchLab"
+          python -B "$lab/extract_source.py"
+          if ($LASTEXITCODE -ne 0) { throw "SOURCE_METHOD_GUARD_INCONCLUSIVE: exit=$LASTEXITCODE" }
+          dotnet run --project "$lab/NativeCoinDispatchLab.csproj" -c Release -- --diagnostic
+          if ($LASTEXITCODE -ne 0) { throw "SOURCE_LINKED_DISPATCH_DIAGNOSTIC_FAILED: exit=$LASTEXITCODE" }
+          Write-Host 'NATIVE_ASYNC_DISPATCH_EXPECTED_SAFETY_RED: test-only; no admission approval.'
+
       - name: PHX-L-APPS #164 native C# active-low status-failure no-false-coin gate
         shell: pwsh
         run: |
