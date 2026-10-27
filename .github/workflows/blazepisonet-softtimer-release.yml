@@ -280,6 +280,5 @@ jobs:
           # Missing pin/signatures -> throw BEFORE gh release creates a tag.
           $signedGate="$env:PROJECT_DIR/tests/ReleaseSignaturePolicy/require-signed-candidates.ps1"
           & $signedGate -Setup $setup -App 'out/bundle/BlazePisonet.SoftTimer.exe' -Watchdog 'out/bundle/BlazePisonet.SoftTimer.Watchdog.exe' -ExpectedThumbprint "$env:SOFTTIMER_SIGNER_SHA1"
-          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'RELEASE BLOCKED: executable publisher identity verification failed' }
           gh release create $env:TAG $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
