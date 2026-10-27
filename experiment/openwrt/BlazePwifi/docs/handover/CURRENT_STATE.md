@@ -1,3 +1,12 @@
+## PAY-LOCK-20261027 — SOURCE+TEST COMMITTED / CI NOT YET VERIFIED
+- Original [PR #178](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/178) is OPEN on an obsolete integration base; its RED #40102482541 and GREEN #40103674841 are real but not today's source. Prior main development PR #30 closed without merge October 24. Current dev parent SHA 1890e522843d262c33a5109dcea11768896c2e5f differs from Full-green source 5a8fe3ef only by the three canonical handovers (Full #40265142084 SUCCESS).
+- Source 41d2d3d2eaa0630f925916d47701120a957b5a70: openwrt/rootfs/www/blazepwifi/cgi-bin/vendo fresh signed member_transfer checks original sender proof and recipient.enabled AFTER writer lock; unlocks on refusal; leaves already-committed receipt replay unchanged.
+- Regression a3843464dbdcb3156e240427f89a6bb69bfcaeb3: tests/v053_members.sh matches PR178 verified fixture byte-for-byte; tests lock-handoff recipient disable, sender disable/password reset and original receipt replay after revocation.
+- Status IMPLEMENTED_UNTESTED at latest baseline: require new exact-SHA Full CI; independent MASTER/VERIFY review before any guarded development merge. No financial journal/counter witness/physical acceptance fix; P0 #31/#32/#34/#43 all OPEN; VERSION 0.5.3, production v0.6 release and paid customer migration BLOCKED.
+- NEXT: create draft PR from integration/pay31-transfer-revocation-20261027 to current development, verify named centralized SoftTimer member source fixture, Android and QEMU; inspect failures and don't suppress tests. Preserve original PR178 and its independent-review requirement. No live payments/devices/key material touched.
+
+---
+
 ## PAY-LOCK-20261027 — IN PROGRESS / P0 #31 / forward-port independently proven signed member-transfer race fix
 
 - **Branch:** `integration/pay31-transfer-revocation-20261027` from active development `blazepwifi-v0.6.0-audit-foundation` exact `1890e522843d262c33a5109dcea11768896c2e5f`. Historical PR #30 CLOSED WITHOUT MERGE on Oct 24, so not an integration target. Latest application source `5a8fe3efbc4afb9ecf1260c4f09cf6903c26795a` passed Full #40265142084 and UI #40265142069. Live dev HEAD has four later changes confined to the THREE canonical docs; **no literal exact-HEAD CI** at 1890e. Source VERSION=0.5.3, no production v0.6.0.
