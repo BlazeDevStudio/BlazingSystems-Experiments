@@ -1,3 +1,5 @@
+**Integrated source revision:** `1e271068856b11916648acde316af18ba4bfa42b`
+
 ## PAY-LOCK-20261027 — SOURCE CI VERIFIED; INDEPENDENT REVIEW PENDING (October 27, 2026)
 - Source branch integration/pay31-transfer-revocation-20261027 targets live development blazepwifi-v0.6.0-audit-foundation at base 1890e522843d262c33a5109dcea11768896c2e5f. Historical PR #30 was CLOSED WITHOUT MERGE on October 24. PR #178 remains OPEN/UNMERGED on a stale baseline; this is its narrow forward-port, not a parallel fresh audit.
 - **Integrated source revision:** `1e271068856b11916648acde316af18ba4bfa42b`
