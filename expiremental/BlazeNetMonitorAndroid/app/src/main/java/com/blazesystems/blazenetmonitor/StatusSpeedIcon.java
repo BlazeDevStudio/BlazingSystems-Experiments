@@ -8,16 +8,14 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Icon;
 import java.util.Locale;
 
-/**
- * Monochrome dynamic small notification icons, as in other speed meters.
- * The OS scales and tints each icon into a small status-bar slot.
- * Two notifications provide left-dot upload and download right-dot indicators.
- */
+/** Download-only numeric monochrome status icon. Full details are in shade. */
 public final class StatusSpeedIcon {
-    private StatusSpeedIcon(){}
+    private StatusSpeedIcon() {}
 
     public static String shortSpeed(double bytesPerSecond,boolean bits){
-        double value=Math.max(0,bytesPerSecond)*(bits?8d:1d);
+        if(Double.isNaN(bytesPerSecond)||bytesPerSecond<=0)return bits?"0b":"0B";
+        double value=bytesPerSecond*(bits?8d:1d);
+        if(Double.isInfinite(value))return "MAX";
         String[] units=bits?new String[]{"b","K","M","G"}:
             new String[]{"B","K","M","G"};
         int tier=0;
@@ -29,8 +27,7 @@ public final class StatusSpeedIcon {
         return number+units[tier];
     }
 
-    public static Bitmap bitmap(double bytesPerSecond,boolean bits,
-                                String health,boolean upload){
+    public static Bitmap bitmap(double bytesPerSecond,boolean bits){
         final int size=96;
         Bitmap bitmap=Bitmap.createBitmap(size,size,Bitmap.Config.ALPHA_8);
         Canvas canvas=new Canvas(bitmap);
@@ -40,29 +37,15 @@ public final class StatusSpeedIcon {
         p.setTextAlign(Paint.Align.CENTER);
         p.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));
         String value=shortSpeed(bytesPerSecond,bits);
-        p.setTextSize(value.length()>5?39f:value.length()>4?47f:54f);
-        canvas.drawText(value,48,56,p);
-        p.setTextSize(27f);
-        canvas.drawText(upload?"↑":"↓",48,88,p);
-        // Status icons are monochrome: filled=good, ring=degraded,
-        // crossed=unreachable. Exact colors remain visible in app.
-        float x=upload?11:85,y=13;
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3f);
-        if("Green".equals(health)){
-            p.setStyle(Paint.Style.FILL);canvas.drawCircle(x,y,8,p);
-        }else if("Red".equals(health)){
-            canvas.drawCircle(x,y,8,p);
-            canvas.drawLine(x-5,y-5,x+5,y+5,p);
-            canvas.drawLine(x+5,y-5,x-5,y+5,p);
-        }else if("Yellow".equals(health)||"Orange".equals(health)){
-            canvas.drawCircle(x,y,8,p);
-            if("Orange".equals(health))canvas.drawLine(x,y-4,x,y+4,p);
-        }else canvas.drawCircle(x,y,5,p);
+        p.setTextSize(72f);
+        while(p.measureText(value)>90f && p.getTextSize()>28f)
+            p.setTextSize(p.getTextSize()-2f);
+        Paint.FontMetrics fm=p.getFontMetrics();
+        canvas.drawText(value,size/2f,(size-(fm.ascent+fm.descent))/2f,p);
         return bitmap;
     }
 
-    public static Icon icon(double bytesPerSecond,boolean bits,
-                            String quality,boolean upload){
-        return Icon.createWithBitmap(bitmap(bytesPerSecond,bits,quality,upload));
+    public static Icon icon(double bytesPerSecond,boolean bits){
+        return Icon.createWithBitmap(bitmap(bytesPerSecond,bits));
     }
 }

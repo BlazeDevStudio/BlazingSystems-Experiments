@@ -70,6 +70,18 @@ if ! grep -F "$PKG" /tmp/blaze-android-notification-after.txt; then
   echo 'FAIL no app notification after Start monitoring'
   exit 3
 fi
+# Match only active notification records for this app, not each metadata line.
+python3 - <<'PY'
+from pathlib import Path
+import re,sys
+dump=Path('/tmp/blaze-android-notification-after.txt').read_text()
+records=re.findall(r'NotificationRecord\([^\n]*pkg=com\.blazesystems\.blazenetmonitor\b[^\n]*\bid=(\d+)',dump)
+print('Active BlazeNetMonitor notification IDs:',records)
+if records!=['101']:
+    print('FAIL expected exactly one notification (101), no legacy 102 or OS group summary',file=sys.stderr)
+    sys.exit(3)
+print('PASS exactly one ongoing app notification')
+PY
 if grep -E 'FATAL EXCEPTION|RemoteServiceException|Bad notification' /tmp/blaze-android-logcat.txt 2>/dev/null | grep -q "$PKG"; then
   echo 'FAIL app exception detected'
   exit 3

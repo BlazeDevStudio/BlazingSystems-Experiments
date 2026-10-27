@@ -8,22 +8,23 @@ import android.util.Log;
 import java.util.concurrent.*;
 
 /**
- * Dynamic small-icon bitmap notifications render current numerical speeds
- * in two adjacent status-bar slots. SystemUI owns layout/order/monochrome tint.
- * The expanded shade uses OS-owned InboxStyle, never risky custom RemoteViews
- * that can kill apps asynchronously after notify() returns successfully.
+ * A single foreground notification shows download-only digits in the
+ * status bar. The standard expanded shade displays both speeds, two named
+ * connection states, traffic totals, and Stop. No custom RemoteViews.
  */
 public final class MonitorService extends Service {
     public static volatile boolean ACTIVE=false;
     public static final String ACTION_START="com.blazesystems.blazenetmonitor.START";
     public static final String ACTION_STOP="com.blazesystems.blazenetmonitor.STOP";
     private static final int NOTIFICATION_ID=101;
-    private static final int DOWNLOAD_NOTIFICATION_ID=102;
+    // Remove the old second notification after upgrading from v0.1.5.
+    private static final int LEGACY_DOWNLOAD_ID=102;
     private static final String TAG="BlazeNetMonitor.Service";
     private static final String ERROR_KEY="service_start_error";
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
+    private android.graphics.Bitmap logo;
     private boolean running=false;
     private int ticks=0;
 
@@ -52,7 +53,23 @@ public final class MonitorService extends Service {
         channel.setDescription("Network speeds and traffic summary in notification shade");
         channel.setShowBadge(false);
         NotificationManager manager=getSystemService(NotificationManager.class);
-        if(manager!=null)manager.createNotificationChannel(channel);
+        if(manager!=null) {
+            manager.createNotificationChannel(channel);
+            manager.cancel(LEGACY_DOWNLOAD_ID);
+        }
+        try {
+            android.graphics.drawable.Drawable d=getDrawable(R.drawable.ic_blaze);
+            if(d!=null) {
+                logo=android.graphics.Bitmap.createBitmap(96,96,
+                    android.graphics.Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas c=new android.graphics.Canvas(logo);
+                d.setBounds(0,0,96,96);
+                d.draw(c);
+            }
+        }catch(RuntimeException e) {
+            Log.w(TAG,"Unable to render large notification logo",e);
+            logo=null;
+        }
     }
 
     @Override public int onStartCommand(Intent intent,int flags,int startId) {
@@ -101,47 +118,23 @@ public final class MonitorService extends Service {
     }
 
 
-    private android.graphics.drawable.Icon liveIcon(MonitorState.Frame f,
-            boolean bits,boolean upload){
-        try{
-            return StatusSpeedIcon.icon(upload?f.tx:f.rx,bits,
-                f.status[upload?0:1],upload);
-        }catch(RuntimeException e){
+    /** Download-only numeric icon, no tiny dots or arrows. */
+    private android.graphics.drawable.Icon liveIcon(MonitorState.Frame f,boolean bits) {
+        try {
+            return StatusSpeedIcon.icon(f.rx,bits);
+        }catch(RuntimeException e) {
             Log.e(TAG,"Dynamic status icon failed; keeping static icon",e);
             return android.graphics.drawable.Icon.createWithResource(
                 this,R.drawable.ic_notification_status);
         }
     }
 
-    /** Second live icon provides the download value alongside upload in
-      * the OS-managed status bar. Some OEMs collapse, re-order or suppress
-      * icons; no accessibility/overlay injection is used. */
-    private Notification downloadNotification(MonitorState.Frame f,boolean bits){
-        PendingIntent open=PendingIntent.getActivity(this,12,
-            new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
-        String text="↓ "+TrafficMath.speed(f.rx,bits);
-        return new Notification.Builder(this,CHANNEL)
-            .setSmallIcon(liveIcon(f,bits,false))
-            .setContentTitle("BlazeNetMonitor · Download")
-            .setContentText(text)
-            .setContentIntent(open)
-            .setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false)
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .build();
-    }
-
-    private String speed(MonitorState.Frame f,boolean bits) {
-        return "↑ "+TrafficMath.speed(f.tx,bits)+
-            "    ↓ "+TrafficMath.speed(f.rx,bits);
-    }
-
     /** OS template (InboxStyle), not user-supplied RemoteViews. */
     private Notification notification(boolean dynamicIcon) {
         MonitorState.Frame f=MonitorState.INSTANCE.frame();
         boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
-        String strip=StatusLabel.strip(f.status[0],
-            TrafficMath.speed(f.tx,bits),TrafficMath.speed(f.rx,bits),f.status[1]);
+        String strip=StatusLabel.strip(
+            TrafficMath.speed(f.tx,bits),TrafficMath.speed(f.rx,bits));
         PendingIntent open=PendingIntent.getActivity(this,12,
             new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
@@ -150,22 +143,25 @@ public final class MonitorService extends Service {
             PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification.InboxStyle details=new Notification.InboxStyle()
-            .setBigContentTitle("At a glance · "+speed(f,bits))
-            .addLine(StatusLabel.dot(f.status[0])+" Target 1  "+f.detail[0])
-            .addLine(StatusLabel.dot(f.status[1])+" Target 2  "+f.detail[1])
-            .addLine("Session  ↓ "+TrafficMath.data(f.sessionRx)+
+            .setBigContentTitle("BlazeNetMonitor · At a glance")
+            .addLine("Download: "+TrafficMath.speed(f.rx,bits))
+            .addLine("Upload: "+TrafficMath.speed(f.tx,bits))
+            .addLine("Target 1: "+StatusLabel.quality(f.status[0])+" · "+f.detail[0])
+            .addLine("Target 2: "+StatusLabel.quality(f.status[1])+" · "+f.detail[1])
+            .addLine("Session: ↓ "+TrafficMath.data(f.sessionRx)+
                 "  ↑ "+TrafficMath.data(f.sessionTx))
-            .addLine("Today     ↓ "+TrafficMath.data(f.dayRx)+
+            .addLine("Today: ↓ "+TrafficMath.data(f.dayRx)+
                 "  ↑ "+TrafficMath.data(f.dayTx))
-            .addLine("Month   ↓ "+TrafficMath.data(f.monthRx)+
+            .addLine("Month: ↓ "+TrafficMath.data(f.monthRx)+
                 "  ↑ "+TrafficMath.data(f.monthTx));
 
         return new Notification.Builder(this,CHANNEL)
-            .setSmallIcon(dynamicIcon?liveIcon(f,bits,true):
+            .setSmallIcon(dynamicIcon?liveIcon(f,bits):
                 android.graphics.drawable.Icon.createWithResource(
                     this,R.drawable.ic_notification_status))
-            .setContentTitle("BlazeNetMonitor")
+            .setContentTitle("BlazeNetMonitor · Network speed")
             .setContentText(strip)
+            .setLargeIcon(logo)
             .setStyle(details)
             .setContentIntent(open)
             .setOngoing(true).setOnlyAlertOnce(true).setShowWhen(false)
@@ -179,10 +175,7 @@ public final class MonitorService extends Service {
         try {
             NotificationManager manager=getSystemService(NotificationManager.class);
             if(manager!=null) {
-                MonitorState.Frame frame=MonitorState.INSTANCE.frame();
-                boolean bits=getSharedPreferences("settings",0).getBoolean("bits",true);
                 manager.notify(NOTIFICATION_ID,notification(true));
-                manager.notify(DOWNLOAD_NOTIFICATION_ID,downloadNotification(frame,bits));
             }
         } catch(RuntimeException e) {
             Log.e(TAG,"Notification update failed",e);
@@ -211,7 +204,7 @@ public final class MonitorService extends Service {
         handler.removeCallbacks(poll);
         if(probes!=null)probes.shutdownNow();
         NotificationManager manager=getSystemService(NotificationManager.class);
-        if(manager!=null)manager.cancel(DOWNLOAD_NOTIFICATION_ID);
+        if(manager!=null)manager.cancel(LEGACY_DOWNLOAD_ID);
         MonitorState.INSTANCE.save(this);
         super.onDestroy();
     }
