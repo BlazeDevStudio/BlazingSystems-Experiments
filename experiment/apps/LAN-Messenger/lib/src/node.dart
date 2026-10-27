@@ -132,9 +132,23 @@ class LanNode {
 
   static const _wifiMulticast = MethodChannel('lan_messenger/multicast');
 
+  /// Stable TCP ingress simplifies an explicit firewall rule for a manually
+  /// routed subnet. The UDP discovery port remains discoveryPort (39823).
+  /// A second local process may use an ephemeral port, which is advertised
+  /// honestly in discovery rather than pretending that 39824 is reachable.
+  static const int preferredListenPort = 39824;
+  bool get usingPreferredListenPort => _server?.port == preferredListenPort;
+
   Future<void> start() async {
     try { await _wifiMulticast.invokeMethod<void>('acquire'); } catch (_) {}
-    _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+    try {
+      _server = await HttpServer.bind(
+          InternetAddress.anyIPv4, preferredListenPort);
+    } on SocketException {
+      // Keep local-LAN operation available if another local app owns 39824;
+      // discovery publishes the ACTUAL bound port in every announcement.
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
+    }
     _server!.listen(_serve, onError: (_) {});
     try {
       _udp = await RawDatagramSocket.bind(InternetAddress.anyIPv4, discoveryPort,
