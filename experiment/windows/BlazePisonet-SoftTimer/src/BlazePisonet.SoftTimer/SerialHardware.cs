@@ -187,9 +187,10 @@ public sealed class SerialHardware : IDisposable
                 return false;
             }
 
+            SerialPort? candidate = null;
             try
             {
-                var port = new SerialPort(selected.PortName, Math.Clamp(config.SerialBaudRate, 300, 115200), Parity.None, 8, StopBits.One)
+                candidate = new SerialPort(selected.PortName, Math.Clamp(config.SerialBaudRate, 300, 115200), Parity.None, 8, StopBits.One)
                 {
                     Handshake = Handshake.None,
                     DtrEnable = config.DtrEnabled,
@@ -228,6 +229,22 @@ public sealed class SerialHardware : IDisposable
             }
             catch (Exception ex)
             {
+                // Open() may throw before _port is assigned. That provisional
+                // SerialPort and its PinChanged subscription are still ours.
+                // Never leave a failed-open adapter object observing callbacks.
+                if (candidate is not null && !ReferenceEquals(candidate, _port))
+                {
+                    try { candidate.PinChanged -= OnPinChanged; } catch { }
+                    try { if (candidate.IsOpen) candidate.Close(); } catch { }
+                    try { candidate.Dispose(); } catch { }
+                }
+                if (_port is null)
+                {
+                    _config = null;
+                    _pulseStarted = null;
+                    _lastCoinActive = false;
+                    _requireVerifiedIdle = true;
+                }
                 Storage.Log($"Serial open failed for {selected.PortName}: {ex.Message}");
                 ConnectedDevice = null;
                 ConnectionChanged?.Invoke($"Could not open {selected.PortName}: {ex.Message}");
