@@ -24,6 +24,11 @@ namespace System.IO.Ports
     public sealed class SerialPort : IDisposable
     {
         public static bool InitialCtsLevel { get; set; }
+        // Fake OS fault injection for actual C# failed-Open lifecycle test.
+        public static bool ThrowOnNextOpen { get; set; }
+        public int OpenAttemptCount { get; private set; }
+        public bool WasDisposed { get; private set; }
+        public int PinSubscriberCount => PinChanged?.GetInvocationList().Length ?? 0;
         public static SerialPort? LastCreated { get; private set; }
         // TEST ONLY: the physical adapter currently mapped to a COM port may
         // differ from the PnP identity previously enumerated by WMI.
@@ -57,11 +62,17 @@ namespace System.IO.Ports
         }
         public void Open()
         {
+            OpenAttemptCount++;
+            if (ThrowOnNextOpen)
+            {
+                ThrowOnNextOpen = false;
+                throw new IOException("TEST_ONLY injected COM9 access-denied on Open");
+            }
             OpenedPhysicalPnp = PhysicalPnpAtOpen;
             IsOpen = true;
         }
         public void Close() => IsOpen = false;
-        public void Dispose() => Close();
+        public void Dispose() { WasDisposed = true; Close(); }
         public void Raise(SerialPinChange change) =>
             PinChanged?.Invoke(this, new SerialPinChangedEventArgs(change));
         // TEST-ONLY: snapshot a handler before Dispose()/unsubscribe and invoke
