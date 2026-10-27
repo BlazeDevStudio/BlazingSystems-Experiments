@@ -20,6 +20,7 @@ public final class MonitorService extends Service {
     private static final String CHANNEL="blazenetmonitor.active";
     private final Handler handler=new Handler(Looper.getMainLooper());
     private ExecutorService probes;
+    private TargetFavicons favicons;
     private boolean running=false;
     private int ticks=0;
     private final Runnable poll=new Runnable(){
@@ -28,6 +29,9 @@ public final class MonitorService extends Service {
             MonitorState.INSTANCE.sample(MonitorService.this);
             ticks++;
             if(ticks%15==1)probeTargets();
+            if(ticks%60==1 && favicons!=null)
+                favicons.refresh(getSharedPreferences("settings",0),
+                    ()->handler.post(()->{if(running)publish();}));
             // Periodic speed changes are delivered to the collapsed and
             // expanded notification. The OS may throttle their presentation.
             if(ticks%2==0)publish();
@@ -37,6 +41,7 @@ public final class MonitorService extends Service {
     @Override public void onCreate(){
         super.onCreate();
         probes=Executors.newFixedThreadPool(2);
+        favicons=new TargetFavicons();
         NotificationChannel channel=new NotificationChannel(
             CHANNEL,"Network speed · At a glance",NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("Status bar indicator and expanded speed, health and data totals");
@@ -118,6 +123,11 @@ public final class MonitorService extends Service {
             "● Target 1 · "+frame.status[0]+"  ·  "+frame.detail[0]);
         views.setTextViewText(R.id.notif_target2,
             "● Target 2 · "+frame.status[1]+"  ·  "+frame.detail[1]);
+        if(favicons!=null) {
+            android.graphics.Bitmap a=favicons.icon(0),b=favicons.icon(1);
+            if(a!=null)views.setImageViewBitmap(R.id.notif_logo1,a);
+            if(b!=null)views.setImageViewBitmap(R.id.notif_logo2,b);
+        }
         views.setTextColor(R.id.notif_target1,healthColor(frame.status[0]));
         views.setTextColor(R.id.notif_target2,healthColor(frame.status[1]));
         views.setTextViewText(R.id.notif_session,
@@ -162,6 +172,7 @@ public final class MonitorService extends Service {
         ACTIVE=false;
         handler.removeCallbacks(poll);
         if(probes!=null)probes.shutdownNow();
+        if(favicons!=null)favicons.shutdown();
         MonitorState.INSTANCE.save(this);
         super.onDestroy();
     }
