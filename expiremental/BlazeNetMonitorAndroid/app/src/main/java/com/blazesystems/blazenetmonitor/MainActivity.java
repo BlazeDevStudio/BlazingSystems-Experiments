@@ -158,6 +158,9 @@ public final class MainActivity extends Activity {
         LinearLayout links=new LinearLayout(this);add(about,links,47);
         action("Support",links,this::showSupport);
         action("Developer Facebook",links,()->open("https://fb.me/manrealloumer"));
+        LinearLayout diagnostics= new LinearLayout(this);
+        add(about,diagnostics,46);
+        action("Crash diagnostics",diagnostics,this::showCrashDiagnostics);
 
         if(!pref.getBoolean("welcomeDonation",false)){
             pref.edit().putBoolean("welcomeDonation",true).apply();
@@ -280,6 +283,27 @@ public final class MainActivity extends Activity {
             .setView(group).setNegativeButton("Not now",null)
             .setPositiveButton("Open PayPal",(d,w)->open(DonationQrView.PAYPAL)).show();
     }
+    private void showCrashDiagnostics(){
+        final String report=BlazeApplication.crashReport(this);
+        if(report.isEmpty()){
+            new AlertDialog.Builder(this).setTitle("Crash diagnostics")
+                .setMessage("No recorded app exception. Android can also stop apps without a Java exception.")
+                .setPositiveButton("OK",null).show();
+            return;
+        }
+        new AlertDialog.Builder(this).setTitle("Previous crash")
+            .setMessage(report.length()>1800?report.substring(0,1800)+"\n…":report)
+            .setPositiveButton("Copy diagnostics",(dialog,which)->{
+                android.content.ClipboardManager clipboard=
+                    (android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                if(clipboard!=null)clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("BlazeNetMonitor crash",report));
+                Toast.makeText(this,"Copied crash report",Toast.LENGTH_SHORT).show();
+            })
+            .setNeutralButton("Clear",(dialog,which)->BlazeApplication.clearCrash(this))
+            .setNegativeButton("Close",null).show();
+    }
+
     private void open(String url){
         try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}
         catch(Exception e){Toast.makeText(this,"Browser unavailable",Toast.LENGTH_SHORT).show();}

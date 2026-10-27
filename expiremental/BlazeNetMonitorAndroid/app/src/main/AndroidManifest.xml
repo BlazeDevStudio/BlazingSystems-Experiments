@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <application android:label="BlazeNetMonitor" android:allowBackup="false"
+    <application android:name=".BlazeApplication" android:label="BlazeNetMonitor" android:allowBackup="false"
         android:supportsRtl="true" android:theme="@android:style/Theme.Material.NoActionBar"
         android:icon="@drawable/ic_blaze" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
