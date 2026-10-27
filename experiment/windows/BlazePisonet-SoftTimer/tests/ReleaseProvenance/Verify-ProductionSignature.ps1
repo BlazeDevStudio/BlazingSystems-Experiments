@@ -39,7 +39,7 @@ foreach ($file in $files) {
     if ([IO.Path]::GetExtension($item.Name) -ine '.exe' -or -not $seen.Add($item.FullName)) {
         Deny "$($file.Name) has an unsafe or reused path"
     }
-    $file.Item = $item
+    $file['Item'] = $item
     # A matching filename or AssemblyVersion does not prove resource metadata.
     $expectedFileVersion = "$ExpectedVersion.0"
     $info = $item.VersionInfo
@@ -97,7 +97,7 @@ Add-Type -AssemblyName System.IO.Compression
 $archive = [System.IO.Compression.ZipFile]::OpenRead($zipFile.FullName)
 try {
     foreach ($file in $files | Where-Object { $_.Name -ne 'Setup' }) {
-        $expectedName = $file.Item.Name
+        $expectedName = $file['Item'].Name
         $matches = @($archive.Entries | Where-Object { $_.FullName -ceq $expectedName })
         if ($matches.Count -ne 1) {
             Deny "$($file.Name) portable archive identity missing or ambiguous"
@@ -113,7 +113,7 @@ try {
         } finally {
             $stream.Dispose()
         }
-        $fileHash = (Get-FileHash -LiteralPath $file.Item.FullName -Algorithm SHA256).Hash
+        $fileHash = (Get-FileHash -LiteralPath $file['Item'].FullName -Algorithm SHA256).Hash
         if ($entryHash -cne $fileHash) {
             Deny "$($file.Name) ZIP payload does not match signed EXE"
         }
