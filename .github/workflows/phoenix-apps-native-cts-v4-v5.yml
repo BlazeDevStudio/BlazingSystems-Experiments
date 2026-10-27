@@ -1,0 +1,63 @@
+name: PHX-L-APPS isolated native V4 V5 CTS reconnect RED
+run-name: PHX-L-APPS TEST ONLY guarded Windows CTS race at ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - phoenix/light-apps-native-cts-v4-v5-20261027
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-apps-native-reconnect-v4-v5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-csharp-test-only:
+    name: Native Windows C# guarded source race / NO physical acceptance
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned major .NET 8 runtime SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Prepare Python for verified literal Git blob read
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact source and fake-OS Git blobs BEFORE any test-only instrumentation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          python experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/prepare_guarded_copy.py
+          if ($LASTEXITCODE -eq 3) {
+            Write-Error 'INCONCLUSIVE_EXIT_3: checkout/source/blob guard differs; NO native source claim.'
+            exit 3
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path 'experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/Generated/ActualSerialHardware.cs')) {
+            Write-Error 'INCONCLUSIVE_EXIT_3: no disposable C# source generated.'
+            exit 3
+          }
+      - name: Compile and execute actual source-linked native Windows C# V4 V5 regressions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab = 'experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/NativeSerialReconnectGuard.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile
+          $code = $LASTEXITCODE
+          if ($code -eq 3) {
+            Write-Error 'INCONCLUSIVE_EXIT_3: invalid sentinel, setup, timeout, missing positive control or fake-port scenario.'
+            exit 3
+          }
+          if ($code -ne 2) {
+            Write-Error "NATIVE_DIAGNOSTIC_UNEXPECTED_EXIT: got $code instead of observed existing safety RED exit 2; investigate exact log."
+            exit 1
+          }
+          Write-Host 'NATIVE_CSHARP_EXPECTED_SOURCE_RED_CONFIRMED: V4/V5 controlled simulated interleavings reproduced in actual C# CLR; NOT FIXED; NO physical or paid admission.'
+          exit 0
