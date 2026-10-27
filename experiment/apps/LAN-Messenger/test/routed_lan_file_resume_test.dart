@@ -95,6 +95,33 @@ Future<void> _exerciseLostAck({required bool finalChunk}) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('routed ingress advertises its real TCP port if preferred port is occupied',
+      () => HttpOverrides.runWithHttpOverrides(() async {
+        final identity1 = Identity(
+            await (await X25519().newKeyPair()).extract(), 'Ingress A');
+        final identity2 = Identity(
+            await (await X25519().newKeyPair()).extract(), 'Ingress B');
+        final first = LanNode(identity1);
+        final second = LanNode(identity2);
+        try {
+          await first.start();
+          await second.start();
+          expect(LanNode.preferredListenPort, 39824);
+          expect(first.listenPort, greaterThan(0));
+          expect(second.listenPort, greaterThan(0));
+          expect(second.listenPort, isNot(first.listenPort));
+          expect(first.usingPreferredListenPort,
+              first.listenPort == LanNode.preferredListenPort);
+          expect(second.usingPreferredListenPort,
+              second.listenPort == LanNode.preferredListenPort);
+          // Both servers must report the actual bound port, not assume a
+          // fixed route if another local application already owns it.
+        } finally {
+          await first.dispose();
+          await second.dispose();
+        }
+      }, _LoopbackHttpOverrides()));
+
   test('resume large file after lost first-chunk acknowledgement', () =>
       HttpOverrides.runWithHttpOverrides(
           () => _exerciseLostAck(finalChunk: false),
