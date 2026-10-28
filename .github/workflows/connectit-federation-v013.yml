@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p bin
           go vet ./...
-          CGO_ENABLED=0 go test -race ./... -count=1
+          CGO_ENABLED=1 go test -race ./... -count=1
           CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed .
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-windows-amd64.exe .
           GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-linux-arm64 .
