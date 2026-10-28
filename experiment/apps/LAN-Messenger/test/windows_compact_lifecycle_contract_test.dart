@@ -14,7 +14,7 @@ void main() {
     expect(block, contains('_deferredCompactForceOpen'));
     expect(block, contains('intercom?.callId != session'));
     expect(block, contains('intercom?.closing == true'));
-    expect(block, contains('await _restoreCompactVideo()'));
+    expect(block, contains('await _restoreCompactVideo(forceOpen: forceOpen)'));
     expect(block, isNot(contains('await wm.windowManager.setSkipTaskbar(true)')));
   });
   test('Windows compact call presentation rechecks live session after awaiting toast', () {
