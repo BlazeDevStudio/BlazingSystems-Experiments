@@ -7,6 +7,7 @@ import 'node.dart';
 import 'call_transport_gate.dart';
 import 'windows_remote_input.dart';
 import 'lan_reconnect_policy.dart';
+import 'call_peer_watchdog.dart';
 import 'protocol.dart';
 
 // Exactly one active call, shared for voice and video. No STUN/TURN or internet.
@@ -293,6 +294,79 @@ class Intercom {
   bool reconnecting = false;
   DateTime? _reconnectUntil;
   Timer? _reconnectUiPulse;
+  Timer? _peerProbeTimer;
+  bool _peerProbeBusy = false;
+  int _peerProbeGeneration = 0;
+  bool _iceDisconnected = false;
+  final CallPeerWatchdog _peerWatchdog = CallPeerWatchdog();
+
+  /// Call-scoped HTTP liveness supplements ICE: a crashed Windows process
+  /// cannot send 'hangup', and the surviving peer may otherwise appear live.
+  void _startPeerProbes(Peer peer, String id) {
+    if (_peerProbeTimer != null) return;
+    _peerWatchdog.reset();
+    final generation = ++_peerProbeGeneration;
+    _peerProbeTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_peerProbeBusy || _closing || callId != id) return;
+      unawaited(_checkPeerProbe(peer, id, generation));
+    });
+  }
+
+  Future<void> _checkPeerProbe(Peer peer, String id, int generation) async {
+    if (_peerProbeBusy || callId != id || _closing) return;
+    _peerProbeBusy = true;
+    try {
+      final status = await node.probeCall(peer, id);
+      if (generation != _peerProbeGeneration ||
+          callId != id || _closing) return;
+      final change = _peerWatchdog.report(status);
+      if (change == CallWatchdogChange.ended) {
+        // The remote process answered our encrypted probe but reports no
+        // matching live session. End now; no point waiting for ICE timeouts.
+        unawaited(_log('remote peer reports call session already ended'));
+        unawaited(hangUp(notify: false));
+      } else if (change == CallWatchdogChange.suspect) {
+        node.markPeerUnreachable(peer);
+        _beginReconnectAt(_peerWatchdog.firstUnavailableAt!);
+        unawaited(_log('peer heartbeat unavailable; bounded reconnect'));
+      } else if (change == CallWatchdogChange.recovered) {
+        // A recovered signaling socket does not prove media recovery after
+        // ICE has actually disconnected. Preserve grace until media resumes.
+        if (!_iceDisconnected) _resetReconnectState();
+        onChanged?.call();
+      }
+    } finally {
+      if (generation == _peerProbeGeneration) _peerProbeBusy = false;
+    }
+  }
+
+  void _stopPeerProbes() {
+    _peerProbeTimer?.cancel();
+    _peerProbeTimer = null;
+    _peerProbeGeneration++;
+    _peerProbeBusy = false;
+    _iceDisconnected = false;
+    _peerWatchdog.reset();
+  }
+
+  void _beginReconnectAt(DateTime firstFailure) {
+    final deadline = firstFailure.add(Duration(seconds: reconnectGraceSeconds));
+    if (!reconnecting) {
+      reconnecting = true;
+      _reconnectUiPulse?.cancel();
+      _reconnectUiPulse = Timer.periodic(
+          const Duration(seconds: 1), (_) => onChanged?.call());
+    }
+    if (_reconnectUntil == null || deadline.isBefore(_reconnectUntil!)) {
+      _reconnectUntil = deadline;
+      _disconnectGrace.dispose();
+    }
+    final remaining = _reconnectUntil!.difference(DateTime.now());
+    _disconnectGrace.disconnected(remaining.isNegative
+        ? Duration.zero : remaining);
+    onChanged?.call();
+  }
+
   int get reconnectRemainingSeconds {
     if (!reconnecting || _reconnectUntil == null) return 0;
     final ms = _reconnectUntil!.difference(DateTime.now()).inMilliseconds;
@@ -308,8 +382,8 @@ class Intercom {
   }
   late final LanDisconnectGrace _disconnectGrace = LanDisconnectGrace(() {
     if (callId != null && !_closing && reconnecting) {
-      unawaited(_log('media reconnect grace expired'));
-      unawaited(hangUp());
+      unawaited(_log('media reconnect grace expired; closing orphaned call'));
+      unawaited(hangUp(notify: false));
     }
   });
   bool _remoteDescriptionReady = false;
@@ -460,17 +534,10 @@ class Intercom {
     pc.onConnectionState = (state) {
       if (callId != id || _closing) return;
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        // Keep tracks/renderers alive during transient Wi-Fi or router loss.
-        if (!reconnecting) {
-          reconnecting = true;
-          _reconnectUntil = DateTime.now()
-              .add(Duration(seconds: reconnectGraceSeconds));
-          _reconnectUiPulse?.cancel();
-          _reconnectUiPulse = Timer.periodic(
-              const Duration(seconds: 1), (_) => onChanged?.call());
-        }
-        _disconnectGrace.disconnected(
-            Duration(seconds: reconnectGraceSeconds));
+        // WebRTC lost media: keep the existing tracks for bounded recovery.
+        // A concurrent heartbeat may already have started an EARLIER deadline.
+        _iceDisconnected = true;
+        _beginReconnectAt(DateTime.now());
         unawaited(_log('media disconnected; grace=${reconnectGraceSeconds}s'));
       } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
@@ -479,11 +546,13 @@ class Intercom {
         unawaited(_log('terminal connection state $state'));
         unawaited(hangUp(notify: false));
       } else if (CallTransportGate.mediaReady(state)) {
-        _resetReconnectState();
+        _iceDisconnected = false;
+        if (!_peerWatchdog.suspect) _resetReconnectState();
         // An SDP answer is not proof of a usable media path. Only the actual
         // WebRTC peer transport reaching Connected clears the call's
         // negotiating state and unlocks connected-call UI/PiP.
         connecting = false;
+        _startPeerProbes(peer, id);
         _answerTimeout?.cancel();
         _answerTimeout = null;
         // Distinct, privacy-safe native log marker for both endpoints.
@@ -732,6 +801,7 @@ class Intercom {
   Future<void> _hangUpOnce({required bool notify}) async {
     if (_closing) return;
     _closing = true;
+    _stopPeerProbes();
     _resetReconnectState();
     _answerTimeout?.cancel();
     _answerTimeout = null;

@@ -32,6 +32,20 @@ class GroupCallMesh {
   // A pending WebRTC offer is not yet a joined participant.
   int get participants => 1 + links.values
       .where((link) => link.talkingTo != null && !link.connecting).length;
+
+  /// Distinct call IDs are owned by individual encrypted WebRTC mesh links.
+  /// Never compare a probe against the room's sessionId: that is a shared
+  /// coordination ID, NOT the per-peer media call identity.
+  /// The link is valid while ICE/SDP negotiation is still in progress.
+  bool hasLiveLinkSession(Peer peer, String callSessionId) {
+    if (!active || _leaving || activeRoom?.includes(peer.id) != true) {
+      return false;
+    }
+    final link = links[peer.id];
+    return link != null && link.callId == callSessionId &&
+        link.talkingTo?.id == peer.id && !link.closing;
+  }
+
   static bool canCall(GroupRoom room) => room.members.length >= 3 &&
       room.members.length <= 4;
 

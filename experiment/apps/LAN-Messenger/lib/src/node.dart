@@ -9,6 +9,7 @@ import 'identity.dart';
 import 'serial_async_gate.dart';
 import 'protocol.dart';
 import 'lan_reconnect_policy.dart';
+import 'call_peer_watchdog.dart';
 
 class TransferProgress {
   final String id;
@@ -51,6 +52,7 @@ class LanNode {
   RawDatagramSocket? _udp;
   Timer? _ticker;
   final Map<String, Peer> peers = {};
+  final Set<String> _unreachablePeers = {};
   final Map<String, _ReceiveState> _incoming = {};
   final Set<String> _pendingOfferIds = {};
   final SerialAsyncGate _completionGate = SerialAsyncGate();
@@ -81,12 +83,21 @@ class LanNode {
   static const int maxConcurrentIncoming = 4;
   bool _checkingPeers = false;
   bool isOnline(Peer peer) =>
+      !_unreachablePeers.contains(peer.id) &&
       DateTime.now().difference(peers[peer.id]?.seen ?? peer.seen) < peerOnlineWindow;
+  /// A failed authenticated call heartbeat overrides a stale UDP presence.
+  /// The peer identity remains pinned and is reinstated on a valid reply.
+  void markPeerUnreachable(Peer peer) {
+    if (peers[peer.id]?.key != peer.key) return;
+    if (_unreachablePeers.add(peer.id)) onPeersChanged?.call();
+  }
   void _markSeen(Peer peer) {
     final old = peers[peer.id];
     if (old == null || old.key != peer.key) return;
+    final wasUnreachable = _unreachablePeers.remove(peer.id);
     peers[peer.id] = Peer(id: old.id, name: old.name, key: old.key,
         host: old.host, port: old.port, seen: DateTime.now());
+    if (wasUnreachable) onPeersChanged?.call();
   }
   Future<void> _checkPeerReachability() async {
     if (_checkingPeers) return;
@@ -108,6 +119,7 @@ class LanNode {
   void Function()? onPeersChanged;
   void Function(Peer, ChatMessage)? onChat;
   void Function(Peer, Map<String, dynamic>)? onSignal;
+  bool Function(Peer, String sessionId)? onCallProbe;
   void Function(TransferProgress)? onProgress;
   Timer? _progressPulse;
   final Map<String, TransferProgress> _progressPending = {};
@@ -320,6 +332,30 @@ class LanNode {
         timeout: event['kind'] == 'file-offer'
             ? const Duration(minutes: 3) : const Duration(seconds: 15));
 
+  /// A two-way encrypted call-specific probe. Modern peers can prove that
+  /// THIS call ID remains active; an older v0.3.2 peer falls back to encrypted
+  /// ping for compatibility, with weaker session-liveness guarantees.
+  Future<CallProbeResult> probeCall(Peer peer, String callId) async {
+    try {
+      final probe = await _post(peer, '/v1/event',
+          utf8.encode(jsonEncode({'kind': 'call-probe', 'callId': callId})),
+          timeout: const Duration(seconds: 3));
+      if (probe['active'] is bool) {
+        return probe['active'] == true
+            ? CallProbeResult.active : CallProbeResult.ended;
+      }
+      // Legacy versions reply {'ok': false} for unknown 'call-probe'.
+      // Do not break voice/video across mixed preview versions.
+      final legacy = await _post(peer, '/v1/event',
+          utf8.encode(jsonEncode({'kind': 'ping'})),
+          timeout: const Duration(seconds: 3));
+      return legacy['ok'] == true
+          ? CallProbeResult.active : CallProbeResult.unreachable;
+    } catch (_) {
+      return CallProbeResult.unreachable;
+    }
+  }
+
   Future<void> sendMessage(Peer peer, String body) async {
     if (body.trim().isEmpty || body.length > 4000) throw ArgumentError('Invalid message');
     final id = randomId();
@@ -346,6 +382,11 @@ class LanNode {
     switch (event['kind']) {
       case 'ping':
         return {'ok': true};
+      case 'call-probe':
+        final id = event['callId'];
+        return {'ok': true, 'active':
+          id is String && id.isNotEmpty && id.length <= 64 &&
+          onCallProbe?.call(peer, id) == true};
       case 'message':
         final text = event['text'];
         final id = event['id'];
