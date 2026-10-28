@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT, created I
 CREATE TABLE IF NOT EXISTS session_records(id TEXT PRIMARY KEY, account_id TEXT REFERENCES accounts(id), created INTEGER NOT NULL, expires INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS policies(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 PRAGMA user_version=1;
+
+CREATE TABLE IF NOT EXISTS revoked_node_keys (key_hash TEXT PRIMARY KEY, node_id TEXT NOT NULL, revoked_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS node_cert_issues (node_id TEXT NOT NULL, key_hash TEXT NOT NULL, issued_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, PRIMARY KEY(node_id,key_hash,issued_at));

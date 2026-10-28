@@ -548,6 +548,7 @@ func relayServe(args []string) error {
 		return errors.New("remote Seed federation requires Master-authorized signed node identity; no shared-secret fallback")
 	}
 	var mesh *MeshIdentity
+	var nodeRevocations *NodeRevocationCache
 	if signedMode {
 		if *nodeCert == "" || *nodeKey == "" || len(ids) != len(urls) {
 			return errors.New("signed mode requires node-cert, node-private-key and a peer-id per peer URL")
@@ -555,6 +556,14 @@ func relayServe(args []string) error {
 		mesh, e = newMeshIdentity(*dir, *node, *nodeCert, *nodeKey, pub, ids)
 		if e != nil {
 			return fmt.Errorf("node identity: %w", e)
+		}
+		nodeRevocations, e = configuredNodeRevocations(*dir, pub, *revokeURL)
+		if e != nil {
+			return fmt.Errorf("node revocation authority: %w", e)
+		}
+		mesh.Revocations = nodeRevocations
+		if _, e = mesh.currentCert(); e != nil {
+			return fmt.Errorf("local node credential: %w", e)
 		}
 	} else if len(urls) > 0 && len(secret) < 32 {
 		return errors.New("localhost legacy mesh secret must have at least 32 characters")
@@ -721,6 +730,11 @@ func relayServe(args []string) error {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		go revocations.poll(ctx, *revokeURL, 60*time.Second)
+	}
+	if nodeRevocations != nil {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go nodeRevocations.poll(ctx, strings.TrimSuffix(*revokeURL, "/v1/revocations")+"/v1/node-revocations", 30*time.Second)
 	}
 	return withServer(*listen, *cert, *key, mux, *maxConnections)
 }
