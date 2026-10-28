@@ -2,6 +2,7 @@
 No third-party media files are bundled. Reproducible with Python stdlib.
 """
 import math
+import struct
 import wave
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
