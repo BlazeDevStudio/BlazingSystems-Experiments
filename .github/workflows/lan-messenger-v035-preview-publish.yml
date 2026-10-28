@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SOURCE_SHA: ea9e6292a458aa7468be533f0d70f9d133dbd014
-  BUILD_RUN: "40639300739"
+  SOURCE_SHA: e115889f8a5ff8b50f9fc0c48afbb6fa24340bfe
+  BUILD_RUN: "40639785047"
   TAG: lan-messenger-v0.3.5-preview.1
 
 jobs:
