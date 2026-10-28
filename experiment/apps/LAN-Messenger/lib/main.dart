@@ -594,11 +594,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         ..reconnectGraceSeconds = settings.reconnectGraceSeconds;
       // The remote call ID must remain verifiable while signaling and ICE
       // callbacks settle. Register the callback before any incoming calls.
-      n.onCallProbe = (peer, sessionId) =>
-          inter.callId == sessionId &&
-          inter.talkingTo?.id == peer.id && !inter.closing;
       final groupMessages = GroupMessaging(n);
       final mesh = GroupCallMesh(n, groupMessages);
+      n.onCallProbe = (peer, sessionId) =>
+          (inter.callId == sessionId &&
+              inter.talkingTo?.id == peer.id && !inter.closing) ||
+          mesh.hasLiveLinkSession(peer, sessionId);
       groupMessages.onChanged = () { if (mounted) setState(() {}); };
       mesh.onChanged = () { if (mounted) setState(() {}); };
       groupMessages.onInvitation = (sender, title, count) => _ask(
