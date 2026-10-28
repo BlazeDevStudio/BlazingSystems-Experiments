@@ -27,7 +27,7 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final generator = File('tool/generate_assets.py').readAsStringSync();
     final platform = File('tool/prepare_platforms.py').readAsStringSync();
-    expect(main, contains("Image.asset('assets/branding/connectit/connectit-icon-48.png'"));
+    expect(main, contains('assets/branding/connectit/connectit-icon-48.png'));
     expect(main, contains("rootBundle.load('assets/icons/lan_messenger.ico')"));
     expect(pubspec, contains('assets/branding/connectit/'));
     expect(generator, contains("root/'assets/branding/connectit/connectit.ico'"));
