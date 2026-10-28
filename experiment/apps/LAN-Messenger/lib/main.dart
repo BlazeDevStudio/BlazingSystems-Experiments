@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:window_manager/window_manager.dart' as wm;
 import 'package:tray_manager/tray_manager.dart' as tray;
 import 'package:flutter_background/flutter_background.dart';
 import 'src/settings.dart';
+import 'src/recoverable_json_file.dart';
 import 'src/lan_reconnect_policy.dart';
 import 'src/alerts.dart';
 import 'src/identity.dart';
@@ -1297,8 +1297,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     try {
       final folder = await Identity.appDirectory();
       final file = File('${folder.path}${Platform.pathSeparator}chats.json');
-      if (!await file.exists()) return;
-      final data = jsonDecode(await file.readAsString()) as List<dynamic>;
+      if (!await RecoverableJsonFile.hasSavedState(file)) return;
+      final data = await RecoverableJsonFile.read(file,
+          isValid: (value) => value is List) as List<dynamic>;
       for (final item in data) {
         final message = ChatMessage.fromJson(item);
         if (message != null) chats.putIfAbsent(message.peerId, () => []).add(message);
@@ -1312,7 +1313,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       final file = File('${folder.path}${Platform.pathSeparator}chats.json');
       final data = chats.values.expand((items) => items.length > 300
           ? items.sublist(items.length - 300) : items).map((m) => m.toJson()).toList();
-      await file.writeAsString(jsonEncode(data), flush: true);
+      await RecoverableJsonFile.write(file, data);
     }).catchError((_) {});
   }
 

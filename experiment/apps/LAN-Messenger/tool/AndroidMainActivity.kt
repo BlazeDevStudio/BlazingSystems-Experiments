@@ -436,7 +436,7 @@ class MainActivity : FlutterActivity() {
         }
         b.addAction(android.R.drawable.ic_lock_silent_mode,
             if (muted) "Unmute" else "Mute", callAction("mute", callId))
-        b.addAction(android.R.drawable.ic_menu_view, "Open thread",
+        b.addAction(android.R.drawable.ic_menu_view, "Return to live call",
             callAction("open", callId))
         notifications.notify(7024, b.build())
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
@@ -455,11 +455,15 @@ class MainActivity : FlutterActivity() {
             return RemoteAction(Icon.createWithResource(this, icon),
                 label, label, callAction(name, id))
         }
+        // OS PiP already owns tap-to-expand. A custom "Open conversation"
+        // action changed Flutter state but did not expand the Android PiP
+        // task, leaving the last video tile floating over another app.
+        // Keep only genuine in-PiP controls; user taps the system PiP tile
+        // to expand the full active video call.
         return listOf(
             control("mute", if (lastMuted) "Unmute" else "Mute",
                 android.R.drawable.ic_lock_silent_mode),
             control("end", "End call", android.R.drawable.ic_menu_close_clear_cancel),
-            control("open", "Open conversation", android.R.drawable.ic_menu_view),
         )
     }
 

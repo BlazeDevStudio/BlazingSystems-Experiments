@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart' as hash;
 import 'package:flutter/services.dart';
 import 'identity.dart';
+import 'serial_async_gate.dart';
 import 'protocol.dart';
 import 'lan_reconnect_policy.dart';
 
@@ -30,6 +31,7 @@ class _ReceiveState {
   final File temporary;
   final String senderId;
   int written = 0;
+  final SerialAsyncGate writes = SerialAsyncGate();
   _ReceiveState(this.name, this.checksum, this.total, this.temporary, this.senderId);
   int get nextChunk => (written / chunkSize).ceil();
 }
@@ -50,6 +52,8 @@ class LanNode {
   Timer? _ticker;
   final Map<String, Peer> peers = {};
   final Map<String, _ReceiveState> _incoming = {};
+  final Set<String> _pendingOfferIds = {};
+  final SerialAsyncGate _completionGate = SerialAsyncGate();
   final Map<String, _CompletedIncomingFile> _completedIncoming = {};
   final Set<String> _routedPeerSeeds = {};
   int reconnectGraceSeconds = 60;
@@ -385,7 +389,12 @@ class LanNode {
         sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false, 'reason': 'invalid or over configured size limit'};
     if (_incoming.containsKey(id)) {
       final previous = _incoming[id]!;
-      return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};
+      final identicalOffer = previous.senderId == peer.id &&
+          previous.checksum == sha && previous.total == total &&
+          previous.name == safeFileName(name);
+      return {'ok': identicalOffer,
+        if (identicalOffer) 'next': previous.nextChunk,
+        if (!identicalOffer) 'reason': 'conflicting transfer identity'};
     }
     final finished = _completedIncoming[id];
     if (finished != null) {
@@ -393,24 +402,30 @@ class LanNode {
           finished.checksum == sha && finished.bytes == total,
           'done': true, 'next': finished.next};
     }
-    if (_incoming.length >= maxConcurrentIncoming) return {'ok': false, 'reason': 'busy'};
-    if (!autoReceiveFiles) {
-      final ask = onFileOffer;
-      if (ask == null || !await ask(peer, safeFileName(name), total)) {
-        return {'ok': false, 'reason': 'declined'};
-      }
+    if (_pendingOfferIds.contains(id)) return {'ok': false, 'reason': 'pending'};
+    if (_incoming.length + _pendingOfferIds.length >= maxConcurrentIncoming) {
+      return {'ok': false, 'reason': 'busy'};
     }
-    // The default is receive-without-prompt, *never* automatically execute.
-    // Size and concurrent-transfer ceilings reduce malicious LAN exhaustion.
-    final dir = await _storage();
-    final tempDir = Directory('${dir.path}${Platform.pathSeparator}pending');
-    await tempDir.create(recursive: true);
-    final temporary = File('${tempDir.path}${Platform.pathSeparator}$id.part');
-    await temporary.writeAsBytes([], flush: true);
-    _incoming[id] = _ReceiveState(safeFileName(name), sha, total, temporary, peer.id);
-    _reportProgress(TransferProgress(id, peer.id, safeFileName(name), 0, total, true));
-    if (total == 0) return {'ok': await _finish(id, _incoming[id]!), 'next': 0};
-    return {'ok': true, 'next': 0};
+    _pendingOfferIds.add(id);
+    try {
+      if (!autoReceiveFiles) {
+        final ask = onFileOffer;
+        if (ask == null || !await ask(peer, safeFileName(name), total)) {
+          return {'ok': false, 'reason': 'declined'};
+        }
+      }
+      final dir = await _storage();
+      final tempDir = Directory('${dir.path}${Platform.pathSeparator}pending');
+      await tempDir.create(recursive: true);
+      final temporary = File('${tempDir.path}${Platform.pathSeparator}$id.part');
+      await temporary.writeAsBytes([], flush: true);
+      _incoming[id] = _ReceiveState(safeFileName(name), sha, total, temporary, peer.id);
+      _reportProgress(TransferProgress(id, peer.id, safeFileName(name), 0, total, true));
+      if (total == 0) return {'ok': await _finish(id, _incoming[id]!), 'next': 0};
+      return {'ok': true, 'next': 0};
+    } finally {
+      _pendingOfferIds.remove(id);
+    }
   }
 
   Future<Map<String, dynamic>> _receiveChunk(Peer peer, List<int> plain) async {
@@ -428,23 +443,36 @@ class LanNode {
         }};
     }
     if (transfer.senderId != peer.id) return {'ok': false};
-    if (idx < 0) return {'ok': false};
-    if (idx < transfer.nextChunk) return {'ok': true, 'next': transfer.nextChunk};
-    if (idx != transfer.nextChunk) return {'ok': false, 'next': transfer.nextChunk};
-    final bytes = base64Decode(payload);
-    if (bytes.isEmpty || bytes.length > chunkSize ||
-        transfer.written + bytes.length > transfer.total) return {'ok': false};
-    await transfer.temporary.writeAsBytes(bytes, mode: FileMode.append);
-    transfer.written += bytes.length;
-    _reportProgress(TransferProgress(id, peer.id, transfer.name, transfer.written,
-        transfer.total, true));
-    if (transfer.written == transfer.total && !await _finish(id, transfer)) {
-      return {'ok': false};
-    }
-    return {'ok': true, 'next': idx + 1};
+    return transfer.writes.run(() async {
+      if (!identical(_incoming[id], transfer)) {
+        final completed = _completedIncoming[id];
+        if (completed != null && completed.senderId == peer.id) {
+          return {'ok': true, 'done': true, 'next': completed.next};
+        }
+        return {'ok': false};
+      }
+      if (idx < 0) return {'ok': false};
+      if (idx < transfer.nextChunk) return {'ok': true, 'next': transfer.nextChunk};
+      if (idx != transfer.nextChunk) return {'ok': false, 'next': transfer.nextChunk};
+      final bytes = base64Decode(payload);
+      if (bytes.isEmpty || bytes.length > chunkSize ||
+          transfer.written + bytes.length > transfer.total) return {'ok': false};
+      await transfer.temporary.writeAsBytes(bytes, mode: FileMode.append);
+      transfer.written += bytes.length;
+      _reportProgress(TransferProgress(id, peer.id, transfer.name, transfer.written,
+          transfer.total, true));
+      if (transfer.written == transfer.total && !await _finish(id, transfer)) {
+        return {'ok': false};
+      }
+      return {'ok': true, 'next': idx + 1};
+    });
   }
 
-  Future<bool> _finish(String id, _ReceiveState transfer) async {
+  // A shared completion gate protects same-name destination allocation.
+  // Per-transfer chunk gates alone cannot prevent two different file IDs
+  // simultaneously choosing the same Received/filename.
+  Future<bool> _finish(String id, _ReceiveState transfer) =>
+      _completionGate.run(() async {
     final actual = (await hash.sha256.bind(transfer.temporary.openRead()).first).toString();
     if (actual != transfer.checksum) {
       await transfer.temporary.delete();
@@ -483,7 +511,7 @@ class LanNode {
           filePath: completed.path, fileSize: transfer.total));
     }
     return true;
-  }
+  });
 
   Future<void> sendFile(Peer peer, File file) async {
     final id = randomId();
@@ -577,6 +605,7 @@ class LanNode {
     _ticker?.cancel();
     _progressPulse?.cancel();
     _progressPending.clear();
+    _pendingOfferIds.clear();
     _udp?.close();
     await _server?.close(force: true);
     _http.close(force: true);
