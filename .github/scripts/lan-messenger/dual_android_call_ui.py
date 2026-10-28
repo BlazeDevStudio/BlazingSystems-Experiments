@@ -354,6 +354,93 @@ def video_call_test():
     note("video", "PASS: two decoded video feeds, PiP expand, remote hangup and PiP close")
 
 
+
+def process_death_test():
+    """Kill an active peer without signaling; survivor must end automatically.
+
+    This is the missing acceptance path from the physical Windows freeze/exit.
+    A graceful Hangup cannot prove the watchdog detects process death.
+    """
+    package = "com.example.lan_messenger"
+    note("peer-death", "Dialing first real voice session before forced process exit")
+    tap_label(CALLER, "peer-death-dial", lambda text: "voice call" in text.lower(),
+              timeout_seconds=45)
+    tap_label(RECEIVER, "peer-death-answer",
+              lambda text: text.strip().lower() == "answer",
+              timeout_seconds=55)
+    wait_both_connected()
+    before = snapshot(CALLER, "peer-death-before-kill")
+    if before is None:
+        raise RuntimeError("No caller UI evidence before peer termination")
+    if "End call" not in " ".join(labels(n) for n in before.iter("node")):
+        raise RuntimeError("No active call controls before peer termination")
+    # Android force-stop is deliberately abrupt: no Dart dispose/hangup can
+    # run. This simulates a desktop executable disappearing mid-call.
+    started = time.monotonic()
+    note("peer-death-kill", "Force-stopping receiver process without hangup")
+    adb(RECEIVER, "shell", "am", "force-stop", package)
+    time.sleep(2)
+    if adb(RECEIVER, "shell", "pidof", package, check=False).strip():
+        raise RuntimeError("Force-stopped peer is still running")
+
+    saw_reconnecting = False
+    saw_ended = False
+    saw_offline = False
+    # Default reconnect grace is 60s; 110s allows two 5-second probes,
+    # bounded HTTP timeouts, media cleanup and UiAutomator overhead.
+    # The session must NOT stay active indefinitely after a dead process.
+    deadline = started + 110
+    while time.monotonic() < deadline:
+        if not adb(CALLER, "shell", "pidof", package, check=False).strip():
+            raise RuntimeError("Surviving caller crashed after remote process death")
+        if adb(RECEIVER, "shell", "pidof", package, check=False).strip():
+            raise RuntimeError("Dead receiver unexpectedly restarted; invalid test")
+        root = snapshot(CALLER, "peer-death-watchdog")
+        if root is None:
+            time.sleep(2)
+            continue
+        screen = " ".join(labels(n) for n in root.iter("node"))
+        if "reconnecting" in screen.lower():
+            if not saw_reconnecting:
+                note("peer-death-grace", "Observed surviving caller reconnect countdown")
+            saw_reconnecting = True
+        has_end = any(labels(n).strip().lower() == "end call"
+                      for n in root.iter("node"))
+        offline = "Offline • Waiting for this device" in screen
+        if offline:
+            saw_offline = True
+        if not has_end and offline:
+            saw_ended = True
+            elapsed = round(time.monotonic() - started, 1)
+            note("peer-death-complete", f"PASS: orphan call ended and peer offline in {elapsed}s")
+            break
+        time.sleep(3)
+
+    report = {
+        "trigger": "adb shell am force-stop, no app hangup signal",
+        "source": "same exact-head APK installed on two Android 35 emulators",
+        "configured_grace_seconds": 60,
+        "saw_reconnecting": saw_reconnecting,
+        "call_ended": saw_ended,
+        "peer_offline": saw_offline,
+        "elapsed_seconds": round(time.monotonic() - started, 1),
+        "receiver_remained_stopped": not bool(
+            adb(RECEIVER, "shell", "pidof", package, check=False).strip()),
+        "survivor_alive": bool(
+            adb(CALLER, "shell", "pidof", package, check=False).strip()),
+    }
+    (OUT / "peer-process-death-acceptance.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8")
+    if not saw_ended or not saw_offline or not report["survivor_alive"]:
+        raise RuntimeError(
+            "Orphan call did not auto-end with offline peer within "
+            "110s of an unannounced remote process exit")
+    # Immediate terminal WebRTC Failed/Closed is also safe and may bypass a
+    # visible reconnect countdown. Report it rather than inventing a pass.
+    if not saw_reconnecting:
+        note("peer-death-grace",
+             "No reconnect UI observed: connection may have ended immediately via ICE")
+
 def main():
     note("setup", "Starting actual Android↔Android voice/video call UI test")
     for serial in (CALLER, RECEIVER):
@@ -365,6 +452,9 @@ def main():
         tap_label(CALLER, "choose-peer",
                   lambda text: "online" in text.lower() and
                   "looking for nearby" not in text.lower())
+    if os.environ.get("LAN_MESSENGER_SCENARIO") == "peer-process-death":
+        process_death_test()
+        return
     if os.environ.get("LAN_MESSENGER_SCENARIO") == "background-first":
         first_background_incoming_test()
         return
