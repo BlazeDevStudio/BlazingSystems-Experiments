@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'identity.dart';
+import 'recoverable_json_file.dart';
 import 'node.dart';
 import 'protocol.dart';
 
@@ -66,8 +66,8 @@ class GroupMessaging {
     try {
       final folder = await Identity.appDirectory();
       final file = File('${folder.path}${Platform.pathSeparator}groups.json');
-      if (!await file.exists()) return;
-      final raw = jsonDecode(await file.readAsString());
+      if (!await RecoverableJsonFile.hasSavedState(file)) return;
+      final raw = await RecoverableJsonFile.read(file, isValid: (value) => value is List);
       if (raw is! List) return;
       for (final item in raw) {
         final room = GroupRoom.fromJson(item);
@@ -80,11 +80,8 @@ class GroupMessaging {
     _pending = _pending.then((_) async {
       final folder = await Identity.appDirectory();
       final file = File('${folder.path}${Platform.pathSeparator}groups.json');
-      final temp = File('${file.path}.pending');
-      await temp.writeAsString(jsonEncode(rooms.values.map((r) => r.toJson()).toList()),
-          flush: true);
-      if (await file.exists()) await file.delete();
-      await temp.rename(file.path);
+      await RecoverableJsonFile.write(
+          file, rooms.values.map((r) => r.toJson()).toList());
     }).catchError((Object _) {});
   }
   Future<GroupRoom> create(String name, List<Peer> members) async {
