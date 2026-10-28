@@ -53,6 +53,7 @@ class LanNode {
   final Map<String, Peer> peers = {};
   final Map<String, _ReceiveState> _incoming = {};
   final Set<String> _pendingOfferIds = {};
+  final SerialAsyncGate _completionGate = SerialAsyncGate();
   final Map<String, _CompletedIncomingFile> _completedIncoming = {};
   final Set<String> _routedPeerSeeds = {};
   int reconnectGraceSeconds = 60;
@@ -388,7 +389,12 @@ class LanNode {
         sha is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(sha)) return {'ok': false, 'reason': 'invalid or over configured size limit'};
     if (_incoming.containsKey(id)) {
       final previous = _incoming[id]!;
-      return {'ok': previous.senderId == peer.id, 'next': previous.nextChunk};
+      final identicalOffer = previous.senderId == peer.id &&
+          previous.checksum == sha && previous.total == total &&
+          previous.name == safeFileName(name);
+      return {'ok': identicalOffer,
+        if (identicalOffer) 'next': previous.nextChunk,
+        if (!identicalOffer) 'reason': 'conflicting transfer identity'};
     }
     final finished = _completedIncoming[id];
     if (finished != null) {
@@ -462,7 +468,11 @@ class LanNode {
     });
   }
 
-  Future<bool> _finish(String id, _ReceiveState transfer) async {
+  // A shared completion gate protects same-name destination allocation.
+  // Per-transfer chunk gates alone cannot prevent two different file IDs
+  // simultaneously choosing the same Received/filename.
+  Future<bool> _finish(String id, _ReceiveState transfer) =>
+      _completionGate.run(() async {
     final actual = (await hash.sha256.bind(transfer.temporary.openRead()).first).toString();
     if (actual != transfer.checksum) {
       await transfer.temporary.delete();
@@ -501,7 +511,7 @@ class LanNode {
           filePath: completed.path, fileSize: transfer.total));
     }
     return true;
-  }
+  });
 
   Future<void> sendFile(Peer peer, File file) async {
     final id = randomId();

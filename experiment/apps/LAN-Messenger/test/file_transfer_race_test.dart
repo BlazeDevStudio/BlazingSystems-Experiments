@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lan_messenger/src/identity.dart';
 import 'package:lan_messenger/src/node.dart';
 import 'package:lan_messenger/src/protocol.dart';
@@ -129,4 +130,51 @@ void main() {
     expect((await first)['ok'], isTrue);
     expect(prompts, 1);
   }));
+  test('active offer rejects same transfer ID with different file identity',
+      () => withLanNodes((sender, receiver, dir) async {
+    final id = randomId();
+    final initial = await postEncrypted(sender, receiver, '/v1/event', {
+      'kind': 'file-offer', 'id': id, 'name': 'genuine.bin',
+      'size': 4,
+      'sha256': crypto.sha256.convert([1, 2, 3, 4]).toString(),
+    });
+    expect(initial['ok'], true);
+    final conflict = await postEncrypted(sender, receiver, '/v1/event', {
+      'kind': 'file-offer', 'id': id, 'name': 'replacement.bin',
+      'size': 4,
+      'sha256': crypto.sha256.convert([9, 8, 7, 6]).toString(),
+    });
+    expect(conflict['ok'], false);
+    expect(conflict['reason'], 'conflicting transfer identity');
+    final valid = await postEncrypted(sender, receiver, '/v1/chunk', {
+      'id': id, 'index': 0, 'bytes': base64Encode([1, 2, 3, 4]),
+    });
+    expect(valid['ok'], true);
+    expect((await receiver.receivedFiles()).length, 1);
+  }));
+
+  test('two simultaneous same-name transfers retain both contents',
+      () => withLanNodes((sender, receiver, dir) async {
+    final ids = [randomId(), randomId()];
+    final contents = [List<int>.filled(19, 41), List<int>.filled(19, 87)];
+    final offers = await Future.wait(List.generate(2, (i) => postEncrypted(
+        sender, receiver, '/v1/event', {
+          'kind': 'file-offer', 'id': ids[i], 'name': 'same-name.bin',
+          'size': contents[i].length,
+          'sha256': crypto.sha256.convert(contents[i]).toString(),
+        })));
+    expect(offers.every((r) => r['ok'] == true), true);
+    final results = await Future.wait(List.generate(2, (i) => postEncrypted(
+        sender, receiver, '/v1/chunk', {
+          'id': ids[i], 'index': 0,
+          'bytes': base64Encode(contents[i]),
+        })));
+    expect(results.every((r) => r['ok'] == true), true);
+    final received = await receiver.receivedFiles();
+    expect(received.length, 2);
+    final data = await Future.wait(received.map((f) => f.readAsBytes()));
+    expect(data.any((v) => listEquals(v, contents[0])), true);
+    expect(data.any((v) => listEquals(v, contents[1])), true);
+  }));
+
 }
