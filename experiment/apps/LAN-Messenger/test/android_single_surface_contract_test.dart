@@ -38,4 +38,18 @@ void main() {
         greaterThan(ongoing.indexOf('pipEnabledForCall = video')));
     expect(native.contains('AndroidCallOverlay'), isFalse);
   });
+  test('Android PiP uses OS expansion, not a nonexpanding custom Open action', () {
+    final native = File('tool/AndroidMainActivity.kt').readAsStringSync();
+    final start = native.indexOf('private fun pictureActions(');
+    final end = native.indexOf('private fun pipFailureReason()', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final pipActions = native.substring(start, end);
+    expect(pipActions, contains('control("mute"'));
+    expect(pipActions, contains('control("end"'));
+    expect(pipActions, isNot(contains('control("open"')));
+    expect(native, contains('"Return to live call"'));
+    expect(native, isNot(contains('"Open thread"')));
+  });
+
 }
