@@ -41,4 +41,4 @@ jobs:
           python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/signed_mesh_e2e.py
       - name: No production key leaks in source check
         run: |
-          ! grep -R -l --exclude='*.md' --exclude='*.txt' --exclude='*.py' --exclude='*.json' --exclude='*.go' --exclude='*.yml' 'PRIVATE KEY' experiment/apps/ConnectIT
+          if git grep -l -e '-----BEGIN PRIVATE KEY-----' -e '-----BEGIN RSA PRIVATE KEY-----' -- experiment/apps/ConnectIT; then echo 'Tracked private key material detected'; exit 1; fi
