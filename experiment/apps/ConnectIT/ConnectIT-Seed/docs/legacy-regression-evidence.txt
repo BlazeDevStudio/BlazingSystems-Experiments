@@ -1,0 +1,2 @@
+{"workload": "201 signed messages, 1 original and 200 x 256-byte opaque payloads, 2 local seeds", "seed_a_rss_kib": 12236, "seed_b_rss_kib": 9904, "note": "Linux x86-64 process RSS after a light test; not proof of sustained 1 GB hardware performance"}
+{"ten_digit_id": "PASS", "first_device_signed_enrollment": "PASS", "seed_one_to_seed_two_signed_replication": "PASS", "hop_count": 1, "master_offline_verified_delivery": "PASS", "client_side_E2E_encryption": "NOT_IMPLEMENTED_IN_SMOKE"}

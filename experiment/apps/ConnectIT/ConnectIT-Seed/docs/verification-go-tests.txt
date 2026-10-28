@@ -1,0 +1,16 @@
+=== RUN   TestDeviceEnvelopeOfflineValidation
+--- PASS: TestDeviceEnvelopeOfflineValidation (0.00s)
+=== RUN   TestDeviceRequestProofAndReplay
+--- PASS: TestDeviceRequestProofAndReplay (0.00s)
+=== RUN   TestDisallowRemotePlainHTTP
+--- PASS: TestDisallowRemotePlainHTTP (0.00s)
+=== RUN   TestBoundedListenerMaxConnections
+--- PASS: TestBoundedListenerMaxConnections (0.00s)
+=== RUN   TestHopCounterBound
+--- PASS: TestHopCounterBound (0.00s)
+=== RUN   TestSignedTokens
+--- PASS: TestSignedTokens (0.00s)
+=== RUN   TestStorePersistenceDedupAndRetention
+--- PASS: TestStorePersistenceDedupAndRetention (0.06s)
+PASS
+ok  	blazingsystems/connectit-seed	0.075s

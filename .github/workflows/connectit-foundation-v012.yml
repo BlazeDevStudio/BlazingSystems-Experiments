@@ -1,0 +1,41 @@
+name: ConnectIT foundation v0.1.2 (draft)
+on:
+  pull_request:
+    paths:
+      - 'experiment/apps/ConnectIT/**'
+      - '.github/workflows/connectit-foundation-v012.yml'
+  workflow_dispatch:
+jobs:
+  linux-go-and-security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Install SQLite development headers
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+      - name: Master lint, test, build
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Master-Seed
+        run: |
+          go vet ./...
+          go test ./...
+          mkdir -p bin
+          CGO_ENABLED=1 go build -o bin/connectit-master .
+      - name: Satellite lint, test and cross-build
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Seed
+        run: |
+          go vet ./...
+          go test ./...
+          mkdir -p bin
+          CGO_ENABLED=0 go build -o bin/connectit-seed .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o bin/connectit-seed-windows-amd64.exe .
+      - name: Python crypto test dependency (ephemeral fixture only)
+        run: python3 -m pip install cryptography
+      - name: Two-seed encrypted-envelope and signed revocation integration tests
+        working-directory: experiment/apps/ConnectIT
+        run: |
+          python3 ConnectIT-Master-Seed/tests/revocation_smoke.py
+          python3 ConnectIT-Master-Seed/tests/integration_smoke.py
