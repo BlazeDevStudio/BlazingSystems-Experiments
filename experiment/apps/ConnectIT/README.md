@@ -1,24 +1,11 @@
-# ConnectIT — v0.1.2 development-only source dump
+# ConnectIT — independent development products (v0.1.3)
 
-Three independent products reside in their respective folders. The original LAN Messenger source and release are **not modified**. This branch preserves the prior Blaze Messenger Seed v0.2.0 relay compatibility while developing Master-owned device authority and a signed revocation view. Current LAN Messenger test adapter remains separately parked in draft PR #230.
+**Development only; NO-GO for production.**
 
-## Evidence
+Separate, individually distributable source trees: `ConnectIT-Master-Seed/` (SQLite and account authority), `ConnectIT-Seed/` (Go satellite relay), `ConnectIT-LAN-Messenger-Draft/` (disabled-by-default Flutter interface draft). The current source builds server binaries only, not a ConnectIT native Flutter app. The original LAN Messenger code is untouched.
 
-Go 1.23 Linux x86-64: both projects' unit tests, `go vet`, build; Windows x86-64 Seed cross-build. Local Python integration: two-seed relay, signed enrollment, Master-offline retrieval, revocation refresh and revoked credential rejection. Draft Flutter source is not a compiled client. Physical device acceptance, peer node-identity signatures, production TLS deployment, five-hop private user discovery, SecureBind notification delivery, P2P file/audio/video, Android key storage and production signing remain **NO-GO**.
+v0.1.2 introduced Master-signed device revocation cache; v0.1.3 adds Master-authorized short-lived Seed certificates, signed peer GET/response exchange with explicit peer ID allowlists, replay controls, no remote shared-password fallback. See `ConnectIT-Seed/docs/FEDERATION_v0.1.3.md` for commands and threat limitations.
 
-## Security-specific scope
+To run CI locally: build Master and Seed in their own `go.mod` directories; run `go test ./...` and `go vet ./...`. See `ConnectIT-Master-Seed/tests/signed_mesh_e2e.py` for 201-message Master→Seed-A→Seed-B smoke. A real internet TLS deployment, peer certificate revocation, key protection, automatic renewal, E2EE native client, SecureBind UI, NAT traversal, five-hop discovery and real Android/Windows integration remain blocked.
 
-Master `GET /v1/revocations` returns signed, hour-limited revocation fingerprints with monotonic SQLite generation. Satellite HTTPS fetches and verifies pinned Master signature; stored cache allows a bounded Master outage. Remote-listening satellites require configured revocation URL. Accepted credentials without a current signed view are rejected when cache expires. Local-only legacy mode is not production-safe. No claim of immediate revocation propagation or rollback-resistant hardware witnessed trust.
-
-## Go workflow
-
-```bash
-cd ConnectIT-Master-Seed && go test ./... && go build -o bin/connectit-master .
-cd ../ConnectIT-Seed && go test ./... && go build -o bin/connectit-seed .
-cd ..
-python3 ConnectIT-Master-Seed/tests/revocation_smoke.py
-```
-
-## Artifacts
-
-Independent dev ZIP archives with built binaries and SHA256 manifests are kept in the private Google Drive `ConnectIT Development` folder. Never commit or publish private signing keys, generated installation tokens, live SQLite databases, or device credentials. No production release or merge authorized.
+Historical audit trail: v0.1.2 draft PR #231; v0.1.3 draft PR is stacked and should not be merged until dependency accepted. Binary/source ZIPs are stored in user's private Drive under `ConnectIT Development`; no release artifact or signing key should be committed here.

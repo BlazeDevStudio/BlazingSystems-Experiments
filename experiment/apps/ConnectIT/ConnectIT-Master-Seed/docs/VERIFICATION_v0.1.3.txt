@@ -1,0 +1,23 @@
+ConnectIT v0.1.3 local verification — 2026-10-28
+
+Implemented this checkpoint:
+- Offline Master CLI node-authorize, Ed25519-signed node cert, 1..168h TTL, forced admin rotation, no overwrite.
+- Seed authenticated request+response Ed25519 signatures, peer allowlist and expected node ID, replay/clock checks, SHA256 response body binding.
+- Legacy X-Mesh-Secret accepted only when all listener/peer endpoints are loopback AND no signed federation configured.
+- Device revocation validation remains integrated with incoming HTTP and peer imports.
+
+Commands executed successfully:
+- Master: go test ./... -count=1; go vet ./...; go test -race -run TestNodeAuthorizeRequiresRotationAndSignedCert
+- Seed: go test ./... -count=1; go vet ./...; go test -race ./...
+- Master: CGO_ENABLED=1 go build (Linux x86-64)
+- Seed: CGO_ENABLED=0 go build (Linux x86-64), GOOS=windows GOARCH=amd64 go build, GOOS=linux GOARCH=arm64 go build
+- Real localhost Master + 2 Seed startup smoke; old shared-secret header returned HTTP 403.
+- Real signed two-Seed E2E localhost: Master enrollment -> Seed A signed client post -> Seed B federated sync; 201 message workload, 1-hop count, retrieve after Master stopped.
+- RSS snapshot: Seed A 11708 KiB, Seed B 10144 KiB after 201 messages; NOT hardware capacity certification.
+
+Security and product caveats:
+- No node certificate revocation/push, OS-keystore protection or authenticated renewal mechanism yet.
+- 24-hour default node certificate means independent operations must renew before expiry.
+- No WAN TLS / real routers / NAT hardware / Android or Windows runtime acceptance; Windows x64 EXE cross-compiled but not run here.
+- Client-side end-to-end encryption and real Flutter ConnectIT app still not wired into production build.
+- Code and outputs are development-only; do not deploy to untrusted internet or merge into shipping LAN Messenger.

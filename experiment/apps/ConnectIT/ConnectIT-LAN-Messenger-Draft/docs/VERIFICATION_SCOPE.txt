@@ -1,3 +1,5 @@
+Current v0.1.3 exact checkpoint: see VERIFICATION_v0.1.3.txt. Older evidence below is historical.
+
 2026-10-28 source draft only: vector SVGs rendered into PNG/ICO; no Flutter/Dart SDK installed.
 Flutter analysis, Dart tests, Android/Windows native builds, device key storage, WebRTC P2P and existing LAN Messenger integration were NOT executed.
 This package makes no claim of working native client networking.

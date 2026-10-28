@@ -94,12 +94,12 @@ func main() {
 	}
 }
 func usage() {
-	fmt.Println(`ConnectIT Seed v0.1.0 foundation
+	fmt.Println(`ConnectIT Seed v0.1.3 signed federation preview
  connectit-seed init --dir ./seed-data --node-id seed-a --master-public-key ./master/public.key
  connectit-seed start --dir ./seed-data
  connectit-seed status --dir ./seed-data
  The Seed is a separate service; no account authority or private master signing key.
- See README.md for peer and TLS configuration, mesh-secret setup, and limitations.`)
+ See README.md for Master-signed node certificate setup and TLS/allowlist limitations.`)
 }
 
 func flagDir(args []string, name string) (*flag.FlagSet, *string) {
@@ -474,7 +474,10 @@ func relayServe(args []string) error {
 	node := fs.String("node-id", "", "unique node identifier")
 	pubPath := fs.String("master-public-key", "", "master public.key path")
 	peers := fs.String("peers", "", "comma-separated peer URLs (HTTPS recommended)")
-	env := fs.String("mesh-secret-env", "BLAZE_MESH_SECRET", "environment variable for shared mesh secret")
+	env := fs.String("mesh-secret-env", "BLAZE_MESH_SECRET", "localhost-only legacy mesh secret environment variable")
+	nodeCert := fs.String("node-cert", "", "Master-authorized node certificate (JSON)")
+	nodeKey := fs.String("node-private-key", "", "Ed25519 node private key path")
+	peerIDs := fs.String("peer-ids", "", "comma-separated trusted peer node IDs, in peers URL order")
 	maxItems := fs.Int("max-messages", 8000, "number of retained envelopes (100..100000)")
 	maxConnections := fs.Int("max-connections", 64, "maximum simultaneously accepted HTTP connections (4..2048)")
 	maxBytes := fs.Int("max-payload-bytes", 8192, "max decoded ciphertext bytes (256..65536)")
@@ -526,8 +529,35 @@ func relayServe(args []string) error {
 	if revocations == nil {
 		log.Printf("WARNING: localhost-only legacy Seed has no revocation feed; not for production")
 	}
-	if len(urls) > 0 && len(secret) < 32 {
-		return errors.New("mesh secret must be at least 32 characters for peer replication")
+	// Signed mode is mandatory for any non-loopback listener or federation URL.
+	// Legacy shared-secret mode survives only for explicitly local regression clients.
+	allLoopback := loopback
+	for _, u := range urls {
+		if !isLoopbackURL(u) {
+			allLoopback = false
+		}
+	}
+	var ids []string
+	if *peerIDs != "" {
+		for _, v := range strings.Split(*peerIDs, ",") {
+			ids = append(ids, strings.TrimSpace(v))
+		}
+	}
+	signedMode := *nodeCert != "" || *nodeKey != "" || *peerIDs != ""
+	if !signedMode && !allLoopback {
+		return errors.New("remote Seed federation requires Master-authorized signed node identity; no shared-secret fallback")
+	}
+	var mesh *MeshIdentity
+	if signedMode {
+		if *nodeCert == "" || *nodeKey == "" || len(ids) != len(urls) {
+			return errors.New("signed mode requires node-cert, node-private-key and a peer-id per peer URL")
+		}
+		mesh, e = newMeshIdentity(*dir, *node, *nodeCert, *nodeKey, pub, ids)
+		if e != nil {
+			return fmt.Errorf("node identity: %w", e)
+		}
+	} else if len(urls) > 0 && len(secret) < 32 {
+		return errors.New("localhost legacy mesh secret must have at least 32 characters")
 	}
 	mux := http.NewServeMux()
 	internalAuth := func(r *http.Request) bool {
@@ -637,7 +667,12 @@ func relayServe(args []string) error {
 		sendError(w, 405, "method not allowed")
 	})
 	mux.HandleFunc("/internal/export", func(w http.ResponseWriter, r *http.Request) {
-		if !internalAuth(r) {
+		if mesh != nil {
+			if e := mesh.authorizeRequest(r); e != nil {
+				sendError(w, 403, "signed peer request rejected")
+				return
+			}
+		} else if !internalAuth(r) {
 			sendError(w, 403, "forbidden")
 			return
 		}
@@ -658,10 +693,18 @@ func relayServe(args []string) error {
 		}
 		out.Messages = filtered
 		if expired {
-			sendError(w, 410, "cursor expired")
+			if mesh != nil {
+				signedExport(w, mesh, r.Header.Get("X-ConnectIT-Node-Nonce"), 410, map[string]string{"error": "cursor expired"})
+			} else {
+				sendError(w, 410, "cursor expired")
+			}
 			return
 		}
-		sendJSON(w, 200, out)
+		if mesh != nil {
+			signedExport(w, mesh, r.Header.Get("X-ConnectIT-Node-Nonce"), 200, out)
+		} else {
+			sendJSON(w, 200, out)
+		}
 	})
 	mux.HandleFunc("/v1/info", func(w http.ResponseWriter, r *http.Request) {
 		if !onlyMethod(w, r, "GET") {
@@ -672,7 +715,7 @@ func relayServe(args []string) error {
 	if len(urls) > 0 {
 		ctx, stop := context.WithCancel(context.Background())
 		defer stop()
-		go syncPeers(ctx, s, urls, secret, pub, *maxBytes, filepath.Join(*dir, "peer-cursors.json"), time.Duration(*period)*time.Second, revocations)
+		go syncPeersAuthenticated(ctx, s, urls, ids, mesh, secret, pub, *maxBytes, filepath.Join(*dir, "peer-cursors.json"), time.Duration(*period)*time.Second, revocations)
 	}
 	if revocations != nil {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -682,8 +725,11 @@ func relayServe(args []string) error {
 	return withServer(*listen, *cert, *key, mux, *maxConnections)
 }
 func syncPeers(ctx context.Context, s *Store, peers []string, secret string, masterKey ed25519.PublicKey, maxPayload int, path string, interval time.Duration, revocations *RevocationCache) {
+	syncPeersAuthenticated(ctx, s, peers, nil, nil, secret, masterKey, maxPayload, path, interval, revocations)
+}
+func syncPeersAuthenticated(ctx context.Context, s *Store, peers, ids []string, mesh *MeshIdentity, secret string, masterKey ed25519.PublicKey, maxPayload int, path string, interval time.Duration, revocations *RevocationCache) {
 	cursors := loadCursor(path)
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := &http.Client{Timeout: 15 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return errors.New("mesh redirect forbidden") }}
 	t := time.NewTicker(interval)
 	defer t.Stop()
 	for {
@@ -693,23 +739,50 @@ func syncPeers(ctx context.Context, s *Store, peers []string, secret string, mas
 				if e != nil {
 					break
 				}
-				r.Header.Set("X-Mesh-Secret", secret)
-				res, e := client.Do(r)
+				var data []byte
+				var status int
+				if mesh != nil {
+					if len(ids) != len(peers) {
+						log.Printf("peer configuration has mismatched ID count")
+						break
+					}
+					ix := -1
+					for j, url := range peers {
+						if url == peer {
+							ix = j
+							break
+						}
+					}
+					if ix < 0 {
+						break
+					}
+					data, status, e = signedDownload(client, r, mesh, ids[ix])
+				} else {
+					r.Header.Set("X-Mesh-Secret", secret)
+					var res *http.Response
+					res, e = client.Do(r)
+					if e == nil {
+						status = res.StatusCode
+						data, e = io.ReadAll(io.LimitReader(res.Body, 24*1024*1024+1))
+						res.Body.Close()
+						if len(data) > 24*1024*1024 {
+							e = errors.New("legacy peer response oversized")
+						}
+					}
+				}
 				if e != nil {
+					log.Printf("peer %s authentication/transport: %v", peer, e)
 					break
 				}
-				if res.StatusCode == 410 {
-					res.Body.Close()
+				if status == 410 {
 					cursors[peer] = 0
 					continue
 				}
-				if res.StatusCode != 200 {
-					res.Body.Close()
+				if status != 200 {
 					break
 				}
 				var batch MessageSet
-				e = json.NewDecoder(io.LimitReader(res.Body, 24*1024*1024)).Decode(&batch)
-				res.Body.Close()
+				e = json.Unmarshal(data, &batch)
 				if e != nil {
 					log.Printf("peer %s: invalid batch: %v", peer, e)
 					break

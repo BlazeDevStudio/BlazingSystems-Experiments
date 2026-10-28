@@ -185,6 +185,10 @@ func main() {
 	nick := fs.String("nickname", "", "nickname for account creation")
 	id := fs.String("id", "", "account ID")
 	deviceID := fs.String("device-id", "", "device ID for local revocation")
+	nodeID := fs.String("node-id", "", "federation Seed node identifier")
+	nodePub := fs.String("node-public-key", "", "federation Seed public key path")
+	nodeOut := fs.String("node-cert-out", "", "new signed Seed certificate output path")
+	nodeTTL := fs.Int("node-ttl-hours", 24, "authorized Seed certificate hours (1..168)")
 	backupTo := fs.String("backup-to", "", "destination path for an atomic SQLite backup (must not exist)")
 	pwEnv := fs.String("password-env", "CONNECTIT_PASSWORD", "environment variable containing account password")
 	oldEnv := fs.String("old-password-env", "CONNECTIT_OLD_ADMIN_PASSWORD", "current admin password variable")
@@ -203,6 +207,8 @@ func main() {
 		e = disableAccount(*dir, *id)
 	case "device-revoke":
 		e = revokeDevice(*dir, *deviceID)
+	case "node-authorize":
+		e = nodeAuthorize(*dir, *nodeID, *nodePub, *nodeOut, *nodeTTL)
 	case "start":
 		e = start(*dir, *listen, *tlsCert, *tlsKey)
 	case "check":
@@ -226,6 +232,7 @@ func usage() {
  connectit-master account-create --nickname Alice         # set CONNECTIT_PASSWORD
  connectit-master account-disable --id 0000000000
  connectit-master device-revoke --device-id <device-id>
+ connectit-master node-authorize --dir ./master-data --node-id seed-a --node-public-key seed-a/node.public.key --node-cert-out seed-a/node.cert.json --node-ttl-hours 24
  connectit-master start --listen 127.0.0.1:7070
  connectit-master check
  connectit-master backup --backup-to ./backup.sqlite3
