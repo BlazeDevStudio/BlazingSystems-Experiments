@@ -214,6 +214,9 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+      - name: Validate privacy-limited Windows crash-report collector
+        shell: pwsh
+        run: ./tool/windows_crash_report.ps1 -SelfTest
       - run: flutter build windows --release --tree-shake-icons
       - name: Cloud Windows runtime, minimize, restore and close-to-tray smoke
         shell: pwsh
