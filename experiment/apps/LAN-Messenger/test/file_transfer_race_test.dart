@@ -177,4 +177,24 @@ void main() {
     expect(data.any((v) => listEquals(v, contents[1])), true);
   }));
 
+  test('session-specific probe refuses an absent call and wrong call ID',
+      () => withLanNodes((sender, receiver, dir) async {
+    receiver.onCallProbe = (peer, id) =>
+        peer.id == sender.identity.id && id == 'valid-call-session';
+    final bad = await postEncrypted(sender, receiver, '/v1/event', {
+      'kind': 'call-probe', 'callId': 'wrong-session',
+    });
+    expect(bad['ok'], true);
+    expect(bad['active'], false);
+    final good = await postEncrypted(sender, receiver, '/v1/event', {
+      'kind': 'call-probe', 'callId': 'valid-call-session',
+    });
+    expect(good['active'], true);
+    receiver.onCallProbe = null; // Simulate ending the matching call.
+    final ended = await postEncrypted(sender, receiver, '/v1/event', {
+      'kind': 'call-probe', 'callId': 'valid-call-session',
+    });
+    expect(ended['active'], false);
+  }));
+
 }

@@ -88,6 +88,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _pendingCallPresentation = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
+  bool _openingCompactWindow = false;
+  bool _deferredCompactRestore = false;
   bool _restoringCompactWindow = false;
   Size? _normalWindowSize;
   Offset? _normalWindowPosition;
@@ -273,7 +275,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       }
       if (video && background) {
         await _dismissDesktopCall();
-        await _openCompactVideoWindow();
+        // The call may have ended while the native notification was closing.
+        if (intercom?.callId == id && intercom?.closing != true) {
+          await _openCompactVideoWindow();
+        }
       } else if (background) {
         try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
         catch (_) {}
@@ -356,37 +361,59 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _openCompactVideoWindow() async {
-    if (!Platform.isWindows || _compactWindowsVideo) return;
+    if (!Platform.isWindows || _compactWindowsVideo ||
+        _openingCompactWindow || _restoringCompactWindow) return;
+    final session = intercom?.callId;
+    if (session == null || intercom?.closing == true ||
+        intercom?.connecting == true) return;
+    _openingCompactWindow = true;
     try {
       await wm.windowManager.ensureInitialized();
       _normalWindowWasVisible = await wm.windowManager.isVisible();
       _normalWindowWasMinimized = await wm.windowManager.isMinimized();
+      if (intercom?.callId != session || intercom?.closing == true) return;
       if (_normalWindowWasMinimized) {
-        // Native SW_SHOWNOACTIVATE restores the minimized window without
-        // stealing focus from the PC user who answered from the toast.
+        // Native SW_SHOWNOACTIVATE restores the window without taking focus.
         await _desktopCalls.invokeMethod<bool>('restoreMainInactive');
       }
       _normalWindowSize = await wm.windowManager.getSize();
       _normalWindowPosition = await wm.windowManager.getPosition();
+      if (intercom?.callId != session || intercom?.closing == true) return;
       _compactWindowsVideo = true;
       if (mounted) setState(() {});
       await wm.windowManager.setMinimumSize(const Size(290, 230));
       await wm.windowManager.setSize(const Size(358, 310));
+      if (intercom?.callId != session || intercom?.closing == true) return;
       await wm.windowManager.setAlignment(Alignment.bottomRight);
       await wm.windowManager.setAlwaysOnTop(true);
-      await wm.windowManager.setSkipTaskbar(true);
-      // Unlike show(), show(inactive: true) deliberately does not take focus
-      // away from the current PC app (game, document, presenter etc.).
+      // Avoid changing native taskbar/window ownership mid-WebRTC rendering:
+      // the live Flutter texture shares this same top-level HWND.
+      // A Win32 style mutation while textures reparent can destabilize the
+      // native view. The main window remains in the taskbar in compact mode.
+      // Never setSkipTaskbar(true) while an active video renderer is mounted.
+      if (intercom?.callId != session || intercom?.closing == true) return;
       await wm.windowManager.show(inactive: true);
     } catch (e) {
-      _compactWindowsVideo = false;
-      if (mounted) setState(() {
-        error = 'Could not open compact video viewer: $e';
-      });
+      _deferredCompactRestore = _compactWindowsVideo;
+      if (mounted && intercom?.callId == session) {
+        setState(() => error = 'Compact video transition failed: $e');
+      }
+    } finally {
+      _openingCompactWindow = false;
+      if (_deferredCompactRestore ||
+          (_compactWindowsVideo &&
+              (intercom?.callId != session || intercom?.closing == true))) {
+        _deferredCompactRestore = false;
+        await _restoreCompactVideo();
+      }
     }
   }
 
   Future<void> _restoreCompactVideo({bool forceOpen = false}) async {
+    if (_openingCompactWindow) {
+      _deferredCompactRestore = true;
+      return;
+    }
     if (!Platform.isWindows || !_compactWindowsVideo ||
         _restoringCompactWindow) return;
     _restoringCompactWindow = true;
@@ -394,7 +421,6 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (mounted) setState(() {});
     try {
       await wm.windowManager.setAlwaysOnTop(false);
-      await wm.windowManager.setSkipTaskbar(false);
       await wm.windowManager.setMinimumSize(const Size(0, 0));
       if (_normalWindowSize != null) {
         await wm.windowManager.setSize(_normalWindowSize!);
