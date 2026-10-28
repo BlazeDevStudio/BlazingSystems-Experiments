@@ -63,6 +63,9 @@ func nodeAuthorize(dir, nodeID, publicPath, out string, ttlHours int) error {
 	payload := NodeCertificatePayload{Format: "connectit-seed-cert-v1", NodeID: nodeID, PublicKey: base64.StdEncoding.EncodeToString(key), IssuedAt: now, ExpiresAt: now + int64(ttlHours)*3600}
 	packed, _ := json.Marshal(payload)
 	sign := ed25519.Sign(ed25519.PrivateKey(private), append([]byte("ConnectIT-seed-cert-v1\n"), packed...))
+	if err := recordNodeIssue(d, payload, nodeKeyHash(key)); err != nil {
+		return err
+	}
 	doc, _ := json.MarshalIndent(SignedNodeCertificate{Payload: payload, Signature: base64.RawURLEncoding.EncodeToString(sign)}, "", "  ")
 	if err := os.MkdirAll(filepath.Dir(out), 0700); err != nil {
 		return err

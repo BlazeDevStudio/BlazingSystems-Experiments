@@ -67,6 +67,8 @@ func responsePayload(nonce string, status int, body []byte) []byte {
 type MeshIdentity struct {
 	NodeID      string
 	Certificate string
+	CertFile    string
+	Revocations *NodeRevocationCache
 	Private     ed25519.PrivateKey
 	Master      ed25519.PublicKey
 	Allowed     map[string]struct{}
@@ -74,9 +76,42 @@ type MeshIdentity struct {
 	seen        map[string]int64
 }
 
+func (m *MeshIdentity) currentCert() (string, error) {
+	if m == nil {
+		return "", errors.New("node identity absent")
+	}
+	// Read the certificate each signed operation: atomically replacing the same-key
+	// certificate renews access without interrupting running call/message state.
+	raw, e := os.ReadFile(m.CertFile)
+	if m.CertFile == "" {
+		raw = []byte(m.Certificate)
+		e = nil
+	} // unit-only in-memory identity
+	if e != nil {
+		return "", e
+	}
+	cert := strings.TrimSpace(string(raw))
+	p, pub, e := checkNodeCertificate(cert, m.Master, time.Now().Unix())
+	if e != nil {
+		return "", e
+	}
+	if p.NodeID != m.NodeID || !ed25519.PublicKey(m.Private.Public().(ed25519.PublicKey)).Equal(pub) {
+		return "", errors.New("node renewal key or ID mismatch")
+	}
+	if m.Revocations != nil {
+		if e = m.Revocations.check(pub); e != nil {
+			return "", e
+		}
+	}
+	return cert, nil
+}
 func (m *MeshIdentity) signRequest(r *http.Request, target string) error {
 	if m == nil {
 		return errors.New("node identity absent")
+	}
+	cert, e := m.currentCert()
+	if e != nil {
+		return e
 	}
 	nonce := make([]byte, 24)
 	if _, e := rand.Read(nonce); e != nil {
@@ -84,7 +119,7 @@ func (m *MeshIdentity) signRequest(r *http.Request, target string) error {
 	}
 	n := base64.RawURLEncoding.EncodeToString(nonce)
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
-	r.Header.Set("X-ConnectIT-Node-Cert", base64.RawURLEncoding.EncodeToString([]byte(m.Certificate)))
+	r.Header.Set("X-ConnectIT-Node-Cert", base64.RawURLEncoding.EncodeToString([]byte(cert)))
 	r.Header.Set("X-ConnectIT-Node-Time", ts)
 	r.Header.Set("X-ConnectIT-Node-Nonce", n)
 	r.Header.Set("X-ConnectIT-Node-Signature", base64.RawURLEncoding.EncodeToString(ed25519.Sign(m.Private, reqPayload(r.Method, r.URL.RequestURI(), ts, n, target))))
@@ -101,6 +136,11 @@ func (m *MeshIdentity) authorizeRequest(r *http.Request) error {
 	cert, key, e := checkNodeCertificate(string(raw), m.Master, time.Now().Unix())
 	if e != nil {
 		return e
+	}
+	if m.Revocations != nil {
+		if e = m.Revocations.check(key); e != nil {
+			return e
+		}
 	}
 	if _, ok := m.Allowed[cert.NodeID]; !ok {
 		return errors.New("node is not on local allowlist")
@@ -138,11 +178,15 @@ func (m *MeshIdentity) authorizeRequest(r *http.Request) error {
 	return nil
 }
 func (m *MeshIdentity) signedResponse(nonce string, status int, body []byte) (http.Header, error) {
+	cert, e := m.currentCert()
+	if e != nil {
+		return nil, e
+	}
 	if len(nonce) > 64 {
 		return nil, errors.New("response nonce oversized")
 	}
 	h := make(http.Header)
-	h.Set("X-ConnectIT-Node-Cert", base64.RawURLEncoding.EncodeToString([]byte(m.Certificate)))
+	h.Set("X-ConnectIT-Node-Cert", base64.RawURLEncoding.EncodeToString([]byte(cert)))
 	h.Set("X-ConnectIT-Response-Nonce", nonce)
 	h.Set("X-ConnectIT-Response-Signature", base64.RawURLEncoding.EncodeToString(ed25519.Sign(m.Private, responsePayload(nonce, status, body))))
 	return h, nil
@@ -158,6 +202,11 @@ func (m *MeshIdentity) verifyResponse(resp *http.Response, nonce, expectedNode s
 	p, key, e := checkNodeCertificate(string(raw), m.Master, time.Now().Unix())
 	if e != nil {
 		return e
+	}
+	if m.Revocations != nil {
+		if e = m.Revocations.check(key); e != nil {
+			return e
+		}
 	}
 	if p.NodeID != expectedNode {
 		return errors.New("unexpected signed peer identity")
@@ -201,7 +250,7 @@ func newMeshIdentity(dir, nodeID, certFile, keyFile string, master ed25519.Publi
 		}
 		peers[v] = struct{}{}
 	}
-	return &MeshIdentity{NodeID: nodeID, Certificate: cert, Private: priv, Master: master, Allowed: peers, seen: make(map[string]int64)}, nil
+	return &MeshIdentity{NodeID: nodeID, Certificate: cert, CertFile: certFile, Private: priv, Master: master, Allowed: peers, seen: make(map[string]int64)}, nil
 }
 func signedExport(w http.ResponseWriter, m *MeshIdentity, nonce string, status int, value any) {
 	body, e := json.Marshal(value)

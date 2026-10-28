@@ -1,3 +1,7 @@
+# ConnectIT v0.1.4 — Node Revocation / Manual Renewal (DEVELOPMENT ONLY)
+
+New v0.1.4 hardening: exact Master-issued node certificate revocation, separate signed node-key revocation feed, fail-closed cached Seed enforcement on incoming/outgoing federation, safe same-key certificate hot reread, and new negative/live tests. See `docs/NODE_REVOCATION_v0.1.4.md`. Still NO-GO for production.
+
 # ConnectIT v0.1.3 — Signed Satellite Federation / DEVELOPMENT NO-GO
 
 **Current release candidate documentation.** Master-authorized short-lived Seed certificates, Ed25519 mutually signed mesh requests and responses, per-node allowlists, replay protection, and no remote shared-secret fallback are implemented and locally tested. Read `docs/FEDERATION_v0.1.3.md` first. The older v0.1.2/0.1.1/0.1.0 text preserved below is historical and its statements that federation "still uses a shared secret" do not describe the new signed mode. Device revocation and account authority remain separate. No production client, WAN/TLS acceptance, peer-certificate revocation or automatic certificate renewal.

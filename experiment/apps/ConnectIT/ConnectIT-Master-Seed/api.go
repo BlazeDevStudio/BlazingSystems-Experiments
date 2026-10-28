@@ -72,6 +72,7 @@ func (a *api) routes(mux *http.ServeMux) {
 		reply(w, 200, map[string]any{"ok": true, "role": "master", "protocol": "connectit-v1-foundation"})
 	})
 	mux.HandleFunc("/v1/revocations", a.revocations)
+	mux.HandleFunc("/v1/node-revocations", a.nodeRevocations)
 	mux.HandleFunc("/v1/public-key", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			failure(w, 405, "GET required")

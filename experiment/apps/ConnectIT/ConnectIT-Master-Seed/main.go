@@ -188,6 +188,7 @@ func main() {
 	nodeID := fs.String("node-id", "", "federation Seed node identifier")
 	nodePub := fs.String("node-public-key", "", "federation Seed public key path")
 	nodeOut := fs.String("node-cert-out", "", "new signed Seed certificate output path")
+	nodeCertToRevoke := fs.String("node-cert", "", "Master-signed node certificate to revoke")
 	nodeTTL := fs.Int("node-ttl-hours", 24, "authorized Seed certificate hours (1..168)")
 	backupTo := fs.String("backup-to", "", "destination path for an atomic SQLite backup (must not exist)")
 	pwEnv := fs.String("password-env", "CONNECTIT_PASSWORD", "environment variable containing account password")
@@ -207,6 +208,8 @@ func main() {
 		e = disableAccount(*dir, *id)
 	case "device-revoke":
 		e = revokeDevice(*dir, *deviceID)
+	case "node-revoke":
+		e = nodeRevoke(*dir, *nodeCertToRevoke)
 	case "node-authorize":
 		e = nodeAuthorize(*dir, *nodeID, *nodePub, *nodeOut, *nodeTTL)
 	case "start":
@@ -232,6 +235,7 @@ func usage() {
  connectit-master account-create --nickname Alice         # set CONNECTIT_PASSWORD
  connectit-master account-disable --id 0000000000
  connectit-master device-revoke --device-id <device-id>
+ connectit-master node-revoke --dir ./master-data --node-cert compromised-node.cert.json
  connectit-master node-authorize --dir ./master-data --node-id seed-a --node-public-key seed-a/node.public.key --node-cert-out seed-a/node.cert.json --node-ttl-hours 24
  connectit-master start --listen 127.0.0.1:7070
  connectit-master check
@@ -492,6 +496,9 @@ func start(dir, listen, cert, key string) error {
 	}
 	if (cert == "") != (key == "") {
 		return errors.New("both TLS cert and key must be provided")
+	}
+	if e = migrateNodeRevocations(d); e != nil {
+		return e
 	}
 	api := &api{db: d, priv: ed25519.PrivateKey(private), hmacKey: hmacSecret, attempts: map[string]rate{}}
 	mux := http.NewServeMux()

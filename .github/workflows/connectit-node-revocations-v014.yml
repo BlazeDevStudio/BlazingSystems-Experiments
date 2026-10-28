@@ -1,0 +1,45 @@
+name: ConnectIT v0.1.4 node revocations (draft)
+on:
+  pull_request:
+    paths:
+      - 'experiment/apps/ConnectIT/**'
+      - '.github/workflows/connectit-node-revocations-v014.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-security-and-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Install SQLite C header and Python fixture crypto
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          python3 -m pip install --break-system-packages cryptography
+      - name: Master vet, tests, Linux build
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Master-Seed
+        run: |
+          go vet ./...
+          CGO_ENABLED=1 go test ./... -count=1
+          CGO_ENABLED=1 go build -trimpath -o bin/connectit-master .
+      - name: Satellite vet, tests, race, Linux/Windows/ARM64 builds
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Seed
+        run: |
+          go vet ./...
+          CGO_ENABLED=1 go test -race ./... -count=1
+          CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-windows-amd64.exe .
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-linux-arm64 .
+      - name: Local live node revocation + signed mesh compatibility
+        run: |
+          python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/node_revoke_live.py
+          python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/signed_federation_smoke.py
+          python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/signed_mesh_e2e.py
+      - name: Scan tracked sources for accidentally committed private PEM keys
+        run: |
+          if git grep -l -e '-----BEGIN PRIVATE KEY-----' -e '-----BEGIN RSA PRIVATE KEY-----' -- experiment/apps/ConnectIT; then echo 'Private key material found'; exit 1; fi
