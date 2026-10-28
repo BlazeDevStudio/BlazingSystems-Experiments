@@ -35,11 +35,15 @@ jobs:
       - run: dart format --output=write lib test
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+      - name: Self-test public Android signer fingerprint audit
+        run: python3 tool/apk_signing_audit.py --self-test
       # Release AOT: no debug engine, validation layers or Dart kernel blob.
       # Standalone APK per CPU architecture: a user installs ONE matching file.
       - run: flutter build apk --release --split-per-abi --tree-shake-icons
       - name: Verify individual APK signing, APK structure and checksums
         shell: bash
+        env:
+          LAN_EXPECTED_SIGNER_SHA256: ${{ vars.LAN_MESSENGER_ANDROID_SIGNER_SHA256 }}
         run: |
           set -euo pipefail
           tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
@@ -49,6 +53,10 @@ jobs:
             "$tools/aapt" dump badging "$apk" | grep -E "^(package:|sdkVersion:|native-code:)"
             unzip -t "$apk" | tail -1
           done
+          python3 tool/apk_signing_audit.py \
+            --apksigner "$tools/apksigner" \
+            --out build/app/outputs/flutter-apk/SIGNING-PROVENANCE.json \
+            build/app/outputs/flutter-apk/app-*-release.apk
           (cd build/app/outputs/flutter-apk && sha256sum app-*-release.apk > SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
@@ -56,6 +64,7 @@ jobs:
           path: |
             experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/app-*-release.apk
             experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/SHA256SUMS.txt
+            experiment/apps/LAN-Messenger/build/app/outputs/flutter-apk/SIGNING-PROVENANCE.json
           if-no-files-found: error
           retention-days: 30
 
