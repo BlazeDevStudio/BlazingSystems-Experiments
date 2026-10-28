@@ -161,6 +161,41 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  android-peer-process-death:
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Optimized
+          path: android-apk
+      - name: Install emulator runtime libraries and enable KVM
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0
+          if [ -c /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Two Android emulators — kill one live peer and require automatic orphan-call termination
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-front emulated
+          script: bash "$GITHUB_WORKSPACE/.github/scripts/lan-messenger/run_dual_android_peer_death_e2e.sh"
+      - name: Upload actual peer-process-death acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LAN-Messenger-Android-Peer-Death-Evidence
+          path: android-lan-evidence/
+          if-no-files-found: ignore
+          retention-days: 14
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 35
@@ -179,6 +214,9 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+      - name: Validate privacy-limited Windows crash-report collector
+        shell: pwsh
+        run: ./tool/windows_crash_report.ps1 -SelfTest
       - run: flutter build windows --release --tree-shake-icons
       - name: Cloud Windows runtime, minimize, restore and close-to-tray smoke
         shell: pwsh
