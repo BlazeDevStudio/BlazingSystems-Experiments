@@ -1,7 +1,7 @@
 name: lan_messenger
 description: Zero-configuration peer-to-peer LAN chat, files, and intercom.
 publish_to: none
-version: 0.3.3+16
+version: 0.3.4+17
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
