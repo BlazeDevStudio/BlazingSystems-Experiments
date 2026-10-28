@@ -417,22 +417,38 @@ class Intercom {
     pc.onTrack = (event) {
       if (callId != id || _closing || !video ||
           event.track.kind != 'video') return;
-      if (event.streams.isNotEmpty) {
+      // Some Windows Unified Plan callbacks include an empty stream while
+      // delivering the video track separately. Do not bind an empty stream
+      // to RTCVideoRenderer: it produces a black window despite Connected.
+      if (event.streams.isNotEmpty &&
+          event.streams.first.getVideoTracks().isNotEmpty) {
         _remoteHasNativeStream = true;
         remoteRenderer?.srcObject = event.streams.first;
         unawaited(_log('remote video attached via onTrack'));
         onChanged?.call();
         return;
       }
-      // Unified Plan peers can supply a streamless video track. Older code
-      // ignored it entirely, leaving a connected call with a blank feed.
+      // Streamless or empty-stream track: attach its video track to a local
+      // fallback MediaStream, with explicit ownership across native awaits.
       unawaited(() async {
         try {
-          final fallback = _remoteFallbackStream ??
+          final existing = _remoteFallbackStream;
+          final fallback = existing ??
               await createLocalMediaStream('lan-received-video-$id');
-          _remoteFallbackStream = fallback;
+          if (callId != id || _closing || _remoteHasNativeStream) {
+            if (existing == null) await fallback.dispose();
+            return;
+          }
+          if (existing == null) _remoteFallbackStream = fallback;
           await fallback.addTrack(event.track);
-          if (callId != id || _closing || _remoteHasNativeStream) return;
+          if (callId != id || _closing || _remoteHasNativeStream) {
+            if (existing == null &&
+                identical(_remoteFallbackStream, fallback)) {
+              _remoteFallbackStream = null;
+              await fallback.dispose();
+            }
+            return;
+          }
           remoteRenderer?.srcObject = fallback;
           unawaited(_log('remote streamless video track attached'));
           onChanged?.call();
