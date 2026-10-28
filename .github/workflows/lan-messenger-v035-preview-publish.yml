@@ -23,7 +23,7 @@ env:
 jobs:
   windows-installer:
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - name: Verify successful exact-source CI run
@@ -35,11 +35,13 @@ jobs:
           # The publisher is a separate workflow branch, pinned to a prior
           # exact-source run. Wait for its explicit completion; never publish
           # from a still-running or unsuccessful binary build.
+          # The source workflow includes real multi-emulator WebRTC tests;
+          # allow up to 36 minutes without reducing the strict success gate.
           $build = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or $build.head_sha -ne $env:SOURCE_SHA) {
             throw "Source SHA mismatch; refusing release"
           }
-          for ($attempt=0; $attempt -lt 90 -and $build.status -ne 'completed'; $attempt++) {
+          for ($attempt=0; $attempt -lt 180 -and $build.status -ne 'completed'; $attempt++) {
             Start-Sleep -Seconds 12
             $build = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN" | ConvertFrom-Json
             if ($LASTEXITCODE -ne 0 -or $build.head_sha -ne $env:SOURCE_SHA) {
