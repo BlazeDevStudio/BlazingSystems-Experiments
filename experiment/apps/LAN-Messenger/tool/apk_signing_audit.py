@@ -21,9 +21,15 @@ import re
 import subprocess
 from pathlib import Path
 
+# APK Build Tools 36 and earlier: "Signer #1 certificate ..."
+# APK Build Tools 37: "V2 Signer: certificate ..." or "V3.0 Signer: ..."
+# Also accept Android's signer-minSdkVersion form. Never match public-key
+# fingerprints or use a scheme label alone as a certificate identity.
 PATTERN = re.compile(
-    r"Signer\s+#\d+\s+certificate\s+SHA-256\s+digest\s*:\s*"
-    r"([0-9a-fA-F:\s]+)", re.IGNORECASE,
+    r"(?im)^[ \t]*(?:(?:Signer[ \t]+(?:#[0-9]+|\([^)]*\))[ \t]+)"
+    r"|(?:V[0-9]+(?:\.[0-9]+)?[ \t]+Signer[ \t]*:[ \t]*))"
+    r"certificate[ \t]+SHA-256[ \t]+digest[ \t]*:[ \t]*"
+    r"([0-9a-fA-F:]+)[ \t]*$"
 )
 
 
@@ -45,9 +51,31 @@ def parse_signers(output: str) -> list[str]:
 
 def self_test() -> None:
     fingerprint = "a1" * 32
-    sample = "Signer #1 certificate SHA-256 digest: " + fingerprint.upper()
-    assert parse_signers(sample) == [fingerprint]
-    assert parse_signers(sample.replace("digest:", "digest: ")) == [fingerprint]
+    second = "b2" * 32
+    # Real apksigner labels differ across Android Build Tools versions.
+    # Confirm the old numbered format, SDK-range format, and new
+    # signature-scheme-labeled versions all produce the same identity.
+    prefixes = [
+        "Signer #1 certificate SHA-256 digest: ",
+        "Signer (minSdkVersion=24, maxSdkVersion=35) certificate SHA-256 digest: ",
+        "V2 Signer: certificate SHA-256 digest: ",
+        "V3.0 Signer: certificate SHA-256 digest: ",
+    ]
+    for prefix in prefixes:
+        assert parse_signers(prefix + fingerprint.upper()) == [fingerprint]
+        assert parse_signers(prefix + ":".join(["A1"] * 32)) == [fingerprint]
+    both_schemes = (
+        prefixes[2] + fingerprint + "\n" + prefixes[3] + fingerprint
+    )
+    assert parse_signers(both_schemes) == [fingerprint]
+    conflicting = prefixes[2] + fingerprint + "\n" + prefixes[3] + second
+    assert parse_signers(conflicting) == sorted([fingerprint, second])
+    # Public-key digest is not the APK's signing-certificate digest.
+    try:
+        parse_signers("V2 Signer: public key SHA-256 digest: " + fingerprint)
+        raise AssertionError("Accepted a public-key digest as a certificate")
+    except ValueError:
+        pass
     assert normalize_digest(":".join(["a1"] * 32)) == fingerprint
     for invalid in ["", "a1", "this-is-not-a-digest"]:
         try:
@@ -60,7 +88,7 @@ def self_test() -> None:
         raise AssertionError("Accepted an unsigned APK certificate report")
     except ValueError:
         pass
-    print("PASS: signing audit digest parser and negative checks")
+    print("PASS: all SDK signer labels, conflicting signers and negative checks")
 
 
 def main() -> int:
