@@ -1,0 +1,9 @@
+# Temporary LAN Messenger v0.3.2+15 integration test staging
+
+Reference: `BlazingSystems/BlazingSystems-Experiments`, commit `7d8a08afb39bab8d001fce3d3ba33706e034fcb1` (PR #228, GitHub Actions run 40610141383 successful for Windows and Android). Latest known source as of this work: v0.3.3+16 PR #229, SHA `a9f8745fb08f10c9bc8bede458eb35103c03e7e1`, **not** a verified binary build here. Pinning v0.3.2 as the latest verified CI-built application rather than silently treating the newer draft as tested.
+
+The files under `lib/connectit/` and `test/` are additive only. When staging on a **disposable branch/copy** of the pinned LAN Messenger tree, place them at `experiment/apps/LAN-Messenger/lib/connectit/` and `experiment/apps/LAN-Messenger/test/` respectively. No existing file or release asset is replaced; existing LAN files remain the authoritative chat/file/call implementation.
+
+The bridge uses real LAN API names validated against pinned source: `LanNode.peers`, `LanNode.isOnline`, `LanNode.sendMessage`, `LanNode.sendFile`, `Intercom.call(withVideo:)`. It is **default-disabled and not referenced from main.dart**: this deliberately compiles against latest built client without switching its production transport or touching PiP. A future separate adapter can map these methods to `ExistingLanMessengerPort` after true Flutter client/server auth is implemented.
+
+Run in a compatible Flutter environment: `flutter pub get && flutter analyze && flutter test test/connectit_lan_v032_bridge_test.dart`. Build the regular Android/Windows binary in CI. This package's Python E2E dummy uses real Go Master and Seeds but is not the actual installed Flutter client. A green test on this branch proves API-level compile compatibility, **not** ConnectIT account/login integration, WebRTC internet calls, SecureBind UI, native reliability or physical-device acceptance.

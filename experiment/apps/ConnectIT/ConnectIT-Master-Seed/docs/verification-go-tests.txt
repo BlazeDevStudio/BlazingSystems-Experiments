@@ -1,0 +1,14 @@
+=== RUN   TestIdentityAndFirstDevice
+Initialized ConnectIT Master. Rotate temporary admin password before start. Never expose private.key or install-hmac.key.
+Admin password rotated; start is now permitted
+Account created: 6020641915 (nickname "Test User")
+--- PASS: TestIdentityAndFirstDevice (2.12s)
+=== RUN   TestSecureBindReplayAndCountdown
+Initialized ConnectIT Master. Rotate temporary admin password before start. Never expose private.key or install-hmac.key.
+Admin password rotated; start is now permitted
+Account created: 9677992137 (nickname "Test User")
+--- PASS: TestSecureBindReplayAndCountdown (3.13s)
+=== RUN   TestRejectInvalidSignatureAndTenDigitFormat
+--- PASS: TestRejectInvalidSignatureAndTenDigitFormat (0.00s)
+PASS
+ok  	blazingsystems/connectit-master	5.259s
