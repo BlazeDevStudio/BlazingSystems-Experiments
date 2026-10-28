@@ -1,4 +1,4 @@
-Unicode True
+﻿Unicode True
 RequestExecutionLevel admin
 ManifestDPIAware true
 Name "BlazePisonet SoftTimer"
