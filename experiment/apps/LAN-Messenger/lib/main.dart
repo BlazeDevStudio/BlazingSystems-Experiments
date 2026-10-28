@@ -382,7 +382,15 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       _normalWindowPosition = await wm.windowManager.getPosition();
       if (intercom?.callId != session || intercom?.closing == true) return;
       _compactWindowsVideo = true;
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {});
+      // The compact video swaps Flutter's texture-owning widget tree. Wait
+      // for its frame to finish before Win32 resizes the shared engine HWND.
+      // Merely calling setState does not guarantee the old view is unmounted.
+      await WidgetsBinding.instance.endOfFrame.timeout(
+          const Duration(seconds: 3));
+      if (!mounted || intercom?.callId != session ||
+          intercom?.closing == true) return;
       await wm.windowManager.setMinimumSize(const Size(290, 230));
       await wm.windowManager.setSize(const Size(358, 310));
       if (intercom?.callId != session || intercom?.closing == true) return;
@@ -425,6 +433,13 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     _compactWindowsVideo = false;
     if (mounted) setState(() {});
     try {
+      // Remove RTCVideoView from the compact tree BEFORE changing native
+      // topmost/geometry state. A native Flutter texture may still be
+      // attached after setState but before the next completed frame.
+      if (!mounted) return;
+      await WidgetsBinding.instance.endOfFrame.timeout(
+          const Duration(seconds: 3));
+      if (!mounted) return;
       await wm.windowManager.setAlwaysOnTop(false);
       await wm.windowManager.setMinimumSize(const Size(0, 0));
       if (_normalWindowSize != null) {
