@@ -109,7 +109,12 @@ def main() -> int:
         "certificate_sha256": actual,
         "pin_configured": expected is not None,
         "pin_matched": bool(expected is not None and actual == expected),
-        "release_signing_certified": bool(expected is not None and actual == expected),
+        # Certificate pinning proves identity MATCH only. The current Flutter
+        # runner still uses ephemeral developer signing and has no authenticated
+        # provenance of a persistent private release keystore.
+        "release_signing_certified": False,
+        "signing_key_provenance": "unverified",
+        "upgrade_continuity_certified": False,
         "warning": (
             None if expected else
             "Unpinned developer preview signer: signature continuity across "

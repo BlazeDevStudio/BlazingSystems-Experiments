@@ -16,6 +16,13 @@ app-private identity and conversation state.
 
 ## What this draft implements
 
+- A matching **public** certificate pin is **not** proof that a persistent
+  private release keystore was securely provisioned. Accordingly, the report
+  explicitly marks `release_signing_certified=false`,
+  `signing_key_provenance=unverified`, and
+  `upgrade_continuity_certified=false` until a separate release-key
+  provisioning and evidence gate exists.
+
 - `tool/apk_signing_audit.py` runs the platform `apksigner verify
   --verbose --print-certs` on every real compiled ABI APK.
 - Requires exactly one signer for each APK and the same public SHA-256
