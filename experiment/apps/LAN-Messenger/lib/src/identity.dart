@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cryptography/cryptography.dart';
 import 'package:path_provider/path_provider.dart';
 import 'protocol.dart';
+import 'recoverable_json_file.dart';
 
 class Identity {
   final SimpleKeyPairData keyPair;
@@ -23,8 +24,19 @@ class Identity {
   static Future<Identity> load() async {
     final dir = await appDirectory();
     final file = File('${dir.path}${Platform.pathSeparator}identity.json');
-    if (await file.exists()) {
-      final obj = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    if (await RecoverableJsonFile.hasSavedState(file)) {
+      // A corrupt or interrupted rename must never silently regenerate a
+      // device identity: existing peers would lose their pinned trust.
+      final obj = await RecoverableJsonFile.read(file, isValid: (value) {
+        if (value is! Map<String, dynamic> ||
+            value['private'] is! String || value['public'] is! String ||
+            value['name'] is! String) return false;
+        try {
+          return base64Decode(value['private'] as String).length == 32 &&
+              base64Decode(value['public'] as String).length == 32 &&
+              (value['name'] as String).isNotEmpty;
+        } catch (_) { return false; }
+      }) as Map<String, dynamic>;
       final keyPair = SimpleKeyPairData(
         base64Decode(obj['private'] as String),
         publicKey: SimplePublicKey(base64Decode(obj['public'] as String),
@@ -39,10 +51,10 @@ class Identity {
     final name = hostname.isNotEmpty && hostname.toLowerCase() != 'localhost'
         ? hostname.substring(0, hostname.length > 40 ? 40 : hostname.length)
         : 'Device ${id.substring(0, 4).toUpperCase()}';
-    await file.writeAsString(jsonEncode({
+    await RecoverableJsonFile.write(file, {
       'private': base64Encode(keyPair.bytes),
       'public': base64Encode(keyPair.publicKey.bytes), 'name': name,
-    }), flush: true);
+    });
     return Identity(keyPair, name);
   }
 
@@ -54,11 +66,11 @@ class Identity {
     final dir = await appDirectory();
     final file = File('${dir.path}${Platform.pathSeparator}identity.json');
     // Preserve our long-lived identity so conversations do not break on rename.
-    await file.writeAsString(jsonEncode({
+    await RecoverableJsonFile.write(file, {
       'private': base64Encode(keyPair.bytes),
       'public': base64Encode(keyPair.publicKey.bytes),
       'name': newName,
-    }), flush: true);
+    });
     displayName = newName;
   }
 }
