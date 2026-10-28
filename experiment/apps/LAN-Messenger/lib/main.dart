@@ -592,6 +592,11 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await _restoreChats();
       final inter = Intercom(n)
         ..reconnectGraceSeconds = settings.reconnectGraceSeconds;
+      // The remote call ID must remain verifiable while signaling and ICE
+      // callbacks settle. Register the callback before any incoming calls.
+      n.onCallProbe = (peer, sessionId) =>
+          inter.callId == sessionId &&
+          inter.talkingTo?.id == peer.id && !inter.closing;
       final groupMessages = GroupMessaging(n);
       final mesh = GroupCallMesh(n, groupMessages);
       groupMessages.onChanged = () { if (mounted) setState(() {}); };
