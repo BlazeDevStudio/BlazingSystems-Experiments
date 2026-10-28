@@ -1,3 +1,5 @@
+Current v0.1.3 exact checkpoint: see VERIFICATION_v0.1.3.txt. Older evidence below is historical.
+
 VERIFIED on Linux x86-64 local environment, 2026-10-28:
 Go 1.23.2; Master CGO + libsqlite3; Seed CGO_DISABLED.
 Master Go tests: PASS; Seed Go tests: PASS; Go vet both: PASS.

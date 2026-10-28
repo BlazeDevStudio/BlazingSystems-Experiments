@@ -1,3 +1,7 @@
+# ConnectIT v0.1.3 — Signed Satellite Federation / DEVELOPMENT NO-GO
+
+**Current release candidate documentation.** Master-authorized short-lived Seed certificates, Ed25519 mutually signed mesh requests and responses, per-node allowlists, replay protection, and no remote shared-secret fallback are implemented and locally tested. Read `docs/FEDERATION_v0.1.3.md` first. The older v0.1.2/0.1.1/0.1.0 text preserved below is historical and its statements that federation "still uses a shared secret" do not describe the new signed mode. Device revocation and account authority remain separate. No production client, WAN/TLS acceptance, peer-certificate revocation or automatic certificate renewal.
+
 # ConnectIT v0.1.2 REVOCATION INTEGRATION — DEVELOPMENT / NO-GO
 
 revocation-url enforcement and cached signed revocation gate; source/testing details under docs/REVOCATION*.md. Existing v0.1.1 baseline remains below. Do not use as production service.

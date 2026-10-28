@@ -1,0 +1,1 @@
+No native Flutter builds were modified by v0.1.3. The latest LAN Messenger v0.3.2+15 is only a pinned, independently tested interface dummy. Node certificates belong strictly to Go Seed peers; Flutter clients must not be given node signing private keys. This is not an enabled ConnectIT app.

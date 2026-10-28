@@ -1,0 +1,44 @@
+name: ConnectIT v0.1.3 signed federation (draft)
+on:
+  pull_request:
+    paths:
+      - 'experiment/apps/ConnectIT/**'
+      - '.github/workflows/connectit-federation-v013.yml'
+  workflow_dispatch:
+jobs:
+  signed-federation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Prepare SQLite C dependency and test crypto
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          python3 -m pip install --break-system-packages cryptography
+      - name: Master tests and Linux build
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Master-Seed
+        run: |
+          mkdir -p bin
+          go vet ./...
+          CGO_ENABLED=1 go test ./... -count=1
+          CGO_ENABLED=1 go build -trimpath -o bin/connectit-master .
+      - name: Seed tests and Linux/Windows/ARM64 cross-builds
+        working-directory: experiment/apps/ConnectIT/ConnectIT-Seed
+        run: |
+          mkdir -p bin
+          go vet ./...
+          CGO_ENABLED=0 go test -race ./... -count=1
+          CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-windows-amd64.exe .
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o bin/connectit-seed-linux-arm64 .
+      - name: Real local Master-to-two-Seed signed federation and auth denial
+        run: |
+          python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/signed_federation_smoke.py
+          python3 experiment/apps/ConnectIT/ConnectIT-Master-Seed/tests/signed_mesh_e2e.py
+      - name: No production key leaks in source check
+        run: |
+          ! grep -R -l --exclude='*.md' --exclude='*.txt' --exclude='*.py' --exclude='*.json' --exclude='*.go' --exclude='*.yml' 'PRIVATE KEY' experiment/apps/ConnectIT

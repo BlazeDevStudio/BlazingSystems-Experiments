@@ -25,6 +25,9 @@ type SeedConfig struct {
 	TLSKey          string   `json:"tls_key"`
 	MeshSecretEnv   string   `json:"mesh_secret_env"`
 	RevocationsURL  string   `json:"revocations_url"`
+	PeerIDs         []string `json:"peer_ids,omitempty"`
+	NodeCert        string   `json:"node_cert,omitempty"`
+	NodePrivateKey  string   `json:"node_private_key,omitempty"`
 }
 
 func configRead(dir string) (SeedConfig, error) {
@@ -43,6 +46,7 @@ func seedInit(args []string) error {
 	pub := fs.String("master-public-key", "", "Master public key path (must be pinned and provisioned out of band)")
 	peers := fs.String("peers", "", "comma-separated peer HTTPS URLs")
 	revocationsURL := fs.String("revocations-url", "", "Master HTTPS /v1/revocations URL (required before remote exposure)")
+	peerIDs := fs.String("peer-ids", "", "comma-separated expected remote node IDs in peers order")
 	if e := fs.Parse(args); e != nil {
 		return e
 	}
@@ -74,12 +78,21 @@ func seedInit(args []string) error {
 			urls = append(urls, strings.TrimSpace(p))
 		}
 	}
-	c := SeedConfig{NodeID: *id, Listen: *listen, MasterPublicKey: *pub, Peers: urls, MaxMessages: 8000, MaxConnections: 64, MaxPayloadBytes: 8192, SyncSeconds: 3, MeshSecretEnv: "CONNECTIT_MESH_SECRET", RevocationsURL: *revocationsURL}
+	var trusted []string
+	if *peerIDs != "" {
+		for _, p := range strings.Split(*peerIDs, ",") {
+			trusted = append(trusted, strings.TrimSpace(p))
+		}
+	}
+	if len(trusted) > 0 && len(trusted) != len(urls) {
+		return errors.New("peer-ids must correspond to every --peers URL")
+	}
+	c := SeedConfig{NodeID: *id, Listen: *listen, MasterPublicKey: *pub, Peers: urls, MaxMessages: 8000, MaxConnections: 64, MaxPayloadBytes: 8192, SyncSeconds: 3, MeshSecretEnv: "CONNECTIT_MESH_SECRET", RevocationsURL: *revocationsURL, PeerIDs: trusted, NodeCert: filepath.Join(*dir, "node.cert.json"), NodePrivateKey: filepath.Join(*dir, "node.private.key")}
 	b, _ := json.MarshalIndent(c, "", "  ")
 	if e = writeAtomic(filepath.Join(*dir, "seed.json"), b, 0600); e != nil {
 		return e
 	}
-	fmt.Println("Seed initialized. node.private.key reserved for later per-peer authentication; current mesh transport uses shared-secret authentication. Do not expose the port to untrusted clients.")
+	fmt.Println("Seed initialized. Obtain a Master-signed node.cert.json for federation; remote shared-secret fallback is disabled.")
 	return nil
 }
 func seedStart(args []string) error {
@@ -103,6 +116,14 @@ func seedStart(args []string) error {
 	}
 	if len(c.Peers) > 0 {
 		x = append(x, "--peers", strings.Join(c.Peers, ","))
+	}
+	if len(c.PeerIDs) > 0 {
+		x = append(x, "--peer-ids", strings.Join(c.PeerIDs, ","))
+	}
+	if c.NodeCert != "" {
+		if _, e := os.Stat(c.NodeCert); e == nil {
+			x = append(x, "--node-cert", c.NodeCert, "--node-private-key", c.NodePrivateKey)
+		}
 	}
 	if c.TLSCert != "" {
 		x = append(x, "--tls-cert", c.TLSCert, "--tls-key", c.TLSKey)
