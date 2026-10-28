@@ -1,7 +1,7 @@
 name: lan_messenger
 description: Zero-configuration peer-to-peer LAN chat, files, and intercom.
 publish_to: none
-version: 0.3.4+17
+version: 0.3.5+18
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
@@ -35,3 +35,4 @@ flutter:
   assets:
     - assets/sounds/
     - assets/icons/
+    - assets/branding/connectit/

@@ -32,24 +32,10 @@ for key,notes in MELODIES.items():
         samples.append(struct.pack('<h',max(-32768,min(32767,round(value*32767)))))
     with wave.open(str(sound_dir/(key+'.wav')),'wb') as wav:
         wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(RATE);wav.writeframes(b''.join(samples))
-# Windows ICO: original pixel-drawn chat bubble, 32x32 BGRA plus AND mask.
-W=H=32
-pixel=[]
-for y in range(H):
-    for x in range(W):
-        inside=(4<=x<=27 and 4<=y<=24 and (7<=x<=24 or 7<=y<=21)) or (8<=x<=14 and 24<=y<=28)
-        if inside:
-            bgra=(214,102,22,255)
-            if 9<=y<=11 and 10<=x<=22 or 15<=y<=17 and 10<=x<=18:
-                bgra=(255,255,255,255)
-        else: bgra=(0,0,0,0)
-        pixel.append(bytes(bgra))
-rows=[]
-for y in range(H-1,-1,-1): rows.append(b''.join(pixel[y*W:(y+1)*W]))
-bitmap=b''.join(rows)
-mask=b'\x00'*((W+31)//32*4*H)
-header=struct.pack('<IiiHHIIiiII',40,W,2*H,1,32,0,len(bitmap)+len(mask),0,0,0,0)
-frame=header+bitmap+mask
-ico=struct.pack('<HHH',0,1,1)+struct.pack('<BBBBHHII',W,H,0,0,1,32,len(frame),22)+frame
-(icon_dir/'lan_messenger.ico').write_bytes(ico)
-print('Created',len(MELODIES),'alert sounds and tray icon')
+# Use exact owner-provided ConnectIT icon; do not recreate the old bubble.
+import shutil
+icon_source = root/'assets/branding/connectit/connectit.ico'
+if not icon_source.is_file():
+    raise FileNotFoundError(f'Missing ConnectIT icon: {icon_source}')
+shutil.copyfile(icon_source, icon_dir/'lan_messenger.ico')
+print('Created',len(MELODIES),'sounds and installed ConnectIT icon')

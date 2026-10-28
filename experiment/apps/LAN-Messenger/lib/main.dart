@@ -1496,7 +1496,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
     color: settings.accent,
     child: SafeArea(bottom: false, child: Row(children: [
-      _myAvatar(radius: 15), const SizedBox(width: 9),
+      Image.asset('assets/branding/connectit/connectit-icon-48.png',
+          width: 34, height: 34, filterQuality: FilterQuality.high),
+      const SizedBox(width: 9),
       const Expanded(child: Text('LAN Messenger',
           maxLines: 1, overflow: TextOverflow.ellipsis,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white))),
