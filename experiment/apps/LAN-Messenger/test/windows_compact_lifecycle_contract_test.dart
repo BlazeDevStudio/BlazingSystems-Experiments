@@ -11,6 +11,7 @@ void main() {
     final block = app.substring(start, end);
     expect(block, contains('_openingCompactWindow'));
     expect(block, contains('_deferredCompactRestore'));
+    expect(block, contains('_deferredCompactForceOpen'));
     expect(block, contains('intercom?.callId != session'));
     expect(block, contains('intercom?.closing == true'));
     expect(block, contains('await _restoreCompactVideo()'));

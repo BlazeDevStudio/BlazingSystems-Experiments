@@ -90,6 +90,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _compactWindowsVideo = false;
   bool _openingCompactWindow = false;
   bool _deferredCompactRestore = false;
+  bool _deferredCompactForceOpen = false;
   bool _restoringCompactWindow = false;
   Size? _normalWindowSize;
   Offset? _normalWindowPosition;
@@ -298,7 +299,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   /// the call is already ringing. An ordinary visible Messenger window must
   /// never acquire a second floating Answer/Decline window.
   Future<void> _syncDesktopCallSurface() async {
-    if (!Platform.isWindows || !mounted || _compactWindowsVideo) return;
+    if (!Platform.isWindows || !mounted || _compactWindowsVideo ||
+        _openingCompactWindow || _restoringCompactWindow) return;
     final active = intercom;
     final id = active?.callId;
     final peer = _incomingPeer;
@@ -403,8 +405,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       if (_deferredCompactRestore ||
           (_compactWindowsVideo &&
               (intercom?.callId != session || intercom?.closing == true))) {
+        final forceOpen = _deferredCompactForceOpen;
         _deferredCompactRestore = false;
-        await _restoreCompactVideo();
+        _deferredCompactForceOpen = false;
+        await _restoreCompactVideo(forceOpen: forceOpen);
       }
     }
   }
@@ -412,6 +416,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Future<void> _restoreCompactVideo({bool forceOpen = false}) async {
     if (_openingCompactWindow) {
       _deferredCompactRestore = true;
+      _deferredCompactForceOpen = _deferredCompactForceOpen || forceOpen;
       return;
     }
     if (!Platform.isWindows || !_compactWindowsVideo ||
