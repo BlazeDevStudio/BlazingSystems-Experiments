@@ -2,7 +2,7 @@ name: LAN Messenger v0.3.2 - publish evidence-gated preview
 on:
   push:
     branches:
-      - release/lan-messenger-v032-preview
+      - release/lan-messenger-v032-publisher
     paths:
       - .github/workflows/lan-messenger-v032-preview-publish.yml
   workflow_dispatch:
