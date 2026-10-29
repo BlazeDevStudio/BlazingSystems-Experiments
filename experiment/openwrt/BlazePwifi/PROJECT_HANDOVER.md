@@ -1,3 +1,5 @@
+<!-- PHX-CORE-J 2026-10-30: focused branch workflow explicitly runs PAY-0731 source CGI lock fixture and 9-case config_auth DENY-only host test plus PAY-0627/v0.4/member compatibility. CI outcome must be inspected at exact new head, not inferred from historical runs. -->
+
 <!-- PHX-CORE-RECOVERY-I 2026-10-30: PAY-0731 full #40887233578 failed at v060_vendo_coin_replay_lock.sh (step 34), after PAY-0627 passed. Test-only explicit /tmp controller provision added to preserve unknown-controller default deny and original duplicate/replay/lock positive controls. v1 config_auth target owner/window kind unbound: added negative DENY-only host case and v1 doc, no wire changes or admission authority. HEAD validation PENDING, no production approval, protected witness or physical evidence. -->
 
 <!-- PHX-G-20261029-PY-HDR: focused #40886989283: ordinary coin signed CGI PASS; HMAC test's subprocess(text=True) normalized CRLF to LF and parser rejected valid headers before any authentication assertion. Cross-platform parser corrected without changing server cryptography/admission. New focused result pending. -->
