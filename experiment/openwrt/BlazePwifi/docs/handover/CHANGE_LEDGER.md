@@ -1,3 +1,9 @@
+## 2026-10-30 — PHX-CORE Recovery I (PR #252, isolated source/test)
+
+- Rechecked #40887233578 validate job 123495460348: PAY-0627 source CGI passed; PAY-0731 `v060_vendo_coin_replay_lock.sh` exited 1 with no fixture output at step 34. PAY-0731 had not provisioned synthetic `vendo-01` before expecting the first signed coin success. Added explicit synthetic controller admission setup in the disposable /tmp test using GET for library sourcing; no installed policy relaxed, unprovisioned denial retained.
+- `v060_controller_response_auth_v1.py` adds explicit owner/window-kind substitution limitation case. v1 HMAC does NOT cover target owner/account or window kind. Marked v1 DENY-only in CONTROLLER_RESPONSE_AUTH_V1_LAB.md; suggested separate fully bound v2, did not change v1 bytes or authorize relays.
+- Canonical handovers synchronized append-preserving; tests at NEW HEAD not yet verified. No protected monotonic witness, physical proof, production signing, coin/relay admission, release, or merge.
+
 ## 2026-10-29 — PHX-G HMAC fixture cross-platform header normalization
 
 - Focused #40886989283 ordinary coin source fixture PASS. Python host auth test failed at header splitting because text-mode subprocess normalizes CRLF to LF. Normalize CRLF before splitting, do not relax HMAC/config assertions or signed DENY contract. Full historical ledger remains append-only; exact successor run pending.
