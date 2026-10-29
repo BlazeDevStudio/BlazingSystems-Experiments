@@ -1,3 +1,7 @@
+## 2026-10-29 — PHX-G HMAC fixture cross-platform header normalization
+
+- Focused #40886989283 ordinary coin source fixture PASS. Python host auth test failed at header splitting because text-mode subprocess normalizes CRLF to LF. Normalize CRLF before splitting, do not relax HMAC/config assertions or signed DENY contract. Full historical ledger remains append-only; exact successor run pending.
+
 ## 2026-10-29 — PHX-G fixture setup POST/GET correction
 
 - Focused jobs #40886447195 and #40886740567 failed before diagnostic emit; test-only fixture source under REQUEST_METHOD=POST consumed empty stdin and exited under set -e. Source common.sh under GET for synthetic admin provisioning, then restore POST for actual signed CGI. No installed controller/Vendo modifications or relaxation. Full historical ledger retained; successor focused test pending.

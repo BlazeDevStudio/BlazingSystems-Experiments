@@ -68,8 +68,11 @@ esac
         body = urllib.parse.urlencode(dict(action=action,id=ID,nonce=nonce,pulses="0",target="",sig=sig))
         p = subprocess.run(["sh", str(VENDO)], input=body, text=True, capture_output=True,
                            env=env, check=True, timeout=15)
-        check("\r\n\r\n" in p.stdout, "JSON headers")
-        return json.loads(p.stdout.split("\r\n\r\n", 1)[1])
+        # subprocess(text=True) normalizes HTTP CRLF to LF on Linux.
+        # Parse either platform without altering CGI response bytes.
+        normalized = p.stdout.replace("\r\n", "\n")
+        check("\n\n" in normalized, "JSON headers")
+        return json.loads(normalized.split("\n\n", 1)[1])
     nr = "0011223344556677"
     reg = request("register", nr)
     check(reg["ok"] is True, "register response")
