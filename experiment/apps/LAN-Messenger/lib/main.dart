@@ -19,6 +19,7 @@ import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
 import 'src/call_presentation_gate.dart';
+import 'src/serial_async_gate.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -84,6 +85,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _androidInPip = false;
   bool _incomingUsesExternalSurface = false;
   final CallSurfaceEpoch _desktopCallSurfaceEpoch = CallSurfaceEpoch();
+  final SerialAsyncGate _desktopPopupGate = SerialAsyncGate();
   String? _activeCallUiId;
   String? _observedCallId;
   bool _pendingCallPresentation = false;
@@ -242,21 +244,25 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<bool> _showDesktopIncoming(Peer peer, bool video) async {
     if (!Platform.isWindows) return false;
-    try {
-      return await _desktopCalls.invokeMethod<bool>('incoming', {
-        'callId': intercom?.callId ?? '',
-        'caller': peer.name,
-        'video': video,
-      }) ?? false;
-    } catch (_) {
-      // The tray remains usable if Windows refuses native popup creation.
-      return false;
-    }
+    return _desktopPopupGate.run<bool>(() async {
+      try {
+        return await _desktopCalls.invokeMethod<bool>('incoming', {
+          'callId': intercom?.callId ?? '',
+          'caller': peer.name,
+          'video': video,
+        }) ?? false;
+      } catch (_) {
+        // The tray remains usable if Windows refuses native popup creation.
+        return false;
+      }
+    });
   }
 
   Future<void> _dismissDesktopCall() async {
     if (!Platform.isWindows) return;
-    try { await _desktopCalls.invokeMethod<void>('dismiss'); } catch (_) {}
+    await _desktopPopupGate.run<void>(() async {
+      try { await _desktopCalls.invokeMethod<void>('dismiss'); } catch (_) {}
+    });
   }
 
   Future<void> _showOngoingCall(Peer peer, String id, bool video,
@@ -291,8 +297,10 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
           await _openCompactVideoWindow();
         }
       } else if (background) {
-        try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
-        catch (_) {}
+        await _desktopPopupGate.run<void>(() async {
+          try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
+          catch (_) {}
+        });
       }
     }
   }
