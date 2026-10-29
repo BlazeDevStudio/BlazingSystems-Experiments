@@ -32,8 +32,13 @@ void main() {
     final trackStart = source.indexOf('pc.onTrack = (event) {');
     final trackEnd = source.indexOf('pc.onConnectionState =', trackStart);
     final block = source.substring(trackStart, trackEnd);
-    expect(block, contains('unawaited(_remoteVideoTrackGate.run<void>(() async {'));
+    expect(block, matches(RegExp(r'unawaited\(\s*_remoteVideoTrackGate\.run<void>\(\(\) async \{')));
     expect(block, contains('track.id == event.track.id'));
+    // The fallback must be freed after a failed initial native addTrack,
+    // but never while bound to the live renderer.
+    expect(block, contains('MediaStream? createdFallback;'));
+    expect(block, contains('if (!rendererAttached && abandoned != null &&'));
+    expect(block, contains('await abandoned.dispose();'));
     expect(block, contains('if (callId != id || _closing || _remoteHasNativeStream) return;'));
 
     final shutdownStart = source.indexOf('Future<void> _hangUpOnce(');
