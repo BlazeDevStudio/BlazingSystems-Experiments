@@ -92,11 +92,22 @@ for attempt in $(seq 1 10); do
     adb -s "$serial" shell uiautomator dump /sdcard/lan_smoke.xml >/dev/null 2>&1 || true
     adb -s "$serial" exec-out cat /sdcard/lan_smoke.xml >"$OUT/$serial-hierarchy.xml" 2>/dev/null || true
     adb -s "$serial" exec-out screencap -p >"$OUT/$serial-screen.png" 2>/dev/null || true
-    # Pixel Launcher can show its ANR *over* a healthy Messenger process.
+    # A failed cloud runner previously trapped Pixel Launcher ANR *over* an
+    # already-online Messenger peer row. BACK left the launcher dialog in place
+    # for all ten polls. Close ONLY the named system launcher ANR by locating
+    # its exact "Close app" button in UiAutomator's real XML coordinates.
+    # No discovery acceptance is credited until the peer row is visible again.
     if grep -Fq "Pixel Launcher isn't responding" "$OUT/$serial-hierarchy.xml"; then
-      echo "$serial: dismissing cloud Pixel Launcher ANR obscuring Messenger"
-      adb -s "$serial" shell input keyevent KEYCODE_BACK || true
-      adb -s "$serial" shell am start -n com.example.lan_messenger/.MainActivity || true
+      coords="$(python3 "$ROOT/experiment/apps/LAN-Messenger/tool/emulator_launcher_anr.py" \
+          "$OUT/$serial-hierarchy.xml" || true)"
+      if [[ "$coords" =~ ^[0-9]+[[:space:]][0-9]+$ ]]; then
+        read -r close_x close_y <<<"$coords"
+        echo "$serial: closing obstructing Pixel Launcher ANR via system button"
+        adb -s "$serial" shell input tap "$close_x" "$close_y" || true
+        adb -s "$serial" shell am start -n com.example.lan_messenger/.MainActivity || true
+      else
+        echo "$serial: launcher dialog found but safe Close app target unavailable"
+      fi
       both=0
       continue
     fi
