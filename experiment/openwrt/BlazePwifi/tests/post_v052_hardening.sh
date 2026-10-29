@@ -139,7 +139,16 @@ grep -Fq 'response.optInt("coin_received_pulses", 0)' "$LEASE"
 grep -Fq 'response.optInt("coin_received_cents", 0)' "$LEASE"
 grep -Fq 'response.optString("coin_window_sig", "")' "$LEASE"
 grep -Fq 'Hmac.sha256Hex(secret, coinCanonical)' "$LEASE"
-grep -Fq 'Hmac.sha256Hex(newSecret, coinCanonical)' "$LEASE"
+# Status cannot authenticate itself with a response-supplied device_secret.
+grep -Fq 'if (!enrolling && (!deviceId.equals(enrolledId)' "$LEASE"
+grep -Fq 'Hmac.sha256Hex(deviceSecret, coinCanonical)' "$LEASE"
+! grep -Fq 'Hmac.sha256Hex(newSecret, coinCanonical)' "$LEASE"
+COIN_AUTH_LINE="$(grep -n 'coinSignature.equals(Hmac.sha256Hex(deviceSecret, coinCanonical))' "$LEASE" | head -n1 | cut -d: -f1)"
+POLICY_AUTH_LINE="$(grep -n 'policySignatureV3.equals(Hmac.sha256Hex(deviceSecret, v3Canonical))' "$LEASE" | head -n1 | cut -d: -f1)"
+STATUS_COMMIT_LINE="$(grep -n 'RentalLeaseStore.recordLease(context, serverNow, leaseUntil)' "$LEASE" | tail -n1 | cut -d: -f1)"
+[ -n "$COIN_AUTH_LINE" ] && [ -n "$POLICY_AUTH_LINE" ] && [ -n "$STATUS_COMMIT_LINE" ] &&
+    [ "$COIN_AUTH_LINE" -lt "$STATUS_COMMIT_LINE" ] &&
+    [ "$POLICY_AUTH_LINE" -lt "$STATUS_COMMIT_LINE" ]
 grep -Fq 'public static String coinStop' "$LEASE"
 grep -Fq 'DONE INSERTING' "$PAGES"
 grep -Fq 'formatCoinDuration' "$PAGES"
