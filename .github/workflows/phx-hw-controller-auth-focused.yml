@@ -1,0 +1,28 @@
+name: PHX HW controller header focused
+on:
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/ControllerAuthV1Lab.h'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp'
+      - '.github/workflows/phx-hw-controller-auth-focused.yml'
+  workflow_dispatch:
+jobs:
+  header-native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Exact source
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Install vetted mbedTLS development package
+        run: sudo apt-get update && sudo apt-get install -y libmbedtls-dev
+      - name: Compile actual firmware header and execute adversarial cases
+        run: |
+          set -eu
+          g++ -std=c++17 -Wall -Wextra -Werror -O2 experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp -o /tmp/phx-hw-auth-test -lmbedtls -lmbedcrypto -lmbedx509
+          /tmp/phx-hw-auth-test
+      - name: Phase A admission remains denied
+        run: |
+          grep -Fq 'static constexpr bool kCoinAdmissionEnabled=false;' experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino
+          grep -Fq 'may_admit_coin_even_if_mac_valid() { return false; }' experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/ControllerAuthV1Lab.h
