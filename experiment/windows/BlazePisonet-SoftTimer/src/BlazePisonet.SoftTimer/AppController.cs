@@ -182,29 +182,40 @@ public sealed class AppController : IDisposable
 
     private async Task HandleCoinPulse(SerialCoinAcceptance accepted)
     {
-        if (!Config.Enabled) return;
+        // Capture original controller settings and window before ANY await.
+        // A serial event is never rebound to whichever target becomes current.
+        var sourceConfig = Config;
+        if (!sourceConfig.Enabled || !_serial.IsCoinSessionCurrent(accepted)) return;
+        var secondsPerCoin = sourceConfig.SecondsPerCoin;
+        var originalWindow = _blazePwifi.CaptureCoinWindow();
         if (MemberReconciliationPending)
         {
             HardwareStatus = "Coin ignored · member transaction reconciliation pending";
             StatusChanged?.Invoke();
             return;
         }
-        if (Config.CoinTopology == CoinTopologyMode.CentralizedCoordinator)
+        if (sourceConfig.CoinTopology == CoinTopologyMode.CentralizedCoordinator)
         {
             if (_centralServer is not null)
             {
-                var routed = await _centralServer.CreditCurrentAsync(Config.SecondsPerCoin);
+                var routed = await _centralServer.CreditCurrentAsync(secondsPerCoin);
                 HardwareStatus = routed ? "Coin routed to active station" : "Coin received with no active station";
                 StatusChanged?.Invoke();
             }
         }
-        else if (Config.CoinTopology == CoinTopologyMode.StandardOneToOne && Config.TimerSource == TimerSourceMode.InternalPcTimer)
+        else if (sourceConfig.CoinTopology == CoinTopologyMode.StandardOneToOne && sourceConfig.TimerSource == TimerSourceMode.InternalPcTimer)
         {
-            _timer.AddCoin(Config.SecondsPerCoin, accepted.Device.PortName);
+            _timer.AddCoin(secondsPerCoin, accepted.Device.PortName);
         }
 
-        if (Config.BlazePwifiEnabled && Config.MirrorLocalCoinsToBlazePwifi)
-            await _blazePwifi.ForwardCoinAsync(1);
+        // Revalidate the original serial owner and config after the central
+        // await. CoinWindowStillOwned verifies the original controller+nonce
+        // before any network POST, then validates the response's nonce echo.
+        if (!ReferenceEquals(Config, sourceConfig) || !sourceConfig.Enabled ||
+            !_serial.IsCoinSessionCurrent(accepted))
+            return;
+        if (originalWindow is not null)
+            await _blazePwifi.ForwardCoinAsync(originalWindow, 1);
     }
 
     private void UpdateExternalBoard()
