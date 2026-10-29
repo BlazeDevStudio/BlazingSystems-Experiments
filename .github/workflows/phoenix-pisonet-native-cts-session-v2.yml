@@ -76,6 +76,21 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { Write-Error "COIN_EVENT_OWNERSHIP_NOT_GREEN: native exit=$code (2=unsafe, 3=inconclusive)"; exit 1 }
           Write-Host 'NATIVE_COIN_EVENT_OWNERSHIP_SOURCE_GREEN_ONLY: no callback under serial lock, one-time session claim'
+      - name: Source-linked native Windows #216 original asynchronous attribution cases and original target ACK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $fixture='experiment/windows/BlazePisonet-SoftTimer/tests/NativeCoinDispatchLab'
+          python "$fixture/extract_source.py"
+          if ($LASTEXITCODE -ne 0) { Write-Error "INCONCLUSIVE_EXIT_3: changed AppController/BlazePwifiClient source or extractor"; exit 3 }
+          $lab="$fixture/NativeCoinDispatchLab.csproj"
+          dotnet run --project $lab -c Release --no-launch-profile -- --invalid-setup
+          if ($LASTEXITCODE -ne 3) { Write-Error 'ASYNC_INVALID_SETUP_SENTINEL_FAILED'; exit 3 }
+          dotnet run --project $lab -c Release --no-build --no-launch-profile
+          $code=$LASTEXITCODE
+          if ($code -ne 0) { Write-Error "ASYNC_ATTRIBUTION_NOT_GREEN: exit=$code (2=unsafe,3=inconclusive)"; exit 1 }
+          Write-Host 'NATIVE_ASYNC_ATTRIBUTION_ORIGINAL_216_GREEN_ONLY'
       - name: Compile production Windows application (build-only, not release)
         shell: pwsh
         run: |
