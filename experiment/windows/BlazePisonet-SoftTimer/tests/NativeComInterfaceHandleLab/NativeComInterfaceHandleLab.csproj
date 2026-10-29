@@ -9,5 +9,6 @@
   <ItemGroup>
     <!-- Compile the ACTUAL unmodified production Win32 SetupAPI+CreateFile transport. -->
     <Compile Include="../../src/BlazePisonet.SoftTimer/NativeComInterfaceTransport.cs" Link="RealNativeComInterfaceTransport.cs" />
+    <Compile Include="../../src/BlazePisonet.SoftTimer/NativeComPulseCapture.cs" Link="RealNativeComPulseCapture.cs" />
   </ItemGroup>
 </Project>
