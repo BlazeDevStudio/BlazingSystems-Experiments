@@ -110,6 +110,8 @@ try
         Console.WriteLine("NATIVE_INTERFACE_EMPTY_PIN_REJECTED_PASS");
     }
 
+    NativePulseCaptureCases.Run(ifaceA, ifaceB);
+
     // Real SetupAPI code runs on GitHub Windows runner, but never opens an
     // arbitrary available COM interface or toggles/reads real coin hardware.
     if (!OperatingSystem.IsWindows())
@@ -154,6 +156,7 @@ namespace BlazePisonet.SoftTimer
         private readonly NativeComDeviceInterface[] _first;
         public NativeComDeviceInterface[]? AfterOpen { get; set; }
         public bool StatusSupported { get; set; } = true;
+        public uint ModemStatus { get; set; } = 0x10u; // mutable fake CTS for samples
         public bool OpenReturnsInvalid { get; set; }
         public string? OpenedPath { get; private set; }
         public SafeFileHandle? OpenedHandle { get; private set; }
@@ -180,7 +183,7 @@ namespace BlazePisonet.SoftTimer
                 ReadsOnOriginalHandle++;
             else
                 ReadsOnOtherHandle++;
-            status = 0x10u; // fake CTS on, DSR off
+            status = ModemStatus; // test-only fake modem bits from SAME handle
             return StatusSupported && !openedHandle.IsClosed && !openedHandle.IsInvalid;
         }
 
