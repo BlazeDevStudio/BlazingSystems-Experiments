@@ -50,4 +50,16 @@ git -C "$TMP" add .
 git -C "$TMP" commit -qm 'sync live state and ledger'
 sh "$P/tests/handover_gate.sh"
 
-echo 'Handover gate history tests passed: fresh / stale blocked / partial blocked / fully resynced'
+# 5. A valid-looking dated entry must NOT permit prior ledger history to be
+# replaced. CHANGE_LEDGER is append-only, not merely non-empty and dated.
+printf '## 2026-10-09 — replacement only\n' > "$P/docs/handover/CHANGE_LEDGER.md"
+git -C "$TMP" add .
+git -C "$TMP" commit -qm 'replace ledger with one valid-looking entry'
+if sh "$P/tests/handover_gate.sh" > "$TMP/truncated.log" 2>&1; then
+    echo 'handover regression: valid-looking ledger truncation was falsely accepted' >&2
+    exit 1
+fi
+grep -q 'CHANGE_LEDGER is append-only' "$TMP/truncated.log" ||
+    { cat "$TMP/truncated.log" >&2; echo 'handover regression: wrong truncation failure reason' >&2; exit 1; }
+
+echo 'Handover gate history tests passed: fresh / stale blocked / partial blocked / fully resynced / truncation blocked'

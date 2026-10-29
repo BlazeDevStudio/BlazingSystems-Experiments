@@ -31,6 +31,31 @@ grep -Fq '## Mandatory continuous transaction log' "$POLICY" ||
 [ "$(git rev-parse --is-shallow-repository)" = false ] ||
     { echo "handover gate: fetch-depth: 0 is mandatory" >&2; exit 1; }
 
+# CHANGE_LEDGER is append-only. On push CI, compare the complete pushed
+# range; on pull-request merge commits and local runs, compare the first
+# parent. Additions are allowed, but deleting or rewriting history is not.
+ledger_base=""
+case "${GITHUB_EVENT_BEFORE:-}" in
+    ""|0000000000000000000000000000000000000000) ;;
+    *)
+        if git cat-file -e "${GITHUB_EVENT_BEFORE}^{commit}" 2>/dev/null; then
+            ledger_base="$GITHUB_EVENT_BEFORE"
+        fi
+        ;;
+esac
+if [ -z "$ledger_base" ]; then
+    ledger_base="$(git rev-parse -q --verify HEAD^1 2>/dev/null || true)"
+fi
+if [ -n "$ledger_base" ]; then
+    ledger_deleted="$(git diff --numstat "$ledger_base" HEAD -- "$LEDGER" |
+        awk 'NF >= 2 && ($2 == "-" || $2 + 0 > 0) {print $2; exit}')"
+    if [ -n "$ledger_deleted" ]; then
+        echo "handover gate: CHANGE_LEDGER is append-only; historical lines were deleted" >&2
+        echo "handover gate: comparison base $ledger_base" >&2
+        exit 1
+    fi
+fi
+
 for doc in "$HANDOVER" "$CURRENT" "$LEDGER"; do
     checkpoint="$(git log -1 --format=%H HEAD -- "$doc")"
     [ -n "$checkpoint" ] || {
