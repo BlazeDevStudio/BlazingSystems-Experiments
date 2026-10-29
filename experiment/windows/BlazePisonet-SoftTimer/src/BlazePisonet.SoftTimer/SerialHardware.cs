@@ -235,6 +235,17 @@ public sealed class SerialHardware : IDisposable
                 candidate.PinChanged += OnPinChanged;
                 candidate.ErrorReceived += (_, e) => Storage.Log($"Serial error {selected.PortName}: {e.EventType}");
                 candidate.Open();
+                // ExactDevice's WMI/COM lookup is only a selection hint. Never
+                // admit paid CTS/RI events until the SAME opened handle carries
+                // a verified original PnP identity. A second WMI lookup, COM
+                // number or cached identity cannot satisfy this requirement.
+                if (config.SerialSelection == SerialSelectionMode.ExactDevice &&
+                    !OpenedSerialHandleIdentity.TryVerify(candidate, selected, out var identityFailure))
+                {
+                    Storage.Log($"Unverifiable opened COM handle {selected.PortName}: {identityFailure}");
+                    throw new InvalidOperationException(
+                        "Opened serial adapter identity cannot be proved; coin capture denied");
+                }
                 _port = candidate;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
