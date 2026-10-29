@@ -1,3 +1,9 @@
+## 2026-10-29 — PHX-CORE-RECOVERY-E rental signed-CGI fixture (test-only, CI pending)
+
+- Parent CORE #241 `8aa2529a03ca27557dcc7b6db5fd94b4b30e10fa`; isolated branch adjusts the disposable `tests/rental.sh` to assert **actual** signed coin request denial while controller `vendo-02` is unknown/disabled, with no lease/receipt/progress mutation. It explicitly performs synthetic admin provisioning only after denial, then retains the original positive, duplicate ACK, and progress-EIO assertions.
+- Previously observed [#40813818877](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40813818877) validate failure at `tests/rental.sh`; root-cause hypothesis is legacy fixture assuming auto-enabled controller. Final attribution and corrected signed-CGI GREEN require the narrow exact-head CI run.
+- Three complete original handovers and chronological ledger retained append-only. No production code or authorization changes; financial six-RED/witness/signer/physical gates remain NO-GO.
+
 ## 2026-10-25 — QR-WIFI Device Owner QR Wi-Fi framing
 
 - Scope: offline Device Owner QR page only. Not payment, signing, migration, or hardware.
