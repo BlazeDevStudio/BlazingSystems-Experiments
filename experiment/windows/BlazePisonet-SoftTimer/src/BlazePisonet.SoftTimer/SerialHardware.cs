@@ -189,6 +189,9 @@ public sealed class SerialHardware : IDisposable
     // Limited to unclaimed synchronous notifications; cleared on reconnect.
     private readonly HashSet<SerialCoinAcceptance> _unclaimedCoins = new();
     private SerialPort? _port;
+    // Only a verified ExactDevice same-opened-handle session can authorize
+    // monetary claims. Legacy callbacks remain diagnostic-only.
+    private bool _openedHandleVerified;
     private AppConfig? _config;
     private bool _lastCoinActive;
     // After a failed/unknown status sample, wait for a verified idle level
@@ -247,6 +250,8 @@ public sealed class SerialHardware : IDisposable
                         "Opened serial adapter identity cannot be proved; coin capture denied");
                 }
                 _port = candidate;
+                _openedHandleVerified =
+                    config.SerialSelection == SerialSelectionMode.ExactDevice;
                 ConnectedDevice = selected;
                 config.LastKnownComPort = selected.PortName;
                 if (config.SerialSelection == SerialSelectionMode.ExactDevice && string.IsNullOrWhiteSpace(config.PreferredPnpDeviceId))
@@ -402,7 +407,8 @@ public sealed class SerialHardware : IDisposable
         if (accepted is null) return false;
         lock (_gate)
         {
-            return accepted.SessionEpoch == _sessionEpoch &&
+            return _openedHandleVerified &&
+                accepted.SessionEpoch == _sessionEpoch &&
                 ReferenceEquals(accepted.Source, _port) &&
                 _port?.IsOpen == true;
         }
@@ -417,7 +423,8 @@ public sealed class SerialHardware : IDisposable
         {
             if (!_unclaimedCoins.Remove(accepted))
                 return false;
-            return accepted.SessionEpoch == _sessionEpoch &&
+            return _openedHandleVerified &&
+                accepted.SessionEpoch == _sessionEpoch &&
                 ReferenceEquals(accepted.Source, _port) &&
                 _port?.IsOpen == true;
         }
@@ -575,6 +582,7 @@ public sealed class SerialHardware : IDisposable
     private void DisconnectInternal()
     {
         unchecked { _sessionEpoch++; }
+        _openedHandleVerified = false;
         _unclaimedCoins.Clear();
         if (_port is not null)
         {
