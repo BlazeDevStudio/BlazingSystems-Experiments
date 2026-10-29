@@ -509,6 +509,8 @@ class Intercom {
       // Streamless or empty-stream track: attach its video track to a local
       // fallback MediaStream, with explicit ownership across native awaits.
       unawaited(_remoteVideoTrackGate.run<void>(() async {
+        MediaStream? createdFallback;
+        var rendererAttached = false;
         try {
           // A prior callback may be waiting on native stream creation.
           // Recheck ownership when the serialized operation actually starts.
@@ -516,6 +518,7 @@ class Intercom {
           final existing = _remoteFallbackStream;
           final fallback = existing ??
               await createLocalMediaStream('lan-received-video-$id');
+          if (existing == null) createdFallback = fallback;
           if (callId != id || _closing || _remoteHasNativeStream) {
             if (existing == null) await fallback.dispose();
             return;
@@ -535,10 +538,19 @@ class Intercom {
             }
             return;
           }
+          // Never dispose a stream after handing it to the native renderer,
+          // even if a later callback/log operation throws.
+          rendererAttached = true;
           remoteRenderer?.srcObject = fallback;
           unawaited(_log('remote streamless video track attached'));
           onChanged?.call();
         } catch (e) {
+          final abandoned = createdFallback;
+          if (!rendererAttached && abandoned != null &&
+              identical(_remoteFallbackStream, abandoned)) {
+            _remoteFallbackStream = null;
+            try { await abandoned.dispose(); } catch (_) {}
+          }
           unawaited(_log('remote video attachment failed: ${e.runtimeType}'));
         }
       }));
