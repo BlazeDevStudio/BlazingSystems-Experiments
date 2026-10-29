@@ -1,3 +1,9 @@
+## 2026-10-29 — PHX-G ordinary coin fixture + bounded config HMAC (nonproduction)
+
+- Baseline CORE draft #248 `a1f80f305614531a7b3ec8e9815d6e7027076bca`. Focused run #40882029147 SUCCESS; Full run #40882029142 FAILURE isolated to `tests/v060_coin_false_ack.sh` at ordinary coin ACK/quarantine step. Unknown controller policy rightly denied positive coin, so repair only the synthetic fixture, retaining signed denied positive control before explicitly using test admin enable.
+- Bounded controller register/poll response contract uses existing key and rental HMAC helper; authentication covers request nonce/controller ID/complete policy digest/revision/window and signed `DENY`. `config_auth.admission_allowed=false` always; legacy insert remains non-authoritative. Host negative tests are not hardware permission or independent protected witness.
+- Required exact-head focused tests: original PAY-0627 positive/duplicate/failed-store/quarantine, 8 config-auth host cases, existing CORE cold-runtime and committed-receipt regressions and handover freshness. No merges, real coins, keys, flashing, deployment. Full original historical ledger follows unmodified.
+
 ## 2026-10-29 — PHX-CORE cold-runtime mode correction (follow-up)
 
 - Prior commit 9499ea19 retained safe source behavior but inadvertently changed controller.sh Git executable mode 100755→100644. Automatically triggered Full validate #40881538992 failed static executable permission check; its prior focused run #40881539001 succeeded with sh invocation.
