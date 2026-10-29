@@ -10,8 +10,8 @@ import sys
 SOURCE = Path("experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/SerialHardware.cs")
 FAKE = Path("experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/FakeOsAndAppTypes.cs")
 EXPECTED = {
-    SOURCE: "a830311040515a5ee9bf0bd32afc01c2839efc13",
-    FAKE: "8e6cc716c06388668bbf426053da8aa272cd5c47",
+    SOURCE: "ad7e2b101fcadd6f6ccddb8c24b8705752028e9c",
+    FAKE: "3f3b3603f259ac52fde6765b70c2820b68bdb120",
 }
 TARGET = Path("experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/Generated/ActualSerialHardware.cs")
 ANCHOR = "        if (!TryReadCoinActive(cfg, out var active, source, epoch))"
