@@ -1,3 +1,7 @@
+## 2026-10-30 — PHX-CORE-L PAY-0630 fixture correction
+
+- Full run #40942648824 validate 123689919935 passed PAY-0627, PAY-0731, PAY-0732/0733, PAY-0737 then failed step 37 PAY-0630 fixture. Source showed no synthetic provision before first signed coin. Added unprovisioned real CGI DENY control, account SHA/credit/receipt-count invariants, and explicit disposable /tmp-only `bp_controller_set` before original 12-live-receipt loop. Existing voucher, active replay, expiry compaction checks retained. Source/default admission and v1 DENY-only unchanged. New exact-head CI evidence pending. No payment, physical operation, production or merge.
+
 ## 2026-10-30 — PHX-CORE-K PAY-0732/0733 positive fixture recovered
 
 - Existing Full #40911692230 validate 123581561201 passed PAY-0627 and PAY-0731 but failed first command of PAY-0732/0733 source fixture because synthetic vendo-01 was never provisioned. Updated exact real signed CGI fixture to assert unprovisioned request denied and account bytes invariant, then explicitly provision only disposable /tmp controller through actual bp_controller_set helper. Preserved all subsequent pulse replay, ownership, malformed/duplicate account and active-window regressions. No source admission changes, production or protected witness claims. Latest exact-head run awaits inspection.
