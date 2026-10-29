@@ -107,6 +107,7 @@ internal sealed class NativeComInterfaceSession : IDisposable
             // purported independent proof of the open kernel handle.
             var after = platform.EnumeratePresent();
             if (after is null ||
+                after.Count(d => SameId(d.InstanceId, expectedInstanceId)) != 1 ||
                 after.Count(d => SameId(d.InstanceId, expectedInstanceId) &&
                                  SamePath(d.Path, selected.Path)) != 1 ||
                 after.Count(d => SamePath(d.Path, selected.Path)) != 1)
