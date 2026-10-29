@@ -1,8 +1,9 @@
-name: Blaze MCU Studio v0.4.6 workspaces, typed sockets and cross-core gates
+name: Blaze MCU Studio v0.4.7 desktop session and cross-core gates
 on:
   pull_request:
     paths:
-      - 'expiremental/Blaze-MCU-Studio/**'
+      - '**/*MCU*Studio*/**'
+      - '**/*mcu*studio*/**'
       - '.github/workflows/blaze-mcu-studio-preview.yml'
   workflow_dispatch:
 permissions:
@@ -16,9 +17,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Locate MCU Studio regardless of repository directory
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@(git ls-files | Where-Object { $_ -match '(^|/)package\.json$' })
+          $found=@($candidates | Where-Object {
+            try { (Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json).name -eq 'blaze-mcu-studio' } catch { $false }
+          })
+          if ($found.Count -ne 1) { throw "Expected exactly one Blaze MCU Studio package; found $($found.Count). Check migration." }
+          $studioDir=(Split-Path $found[0] -Parent) -replace '\\','/'
+          if (-not $studioDir) { $studioDir='.' }
+          "studio_dir=$studioDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Source directory: $studioDir"
       - name: Unit tests and renderer syntax
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           node --test tests/*.test.cjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -26,7 +41,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Download pinned Arduino CLI
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           New-Item -Force -ItemType Directory -Path BIN | Out-Null
@@ -37,7 +52,7 @@ jobs:
           & ./BIN/arduino-cli.exe version
       - name: Install AVR and compile actual Arduino sketch
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           & ./BIN/arduino-cli.exe core update-index 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-update.log"
@@ -53,7 +68,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile generated structured flowchart firmware
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           node scripts/export-flowchart.cjs "$env:RUNNER_TEMP/generated-sketches"
@@ -62,7 +77,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile real Wire library and PWM/Serial visual firmware
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           node scripts/export-extended.cjs "$env:RUNNER_TEMP/generated-sketches"
@@ -71,7 +86,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile typed variable and analog-threshold firmware on Uno
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           node scripts/export-sensor.cjs "$env:RUNNER_TEMP/generated-sketches"
@@ -80,7 +95,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate generated Blink compilation on Arduino Mega and Nano
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           node scripts/export-avr-targets.cjs "$env:RUNNER_TEMP/generated-sketches"
@@ -91,7 +106,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile actual Uno scalar data-wire visual firmware
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           node scripts/export-data-links.cjs "$env:RUNNER_TEMP/generated-sketches"
@@ -100,7 +115,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build actual portable Windows EXE
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
@@ -113,7 +128,7 @@ jobs:
           $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
       - name: Packaged Windows GUI and IPC runtime smoke
         shell: pwsh
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         run: |
           $ErrorActionPreference='Stop'
           $env:BLAZE_MCU_SMOKE_FILE="$env:RUNNER_TEMP/blaze-mcu-gui-smoke.json"
@@ -125,19 +140,20 @@ jobs:
           if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
           $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
           Get-Content $env:BLAZE_MCU_SMOKE_FILE
-          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
+          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI -or -not $report.sessionRestoreUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
       - name: Archive exact checked-out source
         shell: pwsh
         if: always()
         run: |
-          $items=@('expiremental/Blaze-MCU-Studio/core','expiremental/Blaze-MCU-Studio/renderer','expiremental/Blaze-MCU-Studio/electron','expiremental/Blaze-MCU-Studio/docs','expiremental/Blaze-MCU-Studio/tests','expiremental/Blaze-MCU-Studio/scripts','expiremental/Blaze-MCU-Studio/examples','expiremental/Blaze-MCU-Studio/package.json','expiremental/Blaze-MCU-Studio/README.md','.github/workflows/blaze-mcu-studio-preview.yml')
-          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v046-source.zip" -Force
+          $base='${{ steps.locate.outputs.studio_dir }}'
+          $items=@("$base/core","$base/renderer","$base/electron","$base/docs","$base/tests","$base/scripts","$base/examples","$base/package.json","$base/README.md",".github/workflows/blaze-mcu-studio-preview.yml")
+          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v047-source.zip" -Force
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v046-workspaces-typed-sockets-build-evidence
+          name: blaze-mcu-v047-session-build-evidence
           path: |
-            expiremental/Blaze-MCU-Studio/dist/*.exe
+            ${{ steps.locate.outputs.studio_dir }}/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
             ${{ runner.temp }}/flowchart-compile.log
             ${{ runner.temp }}/wire-pwm-serial-compile.log
@@ -149,7 +165,7 @@ jobs:
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
             ${{ runner.temp }}/blaze-mcu-gui-smoke.json
-            ${{ runner.temp }}/blaze-mcu-v046-source.zip
+            ${{ runner.temp }}/blaze-mcu-v047-source.zip
           if-no-files-found: warn
           retention-days: 14
 
@@ -176,8 +192,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Locate MCU Studio regardless of repository directory
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@(git ls-files | Where-Object { $_ -match '(^|/)package\.json$' })
+          $found=@($candidates | Where-Object {
+            try { (Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json).name -eq 'blaze-mcu-studio' } catch { $false }
+          })
+          if ($found.Count -ne 1) { throw "Expected exactly one Blaze MCU Studio package; found $($found.Count). Check migration." }
+          $studioDir=(Split-Path $found[0] -Parent) -replace '\\','/'
+          if (-not $studioDir) { $studioDir='.' }
+          "studio_dir=$studioDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Source directory: $studioDir"
       - name: Run tested deterministic ESP graph generation
-        working-directory: expiremental/Blaze-MCU-Studio
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
         shell: bash
         run: |
           set -euo pipefail
@@ -209,7 +239,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v044-${{ matrix.family }}-compile-evidence
+          name: blaze-mcu-v047-${{ matrix.family }}-compile-evidence
           path: |
             ${{ runner.temp }}/cli-version.txt
             ${{ runner.temp }}/generated-esp-manifest.txt
