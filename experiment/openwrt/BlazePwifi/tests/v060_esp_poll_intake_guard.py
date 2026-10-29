@@ -42,6 +42,8 @@ uint32_t now_ms=1501,lastPoll=0,lastEdge=0,lastSend=0,configuredApSince=0;
 int wifiFailures=0,maxWifiRetries=6,runCoinPin=27,runRelayPin=26,runLedPin=2;
 uint8_t pendingPulses=0;
 uint16_t runDebounceMs=40,runPulseGroupMs=400;
+// HOST-ONLY legacy positive control; real firmware is compile-time denied.
+bool kCoinAdmissionEnabled=true;
 bool insertMode=true,fsReady=true,pendingReady=false,setupApOn=false;
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true,lastCoin=false;
@@ -132,14 +134,24 @@ int main(){
                          !fsReady&&pendingReady&&!relayOn;
  std::cout<<" flash_save_failure_relay_off="<<flashFailInhibited
           <<" fs_ready="<<fsReady<<" pending_ready="<<pendingReady<<"\n";
- return (blockedPollGuard&&activeEdgeRecorded&&pendingGroupDeferred&&
-         capInhibited&&flashFailInhibited)?0:19;
+  // Phase A: an existing target and simulated edge still MUST NOT journal.
+  now_ms=7200;lastPoll=7200;lastEdge=0;lastSend=7200;
+  pulseFrom=7200;pulseUntil=7280;failNextSave=false;
+  insertMode=true;fsReady=true;pendingReady=false;pendingPulses=0;
+  lastCoin=false;saves=0;polls=0;
+  activeTarget="1234567890123456";pendingTarget="";
+  kCoinAdmissionEnabled=false;applyOutputs();loop();
+  bool phaseALocked=(!relayOn&&pendingPulses==0&&saves==0);
+  std::cout<<" phase_a_journal_denied="<<phaseALocked<<"\n";
+  return (blockedPollGuard&&activeEdgeRecorded&&pendingGroupDeferred&&
+          capInhibited&&flashFailInhibited&&phaseALocked)?0:19;
 }
 """
 
 failed = []
 for chip, path in SOURCES.items():
     sketch = path.read_text()
+    assert "static constexpr bool kCoinAdmissionEnabled=false;" in sketch, "Production Phase A denial missing"
     assert "h.setTimeout(3500)" in sketch, "HTTP timeout contract changed: re-audit"
     loop = source_function(sketch, "loop")
     outputs = source_function(sketch, "applyOutputs")
