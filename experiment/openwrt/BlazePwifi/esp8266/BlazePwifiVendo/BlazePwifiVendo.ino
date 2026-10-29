@@ -326,7 +326,7 @@ void connectSta(){
   WiFi.begin(cfg.ssid,cfg.pass);
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
-  if(WiFi.status()==WL_CONNECTED){wifiFailures=0;String r=post("register");applyRemoteConfig(r);}
+  if(kCoinAdmissionEnabled && WiFi.status()==WL_CONNECTED){wifiFailures=0;String r=post("register");applyRemoteConfig(r);}
 }
 
 bool clearPending(bool committed){
@@ -358,7 +358,7 @@ void loop(){
   }
 
   // Avoid blocking a coin edge or cutting power while a multi-pulse group is still settling.
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 &&
+  if(kCoinAdmissionEnabled && WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 &&
      !(pendingPulses && !pendingReady) &&
      (runCoinActiveLow ? digitalRead(runCoinPin) : !digitalRead(runCoinPin))){
     wifiFailures=0;pollIntakeSuspended=true;applyOutputs();String r=post("poll");pollIntakeSuspended=false;applyRemoteConfig(r);applyOutputs();lastPoll=millis();
