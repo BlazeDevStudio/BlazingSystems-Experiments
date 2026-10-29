@@ -114,6 +114,29 @@ VENDO_CGI="$ROOT/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
 TARGET="$(printf '%s' "$COIN" | sed -n 's/.*"target_nonce":"\([^"]*\)".*/\1/p')"
 VN=aabbccdd
 VSIG="$(bp_vendo_sig_expected coin vendo-02 "$VN" 2 "$TARGET")"
+# PHX-CORE-RECOVERY-20261029-E: a previously unknown controller must NOT
+# authorize a fresh signed paid coin mutation, even with an active window.
+bp_controller_ensure vendo-02
+if bp_controller_paid_allowed vendo-02 coin; then
+  echo 'PHX-CORE-RENTAL-SETUP-INVALID unknown controller allowed coin' >&2
+  exit 2
+fi
+before_denied_lease="$(bp_rental_device_line "$DID" | cut -f3)"
+before_denied_receipts="$(wc -l < "$BP_RENTAL_EVENTS")"
+DENIED="$(printf 'action=coin&id=vendo-02&nonce=%s&pulses=2&target=%s&sig=%s' "$VN" "$TARGET" "$VSIG" | REQUEST_METHOD=POST SERVER_PORT=4455 sh "$VENDO_CGI")"
+printf '%s' "$DENIED" | grep -q '"ok":false'
+printf '%s' "$DENIED" | grep -q 'controller disabled or coin intake disabled'
+[ "$(bp_rental_device_line "$DID" | cut -f3)" = "$before_denied_lease" ]
+[ "$(wc -l < "$BP_RENTAL_EVENTS")" -eq "$before_denied_receipts" ]
+[ "$(cat "$BP_TARGET_DIR/vendo-02.progress")" -eq 0 ]
+echo 'PHX-CORE-RENTAL-DENY-PASS: unprovisioned controller cannot credit'
+# Explicitly enable only this disposable test controller for the existing
+# positive and duplicate-ACK controls. Production heartbeat remains denied.
+bp_controller_set vendo-02 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-02 coin || {
+  echo 'PHX-CORE-RENTAL-SETUP-INVALID fixture admin provisioning failed' >&2
+  exit 2
+}
 V1="$(printf 'action=coin&id=vendo-02&nonce=%s&pulses=2&target=%s&sig=%s' "$VN" "$TARGET" "$VSIG" | REQUEST_METHOD=POST SERVER_PORT=4455 sh "$VENDO_CGI")"
 echo "$V1" | grep -q '"ok":true'
 echo "$V1" | grep -q '"duplicate":false'

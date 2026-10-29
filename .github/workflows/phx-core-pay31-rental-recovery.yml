@@ -1,0 +1,21 @@
+name: PHX-CORE focused rental and signed-CGI recovery
+on:
+  push:
+    branches:
+      - fix/phx-core-pay31-rental-fixture-recovery-20261029
+permissions:
+  contents: read
+jobs:
+  focused-source-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Mandatory complete handover freshness
+        run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
+      - name: Real signed rental CGI negative and positive controls
+        run: sh experiment/openwrt/BlazePwifi/tests/rental.sh
+      - name: Real signed member CGI revocation and committed receipt replay
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_members.sh
