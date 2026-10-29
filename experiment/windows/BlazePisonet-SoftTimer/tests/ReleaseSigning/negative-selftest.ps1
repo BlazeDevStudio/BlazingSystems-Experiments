@@ -59,6 +59,64 @@ try {
       -not $workflow.Contains('github.event.pull_request.head.sha || github.sha')) {
     throw 'Release approval, Unicode gate or literal checkout lost'
   }
+  # Future-version simulation is string-only: no tag, version change, build or publication.
+  # Assert that upload metadata/paths, notes and tag use the SAME VERSION.
+  $future='0.4.1'
+  $template='
+    MustDeny 'actual CI-built unsigned native Setup' {
+      & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
+    } 'lacks trusted embedded Authenticode'
+  }
+  Write-Output 'RELEASE-SIGN: fail-closed negative controls and signing order PASS; no certificate or signed positive claimed'
+} finally {
+  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+}
++'{{ env.VERSION }}'
+  $start=$workflow.IndexOf('      - name: Upload validated release candidates',[StringComparison]::Ordinal)
+  $end=$workflow.IndexOf('      - name: Publish GitHub Release',[StringComparison]::Ordinal)
+  if ($start -lt 0 -or $end -le $start) { throw 'Upload/publisher blocks missing' }
+  $upload=$workflow.Substring($start,$end-$start)
+  $expectedUpload=@(
+    ('name: BlazePisonet-SoftTimer-v'+$template+'-win-x64'),
+    ('release/BlazePisonet-SoftTimer-Setup-v'+$template+'.exe'),
+    ('BlazePisonet-SoftTimer-v'+$template+'-portable-win-x64.zip')
+  )
+  foreach ($entry in $expectedUpload) {
+    if (-not $upload.Contains($entry)) { throw "Upload VERSION template missing: $entry" }
+  }
+  if ($upload.Contains('v0.4.0')) { throw 'Frozen v0.4.0 hardcoding remains in upload block' }
+  $expanded=$upload.Replace($template,$future)
+  foreach ($name in @(
+    'BlazePisonet-SoftTimer-v0.4.1-win-x64',
+    'release/BlazePisonet-SoftTimer-Setup-v0.4.1.exe',
+    'BlazePisonet-SoftTimer-v0.4.1-portable-win-x64.zip'
+  )) {
+    if (-not $expanded.Contains($name)) { throw "Hypothetical future upload not derived: $name" }
+  }
+  if ($expanded.Contains('v0.4.0')) { throw 'Hypothetical future upload uses frozen release version' }
+  $notesTemplate='$env:PROJECT_DIR/RELEASE_NOTES_v$env:VERSION.md'
+  if (($workflow.Split([string[]]@($notesTemplate),[StringSplitOptions]::None).Count - 1) -ne 2) {
+    throw 'Portable and publisher notes must both derive RELEASE_NOTES_vVERSION.md'
+  }
+  if (($workflow.Split([string[]]@('Test-Path -LiteralPath $releaseNotes -PathType Leaf'),[StringSplitOptions]::None).Count - 1) -ne 2) {
+    throw 'Missing-version notes must fail closed in both package and publisher'
+  }
+  $publisher=$workflow.Substring($end)
+  foreach ($contract in @(
+    '$releaseTag="softtimer-v$env:VERSION"',
+    'gh release view $releaseTag',
+    'gh release create $releaseTag',
+    '--notes-file $releaseNotes',
+    "vars.SOFTTIMER_RELEASE_APPROVED == 'true'",
+    "env.VERSION != '0.4.0'"
+  )) {
+    if (-not $publisher.Contains($contract)) { throw "Publisher future-version policy absent: $contract" }
+  }
+  if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
+    throw 'Frozen version was hardcoded into future publication'
+  }
+  Write-Output "RELEASE-PATHS: frozen 0.4.0 unchanged; hypothetical $future upload, notes and tag derivation PASS"
+
   if ($ActualUnsignedSetup) {
     MustDeny 'actual CI-built unsigned native Setup' {
       & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
