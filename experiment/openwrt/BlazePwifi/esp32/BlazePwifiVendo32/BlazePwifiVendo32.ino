@@ -203,6 +203,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 
 void applyRemoteConfig(const String &r){
   (void)r;
+  // config_revision is untrusted until CORE signs a device/request-bound
+  // envelope and an independent protected cold-reboot revision witness agrees.
+  // Never parse/promote config_revision from raw HTTP in this lockdown.
   // PHX-HW-P0: unauthenticated HTTP body MUST NOT grant GPIO/coin authority.
   // Drive OLD relay/LED outputs OFF using OLD polarity. Never rebind here.
   writeLogical(runRelayPin,false,runRelayActiveHigh);
