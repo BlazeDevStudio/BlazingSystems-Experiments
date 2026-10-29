@@ -128,6 +128,55 @@ public final class LeaseSyncAuthBeforeCommitTest {
         }
     }
 
+    @Test public void staleSignedRevisionCannotAlterLeaseOrCoinWindow() throws Exception {
+        try (ServerSocket server = openServer()) {
+            setupPaidLease(server);
+            assertTrue(AndroidRentalPolicyRepository.applyVerified(scoped, 8L,
+                    RentalPolicy.MODE_RENTAL, LeaseClient.inventoryCsv(scoped),
+                    "", "", "fixture-revision-eight", "fixture-signature"));
+            Map<String, ?> beforeLease = leasePrefs();
+            Map<String, ?> beforePolicy = policyPrefs();
+            long remaining = RentalLeaseStore.remainingMs(scoped);
+            long start = SystemClock.elapsedRealtime();
+
+            // Response is genuinely signed by the installed key but policy
+            // revision 7 is older than installed revision 8.
+            assertFalse(syncWithResponse(server, true, false));
+            long elapsed = SystemClock.elapsedRealtime() - start;
+            assertEquals(beforeLease, leasePrefs());
+            assertEquals(beforePolicy, policyPrefs());
+            assertEquals(OLD_UNTIL, RentalLeaseStore.leaseUntilMs(scoped));
+            assertTrue(Math.abs(RentalLeaseStore.remainingMs(scoped)
+                    - Math.max(0L, remaining - elapsed)) < 2000L);
+            assertEquals(0L, LeaseClient.coinWindowRemainingMs());
+            verifyZeroInteractions(alarms);
+        }
+    }
+
+    @Test public void sameRevisionSignedRefreshExtendsLeaseWithoutPolicyRewrite() throws Exception {
+        try (ServerSocket server = openServer()) {
+            setupPaidLease(server);
+            assertTrue(AndroidRentalPolicyRepository.applyVerified(scoped, 7L,
+                    RentalPolicy.MODE_RENTAL, LeaseClient.inventoryCsv(scoped),
+                    "", "", "fixture-revision-seven", "fixture-signature"));
+            Map<String, ?> beforePolicy = policyPrefs();
+
+            assertTrue(syncWithResponse(server, true, false));
+            assertEquals(NEW_UNTIL, RentalLeaseStore.leaseUntilMs(scoped));
+            assertEquals(beforePolicy, policyPrefs());
+            assertTrue(RentalLeaseStore.remainingMs(scoped) > 600000L);
+            verify(alarms, atLeastOnce()).setExactAndAllowWhileIdle(
+                    eq(AlarmManager.ELAPSED_REALTIME_WAKEUP),
+                    anyLong(), any(PendingIntent.class));
+        }
+    }
+
+    private Map<String, ?> policyPrefs() {
+        return new HashMap<String, Object>(
+                scoped.getSharedPreferences("blaze_rental_policy_v04",
+                        Context.MODE_PRIVATE).getAll());
+    }
+
     private static ServerSocket openServer() throws Exception {
         ServerSocket server = new ServerSocket(0, 1,
                 InetAddress.getByName("127.0.0.1"));
