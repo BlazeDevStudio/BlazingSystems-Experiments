@@ -88,6 +88,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _pendingCallPresentation = false;
   bool? _lastNativeMuted;
   bool _compactWindowsVideo = false;
+  // No RTCVideoView can be mounted while native HWND geometry/style changes.
+  bool _windowsVideoTransition = false;
   bool _openingCompactWindow = false;
   bool _deferredCompactRestore = false;
   bool _deferredCompactForceOpen = false;
@@ -373,7 +375,17 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       await wm.windowManager.ensureInitialized();
       _normalWindowWasVisible = await wm.windowManager.isVisible();
       _normalWindowWasMinimized = await wm.windowManager.isMinimized();
-      if (intercom?.callId != session || intercom?.closing == true) return;
+      if (!mounted || intercom?.callId != session ||
+          intercom?.closing == true) return;
+      // Hide every Flutter RTCVideoView BEFORE touching HWND visibility,
+      // geometry or topmost state; a frame swap alone does not guarantee a
+      // native video texture is no longer attached.
+      _windowsVideoTransition = true;
+      setState(() {});
+      await WidgetsBinding.instance.endOfFrame.timeout(
+          const Duration(seconds: 3));
+      if (!mounted || intercom?.callId != session ||
+          intercom?.closing == true) return;
       if (_normalWindowWasMinimized) {
         // Native SW_SHOWNOACTIVATE restores the window without taking focus.
         await _desktopCalls.invokeMethod<bool>('restoreMainInactive');
@@ -384,9 +396,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       _compactWindowsVideo = true;
       if (!mounted) return;
       setState(() {});
-      // The compact video swaps Flutter's texture-owning widget tree. Wait
-      // for its frame to finish before Win32 resizes the shared engine HWND.
-      // Merely calling setState does not guarantee the old view is unmounted.
+      // The transition placeholder remains active until after all Win32
+      // mutations. The compact texture mounts only when this method finishes.
       await WidgetsBinding.instance.endOfFrame.timeout(
           const Duration(seconds: 3));
       if (!mounted || intercom?.callId != session ||
@@ -418,6 +429,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         _deferredCompactForceOpen = false;
         await _restoreCompactVideo(forceOpen: forceOpen);
       }
+      _windowsVideoTransition = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -430,6 +443,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows || !_compactWindowsVideo ||
         _restoringCompactWindow) return;
     _restoringCompactWindow = true;
+    // Neither the compact nor full-size video widget may be mounted while
+    // Win32 restores the old HWND geometry/topmost state.
+    _windowsVideoTransition = true;
     _compactWindowsVideo = false;
     if (mounted) setState(() {});
     try {
@@ -464,6 +480,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       _normalWindowPosition = null;
       _normalWindowSize = null;
       _restoringCompactWindow = false;
+      _windowsVideoTransition = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -2183,7 +2201,12 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   Widget build(BuildContext context) => Theme(
     data: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: settings.accent),
       useMaterial3: true, scaffoldBackgroundColor: const Color(0xfff7f9fd)),
-    child: _compactWindowsVideo
+    child: Platform.isWindows && _windowsVideoTransition
+      // No video textures are mounted while Win32 changes window state.
+      ? const Scaffold(backgroundColor: Color(0xff102b4e),
+          body: Center(child: Text('Adjusting video window…',
+              style: TextStyle(color: Colors.white70))))
+      : _compactWindowsVideo
       ? _compactVideoView()
       : Platform.isAndroid && _androidInPip
         ? _pipVideo()
