@@ -8,6 +8,7 @@ import 'call_transport_gate.dart';
 import 'windows_remote_input.dart';
 import 'lan_reconnect_policy.dart';
 import 'call_peer_watchdog.dart';
+import 'serial_async_gate.dart';
 import 'protocol.dart';
 
 // Exactly one active call, shared for voice and video. No STUN/TURN or internet.
@@ -124,6 +125,9 @@ class Intercom {
 
   MediaStream? _displayStream;
   MediaStream? _remoteFallbackStream;
+  // Native track callbacks and teardown must never mutate a fallback stream
+  // concurrently; Flutter's WebRTC callbacks may arrive back-to-back.
+  final SerialAsyncGate _remoteVideoTrackGate = SerialAsyncGate();
   bool _remoteHasNativeStream = false;
   bool _remoteVideoFrameObserved = false;
   List<MediaDeviceInfo> availableCameras = <MediaDeviceInfo>[];
@@ -504,8 +508,11 @@ class Intercom {
       }
       // Streamless or empty-stream track: attach its video track to a local
       // fallback MediaStream, with explicit ownership across native awaits.
-      unawaited(() async {
+      unawaited(_remoteVideoTrackGate.run<void>(() async {
         try {
+          // A prior callback may be waiting on native stream creation.
+          // Recheck ownership when the serialized operation actually starts.
+          if (callId != id || _closing || _remoteHasNativeStream) return;
           final existing = _remoteFallbackStream;
           final fallback = existing ??
               await createLocalMediaStream('lan-received-video-$id');
@@ -514,7 +521,12 @@ class Intercom {
             return;
           }
           if (existing == null) _remoteFallbackStream = fallback;
-          await fallback.addTrack(event.track);
+          // Some Windows WebRTC builds deliver the same onTrack event twice.
+          // Adding the identical native track repeatedly is not safe.
+          if (!fallback.getVideoTracks().any(
+              (track) => track.id == event.track.id)) {
+            await fallback.addTrack(event.track);
+          }
           if (callId != id || _closing || _remoteHasNativeStream) {
             if (existing == null &&
                 identical(_remoteFallbackStream, fallback)) {
@@ -529,7 +541,7 @@ class Intercom {
         } catch (e) {
           unawaited(_log('remote video attachment failed: ${e.runtimeType}'));
         }
-      }());
+      }));
     };
     pc.onConnectionState = (state) {
       if (callId != id || _closing) return;
@@ -830,8 +842,6 @@ class Intercom {
     availableCameras = <MediaDeviceInfo>[];
     final local = localRenderer;
     final remote = remoteRenderer;
-    final fallback = _remoteFallbackStream;
-    _remoteFallbackStream = null;
     _remoteHasNativeStream = false;
     _remoteVideoFrameObserved = false;
     _lastOutgoingMove = null;
@@ -864,6 +874,12 @@ class Intercom {
         catch (e) { await _log('display track stop error: $e'); }
       }
     }
+    // A callback that began before callId was invalidated can still be inside
+    // native addTrack(). Drain that queue BEFORE closing the peer or disposing
+    // the fallback stream. New callbacks are rejected by _closing/callId.
+    await _remoteVideoTrackGate.run<void>(() async {});
+    final fallback = _remoteFallbackStream;
+    _remoteFallbackStream = null;
     try {
       if (pc != null) {
         // Disconnect callbacks first; don't allow an onConnectionState recursion.
