@@ -56,6 +56,7 @@ def main():
         raise ValueError("window record unterminated")
     chunks = [
         "// TEST ONLY: exact source methods; never edit this generated file.\n",
+        "#nullable enable\n",
         "using System;\nusing System.Collections.Generic;\n",
         "using System.Security.Cryptography;\nusing System.Net.Http;\n",
         "using System.Threading.Tasks;\nusing System.Text.Json;\n",
