@@ -9,12 +9,13 @@ import sys
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parents[1] / "src" / "BlazePisonet.SoftTimer"
 EXPECTED = {
-    "AppController.cs": "dd9e02ef6ca28f7ec48cef2c61489fcbf783b30d",
-    "BlazePwifiClient.cs": "44f2866e6c351fe763f7e4aa2663c26fb563263a",
+    "AppController.cs": "f315f18826c9cb6f20bfe03dfaff8fe16ccb2b7d",
+    "BlazePwifiClient.cs": "afa20d80f7d57ea206d4ca7051ea1011d4de31c9",
 }
 METHODS = (
     ("AppController.cs", "private async Task HandleCoinPulse(SerialCoinAcceptance accepted)", "AppController"),
-    ("BlazePwifiClient.cs", "internal CoinWindowSnapshot? CaptureCoinWindow()", "BlazePwifiClient"),
+    ("BlazePwifiClient.cs", "internal CoinWindowSnapshot? CaptureCoinWindow(SerialCoinAcceptance? accepted = null)", "BlazePwifiClient"),
+    ("BlazePwifiClient.cs", "private bool ApplyCoinWindowPollResult(", "BlazePwifiClient"),
     ("BlazePwifiClient.cs", "private bool CoinWindowStillOwned(CoinWindowSnapshot captured)", "BlazePwifiClient"),
     ("BlazePwifiClient.cs", "public Task<bool> ForwardCoinAsync(int pulses = 1)", "BlazePwifiClient"),
     ("BlazePwifiClient.cs", "internal async Task<bool> ForwardCoinAsync(CoinWindowSnapshot captured, int pulses = 1)", "BlazePwifiClient"),
