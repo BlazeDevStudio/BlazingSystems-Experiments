@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - '.github/workflows/blazerental-auth-instrumentation.yml'
+      - '.github/scripts/run-blazerental-native-auth.sh'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/LeaseClient.java'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/src/com/blazesystems/blazerental/LeaseSyncAuthBeforeCommitTest.java'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build.gradle'
@@ -114,57 +115,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
           emulator-boot-timeout: 300
-          script: |
-            set -euo pipefail
-            mkdir -p rental-auth-results
-            sdk="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
-            test "$sdk" = 27
-            printf 'Emulator API level: %s\n' "$sdk" | tee rental-auth-results/emulator.txt
-            # The emulator action was launched using Java 17; legacy AGP 3.1.3
-            # must use the original JDK 8 for connected instrumentation.
-            export JAVA_HOME="$JAVA_HOME_8_X64"
-            export PATH="$JAVA_HOME/bin:$PATH"
-            java -version 2>&1 | tee rental-auth-results/instrumentation-java.txt
-            java -version 2>&1 | grep -Eq 'version "1\.8\.'
-            (
-              cd "$TARGET"
-              ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
-                "/opt/gradle-${GRADLE_VERSION}/bin/gradle" --no-daemon --stacktrace \
-                "-Pandroid.testInstrumentationRunnerArguments.class=${TEST_CLASS}" \
-                connectedAospDebugAndroidTest
-            ) 2>&1 | tee rental-auth-results/connected.log
-            python3 - <<'PY'
-            import glob, os, sys, xml.etree.ElementTree as ET
-            root = os.environ["TARGET"]
-            reports = sorted(set(
-                glob.glob(os.path.join(root, "build", "outputs", "androidTest-results", "connected", "**", "*.xml"), recursive=True)
-                + glob.glob(os.path.join(root, "build", "outputs", "androidTest-results", "connected", "*.xml"))
-            ))
-            expected = {
-                "invalidCoinSignatureCannotAlterPaidLease",
-                "responseSuppliedSigningKeyCannotAuthorizeStatus",
-                "legitimateSignedStatusStillExtendsLease",
-            }
-            tests = {}
-            for path in reports:
-                xml = ET.parse(path).getroot()
-                for case in xml.iter("testcase"):
-                    if case.get("classname", "").endswith("LeaseSyncAuthBeforeCommitTest"):
-                        tests[case.get("name")] = case
-            print("JUnit XML reports:", reports)
-            print("Observed native rental security tests:", sorted(tests))
-            if set(tests) != expected:
-                sys.exit("FAIL: exact three native security cases not executed")
-            for name, case in tests.items():
-                if list(case.findall("failure")) or list(case.findall("error")) or list(case.findall("skipped")):
-                    sys.exit("FAIL: native security test failed/skipped: " + name)
-            with open("rental-auth-results/results.txt", "w") as out:
-                out.write("EMULATOR API 27 / ALL THREE SECURITY TESTS PASSED\n")
-                for name in sorted(expected):
-                    out.write("PASS " + name + "\n")
-            print("EMULATOR API 27 / 3/3 native tests PASS")
-            PY
-
+          script: bash .github/scripts/run-blazerental-native-auth.sh
       - name: Save exact emulator logs and JUnit reports, including failures
         if: always()
         shell: bash
