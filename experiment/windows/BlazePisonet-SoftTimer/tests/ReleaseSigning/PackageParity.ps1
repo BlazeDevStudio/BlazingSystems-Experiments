@@ -76,7 +76,7 @@ function Check-Portable([string]$bundle,[string]$portable,[string]$zipPath,[stri
       $path=$entry.FullName
       if (-not $path -or $path.StartsWith('/') -or $path.Contains('\') -or
           $path.Contains(':') -or $path.StartsWith('./') -or
-          ($path.Split('/') | Where-Object { $_ -eq '..' }).Count -gt 0) {
+          @($path.Split('/') | Where-Object { $_ -eq '..' }).Count -gt 0) {
         Deny "unsafe archive member path: $path"
       }
       if (-not $entry.Name) {
