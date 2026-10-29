@@ -46,6 +46,29 @@ send_coin() {
     proof="$(printf 'synthetic-vendo-secret|coin|vendo-01|%s|1|%s|synthetic-vendo-secret' "$n" "$TARGET" | sha256sum | cut -d' ' -f1)"
     printf 'action=coin&id=vendo-01&nonce=%s&pulses=1&target=%s&sig=%s' "$n" "$TARGET" "$proof" | sh "$VENDO"
 }
+# Default-deny positive control before lab-only controller provisioning.
+before_account="$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)"
+before_credit="$(credit)"
+before_receipts="$(coin_count)"
+denied="$(send_coin deadbeefdeadbeef)"
+printf '%s' "$denied" | grep -Fq '"ok":false'
+printf '%s' "$denied" | grep -Fq 'controller disabled or coin intake disabled'
+[ "$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)" = "$before_account" ]
+[ "$(credit)" = "$before_credit" ]
+[ "$(coin_count)" = "$before_receipts" ]
+REQUEST_METHOD=GET
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
+bp_controller_ensure vendo-01
+if bp_controller_paid_allowed vendo-01 coin; then
+  echo 'PAY-0630 invalid fixture: unknown controller admission allowed' >&2; exit 2
+fi
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-01 coin || {
+  echo 'PAY-0630 invalid fixture: disposable provision failed' >&2; exit 2
+}
+echo 'PAY-0630 UNPROVISIONED-DENY-PASS: immutable paid account and receipts'
 i=1
 while [ "$i" -le 12 ]; do
     nonce="$(printf '%016x' "$i")"
