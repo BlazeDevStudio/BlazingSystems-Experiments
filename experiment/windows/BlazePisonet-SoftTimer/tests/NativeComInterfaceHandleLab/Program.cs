@@ -29,15 +29,17 @@ try
         using var api = new FakeNativeComPlatform(ifaceA);
         Require(NativeComInterfaceSession.TryOpenExact(A, api, out var session, out var failure),
             "same-device positive rejected: " + failure);
-        using (session)
+        var openedSession = session ??
+            throw new InvalidOperationException("positive opened session is null");
+        using (openedSession)
         {
-            Require(session is not null && session.DeviceInstanceId == A &&
-                session.InterfacePath == PathA, "original interface ownership changed");
+            Require(openedSession.DeviceInstanceId == A &&
+                openedSession.InterfacePath == PathA, "original interface ownership changed");
             Require(api.Opens == 1 && api.OpenedPath == PathA,
                 "opened COM alias or wrong path rather than exact interface");
-            Require(session.TryReadSignal(ModemSignal.Cts, out var cts) && cts,
+            Require(openedSession.TryReadSignal(ModemSignal.Cts, out var cts) && cts,
                 "CTS value not sampled from originally opened handle");
-            Require(session.TryReadSignal(ModemSignal.Dsr, out var dsr) && !dsr,
+            Require(openedSession.TryReadSignal(ModemSignal.Dsr, out var dsr) && !dsr,
                 "DSR negative positive-control failed");
             Require(api.ReadsOnOriginalHandle == 3, "expected initial+two status reads through same handle");
             Require(api.ReadsOnOtherHandle == 0, "read through a new or nonmatching handle");
