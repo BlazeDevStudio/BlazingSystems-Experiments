@@ -1,0 +1,23 @@
+name: PHX-CORE cold runtime controller quarantine focused regression
+on:
+  push:
+    branches:
+      - fix/phx-core-pay31-cold-runtime-quarantine-20261029
+permissions:
+  contents: read
+jobs:
+  cold-runtime-focused:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Handover freshness and historical continuity
+        run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
+      - name: Signed member CGI including two existing cold-runtime-loss regressions
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_members.sh
+      - name: Controller policy and real rental CGI compatibility
+        run: |
+          sh experiment/openwrt/BlazePwifi/tests/controllers.sh
+          sh experiment/openwrt/BlazePwifi/tests/rental.sh
