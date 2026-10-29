@@ -158,6 +158,8 @@ public static class SerialDiscovery
 public sealed class SerialHardware : IDisposable
 {
     private readonly object _gate = new();
+    // Only accessed under _gate. Invalidates callbacks from retired sessions.
+    private long _sessionEpoch;
     private SerialPort? _port;
     private AppConfig? _config;
     private bool _lastCoinActive;
@@ -292,13 +294,22 @@ public sealed class SerialHardware : IDisposable
     // Unlike GetSignal (a read-only UI API returning false on failure), paid
     // pulse capture needs a tri-state result: valid high/low OR unknown.
     // Unknown, detached or throwing modem status must never become an edge.
-    private bool TryReadCoinActive(AppConfig cfg, out bool active)
+    private bool TryReadCoinActive(
+        AppConfig cfg, out bool active,
+        SerialPort? expectedSource = null, long? expectedEpoch = null)
     {
         active = false;
         lock (_gate)
         {
             var port = _port;
             if (port?.IsOpen != true) return false;
+            // Never read a replacement port on behalf of an earlier callback.
+            // Connect's initial level sample intentionally has no owner argument.
+            if (expectedSource is not null &&
+                (expectedEpoch != _sessionEpoch ||
+                 !ReferenceEquals(expectedSource, port) ||
+                 !ReferenceEquals(cfg, _config)))
+                return false;
             try
             {
                 bool raw;
@@ -327,73 +338,116 @@ public sealed class SerialHardware : IDisposable
         }
     }
 
+    // Must hold _gate. Managed callback ownership is NOT opened OS HANDLE proof.
+    private bool IsCurrentCallbackLocked(
+        object? sender, SerialPort source, AppConfig cfg, long epoch)
+    {
+        if (epoch != _sessionEpoch ||
+            !ReferenceEquals(sender, source) ||
+            !ReferenceEquals(source, _port) ||
+            !ReferenceEquals(cfg, _config))
+            return false;
+
+        try { return source.IsOpen; }
+        catch { return false; }
+    }
+
     private void OnPinChanged(object? sender, SerialPinChangedEventArgs e)
     {
-        var cfg = _config;
-        if (cfg is null) return;
-        // A callback can arrive after unplug/dispose or from an old COM session.
-        // Fail closed; it must not be interpreted as an active-low assertion.
-        // A deferred callback from an old COM session must not modify the
-        // NEW session's in-progress pulse or verified-idle arm state.
-        if (!ReferenceEquals(sender, _port)) return;
-        // A callback from the current port that is now closed is different:
-        // its own in-progress pulse must be abandoned until verified idle.
-        if (_port?.IsOpen != true)
+        AppConfig cfg;
+        SerialPort source;
+        long epoch;
+
+        lock (_gate)
         {
-            _pulseStarted = null;
-            _requireVerifiedIdle = true;
-            return;
+            if (_config is not { } currentCfg ||
+                _port is not { } currentPort ||
+                !ReferenceEquals(sender, currentPort))
+                return;
+
+            cfg = currentCfg;
+            source = currentPort;
+            epoch = _sessionEpoch;
+
+            if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
+            {
+                // Only the currently owned closed port can disarm its pulse.
+                _pulseStarted = null;
+                _requireVerifiedIdle = true;
+                return;
+            }
         }
+
+        // Subscribers may synchronously reconnect; no lock during notification.
         SignalChanged?.Invoke();
-        // A SignalChanged subscriber can synchronously reconnect and replace
-        // the port/config while this old callback is on the stack. Never
-        // sample a replacement session using the old callback's settings.
-        // This protects reentrant listeners; parallel reconnects still need
-        // independently reviewed session-atomic capture and paid identity.
-        if (!ReferenceEquals(sender, _port) || !ReferenceEquals(cfg, _config) || _port?.IsOpen != true)
-            return;
+
+        lock (_gate)
+        {
+            if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
+                return;
+        }
 
         if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
         {
-            // RI is event-only in System.IO.Ports; unrelated pin notifications
-            // must not enter the level-read failure/disarm path. RI acceptance
-            // remains UNQUALIFIED for unattended monetary input.
-            if (e.EventType == SerialPinChange.Ring)
+            if (e.EventType != SerialPinChange.Ring) return;
+            lock (_gate)
+            {
+                if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
+                    return;
+
+                // Preserve legacy RI diagnostic only; it has no measured width.
+                // Physical RI coin admission is NOT approved by this change.
                 AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
+            }
             return;
         }
 
-        if (!TryReadCoinActive(cfg, out var active))
+        // Exact #219 test-only instrumentation anchor: hook after CTS read.
+        if (!TryReadCoinActive(cfg, out var active, source, epoch))
         {
-            // Do not treat false from an exception as a physical pin level.
-            _pulseStarted = null;
-            _lastCoinActive = false;
-            _requireVerifiedIdle = true;
+            lock (_gate)
+            {
+                if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
+                    return; // Old A failure must not disarm new B's valid pulse.
+                _pulseStarted = null;
+                _lastCoinActive = false;
+                _requireVerifiedIdle = true;
+            }
             return;
         }
 
-        if (_requireVerifiedIdle)
+        // Commit a sample only to the same opened managed session. Preserve
+        // one lock boundary through pulse-state mutation and event initiation.
+        lock (_gate)
         {
-            // The fault could have happened mid-pulse. Never resume counting
-            // an edge whose true start/end may have been lost.
-            _pulseStarted = null;
+            if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
+                return;
+
+            if (_requireVerifiedIdle)
+            {
+                _pulseStarted = null;
+                _lastCoinActive = active;
+                if (!active) _requireVerifiedIdle = false;
+                return;
+            }
+
+            if (active == _lastCoinActive) return;
             _lastCoinActive = active;
-            if (!active) _requireVerifiedIdle = false;
-            return;
-        }
 
-        if (active == _lastCoinActive) return;
-        _lastCoinActive = active;
+            if (active)
+            {
+                _pulseStarted = DateTimeOffset.UtcNow;
+            }
+            else if (_pulseStarted is { } started)
+            {
+                var width = (int)Math.Max(
+                    0, (DateTimeOffset.UtcNow - started).TotalMilliseconds);
+                _pulseStarted = null;
 
-        if (active)
-        {
-            _pulseStarted = DateTimeOffset.UtcNow;
-        }
-        else if (_pulseStarted is { } started)
-        {
-            var width = (int)Math.Max(0, (DateTimeOffset.UtcNow - started).TotalMilliseconds);
-            _pulseStarted = null;
-            AcceptCoinIfDebounced(cfg, width);
+                // Review synchronous subscriber lock-order before integration.
+                // Async target/session/receipt dispatch is separately unresolved.
+                AcceptCoinIfDebounced(cfg, width);
+            }
         }
     }
 
@@ -422,6 +476,7 @@ public sealed class SerialHardware : IDisposable
 
     private void DisconnectInternal()
     {
+        unchecked { _sessionEpoch++; }
         if (_port is not null)
         {
             try { _port.PinChanged -= OnPinChanged; } catch { }
