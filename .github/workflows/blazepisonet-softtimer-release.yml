@@ -64,6 +64,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 
+      - name: RELEASE-PARITY reject altered installed and archive members in isolated fixtures
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/PackageParity.ps1" -Mode Selftest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: RELEASE-SIGN test fail-closed negative controls
         shell: pwsh
         run: |
@@ -286,6 +292,11 @@ jobs:
           if (-not (Test-Path $app)) { throw 'Installed SoftTimer EXE missing' }
           if (-not (Test-Path $watchdog)) { throw 'Installed watchdog EXE missing' }
 
+          # Compare the real installed executables with the exact signed or
+          # unsigned bundle bytes BEFORE running the installed application.
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/PackageParity.ps1" -Mode Installed -BundlePath 'out/bundle' -InstallPath $install
+          if ($LASTEXITCODE -ne 0) { throw 'Native installed executable bytes differ from staged package' }
+
           $verify=Start-Process -FilePath $app -ArgumentList @('--verify-system-integration') -Wait -PassThru
           if ($verify.ExitCode -ne 0) { throw "SoftTimer native system-integration verification failed with exit code $($verify.ExitCode)" }
 
@@ -332,6 +343,15 @@ jobs:
           Get-Item $setup,$zip,out/bundle/BlazePisonet.SoftTimer.exe,out/bundle/BlazePisonet.SoftTimer.Watchdog.exe | Format-Table Name,Length
           Get-Content SHA256SUMS
 
+
+      - name: RELEASE-PARITY check staged executable, exact portable ZIP membership and final SHA256SUMS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          $zip="BlazePisonet-SoftTimer-v$env:VERSION-portable-win-x64.zip"
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/PackageParity.ps1" -Mode Portable -BundlePath 'out/bundle' -PortablePath portable -ZipPath $zip -SetupPath $setup -SumsPath SHA256SUMS
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: RELEASE-SIGN verify final signed packages before upload
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
