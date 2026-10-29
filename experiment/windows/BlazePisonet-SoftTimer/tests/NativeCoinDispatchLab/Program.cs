@@ -133,6 +133,49 @@ try
             "MISSING_ACK_RED: ok:true without target_nonce counted");
         Console.WriteLine("NATIVE_ASYNC_DISPATCH_MISSING_ACK_DENIED_PASS");
     }
+    // Repeated unchanged polls MUST preserve the window revision so an
+    // already-sent original ACK is not lost solely due to normal polling.
+    {
+        var (_, _, client, _) = Make(A);
+        var snapshot = client.CaptureCoinWindow(new SerialCoinAcceptance()) ??
+            throw new InvalidOperationException("original event scope missing");
+        Require(snapshot.SerialSessionEpoch == 1 && snapshot.SerialEventSequence == 7,
+            "serial event not represented in immutable snapshot");
+        Require(client.SimulatePoll(client.WindowVersion, true, A),
+            "same-target poll rejected");
+        Require(client.WindowVersion == snapshot.Version,
+            "SAME_TARGET_POLL_RED: unchanged polling invalidated original event");
+        Require(await client.ForwardCoinAsync(snapshot, 1),
+            "same-target original ACK rejected after harmless poll");
+        Console.WriteLine("NATIVE_ASYNC_DISPATCH_UNCHANGED_POLL_ACK_CONTROL_PASS");
+    }
+
+    // Retrying the SAME event must reuse its original v1 request nonce,
+    // which the existing CGI folds into its duplicate-credit event key.
+    {
+        var (_, _, client, _) = Make(A);
+        var snapshot = client.CaptureCoinWindow(new SerialCoinAcceptance()) ??
+            throw new InvalidOperationException("retry event scope missing");
+        Require(await client.ForwardCoinAsync(snapshot, 1), "original A ACK missing");
+        Require(await client.ForwardCoinAsync(snapshot, 1), "same event retry denied");
+        Require(client.RequestNonces.Count == 2 &&
+                client.RequestNonces[0] == client.RequestNonces[1] &&
+                client.RequestNonces[0] == snapshot.EventNonce,
+                "RETRY_NONCE_RED: one event minted two different financial event nonces");
+        Require(client.SimulatePoll(client.WindowVersion, true, B),
+            "retarget poll not accepted");
+        Require(!await client.ForwardCoinAsync(snapshot, 1),
+            "STALE_RETRY_RED: original A retried into new B window");
+        Console.WriteLine("NATIVE_ASYNC_DISPATCH_STABLE_EVENT_NONCE_RETRY_PASS");
+    }
+    // Legacy entry point has no accepted serial event owner: fail closed.
+    {
+        var (_, _, client, _) = Make(A);
+        Require(!await client.ForwardCoinAsync(1) && client.ForwardedTargets.Count == 0,
+            "UNOWNED_LEGACY_EVENT_RED: no-event forward dispatched money");
+        Console.WriteLine("NATIVE_ASYNC_DISPATCH_UNOWNED_LEGACY_DENIED_PASS");
+    }
+
     Console.WriteLine("NATIVE_ASYNC_DISPATCH_SOURCE_GREEN: original 4/4 corrected; controller/nonce and malformed-ACK cases passed");
     return 0;
 }
@@ -167,6 +210,7 @@ namespace BlazePisonet.SoftTimer
     public sealed class SerialCoinAcceptance
     {
         public long SessionEpoch { get; } = 1;
+        public long EventSequence { get; } = 7;
         public FakeDevice Device { get; } = new("COM9");
     }
     public sealed class FakeSerial
@@ -199,6 +243,7 @@ namespace BlazePisonet.SoftTimer
     {
         public readonly List<string> ForwardedTargets = new();
         public readonly List<string> ForwardedControllers = new();
+        public readonly List<string> ForwardedRequestNonces = new();
         public readonly List<string> AckResults = new();
         public string? AckTargetOverride;
         public bool RemoveAckTarget;
@@ -217,6 +262,7 @@ namespace BlazePisonet.SoftTimer
                 throw new InvalidOperationException("not actual coin form fields");
             ForwardedTargets.Add(fields["target"]);
             ForwardedControllers.Add(fields["id"]);
+            ForwardedRequestNonces.Add(fields["nonce"]);
             string echo = AckTargetOverride ?? fields["target"];
             if (!RemoveAckTarget) AckResults.Add(echo);
             var response = RemoveAckTarget
@@ -240,6 +286,10 @@ namespace BlazePisonet.SoftTimer
         private readonly HttpClient _http;
         public IReadOnlyList<string> ForwardedTargets => _handler.ForwardedTargets;
         public IReadOnlyList<string> AckResults => _handler.AckResults;
+        public IReadOnlyList<string> RequestNonces => _handler.ForwardedRequestNonces;
+        public long WindowVersion => _coinWindowVersion;
+        public bool SimulatePoll(long originalVersion, bool active, string target) =>
+            ApplyCoinWindowPollResult(originalVersion, active, target);
         public string? AckTargetOverride { set => _handler.AckTargetOverride = value; }
         public bool RemoveAckTarget { set => _handler.RemoveAckTarget = value; }
         public string TargetNonce
