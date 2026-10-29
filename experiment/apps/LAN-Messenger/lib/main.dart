@@ -19,6 +19,7 @@ import 'src/protocol.dart';
 import 'src/inline_preview.dart';
 import 'src/remote_control_surface.dart';
 import 'src/call_presentation_gate.dart';
+import 'src/serial_async_gate.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -83,6 +84,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   bool _inForeground = true;
   bool _androidInPip = false;
   bool _incomingUsesExternalSurface = false;
+  final CallSurfaceEpoch _desktopCallSurfaceEpoch = CallSurfaceEpoch();
+  final SerialAsyncGate _desktopPopupGate = SerialAsyncGate();
   String? _activeCallUiId;
   String? _observedCallId;
   bool _pendingCallPresentation = false;
@@ -241,24 +244,37 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<bool> _showDesktopIncoming(Peer peer, bool video) async {
     if (!Platform.isWindows) return false;
-    try {
-      return await _desktopCalls.invokeMethod<bool>('incoming', {
-        'callId': intercom?.callId ?? '',
-        'caller': peer.name,
-        'video': video,
-      }) ?? false;
-    } catch (_) {
-      // The tray remains usable if Windows refuses native popup creation.
-      return false;
-    }
+    final session = intercom?.callId;
+    if (session == null) return false;
+    return _desktopPopupGate.run<bool>(() async {
+      // Native channel operations execute in requested order. A queued show
+      // from a replaced offer must never inherit the next call's identity.
+      if (!mounted || !_incomingDialogOpen || !_incomingUsesExternalSurface ||
+          intercom?.callId != session || _incomingPeer?.id != peer.id) {
+        return false;
+      }
+      try {
+        return await _desktopCalls.invokeMethod<bool>('incoming', {
+          'callId': session,
+          'caller': peer.name,
+          'video': video,
+        }) ?? false;
+      } catch (_) {
+        // The tray remains usable if Windows refuses native popup creation.
+        return false;
+      }
+    });
   }
 
   Future<void> _dismissDesktopCall() async {
     if (!Platform.isWindows) return;
-    try { await _desktopCalls.invokeMethod<void>('dismiss'); } catch (_) {}
+    await _desktopPopupGate.run<void>(() async {
+      try { await _desktopCalls.invokeMethod<void>('dismiss'); } catch (_) {}
+    });
   }
 
-  Future<void> _showOngoingCall(Peer peer, String id, bool video) async {
+  Future<void> _showOngoingCall(Peer peer, String id, bool video,
+      {int? desktopEpoch}) async {
     if (intercom?.callId != id || intercom?.talkingTo?.id != peer.id ||
         intercom?.connecting == true) return;
     final args = {
@@ -272,19 +288,30 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
       catch (_) {}
     } else if (Platform.isWindows) {
       final background = await _isDesktopBackground();
+      if ((desktopEpoch != null &&
+              !_desktopCallSurfaceEpoch.isCurrent(desktopEpoch)) ||
+          intercom?.callId != id || intercom?.closing == true) return;
       if (!background && !_compactWindowsVideo) {
         await _dismissDesktopCall();
         return; // The user is already viewing the in-app call controls.
       }
       if (video && background) {
         await _dismissDesktopCall();
-        // The call may have ended while the native notification was closing.
-        if (intercom?.callId == id && intercom?.closing != true) {
+        // The call may have ended, or window focus may have changed, while
+        // the native notification was closing.
+        if (intercom?.callId == id && intercom?.closing != true &&
+            (desktopEpoch == null ||
+                _desktopCallSurfaceEpoch.isCurrent(desktopEpoch))) {
           await _openCompactVideoWindow();
         }
       } else if (background) {
-        try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
-        catch (_) {}
+        await _desktopPopupGate.run<void>(() async {
+          if (intercom?.callId != id || intercom?.closing == true ||
+              (desktopEpoch != null &&
+                  !_desktopCallSurfaceEpoch.isCurrent(desktopEpoch))) return;
+          try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
+          catch (_) {}
+        });
       }
     }
   }
@@ -301,33 +328,42 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   /// the call is already ringing. An ordinary visible Messenger window must
   /// never acquire a second floating Answer/Decline window.
   Future<void> _syncDesktopCallSurface() async {
-    if (!Platform.isWindows || !mounted || _compactWindowsVideo ||
-        _openingCompactWindow || _restoringCompactWindow) return;
+    if (!Platform.isWindows || !mounted) return;
+    // Window callbacks may arrive faster than MethodChannel can answer.
+    // An older minimize/focus callback must not override a newer restore.
+    final epoch = _desktopCallSurfaceEpoch.begin();
+    if (_compactWindowsVideo || _openingCompactWindow ||
+        _restoringCompactWindow || _windowsVideoTransition) return;
     final active = intercom;
     final id = active?.callId;
     final peer = _incomingPeer;
     final background = await _isDesktopBackground();
-    if (!mounted || id == null || intercom?.callId != id) return;
+    if (!mounted || !_desktopCallSurfaceEpoch.isCurrent(epoch) ||
+        _compactWindowsVideo || _openingCompactWindow ||
+        _restoringCompactWindow || _windowsVideoTransition ||
+        id == null || intercom?.callId != id ||
+        intercom?.closing == true) return;
     if (_incomingDialogOpen && peer != null) {
       final float = CallPresentationGate.externalIncoming(
           appForeground: !background, awaitingDecision: true);
       _incomingUsesExternalSurface = float;
       _callMinimized = float;
       if (float) {
-        _nativeIncomingAvailable =
-            await _showDesktopIncoming(peer, _incomingVideo);
-        if (!_incomingDialogOpen || intercom?.callId != id) {
-          await _dismissDesktopCall();
-          return;
-        }
+        final available = await _showDesktopIncoming(peer, _incomingVideo);
+        if (!mounted || !_desktopCallSurfaceEpoch.isCurrent(epoch) ||
+            !_incomingDialogOpen || intercom?.callId != id) return;
+        _nativeIncomingAvailable = available;
       } else {
         _nativeIncomingAvailable = false;
         await _dismissDesktopCall();
       }
-      if (mounted) setState(() {});
+      if (mounted && _desktopCallSurfaceEpoch.isCurrent(epoch)) {
+        setState(() {});
+      }
     } else if (active?.talkingTo != null && !active!.connecting) {
       if (background) {
-        await _showOngoingCall(active.talkingTo!, id, active.video);
+        await _showOngoingCall(active.talkingTo!, id, active.video,
+            desktopEpoch: epoch);
       } else {
         await _dismissDesktopCall();
       }
@@ -371,6 +407,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (session == null || intercom?.closing == true ||
         intercom?.connecting == true) return;
     _openingCompactWindow = true;
+    _desktopCallSurfaceEpoch.invalidate();
     try {
       await wm.windowManager.ensureInitialized();
       _normalWindowWasVisible = await wm.windowManager.isVisible();
@@ -443,6 +480,7 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!Platform.isWindows || !_compactWindowsVideo ||
         _restoringCompactWindow) return;
     _restoringCompactWindow = true;
+    _desktopCallSurfaceEpoch.invalidate();
     // Neither the compact nor full-size video widget may be mounted while
     // Win32 restores the old HWND geometry/topmost state.
     _windowsVideoTransition = true;
@@ -544,6 +582,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
   }
 
   Future<void> _endCallPresentation() async {
+    // Prevent an old native visibility query from reviving a ended call toast.
+    _desktopCallSurfaceEpoch.invalidate();
     if (Platform.isAndroid) {
       try { await _notifications.invokeMethod<void>('dismissCall'); }
       catch (_) {}
