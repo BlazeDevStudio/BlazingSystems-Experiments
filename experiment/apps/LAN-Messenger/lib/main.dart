@@ -322,7 +322,8 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
     if (!mounted || !_desktopCallSurfaceEpoch.isCurrent(epoch) ||
         _compactWindowsVideo || _openingCompactWindow ||
         _restoringCompactWindow || _windowsVideoTransition ||
-        id == null || intercom?.callId != id) return;
+        id == null || intercom?.callId != id ||
+        intercom?.closing == true) return;
     if (_incomingDialogOpen && peer != null) {
       final float = CallPresentationGate.externalIncoming(
           appForeground: !background, awaitingDecision: true);
