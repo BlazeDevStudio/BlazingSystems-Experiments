@@ -53,6 +53,8 @@ class LanNode {
   Timer? _ticker;
   final Map<String, Peer> peers = {};
   final Set<String> _unreachablePeers = {};
+  final Set<String> _peerIntroductionsPending = {};
+  static const int maxConcurrentPeerIntroductions = 4;
   final Map<String, _ReceiveState> _incoming = {};
   final Set<String> _pendingOfferIds = {};
   final SerialAsyncGate _completionGate = SerialAsyncGate();
@@ -99,6 +101,35 @@ class LanNode {
         host: old.host, port: old.port, seen: DateTime.now());
     if (wasUnreachable) onPeersChanged?.call();
   }
+  /// Complete one-way UDP discovery using the existing authenticated HTTP
+  /// ping. The receiving node can introduce its identity to a sender that
+  /// never received the reverse UDP multicast or unicast packet.
+  ///
+  /// Only already-parsed, pinned discovery peers are eligible; limit parallel
+  /// first-contact connections so unsolicited LAN announcements cannot create
+  /// an unbounded burst of outbound TCP attempts.
+  Future<bool> introduceDiscoveredPeer(Peer peer) async {
+    if (_server == null || peers[peer.id]?.key != peer.key ||
+        peers[peer.id]?.host != peer.host ||
+        _peerIntroductionsPending.contains(peer.id) ||
+        _peerIntroductionsPending.length >= maxConcurrentPeerIntroductions) {
+      return false;
+    }
+    _peerIntroductionsPending.add(peer.id);
+    try {
+      final reply = await _post(peer, '/v1/event',
+          utf8.encode(jsonEncode({'kind': 'ping'})),
+          timeout: const Duration(seconds: 3));
+      return reply['ok'] == true;
+    } catch (_) {
+      // UDP discovery remains available even when the remote TCP port is
+      // blocked by an asymmetric emulator/router/firewall path.
+      return false;
+    } finally {
+      _peerIntroductionsPending.remove(peer.id);
+    }
+  }
+
   Future<void> _checkPeerReachability() async {
     if (_checkingPeers) return;
     _checkingPeers = true;
@@ -236,6 +267,9 @@ class LanNode {
                 identity.displayName, identity.publicKeyB64, _server!.port)),
                 packet.address, packet.port);
           } catch (_) {}
+          // If the sender cannot hear our reverse UDP packets, an encrypted
+          // first-contact ping lets it learn us from the authenticated request.
+          unawaited(introduceDiscoveredPeer(peer));
         }
       }
     } catch (_) { /* Untrusted malformed multicast is ignored. */ }
@@ -647,6 +681,7 @@ class LanNode {
     _progressPulse?.cancel();
     _progressPending.clear();
     _pendingOfferIds.clear();
+    _peerIntroductionsPending.clear();
     _udp?.close();
     await _server?.close(force: true);
     _http.close(force: true);
