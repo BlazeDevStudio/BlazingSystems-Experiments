@@ -1,6 +1,6 @@
 {
   "name": "blaze-mcu-studio",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": true,
   "description": "Blaze Systems offline-first microcontroller visual development studio",
   "author": "Blaze Systems",
@@ -20,8 +20,29 @@
     "productName": "Blaze MCU Studio",
     "artifactName": "Blaze-MCU-Studio-${version}-Windows-${arch}.${ext}",
     "asar": true,
-    "files": ["package.json", "electron/**/*", "core/**/*", "renderer/**/*", "docs/**/*", "README.md"],
-    "extraResources": [{"from":"BIN","to":"bin","filter":["*.exe"]}],
-    "win": {"target": ["portable"], "executableName": "Blaze MCU Studio", "signAndEditExecutable": false}
+    "files": [
+      "package.json",
+      "electron/**/*",
+      "core/**/*",
+      "renderer/**/*",
+      "docs/**/*",
+      "README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "BIN",
+        "to": "bin",
+        "filter": [
+          "*.exe"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "executableName": "Blaze MCU Studio",
+      "signAndEditExecutable": false
+    }
   }
 }
