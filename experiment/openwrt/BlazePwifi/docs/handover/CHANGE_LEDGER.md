@@ -1,3 +1,7 @@
+## 2026-10-30 — PHX-CORE-K PAY-0732/0733 positive fixture recovered
+
+- Existing Full #40911692230 validate 123581561201 passed PAY-0627 and PAY-0731 but failed first command of PAY-0732/0733 source fixture because synthetic vendo-01 was never provisioned. Updated exact real signed CGI fixture to assert unprovisioned request denied and account bytes invariant, then explicitly provision only disposable /tmp controller through actual bp_controller_set helper. Preserved all subsequent pulse replay, ownership, malformed/duplicate account and active-window regressions. No source admission changes, production or protected witness claims. Latest exact-head run awaits inspection.
+
 ## 2026-10-30 — PHX-CORE-J focused workflow coverage
 
 - Isolated PR #252 branch workflow now explicitly executes actual signed PAY-0731 duplicate receipt / paid writer lock fixture, nine host response-auth cases (including unbound owner/kind negative demonstration), prior PAY-0627, v0.4 controller and member compatibility. Commit chain follows recovery-I d1e71a8. Admission remains DENY-only; validation outcome must be read from new exact-head CI. No merge/release/physical payment.
