@@ -184,6 +184,11 @@ public final class LeaseClient {
                         ? response.optLong("policy_revision", 0L)
                         : Math.max(0L, AndroidRentalPolicyRepository.revision(context) + 1L);
 
+                // Reject authenticated rollback before touching paid lease, coin window,
+                // UI state, admin verifier, update metadata or scheduled alarms.
+                long currentRevision = AndroidRentalPolicyRepository.revision(context);
+                if (revision < currentRevision) return false;
+
                 String acceptedCanonical = legacyCanonical;
                 String acceptedSignature = policySignature;
                 boolean fullPolicyVerified = false;
@@ -227,24 +232,38 @@ public final class LeaseClient {
                         AndroidRentalPolicyRepository.parseCsv(hidden),
                         AndroidRentalPolicyRepository.parseCsv(""));
 
+                // A repeated revision may refresh the authenticated lease, but must
+                // not silently rewrite the already accepted launcher policy.
+                boolean newRevision = revision > currentRevision;
+                if (!newRevision) {
+                    RentalPolicy accepted = AndroidRentalPolicyRepository.load(context);
+                    if (!accepted.getLauncherMode().equals(mode)
+                            || !accepted.getAllowedPackages().equals(
+                                    AndroidRentalPolicyRepository.parseCsv(effectiveAllowed))
+                            || !accepted.getHiddenPackages().equals(
+                                    AndroidRentalPolicyRepository.parseCsv(hidden))) {
+                        return false;
+                    }
+                }
+
                 // Both independent signatures and the installed identity/key are verified.
                 RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
                 recordCoinWindow(serverNow, coinExpires, coinVendo,
                         receivedPulses, receivedCents);
 
-                AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
+                if (newRevision) AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
                         effectiveAllowed, hidden, "", acceptedCanonical, acceptedSignature);
-                if (fullPolicyVerified) {
+                if (newRevision && fullPolicyVerified) {
                     RentalUiPolicy.applyVerified(context, timerMode, timerUserToggle,
                             quickControls, notificationsEnabled, gestureType,
                             gestureValue, offlineGrace);
                 }
-                if (salt.length() > 0 && hash.length() > 0) {
+                if (newRevision && salt.length() > 0 && hash.length() > 0) {
                     RentalLeaseStore.recordAdminVerifier(context, salt, hash, rounds);
                 }
 
                 JSONObject update = response.optJSONObject("update");
-                if (update != null && update.optBoolean("available", false)) {
+                if (newRevision && update != null && update.optBoolean("available", false)) {
                     BlazeRentalUpdateManager.recordAvailable(context,
                             update.optString("version", ""),
                             update.optInt("version_code", 0),
