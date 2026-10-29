@@ -20,7 +20,12 @@ internal sealed record CoinWindowSnapshot(
     string TargetNonce,
     string VendoUrl,
     string VendoKey,
-    long Version);
+    long Version,
+    // One stable request nonce for the exact original event; never regenerate
+    // on a retry while this in-memory snapshot survives.
+    string EventNonce,
+    long SerialSessionEpoch,
+    long SerialEventSequence);
 
 public sealed class BlazePwifiClient : IDisposable
 {
@@ -148,15 +153,8 @@ public sealed class BlazePwifiClient : IDisposable
             string newTarget = root.TryGetProperty("target_nonce", out var tn) &&
                 tn.ValueKind == JsonValueKind.String
                     ? tn.GetString() ?? string.Empty : string.Empty;
-            lock (_coinWindowGate)
-            {
-                // Old HTTP poll results cannot reopen a window after Stop or
-                // update/reconnect. Each response creates a new window version.
-                if (requestedVersion != _coinWindowVersion) return;
-                _coinWindowVersion++;
-                _insertWindow = newWindow;
-                _targetNonce = newTarget;
-            }
+            if (!ApplyCoinWindowPollResult(requestedVersion, newWindow, newTarget))
+                return;
 
             var status = newWindow ? "BlazePwifi connected · coin window active" : "BlazePwifi connected";
             if (_config.BlazePwifiMemberAuthorityEnabled
@@ -178,9 +176,29 @@ public sealed class BlazePwifiClient : IDisposable
         finally { Interlocked.Exchange(ref _busy, 0); }
     }
 
+    // A repeated poll of the SAME window does not invalidate a request
+    // already in flight. Replacing/revoking the window increments its epoch.
+    private bool ApplyCoinWindowPollResult(
+        long requestedVersion, bool newWindow, string newTarget)
+    {
+        lock (_coinWindowGate)
+        {
+            if (requestedVersion != _coinWindowVersion)
+                return false; // stale poll after Stop/update/reconnect
+            if (_insertWindow != newWindow ||
+                !string.Equals(_targetNonce, newTarget, StringComparison.Ordinal))
+            {
+                _coinWindowVersion++;
+                _insertWindow = newWindow;
+                _targetNonce = newTarget;
+            }
+            return true;
+        }
+    }
+
     // Capture ONCE before an upstream await. A changed target, controller,
     // policy or window generation can never be silently substituted.
-    internal CoinWindowSnapshot? CaptureCoinWindow()
+    internal CoinWindowSnapshot? CaptureCoinWindow(SerialCoinAcceptance? accepted = null)
     {
         lock (_coinWindowGate)
         {
@@ -195,7 +213,10 @@ public sealed class BlazePwifiClient : IDisposable
                 return null;
             return new CoinWindowSnapshot(
                 cfg, id, _targetNonce, cfg.BlazePwifiVendoUrl,
-                cfg.BlazePwifiVendoKey, _coinWindowVersion);
+                cfg.BlazePwifiVendoKey, _coinWindowVersion,
+                Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant(),
+                accepted?.SessionEpoch ?? 0,
+                accepted?.EventSequence ?? 0);
         }
     }
 
@@ -220,8 +241,9 @@ public sealed class BlazePwifiClient : IDisposable
     // not be used to rediscover a target after an unrelated await.
     public Task<bool> ForwardCoinAsync(int pulses = 1)
     {
-        var snapshot = CaptureCoinWindow();
-        return snapshot is null ? Task.FromResult(false) : ForwardCoinAsync(snapshot, pulses);
+        // Do not dispatch money from an unattributed legacy entry point.
+        // A paid serial event MUST carry the immutable acceptance snapshot.
+        return Task.FromResult(false);
     }
 
     internal async Task<bool> ForwardCoinAsync(CoinWindowSnapshot captured, int pulses = 1)
@@ -229,16 +251,15 @@ public sealed class BlazePwifiClient : IDisposable
         if (captured is null || !CoinWindowStillOwned(captured)) return false;
         try
         {
-            var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
             var sig = Signature(captured.VendoKey, "coin", captured.ControllerId,
-                nonce, Math.Clamp(pulses, 1, 20), captured.TargetNonce);
+                captured.EventNonce, Math.Clamp(pulses, 1, 20), captured.TargetNonce);
             // The actual legacy v1 form fields are action/id/nonce/pulses/
             // target/sig. All values come from the ORIGINAL window, not _config.
             var form = new Dictionary<string, string>
             {
                 ["action"] = "coin",
                 ["id"] = captured.ControllerId,
-                ["nonce"] = nonce,
+                ["nonce"] = captured.EventNonce,
                 ["pulses"] = Math.Clamp(pulses, 1, 20).ToString(),
                 ["target"] = captured.TargetNonce,
                 ["sig"] = sig
