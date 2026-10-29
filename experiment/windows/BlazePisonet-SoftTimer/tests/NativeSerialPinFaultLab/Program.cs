@@ -347,6 +347,9 @@ using (var sut = new SerialHardware()) {
         throw new Exception("Fake COM mapping did not change at Open");
     if (connectedToSubstitutedAdapter && sut.ConnectedDevice?.PnpDeviceId != openPinnedPnp)
         throw new Exception("Unexpected descriptor: stale WMI selection was not retained");
+    if (!connectedToSubstitutedAdapter &&
+        (!opened.WasDisposed || opened.PinSubscriberCount != 0))
+        throw new Exception("Swapped HANDLE candidate leaked resources or PinChanged subscriber");
     // TEST ONLY: a substituted physical adapter must never be allowed to
     // manufacture a coin callback merely because COM9 opened successfully.
     // This is synthetic CTS, not a real coin or paid ledger operation.
@@ -358,13 +361,26 @@ using (var sut = new SerialHardware()) {
         opened.Raise(SerialPinChange.CtsChanged);
     }
 }
+var rejectedSwapped = SerialPort.LastCreated ??
+    throw new Exception("Swapped Open candidate not created");
+if (rejectedSwapped.WasDisposed != true || rejectedSwapped.PinSubscriberCount != 0)
+    throw new Exception("Swapped device failed-open cleanup broken");
 SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
 bool connectedToStableAdapter;
+int stableExactOpenedHandleCoins = 0;
 using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => stableExactOpenedHandleCoins++;
     connectedToStableAdapter = sut.Connect(openConfig);
     var opened = SerialPort.LastCreated ?? throw new Exception("Missing stable COM9");
     if (opened.OpenedPhysicalPnp != openPinnedPnp)
         throw new Exception("Fake stable COM mapping invalid");
+    if (connectedToStableAdapter) {
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(55);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
 }
 SerialPort.PhysicalPnpAtOpen = null;
 System.Management.ManagementObjectSearcher.FakeDevices =
@@ -400,6 +416,11 @@ using (var sut = new SerialHardware()) {
         opened.Raise(SerialPinChange.CtsChanged);
     }
 }
+var rejectedUnknownCts = SerialPort.LastCreated ??
+    throw new Exception("Unknown CTS candidate not created");
+if (rejectedUnknownCts.WasDisposed != true ||
+    rejectedUnknownCts.PinSubscriberCount != 0)
+    throw new Exception("Unverified CTS candidate leaked resources");
 // PHX-L-APPS UTC05 TEST ONLY: the event-only RI path must also be coin-
 // inhibited when a successful COM Open has NO opened-handle identity proof.
 // The existing CTS negative does not exercise the Ring-specific path.
@@ -471,6 +492,7 @@ System.Management.ManagementObjectSearcher.FakeDevices =
 SerialPort.PhysicalPnpAtOpen = null;
 
 var cases = new (string Name, int Actual, int Expected)[] {
+    ("exact_stable_opened_handle_positive_coin", stableExactOpenedHandleCoins, 1),
     ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_must_not_emit_coin_pulse", unverifiableHandlePulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_ring_must_not_emit_coin_pulse", unknownHandleRingPulseAccepted, 0),
