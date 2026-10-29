@@ -17,9 +17,25 @@ void main() {
     expect(block, contains('await _restoreCompactVideo(forceOpen: forceOpen)'));
     expect(block, isNot(contains('await wm.windowManager.setSkipTaskbar(true)')));
   });
-  test('Windows compact call presentation rechecks live session after awaiting toast', () {
+  test('Windows compact presentation rechecks original session and epoch after toast', () {
     final app = File('lib/main.dart').readAsStringSync();
-    expect(app, contains('if (intercom?.callId == id && intercom?.closing != true)'));
+    final begin = app.indexOf('Future<void> _showOngoingCall(');
+    final end = app.indexOf('Future<bool> _isDesktopBackground()', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(begin));
+    final body = app.substring(begin, end);
+    final dismissed = body.indexOf('await _dismissDesktopCall();',
+        body.indexOf('if (video && background)'));
+    final recheck = body.indexOf('intercom?.callId == id', dismissed);
+    final closeGuard = body.indexOf('intercom?.closing != true', recheck);
+    final epochGuard = body.indexOf('_desktopCallSurfaceEpoch.isCurrent(desktopEpoch)',
+        closeGuard);
+    final compact = body.indexOf('await _openCompactVideoWindow();', recheck);
+    expect(dismissed, greaterThanOrEqualTo(0));
+    expect(recheck, greaterThan(dismissed));
+    expect(closeGuard, greaterThan(recheck));
+    expect(epochGuard, greaterThan(closeGuard));
+    expect(compact, greaterThan(epochGuard));
   });
   test('Windows compact texture frame completes before native window mutations', () {
     final app = File('lib/main.dart').readAsStringSync();
