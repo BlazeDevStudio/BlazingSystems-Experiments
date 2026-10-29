@@ -99,9 +99,24 @@ jobs:
       - name: Build with warnings as errors
         shell: pwsh
         run: |
-          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --no-restore -warnaserror
+          $ErrorActionPreference='Stop'
+          $source=(git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror
+          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+) { throw 'Exact Git source required for compiled version' }
+          $versionArgs=@(
+            "-p:Version=$env:VERSION",
+            "-p:FileVersion=$($env:VERSION).0",
+            "-p:AssemblyVersion=$($env:VERSION).0",
+            "-p:InformationalVersion=$env:VERSION+$source",
+            '-p:IncludeSourceRevisionInInformationalVersion=false'
+          )
+          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: PAY-0719 compiled SoftTimer V2-required protocol no-downgrade (no network)
@@ -138,6 +153,27 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           New-Item -ItemType Directory -Force out/app,out/watchdog,out/bundle,portable,release | Out-Null
+          $source=(git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}
+          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/app @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/watchdog @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Copy-Item out/app/BlazePisonet.SoftTimer.exe out/bundle/ -Force
+          Copy-Item out/watchdog/BlazePisonet.SoftTimer.Watchdog.exe out/bundle/ -Force
+          if (-not (Test-Path out/bundle/BlazePisonet.SoftTimer.exe)) { throw 'SoftTimer EXE missing' }
+          if (-not (Test-Path out/bundle/BlazePisonet.SoftTimer.Watchdog.exe)) { throw 'Watchdog EXE missing' }
+
+
+) { throw 'Exact Git source required for compiled version' }
+          $versionArgs=@(
+            "-p:Version=$env:VERSION",
+            "-p:FileVersion=$($env:VERSION).0",
+            "-p:AssemblyVersion=$($env:VERSION).0",
+            "-p:InformationalVersion=$env:VERSION+$source",
+            '-p:IncludeSourceRevisionInInformationalVersion=false'
+          )
 
           dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/app
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -183,6 +219,13 @@ jobs:
           if (-not $makensis) { throw 'makensis.exe was not found after NSIS installation' }
           "NSIS_EXE=$makensis" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: RELEASE-VERSION compile isolated future 0.4.1 native metadata probe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/Version-MetadataProbe.ps1" -CurrentVersion "$env:VERSION" -FutureVersion '0.4.1'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build native Setup EXE
         shell: pwsh
         run: |
@@ -190,7 +233,7 @@ jobs:
           New-Item -ItemType Directory -Force release | Out-Null
           Push-Location "$env:PROJECT_DIR/installer"
           try {
-            & "$env:NSIS_EXE" /V3 "BlazePisonet-SoftTimer.nsi"
+            & "$env:NSIS_EXE" "/DSOFTTIMER_VERSION=$env:VERSION" /V3 "BlazePisonet-SoftTimer.nsi"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
