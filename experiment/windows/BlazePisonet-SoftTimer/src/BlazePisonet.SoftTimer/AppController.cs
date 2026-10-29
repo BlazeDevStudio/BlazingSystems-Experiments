@@ -187,7 +187,7 @@ public sealed class AppController : IDisposable
         var sourceConfig = Config;
         if (!sourceConfig.Enabled || !_serial.IsCoinSessionCurrent(accepted)) return;
         var secondsPerCoin = sourceConfig.SecondsPerCoin;
-        var originalWindow = _blazePwifi.CaptureCoinWindow();
+        var originalWindow = _blazePwifi.CaptureCoinWindow(accepted);
         if (MemberReconciliationPending)
         {
             HardwareStatus = "Coin ignored · member transaction reconciliation pending";
