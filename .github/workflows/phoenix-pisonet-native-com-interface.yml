@@ -1,0 +1,64 @@
+name: PHX PISONET native COM interface owned-HANDLE prototype (test only)
+run-name: PISONET native GUID_DEVINTERFACE_COMPORT source-linked lab at ${{ github.sha }}
+on:
+  push:
+    branches:
+      - phoenix/pisonet-native-com-interface-20261030
+permissions:
+  contents: read
+concurrency:
+  group: phx-pisonet-owned-handle-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  win32-native:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Real SetupAPI + same-owned-handle C# test; no device open or money
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab='experiment/windows/BlazePisonet-SoftTimer/tests/NativeComInterfaceHandleLab/NativeComInterfaceHandleLab.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile -- --invalid-setup
+          if ($LASTEXITCODE -ne 3) { Write-Error "INCONCLUSIVE: invalid setup sentinel mismatch"; exit 3 }
+          dotnet run --project $lab -c Release --no-build --no-launch-profile
+          if ($LASTEXITCODE -ne 0) { Write-Error "NATIVE_COM_INTERFACE_NOT_GREEN: $LASTEXITCODE"; exit 1 }
+          Write-Host 'NATIVE_SETUPAPI_OWNED_HANDLE_SOURCE_GREEN_ONLY'
+      - name: Preserve #219 V4/V5 original CTS and #221 failed-open gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          python experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/prepare_guarded_copy.py
+          if ($LASTEXITCODE -ne 0) { Write-Error "INCONCLUSIVE: original CTS source hash mismatch"; exit 3 }
+          $base='experiment/windows/BlazePisonet-SoftTimer/tests/'
+          dotnet run --project "$base/NativeSerialReconnectGuard/NativeSerialReconnectGuard.csproj" -c Release --no-launch-profile
+          if ($LASTEXITCODE -ne 0) { Write-Error "CTS_V4_V5_REGRESSION"; exit 1 }
+          dotnet run --project "$base/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj" -c Release --no-launch-profile -- --open-failure-safety-gate
+          if ($LASTEXITCODE -ne 0) { Write-Error "FAILED_OPEN_REGRESSION"; exit 1 }
+      - name: Preserve original immutable ownership and #216 attribution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $base='experiment/windows/BlazePisonet-SoftTimer/tests/'
+          dotnet run --project "$base/NativeCoinEventOwnershipGuard/NativeCoinEventOwnershipGuard.csproj" -c Release --no-launch-profile
+          if ($LASTEXITCODE -ne 0) { Write-Error "IMMUTABLE_EVENT_REGRESSION"; exit 1 }
+          python "$base/NativeCoinDispatchLab/extract_source.py"
+          if ($LASTEXITCODE -ne 0) { Write-Error "INCONCLUSIVE: async source hash"; exit 3 }
+          dotnet run --project "$base/NativeCoinDispatchLab/NativeCoinDispatchLab.csproj" -c Release --no-launch-profile
+          if ($LASTEXITCODE -ne 0) { Write-Error "ASYNC_ATTRIBUTION_REGRESSION"; exit 1 }
+      - name: Compile production Windows SoftTimer source, no release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet build 'experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj' -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
