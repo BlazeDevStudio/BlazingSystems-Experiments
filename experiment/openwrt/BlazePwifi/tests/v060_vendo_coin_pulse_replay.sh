@@ -38,6 +38,26 @@ send_coin() {
 }
 credit() { awk -F '\t' '$1=="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {print $2}' "$BP_STATE/accounts.tsv"; }
 events() { awk -F '\t' '$1=="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {print $9}' "$BP_STATE/accounts.tsv"; }
+# Verify the real signed CGI rejects an unknown/unprovisioned controller
+# without changing even one byte of the account. Enable only this /tmp lab.
+pre_sha="$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)"
+unprovisioned="$(send_coin deadbeefdeadbeef 2)"
+printf '%s' "$unprovisioned" | grep -Fq '"ok":false'
+printf '%s' "$unprovisioned" | grep -Fq 'controller disabled or coin intake disabled'
+[ "$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)" = "$pre_sha" ]
+REQUEST_METHOD=GET
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
+bp_controller_ensure vendo-01
+if bp_controller_paid_allowed vendo-01 coin; then
+  echo 'PAY-0732 invalid fixture: default-deny bypassed' >&2; exit 2
+fi
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-01 coin || {
+  echo 'PAY-0732 invalid fixture: explicit disposable provision failed' >&2; exit 2
+}
+echo 'PAY-0732 UNPROVISIONED-DENY-PASS: account bytes preserved'
 orig="$(send_coin 0102030405060708 2)"
 printf '%s' "$orig" | grep -Fq '"duplicate":false'
 [ "$(credit)" = 300 ] && printf '%s' "$(events)" | grep -Fq '!2'
