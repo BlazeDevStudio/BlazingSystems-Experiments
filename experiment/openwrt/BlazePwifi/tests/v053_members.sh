@@ -30,6 +30,10 @@ export SERVER_PORT=4455 REMOTE_ADDR=10.0.0.50
 . "$BP_AUTH_LIB"
 . "$BP_MEMBER_LIB"
 bp_member_init
+. "$BP_CONTROLLER_LIB"
+# Existing signed controls use an explicitly admin-provisioned controller.
+bp_controller_ensure softtimer-01
+bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
 
 bp_member_lock
 bp_member_create alice "Alice Member" 'alpha123' test >/dev/null
