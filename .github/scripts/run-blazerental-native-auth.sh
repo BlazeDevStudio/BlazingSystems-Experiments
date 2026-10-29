@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs only the three PHX-RENTAL source-linked security regressions in a
+# Runs only the five PHX-RENTAL source-linked security regressions in a
 # disposable Android API 27 emulator; invoked explicitly by Bash because
 # android-emulator-runner calls the script through /bin/sh.
 set -euo pipefail
@@ -39,6 +39,8 @@ expected = {
     "invalidCoinSignatureCannotAlterPaidLease",
     "responseSuppliedSigningKeyCannotAuthorizeStatus",
     "legitimateSignedStatusStillExtendsLease",
+    "staleSignedRevisionCannotAlterLeaseOrCoinWindow",
+    "sameRevisionSignedRefreshExtendsLeaseWithoutPolicyRewrite",
 }
 tests = {}
 for path in reports:
@@ -53,14 +55,14 @@ for path in reports:
 print("JUnit XML reports:", reports)
 print("Observed native rental security tests:", sorted(tests))
 if set(tests) != expected:
-    sys.exit("FAIL: exact three native security cases not executed")
+    sys.exit("FAIL: exact five native security cases not executed")
 for name, case in tests.items():
     if case.findall("failure") or case.findall("error") or case.findall("skipped"):
         sys.exit("FAIL: native security test failed/skipped: " + name)
 
 with open("rental-auth-results/results.txt", "w") as out:
-    out.write("EMULATOR API 27 / ALL THREE SECURITY TESTS PASSED\n")
+    out.write("EMULATOR API 27 / ALL FIVE SECURITY TESTS PASSED\n")
     for name in sorted(expected):
         out.write("PASS " + name + "\n")
-print("EMULATOR API 27 / 3/3 native tests PASS")
+print("EMULATOR API 27 / 5/5 native tests PASS")
 PY
