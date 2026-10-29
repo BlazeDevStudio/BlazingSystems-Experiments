@@ -423,4 +423,82 @@ if ! printf '%s' "$phx_ctrl_replay" | grep -Fq '"ok":true' ||
 fi
 echo 'PHX-PAY31-TWOLOCK-REPLAY-GREEN: prior committed event replay stays idempotent'
 
+# PHX-PAY31-COLD-RUNTIME-20261029 — derived from the actual independent
+# #198 signed CGI BP_RUN-loss regression. This narrow source fix exercises
+# one repaired failure domain only; valid BP_STATE snapshot rollback still
+# needs an authenticated independent witness. No physical reboot is claimed.
+phx_cold_fresh() {
+  slot="$1"
+  export BP_STATE="$T/cold-stable-$slot" BP_RUN="$T/cold-volatile-$slot"
+  mkdir -p "$BP_STATE" "$BP_RUN" "$BP_STATE/targets"
+  unset BP_MEMBERS BP_MEMBER_EVENTS BP_MEMBER_REVISION
+  . "$BP_LIB"
+  . "$PHX_REAL_MEMBER"
+  . "$BP_CONTROLLER_LIB"
+  bp_member_init
+  bp_controller_ensure softtimer-01
+  bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+  bp_controller_set softtimer-01 0 0 1 1 -1 -1 -1 1 1 1 40 400 6
+}
+for phx_cold_action in member_bank coin; do
+  phx_cold_fresh "$phx_cold_action"
+  phx_cold_nonce=10000000000007a0
+  phx_cold_amount=30
+  if [ "$phx_cold_action" = member_bank ]; then
+    bp_member_create coldmember 'Cold runtime signed bank' 'cold-pass-123' fixture >/dev/null
+    phx_cold_event=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa71
+    phx_cold_hash="$(printf '%s' "$(bp_member_line coldmember)" | cut -f6)"
+    phx_cold_proof="$(proof_for "$phx_cold_hash" "$phx_cold_nonce")"
+    phx_cold_target="coldmember:$phx_cold_event:$phx_cold_proof"
+    phx_cold_before="$(printf '%s' "$(bp_member_line coldmember)" | cut -f8)"
+    phx_cold_receipts_before="$(wc -l < "$BP_MEMBER_EVENTS")"
+  else
+    phx_cold_nonce=10000000000007a1
+    phx_cold_amount=1
+    phx_cold_target=1122334455667788
+    printf '%s\t100\t0\t0\t0\t0\taa:bb:cc:dd:ee:ff\t10.0.0.50\t\n' \
+      aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa > "$BP_ACCOUNTS"
+    printf '%s\taa:bb:cc:dd:ee:ff\t%s\t%s\tsofttimer-01\thotspot\n' \
+      aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "$phx_cold_target" "$(($(date +%s)+600))" > "$BP_TARGET_DIR/softtimer-01.tsv"
+    phx_cold_before="$(sha256sum "$BP_ACCOUNTS" | cut -d' ' -f1)"
+  fi
+  # Fault the ACTUAL controller's post-rename durable-sync call while the
+  # locally enabled controller row is visible. The pre-write stable marker
+  # is independently synced by the implementation before this mock fault.
+  bp_durable_sync() { return 74; }
+  phx_cold_rc=0
+  bp_controller_set softtimer-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6 || phx_cold_rc=$?
+  . "$BP_LIB"
+  if [ "$phx_cold_rc" -ne 8 ] ||
+     [ "$(printf '%s' "$(bp_controller_line softtimer-01)" | cut -f2)" != 1 ] ||
+     [ ! -f "$BP_RUN/controller-update-unsettled" ] ||
+     [ ! -f "$BP_STATE/controller-update-unsettled" ]; then
+    echo "PHX-PAY31-COLD-SETUP-INVALID: no post-rename ambiguous controller state for $phx_cold_action" >&2
+    exit 2
+  fi
+  # A vanished tmpfs runtime directory MUST NOT erase the stable local halt.
+  rm -rf "$BP_RUN"
+  mkdir -p "$BP_RUN"
+  phx_cold_reply="$(call_vendo "$phx_cold_action" "$phx_cold_nonce" "$phx_cold_amount" "$phx_cold_target")"
+  if ! printf '%s' "$phx_cold_reply" | grep -Fq '"ok":false' ||
+     ! bp_controller_update_unsettled; then
+    echo "PHX-PAY31-COLD-RED: $phx_cold_action accepted after BP_RUN loss: $phx_cold_reply" >&2
+    exit 1
+  fi
+  if [ "$phx_cold_action" = member_bank ]; then
+    [ "$(printf '%s' "$(bp_member_line coldmember)" | cut -f8)" = "$phx_cold_before" ] &&
+    [ "$(wc -l < "$BP_MEMBER_EVENTS")" -eq "$phx_cold_receipts_before" ] || {
+      echo 'PHX-PAY31-COLD-RED: denied bank altered paid balance/receipts' >&2
+      exit 1
+    }
+  else
+    [ "$(sha256sum "$BP_ACCOUNTS" | cut -d' ' -f1)" = "$phx_cold_before" ] || {
+      echo 'PHX-PAY31-COLD-RED: denied coin altered account balance/receipts' >&2
+      exit 1
+    }
+  fi
+  echo "PHX-L-CORE CONTROLLER_COLD_RUNTIME_PASS: $phx_cold_action denied after simulated BP_RUN loss"
+done
+# Retain the original suite's all-positive status only after this regression.
+
 echo 'BlazePwifi centralized SoftTimer member checks passed'

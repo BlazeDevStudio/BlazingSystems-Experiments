@@ -55,14 +55,17 @@ bp_controller_admission_unlock() {
   flock -u 4 2>/dev/null || true
   exec 4>&-
 }
-# Runtime-only admission barrier. Created BEFORE an admin controller write
-# while the shared fd4 admission lock is held. If registry replacement or its
-# durability sync fails, the barrier remains and subsequent signed NEW paid
-# admissions fail closed even if the new enabled row is locally visible.
-# BP_RUN is volatile: this is NOT independent antirollback/powercycle proof.
+# Two fail-closed markers in DIFFERENT local failure domains. The BP_RUN
+# marker serializes live failures, but BP_RUN is volatile and may disappear.
+# The BP_STATE marker survives a *runtime-directory-only* loss after an
+# ambiguous controller write. Neither marker is an independent protected
+# monotonic witness: rollback of BP_STATE and controller registry together
+# remains a hard P0 NO-GO. Never trust this for commercial paid admission.
 bp_controller_update_unsettled() {
   [ -e "$BP_RUN/controller-update-unsettled" ] ||
-    [ -L "$BP_RUN/controller-update-unsettled" ]
+    [ -L "$BP_RUN/controller-update-unsettled" ] ||
+    [ -e "$BP_STATE/controller-update-unsettled" ] ||
+    [ -L "$BP_STATE/controller-update-unsettled" ]
 }
 bp_controller_paid_allowed() {
   controller_id="$1"; operation="$2"
@@ -142,10 +145,13 @@ bp_controller_set() {
     bp_controller_admission_unlock
     return 8
   fi
-  # This marker is in the runtime directory, NOT on the failed durable disk.
-  # Establish it under the same lock before any registry replacement.
-  # A failure to establish the barrier must prevent the admin write.
-  if ! (umask 077; : > "$BP_RUN/controller-update-unsettled"); then
+  # Establish the volatile barrier first, then durably stage a local
+  # unresolved marker BEFORE replacing controllers.tsv. This is limited
+  # crash containment, not a protected witness or verified flash fsync.
+  if ! (umask 077; : > "$BP_RUN/controller-update-unsettled") ||
+     ! (umask 077; printf 'PENDING\n' > "$BP_STATE/controller-update-unsettled") ||
+     ! chmod 600 "$BP_STATE/controller-update-unsettled" ||
+     ! sync; then
     bp_controller_admission_unlock
     return 8
   fi
@@ -154,13 +160,22 @@ bp_controller_set() {
   [ -n "$rev" ] || rev=0
   rev=$((rev+1))
   if bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"; then
-    # A truly successful durable write can release the runtime barrier.
-    # If removal fails, retain denial instead of falsely declaring success.
-    if rm -f "$BP_RUN/controller-update-unsettled" &&
+    # Retire the stable local marker only AFTER controller data sync, and
+    # sync the marker deletion before retiring the volatile fail-closed fence.
+    # If any stage is ambiguous, keep/re-create both barriers, never ACK.
+    if rm -f "$BP_STATE/controller-update-unsettled" &&
+       sync &&
+       rm -f "$BP_RUN/controller-update-unsettled" &&
        ! bp_controller_update_unsettled; then
       bp_controller_admission_unlock
       return 0
     fi
+    # A failed removal/sync cannot be treated as a successful enable.
+    # This is best-effort repair of a local barrier, not rollback proof.
+    (umask 077; printf 'PENDING\n' > "$BP_STATE/controller-update-unsettled") &&
+      chmod 600 "$BP_STATE/controller-update-unsettled" &&
+      sync || true
+    (umask 077; : > "$BP_RUN/controller-update-unsettled") || true
   fi
   # No cleanup on ambiguous failure; an enabled row can be visible after
   # mv succeeded but bp_durable_sync returned an error.
