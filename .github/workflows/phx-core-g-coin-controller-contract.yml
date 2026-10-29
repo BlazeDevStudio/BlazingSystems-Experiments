@@ -17,7 +17,9 @@ jobs:
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Ordinary coin signed CGI ACK and quarantine
         run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh
-      - name: Authenticated response eight adversarial host cases
+      - name: PAY-0731 actual signed duplicate receipts and paid lock
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_vendo_coin_replay_lock.sh
+      - name: Authenticated response nine adversarial host cases
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_controller_response_auth_v1.py
       - name: Controller compatibility plus signed CORE regression
         run: |
