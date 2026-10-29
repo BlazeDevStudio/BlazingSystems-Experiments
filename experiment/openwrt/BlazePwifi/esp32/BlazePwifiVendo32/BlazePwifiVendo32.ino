@@ -28,7 +28,10 @@ Config cfg;
 Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, pollIntakeSuspended=false;
-bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
+// PHX-HW-P0: NO trusted response/freshness authority available in Phase A.
+// Deliberate availability lockdown, never an operator override.
+static constexpr bool kCoinAdmissionEnabled=false;
+bool controllerEnabled=false, coinEnabled=false, relayEnabled=false, ledEnabled=false, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
@@ -199,37 +202,15 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 }
 
 void applyRemoteConfig(const String &r){
-  int rev=jsonInt(r,"config_revision",remoteRevision);
-  // Reject absent/nonpositive, stale, and equal revisions before touching GPIO.
-  // This RAM-only comparison is NOT authenticated or reboot rollback protection.
-  if(rev<=0 || rev<=remoteRevision) return;
-  controllerEnabled=jsonInt(r,"enabled",1)!=0;
-  coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
-  relayEnabled=jsonInt(r,"relay_enabled",1)!=0;
-  ledEnabled=jsonInt(r,"led_enabled",1)!=0;
-  int cp=jsonInt(r,"coin_pin",-1), rp=jsonInt(r,"relay_pin",-1), lp=jsonInt(r,"led_pin",-1);
-  int nextCoin=(cp>=0&&cp<=39)?cp:cfg.coinPin;
-  int nextRelay=(rp>=0&&rp<=39)?rp:cfg.relayPin;
-  int nextLed=(lp>=0&&lp<=39)?lp:cfg.insertLedPin;
-  // Live polarity flips and pin aliases are unsafe without electrical reprovision.
-  // Keep the existing GPIO mapping and journal intact, inhibit all coin intake.
-  const bool proposedRelayHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
-  const bool proposedLedHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
-  if(proposedRelayHigh!=runRelayActiveHigh || proposedLedHigh!=runLedActiveHigh ||
-     nextCoin==nextRelay || nextCoin==nextLed || nextRelay==nextLed ||
-     nextCoin!=runCoinPin || nextRelay!=runRelayPin || nextLed!=runLedPin){
-    writeLogical(runRelayPin,false,runRelayActiveHigh);
-    writeLogical(runLedPin,false,runLedActiveHigh);
-    controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
-    insertMode=false;
-    return;
-  }
-  runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=proposedRelayHigh;
-  runLedActiveHigh=proposedLedHigh;
-  int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
-  runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
-  configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
+  (void)r;
+  // PHX-HW-P0: unauthenticated HTTP body MUST NOT grant GPIO/coin authority.
+  // Drive OLD relay/LED outputs OFF using OLD polarity. Never rebind here.
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
+  controllerEnabled=coinEnabled=relayEnabled=ledEnabled=false;
+  insertMode=false;
+  activeTarget="";
+  // Preserve remoteRevision and all pending/receipt-journal data unchanged.
 }
 
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
@@ -252,7 +233,7 @@ void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==active
 void applyOutputs(){
   // Do not energize the coin acceptor if the next physical pulse cannot
   // be associated with the selected target and durably journaled.
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+  bool accepting=kCoinAdmissionEnabled && controllerEnabled && coinEnabled && insertMode && fsReady &&
     !pendingReady && !pollIntakeSuspended && activeTarget.length()!=0 &&
     pendingPulses<20 && (pendingPulses==0 || pendingTarget==activeTarget);
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -312,11 +293,8 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
-  fsReady=LittleFS.begin(false);
-  if(fsReady && !loadPending()){
-    fsReady=false;
-    Serial.println("CRITICAL: Vendo sequence journal is corrupt; coin relay will stay disabled.");
-  } else if(!fsReady) Serial.println("CRITICAL: LittleFS unavailable; relay remains disabled.");
+  // PHX-HW-P0: defer LittleFS mount/recovery; no pending-file promotion
+  // or coin admission before authenticated recovery. fsReady stays false.
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
@@ -334,13 +312,13 @@ void loop(){
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 &&
      !(pendingPulses && !pendingReady) &&
      (runCoinActiveLow ? digitalRead(runCoinPin) : !digitalRead(runCoinPin))){
-    wifiFailures=0; pollIntakeSuspended=true; applyOutputs(); String r=post("poll"); pollIntakeSuspended=false; insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
+    wifiFailures=0; pollIntakeSuspended=true; applyOutputs(); String r=post("poll"); pollIntakeSuspended=false; applyRemoteConfig(r);
     applyOutputs(); lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+  if(kCoinAdmissionEnabled && insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
     if(pendingTarget==activeTarget && pendingPulses<20){
       pendingPulses++; lastEdge=millis();
@@ -351,7 +329,7 @@ void loop(){
   }
   lastCoin=active;
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
-  if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
+  if(kCoinAdmissionEnabled && pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
     String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce); lastSend=millis();
     if(r.indexOf("\"ok\":true")>=0){ clearPending(true); applyOutputs(); }
     else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
