@@ -35,7 +35,11 @@ catch (Exception ex)
 
 static AppConfig Config() => new()
 {
-    SerialSelection = SerialSelectionMode.ManualPort,
+    SerialSelection = SerialSelectionMode.ExactDevice,
+    PreferredPnpDeviceId = @"USB\VID_1234&PID_5678\COIN-A",
+    PreferredUsbSerial = "COIN-A",
+    PreferredVid = "1234",
+    PreferredPid = "5678",
     ManualComPort = "COM9",
     CoinInputSignal = ModemSignal.Cts,
     CoinInputActiveHigh = true,
@@ -46,7 +50,14 @@ static AppConfig Config() => new()
 static SerialPort Connect(SerialHardware sut, AppConfig config)
 {
     SerialPort.InitialCtsLevel = false;
-    SerialPort.PhysicalPnpAtOpen = null;
+    // FAKE OS only: pin the original opened PnP identity to the synthetic
+    // SerialPort instance; the REAL verifier remains fail-closed.
+    SerialPort.PhysicalPnpAtOpen = @"USB\VID_1234&PID_5678\COIN-A";
+    System.Management.ManagementObjectSearcher.FakeDevices = new[]
+    {
+        new System.Management.ManagementObject(
+            "Coin Adapter (COM9)", "Lab", @"USB\VID_1234&PID_5678\COIN-A", "COM9")
+    };
     if (!sut.Connect(config))
         throw new InvalidOperationException("positive source Connect failed");
     return SerialPort.LastCreated ??
