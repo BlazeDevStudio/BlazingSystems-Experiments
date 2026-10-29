@@ -22,7 +22,6 @@ concurrency:
 env:
   PROJECT_DIR: experiment/windows/BlazePisonet-SoftTimer
   VERSION: 0.4.0
-  TAG: softtimer-v0.4.0
 
 jobs:
   handover:
@@ -284,7 +283,11 @@ jobs:
           Copy-Item out/bundle/BlazePisonet.SoftTimer.exe portable/ -Force
           Copy-Item out/bundle/BlazePisonet.SoftTimer.Watchdog.exe portable/ -Force
           Copy-Item "$env:PROJECT_DIR/README.md" portable/README.md -Force
-          Copy-Item "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" portable/RELEASE_NOTES.md -Force
+          $releaseNotes="$env:PROJECT_DIR/RELEASE_NOTES_v$env:VERSION.md"
+          if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {
+            throw "Version-specific release notes missing: $releaseNotes"
+          }
+          Copy-Item -LiteralPath $releaseNotes -Destination portable/RELEASE_NOTES.md -Force
           New-Item -ItemType Directory -Force portable/docs | Out-Null
           Copy-Item "$env:PROJECT_DIR/docs/*" portable/docs/ -Recurse -Force
 
@@ -327,10 +330,10 @@ jobs:
       - name: Upload validated release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: BlazePisonet-SoftTimer-v0.4.0-win-x64
+          name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
           path: |
-            release/BlazePisonet-SoftTimer-Setup-v0.4.0.exe
-            BlazePisonet-SoftTimer-v0.4.0-portable-win-x64.zip
+            release/BlazePisonet-SoftTimer-Setup-v${{ env.VERSION }}.exe
+            BlazePisonet-SoftTimer-v${{ env.VERSION }}-portable-win-x64.zip
             SHA256SUMS
           if-no-files-found: error
 
@@ -349,12 +352,17 @@ jobs:
           $releaseTarget=(git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          if (gh release view $env:TAG *> $null) {
-            throw "Immutable release tag $env:TAG already exists. Refusing asset replacement; bump version and TAG with a new candidate."
+          $releaseTag="softtimer-v$env:VERSION"
+          $releaseNotes="$env:PROJECT_DIR/RELEASE_NOTES_v$env:VERSION.md"
+          if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {
+            throw "Version-specific release notes missing: $releaseNotes"
+          }
+          if (gh release view $releaseTag *> $null) {
+            throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
           }
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
           $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
           & $gate -Mode Verify -InputPaths @($setup,'out/bundle/BlazePisonet.SoftTimer.exe','out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -PinnedCertSha256 "$env:SOFTTIMER_SIGNER_CERT_SHA256" -PortableZipPath $zip -Sha256SumsPath 'SHA256SUMS' -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
-          gh release create $env:TAG $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file "$env:PROJECT_DIR/RELEASE_NOTES_v0.4.0.md" --target $releaseTarget
+          gh release create $releaseTag $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file $releaseNotes --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
