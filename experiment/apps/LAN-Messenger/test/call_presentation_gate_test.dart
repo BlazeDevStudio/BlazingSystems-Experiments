@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lan_messenger/src/call_presentation_gate.dart';
+import 'package:lan_messenger/src/serial_async_gate.dart';
 
 void main() {
   test('foreground offer uses the inline Answer/Decline row', () {
@@ -90,6 +91,44 @@ void main() {
     expect(block, contains('desktopEpoch: epoch'));
     expect(app, contains('_desktopCallSurfaceEpoch.invalidate();'));
     expect(app, contains('_windowsVideoTransition'));
+  });
+
+  test('native show cannot outlive a later native dismiss', () async {
+    final gate = SerialAsyncGate();
+    final showCompleted = Completer<void>();
+    final seen = <String>[];
+    final oldShow = gate.run<void>(() async {
+      seen.add('show-start');
+      await showCompleted.future;
+      seen.add('show-finish');
+    });
+    final latestDismiss = gate.run<void>(() async {
+      seen.add('dismiss');
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(seen, ['show-start']);
+    showCompleted.complete();
+    await Future.wait<void>([oldShow, latestDismiss]);
+    expect(seen, ['show-start', 'show-finish', 'dismiss']);
+  });
+
+  test('Windows native incoming call is session-pinned and popup operations are serialized', () {
+    final source = File('lib/main.dart').readAsStringSync();
+    expect(source, contains('final SerialAsyncGate _desktopPopupGate = SerialAsyncGate();'));
+    final show = source.substring(source.indexOf('Future<bool> _showDesktopIncoming('),
+        source.indexOf('Future<void> _dismissDesktopCall(', source.indexOf('Future<bool> _showDesktopIncoming(')));
+    expect(show, contains('final session = intercom?.callId;'));
+    expect(show, contains('_desktopPopupGate.run<bool>('));
+    expect(show, contains('intercom?.callId != session'));
+    expect(show, contains("'callId': session"));
+    final dismiss = source.substring(source.indexOf('Future<void> _dismissDesktopCall('),
+        source.indexOf('Future<void> _showOngoingCall(', source.indexOf('Future<void> _dismissDesktopCall(')));
+    expect(dismiss, contains('_desktopPopupGate.run<void>('));
+    expect(dismiss, contains("'dismiss'"));
+    final ongoing = source.substring(source.indexOf('Future<void> _showOngoingCall('),
+        source.indexOf('Future<bool> _isDesktopBackground()', source.indexOf('Future<void> _showOngoingCall(')));
+    expect(ongoing, contains('_desktopPopupGate.run<void>('));
+    expect(ongoing, contains("'ongoing'"));
   });
 
 }
