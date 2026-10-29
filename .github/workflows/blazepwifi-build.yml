@@ -528,7 +528,7 @@ jobs:
           (
             cd "$CUR"
             ANDROID_HOME=/tmp/android-sdk-27 ANDROID_SDK_ROOT=/tmp/android-sdk-27 \
-              gradle --no-daemon --stacktrace testAospDebugUnitTest assembleAospDebug assembleAospRelease
+              gradle --no-daemon --stacktrace testAospDebugUnitTest assembleAospDebug assembleAospRelease assembleAospDebugAndroidTest
           )
           DEBUG_APK="$(find "$CUR/build/outputs/apk/aosp/debug" -type f -name '*.apk' | head -n1)"
           RELEASE_APK="$(find "$CUR/build/outputs/apk/aosp/release" -type f -name '*.apk' | head -n1)"

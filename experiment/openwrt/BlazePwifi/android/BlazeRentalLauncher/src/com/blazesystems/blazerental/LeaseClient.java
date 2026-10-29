@@ -106,8 +106,12 @@ public final class LeaseClient {
             JSONObject response = post(context, base, body.toString());
             if (response == null || !response.optBoolean("ok", false)) return false;
 
+            String enrolledId = RentalLeaseStore.deviceId(context);
             String newSecret = response.optString("device_secret", deviceSecret);
-            String deviceId = response.optString("device_id", RentalLeaseStore.deviceId(context));
+            String deviceId = response.optString("device_id", enrolledId);
+            // A status response must not choose its own HMAC key or device identity.
+            if (!enrolling && (!deviceId.equals(enrolledId)
+                    || !newSecret.equals(deviceSecret))) return false;
             long serverNow = response.optLong("server_time_ms", 0L);
             long leaseUntil = response.optLong("lease_until_ms", 0L);
             if (serverNow <= 0L || leaseUntil < serverNow) return false;
@@ -130,24 +134,27 @@ public final class LeaseClient {
                 }
             }
 
-            RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
+            long coinExpires = 0L;
+            String coinVendo = "";
+            int receivedPulses = 0;
+            int receivedCents = 0;
             if (enrolling) {
+                // Enrollment is authenticated above by the provisioned enrollment token.
+                RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
                 clearCoinWindow();
             } else {
-                long coinExpires = response.optLong("coin_window_expires_ms", 0L);
-                String coinVendo = response.optString("coin_window_vendo", "");
-                int receivedPulses = response.optInt("coin_received_pulses", 0);
-                int receivedCents = response.optInt("coin_received_cents", 0);
+                coinExpires = response.optLong("coin_window_expires_ms", 0L);
+                coinVendo = response.optString("coin_window_vendo", "");
+                receivedPulses = response.optInt("coin_received_pulses", 0);
+                receivedCents = response.optInt("coin_received_cents", 0);
                 String coinSignature = response.optString("coin_window_sig", "");
                 String coinCanonical = "coin_window|" + deviceId + "|" + serverNow + "|"
                         + coinExpires + "|" + coinVendo + "|" + receivedPulses + "|"
                         + receivedCents;
                 if (coinSignature.length() == 0
-                        || !coinSignature.equals(Hmac.sha256Hex(newSecret, coinCanonical))) {
+                        || !coinSignature.equals(Hmac.sha256Hex(deviceSecret, coinCanonical))) {
                     return false;
                 }
-                recordCoinWindow(serverNow, coinExpires, coinVendo,
-                        receivedPulses, receivedCents);
             }
 
             if (!enrolling) {
@@ -177,6 +184,11 @@ public final class LeaseClient {
                         ? response.optLong("policy_revision", 0L)
                         : Math.max(0L, AndroidRentalPolicyRepository.revision(context) + 1L);
 
+                // Reject authenticated rollback before touching paid lease, coin window,
+                // UI state, admin verifier, update metadata or scheduled alarms.
+                long currentRevision = AndroidRentalPolicyRepository.revision(context);
+                if (revision < currentRevision) return false;
+
                 String acceptedCanonical = legacyCanonical;
                 String acceptedSignature = policySignature;
                 boolean fullPolicyVerified = false;
@@ -193,7 +205,7 @@ public final class LeaseClient {
                             + (notificationsEnabled ? "1" : "0") + "|" + gestureType + "|"
                             + gestureValue + "|" + offlineGrace;
                     if (policySignatureV3.length() > 0) {
-                        if (!policySignatureV3.equals(Hmac.sha256Hex(newSecret, v3Canonical))) {
+                        if (!policySignatureV3.equals(Hmac.sha256Hex(deviceSecret, v3Canonical))) {
                             return false;
                         }
                         acceptedCanonical = v3Canonical;
@@ -201,33 +213,70 @@ public final class LeaseClient {
                         fullPolicyVerified = true;
                     } else {
                         if (policySignatureV2.length() == 0
-                                || !policySignatureV2.equals(Hmac.sha256Hex(newSecret, v2Canonical))) {
+                                || !policySignatureV2.equals(Hmac.sha256Hex(deviceSecret, v2Canonical))) {
                             return false;
                         }
                         acceptedCanonical = v2Canonical;
                         acceptedSignature = policySignatureV2;
                     }
                 } else if (policySignature.length() == 0
-                        || !policySignature.equals(Hmac.sha256Hex(newSecret, legacyCanonical))) {
+                        || !policySignature.equals(Hmac.sha256Hex(deviceSecret, legacyCanonical))) {
                     return false;
                 }
 
                 String effectiveAllowed = allowed;
                 if ("*".equals(allowed)) effectiveAllowed = inventoryCsv(context);
+                // Validate signed policy fields before changing lease/timer/alarm state.
+                new RentalPolicy(revision, mode,
+                        AndroidRentalPolicyRepository.parseCsv(effectiveAllowed),
+                        AndroidRentalPolicyRepository.parseCsv(hidden),
+                        AndroidRentalPolicyRepository.parseCsv(""));
 
-                AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
+                // A repeated revision may refresh the authenticated lease, but must
+                // not silently rewrite the already accepted launcher policy.
+                boolean newRevision = revision > currentRevision;
+                if (!newRevision) {
+                    RentalPolicy accepted = AndroidRentalPolicyRepository.load(context);
+                    // Wildcard means server-selected installed inventory at policy
+                    // acceptance time. A later installed-app change must not turn
+                    // a valid same-revision lease refresh into a policy rewrite.
+                    // Require BOTH authenticated canonicals to use wildcard;
+                    // otherwise an explicit package restriction cannot be bypassed.
+                    String oldCanonical = AndroidRentalPolicyRepository.signedPayload(context);
+                    String[] oldFields = oldCanonical.split("\\|", -1);
+                    boolean acceptedWildcard = oldFields.length > 8
+                            && ("v2".equals(oldFields[0]) || "v3".equals(oldFields[0]))
+                            && deviceId.equals(oldFields[1])
+                            && Long.toString(revision).equals(oldFields[5])
+                            && "*".equals(oldFields[7]);
+                    boolean allowedMatches = accepted.getAllowedPackages().equals(
+                            AndroidRentalPolicyRepository.parseCsv(effectiveAllowed));
+                    if (!accepted.getLauncherMode().equals(mode)
+                            || (!allowedMatches && !(acceptedWildcard && "*".equals(allowed)))
+                            || !accepted.getHiddenPackages().equals(
+                                    AndroidRentalPolicyRepository.parseCsv(hidden))) {
+                        return false;
+                    }
+                }
+
+                // Both independent signatures and the installed identity/key are verified.
+                RentalLeaseStore.recordLease(context, serverNow, leaseUntil);
+                recordCoinWindow(serverNow, coinExpires, coinVendo,
+                        receivedPulses, receivedCents);
+
+                if (newRevision) AndroidRentalPolicyRepository.applyVerified(context, revision, mode,
                         effectiveAllowed, hidden, "", acceptedCanonical, acceptedSignature);
-                if (fullPolicyVerified) {
+                if (newRevision && fullPolicyVerified) {
                     RentalUiPolicy.applyVerified(context, timerMode, timerUserToggle,
                             quickControls, notificationsEnabled, gestureType,
                             gestureValue, offlineGrace);
                 }
-                if (salt.length() > 0 && hash.length() > 0) {
+                if (newRevision && salt.length() > 0 && hash.length() > 0) {
                     RentalLeaseStore.recordAdminVerifier(context, salt, hash, rounds);
                 }
 
                 JSONObject update = response.optJSONObject("update");
-                if (update != null && update.optBoolean("available", false)) {
+                if (newRevision && update != null && update.optBoolean("available", false)) {
                     BlazeRentalUpdateManager.recordAvailable(context,
                             update.optString("version", ""),
                             update.optInt("version_code", 0),

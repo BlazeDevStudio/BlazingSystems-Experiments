@@ -14,6 +14,10 @@ public final class AndroidRentalPolicyRepository {
         return prefs(context).getLong("revision", -1L);
     }
 
+    public static String signedPayload(Context context) {
+        return prefs(context).getString("signed_payload", "");
+    }
+
     public static RentalPolicy load(Context context) {
         SharedPreferences p = prefs(context);
         long revision = Math.max(0L, p.getLong("revision", 0L));
