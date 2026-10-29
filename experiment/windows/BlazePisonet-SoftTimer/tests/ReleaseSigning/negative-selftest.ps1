@@ -105,6 +105,38 @@ try {
   if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
     throw 'Publisher reuses frozen tag or notes'
   }
+  # VERSION is authoritative for both native .NET artifacts and NSIS output.
+  foreach ($entry in @(
+    @{ Marker='-p:Version=$env:VERSION'; Count=2 },
+    @{ Marker='-p:InformationalVersion=$env:VERSION+$source'; Count=2 },
+    @{ Marker='-p:IncludeSourceRevisionInInformationalVersion=false'; Count=2 },
+    @{ Marker='-warnaserror @versionArgs'; Count=2 },
+    @{ Marker=' -o out/app @versionArgs'; Count=1 },
+    @{ Marker=' -o out/watchdog @versionArgs'; Count=1 }
+  )) {
+    if (([regex]::Matches($workflow,[regex]::Escape($entry.Marker))).Count -ne $entry.Count) {
+      throw "Release .NET/Watchdog VERSION contract changed: $($entry.Marker)"
+    }
+  }
+  if (-not $workflow.Contains('"/DSOFTTIMER_VERSION=$env:VERSION"') -or
+      -not $workflow.Contains('Version-MetadataProbe.ps1')) {
+    throw 'NSIS version override or isolated native compiled probe absent'
+  }
+  $nsis=Get-Content -LiteralPath (Join-Path $PSScriptRoot '../../installer/BlazePisonet-SoftTimer.nsi') -Raw
+  foreach ($required in @(
+    '!ifndef SOFTTIMER_VERSION',
+    'VIProductVersion "',
+    'VIAddVersionKey /LANG=1033 "ProductVersion"',
+    'OutFile "',
+    '"DisplayVersion" "'
+  )) {
+    if (-not $nsis.Contains($required)) { throw "NSIS version source missing: $required" }
+  }
+  if (([regex]::Matches($nsis,'0[.]4[.]0')).Count -ne 2) {
+    throw 'Frozen installer must retain only documented default 0.4.0 (not hardcoded metadata)'
+  }
+  Write-Output 'RELEASE-VERSION: build/publish/installer source and isolated native probe contracts PASS'
+
   Write-Output "RELEASE-PATHS: frozen v0.4.0 unchanged; hypothetical v$future template PASS"
 
   if ($ActualUnsignedSetup) {
