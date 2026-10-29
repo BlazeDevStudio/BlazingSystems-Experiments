@@ -19,4 +19,22 @@ void main() {
     expect(handler, contains('if (_incomingDialogOpen)'));
     expect(handler, contains('_openWindow();'));
   });
+  test('native Windows popup labels open action as call, not thread', () {
+    final native = File('tool/windows_call_toast.cpp').readAsStringSync();
+    final begin = native.indexOf('void WindowsCallToast::ResizeButtons()');
+    final end = native.indexOf('void WindowsCallToast::Show(', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(begin));
+    final labels = native.substring(begin, end);
+    expect(labels, contains('captions[2] = L"Open call";'));
+    expect(labels, isNot(contains('L"Open thread"')));
+
+    // The toast is copied into the generated Windows runner before compiling.
+    final platformSetup = File('tool/prepare_platforms.py').readAsStringSync();
+    expect(platformSetup, contains("root / 'tool/windows_call_toast.cpp'"));
+    // Button 103 remains the call-opening action, not a conversation shortcut.
+    final handler = native.substring(native.indexOf('case WM_COMMAND:'));
+    expect(handler, contains('else if (id == 103) Emit("open");'));
+  });
+
 }
