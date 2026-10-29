@@ -56,6 +56,7 @@ struct Config {
  bool coinActiveLow=true,relayActiveHigh=true,ledActiveHigh=true;
  int coinDebounceMs=40,pulseGroupMs=400;
 } cfg;
+static constexpr bool kCoinAdmissionEnabled=false;
 int runCoinPin=4,runRelayPin=5,runLedPin=14,remoteRevision=1,maxWifiRetries=6;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true;
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
@@ -102,12 +103,12 @@ int main(){
   levels[14]==LOW&&runLedActiveHigh&&remoteRevision==1&&
   !controllerEnabled&&!coinEnabled&&!insertMode&&first('M')<0);
  reset();
- applyRemoteConfig("{\"config_revision\":2,\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"relay_active_high\":1,\"led_active_high\":1,\"coin_pin\":4,\"relay_pin\":5,\"led_pin\":14}");
+  configureRuntimePins(4,5,14); // direct old-polarity GPIO ordering check
  int mode=first('M');
  check("same_pin_old_outputs_off_before_mode",
   mode>=0&&first('W',5,LOW)>=0&&first('W',14,LOW)>=0&&
   first('W',5,LOW)<mode&&first('W',14,LOW)<mode&&
-  levels[5]==LOW&&levels[14]==LOW&&remoteRevision==2);
+  levels[5]==LOW&&levels[14]==LOW&&remoteRevision==1);
  reset();
  applyRemoteConfig("{\"config_revision\":2,\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"relay_active_high\":1,\"led_active_high\":1,\"coin_pin\":4,\"relay_pin\":12,\"led_pin\":13}");
  mode=first('M');
@@ -141,8 +142,8 @@ int main(){
  remoteRevision=3;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
  digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
  applyRemoteConfig("{\"config_revision\":4,\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"coin_pin\":4,\"relay_pin\":5,\"led_pin\":14}");
- check("higher_revision_disabled_config_accepted",
-  remoteRevision==4&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
+ check("higher_revision_disabled_untrusted_denied",
+  remoteRevision==3&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
 
  // Cold-boot admission: revision 0 is untrusted, and missing/nonpositive
  // revisions must not bootstrap a previously disabled coin acceptor.
@@ -168,8 +169,8 @@ int main(){
  remoteRevision=0;controllerEnabled=coinEnabled=relayEnabled=ledEnabled=insertMode=false;
  digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
  applyRemoteConfig(R"({"config_revision":1,"enabled":0,"coin_enabled":0,"relay_enabled":0,"led_enabled":0,"coin_pin":4,"relay_pin":5,"led_pin":14})");
- check("bootstrap_positive_disabled_config_accepted",
-  remoteRevision==1&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')>=0);
+ check("bootstrap_positive_disabled_untrusted_denied",
+  remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&levels[5]==LOW&&first('M')<0);
 
  // A positive integer alone does not authenticate an enabling config response.
  // This is an untrusted response-body test, not a forged network packet.
@@ -195,6 +196,19 @@ int main(){
   remoteRevision==0&&!controllerEnabled&&!coinEnabled&&!insertMode&&
   levels[5]==LOW&&first('M')<0);
 
+  reset();
+  runRelayActiveHigh=false;runLedActiveHigh=false;
+  digitalWrite(5,LOW);digitalWrite(14,LOW);trace.clear();
+  configureRuntimePins(4,5,14);
+  int oldOffMode=first('M');
+  check("active_low_old_outputs_off_before_mode",
+   oldOffMode>=0&&first('W',5,HIGH)>=0&&first('W',14,HIGH)>=0&&
+   first('W',5,HIGH)<oldOffMode&&first('W',14,HIGH)<oldOffMode&&
+   levels[5]==HIGH&&levels[14]==HIGH&&remoteRevision==1);
+  reset();
+  applyOutputs();
+  check("phase_a_relay_stays_off_even_if_flags_true",
+   levels[5]==LOW&&levels[14]==LOW&&remoteRevision==1);
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<" physical_verified=0\n";
  return fails?18:0;
 }
@@ -202,6 +216,16 @@ int main(){
 failed=[]
 for board, path in SOURCES.items():
     src=path.read_text(encoding="utf-8")
+    # Read actual firmware setup/loop source, not a simulated startup.
+    startup=extract(src,"setup")
+    loop=extract(src,"loop")
+    if ("initPendingStore();" in startup or "loadPending();" in startup or
+        'insertMode=jsonTrue(r,"insert")' in loop or
+        "kCoinAdmissionEnabled && insertMode && fsReady" not in loop or
+        "kCoinAdmissionEnabled && pendingPulses && pendingReady" not in loop):
+        print(board,"PHASE_A_SOURCE_GUARD_RED")
+        failed.append(board+":phase_a_source_guard")
+        continue
     bodies="\n".join(extract(src,name) for name in
                      ("writeLogical","configureRuntimePins","applyOutputs","applyRemoteConfig"))
     with tempfile.TemporaryDirectory(prefix="phx-relay-rebind-") as folder:

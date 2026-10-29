@@ -23,17 +23,45 @@ grep -Eqi 'Image|ESP|Segment|Entry' "$OUT/esptool.txt"
 
 strings "$BIN" > "$OUT/strings.txt"
 grep -Fq 'BlazePwifi' "$OUT/strings.txt"
-grep -Fq 'cgi-bin/vendo' "$OUT/strings.txt"
+# The original v0.4 path requires the live endpoint marker in compiled bytes.
+# Phase A intentionally disables all endpoint callers at compile time, so LTO
+# may omit the dead string. Admit this variant ONLY when the exact checksummed
+# source shipped beside the binary proves every admission gate remains false.
+ENDPOINT_MODE=runtime
+if ! grep -Fq 'cgi-bin/vendo' "$OUT/strings.txt"; then
+  case "$KIND" in
+    esp8266) SKETCH=BlazePwifiVendo ;;
+    esp32) SKETCH=BlazePwifiVendo32 ;;
+  esac
+  SOURCE="$DIR/source/$SKETCH/$SKETCH.ino"
+  test -s "$SOURCE" || { echo "missing checksummed Phase A source $SOURCE" >&2; exit 1; }
+  for gate in \
+    'static constexpr bool kCoinAdmissionEnabled=false;' \
+    'bool accepting=kCoinAdmissionEnabled &&' \
+    'if(kCoinAdmissionEnabled && insertMode && fsReady &&' \
+    'if(kCoinAdmissionEnabled && pendingPulses && pendingReady &&' \
+    'if(kCoinAdmissionEnabled && WiFi.status()==WL_CONNECTED'; do
+    grep -Fq "$gate" "$SOURCE" || {
+      echo "binary missing endpoint and source missing fail-closed gate: $gate" >&2
+      exit 1
+    }
+  done
+  ENDPOINT_MODE=phase_a_denied
+  echo "$KIND: compiled endpoint optimized out; exact shipped source confirms Phase A denial"
+fi
 grep -Fq 'Wi-Fi verification failed' "$OUT/strings.txt"
 
-python3 - "$OUT/audit.json" "$KIND" "$BIN" <<'PY'
+python3 - "$OUT/audit.json" "$KIND" "$BIN" "$ENDPOINT_MODE" <<'PY'
 import hashlib,json,sys,os
-out,kind,path=sys.argv[1:]
+out,kind,path,mode=sys.argv[1:]
 h=hashlib.sha256(open(path,'rb').read()).hexdigest()
-json.dump({"target":kind,"release":"0.4.0","validation_level":"compiled-binary-parse-and-protocol-strings",
+json.dump({"target":kind,"release":"0.4.0",
+           "validation_level":("compiled-binary-parse-and-protocol-strings" if mode=="runtime"
+                               else "compiled-binary-parse-and-source-verified-phase-a-denial"),
            "binary":os.path.basename(path),"sha256":h,
            "checks":{"sha256_manifest":True,"esptool_parse":True,"blazepwifi_marker":True,
-                     "vendo_endpoint_marker":True,"wifi_verification_marker":True}},
+                     "vendo_endpoint_marker":mode=="runtime","phase_a_lockdown":mode=="phase_a_denied",
+                      "wifi_verification_marker":True}},
           open(out,'w'),indent=2)
 PY
-echo "$KIND v0.4 binary audit passed"
+echo "$KIND v0.4 binary audit passed ($ENDPOINT_MODE)"

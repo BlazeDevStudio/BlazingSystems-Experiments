@@ -35,6 +35,8 @@ FIXTURE = r"""
 #include <string>
 #include <cstdint>
 using String=std::string;
+// HOST-ONLY test seam for historical positives; production has constant-false gate.
+bool kCoinAdmissionEnabled=true;
 bool controllerEnabled=true,coinEnabled=true,insertMode=true,fsReady=true;
 bool pendingReady=false,pollIntakeSuspended=false,ledEnabled=true,relayEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;
@@ -51,6 +53,7 @@ void writeLogical(int pin,bool on,bool polarity) {
   if(pin==runLedPin){ledLogical=on;++ledWrites;}
 }
 void defaults(){
+ kCoinAdmissionEnabled=true;
  controllerEnabled=coinEnabled=insertMode=fsReady=true;
  pendingReady=pollIntakeSuspended=false;
  ledEnabled=relayEnabled=true;
@@ -89,6 +92,8 @@ int main(){
  defaults();controllerEnabled=false;verify("admin controller disable MUST inhibit",false,false);
  defaults();relayEnabled=false;verify("remote relay disable MUST inhibit",false,true);
  defaults();ledEnabled=false;verify("remote led disable MUST inhibit",true,false);
+ defaults();kCoinAdmissionEnabled=false;
+ verify("Phase A production denial even for valid target",false,false);
  std::cout<<"CHECKS "<<checks<<" FAILED "<<fails<<"\n";
  return fails?18:0;
 }
@@ -99,6 +104,7 @@ fail = []
 for board,path in BOARDS.items():
     source = path.read_text(encoding="utf-8")
     extracted = function(source,"applyOutputs")
+    assert "static constexpr bool kCoinAdmissionEnabled=false;" in source, "Phase A production denial missing"
     assert "bool accepting=" in extracted
     code = prefix + "\n" + extracted + "\nint main(){" + main
     with tempfile.TemporaryDirectory(prefix="blaze-target-relay-lab-") as folder:
@@ -119,4 +125,4 @@ for board,path in BOARDS.items():
             fail.append(board)
 if fail:
     sys.exit("PHX-VERIFY P0 target-bound output admission safety RED: "+",".join(fail))
-print("PHX-VERIFY 13/13 real-output-function host cases PASS per ESP board; physical_coin_acceptance_verified=0")
+print("PHX-VERIFY 14/14 extracted-output host controls per board (13 historical hypothetical + 1 Phase A denial); physical_coin_acceptance_verified=0")
