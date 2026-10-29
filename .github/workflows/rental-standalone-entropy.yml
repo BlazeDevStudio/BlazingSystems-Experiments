@@ -36,3 +36,5 @@ jobs:
         run: sh experiment/openwrt/Rental-Server-Standalone/tests/lease_race.sh
       - name: Retry the same dashboard request after a lost response
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_pending.js
+      - name: Preserve literal device labels through the rendered Rename control
+        run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_labels.js
