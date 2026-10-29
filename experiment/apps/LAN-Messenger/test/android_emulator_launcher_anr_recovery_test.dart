@@ -57,9 +57,9 @@ void main() {
   test('recovery does not weaken two-sided online UI assertion', () {
     final script = File('tool/android_dual_lan_smoke.sh').readAsStringSync();
     expect(script, contains('emulator_launcher_anr.py'));
-    expect(script, contains('adb -s "$serial" shell input tap "$close_x" "$close_y"'));
+    expect(script, contains('adb -s "\$serial" shell input tap "\$close_x" "\$close_y"'));
     expect(script, contains('both=0'));
-    expect(script, contains('if [[ "$both" == "1" ]]; then success=1; break; fi'));
+    expect(script, contains('if [[ "\$both" == "1" ]]; then success=1; break; fi'));
     expect(script, contains('assert "Online" in displayed'));
     expect(script, contains('exit 1'));
   });
