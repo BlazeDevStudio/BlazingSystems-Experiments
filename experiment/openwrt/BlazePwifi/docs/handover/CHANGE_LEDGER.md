@@ -1,3 +1,8 @@
+## 2026-10-29 — PHX-CORE cold-runtime mode correction (follow-up)
+
+- Prior commit 9499ea19 retained safe source behavior but inadvertently changed controller.sh Git executable mode 100755→100644. Automatically triggered Full validate #40881538992 failed static executable permission check; its prior focused run #40881539001 succeeded with sh invocation.
+- New metadata+mode-only checkpoint restores original controller.sh mode 100755 and updates all three handovers together, preserving original content and all historical RED/NO-GO labels. No runtime source/test/workflow modification; successor CI not yet claimed.
+
 ## 2026-10-29 — PHX-PAY31-COLD-RUNTIME-F test-first containment, witness remains required
 
 - Parent: #243 `0f850ff2f919a8a6a0b483a0327533680e02c619`; source `controller.sh` now stages a synced local BP_STATE unresolved marker before registry updates and checks it after losing volatile BP_RUN. Only local runtime-loss mitigation, NOT independent rollback/protected monotonic witness or production authority.
