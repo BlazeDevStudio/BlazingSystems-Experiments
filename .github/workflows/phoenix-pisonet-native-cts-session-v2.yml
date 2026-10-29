@@ -91,6 +91,24 @@ jobs:
           $code=$LASTEXITCODE
           if ($code -ne 0) { Write-Error "ASYNC_ATTRIBUTION_NOT_GREEN: exit=$code (2=unsafe,3=inconclusive)"; exit 1 }
           Write-Host 'NATIVE_ASYNC_ATTRIBUTION_ORIGINAL_216_GREEN_ONLY'
+      - name: Exact-device opened-HANDLE synthetic safety and positive C# gate (#197)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab='experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile -- --diagnostic
+          $code=$LASTEXITCODE
+          if ($code -ne 0) {
+            Write-Error "OPENED_HANDLE_IDENTITY_NATIVE_RED_OR_INCONCLUSIVE: exit=$code; do not promote"
+            exit 1
+          }
+          dotnet run --project $lab -c Release --no-launch-profile -- --safety-gate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "OPENED_HANDLE_IDENTITY_NATIVE_GATE_RED: exit=$LASTEXITCODE"
+            exit 1
+          }
+          Write-Host 'FAKE_OPENED_HANDLE_IDENTITY_197_GREEN_ONLY: swapped and unverified denied, stable fake positive accepted; native real transport remains fail closed'
       - name: Compile production Windows application (build-only, not release)
         shell: pwsh
         run: |
