@@ -126,11 +126,11 @@ void WindowsCallToast::ResizeButtons() {
   if (incoming_) {
     captions[0] = L"Answer";
     captions[1] = L"Decline";
-    captions[2] = L"Open thread";
+    captions[2] = L"Open call";
   } else {
     captions[0] = muted_ ? L"Unmute" : L"Mute";
     captions[1] = L"End call";
-    captions[2] = L"Open thread";
+    captions[2] = L"Open call";
   }
   // Incoming is deliberately TWO actions, like a Messenger call.
   // The third Open Thread action belongs only to an ongoing conversation.
