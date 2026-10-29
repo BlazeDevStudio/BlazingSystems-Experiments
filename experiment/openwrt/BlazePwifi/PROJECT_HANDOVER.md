@@ -1,3 +1,5 @@
+<!-- PHX-CORE-RECOVERY-I 2026-10-30: PAY-0731 full #40887233578 failed at v060_vendo_coin_replay_lock.sh (step 34), after PAY-0627 passed. Test-only explicit /tmp controller provision added to preserve unknown-controller default deny and original duplicate/replay/lock positive controls. v1 config_auth target owner/window kind unbound: added negative DENY-only host case and v1 doc, no wire changes or admission authority. HEAD validation PENDING, no production approval, protected witness or physical evidence. -->
+
 <!-- PHX-G-20261029-PY-HDR: focused #40886989283: ordinary coin signed CGI PASS; HMAC test's subprocess(text=True) normalized CRLF to LF and parser rejected valid headers before any authentication assertion. Cross-platform parser corrected without changing server cryptography/admission. New focused result pending. -->
 
 <!-- PHX-G-20261029-FIX-SETUP: isolated ordinary-coin fixture sources common.sh with REQUEST_METHOD=GET because POST setup reads empty stdin under set -e; restores POST before real signed CGI. No production code/source policy changed. Earlier focused #40886447195 and #40886740567 FAIL (fixture setup), new exact-head run pending. -->
