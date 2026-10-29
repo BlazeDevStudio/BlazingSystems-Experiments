@@ -1,0 +1,70 @@
+name: PHX-PISONET native CTS V4 V5 session-atomic correction (test-only)
+run-name: PHX-PISONET exact-source Windows CTS native gate at ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - phoenix/pisonet-cts-session-atomic-v2-20261029
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-pisonet-cts-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-windows:
+    name: Guarded Windows C# V4/V5 plus failed Open (no hardware or payment)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact production source and fake-OS blobs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          python experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/prepare_guarded_copy.py
+          $code = $LASTEXITCODE
+          if ($code -eq 3) { Write-Error 'INCONCLUSIVE_EXIT_3: source/fixture blob guard did not match'; exit 3 }
+          if ($code -ne 0) { exit $code }
+          $generated='experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/Generated/ActualSerialHardware.cs'
+          if (-not (Test-Path $generated)) { Write-Error 'INCONCLUSIVE_EXIT_3: generated native C# copy missing'; exit 3 }
+      - name: Native C# invalid-setup control + CTS V4 V5 safety GREEN required
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab='experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/NativeSerialReconnectGuard.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile -- --invalid-setup
+          if ($LASTEXITCODE -ne 3) { Write-Error "INCONCLUSIVE_SENTINEL_INVALID: expected 3, got $LASTEXITCODE"; exit 3 }
+          Write-Host 'NATIVE_INCONCLUSIVE_EXIT_3_CONTROL_PASS'
+          dotnet run --project $lab -c Release --no-build --no-launch-profile
+          $code = $LASTEXITCODE
+          if ($code -eq 3) { Write-Error 'INCONCLUSIVE_EXIT_3: missing successful controls or bad fixture'; exit 3 }
+          if ($code -ne 0) { Write-Error "CTS_V4V5_SAFETY_NOT_GREEN: actual C# returned $code (2=unsafe source RED)"; exit 1 }
+          Write-Host 'NATIVE_CTS_V4V5_SOURCE_GREEN_ONLY: accepted valid=1 V4=0 V5=1; no physical identity proof'
+      - name: Preserve #221 real C# failed SerialPort.Open cleanup and retry positive
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $lab='experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile -- --open-failure-safety-gate
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { Write-Error "FAILED_OPEN_RESOURCE_GATE_RED_OR_INCONCLUSIVE: exit=$code"; exit 1 }
+          Write-Host 'FAILED_OPEN_RESOURCE_GATE_GREEN'
+      - name: Compile production Windows application (build-only, not release)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $p='experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj'
+          dotnet build $p -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
