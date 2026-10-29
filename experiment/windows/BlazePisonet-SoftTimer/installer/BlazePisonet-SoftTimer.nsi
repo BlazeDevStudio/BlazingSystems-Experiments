@@ -1,19 +1,31 @@
-﻿Unicode True
+﻿; Default preserves the frozen v0.4.0 installer when compiled directly.
+; The release workflow and non-shipping metadata probe override only this
+; compile-time version and the probe output/payload directories.
+!ifndef SOFTTIMER_VERSION
+  !define SOFTTIMER_VERSION "0.4.0"
+!endif
+!ifndef SOFTTIMER_PAYLOAD_ROOT
+  !define SOFTTIMER_PAYLOAD_ROOT "..\..\..\..\out\bundle"
+!endif
+!ifndef SOFTTIMER_OUTPUT_ROOT
+  !define SOFTTIMER_OUTPUT_ROOT "..\..\..\..\release"
+!endif
+Unicode True
 RequestExecutionLevel admin
 ManifestDPIAware true
 Name "BlazePisonet SoftTimer"
-OutFile "..\..\..\..\release\BlazePisonet-SoftTimer-Setup-v0.4.0.exe"
+OutFile "${SOFTTIMER_OUTPUT_ROOT}\BlazePisonet-SoftTimer-Setup-v${SOFTTIMER_VERSION}.exe"
 InstallDir "$PROGRAMFILES64\BlazeSystems\BlazePisonet SoftTimer"
 InstallDirRegKey HKLM "Software\BlazeSystems\BlazePisonet SoftTimer" "InstallDir"
 SetCompressor /SOLID lzma
 SetCompressorDictSize 64
 BrandingText "BlazeSystems · BlazePisonet SoftTimer"
-VIProductVersion "0.4.0.0"
+VIProductVersion "${SOFTTIMER_VERSION}.0"
 VIAddVersionKey /LANG=1033 "ProductName" "BlazePisonet SoftTimer"
-VIAddVersionKey /LANG=1033 "ProductVersion" "0.4.0"
+VIAddVersionKey /LANG=1033 "ProductVersion" "${SOFTTIMER_VERSION}"
 VIAddVersionKey /LANG=1033 "CompanyName" "BlazeSystems"
 VIAddVersionKey /LANG=1033 "FileDescription" "BlazePisonet SoftTimer Setup"
-VIAddVersionKey /LANG=1033 "FileVersion" "0.4.0.0"
+VIAddVersionKey /LANG=1033 "FileVersion" "${SOFTTIMER_VERSION}.0"
 VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright © 2026 BlazeSystems"
 
 !include "MUI2.nsh"
@@ -55,8 +67,8 @@ Section "BlazePisonet SoftTimer" SEC_MAIN
   SetShellVarContext all
   SetOutPath "$INSTDIR"
 
-  File "..\..\..\..\out\bundle\BlazePisonet.SoftTimer.exe"
-  File "..\..\..\..\out\bundle\BlazePisonet.SoftTimer.Watchdog.exe"
+  File "${SOFTTIMER_PAYLOAD_ROOT}\BlazePisonet.SoftTimer.exe"
+  File "${SOFTTIMER_PAYLOAD_ROOT}\BlazePisonet.SoftTimer.Watchdog.exe"
 
   CreateDirectory "$APPDATA\BlazeSystems\BlazePisonetSoftTimer"
   nsExec::ExecToStack '$\"$SYSDIR\icacls.exe$\" $\"$APPDATA\BlazeSystems\BlazePisonetSoftTimer$\" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F /T /C'
@@ -74,7 +86,7 @@ Section "BlazePisonet SoftTimer" SEC_MAIN
 
   WriteRegStr HKLM "Software\BlazeSystems\BlazePisonet SoftTimer" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayName" "BlazePisonet SoftTimer"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayVersion" "0.4.0"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayVersion" "${SOFTTIMER_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "Publisher" "BlazeSystems"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "DisplayIcon" "$INSTDIR\BlazePisonet.SoftTimer.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BlazePisonetSoftTimer" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
