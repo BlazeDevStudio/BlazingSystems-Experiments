@@ -146,7 +146,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p rental-auth-results
-          adb logcat -d -t 1000 > rental-auth-results/logcat-tail.txt 2>&1 || true
+          timeout 8s adb devices -l > rental-auth-results/adb-devices.txt 2>&1 || true
+          # Never hang evidence collection if emulator boot or test execution failed.
+          timeout 8s adb logcat -d -t 1000 > rental-auth-results/logcat-tail.txt 2>&1 || true
           cp -a "$TARGET/build/outputs/androidTest-results" rental-auth-results/androidTest-results 2>/dev/null || true
           cp -a "$TARGET/build/reports/androidTests" rental-auth-results/androidTests 2>/dev/null || true
 
