@@ -347,6 +347,9 @@ using (var sut = new SerialHardware()) {
         throw new Exception("Fake COM mapping did not change at Open");
     if (connectedToSubstitutedAdapter && sut.ConnectedDevice?.PnpDeviceId != openPinnedPnp)
         throw new Exception("Unexpected descriptor: stale WMI selection was not retained");
+    if (!connectedToSubstitutedAdapter &&
+        (!opened.WasDisposed || opened.PinSubscriberCount != 0))
+        throw new Exception("Swapped HANDLE candidate leaked resources or PinChanged subscriber");
     // TEST ONLY: a substituted physical adapter must never be allowed to
     // manufacture a coin callback merely because COM9 opened successfully.
     // This is synthetic CTS, not a real coin or paid ledger operation.
@@ -358,13 +361,26 @@ using (var sut = new SerialHardware()) {
         opened.Raise(SerialPinChange.CtsChanged);
     }
 }
+var rejectedSwapped = SerialPort.LastCreated ??
+    throw new Exception("Swapped Open candidate not created");
+if (rejectedSwapped.WasDisposed != true || rejectedSwapped.PinSubscriberCount != 0)
+    throw new Exception("Swapped device failed-open cleanup broken");
 SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
 bool connectedToStableAdapter;
+int stableExactOpenedHandleCoins = 0;
 using (var sut = new SerialHardware()) {
+    sut.CoinPulseAccepted += () => stableExactOpenedHandleCoins++;
     connectedToStableAdapter = sut.Connect(openConfig);
     var opened = SerialPort.LastCreated ?? throw new Exception("Missing stable COM9");
     if (opened.OpenedPhysicalPnp != openPinnedPnp)
         throw new Exception("Fake stable COM mapping invalid");
+    if (connectedToStableAdapter) {
+        opened.CtsLevel = true;
+        opened.Raise(SerialPinChange.CtsChanged);
+        Thread.Sleep(55);
+        opened.CtsLevel = false;
+        opened.Raise(SerialPinChange.CtsChanged);
+    }
 }
 SerialPort.PhysicalPnpAtOpen = null;
 System.Management.ManagementObjectSearcher.FakeDevices =
@@ -400,6 +416,11 @@ using (var sut = new SerialHardware()) {
         opened.Raise(SerialPinChange.CtsChanged);
     }
 }
+var rejectedUnknownCts = SerialPort.LastCreated ??
+    throw new Exception("Unknown CTS candidate not created");
+if (rejectedUnknownCts.WasDisposed != true ||
+    rejectedUnknownCts.PinSubscriberCount != 0)
+    throw new Exception("Unverified CTS candidate leaked resources");
 // PHX-L-APPS UTC05 TEST ONLY: the event-only RI path must also be coin-
 // inhibited when a successful COM Open has NO opened-handle identity proof.
 // The existing CTS negative does not exercise the Ring-specific path.
@@ -470,7 +491,37 @@ System.Management.ManagementObjectSearcher.FakeDevices =
     Array.Empty<System.Management.ManagementObject>();
 SerialPort.PhysicalPnpAtOpen = null;
 
+// MANUAL PORT IS NOT A MONETARY AUTHORITY: even if an arbitrary physical
+// adapter is present, a diagnostic legacy event must not be claimable for
+// timer or routed credit without an exact opened-handle identity proof.
+int manualUnverifiedPaidClaims = 0;
+int manualDiagnosticPulses = 0;
+SerialPort.PhysicalPnpAtOpen = openPinnedPnp;
+SerialPort.InitialCtsLevel = false;
+using (var sut = new SerialHardware()) {
+    sut.CoinPulseAcceptedWithContext += accepted => {
+        if (sut.TryClaimCoin(accepted)) manualUnverifiedPaidClaims++;
+    };
+    sut.CoinPulseAccepted += () => manualDiagnosticPulses++;
+    if (!sut.Connect(new AppConfig {
+        SerialSelection = SerialSelectionMode.ManualPort,
+        ManualComPort = "COM9", CoinInputSignal = ModemSignal.Cts,
+        MinimumPulseMs = 10
+    })) throw new Exception("ManualPort diagnostic Connect failed");
+    var port = SerialPort.LastCreated ?? throw new Exception("No manual COM port");
+    port.CtsLevel = true;
+    port.Raise(SerialPinChange.CtsChanged);
+    Thread.Sleep(55);
+    port.CtsLevel = false;
+    port.Raise(SerialPinChange.CtsChanged);
+}
+if (manualDiagnosticPulses != 1)
+    throw new Exception("ManualPort diagnostic pulse positive control broken");
+SerialPort.PhysicalPnpAtOpen = null;
+
 var cases = new (string Name, int Actual, int Expected)[] {
+    ("exact_stable_opened_handle_positive_coin", stableExactOpenedHandleCoins, 1),
+    ("manual_com_without_opened_handle_proof_denies_paid_claim", manualUnverifiedPaidClaims, 0),
     ("exact_open_time_swapped_adapter_must_not_emit_coin_pulse", substitutedAdapterPulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_must_not_emit_coin_pulse", unverifiableHandlePulseAccepted, 0),
     ("exact_open_time_unverifiable_handle_ring_must_not_emit_coin_pulse", unknownHandleRingPulseAccepted, 0),
@@ -519,5 +570,6 @@ if (args.Contains("--safety-gate", StringComparer.Ordinal)) {
     Console.WriteLine("READ_ERROR_SAFETY_GREEN: 4/4 status-error/detach scenarios emitted zero coin pulses; other capture risks remain.");
     return 0;
 }
-Console.WriteLine("NATIVE_SOURCE_DIAGNOSTIC_PASS: 32/32 controlled in-process C# API traces met proposed read-error guard contract; delayed callback and RI capture risks remain. NOT hardware or real Windows serial driver.");
+var verifiedCount = identityCases.Length + openTimeCases.Length + cases.Length;
+Console.WriteLine($"NATIVE_SOURCE_DIAGNOSTIC_PASS: {verifiedCount}/{verifiedCount} controlled in-process C# API traces met guarded serial contract; NOT hardware or an actual Windows serial driver.");
 return 0;
