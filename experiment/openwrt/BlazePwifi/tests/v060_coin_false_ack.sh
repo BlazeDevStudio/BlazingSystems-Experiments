@@ -50,8 +50,11 @@ send_coin() {
 # PHX-G: actual first signed request proves UNKNOWN controller is DENIED.
 # This fixture is disposable /tmp only. Never auto-enable live heartbeat.
 denied_unprovisioned="$(send_coin deadbeefdeadbeef)"
-printf '%s' "$denied_unprovisioned" | grep -q '"ok":false'
-printf '%s' "$denied_unprovisioned" | grep -q 'controller disabled or coin intake disabled'
+if ! printf '%s' "$denied_unprovisioned" | grep -q '"ok":false' ||
+   ! printf '%s' "$denied_unprovisioned" | grep -q 'controller disabled or coin intake disabled'; then
+  printf '%s\n' "PAY-0627 unknown-controller rejection mismatch: $denied_unprovisioned" >&2
+  exit 1
+fi
 [ "$(credit)" = 100 ]
 [ ! -e "$BP_STATE/paid-state-uncertain" ]
 . "$BP_LIB"

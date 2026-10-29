@@ -1,3 +1,7 @@
+## 2026-10-29 — PHX-G ordinary-coin negative diagnostic (follow-up)
+
+- Initial focused CI #40886447195 failed at ordinary coin fixture with no diagnostic output. Test-only explicit rejected-response reporting added; no weakening of unknown-controller denial or change to installed CGI source. All historical ledger entries preserved. Exact retest pending.
+
 ## 2026-10-29 — PHX-G ordinary coin fixture + bounded config HMAC (nonproduction)
 
 - Baseline CORE draft #248 `a1f80f305614531a7b3ec8e9815d6e7027076bca`. Focused run #40882029147 SUCCESS; Full run #40882029142 FAILURE isolated to `tests/v060_coin_false_ack.sh` at ordinary coin ACK/quarantine step. Unknown controller policy rightly denied positive coin, so repair only the synthetic fixture, retaining signed denied positive control before explicitly using test admin enable.
