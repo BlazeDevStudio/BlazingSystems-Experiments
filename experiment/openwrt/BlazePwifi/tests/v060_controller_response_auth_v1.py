@@ -120,11 +120,23 @@ esac
     except AssertionError: pass
     else: raise AssertionError("replayed response accepted for new nonce")
     print("PHX-G-CFG-AUTH case 7 replay-to-new-nonce denied PASS")
+    # Negative contract demonstration: v1 does NOT authenticate owner or
+    # window kind. Preserve DENY; never interpret this signature as admission.
+    owner_a = {"device_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "window_kind": "hotspot"}
+    owner_b = {"device_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "window_kind": "rental"}
+    check(owner_a != owner_b, "mutation setup")
+    check(valid(active, "poll", na)["signature"] == valid(active, "poll", na)["signature"],
+          "stable v1 signed core")
+    check("device_id" not in active["config_auth"] and "window_kind" not in active["config_auth"],
+          "v1 unexpectedly claims owner/kind binding")
+    check(active["config_auth"]["admission_allowed"] is False,
+          "owner/kind mutation may never grant admission")
+    print("PHX-G-CFG-AUTH case 8 owner/window-kind mutation NOT authenticated by v1; DENY-only PASS")
     fake = t/"bin/openssl"
     fake.write_text("#!/bin/sh\nexit 74\n")
     fake.chmod(0o700)
     broken = request("poll", "445566778899aabb")
     check(broken["ok"] is False and "authentication unavailable" in broken["error"],
           "openssl failure must deny, never unsigned fallback")
-    print("PHX-G-CFG-AUTH case 8 missing signer denies response PASS")
-    print("PHX-G-CFG-AUTH 8/8 synthetic host cases PASS; protected reboot highwater=UNPROVEN; physical admission=DENY")
+    print("PHX-G-CFG-AUTH case 9 missing signer denies response PASS")
+    print("PHX-G-CFG-AUTH 9/9 synthetic host cases PASS; protected reboot highwater=UNPROVEN; physical admission=DENY")
