@@ -167,6 +167,15 @@ app.whenReady().then(()=>{
       await api.deleteWorkspace(ws.id);
       if((await api.listWorkspaces()).some(w=>w.id===ws.id))throw Error('Workspace deletion failed');
       if(!(await api.openProject(saved.id))||!(await api.openProject(other.id)))throw Error('Workspace deletion altered project firmware');
+      // Real IPC persistence and renderer rehydration, not only schema unit tests.
+      const sessionLayout=await api.getSession();
+      if(sessionLayout.workspaceId!==''||sessionLayout.activeProjectId!==saved.id
+       ||!sessionLayout.openProjectIds.includes(saved.id)||!sessionLayout.openProjectIds.includes(other.id))
+       throw Error('Desktop session did not preserve active target and valid independent tabs');
+      await restoreSession();
+      if(document.getElementById('projectTitle').textContent!=='GuiSmoke'
+       ||!document.querySelector('#openProjectTabs [data-activate-project="'+other.id+'"]'))
+       throw Error('Desktop session restore did not rehydrate real renderer tabs');
 
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
