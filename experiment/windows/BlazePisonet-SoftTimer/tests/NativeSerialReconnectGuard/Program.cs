@@ -83,10 +83,9 @@ static (int accepted, bool sampleObserved) ForcedRace(bool injectFault)
     var oldCfg = new AppConfig { CoinInputSignal = ModemSignal.Cts,
         CoinInputActiveHigh = true, MinimumPulseMs = 10, DebounceMs = 10 };
     var newCfg = new AppConfig { CoinInputSignal = ModemSignal.Cts,
-        CoinInputActiveHigh = !injectFault, MinimumPulseMs = 10, DebounceMs = 10 };
+        CoinInputActiveHigh = injectFault, MinimumPulseMs = 10, DebounceMs = 10 };
     // V4 new B active-low (physical idle CTS high); V5 new B active-high
     // (physical idle CTS low), with a legitimate B pulse during old fault.
-    if (!injectFault) newCfg.CoinInputActiveHigh = false;
     using var sut = new SerialHardware();
     int count = 0;
     sut.CoinPulseAccepted += () => Interlocked.Increment(ref count);
