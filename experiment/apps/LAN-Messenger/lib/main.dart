@@ -244,10 +244,18 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
 
   Future<bool> _showDesktopIncoming(Peer peer, bool video) async {
     if (!Platform.isWindows) return false;
+    final session = intercom?.callId;
+    if (session == null) return false;
     return _desktopPopupGate.run<bool>(() async {
+      // Native channel operations execute in requested order. A queued show
+      // from a replaced offer must never inherit the next call's identity.
+      if (!mounted || !_incomingDialogOpen || !_incomingUsesExternalSurface ||
+          intercom?.callId != session || _incomingPeer?.id != peer.id) {
+        return false;
+      }
       try {
         return await _desktopCalls.invokeMethod<bool>('incoming', {
-          'callId': intercom?.callId ?? '',
+          'callId': session,
           'caller': peer.name,
           'video': video,
         }) ?? false;
@@ -298,6 +306,9 @@ class _HomePageState extends State<HomePage> with wm.WindowListener, tray.TrayLi
         }
       } else if (background) {
         await _desktopPopupGate.run<void>(() async {
+          if (intercom?.callId != id || intercom?.closing == true ||
+              (desktopEpoch != null &&
+                  !_desktopCallSurfaceEpoch.isCurrent(desktopEpoch))) return;
           try { await _desktopCalls.invokeMethod<bool>('ongoing', args); }
           catch (_) {}
         });
