@@ -135,6 +135,31 @@ namespace BlazePisonet.SoftTimer
         public int MaximumPulseMs { get; set; } = 1000;
         public int DebounceMs { get; set; } = 10;
     }
+    // TEST ONLY — Fake opened-HANDLE identity verifier. It reads the PnP
+    // value captured by the *fake SerialPort.Open()* instance, not the mutable
+    // WMI pre-open descriptor. Real production verifier is deliberately
+    // fail closed until a reviewed HANDLE-owning transport exists.
+    internal static class OpenedSerialHandleIdentity
+    {
+        internal static bool TryVerify(
+            System.IO.Ports.SerialPort opened,
+            SerialDeviceInfo selected, out string reason)
+        {
+            if (!opened.IsOpen || string.IsNullOrWhiteSpace(opened.OpenedPhysicalPnp))
+            {
+                reason = "Fake opened HANDLE: physical PnP identity unavailable";
+                return false;
+            }
+            if (!string.Equals(opened.OpenedPhysicalPnp, selected.PnpDeviceId,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                reason = "Fake opened HANDLE: selected PnP does not match opened adapter";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+    }
     public static class Storage
     {
         public static void Log(string message) => Console.WriteLine("SOURCE_LOG " + message);
