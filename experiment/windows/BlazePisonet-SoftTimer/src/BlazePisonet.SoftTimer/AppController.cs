@@ -50,7 +50,9 @@ public sealed class AppController : IDisposable
         _timer.Audit += Storage.Log;
         _serial.ConnectionChanged += s => { HardwareStatus = s; StatusChanged?.Invoke(); };
         _serial.SignalChanged += () => { if (Config.TimerSource == TimerSourceMode.ExternalTimerBoard) UpdateExternalBoard(); };
-        _serial.CoinPulseAccepted += async () => await HandleCoinPulse();
+        // Never route money from the unqualified legacy Action callback.
+        // Consume the original immutable session event before any credit path.
+        _serial.CoinPulseAcceptedWithContext += OnSerialCoinAccepted;
         _security.AdminSecretRequested += () => BeginInvokeUi(OpenAdminFromLock);
         _security.UnusualInputThresholdReached += () => BeginInvokeUi(() => ConfirmOrShutdown("Unusual keyboard or mouse activity detected."));
         _blazeTimer.RemainingReceived += s => _timer.SetAuthoritativeSeconds(s, "Blaze Pisonet Timer");
@@ -165,7 +167,20 @@ public sealed class AppController : IDisposable
         if (Config.RunWatchdog) EnsureWatchdog();
     }
 
-    private async Task HandleCoinPulse()
+    private void OnSerialCoinAccepted(SerialCoinAcceptance accepted)
+    {
+        if (!_serial.TryClaimCoin(accepted))
+        {
+            Storage.Log($"Stale/duplicate serial coin denied: session={accepted.SessionEpoch} event={accepted.EventSequence}");
+            return;
+        }
+
+        // The original immutable event is carried throughout the operation,
+        // not reconstructed from mutable _serial.ConnectedDevice after awaits.
+        _ = HandleCoinPulse(accepted);
+    }
+
+    private async Task HandleCoinPulse(SerialCoinAcceptance accepted)
     {
         if (!Config.Enabled) return;
         if (MemberReconciliationPending)
@@ -185,7 +200,7 @@ public sealed class AppController : IDisposable
         }
         else if (Config.CoinTopology == CoinTopologyMode.StandardOneToOne && Config.TimerSource == TimerSourceMode.InternalPcTimer)
         {
-            _timer.AddCoin(Config.SecondsPerCoin, _serial.ConnectedDevice?.PortName ?? "serial");
+            _timer.AddCoin(Config.SecondsPerCoin, accepted.Device.PortName);
         }
 
         if (Config.BlazePwifiEnabled && Config.MirrorLocalCoinsToBlazePwifi)
