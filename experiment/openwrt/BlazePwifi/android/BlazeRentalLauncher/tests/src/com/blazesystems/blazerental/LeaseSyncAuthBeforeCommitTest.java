@@ -177,6 +177,47 @@ public final class LeaseSyncAuthBeforeCommitTest {
                         Context.MODE_PRIVATE).getAll());
     }
 
+    @Test public void wildcardSameRevisionSurvivesInventoryChange() throws Exception {
+        try (ServerSocket server = openServer()) {
+            setupPaidLease(server);
+            // Previous wildcard policy expanded inventory at acceptance time.
+            // Simulate the subsequently changed inventory without touching the
+            // trusted signed wildcard canonical or rewriting accepted restrictions.
+            assertTrue(AndroidRentalPolicyRepository.applyVerified(scoped, 7L,
+                    RentalPolicy.MODE_RENTAL, "com.example.previously.installed",
+                    "", "", "v3|" + ID + "|oldnonce|" + NOW
+                            + "|" + OLD_UNTIL + "|7|rental|*||||4096||600"
+                            + "|overlay|1||1|hold|4000|0", "fixture-signature"));
+            Map<String, ?> priorPolicy = policyPrefs();
+            assertFalse(AndroidRentalPolicyRepository.load(scoped).getAllowedPackages()
+                    .equals(AndroidRentalPolicyRepository.parseCsv(LeaseClient.inventoryCsv(scoped))));
+            assertTrue(syncWithResponse(server, true, false));
+            assertEquals(NEW_UNTIL, RentalLeaseStore.leaseUntilMs(scoped));
+            assertEquals(priorPolicy, policyPrefs());
+            verify(alarms, atLeastOnce()).setExactAndAllowWhileIdle(
+                    eq(AlarmManager.ELAPSED_REALTIME_WAKEUP),
+                    anyLong(), any(PendingIntent.class));
+        }
+    }
+
+    @Test public void explicitSameRevisionCannotBecomeWildcard() throws Exception {
+        try (ServerSocket server = openServer()) {
+            setupPaidLease(server);
+            assertTrue(AndroidRentalPolicyRepository.applyVerified(scoped, 7L,
+                    RentalPolicy.MODE_RENTAL, "com.example.restricted",
+                    "", "", "v3|" + ID + "|oldnonce|" + NOW
+                            + "|" + OLD_UNTIL + "|7|rental|com.example.restricted"
+                            + "||||4096||600|overlay|1||1|hold|4000|0", "fixture-signature"));
+            Map<String, ?> oldLease = leasePrefs();
+            Map<String, ?> oldPolicy = policyPrefs();
+            assertFalse(syncWithResponse(server, true, false));
+            assertEquals(oldLease, leasePrefs());
+            assertEquals(oldPolicy, policyPrefs());
+            assertEquals(OLD_UNTIL, RentalLeaseStore.leaseUntilMs(scoped));
+            verifyZeroInteractions(alarms);
+        }
+    }
+
     private static ServerSocket openServer() throws Exception {
         ServerSocket server = new ServerSocket(0, 1,
                 InetAddress.getByName("127.0.0.1"));
