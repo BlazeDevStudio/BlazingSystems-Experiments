@@ -21,6 +21,10 @@ function MustDeny([string]$label,[scriptblock]$action,[string]$needle) {
 try {
   $fake=Join-Path $root 'fixture.exe'
   [IO.File]::WriteAllBytes($fake,[byte[]](77,90,0,0))
+  $fakeApp=Join-Path $root 'fixture-app.exe'
+  $fakeWatchdog=Join-Path $root 'fixture-watchdog.exe'
+  [IO.File]::WriteAllBytes($fakeApp,[byte[]](77,90,0,1))
+  [IO.File]::WriteAllBytes($fakeWatchdog,[byte[]](77,90,0,2))
   MustDeny 'missing pin' { & $gate -Mode Sign -InputPaths @($fake) -PinnedCertSha256 '' } '64-hex'
   MustDeny 'malformed pin' { & $gate -Mode Verify -InputPaths @($fake,$fake,$fake) -PinnedCertSha256 '123' } '64-hex'
   MustDeny 'missing PFX' { & $gate -Mode Sign -InputPaths @($fake) -PinnedCertSha256 $pin } 'PFX secret missing'
@@ -28,9 +32,9 @@ try {
   MustDeny 'missing timestamp URL' { & $gate -Mode Sign -InputPaths @($fake) -PinnedCertSha256 $pin -PfxBase64 'AA==' -PfxPassword 'fixture' } 'timestamp URL missing'
   MustDeny 'unapproved http timestamp' { & $gate -Mode Sign -InputPaths @($fake) -PinnedCertSha256 $pin -PfxBase64 'AA==' -PfxPassword 'fixture' -TimestampUrl 'http://example.invalid' } 'timestamp URL missing'
   MustDeny 'missing EXE' { & $gate -Mode Sign -InputPaths @((Join-Path $root 'missing.exe')) -PinnedCertSha256 $pin -PfxBase64 'AA==' -PfxPassword 'fixture' -TimestampUrl 'https://example.invalid' } 'missing.exe'
-  MustDeny 'unsigned fixture' { & $gate -Mode Verify -InputPaths @($fake,$fake,$fake) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40) } 'lacks trusted embedded Authenticode'
+  MustDeny 'unsigned fixture' { & $gate -Mode Verify -InputPaths @($fake,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40) } 'lacks trusted embedded Authenticode'
 
-  $workflow=Get-Content -LiteralPath (Join-Path $PSScriptRoot '../../../../.github/workflows/blazepisonet-softtimer-release.yml') -Raw
+  $workflow=Get-Content -LiteralPath (Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepisonet-softtimer-release.yml') -Raw
   $markers=@(
     'RELEASE-SIGN test fail-closed negative controls',
     'Publish self-contained Windows x64 EXEs',
@@ -57,7 +61,7 @@ try {
   }
   if ($ActualUnsignedSetup) {
     MustDeny 'actual CI-built unsigned native Setup' {
-      & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fake,$fake) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
+      & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
     } 'lacks trusted embedded Authenticode'
   }
   Write-Output 'RELEASE-SIGN: fail-closed negative controls and signing order PASS; no certificate or signed positive claimed'
