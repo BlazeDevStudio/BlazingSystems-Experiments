@@ -266,6 +266,9 @@ jobs:
           Get-Content SHA256SUMS
 
       - name: Upload validated release candidates
+        # DRAFT/PR regressions may compile/build locally but must NOT
+        # publish candidate artifacts or imply release readiness.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: BlazePisonet-SoftTimer-v0.4.0-win-x64
