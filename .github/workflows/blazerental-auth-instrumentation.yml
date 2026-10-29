@@ -65,7 +65,7 @@ jobs:
               "/opt/gradle-${GRADLE_VERSION}/bin/gradle" --no-daemon tasks --all
           ) > rental-auth-results/tasks.txt
           grep -Eq '^[[:space:]]*connectedAospDebugAndroidTest[[:space:]]' rental-auth-results/tasks.txt
-          grep -Eq '^[[:space:]]*assembleAospDebugAndroidTest[[:space:]]' rental-auth-results/tasks.txt
+          grep -Eq '^[[:space:]]*assembleAospDebugAndroidTest([[:space:]]|$)' rental-auth-results/tasks.txt
 
       - name: Compile debug app and regression test APK (no production signer)
         shell: bash
