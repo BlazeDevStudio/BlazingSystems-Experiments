@@ -10,7 +10,7 @@ import sys
 SOURCE = Path("experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/SerialHardware.cs")
 FAKE = Path("experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialPinFaultLab/FakeOsAndAppTypes.cs")
 EXPECTED = {
-    SOURCE: "1f1e46595fa93a229c6bced9fed95ca0f01a07f6",
+    SOURCE: "a830311040515a5ee9bf0bd32afc01c2839efc13",
     FAKE: "8e6cc716c06388668bbf426053da8aa272cd5c47",
 }
 TARGET = Path("experiment/windows/BlazePisonet-SoftTimer/tests/NativeSerialReconnectGuard/Generated/ActualSerialHardware.cs")
