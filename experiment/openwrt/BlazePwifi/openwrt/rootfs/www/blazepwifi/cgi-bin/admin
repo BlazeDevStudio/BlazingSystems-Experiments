@@ -475,8 +475,19 @@ EOF
     bp_auth_csrf_ok || bp_fail "csrf validation failed"
     id="$(bp_param id)"
     printf '%s' "$id" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid controller"
-    bp_controller_ensure "$id"
-    bp_controller_set "$id" "$(bp_param enabled)" "$(bp_param coin_enabled)" "$(bp_param relay_enabled)" "$(bp_param led_enabled)" "$(bp_param coin_pin)" "$(bp_param relay_pin)" "$(bp_param led_pin)" "$(bp_param coin_active_low)" "$(bp_param relay_active_high)" "$(bp_param led_active_high)" "$(bp_param coin_debounce_ms)" "$(bp_param pulse_group_ms)" "$(bp_param max_wifi_retries)" || bp_fail "invalid controller configuration"
+    bp_lock || bp_fail "controller registry busy"
+    if ! bp_controller_ensure "$id"; then
+      bp_unlock
+      bp_fail "controller registry unavailable"
+    fi
+    bp_controller_set "$id" "$(bp_param enabled)" "$(bp_param coin_enabled)" "$(bp_param relay_enabled)" "$(bp_param led_enabled)" "$(bp_param coin_pin)" "$(bp_param relay_pin)" "$(bp_param led_pin)" "$(bp_param coin_active_low)" "$(bp_param relay_active_high)" "$(bp_param led_active_high)" "$(bp_param coin_debounce_ms)" "$(bp_param pulse_group_ms)" "$(bp_param max_wifi_retries)"
+    rc=$?
+    bp_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid controller configuration" ;;
+      *) bp_fail "controller update uncertain; reconciliation required" ;;
+    esac
     bp_auth_audit controller_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$id"
     bp_json '{"ok":true}'
     ;;

@@ -15,7 +15,10 @@ bp_controller_ensure() {
   id="$1"
   bp_controller_init
   grep -q "^$id$(printf '\t')" "$BP_CONTROLLERS" 2>/dev/null || {
-    printf '%s\t1\t1\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t1\n' "$id" >> "$BP_CONTROLLERS"
+    # Unknown/recovered controller identities are UNENROLLED: neither coin
+    # intake nor signed paid admission may be activated by heartbeat alone.
+    # Re-enabling needs an explicit authenticated admin controller_set.
+    printf '%s\t0\t0\t1\t1\t-1\t-1\t-1\t1\t1\t1\t40\t400\t6\t1\n' "$id" >> "$BP_CONTROLLERS"
     chmod 600 "$BP_CONTROLLERS"
     bp_durable_sync
   }
@@ -37,15 +40,90 @@ bp_controller_uint() {
   [ "$value" -ge "$min" ] && [ "$value" -le "$max" ]
 }
 
+
+# PHX-L-CORE P0 #31: shared controller-paid admission linearization.
+# fd4 is distinct from paid fd6, member fd7, auth fd8, account fd9.
+# Callers must acquire this only AFTER any member/account writer lock,
+# and hold through the durable paid commit. Controller admin holds it
+# through its config write. Previously committed receipts are checked first.
+bp_controller_admission_lock() {
+  mkdir -p "$BP_RUN" || return 8
+  exec 4>"$BP_RUN/controller-admission.lock" || return 8
+  flock -w 10 4 || { exec 4>&-; return 8; }
+}
+bp_controller_admission_unlock() {
+  flock -u 4 2>/dev/null || true
+  exec 4>&-
+}
+# Runtime-only admission barrier. Created BEFORE an admin controller write
+# while the shared fd4 admission lock is held. If registry replacement or its
+# durability sync fails, the barrier remains and subsequent signed NEW paid
+# admissions fail closed even if the new enabled row is locally visible.
+# BP_RUN is volatile: this is NOT independent antirollback/powercycle proof.
+bp_controller_update_unsettled() {
+  [ -e "$BP_RUN/controller-update-unsettled" ] ||
+    [ -L "$BP_RUN/controller-update-unsettled" ]
+}
+bp_controller_paid_allowed() {
+  controller_id="$1"; operation="$2"
+  bp_controller_update_unsettled && return 1
+  [ -f "$BP_CONTROLLERS" ] && [ ! -L "$BP_CONTROLLERS" ] || return 1
+  # Do not admit an automatically created row, a torn/truncated row,
+  # malformed controller policy, or duplicate controller identity.
+  # This validates the entire 15-column persisted controller policy;
+  # config/revision rollback protection STILL needs an independent witness.
+  LC_ALL=C awk -F '\t' -v d="$controller_id" -v op="$operation" '
+    function uint(s, lo, hi) {
+      return s ~ /^(0|[1-9][0-9]*)$/ && length(s)<=10 &&
+        s+0>=lo && s+0<=hi
+    }
+    function bit(s) { return s=="0" || s=="1" }
+    function pin(s) { return s=="-1" || uint(s, 0, 63) }
+    $1==d {
+      n++
+      if (NF!=15 ||
+          !bit($2) || !bit($3) || !bit($4) || !bit($5) ||
+          !pin($6) || !pin($7) || !pin($8) ||
+          !bit($9) || !bit($10) || !bit($11) ||
+          !uint($12, 1, 2000) || !uint($13, 10, 10000) ||
+          !uint($14, 1, 60) || !uint($15, 1, 2147483647)) bad=1
+      enabled=$2; coin_enabled=$3
+    }
+    END {
+      if (n!=1 || bad || enabled!="1" ||
+          (op=="coin" && coin_enabled!="1")) exit 1
+    }
+  ' "$BP_CONTROLLERS"
+}
+
 bp_controller_write() {
   id="$1"; shift
   tmp="$BP_STATE/.controllers.$(bp_tmp_suffix)"
-  awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"
-  printf '%s' "$id" >> "$tmp"
-  for value in "$@"; do printf '\t%s' "$value" >> "$tmp"; done
-  printf '\n' >> "$tmp"
-  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS"
-  bp_durable_sync
+  # A failed copy or partial append must never replace the prior
+  # controller registry: it also carries enabled/coin-enabled admission.
+  if ! awk -F '\t' -v d="$id" '$1!=d {print}' "$BP_CONTROLLERS" > "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  if ! printf '%s' "$id" >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  for value in "$@"; do
+    if ! printf '\t%s' "$value" >> "$tmp"; then
+      rm -f "$tmp" 2>/dev/null || true
+      return 8
+    fi
+  done
+  if ! printf '\n' >> "$tmp"; then
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  fi
+  chmod 600 "$tmp" && mv "$tmp" "$BP_CONTROLLERS" || {
+    rm -f "$tmp" 2>/dev/null || true
+    return 8
+  }
+  bp_durable_sync || return 8
 }
 
 bp_controller_set() {
@@ -57,11 +135,37 @@ bp_controller_set() {
   bp_controller_uint "$debounce" 1 2000 || return 2
   bp_controller_uint "$group" 10 10000 || return 2
   bp_controller_uint "$retries" 1 60 || return 2
+  bp_controller_admission_lock || return 8
+  # Never auto-clear a previous ambiguous controller write. Operator recovery
+  # and a protected witness are separate production P0 requirements.
+  if bp_controller_update_unsettled; then
+    bp_controller_admission_unlock
+    return 8
+  fi
+  # This marker is in the runtime directory, NOT on the failed durable disk.
+  # Establish it under the same lock before any registry replacement.
+  # A failure to establish the barrier must prevent the admin write.
+  if ! (umask 077; : > "$BP_RUN/controller-update-unsettled"); then
+    bp_controller_admission_unlock
+    return 8
+  fi
   line="$(bp_controller_line "$id")"
   rev="$(printf '%s' "$line" | cut -f15)"
   [ -n "$rev" ] || rev=0
   rev=$((rev+1))
-  bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"
+  if bp_controller_write "$id" "$enabled" "$coin" "$relay" "$led" "$cpin" "$rpin" "$lpin" "$clow" "$rhigh" "$lhigh" "$debounce" "$group" "$retries" "$rev"; then
+    # A truly successful durable write can release the runtime barrier.
+    # If removal fails, retain denial instead of falsely declaring success.
+    if rm -f "$BP_RUN/controller-update-unsettled" &&
+       ! bp_controller_update_unsettled; then
+      bp_controller_admission_unlock
+      return 0
+    fi
+  fi
+  # No cleanup on ambiguous failure; an enabled row can be visible after
+  # mv succeeded but bp_durable_sync returned an error.
+  bp_controller_admission_unlock
+  return 8
 }
 
 bp_controller_json() {
