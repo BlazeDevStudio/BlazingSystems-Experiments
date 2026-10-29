@@ -384,6 +384,19 @@ public sealed class SerialHardware : IDisposable
         catch { return false; }
     }
 
+    // Read-only admission check for a previously claimed original event.
+    // Guards post-await continuation from reconnect; NOT opened OS HANDLE proof.
+    public bool IsCoinSessionCurrent(SerialCoinAcceptance accepted)
+    {
+        if (accepted is null) return false;
+        lock (_gate)
+        {
+            return accepted.SessionEpoch == _sessionEpoch &&
+                ReferenceEquals(accepted.Source, _port) &&
+                _port?.IsOpen == true;
+        }
+    }
+
     // Check+consume under _gate. A pending notification whose port/session has
     // been replaced cannot be claimed, even if a subscriber is delayed.
     public bool TryClaimCoin(SerialCoinAcceptance accepted)
