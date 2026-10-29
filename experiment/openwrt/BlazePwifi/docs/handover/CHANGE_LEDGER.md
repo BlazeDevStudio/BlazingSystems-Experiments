@@ -1,3 +1,7 @@
+## 2026-10-30 — PHX-CORE-J focused workflow coverage
+
+- Isolated PR #252 branch workflow now explicitly executes actual signed PAY-0731 duplicate receipt / paid writer lock fixture, nine host response-auth cases (including unbound owner/kind negative demonstration), prior PAY-0627, v0.4 controller and member compatibility. Commit chain follows recovery-I d1e71a8. Admission remains DENY-only; validation outcome must be read from new exact-head CI. No merge/release/physical payment.
+
 ## 2026-10-30 — PHX-CORE Recovery I (PR #252, isolated source/test)
 
 - Rechecked #40887233578 validate job 123495460348: PAY-0627 source CGI passed; PAY-0731 `v060_vendo_coin_replay_lock.sh` exited 1 with no fixture output at step 34. PAY-0731 had not provisioned synthetic `vendo-01` before expecting the first signed coin success. Added explicit synthetic controller admission setup in the disposable /tmp test using GET for library sourcing; no installed policy relaxed, unprovisioned denial retained.
