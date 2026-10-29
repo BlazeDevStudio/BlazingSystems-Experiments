@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let boardLoading=null;
-let currentWorkspaceId='',workspaces=[],openProjectIds=[];
+let currentWorkspaceId='',workspaces=[],openProjectIds=[],restoringSession=false;
 let project=null,projects=[],boards=[],selected=null,pending=null,pendingData=null,tab='graph',unsaved=false,saveTimer=null,saveInFlight=null,changeRevision=0,codeRequest=0,simulation=null,lastCompilation=null,simInputs={},simAnalogInputs={},simBreaks=[];
 const labels={setVariable:'Set Variable',readAnalog:'Analog Sample',thresholdOutput:'Threshold Output',loopStart:'Loop Start',pinMode:'Pin Mode',digitalWrite:'Digital Write',delay:'Delay',comment:'Comment',pwmWrite:'PWM Write',serialPrint:'Serial Print',wireWrite:'Wire I2C Write'};
 function log(text){const box=$('#log');box.textContent+='\n'+String(text);box.scrollTop=box.scrollHeight;}
@@ -39,6 +39,24 @@ function updateWorkspaceActions(){
  $('#workspaceRemoveCurrent').disabled=!w||!project||!w.projectIds.includes(project.id);
  $('#workspaceSummary').textContent=w?`${w.projectIds.length} independent targets${w.missingIds?.length?' · '+w.missingIds.length+' recoverable/missing':''}. Export/compile each separately.`:'Showing all projects. Each tab builds its own board target.';
 }
+// Tabs and selected collection live in a separate atomic session file, never in firmware.
+async function persistSession(){
+ if(restoringSession)return;
+ try{await window.blaze.saveSession({workspaceId:currentWorkspaceId,openProjectIds:[...openProjectIds],activeProjectId:project?.id||null});}
+ catch(e){log('Desktop layout could not be saved: '+e.message);}
+}
+async function restoreSession(){
+ const state=await window.blaze.getSession();
+ restoringSession=true;
+ try{
+  currentWorkspaceId=state.workspaceId;
+  openProjectIds=[...state.openProjectIds];
+  await refreshWorkspaces();await refreshProjects(false);
+  if(state.activeProjectId)await openProject(state.activeProjectId);
+  else renderOpenProjectTabs();
+ }finally{restoringSession=false;}
+ await persistSession();
+}
 function renderOpenProjectTabs(){
  const lookup=new Map(projects.map(x=>[x.id,x]));
  $('#openProjectTabs').innerHTML=openProjectIds.map(id=>{
@@ -54,7 +72,7 @@ async function refreshProjects(update=true){
  renderOpenProjectTabs();updateWorkspaceActions();
  if(update)log(`Found ${visible.length} visible project(s) in ${workspace?.name||'All projects'}.`);
 }
-async function openProject(id){while(project&&unsaved)await save();project=await window.blaze.openProject(id);if(!openProjectIds.includes(id))openProjectIds.push(id);simulation=null;lastCompilation=null;simInputs={};simAnalogInputs={};simBreaks=[];selected=null;pending=null;pendingData=null;unsaved=false;$('#dirty').textContent='';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=false);$('#paletteHint').textContent='Drag a block onto Nodes, or click to append it. Select the block to edit.';$('#welcome').classList.add('hidden');$('#workspace').classList.remove('hidden');render();}
+async function openProject(id){while(project&&unsaved)await save();project=await window.blaze.openProject(id);if(!openProjectIds.includes(id))openProjectIds.push(id);simulation=null;lastCompilation=null;simInputs={};simAnalogInputs={};simBreaks=[];selected=null;pending=null;pendingData=null;unsaved=false;$('#dirty').textContent='';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=false);$('#paletteHint').textContent='Drag a block onto Nodes, or click to append it. Select the block to edit.';$('#welcome').classList.add('hidden');$('#workspace').classList.remove('hidden');render();await persistSession();}
 function render(){if(!project)return;renderOpenProjectTabs();updateWorkspaceActions();$('#projectTitle').textContent=project.name;$('#projectMeta').textContent=`${project.fqbn} · ${project.source.mode==='manual'?'Full manual C++':'Node-generated C++'}`;$('#activeBoard').textContent=project.fqbn;$$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$$('.view').forEach(v=>v.classList.add('hidden'));$('#'+tab+'View').classList.remove('hidden');renderGraph();renderInspector();renderCode().catch(e=>log('Source generation error: '+e.message));renderPins().catch(e=>log('Pin profile error: '+e.message));renderBoardList();renderFlowchart();renderLibraries();renderVariables();renderSim();renderResourcesSummary();refreshProjects(false);}
 function renderGraph(){if(!project)return;let html='';for(const n of project.graph.nodes){html+=`<div class="node ${n.type==='loopStart'?'start':''} ${selected===n.id?'selected':''}" data-node="${n.id}" style="left:${Math.max(0,Math.min(1400,n.x||0))}px;top:${Math.max(0,Math.min(1100,n.y||0))}px"><div class="ntitle" data-drag="${n.id}">${escapeHTML(labels[n.type])}</div><div class="ndesc">${escapeHTML(describe(n))}</div><div class="ports"><button data-select="${n.id}">Edit</button>${n.type!=='loopStart'?`<button data-target="${n.id}">Input</button>`:'<span></span>'}<button data-source="${n.id}" title="Connect next execution block">Output →</button></div>${['readAnalog','setVariable'].includes(n.type)?`<div class="dataPorts"><button draggable="true" data-data-output="${n.id}" title="Data value output. Click, then click a Value input; or drag onto it.">● Value out</button></div>`:''}${n.type==='thresholdOutput'?`<div class="dataPorts"><button data-data-input="${n.id}" title="Typed numeric measurement input">◉ Value in</button></div>`:''}</div>`;}$('#nodeLayer').innerHTML=html;drawWires();}
 function describe(n){switch(n.type){case 'loopStart':return 'Runs repeatedly';case 'pinMode':return `D${n.params.pin} → ${n.params.mode}`;case 'digitalWrite':return `D${n.params.pin} ← ${n.params.value}`;case 'delay':return `${n.params.ms} ms`;case 'pwmWrite':return `D${n.params.pin} PWM ${n.params.value}/255`;case 'serialPrint':return `Serial ${n.params.baud}: ${(n.params.text||'').slice(0,26)}`;case 'setVariable':return `${n.params.target} = ${n.params.value}`;case 'readAnalog':return `${n.params.target} ← ${n.params.pin}`;case 'thresholdOutput':return `D${n.params.pin}: ${n.params.variable} ${n.params.operator} ${n.params.threshold}`;case 'wireWrite':return `I2C ${n.params.address} register ${n.params.register} = ${n.params.value}`;case 'comment':return (n.params.text||'Annotation').slice(0,42);}}
@@ -193,7 +211,7 @@ $('#nodeInspector').addEventListener('click',e=>{if(e.target.id==='disconnectDat
 $('#manualMode').onchange=async()=>{if(!project)return;if($('#manualMode').checked){if(!confirm('Take full manual source ownership? Visual changes will no longer generate this sketch. Existing blocks stay preserved.')){renderCode();return;}const generated=await window.blaze.generate(project);if(!generated.source){log('Cannot switch: graph validation errors: '+generated.diagnostics.errors.join('; '));renderCode();return;}project.source.manualSource=generated.source;project.source.mode='manual';}else{if(!confirm('Return to visual generation? Your manual source stays saved but is NOT compiled or exported while visual mode is active.')){renderCode();return;}project.source.mode='visual';}dirty();render();};
 $('#codeEditor').addEventListener('input',()=>{if(project?.source.mode==='manual'){project.source.manualSource=$('#codeEditor').value;dirty();}});
 for(const k of ['userPrelude','userSetup','userLoop'])$('#'+k).addEventListener('input',()=>{if(!project)return;project.source[k]=$('#'+k).value;dirty();});
-(async()=>{try{await refreshWorkspaces();await refreshProjects();const status=await window.blaze.cliStatus();$('#cliLed').classList.toggle('ok',status.ok);$('#cliState').textContent=status.ok?'Arduino CLI detected':'Arduino CLI unavailable';logResult('Arduino CLI',status);if(status.ok)await discover();else renderBoardList();}catch(e){log('Initialization failed: '+e.message);$('#cliState').textContent='CLI unavailable';}})();
+(async()=>{try{await refreshWorkspaces();await refreshProjects();try{await restoreSession();}catch(e){log('Desktop session recovery required; projects remain accessible: '+e.message);}const status=await window.blaze.cliStatus();$('#cliLed').classList.toggle('ok',status.ok);$('#cliState').textContent=status.ok?'Arduino CLI detected':'Arduino CLI unavailable';logResult('Arduino CLI',status);if(status.ok)await discover();else renderBoardList();}catch(e){log('Initialization failed: '+e.message);$('#cliState').textContent='CLI unavailable';}})();
 
 // v0.3 structured flowchart and BALIE read-only library panels.
 const flowTitles={setOutput:'Configure output',write:'Digital output',wait:'Delay',branch:'Decision',repeat:'Repeat',note:'Comment',callNodes:'Call node graph',end:'End loop iteration'};
@@ -220,7 +238,7 @@ $('#addWireAdapter').onclick=()=>{if(!project||project.fqbn!=='arduino:avr:uno')
 $('#manageLibraries').onclick=()=>{if(!project){log('Create a project first');return;}tab='libraries';render();};
 $('#rename').onclick=async()=>{if(!project)return;const name=prompt('New project name',project.name);if(name===null)return;try{while(unsaved)await save();project=await window.blaze.renameProject(project.id,name);render();log('Renamed project');}catch(e){log('Rename failed: '+e.message);}};
 $('#duplicate').onclick=async()=>{if(!project)return;try{while(unsaved)await save();const p=await window.blaze.duplicateProject(project.id);await openProject(p.id);log('Project duplicated to '+p.name);}catch(e){log('Duplicate failed: '+e.message);}};
-$('#trash').onclick=async()=>{if(!project)return;if(!confirm('Move '+project.name+' to project recovery? This removes it from active projects.'))return;try{while(unsaved)await save();await window.blaze.trashProject(project.id);openProjectIds=openProjectIds.filter(id=>id!==project.id);project=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);$('#paletteHint').textContent='Create a project to activate blocks.';await refreshProjects();log('Project moved to recoverable trash.');}catch(e){log('Delete failed: '+e.message);}};
+$('#trash').onclick=async()=>{if(!project)return;if(!confirm('Move '+project.name+' to project recovery? This removes it from active projects.'))return;try{while(unsaved)await save();await window.blaze.trashProject(project.id);openProjectIds=openProjectIds.filter(id=>id!==project.id);project=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);$('#paletteHint').textContent='Create a project to activate blocks.';await refreshProjects();await persistSession();log('Project moved to recoverable trash.');}catch(e){log('Delete failed: '+e.message);}};
 $('#recoverProject').onclick=async()=>{try{const items=await window.blaze.listRecovery();if(!items.length){log('No deleted projects available for recovery.');return;}const id=prompt('Paste the project ID to recover:\n'+items.map(p=>p.id).join('\n'),items[0].id);if(!id)return;const p=await window.blaze.recoverProject(id);await openProject(p.id);log('Restored '+p.name);}catch(e){log('Recovery failed: '+e.message);}};
 
 // v0.4.0 virtual logic simulator and forecast, both entirely optional to firmware generation.
@@ -271,10 +289,10 @@ $('#planSD').onclick=async()=>{if(!project)return;if(project.fqbn!=='arduino:avr
 };
 
 // v0.4.6 multi-project workspace control. A collection never changes board identities.
-$('#workspaceSelect').onchange=async()=>{currentWorkspaceId=$('#workspaceSelect').value;await refreshProjects();};
+$('#workspaceSelect').onchange=async()=>{currentWorkspaceId=$('#workspaceSelect').value;await refreshProjects();await persistSession();};
 $('#workspaceCreate').onclick=async()=>{
  const name=prompt('New workspace collection name (each project builds separately):','Home Automation');if(name===null)return;
- try{const w=await window.blaze.createWorkspace(name);currentWorkspaceId=w.id;await refreshWorkspaces();await refreshProjects();log('Workspace created: '+w.name);}catch(e){log('Workspace creation failed: '+e.message);}
+ try{const w=await window.blaze.createWorkspace(name);currentWorkspaceId=w.id;await refreshWorkspaces();await refreshProjects();await persistSession();log('Workspace created: '+w.name);}catch(e){log('Workspace creation failed: '+e.message);}
 };
 $('#workspaceRename').onclick=async()=>{
  const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
@@ -284,7 +302,7 @@ $('#workspaceRename').onclick=async()=>{
 $('#workspaceDelete').onclick=async()=>{
  const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
  if(!confirm(`Delete collection "${w.name}"? Its ${w.projectIds.length} firmware projects will NOT be deleted.`))return;
- try{await window.blaze.deleteWorkspace(w.id);currentWorkspaceId='';await refreshWorkspaces();await refreshProjects();log('Workspace collection deleted. Firmware projects retained.');}catch(e){log('Workspace delete failed: '+e.message);}
+ try{await window.blaze.deleteWorkspace(w.id);currentWorkspaceId='';await refreshWorkspaces();await refreshProjects();await persistSession();log('Workspace collection deleted. Firmware projects retained.');}catch(e){log('Workspace delete failed: '+e.message);}
 };
 $('#workspaceAddCurrent').onclick=async()=>{
  if(!currentWorkspaceId||!project)return;
@@ -305,7 +323,7 @@ $('#openProjectTabs').addEventListener('click',async e=>{
     const next=openProjectIds.at(-1);if(next)await openProject(next);
     else{project=null;selected=null;simulation=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$('#projectTitle').textContent='Start with a project';$('#projectMeta').textContent='Select a board and create your first sketch.';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);}
    }
-   await refreshProjects(false);
+   await refreshProjects(false);await persistSession();
   }catch(err){log('Close tab failed: '+err.message);}
   return;
  }
