@@ -12,6 +12,16 @@ public sealed record BlazePwifiMemberMutationResult(
     long BankedSeconds,
     long Revision);
 
+// Immutable, in-process request scope. Captures the exact original controller
+// identity, target nonce and connection settings; never a server-signed receipt.
+internal sealed record CoinWindowSnapshot(
+    AppConfig ConfigReference,
+    string ControllerId,
+    string TargetNonce,
+    string VendoUrl,
+    string VendoKey,
+    long Version);
+
 public sealed class BlazePwifiClient : IDisposable
 {
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(4) };
@@ -19,6 +29,8 @@ public sealed class BlazePwifiClient : IDisposable
     private AppConfig _config;
     private string _targetNonce = string.Empty;
     private bool _insertWindow;
+    private readonly object _coinWindowGate = new();
+    private long _coinWindowVersion;
     private int _busy;
     private DateTimeOffset _lastMemberSync = DateTimeOffset.MinValue;
 
@@ -86,7 +98,16 @@ public sealed class BlazePwifiClient : IDisposable
         _timer = new System.Threading.Timer(async _ => await Poll(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
-    public void UpdateConfig(AppConfig config) => _config = config;
+    public void UpdateConfig(AppConfig config)
+    {
+        lock (_coinWindowGate)
+        {
+            _config = config;
+            _coinWindowVersion++;
+            _insertWindow = false;
+            _targetNonce = string.Empty;
+        }
+    }
 
     public void Start()
     {
@@ -94,12 +115,23 @@ public sealed class BlazePwifiClient : IDisposable
         _timer.Change(0, 2500);
     }
 
-    public void Stop() => _timer.Change(Timeout.Infinite, Timeout.Infinite);
+    public void Stop()
+    {
+        _timer.Change(Timeout.Infinite, Timeout.Infinite);
+        lock (_coinWindowGate)
+        {
+            _coinWindowVersion++;
+            _insertWindow = false;
+            _targetNonce = string.Empty;
+        }
+    }
 
     private async Task Poll()
     {
         if (!_config.BlazePwifiEnabled || string.IsNullOrWhiteSpace(_config.BlazePwifiVendoKey)) return;
         if (Interlocked.Exchange(ref _busy, 1) != 0) return;
+        long requestedVersion;
+        lock (_coinWindowGate) requestedVersion = _coinWindowVersion;
         try
         {
             var json = await Call("poll", 0, string.Empty);
@@ -110,10 +142,23 @@ public sealed class BlazePwifiClient : IDisposable
             }
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            _insertWindow = root.TryGetProperty("insert", out var ins) && (ins.ValueKind == JsonValueKind.True || (ins.ValueKind == JsonValueKind.Number && ins.GetInt32() == 1));
-            _targetNonce = root.TryGetProperty("target_nonce", out var tn) ? tn.GetString() ?? string.Empty : string.Empty;
+            bool newWindow = root.TryGetProperty("insert", out var ins) &&
+                (ins.ValueKind == JsonValueKind.True ||
+                 (ins.ValueKind == JsonValueKind.Number && ins.GetInt32() == 1));
+            string newTarget = root.TryGetProperty("target_nonce", out var tn) &&
+                tn.ValueKind == JsonValueKind.String
+                    ? tn.GetString() ?? string.Empty : string.Empty;
+            lock (_coinWindowGate)
+            {
+                // Old HTTP poll results cannot reopen a window after Stop or
+                // update/reconnect. Each response creates a new window version.
+                if (requestedVersion != _coinWindowVersion) return;
+                _coinWindowVersion++;
+                _insertWindow = newWindow;
+                _targetNonce = newTarget;
+            }
 
-            var status = _insertWindow ? "BlazePwifi connected · coin window active" : "BlazePwifi connected";
+            var status = newWindow ? "BlazePwifi connected · coin window active" : "BlazePwifi connected";
             if (_config.BlazePwifiMemberAuthorityEnabled
                 && !_config.BlazePwifiRequireV2MemberProtocol
                 && DateTimeOffset.UtcNow - _lastMemberSync >= TimeSpan.FromSeconds(Math.Clamp(_config.BlazePwifiMemberSyncSeconds, 5, 300)))
@@ -133,15 +178,88 @@ public sealed class BlazePwifiClient : IDisposable
         finally { Interlocked.Exchange(ref _busy, 0); }
     }
 
-    public async Task<bool> ForwardCoinAsync(int pulses = 1)
+    // Capture ONCE before an upstream await. A changed target, controller,
+    // policy or window generation can never be silently substituted.
+    internal CoinWindowSnapshot? CaptureCoinWindow()
     {
-        if (!_config.BlazePwifiEnabled || !_config.MirrorLocalCoinsToBlazePwifi || !_insertWindow || string.IsNullOrWhiteSpace(_targetNonce)) return false;
+        lock (_coinWindowGate)
+        {
+            var cfg = _config;
+            var id = Storage.NormalizeId(cfg.BlazePwifiControllerId);
+            if (!cfg.Enabled || !cfg.BlazePwifiEnabled ||
+                !cfg.MirrorLocalCoinsToBlazePwifi || !_insertWindow ||
+                string.IsNullOrWhiteSpace(_targetNonce) ||
+                string.IsNullOrWhiteSpace(id) ||
+                string.IsNullOrWhiteSpace(cfg.BlazePwifiVendoUrl) ||
+                string.IsNullOrWhiteSpace(cfg.BlazePwifiVendoKey))
+                return null;
+            return new CoinWindowSnapshot(
+                cfg, id, _targetNonce, cfg.BlazePwifiVendoUrl,
+                cfg.BlazePwifiVendoKey, _coinWindowVersion);
+        }
+    }
+
+    private bool CoinWindowStillOwned(CoinWindowSnapshot captured)
+    {
+        lock (_coinWindowGate)
+        {
+            var cfg = _config;
+            return captured.Version == _coinWindowVersion &&
+                ReferenceEquals(captured.ConfigReference, cfg) &&
+                cfg.Enabled && cfg.BlazePwifiEnabled &&
+                cfg.MirrorLocalCoinsToBlazePwifi && _insertWindow &&
+                string.Equals(captured.TargetNonce, _targetNonce, StringComparison.Ordinal) &&
+                string.Equals(captured.ControllerId,
+                    Storage.NormalizeId(cfg.BlazePwifiControllerId), StringComparison.Ordinal) &&
+                string.Equals(captured.VendoUrl, cfg.BlazePwifiVendoUrl, StringComparison.Ordinal) &&
+                string.Equals(captured.VendoKey, cfg.BlazePwifiVendoKey, StringComparison.Ordinal);
+        }
+    }
+
+    // This compatibility entry point also captures the window once. It must
+    // not be used to rediscover a target after an unrelated await.
+    public Task<bool> ForwardCoinAsync(int pulses = 1)
+    {
+        var snapshot = CaptureCoinWindow();
+        return snapshot is null ? Task.FromResult(false) : ForwardCoinAsync(snapshot, pulses);
+    }
+
+    internal async Task<bool> ForwardCoinAsync(CoinWindowSnapshot captured, int pulses = 1)
+    {
+        if (captured is null || !CoinWindowStillOwned(captured)) return false;
         try
         {
-            var json = await Call("coin", Math.Clamp(pulses, 1, 20), _targetNonce);
-            if (json is null) return false;
+            var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
+            var sig = Signature(captured.VendoKey, "coin", captured.ControllerId,
+                nonce, Math.Clamp(pulses, 1, 20), captured.TargetNonce);
+            // The actual legacy v1 form fields are action/id/nonce/pulses/
+            // target/sig. All values come from the ORIGINAL window, not _config.
+            var form = new Dictionary<string, string>
+            {
+                ["action"] = "coin",
+                ["id"] = captured.ControllerId,
+                ["nonce"] = nonce,
+                ["pulses"] = Math.Clamp(pulses, 1, 20).ToString(),
+                ["target"] = captured.TargetNonce,
+                ["sig"] = sig
+            };
+            if (!CoinWindowStillOwned(captured)) return false;
+            using var resp = await _http.PostAsync(captured.VendoUrl,
+                new FormUrlEncodedContent(form));
+            var json = await resp.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode || !CoinWindowStillOwned(captured))
+                return false;
             using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.TryGetProperty("ok", out var ok) && ok.GetBoolean();
+            var root = doc.RootElement;
+            // The actual v1 CGI echoes target_nonce on BOTH first and replay
+            // coin ACKs. Missing/mismatched echo is never considered success.
+            // This remains a correlation check, not a signed paid receipt.
+            return root.TryGetProperty("ok", out var ok) &&
+                ok.ValueKind == JsonValueKind.True &&
+                root.TryGetProperty("target_nonce", out var tn) &&
+                tn.ValueKind == JsonValueKind.String &&
+                string.Equals(tn.GetString(), captured.TargetNonce,
+                    StringComparison.Ordinal);
         }
         catch { return false; }
     }
