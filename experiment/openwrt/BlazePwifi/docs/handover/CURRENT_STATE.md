@@ -1,3 +1,5 @@
+<!-- PHX-G-20261029-FIX-SETUP: isolated ordinary-coin fixture sources common.sh with REQUEST_METHOD=GET because POST setup reads empty stdin under set -e; restores POST before real signed CGI. No production code/source policy changed. Earlier focused #40886447195 and #40886740567 FAIL (fixture setup), new exact-head run pending. -->
+
 <!-- PHX-G-20261029-DIAG: original focused #40886447195 failed at first PAY-0627 negative assertion without stdout; fixture now emits the exact CGI rejected-response mismatch and still fails closed. This diagnostic-only follow-up leaves installed controller/Vendo source, signed replay tests and production policy unchanged. Final positive source test evidence remains pending. -->
 
 <!-- PHX-G-20261029:START -->

@@ -57,8 +57,12 @@ if ! printf '%s' "$denied_unprovisioned" | grep -q '"ok":false' ||
 fi
 [ "$(credit)" = 100 ]
 [ ! -e "$BP_STATE/paid-state-uncertain" ]
+# common.sh consumes POST stdin when sourced; avoid an empty read under
+# set -e during local admin setup. Restore POST for signed CGI processes.
+REQUEST_METHOD=GET
 . "$BP_LIB"
 . "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
 bp_controller_ensure vendo-01
 if bp_controller_paid_allowed vendo-01 coin; then
   echo 'PAY-0627 invalid fixture: unknown controller paid admission allowed' >&2

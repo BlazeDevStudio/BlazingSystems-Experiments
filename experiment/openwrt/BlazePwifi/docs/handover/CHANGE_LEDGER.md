@@ -1,3 +1,7 @@
+## 2026-10-29 — PHX-G fixture setup POST/GET correction
+
+- Focused jobs #40886447195 and #40886740567 failed before diagnostic emit; test-only fixture source under REQUEST_METHOD=POST consumed empty stdin and exited under set -e. Source common.sh under GET for synthetic admin provisioning, then restore POST for actual signed CGI. No installed controller/Vendo modifications or relaxation. Full historical ledger retained; successor focused test pending.
+
 ## 2026-10-29 — PHX-G ordinary-coin negative diagnostic (follow-up)
 
 - Initial focused CI #40886447195 failed at ordinary coin fixture with no diagnostic output. Test-only explicit rejected-response reporting added; no weakening of unknown-controller denial or change to installed CGI source. All historical ledger entries preserved. Exact retest pending.
