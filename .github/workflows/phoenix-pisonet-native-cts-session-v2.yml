@@ -61,6 +61,21 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { Write-Error "FAILED_OPEN_RESOURCE_GATE_RED_OR_INCONCLUSIVE: exit=$code"; exit 1 }
           Write-Host 'FAILED_OPEN_RESOURCE_GATE_GREEN'
+      - name: Native C# immutable acceptance / outside-lock reentrancy and cross-thread controls
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          # Source blob is already validated above by the literal guarded preparer.
+          # This independent fixture compiles the same unmodified actual C# source.
+          $lab='experiment/windows/BlazePisonet-SoftTimer/tests/NativeCoinEventOwnershipGuard/NativeCoinEventOwnershipGuard.csproj'
+          dotnet run --project $lab -c Release --no-launch-profile -- --invalid-setup
+          if ($LASTEXITCODE -ne 3) { Write-Error 'INCONCLUSIVE_EXIT_3: expected distinct invalid-setup sentinel'; exit 3 }
+          Write-Host 'COIN_EVENT_INCONCLUSIVE_EXIT_3_CONTROL_PASS'
+          dotnet run --project $lab -c Release --no-build --no-launch-profile
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { Write-Error "COIN_EVENT_OWNERSHIP_NOT_GREEN: native exit=$code (2=unsafe, 3=inconclusive)"; exit 1 }
+          Write-Host 'NATIVE_COIN_EVENT_OWNERSHIP_SOURCE_GREEN_ONLY: no callback under serial lock, one-time session claim'
       - name: Compile production Windows application (build-only, not release)
         shell: pwsh
         run: |
