@@ -155,11 +155,39 @@ public static class SerialDiscovery
     }
 }
 
+// An immutable in-process acceptance fact; not proof of Win32 opened-HANDLE
+// identity or financial authorization. Constructor and source identity are
+// internal so a consumer cannot construct an arbitrary accepted coin.
+public sealed class SerialCoinAcceptance
+{
+    internal SerialPort Source { get; }
+    internal SerialCoinAcceptance(
+        SerialPort source, long sessionEpoch, long eventSequence,
+        SerialDeviceInfo device, DateTimeOffset acceptedUtc, int widthMs)
+    {
+        Source = source;
+        SessionEpoch = sessionEpoch;
+        EventSequence = eventSequence;
+        Device = device;
+        AcceptedUtc = acceptedUtc;
+        PulseWidthMs = widthMs;
+    }
+
+    public long SessionEpoch { get; }
+    public long EventSequence { get; }
+    public SerialDeviceInfo Device { get; }
+    public DateTimeOffset AcceptedUtc { get; }
+    public int PulseWidthMs { get; }
+}
+
 public sealed class SerialHardware : IDisposable
 {
     private readonly object _gate = new();
     // Only accessed under _gate. Invalidates callbacks from retired sessions.
     private long _sessionEpoch;
+    private long _eventSequence;
+    // Limited to unclaimed synchronous notifications; cleared on reconnect.
+    private readonly HashSet<SerialCoinAcceptance> _unclaimedCoins = new();
     private SerialPort? _port;
     private AppConfig? _config;
     private bool _lastCoinActive;
@@ -172,7 +200,11 @@ public sealed class SerialHardware : IDisposable
     public SerialDeviceInfo? ConnectedDevice { get; private set; }
     public bool IsConnected => _port?.IsOpen == true;
     public event Action<string>? ConnectionChanged;
+    // Legacy diagnostic notification is not trusted for monetary decisions.
     public event Action? CoinPulseAccepted;
+    // Application money handling MUST consume this one-time, original-session
+    // event with TryClaimCoin before touching timer/central routing.
+    public event Action<SerialCoinAcceptance>? CoinPulseAcceptedWithContext;
     public event Action? SignalChanged;
 
     public bool Connect(AppConfig config)
@@ -352,6 +384,37 @@ public sealed class SerialHardware : IDisposable
         catch { return false; }
     }
 
+    // Check+consume under _gate. A pending notification whose port/session has
+    // been replaced cannot be claimed, even if a subscriber is delayed.
+    public bool TryClaimCoin(SerialCoinAcceptance accepted)
+    {
+        if (accepted is null) return false;
+        lock (_gate)
+        {
+            if (!_unclaimedCoins.Remove(accepted))
+                return false;
+            return accepted.SessionEpoch == _sessionEpoch &&
+                ReferenceEquals(accepted.Source, _port) &&
+                _port?.IsOpen == true;
+        }
+    }
+
+    // No user callback executes under _gate. A reconnecting subscriber
+    // invalidates later claims using the original epoch/source from capture.
+    private void DispatchCapturedCoin(SerialCoinAcceptance? accepted)
+    {
+        if (accepted is null) return;
+        try
+        {
+            CoinPulseAcceptedWithContext?.Invoke(accepted);
+            CoinPulseAccepted?.Invoke();
+        }
+        finally
+        {
+            lock (_gate) _unclaimedCoins.Remove(accepted);
+        }
+    }
+
     private void OnPinChanged(object? sender, SerialPinChangedEventArgs e)
     {
         AppConfig cfg;
@@ -390,15 +453,17 @@ public sealed class SerialHardware : IDisposable
         if (cfg.CoinInputSignal == ModemSignal.RingIndicator)
         {
             if (e.EventType != SerialPinChange.Ring) return;
+            SerialCoinAcceptance? accepted;
             lock (_gate)
             {
                 if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
                     return;
 
-                // Preserve legacy RI diagnostic only; it has no measured width.
-                // Physical RI coin admission is NOT approved by this change.
-                AcceptCoinIfDebounced(cfg, Math.Max(cfg.MinimumPulseMs, 1));
+                // RI still has no measured width and no physical approval.
+                accepted = CaptureCoinIfDebouncedLocked(
+                    cfg, Math.Max(cfg.MinimumPulseMs, 1));
             }
+            DispatchCapturedCoin(accepted);
             return;
         }
 
@@ -416,8 +481,9 @@ public sealed class SerialHardware : IDisposable
             return;
         }
 
-        // Commit a sample only to the same opened managed session. Preserve
-        // one lock boundary through pulse-state mutation and event initiation.
+        // Commit sampled pulse state only to the same managed session.
+        // Capture an immutable event under lock; deliver it OUTSIDE the lock.
+        SerialCoinAcceptance? acceptedCoin = null;
         lock (_gate)
         {
             if (!IsCurrentCallbackLocked(sender, source, cfg, epoch))
@@ -444,23 +510,31 @@ public sealed class SerialHardware : IDisposable
                     0, (DateTimeOffset.UtcNow - started).TotalMilliseconds);
                 _pulseStarted = null;
 
-                // Review synchronous subscriber lock-order before integration.
-                // Async target/session/receipt dispatch is separately unresolved.
-                AcceptCoinIfDebounced(cfg, width);
+                acceptedCoin = CaptureCoinIfDebouncedLocked(cfg, width);
             }
         }
+
+        DispatchCapturedCoin(acceptedCoin);
     }
 
-    private void AcceptCoinIfDebounced(AppConfig cfg, int widthMs)
+    // Requires _gate. This only captures metadata and reserves a one-time
+    // claim. It does not call listeners or grant financial authorization.
+    private SerialCoinAcceptance? CaptureCoinIfDebouncedLocked(
+        AppConfig cfg, int widthMs)
     {
-        if (_port?.IsOpen != true || _requireVerifiedIdle) return;
+        if (_port?.IsOpen != true || _requireVerifiedIdle ||
+            ConnectedDevice is not { } device)
+            return null;
         var now = DateTimeOffset.UtcNow;
-        if ((now - _lastAccepted).TotalMilliseconds < Math.Max(10, cfg.DebounceMs)) return;
-        if (widthMs < Math.Max(1, cfg.MinimumPulseMs)) return;
-        if (cfg.MaximumPulseMs > 0 && widthMs > cfg.MaximumPulseMs) return;
+        if ((now - _lastAccepted).TotalMilliseconds < Math.Max(10, cfg.DebounceMs)) return null;
+        if (widthMs < Math.Max(1, cfg.MinimumPulseMs)) return null;
+        if (cfg.MaximumPulseMs > 0 && widthMs > cfg.MaximumPulseMs) return null;
         _lastAccepted = now;
-        Storage.Log($"Coin pulse accepted on {ConnectedDevice?.PortName ?? "serial"} ({widthMs} ms)");
-        CoinPulseAccepted?.Invoke();
+        var accepted = new SerialCoinAcceptance(
+            _port, _sessionEpoch, ++_eventSequence, device, now, widthMs);
+        _unclaimedCoins.Add(accepted);
+        Storage.Log($"Coin pulse accepted on {device.PortName} ({widthMs} ms)");
+        return accepted;
     }
 
     private bool IsSignalActive(ModemSignal signal, bool activeHigh)
@@ -477,6 +551,7 @@ public sealed class SerialHardware : IDisposable
     private void DisconnectInternal()
     {
         unchecked { _sessionEpoch++; }
+        _unclaimedCoins.Clear();
         if (_port is not null)
         {
             try { _port.PinChanged -= OnPinChanged; } catch { }
