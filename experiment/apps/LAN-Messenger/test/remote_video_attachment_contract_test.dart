@@ -37,7 +37,7 @@ void main() {
     // The fallback must be freed after a failed initial native addTrack,
     // but never while bound to the live renderer.
     expect(block, contains('MediaStream? createdFallback;'));
-    expect(block, contains('if (!rendererAttached && abandoned != null &&'));
+    expect(block, matches(RegExp(r'if\s*\(\s*!rendererAttached\s*&&\s*abandoned\s*!=\s*null\s*&&')));
     expect(block, contains('await abandoned.dispose();'));
     expect(block, contains('if (callId != id || _closing || _remoteHasNativeStream) return;'));
 
