@@ -101,12 +101,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $source=(git rev-parse HEAD).Trim()
-          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet build "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --no-restore -warnaserror @versionArgs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-) { throw 'Exact Git source required for compiled version' }
+          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}$') { throw 'Exact Git source required for compiled version' }
           $versionArgs=@(
             "-p:Version=$env:VERSION",
             "-p:FileVersion=$($env:VERSION).0",
@@ -154,19 +149,7 @@ jobs:
           $ErrorActionPreference='Stop'
           New-Item -ItemType Directory -Force out/app,out/watchdog,out/bundle,portable,release | Out-Null
           $source=(git rev-parse HEAD).Trim()
-          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}
-          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/app @versionArgs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/watchdog @versionArgs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-          Copy-Item out/app/BlazePisonet.SoftTimer.exe out/bundle/ -Force
-          Copy-Item out/watchdog/BlazePisonet.SoftTimer.Watchdog.exe out/bundle/ -Force
-          if (-not (Test-Path out/bundle/BlazePisonet.SoftTimer.exe)) { throw 'SoftTimer EXE missing' }
-          if (-not (Test-Path out/bundle/BlazePisonet.SoftTimer.Watchdog.exe)) { throw 'Watchdog EXE missing' }
-
-
-) { throw 'Exact Git source required for compiled version' }
+          if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[0-9a-f]{40}$') { throw 'Exact Git source required for compiled version' }
           $versionArgs=@(
             "-p:Version=$env:VERSION",
             "-p:FileVersion=$($env:VERSION).0",
@@ -175,9 +158,9 @@ jobs:
             '-p:IncludeSourceRevisionInInformationalVersion=false'
           )
 
-          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/app
+          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/app @versionArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/watchdog
+          dotnet publish "$env:PROJECT_DIR/src/BlazePisonet.SoftTimer.Watchdog/BlazePisonet.SoftTimer.Watchdog.csproj" -c Release -r win-x64 --self-contained true --no-restore -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o out/watchdog @versionArgs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           Copy-Item out/app/BlazePisonet.SoftTimer.exe out/bundle/ -Force
