@@ -111,6 +111,7 @@ class LanNode {
   Future<bool> introduceDiscoveredPeer(Peer peer) async {
     if (_server == null || peers[peer.id]?.key != peer.key ||
         peers[peer.id]?.host != peer.host ||
+        peers[peer.id]?.port != peer.port ||
         _peerIntroductionsPending.contains(peer.id) ||
         _peerIntroductionsPending.length >= maxConcurrentPeerIntroductions) {
       return false;
