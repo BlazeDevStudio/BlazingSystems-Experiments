@@ -243,7 +243,7 @@ public final class LeaseClient {
                     // Require BOTH authenticated canonicals to use wildcard;
                     // otherwise an explicit package restriction cannot be bypassed.
                     String oldCanonical = AndroidRentalPolicyRepository.signedPayload(context);
-                    String[] oldFields = oldCanonical.split("\\\\|", -1);
+                    String[] oldFields = oldCanonical.split("\\|", -1);
                     boolean acceptedWildcard = oldFields.length > 8
                             && ("v2".equals(oldFields[0]) || "v3".equals(oldFields[0]))
                             && deviceId.equals(oldFields[1])
