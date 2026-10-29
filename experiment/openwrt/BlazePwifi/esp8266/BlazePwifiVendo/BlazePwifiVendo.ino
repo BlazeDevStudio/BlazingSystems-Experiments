@@ -243,6 +243,9 @@ void applyRemoteConfig(const String&r){
   // config_revision is untrusted until CORE signs a device/request-bound
   // envelope and an independent protected cold-reboot revision witness agrees.
   // Never parse/promote config_revision from raw HTTP in this lockdown.
+  // Legacy protocol fields coin_debounce_ms, pulse_group_ms and
+  // max_wifi_retries remain server-defined but are NOT accepted in Phase A.
+  // A future authenticated and protected-freshness config contract is required.
   // PHX-HW-P0: unauthenticated HTTP body MUST NOT grant GPIO/coin authority.
   // Drive OLD relay/LED outputs OFF using OLD polarity. Never rebind here.
   writeLogical(runRelayPin,false,runRelayActiveHigh);
