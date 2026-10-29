@@ -1,11 +1,11 @@
 'use strict';
 const {app,BrowserWindow,ipcMain,dialog,session}=require('electron');const path=require('node:path');
-const {WorkspaceStore}=require('../core/storage.cjs');const {WorkspaceCatalog}=require('../core/workspaces.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');const balie=require('../core/balie.cjs');const board=require('../core/board.cjs');const flow=require('../core/flowchart.cjs');const {SimulationController}=require('../core/simulator.cjs');const resources=require('../core/resources.cjs');const peripheralPlanner=require('../core/peripherals.cjs');
-let win,store,cli,workspaceCatalog;const simulations=new SimulationController();
+const {WorkspaceStore}=require('../core/storage.cjs');const {WorkspaceCatalog}=require('../core/workspaces.cjs');const {DesktopSession}=require('../core/desktop-session.cjs');const arduino=require('../core/arduino.cjs');const {analyzeGraph,generateSketch}=require('../core/project.cjs');const balie=require('../core/balie.cjs');const board=require('../core/board.cjs');const flow=require('../core/flowchart.cjs');const {SimulationController}=require('../core/simulator.cjs');const resources=require('../core/resources.cjs');const peripheralPlanner=require('../core/peripherals.cjs');
+let win,store,cli,workspaceCatalog,desktopSession;const simulations=new SimulationController();
 function checkedSender(event){if(!win || event.sender!==win.webContents)throw Error('Untrusted IPC sender');}
 function register(channel,fn){ipcMain.handle(channel,(event,...args)=>{checkedSender(event);return fn(...args);});}
 app.whenReady().then(()=>{
- store=new WorkspaceStore(path.join(app.getPath('userData'),'projects'));workspaceCatalog=new WorkspaceCatalog(store);cli=arduino.findCli(process.resourcesPath);
+ store=new WorkspaceStore(path.join(app.getPath('userData'),'projects'));workspaceCatalog=new WorkspaceCatalog(store);desktopSession=new DesktopSession(store,workspaceCatalog);cli=arduino.findCli(process.resourcesPath);
  session.defaultSession.setPermissionRequestHandler((_w,_p,cb)=>cb(false));
  win=new BrowserWindow({width:1350,height:810,minWidth:900,minHeight:620,show:false,backgroundColor:'#121721',webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(__dirname,'preload.cjs'),webSecurity:true}});
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());
@@ -185,6 +185,7 @@ app.whenReady().then(()=>{
   });
  }
 
+ register('session:load',()=>desktopSession.load());register('session:save',state=>desktopSession.save(state));
  register('workspace:list',()=>workspaceCatalog.list());register('workspace:create',name=>workspaceCatalog.create(name));register('workspace:rename',(id,name)=>workspaceCatalog.rename(id,name));register('workspace:add',(id,pid)=>workspaceCatalog.add(id,pid));register('workspace:remove',(id,pid)=>workspaceCatalog.remove(id,pid));register('workspace:delete',id=>workspaceCatalog.delete(id));register('project:list',()=>store.list());register('project:create',(name,fqbn,template)=>store.create(name,fqbn,template));register('project:open',id=>store.open(id));register('project:save',p=>store.save(p));
  register('project:validate',p=>{const d=generateSketch(p).diagnostics;return {...d,ordered:(d.ordered||[]).map(n=>n.id)};});register('project:generate',p=>generateSketch(p));
  register('project:rename',(id,name)=>store.rename(id,name));register('project:duplicate',id=>store.duplicate(id));register('project:trash',id=>store.trash(id));register('project:recoveryList',()=>store.recoveryList());register('project:recover',id=>store.recover(id));
