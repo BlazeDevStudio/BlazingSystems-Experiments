@@ -49,6 +49,20 @@ assert_deny() {
   ! printf '%s' "$response" | grep -Fq '"duplicate":true' || exit 1
   [ "$(paid_digest)" = "$before" ] || { echo "PAY-0731 $tag mutated money" >&2; exit 1; }
 }
+# Explicitly provision only this disposable synthetic fixture. Unknown controllers
+# must remain denied by default; production code is never auto-enabled.
+REQUEST_METHOD=GET
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
+bp_controller_ensure vendo-01
+if bp_controller_paid_allowed vendo-01 coin; then
+  echo 'PAY-0731 invalid fixture: unprovisioned controller accepted' >&2; exit 2
+fi
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-01 coin || {
+  echo 'PAY-0731 invalid fixture: synthetic admission setup failed' >&2; exit 2
+}
 # First record is genuinely committed by the normal signed CGI, and replayed.
 first="$(send_coin 0102030405060708)"
 printf '%s' "$first" | grep -Fq '"ok":true'

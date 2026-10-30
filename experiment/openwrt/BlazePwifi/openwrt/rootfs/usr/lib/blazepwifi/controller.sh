@@ -183,6 +183,40 @@ bp_controller_set() {
   return 8
 }
 
+# PHX-G-CFG-AUTH-V1 (nonproduction): an authenticated CONFIGURATION reply,
+# not authorization to accept coins, energize relays or clear pending events.
+# Reuse the already-installed OpenSSL HMAC-SHA256 rental helper and existing
+# controller request secret. That shared extractable secret is NOT a protected
+# signer or an independent revision/finance witness; hardware Phase A DENIES.
+bp_controller_lab_response_v1() {
+  act="$1"; cid="$2"; request_nonce="$3"; policy_json="$4"
+  requested_insert="$5"; window_nonce="$6"; window_expiry="$7"
+  case "$act" in register|ping|poll) ;; *) return 1;; esac
+  printf '%s' "$cid" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || return 1
+  printf '%s' "$request_nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || return 1
+  case "$requested_insert" in 0|1) ;; *) return 1;; esac
+  case "$window_expiry" in ''|*[!0-9]*) return 1;; esac
+  [ -n "$window_expiry" ] || return 1
+  [ -z "$window_nonce" ] ||
+    printf '%s' "$window_nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || return 1
+  revision="$(printf '%s' "$policy_json" |
+    sed -n 's/.*"config_revision":\([0-9][0-9]*\).*/\1/p')"
+  case "$revision" in ''|*[!0-9]*) return 1;; esac
+  [ "$revision" -gt 0 ] 2>/dev/null || return 1
+  policy_sha256="$(printf '%s' "$policy_json" | bp_sha256)" || return 1
+  key="$(bp_cfg vendo_key)" || return 1
+  [ -n "$key" ] || return 1
+  # Canonical order is fixed; response signature includes the original
+  # request nonce, exact policy bytes, selected target/window and DENY bit.
+  domain=blazepwifi-controller-response-v1
+  canonical="$domain|$act|$cid|$request_nonce|$revision|$policy_sha256|$requested_insert|$window_nonce|$window_expiry|DENY"
+  signature="$(bp_rental_hmac "$key" "$canonical")" || return 1
+  printf '%s' "$signature" | grep -Eq '^[a-f0-9]{64}$' || return 1
+  printf '{"version":1,"action":"%s","controller_id":"%s","request_nonce":"%s","revision":%s,"policy_sha256":"%s","insert":%s,"target_nonce":"%s","expires":%s,"admission_allowed":false,"signature":"%s"}' \
+    "$act" "$(bp_json_escape "$cid")" "$request_nonce" "$revision" "$policy_sha256" \
+    "$requested_insert" "$window_nonce" "$window_expiry" "$signature"
+}
+
 bp_controller_json() {
   id="$1"
   bp_controller_ensure "$id"

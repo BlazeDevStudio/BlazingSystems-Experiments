@@ -47,6 +47,36 @@ send_coin() {
   printf 'action=coin&id=vendo-01&nonce=%s&pulses=1&target=%s&sig=%s' "$nonce" "$TARGET" "$signature" | sh "$VENDO"
 }
 
+# PHX-G: actual first signed request proves UNKNOWN controller is DENIED.
+# This fixture is disposable /tmp only. Never auto-enable live heartbeat.
+denied_unprovisioned="$(send_coin deadbeefdeadbeef)"
+if ! printf '%s' "$denied_unprovisioned" | grep -q '"ok":false' ||
+   ! printf '%s' "$denied_unprovisioned" | grep -q 'controller disabled or coin intake disabled'; then
+  printf '%s\n' "PAY-0627 unknown-controller rejection mismatch: $denied_unprovisioned" >&2
+  exit 1
+fi
+[ "$(credit)" = 100 ]
+[ ! -e "$BP_STATE/paid-state-uncertain" ]
+# common.sh consumes POST stdin when sourced; avoid an empty read under
+# set -e during local admin setup. Restore POST for signed CGI processes.
+REQUEST_METHOD=GET
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
+bp_controller_ensure vendo-01
+if bp_controller_paid_allowed vendo-01 coin; then
+  echo 'PAY-0627 invalid fixture: unknown controller paid admission allowed' >&2
+  exit 2
+fi
+# Synthetic authenticated-admin equivalent for the original positive,
+# exact replay and disk-EIO quarantine controls; no production permission.
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-01 coin || {
+  echo 'PAY-0627 invalid fixture: explicit controller enable not persisted' >&2
+  exit 2
+}
+echo 'PAY-0627 UNPROVISIONED-DENY-PASS: signed ordinary coin refused without mutation'
+
 # Positive baseline: the CGI really applies and ACKs a valid signed pulse.
 first="$(send_coin 0102030405060708)"
 printf '%s' "$first" | grep -q '"ok":true'

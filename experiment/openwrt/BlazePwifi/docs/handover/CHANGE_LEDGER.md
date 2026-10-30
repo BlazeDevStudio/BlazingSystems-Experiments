@@ -1,3 +1,43 @@
+## 2026-10-30 — PHX-CORE-M integration fixture restore
+
+- Exact #40943181335 validate 123691824562 passed step37 PAY-0630 and 38–125, then failed step126 integration.sh immediately after controller targeting. Registered vendos default-disabled; original fixture expected positive signed coin without authorized synthetic enable. Added correctly signed unprovisioned coin rejection with account SHA, credit and receipt invariants, then explicit /tmp-only controller helper enable for both vendo-01/vendo-02 before original accounting checks. Source defaults, paired isolation, tmpfs loss, auth/EIO quarantine, DENY-only v1 unchanged. Exact-head test still requires execution.
+
+## 2026-10-30 — PHX-CORE-L PAY-0630 fixture correction
+
+- Full run #40942648824 validate 123689919935 passed PAY-0627, PAY-0731, PAY-0732/0733, PAY-0737 then failed step 37 PAY-0630 fixture. Source showed no synthetic provision before first signed coin. Added unprovisioned real CGI DENY control, account SHA/credit/receipt-count invariants, and explicit disposable /tmp-only `bp_controller_set` before original 12-live-receipt loop. Existing voucher, active replay, expiry compaction checks retained. Source/default admission and v1 DENY-only unchanged. New exact-head CI evidence pending. No payment, physical operation, production or merge.
+
+## 2026-10-30 — PHX-CORE-K PAY-0732/0733 positive fixture recovered
+
+- Existing Full #40911692230 validate 123581561201 passed PAY-0627 and PAY-0731 but failed first command of PAY-0732/0733 source fixture because synthetic vendo-01 was never provisioned. Updated exact real signed CGI fixture to assert unprovisioned request denied and account bytes invariant, then explicitly provision only disposable /tmp controller through actual bp_controller_set helper. Preserved all subsequent pulse replay, ownership, malformed/duplicate account and active-window regressions. No source admission changes, production or protected witness claims. Latest exact-head run awaits inspection.
+
+## 2026-10-30 — PHX-CORE-J focused workflow coverage
+
+- Isolated PR #252 branch workflow now explicitly executes actual signed PAY-0731 duplicate receipt / paid writer lock fixture, nine host response-auth cases (including unbound owner/kind negative demonstration), prior PAY-0627, v0.4 controller and member compatibility. Commit chain follows recovery-I d1e71a8. Admission remains DENY-only; validation outcome must be read from new exact-head CI. No merge/release/physical payment.
+
+## 2026-10-30 — PHX-CORE Recovery I (PR #252, isolated source/test)
+
+- Rechecked #40887233578 validate job 123495460348: PAY-0627 source CGI passed; PAY-0731 `v060_vendo_coin_replay_lock.sh` exited 1 with no fixture output at step 34. PAY-0731 had not provisioned synthetic `vendo-01` before expecting the first signed coin success. Added explicit synthetic controller admission setup in the disposable /tmp test using GET for library sourcing; no installed policy relaxed, unprovisioned denial retained.
+- `v060_controller_response_auth_v1.py` adds explicit owner/window-kind substitution limitation case. v1 HMAC does NOT cover target owner/account or window kind. Marked v1 DENY-only in CONTROLLER_RESPONSE_AUTH_V1_LAB.md; suggested separate fully bound v2, did not change v1 bytes or authorize relays.
+- Canonical handovers synchronized append-preserving; tests at NEW HEAD not yet verified. No protected monotonic witness, physical proof, production signing, coin/relay admission, release, or merge.
+
+## 2026-10-29 — PHX-G HMAC fixture cross-platform header normalization
+
+- Focused #40886989283 ordinary coin source fixture PASS. Python host auth test failed at header splitting because text-mode subprocess normalizes CRLF to LF. Normalize CRLF before splitting, do not relax HMAC/config assertions or signed DENY contract. Full historical ledger remains append-only; exact successor run pending.
+
+## 2026-10-29 — PHX-G fixture setup POST/GET correction
+
+- Focused jobs #40886447195 and #40886740567 failed before diagnostic emit; test-only fixture source under REQUEST_METHOD=POST consumed empty stdin and exited under set -e. Source common.sh under GET for synthetic admin provisioning, then restore POST for actual signed CGI. No installed controller/Vendo modifications or relaxation. Full historical ledger retained; successor focused test pending.
+
+## 2026-10-29 — PHX-G ordinary-coin negative diagnostic (follow-up)
+
+- Initial focused CI #40886447195 failed at ordinary coin fixture with no diagnostic output. Test-only explicit rejected-response reporting added; no weakening of unknown-controller denial or change to installed CGI source. All historical ledger entries preserved. Exact retest pending.
+
+## 2026-10-29 — PHX-G ordinary coin fixture + bounded config HMAC (nonproduction)
+
+- Baseline CORE draft #248 `a1f80f305614531a7b3ec8e9815d6e7027076bca`. Focused run #40882029147 SUCCESS; Full run #40882029142 FAILURE isolated to `tests/v060_coin_false_ack.sh` at ordinary coin ACK/quarantine step. Unknown controller policy rightly denied positive coin, so repair only the synthetic fixture, retaining signed denied positive control before explicitly using test admin enable.
+- Bounded controller register/poll response contract uses existing key and rental HMAC helper; authentication covers request nonce/controller ID/complete policy digest/revision/window and signed `DENY`. `config_auth.admission_allowed=false` always; legacy insert remains non-authoritative. Host negative tests are not hardware permission or independent protected witness.
+- Required exact-head focused tests: original PAY-0627 positive/duplicate/failed-store/quarantine, 8 config-auth host cases, existing CORE cold-runtime and committed-receipt regressions and handover freshness. No merges, real coins, keys, flashing, deployment. Full original historical ledger follows unmodified.
+
 ## 2026-10-29 — PHX-CORE cold-runtime mode correction (follow-up)
 
 - Prior commit 9499ea19 retained safe source behavior but inadvertently changed controller.sh Git executable mode 100755→100644. Automatically triggered Full validate #40881538992 failed static executable permission check; its prior focused run #40881539001 succeeded with sh invocation.
