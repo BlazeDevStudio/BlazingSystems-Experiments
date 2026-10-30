@@ -198,7 +198,11 @@ internal sealed class NativeComPulseCapture : IDisposable
             return !_disposed && _session is not null &&
                 !_session.IsClosed &&
                 ReferenceEquals(_session, observed.Source) &&
-                observed.Generation == _generation;
+                observed.Generation == _generation &&
+                // Removal can happen AFTER a good level sample but BEFORE
+                // a queued listener claims it. Cached driver CTS success is
+                // never sufficient without a fresh exact-interface check.
+                _session.TryVerifyPresent();
         }
     }
 
