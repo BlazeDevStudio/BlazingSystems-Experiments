@@ -232,7 +232,6 @@ def audit_image(path, expected_sha256):
             result['image_integrity_passed'] = True
             start, end = _locate_esp(fp, length)
             result['gpt_structure_passed'] = True
-            start, end = esp[0]
             _validate_fat32_esp(fp, length, start, end)
             result['esp_boot_sector_plausible'] = True
             # A mutable image can change after its initial digest and before
