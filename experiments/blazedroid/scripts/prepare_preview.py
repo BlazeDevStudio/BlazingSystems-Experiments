@@ -23,6 +23,30 @@ def digest(path):
     return h.hexdigest()
 
 
+def stage_iso(iso, destination, max_asset_bytes):
+    """Copy an ISO or split it into bounded parts without loading it into RAM."""
+    size = iso.stat().st_size
+    if size <= max_asset_bytes:
+        target = destination / ISO_NAME
+        shutil.copyfile(iso, target)
+        return [target]
+
+    parts = []
+    with iso.open("rb") as source:
+        for index, offset in enumerate(range(0, size, max_asset_bytes), start=1):
+            target = destination / f"{ISO_NAME}.part{index:03d}"
+            remaining = min(max_asset_bytes, size - offset)
+            with target.open("wb") as output:
+                while remaining:
+                    block = source.read(min(BUFFER_BYTES, remaining))
+                    if not block:
+                        raise OSError("source ISO changed during packaging")
+                    output.write(block)
+                    remaining -= len(block)
+            parts.append(target)
+    return parts
+
+
 def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES):
     iso, destination, manifest = map(Path, (iso, destination, manifest))
     if iso.name != ISO_NAME:
@@ -41,29 +65,7 @@ def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES)
     if destination.exists() and any(destination.iterdir()):
         raise ValueError("refusing nonempty release directory (stale asset risk)")
     destination.mkdir(parents=True, exist_ok=True)
-    assets = []
-    if iso.stat().st_size <= max_asset_bytes:
-        target = destination / ISO_NAME
-        shutil.copyfile(iso, target)
-        assets.append(target)
-    else:
-        with iso.open("rb") as source:
-            index = 1
-            while True:
-                block = source.read(min(BUFFER_BYTES, max_asset_bytes))
-                if not block:
-                    break
-                target = destination / f"{ISO_NAME}.part{index:03d}"
-                written = 0
-                with target.open("wb") as output:
-                    while block:
-                        output.write(block)
-                        written += len(block)
-                        if written >= max_asset_bytes:
-                            break
-                        block = source.read(min(BUFFER_BYTES, max_asset_bytes - written))
-                assets.append(target)
-                index += 1
+    assets = stage_iso(iso, destination, max_asset_bytes)
     shutil.copyfile(manifest, destination / "resolved-manifest.xml")
     shutil.copyfile(overlay_provenance, destination / "blazedroid-overlay-SHA256SUMS")
     checksums = [f"{digest(iso)}  {ISO_NAME}"]
