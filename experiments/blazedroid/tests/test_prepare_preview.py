@@ -18,6 +18,8 @@ class PreviewPackagingTests(unittest.TestCase):
         self.output = self.base / "release-assets"
         self.manifest = self.base / "resolved-manifest.xml"
         self.manifest.write_text("<manifest/>")
+        self.overlay_digest = self.base / "blazedroid-overlay-SHA256SUMS"
+        self.overlay_digest.write_text("test-overlay-digest  device/blazedroid/x86_64/blazedroid_x86_64.mk\n")
 
     def test_refuse_missing_iso(self):
         with self.assertRaises((ValueError, FileNotFoundError)):
@@ -43,6 +45,13 @@ class PreviewPackagingTests(unittest.TestCase):
                       (self.output / "SHA256SUMS").read_text())
         self.assertIn("PREVIEW", (self.output / "PREVIEW_NOTES.md").read_text())
         self.assertEqual((self.output / self.manifest.name).read_text(), "<manifest/>")
+        self.assertEqual((self.output / self.overlay_digest.name).read_text(), self.overlay_digest.read_text())
+
+    def test_refuse_missing_local_product_provenance(self):
+        self.iso.write_bytes(b"ISO bytes test fixture")
+        self.overlay_digest.unlink()
+        with self.assertRaises(FileNotFoundError):
+            prepare_preview(self.iso, self.output, self.manifest, max_asset_bytes=100)
 
     def test_refuse_wrong_filename(self):
         wrong = self.base / "android13.iso"
