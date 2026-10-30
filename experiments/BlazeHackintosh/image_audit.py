@@ -72,6 +72,85 @@ def read_gpt(fp, lba, length):
                 table_lba=table_lba)
 
 
+def _validate_fat32_esp(fp, length, start, end):
+    """Check ESP FAT32 metadata only; this does not validate directory contents."""
+    boot = read_exact(fp, start * SECTOR, SECTOR, length)
+    bps = struct.unpack_from('<H', boot, 11)[0]
+    cluster, reserved, fats = boot[13], struct.unpack_from('<H', boot, 14)[0], boot[16]
+    root_entries = struct.unpack_from('<H', boot, 17)[0]
+    total16 = struct.unpack_from('<H', boot, 19)[0]
+    fs_version = struct.unpack_from('<H', boot, 42)[0]
+    fat16 = struct.unpack_from('<H', boot, 22)[0]
+    total, fat32 = struct.unpack_from('<II', boot, 32)
+    root_cluster = struct.unpack_from('<I', boot, 44)[0]
+    fat_flags = struct.unpack_from('<H', boot, 40)[0]
+    media = boot[21]
+    fsinfo_sector, backup_boot_sector = struct.unpack_from('<HH', boot, 48)
+    # Bit 7 disables FAT mirroring; then the low nibble selects
+    # the active FAT. All other FAT32 flags bits are reserved.
+    fat_flags_valid = not (fat_flags & 0xff70) and (
+        not (fat_flags & 0x80) or (fat_flags & 0xf) < fats)
+    fsinfo_valid = fsinfo_sector == 0xffff or 0 < fsinfo_sector < reserved
+    backup_boot_valid = backup_boot_sector in (0, 0xffff) or (
+        0 < backup_boot_sector and backup_boot_sector + 2 < reserved and
+        backup_boot_sector != fsinfo_sector and
+        (fsinfo_sector == 0xffff or backup_boot_sector + fsinfo_sector < reserved))
+    data_sectors = total - reserved - fats * fat32
+    cluster_count = data_sectors // cluster if cluster else 0
+    fat_entry_capacity = fat32 * SECTOR // 4
+    if (boot[510:512] != bytes.fromhex('55aa') or boot[0] not in (0xe9, 0xeb) or
+            bps != SECTOR or cluster not in (1, 2, 4, 8, 16, 32, 64, 128) or
+            reserved < 1 or fats not in (1, 2) or root_entries or total16 or fat16 or fs_version or
+            (media != 0xf0 and not 0xf8 <= media <= 0xff) or any(boot[52:64]) or
+            not fat_flags_valid or not fsinfo_valid or not backup_boot_valid or
+            fat32 < 1 or root_cluster < 2 or not 0 < total <= end - start + 1 or
+            reserved + fats * fat32 >= total or
+            cluster_count < FAT32_MIN_CLUSTERS or
+            not 2 <= root_cluster < cluster_count + 2 or
+            fat_entry_capacity < cluster_count + 2):
+        raise ValueError('ESP FAT32 BPB structurally implausible')
+    # Read-only cross-checks of the FAT32 reserved region. These are
+    # metadata checks, NOT a FAT-chain walk or filesystem verification.
+    def inspect_fsinfo(sector):
+        info = read_exact(fp, (start + sector) * SECTOR, SECTOR, length)
+        lead, structure = struct.unpack_from('<I', info, 0)[0], struct.unpack_from('<I', info, 484)[0]
+        free_count, next_free = struct.unpack_from('<II', info, 488)
+        trail = struct.unpack_from('<I', info, 508)[0]
+        if (lead != 0x41615252 or structure != 0x61417272 or trail != 0xaa550000 or
+                (free_count != 0xffffffff and free_count > cluster_count) or
+                (next_free != 0xffffffff and not 2 <= next_free < cluster_count + 2)):
+            raise ValueError('FAT32 FSInfo metadata invalid')
+
+    if fsinfo_sector != 0xffff:
+        inspect_fsinfo(fsinfo_sector)
+    if backup_boot_sector not in (0, 0xffff):
+        saved_boot = read_exact(fp, (start + backup_boot_sector) * SECTOR, SECTOR, length)
+        if saved_boot != boot:
+            raise ValueError('FAT32 backup boot sector differs from primary')
+        if fsinfo_sector != 0xffff:
+            inspect_fsinfo(backup_boot_sector + fsinfo_sector)
+
+    # FAT[0] and FAT[1] must contain reserved markers. The FAT entry
+    # for the root-directory start cluster must also be allocated;
+    # otherwise an empty FAT table can masquerade as a formatted ESP.
+    # These sampled entries do NOT constitute a full FAT-chain walk.
+    active_fats = (range(fats) if not fat_flags & 0x80 else (fat_flags & 0xf,))
+    sampled_entries = []
+    for fat_index in active_fats:
+        fat_start = (start + reserved + fat_index * fat32) * SECTOR
+        fat_head = read_exact(fp, fat_start, 8, length)
+        entry0, entry1 = struct.unpack('<II', fat_head)
+        root_entry = struct.unpack('<I', read_exact(fp, fat_start + root_cluster * 4, 4, length))[0] & 0x0fffffff
+        if ((entry0 & 0x0fffff00) != 0x0fffff00 or
+                (entry0 & 0xff) != media or
+                (entry1 & 0x0fffffff) < 0x0ffffff8 or
+                not (2 <= root_entry < cluster_count + 2 or root_entry >= 0x0ffffff8)):
+            raise ValueError('FAT32 reserved or root-directory FAT entry invalid')
+        sampled_entries.append((entry0 & 0x0fffffff, entry1 & 0x0fffffff, root_entry))
+    if len(sampled_entries) > 1 and len(set(sampled_entries)) != 1:
+        raise ValueError('Mirrored FAT metadata entries disagree')
+
+
 def audit_image(path, expected_sha256):
     result = dict(audit_complete=False, image_integrity_passed=False, gpt_structure_passed=False,
                   esp_boot_sector_plausible=False, image_consistency_passed=False, physical_readback_verified=False,
@@ -148,81 +227,7 @@ def audit_image(path, expected_sha256):
                 raise ValueError('Expected exactly one EFI System Partition')
             result['gpt_structure_passed'] = True
             start, end = esp[0]
-            boot = read_exact(fp, start * SECTOR, SECTOR, length)
-            bps = struct.unpack_from('<H', boot, 11)[0]
-            cluster, reserved, fats = boot[13], struct.unpack_from('<H', boot, 14)[0], boot[16]
-            root_entries = struct.unpack_from('<H', boot, 17)[0]
-            total16 = struct.unpack_from('<H', boot, 19)[0]
-            fs_version = struct.unpack_from('<H', boot, 42)[0]
-            fat16 = struct.unpack_from('<H', boot, 22)[0]
-            total, fat32 = struct.unpack_from('<II', boot, 32)
-            root_cluster = struct.unpack_from('<I', boot, 44)[0]
-            fat_flags = struct.unpack_from('<H', boot, 40)[0]
-            media = boot[21]
-            fsinfo_sector, backup_boot_sector = struct.unpack_from('<HH', boot, 48)
-            # Bit 7 disables FAT mirroring; then the low nibble selects
-            # the active FAT. All other FAT32 flags bits are reserved.
-            fat_flags_valid = not (fat_flags & 0xff70) and (
-                not (fat_flags & 0x80) or (fat_flags & 0xf) < fats)
-            fsinfo_valid = fsinfo_sector == 0xffff or 0 < fsinfo_sector < reserved
-            backup_boot_valid = backup_boot_sector in (0, 0xffff) or (
-                0 < backup_boot_sector and backup_boot_sector + 2 < reserved and
-                backup_boot_sector != fsinfo_sector and
-                (fsinfo_sector == 0xffff or backup_boot_sector + fsinfo_sector < reserved))
-            data_sectors = total - reserved - fats * fat32
-            cluster_count = data_sectors // cluster if cluster else 0
-            fat_entry_capacity = fat32 * SECTOR // 4
-            if (boot[510:512] != bytes.fromhex('55aa') or boot[0] not in (0xe9, 0xeb) or
-                    bps != SECTOR or cluster not in (1, 2, 4, 8, 16, 32, 64, 128) or
-                    reserved < 1 or fats not in (1, 2) or root_entries or total16 or fat16 or fs_version or
-                    (media != 0xf0 and not 0xf8 <= media <= 0xff) or any(boot[52:64]) or
-                    not fat_flags_valid or not fsinfo_valid or not backup_boot_valid or
-                    fat32 < 1 or root_cluster < 2 or not 0 < total <= end - start + 1 or
-                    reserved + fats * fat32 >= total or
-                    cluster_count < FAT32_MIN_CLUSTERS or
-                    not 2 <= root_cluster < cluster_count + 2 or
-                    fat_entry_capacity < cluster_count + 2):
-                raise ValueError('ESP FAT32 BPB structurally implausible')
-            # Read-only cross-checks of the FAT32 reserved region. These are
-            # metadata checks, NOT a FAT-chain walk or filesystem verification.
-            def inspect_fsinfo(sector):
-                info = read_exact(fp, (start + sector) * SECTOR, SECTOR, length)
-                lead, structure = struct.unpack_from('<I', info, 0)[0], struct.unpack_from('<I', info, 484)[0]
-                free_count, next_free = struct.unpack_from('<II', info, 488)
-                trail = struct.unpack_from('<I', info, 508)[0]
-                if (lead != 0x41615252 or structure != 0x61417272 or trail != 0xaa550000 or
-                        (free_count != 0xffffffff and free_count > cluster_count) or
-                        (next_free != 0xffffffff and not 2 <= next_free < cluster_count + 2)):
-                    raise ValueError('FAT32 FSInfo metadata invalid')
-
-            if fsinfo_sector != 0xffff:
-                inspect_fsinfo(fsinfo_sector)
-            if backup_boot_sector not in (0, 0xffff):
-                saved_boot = read_exact(fp, (start + backup_boot_sector) * SECTOR, SECTOR, length)
-                if saved_boot != boot:
-                    raise ValueError('FAT32 backup boot sector differs from primary')
-                if fsinfo_sector != 0xffff:
-                    inspect_fsinfo(backup_boot_sector + fsinfo_sector)
-
-            # FAT[0] and FAT[1] must contain reserved markers. The FAT entry
-            # for the root-directory start cluster must also be allocated;
-            # otherwise an empty FAT table can masquerade as a formatted ESP.
-            # These sampled entries do NOT constitute a full FAT-chain walk.
-            active_fats = (range(fats) if not fat_flags & 0x80 else (fat_flags & 0xf,))
-            sampled_entries = []
-            for fat_index in active_fats:
-                fat_start = (start + reserved + fat_index * fat32) * SECTOR
-                fat_head = read_exact(fp, fat_start, 8, length)
-                entry0, entry1 = struct.unpack('<II', fat_head)
-                root_entry = struct.unpack('<I', read_exact(fp, fat_start + root_cluster * 4, 4, length))[0] & 0x0fffffff
-                if ((entry0 & 0x0fffff00) != 0x0fffff00 or
-                        (entry0 & 0xff) != media or
-                        (entry1 & 0x0fffffff) < 0x0ffffff8 or
-                        not (2 <= root_entry < cluster_count + 2 or root_entry >= 0x0ffffff8)):
-                    raise ValueError('FAT32 reserved or root-directory FAT entry invalid')
-                sampled_entries.append((entry0 & 0x0fffffff, entry1 & 0x0fffffff, root_entry))
-            if len(sampled_entries) > 1 and len(set(sampled_entries)) != 1:
-                raise ValueError('Mirrored FAT metadata entries disagree')
+            _validate_fat32_esp(fp, length, start, end)
             result['esp_boot_sector_plausible'] = True
             # A mutable image can change after its initial digest and before
             # structural reads. Re-hash the SAME opened handle to detect such
