@@ -20,6 +20,16 @@ def validate_props(path):
         raise ValueError("Android API level must be exactly 36")
 
 
+def validate_blazedroid_props(path):
+    """Require Android 16 plus downstream system properties from the built product."""
+    validate_props(path)
+    props = parse_props(path)
+    if props.get("ro.blazedroid.version") != "16.0.0":
+        raise ValueError("output does not identify BlazeDroid 16.0.0")
+    if props.get("ro.blazedroid.channel") != "preview":
+        raise ValueError("output is not an explicitly untested BlazeDroid preview")
+
+
 def validate_lock(path):
     lock = json.loads(path.read_text())
     if (lock.get("android_major"), lock.get("android_api")) != (16, 36):
@@ -61,6 +71,7 @@ def main():
     parser.add_argument("--lock", type=Path)
     parser.add_argument("--build-prop", type=Path)
     parser.add_argument("--verify-upstream", action="store_true")
+    parser.add_argument("--require-blazedroid", action="store_true")
     args = parser.parse_args()
     if not (args.lock or args.build_prop):
         parser.error("provide --lock and/or --build-prop")
@@ -68,8 +79,13 @@ def main():
         validate_lock(args.lock)
         if args.verify_upstream:
             verify_upstream(json.loads(args.lock.read_text()))
+    if args.require_blazedroid and not args.build_prop:
+        parser.error("--require-blazedroid requires --build-prop")
     if args.build_prop:
-        validate_props(args.build_prop)
+        if args.require_blazedroid:
+            validate_blazedroid_props(args.build_prop)
+        else:
+            validate_props(args.build_prop)
 
 
 if __name__ == "__main__":
