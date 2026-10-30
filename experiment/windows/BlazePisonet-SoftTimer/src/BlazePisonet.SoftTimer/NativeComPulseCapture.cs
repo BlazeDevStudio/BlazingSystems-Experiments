@@ -198,7 +198,8 @@ internal sealed class NativeComPulseCapture : IDisposable
             return null;
         }
 
-        if (!_active || _pulseStarted is not { } started) return null;
+        if (!_active || !_pulseStarted.HasValue) return null;
+        var started = _pulseStarted.Value;
 
         NativeObservedPulse? observed = null;
         var widthMs = (now - started).TotalMilliseconds;
