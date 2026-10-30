@@ -74,22 +74,10 @@ internal sealed class NativeComInterfaceSession : IDisposable
         SafeFileHandle? candidate = null;
         try
         {
-            var first = platform.EnumeratePresent();
-            if (first is null ||
-                first.Count(d => SameId(d.InstanceId, expectedInstanceId) &&
-                    !string.IsNullOrWhiteSpace(d.Path)) != 1 ||
-                first.Any(d => SameId(d.InstanceId, expectedInstanceId) &&
-                    string.IsNullOrWhiteSpace(d.Path)))
+            if (!TrySelectUniqueInterface(platform.EnumeratePresent(),
+                    expectedInstanceId, out var selected) || selected is null)
             {
-                failure = "Missing or ambiguous present serial device interface";
-                return false;
-            }
-            var selected = first.Single(d => SameId(d.InstanceId, expectedInstanceId));
-            // Protect against two different instance IDs advertising the same
-            // interface path. Never pick the first and hope it is the adapter.
-            if (first.Count(d => SamePath(d.Path, selected.Path)) != 1)
-            {
-                failure = "Conflicting device-interface path";
+                failure = "Missing, conflicting or ambiguous serial device interface";
                 return false;
             }
 
@@ -105,12 +93,8 @@ internal sealed class NativeComInterfaceSession : IDisposable
             // A removal/retarget during CreateFile must never be silently
             // accepted. A second enumeration is a freshness check ONLY, not
             // purported independent proof of the open kernel handle.
-            var after = platform.EnumeratePresent();
-            if (after is null ||
-                after.Count(d => SameId(d.InstanceId, expectedInstanceId)) != 1 ||
-                after.Count(d => SameId(d.InstanceId, expectedInstanceId) &&
-                                 SamePath(d.Path, selected.Path)) != 1 ||
-                after.Count(d => SamePath(d.Path, selected.Path)) != 1)
+            if (!HasExactUniqueInterface(platform.EnumeratePresent(),
+                    expectedInstanceId, selected.Path))
             {
                 failure = "Device interface changed during exact-handle open";
                 return false;
@@ -154,12 +138,8 @@ internal sealed class NativeComInterfaceSession : IDisposable
         if (_disposed || _handle.IsInvalid || _handle.IsClosed) return false;
         try
         {
-            var current = _platform.EnumeratePresent();
-            if (current is not null &&
-                current.Count(d => SameId(d.InstanceId, DeviceInstanceId)) == 1 &&
-                current.Count(d => SameId(d.InstanceId, DeviceInstanceId) &&
-                                   SamePath(d.Path, InterfacePath)) == 1 &&
-                current.Count(d => SamePath(d.Path, InterfacePath)) == 1)
+            if (HasExactUniqueInterface(_platform.EnumeratePresent(),
+                    DeviceInstanceId, InterfacePath))
                 return true;
         }
         catch (Exception)
@@ -167,8 +147,7 @@ internal sealed class NativeComInterfaceSession : IDisposable
             // Enumeration failure = unknown, never "still present".
         }
 
-        _disposed = true;
-        _handle.Dispose(); // revoke exact original handle on missing/replaced ID
+        RevokeLocked(); // missing/replaced/duplicate interface revokes original
         return false;
     }
 
@@ -185,15 +164,13 @@ internal sealed class NativeComInterfaceSession : IDisposable
             {
                 if (!_platform.TryReadModemStatus(_handle, out flags))
                 {
-                    _disposed = true;
-                    _handle.Dispose();
+                    RevokeLocked();
                     return false;
                 }
             }
             catch (Exception)
             {
-                _disposed = true;
-                _handle.Dispose();
+                RevokeLocked();
                 return false;
             }
 
@@ -218,13 +195,44 @@ internal sealed class NativeComInterfaceSession : IDisposable
 
     public void Dispose()
     {
-        lock (_gate)
-        {
-            if (_disposed) return;
-            _disposed = true;
-            _handle.Dispose();
-        }
+        lock (_gate) RevokeLocked();
     }
+
+    // Invoked only under _gate; every invalidation owns the same SafeFileHandle.
+    private void RevokeLocked()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _handle.Dispose();
+    }
+
+    // One rule for initial selection, post-open refresh and every later read
+    // or claim: exactly one matching instance and one claimant for its path.
+    private static bool TrySelectUniqueInterface(
+        IReadOnlyList<NativeComDeviceInterface>? devices, string instanceId,
+        out NativeComDeviceInterface? selected)
+    {
+        selected = null;
+        if (devices is null) return false;
+
+        foreach (var device in devices)
+        {
+            if (!SameId(device.InstanceId, instanceId)) continue;
+            if (selected is not null || string.IsNullOrWhiteSpace(device.Path))
+                return false;
+            selected = device;
+        }
+
+        if (selected is null) return false;
+        var path = selected.Path;
+        return devices.Count(device => SamePath(device.Path, path)) == 1;
+    }
+
+    private static bool HasExactUniqueInterface(
+        IReadOnlyList<NativeComDeviceInterface>? devices,
+        string instanceId, string originalPath) =>
+        TrySelectUniqueInterface(devices, instanceId, out var selected) &&
+        selected is not null && SamePath(selected.Path, originalPath);
 
     private static bool SameId(string? a, string? b) =>
         !string.IsNullOrWhiteSpace(a) && !string.IsNullOrWhiteSpace(b) &&
