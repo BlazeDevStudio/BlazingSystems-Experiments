@@ -139,14 +139,69 @@ internal sealed class NativeComInterfaceSession : IDisposable
         finally { candidate?.Dispose(); }
     }
 
+    // The opened kernel handle can outlive its published device interface,
+    // and a driver may still return cached modem bits after unplug/rebind.
+    // Check the exact instance AND interface path for EACH observation and
+    // again when a deferred observation is claimed. Enumeration is a bounded
+    // presence check, NOT physical kernel HANDLE identity attestation.
+    internal bool TryVerifyPresent()
+    {
+        lock (_gate) return VerifyPresentLocked();
+    }
+
+    private bool VerifyPresentLocked()
+    {
+        if (_disposed || _handle.IsInvalid || _handle.IsClosed) return false;
+        try
+        {
+            var current = _platform.EnumeratePresent();
+            if (current is not null &&
+                current.Count(d => SameId(d.InstanceId, DeviceInstanceId)) == 1 &&
+                current.Count(d => SameId(d.InstanceId, DeviceInstanceId) &&
+                                   SamePath(d.Path, InterfacePath)) == 1 &&
+                current.Count(d => SamePath(d.Path, InterfacePath)) == 1)
+                return true;
+        }
+        catch (Exception)
+        {
+            // Enumeration failure = unknown, never "still present".
+        }
+
+        _disposed = true;
+        _handle.Dispose(); // revoke exact original handle on missing/replaced ID
+        return false;
+    }
+
     internal bool TryReadSignal(ModemSignal signal, out bool active)
     {
         active = false;
         lock (_gate)
         {
-            if (_disposed || _handle.IsInvalid || _handle.IsClosed ||
-                !_platform.TryReadModemStatus(_handle, out var flags))
-                return false; // unknown, cannot infer a transition
+            if (_disposed || _handle.IsInvalid || _handle.IsClosed)
+                return false;
+
+            uint flags;
+            try
+            {
+                if (!_platform.TryReadModemStatus(_handle, out flags))
+                {
+                    _disposed = true;
+                    _handle.Dispose();
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                _disposed = true;
+                _handle.Dispose();
+                return false;
+            }
+
+            // IMPORTANT: a cached-success CTS=1 from a still-open, removed
+            // handle is not an admissible edge. Recheck after each read, NOT
+            // only during TryOpenExact. Do not emit even a diagnostic pulse.
+            if (!VerifyPresentLocked()) return false;
+
             var bit = signal switch
             {
                 ModemSignal.Cts => CtsOn,
