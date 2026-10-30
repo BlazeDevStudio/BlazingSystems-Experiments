@@ -195,14 +195,22 @@ internal sealed class NativeComPulseCapture : IDisposable
         lock (_gate)
         {
             if (!_unclaimed.Remove(observed)) return false;
-            return !_disposed && _session is not null &&
-                !_session.IsClosed &&
-                ReferenceEquals(_session, observed.Source) &&
-                observed.Generation == _generation &&
-                // Removal can happen AFTER a good level sample but BEFORE
-                // a queued listener claims it. Cached driver CTS success is
-                // never sufficient without a fresh exact-interface check.
-                _session.TryVerifyPresent();
+            if (_disposed || _session is null ||
+                !ReferenceEquals(_session, observed.Source) ||
+                observed.Generation != _generation)
+                return false;
+
+            // Removal after a good sample, before this listener claims it,
+            // must revoke the ENTIRE capture generation, not just the event.
+            // TryVerifyPresent closes the original invalid handle.
+            if (_session.IsClosed || !_session.TryVerifyPresent())
+            {
+                _session = null;
+                unchecked { _generation++; }
+                ResetLocked();
+                return false;
+            }
+            return true;
         }
     }
 
