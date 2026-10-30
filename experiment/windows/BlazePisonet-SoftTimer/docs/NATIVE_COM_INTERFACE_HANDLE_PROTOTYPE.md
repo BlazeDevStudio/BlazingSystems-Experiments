@@ -53,3 +53,30 @@ Immutable `NativeObservedPulse` records the original native session reference, g
 **Native CI proof:** [Windows run #40943179215/job #123691679093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40943179215), completed **SUCCESS** at exact pre-documentation head `7fe880b0168f972dc8f96d9c13c8c9e416040289`. Actual CLR test executed the unmodified new source, with synthetic legitimate CTS pulse 30ms, 1/0 one-time duplicate claims, initial-high inhibition followed by valid idle/positive pulse, missed sample gap denial+recovery, status-error/unplug cleanup, cross-thread callback A→B rebind stale A denial plus legitimate B positive, short/long pulse and clock rollback rejection. Read-only Windows SetupAPI enumeration remained green. The same job ran the existing V4=0/V5=1, failed-Open, reentrant/immutable and #216 original async controller/target/nonce tests, plus Windows production build with **0 errors**. These are fake modem levels and fake handles; a genuine serial device was not opened or signaled.
 
 **Remaining exact real-adapter gate:** review the bounded sampling cadence and missed-edge problem under real Windows USB-RS232/serial drivers; implement and independently validate `SetCommMask(EV_CTS)` / `WaitCommEvent` on the owned handle (or prove a sampling schedule accurately observes the desired physical pulse durations), plus removal cancellation and safe reconnect under physical unplug/replug. Verify legitimate matched physical adapter CTS positive and same-COM swapped/unverifiable negative, power cuts, driver status errors, GPIO polarity, idle threshold, pulse width across actual hardware. Keep `NativeComPulseCapture` disconnected from `SerialHardware`/timer/central credit, and leave financial admission fail-closed until independent review, hardware evidence, signed original-event receipt and protected witness. No payment, release, merge, code-signing key or physical coin operation was performed.
+
+
+## 2026-10-30 — PHX-PISONET-K: QA cached-success-after-removal correction
+
+**Exact original QA gap:** Open the pinned A interface successfully. After session creation, remove/replace the published device interface with B while keeping the old fake A handle valid; make its `TryReadModemStatus` return a *successful cached CTS=1*. Previous unplug/status-fault tests did not execute this scenario. A cache-success must be rejected, and no diagnostic claim can occur until a new exact-device session rebind and verified-low idle.
+
+**Minimal source changes** on the same isolated draft PR #255:
+
+- Production native transport `NativeComInterfaceTransport.cs`, blob `e844a6408af89951ba4bcef13367b3212e4dac9f`: after **each** `GetCommModemStatus` call—even successful cached CTS—the same `NativeComInterfaceSession` performs a fresh SetupAPI `EnumeratePresent` check requiring exactly one original pinned device instance ID and exactly one original device-interface path. A missing, replaced, duplicate, invalid or unverifiable path retires and disposes the original opened `SafeFileHandle`; all reads fail closed, never treating unknown as CTS low.
+- Production diagnostic capture `NativeComPulseCapture.cs`, blob `25f1b2f6a31d9745063efcd5d8f7e296f91b5369`: `TryClaimObserved` rechecks the original session's interface presence at **claim time**, closing invalid original handle, clearing all unclaimed observations, and advancing generation before denying a queued/stale event.
+- Literal-source-linked test `NativePulseCaptureCases.cs`, blob `6f8519fb748590eda10fd7b18d7f1991007e7026`: tests both a cached-success old-A sample after A→B interface removal (assert old handle *actually* returned an extra successful fake status read, then was closed, no stale event) and an already-dispatched observation where duplicate interface identity appears before its callback claims it. Newly opened pinned B cannot claim the old A event and must first rearm using a verified-low level before a legitimate positive observation.
+
+**Executed exact source evidence:** [Windows run #41010121683, job #123914052710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41010121683), **SUCCESS** at source/test head `c7a99a8ad3f9713701771cb8c70d656f0871e07d`. Log anchors:
+
+```text
+NATIVE_PULSE_CACHED_CTS_SUCCESS_REMOVED_A_DENIED_FRESH_B_POSITIVE_PASS
+NATIVE_PULSE_AFTER_SAMPLE_DUPLICATE_INTERFACE_STALE_CLAIM_DENIED_PASS
+NATIVE_OWNED_HANDLE_PULSE_SOURCE_GREEN: 8 deterministic positive/fault/rebind/presence suites; diagnostic only
+V4_NATIVE_SOURCE_CTS_AFTER_SUCCESSFUL_SAMPLE: accepted=0, safe_expected=0
+V5_NATIVE_SOURCE_FAILED_CTS_SAMPLE_RECONNECT: accepted=1, valid_pulse_expected=1
+OPEN_FAILURE_RESOURCE_GREEN
+NATIVE_COIN_EVENT_OWNERSHIP_GREEN
+NATIVE_ASYNC_DISPATCH_SOURCE_GREEN
+Build succeeded. 0 Error(s)
+```
+
+**Limitations unchanged:** This is a **synthetic fake-OS status and interface-enumeration** regression compiled on a real Windows runner, not a real unplugged USB-RS232 adapter; its fake handle returns user-controlled cached CTS. SetupAPI presence sampling is non-atomic relative to physical device removal and **is not an OS cryptographic binding to a real opened handle**. A real driver with stale enumeration or removal between identity checks still requires physical tests, actual same-handle event/cancellation handling and timing proof. Original `SerialHardware` and its real ExactDevice-money fail-closed gate are unchanged; no coin admission, release, merge, keys, payment or hardware operation. Three canonical handovers must remain append-only.
