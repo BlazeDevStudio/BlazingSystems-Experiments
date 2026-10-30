@@ -90,6 +90,7 @@ def audit_boot_efi(path, image_sha256, boot_file_sha256):
             clusters = (total_sectors - reserved - fats * fat_sectors) // sectors_per_cluster
             mirrored = not fat_flags & 0x80
             active_fats = range(fats) if mirrored else (fat_flags & 0xf,)
+            used_clusters = set()  # Scoped to the three inspected EFI path entries.
 
             def next_cluster(cluster):
                 if not 2 <= cluster < clusters + 2 or (cluster + 1) * 4 > fat_sectors * SECTOR:
@@ -113,13 +114,12 @@ def audit_boot_efi(path, image_sha256, boot_file_sha256):
                 return read_exact(fp, lba * SECTOR, cluster_bytes, length)
 
             def find_short_name(root_cluster, expected, is_directory):
-                visited = set()
                 cluster = root_cluster
                 found = None
                 for _ in range(MAX_DIRECTORY_CLUSTERS):
-                    if cluster in visited:
-                        raise ValueError('Directory FAT chain cycle')
-                    visited.add(cluster)
+                    if cluster in used_clusters:
+                        raise ValueError('FAT cluster cyclic or cross-linked across EFI path')
+                    used_clusters.add(cluster)
                     data = cluster_bytes_at(cluster)
                     for pos in range(0, len(data), 32):
                         row = data[pos:pos+32]
@@ -162,12 +162,11 @@ def audit_boot_efi(path, image_sha256, boot_file_sha256):
 
             needed = (file_size + cluster_bytes - 1) // cluster_bytes
             digest = hashlib.sha256()
-            visited = set()
             remaining = file_size
             for i in range(needed):
-                if current in visited:
-                    raise ValueError('EFI file FAT chain cycle')
-                visited.add(current)
+                if current in used_clusters:
+                    raise ValueError('FAT cluster cyclic or cross-linked across EFI path')
+                used_clusters.add(current)
                 data = cluster_bytes_at(current)
                 used = min(remaining, len(data))
                 digest.update(data[:used])
