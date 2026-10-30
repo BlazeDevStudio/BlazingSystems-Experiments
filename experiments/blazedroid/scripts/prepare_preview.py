@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 
 ISO_NAME = "BlazeDroid-16.0.0-x86_64-PREVIEW.iso"
-# GitHub Releases permit assets <2 GiB; use <1.9 GiB parts as a margin.
+# Split large owner-test artifacts into portable 1.9 GB parts for download.
 MAX_ASSET_BYTES = 1_900_000_000
 BUFFER_BYTES = 1024 * 1024
 
@@ -105,7 +105,7 @@ def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES)
     ]
     if len(assets) > 1:
         notes.extend([
-            "GitHub's 2 GiB-per-file limit requires a split download. Download **every** `.partNNN` file.",
+            "This large test image is split into downloadable parts. Download **every** `.partNNN` file.",
             "On Windows, put all parts in one folder and run `REASSEMBLE_WINDOWS.cmd`.",
             f"On Linux: `cat {ISO_NAME}.part* > {ISO_NAME}`.",
             "Compare the reconstructed ISO SHA-256 against `SHA256SUMS` before flashing.",

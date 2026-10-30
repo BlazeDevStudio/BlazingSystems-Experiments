@@ -8,11 +8,15 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 PIN="1cd01b9e0dab099693d262e125cd74dccd58e26d"
 INSTALLER_PIN="8c6a69fd8d7728ceeddefd42470a488d9785339f"
 python3 "$HERE/scripts/check_build.py" --lock "$HERE/foundation.lock.json"
-for cmd in repo git python3 xorriso sha256sum; do command -v "$cmd" >/dev/null || { echo "Missing: $cmd" >&2; exit 1; }; done
+for cmd in repo git python3 xorriso sha256sum java javac; do
+  command -v "$cmd" >/dev/null || { echo "Missing Android build prerequisite: $cmd" >&2; exit 1; }
+done
+git lfs version >/dev/null 2>&1 || { echo "Missing Android source prerequisite: git-lfs" >&2; exit 1; }
 if [[ -e "$SRC" && ! -d "$SRC/.repo" ]] && [[ -n "$(ls -A "$SRC")" ]]; then
   echo "Refusing to use a nonempty non-repo directory: $SRC" >&2; exit 1
 fi
 mkdir -p "$SRC" "$DEST"
+python3 "$HERE/scripts/check_host.py" "$SRC"
 cd "$SRC"
 if [[ ! -d .repo ]]; then
   repo init -u https://github.com/los-tv-x86/lineage_bass_android.git -b lineage-23.2 --git-lfs
