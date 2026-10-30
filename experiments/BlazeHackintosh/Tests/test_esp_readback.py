@@ -99,6 +99,27 @@ class FAT32BootReadbackTests(unittest.TestCase):
             fp.write(_dir_entry(b'A' * 11, 0x0f, 0))
         self.assertFalse(self.inspect()['file_hash_match'])
 
+    def test_boot_payload_cannot_reuse_parent_directory_cluster(self):
+        """A self-consistent image/file SHA does not legitimize cross-linked FAT."""
+        with self.img.open('r+b') as fp:
+            fp.seek((DATA_LBA + 4 - 2) * SECTOR)
+            fp.write(_dir_entry(b'BOOTX64 EFI', 0x20, 3, 32))
+            fp.seek((DATA_LBA + 3 - 2) * SECTOR)
+            claimed_payload = fp.read(32)
+        result = self.inspect(file_sha=hashlib.sha256(claimed_payload).hexdigest())
+        self.assertFalse(result['file_hash_match'], result)
+        self.assertFalse(result['filesystem_verified'])
+
+    def test_nested_directory_cannot_reuse_its_parent_cluster(self):
+        """EFI/BOOT cannot point back to the same directory cluster."""
+        with self.img.open('r+b') as fp:
+            fp.seek((DATA_LBA + 3 - 2) * SECTOR)
+            fp.write(_dir_entry(b'BOOT       ', 0x10, 3))
+            fp.write(_dir_entry(b'BOOTX64 EFI', 0x20, 5, len(PAYLOAD)))
+        result = self.inspect()
+        self.assertFalse(result['file_hash_match'], result)
+        self.assertFalse(result['safe_to_flash'])
+
     def test_wrong_image_hash_fails_before_filesystem_read(self):
         result = audit_boot_efi(self.img, '0' * 64, FILE_SHA)
         self.assertFalse(result['file_hash_match'])
