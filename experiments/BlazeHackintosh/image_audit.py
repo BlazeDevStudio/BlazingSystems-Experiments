@@ -72,6 +72,51 @@ def read_gpt(fp, lba, length):
                 table_lba=table_lba)
 
 
+def _locate_esp(fp, length):
+    """Validate protective MBR and both GPT tables; return the sole ESP span."""
+    mbr = read_exact(fp, 0, SECTOR, length)
+    if mbr[510:512] != bytes.fromhex('55aa'):
+        raise ValueError('Invalid protective MBR signature')
+    sectors = length // SECTOR
+    slots = [mbr[446 + 16*i:462 + 16*i] for i in range(4)]
+    if (slots[0][4] != 0xee or any(any(slot) for slot in slots[1:]) or
+            struct.unpack_from('<I', slots[0], 8)[0] != 1 or
+            struct.unpack_from('<I', slots[0], 12)[0] != min(sectors - 1, 0xffffffff)):
+        raise ValueError('Missing protective MBR or hybrid MBR detected')
+    sectors = length // SECTOR
+    primary, backup = read_gpt(fp, 1, length), read_gpt(fp, sectors - 1, length)
+    if (primary['backup'] != sectors - 1 or backup['backup'] != 1 or
+            any(primary[k] != backup[k] for k in ('first', 'last', 'guid', 'count', 'entry_size', 'table'))):
+        raise ValueError('Primary/backup GPT mismatch')
+    if (primary['table_lba'] != 2 or
+            backup['table_lba'] + (len(backup['table']) + SECTOR - 1) // SECTOR != sectors - 1):
+        raise ValueError('Noncanonical GPT table locations')
+    table_sectors = (len(primary['table']) + SECTOR - 1) // SECTOR
+    if (primary['first'] < primary['table_lba'] + table_sectors or
+            primary['last'] >= backup['table_lba']):
+        raise ValueError('GPT usable range overlaps partition tables')
+    partitions, esp, partition_guids = [], [], set()
+    for i in range(primary['count']):
+        row = primary['table'][i*primary['entry_size']:(i+1)*primary['entry_size']]
+        if row[:16] == bytes(16):
+            if any(row):
+                raise ValueError('Unused GPT entry contains stale nonzero data')
+            continue
+        start, end = struct.unpack_from('<QQ', row, 32)
+        if (row[16:32] == bytes(16) or row[16:32] in partition_guids or
+                not primary['first'] <= start <= end <= primary['last']):
+            raise ValueError('Invalid or duplicate partition GUID or bounds')
+        partition_guids.add(row[16:32])
+        if any(not (end < a or start > b) for a, b in partitions):
+            raise ValueError('Overlapping GPT partitions')
+        partitions.append((start, end))
+        if row[:16] == ESP_TYPE:
+            esp.append((start, end))
+    if len(esp) != 1:
+        raise ValueError('Expected exactly one EFI System Partition')
+    return esp[0]
+
+
 def _validate_fat32_esp(fp, length, start, end):
     """Check ESP FAT32 metadata only; this does not validate directory contents."""
     boot = read_exact(fp, start * SECTOR, SECTOR, length)
@@ -185,46 +230,7 @@ def audit_image(path, expected_sha256):
             if digest.hexdigest() != expected_sha256.lower():
                 raise ValueError('Image SHA-256 mismatch')
             result['image_integrity_passed'] = True
-            mbr = read_exact(fp, 0, SECTOR, length)
-            if mbr[510:512] != bytes.fromhex('55aa'):
-                raise ValueError('Invalid protective MBR signature')
-            sectors = length // SECTOR
-            slots = [mbr[446 + 16*i:462 + 16*i] for i in range(4)]
-            if (slots[0][4] != 0xee or any(any(slot) for slot in slots[1:]) or
-                    struct.unpack_from('<I', slots[0], 8)[0] != 1 or
-                    struct.unpack_from('<I', slots[0], 12)[0] != min(sectors - 1, 0xffffffff)):
-                raise ValueError('Missing protective MBR or hybrid MBR detected')
-            sectors = length // SECTOR
-            primary, backup = read_gpt(fp, 1, length), read_gpt(fp, sectors - 1, length)
-            if (primary['backup'] != sectors - 1 or backup['backup'] != 1 or
-                    any(primary[k] != backup[k] for k in ('first', 'last', 'guid', 'count', 'entry_size', 'table'))):
-                raise ValueError('Primary/backup GPT mismatch')
-            if (primary['table_lba'] != 2 or
-                    backup['table_lba'] + (len(backup['table']) + SECTOR - 1) // SECTOR != sectors - 1):
-                raise ValueError('Noncanonical GPT table locations')
-            table_sectors = (len(primary['table']) + SECTOR - 1) // SECTOR
-            if (primary['first'] < primary['table_lba'] + table_sectors or
-                    primary['last'] >= backup['table_lba']):
-                raise ValueError('GPT usable range overlaps partition tables')
-            partitions, esp, partition_guids = [], [], set()
-            for i in range(primary['count']):
-                row = primary['table'][i*primary['entry_size']:(i+1)*primary['entry_size']]
-                if row[:16] == bytes(16):
-                    if any(row):
-                        raise ValueError('Unused GPT entry contains stale nonzero data')
-                    continue
-                start, end = struct.unpack_from('<QQ', row, 32)
-                if (row[16:32] == bytes(16) or row[16:32] in partition_guids or
-                        not primary['first'] <= start <= end <= primary['last']):
-                    raise ValueError('Invalid or duplicate partition GUID or bounds')
-                partition_guids.add(row[16:32])
-                if any(not (end < a or start > b) for a, b in partitions):
-                    raise ValueError('Overlapping GPT partitions')
-                partitions.append((start, end))
-                if row[:16] == ESP_TYPE:
-                    esp.append((start, end))
-            if len(esp) != 1:
-                raise ValueError('Expected exactly one EFI System Partition')
+            start, end = _locate_esp(fp, length)
             result['gpt_structure_passed'] = True
             start, end = esp[0]
             _validate_fat32_esp(fp, length, start, end)
