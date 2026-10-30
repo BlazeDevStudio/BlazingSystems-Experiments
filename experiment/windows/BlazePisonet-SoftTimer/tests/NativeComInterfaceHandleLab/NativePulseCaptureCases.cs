@@ -215,6 +215,100 @@ internal static class NativePulseCaptureCases
             Console.WriteLine("NATIVE_PULSE_SHORT_LONG_CLOCK_ROLLBACK_DENIED_PASS");
         }
 
-        Console.WriteLine("NATIVE_OWNED_HANDLE_PULSE_SOURCE_GREEN: 6 deterministic positive/fault/rebind suites; diagnostic only");
+        // QA PHX-PISONET-K: A was valid at Open(). After successfully
+        // sampling A, Windows publishes B instead, but the OLD A HANDLE
+        // remains open and the fake driver still returns SUCCESS + CTS=1.
+        // This differs from the existing "status read fails" unplug test.
+        clock = new FakeMonotonicPulseClock();
+        using (var osA = new FakeNativeComPlatform(adapterA) { ModemStatus = 0 })
+        using (var osB = new FakeNativeComPlatform(adapterB) { ModemStatus = 0x10u })
+        using (var capture = new NativeComPulseCapture(clock,
+            minimumMs: 20, maximumMs: 200, debounceMs: 0, maximumGapMs: 50))
+        {
+            capture.Rebind(Open(adapterA.InstanceId, osA));
+            long beforeRemovalGeneration = capture.Generation;
+            int observedA = 0, claimedA = 0, claimedB = 0;
+            capture.Observed += pulse =>
+            {
+                if (pulse.DeviceInstanceId == adapterA.InstanceId)
+                {
+                    observedA++;
+                    if (capture.TryClaimObserved(pulse)) claimedA++;
+                }
+                else if (capture.TryClaimObserved(pulse)) claimedB++;
+            };
+            capture.SampleOnce();  // verified A idle
+            clock.Advance(10);
+            High(osA); capture.SampleOnce(); // A pulse begins
+            Require(osA.OpenedHandle?.IsClosed == false,
+                "A did not have an actual open fake HANDLE before removal");
+
+            // B now replaces A in device-interface inventory. The A handle
+            // deliberately stays valid and a driver returns cached CTS=1.
+            osA.AfterOpen = new[] { adapterB };
+            osA.StatusSupported = true;
+            High(osA);
+            int readsBeforeRemovedSample = osA.ReadsOnOriginalHandle;
+            clock.Advance(10);
+            capture.SampleOnce();
+            Require(osA.ReadsOnOriginalHandle == readsBeforeRemovedSample + 1 &&
+                osA.OpenedHandle?.IsClosed == true &&
+                capture.Generation != beforeRemovalGeneration &&
+                observedA == 0 && claimedA == 0,
+                "CACHED_SUCCESS_AFTER_REMOVAL_RED: old A cached CTS success survived identity revocation");
+            clock.Advance(30);
+            Low(osA); capture.SampleOnce();
+            Require(observedA == 0 && claimedA == 0,
+                "post-removal A generated an observation");
+
+            // B is newly opened via its pinned interface and MUST establish
+            // its own verified low/idle before a complete positive pulse.
+            capture.Rebind(Open(adapterB.InstanceId, osB));
+            clock.Advance(5);
+            capture.SampleOnce(); // B initially high: no known rise
+            clock.Advance(20);
+            Low(osB); capture.SampleOnce();  // B verified idle
+            Require(claimedB == 0, "new B accepted an incomplete high pulse");
+            clock.Advance(10);
+            High(osB); capture.SampleOnce();
+            clock.Advance(30);
+            Low(osB); capture.SampleOnce();
+            Require(claimedB == 1 && claimedA == 0 &&
+                osB.ReadsOnOtherHandle == 0,
+                "fresh pinned B original-handle idle-rearmed positive failed");
+            Console.WriteLine("NATIVE_PULSE_CACHED_CTS_SUCCESS_REMOVED_A_DENIED_FRESH_B_POSITIVE_PASS");
+        }
+
+        // Also guard a pending/queued *already sampled* A observation:
+        // interface A is removed after falling edge but before the listener
+        // consumes the immutable token. Fake old A status remains readable.
+        clock = new FakeMonotonicPulseClock();
+        using (var os = new FakeNativeComPlatform(adapterA) { ModemStatus = 0 })
+        using (var capture = new NativeComPulseCapture(clock,
+            minimumMs: 20, maximumMs: 200, debounceMs: 0, maximumGapMs: 50))
+        {
+            capture.Rebind(Open(adapterA.InstanceId, os));
+            long generation = capture.Generation;
+            int staleClaim = 0, delivered = 0;
+            capture.Observed += pulse =>
+            {
+                delivered++;
+                // Duplicate instance aliases after the good native read;
+                // the open original HANDLE and its driver status stay valid.
+                os.AfterOpen = new[] { adapterA, adapterA };
+                if (capture.TryClaimObserved(pulse)) staleClaim++;
+            };
+            capture.SampleOnce();
+            clock.Advance(10);
+            High(os); capture.SampleOnce();
+            clock.Advance(30);
+            Low(os); capture.SampleOnce();
+            Require(delivered == 1 && staleClaim == 0 &&
+                capture.Generation != generation && os.OpenedHandle?.IsClosed == true,
+                "REMOVED_DURING_CALLBACK_RED: duplicate interface allowed old event claim");
+            Console.WriteLine("NATIVE_PULSE_AFTER_SAMPLE_DUPLICATE_INTERFACE_STALE_CLAIM_DENIED_PASS");
+        }
+
+        Console.WriteLine("NATIVE_OWNED_HANDLE_PULSE_SOURCE_GREEN: 8 deterministic positive/fault/rebind/presence suites; diagnostic only");
     }
 }
