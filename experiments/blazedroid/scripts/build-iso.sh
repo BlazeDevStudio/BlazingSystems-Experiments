@@ -22,13 +22,19 @@ git -C .repo/manifests checkout --detach "$PIN"
 [[ "$(git -C .repo/manifests rev-parse HEAD)" == "$PIN" ]] || { echo "Manifest commit mismatch" >&2; exit 1; }
 repo sync -c --no-tags --no-clone-bundle -j4
 [[ "$(git -C bootable/aaropa rev-parse HEAD)" == "$INSTALLER_PIN" ]] || { echo "Āropa installer mismatch" >&2; exit 1; }
+# Install the downstream product as a non-repo source overlay. This is local BlazeDroid
+# code, not a renamed upstream product. Repeated builds replace only these tracked files.
+[[ ! -L "$SRC/device/blazedroid" ]] || { echo "Refusing symlinked BlazeDroid device directory" >&2; exit 1; }
+mkdir -p "$SRC/device/blazedroid"
+cp -a -- "$HERE/device/blazedroid/." "$SRC/device/blazedroid/"
 repo manifest -r -o "$DEST/resolved-manifest.xml"
+(cd "$HERE" && sha256sum device/blazedroid/x86_64/*.mk) > "$DEST/blazedroid-overlay-SHA256SUMS"
 export USE_TV_BUILD=false SKIP_AG_DOWNLOADS=false AAROPA_SOURCE=bass
 # The upstream environment hook fetches Aaropa and required firmware prebuilts.
 source build/envsetup.sh
-lunch lineage_x86_64_tablet-userdebug
+lunch blazedroid_x86_64-userdebug
 m iso_img
-mapfile -d '' images < <(find out/target/product -type f -name '*.iso' -print0)
+mapfile -d '' images < <(find out/target/product/blazedroid_x86_64 -maxdepth 1 -type f -name '*.iso' -print0)
 [[ "${#images[@]}" -eq 1 ]] || { echo "Expected exactly one ISO; found ${#images[@]}" >&2; exit 1; }
 mapfile -d '' props < <(find out/target/product -type f -name build.prop -print0)
 valid=0
