@@ -91,8 +91,7 @@ internal sealed class NativeComPulseCapture : IDisposable
             if (ReferenceEquals(previous, replacement) && previous is not null)
                 throw new ArgumentException("Cannot rebind the same owned session", nameof(replacement));
             _session = replacement;
-            unchecked { _generation++; }
-            ResetLocked();
+            AdvanceGenerationLocked();
         }
         previous?.Dispose();
     }
@@ -232,9 +231,16 @@ internal sealed class NativeComPulseCapture : IDisposable
     {
         var previous = _session;
         _session = null;
+        AdvanceGenerationLocked();
+        return previous;
+    }
+
+    // One epoch transition contract for rebind and retirement. Never leave
+    // a pulse, debounce timestamp or unclaimed event in the prior generation.
+    private void AdvanceGenerationLocked()
+    {
         unchecked { _generation++; }
         ResetLocked();
-        return previous;
     }
 
     private void ResetLocked()
