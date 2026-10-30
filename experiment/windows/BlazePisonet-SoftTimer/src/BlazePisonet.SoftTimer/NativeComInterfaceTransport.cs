@@ -330,36 +330,44 @@ internal sealed class WindowsNativeComPlatform : INativeComPlatform
                     throw new Win32Exception(error);
                 }
 
-                var info = new SpDevInfoData { cbSize = Marshal.SizeOf<SpDevInfoData>() };
-                _ = SetupDiGetDeviceInterfaceDetail(
-                    set, ref iface, IntPtr.Zero, 0, out var required, ref info);
-                if (Marshal.GetLastWin32Error() != ErrorInsufficientBuffer ||
-                    required < 8 || required > 65536)
-                    throw new Win32Exception("Invalid device-interface detail size");
-
-                var buffer = Marshal.AllocHGlobal(required);
-                try
-                {
-                    // SP_DEVICE_INTERFACE_DETAIL_DATA_W cbSize: 8 on x64,
-                    // 6 on x86; actual Unicode DevicePath begins at byte 4.
-                    Marshal.WriteInt32(buffer, IntPtr.Size == 8 ? 8 : 6);
-                    if (!SetupDiGetDeviceInterfaceDetail(
-                        set, ref iface, buffer, required, out _, ref info))
-                        throw new Win32Exception(Marshal.GetLastWin32Error());
-                    var path = Marshal.PtrToStringUni(IntPtr.Add(buffer, 4));
-                    var id = new StringBuilder(1024);
-                    if (!SetupDiGetDeviceInstanceId(
-                        set, ref info, id, id.Capacity, out _))
-                        throw new Win32Exception(Marshal.GetLastWin32Error());
-                    if (string.IsNullOrWhiteSpace(path) || id.Length == 0)
-                        throw new Win32Exception("Device-interface identity missing");
-                    devices.Add(new NativeComDeviceInterface(id.ToString(), path));
-                }
-                finally { Marshal.FreeHGlobal(buffer); }
+                devices.Add(ReadDeviceInterface(set, ref iface));
             }
             throw new Win32Exception("Exceeded device-interface enumeration limit");
         }
         finally { SetupDiDestroyDeviceInfoList(set); }
+    }
+
+    // Keep SetupAPI allocation, Unicode detail decoding and the device ID
+    // in one bounded scope. Enumeration only owns the present-interface loop.
+    private static NativeComDeviceInterface ReadDeviceInterface(
+        IntPtr set, ref SpDeviceInterfaceData iface)
+    {
+        var info = new SpDevInfoData { cbSize = Marshal.SizeOf<SpDevInfoData>() };
+        _ = SetupDiGetDeviceInterfaceDetail(
+            set, ref iface, IntPtr.Zero, 0, out var required, ref info);
+        if (Marshal.GetLastWin32Error() != ErrorInsufficientBuffer ||
+            required < 8 || required > 65536)
+            throw new Win32Exception("Invalid device-interface detail size");
+
+        var buffer = Marshal.AllocHGlobal(required);
+        try
+        {
+            // SP_DEVICE_INTERFACE_DETAIL_DATA_W cbSize: 8 on x64,
+            // 6 on x86; actual Unicode DevicePath begins at byte 4.
+            Marshal.WriteInt32(buffer, IntPtr.Size == 8 ? 8 : 6);
+            if (!SetupDiGetDeviceInterfaceDetail(
+                set, ref iface, buffer, required, out _, ref info))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            var path = Marshal.PtrToStringUni(IntPtr.Add(buffer, 4));
+            var id = new StringBuilder(1024);
+            if (!SetupDiGetDeviceInstanceId(
+                set, ref info, id, id.Capacity, out _))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            if (string.IsNullOrWhiteSpace(path) || id.Length == 0)
+                throw new Win32Exception("Device-interface identity missing");
+            return new NativeComDeviceInterface(id.ToString(), path);
+        }
+        finally { Marshal.FreeHGlobal(buffer); }
     }
 
     public SafeFileHandle OpenInterface(string path)
