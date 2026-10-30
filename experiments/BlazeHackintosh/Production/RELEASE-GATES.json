@@ -295,6 +295,51 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224322821",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224317558"
       ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-boot-file-content-readback",
+      "status": "ci_verified_scope_limited",
+      "note": "Draft PR #257: narrow read-only 8.3 EFI/BOOT/BOOTX64.EFI file hash readback from disposable FAT32 disk image, 700-byte synthetic 2-cluster fixture, RED CI 40988387682 and GREEN 40988558649 with 245 Linux and 245 Windows tests. Reuses existing image_audit metadata checks; neither physical drive readback, full filesystem integrity, real EFI execution nor macOS boot proved. Production release gates unchanged.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988387682",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988558649"
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-crosslink-efi-path-deny",
+      "status": "ci_verified_scope_limited",
+      "note": "Source PR #257: RED exact-head run 41005316485 with 2 failing 8.3 EFI path cross-link tests; fix c06e8e56d23e630400049671e23f1f48c783497f uses shared cluster-ownership set, GREEN run 41005392462: 247 Linux and 247 Windows tests passed plus existing Windows console packaging. Limited to clusters inspected along EFI/BOOT/BOOTX64.EFI. No full FAT filesystem, physical readback/rollback or boot proof. Mandatory gate statuses unchanged.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005316485",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005392462"
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-directory-tail-allocation-deny",
+      "status": "ci_verified_scope_limited",
+      "note": "Test-first RED run 41006837380: three malformed FAT32 EFI directory-chain cases previously passed SHA-only targeted readback. Fix 05b1eb01efcd21a2cd57911782d6acb2c442fcdd makes a bounded directory FAT-chain check even after end-of-entries marker; GREEN run 41006939648 passed 250 Linux/250 Windows Python tests and Windows console packaging. Limited to inspected short-name EFI path; no complete FAT32, hardware, physical write/readback or boot proof.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41006837380",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41006939648"
+      ]
     }
   ]
 }
