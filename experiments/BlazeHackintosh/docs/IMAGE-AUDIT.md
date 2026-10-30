@@ -27,3 +27,10 @@ CI evidence: https://github.com/BlazingSystems/BlazingSystems-Experiments/action
 
 ## Disposable file roundtrip regression
 Two additional `Tests/test_image_audit.py` cases verify copying the synthetic 40 MiB image into a private temporary .img, readback integrity, rejection after simulated corruption, restoration from a temporary backup, and rejection of interrupted copies. Source and destination are ordinary temporary files; `shutil` and `os.replace` are exercised **inside tests only**. This is not the deliverable physical disk writer, migration utility, FAT32 filesystem content validator or rollback proof. CI: https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224322821.
+
+## Experimental short-name EFI-file payload readback (draft PR #257; 2026-10-30)
+`esp_readback.audit_boot_efi(image_path, expected_image_sha256, expected_boot_file_sha256)` is a separate read-only helper for **ordinary .img files only**. It first requires the existing GPT/ESP/FAT32 metadata audit to pass, then opens the same pinned image bytes read-only and follows the FAT32 directory/FAT chain for exactly `EFI/BOOT/BOOTX64.EFI` using 8.3 short names. It verifies the SHA-256 of the actual file content, including multiple clusters, and rehashes the opened image handle before returning. Any unhandled LFN, oversized directory/file, missing entry, FAT cycle, inconsistent mirrored FAT or mismatched digest fails closed.
+
+It deliberately does **not** support arbitrary file paths, verify every FAT entry, check complete filesystem integrity, validate an EFI executable, or write to a disk. Return flags `physical_readback_verified`, `filesystem_verified`, `boot_verified` and `safe_to_flash` stay false even on success. The synthetic 700-byte payload is not real OpenCore or a deployable loader.
+
+RED CI: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988387682 ; GREEN 245 Linux/245 Windows: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988558649 .

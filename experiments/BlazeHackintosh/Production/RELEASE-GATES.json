@@ -295,6 +295,21 @@
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224322821",
         "https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/39224317558"
       ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-boot-file-content-readback",
+      "status": "ci_verified_scope_limited",
+      "note": "Draft PR #257: narrow read-only 8.3 EFI/BOOT/BOOTX64.EFI file hash readback from disposable FAT32 disk image, 700-byte synthetic 2-cluster fixture, RED CI 40988387682 and GREEN 40988558649 with 245 Linux and 245 Windows tests. Reuses existing image_audit metadata checks; neither physical drive readback, full filesystem integrity, real EFI execution nor macOS boot proved. Production release gates unchanged.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988387682",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988558649"
+      ]
     }
   ]
 }
