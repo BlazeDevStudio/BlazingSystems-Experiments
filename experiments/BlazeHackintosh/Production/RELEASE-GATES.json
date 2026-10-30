@@ -325,6 +325,21 @@
         "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005316485",
         "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005392462"
       ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-directory-tail-allocation-deny",
+      "status": "ci_verified_scope_limited",
+      "note": "Test-first RED run 41006837380: three malformed FAT32 EFI directory-chain cases previously passed SHA-only targeted readback. Fix 05b1eb01efcd21a2cd57911782d6acb2c442fcdd makes a bounded directory FAT-chain check even after end-of-entries marker; GREEN run 41006939648 passed 250 Linux/250 Windows Python tests and Windows console packaging. Limited to inspected short-name EFI path; no complete FAT32, hardware, physical write/readback or boot proof.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41006837380",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41006939648"
+      ]
     }
   ]
 }
