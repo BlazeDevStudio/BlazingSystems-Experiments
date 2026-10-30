@@ -31,6 +31,9 @@ def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES)
         raise FileNotFoundError(f"missing or empty ISO: {iso}")
     if not manifest.is_file() or manifest.stat().st_size == 0:
         raise FileNotFoundError(f"missing resolved manifest: {manifest}")
+    overlay_provenance = manifest.parent / "blazedroid-overlay-SHA256SUMS"
+    if not overlay_provenance.is_file() or overlay_provenance.stat().st_size == 0:
+        raise FileNotFoundError(f"missing BlazeDroid product provenance: {overlay_provenance}")
     if max_asset_bytes <= 0:
         raise ValueError("asset size limit must be positive")
     if iso.parent.resolve() == destination.resolve():
@@ -62,6 +65,7 @@ def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES)
                 assets.append(target)
                 index += 1
     shutil.copyfile(manifest, destination / "resolved-manifest.xml")
+    shutil.copyfile(overlay_provenance, destination / "blazedroid-overlay-SHA256SUMS")
     checksums = [f"{digest(iso)}  {ISO_NAME}"]
     checksums.extend(f"{digest(asset)}  {asset.name}" for asset in assets if asset.name != ISO_NAME)
     (destination / "SHA256SUMS").write_text("\n".join(checksums) + "\n")
@@ -110,7 +114,7 @@ def prepare_preview(iso, destination, manifest, max_asset_bytes=MAX_ASSET_BYTES)
         notes.append(f"Download `{ISO_NAME}` and verify its hash using `SHA256SUMS`.")
     notes.extend([
         "",
-        "`resolved-manifest.xml` records the actual upstream Git source revisions.",
+        "`resolved-manifest.xml` records the upstream Git revisions; `blazedroid-overlay-SHA256SUMS` identifies downstream BlazeDroid source files.",
         "This is a preview release, **not** a production-ready or certified Windows alternative.",
         "",
     ])
