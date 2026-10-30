@@ -34,7 +34,7 @@ export USE_TV_BUILD=false SKIP_AG_DOWNLOADS=false AAROPA_SOURCE=bass
 source build/envsetup.sh
 lunch blazedroid_x86_64-userdebug
 m iso_img
-mapfile -d '' images < <(find out/target/product/blazedroid_x86_64 -maxdepth 1 -type f -name '*.iso' -print0)
+mapfile -d '' images < <(find out/target/product/x86_64_tablet -maxdepth 1 -type f -name '*.iso' -print0)
 [[ "${#images[@]}" -eq 1 ]] || { echo "Expected exactly one ISO; found ${#images[@]}" >&2; exit 1; }
 mapfile -d '' props < <(find out/target/product -type f -name build.prop -print0)
 valid=0
