@@ -169,6 +169,11 @@ async function enrollmentResponseCases() {
   assert.equal(failed, 0, 'enrollment responses must belong to the current pending request');
 }
 
+const watchdog = setTimeout(() => {
+  console.error('Pending dashboard fixture did not complete');
+  process.exitCode = 1;
+}, 30000);
+
 (async () => {
   const firstPage = loadPage();
   await firstPage.paid('add_time', { device_id: deviceId, seconds: 600 });
@@ -203,4 +208,4 @@ async function enrollmentResponseCases() {
   assert.equal(stored.size, 0, 'operator confirmation clears pending enrollment');
   await enrollmentResponseCases();
   console.log('R281 admin lost-response pending request contract PASS');
-})().catch(error => { console.error(error); process.exitCode = 1; });
+})().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => clearTimeout(watchdog));
