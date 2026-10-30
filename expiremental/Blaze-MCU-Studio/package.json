@@ -1,0 +1,48 @@
+{
+  "name": "blaze-mcu-studio",
+  "version": "0.4.7",
+  "private": true,
+  "description": "Blaze Systems offline-first microcontroller visual development studio",
+  "author": "Blaze Systems",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "dist:win": "electron-builder --win portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "systems.blaze.mcustudio",
+    "productName": "Blaze MCU Studio",
+    "artifactName": "Blaze-MCU-Studio-${version}-Windows-${arch}.${ext}",
+    "asar": true,
+    "files": [
+      "package.json",
+      "electron/**/*",
+      "core/**/*",
+      "renderer/**/*",
+      "docs/**/*",
+      "README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "BIN",
+        "to": "bin",
+        "filter": [
+          "*.exe"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "executableName": "Blaze MCU Studio",
+      "signAndEditExecutable": false
+    }
+  }
+}

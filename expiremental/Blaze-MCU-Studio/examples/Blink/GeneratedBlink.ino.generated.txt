@@ -1,0 +1,20 @@
+// Blaze MCU Studio v0.1.0 - GeneratedBlink
+// Generated visual regions are rebuilt; user regions are preserved.
+
+
+void setup() {
+  pinMode(13, OUTPUT); // node:mode
+// BEGIN USER SETUP
+
+// END USER SETUP
+}
+
+void loop() {
+  digitalWrite(13, HIGH); // node:on
+  delay(1000UL); // node:wait1
+  digitalWrite(13, LOW); // node:off
+  delay(1000UL); // node:wait2
+// BEGIN USER LOOP
+
+// END USER LOOP
+}

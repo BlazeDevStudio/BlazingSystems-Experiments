@@ -1,0 +1,251 @@
+name: Blaze MCU Studio v0.4.7 desktop session and cross-core gates
+on:
+  pull_request:
+    paths:
+      - '**/*MCU*Studio*/**'
+      - '**/*mcu*studio*/**'
+      - '.github/workflows/blaze-mcu-studio-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation-windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Locate MCU Studio regardless of repository directory
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@(git ls-files | Where-Object { $_ -match '(^|/)package\.json$' })
+          $found=@($candidates | Where-Object {
+            try { (Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json).name -eq 'blaze-mcu-studio' } catch { $false }
+          })
+          if ($found.Count -ne 1) { throw "Expected exactly one Blaze MCU Studio package; found $($found.Count). Check migration." }
+          $studioDir=(Split-Path $found[0] -Parent) -replace '\\','/'
+          if (-not $studioDir) { $studioDir='.' }
+          "studio_dir=$studioDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Source directory: $studioDir"
+      - name: Unit tests and renderer syntax
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          node --test tests/*.test.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check renderer/app.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Download pinned Arduino CLI
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -Force -ItemType Directory -Path BIN | Out-Null
+          $version='1.5.1'
+          $url="https://github.com/arduino/arduino-cli/releases/download/v$version/arduino-cli_${version}_Windows_64bit.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP/arduino-cli.zip"
+          Expand-Archive "$env:RUNNER_TEMP/arduino-cli.zip" -DestinationPath BIN -Force
+          & ./BIN/arduino-cli.exe version
+      - name: Install AVR and compile actual Arduino sketch
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          & ./BIN/arduino-cli.exe core update-index 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-update.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe core install arduino:avr 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-install.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/generated-sketches" | Out-Null
+          node scripts/export-example.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all examples/Blink 2>&1 | Tee-Object "$env:RUNNER_TEMP/arduino-reference-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile generated structured flowchart firmware
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-flowchart.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedFlowchart" 2>&1 | Tee-Object "$env:RUNNER_TEMP/flowchart-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile real Wire library and PWM/Serial visual firmware
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-extended.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedWirePWMSerial" 2>&1 | Tee-Object "$env:RUNNER_TEMP/wire-pwm-serial-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile typed variable and analog-threshold firmware on Uno
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-sensor.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedSensorThreshold" 2>&1 | Tee-Object "$env:RUNNER_TEMP/sensor-threshold-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate generated Blink compilation on Arduino Mega and Nano
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-avr-targets.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:mega --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedMegaBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/mega-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:nano --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedNanoBlink" 2>&1 | Tee-Object "$env:RUNNER_TEMP/nano-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile actual Uno scalar data-wire visual firmware
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          node scripts/export-data-links.cjs "$env:RUNNER_TEMP/generated-sketches"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedTypedDataWire" 2>&1 | Tee-Object "$env:RUNNER_TEMP/data-links-compile.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build actual portable Windows EXE
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm install --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run dist:win
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exe=Get-ChildItem dist -Filter '*.exe'
+          if (-not $exe) { throw 'Windows EXE artifact missing' }
+          $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
+      - name: Packaged Windows GUI and IPC runtime smoke
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:BLAZE_MCU_SMOKE_FILE="$env:RUNNER_TEMP/blaze-mcu-gui-smoke.json"
+          $exe=(Get-ChildItem dist -Filter '*.exe' | Select-Object -First 1).FullName
+          if (-not $exe) { throw 'Portable GUI binary missing before smoke' }
+          $process=Start-Process -FilePath $exe -PassThru
+          $deadline=(Get-Date).AddSeconds(120)
+          while(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE) -and (Get-Date) -lt $deadline){ Start-Sleep -Seconds 2 }
+          if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
+          $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
+          Get-Content $env:BLAZE_MCU_SMOKE_FILE
+          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI -or -not $report.sessionRestoreUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
+      - name: Archive exact checked-out source
+        shell: pwsh
+        if: always()
+        run: |
+          $base='${{ steps.locate.outputs.studio_dir }}'
+          $items=@("$base/core","$base/renderer","$base/electron","$base/docs","$base/tests","$base/scripts","$base/examples","$base/package.json","$base/README.md",".github/workflows/blaze-mcu-studio-preview.yml")
+          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v047-source.zip" -Force
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blaze-mcu-v047-session-build-evidence
+          path: |
+            ${{ steps.locate.outputs.studio_dir }}/dist/*.exe
+            ${{ runner.temp }}/arduino-compile.log
+            ${{ runner.temp }}/flowchart-compile.log
+            ${{ runner.temp }}/wire-pwm-serial-compile.log
+            ${{ runner.temp }}/sensor-threshold-compile.log
+            ${{ runner.temp }}/data-links-compile.log
+            ${{ runner.temp }}/mega-compile.log
+            ${{ runner.temp }}/nano-compile.log
+            ${{ runner.temp }}/arduino-reference-compile.log
+            ${{ runner.temp }}/arduino-install.log
+            ${{ runner.temp }}/sha256.txt
+            ${{ runner.temp }}/blaze-mcu-gui-smoke.json
+            ${{ runner.temp }}/blaze-mcu-v047-source.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+  esp-core-compile:
+    name: Compile genuine ESP firmware (${{ matrix.family }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - family: esp8266
+            platform: esp8266:esp8266@3.1.2
+            fqbn: esp8266:esp8266:generic
+            sketch: BlazeESP8266Blink
+            index: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          - family: esp32
+            platform: esp32:esp32@3.0.7
+            fqbn: esp32:esp32:esp32
+            sketch: BlazeESP32Blink
+            index: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Locate MCU Studio regardless of repository directory
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@(git ls-files | Where-Object { $_ -match '(^|/)package\.json$' })
+          $found=@($candidates | Where-Object {
+            try { (Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json).name -eq 'blaze-mcu-studio' } catch { $false }
+          })
+          if ($found.Count -ne 1) { throw "Expected exactly one Blaze MCU Studio package; found $($found.Count). Check migration." }
+          $studioDir=(Split-Path $found[0] -Parent) -replace '\\','/'
+          if (-not $studioDir) { $studioDir='.' }
+          "studio_dir=$studioDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Source directory: $studioDir"
+      - name: Run tested deterministic ESP graph generation
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/esp-pin-profiles.test.cjs
+          mkdir -p "$RUNNER_TEMP/esp-generated"
+          node scripts/export-esp.cjs "$RUNNER_TEMP/esp-generated" | tee "$RUNNER_TEMP/generated-esp-manifest.txt"
+      - name: Install pinned Arduino CLI 1.5.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 "https://github.com/arduino/arduino-cli/releases/download/v1.5.1/arduino-cli_1.5.1_Linux_64bit.tar.gz" -o "$RUNNER_TEMP/arduino-cli.tar.gz"
+          mkdir -p "$RUNNER_TEMP/arduino-bin"
+          tar -xzf "$RUNNER_TEMP/arduino-cli.tar.gz" -C "$RUNNER_TEMP/arduino-bin" arduino-cli
+          echo "$RUNNER_TEMP/arduino-bin" >> "$GITHUB_PATH"
+      - name: Install pinned platform and compile generated target
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          FQBN: ${{ matrix.fqbn }}
+          SKETCH: ${{ matrix.sketch }}
+          INDEX: ${{ matrix.index }}
+        run: |
+          set -euo pipefail
+          arduino-cli version | tee "$RUNNER_TEMP/cli-version.txt"
+          arduino-cli core update-index --additional-urls "$INDEX" 2>&1 | tee "$RUNNER_TEMP/esp-core-update.log"
+          arduino-cli core install "$PLATFORM" --additional-urls "$INDEX" 2>&1 | tee "$RUNNER_TEMP/esp-core-install.log"
+          arduino-cli core list --json | tee "$RUNNER_TEMP/esp-core-versions.json"
+          arduino-cli compile --fqbn "$FQBN" --additional-urls "$INDEX" --warnings all "$RUNNER_TEMP/esp-generated/$SKETCH" 2>&1 | tee "$RUNNER_TEMP/esp-compile.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blaze-mcu-v047-${{ matrix.family }}-compile-evidence
+          path: |
+            ${{ runner.temp }}/cli-version.txt
+            ${{ runner.temp }}/generated-esp-manifest.txt
+            ${{ runner.temp }}/esp-core-update.log
+            ${{ runner.temp }}/esp-core-install.log
+            ${{ runner.temp }}/esp-core-versions.json
+            ${{ runner.temp }}/esp-compile.log
+          if-no-files-found: warn
+          retention-days: 14

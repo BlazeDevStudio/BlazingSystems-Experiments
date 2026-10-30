@@ -1,0 +1,331 @@
+'use strict';
+const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let boardLoading=null;
+let currentWorkspaceId='',workspaces=[],openProjectIds=[],restoringSession=false;
+let project=null,projects=[],boards=[],selected=null,pending=null,pendingData=null,tab='graph',unsaved=false,saveTimer=null,saveInFlight=null,changeRevision=0,codeRequest=0,simulation=null,lastCompilation=null,simInputs={},simAnalogInputs={},simBreaks=[];
+const labels={setVariable:'Set Variable',readAnalog:'Analog Sample',thresholdOutput:'Threshold Output',loopStart:'Loop Start',pinMode:'Pin Mode',digitalWrite:'Digital Write',delay:'Delay',comment:'Comment',pwmWrite:'PWM Write',serialPrint:'Serial Print',wireWrite:'Wire I2C Write'};
+function log(text){const box=$('#log');box.textContent+='\n'+String(text);box.scrollTop=box.scrollHeight;}
+function logResult(prefix,r){log(`${prefix}: ${r.ok?'SUCCESS':'FAILED'} ${r.exitCode??''}\n${r.stdout||''}\n${r.stderr||''}`);}
+function dirty(){simulation=null;lastCompilation=null;changeRevision++;unsaved=true;$('#dirty').textContent='● Unsaved';clearTimeout(saveTimer);saveTimer=setTimeout(()=>save().catch(e=>log('Autosave error: '+e.message)),1300);}
+async function save(){
+ if(saveInFlight){await saveInFlight;if(unsaved)return save();return;}
+ if(!project||!unsaved)return;
+ clearTimeout(saveTimer);
+ const original=project, revision=changeRevision, snapshot=structuredClone(project);
+ const job=(async()=>{
+   const persisted=await window.blaze.saveProject(snapshot);
+   if(project===original){
+     project.updatedAt=persisted.updatedAt;
+     if(revision===changeRevision){unsaved=false;$('#dirty').textContent='Saved';}
+     else{$('#dirty').textContent='● Unsaved';clearTimeout(saveTimer);saveTimer=setTimeout(()=>save().catch(e=>log('Autosave error: '+e.message)),150);}
+   }
+   await refreshProjects(false);
+ })();
+ saveInFlight=job;
+ try{await job;}finally{if(saveInFlight===job)saveInFlight=null;}
+}
+async function refreshWorkspaces(){
+ workspaces=await window.blaze.listWorkspaces();
+ if(currentWorkspaceId&&!workspaces.some(w=>w.id===currentWorkspaceId))currentWorkspaceId='';
+ $('#workspaceSelect').innerHTML='<option value="">All projects</option>'+workspaces.map(w=>`<option value="${w.id}">${escapeHTML(w.name)} (${w.projectIds.length})</option>`).join('');
+ $('#workspaceSelect').value=currentWorkspaceId;
+ updateWorkspaceActions();
+}
+function updateWorkspaceActions(){
+ const w=workspaces.find(w=>w.id===currentWorkspaceId);
+ for(const id of ['workspaceRename','workspaceDelete','workspaceAddCurrent','workspaceRemoveCurrent'])$('#'+id).disabled=!w;
+ $('#workspaceAddCurrent').disabled=!w||!project||w.projectIds.includes(project.id);
+ $('#workspaceRemoveCurrent').disabled=!w||!project||!w.projectIds.includes(project.id);
+ $('#workspaceSummary').textContent=w?`${w.projectIds.length} independent targets${w.missingIds?.length?' · '+w.missingIds.length+' recoverable/missing':''}. Export/compile each separately.`:'Showing all projects. Each tab builds its own board target.';
+}
+// Tabs and selected collection live in a separate atomic session file, never in firmware.
+async function persistSession(){
+ if(restoringSession)return;
+ try{await window.blaze.saveSession({workspaceId:currentWorkspaceId,openProjectIds:[...openProjectIds],activeProjectId:project?.id||null});}
+ catch(e){log('Desktop layout could not be saved: '+e.message);}
+}
+async function restoreSession(){
+ const state=await window.blaze.getSession();
+ restoringSession=true;
+ try{
+  currentWorkspaceId=state.workspaceId;
+  openProjectIds=[...state.openProjectIds];
+  await refreshWorkspaces();await refreshProjects(false);
+  if(state.activeProjectId)await openProject(state.activeProjectId);
+  else renderOpenProjectTabs();
+ }finally{restoringSession=false;}
+ await persistSession();
+}
+function renderOpenProjectTabs(){
+ const lookup=new Map(projects.map(x=>[x.id,x]));
+ $('#openProjectTabs').innerHTML=openProjectIds.map(id=>{
+  const p=lookup.get(id);if(!p)return '';
+  return `<div class="projectTab ${project?.id===id?'active':''}"><button data-activate-project="${id}" title="${escapeHTML(p.fqbn)}">${escapeHTML(p.name)}</button><button class="closeTab" data-close-project="${id}" title="Close tab">×</button></div>`;
+ }).join('');
+}
+async function refreshProjects(update=true){
+ projects=await window.blaze.listProjects();
+ const workspace=workspaces.find(w=>w.id===currentWorkspaceId);
+ const visible=workspace?projects.filter(p=>workspace.projectIds.includes(p.id)):projects;
+ $('#projectList').innerHTML=visible.length?visible.map(p=>`<button class="projectlink ${project?.id===p.id?'active':''}" data-open="${p.id}"><strong>◫ ${escapeHTML(p.name)}</strong><small>${escapeHTML(p.fqbn)}</small></button>`).join(''):'<p class="muted">No active projects in this collection</p>';
+ renderOpenProjectTabs();updateWorkspaceActions();
+ if(update)log(`Found ${visible.length} visible project(s) in ${workspace?.name||'All projects'}.`);
+}
+async function openProject(id){while(project&&unsaved)await save();project=await window.blaze.openProject(id);if(!openProjectIds.includes(id))openProjectIds.push(id);simulation=null;lastCompilation=null;simInputs={};simAnalogInputs={};simBreaks=[];selected=null;pending=null;pendingData=null;unsaved=false;$('#dirty').textContent='';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=false);$('#paletteHint').textContent='Drag a block onto Nodes, or click to append it. Select the block to edit.';$('#welcome').classList.add('hidden');$('#workspace').classList.remove('hidden');render();await persistSession();}
+function render(){if(!project)return;renderOpenProjectTabs();updateWorkspaceActions();$('#projectTitle').textContent=project.name;$('#projectMeta').textContent=`${project.fqbn} · ${project.source.mode==='manual'?'Full manual C++':'Node-generated C++'}`;$('#activeBoard').textContent=project.fqbn;$$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$$('.view').forEach(v=>v.classList.add('hidden'));$('#'+tab+'View').classList.remove('hidden');renderGraph();renderInspector();renderCode().catch(e=>log('Source generation error: '+e.message));renderPins().catch(e=>log('Pin profile error: '+e.message));renderBoardList();renderFlowchart();renderLibraries();renderVariables();renderSim();renderResourcesSummary();refreshProjects(false);}
+function renderGraph(){if(!project)return;let html='';for(const n of project.graph.nodes){html+=`<div class="node ${n.type==='loopStart'?'start':''} ${selected===n.id?'selected':''}" data-node="${n.id}" style="left:${Math.max(0,Math.min(1400,n.x||0))}px;top:${Math.max(0,Math.min(1100,n.y||0))}px"><div class="ntitle" data-drag="${n.id}">${escapeHTML(labels[n.type])}</div><div class="ndesc">${escapeHTML(describe(n))}</div><div class="ports"><button data-select="${n.id}">Edit</button>${n.type!=='loopStart'?`<button data-target="${n.id}">Input</button>`:'<span></span>'}<button data-source="${n.id}" title="Connect next execution block">Output →</button></div>${['readAnalog','setVariable'].includes(n.type)?`<div class="dataPorts"><button draggable="true" data-data-output="${n.id}" title="Data value output. Click, then click a Value input; or drag onto it.">● Value out</button></div>`:''}${n.type==='thresholdOutput'?`<div class="dataPorts"><button data-data-input="${n.id}" title="Typed numeric measurement input">◉ Value in</button></div>`:''}</div>`;}$('#nodeLayer').innerHTML=html;drawWires();}
+function describe(n){switch(n.type){case 'loopStart':return 'Runs repeatedly';case 'pinMode':return `D${n.params.pin} → ${n.params.mode}`;case 'digitalWrite':return `D${n.params.pin} ← ${n.params.value}`;case 'delay':return `${n.params.ms} ms`;case 'pwmWrite':return `D${n.params.pin} PWM ${n.params.value}/255`;case 'serialPrint':return `Serial ${n.params.baud}: ${(n.params.text||'').slice(0,26)}`;case 'setVariable':return `${n.params.target} = ${n.params.value}`;case 'readAnalog':return `${n.params.target} ← ${n.params.pin}`;case 'thresholdOutput':return `D${n.params.pin}: ${n.params.variable} ${n.params.operator} ${n.params.threshold}`;case 'wireWrite':return `I2C ${n.params.address} register ${n.params.register} = ${n.params.value}`;case 'comment':return (n.params.text||'Annotation').slice(0,42);}}
+function renderInspector(){const n=project?.graph.nodes.find(n=>n.id===selected);$('#inspectorEmpty').classList.toggle('hidden',!!n);$('#nodeInspector').classList.toggle('hidden',!n);if(!n)return;let fields='';if(['pinMode','digitalWrite','pwmWrite'].includes(n.type))fields+=`<label>Digital pin<input type="text" data-param="pin" value="${escapeHTML(n.params.pin)}"></label>`;
+ if(n.type==='pinMode')fields+=`<label>Mode<select data-param="mode">${['OUTPUT','INPUT','INPUT_PULLUP'].map(v=>`<option ${v===n.params.mode?'selected':''}>${v}</option>`).join('')}</select></label>`;
+ if(n.type==='digitalWrite')fields+=`<label>Output level<select data-param="value">${['HIGH','LOW'].map(v=>`<option ${v===n.params.value?'selected':''}>${v}</option>`).join('')}</select></label>`;
+ if(n.type==='pwmWrite')fields+=`<label>PWM duty (0..255)<input type="text" data-param="value" value="${escapeHTML(n.params.value)}"></label>`;
+ if(n.type==='serialPrint')fields+=`<label>Serial text<input type="text" data-param="text" value="${escapeHTML(n.params.text)}"></label><label>Baud<select data-param="baud">${[9600,19200,38400,57600,115200].map(v=>`<option value="${v}" ${String(v)===String(n.params.baud)?'selected':''}>${v}</option>`).join('')}</select></label>`;
+ if(n.type==='wireWrite')fields+=`<p class="hint">Uno Wire adapter. Bus pins A4/A5, status stored in blazeLastWireStatus. Electrical behavior not simulated.</p>`+['address','register','value'].map(key=>`<label>${key} (decimal or 0x)<input type="text" data-param="${key}" value="${escapeHTML(n.params[key])}"></label>`).join('');
+ if(n.type==='setVariable')fields+=`<label>Variable<select data-param="target">${(project.variables||[]).map(v=>`<option value="${escapeHTML(v.name)}" ${v.name===n.params.target?'selected':''}>${escapeHTML(v.name)} (${v.type})</option>`).join('')}</select></label><label>Value (literal)<input data-param="value" value="${escapeHTML(n.params.value)}"></label>`;
+ if(n.type==='readAnalog')fields+=`<label>Uno ADC pin<select data-param="pin">${['A0','A1','A2','A3','A4','A5'].map(pin=>`<option ${pin===n.params.pin?'selected':''}>${pin}</option>`).join('')}</select></label><label>Output variable (long)<select data-param="target">${(project.variables||[]).filter(v=>v.type==='long').map(v=>`<option value="${escapeHTML(v.name)}" ${v.name===n.params.target?'selected':''}>${escapeHTML(v.name)}</option>`).join('')}</select></label>`;
+ if(n.type==='thresholdOutput'){const wire=(project.graph.dataEdges||[]).find(e=>e.to===n.id&&e.input==='measurement');if(wire){const source=project.graph.nodes.find(x=>x.id===wire.from);fields+=`<p class="dataBinding">Value input connected to <strong>${escapeHTML(source?.params?.target||'Unknown')}</strong> from ${escapeHTML(wire.from)}. This connection overrides the manual variable selection.</p><button id="disconnectData">Disconnect data wire</button>`;}}
+ if(n.type==='thresholdOutput')fields+=`<label>Numeric variable<select data-param="variable" ${(project.graph.dataEdges||[]).some(e=>e.to===n.id&&e.input==='measurement')?'disabled':''}>${(project.variables||[]).filter(v=>v.type!=='bool').map(v=>`<option ${v.name===n.params.variable?'selected':''}>${escapeHTML(v.name)}</option>`).join('')}</select></label><label>Comparator<select data-param="operator">${['<','<=','>','>=','==','!='].map(op=>`<option value="${escapeHTML(op)}" ${op===n.params.operator?'selected':''}>${escapeHTML(op)}</option>`).join('')}</select></label><label>Threshold<input data-param="threshold" value="${escapeHTML(n.params.threshold)}"></label><label>Output D-pin<input data-param="pin" value="${escapeHTML(n.params.pin)}"></label><label>When true<select data-param="trueValue"><option ${n.params.trueValue==='HIGH'?'selected':''}>HIGH</option><option ${n.params.trueValue==='LOW'?'selected':''}>LOW</option></select></label><label>When false<select data-param="falseValue"><option ${n.params.falseValue==='HIGH'?'selected':''}>HIGH</option><option ${n.params.falseValue==='LOW'?'selected':''}>LOW</option></select></label>`;
+ if(n.type==='delay')fields+=`<label>Milliseconds<input type="text" data-param="ms" value="${escapeHTML(n.params.ms)}"></label>`;
+ if(n.type==='comment')fields+=`<label>Comment<input type="text" data-param="text" value="${escapeHTML(n.params.text||'')}"></label>`;
+ $('#nodeInspector').innerHTML=`<h3>${escapeHTML(labels[n.type])}</h3><div class="help">Block ID: ${escapeHTML(n.id)}<br>Changes affect the generated Arduino sketch.</div>${fields}${n.type==='loopStart'?'':'<button class="danger" id="removeNode">Remove block</button>'}${pending?`<p class="hint">Linking from ${escapeHTML(pending)}. Press an Input button to connect.</p>`:''}`;}
+async function renderCode(){if(!project)return;const viewProject=structuredClone(project), request=++codeRequest;const g=await window.blaze.generate(viewProject);if(!project||project.id!==viewProject.id||request!==codeRequest)return;$('#codeFilename').textContent=project.name.replace(/[^a-zA-Z0-9_]/g,'_')+'.ino';$('#manualMode').checked=project.source.mode==='manual';$('#codeEditor').readOnly=project.source.mode!=='manual';$('#codeEditor').value=g.source??'// Graph diagnostics must be fixed before source can be generated.';$('#codeInfo').textContent=project.source.mode==='manual'?'Manual ownership: the entire source is preserved verbatim. Node edits do not modify this sketch.':'Visual ownership: generated source is read-only. Edit the preserved custom C++ sections below or switch ownership.';$('#userRegions').classList.toggle('hidden',project.source.mode==='manual');for(const k of ['userPrelude','userSetup','userLoop'])$('#'+k).value=project.source[k];}
+async function renderPins(){
+ if(!project)return;
+ const target=project.fqbn, id=project.id;
+ const info=await window.blaze.boardProfile(target);
+ if(!project||project.id!==id||project.fqbn!==target)return;
+ if(!info){
+  $('#pinDescription').textContent='No reviewed pin profile for '+target+'. Unknown / Verification Required. Compile support does not imply safe electrical assignments.';
+  $('#pinGrid').innerHTML='<p>Unknown / Verification Required</p>';
+  $('#pinWarnings').textContent='A board core may compile without a verified GPIO mapping. Review the manufacturer pinout.';
+  return;
+ }
+ $('#pinDescription').textContent=info.provenance+' — '+info.scope+'. '+info.voltage+'. Pins are raw GPIO identifiers (not carrier D aliases).';
+ const used=new Set(project.graph.nodes.filter(n=>['pinMode','digitalWrite','pwmWrite','thresholdOutput'].includes(n.type)).map(n=>String(n.params.pin)));
+ const drawn=[...new Set([...info.pins,...info.blocked])].sort((a,b)=>Number(a)-Number(b));
+ $('#pinGrid').innerHTML=drawn.map(pin=>{
+  const restricted=info.blocked.includes(pin),input=info.inputOnly.includes(pin),boot=info.bootSensitive.includes(pin),serial=info.serial.includes(pin);
+  const state=restricted?'FLASH / NO-GO':input?'INPUT ONLY':boot?'BOOT STRAP':serial?'UART':'GPIO';
+  return `<div class="pinCell ${used.has(pin)?'used':''} ${restricted||boot?'reserved':''}" title="${escapeHTML(state)}"><strong>${escapeHTML(target.startsWith('arduino:')?'D':'GPIO')}${pin}</strong><small style="display:block">${escapeHTML(state)}</small></div>`;
+ }).join('');
+ if(target==='arduino:avr:uno')$('#pinGrid').innerHTML+=info.analog.map(pin=>`<div class="pinCell"><strong>${pin}</strong><small style="display:block">ADC ${pin==='A4'||pin==='A5'?' / Wire shared':''}</small></div>`).join('');
+ $('#pinWarnings').textContent='Pin restrictions are board-family-level and may not reflect carrier flash/PSRAM wiring. '+info.sourceUrl+' . Electrical acceptance is NOT verified.';
+}
+function selectedBoard(){return boards.find(b=>b.fqbn===$('#newBoard').value);}
+function renderBoardList(){
+ const term=($('#boardSearch')?.value||'').trim().toLowerCase();
+ const previouslySelected=$('#newBoard').value;
+ const visible=boards.filter(b=>!term||b.name.toLowerCase().includes(term)||b.fqbn.toLowerCase().includes(term));
+ $('#boardList').innerHTML=visible.length?visible.map(b=>`<div class="boardrow"><span><strong>${escapeHTML(b.name)}</strong><br><small>${escapeHTML(b.fqbn)} — ${b.installed?'Installed':'Core required'}</small></span>${project?`<button data-board="${escapeHTML(b.fqbn)}">Select</button>`:''}${!b.installed?`<button data-install-board="${escapeHTML(b.core)}">Install core</button>`:''}</div>`).join(''):'<p class="muted">No boards match your search. You can install a platform via Arduino CLI.</p>';
+ $('#installedCount').textContent=boards.filter(b=>b.installed).length+' installed boards · '+boards.filter(b=>!b.installed).length+' clearly labeled starter targets';
+ $('#newBoard').innerHTML=visible.map(b=>`<option value="${escapeHTML(b.fqbn)}">${escapeHTML(b.name)} [${b.installed?'Installed':'Install core to compile'}] (${escapeHTML(b.fqbn)})</option>`).join('');
+ if(visible.some(b=>b.fqbn===previouslySelected))$('#newBoard').value=previouslySelected;
+ updateBoardChoiceStatus();
+}
+function updateBoardChoiceStatus(){
+ const board=selectedBoard();const message=board?(board.installed?`Installed board definition: ${board.fqbn}. Electrical and pin capabilities require separate verification; Uno R3 currently has a partial known profile.`:`${board.name}: ${board.core} is NOT installed. You can create the project, but must install this core before compiling. Pin capabilities may be unknown.`):'No matching boards. Clear the search or refresh the catalog.';
+ $('#boardChoiceStatus').textContent=message;
+ $('#confirmNew').disabled=!board;
+ $('#installSelectedCore').disabled=!board||board.installed;
+}
+function showModal(){
+ $('#newModal').classList.remove('hidden');
+ renderBoardList();$('#newName').focus();
+ if(!boards.length){$('#boardChoiceStatus').textContent='Loading board catalog from Arduino CLI…';discover().catch(e=>log('Board catalog loading failed: '+e.message));}
+}
+async function discover(){
+ if(boardLoading)return boardLoading;
+ boardLoading=(async()=>{
+  const r=await window.blaze.boards();boards=r.boards||[];
+  renderBoardList();
+  if(!r.ok)log('Board discovery error: '+r.stderr);
+  else log(`Discovered ${boards.filter(b=>b.installed).length} installed boards and ${boards.filter(b=>!b.installed).length} optional starter targets. Additional boards require installing their cores.`);
+  return r;
+ })();
+ try{return await boardLoading;}finally{boardLoading=null;}
+}
+async function installCoreFor(core){
+ if(!/^[\w.-]+:[\w.-]+$/.test(core))throw Error('Invalid core ID');
+ if(!confirm(`Install trusted ${core} core through Arduino CLI? Downloads execute third-party platform build tools. Verify the publisher before proceeding. Internet access may be required.`))return;
+ $('#installSelectedCore').disabled=true;$('#installCore').disabled=true;
+ try{const result=await window.blaze.installCore(core);logResult(`Core ${core} install`,result);if(result.ok)await discover();else log('Installation failed at '+(result.phase||'unknown phase')+'. Check the CLI log.');}
+ finally{$('#installCore').disabled=false;updateBoardChoiceStatus();}
+}
+async function build(){if(!project)return;while(unsaved)await save();$('#build').disabled=true;log('Compiling '+project.name+' for '+project.fqbn+' …');try{const r=await window.blaze.compile(project);logResult('Arduino compile',r);lastCompilation=r;renderResourcesSummary();}catch(e){log('Compile failed: '+e.message);}finally{$('#build').disabled=false;}}
+async function validate(){if(!project)return;const r=await window.blaze.validate(project);log(`Graph validation: ${r.ok?'PASS':'FAIL'}\n${r.errors.map(s=>'ERROR: '+s).join('\n')}\n${r.warnings.map(s=>'WARNING: '+s).join('\n')}`);}
+function addNode(type,position=null){if(!project||project.source.mode==='manual') {log('Node edits disabled in manual ownership mode.');return; } if(['setVariable','readAnalog','thresholdOutput'].includes(type)&&!(project.variables||[]).length){tab='variables';render();log('Add a typed variable in Variables before inserting a sensor/control node.');return;} if(type==='readAnalog'&&!(project.variables||[]).some(v=>v.type==='long')){tab='variables';render();log('Analog sample requires a declared long variable.');return;} if(type==='thresholdOutput'&&!(project.variables||[]).some(v=>v.type!=='bool')){tab='variables';render();log('Threshold output requires a numeric variable.');return;} const n=project.graph.nodes.length;let id=type+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);const params={pinMode:{pin:'13',mode:'OUTPUT'},digitalWrite:{pin:'13',value:'HIGH'},delay:{ms:1000},comment:{text:'Your comment'},pwmWrite:{pin:'9',value:'128'},serialPrint:{text:'Hello from Blaze MCU Studio',baud:'9600'},wireWrite:{address:'0x3C',register:'0',value:'1'},setVariable:{target:project.variables?.[0]?.name||'sensorValue',value:'0'},readAnalog:{pin:'A0',target:project.variables?.find(v=>v.type==='long')?.name||'sensorValue'},thresholdOutput:{variable:project.variables?.find(v=>v.type!=='bool')?.name||'sensorValue',operator:'>=',threshold:'512',pin:'8',trueValue:'HIGH',falseValue:'LOW'}}[type];const node={id,type,params,x:position?.x??(280+(n%4)*210),y:position?.y??(420+Math.floor(n/4)*150)};const edges=project.graph.edges;let current='start',next,seen=new Set();while((next=edges.find(e=>e[0]===current)?.[1])&&!seen.has(current)){seen.add(current);current=next;}project.graph.nodes.push(node);edges.push([current,id]);selected=id;tab='graph';dirty();render();}
+async function connectData(from,to){
+ if(!project||project.source.mode==='manual'){log('Typed connections require a visual project.');return;}
+ const source=project.graph.nodes.find(n=>n.id===from),target=project.graph.nodes.find(n=>n.id===to);
+ if(!source||!target||!['readAnalog','setVariable'].includes(source.type)||target.type!=='thresholdOutput'){
+  log('Invalid typed socket: connect Value Out from Analog Sample or Set Variable to Threshold Output Value In.');return;
+ }
+ const original=project,old=(project.graph.dataEdges||[]).map(e=>({...e}));
+ const edges=old.filter(e=>!(e.to===to&&e.input==='measurement'));
+ edges.push({from,to,out:'value',input:'measurement'});
+ project.graph.dataEdges=edges;
+ try{
+  const diagnostics=await window.blaze.validate(structuredClone(project));
+  if(project!==original)return;
+  if(!diagnostics.ok){project.graph.dataEdges=old;log('Data connection rejected: '+diagnostics.errors.join('; '));return;}
+  pendingData=null;selected=to;dirty();render();log('Typed value linked '+from+' → '+to+'. Generated source and simulator now resolve the linked input.');
+ }catch(error){if(project===original)project.graph.dataEdges=old;log('Data connection validation failed: '+error.message);}
+}
+function connect(from,to){if(from===to){log('Self-connection rejected.');return;}const edges=project.graph.edges.filter(e=>e[0]!==from&&e[1]!==to);edges.push([from,to]);project.graph.edges=edges;pending=null;dirty();render();}
+function rearrange(){let ordered=[],seen=new Set(),cur='start';while(cur&&!seen.has(cur)){seen.add(cur);ordered.push(cur);cur=project.graph.edges.find(e=>e[0]===cur)?.[1];}for(const [i,id] of ordered.entries()){const n=project.graph.nodes.find(n=>n.id===id);if(n){n.x=55+(i%4)*255;n.y=90+Math.floor(i/4)*205;}}dirty();renderGraph();}
+$('#newProject').onclick=showModal;$('#welcomeNew').onclick=showModal;$('#cancelNew').onclick=()=>$('#newModal').classList.add('hidden');$('#confirmNew').onclick=async()=>{try{const created=await window.blaze.createProject($('#newName').value,$('#newBoard').value,$('#newTemplate').value);$('#newModal').classList.add('hidden');if(currentWorkspaceId){await window.blaze.addToWorkspace(currentWorkspaceId,created.id);await refreshWorkspaces();}await openProject(created.id);log('Created '+created.name+' for '+created.fqbn);}catch(e){log('Project create error: '+e.message);}};
+$('#refreshProjects').onclick=()=>refreshProjects();$('#save').onclick=()=>save();$('#validate').onclick=validate;$('#build').onclick=build;$('#export').onclick=async()=>{try{while(unsaved)await save();const r=await window.blaze.exportSketch(project);log(r.canceled?'Export canceled.':'Arduino sketch exported: '+r.filename);}catch(e){log('Export error: '+e.message);}};
+$('#manageBoards').onclick=()=>{if(!project){showModal();return;}tab='boards';render();};$('#refreshBoards').onclick=discover;
+$('#installCore').onclick=()=>installCoreFor($('#coreId').value.trim()).catch(e=>log('Core install error: '+e.message));
+$('#autoArrange').onclick=rearrange;$('#clearLog').onclick=()=>$('#log').textContent='';
+$$('[data-tab]').forEach(b=>b.onclick=()=>{if(!project){log('Create a project first.');return;}tab=b.dataset.tab;render();});
+$$('[data-add]').forEach(b=>{
+ b.onclick=()=>addNode(b.dataset.add);
+ b.addEventListener('dragstart',e=>{if(!project||project.source.mode==='manual'){e.preventDefault();log('Open a visual project before dragging blocks.');return;}e.dataTransfer.setData('application/x-blaze-node',b.dataset.add);e.dataTransfer.setData('text/plain',b.dataset.add);e.dataTransfer.effectAllowed='copy';b.classList.add('dragging');});
+ b.addEventListener('dragend',()=>b.classList.remove('dragging'));
+});
+$('#graphCanvas').addEventListener('dragover',e=>{if(!project||project.source.mode==='manual')return;if(Array.from(e.dataTransfer?.types||[]).includes('application/x-blaze-data'))return; e.preventDefault();e.dataTransfer.dropEffect='copy';$('#graphCanvas').classList.add('dropReady');});
+$('#graphCanvas').addEventListener('dragleave',e=>{if(!$('#graphCanvas').contains(e.relatedTarget))$('#graphCanvas').classList.remove('dropReady');});
+$('#graphCanvas').addEventListener('drop',e=>{e.preventDefault();$('#graphCanvas').classList.remove('dropReady');const type=e.dataTransfer.getData('application/x-blaze-node');if(!['pinMode','digitalWrite','delay','comment','pwmWrite','serialPrint','wireWrite','setVariable','readAnalog','thresholdOutput'].includes(type))return;const bounds=$('#graphCanvas').getBoundingClientRect();const position={x:Math.round(Math.max(0,Math.min(1800,e.clientX-bounds.left+$('#graphCanvas').scrollLeft-95))/10)*10,y:Math.round(Math.max(0,Math.min(1700,e.clientY-bounds.top+$('#graphCanvas').scrollTop-25))/10)*10};addNode(type,position);});
+$('#newBoard').addEventListener('change',updateBoardChoiceStatus);
+$('#boardSearch').addEventListener('input',renderBoardList);
+$('#refreshBoardCatalog').onclick=()=>discover().catch(e=>log(e.message));
+$('#installSelectedCore').onclick=()=>{const b=selectedBoard();if(b)installCoreFor(b.core).catch(e=>log('Core install error: '+e.message));};
+$('#boardList').addEventListener('click',e=>{const target=e.target.closest('[data-install-board]');if(target)installCoreFor(target.dataset.installBoard).catch(err=>log('Core install error: '+err.message));});
+$('#projectList').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openProject(b.dataset.open).catch(err=>log(err.message));});
+$('#boardList').addEventListener('click',async e=>{const b=e.target.closest('[data-board]');if(!b||!project)return;const from=project.fqbn,to=b.dataset.board;if(from===to)return;const report=await window.blaze.migration(project,to);if(!confirm(`BOARD MIGRATION REPORT\n${report.issues.join('\n')||'No known hard pin issues'}\n${report.warnings.join('\n')||'No warnings'}\nSnapshot original and change board?`))return;try{while(unsaved)await save();}catch(e){log('Board migration canceled: snapshot save failed: '+e.message);return;}project.fqbn=to;dirty();render();log(`Board changed to ${to}. Run validation and manually resolve all compatibility warnings before compiling.`);});
+$('#nodeLayer').addEventListener('click',e=>{const dataFrom=e.target.closest('[data-data-output]'),dataTo=e.target.closest('[data-data-input]');if(dataFrom){pendingData=dataFrom.dataset.dataOutput;log('Choose a Value In socket for '+pendingData+' (numeric scalar values only).');return;}if(dataTo){if(pendingData)connectData(pendingData,dataTo.dataset.dataInput);else log('Select a Value Out socket first, or drag from one.');return;}const from=e.target.closest('[data-source]'),to=e.target.closest('[data-target]'),sel=e.target.closest('[data-select]'),box=e.target.closest('[data-node]');if(from){pending=from.dataset.source;selected=pending;log('Choose the next block Input to connect after '+pending);renderInspector();return;}if(to){if(pending)connect(pending,to.dataset.target);else{selected=to.dataset.target;render();}return;}if(sel||box){selected=(sel?.dataset.select||box?.dataset.node);render();}});
+$('#nodeLayer').addEventListener('dragstart',e=>{const port=e.target.closest('[data-data-output]');if(!port||!project||project.source.mode==='manual')return;e.dataTransfer.setData('application/x-blaze-data',port.dataset.dataOutput);e.dataTransfer.effectAllowed='link';});
+$('#nodeLayer').addEventListener('dragover',e=>{if(e.target.closest('[data-data-input]')){e.preventDefault();e.dataTransfer.dropEffect='link';}});
+$('#nodeLayer').addEventListener('drop',e=>{const port=e.target.closest('[data-data-input]');if(!port)return;e.preventDefault();e.stopPropagation();const from=e.dataTransfer.getData('application/x-blaze-data');if(from)connectData(from,port.dataset.dataInput);});
+$('#nodeLayer').addEventListener('pointerdown',e=>{const h=e.target.closest('[data-drag]');if(!h||!project)return;const n=project.graph.nodes.find(x=>x.id===h.dataset.drag);if(!n)return;const ox=e.clientX,oy=e.clientY,sx=n.x,sy=n.y;h.setPointerCapture(e.pointerId);const move=q=>{n.x=Math.round(Math.max(0,Math.min(1400,sx+q.clientX-ox))/10)*10;n.y=Math.round(Math.max(0,Math.min(1100,sy+q.clientY-oy))/10)*10;h.parentElement.style.left=n.x+'px';h.parentElement.style.top=n.y+'px';drawWires();};const up=()=>{h.removeEventListener('pointermove',move);h.removeEventListener('pointerup',up);dirty();};h.addEventListener('pointermove',move);h.addEventListener('pointerup',up,{once:true});});
+function drawWires(){if(!project)return;
+ const nodes=new Map(project.graph.nodes.map(n=>[n.id,n]));
+ const execution=project.graph.edges.map(([a,b])=>{const x=nodes.get(a),y=nodes.get(b);if(!x||!y)return '';const x1=x.x+195,y1=x.y+55,x2=y.x,y2=y.y+55;return `<path d="M${x1} ${y1} C${x1+50} ${y1},${x2-50} ${y2},${x2} ${y2}" fill="none" stroke="#5e9bc4" stroke-width="2"/><circle cx="${x2}" cy="${y2}" r="4" fill="#8de6e0"/>`;}).join('');
+ const data=(project.graph.dataEdges||[]).map(e=>{const a=nodes.get(e.from),b=nodes.get(e.to);if(!a||!b)return '';const x1=a.x+190,y1=a.y+145,x2=b.x+3,y2=b.y+145;return `<path d="M${x1} ${y1} C${x1+75} ${y1},${x2-75} ${y2},${x2} ${y2}" fill="none" stroke="#e6be7a" stroke-dasharray="5 3" stroke-width="2.5"/>`;}).join('');
+ $('#wires').innerHTML=execution+data;
+}
+$('#nodeInspector').addEventListener('input',e=>{const input=e.target.closest('[data-param]');if(!input||!project)return;const n=project.graph.nodes.find(n=>n.id===selected);if(!n)return;n.params[input.dataset.param]=input.value;dirty();const box=$(`[data-node="${n.id}"] .ndesc`);if(box)box.textContent=describe(n);});
+$('#nodeInspector').addEventListener('click',e=>{if(e.target.id==='disconnectData'&&project&&selected){project.graph.dataEdges=(project.graph.dataEdges||[]).filter(x=>x.to!==selected);dirty();render();return;}if(e.target.id!=='removeNode'||!project)return;const id=selected,old=project.graph.edges;const before=old.find(e=>e[1]===id)?.[0],after=old.find(e=>e[0]===id)?.[1];project.graph.edges=old.filter(e=>e[0]!==id&&e[1]!==id);if(before&&after)project.graph.edges.push([before,after]);project.graph.nodes=project.graph.nodes.filter(n=>n.id!==id);project.graph.dataEdges=(project.graph.dataEdges||[]).filter(e=>e.from!==id&&e.to!==id);selected=null;dirty();render();});
+$('#manualMode').onchange=async()=>{if(!project)return;if($('#manualMode').checked){if(!confirm('Take full manual source ownership? Visual changes will no longer generate this sketch. Existing blocks stay preserved.')){renderCode();return;}const generated=await window.blaze.generate(project);if(!generated.source){log('Cannot switch: graph validation errors: '+generated.diagnostics.errors.join('; '));renderCode();return;}project.source.manualSource=generated.source;project.source.mode='manual';}else{if(!confirm('Return to visual generation? Your manual source stays saved but is NOT compiled or exported while visual mode is active.')){renderCode();return;}project.source.mode='visual';}dirty();render();};
+$('#codeEditor').addEventListener('input',()=>{if(project?.source.mode==='manual'){project.source.manualSource=$('#codeEditor').value;dirty();}});
+for(const k of ['userPrelude','userSetup','userLoop'])$('#'+k).addEventListener('input',()=>{if(!project)return;project.source[k]=$('#'+k).value;dirty();});
+(async()=>{try{await refreshWorkspaces();await refreshProjects();try{await restoreSession();}catch(e){log('Desktop session recovery required; projects remain accessible: '+e.message);}const status=await window.blaze.cliStatus();$('#cliLed').classList.toggle('ok',status.ok);$('#cliState').textContent=status.ok?'Arduino CLI detected':'Arduino CLI unavailable';logResult('Arduino CLI',status);if(status.ok)await discover();else renderBoardList();}catch(e){log('Initialization failed: '+e.message);$('#cliState').textContent='CLI unavailable';}})();
+
+// v0.3 structured flowchart and BALIE read-only library panels.
+const flowTitles={setOutput:'Configure output',write:'Digital output',wait:'Delay',branch:'Decision',repeat:'Repeat',note:'Comment',callNodes:'Call node graph',end:'End loop iteration'};
+let indexedLibraries=[];
+function ensureVisualModel(){if(!project.visualMode)project.visualMode='nodes';if(!project.flowchart)project.flowchart={steps:[]};}
+function stepSpec(type){const defaults={setOutput:{pin:'13'},write:{pin:'13',value:'HIGH'},wait:{ms:1000},branch:{pin:'2',equals:'HIGH'},repeat:{count:3},note:{text:'New annotation'},callNodes:{},end:{}};return {id:'flow'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),type,params:defaults[type],thenSteps:[],elseSteps:[]};}
+function flowFound(id,items=project.flowchart.steps){for(const node of items){if(node.id===id)return node;const inner=flowFound(id,node.thenSteps||[]);if(inner)return inner;const alt=flowFound(id,node.elseSteps||[]);if(alt)return alt;}return null;}
+function flowRemove(id,items=project.flowchart.steps){const index=items.findIndex(x=>x.id===id);if(index>=0){items.splice(index,1);return true;}for(const node of items){if(flowRemove(id,node.thenSteps||[])||flowRemove(id,node.elseSteps||[]))return true;}return false;}
+function flowDescribe(n){const p=n.params;return {setOutput:`D${p.pin} OUTPUT`,write:`D${p.pin} ← ${p.value}`,wait:`${p.ms} ms`,branch:`Read D${p.pin} == ${p.equals}?`,repeat:`${p.count} iterations`,note:p.text,callNodes:'One execution of the existing node chain',end:'Return from loop()'}[n.type]||'';}
+function drawSteps(items){return items.map(n=>`<div class="flowLine"><section class="flowNode ${n.type==='branch'?'decision':n.type==='repeat'?'repeat':''}"><div class="flowTitle">${escapeHTML(flowTitles[n.type])}</div><div class="flowMeta">${escapeHTML(flowDescribe(n))}</div><div class="flowControls"><button data-flow-edit="${n.id}">Properties</button><button data-flow-before="${n.id}" title="Insert a block before this step">Insert before</button><button data-flow-delete="${n.id}">Remove</button></div></section>${n.type==='branch'?`<div class="flowBranches"><div class="flowBranch"><h4>YES</h4>${drawSteps(n.thenSteps||[])}<button data-flow-nest="${n.id}" data-side="then">+ Add YES step</button></div><div class="flowBranch"><h4>NO</h4>${drawSteps(n.elseSteps||[])}<button data-flow-nest="${n.id}" data-side="else">+ Add NO step</button></div></div>`:n.type==='repeat'?`<div class="flowBranch"><h4>REPEAT BODY</h4>${drawSteps(n.thenSteps||[])}<button data-flow-nest="${n.id}" data-side="then">+ Add repeat step</button></div>`:''}</div>`).join('');}
+function renderFlowchart(){if(!project)return;ensureVisualModel();const active=project.visualMode==='flowchart'&&project.source.mode==='visual';$('#visualModeStatus').textContent=active?'Flowchart generates current firmware':'Preview only — node graph or manual source is active';$('#flowchartCanvas').innerHTML=`<div class="flowLine"><div class="flowNode"><strong>START — loop()</strong></div></div>`+(project.flowchart.steps.length?drawSteps(project.flowchart.steps):'<div class="flowEmpty">No flowchart blocks yet</div>')+'<div class="flowLine"><div class="flowNode"><strong>END — next loop()</strong></div></div>';$('#activateFlowchart').disabled=active;$('#activateNodes').disabled=project.visualMode==='nodes';}
+function renderLibraries(){if(!$('#librariesOutput'))return;$('#curatedAdapter').classList.toggle('hidden',project?.fqbn!=='arduino:avr:uno');$('#librariesOutput').innerHTML=indexedLibraries.length?indexedLibraries.map((lib,i)=>`<details class="libCard"><summary>${escapeHTML(lib.name)} (${escapeHTML(lib.version)})</summary><small>${escapeHTML(lib.directory)}<br>Board: ${lib.boardCompatible?'architecture declared compatible':'unsupported architecture'} | Analysis: Inferred (not compile verified)<br>SHA256 ${escapeHTML(lib.sourceHash)}</small><p class="hint">${escapeHTML(lib.api.length)} syntactic API declarations. No automatic execution or guessed initialization.</p>${lib.api.slice(0,80).map(a=>`<div class="libSig">${escapeHTML(a.signature)} <small>${escapeHTML(a.header)} · ${escapeHTML(a.confidence)}</small></div>`).join('')}</details>`).join(''):'<p class="flowEmpty">No libraries indexed in this session. Scan installed packages, or inspect a trusted Arduino library folder.</p>';}
+function flowInsertBefore(id,type,items=project.flowchart.steps){const index=items.findIndex(n=>n.id===id);if(index>=0){items.splice(index,0,stepSpec(type));return true;}for(const node of items){if(flowInsertBefore(id,type,node.thenSteps||[])||flowInsertBefore(id,type,node.elseSteps||[]))return true;}return false;}
+function flowProps(n){const properties={setOutput:['pin'],write:['pin','value'],wait:['ms'],branch:['pin','equals'],repeat:['count'],note:['text']}[n.type]||[];if(!properties.length){log(n.type+' has no editable properties');return;}
+ for(const key of properties){const result=prompt(`${flowTitles[n.type]} — ${key}`,String(n.params[key]));if(result===null)return;n.params[key]=result;}dirty();renderFlowchart();renderCode().catch(e=>log(e.message));}
+$('#addFlowStep').onclick=()=>{if(!project||project.source.mode==='manual'){log('Flowchart changes are not allowed while manual code owns the source');return;}ensureVisualModel();project.flowchart.steps.push(stepSpec($('#flowType').value));dirty();renderFlowchart();renderCode();};
+$('#activateFlowchart').onclick=()=>{if(!project||project.source.mode==='manual'){log('Switch out of manual C++ ownership before enabling visual generation.');return;}ensureVisualModel();project.visualMode='flowchart';dirty();render();};
+$('#activateNodes').onclick=()=>{if(!project||project.source.mode==='manual')return;project.visualMode='nodes';dirty();render();};
+$('#traceFlowchart').onclick=async()=>{if(!project)return;try{const d=await window.blaze.flowTrace(project,{});log('LOGIC TRACE (not hardware simulation): '+(d.ok?'PASS':'FAIL')+'\n'+JSON.stringify(d.events.slice(0,70),null,2)+(d.error?'\n'+d.error:''));}catch(e){log('Trace error: '+e.message);}};
+$('#flowchartCanvas').addEventListener('click',e=>{if(!project||project.source.mode==='manual')return;const edit=e.target.closest('[data-flow-edit]'),del=e.target.closest('[data-flow-delete]'),nest=e.target.closest('[data-flow-nest]'),before=e.target.closest('[data-flow-before]');if(edit){const n=flowFound(edit.dataset.flowEdit);if(n)flowProps(n);}else if(del){if(!confirm('Remove this flowchart block and any nested blocks?'))return;flowRemove(del.dataset.flowDelete);dirty();renderFlowchart();renderCode();}else if(nest){const n=flowFound(nest.dataset.flowNest);const list=nest.dataset.side==='else'?n?.elseSteps:n?.thenSteps;if(list){list.push(stepSpec($('#flowType').value));dirty();renderFlowchart();renderCode();}}else if(before){flowInsertBefore(before.dataset.flowBefore,$('#flowType').value);dirty();renderFlowchart();renderCode();}});
+$('#scanLibraries').onclick=async()=>{if(!project)return;$('#scanLibraries').disabled=true;try{const r=await window.blaze.scanLibraries(project);indexedLibraries=r.libraries;renderLibraries();log(`Indexed ${indexedLibraries.length} Arduino libraries; ${r.errors.length} scan warnings. Syntax-only, source code not executed.`);for(const warn of r.errors.slice(0,12))log('Library: '+warn);}catch(e){log('Library indexing failed: '+e.message);}finally{$('#scanLibraries').disabled=false;}};
+$('#inspectLibrary').onclick=async()=>{if(!project)return;try{const r=await window.blaze.inspectLibrary(project);if(r.canceled)return;indexedLibraries=[r,...indexedLibraries.filter(x=>x.directory!==r.directory)];renderLibraries();log(`Indexed ${r.name} ${r.version}: ${r.api.length} inferred declarations`);}catch(e){log('Library import refused: '+e.message);}};
+$('#addWireAdapter').onclick=()=>{if(!project||project.fqbn!=='arduino:avr:uno'){log('Curated Wire node is currently limited to Uno R3');return;}tab='graph';addNode('wireWrite');};
+$('#manageLibraries').onclick=()=>{if(!project){log('Create a project first');return;}tab='libraries';render();};
+$('#rename').onclick=async()=>{if(!project)return;const name=prompt('New project name',project.name);if(name===null)return;try{while(unsaved)await save();project=await window.blaze.renameProject(project.id,name);render();log('Renamed project');}catch(e){log('Rename failed: '+e.message);}};
+$('#duplicate').onclick=async()=>{if(!project)return;try{while(unsaved)await save();const p=await window.blaze.duplicateProject(project.id);await openProject(p.id);log('Project duplicated to '+p.name);}catch(e){log('Duplicate failed: '+e.message);}};
+$('#trash').onclick=async()=>{if(!project)return;if(!confirm('Move '+project.name+' to project recovery? This removes it from active projects.'))return;try{while(unsaved)await save();await window.blaze.trashProject(project.id);openProjectIds=openProjectIds.filter(id=>id!==project.id);project=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);$('#paletteHint').textContent='Create a project to activate blocks.';await refreshProjects();await persistSession();log('Project moved to recoverable trash.');}catch(e){log('Delete failed: '+e.message);}};
+$('#recoverProject').onclick=async()=>{try{const items=await window.blaze.listRecovery();if(!items.length){log('No deleted projects available for recovery.');return;}const id=prompt('Paste the project ID to recover:\n'+items.map(p=>p.id).join('\n'),items[0].id);if(!id)return;const p=await window.blaze.recoverProject(id);await openProject(p.id);log('Restored '+p.name);}catch(e){log('Recovery failed: '+e.message);}};
+
+// v0.4.0 virtual logic simulator and forecast, both entirely optional to firmware generation.
+function renderSim(){if(!$('#simSummary'))return;
+ const s=simulation;$('#simSummary').textContent=s?`Status: ${s.status} • virtual time ${s.virtualTimeMs}ms • executed steps ${s.stepCount} • next ${s.next||'END'} • breakpoints ${s.breakpoints.join(', ')||'none'}`:'Simulation not started. Reset runs the current visual model.';
+ $('#simVariables').textContent=s?Object.entries(s.variables||{}).map(([name,value])=>name+' = '+String(value)).join(' • ')||'No project variables defined.':'Reset simulator to inspect typed variables.';
+ $('#simPins').innerHTML=s?Object.entries({...s.inputs,...s.outputs}).map(([pin])=>`<div class="pinCell ${s.outputs[pin]==='HIGH'?'used':''}">D${escapeHTML(pin)}<small style="display:block">Input: ${escapeHTML(s.inputs[pin]||'—')} / Output: ${escapeHTML(s.outputs[pin]||'—')}</small></div>`).join('')||'<p>All virtual GPIO values unknown / unset.</p>':'<p>Start simulation to show virtual I/O.</p>';
+ $('#simTrace').innerHTML=s?s.events.slice(-90).reverse().map(e=>`<div class="traceEvent ${e.id===s.lastEvent?.id?'current':''}"><b>#${e.number} ${escapeHTML(e.id)}</b> — ${escapeHTML(e.effect)} <small>@ ${e.timeMs}ms</small></div>`).join('')||'<p>No events executed yet.</p>':'<p>Execution trace appears here.</p>';
+}
+async function resetSimulation(){if(!project)return;try{if(simulation)await window.blaze.simDispose(simulation.id);simulation=await window.blaze.simCreate(structuredClone(project),simInputs);if(Object.keys(simAnalogInputs).length)simulation=await window.blaze.simAnalog(simulation.id,simAnalogInputs);if(simBreaks.length)simulation=await window.blaze.simBreakpoints(simulation.id,simBreaks);renderSim();log('Virtual logic simulator reset. It does not emulate electrical hardware.');}catch(e){log('Simulation unavailable: '+e.message);}}
+$('#simReset').onclick=resetSimulation;
+$('#simStep').onclick=async()=>{try{if(!simulation)await resetSimulation();if(!simulation)return;simulation=await window.blaze.simStep(simulation.id);renderSim();}catch(e){log('Sim step failed: '+e.message);}};
+$('#simRun').onclick=async()=>{try{if(!simulation)await resetSimulation();if(!simulation)return;simulation=await window.blaze.simRun(simulation.id,100);renderSim();log(`Simulator ${simulation.status} after ${simulation.stepCount} logic steps; virtual time ${simulation.virtualTimeMs}ms`);}catch(e){log('Simulation run failed: '+e.message);}};
+$('#simSetInput').onclick=async()=>{try{const pin=String($('#simInputPin').value);if(!/^\d{1,3}$/.test(pin))throw Error('Pin must be numeric 0..999');simInputs[pin]=$('#simInputLevel').value;if(simulation)simulation=await window.blaze.simInputs(simulation.id,simInputs);renderSim();}catch(e){log('Virtual input rejected: '+e.message);}};
+$('#simSetAnalog').onclick=async()=>{try{const pin=$('#simAnalogPin').value,value=Number($('#simAnalogValue').value);if(!Number.isInteger(value)||value<0||value>1023)throw Error('ADC reading must be integer 0..1023');simAnalogInputs[pin]=value;if(simulation)simulation=await window.blaze.simAnalog(simulation.id,simAnalogInputs);renderSim();}catch(e){log('Virtual analog input rejected: '+e.message);}};
+$('#simToggleBreak').onclick=async()=>{try{const id=$('#simBreakId').value.trim();if(!/^[A-Za-z][\w]{0,63}$/.test(id))throw Error('Enter a valid block ID');simBreaks=simBreaks.includes(id)?simBreaks.filter(x=>x!==id):[...simBreaks,id];if(simulation)simulation=await window.blaze.simBreakpoints(simulation.id,simBreaks);renderSim();}catch(e){log('Breakpoint rejected: '+e.message);}};
+const humanBytes=n=>n==null?'Unknown / Verification Required':(n<1024?`${n.toFixed(0)} B`:`${(n/1024).toFixed(2)} KiB`);
+function renderResourcesSummary(){if(!$('#resourceOutput'))return;$('#resourceOutput').textContent=project?'Press Recalculate for compiler measurements and storage assumptions.':'Select project first.';renderPeripherals().catch(e=>log('Peripheral planner: '+e.message));}
+async function renderPeripherals(){if(!project)return;const plan=await window.blaze.pinPlan(project);$('#peripheralOutput').innerHTML=`<p><b>${plan.ok?'No known collisions':'Pin conflicts found'}</b> · ${project.peripherals?.length||0} peripheral assignment(s). ${escapeHTML(plan.interpretation)}</p>`+(project.peripherals||[]).map(p=>`<p>${escapeHTML(p.id)} ${escapeHTML(p.type)} (${escapeHTML(p.bus)}) ${escapeHTML(JSON.stringify(p.pins))}</p>`).join('')+plan.errors.map(e=>`<p class="dangerText">ERROR: ${escapeHTML(e)}</p>`).join('')+plan.warnings.map(e=>`<p class="hint">WARN: ${escapeHTML(e)}</p>`).join('');}
+function renderVariables(){if(!$('#variableList')||!project)return;
+ const refs=name=>project.graph.nodes.filter(n=>n.params?.target===name||n.params?.variable===name).length;
+ $('#variableList').innerHTML=(project.variables||[]).length?(project.variables||[]).map(v=>`<div class="boardrow"><div><b>${escapeHTML(v.name)}</b> <small>${escapeHTML(v.type)} = ${escapeHTML(v.initial)} · ${refs(v.name)} referencing block(s)</small></div><button data-var-delete="${escapeHTML(v.name)}" ${refs(v.name)?'disabled title="Remove dependent blocks first"':''}>Remove</button></div>`).join(''):'No variables yet. Add a declared variable before adding a sensor or threshold node.';
+}
+$('#varAdd').onclick=async()=>{if(!project)return;try{
+ const draft={name:$('#varName').value.trim(),type:$('#varType').value,initial:$('#varInitial').value.trim()};
+ const candidate=[...(project.variables||[]),draft];
+ const checker=await window.blaze.validateVariables(candidate);if(checker.errors.length)throw Error(checker.errors.join('; '));
+ project.variables=candidate;dirty();renderVariables();log('Declared global '+draft.name+' ('+draft.type+')');
+ }catch(e){log('Variable rejected: '+e.message);}};
+$('#variableList').onclick=e=>{const item=e.target.closest('[data-var-delete]');if(!project||!item)return;const name=item.dataset.varDelete;
+ if(project.graph.nodes.some(n=>n.params?.target===name||n.params?.variable===name)){log('Cannot delete '+name+': blocks depend on it');return;}
+ project.variables=project.variables.filter(v=>v.name!==name);dirty();renderVariables();};
+$('#resRefresh').onclick=async()=>{if(!project)return;try{const config={intervalSeconds:Number($('#logInterval').value),bytesPerRecord:Number($('#logBytes').value),capacityBytes:Number($('#logCapacity').value)*1024,retentionDays:Number($('#logRetention').value)};const result=await window.blaze.resourceAnalyze(project,lastCompilation,config);const o=result.observations,f=result.storage;$('#resourceOutput').innerHTML=`<div class="resourceGrid"><div><b>Program flash</b><p>${humanBytes(o.firmwareMeasurement?.flashBytes)} (measured only after successful compile)</p></div><div><b>Global RAM</b><p>${humanBytes(o.firmwareMeasurement?.ramBytes)}</p></div><div><b>Program source</b><p>${humanBytes(o.sourceTextBytes)} (NOT firmware size)</p></div><div><b>Board SRAM limit</b><p>${humanBytes(o.ramCapacity)}</p></div><div><b>Records/day</b><p>${f.recordsDay.toFixed(0)}</p></div><div><b>Daily storage</b><p>${humanBytes(f.dailyBytes)}</p></div><div><b>7 / 30 days</b><p>${humanBytes(f.sevenDaysBytes)} / ${humanBytes(f.thirtyDaysBytes)}</p></div><div><b>Until full</b><p>${f.daysUntilFull?.toFixed(1)??'unknown'} days</p></div></div><p class="hint">${escapeHTML(o.capacitiesProvenance)} · Forecast assumptions: CSV ${f.assumptions.bytesPerRecord} B/record, ${(f.assumptions.overheadFraction*100).toFixed(0)}% overhead, ${(f.assumptions.compressionRatio*100).toFixed(0)}% size ratio.</p>${result.recommendations.map(r=>`<p class="hint">• ${escapeHTML(r)}</p>`).join('')}`;await renderPeripherals();}catch(e){log('Resource advisor failed: '+e.message);}};
+$('#addPeripheral').onclick=()=>{if(!project)return;const type=$('#peripheralType').value,bus=$('#peripheralBus').value.trim()||'default',raw=$('#peripheralTarget').value.trim();const id='peripheral'+Date.now().toString(36);let p;
+ if(type==='i2c'){const address=Number(raw);if(!Number.isInteger(address)||address<8||address>119){log('I2C address must be 0x08..0x77');return;}p={id,type,bus,address,pins:{sda:'A4',scl:'A5'}};}
+ else if(type==='spi'){if(!/^\d{1,3}$/.test(raw)){log('SPI chip-select must be a numeric pin');return;}p={id,type,bus,pins:{sck:'13',miso:'12',mosi:'11',cs:raw}};}
+ else {if(!/^\d{1,3}$/.test(raw)){log('GPIO must be numeric');return;}p={id,type,bus,pins:{io:raw}};}
+ project.peripherals=project.peripherals||[];project.peripherals.push(p);dirty();renderPeripherals().catch(e=>log(e.message));};
+$('#clearPeripherals').onclick=()=>{if(!project||!confirm('Remove all peripheral planning assignments? This does not remove firmware logic.'))return;project.peripherals=[];dirty();renderPeripherals().catch(e=>log(e.message));};
+
+$('#planSD').onclick=async()=>{if(!project)return;if(project.fqbn!=='arduino:avr:uno'){log('Automatic SPI SD pin proposal exists only for the verified Uno R3 profile. Unknown / Verification Required for other boards.');return;}
+ const proposal={id:'SD'+Date.now().toString(36),type:'spi',bus:'SPI',kind:'sd-card-plan-only',pins:{sck:'13',miso:'12',mosi:'11',cs:'10'}};
+ const sample=structuredClone(project);sample.peripherals=[...(sample.peripherals||[]),proposal];
+ try{const planned=await window.blaze.pinPlan(sample);if(!planned.ok){log('SD SPI planning blocked by known collisions; no pins changed: '+planned.errors.join('; '));return;}
+  if(!confirm('Reserve Uno SPI D11/D12/D13 and CS D10 for a proposed SD card? This is pin planning ONLY; you must install an appropriate SD library and implement mount/read/write error handling.'))return;
+  project.peripherals=sample.peripherals;dirty();renderPeripherals();log('SD card SPI pin proposal saved. Library integration and physical SD acceptance NOT implemented.');
+ }catch(e){log('SD pin proposal failed: '+e.message);}
+};
+
+// v0.4.6 multi-project workspace control. A collection never changes board identities.
+$('#workspaceSelect').onchange=async()=>{currentWorkspaceId=$('#workspaceSelect').value;await refreshProjects();await persistSession();};
+$('#workspaceCreate').onclick=async()=>{
+ const name=prompt('New workspace collection name (each project builds separately):','Home Automation');if(name===null)return;
+ try{const w=await window.blaze.createWorkspace(name);currentWorkspaceId=w.id;await refreshWorkspaces();await refreshProjects();await persistSession();log('Workspace created: '+w.name);}catch(e){log('Workspace creation failed: '+e.message);}
+};
+$('#workspaceRename').onclick=async()=>{
+ const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
+ const name=prompt('Rename workspace',w.name);if(name===null)return;
+ try{await window.blaze.renameWorkspace(w.id,name);await refreshWorkspaces();await refreshProjects();}catch(e){log('Workspace rename failed: '+e.message);}
+};
+$('#workspaceDelete').onclick=async()=>{
+ const w=workspaces.find(x=>x.id===currentWorkspaceId);if(!w)return;
+ if(!confirm(`Delete collection "${w.name}"? Its ${w.projectIds.length} firmware projects will NOT be deleted.`))return;
+ try{await window.blaze.deleteWorkspace(w.id);currentWorkspaceId='';await refreshWorkspaces();await refreshProjects();await persistSession();log('Workspace collection deleted. Firmware projects retained.');}catch(e){log('Workspace delete failed: '+e.message);}
+};
+$('#workspaceAddCurrent').onclick=async()=>{
+ if(!currentWorkspaceId||!project)return;
+ try{await window.blaze.addToWorkspace(currentWorkspaceId,project.id);await refreshWorkspaces();await refreshProjects();log('Linked '+project.name+' to workspace without modifying firmware.');}catch(e){log('Workspace association failed: '+e.message);}
+};
+$('#workspaceRemoveCurrent').onclick=async()=>{
+ if(!currentWorkspaceId||!project)return;
+ try{await window.blaze.removeFromWorkspace(currentWorkspaceId,project.id);await refreshWorkspaces();await refreshProjects();log('Unlinked project; firmware remains accessible in All projects.');}catch(e){log('Workspace unlink failed: '+e.message);}
+};
+$('#openProjectTabs').addEventListener('click',async e=>{
+ const close=e.target.closest('[data-close-project]');
+ if(close){
+  const id=close.dataset.closeProject,wasActive=project?.id===id;
+  try{
+   if(wasActive)while(unsaved)await save();
+   openProjectIds=openProjectIds.filter(x=>x!==id);
+   if(wasActive){
+    const next=openProjectIds.at(-1);if(next)await openProject(next);
+    else{project=null;selected=null;simulation=null;$('#workspace').classList.add('hidden');$('#welcome').classList.remove('hidden');$('#projectTitle').textContent='Start with a project';$('#projectMeta').textContent='Select a board and create your first sketch.';$$('#save,#validate,#build,#export,#rename,#duplicate,#trash,[data-add]').forEach(b=>b.disabled=true);}
+   }
+   await refreshProjects(false);await persistSession();
+  }catch(err){log('Close tab failed: '+err.message);}
+  return;
+ }
+ const open=e.target.closest('[data-activate-project]');if(open)openProject(open.dataset.activateProject).catch(err=>log('Open tab failed: '+err.message));
+});

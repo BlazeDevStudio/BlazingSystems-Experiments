@@ -1,0 +1,14 @@
+'use strict';const {test}=require('node:test'),assert=require('node:assert/strict');const {plan}=require('../core/peripherals.cjs');const {createProject,generateSketch}=require('../core/project.cjs');
+const i2c=(id,address,bus='Wire')=>({id,type:'i2c',bus,address,pins:{sda:'A4',scl:'A5'}});
+const spi=(id,cs)=>({id,type:'spi',bus:'SPI',pins:{sck:'13',miso:'12',mosi:'11',cs:String(cs)}});
+test('two I2C devices on same Wire bus can share SDA/SCL',()=>{const p=createProject('I2C');p.peripherals=[i2c('sensor',0x40),i2c('display',0x3c)];const r=plan(p);assert(r.ok,r.errors.join(' '));});
+test('duplicate 7 bit I2C addresses on same bus rejected',()=>{const p=createProject('I2C');p.peripherals=[i2c('one',0x40),i2c('two',0x40)];assert.match(plan(p).errors.join(' '),/duplicate I2C address/);});
+test('SPI clock and data signals can share but CS must be exclusive',()=>{const p=createProject('SPI');p.graph.nodes[2].params.pin='8';p.graph.nodes[4].params.pin='8';p.graph.nodes[1].params.pin='8';p.peripherals=[spi('storage',10),spi('screen',9)];assert(plan(p).ok);p.peripherals[1].pins.cs='10';assert.match(plan(p).errors.join(' '),/Pin 10 collision/);});
+test('SPI chip select cannot collide with other bus function',()=>{const p=createProject('SPI');p.graph.nodes[2].params.pin='8';p.graph.nodes[4].params.pin='8';p.graph.nodes[1].params.pin='8';p.peripherals=[spi('memory',11)];assert.match(plan(p).errors.join(' '),/Pin 11 collision/);});
+test('SPI and I2C same numbered GPIO triggers conflict, not blanket shared permission',()=>{const p=createProject('CrossBus');p.peripherals=[spi('s1',10),{id:'digital',type:'gpio',pins:{io:'13'},bus:'x'}];assert.match(plan(p).errors.join(' '),/Pin 13 collision/);});
+test('unknown target reports unknown electrical capabilities',()=>{const p=createProject('ESP','esp32:esp32:esp32s3');p.peripherals=[i2c('sensor',0x40)];assert(plan(p).ok);assert.match(plan(p).warnings.join(' '),/Unknown \/ Verification Required/);});
+test('peripheral collision prevents generated source but never erases manual owned code',()=>{const p=createProject('Collision');p.peripherals=[spi('card',10),spi('lcd',10)];assert.equal(generateSketch(p).source,null);p.source.mode='manual';p.source.manualSource='void setup(){}\nvoid loop(){}';assert.equal(generateSketch(p).source,p.source.manualSource);});
+
+test('active Blink GPIO D13 collides with SPI SCK, inactive editor does not',()=>{const p=createProject('BlinkSPI');p.peripherals=[spi('display',10)];assert.match(plan(p).errors.join(' '),/Pin 13 collision/);p.visualMode='flowchart';p.flowchart.steps=[];assert(plan(p).ok);});
+
+test('flowchart callNodes also reserves GPIO pins from invoked graph',()=>{const {step}=require('../core/flowchart.cjs');const p=createProject('Composed');p.visualMode='flowchart';p.flowchart.steps=[step('invoke','callNodes')];p.peripherals=[spi('module',10)];assert.match(plan(p).errors.join(' '),/Pin 13 collision/);});
