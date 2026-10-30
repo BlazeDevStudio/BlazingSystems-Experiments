@@ -31,7 +31,7 @@ class BlazeProductTests(unittest.TestCase):
 
     def test_build_installs_local_product_and_uses_it(self):
         script = (ROOT / "scripts" / "build-iso.sh").read_text()
-        self.assertIn('cp -a -- "$HERE/device/blazedroid"', script)
+        self.assertIn('cp -a -- "$HERE/device/blazedroid/." "$SRC/device/blazedroid/"', script)
         self.assertIn("lunch blazedroid_x86_64-userdebug", script)
         self.assertNotIn("lunch lineage_x86_64_tablet-userdebug", script)
 
