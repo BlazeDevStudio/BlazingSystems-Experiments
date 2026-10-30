@@ -12,18 +12,22 @@ def parse_props(path):
                 if "=" in line and not line.lstrip().startswith("#"))
 
 
-def validate_props(path):
-    props = parse_props(path)
+def validate_android_version(props):
+    """Validate the parsed Android build properties once."""
     if props.get("ro.build.version.release") != "16":
         raise ValueError("Android release must be exactly 16")
     if props.get("ro.build.version.sdk") != "36":
         raise ValueError("Android API level must be exactly 36")
 
 
+def validate_props(path):
+    validate_android_version(parse_props(path))
+
+
 def validate_blazedroid_props(path):
     """Require Android 16 plus downstream system properties from the built product."""
-    validate_props(path)
     props = parse_props(path)
+    validate_android_version(props)
     if props.get("ro.blazedroid.version") != "16.0.0":
         raise ValueError("output does not identify BlazeDroid 16.0.0")
     if props.get("ro.blazedroid.channel") != "preview":
