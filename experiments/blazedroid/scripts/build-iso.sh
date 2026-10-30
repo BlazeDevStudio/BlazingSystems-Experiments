@@ -36,12 +36,12 @@ lunch blazedroid_x86_64-userdebug
 m iso_img
 mapfile -d '' images < <(find out/target/product/x86_64_tablet -maxdepth 1 -type f -name '*.iso' -print0)
 [[ "${#images[@]}" -eq 1 ]] || { echo "Expected exactly one ISO; found ${#images[@]}" >&2; exit 1; }
-mapfile -d '' props < <(find out/target/product -type f -name build.prop -print0)
+mapfile -d '' props < <(find out/target/product/x86_64_tablet -type f -name build.prop -print0)
 valid=0
 for prop in "${props[@]}"; do
-  if python3 "$HERE/scripts/check_build.py" --build-prop "$prop" >/dev/null 2>&1; then valid=$((valid+1)); fi
+  if python3 "$HERE/scripts/check_build.py" --build-prop "$prop" --require-blazedroid >/dev/null 2>&1; then valid=$((valid+1)); fi
 done
-[[ "$valid" -ge 1 ]] || { echo "No output build.prop proves Android 16/API 36" >&2; exit 1; }
+[[ "$valid" -ge 1 ]] || { echo "No output build.prop proves Android 16/API 36 and BlazeDroid Preview identity" >&2; exit 1; }
 bash "$HERE/scripts/verify-iso.sh" "${images[0]}"
 cp -- "${images[0]}" "$DEST/BlazeDroid-16.0.0-x86_64-PREVIEW.iso"
 cd "$DEST"
