@@ -310,6 +310,21 @@
         "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988387682",
         "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40988558649"
       ]
+    },
+    {
+      "date": "2026-10-30",
+      "scope": "fat32-crosslink-efi-path-deny",
+      "status": "ci_verified_scope_limited",
+      "note": "Source PR #257: RED exact-head run 41005316485 with 2 failing 8.3 EFI path cross-link tests; fix c06e8e56d23e630400049671e23f1f48c783497f uses shared cluster-ownership set, GREEN run 41005392462: 247 Linux and 247 Windows tests passed plus existing Windows console packaging. Limited to clusters inspected along EFI/BOOT/BOOTX64.EFI. No full FAT filesystem, physical readback/rollback or boot proof. Mandatory gate statuses unchanged.",
+      "related_gates": [
+        "esp-img",
+        "usb-img",
+        "release-security"
+      ],
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005316485",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/41005392462"
+      ]
     }
   ]
 }
