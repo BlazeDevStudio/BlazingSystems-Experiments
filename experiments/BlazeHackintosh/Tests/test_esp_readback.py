@@ -120,6 +120,33 @@ class FAT32BootReadbackTests(unittest.TestCase):
         self.assertFalse(result['file_hash_match'], result)
         self.assertFalse(result['safe_to_flash'])
 
+    def test_efi_directory_with_free_fat_entry_is_rejected(self):
+        """A populated directory cannot have a FAT entry marked unallocated."""
+        with self.img.open('r+b') as fp:
+            for table in (START + 32, START + 32 + 600):
+                fp.seek(table * SECTOR + 3 * 4)
+                fp.write(struct.pack('<I', 0))
+        result = self.inspect()
+        self.assertFalse(result['file_hash_match'], result)
+
+    def test_boot_directory_with_reserved_fat_entry_is_rejected(self):
+        """Reserved FAT markers must not validate a directory allocation."""
+        with self.img.open('r+b') as fp:
+            for table in (START + 32, START + 32 + 600):
+                fp.seek(table * SECTOR + 4 * 4)
+                fp.write(struct.pack('<I', 0x0ffffff6))
+        result = self.inspect()
+        self.assertFalse(result['file_hash_match'], result)
+
+    def test_terminated_directory_fat_tail_cannot_alias_boot_file(self):
+        """A directory's extra allocated chain cannot reuse the EFI file data."""
+        with self.img.open('r+b') as fp:
+            for table in (START + 32, START + 32 + 600):
+                fp.seek(table * SECTOR + 4 * 4)
+                fp.write(struct.pack('<I', 5))
+        result = self.inspect()
+        self.assertFalse(result['file_hash_match'], result)
+
     def test_wrong_image_hash_fails_before_filesystem_read(self):
         result = audit_boot_efi(self.img, '0' * 64, FILE_SHA)
         self.assertFalse(result['file_hash_match'])
