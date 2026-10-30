@@ -116,40 +116,46 @@ def audit_boot_efi(path, image_sha256, boot_file_sha256):
             def find_short_name(root_cluster, expected, is_directory):
                 cluster = root_cluster
                 found = None
+                terminated = False
                 for _ in range(MAX_DIRECTORY_CLUSTERS):
                     if cluster in used_clusters:
                         raise ValueError('FAT cluster cyclic or cross-linked across EFI path')
                     used_clusters.add(cluster)
-                    data = cluster_bytes_at(cluster)
-                    for pos in range(0, len(data), 32):
-                        row = data[pos:pos+32]
-                        if row[0] == 0:
-                            if found is None:
-                                raise ValueError('EFI short-name path absent')
-                            return found
-                        if row[0] == 0xe5:
-                            continue
-                        attr = row[11]
-                        if attr == 0x0f:
-                            raise ValueError('Long filename entry unsupported')
-                        if attr & 0x08:
-                            continue  # Volume label, not a file.
-                        if row[:11] == expected:
-                            if found is not None:
-                                raise ValueError('Duplicate EFI short-name entry')
-                            if bool(attr & 0x10) != is_directory or attr & 0xc0:
-                                raise ValueError('EFI entry has invalid type')
-                            target = (struct.unpack_from('<H', row, 20)[0] << 16 |
-                                      struct.unpack_from('<H', row, 26)[0])
-                            size = struct.unpack_from('<I', row, 28)[0]
-                            if target < 2 or (is_directory and size):
-                                raise ValueError('Invalid EFI directory entry')
-                            found = (target, size)
+                    if not terminated:
+                        data = cluster_bytes_at(cluster)
+                        for pos in range(0, len(data), 32):
+                            row = data[pos:pos+32]
+                            if row[0] == 0:
+                                terminated = True
+                                break
+                            if row[0] == 0xe5:
+                                continue
+                            attr = row[11]
+                            if attr == 0x0f:
+                                raise ValueError('Long filename entry unsupported')
+                            if attr & 0x08:
+                                continue  # Volume label, not a file.
+                            if row[:11] == expected:
+                                if found is not None:
+                                    raise ValueError('Duplicate EFI short-name entry')
+                                if bool(attr & 0x10) != is_directory or attr & 0xc0:
+                                    raise ValueError('EFI entry has invalid type')
+                                target = (struct.unpack_from('<H', row, 20)[0] << 16 |
+                                          struct.unpack_from('<H', row, 26)[0])
+                                size = struct.unpack_from('<I', row, 28)[0]
+                                if target < 2 or (is_directory and size):
+                                    raise ValueError('Invalid EFI directory entry')
+                                found = (target, size)
+                    # A 0x00 directory terminator ends entries, not the FAT chain.
+                    # Walk its remaining allocations to catch free, reserved and
+                    # cross-linked clusters before trusting the selected path.
                     nxt = next_cluster(cluster)
                     if nxt >= 0x0ffffff8:
                         if found is None:
                             raise ValueError('EFI short-name path absent')
                         return found
+                    if not 2 <= nxt < clusters + 2:
+                        raise ValueError('Directory FAT chain has invalid continuation')
                     cluster = nxt
                 raise ValueError('Directory FAT chain exceeds readback limit')
 
