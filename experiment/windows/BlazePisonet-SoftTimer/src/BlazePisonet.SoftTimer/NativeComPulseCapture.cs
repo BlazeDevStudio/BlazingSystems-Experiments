@@ -119,10 +119,7 @@ internal sealed class NativeComPulseCapture : IDisposable
             {
                 // Too much unobserved time, or clock rollback: a pulse may
                 // have started/ended unseen. Wait for a VERIFIED idle sample.
-                _armed = false;
-                _active = false;
-                _pulseStarted = null;
-                _unclaimed.Clear();
+                AbandonIncompletePulseLocked();
             }
             _lastSample = now;
 
@@ -132,45 +129,9 @@ internal sealed class NativeComPulseCapture : IDisposable
             catch (Exception) { sampleOk = false; level = false; }
 
             if (!sampleOk)
-            {
-                retired = _session;
-                _session = null;
-                unchecked { _generation++; }
-                ResetLocked();
-            }
-            else if (!level)
-            {
-                if (!_armed)
-                {
-                    // Verified idle is required after bind, gap, error or
-                    // accepted pulse. An already-high first sample cannot
-                    // supply a beginning edge.
-                    _armed = true;
-                    _active = false;
-                    _pulseStarted = null;
-                }
-                else if (_active && _pulseStarted is { } start)
-                {
-                    var width = (now - start).TotalMilliseconds;
-                    if (width >= _minimumMs && width <= _maximumMs &&
-                        (_lastAccepted is null ||
-                         (now - _lastAccepted.Value).TotalMilliseconds >= _debounceMs))
-                    {
-                        _lastAccepted = now;
-                        observed = new NativeObservedPulse(
-                            source, _generation, ++_sequence, start, now);
-                        _unclaimed.Add(observed);
-                    }
-                    _armed = false; // demand another explicit idle sample
-                    _active = false;
-                    _pulseStarted = null;
-                }
-            }
-            else if (_armed && !_active)
-            {
-                _active = true;
-                _pulseStarted = now;
-            }
+                retired = RetireSessionLocked();
+            else
+                observed = ObserveLevelLocked(source, now, level);
         }
         retired?.Dispose();
         if (observed is null) return;
@@ -205,23 +166,81 @@ internal sealed class NativeComPulseCapture : IDisposable
             // TryVerifyPresent closes the original invalid handle.
             if (_session.IsClosed || !_session.TryVerifyPresent())
             {
-                _session = null;
-                unchecked { _generation++; }
-                ResetLocked();
+                // Invalid handle was already closed by its owning session.
+                _ = RetireSessionLocked();
                 return false;
             }
             return true;
         }
     }
 
-    private void ResetLocked()
+    // All helpers below run with _gate held. Keep transitions independent
+    // of callback dispatch so callbacks cannot re-enter under this lock.
+    private NativeObservedPulse? ObserveLevelLocked(
+        NativeComInterfaceSession source, TimeSpan now, bool level)
+    {
+        if (level)
+        {
+            if (_armed && !_active)
+            {
+                _active = true;
+                _pulseStarted = now;
+            }
+            return null;
+        }
+
+        if (!_armed)
+        {
+            // After bind/gap/accepted pulse, only a VERIFIED low arms capture.
+            _armed = true;
+            _active = false;
+            _pulseStarted = null;
+            return null;
+        }
+
+        if (!_active || _pulseStarted is not { } started) return null;
+
+        NativeObservedPulse? observed = null;
+        var widthMs = (now - started).TotalMilliseconds;
+        if (widthMs >= _minimumMs && widthMs <= _maximumMs &&
+            (_lastAccepted is null ||
+             (now - _lastAccepted.Value).TotalMilliseconds >= _debounceMs))
+        {
+            _lastAccepted = now;
+            observed = new NativeObservedPulse(
+                source, _generation, ++_sequence, started, now);
+            _unclaimed.Add(observed);
+        }
+
+        // Falling edge (accepted or rejected) requires a new verified idle.
+        _armed = false;
+        _active = false;
+        _pulseStarted = null;
+        return observed;
+    }
+
+    private void AbandonIncompletePulseLocked()
     {
         _armed = false;
         _active = false;
-        _lastSample = null;
         _pulseStarted = null;
-        _lastAccepted = null;
         _unclaimed.Clear();
+    }
+
+    private NativeComInterfaceSession? RetireSessionLocked()
+    {
+        var previous = _session;
+        _session = null;
+        unchecked { _generation++; }
+        ResetLocked();
+        return previous;
+    }
+
+    private void ResetLocked()
+    {
+        AbandonIncompletePulseLocked();
+        _lastSample = null;
+        _lastAccepted = null;
     }
 
     public void Dispose()
@@ -231,10 +250,7 @@ internal sealed class NativeComPulseCapture : IDisposable
         {
             if (_disposed) return;
             _disposed = true;
-            old = _session;
-            _session = null;
-            unchecked { _generation++; }
-            ResetLocked();
+            old = RetireSessionLocked();
         }
         old?.Dispose();
     }
