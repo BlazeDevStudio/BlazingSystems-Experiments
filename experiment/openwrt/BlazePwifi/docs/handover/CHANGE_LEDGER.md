@@ -1,3 +1,7 @@
+## 2026-10-30 — PHX-CORE-M integration fixture restore
+
+- Exact #40943181335 validate 123691824562 passed step37 PAY-0630 and 38–125, then failed step126 integration.sh immediately after controller targeting. Registered vendos default-disabled; original fixture expected positive signed coin without authorized synthetic enable. Added correctly signed unprovisioned coin rejection with account SHA, credit and receipt invariants, then explicit /tmp-only controller helper enable for both vendo-01/vendo-02 before original accounting checks. Source defaults, paired isolation, tmpfs loss, auth/EIO quarantine, DENY-only v1 unchanged. Exact-head test still requires execution.
+
 ## 2026-10-30 — PHX-CORE-L PAY-0630 fixture correction
 
 - Full run #40942648824 validate 123689919935 passed PAY-0627, PAY-0731, PAY-0732/0733, PAY-0737 then failed step 37 PAY-0630 fixture. Source showed no synthetic provision before first signed coin. Added unprovisioned real CGI DENY control, account SHA/credit/receipt-count invariants, and explicit disposable /tmp-only `bp_controller_set` before original 12-live-receipt loop. Existing voucher, active replay, expiry compaction checks retained. Source/default admission and v1 DENY-only unchanged. New exact-head CI evidence pending. No payment, physical operation, production or merge.
