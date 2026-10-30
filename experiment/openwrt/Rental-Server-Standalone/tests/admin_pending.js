@@ -67,6 +67,108 @@ vm.runInContext(script, context, { filename: 'rental-dashboard.js' });
 return context;
 }
 
+function deferredEnrollmentPage() {
+  const elements = new Map(), stored = new Map(), requests = [];
+  let complete, fail, serial = 0;
+  const context = vm.createContext({
+    document: { getElementById(id) {
+      if (!elements.has(id)) {
+        let content = '';
+        elements.set(id, { value: '', classList: { add() {}, remove() {} },
+          get innerHTML() { return content; }, set innerHTML(value) { content = String(value); },
+          get textContent() { return content; }, set textContent(value) { content = String(value); },
+        });
+      }
+      return elements.get(id);
+    } },
+    location: { origin: 'https://r281.invalid' },
+    sessionStorage: { getItem() { return null; } },
+    localStorage: { getItem(key) { return stored.get(key) ?? null; },
+      setItem(key, value) { stored.set(key, value); }, removeItem(key) { stored.delete(key); } },
+    crypto: { getRandomValues(bytes) { bytes.fill(++serial); return bytes; } },
+    URLSearchParams, Uint8Array,
+    alert() {}, confirm() { return true; },
+    fetch(url, options) {
+      assert.equal(url, '/cgi-bin/rental-admin');
+      assert.equal(options.method, 'POST');
+      const body = new URLSearchParams(options.body);
+      requests.push(body);
+      if (body.get('action') === 'enroll_create') return new Promise((resolve, reject) => {
+        complete = data => resolve({ async json() { return data; } });
+        fail = reject;
+      });
+      assert.equal(body.get('action'), 'recent_events');
+      return Promise.resolve({ async json() { return { ok: true, events: [] }; } });
+    },
+  });
+  vm.runInContext(script, context, { filename: 'rental-dashboard.js' });
+  context.document.getElementById('label').value = 'First phone';
+  context.document.getElementById('ttl').value = '900';
+  return { context, stored, requests, output: context.document.getElementById('enrollOut'),
+    finish(outcome) {
+      if (outcome === 'lost') fail(Error('simulated response loss'));
+      else complete(outcome === 'success'
+        ? { ok: true, token: 'aaaaaaaaaaaa.111111111111111111111111111111111111', expires: 1900000000 }
+        : { ok: false, error: 'fixture refusal' });
+    } };
+}
+
+async function enrollmentResponseCases() {
+  const checks = [];
+  for (const outcome of ['success', 'refused', 'lost']) {
+    checks.push(['current request ' + outcome, async () => {
+      const p = deferredEnrollmentPage(), work = p.context.enroll(), id = p.context.pendingEnrollment().request_id;
+      p.finish(outcome); await work;
+      assert.equal(p.context.pendingEnrollment().request_id, id, 'retain the same nonsecret request for inspection/retry');
+      assert.ok(p.output.textContent.includes(outcome === 'success' ? 'aaaaaaaaaaaa.' : outcome === 'refused' ? 'fixture refusal' : 'uncertain'));
+      assert.equal(p.requests.filter(r => r.get('action') === 'enroll_create').length, 1);
+      assert.equal(p.requests[0].get('request_id'), id);
+    }]);
+    for (const state of ['replaced', 'cleared', 'invalid']) checks.push([state + ' request ignores delayed ' + outcome, async () => {
+      const p = deferredEnrollmentPage(), work = p.context.enroll();
+      if (state === 'replaced') p.stored.set('blazeRentalPendingEnrollV1', JSON.stringify({ request_id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', label: 'Second phone', ttl: '900' }));
+      else if (state === 'cleared') p.stored.clear();
+      else p.stored.set('blazeRentalPendingEnrollV1', '{damaged');
+      p.output.textContent = 'Newer view';
+      const current = p.stored.get('blazeRentalPendingEnrollV1');
+      p.finish(outcome); await work;
+      assert.equal(p.output.textContent, 'Newer view', 'obsolete result must not replace the current provisioning view');
+      assert.equal(p.stored.get('blazeRentalPendingEnrollV1'), current, 'obsolete result must not alter current pending storage');
+    }]);
+  }
+  checks.push(['confirmed clear and new enrollment ignore first result and allow retry', async () => {
+    const p = deferredEnrollmentPage(), first = p.context.enroll(), firstId = p.context.pendingEnrollment().request_id;
+    p.context.clearPendingEnroll();
+    p.context.document.getElementById('label').value = 'Second phone';
+    await p.context.enroll();
+    const nextId = p.context.pendingEnrollment().request_id;
+    assert.notEqual(nextId, firstId);
+    p.finish('success'); await first;
+    assert.equal(p.output.textContent, '', 'old token must not be displayed under the second pending request');
+    const retry = p.context.retryPendingEnroll();
+    p.finish('success'); await retry;
+    const enrolls = p.requests.filter(r => r.get('action') === 'enroll_create');
+    assert.equal(enrolls.length, 2, 'busy state must release so the retained second request can be sent');
+    assert.equal(enrolls[1].get('request_id'), nextId);
+    assert.equal(p.context.pendingEnrollment().request_id, nextId);
+    assert.ok(p.output.textContent.includes('aaaaaaaaaaaa.'));
+  }]);
+  checks.push(['retry removes obsolete provisioning output while transport is pending', async () => {
+    const p = deferredEnrollmentPage(); p.output.textContent = 'Old token output';
+    const work = p.context.enroll();
+    const duringRequest = p.output.textContent;
+    p.finish('success'); await work;
+    assert.equal(duringRequest, '', 'previous provisioning output must be cleared before awaiting a new result');
+  }]);
+  let failed = 0;
+  for (const [name, check] of checks) {
+    try { await check(); console.log('PASS: ' + name); }
+    catch (error) { failed++; console.error('FAIL: ' + name + ': ' + error.message); }
+  }
+  console.log('Enrollment response association: ' + (checks.length - failed) + '/' + checks.length + ' passed');
+  assert.equal(failed, 0, 'enrollment responses must belong to the current pending request');
+}
+
 (async () => {
   const firstPage = loadPage();
   await firstPage.paid('add_time', { device_id: deviceId, seconds: 600 });
@@ -99,5 +201,6 @@ return context;
   assert.equal(stored.size, 1, 'pending ID remains until token is copied or inspected');
   enrollmentReload.clearPendingEnroll();
   assert.equal(stored.size, 0, 'operator confirmation clears pending enrollment');
+  await enrollmentResponseCases();
   console.log('R281 admin lost-response pending request contract PASS');
 })().catch(error => { console.error(error); process.exitCode = 1; });
