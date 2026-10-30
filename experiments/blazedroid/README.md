@@ -14,7 +14,7 @@ BlazeDroid is an independent Android desktop OS project, isolated from all coin-
 
 This manifest still includes some floating upstream dependency branches. Every successful build exports `resolved-manifest.xml` with concrete resolved revisions.
 
-## Build and owner-only Preview artifact download
+## Build and owner-test Preview artifact download
 
 A full AOSP compilation needs a **dedicated Linux x86-64 build host**, with Android/Lineage dependencies, Android `repo`, `git-lfs`, a JDK (`java` and `javac`), Python3 and `xorriso`. The preflight refuses hosts with less than 28 GiB physical RAM or 300 GiB free disk **before fetching Android source**; at least 32 GiB RAM is recommended and more storage may be needed. These are build-host allowances, **not tested end-user OS requirements**. Standard GitHub-hosted runners are not adequate. Register a trusted self-hosted GitHub Actions runner labeled **`blazedroid-aosp`**.
 
@@ -22,7 +22,7 @@ A full AOSP compilation needs a **dedicated Linux x86-64 build host**, with Andr
 2. Select **Actions → BlazeDroid 16 preview build → Run workflow → main**, and set `full_build=true`. It will queue until a suitable registered `blazedroid-aosp` runner is available.
 3. The script checks host prerequisites, pinned source/installer commits, stages the BlazeDroid-owned product definition, selects its `lunch` target, and compiles `iso_img`. It requires Android 16/API 36 **and** `ro.blazedroid.version=16.0.0` / `ro.blazedroid.channel=preview` in built properties, verifies ISO structure plus EFI catalog, and calculates SHA-256 checksums.
 4. On a **successful genuine build**, open the finished workflow run on GitHub **Actions → Artifacts → `BlazeDroid-16.0.0-PREVIEW`**. Download the artifact ZIP, extract its ISO or ISO parts, and verify the full SHA-256 against `SHA256SUMS`. The artifact is retained for 30 days by the workflow.
-5. **No GitHub Release or release tag is created.** No VM or physical acceptance tests are required before this private owner-test delivery. Check third-party redistribution rights before sharing any file with others.
+5. **No GitHub Release or release tag is created.** No VM or physical acceptance tests are required before this owner-test artifact delivery. Check third-party redistribution rights before sharing any file with others.
 
 Build locally on a trusted machine:
 
