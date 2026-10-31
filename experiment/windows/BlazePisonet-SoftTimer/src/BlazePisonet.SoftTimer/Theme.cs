@@ -23,7 +23,11 @@ public static class BlazeTheme
 
     private static void ApplyRecursive(Control c)
     {
-        if (c is Form || c is System.Windows.Forms.Panel || c is UserControl) c.BackColor = c.Tag as string == "sidebar" ? Sidebar : Background;
+        if (c is Form || c is System.Windows.Forms.Panel || c is UserControl)
+        {
+            c.BackColor = c.Tag as string == "sidebar" ? Sidebar : Background;
+        }
+
         if (c is Label label)
         {
             label.ForeColor = label.Tag as string == "muted" ? Muted : Text;
@@ -31,19 +35,26 @@ public static class BlazeTheme
         }
         else if (c is TextBox tb)
         {
-            tb.BackColor = Panel2; tb.ForeColor = Text; tb.BorderStyle = BorderStyle.FixedSingle;
+            tb.BackColor = Panel2;
+            tb.ForeColor = Text;
+            tb.BorderStyle = BorderStyle.FixedSingle;
         }
         else if (c is ComboBox cb)
         {
-            cb.BackColor = Panel2; cb.ForeColor = Text; cb.FlatStyle = FlatStyle.Flat;
+            cb.BackColor = Panel2;
+            cb.ForeColor = Text;
+            cb.FlatStyle = FlatStyle.Flat;
         }
         else if (c is NumericUpDown nud)
         {
-            nud.BackColor = Panel2; nud.ForeColor = Text; nud.BorderStyle = BorderStyle.FixedSingle;
+            nud.BackColor = Panel2;
+            nud.ForeColor = Text;
+            nud.BorderStyle = BorderStyle.FixedSingle;
         }
         else if (c is CheckBox check)
         {
-            check.ForeColor = Text; check.BackColor = Color.Transparent;
+            check.ForeColor = Text;
+            check.BackColor = Color.Transparent;
         }
         else if (c is Button btn)
         {
@@ -56,9 +67,15 @@ public static class BlazeTheme
         }
         else if (c is ListBox lb)
         {
-            lb.BackColor = Panel2; lb.ForeColor = Text; lb.BorderStyle = BorderStyle.FixedSingle;
+            lb.BackColor = Panel2;
+            lb.ForeColor = Text;
+            lb.BorderStyle = BorderStyle.FixedSingle;
         }
-        foreach (Control child in c.Controls) ApplyRecursive(child);
+
+        foreach (Control child in c.Controls)
+        {
+            ApplyRecursive(child);
+        }
     }
 
     public static Panel Card(string? title = null)
