@@ -1,0 +1,375 @@
+name: PHX QA parallel pinned source labs (nonproduction)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/phoenix-qa-parallel-pinned-labs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  handover:
+    name: Preserve canonical handover gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail closed on stale or incomplete handovers
+        run: |
+          sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
+          sh experiment/openwrt/BlazePwifi/tests/handover_gate_regression.sh
+
+  windows-native:
+    name: Windows app and original owned-HANDLE diagnostic labs
+    needs: handover
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b20895064ce8c2c37a9993ae3140ea46ac3e202d
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Confirm pinned source head
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne 'b20895064ce8c2c37a9993ae3140ea46ac3e202d') { throw 'Pinned source changed' }
+      - name: Native same-owned-HANDLE diagnostic regression and production-source compile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $base='experiment/windows/BlazePisonet-SoftTimer'
+          dotnet run --project "$base/tests/NativeComInterfaceHandleLab/NativeComInterfaceHandleLab.csproj" -c Release --no-launch-profile -- --invalid-setup
+          if ($LASTEXITCODE -ne 3) { throw "Invalid-setup sentinel failed: $LASTEXITCODE" }
+          dotnet run --project "$base/tests/NativeComInterfaceHandleLab/NativeComInterfaceHandleLab.csproj" -c Release --no-build --no-launch-profile
+          if ($LASTEXITCODE -ne 0) { throw "Owned-handle diagnostic lab failed: $LASTEXITCODE" }
+          dotnet build "$base/src/BlazePisonet.SoftTimer/BlazePisonet.SoftTimer.csproj" -c Release -warnaserror
+          if ($LASTEXITCODE -ne 0) { throw "Production source failed to compile: $LASTEXITCODE" }
+
+  core-focused:
+    name: CORE signed deny/nonce/replay disposable host
+    needs: handover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: c2a7515f43aff7043b0c2274dcdc097f30d7efbb
+          persist-credentials: false
+      - name: Check exact CORE input SHA
+        run: test "$(git rev-parse HEAD)" = "c2a7515f43aff7043b0c2274dcdc097f30d7efbb"
+      - name: Execute existing source-linked financial refusal regressions (disposable only)
+        run: |
+          set -eu
+          P=experiment/openwrt/BlazePwifi/tests
+          sh "$P/v060_coin_false_ack.sh"
+          sh "$P/v060_vendo_coin_replay_lock.sh"
+          python3 "$P/v060_controller_response_auth_v1.py"
+          sh "$P/v04_controller_compat.sh"
+
+  hardware-native:
+    name: ESP32 consumer header native C++ fake crypto tests (GPIO disabled)
+    needs: handover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7a33d8ea9a93b5802b9bd8f933939494e8b959b0
+          persist-credentials: false
+      - name: Check exact hardware source SHA
+        run: test "$(git rev-parse HEAD)" = "7a33d8ea9a93b5802b9bd8f933939494e8b959b0"
+      - name: Build and execute existing header against native mbedTLS
+        run: |
+          set -eu
+          sudo apt-get update
+          sudo apt-get install -y libmbedtls-dev
+          P=experiment/openwrt/BlazePwifi
+          g++ -std=c++17 -Wall -Wextra -Werror -O2 "$P/tests/v060_controller_auth_header_native.cpp" -o /tmp/phx-hw-auth-test -lmbedtls -lmbedcrypto -lmbedx509
+          /tmp/phx-hw-auth-test
+          grep -Fq 'static constexpr bool kCoinAdmissionEnabled=false;' "$P/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+          grep -Fq 'may_admit_coin_even_if_mac_valid() { return false; }' "$P/esp32/BlazePwifiVendo32/ControllerAuthV1Lab.h"
+
+  android-native:
+    needs: handover
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2]
+    name: Android API27 emulator auth repeat ${{ matrix.repeat }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 50
+    env:
+      TARGET: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+      GRADLE_VERSION: 4.4.1
+      TEST_CLASS: com.blazesystems.blazerental.LeaseSyncAuthBeforeCommitTest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # This is the actual PR source, not an old default branch or a stale merge artifact.
+          ref: a7d113fb8ae3f0c5e838e64d31cae7a154e37b56
+          persist-credentials: false
+
+      - name: Pin Android 27 SDK and build-tools 27.0.3 (Launcher3 AGP 3.1.3)
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-27" "build-tools;27.0.3"
+          mkdir -p /tmp/blazerental-sdk27/platforms /tmp/blazerental-sdk27/build-tools
+          cp -a "${ANDROID_SDK_ROOT}/platforms/android-27" /tmp/blazerental-sdk27/platforms/
+          cp -a "${ANDROID_SDK_ROOT}/build-tools/27.0.3" /tmp/blazerental-sdk27/build-tools/
+          # connectedAospDebugAndroidTest needs ADB inside the isolated legacy SDK.
+          test -x "${ANDROID_SDK_ROOT}/platform-tools/adb"
+          ln -s "${ANDROID_SDK_ROOT}/platform-tools" /tmp/blazerental-sdk27/platform-tools
+          printf 'sdk.dir=/tmp/blazerental-sdk27\n' > "$TARGET/local.properties"
+
+      - name: Pin JDK 8 for historical Launcher3
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Pin Gradle 4.4.1 and verify exact connected test task
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/blazerental-gradle.zip
+          unzip -q /tmp/blazerental-gradle.zip -d /opt
+          echo "/opt/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+          mkdir -p rental-auth-results
+          (
+            cd "$TARGET"
+            ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
+              "/opt/gradle-${GRADLE_VERSION}/bin/gradle" --no-daemon tasks --all
+          ) > rental-auth-results/tasks.txt
+          grep -Eq '^[[:space:]]*connectedAospDebugAndroidTest[[:space:]]' rental-auth-results/tasks.txt
+          grep -Eq '^[[:space:]]*assembleAospDebugAndroidTest([[:space:]]|$)' rental-auth-results/tasks.txt
+
+      - name: Compile debug app and regression test APK (no production signer)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd "$TARGET"
+            ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
+              "/opt/gradle-${GRADLE_VERSION}/bin/gradle" --no-daemon --stacktrace assembleAospDebug assembleAospDebugAndroidTest
+          ) 2>&1 | tee rental-auth-results/compile.log
+
+      - name: Enable KVM for disposable Android emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+          test -r /dev/kvm -a -w /dev/kvm
+
+      - name: Switch to JDK 17 for modern Android SDK emulator startup
+        # SDK command-line tools contain Java 11+ bytecode; Gradle 4.4.1 remains on JDK 8.
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify emulator CLI has a Java 17 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${JAVA_HOME_8_X64:-}"
+          java -version 2>&1 | tee rental-auth-results/emulator-java.txt
+          java -version 2>&1 | grep -Eq 'version "17\.'
+
+      - name: Execute three security tests on isolated Android API 27
+        # v2.38.0 pinned to its immutable commit, avoiding a floating action tag.
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 27
+          arch: x86
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
+          emulator-boot-timeout: 300
+          script: bash .github/scripts/run-blazerental-native-auth.sh
+      - name: Save exact emulator logs and JUnit reports, including failures
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p rental-auth-results
+          timeout 8s adb devices -l > rental-auth-results/adb-devices.txt 2>&1 || true
+          # Never hang evidence collection if emulator boot or test execution failed.
+          timeout 8s adb logcat -d -t 1000 > rental-auth-results/logcat-tail.txt 2>&1 || true
+          cp -a "$TARGET/build/outputs/androidTest-results" rental-auth-results/androidTest-results 2>/dev/null || true
+          cp -a "$TARGET/build/reports/androidTests" rental-auth-results/androidTests 2>/dev/null || true
+
+      - name: Upload source-linked native execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHX-Rental-auth-native-${{ matrix.repeat }}-${{ github.run_id }}
+          path: rental-auth-results/
+          if-no-files-found: error
+
+  core-contract-matrix:
+    name: CORE isolated ${{ matrix.suite }} contract
+    needs: handover
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [auth-revocation, member-integrity, receipt-integrity, rental-leases, migration-safety, witness-model, native-envelope, qr-rendering]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: c2a7515f43aff7043b0c2274dcdc097f30d7efbb
+          persist-credentials: false
+      - name: Verify exact CORE SHA
+        run: test "$(git rev-parse HEAD)" = "c2a7515f43aff7043b0c2274dcdc097f30d7efbb"
+      - name: Execute only the selected independent disposable test suite
+        shell: bash
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          set -euo pipefail
+          P=experiment/openwrt/BlazePwifi/tests
+          case "$SUITE" in
+            auth-revocation)
+              sh "$P/v060_auth_session_revocation.sh"
+              sh "$P/v060_auth_rng_failclosed.sh" ;;
+            member-integrity)
+              sh "$P/v060_member_revision_integrity.sh"
+              sh "$P/v060_paid_numeric_guard.sh" ;;
+            receipt-integrity)
+              sh "$P/v060_paid_receipt_corpus_integrity.sh" ;;
+            rental-leases)
+              sh "$P/v060_rental_db_integrity.sh"
+              sh "$P/v060_rental_lease_mutation_safety.sh" ;;
+            migration-safety)
+              sh "$P/v060_migration_guard.sh"
+              sh "$P/v060_member_v2_atomic_bridge.sh" ;;
+            witness-model)
+              python3 "$P/v060_trusted_witness_model.py"
+              python3 "$P/v060_witness_two_stage_recovery.py" ;;
+            native-envelope)
+              sh "$P/v060_vendo_pending_sequence.sh"
+              sh "$P/v060_v2_cgi_native_envelope.sh" ;;
+            qr-rendering)
+              node "$P/v060_rental_qr_browser.cjs"
+              node --test "$P/v060_rental_qr_templates.cjs" ;;
+            *) echo "Unknown CORE QA lane" >&2; exit 3 ;;
+          esac
+
+  windows-regression-matrix:
+    name: Windows isolated ${{ matrix.suite }} native regression
+    needs: handover
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [cts-reconnect, immutable-dispatch, v2-protocol]
+    runs-on: windows-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b20895064ce8c2c37a9993ae3140ea46ac3e202d
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source pinned to cleanup branch
+        shell: pwsh
+        run: if ((git rev-parse HEAD).Trim() -ne 'b20895064ce8c2c37a9993ae3140ea46ac3e202d') { throw 'Unpinned Windows test input' }
+      - name: Execute selected Windows regression without packaging or release
+        shell: pwsh
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $P='experiment/windows/BlazePisonet-SoftTimer/tests'
+          switch ($env:SUITE) {
+            'cts-reconnect' {
+              python "$P/NativeSerialReconnectGuard/prepare_guarded_copy.py"
+              if ($LASTEXITCODE -ne 0) { throw 'CTS source extraction failed' }
+              dotnet run --project "$P/NativeSerialReconnectGuard/NativeSerialReconnectGuard.csproj" -c Release --no-launch-profile
+              if ($LASTEXITCODE -ne 0) { throw 'CTS reconnect failed' }
+              dotnet run --project "$P/NativeSerialPinFaultLab/NativeSerialPinFaultLab.csproj" -c Release --no-launch-profile -- --open-failure-safety-gate
+              if ($LASTEXITCODE -ne 0) { throw 'Failed-open candidate cleanup failed' }
+            }
+            'immutable-dispatch' {
+              dotnet run --project "$P/NativeCoinEventOwnershipGuard/NativeCoinEventOwnershipGuard.csproj" -c Release --no-launch-profile
+              if ($LASTEXITCODE -ne 0) { throw 'Event ownership failed' }
+              python "$P/NativeCoinDispatchLab/extract_source.py"
+              if ($LASTEXITCODE -ne 0) { throw 'Dispatch extraction failed' }
+              dotnet run --project "$P/NativeCoinDispatchLab/NativeCoinDispatchLab.csproj" -c Release --no-launch-profile
+              if ($LASTEXITCODE -ne 0) { throw 'Async event attribution failed' }
+            }
+            'v2-protocol' {
+              dotnet run --project "$P/V2NativeEnvelopeContract/V2NativeEnvelopeContract.csproj" -c Release --no-launch-profile -- --selftest
+              if ($LASTEXITCODE -ne 0) { throw 'Signed v2 envelope failed' }
+              pwsh -NoProfile -File "$P/V2PendingSequenceLab/windows-selftest.ps1"
+              if ($LASTEXITCODE -ne 0) { throw 'V2 pending-sequence failed' }
+            }
+            default { throw 'Unknown Windows QA suite' }
+          }
+
+  hardware-host-matrix:
+    name: ESP source-linked ${{ matrix.suite }} GPIO fake-host
+    needs: handover
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [relay-reconfiguration, poll-and-target-intake]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7a33d8ea9a93b5802b9bd8f933939494e8b959b0
+          persist-credentials: false
+      - name: Verify exact hardware SHA
+        run: test "$(git rev-parse HEAD)" = "7a33d8ea9a93b5802b9bd8f933939494e8b959b0"
+      - name: Execute firmware source functions with simulated GPIO, never physical hardware
+        shell: bash
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          set -euo pipefail
+          P=experiment/openwrt/BlazePwifi/tests
+          case "$SUITE" in
+            relay-reconfiguration)
+              python3 "$P/v060_esp_relay_reconfig_contract.py" ;;
+            poll-and-target-intake)
+              python3 "$P/v060_esp_poll_intake_guard.py"
+              python3 "$P/v060_esp_target_intake_contract.py" ;;
+            *) echo 'Unknown ESP host lane' >&2; exit 3 ;;
+          esac
+
+  android-source-contract:
+    name: Android update, management and trust source security
+    needs: handover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: a7d113fb8ae3f0c5e838e64d31cae7a154e37b56
+          persist-credentials: false
+      - name: Verify exact Android source SHA
+        run: test "$(git rev-parse HEAD)" = "a7d113fb8ae3f0c5e838e64d31cae7a154e37b56"
+      - name: Run read-only source contracts without emulator
+        run: |
+          set -eu
+          P=experiment/openwrt/BlazePwifi/tests
+          sh "$P/v04_android_source.sh"
+          sh "$P/v051_android_source.sh"
+          sh "$P/v060_android_trust_panel.sh"
