@@ -56,10 +56,15 @@ public sealed class TimerEngine : IDisposable
         long remaining;
         lock (_gate)
         {
-            if (_state.AppliedEventIds.Contains(eventId)) return false;
+            // Refuse corrupt/overflowing balances before recording an event.
+            // No sale, receipt, or timer state may change on denial.
+            if (_state.AppliedEventIds.Contains(eventId) ||
+                !TimeCreditMath.TryAdd(_state.RemainingSeconds, seconds, out var nextRemaining) ||
+                (countSale && _state.SalesPulseCount == long.MaxValue))
+                return false;
             wasActive = _state.RemainingSeconds > 0;
             _state.AppliedEventIds.Add(eventId);
-            _state.RemainingSeconds = Math.Max(0, _state.RemainingSeconds) + seconds;
+            _state.RemainingSeconds = nextRemaining;
             _state.TimerRunning = _state.RemainingSeconds > 0;
             if (countSale) _state.SalesPulseCount++;
             _state.UpdatedUtc = DateTimeOffset.UtcNow;
@@ -154,8 +159,11 @@ public sealed class TimerEngine : IDisposable
     {
         lock (_gate)
         {
-            if (!_state.Members.TryGetValue(username, out var member) || !Passwords.VerifyMemberPassword(member, password)) return false;
-            member.BankedSeconds += Math.Max(0, _state.RemainingSeconds);
+            if (!_state.Members.TryGetValue(username, out var member) || !Passwords.VerifyMemberPassword(member, password))
+                return false;
+            if (!TimeCreditMath.TryAdd(member.BankedSeconds, _state.RemainingSeconds, out var nextBanked))
+                return false;
+            member.BankedSeconds = nextBanked;
             member.UpdatedUtc = DateTimeOffset.UtcNow;
             _state.RemainingSeconds = 0;
             _state.TimerRunning = false;
@@ -174,8 +182,10 @@ public sealed class TimerEngine : IDisposable
         {
             if (!_state.Members.TryGetValue(username, out var member) || !Passwords.VerifyMemberPassword(member, password)) return false;
             restored = member.BankedSeconds;
-            if (restored <= 0) return true;
-            _state.RemainingSeconds += restored;
+            if (restored <= 0) return restored == 0;
+            if (!TimeCreditMath.TryAdd(_state.RemainingSeconds, restored, out var nextRemaining))
+                return false;
+            _state.RemainingSeconds = nextRemaining;
             _state.TimerRunning = true;
             member.BankedSeconds = 0;
             member.UpdatedUtc = DateTimeOffset.UtcNow;
@@ -194,10 +204,16 @@ public sealed class TimerEngine : IDisposable
         if (seconds <= 0) return false;
         lock (_gate)
         {
-            if (!_state.Members.TryGetValue(fromUser, out var from) || !_state.Members.TryGetValue(toUser, out var to)) return false;
-            if (!Passwords.VerifyMemberPassword(from, fromPassword) || from.BankedSeconds < seconds) return false;
+            if (!_state.Members.TryGetValue(fromUser, out var from) || !_state.Members.TryGetValue(toUser, out var to))
+                return false;
+            // Same underlying account is not a transfer, even with different name casing.
+            if (ReferenceEquals(from, to) || !Passwords.VerifyMemberPassword(from, fromPassword) ||
+                from.BankedSeconds < seconds)
+                return false;
+            if (!TimeCreditMath.TryAdd(to.BankedSeconds, seconds, out var nextRecipient))
+                return false;
             from.BankedSeconds -= seconds;
-            to.BankedSeconds += seconds;
+            to.BankedSeconds = nextRecipient;
             from.UpdatedUtc = to.UpdatedUtc = DateTimeOffset.UtcNow;
             Storage.SaveState(_state);
         }
@@ -342,6 +358,15 @@ public sealed class TimerEngine : IDisposable
         if (Math.Abs(carry - 0.125) > 0.000001) return 6;
         if (DebitWholeSeconds(ref carry, -100) != 0) return 7;
         if (DebitWholeSeconds(ref carry, double.NaN) != 0) return 8;
+        // Source-linked boundary checks: every credit route uses one overflow rule.
+        if (!TimeCreditMath.TryAdd(10, 15, out var total) || total != 25) return 9;
+        if (!TimeCreditMath.TryAdd(0, 0, out total) || total != 0) return 10;
+        if (!TimeCreditMath.TryAdd(long.MaxValue - 1, 1, out total) ||
+            total != long.MaxValue) return 11;
+        if (TimeCreditMath.TryAdd(long.MaxValue, 1, out _)) return 12;
+        if (TimeCreditMath.TryAdd(long.MaxValue - 1, 2, out _)) return 13;
+        if (TimeCreditMath.TryAdd(-1, 1, out _)) return 14;
+        if (TimeCreditMath.TryAdd(1, -1, out _)) return 15;
         return 0;
     }
 
