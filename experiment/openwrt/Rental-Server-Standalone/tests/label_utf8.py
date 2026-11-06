@@ -4,6 +4,8 @@ import hmac
 import json
 import os
 from pathlib import Path
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -39,6 +41,7 @@ class LabelBytes(unittest.TestCase):
         self.base = Path(self.temp.name)
         self.state = self.base / 'state'
         self.state.mkdir()
+        self.extra_env = {}
         (self.base / 'admin.token').write_text('fixture-admin\n')
 
     def seed(self, label='Initial phone'):
@@ -46,10 +49,11 @@ class LabelBytes(unittest.TestCase):
         for name in ('enroll.tsv', 'policy.tsv', 'events.tsv'):
             (self.state / name).write_bytes(b'')
 
-    def call(self, endpoint, **data):
+    def call(self, endpoint, want_ok=True, **data):
         env = os.environ.copy()
         env.update(BLAZE_RENTAL_BASE=str(self.base), REQUEST_METHOD='POST',
                    HTTP_X_BLAZE_RENTAL_ADMIN='fixture-admin', LC_ALL='C')
+        env.update(self.extra_env)
         result = subprocess.run(['sh', str(ROOT / 'root/www/cgi-bin' / endpoint)],
                                 input=(urlencode(data) + '\n').encode('ascii'),
                                 capture_output=True, env=env, timeout=20, check=True)
@@ -58,8 +62,25 @@ class LabelBytes(unittest.TestCase):
         text = result.stdout.decode('utf-8')
         body = text.split('\r\n\r\n', 1)[1]
         reply = json.loads(body)
-        self.assertTrue(reply.get('ok'), reply.get('error', 'missing success'))
+        self.assertEqual(reply.get('ok'), want_ok, reply)
         return reply
+
+    def authority(self):
+        return {name: (self.state / name).read_bytes()
+                for name in ('devices.tsv', 'enroll.tsv', 'policy.tsv', 'events.tsv')}
+
+    def refuse_normalizer(self):
+        # Fail only the new normalizer, leaving real state readers/validators intact.
+        awk = shutil.which('awk')
+        self.assertIsNotNone(awk)
+        tools = self.base / 'tools'
+        tools.mkdir()
+        wrapper = tools / 'awk'
+        wrapper.write_text("#!/bin/sh\ncase \"${1:-}\" in\n"
+                           "  *'s=substr($0,1,80)'*) exit 17;;\nesac\n"
+                           'exec ' + shlex.quote(awk) + ' "$@"\n')
+        wrapper.chmod(0o700)
+        self.extra_env['PATH'] = str(tools) + os.pathsep + os.environ['PATH']
 
     def assert_device(self, expected):
         devices = self.call('rental-admin', action='list')['devices']
@@ -124,6 +145,46 @@ class LabelBytes(unittest.TestCase):
                 self.assertEqual(second['device_id'], first['device_id'])
                 self.assertEqual(second['device_secret'], first['device_secret'])
                 self.assertEqual((self.state / 'devices.tsv').read_bytes(), before)
+
+    def test_legacy_split_receipt_conflicts_without_reissuing(self):
+        self.seed()
+        expiry = int(time.time()) + 900
+        digest = hashlib.sha256((EID + '.' + ESECRET).encode()).hexdigest()
+        # Retain actual old cut output, including its incomplete final byte.
+        old_label = b'a' * 79 + b'\xc3'
+        (self.state / 'enroll.tsv').write_bytes(
+            f'{EID}\t{ESECRET}\t{expiry}\t'.encode() + old_label + b'\n' +
+            f'@create\t{RID}\t{EID}\t{digest}\t{expiry}\t900\t'.encode() + old_label + b'\n')
+        before = self.authority()
+        reply = self.call('rental-admin', want_ok=False, action='enroll_create',
+                          label='a' * 79 + '\u00e9', ttl=900, request_id=RID)
+        self.assertEqual(reply['error'], 'request id conflict')
+        self.assertNotIn('token', reply)
+        self.assertEqual(self.authority(), before)
+
+    def test_admin_normalizer_failure_preserves_authority(self):
+        self.refuse_normalizer()
+        for action in ('rename', 'set_time', 'enroll_create'):
+            with self.subTest(action=action):
+                self.seed()
+                before = self.authority()
+                self.call('rental-admin', want_ok=False, action=action, device_id=DID,
+                          seconds=0, label='New phone', ttl=900, request_id=RID)
+                self.assertEqual(self.authority(), before)
+
+    def test_app_normalizer_failure_preserves_authority(self):
+        self.seed()
+        (self.state / 'devices.tsv').write_bytes(b'')
+        (self.state / 'enroll.tsv').write_bytes(
+            f'{EID}\t{ESECRET}\t{int(time.time()) + 900}\tNew phone\n'.encode())
+        token, nonce = EID + '.' + ESECRET, 'abcdefgh'
+        signature = hmac.new(token.encode(), f'enroll|{nonce}|{token}'.encode(), hashlib.sha256).hexdigest()
+        self.refuse_normalizer()
+        before = self.authority()
+        reply = self.call('rental', want_ok=False, action='enroll', enroll_id=EID,
+                          nonce=nonce, sig=signature)
+        self.assertNotIn('device_secret', reply)
+        self.assertEqual(self.authority(), before)
 
 
 if __name__ == '__main__':
