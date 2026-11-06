@@ -38,3 +38,5 @@ jobs:
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_pending.js
       - name: Preserve literal device labels through the rendered Rename control
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_labels.js
+      - name: Preserve complete UTF-8 label bytes through actual CGI writers
+        run: python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py
