@@ -62,13 +62,13 @@ class LabelBytes(unittest.TestCase):
         return reply
 
     def assert_device(self, expected):
+        devices = self.call('rental-admin', action='list')['devices']
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0]['label'], expected)
         rows = (self.state / 'devices.tsv').read_bytes().decode('utf-8').splitlines()
         device = next(row.split('\t') for row in rows if not row.startswith('@'))
         self.assertEqual(device[3], expected)
         self.assertLessEqual(len(device[3].encode()), 80)
-        devices = self.call('rental-admin', action='list')['devices']
-        self.assertEqual(len(devices), 1)
-        self.assertEqual(devices[0]['label'], expected)
 
     def test_rename_and_raw_list_response(self):
         for name, label, expected in CASES:
