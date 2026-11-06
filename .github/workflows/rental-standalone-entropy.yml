@@ -40,6 +40,8 @@ jobs:
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_labels.js
       - name: Preserve complete UTF-8 label bytes through actual CGI writers
         run: python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py
+      - name: Audit exact form-decoder bytes and actual CGI input across locales
+        run: python3 experiment/openwrt/Rental-Server-Standalone/tests/form_decode.py
       - name: Repeat raw CGI label contracts with disposable BusyBox applets
         run: |
           sudo apt-get update
@@ -48,3 +50,4 @@ jobs:
           mkdir -p "$fixture_tools"
           busybox --install -s "$fixture_tools"
           PATH="$fixture_tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py
+          PATH="$fixture_tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/form_decode.py
