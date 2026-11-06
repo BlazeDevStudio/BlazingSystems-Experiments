@@ -38,3 +38,13 @@ jobs:
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_pending.js
       - name: Preserve literal device labels through the rendered Rename control
         run: node experiment/openwrt/Rental-Server-Standalone/tests/admin_labels.js
+      - name: Preserve complete UTF-8 label bytes through actual CGI writers
+        run: python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py
+      - name: Repeat raw CGI label contracts with disposable BusyBox applets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y busybox
+          fixture_tools="$RUNNER_TEMP/rental-busybox-tools"
+          mkdir -p "$fixture_tools"
+          busybox --install -s "$fixture_tools"
+          PATH="$fixture_tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py

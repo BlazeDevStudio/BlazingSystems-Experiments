@@ -106,8 +106,8 @@ fetch_or_copy(){
 fetch_or_copy root/www/cgi-bin/rental "$TMP/root/www/cgi-bin/rental"
 fetch_or_copy root/www/cgi-bin/rental-admin "$TMP/root/www/cgi-bin/rental-admin"
 fetch_or_copy root/www/rental/index.html "$TMP/root/www/rental/index.html"
-echo '5e338fa1bc20bb8ec287d1e25e9bac65ee6d23ea45eebc79a7a6410d9e4e227a  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
-echo 'c95ceee486634e61d972bff6f60ab32851d48df652a90440ff5c3a53044fe3a3  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
+echo '9b7ab5449b166183adab424fe76f99cb1fc2670678be58916642528cf923ec4c  root/www/cgi-bin/rental' > "$TMP/SHA256SUMS"
+echo 'f48d8c86873277128d3bc3b2f8bc9752c2e68371621d74ac63f3ce7a55347ebb  root/www/cgi-bin/rental-admin' >> "$TMP/SHA256SUMS"
 echo '64ec53a877845409efd03441de059f4a7e43d7a800c443b46593786c6e947d7b  root/www/rental/index.html' >> "$TMP/SHA256SUMS"
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
