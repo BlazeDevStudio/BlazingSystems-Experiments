@@ -43,7 +43,7 @@ randhex(){
   printf '%s' "$x"
 }
 url_decode(){
-  printf '%s' "$1" | awk '
+  printf '%s' "$1" | LC_ALL=C awk '
   function hx(c,p){c=toupper(c);p=index("0123456789ABCDEF",c);return p?p-1:-1}
   {s=$0;out="";for(i=1;i<=length(s);i++){c=substr(s,i,1);if(c=="%"&&i+2<=length(s)){a=hx(substr(s,i+1,1));b=hx(substr(s,i+2,1));if(a>=0&&b>=0){out=out sprintf("%c",a*16+b);i+=2;continue}}if(c=="+")c=" ";out=out c}printf "%s",out}'
 }
