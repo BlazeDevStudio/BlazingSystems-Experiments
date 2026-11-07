@@ -155,7 +155,7 @@ bp_mac_for_ip() {
 }
 
 bp_url_decode() {
-	printf '%s' "$1" | awk '
+	printf '%s' "$1" | LC_ALL=C awk '
 	function hx(c, p) { c=toupper(c); p=index("0123456789ABCDEF",c); return p ? p-1 : -1 }
 	{
 		s=$0; out=""
