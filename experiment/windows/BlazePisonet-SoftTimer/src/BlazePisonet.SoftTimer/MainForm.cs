@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace BlazePisonet.SoftTimer;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private readonly AppController _controller;
     private readonly Panel _content = new() { Dock = DockStyle.Fill, Padding = new Padding(22), AutoScroll = true };
