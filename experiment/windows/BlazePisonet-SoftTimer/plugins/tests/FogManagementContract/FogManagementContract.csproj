@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../BlazePisonet.DisklessManager/FogManagement.cs" Link="FogManagement.cs" />
+    <Compile Include="../../BlazePisonet.DisklessManager/TargetdInspection.cs" Link="TargetdInspection.cs" />
+    <Compile Include="../../BlazePisonet.DisklessManager/FogInventoryBinding.cs" Link="FogInventoryBinding.cs" />
+    <Compile Include="../../BlazePisonet.DisklessManager/DisklessBootProfile.cs" Link="DisklessBootProfile.cs" />
+    <Compile Include="../../BlazePisonet.DisklessManager/DisklessProfileRegistry.cs" Link="DisklessProfileRegistry.cs" />
+    <Compile Include="../../BlazePisonet.DisklessManager/LioSshStatus.cs" Link="LioSshStatus.cs" />
+  </ItemGroup>
+</Project>

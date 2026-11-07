@@ -148,3 +148,7 @@ See [docs/INTEGRATION.md](docs/INTEGRATION.md), [docs/ASAPP-BEHAVIOR-MAP.md](doc
 ## Validation boundary
 
 A successful GitHub Windows build validates compilation and packaging. Pisonet deployments still require physical testing of the exact USB-RS232 adapter, modem-control wiring, timer board, power-loss behavior, multi-monitor lock behavior, and actual coin pulses before unattended commercial use.
+
+## Diskless is now optional
+
+FOG, iSCSI, PXE and diskless client management belong to a separately compiled administrator **Diskless Manager** add-on. The core Windows coin-operated timer does not depend on it and opens it only when installed and selected from **Add-ons**. See [add-on documentation](plugins/BlazePisonet.DisklessManager/README.md). Do not merge the older embedded `pisonet-diskless-manager` branch into the main timer development line.

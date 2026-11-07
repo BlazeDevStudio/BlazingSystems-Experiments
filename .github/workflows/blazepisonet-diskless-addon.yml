@@ -1,0 +1,53 @@
+name: BlazePisonet Optional Diskless Add-on
+on:
+  pull_request:
+    paths:
+      - 'experiment/windows/BlazePisonet-SoftTimer/plugins/**'
+      - 'experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer/MainForm*'
+      - '.github/workflows/blazepisonet-diskless-addon.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-build-and-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Isolated FOG, iSCSI and storage safety contract
+        shell: pwsh
+        run: |
+          dotnet run --project experiment/windows/BlazePisonet-SoftTimer/plugins/tests/FogManagementContract/FogManagementContract.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Add-on builds independently
+        shell: pwsh
+        run: |
+          $p='experiment/windows/BlazePisonet-SoftTimer/plugins/BlazePisonet.DisklessManager/BlazePisonet.DisklessManager.csproj'
+          dotnet build $p -c Release -r win-x64 -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Add-on profile store is independent and corrupt input denied
+        shell: pwsh
+        run: |
+          $exe='experiment/windows/BlazePisonet-SoftTimer/plugins/BlazePisonet.DisklessManager/bin/Release/net8.0-windows/win-x64/BlazePisonet.DisklessManager.exe'
+          $p=Start-Process -FilePath (Resolve-Path $exe).Path -ArgumentList '--verify-profile-store' -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Profile store contract failed: $($p.ExitCode)" }
+      - name: Customer SoftTimer compiles without diskless dependency
+        shell: pwsh
+        run: |
+          $core='experiment/windows/BlazePisonet-SoftTimer/src/BlazePisonet.SoftTimer'
+          dotnet build "$core/BlazePisonet.SoftTimer.csproj" -c Release -r win-x64 -warnaserror
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $imports=Get-ChildItem $core -Filter '*.cs' | Select-String 'FogManagementClient|DisklessClientAssignment|TargetdInspectionClient|LioSshStatusClient'
+          if ($imports) { throw 'Core is still coupled to diskless management' }
+      - name: Build downloadable optional add-on preview
+        shell: pwsh
+        run: |
+          dotnet publish experiment/windows/BlazePisonet-SoftTimer/plugins/BlazePisonet.DisklessManager/BlazePisonet.DisklessManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o addon-preview
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePisonet-DisklessManager-optional-preview-win-x64
+          path: addon-preview/BlazePisonet.DisklessManager.exe
+          if-no-files-found: error

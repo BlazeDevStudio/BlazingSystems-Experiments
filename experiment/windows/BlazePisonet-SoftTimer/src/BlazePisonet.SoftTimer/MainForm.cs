@@ -134,7 +134,7 @@ public sealed class MainForm : Form
         var navPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(0, 8, 0, 0) };
         side.Controls.Add(navPanel);
         navPanel.BringToFront();
-        foreach (var name in new[] { "Dashboard", "Hardware", "Centralized", "BlazePwifi", "Members", "Schedules", "Security", "Appearance", "Diagnostics" })
+        foreach (var name in new[] { "Dashboard", "Hardware", "Centralized", "BlazePwifi", "Members", "Schedules", "Security", "Appearance", "Add-ons", "Diagnostics" })
         {
             var b = new Button { Text = name, Width = 185, Height = 42, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(2), FlatStyle = FlatStyle.Flat, BackColor = BlazeTheme.Panel2, ForeColor = BlazeTheme.Text };
             b.FlatAppearance.BorderSize = 0;
@@ -156,6 +156,7 @@ public sealed class MainForm : Form
         BuildSchedules();
         BuildSecurity();
         BuildAppearance();
+        BuildAddons();
         BuildDiagnostics();
     }
 
