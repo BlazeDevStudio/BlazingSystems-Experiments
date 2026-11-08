@@ -1,3 +1,11 @@
+<!-- PEVID-GUIDE-20261108:START -->
+> **Physical evidence guide / 2026-11-08 Asia/Manila** — The operator guide previously specified 64 hexadecimal characters for `candidate_git_sha`. The repository uses SHA-1 commit IDs, and the checker requires all 40 lowercase hexadecimal characters. The guide now matches that requirement. Package, state and capture digests still use SHA-256.
+>
+> [Merged Full validation](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42431285488/job/128580554373) checked out `acd6115e1895f5b55281ea474ae544b0666cbdca` and reported PEVID-0690 passing. The test accepts a 40-character ID and rejects 64-character, short, uppercase and invalid values. PEVID-0679 checked 150 mocked trials and three mocked soaks. The checker, tests, procedures and acceptance thresholds are unchanged. Actual physical acceptance and independent custody still require separate evidence.
+>
+> **Next action** — Record the terminal outcome of [Full run 42431285488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42431285488) from the complete job inventory. Five firmware image jobs were still running at the read-only audit. The standalone branch and R281 manual preview remain separate. The next source audit reproduced placeholder text being replaced inside a valid APK URL in `build-rental-qr-tool.py`. Capture a tracked regression before repairing that builder.
+<!-- PEVID-GUIDE-20261108:END -->
+
 <!-- FULL-FORM-20261107:START -->
 > **FULL-FORM-20261107 / 2026-11-08 Asia/Manila / INTEGRATED** — [PR 274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/274) merged into Full at `acd6115e1895f5b55281ea474ae544b0666cbdca`. Its complete tree `2ce38cd496f64b7b7826d502e019ec83b01d23f0` matches independently reviewed candidate `18b8cd7c2f951354292d65483b72c469f9ed5c69` and the tested PR merge checkout `f6980f0b07b155bed7c8c0cba49380ffadc6bfa9`. Source commit `464d2184a44dc5cb5a50b4b7dc30bf836a9cd296` sets `LC_ALL=C` only on the existing AWK invocation in `bp_url_decode`. The decoder instructions, authority rules, original build and device checklists, and Logo-V2 assets are preserved. Standalone remains separate at `1074c213e0d21ef44d63d7549a04b58d5d7391fc`.
 >

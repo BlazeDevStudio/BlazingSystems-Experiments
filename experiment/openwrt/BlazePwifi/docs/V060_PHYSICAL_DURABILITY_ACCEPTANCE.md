@@ -108,7 +108,7 @@ python3 tools/v060_physical_evidence_contract.py --root /tmp/blaze-v2-evidence-O
 
 The closed-format \`manifest.json\` uses schema
 \`blaze-v060-physical-evidence-structure/1\`, \`fixture_only: true\`,
-\`claim_origin: "operator-claimed-unverified"\`, a candidate 64-hex commit SHA,
+\`claim_origin: "operator-claimed-unverified"\`, a full 40-character lowercase hexadecimal Git SHA-1 commit ID (\`candidate_git_sha\`),
 150 claimed trials (each of three architectures × five physical fault
 checkpoints × trials 1–10), and one claimed ≥86,400-second/≥30-client soak
 for each architecture. Required trial observations include exact target
