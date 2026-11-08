@@ -63,7 +63,7 @@ function registerEndpoints({ ipcMain, dialog, win, store, workspaceCatalog, desk
   register('sim:dispose',id=>simulations.dispose(id));
   // Resource and peripheral analysis
   register('resources:analyze',(p,compilation,config)=>resources.analyzeResources(p,compilation,config));
-  register('pins:plan',p=>peripheralPlanner.plan(p));
+  register('pins:plan',p=>peripherals.plan(p));
   register('project:export',async p=>{const result=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory'],title:'Export Arduino-compatible sketch'});return result.canceled?{canceled:true}:store.export(p,result.filePaths[0]);});
   // Arduino CLI subprocesses
   register('cli:status',()=>arduino.run(cli,['version']));

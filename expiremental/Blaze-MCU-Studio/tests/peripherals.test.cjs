@@ -12,3 +12,14 @@ test('peripheral collision prevents generated source but never erases manual own
 test('active Blink GPIO D13 collides with SPI SCK, inactive editor does not',()=>{const p=createProject('BlinkSPI');p.peripherals=[spi('display',10)];assert.match(plan(p).errors.join(' '),/Pin 13 collision/);p.visualMode='flowchart';p.flowchart.steps=[];assert(plan(p).ok);});
 
 test('flowchart callNodes also reserves GPIO pins from invoked graph',()=>{const {step}=require('../core/flowchart.cjs');const p=createProject('Composed');p.visualMode='flowchart';p.flowchart.steps=[step('invoke','callNodes')];p.peripherals=[spi('module',10)];assert.match(plan(p).errors.join(' '),/Pin 13 collision/);});
+
+test('trusted desktop pin planning returns the same collision result as the core planner',()=>{
+ const {registerEndpoints}=require('../electron/ipc-routes.cjs');
+ const handlers=new Map(),win={webContents:{}};
+ registerEndpoints({ipcMain:{handle:(channel,handler)=>handlers.set(channel,handler)},win});
+ const p=createProject('IPC Pins');p.peripherals=[spi('card',10),spi('screen',10)];
+ const throughDesktop=handlers.get('pins:plan')({sender:win.webContents},p);
+ assert.deepEqual(throughDesktop,plan(p));
+ assert.equal(throughDesktop.ok,false);
+ assert.throws(()=>handlers.get('pins:plan')({sender:{}},p),/Untrusted IPC sender/);
+});
