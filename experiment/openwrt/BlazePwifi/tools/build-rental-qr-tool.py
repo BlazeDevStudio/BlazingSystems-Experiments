@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import pathlib
+import re
 from urllib.parse import urlsplit
 
 p = argparse.ArgumentParser()
@@ -48,8 +49,13 @@ if "__BLAZE_SYSTEMS_LOGO__" in html:
 # URL characters cannot terminate the enclosing script element.
 safe_url = json.dumps(a.apk_url, ensure_ascii=True)[1:-1]
 safe_url = safe_url.replace("<", r"\u003c").replace(">", r"\u003e").replace("&", r"\u0026")
-html = (html.replace("__QRCODE_JS__", qr)
-            .replace("__APK_URL__", safe_url)
-            .replace("__APK_CHECKSUM__", checksum))
+# Match template markers only, without interpreting marker text in inserted data.
+replacements = {
+    "__QRCODE_JS__": qr,
+    "__APK_URL__": safe_url,
+    "__APK_CHECKSUM__": checksum,
+}
+pattern = "|".join(map(re.escape, replacements))
+html = re.sub(pattern, lambda match: replacements[match.group()], html)
 pathlib.Path(a.out).write_text(html, encoding="utf-8")
 print(a.out)
