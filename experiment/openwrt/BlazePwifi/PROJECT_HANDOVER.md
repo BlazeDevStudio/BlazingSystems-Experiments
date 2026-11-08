@@ -1,3 +1,11 @@
+<!-- FULL-QR-URL-20261108:START -->
+> **FULL-QR-URL-20261108 / 2026-11-08 Asia/Manila / CANDIDATE** — Source `64bceee01d7622616bca8fdc36656544ba583022` makes the existing three required substitutions in one pass over the template. The optional logo replacement, required-marker preflight, HTTPS policy, URL escaping and APK checksum calculation remain intact. Inserted URL and QR JavaScript text are no longer scanned for template markers. The source and regression are confined to Full. The original templates, exact artwork, workflow and standalone files are unchanged.
+>
+> **Local evidence** — Test commit `a44d83030780287d5e4a82011016c0b5944b331a` with the original builder failed the marker-bearing URL and opaque QR JavaScript cases. The same test blob `294034f1b28bc173b307559b2a230834a438a152` passes all five methods on the candidate. The complete existing `tests/qr_setup.sh` also passed on Windows using bundled shell and Python, including five URL-policy methods, five artwork and substitution methods and existing shell checks. The first shell launch used a missing executable name, and a later run printed a missing `cygpath` warning. The clean retry used a private native cache path and the same unmodified suite. Logs are in `work/full-qr-url-proof`.
+>
+> **Next action** — Publish the synchronized branch and require independent committed review and the actual Full validate job and build matrix before merging. Preserve the earlier failure evidence. Rollback is an isolated builder/test revert. Device enrollment, physical acceptance, permanent signing and release still require their existing gates.
+<!-- FULL-QR-URL-20261108:END -->
+
 <!-- FULL-MERGED-CI-20261108:START -->
 > **Full merged-head CI / 2026-11-08 Asia/Manila** — [Run 42431285488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42431285488) completed successfully on `acd6115e1895f5b55281ea474ae544b0666cbdca`. The complete REST inventory records 27 successes and five conditional skips for signed APK import, signing handoff, release, prerelease and lab preview publication. All five previously running firmware builds finished successfully. Validation job `128580554373` and candidate gate `128588946430` succeeded. The earlier in-progress observations remain historical evidence.
 >
