@@ -69,6 +69,20 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ci_doc_only_filter.py
       - name: CI-0701 guard never bypasses Full for unverified source
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ci_docs_classifier.py
+      - name: Preserve Full form octets and authenticated CGI inputs across locales
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_form_decoder.py
+      - name: Verify Full form decoding with BusyBox applets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y busybox
+          busybox_path="$(command -v busybox)"
+          busybox --help | sed -n '1p'
+          fixture_tools="$RUNNER_TEMP/full-form-busybox"
+          mkdir "$fixture_tools"
+          for applet in sh awk tr sed; do
+            ln -s "$busybox_path" "$fixture_tools/$applet"
+          done
+          PATH="$fixture_tools:$PATH" python3 experiment/openwrt/BlazePwifi/tests/v060_form_decoder.py
       - name: Static validation
         run: sh experiment/openwrt/BlazePwifi/tests/static.sh
       - name: v0.3 foundation validation
