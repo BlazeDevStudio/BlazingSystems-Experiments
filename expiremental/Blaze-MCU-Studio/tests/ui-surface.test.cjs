@@ -7,12 +7,16 @@ test('workspace collection and multi-project tab controls are actually addressab
 
 test('desktop tab persistence is wired through secure IPC, restore path and UI handlers',()=>{
  const electron=fs.readFileSync(path.join(__dirname,'../electron/main.cjs'),'utf8');
+ const routes=fs.readFileSync(path.join(__dirname,'../electron/ipc-routes.cjs'),'utf8');
+ const smoke=fs.readFileSync(path.join(__dirname,'../electron/gui-smoke.cjs'),'utf8');
  const preload=fs.readFileSync(path.join(__dirname,'../electron/preload.cjs'),'utf8');
  const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
- for(const id of ["'session:load'","'session:save'"])assert(electron.includes(id),id);
+ assert(electron.includes("require('./ipc-routes.cjs')"));
+ assert(electron.includes('registerEndpoints({ ipcMain, dialog, win, store, workspaceCatalog, desktopSession, cli, simulations })'));
+ for(const id of ["'session:load'","'session:save'"])assert(routes.includes(id),id);
  for(const name of ["getSession:'session:load'","saveSession:'session:save'"])assert(preload.includes(name),name);
  assert(app.includes('async function restoreSession()'));
  assert(app.includes('await restoreSession();'));
  assert(app.includes('await persistSession();'));
- assert(electron.includes('sessionRestoreUI:true'));
+ assert(smoke.includes('sessionRestoreUI:true'));
 });
