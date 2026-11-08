@@ -1,3 +1,11 @@
+<!-- FULL-MERGED-CI-20261108:START -->
+> **Full merged-head CI / 2026-11-08 Asia/Manila** — [Run 42431285488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42431285488) completed successfully on `acd6115e1895f5b55281ea474ae544b0666cbdca`. The complete REST inventory records 27 successes and five conditional skips for signed APK import, signing handoff, release, prerelease and lab preview publication. All five previously running firmware builds finished successfully. Validation job `128580554373` and candidate gate `128588946430` succeeded. The earlier in-progress observations remain historical evidence.
+>
+> [PR 276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/276) merged the physical guide correction at `f1f9185956980e36101ccd48d42d81cb0fcc0374`. The complete tree `6af4d4d2cfa3bbfb8ad124fba0adcad1b7089a15` matches independently reviewed `eba7d1a451df083974dbe2f8b6a5889dd0002134`. The guide and three handovers were the only changes. Freshness and whitespace passed. GitHub returned zero workflow runs for that documentation-only head and merge.
+>
+> **Next source action** — In an exact-source disposable fixture, the offline rental QR builder returned success while replacing the literal `__APK_CHECKSUM__` inside an otherwise valid HTTPS APK URL. An ordinary query control preserved the URL. Capture the failing case in the existing QR test suite before making a bounded fix. Use synthetic APK bytes and keep branding, package identity, checksum, URL policy and separate Full and standalone histories intact. Physical acceptance, paid admission, P0 money safety, permanent signing, custody and recovery remain open.
+<!-- FULL-MERGED-CI-20261108:END -->
+
 <!-- PEVID-GUIDE-20261108:START -->
 > **Physical evidence guide / 2026-11-08 Asia/Manila** — The operator guide previously specified 64 hexadecimal characters for `candidate_git_sha`. The repository uses SHA-1 commit IDs, and the checker requires all 40 lowercase hexadecimal characters. The guide now matches that requirement. Package, state and capture digests still use SHA-256.
 >
