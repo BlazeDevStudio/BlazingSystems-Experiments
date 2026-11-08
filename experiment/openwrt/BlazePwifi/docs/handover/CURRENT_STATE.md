@@ -1,3 +1,7 @@
+<!-- FULL-QR-URL-20261108:START -->
+> **FULL-QR-URL-20261108 / 2026-11-08 Asia/Manila / IN PROGRESS** — The isolated Full branch `codex/full-qr-url-20261108` starts at `4e2758e74b0d7ef943ce205f77640f55ec32bb3d`. The offline Device Owner QR builder reprocesses a valid APK URL containing the checksum marker. Capture the mismatch in `tests/test_rental_qr_branding.py` using disposable synthetic APK bytes, then keep substitutions confined to the template in `tools/build-rental-qr-tool.py`. The URL must round-trip exactly while the generated checksum still matches the input bytes. Preserve the original template, Logo-V2, HTTPS policy and escaping, and retain all Full CI gates. The work can be reverted as an isolated builder and test change. Standalone and all device and production gates remain separate.
+<!-- FULL-QR-URL-20261108:END -->
+
 <!-- FULL-MERGED-CI-20261108:START -->
 > **Full merged-head CI / 2026-11-08 Asia/Manila** — [Run 42431285488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42431285488) completed successfully on `acd6115e1895f5b55281ea474ae544b0666cbdca`. The complete REST inventory records 27 successes and five conditional skips for signed APK import, signing handoff, release, prerelease and lab preview publication. All five previously running firmware builds finished successfully. Validation job `128580554373` and candidate gate `128588946430` succeeded. The earlier in-progress observations remain historical evidence.
 >
