@@ -126,15 +126,15 @@ esac
     # same authenticated config tuple; neither response authorizes admission.
     target_file = t / "state/targets" / (ID + ".tsv")
     original_window = target_file.read_text()
-    check(original_window.startswith("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\t"),
+    check(original_window.startswith("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\t"),
           "owner mutation baseline")
-    check(original_window.endswith("\\thotspot\\n"), "kind mutation baseline")
+    check(original_window.endswith("\thotspot\n"), "kind mutation baseline")
     for label, device, kind in (
         ("owner", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "hotspot"),
         ("kind", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "rental"),
     ):
         target_file.write_text(
-            f"{device}\\taa:bb:cc:dd:ee:ff\\t{TARGET}\\t{exp}\\t{ID}\\t{kind}\\n"
+            f"{device}\taa:bb:cc:dd:ee:ff\t{TARGET}\t{exp}\t{ID}\t{kind}\n"
         )
         changed = request("poll", na)
         valid(changed, "poll", na)

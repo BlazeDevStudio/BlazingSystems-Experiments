@@ -1,3 +1,7 @@
+## 2026-11-10 — PHX-CORE-N fixture literal correction
+
+- Corrected escaped tab/newline literals in the newly introduced real target-file mutation regression (test-only). The prior draft had double slashes in Python string literals and was not eligible for a PASS claim. Full source `c2a7515` CI is historical GREEN; this successor needs its own exact-head execution. No production change, admission remains DENY-only, full ledger history preserved.
+
 ## 2026-11-10 — PHX-CORE-N source-linked owner/window-kind v1 limitation regression
 
 - Live PR #252 verified OPEN/DRAFT at source `c2a7515f43aff7043b0c2274dcdc097f30d7efbb`; exact Full #41010040994 validate 123914037684 completed GREEN through accounting integration x3, replay x3 and bundle, no failed steps. Corrected test-only `v060_controller_response_auth_v1.py` case 8, which previously compared the identical signature to itself: it now mutates actual target row owner and window kind separately, calls real signed Vendo poll with the same pending request nonce, and asserts the unchanged v1 HMAC plus admission_allowed=false. This proves v1 cannot authorize either target dimension; no server response/v1 bytes, financial source, hardware, real keys or production admission modified. Canonical full ledger preserved; new exact-head test evidence required.
