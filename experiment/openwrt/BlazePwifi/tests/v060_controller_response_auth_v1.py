@@ -120,18 +120,33 @@ esac
     except AssertionError: pass
     else: raise AssertionError("replayed response accepted for new nonce")
     print("PHX-G-CFG-AUTH case 7 replay-to-new-nonce denied PASS")
-    # Negative contract demonstration: v1 does NOT authenticate owner or
-    # window kind. Preserve DENY; never interpret this signature as admission.
-    owner_a = {"device_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "window_kind": "hotspot"}
-    owner_b = {"device_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "window_kind": "rental"}
-    check(owner_a != owner_b, "mutation setup")
-    check(valid(active, "poll", na)["signature"] == valid(active, "poll", na)["signature"],
-          "stable v1 signed core")
+    # Negative contract: mutate the REAL backing target row and request a
+    # second REAL CGI response with the same pending request nonce. v1 HMAC
+    # omits owner and window kind, so both distinct target rows produce the
+    # same authenticated config tuple; neither response authorizes admission.
+    target_file = t / "state/targets" / (ID + ".tsv")
+    original_window = target_file.read_text()
+    check(original_window.startswith("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\t"),
+          "owner mutation baseline")
+    check(original_window.endswith("\\thotspot\\n"), "kind mutation baseline")
+    for label, device, kind in (
+        ("owner", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "hotspot"),
+        ("kind", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "rental"),
+    ):
+        target_file.write_text(
+            f"{device}\\taa:bb:cc:dd:ee:ff\\t{TARGET}\\t{exp}\\t{ID}\\t{kind}\\n"
+        )
+        changed = request("poll", na)
+        valid(changed, "poll", na)
+        check(changed["insert"] == active["insert"], label + " legacy insert changed")
+        check(changed["config_auth"] == active["config_auth"],
+              label + " unexpectedly covered by v1 HMAC")
+        check(changed["config_auth"]["admission_allowed"] is False,
+              label + " cannot authorize coin or relay")
+    target_file.write_text(original_window)
     check("device_id" not in active["config_auth"] and "window_kind" not in active["config_auth"],
-          "v1 unexpectedly claims owner/kind binding")
-    check(active["config_auth"]["admission_allowed"] is False,
-          "owner/kind mutation may never grant admission")
-    print("PHX-G-CFG-AUTH case 8 owner/window-kind mutation NOT authenticated by v1; DENY-only PASS")
+          "v1 unexpectedly advertises owner/kind binding")
+    print("PHX-G-CFG-AUTH case 8 real target owner/kind substitutions share v1 signature; DENY-only PASS")
     fake = t/"bin/openssl"
     fake.write_text("#!/bin/sh\nexit 74\n")
     fake.chmod(0o700)

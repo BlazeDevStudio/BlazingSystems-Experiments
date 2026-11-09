@@ -1,3 +1,7 @@
+## 2026-11-10 — PHX-CORE-N source-linked owner/window-kind v1 limitation regression
+
+- Live PR #252 verified OPEN/DRAFT at source `c2a7515f43aff7043b0c2274dcdc097f30d7efbb`; exact Full #41010040994 validate 123914037684 completed GREEN through accounting integration x3, replay x3 and bundle, no failed steps. Corrected test-only `v060_controller_response_auth_v1.py` case 8, which previously compared the identical signature to itself: it now mutates actual target row owner and window kind separately, calls real signed Vendo poll with the same pending request nonce, and asserts the unchanged v1 HMAC plus admission_allowed=false. This proves v1 cannot authorize either target dimension; no server response/v1 bytes, financial source, hardware, real keys or production admission modified. Canonical full ledger preserved; new exact-head test evidence required.
+
 ## 2026-10-30 — PHX-CORE-M integration fixture restore
 
 - Exact #40943181335 validate 123691824562 passed step37 PAY-0630 and 38–125, then failed step126 integration.sh immediately after controller targeting. Registered vendos default-disabled; original fixture expected positive signed coin without authorized synthetic enable. Added correctly signed unprovisioned coin rejection with account SHA, credit and receipt invariants, then explicit /tmp-only controller helper enable for both vendo-01/vendo-02 before original accounting checks. Source defaults, paired isolation, tmpfs loss, auth/EIO quarantine, DENY-only v1 unchanged. Exact-head test still requires execution.
