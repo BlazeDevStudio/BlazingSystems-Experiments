@@ -113,7 +113,9 @@ esac
 case "$action" in
   register|ping)
     controller="$(bp_controller_json "$id")"
-    body="$(printf '{"ok":true,"server_time":%s,"controller":%s}' "$now" "$controller")"
+    config_auth="$(bp_controller_lab_response_v1 "$action" "$id" "$nonce" "$controller" 0 "" 0)" ||
+      bp_fail "controller response authentication unavailable; admission denied"
+    body="$(printf '{"ok":true,"server_time":%s,"controller":%s,"config_auth":%s}' "$now" "$controller" "$config_auth")"
     bp_json "$body"
     ;;
   poll)
@@ -134,7 +136,11 @@ case "$action" in
     enabled="$(printf '%s' "$controller" | sed -n 's/.*"enabled":\([01]\).*/\1/p')"
     coin_enabled="$(printf '%s' "$controller" | sed -n 's/.*"coin_enabled":\([01]\).*/\1/p')"
     [ "$enabled" = 1 ] && [ "$coin_enabled" = 1 ] || insert=0
-    body="$(printf '{"ok":true,"insert":%s,"target_nonce":"%s","expires":%s,"controller":%s}' "$insert" "$(bp_json_escape "$target_nonce")" "${expires:-0}" "$controller")"
+    config_auth="$(bp_controller_lab_response_v1 poll "$id" "$nonce" "$controller" "$insert" "$target_nonce" "${expires:-0}")" ||
+      bp_fail "controller response authentication unavailable; admission denied"
+    # Keep the legacy response shape for source compatibility. New hardware
+    # MUST ignore legacy insert as authority and observe admission_allowed=false.
+    body="$(printf '{"ok":true,"insert":%s,"target_nonce":"%s","expires":%s,"controller":%s,"config_auth":%s}' "$insert" "$(bp_json_escape "$target_nonce")" "${expires:-0}" "$controller" "$config_auth")"
     bp_json "$body"
     ;;
   member_snapshot)

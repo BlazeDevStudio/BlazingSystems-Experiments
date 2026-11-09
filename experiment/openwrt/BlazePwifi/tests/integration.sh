@@ -148,6 +148,33 @@ echo "integration: controller targeting ok"
 EVENT=1122334455667788
 SIG="$(printf 'vendokey|coin|vendo-01|%s|1|%s|vendokey' "$EVENT" "$TARGET" | sha256sum | awk '{print $1}')"
 BODY="action=coin&id=vendo-01&nonce=$EVENT&pulses=1&target=$TARGET&sig=$SIG"
+# The real register replies above must remain default-disabled. Before
+# private lab provisioning, a correctly signed coin cannot credit any account.
+pre_account="$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)"
+pre_credit="$(awk -F '\t' -v d="$DEVICE" '$1==d {print $2; exit}' "$BP_STATE/accounts.tsv")"
+pre_receipts="$(awk -F '\t' -v d="$DEVICE" '$1==d {print $9; exit}' "$BP_STATE/accounts.tsv")"
+UNPROVISIONED="$(printf '%s' "$BODY" | sh "$VENDO")"
+printf '%s' "$UNPROVISIONED" | grep -Fq '"ok":false'
+printf '%s' "$UNPROVISIONED" | grep -Fq 'controller disabled or coin intake disabled'
+[ "$(sha256sum "$BP_STATE/accounts.tsv" | cut -d' ' -f1)" = "$pre_account" ]
+[ "$(awk -F '\t' -v d="$DEVICE" '$1==d {print $2; exit}' "$BP_STATE/accounts.tsv")" = "$pre_credit" ]
+[ "$(awk -F '\t' -v d="$DEVICE" '$1==d {print $9; exit}' "$BP_STATE/accounts.tsv")" = "$pre_receipts" ]
+# Source libraries under GET: POST sourcing consumes CGI stdin under set -e.
+REQUEST_METHOD=GET
+. "$BP_LIB"
+. "$BP_CONTROLLER_LIB"
+REQUEST_METHOD=POST
+bp_controller_ensure vendo-01
+bp_controller_ensure vendo-02
+if bp_controller_paid_allowed vendo-01 coin || bp_controller_paid_allowed vendo-02 coin; then
+  echo 'integration: default-disabled controller unexpectedly admitted coin' >&2; exit 2
+fi
+bp_controller_set vendo-01 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_set vendo-02 1 1 1 1 -1 -1 -1 1 1 1 40 400 6
+bp_controller_paid_allowed vendo-01 coin && bp_controller_paid_allowed vendo-02 coin || {
+  echo 'integration: fixture controller enable failed' >&2; exit 2
+}
+echo 'integration: default-denied coin no mutation; lab-only explicit controller enable ok'
 OUT="$(printf '%s' "$BODY" | sh "$VENDO")"
 echo "$OUT" | grep -q '"credited_cents":100'
 echo "$OUT" | grep -q '"duplicate":false'
