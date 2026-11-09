@@ -39,6 +39,79 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --check renderer/app.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build actual portable Windows EXE
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm install --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run dist:win
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exe=Get-ChildItem dist -Filter '*.exe'
+          if (-not $exe) { throw 'Windows EXE artifact missing' }
+          $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
+      - name: Packaged Windows GUI and IPC runtime smoke
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.studio_dir }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:BLAZE_MCU_SMOKE_FILE="$env:RUNNER_TEMP/blaze-mcu-gui-smoke.json"
+          $exe=(Get-ChildItem dist -Filter '*.exe' | Select-Object -First 1).FullName
+          if (-not $exe) { throw 'Portable GUI binary missing before smoke' }
+          $process=Start-Process -FilePath $exe -PassThru
+          $deadline=(Get-Date).AddSeconds(120)
+          while(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE) -and (Get-Date) -lt $deadline){ Start-Sleep -Seconds 2 }
+          if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
+          $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
+          Get-Content $env:BLAZE_MCU_SMOKE_FILE
+          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI -or -not $report.sessionRestoreUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
+      - name: Archive exact checked-out source
+        shell: pwsh
+        if: always()
+        run: |
+          $base='${{ steps.locate.outputs.studio_dir }}'
+          $items=@("$base/core","$base/renderer","$base/electron","$base/docs","$base/tests","$base/scripts","$base/examples","$base/package.json","$base/README.md",".github/workflows/blaze-mcu-studio-preview.yml")
+          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v047-source.zip" -Force
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blaze-mcu-v047-session-build-evidence
+          path: |
+            ${{ steps.locate.outputs.studio_dir }}/dist/*.exe
+            ${{ runner.temp }}/sha256.txt
+            ${{ runner.temp }}/blaze-mcu-gui-smoke.json
+            ${{ runner.temp }}/blaze-mcu-v047-source.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+
+  # Keep desktop packaging independent of third-party Arduino availability.
+  # Both jobs remain required for complete Windows + AVR acceptance.
+  avr-compile-windows:
+    name: Compile genuine Arduino AVR firmware (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Locate MCU Studio regardless of repository directory
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $candidates=@(git ls-files | Where-Object { $_ -match '(^|/)package\.json$' })
+          $found=@($candidates | Where-Object {
+            try { (Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json).name -eq 'blaze-mcu-studio' } catch { $false }
+          })
+          if ($found.Count -ne 1) { throw "Expected exactly one Blaze MCU Studio package; found $($found.Count). Check migration." }
+          $studioDir=(Split-Path $found[0] -Parent) -replace '\\','/'
+          if (-not $studioDir) { $studioDir='.' }
+          "studio_dir=$studioDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Source directory: $studioDir"
       - name: Download pinned Arduino CLI
         shell: pwsh
         working-directory: ${{ steps.locate.outputs.studio_dir }}
@@ -113,47 +186,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./BIN/arduino-cli.exe compile --fqbn arduino:avr:uno --warnings all "$env:RUNNER_TEMP/generated-sketches/GeneratedTypedDataWire" 2>&1 | Tee-Object "$env:RUNNER_TEMP/data-links-compile.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Build actual portable Windows EXE
-        shell: pwsh
-        working-directory: ${{ steps.locate.outputs.studio_dir }}
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: |
-          npm install --no-audit --no-fund
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          npm run dist:win
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $exe=Get-ChildItem dist -Filter '*.exe'
-          if (-not $exe) { throw 'Windows EXE artifact missing' }
-          $exe | ForEach-Object { Get-FileHash -Algorithm SHA256 $_.FullName | Format-List | Out-File "$env:RUNNER_TEMP/sha256.txt" -Append }
-      - name: Packaged Windows GUI and IPC runtime smoke
-        shell: pwsh
-        working-directory: ${{ steps.locate.outputs.studio_dir }}
-        run: |
-          $ErrorActionPreference='Stop'
-          $env:BLAZE_MCU_SMOKE_FILE="$env:RUNNER_TEMP/blaze-mcu-gui-smoke.json"
-          $exe=(Get-ChildItem dist -Filter '*.exe' | Select-Object -First 1).FullName
-          if (-not $exe) { throw 'Portable GUI binary missing before smoke' }
-          $process=Start-Process -FilePath $exe -PassThru
-          $deadline=(Get-Date).AddSeconds(120)
-          while(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE) -and (Get-Date) -lt $deadline){ Start-Sleep -Seconds 2 }
-          if(-not (Test-Path $env:BLAZE_MCU_SMOKE_FILE)) { throw "Packaged Windows GUI smoke timed out; launcher pid $($process.Id)" }
-          $report=Get-Content $env:BLAZE_MCU_SMOKE_FILE -Raw | ConvertFrom-Json
-          Get-Content $env:BLAZE_MCU_SMOKE_FILE
-          if(-not $report.passed -or -not $report.typedDataLinkGUI -or -not $report.typedDataDragGUI -or -not $report.workspaceTabUI -or -not $report.sessionRestoreUI) { throw "Packaged GUI typed-socket smoke failed: $($report.error) (linked=$($report.typedDataLinkGUI), drag=$($report.typedDataDragGUI))" }
-      - name: Archive exact checked-out source
-        shell: pwsh
-        if: always()
-        run: |
-          $base='${{ steps.locate.outputs.studio_dir }}'
-          $items=@("$base/core","$base/renderer","$base/electron","$base/docs","$base/tests","$base/scripts","$base/examples","$base/package.json","$base/README.md",".github/workflows/blaze-mcu-studio-preview.yml")
-          Compress-Archive -Path $items -DestinationPath "$env:RUNNER_TEMP/blaze-mcu-v047-source.zip" -Force
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: blaze-mcu-v047-session-build-evidence
+          name: blaze-mcu-v047-avr-compile-evidence
           path: |
-            ${{ steps.locate.outputs.studio_dir }}/dist/*.exe
             ${{ runner.temp }}/arduino-compile.log
             ${{ runner.temp }}/flowchart-compile.log
             ${{ runner.temp }}/wire-pwm-serial-compile.log
@@ -163,9 +200,6 @@ jobs:
             ${{ runner.temp }}/nano-compile.log
             ${{ runner.temp }}/arduino-reference-compile.log
             ${{ runner.temp }}/arduino-install.log
-            ${{ runner.temp }}/sha256.txt
-            ${{ runner.temp }}/blaze-mcu-gui-smoke.json
-            ${{ runner.temp }}/blaze-mcu-v047-source.zip
           if-no-files-found: warn
           retention-days: 14
 
