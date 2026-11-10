@@ -6,7 +6,8 @@ test('typed state UI has a complete input and inspector surface',()=>{const html
 test('workspace collection and multi-project tab controls are actually addressable',()=>{const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),app=fs.readFileSync(path.join(root,'app.js'),'utf8');for(const id of ['workspaceSelect','workspaceCreate','workspaceRename','workspaceDelete','workspaceAddCurrent','workspaceRemoveCurrent','workspaceSummary','openProjectTabs'])assert(html.includes(`id="${id}"`),id);for(const api of ['window.blaze.createWorkspace','window.blaze.addToWorkspace','window.blaze.removeFromWorkspace','window.blaze.deleteWorkspace'])assert(app.includes(api),api);});
 
 test('desktop tab persistence is wired through secure IPC, restore path and UI handlers',()=>{
- const ipc=fs.readFileSync(path.join(__dirname,'../electron/ipc-routes.cjs'),'utf8');\n const smoke=fs.readFileSync(path.join(__dirname,'../electron/gui-smoke.cjs'),'utf8');
+ const ipc=fs.readFileSync(path.join(__dirname,'../electron/ipc-routes.cjs'),'utf8');
+ const smoke=fs.readFileSync(path.join(__dirname,'../electron/gui-smoke.cjs'),'utf8');
  const preload=fs.readFileSync(path.join(__dirname,'../electron/preload.cjs'),'utf8');
  const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
  for(const id of ["'session:load'","'session:save'"])assert(ipc.includes(id),id);
