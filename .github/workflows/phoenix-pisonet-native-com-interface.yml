@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - phoenix/pisonet-native-com-interface-20261030
+      - qa/pisonet-setupapi-validation-20261111
 permissions:
   contents: read
 concurrency:
