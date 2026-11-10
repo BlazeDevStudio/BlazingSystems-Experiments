@@ -5,6 +5,13 @@ on:
       - '**/*MCU*Studio*/**'
       - '**/*mcu*studio*/**'
       - '.github/workflows/blaze-mcu-studio-preview.yml'
+  push:
+    branches:
+      - 'feat/blaze-mcu-studio-foundation-20261026'
+    paths:
+      - '**/*MCU*Studio*/**'
+      - '**/*mcu*studio*/**'
+      - '.github/workflows/blaze-mcu-studio-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
