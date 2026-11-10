@@ -35,3 +35,13 @@ test('custom generated comments never masquerade as source-map entries for delet
  const g=generateSketch(p);assert(g.sourceMap.find(x=>x.id==='wait1').code.includes('95UL'));
  assert(!g.sourceMap.some(x=>x.id==='nonexistent'));
 });
+
+test('user source may contain forged section markers without breaking generation or mapping',()=>{
+ const p=createProject('ForgedLabels');
+ p.source.userPrelude='// BEGIN USER SETUP\nvoid setup() {\n// BEGIN USER LOOP';
+ p.source.userSetup='// BEGIN USER SETUP\n// node:on';
+ p.source.userLoop='// BEGIN USER LOOP\n// node:on\nvoid loop() {';
+ const g=generateSketch(p);
+ assert.equal(g.sourceMap.filter(e=>e.id==='on').length,1);
+ assert(g.sourceMap.some(e=>e.kind==='node'&&e.id==='mode'));
+});
