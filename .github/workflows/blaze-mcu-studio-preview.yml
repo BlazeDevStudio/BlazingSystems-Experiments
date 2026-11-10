@@ -172,7 +172,7 @@ jobs:
             ${{ runner.temp }}/arduino-install.log
             ${{ runner.temp }}/sha256.txt
             ${{ runner.temp }}/blaze-mcu-gui-smoke.json
-            ${{ runner.temp }}/blaze-mcu-v047-source.zip
+            ${{ runner.temp }}/blaze-mcu-v048-source.zip
           if-no-files-found: warn
           retention-days: 14
 
