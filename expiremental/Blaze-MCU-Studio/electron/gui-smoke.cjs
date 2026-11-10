@@ -170,6 +170,32 @@ function installGuiSmoke(win, app) {
        ||!document.querySelector('#openProjectTabs [data-activate-project="'+other.id+'"]'))
        throw Error('Desktop session restore did not rehydrate real renderer tabs');
 
+
+      // Navigate from the real packaged code view to a generated node and back.
+      const sourceTour=await api.createProject('SourceTour','arduino:avr:uno');
+      await openProject(sourceTour.id);
+      document.querySelector('[data-tab="code"]').click();
+      for(let i=0;i<50&&!document.querySelector('#codeMapList [data-map-block="on"]');i++)await pause(100);
+      const generatedTour=await api.generate(sourceTour);
+      const onLine=generatedTour.sourceMap?.find(e=>e.kind==='node'&&e.id==='on')?.line;
+      if(!onLine)throw Error('Generated source map omitted the LED-on block');
+      const sourceButton=document.querySelector('#codeMapList [data-map-line="'+onLine+'"]');
+      if(!sourceButton)throw Error('Source navigator omitted the actual generated C++ line');
+      sourceButton.click();
+      const codeBox=document.getElementById('codeEditor');
+      if(!codeBox.value.slice(codeBox.selectionStart,codeBox.selectionEnd).includes('digitalWrite(13, HIGH)'))throw Error('Source navigator selected wrong C++ statement');
+      document.querySelector('#codeMapList [data-map-block="on"]').click();
+      if(document.getElementById('graphView').classList.contains('hidden')||!document.querySelector('#nodeLayer [data-node="on"].selected'))throw Error('Source navigator failed to select corresponding graph block');
+      const reverse=document.querySelector('#nodeInspector [data-view-source="on"]');
+      if(!reverse)throw Error('Selected block has no C++ source action');
+      reverse.click();
+      for(let i=0;i<50&&document.getElementById('codeView').classList.contains('hidden');i++)await pause(100);
+      if(document.getElementById('codeView').classList.contains('hidden'))throw Error('Visual block failed to open source editor');
+      for(let i=0;i<50&&!codeBox.value.slice(codeBox.selectionStart,codeBox.selectionEnd).includes('digitalWrite(13, HIGH)');i++)await pause(100);
+      if(!codeBox.value.slice(codeBox.selectionStart,codeBox.selectionEnd).includes('digitalWrite(13, HIGH)'))throw Error('Visual block did not navigate back to real generated source');
+      const forged=structuredClone(sourceTour);forged.source.userLoop='// node:on';
+      const forgedResult=await api.generate(forged);
+      if(forgedResult.sourceMap.filter(e=>e.id==='on').length!==1)throw Error('User-owned C++ forged generated block attribution');
       const created=await api.createProject('CISmoke','arduino:avr:uno');
       const reopened=await api.openProject(created.id);
       const generated=await api.generate(reopened);
@@ -179,7 +205,7 @@ function installGuiSmoke(win, app) {
       if(trace.outputs['13']!=='LOW'||trace.virtualTimeMs!==2000)throw Error('Simulator output mismatch');
       const resources=await api.resourceAnalyze(reopened,null,{intervalSeconds:10,bytesPerRecord:48,capacityBytes:1048576,retentionDays:7});
       if(resources.storage.recordsDay!==8640)throw Error('Resource advisor IPC mismatch');
-      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,workspaceTabUI:true,sessionRestoreUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,reviewedEspGpioUI:true,typedDataLinkGUI:true,typedDataDragGUI:true,simulation:true,resources:true};
+      return {passed:true,renderer:true,ipc:true,boardCatalog:true,newProjectUI:true,paletteDragDrop:true,inspectorEdit:true,persistence:true,generation:true,curatedWireGUI:true,workspaceTabUI:true,sessionRestoreUI:true,typedVariableUI:true,analogThresholdFirmware:true,analogSimulation:true,reviewedEspGpioUI:true,typedDataLinkGUI:true,typedDataDragGUI:true,sourceNavigatorUI:true,simulation:true,resources:true};
     })()`);
    }catch(e){report={passed:false,error:String(e?.stack||e)};}
    try{fs.writeFileSync(process.env.BLAZE_MCU_SMOKE_FILE,JSON.stringify(report,null,2));}catch(e){console.error('SMOKE REPORT WRITE FAILED',e);}

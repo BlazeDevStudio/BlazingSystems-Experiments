@@ -7,6 +7,7 @@ const wire=require('./curated-adapters.cjs');
 const variables=require('./variables.cjs');
 const board=require('./board.cjs');
 const dataLinks=require('./data-links.cjs');
+const {sourceAttribution}=require('./source-attribution.cjs');
 const NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,62}$/;
 const FQBN_RE = /^[\w.-]+:[\w.-]+:[\w.-]+(?::[\w.,=~-]+)?$/;
 function sketchName(text) {
@@ -138,12 +139,13 @@ function generateSketch(p) {
       case 'comment':targetLoop.push(`  // ${String(n.params.text||'').replace(/[\r\n]/g,' ').replace(/\*\//g,'')} // node:${n.id}`);break;}
     }return graph;
   }
-  let graphFunction='';
+  let graphFunction='',graphLoop=[];
   if(isFlow){const generated=flow.flowchartSource(p.flowchart||flow.sampleFlowchart());setup.push(...generated.setup);loop.push(...generated.loop);
-    if(generated.needsNodeCall){const extraSetup=[],extraLoop=[];const g=addGraph(extraSetup,extraLoop);if(!g.ok)return {source:null,diagnostics:g};setup.push(...extraSetup);graphFunction=`void blazeNodesTick() {\n${extraLoop.join('\n')}\n}\n\n`;}
+    if(generated.needsNodeCall){const extraSetup=[],extraLoop=[];const g=addGraph(extraSetup,extraLoop);if(!g.ok)return {source:null,diagnostics:g};setup.push(...extraSetup);graphLoop=extraLoop;graphFunction=`void blazeNodesTick() {\n${extraLoop.join('\n')}\n}\n\n`;}
   }else addGraph(setup,loop);
   if(needsWire)setup.unshift('  Wire.begin(); // curated core library');
   if(serialBaud!==null)setup.unshift(`  Serial.begin(${serialBaud});`);
-  return {source:`// Blaze MCU Studio v0.4.5 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${needsWire?'#include <Wire.h>\nuint8_t blazeLastWireStatus = 0;\n':''}${variables.declarations(p.variables||[])}\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`,diagnostics,dependencies:needsWire?['Wire']:[]};
+  const source=`// Blaze MCU Studio v0.4.5 - ${p.name.replace(/[\r\n]/g,' ')}\n// Generated visual regions are rebuilt; user regions are preserved.\n${needsWire?'#include <Wire.h>\nuint8_t blazeLastWireStatus = 0;\n':''}${variables.declarations(p.variables||[])}\n${p.source.userPrelude}\n\n${graphFunction}void setup() {\n${setup.join('\n')}\n// BEGIN USER SETUP\n${p.source.userSetup}\n// END USER SETUP\n}\n\nvoid loop() {\n${loop.join('\n')}\n// BEGIN USER LOOP\n${p.source.userLoop}\n// END USER LOOP\n}\n`;
+  return {source,sourceMap:sourceAttribution(source,p,{setup,loop,graphLoop}),diagnostics,dependencies:needsWire?['Wire']:[]};
 }
 module.exports={SCHEMA_VERSION, FQBN_RE, NAME_RE, createProject, verifyProject, analyzeGraph, generateSketch, pinDiagnostics, sketchName, PIN_PROFILES};

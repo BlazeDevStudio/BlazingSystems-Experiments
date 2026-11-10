@@ -27,3 +27,16 @@
 .projectTab.active{border-color:#58b7d9;background:#23475b;}
 .projectTab button{padding:5px 9px;font-size:12px;border:0;background:none;color:#e4ebf2;}
 .projectTab button.closeTab{font-weight:bold;padding:5px 8px;}
+
+/* Source-to-block navigator: reuses generated text, adds no embedded browser or editor bundle. */
+.codeMapToolbar{padding:8px 15px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-block:1px solid #314356;background:#152437;font-size:12px}
+.codeMapToolbar span{color:#bad1e3;font-size:11px}
+.codeMapList{display:flex;gap:6px;padding:8px 14px;overflow:auto;max-height:115px;min-height:37px;background:#0f1b2b;border-bottom:1px solid #314356;flex-wrap:wrap;align-content:start}
+.codeMapList .codeMapItem{display:flex;align-items:center;gap:3px;border:1px solid #48647c;border-radius:7px;background:#1d3445;max-width:100%}
+.codeMapList button{font-size:11px;padding:6px 9px;border:0;background:none;color:#c6e9ef}
+.codeMapList button:focus-visible,.codeMapList button:hover{outline:1px solid #79dcd5;background:#284359}
+.codeMapList .codeJump{color:#f4dfa9;border-left:1px solid #48647c}
+.codeMapList .codeMapEmpty{color:#93a9bb;font-size:11px;padding:5px}
+#codeView .codeEditor{height:clamp(170px,42vh,580px);min-height:170px}
+#nodeInspector [data-view-source]{margin-top:10px;background:#23495b;border-color:#5b98ae}
+.flowNode.sourceLocated{outline:2px solid #f0c97f;outline-offset:4px}

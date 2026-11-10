@@ -29,6 +29,10 @@ ESP8266 Generic/NodeMCU and classic ESP32 now have conservatively reviewed GPIO 
 - Acceptance requires compiling generated Wire/PWM/Serial firmware through actual AVR core, and Windows GUI click/edit/save tests. **A Linux Node test pass alone is not proof of that gate.**
 - See [curated adapter contract](docs/CURATED_LIBRARY_ADAPTERS.md).
 
+## v0.4.8 — source navigator (development)
+
+Generated Arduino statements now map to their graph/flowchart blocks in the C++ Source view without reverse-parsing manual C++. See [SOURCE_NAVIGATOR.md](docs/SOURCE_NAVIGATOR.md). ESP Labs Web was reviewed as an MIT-licensed educational design reference; no third-party code or artwork is embedded.
+
 # Blaze MCU Studio v0.4.2 — Interaction Repair (development branch)
 
 **This update repairs concrete failures demonstrated on Windows v0.4.0. It is not a complete universal visual MCU IDE or production release.**
