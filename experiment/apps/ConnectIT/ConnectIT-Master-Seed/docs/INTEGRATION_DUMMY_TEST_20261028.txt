@@ -1,0 +1,16 @@
+{
+  "dummy_reference_version": "0.3.2+15",
+  "dummy_reference_commit": "7d8a08afb39bab8d001fce3d3ba33706e034fcb1",
+  "two_distinct_authoritative_accounts": "PASS",
+  "Master_issued_device_credentials": "PASS",
+  "X25519_HKDF_AES256GCM_client_E2E": "PASS",
+  "recipient_authenticates_sender_signature": "PASS",
+  "two_seed_replication_with_one_hop": "PASS",
+  "recipient_ciphertext_tamper_detection": "PASS",
+  "Seed_refuses_file_payload_kind": "PASS",
+  "Master_offline_authenticated_delivery": "PASS",
+  "actual_Flutter_APK_or_Windows_binary_test": "NOT_RUN",
+  "trust_limitation": "manually provisioned pairwise dummy keys, not production authenticated directory"
+}
+
+Environment: Linux amd64 Go 1.23.2, Python cryptography 46.0.4; Flutter/Dart unavailable. No actual LAN native client was executed.

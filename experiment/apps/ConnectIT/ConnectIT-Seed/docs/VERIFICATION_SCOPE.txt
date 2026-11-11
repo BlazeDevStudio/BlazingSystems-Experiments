@@ -1,0 +1,9 @@
+VERIFIED on Linux x86-64 local environment, 2026-10-28:
+Go 1.23.2; Master CGO + libsqlite3; Seed CGO_DISABLED.
+Master Go tests: PASS; Seed Go tests: PASS; Go vet both: PASS.
+Master Linux amd64 binary built and run; Seed Linux amd64 built and run.
+Seed Windows amd64 cross-binary build completed, execution NOT verified on Windows.
+Flutter/Dart tests not executed (SDK unavailable).
+Linux arm64/armv7, macOS and Android terminal binaries NOT built; targets remain source portability candidates.
+Master Windows/macOS/Linux ARM builds NOT produced; require matching CGo SQLite toolchains and target runtime testing.
+See integration test log for narrow Master-offline and 201-message resource observation.

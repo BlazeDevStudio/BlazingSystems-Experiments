@@ -1,0 +1,9 @@
+# ConnectIT Satellite signed revocation synchronization — v0.1.2
+
+On `connectit-seed init`, add `--revocations-url https://your-master.example/v1/revocations` (or `http://127.0.0.1:7070/v1/revocations` for localhost-only testing). `seed.json` stores this pinned URL; it never stores any Master private key. On `start`, Seed verifies the Master Ed25519 signature, signed UTC times and expiry, ordered bounded SHA256 key fingerprints, and generation monotonicity. It persists the signed snapshot to `signed-revocations.json` with owner-only permissions, then refreshes every 60 seconds.
+
+For non-loopback listeners, a configured signed revocation endpoint is REQUIRED before startup. Legacy localhost test nodes may omit the URL, and log a warning; they MUST NOT be exposed to any untrusted network. A failed initial refresh can use a previously saved *valid* signed snapshot. If both fresh fetch and signed cache are invalid, the Seed refuses to start. An expired cached snapshot causes authenticated message APIs to reject all credentials, rather than re-enable revoked users.
+
+Revocation validation is applied to every signed device request (read and send) and to envelopes imported from peers. For imported historical revoked messages, the Seed skips the envelope and advances its peer cursor, preventing starvation of later valid traffic. This does not delete an already-delivered message from recipient devices or an already-stored server log.
+
+Limits: no push revocation, no transparent authority failover, host OS clock must be reliable, physical power-cut recovery and rollback-resistant secure storage not yet tested, and peer federation still uses a shared secret rather than independently Master-authorized node identities. No file/media relay payloads allowed. Do not claim production-ready.
