@@ -62,6 +62,20 @@ String esc(const String &s){
   return o;
 }
 
+String htmlEsc(const String &s){
+  String o;
+  for(size_t i=0;i<s.length();i++){
+    char c=s[i];
+    if(c=='&') o+="&amp;";
+    else if(c=='\'') o+="&#39;";
+    else if(c=='\"') o+="&quot;";
+    else if(c=='<') o+="&lt;";
+    else if(c=='>') o+="&gt;";
+    else o+=c;
+  }
+  return o;
+}
+
 uint32_t pendingChecksum(const PendingRecord &r){
   const uint8_t *p=(const uint8_t*)&r; uint32_t h=2166136261UL;
   for(size_t i=0;i<offsetof(PendingRecord,checksum);i++){ h^=p[i]; h*=16777619UL; }
@@ -110,6 +124,20 @@ void loadPending(){
 void clearPending(){
   pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
   if(fsReady){ LittleFS.remove("/pending.dat"); LittleFS.remove("/pending.new"); LittleFS.remove("/pending.bak"); }
+}
+
+void quarantinePending(const String &reason){
+  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
+  if(fsReady && pendingPulses>0){
+    File q=LittleFS.open("/quarantine.log","a");
+    if(q){
+      q.printf("TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
+               (unsigned long)millis(), (unsigned int)pendingPulses,
+               pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
+      q.flush(); q.close();
+    }
+  }
+  clearPending();
 }
 
 void loadConfig(){
@@ -183,8 +211,11 @@ void applyRemoteConfig(const String &r){
   configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
 }
 
+String lastSentNonce;
+
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
+  lastSentNonce=n;
   String base=cfg.key+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
   return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
 }
@@ -223,9 +254,9 @@ void setupPortal(){
   startSetupAp();
   web.on("/",[](){
     String h="<meta name=viewport content='width=device-width'><h2>BlazePwifi ESP32 Vendo</h2><form method=POST action=/save>"
-      "SSID <input name=s value='"+cfg.ssid+"'><br>WiFi credential <input name=p type=password><br>"
-      "Server <input name=server value='"+cfg.server+"'><br>Controller key <input name=k type=password><br>"
-      "ID <input name=id value='"+cfg.id+"'><br>Coin GPIO <input name=coin value='"+String(cfg.coinPin)+"'><br>"
+      "SSID <input name=s value='"+htmlEsc(cfg.ssid)+"'><br>WiFi credential <input name=p type=password><br>"
+      "Server <input name=server value='"+htmlEsc(cfg.server)+"'><br>Controller key <input name=k type=password><br>"
+      "ID <input name=id value='"+htmlEsc(cfg.id)+"'><br>Coin GPIO <input name=coin value='"+String(cfg.coinPin)+"'><br>"
       "LED GPIO <input name=led value='"+String(cfg.insertLedPin)+"'><br>Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br>"
       "Debounce ms <input name=db value='"+String(cfg.coinDebounceMs)+"'><br>Pulse group ms <input name=pg value='"+String(cfg.pulseGroupMs)+"'><br>"
       "Coin active low <input name=cl value='"+String(cfg.coinActiveLow?1:0)+"'><br>"
@@ -254,7 +285,21 @@ void connectSta(){
   WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str());
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250); }
-  if(WiFi.status()==WL_CONNECTED){ wifiFailures=0; String r=post("register"); applyRemoteConfig(r); }
+  if(WiFi.status()==WL_CONNECTED){
+    wifiFailures=0; String r=post("register");
+    bool sigOk=true;
+    if(cfg.key.length()){
+      String sig=jsonString(r,"response_sig");
+      if(sig.length()){
+        int st=jsonInt(r,"server_time",0);
+        String expected=hexDigest(cfg.key+"|register|"+cfg.id+"|"+lastSentNonce+"|"+String(st)+"|"+cfg.key);
+        sigOk=sig.equalsIgnoreCase(expected);
+      } else {
+        sigOk=false;
+      }
+    }
+    if(sigOk && r.indexOf("\"ok\":true")>=0) applyRemoteConfig(r);
+  }
 }
 
 void setup(){
@@ -275,7 +320,23 @@ void loop(){
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0; String r=post("poll"); insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
+    wifiFailures=0; String r=post("poll");
+    bool sigOk=true;
+    if(cfg.key.length()){
+      String sig=jsonString(r,"response_sig");
+      if(sig.length()){
+        int ins=jsonTrue(r,"insert")?1:0;
+        String tgt=jsonString(r,"target_nonce");
+        int exp=jsonInt(r,"expires",0);
+        String expected=hexDigest(cfg.key+"|poll|"+cfg.id+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+cfg.key);
+        sigOk=sig.equalsIgnoreCase(expected);
+      } else {
+        sigOk=false;
+      }
+    }
+    if(sigOk && r.indexOf("\"ok\":true")>=0){
+      insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
+    }
     applyOutputs(); lastPoll=millis();
   }
 
@@ -292,11 +353,13 @@ void loop(){
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
   if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
     String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce); lastSend=millis();
-    if(r.indexOf("\"ok\":true")>=0 ||
-       r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
-       r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
+    if(r.indexOf("\"ok\":true")>=0){
       clearPending(); applyOutputs();
+    } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
+              r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
+      quarantinePending(r); applyOutputs();
     }
+  }
   }
   if(setupApOn && !cfg.ssid.isEmpty() && WiFi.status()==WL_CONNECTED && millis()-configuredApSince>600000UL){ WiFi.softAPdisconnect(true); setupApOn=false; }
   delay(2);

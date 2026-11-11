@@ -64,7 +64,7 @@ String hexDigest(const String &s){
 }
 
 String freshNonce(){
-  char b[17]; uint32_t a=ESP.random(),c=micros();
+  char b[17]; uint32_t a=ESP.random(),c=ESP.random();
   sprintf(b,"%08lx%08lx",(unsigned long)a,(unsigned long)c); return String(b);
 }
 
@@ -133,6 +133,20 @@ String esc(const String &s){
     char c=s[i];
     if(isalnum(c)||c=='-'||c=='_'||c=='.') o+=c;
     else {char b[4];sprintf(b,"%%%02X",(unsigned char)c);o+=b;}
+  }
+  return o;
+}
+
+String htmlEsc(const String &s){
+  String o;
+  for(unsigned i=0;i<s.length();i++){
+    char c=s[i];
+    if(c=='&') o+="&amp;";
+    else if(c=='\'') o+="&#39;";
+    else if(c=='\"') o+="&quot;";
+    else if(c=='<') o+="&lt;";
+    else if(c=='>') o+="&gt;";
+    else o+=c;
   }
   return o;
 }
@@ -220,8 +234,11 @@ void applyRemoteConfig(const String&r){
   configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
 }
 
+String lastSentNonce;
+
 String signedBody(const String& action,const String& pulses,const String& target,const String& forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
+  lastSentNonce=n;
   String base=String(cfg.key)+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
   return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
 }
@@ -262,9 +279,9 @@ void setupPortal(){
   web.on("/",[](){
     String h="<meta name=viewport content='width=device-width'><h2>BlazePwifi Vendo</h2>"
       "<p>Setup AP is WPA2 protected. Save changes to reboot.</p>"
-      "<form method=POST action=/save>SSID <input name=s value='"+String(cfg.ssid)+"'><br>"
-      "Password <input name=p type=password><br>Server <input name=server value='"+String(cfg.server)+"'><br>"
-      "Vendo key <input name=k type=password><br>ID <input name=id value='"+String(cfg.id)+"'><br>"
+      "<form method=POST action=/save>SSID <input name=s value='"+htmlEsc(String(cfg.ssid))+"'><br>"
+      "Password <input name=p type=password><br>Server <input name=server value='"+htmlEsc(String(cfg.server))+"'><br>"
+      "Vendo key <input name=k type=password><br>ID <input name=id value='"+htmlEsc(String(cfg.id))+"'><br>"
       "Coin GPIO <input name=coin value='"+String(cfg.coinPin)+"'><br>"
       "LED GPIO <input name=led value='"+String(cfg.insertLedPin)+"'><br>"
       "Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br><button>Save & reboot</button></form>"
@@ -292,7 +309,21 @@ void connectSta(){
   WiFi.begin(cfg.ssid,cfg.pass);
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
-  if(WiFi.status()==WL_CONNECTED){wifiFailures=0;String r=post("register");applyRemoteConfig(r);}
+  if(WiFi.status()==WL_CONNECTED){
+    wifiFailures=0;String r=post("register");
+    bool sigOk=true;
+    if(strlen(cfg.key)){
+      String sig=jsonString(r,"response_sig");
+      if(sig.length()){
+        int st=jsonInt(r,"server_time",0);
+        String expected=hexDigest(String(cfg.key)+"|register|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(st)+"|"+String(cfg.key));
+        sigOk=sig.equalsIgnoreCase(expected);
+      } else {
+        sigOk=false;
+      }
+    }
+    if(sigOk && r.indexOf("\"ok\":true")>=0) applyRemoteConfig(r);
+  }
 }
 
 void clearPending(){
@@ -302,6 +333,22 @@ void clearPending(){
     LittleFS.remove("/pending.new");
     LittleFS.remove("/pending.bak");
   }
+}
+
+void quarantinePending(const String &reason){
+  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
+  if(fsReady && pendingPulses>0){
+    File q=LittleFS.open("/quarantine.log","a");
+    if(q){
+      char buf[160];
+      snprintf(buf,sizeof(buf),"TIME=%lu PULSES=%u NONCE=%s TARGET=%s\n",
+               (unsigned long)millis(), (unsigned int)pendingPulses,
+               pendingNonce.c_str(), pendingTarget.c_str());
+      q.write((const uint8_t*)buf,strlen(buf));
+      q.close();
+    }
+  }
+  clearPending();
 }
 
 void setup(){
@@ -319,7 +366,24 @@ void loop(){
   }
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;String r=post("poll");insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);applyOutputs();lastPoll=millis();
+    wifiFailures=0;String r=post("poll");
+    bool sigOk=true;
+    if(strlen(cfg.key)){
+      String sig=jsonString(r,"response_sig");
+      if(sig.length()){
+        int ins=jsonTrue(r,"insert")?1:0;
+        String tgt=jsonString(r,"target_nonce");
+        int exp=jsonInt(r,"expires",0);
+        String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+String(cfg.key));
+        sigOk=sig.equalsIgnoreCase(expected);
+      } else {
+        sigOk=false;
+      }
+    }
+    if(sigOk && r.indexOf("\"ok\":true")>=0){
+      insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);
+    }
+    applyOutputs();lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
@@ -355,7 +419,7 @@ void loop(){
       applyOutputs();
     } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
               r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      clearPending();
+      quarantinePending(r);
       applyOutputs();
     }
   }
