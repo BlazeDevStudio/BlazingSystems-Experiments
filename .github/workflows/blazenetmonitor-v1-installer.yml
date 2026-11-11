@@ -1,0 +1,84 @@
+name: BlazeNetMonitor Windows Installer
+on:
+  push:
+    branches: [feature/blazenetmonitor-v0.1.0]
+    paths: ['.github/workflows/blazenetmonitor-v1-installer.yml','expiremental/BlazeNetMonitor/installer/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  installer:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: expiremental/BlazeNetMonitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test
+        run: dotnet run --project tests/BlazeNetMonitor.Tests/BlazeNetMonitor.Tests.csproj -c Release
+      - name: Publish app
+        shell: pwsh
+        run: |
+          dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o dist/win-x64
+          if ($LASTEXITCODE -ne 0) { throw 'App publish failed' }
+      - name: Create support QR
+        shell: pwsh
+        run: |
+          $app = (Resolve-Path dist/win-x64/BlazeNetMonitor.exe).Path
+          $bmp = Join-Path (Get-Location).Path 'dist/support-qr.bmp'
+          $p = Start-Process $app -ArgumentList @('--export-installer-qr',('"' + $bmp + '"')) -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or !(Test-Path $bmp)) { throw 'QR export failed' }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+      - name: Compile Windows installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $compiler installer/BlazeNetMonitor.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compiler failed' }
+          if (!(Test-Path 'artifacts/BlazeNetMonitor-Setup-v1.0.0.exe')) { throw 'Installer missing' }
+      - name: Verify installation and uninstall
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = (Resolve-Path artifacts/BlazeNetMonitor-Setup-v1.0.0.exe).Path
+          $dest = Join-Path $env:RUNNER_TEMP 'BlazeNetMonitor-test-install'
+          $proc = Start-Process $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="' + $dest + '"')) -PassThru -Wait
+          if ($proc.ExitCode -ne 0) { throw "Installation failed: $($proc.ExitCode)" }
+          $app = Join-Path $dest 'BlazeNetMonitor.exe'
+          $unins = Join-Path $dest 'unins000.exe'
+          $startup = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Startup\BlazeNetMonitor.lnk'
+          if (!(Test-Path $app) -or !(Test-Path $unins) -or !(Test-Path $startup)) {
+            throw 'Installed application, uninstaller or Startup shortcut missing'
+          }
+          $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($startup)
+          if ($shortcut.TargetPath -ne $app -or $shortcut.Arguments -ne '--startup') {
+            throw 'Startup shortcut target or arguments incorrect'
+          }
+          $native = Start-Process $app -ArgumentList '--verify-qr-render' -PassThru -Wait
+          if ($native.ExitCode -ne 0) { throw 'Installed application failed native smoke check' }
+          Write-Host 'PASS installation, app, QR and shared startup shortcut'
+          $remove = Start-Process $unins -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
+          if ($remove.ExitCode -ne 0 -or (Test-Path $app) -or (Test-Path $startup)) {
+            throw 'Uninstall did not remove app and Startup shortcut'
+          }
+          Write-Host 'PASS uninstallation'
+      - name: Publish validated v1.0.0 installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view blazenetmonitor-v1.0.0 --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { throw 'Release tag already exists; refusing overwrite' }
+          gh release create blazenetmonitor-v1.0.0 artifacts/BlazeNetMonitor-Setup-v1.0.0.exe --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'BlazeNetMonitor v1.0.0 — Windows Installer' --latest --notes 'Windows x64 installer with the owner PayPal QR support page, Program Files installation, Start menu/desktop/Startup shortcuts, Thank You page, optional self-delete checkbox and Facebook link after successful Finish. Native app still shows its own support QR splash. Includes the .NET runtime. Silent install/uninstall, QR generation and startup shortcut checks passed CI. This installer is unsigned; Windows may display a SmartScreen warning. Interactive finish page and cleanup checkbox should be tested on a desktop.'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not publish v1.0.0 release' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeNetMonitor-Setup-v1.0.0
+          path: expiremental/BlazeNetMonitor/artifacts/BlazeNetMonitor-Setup-v1.0.0.exe

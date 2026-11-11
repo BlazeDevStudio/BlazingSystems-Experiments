@@ -1,0 +1,40 @@
+name: BlazeNetMonitor Windows EXE
+on:
+  push:
+    branches: ['feature/blazenetmonitor*', main]
+    paths: ['expiremental/BlazeNetMonitor/**', '.github/workflows/blazenetmonitor.yml']
+  pull_request:
+    paths: ['expiremental/BlazeNetMonitor/**', '.github/workflows/blazenetmonitor.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-and-publish:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, win-x86, win-arm64]
+    defaults:
+      run:
+        working-directory: expiremental/BlazeNetMonitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run core console assertions
+        run: dotnet run --project tests/BlazeNetMonitor.Tests/BlazeNetMonitor.Tests.csproj -c Release
+      - name: Publish standalone Windows EXE
+        run: dotnet publish src/BlazeNetMonitor/BlazeNetMonitor.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o dist/${{ matrix.rid }}
+      - name: Confirm executable and SHA-256
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'dist/${{ matrix.rid }}/BlazeNetMonitor.exe')) { throw 'BlazeNetMonitor.exe not found' }
+          Get-FileHash 'dist/${{ matrix.rid }}/BlazeNetMonitor.exe' -Algorithm SHA256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeNetMonitor-v0.1.0-${{ matrix.rid }}
+          path: expiremental/BlazeNetMonitor/dist/${{ matrix.rid }}/BlazeNetMonitor.exe
+          if-no-files-found: error
+          retention-days: 14

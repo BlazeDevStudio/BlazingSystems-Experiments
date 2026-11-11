@@ -1,0 +1,62 @@
+name: Prune archived BlazeNetMonitor preview binaries
+on:
+  push:
+    branches: [feature/blazenetmonitor-v0.1.0]
+    paths: ['.github/workflows/blazenetmonitor-prune-preview-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prune-after-drive-verification:
+    if: github.repository == 'BlazingSystems/BlazingSystems-Experiments'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Remove only archived 0.x download attachments
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Authorized archive audit before initiating this workflow:
+          # 24 preview split ZIPs and v1.0.0 full ZIP exist in the user's
+          # BlazeNetMonitor Google Drive folder. Each preview split ZIP
+          # has the exact GitHub Actions artifact byte count on readback.
+          repo="$GITHUB_REPOSITORY"
+          versions=(0.1.0 0.2.0 0.2.1 0.2.2 0.2.3 0.2.4 0.2.5 0.2.6 0.2.7 0.2.8 0.2.9 0.3.0)
+          removed=0
+          for version in "${versions[@]}"; do
+            tag="blazenetmonitor-v${version}-preview.1"
+            original="$(gh api "repos/$repo/releases/tags/$tag")"
+            rid="$(jq -r '.id' <<< "$original")"
+            if [ "$(jq -r '.draft' <<< "$original")" != false ] || [ "$(jq -r '.prerelease' <<< "$original")" != true ]; then
+              echo "Release state changed for $tag; refusing to prune"
+              exit 1
+            fi
+            oldBody="$(jq -r '.body // ""' <<< "$original")"
+            oldName="$(jq -r '.name' <<< "$original")"
+            count="$(jq '.assets | length' <<< "$original")"
+            if [ "$count" -gt 4 ]; then echo "Unexpected asset count for $tag"; exit 1; fi
+            while IFS=$'\t' read -r assetId filename; do
+              if [ -z "$assetId" ]; then continue; fi
+              if [[ ! "$filename" =~ ^BlazeNetMonitor-v[0-9.]+-win-(x64|x86|arm64|x64-lite)\.zip$ ]]; then
+                echo "Unexpected asset $filename; refusing to delete"
+                exit 1
+              fi
+              gh api -X DELETE "repos/$repo/releases/assets/$assetId" >/dev/null
+              echo "Removed archived attachment: $tag / $filename"
+              removed=$((removed+1))
+            done < <(jq -r '.assets[] | [.id,.name] | @tsv' <<< "$original")
+            latest="$(gh api "repos/$repo/releases/$rid")"
+            if [ "$(jq -r '.name' <<< "$latest")" != "$oldName" ] ||
+               [ "$(jq -r '.body // ""' <<< "$latest")" != "$oldBody" ] ||
+               [ "$(jq -r '.tag_name' <<< "$latest")" != "$tag" ] ||
+               [ "$(jq '.assets | length' <<< "$latest")" -ne 0 ]; then
+              echo "Release metadata check failed for $tag"
+              exit 1
+            fi
+            echo "PRESERVED $tag: release name, tag, description and history"
+          done
+          echo "Removed $removed preview attachments; did not modify v1.0.0 release."
+          if [ "$removed" -ne 41 ]; then
+            echo "Unexpected count; investigate (idempotent reruns may remove 0 files)."
+          fi
