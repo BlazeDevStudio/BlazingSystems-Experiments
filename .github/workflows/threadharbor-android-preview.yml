@@ -1,0 +1,99 @@
+name: ThreadHarbor Android Preview
+concurrency:
+  group: threadharbor-preview-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  push:
+    branches: [feature/threadharbor-v0.1.0-preview]
+    paths:
+      - 'expiremental/Blaze-ThreadHarbor-Utility/**'
+      - '.github/workflows/threadharbor-android-preview.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: expiremental/Blaze-ThreadHarbor-Utility
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install Android SDK platform
+        run: |
+          set -eu
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMGR="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMGR"
+          "$SDKMGR" --install 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Verify controlled DOM adapter and opt-in reader protocols (Node)
+        run: |
+          node tests/fixture.test.cjs
+          node tests/reader.test.cjs
+      - name: Compile debug APK and run unit tests
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+      - name: Check APK identity and SHA-256
+        run: |
+          set -eu
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee APK-SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Blaze-ThreadHarbor-0.1.0-preview-debug
+          path: |
+            expiremental/Blaze-ThreadHarbor-Utility/app/build/outputs/apk/debug/app-debug.apk
+            expiremental/Blaze-ThreadHarbor-Utility/APK-SHA256.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  emulator-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: Blaze-ThreadHarbor-0.1.0-preview-debug
+          path: preview
+      - name: Allow emulator KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install, launch and inspect Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          ram-size: 3072M
+          heap-size: 512M
+          disable-animations: true
+          script: bash expiremental/Blaze-ThreadHarbor-Utility/ci/emulator_smoke.sh
+      - name: Preserve emulator smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ThreadHarbor-Emulator-Smoke
+          path: |
+            threadharbor-smoke.png
+            threadharbor-native-reply.png
+            threadharbor-native-hierarchy.xml
+            threadharbor-launcher-anr.png
+            threadharbor-uiautomator-killed.png
+            threadharbor-logcat.txt
+          if-no-files-found: ignore

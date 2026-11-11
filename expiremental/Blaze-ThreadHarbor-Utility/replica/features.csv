@@ -1,0 +1,15 @@
+feature,area,priority,original,clone,notes
+Controlled document observer,semantic,must,skip,partial,App-owned fixture only
+Native message rendering,chat,must,skip,partial,Fixture messages only
+Native send with observed confirmation,chat,must,skip,partial,Fixture only no remote delivery
+Browser navigation,browser,must,skip,partial,WebView tabs no persistent tab manager
+Session storage,browser,must,skip,partial,WebView-managed data only
+Download queue,downloads,must,skip,partial,Android DownloadManager basic
+Custom save destination,downloads,must,skip,no,SAF Save As not implemented
+Resumable ETag validated transfer,downloads,must,skip,no,Not implemented
+File folder browse,files,should,skip,partial,Selected folder via SAF
+Gallery image viewer,gallery,should,skip,partial,Single image picker
+Inspection JSON export,inspection,should,skip,partial,Manual metadata offline
+Facebook native interpretation,site-adapter,could,skip,no,Permission and compatibility not established
+Meta calling integration,calls,could,skip,no,Unsupported no media access
+Recording and voicemail,calls,could,skip,no,Unsupported
