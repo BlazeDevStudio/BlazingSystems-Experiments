@@ -285,8 +285,25 @@ void setupPortal(){
       "Coin GPIO <input name=coin value='"+String(cfg.coinPin)+"'><br>"
       "LED GPIO <input name=led value='"+String(cfg.insertLedPin)+"'><br>"
       "Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br><button>Save & reboot</button></form>"
-      "<p>STA: "+WiFi.localIP().toString()+"</p>";
+      "<p>STA: "+WiFi.localIP().toString()+"</p>"
+      "<hr><p><a href='/quarantine'>View Quarantine Log</a></p>";
     web.send(200,"text/html",h);
+  });
+
+  web.on("/quarantine",[](){
+    if(!fsReady || !LittleFS.exists("/quarantine.log")){
+      web.send(200,"text/plain","No quarantine records found.\n");
+      return;
+    }
+    File f=LittleFS.open("/quarantine.log","r");
+    if(!f){ web.send(500,"text/plain","Failed to open quarantine log.\n"); return; }
+    String s=f.readString(); f.close();
+    web.send(200,"text/plain",s);
+  });
+
+  web.on("/quarantine/clear",HTTP_POST,[](){
+    if(fsReady && LittleFS.exists("/quarantine.log")) LittleFS.remove("/quarantine.log");
+    web.send(200,"text/plain","Quarantine log cleared.\n");
   });
 
   web.on("/save",HTTP_POST,[](){
@@ -340,10 +357,10 @@ void quarantinePending(const String &reason){
   if(fsReady && pendingPulses>0){
     File q=LittleFS.open("/quarantine.log","a");
     if(q){
-      char buf[160];
-      snprintf(buf,sizeof(buf),"TIME=%lu PULSES=%u NONCE=%s TARGET=%s\n",
+      char buf[220];
+      snprintf(buf,sizeof(buf),"TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
                (unsigned long)millis(), (unsigned int)pendingPulses,
-               pendingNonce.c_str(), pendingTarget.c_str());
+               pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
       q.write((const uint8_t*)buf,strlen(buf));
       q.close();
     }

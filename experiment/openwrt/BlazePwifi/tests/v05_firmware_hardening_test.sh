@@ -32,6 +32,25 @@ for f in "$E6" "$E32"; do
   # 3. Quarantined Swallowed Coins (HW-P0-2)
   grep -q 'quarantinePending' "$f" || { echo "Missing quarantinePending in $f" >&2; exit 1; }
   grep -q '/quarantine.log' "$f" || { echo "Missing quarantine.log path in $f" >&2; exit 1; }
+  grep -q '"/quarantine"' "$f" || { echo "Missing /quarantine route in $f" >&2; exit 1; }
+  grep -q '"/quarantine/clear"' "$f" || { echo "Missing /quarantine/clear route in $f" >&2; exit 1; }
+
+  # 4. Syntax & Brace Balancing Check
+  python3 - "$f" <<'PY'
+import sys
+content = open(sys.argv[1]).read()
+stack = []
+for i, line in enumerate(content.splitlines(), 1):
+    for c in line:
+        if c == '{':
+            stack.append(i)
+        elif c == '}':
+            if not stack:
+                sys.exit(f"Syntax error: Unmatched }} at line {i} in {sys.argv[1]}")
+            stack.pop()
+if stack:
+    sys.exit(f"Syntax error: Unclosed {{ from line(s) {stack} in {sys.argv[1]}")
+PY
 done
 
 # 4. ESP8266 Nonce Entropy Check (HW-P1-1): Ensure micros() is NOT in freshNonce

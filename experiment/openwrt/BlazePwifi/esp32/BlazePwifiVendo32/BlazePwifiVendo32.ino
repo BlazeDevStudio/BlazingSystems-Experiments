@@ -261,8 +261,23 @@ void setupPortal(){
       "Debounce ms <input name=db value='"+String(cfg.coinDebounceMs)+"'><br>Pulse group ms <input name=pg value='"+String(cfg.pulseGroupMs)+"'><br>"
       "Coin active low <input name=cl value='"+String(cfg.coinActiveLow?1:0)+"'><br>"
       "Relay active high <input name=rh value='"+String(cfg.relayActiveHigh?1:0)+"'><br>"
-      "LED active high <input name=lh value='"+String(cfg.ledActiveHigh?1:0)+"'><br><button>Save & reboot</button></form>";
+      "LED active high <input name=lh value='"+String(cfg.ledActiveHigh?1:0)+"'><br><button>Save & reboot</button></form>"
+      "<hr><p><a href='/quarantine'>View Quarantine Log</a></p>";
     web.send(200,"text/html",h);
+  });
+  web.on("/quarantine",[](){
+    if(!fsReady || !LittleFS.exists("/quarantine.log")){
+      web.send(200,"text/plain","No quarantine records found.\n");
+      return;
+    }
+    File f=LittleFS.open("/quarantine.log","r");
+    if(!f){ web.send(500,"text/plain","Failed to open quarantine log.\n"); return; }
+    String s=f.readString(); f.close();
+    web.send(200,"text/plain",s);
+  });
+  web.on("/quarantine/clear",HTTP_POST,[](){
+    if(fsReady && LittleFS.exists("/quarantine.log")) LittleFS.remove("/quarantine.log");
+    web.send(200,"text/plain","Quarantine log cleared.\n");
   });
   web.on("/save",HTTP_POST,[](){
     String newSsid=web.arg("s"), newPass=web.arg("p").length()?web.arg("p"):cfg.pass;
@@ -359,7 +374,6 @@ void loop(){
               r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
       quarantinePending(r); applyOutputs();
     }
-  }
   }
   if(setupApOn && !cfg.ssid.isEmpty() && WiFi.status()==WL_CONNECTED && millis()-configuredApSince>600000UL){ WiFi.softAPdisconnect(true); setupApOn=false; }
   delay(2);
