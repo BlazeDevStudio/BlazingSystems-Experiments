@@ -1,3 +1,11 @@
+<!-- STANDALONE-UNINSTALL-20261113:START -->
+> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / P0 data preservation / IN PROGRESS**
+>
+> On the separate standalone branch `codex/standalone-uninstall-20261113` from `1074c213e0d21ef44d63d7549a04b58d5d7391fc`, capture the uninstall command scope of `experiment/openwrt/Rental-Server-Standalone/install.sh` blob `770e65fc221bb201de1fd8bae2e67973d5036730`. Install owns the dashboard index, while the marked-index uninstall requests recursive removal of the dashboard directory. Unrelated files can share that directory.
+>
+> **NEXT EXACT ACTION** Add a tracked Ubuntu fixture that runs the extracted uninstall branch against a temporary root with deletion commands intercepted. Require a failing assertion on the recursive dashboard request before changing product source. Cover ownership markers, sibling preservation, empty-directory cleanup, directory and index symlinks, accepted document-root behavior and explicit purge. Use a source-only revert for rollback. R281 remains on its existing manual preview.
+<!-- STANDALONE-UNINSTALL-20261113:END -->
+
 <!-- STANDALONE-FORM-20261106:START -->
 > **STANDALONE-FORM-20261106 / 2026-11-06 Asia/Manila / P2 DEVELOPMENT INTEGRATED:** [PR271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/271) merged into separate standalone fix/rental-standalone-entropy atd872e3fee9992d4612d42d84a239607ccaa6e68b. Whole merge tree9d8fa9d4b86fc6b8c96d8736f2f8dff6be9c73b1 equals independently reviewed/tested7eadfbc5a9c59ae614438355c839d08f73322cbf. Source aa0e52054ce0ee8d4887aeb303d90dc0a06dca50 scopes LC_ALL=C only to the existing AWK command in each CGI url_decode pipeline, preserving every decoder instruction and ambient locale elsewhere. Matching hashes/pins are rental16c0aae6ecde67d7bba46628246dbeb96031364b21fe9d554dcbe412011550b7; adminf39407c36e4b5d5c0e576dc8dc018b5e3f712ae4c130807c5582b07670f11391. HTML/embedded owner PNG, auth/HMAC/token/expiry/lease/receipt order, installer write behavior, versions, README/TEST-REPORT/original acceptance checklists and exact Logo-V2 assets remain unchanged. No Full or peer history was merged into standalone. Prior269/270 and all earlier completed fixes remain intact.
 >
