@@ -2963,3 +2963,12 @@
 > The exact standalone installer at `1074c213e0d21ef44d63d7549a04b58d5d7391fc` requests recursive removal of the dashboard directory after recognizing its index. Install only backs up and copies the index and two CGIs. The tracked `tests/uninstall_scope.py` exercises the installer argument parser and uninstall branch under a private Linux root with intercepted deletion commands. The standalone workflow adds this check after all existing gates. The installer blob is still `770e65fc221bb201de1fd8bae2e67973d5036730`.
 >
 > **NEXT EXACT ACTION** Run the baseline in Ubuntu on a draft against the separate standalone branch. Inspect the command traces and unchanged fixture contents before changing installer source. R281 stays on the manual preview.
+
+
+> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / repair awaiting Ubuntu**
+>
+> Separate standalone draft [PR 284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/284) targets `fix/rental-standalone-entropy` at `1074c213e0d21ef44d63d7549a04b58d5d7391fc`. The baseline at `f795e5b77454749e5ef4a7bf04a8d4ba4489eedd` passed all prior gates and failed five of eight uninstall scope cases. The command trace recorded recursive removal of the dashboard directory. All eight temporary trees stayed intact. The new BusyBox uninstall invocation stopped after the default-shell failure. [Baseline Ubuntu job](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43300405283/job/131469733549)
+>
+> Installer repair `590af51028cb4d933c07e8ccde4d80fc936cb177` checks the dashboard directory and index for symlinks, removes only a recognized regular index and attempts nonrecursive empty-directory cleanup. The existing `/www` ancestor behavior, CGI removal, backups, install path and explicit purge are preserved. The regression blob remains `7ee3f32b3af6e8749cb61ff343305833292457c4`. A source revert is the rollback.
+>
+> **NEXT EXACT ACTION** Confirm the exact PR head passes every standalone gate and both uninstall lanes. Independently review the committed delta and actual Ubuntu evidence before merging into standalone. R281 stays on the manual preview at `301d5d3`. Physical acceptance and the existing production gates remain open.
