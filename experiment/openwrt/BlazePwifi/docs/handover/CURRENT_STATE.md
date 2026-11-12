@@ -1,9 +1,9 @@
 <!-- STANDALONE-UNINSTALL-20261113:START -->
-> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / P0 data preservation / IN PROGRESS**
+> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / baseline awaiting Ubuntu**
 >
-> On the separate standalone branch `codex/standalone-uninstall-20261113` from `1074c213e0d21ef44d63d7549a04b58d5d7391fc`, capture the uninstall command scope of `experiment/openwrt/Rental-Server-Standalone/install.sh` blob `770e65fc221bb201de1fd8bae2e67973d5036730`. Install owns the dashboard index, while the marked-index uninstall requests recursive removal of the dashboard directory. Unrelated files can share that directory.
+> The exact standalone installer at `1074c213e0d21ef44d63d7549a04b58d5d7391fc` requests recursive removal of the dashboard directory after recognizing its index. Install only backs up and copies the index and two CGIs. The tracked `tests/uninstall_scope.py` exercises the installer argument parser and uninstall branch under a private Linux root with intercepted deletion commands. The standalone workflow adds this check after all existing gates. The installer blob is still `770e65fc221bb201de1fd8bae2e67973d5036730`.
 >
-> **NEXT EXACT ACTION** Add a tracked Ubuntu fixture that runs the extracted uninstall branch against a temporary root with deletion commands intercepted. Require a failing assertion on the recursive dashboard request before changing product source. Cover ownership markers, sibling preservation, empty-directory cleanup, directory and index symlinks, accepted document-root behavior and explicit purge. Use a source-only revert for rollback. R281 remains on its existing manual preview.
+> **NEXT EXACT ACTION** Run the baseline in Ubuntu on a draft against the separate standalone branch. Inspect the command traces and unchanged fixture contents before changing installer source. R281 stays on the manual preview.
 <!-- STANDALONE-UNINSTALL-20261113:END -->
 
 <!-- STANDALONE-FORM-20261106:START -->

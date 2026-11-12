@@ -51,3 +51,7 @@ jobs:
           busybox --install -s "$fixture_tools"
           PATH="$fixture_tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/label_utf8.py
           PATH="$fixture_tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/form_decode.py
+      - name: Verify uninstall removes only owned dashboard files
+        run: |
+          python3 experiment/openwrt/Rental-Server-Standalone/tests/uninstall_scope.py
+          PATH="$RUNNER_TEMP/rental-busybox-tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/uninstall_scope.py
