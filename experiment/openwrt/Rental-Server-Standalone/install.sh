@@ -26,7 +26,11 @@ safe_remove(){
 if [ "$MODE" = uninstall ]; then
   safe_remove /www/cgi-bin/rental
   safe_remove /www/cgi-bin/rental-admin
-  if [ -f /www/rental/index.html ] && grep -q 'BlazeRental · R281 Test Hub' /www/rental/index.html 2>/dev/null; then rm -rf /www/rental; fi
+  if [ ! -L /www/rental ] && [ ! -L /www/rental/index.html ] &&
+     [ -f /www/rental/index.html ] && grep -q 'BlazeRental · R281 Test Hub' /www/rental/index.html 2>/dev/null; then
+    rm -f /www/rental/index.html
+    rmdir /www/rental 2>/dev/null || true
+  fi
   if [ "$PURGE" = 1 ]; then rm -rf /etc/blazepwifi-rental; else echo 'Rental state preserved at /etc/blazepwifi-rental.'; fi
   echo 'Uninstall complete. EasyMode/LuCI/OpenWrt configuration was not changed.'
   exit 0

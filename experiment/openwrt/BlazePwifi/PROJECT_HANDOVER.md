@@ -1,3 +1,13 @@
+<!-- STANDALONE-UNINSTALL-20261113:START -->
+> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / repair awaiting Ubuntu**
+>
+> Separate standalone draft [PR 284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/284) targets `fix/rental-standalone-entropy` at `1074c213e0d21ef44d63d7549a04b58d5d7391fc`. The baseline at `f795e5b77454749e5ef4a7bf04a8d4ba4489eedd` passed all prior gates and failed five of eight uninstall scope cases. The command trace recorded recursive removal of the dashboard directory. All eight temporary trees stayed intact. The new BusyBox uninstall invocation stopped after the default-shell failure. [Baseline Ubuntu job](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43300405283/job/131469733549)
+>
+> Installer repair `590af51028cb4d933c07e8ccde4d80fc936cb177` checks the dashboard directory and index for symlinks, removes only a recognized regular index and attempts nonrecursive empty-directory cleanup. The existing `/www` ancestor behavior, CGI removal, backups, install path and explicit purge are preserved. The regression blob remains `7ee3f32b3af6e8749cb61ff343305833292457c4`. A source revert is the rollback.
+>
+> **NEXT EXACT ACTION** Confirm the exact PR head passes every standalone gate and both uninstall lanes. Independently review the committed delta and actual Ubuntu evidence before merging into standalone. R281 stays on the manual preview at `301d5d3`. Physical acceptance and the existing production gates remain open.
+<!-- STANDALONE-UNINSTALL-20261113:END -->
+
 <!-- STANDALONE-FORM-20261106:START -->
 > **STANDALONE-FORM-20261106 / 2026-11-06 Asia/Manila / P2 DEVELOPMENT INTEGRATED:** [PR271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/271) merged into separate standalone fix/rental-standalone-entropy atd872e3fee9992d4612d42d84a239607ccaa6e68b. Whole merge tree9d8fa9d4b86fc6b8c96d8736f2f8dff6be9c73b1 equals independently reviewed/tested7eadfbc5a9c59ae614438355c839d08f73322cbf. Source aa0e52054ce0ee8d4887aeb303d90dc0a06dca50 scopes LC_ALL=C only to the existing AWK command in each CGI url_decode pipeline, preserving every decoder instruction and ambient locale elsewhere. Matching hashes/pins are rental16c0aae6ecde67d7bba46628246dbeb96031364b21fe9d554dcbe412011550b7; adminf39407c36e4b5d5c0e576dc8dc018b5e3f712ae4c130807c5582b07670f11391. HTML/embedded owner PNG, auth/HMAC/token/expiry/lease/receipt order, installer write behavior, versions, README/TEST-REPORT/original acceptance checklists and exact Logo-V2 assets remain unchanged. No Full or peer history was merged into standalone. Prior269/270 and all earlier completed fixes remain intact.
 >
