@@ -1,9 +1,11 @@
 <!-- STANDALONE-UNINSTALL-20261113:START -->
-> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / baseline awaiting Ubuntu**
+> **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / baseline reproduced**
 >
 > The exact standalone installer at `1074c213e0d21ef44d63d7549a04b58d5d7391fc` requests recursive removal of the dashboard directory after recognizing its index. Install only backs up and copies the index and two CGIs. The tracked `tests/uninstall_scope.py` exercises the installer argument parser and uninstall branch under a private Linux root with intercepted deletion commands. The standalone workflow adds this check after all existing gates. The installer blob is still `770e65fc221bb201de1fd8bae2e67973d5036730`.
 >
-> **NEXT EXACT ACTION** Run the baseline in Ubuntu on a draft against the separate standalone branch. Inspect the command traces and unchanged fixture contents before changing installer source. R281 stays on the manual preview.
+> [Ubuntu baseline](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43300405283/job/131469733549) checked out `f795e5b77454749e5ef4a7bf04a8d4ba4489eedd` on draft PR 284. All prior steps passed. The default Linux uninstall fixture failed five cases at the operation comparison and passed three controls. All five failures recorded recursive dashboard removal with the fixture contents intact. The new BusyBox uninstall invocation did not run after that failure.
+>
+> **NEXT EXACT ACTION** Keep the existing ownership marker and `/www` ancestor behavior. Skip symlinked dashboard directories and index files. Remove only a recognized regular index and attempt empty-directory cleanup with `rmdir`. Retain CGI cleanup and explicit state purge. Require the same test blob to pass both hosted shell lanes and review the exact candidate before merge. R281 stays on the manual preview.
 <!-- STANDALONE-UNINSTALL-20261113:END -->
 
 <!-- STANDALONE-FORM-20261106:START -->
