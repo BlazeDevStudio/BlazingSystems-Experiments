@@ -1,3 +1,9 @@
+<!-- STANDALONE-BACKUP-20261113:START -->
+> **STANDALONE-BACKUP-20261113 / 2026-11-13 Asia/Manila / baseline reproduced locally**
+>
+> The exact standalone backup block overwrote the first backup under a fixed timestamp and reached the payload replacement boundary after an injected backup copy failure. The first-install control passed. The extracted test used temporary files and the bundled Windows POSIX shell. Hosted Linux verification is next.
+<!-- STANDALONE-BACKUP-20261113:END -->
+
 <!-- STANDALONE-UNINSTALL-20261113:START -->
 > **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / development integrated**
 >

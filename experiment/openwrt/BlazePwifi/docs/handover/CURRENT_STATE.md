@@ -1,3 +1,13 @@
+<!-- STANDALONE-BACKUP-20261113:START -->
+> **STANDALONE-BACKUP-20261113 / 2026-11-13 Asia/Manila / P0 rollback preservation / IN PROGRESS**
+>
+> Separate standalone base `14c0037978f61b3d478ee62aa681cf02cd9793c8`, installer blob `d5634f392a0d575888c051df16ace3631024e90a`. The backup block can reuse a directory when two runs share a timestamp. It also ignores reported backup copy failures. The installer and its uninstall fixture are the only tracked references to the backup root.
+>
+> The extracted local test reproduced both failures. The original backup bytes were replaced, and the injected failure reached the payload replacement boundary. The first-install control passed. Product source is still the standalone base.
+>
+> **NEXT EXACT ACTION** Run the tracked baseline on Ubuntu before integrating a repair. Preserve the archive root, flat filenames and existing rollback archives. R281 stays on its manual preview.
+<!-- STANDALONE-BACKUP-20261113:END -->
+
 <!-- STANDALONE-UNINSTALL-20261113:START -->
 > **STANDALONE-UNINSTALL-20261113 / 2026-11-13 Asia/Manila / development integrated**
 >

@@ -55,3 +55,7 @@ jobs:
         run: |
           python3 experiment/openwrt/Rental-Server-Standalone/tests/uninstall_scope.py
           PATH="$RUNNER_TEMP/rental-busybox-tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/uninstall_scope.py
+      - name: Preserve separate rollback backups and stop on copy failure
+        run: |
+          python3 experiment/openwrt/Rental-Server-Standalone/tests/installer_backup.py
+          PATH="$RUNNER_TEMP/rental-busybox-tools:$PATH" python3 experiment/openwrt/Rental-Server-Standalone/tests/installer_backup.py
