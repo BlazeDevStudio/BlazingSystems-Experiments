@@ -128,6 +128,18 @@ public final class BlazeRentalUpdateManager {
     }
 
     /**
+     * A commit() invocation can have an uncertain result until Android
+     * delivers its status callback. Keep this token's pending state in
+     * place, and never overwrite a later installation's diagnostics.
+     */
+    public static synchronized boolean recordPendingInstallError(
+            Context c, String token, String message) {
+        if (!isPendingInstallToken(c, token)) return false;
+        prefs(c).edit().putString("last_error", safe(message)).apply();
+        return true;
+    }
+
+    /**
      * PackageInstaller reported a terminal failure. Clear only the pending
      * installation state, retaining prior APK metadata and the error for
      * operator diagnosis. Never call for valid pending user confirmation.
