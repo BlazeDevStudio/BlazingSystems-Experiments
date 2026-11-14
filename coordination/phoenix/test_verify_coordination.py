@@ -45,6 +45,30 @@ class CoordinationContractTests(unittest.TestCase):
         modified["routes"][1]["role"] = "PHX-UNKNOWN"
         self.assertTrue(any("unknown role" in s for s in validate_routes(modified, REPO_ROOT)))
 
+    def test_destination_parent_requires_manual_mapping(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][4]["kind"] = "selective-review"
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("Unreviewed destination claims overlap" in e for e in errors))
+
+    def test_overlapping_parent_must_deny_recursive_copy(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][4]["copy_permitted"] = True
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("Unreviewed destination claims overlap" in e for e in errors))
+
+    def test_cross_role_destination_overlap_is_rejected(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][3]["role"] = "PHX-CORE"
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("Cross-role destination claims overlap" in e for e in errors))
+
+    def test_duplicate_destination_is_rejected(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][4]["target"] = "Rental/android/"
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("Duplicate destination claim" in e for e in errors))
+
     def test_example_protocol_passes(self):
         self.assertEqual(validate_envelope(self.example), [])
 
