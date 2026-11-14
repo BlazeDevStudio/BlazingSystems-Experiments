@@ -301,6 +301,11 @@ String post(const String &action,const String &pulses="0",const String &target="
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
+// Never send a RAM-only pulse if its flash journal failed or is ambiguous.
+bool canAttemptCoinPost(){
+  return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
+}
+
 void applyOutputs(){
   bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !journalRecoveryRequired && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -435,7 +440,7 @@ void loop(){
   }
   lastCoin=active;
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
-  if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
+  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
     String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce); lastSend=millis();
     if(r.indexOf("\"ok\":true")>=0){
       clearPending(); applyOutputs();
