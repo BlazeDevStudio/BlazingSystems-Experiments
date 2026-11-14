@@ -85,6 +85,43 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
                     f"and {previous!r} ({previous_role})"
                 )
         paths.append((source, str(role)))
+    # Destination overlap is not necessarily an ownership collision, but is
+    # dangerous for automated recursive migrations. Block unless the broader
+    # path explicitly requires a manual per-file mapping and prohibits copying.
+    claims = [
+        route for route in routes
+        if isinstance(route, dict) and safe_repo_path(route.get("target"))
+    ]
+    for index, a in enumerate(claims):
+        a_path = a["target"].rstrip("/").casefold()
+        for b in claims[:index]:
+            b_path = b["target"].rstrip("/").casefold()
+            if a_path == b_path:
+                errors.append(f"Duplicate destination claim: {a['target']}")
+                continue
+            if a_path.startswith(b_path + "/"):
+                parent, child = b, a
+            elif b_path.startswith(a_path + "/"):
+                parent, child = a, b
+            else:
+                continue
+            if parent.get("role") != child.get("role"):
+                errors.append(
+                    f"Cross-role destination claims overlap: "
+                    f"{parent['target']} / {child['target']}"
+                )
+                continue
+            if (
+                parent.get("kind") != "manual-file-mapping-required"
+                or parent.get("copy_permitted") is not False
+                or not isinstance(parent.get("review_reason"), str)
+                or not parent["review_reason"].strip()
+            ):
+                errors.append(
+                    f"Unreviewed destination claims overlap: "
+                    f"{parent['target']} / {child['target']}; "
+                    "broader path must prohibit copy and require a manual file map"
+                )
     missing = ROLES - seen_roles
     if missing:
         errors.append("Roles missing from ownership routes: " + ", ".join(sorted(missing)))
