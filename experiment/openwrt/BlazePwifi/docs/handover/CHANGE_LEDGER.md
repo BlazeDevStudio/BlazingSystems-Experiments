@@ -3364,3 +3364,5 @@ Android LeaseClient now permits a same-revision valid signed wildcard allowed_pa
 - **NEXT EXACT ACTION:** inspect latest PR #289 SHA and exact-head GitHub Actions compile; run `BlazeRentalUpdateFailureTest` as isolated Android API27 instrumentation, assert 3/3 with report XML, independently review terminal/nonterminal behavior before merge.
 - **Resume:** `@GitHub PHX-RENTAL resume BlazeDevStudio/BlazingSystems-Experiments PR #289, read three canonical handovers; inspect new Android PackageInstaller failure-state fix, run isolated API27 test class, update evidence, keep production NO-GO. No Codex.`
 
+
+- **Human debugging guide synchronized:** `experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_DEBUGGING.md` commit `7273929208e737689a3310716b0d9ff082ff3000` documents terminal result and pending user-approval distinction, including explicit API27 test entrypoint. No new test run is implied by this documentation commit.
