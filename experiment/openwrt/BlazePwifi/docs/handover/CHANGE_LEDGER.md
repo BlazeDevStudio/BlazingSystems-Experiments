@@ -3366,3 +3366,16 @@ Android LeaseClient now permits a same-revision valid signed wildcard allowed_pa
 
 
 - **Human debugging guide synchronized:** `experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_DEBUGGING.md` commit `7273929208e737689a3310716b0d9ff082ff3000` documents terminal result and pending user-approval distinction, including explicit API27 test entrypoint. No new test run is implied by this documentation commit.
+
+
+## 2026-11-15 — PHX-RENTAL-P1 installer result token correlation (committed, NOT TESTED)
+
+- **Time:** 2026-11-14T20:07:10.010Z. **Branch:** `phoenix/rental-revision-guard-cleanup-20261115` [draft PR #289](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/289). **Owner:** PHX-RENTAL. **Priority:** P1, no production operations.
+- **Correctness discovery:** A bare terminal-error handler could clear pending state of a *newer* install if an older installer session reports failure late. This is an asynchronous PackageInstaller callback race and prevents claiming the earlier three-case fix as complete.
+- **Scoped code:** `BlazeRentalUpdateManager.java` commit `16ff6a07919372d806d8bb9149e2a3d9c0977cc8` generates random pending attempt tokens, synchronizes pending write/removal and checks token before clearing pending metadata; `BlazeRentalPackageUpdater.java` commit `2712c5388657717adfd1846c55fbce4099a3f317` embeds token in a unique-action explicit result sender; `BlazeRentalUpdateReceiver.java` commit `e78ef72f473f961b8f0877b2890187f784b20aff` ignores stale or unbound callbacks. Test commit `d956c22b01a3eff4bff57a3ae47822b196b053c6` covers four scenarios (terminal failure, real confirmation pending, confirmation missing, stale failure vs newer attempt). Debugging guide commit `446ad990025bbdad8ff919bccdd73deb4c64ddfe` records state/diagnostics.
+- **Validation:** Existing [full #43632904809](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632904809) and [focused native #43632904791](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632904791) succeeded on **older** source `f455e46e`, not this candidate. Four new Android API27 instrumented tests are **NOT EXECUTED**. New exact-head build must be checked; no hardware, Device Owner, signer, commercial, or money claim.
+- **Compatibility:** Older in-flight install callbacks lack a token and now fail closed instead of mutating current pending state. Recovery of any such preexisting pending install and synchronous `commitInstall` exceptions must be separately reviewed, not silently claimed handled.
+- **Rollback:** Revert only the new update manager/updater/receiver/test/guide edits; retain parent cleanup and historical handovers. No production deployment.
+- **NEXT EXACT ACTION:** review latest source-exact PR #289 workflow build and Native Android 27 results; run `BlazeRentalUpdateFailureTest` via `connectedAospDebugAndroidTest` in isolated API27, require 4/4 XML assertions, then PHX-QA independent review. Keep all global P0 #31/#32/#43/#34 and release gates NO-GO.
+- **Resume:** `PHX-RENTAL audit current PR #289 and exact SHA, read three handovers and test new installer callback-token behavior; ensure four native tests run and independently reviewed before merge. No Codex, signer, payment or customer device action.`
+
