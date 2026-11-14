@@ -19,9 +19,38 @@ import java.security.MessageDigest;
 public final class BlazeRentalPackageUpdater {
     public static final String ACTION_INSTALL_RESULT =
             "com.blazesystems.blazerental.ACTION_INSTALL_RESULT";
+    static final String EXTRA_INSTALL_TOKEN =
+            "com.blazesystems.blazerental.EXTRA_INSTALL_TOKEN";
     private static final long MAX_APK_BYTES = 128L * 1024L * 1024L;
 
     private BlazeRentalPackageUpdater() {}
+
+    /**
+     * commit() can have been dispatched even when its synchronous call
+     * throws. The final status callback, not a guessed return state, owns
+     * the pending-to-terminal transition once dispatch was attempted.
+     */
+    private static final class InstallSubmissionException extends Exception {
+        final boolean commitAttempted;
+
+        InstallSubmissionException(Exception cause, boolean commitAttempted) {
+            super(cause);
+            this.commitAttempted = commitAttempted;
+        }
+    }
+
+    static void recordSynchronousSubmissionFailure(Context c, String token,
+                                                    boolean commitAttempted,
+                                                    String message) {
+        if (token == null || token.length() == 0) {
+            BlazeRentalUpdateManager.recordInstallFailure(c, message);
+        } else if (commitAttempted) {
+            BlazeRentalUpdateManager.recordPendingInstallError(c, token,
+                    "Install outcome not confirmed; awaiting Android callback. " + message);
+        } else {
+            BlazeRentalUpdateManager.recordTerminalInstallFailure(c, token, message);
+        }
+    }
 
     public static String installAvailable(Context c) {
         return downloadAndInstall(c, BlazeRentalUpdateManager.availableUrl(c),
@@ -40,6 +69,7 @@ public final class BlazeRentalPackageUpdater {
     public static String downloadAndInstall(Context context, String url, String expectedSha,
                                             String targetVersion, int targetCode,
                                             boolean rescue) {
+        String pendingToken = null;
         try {
             if (url == null || !url.startsWith("https://")) return "HTTPS update URL required";
             if (expectedSha == null || !expectedSha.matches("(?i)^[0-9a-f]{64}$")) {
@@ -67,17 +97,15 @@ public final class BlazeRentalPackageUpdater {
             }
 
             String previous = backupCurrentApk(context, dir);
-            BlazeRentalUpdateManager.markInstallPending(context, targetVersion, targetCode,
-                    previous, rescue);
-            String install = commitInstall(context, apk);
-            if (install != null) {
-                BlazeRentalUpdateManager.recordInstallFailure(context, install);
-                return install;
-            }
+            pendingToken = BlazeRentalUpdateManager.markInstallPending(
+                    context, targetVersion, targetCode, previous, rescue);
+            commitInstall(context, apk, pendingToken);
             return "Update staged with Android PackageInstaller";
         } catch (Exception e) {
             String m = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            BlazeRentalUpdateManager.recordInstallFailure(context, m);
+            boolean commitAttempted = e instanceof InstallSubmissionException
+                    && ((InstallSubmissionException) e).commitAttempted;
+            recordSynchronousSubmissionFailure(context, pendingToken, commitAttempted, m);
             return "Update failed: " + m;
         }
     }
@@ -144,26 +172,51 @@ public final class BlazeRentalPackageUpdater {
         } catch (Exception ignored) { return ""; }
     }
 
-    private static String commitInstall(Context c, File apk) throws Exception {
+    private static void commitInstall(Context c, File apk, String token) throws Exception {
         PackageInstaller installer = c.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params =
                 new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
         params.setAppPackageName(c.getPackageName());
-        int id = installer.createSession(params);
-        PackageInstaller.Session session = installer.openSession(id);
-        InputStream in = new FileInputStream(apk);
-        OutputStream out = session.openWrite("base.apk", 0, apk.length());
-        byte[] buffer = new byte[8192]; int n;
-        while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
-        session.fsync(out);
-        out.close(); in.close();
-        Intent result = new Intent(c, BlazeRentalUpdateReceiver.class);
-        result.setAction(ACTION_INSTALL_RESULT);
-        PendingIntent pending = PendingIntent.getBroadcast(c, id, result,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        session.commit(pending.getIntentSender());
-        session.close();
-        return null;
+        int sessionId = -1;
+        PackageInstaller.Session session = null;
+        boolean commitAttempted = false;
+        try {
+            sessionId = installer.createSession(params);
+            session = installer.openSession(sessionId);
+            // Streams must be closed before commit(); a failed stream copy
+            // abandons the staged session instead of leaking a live session.
+            try (InputStream in = new FileInputStream(apk);
+                 OutputStream out = session.openWrite("base.apk", 0, apk.length())) {
+                byte[] buffer = new byte[8192]; int n;
+                while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
+                session.fsync(out);
+            }
+            Intent result = new Intent(c, BlazeRentalUpdateReceiver.class);
+            result.setAction(ACTION_INSTALL_RESULT + "." + token);
+            result.putExtra(EXTRA_INSTALL_TOKEN, token);
+            PendingIntent pending = PendingIntent.getBroadcast(c, sessionId, result,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            // If commit() throws, delivery may be ambiguous: retain pending
+            // state for the correlated Android status callback.
+            commitAttempted = true;
+            session.commit(pending.getIntentSender());
+        } catch (Exception e) {
+            if (!commitAttempted) {
+                try {
+                    if (session != null) session.abandon();
+                    else if (sessionId >= 0) installer.abandonSession(sessionId);
+                } catch (Exception ignored) {
+                    // Preserve the original staging error for diagnosis.
+                }
+            }
+            throw new InstallSubmissionException(e, commitAttempted);
+        } finally {
+            // close() releases the handle, it does not abort a committed
+            // session. A close exception after commit must not clear pending.
+            if (session != null) {
+                try { session.close(); } catch (Exception ignored) { }
+            }
+        }
     }
 
     private static String sha256(File f) throws Exception {

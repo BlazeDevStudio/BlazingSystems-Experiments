@@ -68,26 +68,39 @@ public final class BlazeRentalUpdateManager {
                 && rollbackUrl(c).length() > 0 && rollbackSha(c).length() == 64;
     }
 
-    public static void markInstallPending(Context c, String targetVersion, int targetCode,
-                                          String backupPath, boolean rescue) {
+    public static synchronized String markInstallPending(
+            Context c, String targetVersion, int targetCode,
+            String backupPath, boolean rescue) {
+        // Bind each asynchronous PackageInstaller callback to this particular
+        // update attempt; an earlier failure must not clear a newer attempt.
+        String token = Hmac.nonce();
         prefs(c).edit()
                 .putString("previous_version", currentVersion(c))
                 .putInt("previous_code", currentCode(c))
                 .putString("previous_apk", safe(backupPath))
                 .putString("pending_version", safe(targetVersion))
                 .putInt("pending_code", targetCode)
+                .putString("pending_token", token)
                 .putBoolean("pending_rescue", rescue)
                 .putInt("pending_boots", 0)
                 .putLong("pending_started_wall", System.currentTimeMillis())
                 .remove("last_error")
                 .apply();
+        return token;
+    }
+
+    static synchronized boolean isPendingInstallToken(Context c, String token) {
+        if (token == null || token.length() == 0) return false;
+        SharedPreferences p = prefs(c);
+        return p.getInt("pending_code", 0) > 0
+                && token.equals(p.getString("pending_token", ""));
     }
 
     public static boolean isPending(Context c) {
         return prefs(c).getInt("pending_code", 0) > 0;
     }
 
-    public static void markLaunchHealthy(Context c) {
+    public static synchronized void markLaunchHealthy(Context c) {
         SharedPreferences p = prefs(c);
         int pending = p.getInt("pending_code", 0);
         if (pending <= 0 || currentCode(c) != pending) return;
@@ -96,7 +109,8 @@ public final class BlazeRentalUpdateManager {
                 .putInt("stable_code", currentCode(c))
                 .putLong("stable_since_wall", System.currentTimeMillis())
                 .remove("pending_version").remove("pending_code").remove("pending_rescue")
-                .remove("pending_boots").remove("pending_started_wall").remove("last_error")
+                .remove("pending_token").remove("pending_boots")
+                .remove("pending_started_wall").remove("last_error")
                 .apply();
     }
 
@@ -111,6 +125,38 @@ public final class BlazeRentalUpdateManager {
 
     public static void recordInstallFailure(Context c, String message) {
         prefs(c).edit().putString("last_error", safe(message)).apply();
+    }
+
+    /**
+     * A commit() invocation can have an uncertain result until Android
+     * delivers its status callback. Keep this token's pending state in
+     * place, and never overwrite a later installation's diagnostics.
+     */
+    public static synchronized boolean recordPendingInstallError(
+            Context c, String token, String message) {
+        if (!isPendingInstallToken(c, token)) return false;
+        prefs(c).edit().putString("last_error", safe(message)).apply();
+        return true;
+    }
+
+    /**
+     * PackageInstaller reported a terminal failure. Clear only the pending
+     * installation state, retaining prior APK metadata and the error for
+     * operator diagnosis. Never call for valid pending user confirmation.
+     */
+    public static synchronized boolean recordTerminalInstallFailure(
+            Context c, String token, String message) {
+        if (!isPendingInstallToken(c, token)) return false;
+        prefs(c).edit()
+                .remove("pending_version")
+                .remove("pending_code")
+                .remove("pending_rescue")
+                .remove("pending_token")
+                .remove("pending_boots")
+                .remove("pending_started_wall")
+                .putString("last_error", safe(message))
+                .apply();
+        return true;
     }
 
     public static String lastError(Context c) { return prefs(c).getString("last_error", ""); }

@@ -7,6 +7,10 @@ import android.content.pm.PackageInstaller;
 
 public class BlazeRentalUpdateReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
+        if (intent == null) return;
+        String token = intent.getStringExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN);
+        // Old or unbound results must never mutate a newer installation.
+        if (!BlazeRentalUpdateManager.isPendingInstallToken(context, token)) return;
         int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS,
                 PackageInstaller.STATUS_FAILURE);
         if (status == PackageInstaller.STATUS_SUCCESS) {
@@ -23,7 +27,9 @@ public class BlazeRentalUpdateReceiver extends BroadcastReceiver {
             }
         }
         String msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
-        BlazeRentalUpdateManager.recordInstallFailure(context,
+        // A terminal failure cannot leave an update that never installed
+        // marked as still awaiting its boot-time health check.
+        BlazeRentalUpdateManager.recordTerminalInstallFailure(context, token,
                 msg == null ? "PackageInstaller status " + status : msg);
     }
 }

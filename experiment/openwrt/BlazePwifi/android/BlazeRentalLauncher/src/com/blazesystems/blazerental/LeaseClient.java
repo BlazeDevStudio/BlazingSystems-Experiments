@@ -226,37 +226,21 @@ public final class LeaseClient {
 
                 String effectiveAllowed = allowed;
                 if ("*".equals(allowed)) effectiveAllowed = inventoryCsv(context);
-                // Validate signed policy fields before changing lease/timer/alarm state.
-                new RentalPolicy(revision, mode,
+                // Construct the validated immutable policy before any lease/timer writes.
+                // The same-revision comparison is pure Java and unit-testable.
+                RentalPolicy proposedPolicy = new RentalPolicy(revision, mode,
                         AndroidRentalPolicyRepository.parseCsv(effectiveAllowed),
                         AndroidRentalPolicyRepository.parseCsv(hidden),
                         AndroidRentalPolicyRepository.parseCsv(""));
 
-                // A repeated revision may refresh the authenticated lease, but must
-                // not silently rewrite the already accepted launcher policy.
+                // A repeated revision may refresh authenticated paid time, but
+                // cannot silently replace the previously accepted launcher policy.
                 boolean newRevision = revision > currentRevision;
-                if (!newRevision) {
-                    RentalPolicy accepted = AndroidRentalPolicyRepository.load(context);
-                    // Wildcard means server-selected installed inventory at policy
-                    // acceptance time. A later installed-app change must not turn
-                    // a valid same-revision lease refresh into a policy rewrite.
-                    // Require BOTH authenticated canonicals to use wildcard;
-                    // otherwise an explicit package restriction cannot be bypassed.
-                    String oldCanonical = AndroidRentalPolicyRepository.signedPayload(context);
-                    String[] oldFields = oldCanonical.split("\\|", -1);
-                    boolean acceptedWildcard = oldFields.length > 8
-                            && ("v2".equals(oldFields[0]) || "v3".equals(oldFields[0]))
-                            && deviceId.equals(oldFields[1])
-                            && Long.toString(revision).equals(oldFields[5])
-                            && "*".equals(oldFields[7]);
-                    boolean allowedMatches = accepted.getAllowedPackages().equals(
-                            AndroidRentalPolicyRepository.parseCsv(effectiveAllowed));
-                    if (!accepted.getLauncherMode().equals(mode)
-                            || (!allowedMatches && !(acceptedWildcard && "*".equals(allowed)))
-                            || !accepted.getHiddenPackages().equals(
-                                    AndroidRentalPolicyRepository.parseCsv(hidden))) {
-                        return false;
-                    }
+                if (!newRevision && !RentalPolicyRevisionGuard.sameRevisionMayRefresh(
+                        AndroidRentalPolicyRepository.load(context), proposedPolicy,
+                        AndroidRentalPolicyRepository.signedPayload(context), deviceId,
+                        allowed)) {
+                    return false;
                 }
 
                 // Both independent signatures and the installed identity/key are verified.
