@@ -451,5 +451,6 @@ jobs:
           # a prior signing job was skipped, and fail closed on any mismatch.
           $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
           & $gate -Mode Verify -InputPaths @($setup,'out/bundle/BlazePisonet.SoftTimer.exe','out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -PinnedCertSha256 "$env:SOFTTIMER_SIGNER_CERT_SHA256" -PortableZipPath $zip -Sha256SumsPath 'SHA256SUMS' -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
+          if ($LASTEXITCODE -ne 0) { throw "Publisher final artifact verification failed (exit $LASTEXITCODE); refusing release" }
           gh release create $releaseTag $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file $releaseNotes --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
