@@ -166,6 +166,21 @@ try {
   if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
     throw 'Publisher reuses frozen tag or notes'
   }
+  # gh release view is expected to exit nonzero for a *new* release tag.
+  # A PowerShell verifier may not update LASTEXITCODE on success; the stale
+  # gh status must be cleared BEFORE the verifier, never after it.
+  $viewIdx=$publisher.IndexOf('if (gh release view $releaseTag *> $null)',[StringComparison]::Ordinal)
+  $resetIdx=$publisher.IndexOf('$global:LASTEXITCODE = 0',[StringComparison]::Ordinal)
+  $verifyIdx=$publisher.IndexOf('& $gate -Mode Verify -InputPaths',[StringComparison]::Ordinal)
+  $rejectIdx=$publisher.IndexOf('if ($LASTEXITCODE -ne 0) { throw "Publisher final artifact verification failed',[StringComparison]::Ordinal)
+  $createIdx=$publisher.IndexOf('gh release create $releaseTag',[StringComparison]::Ordinal)
+  if ($viewIdx -lt 0 -or $resetIdx -le $viewIdx -or
+      $verifyIdx -le $resetIdx -or $rejectIdx -le $verifyIdx -or
+      $createIdx -le $rejectIdx) {
+    throw 'Publisher must clear only the stale missing-tag exit, run final Verify, then deny nonzero verifier exit before gh release create'
+  }
+  Write-Output 'RELEASE-PUBLISHER: missing-tag status cleared before verify, nonzero verifier blocks publish PASS'
+
   # VERSION is authoritative for both native .NET artifacts and NSIS output.
   foreach ($entry in @(
     @{ Marker='-p:Version=$env:VERSION'; Count=2 },
