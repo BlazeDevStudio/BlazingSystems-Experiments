@@ -96,7 +96,7 @@ does not satisfy those gates.
   `pending_code`, `pending_rescue`, `pending_boots` and
   `pending_started_wall`. It preserves `last_error` and `previous_apk`
   for diagnosis; do not delete any real installer backup here.
-- Three isolated API27 regression cases are in
+- Four isolated API27 regression cases are in
   `tests/src/com/blazesystems/blazerental/BlazeRentalUpdateFailureTest.java`.
   They use separate test preferences and intercept the user confirmation
   Intent; no APK download/install or real Device Owner interaction occurs.
@@ -104,8 +104,26 @@ does not satisfy those gates.
   `connectedAospDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.blazesystems.blazerental.BlazeRentalUpdateFailureTest`.
 - The existing focused auth suite only executes
   `LeaseSyncAuthBeforeCommitTest` (7 cases), **not** this new class.
-  New tests are not accepted until exact-SHA XML evidence confirms all three.
+  New tests are not accepted until exact-SHA XML evidence confirms all four.
   The broader build compiles the Android test APK but does not necessarily
   execute every instrumentation class.
 - Synchronous failures before or during `commitInstall` are a separate
   recovery review. Do not claim full installer transaction atomicity.
+
+
+### Attempt correlation and stale callback protection
+
+Each pending installation now receives an opaque random token from
+`markInstallPending`, carried in the explicit `PackageInstaller` result
+`PendingIntent`. Its unique action includes the token so an earlier
+installation cannot reuse the newer result sender. The receiver checks that
+the callback token matches the currently pending attempt before touching
+the UI or clearing state. Terminal failure clearing repeats the token check
+inside a synchronized transition, so a stale callback cannot clear a newer
+attempt even if the state changes between receipt and write.
+
+The fourth isolated test exercises an old failed result arriving after a
+new attempt begins. The four-case test suite is **not** executed by the
+existing seven-case lease-authentication workflow and must be run
+explicitly on API27 for a source-exact proof. Synchronous exceptions before
+or during `commitInstall` remain a distinct recovery follow-up.
