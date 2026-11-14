@@ -54,16 +54,19 @@ public final class BlazeRentalUpdateFailureTest {
                 .edit().clear().commit();
     }
 
-    private void markPending() {
-        BlazeRentalUpdateManager.markInstallPending(isolated,
+    private String markPending() {
+        String token = BlazeRentalUpdateManager.markInstallPending(isolated,
                 "test-candidate", 999999, "/isolated/test-previous.apk", false);
         assertTrue(BlazeRentalUpdateManager.isPending(isolated));
+        assertTrue(BlazeRentalUpdateManager.isPendingInstallToken(isolated, token));
+        return token;
     }
 
     @Test public void failedInstallerClearsPendingButPreservesDiagnosis() {
-        markPending();
+        String token = markPending();
         Intent failure = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
         failure.putExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        failure.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, token);
         failure.putExtra(PackageInstaller.EXTRA_STATUS_MESSAGE, "synthetic install failure");
         new BlazeRentalUpdateReceiver().onReceive(isolated, failure);
 
@@ -79,10 +82,11 @@ public final class BlazeRentalUpdateFailureTest {
     }
 
     @Test public void validUserConfirmationDoesNotClearPending() {
-        markPending();
+        String token = markPending();
         Intent waiting = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
         waiting.putExtra(PackageInstaller.EXTRA_STATUS,
                 PackageInstaller.STATUS_PENDING_USER_ACTION);
+        waiting.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, token);
         waiting.putExtra(Intent.EXTRA_INTENT, new Intent("isolated.confirm"));
         new BlazeRentalUpdateReceiver().onReceive(isolated, waiting);
 
@@ -91,11 +95,36 @@ public final class BlazeRentalUpdateFailureTest {
         assertEquals("", BlazeRentalUpdateManager.lastError(isolated));
     }
 
+    @Test public void staleFailureCannotClearNewerInstallAttempt() {
+        String previousToken = markPending();
+        String activeToken = markPending();
+        assertFalse(previousToken.equals(activeToken));
+
+        Intent stale = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
+        stale.putExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        stale.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, previousToken);
+        stale.putExtra(PackageInstaller.EXTRA_STATUS_MESSAGE, "stale callback");
+        new BlazeRentalUpdateReceiver().onReceive(isolated, stale);
+
+        assertTrue(BlazeRentalUpdateManager.isPending(isolated));
+        assertTrue(BlazeRentalUpdateManager.isPendingInstallToken(isolated, activeToken));
+        assertEquals("", BlazeRentalUpdateManager.lastError(isolated));
+
+        Intent current = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
+        current.putExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        current.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, activeToken);
+        current.putExtra(PackageInstaller.EXTRA_STATUS_MESSAGE, "active callback");
+        new BlazeRentalUpdateReceiver().onReceive(isolated, current);
+        assertFalse(BlazeRentalUpdateManager.isPending(isolated));
+        assertEquals("active callback", BlazeRentalUpdateManager.lastError(isolated));
+    }
+
     @Test public void missingConfirmationIntentTerminatesPending() {
-        markPending();
+        String token = markPending();
         Intent broken = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
         broken.putExtra(PackageInstaller.EXTRA_STATUS,
                 PackageInstaller.STATUS_PENDING_USER_ACTION);
+        broken.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, token);
         new BlazeRentalUpdateReceiver().onReceive(isolated, broken);
 
         assertFalse(BlazeRentalUpdateManager.isPending(isolated));
