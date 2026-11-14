@@ -352,20 +352,49 @@ void clearPending(){
   }
 }
 
-void quarantinePending(const String &reason){
-  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
-  if(fsReady && pendingPulses>0){
-    File q=LittleFS.open("/quarantine.log","a");
-    if(q){
-      char buf[220];
-      snprintf(buf,sizeof(buf),"TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
-               (unsigned long)millis(), (unsigned int)pendingPulses,
-               pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
-      q.write((const uint8_t*)buf,strlen(buf));
-      q.close();
-    }
+static const size_t QUARANTINE_MAX_BYTES=32768;
+
+bool appendQuarantineRecord(const String &reason){
+  if(!fsReady || pendingPulses==0) return false;
+
+  char record[320];
+  int len=snprintf(record,sizeof(record),
+                   "TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
+                   (unsigned long)millis(), (unsigned int)pendingPulses,
+                   pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
+  if(len<=0 || (size_t)len>=sizeof(record)) return false;
+
+  size_t before=0;
+  if(LittleFS.exists("/quarantine.log")){
+    File prior=LittleFS.open("/quarantine.log","r");
+    if(!prior) return false;
+    before=prior.size();
+    prior.close();
   }
+  if(before+(size_t)len>QUARANTINE_MAX_BYTES) return false;
+
+  File q=LittleFS.open("/quarantine.log","a");
+  if(!q) return false;
+  size_t written=q.write((const uint8_t*)record,(size_t)len);
+  q.flush();
+  q.close();
+  if(written!=(size_t)len) return false;
+
+  File verify=LittleFS.open("/quarantine.log","r");
+  if(!verify) return false;
+  size_t after=verify.size();
+  verify.close();
+  return after==before+(size_t)len;
+}
+
+bool quarantinePending(const String &reason){
+  if(!appendQuarantineRecord(reason)){
+    Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");
+    return false;
+  }
+  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
   clearPending();
+  return true;
 }
 
 void setup(){
