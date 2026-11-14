@@ -25,6 +25,23 @@ class CoordinationContractTests(unittest.TestCase):
                 self.assertFalse(safe_repo_path(path))
         self.assertTrue(safe_repo_path("experiment/openwrt/BlazePwifi/"))
 
+    def test_master_must_not_claim_runtime_destination(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][0]["target"] = "Pisowifi/"
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("MASTER is coordination-only" in e for e in errors))
+
+    def test_draft_route_must_not_authorize_recursive_copy(self):
+        modified = copy.deepcopy(self.routes)
+        modified["routes"][1]["copy_permitted"] = True
+        errors = validate_routes(modified, REPO_ROOT)
+        self.assertTrue(any("DRAFT route cannot authorize copy" in e for e in errors))
+
+    def test_redundant_trailing_path_separators_are_rejected(self):
+        for path in ("coordination/phoenix//", "Rental///"):
+            with self.subTest(path=path):
+                self.assertFalse(safe_repo_path(path))
+
     def test_duplicate_source_claim_fails(self):
         modified = copy.deepcopy(self.routes)
         modified["routes"][1]["source"] = modified["routes"][2]["source"]
