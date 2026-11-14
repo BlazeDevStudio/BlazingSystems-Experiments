@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: blazepisonet-softtimer-${{ github.ref }}
@@ -381,8 +381,28 @@ jobs:
             release/BlazePisonet-SoftTimer-Setup-v${{ env.VERSION }}.exe
             BlazePisonet-SoftTimer-v${{ env.VERSION }}-portable-win-x64.zip
             SHA256SUMS
+            out/bundle/BlazePisonet.SoftTimer.exe
+            out/bundle/BlazePisonet.SoftTimer.Watchdog.exe
           if-no-files-found: error
 
+  # A PR/build checkout never receives a writable repository token.
+  # The sole write scope is a separate approved main-push publication job.
+  publish-release:
+    needs: build-windows
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
+      # The downloaded final artifact must be re-admitted using the owner-pinned
+      # DER cert SHA256, trusted timestamp, version, source SHA and ZIP bytes.
       - name: Publish GitHub Release
         # Never mutate the frozen v0.4.0 release from later development code.
         # A version/tag bump and explicit new candidate are mandatory first.
