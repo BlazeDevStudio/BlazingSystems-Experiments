@@ -2,6 +2,7 @@
 // Real Windows PnP enumeration is a read-only API smoke test. No hardware
 // opens, physical coin pulses, controller credentials or monetary writes.
 using System.ComponentModel;
+using System.IO;
 using Microsoft.Win32.SafeHandles;
 using BlazePisonet.SoftTimer;
 
@@ -96,6 +97,47 @@ try
         Console.WriteLine("NATIVE_INTERFACE_UNVERIFIABLE_STATUS_REJECTED_PASS");
     }
 
+    // Real Win32/driver access can throw rather than return false. The
+    // initial candidate must not escape or leak after post-open failures.
+    {
+        using var api = new FakeNativeComPlatform(ifaceA) { ThrowAfterOpenEnumeration = true };
+        Require(!NativeComInterfaceSession.TryOpenExact(A, api, out var denied, out var reason) &&
+                denied is null && api.Opens == 1 &&
+                api.OpenedHandle?.IsClosed == true &&
+                reason.Contains(nameof(IOException), StringComparison.Ordinal),
+            "post-open enumeration IOException escaped or left candidate handle open");
+        Console.WriteLine("NATIVE_INTERFACE_POST_OPEN_ENUM_EXCEPTION_CLOSED_PASS");
+    }
+
+    {
+        using var api = new FakeNativeComPlatform(ifaceA) { ThrowOnStatusRead = true };
+        Require(!NativeComInterfaceSession.TryOpenExact(A, api, out var denied, out var reason) &&
+                denied is null && api.Opens == 1 &&
+                api.OpenedHandle?.IsClosed == true &&
+                reason.Contains(nameof(IOException), StringComparison.Ordinal),
+            "initial same-handle modem IOException escaped or leaked handle");
+        Console.WriteLine("NATIVE_INTERFACE_INITIAL_STATUS_EXCEPTION_CLOSED_PASS");
+    }
+
+    // Once a live handle's status becomes unknowable, a subsequent successful
+    // read must never resurrect that session or manufacture a paid coin edge.
+    {
+        using var api = new FakeNativeComPlatform(ifaceA);
+        Require(NativeComInterfaceSession.TryOpenExact(A, api, out var session, out var reason),
+            "exception-path positive precondition failed: " + reason);
+        using var live = session ??
+            throw new InvalidOperationException("exception-path live session is null");
+        api.ThrowOnStatusRead = true;
+        Require(!live.TryReadSignal(ModemSignal.Cts, out var active) && !active &&
+                live.IsClosed && api.OpenedHandle?.IsClosed == true,
+            "later modem IOException did not revoke the original handle");
+        api.ThrowOnStatusRead = false;
+        Require(!live.TryReadSignal(ModemSignal.Cts, out active) && !active &&
+                api.Opens == 1,
+            "revoked handle resumed after later modem reads returned success");
+        Console.WriteLine("NATIVE_INTERFACE_LIVE_STATUS_EXCEPTION_PERMANENT_REVOKE_PASS");
+    }
+
     {
         using var api = new FakeNativeComPlatform(ifaceA) { OpenReturnsInvalid = true };
         Require(!NativeComInterfaceSession.TryOpenExact(A, api, out _, out _) &&
@@ -158,14 +200,20 @@ namespace BlazePisonet.SoftTimer
         public bool StatusSupported { get; set; } = true;
         public uint ModemStatus { get; set; } = 0x10u; // mutable fake CTS for samples
         public bool OpenReturnsInvalid { get; set; }
+        public bool ThrowAfterOpenEnumeration { get; set; }
+        public bool ThrowOnStatusRead { get; set; }
         public string? OpenedPath { get; private set; }
         public SafeFileHandle? OpenedHandle { get; private set; }
         public int Opens { get; private set; }
         public int ReadsOnOriginalHandle { get; private set; }
         public int ReadsOnOtherHandle { get; private set; }
         public FakeNativeComPlatform(params NativeComDeviceInterface[] first) => _first = first;
-        public IReadOnlyList<NativeComDeviceInterface> EnumeratePresent() =>
-            Opens > 0 && AfterOpen is not null ? AfterOpen : _first;
+        public IReadOnlyList<NativeComDeviceInterface> EnumeratePresent()
+        {
+            if (Opens > 0 && ThrowAfterOpenEnumeration)
+                throw new IOException("Synthetic post-open SetupAPI enumeration failure");
+            return Opens > 0 && AfterOpen is not null ? AfterOpen : _first;
+        }
 
         public SafeFileHandle OpenInterface(string path)
         {
@@ -183,6 +231,8 @@ namespace BlazePisonet.SoftTimer
                 ReadsOnOriginalHandle++;
             else
                 ReadsOnOtherHandle++;
+            if (ThrowOnStatusRead)
+                throw new IOException("Synthetic same-handle status read failure");
             status = ModemStatus; // test-only fake modem bits from SAME handle
             return StatusSupported && !openedHandle.IsClosed && !openedHandle.IsInvalid;
         }
