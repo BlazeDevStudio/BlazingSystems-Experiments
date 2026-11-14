@@ -1,6 +1,7 @@
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
-**Protocol Specification:** BLAZE-COMMS/1  \n**Exact source routing authority:** [OWNERSHIP_ROUTES.json](OWNERSHIP_ROUTES.json) and [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md). Broad root paths below do not grant ownership of unrelated products.  
+**Protocol Specification:** BLAZE-COMMS/1  
+**Exact source routing authority:** [OWNERSHIP_ROUTES.json](OWNERSHIP_ROUTES.json) and [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md). Broad root paths below do not grant ownership of unrelated products.  
 **Team Topology:** FULL (7 CHATS) TEAM  
 **Governing Issue:** [#172 — [PHX] CONTROL PLANE](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172)  
 **Cleanup Gate Issue:** [#266 — [PHX] Code-cleanup-first gate across seven developer roles](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)  
