@@ -127,3 +127,29 @@ new attempt begins. The four-case test suite is **not** executed by the
 existing seven-case lease-authentication workflow and must be run
 explicitly on API27 for a source-exact proof. Synchronous exceptions before
 or during `commitInstall` remain a distinct recovery follow-up.
+
+
+## Synchronous PackageInstaller submission exceptions (2026-11-15)
+
+- `BlazeRentalPackageUpdater.downloadAndInstall` retains the pending
+  attempt token once `markInstallPending` succeeds. Before
+  `PackageInstaller.Session.commit` is invoked, a staging/streaming
+  exception abandons the session (including the created session ID if
+  the handle could not be opened), closes owned resources, and clears
+  **only that token's** pending metadata while retaining the diagnostic.
+- Once `commit()` is attempted, an exception can mean the submission
+  result is *ambiguous*, not that Android rejected the installation.
+  It therefore keeps the pending attempt for a matching asynchronous
+  callback; `recordPendingInstallError` scopes the diagnosis to that
+  token. An older failure cannot clobber a newer attempt.
+- `Session.close()` is handled in `finally` without reclassifying
+  an accepted commit as a terminal installation failure.
+- `BlazeRentalUpdateFailureTest` now includes **six** isolated API27
+  cases (two new: precommit exception/current token and commit-attempt
+  uncertainty/callback). The source-linked runner checks these six plus
+  seven lease-authentication cases: **13 total**. Do not treat test
+  authoring or app APK compilation as 13/13 execution evidence.
+- Real installer session failure injection, actual signed installation,
+  legacy pre-token pending recovery, device-owner compatibility, power
+  interruption and rollback acceptance still require separate tests.
+  Neither this change nor CI autorizes production rollout.
