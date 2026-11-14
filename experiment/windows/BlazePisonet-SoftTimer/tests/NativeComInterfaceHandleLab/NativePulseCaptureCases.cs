@@ -309,6 +309,64 @@ internal static class NativePulseCaptureCases
             Console.WriteLine("NATIVE_PULSE_AFTER_SAMPLE_DUPLICATE_INTERFACE_STALE_CLAIM_DENIED_PASS");
         }
 
-        Console.WriteLine("NATIVE_OWNED_HANDLE_PULSE_SOURCE_GREEN: 8 deterministic positive/fault/rebind/presence suites; diagnostic only");
+        // A diagnostic observer can throw before claiming its immutable
+        // pulse. Dispatch must release that token even when the callback
+        // fails, and a subsequent real (synthetic here) pulse may still
+        // be claimed once. This does NOT make callbacks a money authority.
+        clock = new FakeMonotonicPulseClock();
+        using (var os = new FakeNativeComPlatform(adapterA) { ModemStatus = 0 })
+        using (var capture = new NativeComPulseCapture(clock,
+            minimumMs: 20, maximumMs: 200, debounceMs: 0, maximumGapMs: 50))
+        {
+            capture.Rebind(Open(adapterA.InstanceId, os));
+            NativeObservedPulse? abandoned = null;
+            int delivered = 0, claimed = 0;
+            capture.Observed += pulse =>
+            {
+                delivered++;
+                if (delivered == 1)
+                {
+                    abandoned = pulse;
+                    throw new InvalidOperationException("Synthetic observer failure");
+                }
+                if (capture.TryClaimObserved(pulse)) claimed++;
+            };
+            capture.SampleOnce();  // verified low for A
+            clock.Advance(10);
+            High(os); capture.SampleOnce();
+            clock.Advance(30);
+            Low(os);
+            bool callbackThrew = false;
+            try
+            {
+                capture.SampleOnce();  // first complete observation throws
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message == "Synthetic observer failure")
+            {
+                callbackThrew = true;
+            }
+            Require(callbackThrew && delivered == 1 && claimed == 0 &&
+                    abandoned is not null &&
+                    !capture.TryClaimObserved(abandoned) &&
+                    os.OpenedHandle?.IsClosed == false,
+                "throwing callback left stale pulse claimable or corrupted A session");
+
+            // A new edge requires a fresh verified low, not a replay of
+            // the prior callback's already-abandoned immutable event.
+            clock.Advance(5);
+            capture.SampleOnce(); // verified low, rearm
+            clock.Advance(10);
+            High(os); capture.SampleOnce();
+            clock.Advance(30);
+            Low(os); capture.SampleOnce();
+            Require(delivered == 2 && claimed == 1 &&
+                    !capture.TryClaimObserved(abandoned) &&
+                    os.ReadsOnOtherHandle == 0,
+                "observer exception replayed stale pulse or lost valid recovery");
+            Console.WriteLine("NATIVE_PULSE_THROWING_OBSERVER_STALE_DENIED_RECOVERY_PASS");
+        }
+
+        Console.WriteLine("NATIVE_OWNED_HANDLE_PULSE_SOURCE_GREEN: 9 deterministic positive/fault/rebind/presence/callback suites; diagnostic only");
     }
 }
