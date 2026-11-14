@@ -3,6 +3,7 @@
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
 #include <LittleFS.h>
+#include <string.h>
 #include <bearssl/bearssl_hash.h>
 
 struct ConfigV1 {
@@ -43,7 +44,7 @@ bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=tru
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
-bool pendingReady=false, fsReady=false;
+bool pendingReady=false, fsReady=false, journalRecoveryRequired=false;
 int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
@@ -78,12 +79,16 @@ bool readPendingFile(const char *path, PendingRecord &r){
   if(!fsReady || !LittleFS.exists(path)) return false;
   File f=LittleFS.open(path,"r"); if(!f) return false;
   size_t n=f.readBytes((char*)&r,sizeof(r)); f.close();
-  return n==sizeof(r) && r.magic==PENDING_MAGIC && r.pulses>0 && r.pulses<=20 &&
-         r.checksum==pendingChecksum(r) && strlen(r.nonce)>=8 && strlen(r.target)>=8;
+  if(n!=sizeof(r) || r.magic!=PENDING_MAGIC || r.pulses==0 || r.pulses>20 ||
+     r.checksum!=pendingChecksum(r)) return false;
+  // A corrupt record may not terminate either fixed-size string. Never use strlen here.
+  const char *nonceEnd=(const char*)memchr(r.nonce,'\0',sizeof(r.nonce));
+  const char *targetEnd=(const char*)memchr(r.target,'\0',sizeof(r.target));
+  return nonceEnd && targetEnd && (size_t)(nonceEnd-r.nonce)>=8 && (size_t)(targetEnd-r.target)>=8;
 }
 
 bool savePending(){
-  if(!fsReady || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
+  if(!fsReady || journalRecoveryRequired || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
   PendingRecord r; memset(&r,0,sizeof(r)); r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
   strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
   strlcpy(r.target,pendingTarget.c_str(),sizeof(r.target));
@@ -103,28 +108,39 @@ bool savePending(){
 
 void loadPending(){
   if(!fsReady) return;
-  PendingRecord r;
-  const char *chosen=nullptr;
-  if(readPendingFile("/pending.dat",r)) chosen="/pending.dat";
-  else if(readPendingFile("/pending.new",r)) chosen="/pending.new";
-  else if(readPendingFile("/pending.bak",r)) chosen="/pending.bak";
-  if(!chosen) return;
+  const bool hasDat=LittleFS.exists("/pending.dat");
+  const bool hasNew=LittleFS.exists("/pending.new");
+  const bool hasBak=LittleFS.exists("/pending.bak");
+  const unsigned journalCount=(unsigned)hasDat+(unsigned)hasNew+(unsigned)hasBak;
+  if(!journalCount) return;
+  // Multiple candidates can represent DIFFERENT unpaid coins after a power cut.
+  // Never choose one and delete another without a durable receipt/ACK contract.
+  if(journalCount!=1){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: multiple pending journals; preserving all evidence, coin intake disabled.");
+    return;
+  }
+  const char *chosen=hasDat?"/pending.dat":(hasNew?"/pending.new":"/pending.bak");
+  PendingRecord r{};
+  if(!readPendingFile(chosen,r)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: corrupt/unreadable pending journal; preserving evidence, coin intake disabled.");
+    return;
+  }
   pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
   pendingReady=true; lastSend=0;
-  if(strcmp(chosen,"/pending.dat")!=0){
-    LittleFS.remove("/pending.dat"); LittleFS.rename(chosen,"/pending.dat");
-  }
+  // Do not rename or delete evidence at boot. Clear only after authorized receipt ACK.
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
 void initPendingStore(){
+  // Never format a failed-to-mount payment journal. It may contain coin evidence.
   fsReady=LittleFS.begin();
   if(!fsReady){
-    Serial.println("LittleFS mount failed; formatting Vendo journal.");
-    if(LittleFS.format()) fsReady=LittleFS.begin();
+    Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
+    return;
   }
-  if(fsReady) loadPending();
-  else Serial.println("CRITICAL: coin journal unavailable; coin relay will stay disabled.");
+  loadPending();
 }
 
 String esc(const String &s){
@@ -254,8 +270,13 @@ String post(const String& action,const String& pulses="0",const String& target="
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
+// Never send a RAM-only pulse if its flash journal failed or is ambiguous.
+bool canAttemptCoinPost(){
+  return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
+}
+
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !journalRecoveryRequired && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -344,6 +365,7 @@ void connectSta(){
 }
 
 void clearPending(){
+  if(journalRecoveryRequired) return; // Never erase ambiguous unpaid coin evidence.
   pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
   if(fsReady){
     LittleFS.remove("/pending.dat");
@@ -383,8 +405,15 @@ bool appendQuarantineRecord(const String &reason){
   File verify=LittleFS.open("/quarantine.log","r");
   if(!verify) return false;
   size_t after=verify.size();
+  bool verified=after==before+(size_t)len &&
+                verify.seek(before,SeekSet);
+  for(size_t i=0;verified && i<(size_t)len;++i){
+    if(verify.read()!=(unsigned char)record[i]) verified=false;
+  }
   verify.close();
-  return after==before+(size_t)len;
+  // Exact byte readback detects same-size corruption before clearing pending.
+  // It is NOT proof of durability across a real flash power cut.
+  return verified;
 }
 
 bool quarantinePending(const String &reason){
@@ -434,7 +463,7 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(insertMode && fsReady && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){
       pendingNonce=freshNonce();
       pendingTarget=activeTarget;
@@ -457,7 +486,7 @@ void loop(){
     applyOutputs();
   }
 
-  if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
+  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
     String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
     lastSend=millis();
     if(r.indexOf("\"ok\":true")>=0){
