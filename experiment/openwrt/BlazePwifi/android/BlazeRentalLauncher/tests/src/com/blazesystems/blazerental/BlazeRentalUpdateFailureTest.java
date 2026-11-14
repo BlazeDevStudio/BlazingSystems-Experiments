@@ -119,6 +119,46 @@ public final class BlazeRentalUpdateFailureTest {
         assertEquals("active callback", BlazeRentalUpdateManager.lastError(isolated));
     }
 
+
+    @Test public void preCommitExceptionClearsOnlyMatchingPendingAttempt() {
+        String older = markPending();
+        String active = markPending();
+        BlazeRentalPackageUpdater.recordSynchronousSubmissionFailure(
+                isolated, older, false, "stale staging failure");
+
+        assertTrue(BlazeRentalUpdateManager.isPendingInstallToken(isolated, active));
+        assertEquals("", BlazeRentalUpdateManager.lastError(isolated));
+
+        BlazeRentalPackageUpdater.recordSynchronousSubmissionFailure(
+                isolated, active, false, "stream write failed");
+        assertFalse(BlazeRentalUpdateManager.isPending(isolated));
+        assertEquals("stream write failed", BlazeRentalUpdateManager.lastError(isolated));
+        assertEquals("/isolated/test-previous.apk",
+                BlazeRentalUpdateManager.previousApk(isolated));
+        assertFalse(confirmationRequested);
+    }
+
+    @Test public void ambiguousCommitExceptionKeepsPendingForAndroidCallback() {
+        String token = markPending();
+        BlazeRentalPackageUpdater.recordSynchronousSubmissionFailure(
+                isolated, token, true, "system service lost connection");
+
+        assertTrue(BlazeRentalUpdateManager.isPendingInstallToken(isolated, token));
+        assertTrue(BlazeRentalUpdateManager.lastError(isolated)
+                .contains("outcome not confirmed"));
+        assertFalse(confirmationRequested);
+
+        Intent result = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
+        result.putExtra(BlazeRentalPackageUpdater.EXTRA_INSTALL_TOKEN, token);
+        result.putExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        result.putExtra(PackageInstaller.EXTRA_STATUS_MESSAGE,
+                "Android confirmed install failed");
+        new BlazeRentalUpdateReceiver().onReceive(isolated, result);
+        assertFalse(BlazeRentalUpdateManager.isPending(isolated));
+        assertEquals("Android confirmed install failed",
+                BlazeRentalUpdateManager.lastError(isolated));
+    }
+
     @Test public void missingConfirmationIntentTerminatesPending() {
         String token = markPending();
         Intent broken = new Intent(BlazeRentalPackageUpdater.ACTION_INSTALL_RESULT);
