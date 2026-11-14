@@ -156,9 +156,15 @@ bool appendQuarantineRecord(const String &reason){
 
   File verify=LittleFS.open("/quarantine.log","r");
   if(!verify) return false;
-  size_t after=verify.size();
+  bool verified=verify.size()==before+(size_t)len &&
+                verify.seek(before,SeekSet);
+  for(size_t i=0;verified && i<(size_t)len;++i){
+    if(verify.read()!=(unsigned char)record[i]) verified=false;
+  }
   verify.close();
-  return after==before+(size_t)len;
+  // Exact byte readback detects same-size corruption before clearing pending.
+  // It is NOT proof of durability across a real flash power cut.
+  return verified;
 }
 
 bool quarantinePending(const String &reason){
