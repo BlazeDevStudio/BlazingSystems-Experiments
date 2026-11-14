@@ -361,6 +361,7 @@ internal static class NativePulseCaptureCases
             clock.Advance(30);
             Low(os); capture.SampleOnce();
             Require(delivered == 2 && claimed == 1 &&
+                    abandoned is not null &&
                     !capture.TryClaimObserved(abandoned) &&
                     os.ReadsOnOtherHandle == 0,
                 "observer exception replayed stale pulse or lost valid recovery");
