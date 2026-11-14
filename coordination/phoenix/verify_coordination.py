@@ -35,7 +35,7 @@ STATUSES = frozenset({"QUEUED", "IN_PROGRESS", "BLOCKED", "PR_READY", "VERIFIED"
 
 def safe_repo_path(value: object) -> bool:
     """Reject traversal, absolute paths and ambiguous Windows separators."""
-    if (not isinstance(value, str) or not value or value.startswith("/")
+    if (not isinstance(value, str) or not value or value.startswith("/") or "//" in value
             or "\\" in value or re.fullmatch(r"[A-Za-z0-9._/-]+", value) is None):
         return False
     return all(part not in ("", ".", "..") for part in value.rstrip("/").split("/"))
@@ -59,6 +59,18 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
             errors.append(f"route {index}: not an object")
             continue
         role, source, target = route.get("role"), route.get("source"), route.get("target")
+        # Master owns the coordination inbox and contracts, never runtime migration.
+        if role == "PHX-MASTER" and (
+            source != "coordination/phoenix/"
+            or target is not None
+            or route.get("kind") != "coordination-only"
+        ):
+            errors.append(
+                f"route {index}: MASTER is coordination-only; no runtime source/destination"
+            )
+        # A draft routing inventory is not an executable migration authorization.
+        if "copy_permitted" in route and route["copy_permitted"] is not False:
+            errors.append(f"route {index}: DRAFT route cannot authorize copy")
         if not isinstance(role, str) or role not in ROLES:
             errors.append(f"route {index}: unknown role {role!r}")
         else:
