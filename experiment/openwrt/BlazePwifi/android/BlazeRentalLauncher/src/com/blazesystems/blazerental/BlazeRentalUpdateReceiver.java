@@ -23,7 +23,9 @@ public class BlazeRentalUpdateReceiver extends BroadcastReceiver {
             }
         }
         String msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
-        BlazeRentalUpdateManager.recordInstallFailure(context,
+        // A terminal failure cannot leave an update that never installed
+        // marked as still awaiting its boot-time health check.
+        BlazeRentalUpdateManager.recordTerminalInstallFailure(context,
                 msg == null ? "PackageInstaller status " + status : msg);
     }
 }
