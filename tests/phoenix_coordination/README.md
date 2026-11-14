@@ -1,3 +1,5 @@
+> **2026-11-15 UPDATE — VERIFIED GREEN ON FIXED MASTER SOURCE BLOB (NOT THIS QA BRANCH TIP).** Existing local QA test blob `14e101056c3e5caaeea942d7bcb50b3734846db7` was rerun with current Master validator blob `903df4034f8aa46f66e32de6e0be9b9ab2ca4b48` and original fixture `f7a8ad161df15fbf8eb07ce80f5a0fb327e528b4`. All three blob hashes matched source readbacks and **4/4 Python unittest cases PASS** (exit 0, 0.005s). Historical Master validator blob `a8a989964c45ab9aef5719e8d17ba3f6fc66e773` was 2 PASS/2 FAIL; the earlier RED is retained. **Do not run this stale QA branch in isolation and claim GREEN**; the full merge candidate has not been exercised in GitHub Actions. Detailed results: [EVIDENCE_20261115.md](EVIDENCE_20261115.md). DRAFT / P0 financial & physical production NO-GO.
+
 # PHX-QA independent coordination recipient regression
 
 **Status:** SOURCE-LINKED HOST RED — 2 positive PASS, 2 negative FAIL; draft only, not a release gate.  
