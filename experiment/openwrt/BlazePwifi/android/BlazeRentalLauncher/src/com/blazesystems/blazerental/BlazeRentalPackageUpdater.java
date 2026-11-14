@@ -19,6 +19,8 @@ import java.security.MessageDigest;
 public final class BlazeRentalPackageUpdater {
     public static final String ACTION_INSTALL_RESULT =
             "com.blazesystems.blazerental.ACTION_INSTALL_RESULT";
+    static final String EXTRA_INSTALL_TOKEN =
+            "com.blazesystems.blazerental.EXTRA_INSTALL_TOKEN";
     private static final long MAX_APK_BYTES = 128L * 1024L * 1024L;
 
     private BlazeRentalPackageUpdater() {}
@@ -67,11 +69,11 @@ public final class BlazeRentalPackageUpdater {
             }
 
             String previous = backupCurrentApk(context, dir);
-            BlazeRentalUpdateManager.markInstallPending(context, targetVersion, targetCode,
-                    previous, rescue);
-            String install = commitInstall(context, apk);
+            String token = BlazeRentalUpdateManager.markInstallPending(
+                    context, targetVersion, targetCode, previous, rescue);
+            String install = commitInstall(context, apk, token);
             if (install != null) {
-                BlazeRentalUpdateManager.recordInstallFailure(context, install);
+                BlazeRentalUpdateManager.recordTerminalInstallFailure(context, token, install);
                 return install;
             }
             return "Update staged with Android PackageInstaller";
@@ -144,7 +146,7 @@ public final class BlazeRentalPackageUpdater {
         } catch (Exception ignored) { return ""; }
     }
 
-    private static String commitInstall(Context c, File apk) throws Exception {
+    private static String commitInstall(Context c, File apk, String token) throws Exception {
         PackageInstaller installer = c.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params =
                 new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
@@ -158,7 +160,10 @@ public final class BlazeRentalPackageUpdater {
         session.fsync(out);
         out.close(); in.close();
         Intent result = new Intent(c, BlazeRentalUpdateReceiver.class);
-        result.setAction(ACTION_INSTALL_RESULT);
+        // A unique action plus the opaque attempt token prevents an old
+        // callback from being mistaken for a newer install attempt.
+        result.setAction(ACTION_INSTALL_RESULT + "." + token);
+        result.putExtra(EXTRA_INSTALL_TOKEN, token);
         PendingIntent pending = PendingIntent.getBroadcast(c, id, result,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         session.commit(pending.getIntentSender());
