@@ -35,7 +35,53 @@ for f in "$E6" "$E32"; do
   grep -q '"/quarantine"' "$f" || { echo "Missing /quarantine route in $f" >&2; exit 1; }
   grep -q '"/quarantine/clear"' "$f" || { echo "Missing /quarantine/clear route in $f" >&2; exit 1; }
 
-  # 4. Syntax & Brace Balancing Check
+  # 4. Quarantine commit must fail closed before clearPending()
+  python3 - "$f" <<'PY'
+import sys
+
+path = sys.argv[1]
+content = open(path, encoding="utf-8").read()
+
+def function_body(signature):
+    start = content.find(signature)
+    if start < 0:
+        sys.exit(f"Missing {signature} in {path}")
+    brace = content.find("{", start)
+    depth = 0
+    for pos in range(brace, len(content)):
+        if content[pos] == "{":
+            depth += 1
+        elif content[pos] == "}":
+            depth -= 1
+            if depth == 0:
+                return content[brace + 1:pos]
+    sys.exit(f"Unclosed {signature} in {path}")
+
+append_body = function_body("bool appendQuarantineRecord")
+quarantine_body = function_body("bool quarantinePending")
+required = [
+    'if(!q) return false;',
+    'written!=(size_t)len',
+    'if(!verify) return false;',
+    'after==before+(size_t)len',
+    'QUARANTINE_MAX_BYTES',
+]
+for token in required:
+    if token not in append_body and token not in content:
+        sys.exit(f"Missing fail-closed quarantine check {token!r} in {path}")
+
+guard = 'if(!appendQuarantineRecord(reason))'
+guard_pos = quarantine_body.find(guard)
+clear_pos = quarantine_body.find("clearPending();")
+if guard_pos < 0 or clear_pos < 0 or clear_pos < guard_pos:
+    sys.exit(f"clearPending() is not gated by verified quarantine commit in {path}")
+failure_path = quarantine_body[guard_pos:clear_pos]
+if "return false;" not in failure_path:
+    sys.exit(f"quarantine failure can reach clearPending() in {path}")
+print(f"Verified fail-closed quarantine source path: {path}")
+PY
+
+  # 5. Syntax & Brace Balancing Check
   python3 - "$f" <<'PY'
 import sys
 content = open(sys.argv[1]).read()
@@ -53,7 +99,39 @@ if stack:
 PY
 done
 
-# 4. ESP8266 Nonce Entropy Check (HW-P1-1): Ensure micros() is NOT in freshNonce
+# 6. Failure-injection model for open, short-write, verify, and reboot paths.
+# Source assertions above bind this transition model to both production sketches.
+python3 - <<'PY'
+PENDING = {"pulses": 5, "nonce": "n-1", "target": "t-1"}
+
+def quarantine_attempt(*, open_ok=True, requested=120, written=120, verify_ok=True, size_ok=True):
+    pending = dict(PENDING)
+    if not open_ok:
+        return pending, False
+    if written != requested:
+        return pending, False
+    if not verify_ok or not size_ok:
+        return pending, False
+    return None, True
+
+for name, kwargs in {
+    "open failure": {"open_ok": False},
+    "short write": {"written": 47},
+    "verify open failure": {"verify_ok": False},
+    "post-close size mismatch": {"size_ok": False},
+}.items():
+    pending, committed = quarantine_attempt(**kwargs)
+    assert not committed, name
+    assert pending == PENDING, f"{name} erased pending coin"
+    reboot_loaded = dict(pending)
+    assert reboot_loaded == PENDING, f"{name} lost pending coin across reboot"
+
+pending, committed = quarantine_attempt()
+assert committed and pending is None, "verified append did not clear pending coin"
+print("Quarantine failure injection PASS: pending survives all failed commits and simulated reboot")
+PY
+
+# 7. ESP8266 Nonce Entropy Check (HW-P1-1): Ensure micros() is NOT in freshNonce
 python3 - "$E6" <<'PY'
 import sys
 content = open(sys.argv[1]).read()
