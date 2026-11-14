@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs seven status-auth and four installer-result regressions in a
+# Runs seven status-auth and six installer-result regressions in a
 # disposable Android API 27 emulator; invoked explicitly by Bash because
 # android-emulator-runner calls the script through /bin/sh.
 set -euo pipefail
@@ -49,6 +49,8 @@ expected_installer = {
     "validUserConfirmationDoesNotClearPending",
     "missingConfirmationIntentTerminatesPending",
     "staleFailureCannotClearNewerInstallAttempt",
+    "preCommitExceptionClearsOnlyMatchingPendingAttempt",
+    "ambiguousCommitExceptionKeepsPendingForAndroidCallback",
 }
 expected = {
     "LeaseSyncAuthBeforeCommitTest": expected_auth,
@@ -84,6 +86,6 @@ with open("rental-auth-results/results.txt", "w") as out:
     for suite in sorted(expected):
         for name in sorted(expected[suite]):
             out.write("PASS " + suite + "." + name + "\n")
-print("EMULATOR API 27 / 7/7 auth + 4/4 installer native tests PASS")
+print("EMULATOR API 27 / 7/7 auth + 6/6 installer native tests PASS")
 
 PY
