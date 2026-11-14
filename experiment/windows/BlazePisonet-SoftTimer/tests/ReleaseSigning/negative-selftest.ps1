@@ -120,7 +120,14 @@ try {
   $start=$workflow.IndexOf('      - name: Upload validated release candidates',[StringComparison]::Ordinal)
   $end=$workflow.IndexOf('      - name: Publish GitHub Release',[StringComparison]::Ordinal)
   if ($start -lt 0 -or $end -le $start) { throw 'Upload/publisher blocks missing' }
-  $upload=$workflow.Substring($start,$end-$start)
+  # Stop at the next job's admission step: its intentional frozen-version
+  # denial must not be mistaken for a hardcoded artifact filename.
+  $uploadEnd=$workflow.IndexOf('      - name: RELEASE-ADMISSION prevent frozen version',[StringComparison]::Ordinal)
+  if ($uploadEnd -le $start -or $uploadEnd -ge $end) {
+    throw 'Validated upload block and future-release admission step not in expected order'
+  }
+  $upload=$workflow.Substring($start,$uploadEnd-$start)
+
   foreach ($suffix in @(
     ('name: BlazePisonet-SoftTimer-v'+$template+'-win-x64'),
     ('release/BlazePisonet-SoftTimer-Setup-v'+$template+'.exe'),
