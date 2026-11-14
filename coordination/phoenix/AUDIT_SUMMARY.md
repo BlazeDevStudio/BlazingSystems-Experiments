@@ -68,3 +68,20 @@ Project Phoenix is under active, rigorous multi-agent and developer coordination
    `PHX-PISONET` must integrate `TimeCreditMath.TryAdd` (PR #268) with the same-owned-handle COM transport (PR #255) and verify warning-free compilation.
 5. **No Production Release:**
    Under all circumstances, production gates remain firmly closed until physical acceptance criteria are fulfilled.
+
+
+---
+
+## 5. 2026-11-15 live integration candidate reconciliation — independent Master pass
+
+**Scope:** read-only live GitHub source/commit metadata and a narrowly scoped Master coordination verifier enhancement. This subsection updates evidence after the 2026-11-13 historical snapshot above, without rewriting another role's handover or claiming a production release.
+
+| Evidence item | Current observation | Admission assessment |
+|---|---|---|
+| Historical source `Experiments/main` | `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active Full development is separately `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` | Main is not the complete current Phoenix development branch |
+| COE migration [draft PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) | `b382d233ff06c8791b1028bed3c617cc7b670d12` with `Pisowifi/`, `Rental/`, `Pisonet/`, `Hardware/`, `Shared/` staging, but `main@a6513ab4412b4c014eee2863e45cbe32d06cb243` remains structure-only | DRAFT. Do not treat PR body assertion of "95% software release readiness" as verified acceptance. Eight candidate HEAD workflows were reported queued, not passed, during this check |
+| CORE default-deny [draft PR #29](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/29) | `6b404e047cdb4dba3d60b1055d991c8050eaa622`, stacked on #26. [POSIX/BusyBox/provenance workflow 43633615058](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43633615058), job `132565494762`, **COMPLETED SUCCESS**; [case collision 43633615065](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43633615065), job `132565494511`, **COMPLETED SUCCESS** | CI VERIFIED on those two bounded checks only; no P0 payment, hardware or production admission implied. This patch is not integrated into COE main or #26 |
+| Migration destination path collisions | Two real target-prefix overlaps: `Rental/` ↔ `Rental/android/`, `Rental/` ↔ `Rental/openwrt/`; distinct nonoverlapping original sources | Root `Rental/` route is now `manual-file-mapping-required` and `copy_permitted=false`. No bulk recursive copy or ownership overwrite; per-file immutable provenance + QA sign-off first |
+| PHX-MASTER audit & source guards | Draft [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) now guards source *and destination* overlaps; 13 Python regression cases authored | Independent live tree/manifest checks executed; **Python tests have not been run** on its latest source SHA, and no exact-head Actions run has been identified |
+
+**Priority order:** P0 #31/#32 durable ledger and receipt/lease atomics with independent source-exact QA → P0 #43 protected off-device witness, key custody and safe v1→v2 migration → #34 real electrical/physical acceptance (150 actual power cuts, 30-device 24h soak, noncustomer native targets) → signed release dry run → separately authorized commercial cutover. No manufactured hardware proof, automatic merge or release.
