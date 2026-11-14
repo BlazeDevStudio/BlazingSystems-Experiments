@@ -60,95 +60,7 @@ try {
     throw 'Release approval, Unicode gate or literal checkout lost'
   }
   # The PR build executes project code; it must never carry release-write authority.
-  if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?  $future='0.4.1'
-  # Construct the Actions expression without embedding YAML template delimiters.
-  $template=('{0}{1}{1} env.VERSION {2}{2}' -f [char]36,[char]123,[char]125)
-  $start=$workflow.IndexOf('      - name: Upload validated release candidates',[StringComparison]::Ordinal)
-  $end=$workflow.IndexOf('      - name: Publish GitHub Release',[StringComparison]::Ordinal)
-  if ($start -lt 0 -or $end -le $start) { throw 'Upload/publisher blocks missing' }
-  $upload=$workflow.Substring($start,$end-$start)
-  foreach ($suffix in @(
-    ('name: BlazePisonet-SoftTimer-v'+$template+'-win-x64'),
-    ('release/BlazePisonet-SoftTimer-Setup-v'+$template+'.exe'),
-    ('BlazePisonet-SoftTimer-v'+$template+'-portable-win-x64.zip')
-  )) {
-    if (-not $upload.Contains($suffix)) { throw "Upload VERSION template missing: $suffix" }
-  }
-  if ($upload.Contains('v0.4.0')) { throw 'Frozen version hardcoded in upload metadata' }
-  $futureUpload=$upload.Replace($template,$future)
-  foreach ($name in @(
-    'BlazePisonet-SoftTimer-v0.4.1-win-x64',
-    'release/BlazePisonet-SoftTimer-Setup-v0.4.1.exe',
-    'BlazePisonet-SoftTimer-v0.4.1-portable-win-x64.zip'
-  )) {
-    if (-not $futureUpload.Contains($name)) { throw "Future-version artifact not derived: $name" }
-  }
-  if ($futureUpload.Contains('v0.4.0')) { throw 'Future-version artifact points at frozen tag' }
-  $notesTemplate='$env:PROJECT_DIR/RELEASE_NOTES_v$env:VERSION.md'
-  if (([regex]::Matches($workflow,[regex]::Escape($notesTemplate))).Count -ne 2) {
-    throw 'Both packaging and publisher must use version-specific release notes'
-  }
-  if (([regex]::Matches($workflow,[regex]::Escape('Test-Path -LiteralPath $releaseNotes -PathType Leaf'))).Count -ne 2) {
-    throw 'Version-specific notes must fail closed for both packaging and publisher'
-  }
-  $publisher=$workflow.Substring($end)
-  foreach ($contract in @(
-    '$releaseTag="softtimer-v$env:VERSION"',
-    'gh release view $releaseTag',
-    'gh release create $releaseTag',
-    '--notes-file $releaseNotes',
-    "vars.SOFTTIMER_RELEASE_APPROVED == 'true'",
-    "env.VERSION != '0.4.0'"
-  )) {
-    if (-not $publisher.Contains($contract)) { throw "Publisher contract missing: $contract" }
-  }
-  if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
-    throw 'Publisher reuses frozen tag or notes'
-  }
-  # VERSION is authoritative for both native .NET artifacts and NSIS output.
-  foreach ($entry in @(
-    @{ Marker='-p:Version=$env:VERSION'; Count=2 },
-    @{ Marker='-p:InformationalVersion=$env:VERSION+$source'; Count=2 },
-    @{ Marker='-p:IncludeSourceRevisionInInformationalVersion=false'; Count=2 },
-    @{ Marker='-warnaserror @versionArgs'; Count=2 },
-    @{ Marker=' -o out/app @versionArgs'; Count=1 },
-    @{ Marker=' -o out/watchdog @versionArgs'; Count=1 }
-  )) {
-    if (([regex]::Matches($workflow,[regex]::Escape($entry.Marker))).Count -ne $entry.Count) {
-      throw "Release .NET/Watchdog VERSION contract changed: $($entry.Marker)"
-    }
-  }
-  if (-not $workflow.Contains('"/DSOFTTIMER_VERSION=$env:VERSION"') -or
-      -not $workflow.Contains('Version-MetadataProbe.ps1')) {
-    throw 'NSIS version override or isolated native compiled probe absent'
-  }
-  $nsis=Get-Content -LiteralPath (Join-Path $PSScriptRoot '../../installer/BlazePisonet-SoftTimer.nsi') -Raw
-  foreach ($required in @(
-    '!ifndef SOFTTIMER_VERSION',
-    'VIProductVersion "',
-    'VIAddVersionKey /LANG=1033 "ProductVersion"',
-    'OutFile "',
-    '"DisplayVersion" "'
-  )) {
-    if (-not $nsis.Contains($required)) { throw "NSIS version source missing: $required" }
-  }
-  if (([regex]::Matches($nsis,'0[.]4[.]0')).Count -ne 2) {
-    throw 'Frozen installer must retain only documented default 0.4.0 (not hardcoded metadata)'
-  }
-  Write-Output 'RELEASE-VERSION: build/publish/installer source and isolated native probe contracts PASS'
-
-  Write-Output "RELEASE-PATHS: frozen v0.4.0 unchanged; hypothetical v$future template PASS"
-
-  if ($ActualUnsignedSetup) {
-    MustDeny 'actual CI-built unsigned native Setup' {
-      & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
-    } 'lacks trusted embedded Authenticode'
-  }
-  Write-Output 'RELEASE-SIGN: fail-closed negative controls and signing order PASS; no certificate or signed positive claimed'
-} finally {
-  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
-}
-) {
+  if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Pull-request/build workflow token must be read-only'
   }
   $publisherJobStart=$workflow.IndexOf('  publish-release:',[StringComparison]::Ordinal)
@@ -158,95 +70,7 @@ try {
   if ($buildPart.Contains('contents: write') -or $buildPart.Contains('gh release create')) {
     throw 'Untrusted build or PR code retains GitHub release write authority'
   }
-  if ($publisherJob -notmatch '(?m)^    permissions:\r?\n      contents: write\r?  $future='0.4.1'
-  # Construct the Actions expression without embedding YAML template delimiters.
-  $template=('{0}{1}{1} env.VERSION {2}{2}' -f [char]36,[char]123,[char]125)
-  $start=$workflow.IndexOf('      - name: Upload validated release candidates',[StringComparison]::Ordinal)
-  $end=$workflow.IndexOf('      - name: Publish GitHub Release',[StringComparison]::Ordinal)
-  if ($start -lt 0 -or $end -le $start) { throw 'Upload/publisher blocks missing' }
-  $upload=$workflow.Substring($start,$end-$start)
-  foreach ($suffix in @(
-    ('name: BlazePisonet-SoftTimer-v'+$template+'-win-x64'),
-    ('release/BlazePisonet-SoftTimer-Setup-v'+$template+'.exe'),
-    ('BlazePisonet-SoftTimer-v'+$template+'-portable-win-x64.zip')
-  )) {
-    if (-not $upload.Contains($suffix)) { throw "Upload VERSION template missing: $suffix" }
-  }
-  if ($upload.Contains('v0.4.0')) { throw 'Frozen version hardcoded in upload metadata' }
-  $futureUpload=$upload.Replace($template,$future)
-  foreach ($name in @(
-    'BlazePisonet-SoftTimer-v0.4.1-win-x64',
-    'release/BlazePisonet-SoftTimer-Setup-v0.4.1.exe',
-    'BlazePisonet-SoftTimer-v0.4.1-portable-win-x64.zip'
-  )) {
-    if (-not $futureUpload.Contains($name)) { throw "Future-version artifact not derived: $name" }
-  }
-  if ($futureUpload.Contains('v0.4.0')) { throw 'Future-version artifact points at frozen tag' }
-  $notesTemplate='$env:PROJECT_DIR/RELEASE_NOTES_v$env:VERSION.md'
-  if (([regex]::Matches($workflow,[regex]::Escape($notesTemplate))).Count -ne 2) {
-    throw 'Both packaging and publisher must use version-specific release notes'
-  }
-  if (([regex]::Matches($workflow,[regex]::Escape('Test-Path -LiteralPath $releaseNotes -PathType Leaf'))).Count -ne 2) {
-    throw 'Version-specific notes must fail closed for both packaging and publisher'
-  }
-  $publisher=$workflow.Substring($end)
-  foreach ($contract in @(
-    '$releaseTag="softtimer-v$env:VERSION"',
-    'gh release view $releaseTag',
-    'gh release create $releaseTag',
-    '--notes-file $releaseNotes',
-    "vars.SOFTTIMER_RELEASE_APPROVED == 'true'",
-    "env.VERSION != '0.4.0'"
-  )) {
-    if (-not $publisher.Contains($contract)) { throw "Publisher contract missing: $contract" }
-  }
-  if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
-    throw 'Publisher reuses frozen tag or notes'
-  }
-  # VERSION is authoritative for both native .NET artifacts and NSIS output.
-  foreach ($entry in @(
-    @{ Marker='-p:Version=$env:VERSION'; Count=2 },
-    @{ Marker='-p:InformationalVersion=$env:VERSION+$source'; Count=2 },
-    @{ Marker='-p:IncludeSourceRevisionInInformationalVersion=false'; Count=2 },
-    @{ Marker='-warnaserror @versionArgs'; Count=2 },
-    @{ Marker=' -o out/app @versionArgs'; Count=1 },
-    @{ Marker=' -o out/watchdog @versionArgs'; Count=1 }
-  )) {
-    if (([regex]::Matches($workflow,[regex]::Escape($entry.Marker))).Count -ne $entry.Count) {
-      throw "Release .NET/Watchdog VERSION contract changed: $($entry.Marker)"
-    }
-  }
-  if (-not $workflow.Contains('"/DSOFTTIMER_VERSION=$env:VERSION"') -or
-      -not $workflow.Contains('Version-MetadataProbe.ps1')) {
-    throw 'NSIS version override or isolated native compiled probe absent'
-  }
-  $nsis=Get-Content -LiteralPath (Join-Path $PSScriptRoot '../../installer/BlazePisonet-SoftTimer.nsi') -Raw
-  foreach ($required in @(
-    '!ifndef SOFTTIMER_VERSION',
-    'VIProductVersion "',
-    'VIAddVersionKey /LANG=1033 "ProductVersion"',
-    'OutFile "',
-    '"DisplayVersion" "'
-  )) {
-    if (-not $nsis.Contains($required)) { throw "NSIS version source missing: $required" }
-  }
-  if (([regex]::Matches($nsis,'0[.]4[.]0')).Count -ne 2) {
-    throw 'Frozen installer must retain only documented default 0.4.0 (not hardcoded metadata)'
-  }
-  Write-Output 'RELEASE-VERSION: build/publish/installer source and isolated native probe contracts PASS'
-
-  Write-Output "RELEASE-PATHS: frozen v0.4.0 unchanged; hypothetical v$future template PASS"
-
-  if ($ActualUnsignedSetup) {
-    MustDeny 'actual CI-built unsigned native Setup' {
-      & $gate -Mode Verify -InputPaths @($ActualUnsignedSetup,$fakeApp,$fakeWatchdog) -PinnedCertSha256 $pin -ExpectedVersion '0.4.0' -ExpectedSourceCommit ('a'*40)
-    } 'lacks trusted embedded Authenticode'
-  }
-  Write-Output 'RELEASE-SIGN: fail-closed negative controls and signing order PASS; no certificate or signed positive claimed'
-} finally {
-  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
-}
- -or
+  if ($publisherJob -notmatch '(?m)^    permissions:\r?\n      contents: write\r?$' -or
       -not $publisherJob.Contains('needs: build-windows') -or
       -not $publisherJob.Contains("vars.SOFTTIMER_RELEASE_APPROVED == 'true'") -or
       -not $publisherJob.Contains("github.ref == 'refs/heads/main'") -or
@@ -263,7 +87,7 @@ try {
       throw "Publisher re-verification payload missing from uploaded artifact: $name"
     }
   }
-  Write-Output 'RELEASE-TOKEN: read-only build/PR, separate owner-approved write-only publisher with downloaded signed payload PASS'
+  Write-Output 'RELEASE-TOKEN: read-only build/PR, separate owner-approved publisher with downloaded signed payload PASS'
 
   # Preview only: do not mutate actual VERSION, create tags or publish assets.
   $future='0.4.1'
