@@ -5,7 +5,6 @@
 // No protected reboot freshness, signer custody, or monetary authority.
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <mbedtls/md.h>
 #include <mbedtls/sha256.h>
@@ -23,6 +22,16 @@ inline bool equal_fixed(const unsigned char *a,const unsigned char *b,size_t n) 
   for(size_t i=0;i<n;i++) diff|=(unsigned char)(a[i]^b[i]);
   return diff==0;
 }
+// Deterministic rendering of a 32-byte digest. Shared by SHA256 and HMAC
+// so both checks use one auditable lowercase-hex implementation.
+inline void encode_sha256_hex(const unsigned char digest[32], char out[65]) {
+  static const char kHex[] = "0123456789abcdef";
+  for (size_t i = 0; i < 32; ++i) {
+    out[2 * i] = kHex[digest[i] >> 4];
+    out[2 * i + 1] = kHex[digest[i] & 0x0f];
+  }
+  out[64] = '\0';
+}
 inline bool matches_policy_digest(const char *raw_policy,size_t len,const char *digest) {
   if (!raw_policy || !hex64(digest)) return false;
   unsigned char hash[32]; char hex[65];
@@ -32,8 +41,7 @@ inline bool matches_policy_digest(const char *raw_policy,size_t len,const char *
           mbedtls_sha256_finish_ret(&ctx,hash)==0;
   mbedtls_sha256_free(&ctx);
   if(!ok) return false;
-  for(size_t i=0;i<32;i++) snprintf(hex+i*2,3,"%02x",hash[i]);
-  hex[64]=0;
+  encode_sha256_hex(hash, hex);
   return equal_fixed(reinterpret_cast<const unsigned char*>(hex),
                      reinterpret_cast<const unsigned char*>(digest),64);
 }
@@ -49,8 +57,7 @@ inline bool verify_mac(const char *key,size_t key_len,
   if(!md || mbedtls_md_hmac(md,reinterpret_cast<const unsigned char*>(key),
               key_len,reinterpret_cast<const unsigned char*>(canonical),
               strlen(canonical),out)!=0) return false;
-  for(size_t i=0;i<32;i++) snprintf(hex+i*2,3,"%02x",out[i]);
-  hex[64]=0;
+  encode_sha256_hex(out, hex);
   return equal_fixed(reinterpret_cast<const unsigned char*>(hex),
                      reinterpret_cast<const unsigned char*>(signature),64);
 }
