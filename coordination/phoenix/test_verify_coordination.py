@@ -72,6 +72,22 @@ class CoordinationContractTests(unittest.TestCase):
     def test_example_protocol_passes(self):
         self.assertEqual(validate_envelope(self.example), [])
 
+    def test_known_recipient_and_all_are_accepted(self):
+        for recipient in ("ALL", "PHX-MASTER", "PHX-QA", "PHX-RENTAL"):
+            with self.subTest(recipient=recipient):
+                modified = copy.deepcopy(self.example)
+                modified["to"] = recipient
+                self.assertEqual(validate_envelope(modified), [])
+
+    def test_unknown_or_ambiguous_recipient_is_rejected(self):
+        for recipient in ("PHX-UNKNOWN", "PHX-QA;PHX-UNKNOWN",
+                          "PHX-QA;PHX-CORE", "ALL;PHX-QA",
+                          " PHX-QA", "PHX-QA ", "all"):
+            with self.subTest(recipient=recipient):
+                modified = copy.deepcopy(self.example)
+                modified["to"] = recipient
+                self.assertTrue(any("Invalid recipient" in e for e in validate_envelope(modified)))
+
     def test_bad_protocol_and_missing_fields_fail(self):
         modified = copy.deepcopy(self.example)
         modified["protocol"] = "NOT-A-PROTOCOL"
