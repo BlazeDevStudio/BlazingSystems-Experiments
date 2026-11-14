@@ -35,7 +35,8 @@ STATUSES = frozenset({"QUEUED", "IN_PROGRESS", "BLOCKED", "PR_READY", "VERIFIED"
 
 def safe_repo_path(value: object) -> bool:
     """Reject traversal, absolute paths and ambiguous Windows separators."""
-    if (not isinstance(value, str) or not value or value.startswith("/")\n            or "\\" in value or re.fullmatch(r"[A-Za-z0-9._/-]+", value) is None):
+    if (not isinstance(value, str) or not value or value.startswith("/")
+            or "\\" in value or re.fullmatch(r"[A-Za-z0-9._/-]+", value) is None):
         return False
     return all(part not in ("", ".", "..") for part in value.rstrip("/").split("/"))
 
