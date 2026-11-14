@@ -1,4 +1,4 @@
-## PHX-RELEASE-PUBLISHER-ISOLATION-20261115 — 2026-11-15 Asia/Manila — P1 release authorization boundary
+## 2026-11-15 — PHX-RELEASE-PUBLISHER-ISOLATION — P1 release authorization boundary
 
 - **Status:** committed_untested, review required; production release NO-GO. Stacked isolated branch `phoenix/release-publisher-isolation-20261115` from draft PR #242 HEAD `734b89d9e7792247e8376335c3f3685500ab3f89`.
 - **Scope:** `.github/workflows/blazepisonet-softtimer-release.yml` and `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1` only. Build and PR checks now request `contents: read`; only a separate owner-approved, main-push publication job requests `contents: write`. The publisher retrieves a build artifact, checks real signed Setup/App/Watchdog, source/version, ZIP membership and SHA256SUMS before any release; the artifact also holds App and Watchdog for later re-admission.
@@ -6,4 +6,6 @@
 - **Evidence:** GitHub file-write commit SHAs above and connector readback; source-level static invariants checked only. **Native PowerShell, YAML Actions validation, signed-positive signing, Windows install/uninstall, exact-head CI and physical hardware NOT RUN** at this checkpoint. No deployment or customer money touched.
 - **Risk:** workflow refactor requires independent QA/MASTER review, especially GitHub artifact path preservation and publisher authorization. Safe rollback: leave draft unmerged or revert isolated branch changes. No change to frozen `VERSION: 0.4.0`, signer keys, receipt schema, firmware or production tag.
 - **NEXT EXACT ACTION:** open a draft PR stacked on existing PR #242; inspect exact-head `BlazePisonet SoftTimer Windows Release` Actions handover and Windows jobs, run negative-selftest and packaging parity on a Windows runner, check publisher job remains skipped for PR, then obtain QA+MASTER review before any integration.
+
+- **First exact-head CI failure:** PR #291 [Actions run 43632635404](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632635404) at `e41423d1d6fec9fecc6a7d91d23fc43c873a1705` completed **FAILURE**: `handover` job 132562401485 rejected ledger because entry heading omitted literal `## 2026-`; build-windows **SKIPPED**, publish-release **SKIPPED**. No production source executed; this is documentation syntax, not a signing failure. Correction: dated ledger heading now matches `handover_gate.sh`. **NEXT:** PR synchronize, check exact-head handover and native Windows build.
 
