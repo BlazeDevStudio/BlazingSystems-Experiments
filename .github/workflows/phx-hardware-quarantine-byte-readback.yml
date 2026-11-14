@@ -1,0 +1,28 @@
+name: PHX-HARDWARE Quarantine Byte Readback LAB
+on:
+  pull_request:
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
+      - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
+  workflow_dispatch:
+jobs:
+  quarantine-source:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Compile exact ESP32 and ESP8266 quarantine source with fault-injected fake LittleFS
+        run: |
+          set -euo pipefail
+          python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_readback_lab.py
+      - name: Assert real money and hardware are not certified
+        run: |
+          echo "SIMULATED_ONLY=1"
+          echo "PHYSICAL_POWER_CUT_VERIFIED=0"
+          echo "FINANCIAL_PRODUCTION_AUTHORIZED=0"
