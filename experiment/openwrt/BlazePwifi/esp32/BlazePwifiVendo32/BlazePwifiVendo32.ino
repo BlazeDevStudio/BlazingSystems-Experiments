@@ -126,18 +126,57 @@ void clearPending(){
   if(fsReady){ LittleFS.remove("/pending.dat"); LittleFS.remove("/pending.new"); LittleFS.remove("/pending.bak"); }
 }
 
-void quarantinePending(const String &reason){
-  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
-  if(fsReady && pendingPulses>0){
-    File q=LittleFS.open("/quarantine.log","a");
-    if(q){
-      q.printf("TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
-               (unsigned long)millis(), (unsigned int)pendingPulses,
-               pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
-      q.flush(); q.close();
-    }
+bool quarantinePending(const String &reason){
+  // Fail closed: a rejected, uncredited coin must not disappear on disk errors.
+  if(!fsReady || pendingPulses==0 || pendingNonce.length()==0 || pendingTarget.length()==0){
+    Serial.println("QUARANTINE FAILED: no writable pending event; retaining evidence.");
+    return false;
   }
+  String safeReason=reason;
+  safeReason.replace('\r',' ');
+  safeReason.replace('\n',' ');
+  if(safeReason.length()>96) safeReason.remove(96);
+  char record[320];
+  int length=snprintf(record,sizeof(record),
+      "TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
+      (unsigned long)millis(), (unsigned int)pendingPulses,
+      pendingNonce.c_str(), pendingTarget.c_str(), safeReason.c_str());
+  if(length<=0 || (size_t)length>=sizeof(record)){
+    Serial.println("QUARANTINE FAILED: record too large; retaining pending event.");
+    return false;
+  }
+  File journal=LittleFS.open("/quarantine.log","a");
+  if(!journal){
+    Serial.println("QUARANTINE FAILED: log open; retaining pending event.");
+    return false;
+  }
+  size_t previousSize=journal.size();
+  size_t bytesWritten=journal.write((const uint8_t*)record,(size_t)length);
+  journal.flush();
+  journal.close();
+  if(bytesWritten!=(size_t)length){
+    Serial.println("QUARANTINE FAILED: short log write; retaining pending event.");
+    return false;
+  }
+  // Verified readback reduces silent losses; physical power-cut proof is still required.
+  File check=LittleFS.open("/quarantine.log","r");
+  if(!check){
+    Serial.println("QUARANTINE FAILED: log readback open; retaining pending event.");
+    return false;
+  }
+  bool verified=check.size()>=previousSize+(size_t)length &&
+                check.seek(previousSize,SeekSet);
+  for(size_t i=0;verified && i<(size_t)length;i++){
+    if(check.read()!=(unsigned char)record[i]) verified=false;
+  }
+  check.close();
+  if(!verified){
+    Serial.println("QUARANTINE FAILED: log readback mismatch; retaining pending event.");
+    return false;
+  }
+  Serial.println("QUARANTINE: append read back; clearing active pending event.");
   clearPending();
+  return true;
 }
 
 void loadConfig(){
