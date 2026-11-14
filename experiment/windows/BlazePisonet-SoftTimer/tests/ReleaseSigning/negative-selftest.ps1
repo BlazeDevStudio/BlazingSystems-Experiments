@@ -87,6 +87,28 @@ try {
       throw "Publisher re-verification payload missing from uploaded artifact: $name"
     }
   }
+  # A skipped publish step is insufficient: a skipped privileged JOB is required.
+  # Only valid future builds may export an eligibility output from a job
+  # without write access, after package byte validation has completed.
+  $expectedOutputTemplate=('{0}{1}{1} steps.release_version_gate.outputs.future_release_eligible {2}{2}' -f [char]36,[char]123,[char]125)
+  if (-not $buildPart.Contains('future_release_eligible: '+$expectedOutputTemplate) -or
+      -not $buildPart.Contains('id: release_version_gate') -or
+      -not $buildPart.Contains('future_release_eligible=false') -or
+      -not $buildPart.Contains('future_release_eligible=true') -or
+      -not $buildPart.Contains("throw 'RELEASE-ADMISSION: invalid version") -or
+      $buildPart.IndexOf('id: release_version_gate',[StringComparison]::Ordinal) -lt
+        $buildPart.IndexOf('Upload validated release candidates',[StringComparison]::Ordinal)) {
+    throw 'Release candidate eligibility must be derived after artifact validation and fail closed for frozen/invalid versions'
+  }
+  $jobIfEnd=$publisherJob.IndexOf('    runs-on:',[StringComparison]::Ordinal)
+  if ($jobIfEnd -lt 0) { throw 'Publisher job conditional or runner declaration missing' }
+  $publisherGuard=$publisherJob.Substring(0,$jobIfEnd)
+  if (-not $publisherGuard.Contains("needs.build-windows.outputs.future_release_eligible == 'true'") -or
+      $publisherGuard.Contains('env.VERSION')) {
+    throw 'Writable publisher job itself must require validated future-version output, not unsupported env context'
+  }
+  Write-Output 'RELEASE-ELIGIBILITY: frozen and invalid version deny write-token publisher job PASS'
+
   Write-Output 'RELEASE-TOKEN: read-only build/PR, separate owner-approved publisher with downloaded signed payload PASS'
 
   # Preview only: do not mutate actual VERSION, create tags or publish assets.
