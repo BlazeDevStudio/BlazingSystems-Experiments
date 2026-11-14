@@ -1,6 +1,6 @@
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
-**Protocol Specification:** BLAZE-COMMS/1  
+**Protocol Specification:** BLAZE-COMMS/1  \n**Exact source routing authority:** [OWNERSHIP_ROUTES.json](OWNERSHIP_ROUTES.json) and [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md). Broad root paths below do not grant ownership of unrelated products.  
 **Team Topology:** FULL (7 CHATS) TEAM  
 **Governing Issue:** [#172 — [PHX] CONTROL PLANE](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172)  
 **Cleanup Gate Issue:** [#266 — [PHX] Code-cleanup-first gate across seven developer roles](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)  
@@ -12,12 +12,12 @@
 | Role ID | Role Title | Primary Branch Suggestion | Owned Directory / File Scope | Key Upstream Dependencies | Key Downstream Consumers |
 |---|---|---|---|---|---|
 | **PHX-MASTER** | Master Auditor / Integration Coordinator | `phoenix/master-coordination` | `coordination/phoenix/`, architecture contracts, release gates | All Roles | All Roles |
-| **PHX-CORE** | BlazePwifi Core / Financial Authority Engineer | `phoenix/core-finance` | `experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/`, `.../cgi-bin/vendo`, financial schema | PHX-MASTER | PHX-RENTAL, PHX-PISONET, PHX-QA |
-| **PHX-RENTAL** | BlazeRental Android / Rental Server Engineer | `phoenix/rental-android` | `android/`, `experiment/openwrt/BlazePwifi/android/`, `profiles/standalone-rental/` | PHX-CORE, PHX-MASTER | PHX-QA, PHX-RELEASE |
-| **PHX-PISONET** | BlazePisonet Windows SoftTimer Engineer | `phoenix/pisonet-windows` | `embedded/`, Windows SoftTimer C# source, NSIS installer, serial COM discovery | PHX-CORE, PHX-MASTER | PHX-QA, PHX-RELEASE |
+| **PHX-CORE** | BlazePwifi Core / Financial Authority Engineer | `phoenix/core-finance` | `experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/` and `.../rootfs/www/blazepwifi/cgi-bin/vendo`, financial schema | PHX-MASTER | PHX-RENTAL, PHX-PISONET, PHX-QA |
+| **PHX-RENTAL** | BlazeRental Android / Rental Server Engineer | `phoenix/rental-android` | `experiment/openwrt/BlazePwifi/android/`, `experiment/openwrt/BlazePwifi/profiles/standalone-rental/`, `experiment/openwrt/Rental-Server-Standalone/` (not root `android/`) | PHX-CORE, PHX-MASTER | PHX-QA, PHX-RELEASE |
+| **PHX-PISONET** | BlazePisonet Windows SoftTimer Engineer | `phoenix/pisonet-windows` | `experiment/windows/BlazePisonet-SoftTimer/` (not root `embedded/`) | PHX-CORE, PHX-MASTER | PHX-QA, PHX-RELEASE |
 | **PHX-HARDWARE** | Hardware / Firmware Integration Engineer | `phoenix/hardware-firmware` | `experiment/openwrt/BlazePwifi/esp32/`, `.../esp8266/`, pin/debounce pulse ingress | PHX-MASTER | PHX-CORE, PHX-QA |
-| **PHX-QA** | Independent QA / Security Engineer | `phoenix/qa-security` | `tests/`, `experiment/openwrt/BlazePwifi/tests/`, negative test fixtures, regression harnesses | All Subsystems | PHX-MASTER, PHX-RELEASE |
-| **PHX-RELEASE** | Build / Packaging / Release Engineer | `phoenix/release-engineering` | `.github/workflows/`, release packaging, checksums, Authenticode/APK signing manifests | PHX-QA, PHX-MASTER | Master Release Gate |
+| **PHX-QA** | Independent QA / Security Engineer | `phoenix/qa-security` | `experiment/openwrt/BlazePwifi/tests/`; other product tests only with scoped owner agreement | All Subsystems | PHX-MASTER, PHX-RELEASE |
+| **PHX-RELEASE** | Build / Packaging / Release Engineer | `phoenix/release-engineering` | Phoenix-specific build/signing workflow files (not every `.github/workflows/` entry), packaging and manifests | PHX-QA, PHX-MASTER | Master Release Gate |
 
 ---
 
