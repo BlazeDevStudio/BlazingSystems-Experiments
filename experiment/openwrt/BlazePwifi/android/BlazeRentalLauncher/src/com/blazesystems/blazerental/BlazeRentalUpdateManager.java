@@ -113,6 +113,22 @@ public final class BlazeRentalUpdateManager {
         prefs(c).edit().putString("last_error", safe(message)).apply();
     }
 
+    /**
+     * PackageInstaller reported a terminal failure. Clear only the pending
+     * installation state, retaining prior APK metadata and the error for
+     * operator diagnosis. Never call for valid pending user confirmation.
+     */
+    public static void recordTerminalInstallFailure(Context c, String message) {
+        prefs(c).edit()
+                .remove("pending_version")
+                .remove("pending_code")
+                .remove("pending_rescue")
+                .remove("pending_boots")
+                .remove("pending_started_wall")
+                .putString("last_error", safe(message))
+                .apply();
+    }
+
     public static String lastError(Context c) { return prefs(c).getString("last_error", ""); }
     public static String previousVersion(Context c) { return prefs(c).getString("previous_version", ""); }
     public static int previousCode(Context c) { return prefs(c).getInt("previous_code", 0); }
