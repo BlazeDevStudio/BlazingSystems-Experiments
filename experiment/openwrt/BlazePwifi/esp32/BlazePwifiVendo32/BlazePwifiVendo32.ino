@@ -121,6 +121,17 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
+void initPendingStore(){
+  // begin(false) must never silently format unreconciled coin evidence.
+  fsReady=LittleFS.begin(false);
+  if(!fsReady){
+    Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
+    return;
+  }
+  loadPending();
+}
+
+
 void clearPending(){
   pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
   if(fsReady){ LittleFS.remove("/pending.dat"); LittleFS.remove("/pending.new"); LittleFS.remove("/pending.bak"); }
@@ -357,8 +368,7 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
-  fsReady=LittleFS.begin(true); if(fsReady) loadPending();
-  else Serial.println("CRITICAL: LittleFS unavailable; relay remains disabled.");
+  initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;

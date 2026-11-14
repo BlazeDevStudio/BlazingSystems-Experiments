@@ -118,13 +118,13 @@ void loadPending(){
 }
 
 void initPendingStore(){
+  // Never format a failed-to-mount payment journal. It may contain coin evidence.
   fsReady=LittleFS.begin();
   if(!fsReady){
-    Serial.println("LittleFS mount failed; formatting Vendo journal.");
-    if(LittleFS.format()) fsReady=LittleFS.begin();
+    Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
+    return;
   }
-  if(fsReady) loadPending();
-  else Serial.println("CRITICAL: coin journal unavailable; coin relay will stay disabled.");
+  loadPending();
 }
 
 String esc(const String &s){
