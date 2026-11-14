@@ -81,3 +81,31 @@ Production stays **NO-GO** pending independent anti-rollback witness,
 safe financial migration, real-device signing/provisioning and authenticated
 physical power-cut / soak evidence. A passing local unit or emulator test
 does not satisfy those gates.
+
+
+## Installer failure and pending-state debugging (draft)
+
+- `BlazeRentalUpdateManager.markInstallPending` writes a pending version before
+  handing an APK to Android `PackageInstaller`. A successful **request to
+  install** is not proof that installation succeeded.
+- `BlazeRentalUpdateReceiver` receives asynchronous installer callbacks.
+  A genuine `STATUS_PENDING_USER_ACTION` with a confirmation Intent keeps
+  `pending_code` intact; user action is still outstanding.
+- A terminal failure (including a missing required confirmation Intent) calls
+  `recordTerminalInstallFailure`, which removes only `pending_version`,
+  `pending_code`, `pending_rescue`, `pending_boots` and
+  `pending_started_wall`. It preserves `last_error` and `previous_apk`
+  for diagnosis; do not delete any real installer backup here.
+- Three isolated API27 regression cases are in
+  `tests/src/com/blazesystems/blazerental/BlazeRentalUpdateFailureTest.java`.
+  They use separate test preferences and intercept the user confirmation
+  Intent; no APK download/install or real Device Owner interaction occurs.
+  Run explicitly in an Android27 emulator with the instrumented class:
+  `connectedAospDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.blazesystems.blazerental.BlazeRentalUpdateFailureTest`.
+- The existing focused auth suite only executes
+  `LeaseSyncAuthBeforeCommitTest` (7 cases), **not** this new class.
+  New tests are not accepted until exact-SHA XML evidence confirms all three.
+  The broader build compiles the Android test APK but does not necessarily
+  execute every instrumentation class.
+- Synchronous failures before or during `commitInstall` are a separate
+  recovery review. Do not claim full installer transaction atomicity.
