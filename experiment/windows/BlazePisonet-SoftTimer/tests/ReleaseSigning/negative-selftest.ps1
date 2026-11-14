@@ -103,8 +103,10 @@ try {
   $jobIfEnd=$publisherJob.IndexOf('    runs-on:',[StringComparison]::Ordinal)
   if ($jobIfEnd -lt 0) { throw 'Publisher job conditional or runner declaration missing' }
   $publisherGuard=$publisherJob.Substring(0,$jobIfEnd)
-  if (-not $publisherGuard.Contains("needs.build-windows.outputs.future_release_eligible == 'true'") -or
-      $publisherGuard.Contains('env.VERSION')) {
+  $publisherIfLines=@($publisherGuard -split '\r?\n' | Where-Object { $_ -match '^\s*if:' })
+  if ($publisherIfLines.Count -ne 1 -or
+      -not $publisherIfLines[0].Contains("needs.build-windows.outputs.future_release_eligible == 'true'") -or
+      $publisherIfLines[0].Contains('env.VERSION')) {
     throw 'Writable publisher job itself must require validated future-version output, not unsupported env context'
   }
   Write-Output 'RELEASE-ELIGIBILITY: frozen and invalid version deny write-token publisher job PASS'
