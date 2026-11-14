@@ -1,134 +1,174 @@
 #!/usr/bin/env python3
-"""
-Project Phoenix — Coordination & Architecture Contract Verification Test
-Validates:
-1. Existence and integrity of coordination/phoenix/ documentation.
-2. Non-overlapping scope boundaries across the 7 developer roles.
-3. Compliance of BLAZE-COMMS/1 protocol envelopes with the schema specification.
-"""
+"""Offline, fail-closed checks for the Phoenix coordination contract.
 
-import sys
-import os
-import re
+Run: python3 coordination/phoenix/verify_coordination.py
+No network access, dependencies, production writes or live device operations.
+"""
+from __future__ import annotations
+
 import json
+import re
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-COORDINATION_FILES = [
-    "ARCHITECTURE_CONTRACTS.md",
-    "ROLE_ASSIGNMENTS.md",
-    "INTEGRATION_MATRIX.md",
-    "AUDIT_SUMMARY.md",
-]
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[1]
+ROLES = frozenset({
+    "PHX-MASTER", "PHX-CORE", "PHX-RENTAL", "PHX-PISONET",
+    "PHX-HARDWARE", "PHX-QA", "PHX-RELEASE",
+})
+REQUIRED_FILES = (
+    "ARCHITECTURE_CONTRACTS.md", "ROLE_ASSIGNMENTS.md",
+    "INTEGRATION_MATRIX.md", "AUDIT_SUMMARY.md",
+    "REPOSITORY_ROUTING.md", "OWNERSHIP_ROUTES.json",
+    "COMMUNICATION_EXAMPLE.json",
+)
+REQUIRED_KEYS = frozenset({
+    "protocol", "message_id", "from", "to", "type", "priority",
+    "task_id", "branch", "base_sha", "scope", "status",
+    "evidence", "blockers", "next_action", "updated_utc",
+})
+TYPES = frozenset({"ASSIGN", "ACK", "PROGRESS", "BLOCKER", "REQUEST_REVIEW", "DONE", "DECISION"})
+STATUSES = frozenset({"QUEUED", "IN_PROGRESS", "BLOCKED", "PR_READY", "VERIFIED", "MERGED"})
 
-def check_files_exist():
-    print("[1/4] Checking coordination file presence...")
-    for filename in COORDINATION_FILES:
-        path = os.path.join(BASE_DIR, filename)
-        if not os.path.isfile(path):
-            print(f"FAIL: Missing expected coordination file: {path}")
-            return False
-        if os.path.getsize(path) < 500:
-            print(f"FAIL: Coordination file appears incomplete or empty: {path}")
-            return False
-        print(f"  OK: {filename} ({os.path.getsize(path)} bytes)")
-    return True
 
-def check_role_ownership():
-    print("\n[2/4] Checking non-overlapping role ownership...")
-    role_assignments_path = os.path.join(BASE_DIR, "ROLE_ASSIGNMENTS.md")
-    with open(role_assignments_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    roles = [
-        "PHX-MASTER",
-        "PHX-CORE",
-        "PHX-RENTAL",
-        "PHX-PISONET",
-        "PHX-HARDWARE",
-        "PHX-QA",
-        "PHX-RELEASE",
-    ]
-
-    for role in roles:
-        if role not in content:
-            print(f"FAIL: Role {role} not documented in ROLE_ASSIGNMENTS.md")
-            return False
-        print(f"  OK: Role {role} verified in ownership registry")
-    return True
-
-def check_protocol_envelope():
-    print("\n[3/4] Validating BLAZE-COMMS/1 message envelope structure...")
-    sample_envelope = {
-        "protocol": "BLAZE-COMMS/1",
-        "message_id": "PHX-20261113-MASTER-001",
-        "from": "PHX-MASTER",
-        "to": "ALL",
-        "type": "ASSIGN",
-        "priority": "P0",
-        "task_id": "PHX-0172",
-        "branch": "phoenix/master-coordination",
-        "base_sha": "f4e8a891aed8af86d5fd315d28750a0ac3a7372b",
-        "scope": ["coordination/phoenix/"],
-        "status": "IN_PROGRESS",
-        "evidence": ["https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172"],
-        "blockers": ["#31", "#32", "#34", "#43"],
-        "next_action": "Coordinate fd4 admission lock verification with PHX-CORE and PHX-QA",
-        "updated_utc": "2026-11-13T19:25:00Z"
-    }
-
-    required_keys = [
-        "protocol", "message_id", "from", "to", "type", "priority",
-        "task_id", "branch", "base_sha", "scope", "status",
-        "evidence", "blockers", "next_action", "updated_utc"
-    ]
-
-    for key in required_keys:
-        if key not in sample_envelope:
-            print(f"FAIL: Missing required protocol key: {key}")
-            return False
-
-    if sample_envelope["protocol"] != "BLAZE-COMMS/1":
-        print(f"FAIL: Invalid protocol identifier: {sample_envelope['protocol']}")
+def safe_repo_path(value: object) -> bool:
+    """Reject traversal, absolute paths and ambiguous Windows separators."""
+    if not isinstance(value, str) or not value or value.startswith("/") or "\\" in value:
         return False
+    return all(part not in ("", ".", "..") for part in value.rstrip("/").split("/"))
 
-    print("  OK: Protocol envelope structure conformant with BLAZE-COMMS/1")
-    return True
 
-def check_safety_gates():
-    print("\n[4/4] Verifying production safety NO-GO declarations...")
-    contracts_path = os.path.join(BASE_DIR, "ARCHITECTURE_CONTRACTS.md")
-    with open(contracts_path, "r", encoding="utf-8") as f:
-        contracts_content = f.read()
+def validate_routes(data: object, repo_root: Path) -> list[str]:
+    """Check real ownership (not merely role-name substrings in a document)."""
+    errors: list[str] = []
+    if not isinstance(data, dict) or data.get("schema") != "phoenix/ownership-routes/v1":
+        return ["Unsupported ownership manifest schema"]
+    if data.get("status") != "DRAFT_REVIEW_ONLY":
+        errors.append("Manifest must remain explicitly draft/review-only")
+    routes = data.get("routes")
+    if not isinstance(routes, list) or not routes:
+        return errors + ["Ownership routes must be a nonempty list"]
 
-    audit_path = os.path.join(BASE_DIR, "AUDIT_SUMMARY.md")
-    with open(audit_path, "r", encoding="utf-8") as f:
-        audit_content = f.read()
+    seen_roles: set[str] = set()
+    paths: list[tuple[str, str]] = []
+    for index, route in enumerate(routes, start=1):
+        if not isinstance(route, dict):
+            errors.append(f"route {index}: not an object")
+            continue
+        role, source, target = route.get("role"), route.get("source"), route.get("target")
+        if role not in ROLES:
+            errors.append(f"route {index}: unknown role {role!r}")
+        else:
+            seen_roles.add(role)
+        if not safe_repo_path(source):
+            errors.append(f"route {index}: invalid source path {source!r}")
+            continue
+        path = repo_root / source.rstrip("/")
+        if not path.exists():
+            errors.append(f"route {index}: source does not exist at checkout: {source}")
+        elif source.endswith("/") and not path.is_dir():
+            errors.append(f"route {index}: source expected a directory: {source}")
+        elif not source.endswith("/") and not path.is_file():
+            errors.append(f"route {index}: source expected a file: {source}")
+        if target is not None and not safe_repo_path(target):
+            errors.append(f"route {index}: unsafe destination path {target!r}")
+        if role != "PHX-MASTER" and target is None:
+            errors.append(f"route {index}: non-MASTER route needs a proposed destination")
+        for previous, previous_role in paths:
+            a, b = source.rstrip("/").casefold(), previous.rstrip("/").casefold()
+            if a == b or a.startswith(b + "/") or b.startswith(a + "/"):
+                errors.append(
+                    f"route {index}: overlapping ownership {source!r} ({role}) "
+                    f"and {previous!r} ({previous_role})"
+                )
+        paths.append((source, str(role)))
+    missing = ROLES - seen_roles
+    if missing:
+        errors.append("Roles missing from ownership routes: " + ", ".join(sorted(missing)))
+    return errors
 
-    if "NO-GO" not in contracts_content or "NO-GO" not in audit_content:
-        print("FAIL: Mandatory NO-GO production safety gate declaration missing")
-        return False
 
-    print("  OK: Production safety NO-GO boundaries explicitly declared")
-    return True
+def validate_envelope(data: object) -> list[str]:
+    """Validate an actual JSON envelope file, never a hard-coded dict inside the checker."""
+    if not isinstance(data, dict):
+        return ["BLAZE-COMMS/1 envelope must be an object"]
+    errors = ["Missing envelope key: " + k for k in sorted(REQUIRED_KEYS - data.keys())]
+    if data.get("protocol") != "BLAZE-COMMS/1":
+        errors.append("Wrong protocol")
+    if data.get("from") not in ROLES:
+        errors.append("Unknown sending role")
+    if not isinstance(data.get("to"), str) or not data["to"].strip():
+        errors.append("Missing recipient")
+    if data.get("type") not in TYPES:
+        errors.append("Invalid message type")
+    if data.get("status") not in STATUSES:
+        errors.append("Invalid status")
+    if data.get("priority") not in ("P0", "P1", "P2"):
+        errors.append("Invalid priority")
+    for key in ("message_id", "task_id", "next_action"):
+        if not isinstance(data.get(key), str) or not data[key].strip():
+            errors.append(f"Invalid {key}")
+    for key in ("scope", "evidence", "blockers"):
+        value = data.get(key)
+        if not isinstance(value, list) or any(not isinstance(x, str) for x in value):
+            errors.append(f"{key} must be a list of strings")
+    if not isinstance(data.get("branch"), (str, type(None))):
+        errors.append("Invalid branch")
+    sha = data.get("base_sha")
+    if sha is not None and (not isinstance(sha, str) or re.fullmatch(r"[a-f0-9]{40}", sha) is None):
+        errors.append("base_sha must be a full 40-digit hex SHA or null")
+    try:
+        stamp = data["updated_utc"]
+        if not isinstance(stamp, str) or not stamp.endswith("Z"):
+            raise ValueError("not UTC Z")
+        date = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if date.tzinfo != timezone.utc:
+            raise ValueError("not UTC")
+    except (KeyError, ValueError, TypeError):
+        errors.append("updated_utc must be UTC ISO8601 ending Z")
+    return errors
 
-def main():
-    print("==================================================")
-    print("Project Phoenix — Master Coordination Verification")
-    print("==================================================")
 
-    if not check_files_exist():
-        sys.exit(1)
-    if not check_role_ownership():
-        sys.exit(1)
-    if not check_protocol_envelope():
-        sys.exit(1)
-    if not check_safety_gates():
-        sys.exit(1)
+def run_checks() -> list[str]:
+    errors: list[str] = []
+    for name in REQUIRED_FILES:
+        path = HERE / name
+        if not path.is_file():
+            errors.append("Missing coordination file: " + name)
+        elif path.stat().st_size == 0:
+            errors.append("Empty coordination file: " + name)
+    if errors:
+        return errors
+    try:
+        manifest = json.loads((HERE / "OWNERSHIP_ROUTES.json").read_text(encoding="utf-8"))
+        example = json.loads((HERE / "COMMUNICATION_EXAMPLE.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return ["Invalid JSON fixture: " + str(exc)]
+    errors.extend(validate_routes(manifest, REPO_ROOT))
+    errors.extend(validate_envelope(example))
+    assignments = (HERE / "ROLE_ASSIGNMENTS.md").read_text(encoding="utf-8")
+    for role in sorted(ROLES):
+        if role not in assignments:
+            errors.append("Undocumented role: " + role)
+    for name in ("ARCHITECTURE_CONTRACTS.md", "AUDIT_SUMMARY.md"):
+        if "NO-GO" not in (HERE / name).read_text(encoding="utf-8"):
+            errors.append(name + ": production NO-GO gate absent")
+    return errors
 
-    print("\n==================================================")
-    print("ALL COORDINATION CHECKS PASSED: Matrix & contracts verified.")
-    print("==================================================")
-    sys.exit(0)
+
+def main() -> int:
+    issues = run_checks()
+    if issues:
+        for issue in issues:
+            print("FAIL:", issue, file=sys.stderr)
+        print(f"Phoenix coordination: {len(issues)} failure(s)", file=sys.stderr)
+        return 1
+    print("Phoenix coordination: PASS — file, scope, protocol and NO-GO checks")
+    print("NOTE: This is static coordination validation, NOT CI/hardware/payment acceptance.")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
