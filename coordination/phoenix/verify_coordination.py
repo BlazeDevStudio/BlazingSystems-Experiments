@@ -35,7 +35,7 @@ STATUSES = frozenset({"QUEUED", "IN_PROGRESS", "BLOCKED", "PR_READY", "VERIFIED"
 
 def safe_repo_path(value: object) -> bool:
     """Reject traversal, absolute paths and ambiguous Windows separators."""
-    if not isinstance(value, str) or not value or value.startswith("/") or "\\" in value:
+    if (not isinstance(value, str) or not value or value.startswith("/")\n            or "\\" in value or re.fullmatch(r"[A-Za-z0-9._/-]+", value) is None):
         return False
     return all(part not in ("", ".", "..") for part in value.rstrip("/").split("/"))
 
@@ -58,7 +58,7 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
             errors.append(f"route {index}: not an object")
             continue
         role, source, target = route.get("role"), route.get("source"), route.get("target")
-        if role not in ROLES:
+        if not isinstance(role, str) or role not in ROLES:
             errors.append(f"route {index}: unknown role {role!r}")
         else:
             seen_roles.add(role)
@@ -97,13 +97,13 @@ def validate_envelope(data: object) -> list[str]:
     errors = ["Missing envelope key: " + k for k in sorted(REQUIRED_KEYS - data.keys())]
     if data.get("protocol") != "BLAZE-COMMS/1":
         errors.append("Wrong protocol")
-    if data.get("from") not in ROLES:
+    if not isinstance(data.get("from"), str) or data["from"] not in ROLES:
         errors.append("Unknown sending role")
     if not isinstance(data.get("to"), str) or not data["to"].strip():
         errors.append("Missing recipient")
-    if data.get("type") not in TYPES:
+    if not isinstance(data.get("type"), str) or data["type"] not in TYPES:
         errors.append("Invalid message type")
-    if data.get("status") not in STATUSES:
+    if not isinstance(data.get("status"), str) or data["status"] not in STATUSES:
         errors.append("Invalid status")
     if data.get("priority") not in ("P0", "P1", "P2"):
         errors.append("Invalid priority")
