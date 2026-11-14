@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs only the seven PHX-RENTAL source-linked security regressions in a
+# Runs seven status-auth and four installer-result regressions in a
 # disposable Android API 27 emulator; invoked explicitly by Bash because
 # android-emulator-runner calls the script through /bin/sh.
 set -euo pipefail
@@ -20,7 +20,7 @@ java -version 2>&1 | grep -Eq 'version "1\.8\.'
   cd "$TARGET"
   ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
     "/opt/gradle-${GRADLE_VERSION}/bin/gradle" --no-daemon --stacktrace \
-    "-Pandroid.testInstrumentationRunnerArguments.class=${TEST_CLASS}" \
+    "-Pandroid.testInstrumentationRunnerArguments.class=${TEST_CLASS},com.blazesystems.blazerental.BlazeRentalUpdateFailureTest" \
     connectedAospDebugAndroidTest
 ) 2>&1 | tee rental-auth-results/connected.log
 
@@ -35,7 +35,7 @@ reports = sorted(set(
     glob.glob(os.path.join(root, "build", "outputs", "androidTest-results", "connected", "**", "*.xml"), recursive=True)
     + glob.glob(os.path.join(root, "build", "outputs", "androidTest-results", "connected", "*.xml"))
 ))
-expected = {
+expected_auth = {
     "invalidCoinSignatureCannotAlterPaidLease",
     "responseSuppliedSigningKeyCannotAuthorizeStatus",
     "legitimateSignedStatusStillExtendsLease",
@@ -44,27 +44,46 @@ expected = {
     "wildcardSameRevisionSurvivesInventoryChange",
     "explicitSameRevisionCannotBecomeWildcard",
 }
-tests = {}
+expected_installer = {
+    "failedInstallerClearsPendingButPreservesDiagnosis",
+    "validUserConfirmationDoesNotClearPending",
+    "missingConfirmationIntentTerminatesPending",
+    "staleFailureCannotClearNewerInstallAttempt",
+}
+expected = {
+    "LeaseSyncAuthBeforeCommitTest": expected_auth,
+    "BlazeRentalUpdateFailureTest": expected_installer,
+}
+actual = {name: {} for name in expected}
 for path in reports:
-    xml = ET.parse(path).getroot()
-    for case in xml.iter("testcase"):
-        if case.get("classname", "").endswith("LeaseSyncAuthBeforeCommitTest"):
-            name = case.get("name")
-            if name in tests:
-                sys.exit("FAIL: duplicate native security testcase: " + name)
-            tests[name] = case
+    root = ET.parse(path).getroot()
+    for case in root.iter("testcase"):
+        classname = case.get("classname", "")
+        for name, cases in actual.items():
+            if classname == "com.blazesystems.blazerental." + name:
+                method = case.get("name")
+                if method in cases:
+                    sys.exit("FAIL: duplicate native test: " + name + "." + str(method))
+                cases[method] = case
+                break
 
 print("JUnit XML reports:", reports)
-print("Observed native rental security tests:", sorted(tests))
-if set(tests) != expected:
-    sys.exit("FAIL: exact seven native security cases not executed")
-for name, case in tests.items():
-    if case.findall("failure") or case.findall("error") or case.findall("skipped"):
-        sys.exit("FAIL: native security test failed/skipped: " + name)
+for suite, wanted in expected.items():
+    found = actual[suite]
+    print("Observed", suite, "tests:", sorted(found))
+    if set(found) != wanted:
+        sys.exit("FAIL: incorrect native case set for " + suite)
+    for name, case in found.items():
+        if case.findall("failure") or case.findall("error") or case.findall("skipped"):
+            sys.exit("FAIL: native test failed/skipped: " + suite + "." + name)
 
+total = sum(len(v) for v in expected.values())
 with open("rental-auth-results/results.txt", "w") as out:
-    out.write("EMULATOR API 27 / ALL SEVEN SECURITY TESTS PASSED\n")
-    for name in sorted(expected):
-        out.write("PASS " + name + "\n")
-print("EMULATOR API 27 / 7/7 native tests PASS")
+    out.write("EMULATOR API 27 / " + str(total) + "/" + str(total)
+              + " AUTH AND INSTALLER RESULT TESTS PASSED\n")
+    for suite in sorted(expected):
+        for name in sorted(expected[suite]):
+            out.write("PASS " + suite + "." + name + "\n")
+print("EMULATOR API 27 / 7/7 auth + 4/4 installer native tests PASS")
+
 PY
