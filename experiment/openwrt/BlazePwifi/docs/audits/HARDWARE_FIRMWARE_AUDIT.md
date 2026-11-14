@@ -156,7 +156,21 @@ In accordance with `V060_PHYSICAL_DURABILITY_ACCEPTANCE.md`:
 | Defect ID | Description | Resolution in Branch | Test Verification |
 |---|---|---|---|
 | **HW-P0-1** | Client-Side Response Signature Verification | Captured `lastSentNonce` and verified `response_sig` on `register` and `poll`. | `v05_firmware_hardening_test.sh` |
-| **HW-P0-2** | Uncredited Coin Quarantine | Swallowed coins saved to `/quarantine.log` with timestamp, nonce, target, and pulses. | `v05_firmware_hardening_test.sh` |
+| **HW-P0-2** | Uncredited Coin Quarantine | Pending coin is cleared only after an exact append and post-close size verification; failed open/write/verify/capacity paths retain the pending journal and keep relay admission closed. | `v05_firmware_hardening_test.sh` failure injection |
 | **HW-P1-1** | Full Hardware RNG Nonce on ESP8266 | Removed `micros()`; uses two 32-bit `ESP.random()` words. | `v05_firmware_hardening_test.sh` |
 | **HW-P2-1** | Setup Portal HTML Escaping | Added `htmlEsc()` for SSID, server, and ID. | `v05_firmware_hardening_test.sh` |
 | **HW-P0-3** | Controller Test Suite Wiring | Hooked `v05_firmware_hardening_test.sh` into `controllers.sh`. | `controllers.sh` execution pass |
+
+
+---
+
+## 9. PHX-HARDWARE checkpoint — 2026-11-15 UTC
+
+**Task:** HW-P0-2 fail-closed quarantine commit (`d4a9646df39dad6afb35c52a0e4acb24f2e6935b` source/test head).
+
+- ESP32 and ESP8266 now isolate quarantine persistence in `appendQuarantineRecord()`.
+- The active pending coin is retained unless the append reports the exact byte count and reopening the log proves the expected size increase.
+- LittleFS open failure, record truncation, 32 KiB capacity exhaustion, short write, and post-close verification failure all return without `clearPending()`; `pendingReady` therefore remains true and `applyOutputs()` keeps admission closed.
+- `v05_firmware_hardening_test.sh` is source-linked to both sketches and injects open, short-write, verification, size-mismatch, and simulated reboot failures.
+
+**Evidence classification:** CI pending at checkpoint publication. Failure injection is **SIMULATED** until the exact-head workflow completes. Physical power-cut, electrical pulse/recovery, 30-device soak, and noncustomer board acceptance remain **NOT TESTED**. This branch and PR #283 remain draft and **PRODUCTION NO-GO**.
