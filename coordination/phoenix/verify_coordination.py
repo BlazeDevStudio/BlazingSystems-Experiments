@@ -137,8 +137,13 @@ def validate_envelope(data: object) -> list[str]:
         errors.append("Wrong protocol")
     if not isinstance(data.get("from"), str) or data["from"] not in ROLES:
         errors.append("Unknown sending role")
-    if not isinstance(data.get("to"), str) or not data["to"].strip():
+    recipient = data.get("to")
+    if not isinstance(recipient, str) or not recipient.strip():
         errors.append("Missing recipient")
+    elif recipient not in ROLES and recipient != "ALL":
+        # BLAZE-COMMS/1 accepts one exact registered role or ALL.
+        # Never silently accept a partial/multi-target string with an unknown role.
+        errors.append("Invalid recipient: expected a registered role or ALL")
     if not isinstance(data.get("type"), str) or data["type"] not in TYPES:
         errors.append("Invalid message type")
     if not isinstance(data.get("status"), str) or data["status"] not in STATUSES:
