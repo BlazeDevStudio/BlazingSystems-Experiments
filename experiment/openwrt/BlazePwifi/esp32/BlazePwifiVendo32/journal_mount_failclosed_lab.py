@@ -31,6 +31,7 @@ struct FakeLittleFS {
 struct FakeSerial {void println(const char*){}} Serial;
 bool fsReady=false;
 bool pendingReady=false;
+bool journalRecoveryRequired=false;
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;
@@ -45,9 +46,9 @@ void writeLogical(int pin,bool enable,bool){
 @@INIT_FUNCTION@@
 @@OUTPUTS_FUNCTION@@
 int main(){
-  for(int scenario=0;scenario<6;++scenario){
+  for(int scenario=0;scenario<7;++scenario){
     LittleFS=FakeLittleFS{};
-    fsReady=false;pendingReady=false;
+    fsReady=false;pendingReady=false;journalRecoveryRequired=false;
     insertMode=true;controllerEnabled=true;coinEnabled=true;
     relayEnabled=true;ledEnabled=true;
     relayOn=false;ledOn=false;loadCalls=0;
@@ -56,6 +57,7 @@ int main(){
     if(scenario==3)coinEnabled=false;
     if(scenario==4)controllerEnabled=false;
     if(scenario==5)insertMode=false;
+    if(scenario==6)journalRecoveryRequired=true;
     initPendingStore();
     applyOutputs();
     const bool expectedRelay=(scenario==1);
@@ -76,7 +78,7 @@ int main(){
       return 1;
     }
   }
-  std::cout<<"MOUNT_SOURCE_LAB_PASS 6/6 source-extracted scenarios, no physical tests\n";
+  std::cout<<"MOUNT_SOURCE_LAB_PASS 7/7 source-extracted scenarios, no physical tests\n";
   return 0;
 }
 '''
@@ -113,4 +115,4 @@ for board, path in BOARDS:
                         str(source), "-o", str(executable)], check=True)
         subprocess.run([str(executable)], check=True)
     print(f"{board}: real mount/output functions compiled and exercised")
-print("PHX-HARDWARE: 12/12 fake-LittleFS mount/relay scenarios PASS; actual devices NOT TESTED")
+print("PHX-HARDWARE: 14/14 fake-LittleFS mount/relay scenarios PASS; actual devices NOT TESTED")

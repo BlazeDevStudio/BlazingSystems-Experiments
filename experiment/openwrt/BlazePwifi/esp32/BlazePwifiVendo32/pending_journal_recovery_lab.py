@@ -186,7 +186,7 @@ for board, path in SKETCHES:
         raise SystemExit(f"{board}: missing real PENDING_MAGIC")
     cpp = CPP
     for name, value in {
-        "@@PENDING_STRUCT@@":extract(source,"struct PendingRecord {"),
+        "@@PENDING_STRUCT@@":extract(source,"struct PendingRecord {")+";",
         "@@MAGIC@@":magic.group(1),
         "@@CHECKSUM@@":extract(source,"uint32_t pendingChecksum("),
         "@@READ@@":extract(source,"bool readPendingFile("),
