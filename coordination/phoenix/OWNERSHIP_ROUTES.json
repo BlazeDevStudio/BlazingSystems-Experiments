@@ -6,7 +6,7 @@
   "destination_candidate_pr": 26,
   "destination_candidate_sha": "b382d233ff06c8791b1028bed3c617cc7b670d12",
   "status": "DRAFT_REVIEW_ONLY",
-  "notes": "Representative non-overlapping source ownership and intended destination paths, NOT a completed or byte-identity migration. Target paths belong to draft PR #26; target main remains structure-only. Check provenance, functionality, branch HEAD and licenses before any integration.",
+  "notes": "Representative non-overlapping source ownership and intended destination paths, NOT a completed or byte-identity migration. Target paths belong to draft PR #26; target main remains structure-only. Check provenance, functionality, branch HEAD and licenses before any integration. Broad parent target prefixes marked manual-file-mapping-required are not copy-safe or evidence of integration. Two destination prefix overlaps are intentionally blocked pending file-by-file review.",
   "routes": [
     {
       "role": "PHX-MASTER",
@@ -36,7 +36,9 @@
       "role": "PHX-RENTAL",
       "source": "experiment/openwrt/BlazePwifi/profiles/standalone-rental/",
       "target": "Rental/",
-      "kind": "selective-review"
+      "kind": "manual-file-mapping-required",
+      "copy_permitted": false,
+      "review_reason": "Broad Rental/ destination contains separate independently owned subtree routes Rental/android/ and Rental/openwrt/. This is a reference-only routing candidate, not a recursive copy plan; resolve per-file path+blob provenance and owner review before any migration."
     },
     {
       "role": "PHX-RENTAL",
