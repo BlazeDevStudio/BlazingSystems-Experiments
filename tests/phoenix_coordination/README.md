@@ -1,6 +1,6 @@
 # PHX-QA independent coordination recipient regression
 
-**Status:** IN_PROGRESS / EXPECTED RED (not a release gate or completed native test).  
+**Status:** SOURCE-LINKED HOST RED — 2 positive PASS, 2 negative FAIL; draft only, not a release gate.  
 **Owner:** PHX-QA · **Task:** BLAZE-COMMS/1 recipient validation · **Priority:** P2 coordination/protocol integrity.  
 **Source owner:** PHX-MASTER [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288), pinned base `add087f84a2fda6f6aedf9938e38394f2b2c27be`.  
 **Real verifier source blob:** `a8a989964c45ab9aef5719e8d17ba3f6fc66e773` (`coordination/phoenix/verify_coordination.py`).  
@@ -20,7 +20,7 @@ Run from repository root:
 python3 -m unittest discover -s tests/phoenix_coordination -p 'test_*.py' -v
 ```
 
-**Expected before Master fix:** the unknown-recipient negative cases are RED. **Test execution:** NOT RUN until evidence is recorded on the exact QA head. If the test fails for import/checkout reasons, classify INCONCLUSIVE rather than as a reproduced security RED.
+**Expected before Master fix:** the unknown-recipient negative cases are RED. **Executed:** Python unittest on literal, Git-blob-verified Master verifier `a8a989964c45ab9aef5719e8d17ba3f6fc66e773`, real example fixture `f7a8ad161df15fbf8eb07ce80f5a0fb327e528b4`, and QA test `14e101056c3e5caaeea942d7bcb50b3734846db7`. Four cases: **2 PASS, 2 FAIL** (unknown-recipient tests both returned `[]`); exit 1 expected diagnostic RED. Reproduction transcript and limits: [EVIDENCE_20261115.md](EVIDENCE_20261115.md). This was an isolated source-exact module/fixture checkout, not a full build, GitHub Actions run or hardware test.
 
 ## Handover / rollback / safety
 
@@ -29,3 +29,5 @@ This work is stacked on the current Master **coordination-only** draft branch. T
 Rollback: close this draft without merge or discard the isolated QA branch. No financial/core/device/firmware source, account, hardware, cryptographic signer, production deployment or installer touched. All P0 money, protected anti-rollback witness, 150 physical power cuts, 30-device 24-hour soak, migration and final release gates remain **NO-GO**.
 
 **Next exact action:** Write the fixture, execute on a source-exact checkout, document actual PASS/FAIL/UNKNOWN, ask PHX-MASTER to tighten recipient validation and rerun the same tests at the fix commit.
+
+**Next exact action (after verified RED):** PHX-MASTER review recipient acceptance policy and repair its own `validate_envelope`, keeping known role and `ALL` positive controls, then QA re-executes these same exact-source tests at the repaired commit. No merge/release while the test is RED.
