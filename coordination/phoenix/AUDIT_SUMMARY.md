@@ -85,3 +85,14 @@ Project Phoenix is under active, rigorous multi-agent and developer coordination
 | PHX-MASTER audit & source guards | Draft [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) now guards source *and destination* overlaps; 13 Python regression cases authored | Independent live tree/manifest checks executed; **Python tests have not been run** on its latest source SHA, and no exact-head Actions run has been identified |
 
 **Priority order:** P0 #31/#32 durable ledger and receipt/lease atomics with independent source-exact QA → P0 #43 protected off-device witness, key custody and safe v1→v2 migration → #34 real electrical/physical acceptance (150 actual power cuts, 30-device 24h soak, noncustomer native targets) → signed release dry run → separately authorized commercial cutover. No manufactured hardware proof, automatic merge or release.
+
+
+## 6. 2026-11-15 PHX-QA BLAZE-COMMS/1 recipient RED and Master correction
+
+Independent [PHX-QA draft #292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/292) ran a source-exact, minimal Python fixture against Master verifier blob `a8a989964c45ab9aef5719e8d17ba3f6fc66e773`: **4 tests, 2 pass, 2 fail**. The real `validate_envelope` accepted `to=PHX-UNKNOWN` and `to=PHX-QA;PHX-UNKNOWN`. The QA RED is valid; do not erase or relabel its original evidence.
+
+Master repair [6d4619bd](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6d4619bd594089d4898564cd6233c79b40c943d2) now accepts only a single exact registered `PHX-*` role or `ALL`, rejects all unknown/multi-target/whitespace/case variants, and retains a distinct missing-recipient error. [15d6839b](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/15d6839b28bc05b1a143c5ea7b76e4621e8fcc0d) adds two source-linked test methods (15 authored Master unit tests total). This is coordination protocol validation only; not a financial state or controller security fix.
+
+**Verification classification:** GitHub exact-source readback and JS source/manifest assertions are static. The QA four-case host RED was actually executed **against the earlier verifier blob**, not the repaired one. Git clone from this runtime could not resolve `github.com`; full Python source-exact execution and GitHub Actions on the corrected HEAD are **NOT RUN / BLOCKED**. PHX-QA should rerun its existing four tests at corrected verifier blob `ea57965fec5bc9ca91b4bb5cbae9e15d51248b0b` and execute all 15 Master tests, reporting exact SHA and stdout before marking GREEN.
+
+Private Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was re-read (55 project entries); no private IDs, snapshots or raw registry content were committed or disclosed. This registry is not production approval. All financial, witness, signing, physical and release gates remain **PRODUCTION NO-GO**.
