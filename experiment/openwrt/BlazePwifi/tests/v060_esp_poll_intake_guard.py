@@ -62,7 +62,8 @@ bool insertMode=true,fsReady=true,pendingReady=false,journalRecoveryRequired=fal
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true,lastCoin=false;
 bool pollIntakeSuspended=false,relayOn=false,relayDuringPoll=false;
-int saves=0,polls=0,coinPosts=0;
+int saves=0,polls=0,coinPosts=0,digitalReads=0;
+bool edgeAfterFirstIdleRead=false;
 uint32_t pulseFrom=1600,pulseUntil=1680;
 String activeTarget="1234567890123456",pendingTarget,pendingNonce,lastSentNonce;
 struct Config {
@@ -86,7 +87,11 @@ struct SerialMock {
 } Serial;
 uint32_t millis(){return now_ms;}
 void delay(int value){now_ms+=(uint32_t)value;}
-int digitalRead(int){return pulseFrom<=now_ms && now_ms<pulseUntil?0:1;}
+int digitalRead(int){
+  digitalReads++;
+  if(edgeAfterFirstIdleRead && digitalReads>=2) return 0;
+  return pulseFrom<=now_ms && now_ms<pulseUntil?0:1;
+}
 void startSetupAp(){}
 void writeLogical(int pin,bool on,bool){if(pin==runRelayPin) relayOn=on;}
 void applyRemoteConfig(const String&){}
@@ -116,7 +121,8 @@ void resetState(){
   now_ms=1501;lastPoll=0;lastEdge=0;lastSend=0;
   wifiFailures=0;pendingPulses=0;pendingReady=false;journalRecoveryRequired=false;
   insertMode=true;lastCoin=false;pollIntakeSuspended=false;
-  saves=0;polls=0;coinPosts=0;relayDuringPoll=true;
+  saves=0;polls=0;coinPosts=0;digitalReads=0;relayDuringPoll=true;
+  edgeAfterFirstIdleRead=false;
   pulseFrom=1600;pulseUntil=1680;activeTarget="1234567890123456";
   pendingTarget="";pendingNonce="";
   applyOutputs();
@@ -136,6 +142,13 @@ int main(){
   pulseFrom=1490;pulseUntil=1570;
   loop();
   const bool activeEdgeSaved=(polls==0 && pendingPulses==1 && saves==1);
+
+  resetState();
+  edgeAfterFirstIdleRead=true;
+  pulseFrom=9000;pulseUntil=9080;
+  loop();
+  const bool checkToInhibitEdgeSaved=(polls==0 && pendingPulses==1 &&
+                                     saves==1 && !pollIntakeSuspended);
 
   resetState();
   pendingPulses=1;lastEdge=1450;
@@ -158,11 +171,12 @@ int main(){
   std::cout<<"control="<<control
            <<" network_guard="<<networkGuard
            <<" active_edge_saved="<<activeEdgeSaved
+           <<" check_to_inhibit_edge_saved="<<checkToInhibitEdgeSaved
            <<" settling_group_deferred="<<settlingGroupDeferred
            <<" owed_coin_prioritized="<<owedCoinPrioritized
            <<" recovery_denied="<<recoveryDenied<<"\n";
-  return (control && networkGuard && activeEdgeSaved && settlingGroupDeferred &&
-          owedCoinPrioritized && recoveryDenied)?0:19;
+  return (control && networkGuard && activeEdgeSaved && checkToInhibitEdgeSaved &&
+          settlingGroupDeferred && owedCoinPrioritized && recoveryDenied)?0:19;
 }
 """
 
@@ -170,11 +184,14 @@ failed = []
 for chip, path in SOURCES.items():
     sketch = path.read_text(encoding="utf-8")
     assert "h.setTimeout(3500)" in sketch, f"{chip}: HTTP timeout contract changed; re-audit"
-    names = ["canAttemptCoinPost", "coinLineIdle", "canStartPoll", "applyOutputs", "loop"]
+    names = ["canAttemptCoinPost", "coinLineIdle", "canStartPoll", "applyOutputs",
+             "beginPollWindow", "loop"]
     extracted = "\n".join(source_function(sketch, name) for name in names)
     loop = source_function(sketch, "loop")
     assert loop.index('post("poll")') < loop.index("bool raw=digitalRead(runCoinPin)")
-    assert "pollIntakeSuspended=true" in loop and "pollIntakeSuspended=false" in loop
+    begin = source_function(sketch, "beginPollWindow")
+    assert "pollIntakeSuspended=true" in begin and "coinLineIdle()" in begin
+    assert "pollIntakeSuspended=false" in begin and "pollIntakeSuspended=false" in loop
     code = ("#define TARGET_ESP32\n" if chip == "ESP32" else "") + STUBS + extracted + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-hw-poll-guard-") as folder:
         cpp = Path(folder) / "test.cpp"
