@@ -181,7 +181,7 @@ int main() {
   assert(disk.renameCalls==0);
 
   reset();
-  pendingTarget=String("target00112233445566778899aabbccdd");
+  pendingTarget=String("ttttttttttttttttttttttttttttttttt");
   assert(pendingTarget.length()==33);
   assert(!savePending());
   assert(!journalRecoveryRequired);
