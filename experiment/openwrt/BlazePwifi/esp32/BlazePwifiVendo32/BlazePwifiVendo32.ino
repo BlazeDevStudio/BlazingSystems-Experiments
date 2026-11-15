@@ -104,8 +104,9 @@ bool removePendingCandidate(const char *path){
 bool savePending(){
   if(!fsReady || journalRecoveryRequired || pendingPulses==0 || pendingNonce.isEmpty() || pendingTarget.isEmpty()) return false;
   PendingRecord r{}; r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
-  strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
-  strlcpy(r.target,pendingTarget.c_str(),sizeof(r.target));
+  const size_t nonceLength=strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
+  const size_t targetLength=strlcpy(r.target,pendingTarget.c_str(),sizeof(r.target));
+  if(nonceLength>=sizeof(r.nonce) || targetLength>=sizeof(r.target)) return false;
   r.checksum=pendingChecksum(r);
   File f=LittleFS.open("/pending.new","w"); if(!f) return false;
   size_t n=f.write((const uint8_t*)&r,sizeof(r)); f.flush(); f.close();
