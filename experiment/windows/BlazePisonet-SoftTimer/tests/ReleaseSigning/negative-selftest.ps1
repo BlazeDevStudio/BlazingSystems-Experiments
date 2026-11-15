@@ -155,7 +155,7 @@ try {
   $publisher=$workflow.Substring($end)
   foreach ($contract in @(
     '$releaseTag="softtimer-v$env:VERSION"',
-    'gh release view $releaseTag',
+    'gh api -i',
     'gh release create $releaseTag',
     '--notes-file $releaseNotes',
     "vars.SOFTTIMER_RELEASE_APPROVED == 'true'",
@@ -166,10 +166,10 @@ try {
   if ($publisher.Contains('$env:TAG') -or $publisher.Contains('RELEASE_NOTES_v0.4.0.md')) {
     throw 'Publisher reuses frozen tag or notes'
   }
-  # gh release view is expected to exit nonzero for a *new* release tag.
+  # An explicit HTTP 404 lookup is expected for a new release tag.
   # A PowerShell verifier may not update LASTEXITCODE on success; the stale
-  # gh status must be cleared BEFORE the verifier, never after it.
-  $viewIdx=$publisher.IndexOf('if (gh release view $releaseTag *> $null)',[StringComparison]::Ordinal)
+  # API lookup status must be cleared BEFORE the verifier, never after it.
+  $viewIdx=$publisher.IndexOf('$lookupOutput = gh api -i',[StringComparison]::Ordinal)
   # A failed release lookup must be a confirmed HTTP 404, not any CLI/API failure.
   if (-not $publisher.Contains('gh api -i') -or
       -not $publisher.Contains('HTTP/[0-9.]+ 404') -or
