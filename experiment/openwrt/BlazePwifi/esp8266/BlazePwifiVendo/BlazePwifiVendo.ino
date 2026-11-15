@@ -87,7 +87,15 @@ bool readPendingFile(const char *path, PendingRecord &r){
   // A corrupt record may not terminate either fixed-size string. Never use strlen here.
   const char *nonceEnd=(const char*)memchr(r.nonce,'\0',sizeof(r.nonce));
   const char *targetEnd=(const char*)memchr(r.target,'\0',sizeof(r.target));
-  return nonceEnd && targetEnd && (size_t)(nonceEnd-r.nonce)>=8 && (size_t)(targetEnd-r.target)>=8;
+  if(!nonceEnd || !targetEnd) return false;
+  const size_t nonceLength=(size_t)(nonceEnd-r.nonce);
+  const size_t targetLength=(size_t)(targetEnd-r.target);
+  if(nonceLength<8 || targetLength<8) return false;
+  // Writers zero-fill both arrays. Reject hidden suffix bytes that would be
+  // discarded by String(char*) and collapse distinct disk records to one identity.
+  for(size_t i=nonceLength+1;i<sizeof(r.nonce);++i) if(r.nonce[i]!='\0') return false;
+  for(size_t i=targetLength+1;i<sizeof(r.target);++i) if(r.target[i]!='\0') return false;
+  return true;
 }
 
 bool removePendingCandidate(const char *path){
