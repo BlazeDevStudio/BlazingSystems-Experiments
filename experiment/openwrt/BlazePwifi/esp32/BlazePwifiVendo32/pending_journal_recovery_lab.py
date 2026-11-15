@@ -2,8 +2,9 @@
 """PHX-HARDWARE source-extracted pending-journal boot safety LAB.
 
 Compiles actual ESP32 and ESP8266 C++ readPendingFile, pendingChecksum,
-loadPending and applyOutputs functions against a fake LittleFS. Verifies
-corrupt/ambiguous files are preserved and no coin acceptance resumes.
+loadPending, clearPending and applyOutputs functions against a fake LittleFS.
+Verifies corrupt/ambiguous files are preserved, destructive clears are
+preflighted, and no coin acceptance resumes.
 NOT real-flash or power-cut evidence.
 """
 from pathlib import Path
@@ -57,7 +58,7 @@ struct File {
 };
 struct FakeLittleFS {
   std::map<std::string,std::vector<uint8_t>> files;
-  bool failOpen=false;
+  bool failOpen=false,failRemove=false,ghostRemove=false;
   size_t readLimit=SIZE_MAX;
   unsigned removeCalls=0,renameCalls=0;
   bool exists(const char *p)const{return files.count(p)!=0;}
@@ -67,7 +68,12 @@ struct FakeLittleFS {
     if(failOpen || i==files.end()) return File{};
     return File{i->second,true,readLimit};
   }
-  bool remove(const char *p){++removeCalls;return files.erase(p)>0;}
+  bool remove(const char *p){
+    ++removeCalls;
+    if(failRemove)return false;
+    if(ghostRemove)return true;
+    return files.erase(p)>0;
+  }
   bool rename(const char *from,const char *to){
     ++renameCalls;
     auto it=files.find(from);
@@ -95,6 +101,7 @@ void writeLogical(int pin,bool on,bool){
 @@CHECKSUM@@
 @@READ@@
 @@LOAD@@
+@@CLEAR@@
 @@OUTPUTS@@
 PendingRecord validRecord(){
   PendingRecord r{};
@@ -167,6 +174,47 @@ int main(){
     }
   }
   std::cout<<"PENDING_JOURNAL_LAB_PASS 16/16 source-extracted cases; physical tests NOT RUN\n";
+
+  for(int scenario=0;scenario<11;++scenario){
+    LittleFS=FakeLittleFS{};
+    fsReady=true;pendingReady=true;journalRecoveryRequired=false;
+    pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";lastSend=42;
+    auto r=validRecord();
+    switch(scenario){
+      case 0:break;
+      case 1:LittleFS.files["/pending.dat"]=bytes(r);break;
+      case 2:LittleFS.files["/pending.new"]=bytes(r);break;
+      case 3:LittleFS.files["/pending.bak"]=bytes(r);break;
+      case 4:LittleFS.files["/pending.dat"]=bytes(r);
+             LittleFS.files["/pending.new"]=bytes(r);break;
+      case 5:LittleFS.files["/pending.dat"]=bytes(r);
+             LittleFS.files["/pending.bak"]=bytes(r);break;
+      case 6:LittleFS.files["/pending.new"]=bytes(r);
+             LittleFS.files["/pending.bak"]=bytes(r);break;
+      case 7:LittleFS.files["/pending.dat"]=bytes(r);LittleFS.failRemove=true;break;
+      case 8:LittleFS.files["/pending.dat"]=bytes(r);LittleFS.ghostRemove=true;break;
+      case 9:LittleFS.files["/pending.dat"]=bytes(r);fsReady=false;break;
+      case 10:LittleFS.files["/pending.dat"]=bytes(r);journalRecoveryRequired=true;break;
+    }
+    const auto originalFiles=LittleFS.files;
+    const bool ok=clearPending();
+    const bool expectSuccess=scenario<=3;
+    const bool expectRecovery=scenario>=4;
+    const unsigned expectRemoveCalls=(scenario>=1 && scenario<=3) || scenario==7 || scenario==8 ? 1U : 0U;
+    const bool filesCorrect=expectSuccess ? LittleFS.files.empty() : LittleFS.files==originalFiles;
+    if(ok!=expectSuccess || journalRecoveryRequired!=expectRecovery ||
+       !filesCorrect || LittleFS.removeCalls!=expectRemoveCalls ||
+       pendingReady!=(!expectSuccess) || pendingPulses!=(expectSuccess?0:4) ||
+       pendingNonce!=(expectSuccess?"":"nonce12345678") ||
+       pendingTarget!=(expectSuccess?"":"target12345678")){
+      std::cerr<<"PENDING_CLEAR_LAB_FAIL case="<<scenario
+               <<" ok="<<ok<<" recovery="<<journalRecoveryRequired
+               <<" removes="<<LittleFS.removeCalls
+               <<" files="<<LittleFS.files.size()<<"\n";
+      return 1;
+    }
+  }
+  std::cout<<"PENDING_CLEAR_LAB_PASS 11/11 source-extracted cases; physical tests NOT RUN\n";
   return 0;
 }
 '''
@@ -193,6 +241,7 @@ for board, path in SKETCHES:
         "@@CHECKSUM@@":extract(source,"uint32_t pendingChecksum("),
         "@@READ@@":extract(source,"bool readPendingFile("),
         "@@LOAD@@":extract(source,"void loadPending(){"),
+        "@@CLEAR@@":extract(source,"bool clearPending(){"),
         "@@OUTPUTS@@":extract(source,"void applyOutputs(){"),
     }.items():
         cpp=cpp.replace(name,value)
@@ -204,4 +253,4 @@ for board, path in SKETCHES:
                         str(path_cpp),"-o",str(path_bin)],check=True)
         subprocess.run([str(path_bin)],check=True)
     print(f"{board}: exact source journal parser/recovery and output gate verified")
-print("PHX-HARDWARE: 32/32 synthetic pending journal cases PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 32/32 boot-recovery and 22/22 pending-clear cases PASS; actual flash NOT TESTED")
