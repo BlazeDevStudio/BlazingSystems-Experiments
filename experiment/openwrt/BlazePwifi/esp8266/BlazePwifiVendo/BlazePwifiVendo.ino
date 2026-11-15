@@ -182,21 +182,25 @@ void defaults(){
 
 void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
 
-template <size_t N>
-bool fixedStringTerminated(const char (&value)[N]){
-  return memchr(value,'\0',N)!=nullptr;
+bool fixedStringTerminated(const char *value,size_t capacity){
+  return memchr(value,'\0',capacity)!=nullptr;
 }
 
 bool configStringsTerminated(const Config &c){
-  return fixedStringTerminated(c.ssid) && fixedStringTerminated(c.pass) &&
-         fixedStringTerminated(c.server) && fixedStringTerminated(c.key) &&
-         fixedStringTerminated(c.id) && fixedStringTerminated(c.apPass);
+  return fixedStringTerminated(c.ssid,sizeof(c.ssid)) &&
+         fixedStringTerminated(c.pass,sizeof(c.pass)) &&
+         fixedStringTerminated(c.server,sizeof(c.server)) &&
+         fixedStringTerminated(c.key,sizeof(c.key)) &&
+         fixedStringTerminated(c.id,sizeof(c.id)) &&
+         fixedStringTerminated(c.apPass,sizeof(c.apPass));
 }
 
 bool configStringsTerminated(const ConfigV1 &c){
-  return fixedStringTerminated(c.ssid) && fixedStringTerminated(c.pass) &&
-         fixedStringTerminated(c.server) && fixedStringTerminated(c.key) &&
-         fixedStringTerminated(c.id);
+  return fixedStringTerminated(c.ssid,sizeof(c.ssid)) &&
+         fixedStringTerminated(c.pass,sizeof(c.pass)) &&
+         fixedStringTerminated(c.server,sizeof(c.server)) &&
+         fixedStringTerminated(c.key,sizeof(c.key)) &&
+         fixedStringTerminated(c.id,sizeof(c.id));
 }
 
 void loadCfg(){
