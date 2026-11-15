@@ -475,14 +475,28 @@ void connectSta(){
   }
 }
 
-void clearPending(){
-  if(journalRecoveryRequired) return; // Never erase ambiguous unpaid coin evidence.
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
-  if(fsReady){
-    LittleFS.remove("/pending.dat");
-    LittleFS.remove("/pending.new");
-    LittleFS.remove("/pending.bak");
+bool clearPending(){
+  if(journalRecoveryRequired) return false;
+  if(!fsReady){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: cannot clear pending journal while LittleFS is unavailable.");
+    return false;
   }
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  bool removed=true;
+  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
+    if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
+    if(LittleFS.exists(paths[i])) removed=false;
+  }
+  if(!removed){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending journal deletion failed; preserving RAM event and disabling relay.");
+    return false;
+  }
+
+  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
+  return true;
 }
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
@@ -533,8 +547,7 @@ bool quarantinePending(const String &reason){
     return false;
   }
   Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
-  clearPending();
-  return true;
+  return clearPending();
 }
 
 void setup(){

@@ -28,8 +28,14 @@ static uint8_t pendingPulses=4;
 static String pendingNonce="nonce001122334455";
 static String pendingTarget="target0011223344";
 static int clearCount=0;
+static bool clearAllowed=true;
 unsigned long millis(){return 1234UL;}
-void clearPending(){++clearCount; pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();}
+bool clearPending(){
+  ++clearCount;
+  if(!clearAllowed) return false;
+  pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();
+  return true;
+}
 struct FakeSerial {
   template<class T> void println(const T&) {}
 } Serial;
@@ -89,9 +95,10 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<11;scenario++){
+  for(int scenario=0;scenario<12;scenario++){
     disk=FakeDisk{};
     clearCount=0;
+    clearAllowed=true;
     fsReady=true;
     pendingPulses=4;
     pendingNonce="nonce001122334455";
@@ -106,15 +113,17 @@ int main(){
     if(scenario==8) disk.mutateAfterClose=true; // same-size corruption!
     if(scenario==9) disk.mutateOnRead=true; // same-size bad readback!
     if(scenario==10) disk.bytes=std::string(QUARANTINE_MAX_BYTES,'X');
+    if(scenario==11) clearAllowed=false;
     bool expectClear=(scenario==0);
+    bool expectClearAttempt=(scenario==0 || scenario==11);
     bool ok=quarantinePending(String("window expired"));
-    if(ok!=expectClear || clearCount!=(expectClear?1:0) ||
+    if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4))){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 11/11 scenarios (power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 12/12 scenarios (power cut NOT tested)\n";
 }
 '''
 
@@ -145,4 +154,4 @@ for board, ino in BOARDS:
                         str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 22/22 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 24/24 source-extracted host scenarios PASS; no hardware evidence")

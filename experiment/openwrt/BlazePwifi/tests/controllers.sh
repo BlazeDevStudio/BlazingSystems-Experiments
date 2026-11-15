@@ -89,5 +89,9 @@ if [ -f "$ROOT/tests/v060_esp32_timing_bounds.py" ]; then
   python3 "$ROOT/tests/v060_esp32_timing_bounds.py"
 fi
 
+if [ -f "$ROOT/tests/v060_esp_journal_clear_verify.py" ]; then
+  python3 "$ROOT/tests/v060_esp_journal_clear_verify.py"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
 
