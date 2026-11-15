@@ -32,9 +32,9 @@ for name in ("ConfigV1", "Config"):
     start = text.index(f"struct {name} {{")
     structs.append(extract_braced(start))
 
-template_start = text.index("template <size_t N>\nbool fixedStringTerminated")
-helpers = [extract_braced(template_start)]
-cursor = template_start
+helper_start = text.index("bool fixedStringTerminated(const char *value,size_t capacity)")
+helpers = [extract_braced(helper_start)]
+cursor = helper_start
 for signature in (
     "bool configStringsTerminated(const Config &c)",
     "bool configStringsTerminated(const ConfigV1 &c)",
