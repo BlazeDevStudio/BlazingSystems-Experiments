@@ -501,14 +501,43 @@ bool clearPending(){
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
 
+String quarantineLogField(const String &value,size_t maxLen){
+  String out;
+  out.reserve(maxLen);
+  size_t i=0;
+  for(;i<value.length();++i){
+    const unsigned char c=(unsigned char)value[i];
+    const char *escaped=nullptr;
+    if(c=='\\') escaped="\\\\";
+    else if(c=='\r') escaped="\\r";
+    else if(c=='\n') escaped="\\n";
+    else if(c=='\t') escaped="\\t";
+    if(escaped){
+      if(out.length()+2>maxLen) break;
+      out+=escaped;
+    } else {
+      if(out.length()+1>maxLen) break;
+      out+=(c<0x20 || c==0x7f)?'?':(char)c;
+    }
+  }
+  if(i<value.length() && maxLen>=3){
+    while(out.length()+3>maxLen) out.remove(out.length()-1);
+    out+="...";
+  }
+  return out;
+}
+
 bool appendQuarantineRecord(const String &reason){
   if(!fsReady || pendingPulses==0) return false;
 
   char record[320];
+  const String logNonce=quarantineLogField(pendingNonce,40);
+  const String logTarget=quarantineLogField(pendingTarget,80);
+  const String logReason=quarantineLogField(reason,128);
   int len=snprintf(record,sizeof(record),
                    "TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
                    (unsigned long)millis(), (unsigned int)pendingPulses,
-                   pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
+                   logNonce.c_str(), logTarget.c_str(), logReason.c_str());
   if(len<=0 || (size_t)len>=sizeof(record)) return false;
 
   size_t before=0;
