@@ -15,13 +15,17 @@ BOARDS = (
 )
 
 CPP = r'''
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string>
-struct String : std::string { using std::string::string; };
+struct String : std::string {
+  using std::string::string;
+  void remove(size_t index){erase(index);}
+};
 static constexpr size_t QUARANTINE_MAX_BYTES=4096;
 static bool fsReady=true;
 static uint8_t pendingPulses=4;
@@ -92,10 +96,11 @@ struct FakeLittleFS {
   }
 } LittleFS;
 
+@@SOURCE_ENCODE@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<12;scenario++){
+  for(int scenario=0;scenario<13;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -114,16 +119,21 @@ int main(){
     if(scenario==9) disk.mutateOnRead=true; // same-size bad readback!
     if(scenario==10) disk.bytes=std::string(QUARANTINE_MAX_BYTES,'X');
     if(scenario==11) clearAllowed=false;
-    bool expectClear=(scenario==0);
-    bool expectClearAttempt=(scenario==0 || scenario==11);
-    bool ok=quarantinePending(String("window expired"));
+    String reason="window expired";
+    if(scenario==12) reason=String("bad\nRECORD=forged\t\\");
+    bool expectClear=(scenario==0 || scenario==12);
+    bool expectClearAttempt=(scenario==0 || scenario==11 || scenario==12);
+    bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
-       (!expectClear && pendingPulses!=(scenario==2?0:4))){
+       (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
+       (scenario==12 &&
+        (std::count(disk.bytes.begin(),disk.bytes.end(),'\n')!=2 ||
+         disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos))){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 12/12 scenarios (power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 13/13 scenarios (power cut NOT tested)\n";
 }
 '''
 
@@ -144,7 +154,8 @@ def extract(src: str, signature: str) -> str:
 
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
-    actual = CPP.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
+    actual = CPP.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
     with tempfile.TemporaryDirectory(prefix="phx-hw-q-") as temp:
         cpp = Path(temp, "test.cpp")
@@ -154,4 +165,4 @@ for board, ino in BOARDS:
                         str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 24/24 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 26/26 source-extracted host scenarios PASS; no hardware evidence")
