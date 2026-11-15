@@ -116,9 +116,20 @@ echo '64ec53a877845409efd03441de059f4a7e43d7a800c443b46593786c6e947d7b  root/www
 (cd "$TMP" && sha256sum -c SHA256SUMS >/dev/null) || { rm -rf "$TMP"; echo 'ERROR: payload checksum verification failed.' >&2; exit 1; }
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP="/root/blazepwifi-rental-backups/$STAMP"
-mkdir -p "$BACKUP" /www/rental /www/cgi-bin /etc/blazepwifi-rental/state
-for f in /www/cgi-bin/rental /www/cgi-bin/rental-admin /www/rental/index.html; do [ -e "$f" ] && cp -p "$f" "$BACKUP/$(basename "$f")" || true; done
+BACKUP_ROOT=/root/blazepwifi-rental-backups
+if ! mkdir -p "$BACKUP_ROOT" || ! BACKUP="$(mktemp -d "$BACKUP_ROOT/$STAMP.XXXXXX")"; then
+  echo 'ERROR: could not create a rental backup directory.' >&2
+  rm -rf "$TMP"
+  exit 1
+fi
+for f in /www/cgi-bin/rental /www/cgi-bin/rental-admin /www/rental/index.html; do
+  if [ -e "$f" ] && ! cp -p "$f" "$BACKUP/"; then
+    echo "ERROR: could not back up $f." >&2
+    rm -rf "$TMP" "$BACKUP"
+    exit 1
+  fi
+done
+mkdir -p /www/rental /www/cgi-bin /etc/blazepwifi-rental/state
 cp "$TMP/root/www/cgi-bin/rental" /www/cgi-bin/rental
 cp "$TMP/root/www/cgi-bin/rental-admin" /www/cgi-bin/rental-admin
 cp "$TMP/root/www/rental/index.html" /www/rental/index.html
