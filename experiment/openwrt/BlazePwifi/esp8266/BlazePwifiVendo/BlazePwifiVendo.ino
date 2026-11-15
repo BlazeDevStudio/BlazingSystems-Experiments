@@ -258,12 +258,16 @@ void applyRemoteConfig(const String&r){
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
   int nextCoin=cp>=0?cp:runCoinPin, nextRelay=rp>=0?rp:runRelayPin, nextLed=lp>=0?lp:runLedPin;
   bool nextPinsSafe=runtimePinsSafe(nextCoin,nextRelay,nextLed);
-  runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=jsonInt(r,"relay_active_high",1)!=0; runLedActiveHigh=jsonInt(r,"led_active_high",1)!=0;
+  bool nextCoinActiveLow=jsonInt(r,"coin_active_low",runCoinActiveLow?1:0)!=0;
+  bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
+  bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   runDebounceMs=(uint16_t)constrain(jsonInt(r,"coin_debounce_ms",40),1,2000);
   runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){
+    runCoinActiveLow=nextCoinActiveLow;
+    runRelayActiveHigh=nextRelayActiveHigh;
+    runLedActiveHigh=nextLedActiveHigh;
     configureRuntimePins(nextCoin,nextRelay,nextLed);
     pinConfigSafe=true;
   } else {
