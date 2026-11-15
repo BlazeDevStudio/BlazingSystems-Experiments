@@ -206,6 +206,18 @@ bool clearPending(){
   }
 
   const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  unsigned candidateCount=0;
+  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
+    if(LittleFS.exists(paths[i])) ++candidateCount;
+  }
+  if(candidateCount>1){
+    // Multiple candidates may represent different unpaid events. Do not begin
+    // destructive cleanup until an operator reconciles every durable record.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: multiple pending journals at clear; preserving all evidence.");
+    return false;
+  }
+
   bool removed=true;
   for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
     if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
