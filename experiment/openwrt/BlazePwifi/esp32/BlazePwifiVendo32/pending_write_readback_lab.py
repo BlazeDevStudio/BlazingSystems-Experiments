@@ -42,7 +42,7 @@ struct String : std::string {
   bool isEmpty() const { return empty(); }
 };
 
-static size_t strlcpy(char *dst,const char *src,size_t capacity) {
+static size_t testStrlcpy(char *dst,const char *src,size_t capacity) {
   size_t length=std::strlen(src);
   if(capacity) {
     size_t copy=std::min(length,capacity-1);
@@ -51,6 +51,7 @@ static size_t strlcpy(char *dst,const char *src,size_t capacity) {
   }
   return length;
 }
+#define strlcpy testStrlcpy
 
 struct FakeDisk {
   std::map<std::string,std::vector<uint8_t>> files;
