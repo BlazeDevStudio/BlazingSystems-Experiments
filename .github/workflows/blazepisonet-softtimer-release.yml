@@ -444,8 +444,15 @@ jobs:
           if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {
             throw "Version-specific release notes missing: $releaseNotes"
           }
-          if (gh release view $releaseTag *> $null) {
+          # A generic gh release view failure is NOT proof of a missing release:
+          # token, transport, rate-limit and server errors must fail closed.
+          $lookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/releases/tags/$releaseTag" 2>&1 | Out-String
+          $lookupExit = $LASTEXITCODE
+          if ($lookupExit -eq 0) {
             throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
+          }
+          if ($lookupOutput -notmatch '(?m)^HTTP/[0-9.]+ 404(?:\\s|$)') {
+            throw "Release lookup failed without confirmed HTTP 404 (exit $lookupExit); refusing publication"
           }
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
