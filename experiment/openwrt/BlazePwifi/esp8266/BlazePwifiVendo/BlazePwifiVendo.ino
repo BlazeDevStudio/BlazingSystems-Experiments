@@ -40,6 +40,7 @@ const uint32_t MAGIC=0x42505732;
 
 bool insertMode=false;
 bool lastCoin=false;
+bool pollIntakeSuspended=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -275,8 +276,21 @@ bool canAttemptCoinPost(){
   return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
 }
 
+bool coinLineIdle(){
+  const bool raw=digitalRead(runCoinPin);
+  return runCoinActiveLow?raw:!raw;
+}
+
+// Synchronous HTTP can block GPIO sampling for 3.5 seconds. Start a poll only
+// with no unsettled/owed coin and inhibit the acceptor before network I/O.
+bool canStartPoll(){
+  return fsReady && !journalRecoveryRequired && !pendingReady &&
+         pendingPulses==0 && coinLineIdle();
+}
+
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !journalRecoveryRequired && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -440,8 +454,12 @@ void loop(){
     if(wifiFailures>=maxWifiRetries)startSetupAp();
   }
 
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;String r=post("poll");
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && canStartPoll()){
+    pollIntakeSuspended=true;
+    applyOutputs();
+    wifiFailures=0;
+    String r=post("poll");
+    pollIntakeSuspended=false;
     bool sigOk=true;
     if(strlen(cfg.key)){
       String sig=jsonString(r,"response_sig");
