@@ -137,7 +137,8 @@ int main(){
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
-    bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||\n                        scenario==11 || scenario==13 || scenario==15;
+    bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||
+                        scenario==11 || scenario==13 || scenario==15;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
