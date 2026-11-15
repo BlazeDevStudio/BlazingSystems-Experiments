@@ -211,6 +211,12 @@ bool quarantinePending(const String &reason){
   return true;
 }
 
+uint16_t boundedTimingMs(uint32_t raw,uint16_t minimum,uint16_t maximum){
+  if(raw<minimum) return minimum;
+  if(raw>maximum) return maximum;
+  return (uint16_t)raw;
+}
+
 void loadConfig(){
   prefs.begin("blazevendo",false);
   cfg.ssid=prefs.getString("ssid","");
@@ -225,8 +231,8 @@ void loadConfig(){
   cfg.coinActiveLow=prefs.getBool("coinlow",true);
   cfg.relayActiveHigh=prefs.getBool("relayhi",true);
   cfg.ledActiveHigh=prefs.getBool("ledhi",true);
-  cfg.coinDebounceMs=(uint16_t)prefs.getUInt("debounce",40);
-  cfg.pulseGroupMs=(uint16_t)prefs.getUInt("groupms",400);
+  cfg.coinDebounceMs=boundedTimingMs(prefs.getUInt("debounce",40),1,2000);
+  cfg.pulseGroupMs=boundedTimingMs(prefs.getUInt("groupms",400),10,10000);
   if(cfg.apPass.length()<8){
     char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
     cfg.apPass=String(b); prefs.putString("appass",cfg.apPass);
