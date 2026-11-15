@@ -170,6 +170,13 @@ try {
   # A PowerShell verifier may not update LASTEXITCODE on success; the stale
   # gh status must be cleared BEFORE the verifier, never after it.
   $viewIdx=$publisher.IndexOf('if (gh release view $releaseTag *> $null)',[StringComparison]::Ordinal)
+  # A failed release lookup must be a confirmed HTTP 404, not any CLI/API failure.
+  if (-not $publisher.Contains('gh api -i') -or
+      -not $publisher.Contains('HTTP/[0-9.]+ 404') -or
+      -not $publisher.Contains('Release lookup failed') -or
+      $publisher.Contains('if (gh release view $releaseTag *> $null)')) {
+    throw 'Publisher must distinguish missing release (404) from API/auth/network failures'
+  }
   $resetIdx=$publisher.IndexOf('$global:LASTEXITCODE = 0',[StringComparison]::Ordinal)
   $verifyIdx=$publisher.IndexOf('& $gate -Mode Verify -InputPaths',[StringComparison]::Ordinal)
   $rejectIdx=$publisher.IndexOf('if ($LASTEXITCODE -ne 0) { throw "Publisher final artifact verification failed',[StringComparison]::Ordinal)
