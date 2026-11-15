@@ -27,6 +27,7 @@ Config cfg;
 Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false;
+bool pollIntakeSuspended=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -306,10 +307,46 @@ bool canAttemptCoinPost(){
   return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
 }
 
+bool coinLineIdle(){
+  const bool raw=digitalRead(runCoinPin);
+  return runCoinActiveLow?raw:!raw;
+}
+
+// Synchronous HTTP can block GPIO sampling for 3.5 seconds. Start a poll only
+// with no unsettled/owed coin and inhibit the acceptor before network I/O.
+bool canStartPoll(){
+  return fsReady && !journalRecoveryRequired && !pendingReady &&
+         pendingPulses==0 && coinLineIdle();
+}
+
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !journalRecoveryRequired && !pendingReady;
+  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+}
+
+// Observe a full debounce-width quiet interval after disabling intake.
+// A pulse at any point cancels polling and returns to normal journal handling.
+bool coinLineQuietAfterInhibit(){
+  const uint32_t started=millis();
+  while(millis()-started<runDebounceMs){
+    if(!coinLineIdle()) return false;
+    delay(1);
+  }
+  return coinLineIdle();
+}
+
+// Close the check-to-inhibit race: after the first idle check, disable intake,
+// then require the line to remain idle before any blocking network operation.
+bool beginPollWindow(){
+  if(!canStartPoll()) return false;
+  pollIntakeSuspended=true;
+  applyOutputs();
+  if(coinLineQuietAfterInhibit()) return true;
+  pollIntakeSuspended=false;
+  applyOutputs();
+  return false;
 }
 
 void startSetupAp(){
@@ -408,8 +445,10 @@ void loop(){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0; String r=post("poll");
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
+    wifiFailures=0;
+    String r=post("poll");
+    pollIntakeSuspended=false;
     bool sigOk=true;
     if(cfg.key.length()){
       String sig=jsonString(r,"response_sig");

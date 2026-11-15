@@ -65,5 +65,9 @@ if [ -f "$ROOT/tests/v05_firmware_hardening_test.sh" ]; then
   sh "$ROOT/tests/v05_firmware_hardening_test.sh"
 fi
 
+if [ -f "$ROOT/tests/v060_esp_poll_intake_guard.py" ]; then
+  python3 "$ROOT/tests/v060_esp_poll_intake_guard.py"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
 
