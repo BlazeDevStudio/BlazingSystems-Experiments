@@ -78,6 +78,12 @@ jobs:
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: RELEASE-PUBLISHER-MOCK execute complete publication command path without credentials
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/PublisherMockCli.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Verify local build stops after each failed dotnet command
         shell: pwsh
         run: |
