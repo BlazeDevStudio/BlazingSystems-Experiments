@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exact-source pending-journal write/readback fault-injection lab."""
+"""Exact-source pending-journal write/readback and rotation fault-injection lab."""
 from pathlib import Path
 import re
 import subprocess
@@ -59,6 +59,8 @@ struct FakeDisk {
   bool shortWrite=false;
   bool shortRead=false;
   bool readOpenFail=false;
+  std::string removeFailPath;
+  std::vector<unsigned> renameFailCalls;
   unsigned renameCalls=0;
 } disk;
 
@@ -111,10 +113,15 @@ struct FakeLittleFS {
     return {};
   }
 
-  bool remove(const char *path) { return disk.files.erase(path)>0; }
+  bool remove(const char *path) {
+    if(disk.removeFailPath==path) return false;
+    return disk.files.erase(path)>0;
+  }
 
   bool rename(const char *from,const char *to) {
     ++disk.renameCalls;
+    if(std::find(disk.renameFailCalls.begin(),disk.renameFailCalls.end(),disk.renameCalls)!=disk.renameFailCalls.end())
+      return false;
     auto found=disk.files.find(from);
     if(found==disk.files.end() || disk.files.count(to)) return false;
     disk.files[to]=found->second;
@@ -132,6 +139,7 @@ String pendingNonce="0011223344556677";
 String pendingTarget="target001122334455667788";
 @@CHECKSUM@@
 @@READ@@
+@@REMOVE_HELPER@@
 @@SAVE@@
 
 static void reset() {
@@ -203,7 +211,62 @@ int main() {
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3);
 
-  std::cout<<"PENDING_WRITE_READBACK_PASS 6/6 exact-source scenarios\n";
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.files["/pending.bak"]=oldRecord();
+  disk.removeFailPath="/pending.bak";
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(disk.files.count("/pending.dat"));
+  assert(disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==0);
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.renameFailCalls={1};
+  assert(!savePending());
+  assert(!journalRecoveryRequired);
+  assert(disk.files.count("/pending.dat"));
+  assert(!disk.files.count("/pending.new"));
+  assert(!disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==1);
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.renameFailCalls={2};
+  assert(!savePending());
+  assert(!journalRecoveryRequired);
+  assert(disk.files.count("/pending.dat"));
+  assert(!disk.files.count("/pending.new"));
+  assert(!disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==3);
+  std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
+  assert(stored.pulses==1);
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.renameFailCalls={2,3};
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(!disk.files.count("/pending.dat"));
+  assert(!disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==3);
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.removeFailPath="/pending.bak";
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(disk.files.count("/pending.dat"));
+  assert(!disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==2);
+  std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
+  assert(stored.pulses==3);
+
+  std::cout<<"PENDING_WRITE_READBACK_PASS 11/11 exact-source scenarios\n";
 }
 '''
 
@@ -220,6 +283,7 @@ for board, path in BOARDS:
         "@@MAGIC@@": magic.group(1),
         "@@CHECKSUM@@": extract(source, "uint32_t pendingChecksum("),
         "@@READ@@": extract(source, "bool readPendingFile("),
+        "@@REMOVE_HELPER@@": extract(source, "bool removePendingCandidate("),
         "@@SAVE@@": save,
     }.items():
         cpp = cpp.replace(marker, value)
@@ -236,6 +300,6 @@ for board, path in BOARDS:
             check=True,
         )
         subprocess.run([str(binary)], check=True)
-    print(f"{board}: pending.new readback verified before rotation")
+    print(f"{board}: pending.new readback and rotation operations verified")
 
-print("PHX-HARDWARE: pending write readback PASS 6 cases x2 sketches")
+print("PHX-HARDWARE: pending write/readback and rotation PASS 11 cases x2 sketches")
