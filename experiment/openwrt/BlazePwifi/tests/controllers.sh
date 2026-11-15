@@ -93,5 +93,9 @@ if [ -f "$ROOT/tests/v060_esp_journal_clear_verify.py" ]; then
   python3 "$ROOT/tests/v060_esp_journal_clear_verify.py"
 fi
 
+if [ -f "$ROOT/tests/v060_esp_quarantine_log_encoding.py" ]; then
+  python3 "$ROOT/tests/v060_esp_quarantine_log_encoding.py"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
 
