@@ -187,6 +187,37 @@ try {
       $createIdx -le $rejectIdx) {
     throw 'Publisher must clear only the stale missing-tag exit, run final Verify, then deny nonzero verifier exit before gh release create'
   }
+  # Execute the actual lookup admission statements extracted from the publisher,
+  # rather than merely searching the workflow for a string. Synthetic API output
+  # must never exercise the real GitHub CLI or the write-privileged release job.
+  $lookupStart=$publisher.IndexOf('          $lookupExit = $LASTEXITCODE',[StringComparison]::Ordinal)
+  $lookupEnd=$publisher.IndexOf('          # Re-admit the FINAL shipped bytes',[StringComparison]::Ordinal)
+  if ($lookupStart -lt 0 -or $lookupEnd -le $lookupStart) { throw 'Publisher lookup decision block missing' }
+  $lookupDecision=$publisher.Substring($lookupStart,$lookupEnd-$lookupStart)
+  # Substitute only the CLI's captured exit code. The status parser and throws
+  # below remain literal source from the production publisher workflow.
+  $lookupDecision=$lookupDecision.Replace('$lookupExit = $LASTEXITCODE','$lookupExit = $fixtureExit')
+  foreach ($case in @(
+    @{ Name='missing tag'; Exit=1; Output="HTTP/2.0 404 Not Found"; Allowed=$true },
+    @{ Name='existing tag'; Exit=0; Output="HTTP/2.0 200 OK"; Allowed=$false },
+    @{ Name='unauthorized'; Exit=1; Output="HTTP/2.0 401 Unauthorized"; Allowed=$false },
+    @{ Name='forbidden'; Exit=1; Output="HTTP/2.0 403 Forbidden"; Allowed=$false },
+    @{ Name='server error'; Exit=1; Output="HTTP/2.0 500 Internal Server Error"; Allowed=$false },
+    @{ Name='transport failure'; Exit=1; Output="connection refused"; Allowed=$false },
+    @{ Name='ambiguous response'; Exit=1; Output="HTTP/2.0 200 OK`nHTTP/2.0 404 Not Found"; Allowed=$false },
+    @{ Name='duplicate not-found'; Exit=1; Output="HTTP/2.0 404 Not Found`nHTTP/2.0 404 Not Found"; Allowed=$false },
+    @{ Name='successful CLI with 404'; Exit=0; Output="HTTP/2.0 404 Not Found"; Allowed=$false }
+  )) {
+    $fixtureExit=[int]$case.Exit
+    $lookupOutput=[string]$case.Output
+    $accepted=$true
+    try { & ([scriptblock]::Create($lookupDecision)) | Out-Null }
+    catch { $accepted=$false }
+    if ($accepted -ne [bool]$case.Allowed) {
+      throw "RELEASE-PUBLISHER executable lookup regression: $($case.Name) accepted=$accepted"
+    }
+  }
+  Write-Output 'RELEASE-PUBLISHER: 9 executed synthetic HTTP/CLI lookup decisions PASS (no publication invoked)'
   Write-Output 'RELEASE-PUBLISHER: missing-tag status cleared before verify, nonzero verifier blocks publish PASS'
 
   # VERSION is authoritative for both native .NET artifacts and NSIS output.
