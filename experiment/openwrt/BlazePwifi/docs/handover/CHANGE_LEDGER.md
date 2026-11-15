@@ -1,3 +1,5 @@
+PHX-RELEASE UTC08 2026-11-15: Draft #291 test-only commit `fac240d0b1431039b357c77fd06773edccf01221` executes the publisher's actual extracted HTTP lookup decision with nine synthetic CLI/status cases (404, existing, 401, 403, 500, transport, mixed, duplicate 404, successful-CLI 404). No `gh` invocation or release creation in tests. Source-exact CI pending; independent QA/MASTER review required. Prior source-exact run #43675841061 PASS (handover/build), publisher SKIPPED. Rollback: revert test commit and these handover entries. PRODUCTION NO-GO; no real signing, publishing, merging or hardware acceptance.
+
 ## PHX-RELEASE / 2026-11-15 03 UTC / draft PR #291: Release lookup now denies ambiguous multiple HTTP response status lines; only one HTTP 404 can indicate an absent tag. Test-first `876df0a367edaac4cdbe5a4c1352fa5ac613246e`, implementation `e089baab648699210e7137079dfac2dae49f0b60`. Exact-head Windows CI pending; static regression only, no live publisher or signed-positive proof. No merge, signing, publication or hardware action. PRODUCTION NO-GO.
 
 ## PHX-RELEASE / 2026-11-15 00 UTC / fail-closed release lookup (DRAFT)
