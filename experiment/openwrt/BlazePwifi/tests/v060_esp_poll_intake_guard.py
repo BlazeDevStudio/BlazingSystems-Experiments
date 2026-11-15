@@ -61,7 +61,7 @@ uint16_t runDebounceMs=40,runPulseGroupMs=400;
 bool insertMode=true,fsReady=true,pendingReady=false,journalRecoveryRequired=false,setupApOn=false;
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool runCoinActiveLow=true,runRelayActiveHigh=true,runLedActiveHigh=true,lastCoin=false;
-bool pollIntakeSuspended=false,relayOn=false,relayDuringPoll=false;
+bool pollIntakeSuspended=false,pinConfigSafe=true,relayOn=false,relayDuringPoll=false;
 int saves=0,polls=0,coinPosts=0,digitalReads=0;
 bool edgeAfterFirstIdleRead=false;
 uint32_t pulseFrom=1600,pulseUntil=1680;
