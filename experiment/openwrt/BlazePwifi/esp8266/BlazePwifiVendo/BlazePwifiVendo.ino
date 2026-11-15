@@ -295,13 +295,24 @@ void applyOutputs(){
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
 
+// Observe a full debounce-width quiet interval after disabling intake.
+// A pulse at any point cancels polling and returns to normal journal handling.
+bool coinLineQuietAfterInhibit(){
+  const uint32_t started=millis();
+  while(millis()-started<runDebounceMs){
+    if(!coinLineIdle()) return false;
+    delay(1);
+  }
+  return coinLineIdle();
+}
+
 // Close the check-to-inhibit race: after the first idle check, disable intake,
-// then sample GPIO again before entering any blocking network operation.
+// then require the line to remain idle before any blocking network operation.
 bool beginPollWindow(){
   if(!canStartPoll()) return false;
   pollIntakeSuspended=true;
   applyOutputs();
-  if(coinLineIdle()) return true;
+  if(coinLineQuietAfterInhibit()) return true;
   pollIntakeSuspended=false;
   applyOutputs();
   return false;
