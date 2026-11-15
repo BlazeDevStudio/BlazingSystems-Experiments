@@ -295,6 +295,18 @@ void applyOutputs(){
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
 
+// Close the check-to-inhibit race: after the first idle check, disable intake,
+// then sample GPIO again before entering any blocking network operation.
+bool beginPollWindow(){
+  if(!canStartPoll()) return false;
+  pollIntakeSuspended=true;
+  applyOutputs();
+  if(coinLineIdle()) return true;
+  pollIntakeSuspended=false;
+  applyOutputs();
+  return false;
+}
+
 void startSetupAp(){
   if(!setupApName.length()) setupApName="BlazePwifi-Vendo-"+String(ESP.getChipId(),HEX);
   WiFi.mode(WIFI_AP_STA); WiFi.softAP(setupApName.c_str(),cfg.apPass); setupApOn=true; configuredApSince=millis();
@@ -454,9 +466,7 @@ void loop(){
     if(wifiFailures>=maxWifiRetries)startSetupAp();
   }
 
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && canStartPoll()){
-    pollIntakeSuspended=true;
-    applyOutputs();
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
     wifiFailures=0;
     String r=post("poll");
     pollIntakeSuspended=false;
