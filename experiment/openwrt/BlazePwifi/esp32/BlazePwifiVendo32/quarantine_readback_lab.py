@@ -103,7 +103,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<16;scenario++){
+  for(int scenario=0;scenario<17;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -134,11 +134,14 @@ int main(){
       disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n";
     if(scenario==15)
       disk.bytes+="TIME=9 PULSES=4 NONCE=nonce001122334455";
+    if(scenario==16)
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n"
+                 "TIME=9 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=duplicate\n";
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||
-                        scenario==11 || scenario==13 || scenario==15;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -147,6 +150,7 @@ int main(){
          disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos)) ||
        (scenario==14 && disk.bytes!=bytesBefore) ||
        (scenario==15 && disk.bytes!=bytesBefore) ||
+       (scenario==16 && disk.bytes!=bytesBefore) ||
        journalRecoveryRequired!=expectRecovery){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -166,15 +170,15 @@ int main(){
         return 1;
       }
     }
-    if((scenario>=5 && scenario<=9) || scenario==11){
+    if((scenario>=5 && scenario<=9) || scenario==11 || scenario==16){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
       journalRecoveryRequired=false;
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
-      bool tornTail=(scenario==5 || scenario==7 || scenario==8);
-      if(tornTail){
+      bool persistentHardStop=(scenario==5 || scenario==7 || scenario==8 || scenario==16);
+      if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
            clearCount!=clearsBeforeReboot || pendingPulses!=4){
           std::cerr<<"SOURCE_QUARANTINE_TORN_REBOOT_FAIL scenario="<<scenario<<"\n";
@@ -189,7 +193,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 16/16 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 17/17 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -222,4 +226,4 @@ for board, ino in BOARDS:
                         str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 32/32 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 34/34 source-extracted host scenarios PASS; no hardware evidence")
