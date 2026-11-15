@@ -151,6 +151,12 @@ int main(){
                                      saves==1 && !pollIntakeSuspended);
 
   resetState();
+  pulseFrom=1510;pulseUntil=1530;
+  loop();
+  const bool quietWindowEdgeSaved=(polls==0 && pendingPulses==1 &&
+                                  saves==1 && !pollIntakeSuspended);
+
+  resetState();
   pendingPulses=1;lastEdge=1450;
   loop();
   const bool settlingGroupDeferred=(polls==0 && pendingPulses==1 && !pendingReady);
@@ -172,11 +178,13 @@ int main(){
            <<" network_guard="<<networkGuard
            <<" active_edge_saved="<<activeEdgeSaved
            <<" check_to_inhibit_edge_saved="<<checkToInhibitEdgeSaved
+           <<" quiet_window_edge_saved="<<quietWindowEdgeSaved
            <<" settling_group_deferred="<<settlingGroupDeferred
            <<" owed_coin_prioritized="<<owedCoinPrioritized
            <<" recovery_denied="<<recoveryDenied<<"\n";
   return (control && networkGuard && activeEdgeSaved && checkToInhibitEdgeSaved &&
-          settlingGroupDeferred && owedCoinPrioritized && recoveryDenied)?0:19;
+          quietWindowEdgeSaved && settlingGroupDeferred && owedCoinPrioritized &&
+          recoveryDenied)?0:19;
 }
 """
 
@@ -185,12 +193,14 @@ for chip, path in SOURCES.items():
     sketch = path.read_text(encoding="utf-8")
     assert "h.setTimeout(3500)" in sketch, f"{chip}: HTTP timeout contract changed; re-audit"
     names = ["canAttemptCoinPost", "coinLineIdle", "canStartPoll", "applyOutputs",
-             "beginPollWindow", "loop"]
+             "coinLineQuietAfterInhibit", "beginPollWindow", "loop"]
     extracted = "\n".join(source_function(sketch, name) for name in names)
     loop = source_function(sketch, "loop")
     assert loop.index('post("poll")') < loop.index("bool raw=digitalRead(runCoinPin)")
+    quiet = source_function(sketch, "coinLineQuietAfterInhibit")
     begin = source_function(sketch, "beginPollWindow")
-    assert "pollIntakeSuspended=true" in begin and "coinLineIdle()" in begin
+    assert "runDebounceMs" in quiet and "delay(1)" in quiet
+    assert "pollIntakeSuspended=true" in begin and "coinLineQuietAfterInhibit()" in begin
     assert "pollIntakeSuspended=false" in begin and "pollIntakeSuspended=false" in loop
     code = ("#define TARGET_ESP32\n" if chip == "ESP32" else "") + STUBS + extracted + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-hw-poll-guard-") as folder:
