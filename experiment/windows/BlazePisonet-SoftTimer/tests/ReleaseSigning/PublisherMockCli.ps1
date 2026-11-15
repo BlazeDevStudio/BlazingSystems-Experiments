@@ -8,11 +8,11 @@ $marker = '      - name: Publish GitHub Release'
 $start = $workflow.IndexOf($marker, [StringComparison]::Ordinal)
 if ($start -lt 0) { throw 'Publisher step missing' }
 $stepTail = $workflow.Substring($start)
-$runMatch = [regex]::Match($stepTail, '(?m)^        run: \\|\\r?\\n')
+$runMatch = [regex]::Match($stepTail, '(?m)^        run: \|\r?\n')
 if (-not $runMatch.Success) { throw 'Publisher executable block missing' }
 $scriptTail = $stepTail.Substring($runMatch.Index + $runMatch.Length)
 $scriptLines = @()
-foreach ($line in ($scriptTail -split "\\r?\\n")) {
+foreach ($line in ($scriptTail -split "\r?\n")) {
   if ($line -and -not $line.StartsWith('          ')) { break }
   if ($line.StartsWith('          ')) { $scriptLines += $line.Substring(10) }
   else { $scriptLines += '' }
