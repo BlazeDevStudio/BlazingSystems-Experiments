@@ -27,7 +27,7 @@ Config cfg;
 Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false;
-bool pollIntakeSuspended=false;
+bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -255,6 +255,22 @@ int jsonInt(const String &r,const String &k,int def){
   return r.substring(p,e).toInt();
 }
 
+bool validInputPullupPin(int pin){
+  if(pin<0 || pin>33) return false;
+  if(pin>=6 && pin<=11) return false; // connected to module flash
+  return pin!=20 && pin!=24 && !(pin>=28 && pin<=31);
+}
+
+bool validOutputPin(int pin){
+  return validInputPullupPin(pin);
+}
+
+bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
+  return validInputPullupPin(coinPin) && validOutputPin(relayPin) &&
+         validOutputPin(ledPin) && coinPin!=relayPin &&
+         coinPin!=ledPin && relayPin!=ledPin;
+}
+
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
@@ -271,15 +287,23 @@ void applyRemoteConfig(const String &r){
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0;
   ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1), rp=jsonInt(r,"relay_pin",-1), lp=jsonInt(r,"led_pin",-1);
-  int nextCoin=(cp>=0&&cp<=39)?cp:cfg.coinPin;
-  int nextRelay=(rp>=0&&rp<=39)?rp:cfg.relayPin;
-  int nextLed=(lp>=0&&lp<=39)?lp:cfg.insertLedPin;
+  int nextCoin=cp>=0?cp:runCoinPin;
+  int nextRelay=rp>=0?rp:runRelayPin;
+  int nextLed=lp>=0?lp:runLedPin;
+  bool nextPinsSafe=runtimePinsSafe(nextCoin,nextRelay,nextLed);
   runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
   runRelayActiveHigh=jsonInt(r,"relay_active_high",cfg.relayActiveHigh?1:0)!=0;
   runLedActiveHigh=jsonInt(r,"led_active_high",cfg.ledActiveHigh?1:0)!=0;
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
   runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
-  configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
+  if(nextPinsSafe){
+    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    pinConfigSafe=true;
+  } else {
+    pinConfigSafe=false;
+    Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
+  }
+  remoteRevision=rev; applyOutputs();
 }
 
 String lastSentNonce;
@@ -320,7 +344,7 @@ bool canStartPoll(){
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady &&
+  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
@@ -393,13 +417,18 @@ void setupPortal(){
   });
   web.on("/save",HTTP_POST,[](){
     String newSsid=web.arg("s"), newPass=web.arg("p").length()?web.arg("p"):cfg.pass;
+    int nextCoin=web.arg("coin").toInt(), nextLed=web.arg("led").toInt(), nextRelay=web.arg("relay").toInt();
+    if(!runtimePinsSafe(nextCoin,nextRelay,nextLed)){
+      web.send(400,"text/plain","Unsafe or colliding GPIO assignment. Settings were NOT saved.");
+      return;
+    }
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
       if(!cfg.ssid.isEmpty()) WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str());
       startSetupAp(); return;
     }
     cfg.ssid=newSsid; cfg.pass=newPass; cfg.server=web.arg("server"); if(web.arg("k").length()) cfg.key=web.arg("k"); cfg.id=web.arg("id");
-    cfg.coinPin=web.arg("coin").toInt(); cfg.insertLedPin=web.arg("led").toInt(); cfg.relayPin=web.arg("relay").toInt();
+    cfg.coinPin=nextCoin; cfg.insertLedPin=nextLed; cfg.relayPin=nextRelay;
     long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
     cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
     saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
@@ -433,6 +462,11 @@ void setup(){
   Serial.begin(115200); loadConfig();
   initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
+  if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
+    pinConfigSafe=false;
+    runCoinPin=27; runLedPin=2; runRelayPin=26;
+    Serial.println("CRITICAL: stored GPIO assignment unsafe; using disabled safe defaults until corrected.");
+  }
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
