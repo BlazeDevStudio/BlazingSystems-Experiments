@@ -386,8 +386,10 @@ void setupPortal(){
   });
 
   web.on("/quarantine/clear",HTTP_POST,[](){
-    if(fsReady && LittleFS.exists("/quarantine.log")) LittleFS.remove("/quarantine.log");
-    web.send(200,"text/plain","Quarantine log cleared.\n");
+    // Quarantine is unpaid-coin reconciliation evidence. Network clients may
+    // read/export it, but firmware must never erase it without an approved
+    // durable receipt and authenticated operator recovery contract.
+    web.send(403,"text/plain","Quarantine deletion disabled; preserve and reconcile evidence offline.\n");
   });
 
   web.on("/save",HTTP_POST,[](){
