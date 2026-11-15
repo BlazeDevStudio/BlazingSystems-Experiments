@@ -55,3 +55,19 @@ Do not infer a pass from the test source or historical #179 runs.
 - Firmware still must not clear a pending coin based only on an unbound
   `"ok":true`; MASTER/CORE must approve the signed durable receipt ACK.
 - #31, #32, #34, and #43 remain production blockers.
+
+
+## Check-to-inhibit race closure
+
+A follow-up source audit found a time-of-check/time-of-use interval in the first
+guard: `canStartPoll()` sampled an idle GPIO before `pollIntakeSuspended`
+disabled the acceptor. `beginPollWindow()` now performs the state/idle check,
+disables outputs, and samples GPIO a second time. An edge arriving between
+those reads cancels the poll, restores normal output policy, and is processed
+by the existing journal path in the same loop.
+
+The source-extracted host lab now injects this exact second-read transition,
+bringing the modeled set to seven scenarios per board. Exact-head CI after this
+change is **PENDING / NOT YET CLASSIFIED** at documentation time. This remains a
+software timing model; real relay turn-off latency and acceptor pulse behavior
+are **NOT TESTED**.
