@@ -389,9 +389,20 @@ bool verifyWifi(const String &ssid,const String &pass){
   return WiFi.status()==WL_CONNECTED;
 }
 
+bool setupRequestAllowed(){
+  return setupApOn && web.client().localIP()==WiFi.softAPIP();
+}
+
+bool requireSetupApRequest(){
+  if(setupRequestAllowed()) return true;
+  web.send(403,"text/plain","Setup routes are available only through the active setup AP.\n");
+  return false;
+}
+
 void setupPortal(){
   startSetupAp();
   web.on("/",[](){
+    if(!requireSetupApRequest()) return;
     String h="<meta name=viewport content='width=device-width'><h2>BlazePwifi ESP32 Vendo</h2><form method=POST action=/save>"
       "SSID <input name=s value='"+htmlEsc(cfg.ssid)+"'><br>WiFi credential <input name=p type=password><br>"
       "Server <input name=server value='"+htmlEsc(cfg.server)+"'><br>Controller key <input name=k type=password><br>"
@@ -405,6 +416,7 @@ void setupPortal(){
     web.send(200,"text/html",h);
   });
   web.on("/quarantine",[](){
+    if(!requireSetupApRequest()) return;
     if(!fsReady || !LittleFS.exists("/quarantine.log")){
       web.send(200,"text/plain","No quarantine records found.\n");
       return;
@@ -421,6 +433,7 @@ void setupPortal(){
     web.send(403,"text/plain","Quarantine deletion disabled; preserve and reconcile evidence offline.\n");
   });
   web.on("/save",HTTP_POST,[](){
+    if(!requireSetupApRequest()) return;
     String newSsid=web.arg("s"), newPass=web.arg("p").length()?web.arg("p"):cfg.pass;
     int nextCoin=web.arg("coin").toInt(), nextLed=web.arg("led").toInt(), nextRelay=web.arg("relay").toInt();
     if(!runtimePinsSafe(nextCoin,nextRelay,nextLed)){
