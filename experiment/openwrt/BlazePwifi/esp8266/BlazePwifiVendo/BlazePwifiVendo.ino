@@ -94,7 +94,8 @@ bool removePendingCandidate(const char *path){
 }
 
 bool savePending(){
-  if(!fsReady || journalRecoveryRequired || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
+  if(!fsReady || journalRecoveryRequired || pendingPulses==0 ||
+     pendingNonce.length()<8 || pendingTarget.length()<8) return false;
   PendingRecord r; memset(&r,0,sizeof(r)); r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
   const size_t nonceLength=strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
   const size_t targetLength=strlcpy(r.target,pendingTarget.c_str(),sizeof(r.target));
