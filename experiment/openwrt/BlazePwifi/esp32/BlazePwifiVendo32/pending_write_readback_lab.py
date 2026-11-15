@@ -72,6 +72,12 @@ struct File {
 
   explicit operator bool() const { return opened; }
 
+  size_t size() const {
+    if(!opened) return 0;
+    auto found=disk.files.find(path);
+    return found==disk.files.end()?0:found->second.size();
+  }
+
   size_t write(const uint8_t *data,size_t length) {
     if(!opened || !writing) return 0;
     size_t count=(disk.shortWrite && length)?length-1:length;
@@ -172,6 +178,16 @@ int main() {
   PendingRecord stored{};
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3 && stored.checksum==pendingChecksum(stored));
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.files["/pending.dat"].push_back(0xa5);
+  const auto oversized=disk.files["/pending.dat"];
+  PendingRecord oversizedRecord{};
+  assert(!readPendingFile("/pending.dat",oversizedRecord));
+  assert(disk.files["/pending.dat"]==oversized);
+  assert(!journalRecoveryRequired);
+  assert(disk.renameCalls==0);
 
   reset();
   pendingNonce=String("00112233445566778");
@@ -320,7 +336,7 @@ int main() {
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3);
 
-  std::cout<<"PENDING_WRITE_READBACK_PASS 18/18 exact-source scenarios\n";
+  std::cout<<"PENDING_WRITE_READBACK_PASS 19/19 exact-source scenarios\n";
 }
 '''
 
@@ -356,4 +372,4 @@ for board, path in BOARDS:
         subprocess.run([str(binary)], check=True)
     print(f"{board}: pending.new readback and rotation operations verified")
 
-print("PHX-HARDWARE: pending write/readback and rotation PASS 18 cases x2 sketches")
+print("PHX-HARDWARE: pending write/readback and rotation PASS 19 cases x2 sketches")
