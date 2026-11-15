@@ -62,7 +62,9 @@ quarantine_body = function_body("bool quarantinePending")
 required = [
     'if(!q) return false;',
     'written!=(size_t)len',
-    'if(!verify) return false;',
+    'if(!verify){',
+    'if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;',
+    'journalRecoveryRequired=true;',
     'after==before+(size_t)len',
     'QUARANTINE_MAX_BYTES',
 ]
