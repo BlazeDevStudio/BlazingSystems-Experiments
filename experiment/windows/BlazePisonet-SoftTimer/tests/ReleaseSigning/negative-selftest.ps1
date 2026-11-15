@@ -172,7 +172,7 @@ try {
   $viewIdx=$publisher.IndexOf('$lookupOutput = gh api -i',[StringComparison]::Ordinal)
   # A failed release lookup must be a confirmed HTTP 404, not any CLI/API failure.
   if (-not $publisher.Contains('gh api -i') -or
-      -not $publisher.Contains('HTTP/[0-9.]+ 404') -or
+      -not $publisher.Contains("Groups[1].Value -ne '404'") -or
       -not $publisher.Contains('Release lookup failed') -or
       -not $publisher.Contains('$httpStatuses.Count -ne 1') -or
       $publisher.Contains('if (gh release view $releaseTag *> $null)')) {
