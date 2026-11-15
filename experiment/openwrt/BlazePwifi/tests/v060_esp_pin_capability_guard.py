@@ -18,7 +18,7 @@ SOURCES = {
 
 
 def source_function(source, name):
-    match = re.search(r"\\bbool\\s+" + re.escape(name) + r"\\s*\\([^)]*\\)\\s*\\{", source)
+    match = re.search(r"\bbool\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
     assert match, f"Missing production function {name}"
     depth = 0
     for pos in range(match.end() - 1, len(source)):
