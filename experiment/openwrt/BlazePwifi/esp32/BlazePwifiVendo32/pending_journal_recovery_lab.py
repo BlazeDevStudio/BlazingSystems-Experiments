@@ -174,7 +174,7 @@ for board, path in SKETCHES:
     source = path.read_text(encoding="utf-8")
     for sig, token in [
         ("bool savePending(){", "journalRecoveryRequired"),
-        ("void clearPending(){", "journalRecoveryRequired"),
+        ("bool clearPending(){", "journalRecoveryRequired"),
         ("void applyOutputs(){", "!journalRecoveryRequired"),
         ("void loop(){", "!journalRecoveryRequired"),
     ]:
