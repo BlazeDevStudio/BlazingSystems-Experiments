@@ -77,5 +77,9 @@ if [ -f "$ROOT/tests/v060_esp_quarantine_clear_deny.py" ]; then
   python3 "$ROOT/tests/v060_esp_quarantine_clear_deny.py"
 fi
 
+if [ -f "$ROOT/tests/v060_esp_setup_ap_route_guard.py" ]; then
+  python3 "$ROOT/tests/v060_esp_setup_ap_route_guard.py"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
 
