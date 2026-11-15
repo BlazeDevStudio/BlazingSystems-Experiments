@@ -572,7 +572,7 @@ String quarantineLogField(const String &value,size_t maxLen){
 }
 
 bool appendQuarantineRecord(const String &reason){
-  if(!fsReady || pendingPulses==0) return false;
+  if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;
 
   char record[320];
   const String logNonce=quarantineLogField(pendingNonce,40);
@@ -598,10 +598,18 @@ bool appendQuarantineRecord(const String &reason){
   size_t written=q.write((const uint8_t*)record,(size_t)len);
   q.flush();
   q.close();
-  if(written!=(size_t)len) return false;
+  if(written!=(size_t)len){
+    // The append may have changed flash even when the reported length is short.
+    // Freeze all journal mutation until an operator reconciles both records.
+    journalRecoveryRequired=true;
+    return false;
+  }
 
   File verify=LittleFS.open("/quarantine.log","r");
-  if(!verify) return false;
+  if(!verify){
+    journalRecoveryRequired=true;
+    return false;
+  }
   size_t after=verify.size();
   bool verified=after==before+(size_t)len &&
                 verify.seek(before,SeekSet);
@@ -610,7 +618,9 @@ bool appendQuarantineRecord(const String &reason){
   }
   verify.close();
   // Exact byte readback detects same-size corruption before clearing pending.
-  // It is NOT proof of durability across a real flash power cut.
+  // It is NOT proof of durability across a real flash power cut. Any failed
+  // post-write verification is ambiguous and must block retries and deletion.
+  if(!verified) journalRecoveryRequired=true;
   return verified;
 }
 

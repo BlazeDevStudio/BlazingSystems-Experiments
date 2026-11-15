@@ -28,6 +28,7 @@ struct String : std::string {
 };
 static constexpr size_t QUARANTINE_MAX_BYTES=4096;
 static bool fsReady=true;
+static bool journalRecoveryRequired=false;
 static uint8_t pendingPulses=4;
 static String pendingNonce="nonce001122334455";
 static String pendingTarget="target0011223344";
@@ -36,7 +37,7 @@ static bool clearAllowed=true;
 unsigned long millis(){return 1234UL;}
 bool clearPending(){
   ++clearCount;
-  if(!clearAllowed) return false;
+  if(!clearAllowed){journalRecoveryRequired=true; return false;}
   pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();
   return true;
 }
@@ -100,11 +101,12 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<13;scenario++){
+  for(int scenario=0;scenario<14;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
     fsReady=true;
+    journalRecoveryRequired=false;
     pendingPulses=4;
     pendingNonce="nonce001122334455";
     pendingTarget="target0011223344";
@@ -121,19 +123,37 @@ int main(){
     if(scenario==11) clearAllowed=false;
     String reason="window expired";
     if(scenario==12) reason=String("bad\nRECORD=forged\t\\");
+    if(scenario==13) journalRecoveryRequired=true;
     bool expectClear=(scenario==0 || scenario==12);
     bool expectClearAttempt=(scenario==0 || scenario==11 || scenario==12);
+    bool expectRecovery=(scenario>=5 && scenario<=9) || scenario==11 || scenario==13;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
        (scenario==12 &&
         (std::count(disk.bytes.begin(),disk.bytes.end(),'\n')!=2 ||
-         disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos))){
+         disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos)) ||
+       journalRecoveryRequired!=expectRecovery){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
     }
+    if(expectRecovery){
+      const std::string ambiguousBytes=disk.bytes;
+      const int attemptsBeforeRetry=clearCount;
+      disk.shortWrite=false;
+      disk.verifyOpenFail=false;
+      disk.removeOneByteAfterClose=false;
+      disk.mutateAfterClose=false;
+      disk.mutateOnRead=false;
+      clearAllowed=true;
+      if(quarantinePending(reason) || disk.bytes!=ambiguousBytes ||
+         clearCount!=attemptsBeforeRetry || !journalRecoveryRequired){
+        std::cerr<<"SOURCE_QUARANTINE_RETRY_MUTATED scenario="<<scenario<<"\n";
+        return 1;
+      }
+    }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 13/13 scenarios (power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 14/14 scenarios (power cut NOT tested)\n";
 }
 '''
 
@@ -165,4 +185,4 @@ for board, ino in BOARDS:
                         str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 26/26 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 28/28 source-extracted host scenarios PASS; no hardware evidence")
