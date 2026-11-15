@@ -174,6 +174,7 @@ try {
   if (-not $publisher.Contains('gh api -i') -or
       -not $publisher.Contains('HTTP/[0-9.]+ 404') -or
       -not $publisher.Contains('Release lookup failed') -or
+      -not $publisher.Contains('$httpStatuses.Count -ne 1') -or
       $publisher.Contains('if (gh release view $releaseTag *> $null)')) {
     throw 'Publisher must distinguish missing release (404) from API/auth/network failures'
   }
