@@ -190,6 +190,42 @@ int main() {
   assert(disk.renameCalls==0);
 
   reset();
+  PendingRecord dirtyNonce{};
+  dirtyNonce.magic=PENDING_MAGIC;
+  dirtyNonce.pulses=2;
+  std::strcpy(dirtyNonce.nonce,"12345678");
+  dirtyNonce.nonce[9]='x';
+  std::strcpy(dirtyNonce.target,"target001");
+  dirtyNonce.checksum=pendingChecksum(dirtyNonce);
+  const auto *dirtyNonceStart=reinterpret_cast<const uint8_t*>(&dirtyNonce);
+  disk.files["/pending.dat"]=
+      std::vector<uint8_t>(dirtyNonceStart,dirtyNonceStart+sizeof(dirtyNonce));
+  const auto dirtyNonceBytes=disk.files["/pending.dat"];
+  PendingRecord dirtyNonceRead{};
+  assert(!readPendingFile("/pending.dat",dirtyNonceRead));
+  assert(disk.files["/pending.dat"]==dirtyNonceBytes);
+  assert(!journalRecoveryRequired);
+  assert(disk.renameCalls==0);
+
+  reset();
+  PendingRecord dirtyTarget{};
+  dirtyTarget.magic=PENDING_MAGIC;
+  dirtyTarget.pulses=2;
+  std::strcpy(dirtyTarget.nonce,"12345678");
+  std::strcpy(dirtyTarget.target,"target01");
+  dirtyTarget.target[9]='x';
+  dirtyTarget.checksum=pendingChecksum(dirtyTarget);
+  const auto *dirtyTargetStart=reinterpret_cast<const uint8_t*>(&dirtyTarget);
+  disk.files["/pending.dat"]=
+      std::vector<uint8_t>(dirtyTargetStart,dirtyTargetStart+sizeof(dirtyTarget));
+  const auto dirtyTargetBytes=disk.files["/pending.dat"];
+  PendingRecord dirtyTargetRead{};
+  assert(!readPendingFile("/pending.dat",dirtyTargetRead));
+  assert(disk.files["/pending.dat"]==dirtyTargetBytes);
+  assert(!journalRecoveryRequired);
+  assert(disk.renameCalls==0);
+
+  reset();
   pendingNonce=String("00112233445566778");
   assert(!savePending());
   assert(!journalRecoveryRequired);
@@ -336,7 +372,7 @@ int main() {
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3);
 
-  std::cout<<"PENDING_WRITE_READBACK_PASS 19/19 exact-source scenarios\n";
+  std::cout<<"PENDING_WRITE_READBACK_PASS 21/21 exact-source scenarios\n";
 }
 '''
 
@@ -372,4 +408,4 @@ for board, path in BOARDS:
         subprocess.run([str(binary)], check=True)
     print(f"{board}: pending.new readback and rotation operations verified")
 
-print("PHX-HARDWARE: pending write/readback and rotation PASS 19 cases x2 sketches")
+print("PHX-HARDWARE: pending write/readback and rotation PASS 21 cases x2 sketches")
