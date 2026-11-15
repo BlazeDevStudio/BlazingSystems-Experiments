@@ -46,7 +46,7 @@ struct FakeSerial {
 } Serial;
 enum SeekMode { SeekSet };
 struct FakeDisk {
-  std::string bytes="PREVIOUS\n";
+  std::string bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
   bool priorOpenFail=false, appendOpenFail=false, verifyOpenFail=false;
   bool shortWrite=false, mutateAfterClose=false, mutateOnRead=false;
   bool removeOneByteAfterClose=false;
@@ -80,10 +80,11 @@ struct File {
     cursor=offset;
     return true;
   }
+  size_t available() const{return d && !writing && cursor<d->bytes.size()?d->bytes.size()-cursor:0;}
   int read(){
     if(!d || writing || cursor>=d->bytes.size())return -1;
     int byte=(unsigned char)d->bytes[cursor++];
-    return d->mutateOnRead?(byte^1):byte;
+    return (d->mutateOnRead && d->hasWritten)?(byte^1):byte;
   }
 };
 struct FakeLittleFS {
@@ -98,10 +99,11 @@ struct FakeLittleFS {
 } LittleFS;
 
 @@SOURCE_ENCODE@@
+@@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<14;scenario++){
+  for(int scenario=0;scenario<16;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -117,22 +119,34 @@ int main(){
     if(scenario==5) disk.shortWrite=true;
     if(scenario==6) disk.verifyOpenFail=true;
     if(scenario==7) disk.removeOneByteAfterClose=true;
-    if(scenario==8) disk.mutateAfterClose=true; // same-size corruption!
-    if(scenario==9) disk.mutateOnRead=true; // same-size bad readback!
-    if(scenario==10) disk.bytes=std::string(QUARANTINE_MAX_BYTES,'X');
+    if(scenario==8) disk.mutateAfterClose=true; // corrupts final newline
+    if(scenario==9) disk.mutateOnRead=true; // verification read fault only
+    if(scenario==10){
+      const std::string valid="TIME=1 PULSES=1 NONCE=old TARGET=old REASON=old\n";
+      disk.bytes.clear();
+      while(disk.bytes.size()<=QUARANTINE_MAX_BYTES) disk.bytes+=valid;
+    }
     if(scenario==11) clearAllowed=false;
     String reason="window expired";
     if(scenario==12) reason=String("bad\nRECORD=forged\t\\");
     if(scenario==13) journalRecoveryRequired=true;
-    bool expectClear=(scenario==0 || scenario==12);
-    bool expectClearAttempt=(scenario==0 || scenario==11 || scenario==12);
-    bool expectRecovery=(scenario>=5 && scenario<=9) || scenario==11 || scenario==13;
+    if(scenario==14)
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n";
+    if(scenario==15)
+      disk.bytes+="TIME=9 PULSES=4 NONCE=nonce001122334455";
+    const std::string bytesBefore=disk.bytes;
+    bool expectClear=(scenario==0 || scenario==12 || scenario==14);
+    bool expectClearAttempt=expectClear || scenario==11;
+    bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||
+                        scenario==11 || scenario==13 || scenario==15;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
        (scenario==12 &&
         (std::count(disk.bytes.begin(),disk.bytes.end(),'\n')!=2 ||
          disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos)) ||
+       (scenario==14 && disk.bytes!=bytesBefore) ||
+       (scenario==15 && disk.bytes!=bytesBefore) ||
        journalRecoveryRequired!=expectRecovery){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -152,8 +166,30 @@ int main(){
         return 1;
       }
     }
+    if((scenario>=5 && scenario<=9) || scenario==11){
+      // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
+      const std::string rebootBytes=disk.bytes;
+      const int clearsBeforeReboot=clearCount;
+      journalRecoveryRequired=false;
+      disk.hasWritten=false;
+      bool rebootOk=quarantinePending(reason);
+      bool tornTail=(scenario==5 || scenario==7 || scenario==8);
+      if(tornTail){
+        if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
+           clearCount!=clearsBeforeReboot || pendingPulses!=4){
+          std::cerr<<"SOURCE_QUARANTINE_TORN_REBOOT_FAIL scenario="<<scenario<<"\n";
+          return 1;
+        }
+      } else {
+        if(!rebootOk || journalRecoveryRequired || disk.bytes!=rebootBytes ||
+           clearCount!=clearsBeforeReboot+1 || pendingPulses!=0){
+          std::cerr<<"SOURCE_QUARANTINE_IDEMPOTENT_REBOOT_FAIL scenario="<<scenario<<"\n";
+          return 1;
+        }
+      }
+    }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 14/14 scenarios (power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 16/16 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -175,6 +211,7 @@ def extract(src: str, signature: str) -> str:
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
     actual = CPP.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
     with tempfile.TemporaryDirectory(prefix="phx-hw-q-") as temp:
@@ -185,4 +222,4 @@ for board, ino in BOARDS:
                         str(cpp), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 28/28 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 32/32 source-extracted host scenarios PASS; no hardware evidence")

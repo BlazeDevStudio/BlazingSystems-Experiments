@@ -249,6 +249,42 @@ String quarantineLogField(const String &value,size_t maxLen){
   return out;
 }
 
+bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecorded){
+  bytes=0; alreadyRecorded=false;
+  if(!LittleFS.exists("/quarantine.log")) return true;
+  File prior=LittleFS.open("/quarantine.log","r");
+  if(!prior) return false;
+  bytes=prior.size();
+  char line[320];
+  size_t lineLength=0,readCount=0;
+  bool valid=true;
+  while(valid && prior.available()){
+    int next=prior.read();
+    if(next<0){ valid=false; break; }
+    ++readCount;
+    if(next=='\n'){
+      if(lineLength==0){ valid=false; break; }
+      line[lineLength]='\0';
+      if(strncmp(line,"TIME=",5)!=0 ||
+         !strstr(line," PULSES=") || !strstr(line," NONCE=") ||
+         !strstr(line," TARGET=") || !strstr(line," REASON=")){
+        valid=false; break;
+      }
+      const char *payload=strchr(line,' ');
+      if(payload && strncmp(payload+1,identity,strlen(identity))==0) alreadyRecorded=true;
+      lineLength=0;
+    } else if(next=='\0' || lineLength+1>=sizeof(line)){
+      valid=false;
+    } else {
+      line[lineLength++]=(char)next;
+    }
+  }
+  prior.close();
+  // Every generated record has exactly one final newline. An unterminated tail
+  // is durable evidence of a torn append and must survive reboot as a hard stop.
+  return valid && readCount==bytes && lineLength==0;
+}
+
 bool appendQuarantineRecord(const String &reason){
   if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;
 
@@ -256,20 +292,28 @@ bool appendQuarantineRecord(const String &reason){
   const String logNonce=quarantineLogField(pendingNonce,40);
   const String logTarget=quarantineLogField(pendingTarget,80);
   const String logReason=quarantineLogField(reason,128);
+  char identity[192];
+  int identityLen=snprintf(identity,sizeof(identity),
+                           "PULSES=%u NONCE=%s TARGET=%s REASON=",
+                           (unsigned int)pendingPulses,
+                           logNonce.c_str(),logTarget.c_str());
+  if(identityLen<=0 || (size_t)identityLen>=sizeof(identity)) return false;
+
   int len=snprintf(record,sizeof(record),
-                   "TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
-                   (unsigned long)millis(), (unsigned int)pendingPulses,
-                   logNonce.c_str(), logTarget.c_str(), logReason.c_str());
+                   "TIME=%lu %s%s\n",
+                   (unsigned long)millis(),identity,logReason.c_str());
   if(len<=0 || (size_t)len>=sizeof(record)) return false;
 
   size_t before=0;
-  if(LittleFS.exists("/quarantine.log")){
-    File prior=LittleFS.open("/quarantine.log","r");
-    if(!prior) return false;
-    before=prior.size();
-    prior.close();
+  bool alreadyRecorded=false;
+  if(!inspectQuarantineLog(identity,before,alreadyRecorded)){
+    journalRecoveryRequired=true;
+    return false;
   }
-  if(before+(size_t)len>QUARANTINE_MAX_BYTES) return false;
+  // A complete record with the same persisted event identity is the successful
+  // side of an earlier ambiguous commit. Reuse it instead of appending twice.
+  if(alreadyRecorded) return true;
+  if(before>QUARANTINE_MAX_BYTES || (size_t)len>QUARANTINE_MAX_BYTES-before) return false;
 
   File q=LittleFS.open("/quarantine.log","a");
   if(!q) return false;
