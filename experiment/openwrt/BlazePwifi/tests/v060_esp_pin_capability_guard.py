@@ -43,6 +43,10 @@ for chip, path in SOURCES.items():
     setup = sketch[sketch.index("void setup(){"):sketch.index("void loop(){")]
 
     assert "pinConfigSafe=false" in remote
+    safe_branch = remote[remote.index("if(nextPinsSafe)"):remote.index("} else {")]
+    assert "runRelayActiveHigh=nextRelayActiveHigh" in safe_branch
+    rejected_branch = remote[remote.index("} else {"):]
+    assert "runRelayActiveHigh=" not in rejected_branch
     assert remote.index("runtimePinsSafe") < remote.index("configureRuntimePins")
     assert "pinConfigSafe && controllerEnabled" in outputs
     assert save.index("runtimePinsSafe") < save.index("verifyWifi")
