@@ -32,6 +32,7 @@ struct FakeSerial {void println(const char*){}} Serial;
 bool fsReady=false;
 bool pendingReady=false;
 bool journalRecoveryRequired=false;
+bool pollIntakeSuspended=false;
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;
