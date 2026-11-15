@@ -87,8 +87,10 @@ uint32_t pendingChecksum(const PendingRecord &r){
 bool readPendingFile(const char *path, PendingRecord &r){
   if(!fsReady || !LittleFS.exists(path)) return false;
   File f=LittleFS.open(path,"r"); if(!f) return false;
+  const size_t storedSize=f.size();
   size_t n=f.readBytes((char*)&r,sizeof(r)); f.close();
-  if(n!=sizeof(r) || r.magic!=PENDING_MAGIC || r.pulses==0 || r.pulses>20 ||
+  if(storedSize!=sizeof(r) || n!=sizeof(r) || r.magic!=PENDING_MAGIC ||
+     r.pulses==0 || r.pulses>20 ||
      r.checksum!=pendingChecksum(r)) return false;
   // A corrupt record may not terminate either fixed-size string. Never use strlen here.
   const char *nonceEnd=(const char*)memchr(r.nonce,'\0',sizeof(r.nonce));

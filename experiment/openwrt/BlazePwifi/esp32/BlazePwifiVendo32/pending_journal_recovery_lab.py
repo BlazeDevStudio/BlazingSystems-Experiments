@@ -47,6 +47,7 @@ struct File {
   bool opened=false;
   size_t readLimit=SIZE_MAX;
   explicit operator bool() const {return opened;}
+  size_t size() const {return data.size();}
   size_t readBytes(char *out, size_t requested) {
     size_t n=std::min({requested,data.size(),readLimit});
     if(n) std::memcpy(out,data.data(),n);
