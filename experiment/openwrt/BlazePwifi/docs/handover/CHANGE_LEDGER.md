@@ -1,3 +1,10 @@
+## PHX-RELEASE / 2026-11-15 00 UTC / fail-closed release lookup (DRAFT)
+
+- Scope: release-owned Windows workflow and negative-selftest only. Prior branch head `360271331816aece0069b10d4913d814e403cca0`. Test-first commit `a22cea088cf14994e5638248693e694f118fbd8a`; implementation `8a1f5d5f40e0f267e533113f4ad6d5f98491a997`; regex/test alignment `98230354a8445ec98242ba9d96febb849dea28d7`, `956a25c2468d3242f3e41a475c9e54ed6447af6e`.
+- Before: any failed `gh release view` was interpreted as missing release, including authentication/API/transport errors. After: `gh api -i` must return nonzero with an explicit HTTP 404 response before the final signed-artifact verifier and publisher can proceed. HTTP success means existing release and denial; all other errors deny. Existing verifier nonzero guard remains.
+- Exact-head Actions [#43656843767](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43656843767) was PENDING at checkpoint, **NOT a passing test**. Earlier [#43644723702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43644723702) at prior `36027133` passed handover/build and skipped publisher; does not validate these edits. Static regression asserts HTTP 404 contract; real approved publisher/signer path remains unexercised.
+- Risk/next: inspect exact-head Windows job and negative regression, independently QA-review HTTP status parsing and GitHub CLI failure modes, and test the real authenticated lookup only in a nonpublishing disposable environment. MASTER owns integration and final release authorization. No merge, signing, release, flash or deployment. **PRODUCTION NO-GO**.
+
 ## 2026-11-15 — PHX-RELEASE-PUBLISHER-ISOLATION — P1 release authorization boundary
 
 - **Status:** committed_untested, review required; production release NO-GO. Stacked isolated branch `phoenix/release-publisher-isolation-20261115` from draft PR #242 HEAD `734b89d9e7792247e8376335c3f3685500ab3f89`.
