@@ -1,3 +1,5 @@
+## PHX-RELEASE / 2026-11-15 03 UTC / draft PR #291: Release lookup now denies ambiguous multiple HTTP response status lines; only one HTTP 404 can indicate an absent tag. Test-first `876df0a367edaac4cdbe5a4c1352fa5ac613246e`, implementation `e089baab648699210e7137079dfac2dae49f0b60`. Exact-head Windows CI pending; static regression only, no live publisher or signed-positive proof. No merge, signing, publication or hardware action. PRODUCTION NO-GO.
+
 ## PHX-RELEASE / 2026-11-15 00 UTC / fail-closed release lookup (DRAFT)
 
 - Scope: release-owned Windows workflow and negative-selftest only. Prior branch head `360271331816aece0069b10d4913d814e403cca0`. Test-first commit `a22cea088cf14994e5638248693e694f118fbd8a`; implementation `8a1f5d5f40e0f267e533113f4ad6d5f98491a997`; regex/test alignment `98230354a8445ec98242ba9d96febb849dea28d7`, `956a25c2468d3242f3e41a475c9e54ed6447af6e`.
