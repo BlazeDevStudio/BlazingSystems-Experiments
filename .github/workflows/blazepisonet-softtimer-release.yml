@@ -451,8 +451,11 @@ jobs:
           if ($lookupExit -eq 0) {
             throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
           }
-          if ($lookupOutput -notmatch '(?m)^HTTP/[0-9.]+ 404(?:\s|$)') {
-            throw "Release lookup failed without confirmed HTTP 404 (exit $lookupExit); refusing publication"
+          # Accept exactly one HTTP response status. Multiple status lines (proxy,
+          # redirect or ambiguous transport output) cannot establish tag absence.
+          $httpStatuses = @([regex]::Matches($lookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\s|$)'))
+          if ($httpStatuses.Count -ne 1 -or $httpStatuses[0].Groups[1].Value -ne '404') {
+            throw "Release lookup failed without an unambiguous HTTP 404 (exit $lookupExit); refusing publication"
           }
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
