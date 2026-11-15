@@ -2986,3 +2986,7 @@
 ## 2026-11-13 — Standalone rollback backup baseline
 
 Exact installer blob d5634f392a0d575888c051df16ace3631024e90a on the standalone checkpoint 14c00379 reused the fixed timestamp path and overwrote the first backup in the extracted local test. An injected copy failure reached the payload replacement boundary. The missing-files control passed. Windows POSIX shell and disposable files only. The tracked fixture and Ubuntu workflow extension await hosted baseline verification. R281 stays on its existing preview.
+
+## 2026-11-16 — Standalone rollback backup candidate
+
+PR 287 targets the separate standalone branch. Ubuntu run 43344419691 attempt 1 stopped at an existing BusyBox replay assertion before the backup fixture. Attempt 2 on the identical baseline 9c212fb1 passed prior gates and reproduced both backup failures in job 132933120931. The first-install control passed. The candidate creates an individual backup directory per run and stops on a reported allocation or copy failure before managed web or state writes. It preserves the archive root, flat filenames, and earlier backups. Local tests passed 3/3 on the unchanged fixture. Hosted exact-head evidence and independent review are pending. Earlier logs remain in work/standalone-backup-proof.
