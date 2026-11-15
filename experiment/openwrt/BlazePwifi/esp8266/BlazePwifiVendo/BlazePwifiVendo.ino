@@ -182,14 +182,35 @@ void defaults(){
 
 void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
 
+template <size_t N>
+bool fixedStringTerminated(const char (&value)[N]){
+  return memchr(value,'\0',N)!=nullptr;
+}
+
+bool configStringsTerminated(const Config &c){
+  return fixedStringTerminated(c.ssid) && fixedStringTerminated(c.pass) &&
+         fixedStringTerminated(c.server) && fixedStringTerminated(c.key) &&
+         fixedStringTerminated(c.id) && fixedStringTerminated(c.apPass);
+}
+
+bool configStringsTerminated(const ConfigV1 &c){
+  return fixedStringTerminated(c.ssid) && fixedStringTerminated(c.pass) &&
+         fixedStringTerminated(c.server) && fixedStringTerminated(c.key) &&
+         fixedStringTerminated(c.id);
+}
+
 void loadCfg(){
   EEPROM.begin(sizeof(Config));
   EEPROM.get(0,cfg);
-  if(cfg.magic==MAGIC && strlen(cfg.apPass)>=8) return;
+  if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
+     strnlen(cfg.apPass,sizeof(cfg.apPass))>=8) return;
+  if(cfg.magic==MAGIC){
+    Serial.println("CRITICAL: malformed current configuration; discarding unterminated EEPROM fields.");
+  }
 
   ConfigV1 oldCfg;
   EEPROM.get(0,oldCfg);
-  if(oldCfg.magic==MAGIC_V1){
+  if(oldCfg.magic==MAGIC_V1 && configStringsTerminated(oldCfg)){
     defaults();
     strlcpy(cfg.ssid,oldCfg.ssid,sizeof(cfg.ssid));
     strlcpy(cfg.pass,oldCfg.pass,sizeof(cfg.pass));
@@ -203,6 +224,9 @@ void loadCfg(){
     saveCfg();
     Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
     return;
+  }
+  if(oldCfg.magic==MAGIC_V1){
+    Serial.println("CRITICAL: malformed v1 configuration; migration refused.");
   }
 
   defaults();
