@@ -451,13 +451,13 @@ jobs:
           if ($lookupExit -eq 0) {
             throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
           }
-          if ($lookupOutput -notmatch '(?m)^HTTP/[0-9.]+ 404(?:\\s|$)') {
+          if ($lookupOutput -notmatch '(?m)^HTTP/[0-9.]+ 404(?:\s|$)') {
             throw "Release lookup failed without confirmed HTTP 404 (exit $lookupExit); refusing publication"
           }
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
           $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
-          # 'gh release view' just returned a nonzero exit for a missing tag.
+          # The GitHub API just returned a confirmed HTTP 404 for a missing release.
           # Clear that EXPECTED stale status so only this verifier can deny publish.
           $global:LASTEXITCODE = 0
           & $gate -Mode Verify -InputPaths @($setup,'out/bundle/BlazePisonet.SoftTimer.exe','out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -PinnedCertSha256 "$env:SOFTTIMER_SIGNER_CERT_SHA256" -PortableZipPath $zip -Sha256SumsPath 'SHA256SUMS' -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
