@@ -88,6 +88,11 @@ bool readPendingFile(const char *path, PendingRecord &r){
   return nonceEnd && targetEnd && (size_t)(nonceEnd-r.nonce)>=8 && (size_t)(targetEnd-r.target)>=8;
 }
 
+bool removePendingCandidate(const char *path){
+  if(!LittleFS.exists(path)) return true;
+  return LittleFS.remove(path) && !LittleFS.exists(path);
+}
+
 bool savePending(){
   if(!fsReady || journalRecoveryRequired || pendingPulses==0 || !pendingNonce.length() || !pendingTarget.length()) return false;
   PendingRecord r; memset(&r,0,sizeof(r)); r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
@@ -102,13 +107,32 @@ bool savePending(){
     LittleFS.remove("/pending.new");
     return false;
   }
-  LittleFS.remove("/pending.bak");
-  if(LittleFS.exists("/pending.dat")) LittleFS.rename("/pending.dat","/pending.bak");
-  if(!LittleFS.rename("/pending.new","/pending.dat")){
-    if(LittleFS.exists("/pending.bak")) LittleFS.rename("/pending.bak","/pending.dat");
+  if(!removePendingCandidate("/pending.bak")){
+    journalRecoveryRequired=true;
     return false;
   }
-  LittleFS.remove("/pending.bak");
+  const bool hadPrimary=LittleFS.exists("/pending.dat");
+  if(hadPrimary &&
+     (!LittleFS.rename("/pending.dat","/pending.bak") ||
+      LittleFS.exists("/pending.dat") || !LittleFS.exists("/pending.bak"))){
+    if(!removePendingCandidate("/pending.new")) journalRecoveryRequired=true;
+    return false;
+  }
+  if(!LittleFS.rename("/pending.new","/pending.dat") ||
+     LittleFS.exists("/pending.new") || !LittleFS.exists("/pending.dat")){
+    const bool removedNew=removePendingCandidate("/pending.new");
+    bool restored=!hadPrimary;
+    if(hadPrimary && removedNew){
+      restored=LittleFS.rename("/pending.bak","/pending.dat") &&
+               LittleFS.exists("/pending.dat") && !LittleFS.exists("/pending.bak");
+    }
+    if(!removedNew || !restored) journalRecoveryRequired=true;
+    return false;
+  }
+  if(hadPrimary && !removePendingCandidate("/pending.bak")){
+    journalRecoveryRequired=true;
+    return false;
+  }
   return true;
 }
 
