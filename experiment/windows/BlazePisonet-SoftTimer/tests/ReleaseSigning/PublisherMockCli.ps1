@@ -7,13 +7,17 @@ $workflow = Get-Content -LiteralPath $workflowPath -Raw
 $marker = '      - name: Publish GitHub Release'
 $start = $workflow.IndexOf($marker, [StringComparison]::Ordinal)
 if ($start -lt 0) { throw 'Publisher step missing' }
-$runStart = $workflow.IndexOf("        run: |" + "`n", $start, [StringComparison]::Ordinal)
-if ($runStart -lt 0) { throw 'Publisher executable block missing' }
-$lines = @($workflow.Substring($runStart + 15) -split "\r?\n")
-$body = ($lines | ForEach-Object {
-  if ($_ -and -not $_.StartsWith('          ')) { throw 'Publisher script indentation changed' }
-  if ($_.StartsWith('          ')) { $_.Substring(10) } else { '' }
-}) -join "`n"
+$stepTail = $workflow.Substring($start)
+$runMatch = [regex]::Match($stepTail, '(?m)^        run: \\|\\r?\\n')
+if (-not $runMatch.Success) { throw 'Publisher executable block missing' }
+$scriptTail = $stepTail.Substring($runMatch.Index + $runMatch.Length)
+$scriptLines = @()
+foreach ($line in ($scriptTail -split "\\r?\\n")) {
+  if ($line -and -not $line.StartsWith('          ')) { break }
+  if ($line.StartsWith('          ')) { $scriptLines += $line.Substring(10) }
+  else { $scriptLines += '' }
+}
+$body = $scriptLines -join "`n"
 if (-not $body.Contains('gh api -i') -or -not $body.Contains('gh release create')) {
   throw 'Expected publisher commands missing'
 }
