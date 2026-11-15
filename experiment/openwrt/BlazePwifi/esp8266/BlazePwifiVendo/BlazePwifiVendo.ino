@@ -593,7 +593,12 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
         valid=false; break;
       }
       const char *payload=strchr(line,' ');
-      if(payload && strncmp(payload+1,identity,strlen(identity))==0) alreadyRecorded=true;
+      if(payload && strncmp(payload+1,identity,strlen(identity))==0){
+        // More than one complete record for one event is conflicting accounting
+        // evidence. Preserve pending state until an operator reconciles the log.
+        if(alreadyRecorded){ valid=false; break; }
+        alreadyRecorded=true;
+      }
       lineLength=0;
     } else if(next=='\0' || lineLength+1>=sizeof(line)){
       valid=false;
