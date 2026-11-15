@@ -71,3 +71,18 @@ bringing the modeled set to seven scenarios per board. Exact-head CI after this
 change is **PENDING / NOT YET CLASSIFIED** at documentation time. This remains a
 software timing model; real relay turn-off latency and acceptor pulse behavior
 are **NOT TESTED**.
+
+
+## Post-inhibit quiet window
+
+An immediate second GPIO sample still assumed zero relay/output settling time.
+`coinLineQuietAfterInhibit()` now samples continuously for the configured
+`runDebounceMs` interval after intake is disabled. Any active sample cancels
+the poll so the same loop can journal the edge. The host lab injects a pulse
+that starts after inhibition and ends inside this quiet interval; the modeled
+set is now eight scenarios per board.
+
+Exact-head CI after this addition is **PENDING / NOT YET CLASSIFIED** at
+documentation time. The interval reuses the configured debounce policy; it is
+not a measurement of the physical relay, acceptor inhibit circuit, or GPIO
+electrical settling. Those remain **NOT TESTED** on noncustomer hardware.
