@@ -109,10 +109,13 @@ bool savePending(){
   r.checksum=pendingChecksum(r);
   File f=LittleFS.open("/pending.new","w"); if(!f) return false;
   size_t n=f.write((const uint8_t*)&r,sizeof(r)); f.flush(); f.close();
-  if(n!=sizeof(r)){ LittleFS.remove("/pending.new"); return false; }
+  if(n!=sizeof(r)){
+    if(!removePendingCandidate("/pending.new")) journalRecoveryRequired=true;
+    return false;
+  }
   PendingRecord verify{};
   if(!readPendingFile("/pending.new",verify) || memcmp(&r,&verify,sizeof(r))!=0){
-    LittleFS.remove("/pending.new");
+    if(!removePendingCandidate("/pending.new")) journalRecoveryRequired=true;
     return false;
   }
   if(!removePendingCandidate("/pending.bak")){

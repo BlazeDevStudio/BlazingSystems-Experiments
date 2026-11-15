@@ -188,10 +188,28 @@ int main() {
   assert(disk.renameCalls==0);
 
   reset();
+  disk.shortWrite=true;
+  disk.removeFailPath="/pending.new";
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(!disk.files.count("/pending.dat"));
+  assert(disk.files.count("/pending.new"));
+  assert(disk.renameCalls==0);
+
+  reset();
   disk.shortRead=true;
   assert(!savePending());
   assert(!disk.files.count("/pending.dat"));
   assert(!disk.files.count("/pending.new"));
+  assert(disk.renameCalls==0);
+
+  reset();
+  disk.shortRead=true;
+  disk.removeFailPath="/pending.new";
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(!disk.files.count("/pending.dat"));
+  assert(disk.files.count("/pending.new"));
   assert(disk.renameCalls==0);
 
   reset();
@@ -266,7 +284,7 @@ int main() {
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3);
 
-  std::cout<<"PENDING_WRITE_READBACK_PASS 11/11 exact-source scenarios\n";
+  std::cout<<"PENDING_WRITE_READBACK_PASS 13/13 exact-source scenarios\n";
 }
 '''
 
@@ -302,4 +320,4 @@ for board, path in BOARDS:
         subprocess.run([str(binary)], check=True)
     print(f"{board}: pending.new readback and rotation operations verified")
 
-print("PHX-HARDWARE: pending write/readback and rotation PASS 11 cases x2 sketches")
+print("PHX-HARDWARE: pending write/readback and rotation PASS 13 cases x2 sketches")
