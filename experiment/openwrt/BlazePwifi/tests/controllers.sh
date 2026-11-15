@@ -97,5 +97,9 @@ if [ -f "$ROOT/tests/v060_esp_quarantine_log_encoding.py" ]; then
   python3 "$ROOT/tests/v060_esp_quarantine_log_encoding.py"
 fi
 
+if [ -f "$ROOT/esp32/BlazePwifiVendo32/pending_write_readback_lab.py" ]; then
+  python3 "$ROOT/esp32/BlazePwifiVendo32/pending_write_readback_lab.py"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
 
