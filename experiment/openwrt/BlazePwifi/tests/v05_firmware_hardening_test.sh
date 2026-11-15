@@ -66,6 +66,7 @@ required = [
     'if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;',
     'bool inspectQuarantineLog',
     'if(alreadyRecorded) return true;',
+    'if(alreadyRecorded){ valid=false; break; }',
     'lineLength==0',
     'journalRecoveryRequired=true;',
     'after==before+(size_t)len',
