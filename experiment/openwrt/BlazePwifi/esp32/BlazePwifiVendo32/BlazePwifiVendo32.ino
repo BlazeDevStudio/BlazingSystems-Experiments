@@ -138,18 +138,16 @@ bool savePending(){
   if(hadPrimary &&
      (!LittleFS.rename("/pending.dat","/pending.bak") ||
       LittleFS.exists("/pending.dat") || !LittleFS.exists("/pending.bak"))){
-    if(!removePendingCandidate("/pending.new")) journalRecoveryRequired=true;
+    // pending.new was already read back successfully. A failed or ambiguous
+    // rotation must preserve both versions for operator reconciliation.
+    journalRecoveryRequired=true;
     return false;
   }
   if(!LittleFS.rename("/pending.new","/pending.dat") ||
      LittleFS.exists("/pending.new") || !LittleFS.exists("/pending.dat")){
-    const bool removedNew=removePendingCandidate("/pending.new");
-    bool restored=!hadPrimary;
-    if(hadPrimary && removedNew){
-      restored=LittleFS.rename("/pending.bak","/pending.dat") &&
-               LittleFS.exists("/pending.dat") && !LittleFS.exists("/pending.bak");
-    }
-    if(!removedNew || !restored) journalRecoveryRequired=true;
+    // Do not roll back by deleting the verified updated candidate. Preserve
+    // every durable version and require reconciliation after any ambiguity.
+    journalRecoveryRequired=true;
     return false;
   }
   if(hadPrimary && !removePendingCandidate("/pending.bak")){
