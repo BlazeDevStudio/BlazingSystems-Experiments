@@ -318,6 +318,35 @@ bool beginPollWindow(){
   return false;
 }
 
+
+bool acceptPollResponse(const String &response){
+  bool signatureOk=true;
+  if(String(cfg.key).length()){
+    String signature=jsonString(response,"response_sig");
+    if(signature.length()){
+      int insert=jsonTrue(response,"insert")?1:0;
+      String target=jsonString(response,"target_nonce");
+      int expires=jsonInt(response,"expires",0);
+      String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(insert)+"|"+target+"|"+String(expires)+"|"+String(cfg.key));
+      signatureOk=signature.equalsIgnoreCase(expected);
+    } else {
+      signatureOk=false;
+    }
+  }
+  if(!signatureOk || response.indexOf("\"ok\":true")<0){
+    // Never reuse the previous positive poll after an empty, rejected or
+    // unauthenticated reply. Keep the acceptor disabled until a fresh poll
+    // explicitly authorizes intake.
+    insertMode=false;
+    activeTarget="";
+    return false;
+  }
+  insertMode=jsonTrue(response,"insert");
+  activeTarget=jsonString(response,"target_nonce");
+  applyRemoteConfig(response);
+  return true;
+}
+
 void startSetupAp(){
   if(!setupApName.length()) setupApName="BlazePwifi-Vendo-"+String(ESP.getChipId(),HEX);
   WiFi.mode(WIFI_AP_STA); WiFi.softAP(setupApName.c_str(),cfg.apPass); setupApOn=true; configuredApSince=millis();
@@ -477,26 +506,13 @@ void loop(){
     if(wifiFailures>=maxWifiRetries)startSetupAp();
   }
 
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
+  
+if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
     wifiFailures=0;
     String r=post("poll");
+    // Keep intake inhibited until this response has been accepted or denied.
+    acceptPollResponse(r);
     pollIntakeSuspended=false;
-    bool sigOk=true;
-    if(strlen(cfg.key)){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int ins=jsonTrue(r,"insert")?1:0;
-        String tgt=jsonString(r,"target_nonce");
-        int exp=jsonInt(r,"expires",0);
-        String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+String(cfg.key));
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0){
-      insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);
-    }
     applyOutputs();lastPoll=millis();
   }
 
