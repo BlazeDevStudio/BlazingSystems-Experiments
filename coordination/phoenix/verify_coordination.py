@@ -48,6 +48,16 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
         return ["Unsupported ownership manifest schema"]
     if data.get("status") != "DRAFT_REVIEW_ONLY":
         errors.append("Manifest must remain explicitly draft/review-only")
+    # Snapshot identities must be complete and unambiguous. These checks do
+    # not establish freshness: compare the actual live branch HEADs separately.
+    for field in ("source_ref", "destination_candidate_sha"):
+        value = data.get(field)
+        if not isinstance(value, str) or re.fullmatch(r"[a-f0-9]{40}", value) is None:
+            errors.append(f"{field} must be a full lowercase 40-character Git SHA")
+    if data.get("source_repository") != "BlazeDevStudio/BlazingSystems-Experiments":
+        errors.append("Unexpected source repository identity")
+    if data.get("destination_repository") != "BlazeDevStudio/CoinOperatedEcosystem":
+        errors.append("Unexpected destination repository identity")
     routes = data.get("routes")
     if not isinstance(routes, list) or not routes:
         return errors + ["Ownership routes must be a nonempty list"]
