@@ -93,12 +93,20 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
             errors.append(f"route {index}: invalid source path {source!r}")
             continue
         path = repo_root / source.rstrip("/")
-        if not path.exists():
-            errors.append(f"route {index}: source does not exist at checkout: {source}")
-        elif source.endswith("/") and not path.is_dir():
-            errors.append(f"route {index}: source expected a directory: {source}")
-        elif not source.endswith("/") and not path.is_file():
-            errors.append(f"route {index}: source expected a file: {source}")
+        # Lexical path checks are insufficient: a symlink can escape the checkout.
+        # Resolve both sides before inspecting source type or accepting presence.
+        try:
+            resolved_root = repo_root.resolve(strict=True)
+            resolved_path = path.resolve(strict=True)
+        except (OSError, RuntimeError):
+            errors.append(f"route {index}: source does not exist or cannot resolve at checkout: {source}")
+        else:
+            if not resolved_path.is_relative_to(resolved_root):
+                errors.append(f"route {index}: source resolves outside checkout: {source}")
+            elif source.endswith("/") and not resolved_path.is_dir():
+                errors.append(f"route {index}: source expected a directory: {source}")
+            elif not source.endswith("/") and not resolved_path.is_file():
+                errors.append(f"route {index}: source expected a file: {source}")
         if target is not None and not safe_repo_path(target):
             errors.append(f"route {index}: unsafe destination path {target!r}")
         if role != "PHX-MASTER" and target is None:
