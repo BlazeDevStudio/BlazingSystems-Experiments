@@ -112,3 +112,24 @@ All subsystems must be classified under one of the following five operational st
 > [!CAUTION]
 > **Production Status: NO-GO**  
 > Under no circumstances may code be promoted to commercial production, deployed to live routers, or flashed to customer hardware without independent durable accounting, anti-rollback witness, QA review, and physical hardware acceptance.
+
+
+## 6. Open P0 poll-response trust and rejected-event durability contract (2026-11-16 UTC22)
+
+**Status: provisional default-deny requirement; PHX-CORE / PHX-HARDWARE owner review pending.** See [HARDWARE_POLL_CONTRACT_AND_STACK_HOLD_20261116_UTC22.md](HARDWARE_POLL_CONTRACT_AND_STACK_HOLD_20261116_UTC22.md) for exact PR heads, CI observations and source-diff evidence.
+
+### 6.1 Keyless poll responses cannot authorize coin intake
+
+- An empty or unprovisioned controller key is **not** an authentication success.
+- No keyless `ok=true` poll response may set coin admission, active target or relay authorization.
+- Coin intake can be enabled only after a fresh response verifies under the approved provisioned key/signature and target/freshness checks.
+- Missing, malformed, expired or mismatched authentication must leave intake denied and must not reuse a previous positive poll.
+- A separate setup/bootstrap path may remain available, but it cannot authorize coin admission.
+
+### 6.2 Failed quarantine persistence must survive reboot safely
+
+- If the controller rejects an event and local quarantine persistence fails, the event must remain durably pending or durably marked for reconciliation before any process can retry or credit it after reboot.
+- A RAM-only `journalRecoveryRequired` latch can inhibit same-boot retries but is not proof of cross-reboot non-replayability.
+- While the event's durable disposition is ambiguous, deny retry, duplicate POST, credit and relay admission.
+
+These are **shared interface/accounting invariants**, not permission for PHX-MASTER to edit firmware or financial source. PHX-CORE owns financial/replay semantics; PHX-HARDWARE owns firmware/journal implementation; PHX-QA independently verifies positive, negative and reboot/failure cases. Do not mark either invariant implemented or accepted until the owners agree on the exact contract and QA verifies the combined exact SHA.
