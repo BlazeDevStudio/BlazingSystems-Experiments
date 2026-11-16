@@ -5,7 +5,9 @@ Run: python3 -m unittest discover -s coordination/phoenix -p 'test_verify_coordi
 """
 import copy
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from verify_coordination import HERE, REPO_ROOT, safe_repo_path, validate_envelope, validate_routes
 
@@ -51,6 +53,40 @@ class CoordinationContractTests(unittest.TestCase):
         modified = copy.deepcopy(self.routes)
         modified["routes"][1]["source"] = "experiment/openwrt/BlazePwifi/"
         self.assertTrue(any("overlapping ownership" in s for s in validate_routes(modified, REPO_ROOT)))
+
+    def test_source_symlink_escape_fails_closed(self):
+        # Synthetic checkout: no customer files or real migration operations.
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base) / "repo"
+            outside = Path(base) / "outside"
+            root.mkdir()
+            outside.mkdir()
+            (root / "escape").symlink_to(outside, target_is_directory=True)
+            modified = copy.deepcopy(self.routes)
+            modified["routes"][1]["source"] = "escape/"
+            errors = validate_routes(modified, root)
+            self.assertTrue(any("resolves outside checkout" in e for e in errors), errors)
+
+    def test_source_internal_symlink_is_contained(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base) / "repo"
+            real = root / "real"
+            real.mkdir(parents=True)
+            (root / "alias").symlink_to(real, target_is_directory=True)
+            modified = copy.deepcopy(self.routes)
+            modified["routes"][1]["source"] = "alias/"
+            errors = validate_routes(modified, root)
+            self.assertFalse(any("resolves outside checkout" in e for e in errors), errors)
+
+    def test_source_broken_symlink_fails_closed(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base) / "repo"
+            root.mkdir()
+            (root / "broken").symlink_to(root / "missing", target_is_directory=True)
+            modified = copy.deepcopy(self.routes)
+            modified["routes"][1]["source"] = "broken/"
+            errors = validate_routes(modified, root)
+            self.assertTrue(any("cannot resolve" in e for e in errors), errors)
 
     def test_source_absent_fails(self):
         modified = copy.deepcopy(self.routes)
