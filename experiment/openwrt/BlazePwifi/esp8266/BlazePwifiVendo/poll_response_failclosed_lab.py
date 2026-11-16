@@ -98,7 +98,7 @@ int main(){
 
   // Explicit controller denial also clears stale permission.
   insertMode=true; activeTarget="old-target"; responseSignature="valid-signature";
-  responseInsert=false; pollIntakeSuspended=true; relayOn=true;
+  responseInsert=false; pollIntakeSuspended=true; relayOn=true; applyOutputs();
   if(acceptPollResponse(String("{\"ok\":false}")) || insertMode || !activeTarget.empty() || relayOn) return 13;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 14;
@@ -110,6 +110,13 @@ int main(){
   if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 15;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 16;
+
+  // A positive-looking reply without a required signature must stay OFF.
+  insertMode=true; activeTarget="old-target"; responseSignature="";
+  responseInsert=true; pollIntakeSuspended=true; relayOn=true; applyOutputs();
+  if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 22;
+  pollIntakeSuspended=false; applyOutputs();
+  if(relayOn || ledOn) return 23;
 
   // A fresh valid positive poll may restore intake after the inhibit is released.
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
@@ -126,7 +133,7 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 21;
 
-  std::cout << "poll-response fail-closed cases: 5/5 PASS\n";
+  std::cout << "poll-response fail-closed cases: 6/6 PASS\n";
   return 0;
 }
 """
