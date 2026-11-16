@@ -684,7 +684,11 @@ bool appendQuarantineRecord(const String &reason){
 }
 
 bool quarantinePending(const String &reason){
+  if(pendingPulses==0) return false;
   if(!appendQuarantineRecord(reason)){
+    // The controller already rejected this event. If local quarantine
+    // persistence is unavailable, block same-boot coin POST retries.
+    journalRecoveryRequired=true;
     Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");
     return false;
   }

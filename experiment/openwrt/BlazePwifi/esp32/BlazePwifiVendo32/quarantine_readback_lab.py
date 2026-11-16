@@ -30,6 +30,7 @@ static constexpr size_t QUARANTINE_MAX_BYTES=4096;
 static bool fsReady=true;
 static bool journalRecoveryRequired=false;
 static uint8_t pendingPulses=4;
+static bool pendingReady=true;
 static String pendingNonce="nonce001122334455";
 static String pendingTarget="target0011223344";
 static int clearCount=0;
@@ -98,6 +99,7 @@ struct FakeLittleFS {
   }
 } LittleFS;
 
+@@SOURCE_COIN_POST_GATE@@
 @@SOURCE_ENCODE@@
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
@@ -110,6 +112,7 @@ int main(){
     fsReady=true;
     journalRecoveryRequired=false;
     pendingPulses=4;
+    pendingReady=true;
     pendingNonce="nonce001122334455";
     pendingTarget="target0011223344";
     if(scenario==1) fsReady=false;
@@ -140,7 +143,8 @@ int main(){
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
-    bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||
+    bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
+                        (scenario>=5 && scenario<=10) ||
                         scenario==11 || scenario==13 || scenario==15 || scenario==16;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
@@ -148,10 +152,12 @@ int main(){
        (scenario==12 &&
         (std::count(disk.bytes.begin(),disk.bytes.end(),'\n')!=2 ||
          disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos)) ||
+       (scenario==4 && disk.bytes!=bytesBefore) ||
+       (scenario==10 && disk.bytes!=bytesBefore) ||
        (scenario==14 && disk.bytes!=bytesBefore) ||
        (scenario==15 && disk.bytes!=bytesBefore) ||
        (scenario==16 && disk.bytes!=bytesBefore) ||
-       journalRecoveryRequired!=expectRecovery){
+       journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
     }
@@ -165,28 +171,31 @@ int main(){
       disk.mutateOnRead=false;
       clearAllowed=true;
       if(quarantinePending(reason) || disk.bytes!=ambiguousBytes ||
-         clearCount!=attemptsBeforeRetry || !journalRecoveryRequired){
+         clearCount!=attemptsBeforeRetry || !journalRecoveryRequired ||
+         canAttemptCoinPost()){
         std::cerr<<"SOURCE_QUARANTINE_RETRY_MUTATED scenario="<<scenario<<"\n";
         return 1;
       }
     }
-    if((scenario>=5 && scenario<=9) || scenario==11 || scenario==16){
+    if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
+       scenario==11 || scenario==16){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
       journalRecoveryRequired=false;
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
-      bool persistentHardStop=(scenario==5 || scenario==7 || scenario==8 || scenario==16);
+      bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16);
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
-           clearCount!=clearsBeforeReboot || pendingPulses!=4){
+           clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
           std::cerr<<"SOURCE_QUARANTINE_TORN_REBOOT_FAIL scenario="<<scenario<<"\n";
           return 1;
         }
       } else {
         if(!rebootOk || journalRecoveryRequired || disk.bytes!=rebootBytes ||
-           clearCount!=clearsBeforeReboot+1 || pendingPulses!=0){
+           clearCount!=clearsBeforeReboot+1 || pendingPulses!=0 || canAttemptCoinPost()){
           std::cerr<<"SOURCE_QUARANTINE_IDEMPOTENT_REBOOT_FAIL scenario="<<scenario<<"\n";
           return 1;
         }
@@ -214,7 +223,8 @@ def extract(src: str, signature: str) -> str:
 
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
-    actual = CPP.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
+    actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
