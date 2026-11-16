@@ -38,7 +38,6 @@ STUBS = r"""
 struct String : std::string {
   using std::string::string;
   String(const std::string &v):std::string(v){}
-  String(const String &v):std::string(v){}
   String(int v):std::string(std::to_string(v)){}
   size_t length() const { return size(); }
   int indexOf(const char *v) const {
