@@ -516,7 +516,7 @@ bool canStartPoll(){
 }
 
 void applyOutputs(){
-  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && fsReady &&
+  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
@@ -543,6 +543,36 @@ bool beginPollWindow(){
   pollIntakeSuspended=false;
   applyOutputs();
   return false;
+}
+
+
+bool acceptPollResponse(const String &response){
+  bool insertAllowed=jsonTrue(response,"insert");
+  String target=jsonString(response,"target_nonce");
+  bool signatureOk=true;
+  if(String(cfg.key).length()){
+    String signature=jsonString(response,"response_sig");
+    if(signature.length()){
+      int insert=insertAllowed?1:0;
+      int expires=jsonInt(response,"expires",0);
+      String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(insert)+"|"+target+"|"+String(expires)+"|"+String(cfg.key));
+      signatureOk=signature.equalsIgnoreCase(expected);
+    } else {
+      signatureOk=false;
+    }
+  }
+  if(!signatureOk || response.indexOf("\\"ok\\":true")<0 ||
+     (insertAllowed && !target.length())){
+    // An unauthenticated, rejected or targetless positive response must not
+    // reuse stale permission or energize an acceptor without a bound target.
+    insertMode=false;
+    activeTarget="";
+    return false;
+  }
+  insertMode=insertAllowed;
+  activeTarget=target;
+  applyRemoteConfig(response);
+  return true;
 }
 
 void startSetupAp(){
@@ -669,24 +699,10 @@ void loop(){
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
     wifiFailures=0;
     String r=post("poll");
+    // Keep intake inhibited until this response has been accepted or denied.
+    acceptPollResponse(r);
     pollIntakeSuspended=false;
-    bool sigOk=true;
-    if(cfg.key.length()){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int ins=jsonTrue(r,"insert")?1:0;
-        String tgt=jsonString(r,"target_nonce");
-        int exp=jsonInt(r,"expires",0);
-        String expected=hexDigest(cfg.key+"|poll|"+cfg.id+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+cfg.key);
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0){
-      insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
-    }
-    applyOutputs(); lastPoll=millis();
+    applyOutputs();lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
