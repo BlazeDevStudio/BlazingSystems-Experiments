@@ -136,7 +136,7 @@ int main(){
   insertMode=true; activeTarget="old-target"; responseTarget="";
   responseSignature="valid-signature"; responseInsert=true;
   pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
-  if(acceptPollResponse(String("{\\"ok\\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 24;
+  if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 24;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 25;
 

@@ -52,3 +52,13 @@ The existing #294 validation extractor still does not include `acceptPollRespons
 - Physical relay polarity/timing, coin waveform, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, and independent release acceptance remain NOT TESTED / BLOCKED.
 
 No flashing, reset, live money, production migration, release, or deployment occurred.
+
+
+## 2026-11-16 UTC23 exact-head CI recheck and follow-up RED
+
+At `08f5e7e25a3012fbca7a57c1674e6853304c592b`:
+- Focused run [43982182229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43982182229), job `133701149610`: **PASS** — quarantine 34/34, mount/output 14/14, pending boot recovery 32/32, pending-clear 22/22, pending write/readback 44/44, coin POST gate 18/18.
+- Full run [43982182265](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43982182265): validation job `133701275035` **FAILED** because the QA-owned #294 source extractor does not extract `acceptPollResponse()`. ESP8266 compile job `133701275574` also **FAILED** on an incorrectly escaped JSON literal in the new helper; this was a real production-source compile error and is corrected in the following commit. ESP32 compile and several target jobs were still running at handover time.
+- The poll-response lab itself remains **NOT RUN** in CI; QA must wire it into the canonical extractor/workflow. No local C++ execution is claimed because this container could not resolve GitHub DNS.
+
+The follow-up source patch changes only the JSON string-literal escaping in both board helpers and the matching targetless-response lab fixture. It does not change authentication policy, API bytes, financial state, or the fail-closed target requirement.
