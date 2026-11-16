@@ -59,6 +59,7 @@ struct Config {
 #endif
 } cfg;
 String lastSentNonce="nonce-123";
+String activeTarget="old-target";
 bool insertMode=true, fsReady=true, journalRecoveryRequired=false;
 bool pendingReady=false, pollIntakeSuspended=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
@@ -90,27 +91,29 @@ int main(){
   // Empty / timed-out poll after a previously positive poll must stay OFF.
   insertMode=true; responseTarget="old-target"; responseSignature="";
   responseInsert=true; pollIntakeSuspended=true; relayOn=true;
-  if(acceptPollResponse(String("")) || !pollIntakeSuspended || insertMode || !activeTarget.empty()) return 11;
+  applyOutputs();
+  if(acceptPollResponse(String("")) || !pollIntakeSuspended || insertMode || !activeTarget.empty() || relayOn) return 11;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn || applyRemoteConfigCalls!=0) return 12;
 
   // Explicit controller denial also clears stale permission.
   insertMode=true; activeTarget="old-target"; responseSignature="valid-signature";
   responseInsert=false; pollIntakeSuspended=true; relayOn=true;
-  if(!acceptPollResponse(String("{\"ok\":false}")) || insertMode || !activeTarget.empty()) return 13;
+  if(acceptPollResponse(String("{\"ok\":false}")) || insertMode || !activeTarget.empty() || relayOn) return 13;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 14;
 
   // A positive-looking reply with a bad signature cannot restore intake.
   insertMode=true; activeTarget="old-target"; responseSignature="bad-signature";
   responseInsert=true; pollIntakeSuspended=true; relayOn=true;
-  if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty()) return 15;
+  applyOutputs();
+  if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 15;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 16;
 
   // A fresh valid positive poll may restore intake after the inhibit is released.
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
-  responseTarget="target-02"; responseInsert=true; pollIntakeSuspended=true;
+  responseTarget="target-02"; responseInsert=true; pollIntakeSuspended=true; relayOn=true; applyOutputs();
   if(!acceptPollResponse(String("{\"ok\":true}")) || !insertMode || activeTarget!="target-02") return 17;
   if(relayOn) return 18; // intake remains inhibited while response is processed
   pollIntakeSuspended=false; applyOutputs();
@@ -118,7 +121,7 @@ int main(){
 
   // A valid negative insert state remains disabled.
   responseInsert=false; responseSignature="valid-signature"; responseTarget="target-03";
-  pollIntakeSuspended=true;
+  pollIntakeSuspended=true; relayOn=true; applyOutputs();
   if(!acceptPollResponse(String("{\"ok\":true}")) || insertMode || activeTarget!="target-03") return 20;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 21;
