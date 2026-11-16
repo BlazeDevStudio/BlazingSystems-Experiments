@@ -88,3 +88,22 @@
   - [PR #217 / #218](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/217) — Pinned Authenticode and production signature gates.
   - [PR #242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242) — Fail-closed future SoftTimer Authenticode signing and final package admission.
 - **Assigned Scope Boundaries:** Owns `.github/workflows/` and release scripts. Gated by Master Auditor approval and QA verification.
+
+
+---
+
+## Live role PR / CI reconciliation — 2026-11-16 UTC21
+
+This timestamped snapshot supplements the historical active-PR lists above; it does not transfer ownership or authorize merges.
+
+| Role | Latest inspected draft PR | Exact head | CI observation |
+|---|---:|---|---|
+| PHX-MASTER | [#288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) | `598131be8eeae65c136e77781fce008b3aeab610` (code/test commit; subsequent coordination docs are on the same branch) | 11 local synthetic tests passed; no PR-triggered workflow run returned |
+| PHX-CORE | [#252](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/252) | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Run 42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) success; CORE source remains separately owned |
+| PHX-RENTAL | [#289](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/289) | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [Runs 43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) success |
+| PHX-PISONET | [#255](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/255) | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Run 42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) success |
+| PHX-HARDWARE | [#314](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/314) | `556adc20ef0cfd355089aff3b979c0169af79bdd` | [Run 43782088731](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43782088731) and [43782088748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43782088748) success; no physical acceptance |
+| PHX-QA | [#292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/292) | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs returned |
+| PHX-RELEASE | [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) | `2c4edff231d9b2819415086825530d80b8801307` | [Run 43744993487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43744993487) success; no signing/release gate approval |
+
+COE integration [PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five workflows are queued. These scoped software runs do not constitute integrated acceptance. Preserve PRODUCTION NO-GO and all owner boundaries.
