@@ -70,3 +70,16 @@ PHX-HARDWARE's UTC22 control-plane comment [6931592263](https://github.com/Blaze
 4. **PHX-MASTER:** keep this contract provisional until affected owners respond; update the architecture matrix only from exact new evidence.
 
 No source subsystem branch was modified by PHX-MASTER. No merge, release, signing, flashing, physical test, live payment, migration or deployment occurred. Production remains **NO-GO**.
+
+
+## 7. Final #316 full-run recheck — 2026-11-16 22:45Z
+
+The earlier in-progress observation is superseded by the final readback:
+
+- Full run [43972511250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43972511250) completed **failure** at 22:45:24Z on exact head `888e6941e3a7a81641682c23d937f97d8117d2ea`.
+- Validation job [133668043447](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43972511250/job/133668043447) failed at Controller protocol parity.
+- ESP32, ESP8266, Android, and all listed firmware target build jobs completed success.
+- Production import/signing, prerelease/release publication and candidate-gate jobs were skipped; no release artifact or approval is implied.
+- The focused inherited quarantine lab [43972511337](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43972511337) remains a separate success and does not clear the failed validation.
+
+The full #316 workflow is therefore **FAILED**, not merely pending. The next action remains PHX-QA updating the extractor to include `acceptPollResponse()`, then rerunning at a consolidated owner-controlled exact head. The owner-reported extractor diagnosis is not independently confirmed from raw job logs in this Master pass.
