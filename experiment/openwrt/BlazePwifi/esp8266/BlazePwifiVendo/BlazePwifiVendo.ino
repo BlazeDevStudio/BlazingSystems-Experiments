@@ -333,7 +333,7 @@ bool acceptPollResponse(const String &response){
       signatureOk=false;
     }
   }
-  if(!signatureOk || response.indexOf("\\"ok\\":true")<0){
+  if(!signatureOk || response.indexOf("\"ok\":true")<0){
     // Never reuse the previous positive poll after an empty, rejected or
     // unauthenticated reply. Keep the acceptor disabled until a fresh poll
     // explicitly authorizes intake.
