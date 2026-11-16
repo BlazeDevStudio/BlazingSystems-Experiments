@@ -94,6 +94,7 @@ bool relayOn=false,ledOn=false;
 uint32_t lastSend=42;
 uint8_t pendingPulses=0;
 String pendingNonce,pendingTarget;
+String activeTarget="target-01";
 void writeLogical(int pin,bool on,bool){
   if(pin==runRelayPin)relayOn=on;
   if(pin==runLedPin)ledOn=on;
