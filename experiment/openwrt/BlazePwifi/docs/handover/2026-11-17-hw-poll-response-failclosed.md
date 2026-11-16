@@ -28,6 +28,18 @@ A board-local source-extracted C++ failure-injection lab is included at \`esp826
 
 The lab is intentionally kept outside QA-owned \`tests/\` and is **not wired into the shared validation workflow**. PHX-QA is asked to review it and decide the canonical CI invocation. Existing #294 poll lab remains useful but does not assert final output after a failed response.
 
+## Local source-function failure injection
+
+The exact `acceptPollResponse()` and `applyOutputs()` bodies read back from both board sketches were compiled with `g++ -std=c++17 -Wall -Wextra -Werror` in a host harness. **6/6 cases passed on ESP8266-shaped and ESP32-shaped config stubs**:
+1. empty/timeout response after previously positive poll;
+2. explicit `ok:false` denial;
+3. positive-looking response with bad signature;
+4. positive-looking response with missing required signature;
+5. fresh valid positive authorization restores intake only after suspension is released;
+6. fresh valid negative insert state stays disabled.
+
+The first harness attempt exposed a test-stub-only deprecated-copy warning; the stub copy constructor was removed and both target-shaped builds then passed. No firmware failure was counted from that harness setup error. This local harness is **SIMULATED**, not GitHub CI or physical hardware. The committed source-extraction script still needs PHX-QA review and CI wiring.
+
 ## Required review / limits
 
 - PHX-QA: independently reproduce the new 5-case matrix and wire it into the canonical controller validation if accepted.
