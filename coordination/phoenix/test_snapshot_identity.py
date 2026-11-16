@@ -58,6 +58,14 @@ class SnapshotIdentityTests(unittest.TestCase):
             self.errors_for("source_repository", "other-owner/BlazingSystems-Experiments"),
         )
 
+    def test_destination_pr_cannot_be_retargeted_or_coerced(self):
+        for value in (None, 0, 27, "26", True, 26.0):
+            with self.subTest(value=value):
+                self.assertIn(
+                    "Unexpected destination candidate PR identity",
+                    self.errors_for("destination_candidate_pr", value),
+                )
+
     def test_destination_repository_cannot_be_retargeted(self):
         self.assertIn(
             "Unexpected destination repository identity",
