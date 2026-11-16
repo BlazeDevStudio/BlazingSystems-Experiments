@@ -61,6 +61,7 @@ struct FakeDisk {
   bool readOpenFail=false;
   std::string removeFailPath;
   std::vector<unsigned> renameFailCalls;
+  std::vector<unsigned> renameFalseNegativeCalls;
   unsigned renameCalls=0;
 } disk;
 
@@ -128,11 +129,14 @@ struct FakeLittleFS {
     ++disk.renameCalls;
     if(std::find(disk.renameFailCalls.begin(),disk.renameFailCalls.end(),disk.renameCalls)!=disk.renameFailCalls.end())
       return false;
+    const bool falseNegative=
+      std::find(disk.renameFalseNegativeCalls.begin(),disk.renameFalseNegativeCalls.end(),disk.renameCalls)!=
+      disk.renameFalseNegativeCalls.end();
     auto found=disk.files.find(from);
     if(found==disk.files.end() || disk.files.count(to)) return false;
     disk.files[to]=found->second;
     disk.files.erase(found);
-    return true;
+    return !falseNegative;
   }
 } LittleFS;
 
@@ -332,9 +336,9 @@ int main() {
   disk.files["/pending.dat"]=oldRecord();
   disk.renameFailCalls={1};
   assert(!savePending());
-  assert(!journalRecoveryRequired);
+  assert(journalRecoveryRequired);
   assert(disk.files.count("/pending.dat"));
-  assert(!disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.new"));
   assert(!disk.files.count("/pending.bak"));
   assert(disk.renameCalls==1);
 
@@ -342,23 +346,37 @@ int main() {
   disk.files["/pending.dat"]=oldRecord();
   disk.renameFailCalls={2};
   assert(!savePending());
-  assert(!journalRecoveryRequired);
-  assert(disk.files.count("/pending.dat"));
-  assert(!disk.files.count("/pending.new"));
-  assert(!disk.files.count("/pending.bak"));
-  assert(disk.renameCalls==3);
-  std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
-  assert(stored.pulses==1);
+  assert(journalRecoveryRequired);
+  assert(!disk.files.count("/pending.dat"));
+  assert(disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==2);
+  std::memcpy(&stored,disk.files["/pending.new"].data(),sizeof(stored));
+  assert(stored.pulses==3);
 
   reset();
   disk.files["/pending.dat"]=oldRecord();
-  disk.renameFailCalls={2,3};
+  disk.renameFalseNegativeCalls={1};
   assert(!savePending());
   assert(journalRecoveryRequired);
   assert(!disk.files.count("/pending.dat"));
+  assert(disk.files.count("/pending.new"));
+  assert(disk.files.count("/pending.bak"));
+  assert(disk.renameCalls==1);
+  std::memcpy(&stored,disk.files["/pending.new"].data(),sizeof(stored));
+  assert(stored.pulses==3);
+
+  reset();
+  disk.files["/pending.dat"]=oldRecord();
+  disk.renameFalseNegativeCalls={2};
+  assert(!savePending());
+  assert(journalRecoveryRequired);
+  assert(disk.files.count("/pending.dat"));
   assert(!disk.files.count("/pending.new"));
   assert(disk.files.count("/pending.bak"));
-  assert(disk.renameCalls==3);
+  assert(disk.renameCalls==2);
+  std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
+  assert(stored.pulses==3);
 
   reset();
   disk.files["/pending.dat"]=oldRecord();
@@ -372,7 +390,7 @@ int main() {
   std::memcpy(&stored,disk.files["/pending.dat"].data(),sizeof(stored));
   assert(stored.pulses==3);
 
-  std::cout<<"PENDING_WRITE_READBACK_PASS 21/21 exact-source scenarios\n";
+  std::cout<<"PENDING_WRITE_READBACK_PASS 22/22 exact-source scenarios\n";
 }
 '''
 
@@ -408,4 +426,4 @@ for board, path in BOARDS:
         subprocess.run([str(binary)], check=True)
     print(f"{board}: pending.new readback and rotation operations verified")
 
-print("PHX-HARDWARE: pending write/readback and rotation PASS 21 cases x2 sketches")
+print("PHX-HARDWARE: pending write/readback and rotation PASS 22 cases x2 sketches")
