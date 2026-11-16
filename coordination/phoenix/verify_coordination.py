@@ -58,7 +58,7 @@ def validate_routes(data: object, repo_root: Path) -> list[str]:
         errors.append("Unexpected source repository identity")
     if data.get("destination_repository") != "BlazeDevStudio/CoinOperatedEcosystem":
         errors.append("Unexpected destination repository identity")
-    routes = data.get("routes")
+    # A draft must remain bound to the one reviewed destination PR; a retargeted\n    # or ambiguous PR number must not pass as equivalent staging evidence.\n    if type(data.get("destination_candidate_pr")) is not int or data["destination_candidate_pr"] != 26:\n        errors.append("Unexpected destination candidate PR identity")\n    routes = data.get("routes")
     if not isinstance(routes, list) or not routes:
         return errors + ["Ownership routes must be a nonempty list"]
 
