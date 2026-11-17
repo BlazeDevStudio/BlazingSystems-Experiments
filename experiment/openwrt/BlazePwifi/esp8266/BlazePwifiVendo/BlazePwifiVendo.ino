@@ -330,6 +330,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
+// Intentionally dormant: register/poll admission signatures do not authenticate
+// the returned configuration object. Do not call until CORE defines a separate
+// config envelope and QA verifies its exact positive/negative golden vectors.
 void applyRemoteConfig(const String&r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
   if(rev==remoteRevision && remoteRevision!=0)return;
@@ -727,19 +730,10 @@ void connectSta(){
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
   if(WiFi.status()==WL_CONNECTED){
-    wifiFailures=0;String r=post("register");
-    bool sigOk=true;
-    if(strlen(cfg.key)){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int st=jsonInt(r,"server_time",0);
-        String expected=hexDigest(String(cfg.key)+"|register|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(st)+"|"+String(cfg.key));
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0) applyRemoteConfig(r);
+    wifiFailures=0;
+    // Register is identity/status only; its response signature does not bind
+    // controller configuration. Never apply remote config from this response.
+    (void)post("register");
   }
 }
 

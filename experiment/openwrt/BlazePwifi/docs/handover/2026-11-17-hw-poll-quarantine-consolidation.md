@@ -251,3 +251,16 @@ Full BlazePwifi run [44008556084](https://github.com/BlazeDevStudio/BlazingSyste
 The prior test-only RED at [44008391400](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008391400) is retained above: it was caused by a duplicate `runRelayActiveHigh` declaration in the hardware-owned C++ stub and was corrected in `853d2ada`. No production firmware failure was reported by that run.
 
 **Next:** PHX-QA must independently repair and rerun the canonical extractor at the current exact PR head; PHX-CORE/MASTER must approve a separate authenticated remote-config contract before any remote config is re-enabled. Physical pulse/relay behavior, 150 power cuts, 30-device 24-hour soak and electrical recovery remain NOT TESTED.
+
+
+## 2026-11-17 UTC03 — register-response configuration authority denied
+
+PHX-MASTER's current DRAFT #288 contract at `fc9ba1391908f8d49d8f9e9c578e43b49e21417`, §6.4, identified a separate residual trust boundary after the poll-path configuration isolation: both `connectSta()` implementations still called `applyRemoteConfig(r)` on a positive register response. The register signature binds the register tuple only; it does not bind the returned controller configuration. With an empty key, the old `sigOk=true` default also treated the response as accepted.
+
+**Test-first evidence:** test-only commit `b4b46452b9f17acb8bd5e4347322f10874ec9b6f`, focused workflow [44012633615](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44012633615), job `133803015218`, **COMPLETED FAILURE as the expected source RED**. The new source-extracted register lab compiled both production `connectSta()` bodies and observed the unsafe configuration mutator on both ESP8266 and ESP32 (scenario 1, exit 11). All preceding quarantine, poll, strict JSON, debounce and poll-window suites in that same job passed. This is host simulation, not a network or hardware test.
+
+**Source correction in this follow-up:** both `connectSta()` functions retain the register/status request but discard its response. The helper `applyRemoteConfig()` remains present for future use but is explicitly documented as dormant. There is no remaining call site from either register or poll admission. No shared API, crypto algorithm, configuration schema, GPIO default, finance/ledger, QA-owned test directory or release workflow was changed.
+
+**Acceptance boundary:** remote configuration stays disabled until PHX-CORE defines a separate domain-separated configuration envelope and PHX-QA independently verifies canonical positive/negative golden vectors, identity/nonce/revision/freshness binding and atomic persistence behavior. This is not an assertion that remote configuration has been replaced or that the controller is production interoperable.
+
+**Remaining blockers:** canonical QA `tests/controllers.sh` still omits `acceptPollResponse()`; configured-key poll producer/consumer compatibility and the shared signature golden vector remain unverified; quarantine failure disposition is still RAM-only across reboot; protected signer/witness, durable accounting/replay, v1-to-v2 migration, physical 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery and independent QA/release acceptance remain open. No flashing, reset, live money, migration, merge, release or deployment.
