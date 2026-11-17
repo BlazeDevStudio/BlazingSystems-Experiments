@@ -13,7 +13,7 @@ The exact-source poll-drain lab proved that a pulse during the inhibit-settle wi
 
 ## Hardware-owned change
 
-Both ESP8266 and ESP32 sketches now call a small `sampleCoinPulseEdge(bool active)` helper from the existing loop. The helper is a behavior-preserving extraction of the prior inline logic: it retains active-level interpretation at the caller, rising-edge latch, unsigned debounce timing, target binding, 20-pulse cap, nonce reuse, and fail-closed handling when `savePending()` fails.
+Both ESP8266 and ESP32 sketches now call a small `sampleCoinPulseEdge(bool active)` helper from the existing loop. The helper retains active-level interpretation at the caller, rising-edge latch, unsigned debounce timing, target binding, 20-pulse cap, and nonce reuse. Test-first failure injection exposed a separate fail-closed defect: when `savePending()` failed, both sketches set `fsReady=false` and `pendingReady=true` but did not call `applyOutputs()`, so the relay/LED remained in their prior accepting state. The helper now calls `applyOutputs()` immediately after latching the failed write and before logging.
 
 No wire format, register/poll contract, receipt authority, financial schema, GPIO assignment, relay polarity, QA-owned file, or shared API changed.
 
@@ -36,6 +36,6 @@ The focused hardware workflow now runs this lab after the existing quarantine, j
 
 ## Evidence classification and next action
 
-At initial commit time, the new lab is **CI PENDING**. It is a host simulation, not physical coin-pulse acceptance. It must not be represented as relay/electrical acceptance or as evidence for the 150-power-cut or 30-device/24-hour gates.
+Test-first RED: commit [`67d3ff96`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/67d3ff96b44af90f6908ab530234805308a274f8), focused run [#44172599058](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44172599058), job `134355386347`: **FAILED AS EXPECTED** on both boards because the relay/LED were still enabled immediately after the injected `savePending()` failure. The source correction and final focused rerun are now pending. The lab is a host simulation, not physical coin-pulse acceptance. It must not be represented as relay/electrical acceptance or as evidence for the 150-power-cut or 30-device/24-hour gates.
 
 Next: inspect the focused run at the exact final PR HEAD, then request PHX-QA review of the source-extracted capture boundary and PHX-MASTER review of the #317/#318 stack. Physical noncustomer pulse waveform, relay-contact, electrical recovery, power-cut and soak evidence remain **NOT TESTED**. Production remains **NO-GO**.
