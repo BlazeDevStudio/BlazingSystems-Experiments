@@ -147,6 +147,9 @@ String post(const String &action,const String &pulses=String("0"),
     pollEndAt=fakeNow;
     pollEndRelayOn=relayOn;
     pollEndSuspended=pollIntakeSuspended;
+    // Deliberately hostile positive response: the extracted production
+    // acceptPollResponse() must still deny it until CORE/QA approve the contract.
+    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");
   }
   return String("");
 }
