@@ -34,6 +34,14 @@ uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
+// Master Architecture Contracts §2.1: never accept a debounce below 20 ms.
+// Apply the same bound to persisted, local-setup, and controller-provided values.
+uint16_t boundedCoinDebounceMs(long long requested){
+  if(requested<20LL) return 20;
+  if(requested>2000LL) return 2000;
+  return (uint16_t)requested;
+}
+
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
@@ -394,7 +402,7 @@ void loadConfig(){
   cfg.coinActiveLow=prefs.getBool("coinlow",true);
   cfg.relayActiveHigh=prefs.getBool("relayhi",true);
   cfg.ledActiveHigh=prefs.getBool("ledhi",true);
-  cfg.coinDebounceMs=boundedTimingMs(prefs.getUInt("debounce",40),1,2000);
+  cfg.coinDebounceMs=boundedCoinDebounceMs(prefs.getUInt("debounce",40));
   cfg.pulseGroupMs=boundedTimingMs(prefs.getUInt("groupms",400),10,10000);
   if(cfg.apPass.length()<8){
     char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
@@ -464,7 +472,7 @@ void applyRemoteConfig(const String &r){
   bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
   bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
-  runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
+  runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
     runRelayActiveHigh=nextRelayActiveHigh;
@@ -831,8 +839,8 @@ void setupPortal(){
     }
     cfg.ssid=newSsid; cfg.pass=newPass; cfg.server=web.arg("server"); if(web.arg("k").length()) cfg.key=web.arg("k"); cfg.id=web.arg("id");
     cfg.coinPin=nextCoin; cfg.insertLedPin=nextLed; cfg.relayPin=nextRelay;
-    long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
-    cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
+    long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(pg<10)pg=10;if(pg>10000)pg=10000;
+    cfg.coinDebounceMs=boundedCoinDebounceMs(db); cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
     saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
   });
   web.begin(); configuredApSince=millis();

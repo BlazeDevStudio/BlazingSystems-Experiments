@@ -48,6 +48,14 @@ uint8_t pendingPulses=0;
 bool pendingReady=false, fsReady=false, journalRecoveryRequired=false;
 int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
+// Master Architecture Contracts §2.1: never accept a debounce below 20 ms.
+// Apply the same bound to persisted, local-setup, and controller-provided values.
+uint16_t boundedCoinDebounceMs(long long requested){
+  if(requested<20LL) return 20;
+  if(requested>2000LL) return 2000;
+  return (uint16_t)requested;
+}
+
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 struct PendingRecord {
@@ -331,7 +339,7 @@ void applyRemoteConfig(const String&r){
   bool nextCoinActiveLow=jsonInt(r,"coin_active_low",runCoinActiveLow?1:0)!=0;
   bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
   bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
-  runDebounceMs=(uint16_t)constrain(jsonInt(r,"coin_debounce_ms",40),1,2000);
+  runDebounceMs=boundedCoinDebounceMs(jsonInt(r,"coin_debounce_ms",40));
   runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){

@@ -155,3 +155,20 @@ Outstanding:
 - Physical relay polarity/timing, coin waveform, 150 real power cuts, 30-device 24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent release signoff remain NOT TESTED / BLOCKED.
 
 No QA-owned tests, RELEASE-owned workflows, shared API, finance source, migration, signing, physical hardware, flashing, reset, merge, release or deployment were changed or performed.
+
+
+## 2026-11-17 UTC02 — enforce minimum debounce and exercise the poll-intake guard
+
+**Source finding at parent `b21d05822772e7c07299331d2a6a1670da2b077e`:** Master Architecture Contracts §2.1 requires a minimum 20 ms stable signal before an edge is recognized, but the ESP8266 remote configuration and ESP32 persisted, remote, and setup-portal configuration paths accepted values as low as 1 ms. Because `beginPollWindow()` also uses `runDebounceMs` for its post-inhibit quiet interval, a 1 ms configuration could shorten both pulse debounce and the poll check-to-inhibit guard below the existing architecture requirement.
+
+**Hardware-owned repair:**
+- Added `boundedCoinDebounceMs()` to both sketches; all owned configuration ingress paths now clamp to 20–2000 ms.
+- ESP8266 remote poll configuration uses the helper.
+- ESP32 NVS load, controller configuration, and local setup portal all use the same helper.
+- No controller schema, response signature, receipt, finance, or provisioning API changed.
+- Expanded the existing hardware-owned `poll_response_failclosed_lab.py` to compile the actual debounce clamp, `coinLineIdle()`, `canStartPoll()`, `coinLineQuietAfterInhibit()`, `beginPollWindow()`, and `applyOutputs()` from both sketches.
+- The new lab checks the clamp boundary, active line at poll entry, pending pulse/group, pending journal, unavailable filesystem, a 30 ms pulse beginning 19 ms after inhibit, stable quiet-line admission, active-high polarity, and source ordering that places `beginPollWindow()` before the blocking poll and response validation before inhibit release.
+
+**Evidence state at commit preparation:** source change and hardware-owned test extension prepared; exact-head GitHub Actions result pending. All host scenarios are simulated. Physical coin waveform, relay polarity, mechanical coin transit, electrical recovery, 150 power cuts and 30-device soak remain NOT TESTED.
+
+**Next:** inspect the exact-head focused run; preserve any RED, then request independent PHX-QA reproduction and PHX-MASTER review of the 20 ms contract alignment. No flash, reset, live money, migration, merge, release or deployment.

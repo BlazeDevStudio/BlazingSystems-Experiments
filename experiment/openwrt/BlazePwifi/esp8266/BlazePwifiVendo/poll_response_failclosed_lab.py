@@ -211,3 +211,122 @@ for board,path in BOARDS.items():
 if failed: sys.exit("poll-response fail-closed lab failed: "+",".join(failed))
 print("PHYSICAL_COIN_ACCEPTOR_VERIFIED=0")
 print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
+
+
+# PHX-HARDWARE pulse-window and debounce-floor regression.
+# This compiles the actual clamp, line-state, poll-window and output-gate functions
+# from both sketches. It is host simulation, not electrical or coin-acceptor proof.
+WINDOW_STUBS = r"""
+#include <cstdint>
+#include <iostream>
+#include <string>
+struct String : std::string {
+  using std::string::string;
+  size_t length() const { return size(); }
+};
+bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
+bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
+bool insertMode=true, runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=true;
+int pendingPulses=0, runCoinPin=4, runRelayPin=26, runLedPin=2;
+uint16_t runDebounceMs=40;
+String activeTarget="target-01";
+bool relayOn=false, ledOn=false, relayOffObservedWhileSuspended=false;
+uint32_t fakeNow=0;
+int pulseStart=-1, pulseEnd=-1;
+int digitalRead(int) {
+    const bool active=pulseStart>=0 && fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
+    if(runCoinActiveLow) return active?0:1;
+    return active?1:0;
+}
+uint32_t millis(){ return fakeNow; }
+void delay(int ms){ fakeNow+=(uint32_t)ms; }
+void writeLogical(int pin,bool on,bool) {
+    if(pin==runRelayPin){
+        relayOn=on;
+        if(!on && pollIntakeSuspended) relayOffObservedWhileSuspended=true;
+    }
+    if(pin==runLedPin) ledOn=on;
+}
+"""
+WINDOW_MAIN = r"""
+void resetState(){
+    fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
+    pollIntakeSuspended=false; pinConfigSafe=true; controllerEnabled=true; coinEnabled=true;
+    relayEnabled=true; ledEnabled=true; insertMode=true; runRelayActiveHigh=true;
+    runLedActiveHigh=true; runCoinActiveLow=true; runCoinPin=4; runRelayPin=26; runLedPin=2;
+    runDebounceMs=40; activeTarget="target-01"; relayOn=false; ledOn=false;
+    relayOffObservedWhileSuspended=false; fakeNow=0; pulseStart=-1; pulseEnd=-1;
+    applyOutputs();
+}
+int main(){
+    if(boundedCoinDebounceMs(-100)!=20 || boundedCoinDebounceMs(0)!=20 ||
+       boundedCoinDebounceMs(1)!=20 || boundedCoinDebounceMs(19)!=20 ||
+       boundedCoinDebounceMs(20)!=20 || boundedCoinDebounceMs(40)!=40 ||
+       boundedCoinDebounceMs(2000)!=2000 || boundedCoinDebounceMs(2001)!=2000){
+        std::cerr<<"DEBOUNCE_FLOOR_FAIL\n"; return 1;
+    }
+    resetState(); pulseStart=0; pulseEnd=80;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn || relayOffObservedWhileSuspended) return 11;
+    resetState(); pendingPulses=1;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn) return 12;
+    resetState(); pendingReady=true; applyOutputs();
+    if(beginPollWindow() || pollIntakeSuspended || relayOn) return 13;
+    resetState(); journalRecoveryRequired=true; applyOutputs();
+    if(beginPollWindow() || pollIntakeSuspended || relayOn) return 14;
+    resetState(); fsReady=false; applyOutputs();
+    if(beginPollWindow() || pollIntakeSuspended || relayOn) return 15;
+    resetState(); runDebounceMs=boundedCoinDebounceMs(1); pulseStart=19; pulseEnd=49;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=19) return 16;
+    resetState(); runDebounceMs=boundedCoinDebounceMs(1);
+    if(!beginPollWindow() || !pollIntakeSuspended || relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=20) return 17;
+    resetState(); runCoinActiveLow=false; runDebounceMs=boundedCoinDebounceMs(1);
+    pulseStart=19; pulseEnd=49;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=19) return 18;
+    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 8/8\n";
+    std::cout<<"PHYSICAL_COIN_ACCEPTOR_VERIFIED=0\n";
+    return 0;
+}
+"""
+for board, path in BOARDS.items():
+    source = path.read_text(encoding="utf-8")
+    minimum_calls = 2 if board == "ESP8266" else 4
+    if source.count("boundedCoinDebounceMs(") < minimum_calls:
+        raise RuntimeError(f"{board}: not all debounce configuration paths use the 20 ms clamp")
+    loop = extract(source, "void loop(){")
+    order = [
+        loop.find("beginPollWindow()"),
+        loop.find('String r=post("poll")'),
+        loop.find("acceptPollResponse(r)"),
+        loop.find("pollIntakeSuspended=false"),
+    ]
+    if any(pos < 0 for pos in order) or order != sorted(order):
+        raise RuntimeError(f"{board}: poll guard/response/release ordering changed: {order}")
+    functions = "\n".join([
+        extract(source, "uint16_t boundedCoinDebounceMs("),
+        extract(source, "void applyOutputs(){"),
+        extract(source, "bool coinLineIdle(){"),
+        extract(source, "bool canStartPoll(){"),
+        extract(source, "bool coinLineQuietAfterInhibit(){"),
+        extract(source, "bool beginPollWindow(){"),
+    ])
+    code = WINDOW_STUBS + functions + WINDOW_MAIN
+    with tempfile.TemporaryDirectory(prefix="phx-poll-window-") as folder:
+        cpp = Path(folder) / "poll_window.cpp"
+        binary = Path(folder) / "poll_window"
+        cpp.write_text(code, encoding="utf-8")
+        built = subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
+            capture_output=True, text=True, timeout=30
+        )
+        if built.returncode:
+            raise RuntimeError(f"{board}: poll-window compile failed:\n{built.stderr[-3000:]}")
+        ran = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
+        if ran.returncode:
+            raise RuntimeError(f"{board}: poll-window scenarios failed ({ran.returncode}): {ran.stderr}")
+        print(f"{board}: {ran.stdout.strip()}; source ordering PASS")
+
