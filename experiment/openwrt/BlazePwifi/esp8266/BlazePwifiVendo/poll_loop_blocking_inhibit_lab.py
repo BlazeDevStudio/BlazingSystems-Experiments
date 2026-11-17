@@ -379,7 +379,7 @@ for board,path in BOARDS.items():
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,main_source=MAIN):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+output+idle+can_start+
+        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
                 quiet_source+begin_source+configure_source+accept_source+write_fault_source+
                 load_fault_source+latch_fault_source+init_store_source+SUPPORT+loop_source+main_source)
 
