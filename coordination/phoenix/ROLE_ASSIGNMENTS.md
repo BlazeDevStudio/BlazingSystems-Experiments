@@ -249,3 +249,34 @@ This timestamped snapshot supersedes earlier live-status tables for the observed
 
 No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The separate CORE implementation ownership boundary remains respected.
 
+
+
+## Live role PR / CI snapshot — 2026-11-17 UTC08
+
+This snapshot supersedes older role-head observations only for the exact refs below; historical comments and evidence remain intact.
+
+| Role / candidate | Exact head | Exact-head CI observation | Current gate |
+|---|---|---|---|
+| PHX-MASTER #288 | 349c5e24c3083dc78ffe9fe96e495d66285b7f2d before this update | No PR-triggered runs returned | Master-only coordination; draft remains |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS | Scoped build only; CORE owner retains source |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 and 43653329229 SUCCESS | Scoped CI only |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS | Scoped Windows CI only |
+| PHX-HARDWARE #315 | cc0743009f44baeda0ea12d84eb6199a8a6916c7 | Focused 44041818004 SUCCESS; Full 44041818133 FAILURE at validation job 133898063910 | QA extractor missing five current dependencies; no physical acceptance |
+| PHX-HARDWARE separate #316 | 888e6941e3a7a81641682c23d937f97d8117d2ea | Focused 43972511337 SUCCESS; Full 43972511250 FAILURE | Separate branch; do not combine without owner consolidation |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs returned | Not current independent verification of #315 |
+| PHX-RELEASE #291 | 2c4edff231d9b2819415086825530d80b8801307 | 43744993487 SUCCESS | Scoped Windows CI only; signing/publishing closed |
+
+### COE destination candidates
+
+| PR | Exact head | CI observation |
+|---|---|---|
+| #26 integration | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five candidate workflows QUEUED |
+| #27 Hardware & Shared | 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 | 43079646264 and 43079646393 SUCCESS, but firmware blobs are identical to stale #26 |
+| #29 CORE | d0830332dee8a1844a85606150681b41d91fe796 | 43653906676 and 43653906675 SUCCESS |
+| #30 PISONET | 4897348d94a0cf7884ecd53244bfcd59e7bf2fbc | 43653415598 SUCCESS |
+| #28 PISONET | b21b04617d38a177260258de2d56b24382822117 | 43632393888 SUCCESS |
+| #32 QA | 29b6fe08b10688182d981a66745f482758bd6630 | 43653540607 SUCCESS |
+| #31 RELEASE | 8cca7ff8e35c7b90fb3b88345a8ea65f92bc81b5 | 44048543517 and 44048543532 SUCCESS |
+| #19 Rental baseline | 04c97030096aa5e5a854952e0cc377ffe31d5d07 | 43061768902 SUCCESS |
+
+These are isolated PR-head results. They do not validate the combined COE #26 tree, physical acceptance, signing, financial migration or production readiness. The Master run made no CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source changes.

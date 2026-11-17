@@ -154,3 +154,12 @@ Exact source/destination blob identities, file modes, line locations, README cry
 
 **Next:** PHX-CORE publishes the receipt contract; PHX-QA repairs the extractor and independently tests both-board vectors; PHX-HARDWARE waits for approval; COE integration owner keeps #26 draft and reconciles provenance. No merge, release, signing, flash, physical test, secret provisioning or live payment operation occurred. **PRODUCTION NO-GO.**
 
+
+
+## 2026-11-17 UTC08 — Hardware staging parity refresh and duplicate candidate
+
+The current HARDWARE source candidate is PR #315 at cc0743009f44baeda0ea12d84eb6199a8a6916c7. COE integration #26 at b382d233ff06c8791b1028bed3c617cc7b670d12 and separate Hardware & Shared #27 at 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 contain the same older ESP32/ESP8266 firmware blobs. Both destination sketches still have response-driven applyRemoteConfig call sites and sigOk=true defaults; they lack the current source's one-shot attempt/disposition helpers and retain a destructive quarantine-clear handler. The #315 source has deny/no-delete quarantine clear and current source-extracted failure labs that are absent from COE Hardware/tests.
+
+Exact source/destination blobs, modes, file sizes, helper counts, test identities, license scope and workflow evidence are recorded in HARDWARE_STAGING_REFRESH_AND_DUPLICATE_CANDIDATE_AUDIT_20261117_UTC08.md. The #315 focused run 44041818004 passed; full run 44041818133 failed in QA-owned validation job 133898063910 because the canonical extractor omits five current dependencies. COE #26 has five queued workflows; #27's two scoped successes validate its stale candidate, not #315 parity.
+
+**Disposition: BLOCKED for migration / PRODUCTION NO-GO.** Keep #26 and #27 draft; no copy, overwrite, relocation or promotion. PHX-QA must repair and rerun exact #315 Full validation; COE integration owner must reconcile current source blobs, tests and Hardware license scope. The exact private Drive registry and newer corrections were not accessible through the connected tool surface; no older Library snapshot was substituted. No subsystem source, financial state, secret, hardware, release or production workflow was changed by Master.

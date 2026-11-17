@@ -415,3 +415,20 @@ COE #29, #28 and #30 have scoped successes at their pinned heads, but they do no
 
 **PRODUCTION NO-GO:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration, independent QA, native acceptance, 150 real power cuts and a 30-device/24-hour soak remain mandatory.
 
+
+
+## Live Hardware staging refresh — 2026-11-17 UTC08
+
+The current owner source is Experiments HARDWARE PR #315 at cc0743009f44baeda0ea12d84eb6199a8a6916c7, not the older firmware snapshot staged in COE #26. The separate COE Hardware & Shared PR #27 at 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 contains the same ESP32/ESP8266 firmware blobs as #26 and is therefore a duplicate stale candidate for this comparison, not an updated import.
+
+| Evidence | Exact ref / result | Gate interpretation |
+|---|---|---|
+| HARDWARE source | #315 cc074300…; focused 44041818004 SUCCESS; full 44041818133 FAILURE | Source lab is simulated; full validation blocked by QA extractor |
+| HARDWARE parallel draft | #316 888e6941…; focused 43972511337 SUCCESS; full 43972511250 FAILURE | Separate branch; do not silently compose with #315 |
+| COE integration | #26 b382d233…; five workflows QUEUED | No combined-tree CI conclusion |
+| COE Hardware & Shared | #27 009f70cc…; runs 43079646264 and 43079646393 SUCCESS | These runs validate the stale #27 candidate, not current #315 source parity |
+| Master | #288 349c5e24… before this update; no PR-triggered runs | Coordination-only; no subsystem source change |
+
+Exact firmware blobs differ on both boards; #315 has dormant remote configuration, one-shot attempt/disposition helpers and a deny/no-delete quarantine clear, while #26/#27 retain response-driven config paths, keyless defaults, no attempt marker/disposition helpers and destructive quarantine clear. Source board-local failure labs are not imported into COE Hardware/tests. Hardware license scope remains unresolved. See HARDWARE_STAGING_REFRESH_AND_DUPLICATE_CANDIDATE_AUDIT_20261117_UTC08.md for exact blobs, modes, sizes, test identities and CI.
+
+**Disposition:** keep #26/#27 draft and do not copy, overwrite, relocate or promote firmware. PHX-QA must repair the exact #315 extractor and rerun Full validation; the COE integration owner must reconcile the candidate, tests and license scope. Production remains NO-GO.

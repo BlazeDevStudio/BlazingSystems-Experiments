@@ -179,3 +179,12 @@ The #315 focused run 44038469936 passed source-extracted host/fake-filesystem ca
 
 **Review-before-move hold:** keep COE #26 draft. Do not copy, overwrite, relocate or promote these firmware files. PHX-HARDWARE owns firmware, PHX-QA owns independent tests, COE integration owns destination staging, and PHX-MASTER owns only coordination and provenance. No merge, release, flash or financial action is authorized.
 
+
+
+## Current Hardware staging refresh — 2026-11-17 UTC08
+
+The live OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY, pins source_ref to Experiments main f4e8a891… and destination_candidate_pr to COE #26 b382d233…, and grants PHX-MASTER only coordination/phoenix/ with target=null. It is not a copy command.
+
+For current hardware parity, compare owner PR #315 at cc0743009f44baeda0ea12d84eb6199a8a6916c7 against COE #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. COE PR #27 at 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 contains the same stale ESP32/ESP8266 firmware blobs as #26; its successful scoped CI does not validate the current #315 source. The exact firmware, helper, quarantine-clear, test-import and license-scope findings are in HARDWARE_STAGING_REFRESH_AND_DUPLICATE_CANDIDATE_AUDIT_20261117_UTC08.md.
+
+**Review-before-move hold:** no source copy, destination overwrite, path relocation, merge or promotion. PHX-HARDWARE owns firmware, PHX-QA owns independent regression/extractor verification, COE integration owns destination staging, and PHX-MASTER owns only coordination and provenance. The exact private Drive registry was not available; no older Library artifact was substituted.
