@@ -172,3 +172,14 @@ No QA-owned tests, RELEASE-owned workflows, shared API, finance source, migratio
 **Evidence state at commit preparation:** source change and hardware-owned test extension prepared; exact-head GitHub Actions result pending. All host scenarios are simulated. Physical coin waveform, relay polarity, mechanical coin transit, electrical recovery, 150 power cuts and 30-device soak remain NOT TESTED.
 
 **Next:** inspect the exact-head focused run; preserve any RED, then request independent PHX-QA reproduction and PHX-MASTER review of the 20 ms contract alignment. No flash, reset, live money, migration, merge, release or deployment.
+
+
+## 2026-11-17 UTC02 — first exact-head regression RED and harness correction
+
+At source commit `5d8776be4fc6bf915bf52f463224a130703f666c`, focused run [44006268728](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44006268728), job `133782278742`, executed the inherited quarantine suites (34/34) and poll-response suites (10/10 per board) successfully, then failed in the new poll-window extension because its Python source extractor was called with a full C++ signature rather than the function name and did not yet recognize the `uint16_t` return type. This is a genuine test-harness RED; no firmware runtime failure was reported by that step.
+
+The full build [44006269369](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44006269369) separately failed in the existing PHX-QA-owned Controller protocol parity extractor (job `133782280822`) because it still does not extract `acceptPollResponse()`. That is the known QA-owned integration blocker; PHX-HARDWARE did not edit `tests/controllers.sh`.
+
+Follow-up corrects the hardware-owned extractor to accept `uint16_t` functions and pass function names, then re-runs the actual debounce/poll-window bodies. ESP32/ESP8266 compile jobs from the full run were still in progress at this checkpoint; no compile result is inferred.
+
+No physical coin acceptor, relay, power-cut or financial operation was performed.

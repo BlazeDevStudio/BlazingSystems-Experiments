@@ -16,7 +16,7 @@ BOARDS = {
 }
 
 def extract(source, name):
-    match = re.search(r"\b(?:void|bool)\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
+    match = re.search(r"\b(?:void|bool|uint16_t)\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
     assert match, f"missing production function: {name}"
     depth = 0
     for pos in range(match.end() - 1, len(source)):
@@ -296,7 +296,7 @@ for board, path in BOARDS.items():
     minimum_calls = 2 if board == "ESP8266" else 4
     if source.count("boundedCoinDebounceMs(") < minimum_calls:
         raise RuntimeError(f"{board}: not all debounce configuration paths use the 20 ms clamp")
-    loop = extract(source, "void loop(){")
+    loop = extract(source, "loop")
     order = [
         loop.find("beginPollWindow()"),
         loop.find('String r=post("poll")'),
@@ -306,12 +306,12 @@ for board, path in BOARDS.items():
     if any(pos < 0 for pos in order) or order != sorted(order):
         raise RuntimeError(f"{board}: poll guard/response/release ordering changed: {order}")
     functions = "\n".join([
-        extract(source, "uint16_t boundedCoinDebounceMs("),
-        extract(source, "void applyOutputs(){"),
-        extract(source, "bool coinLineIdle(){"),
-        extract(source, "bool canStartPoll(){"),
-        extract(source, "bool coinLineQuietAfterInhibit(){"),
-        extract(source, "bool beginPollWindow(){"),
+        extract(source, "boundedCoinDebounceMs"),
+        extract(source, "applyOutputs"),
+        extract(source, "coinLineIdle"),
+        extract(source, "canStartPoll"),
+        extract(source, "coinLineQuietAfterInhibit"),
+        extract(source, "beginPollWindow"),
     ])
     code = WINDOW_STUBS + functions + WINDOW_MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-window-") as folder:
