@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Hardware-owned test-only child stack: DRAFT PR #319, based on DRAFT #317.
+# Final exact-head CI is re-triggered after the handover index synchronization.
 """Source-exact GPIO polarity lab for the ESP32 and ESP8266 output gate.
 
 Compiles the production writeLogical() and applyOutputs() bodies from both
