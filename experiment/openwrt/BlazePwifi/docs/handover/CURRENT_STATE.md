@@ -742,3 +742,15 @@ Correct the release workflow's six mutable action references to the independentl
 
 ## NEXT EXACT ACTION
 Verify this exact source head on Windows: immutable action pin guard, all existing release-negative controls, package parity, build and handover. Confirm the write-privileged publisher remains skipped for the PR. After terminal results, record the exact run and commit in all three canonical handovers.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pins exact-source CI verified
+
+- Test-only YAML action-reference parser correction: `37f4d3f76ce40f74a0b762abadc18a22f52c35c5`. Source/test head: `4129a012ec18b7b390cc668b110dae7691a7ec73`. Exact-source [Windows run #44192255895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192255895) COMPLETED SUCCESS: handover PASS; build-windows PASS; `publish-release` SKIPPED.
+- Windows logs explicitly confirm `RELEASE-ACTIONS: all external actions pinned to verified immutable commit SHAs PASS`, `RELEASE-CONCURRENCY ... PASS`, nine synthetic publisher HTTP/CLI lookup decisions PASS with no publication, and the missing-tag/verifier nonzero guard PASS. PackageParity, native unsigned-Setup denial, Unicode copyright, native install/uninstall, portable ZIP exact 7/7 membership, SHA256SUMS, warnings-as-errors builds, PAY-0717/0718/0719/0720 lab checks and frozen-version admission all passed.
+- Both real signing steps were SKIPPED on the PR. The only artifact is unsigned CI preview [artifact 14378575285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192255895/artifacts/14378575285), 264,824,347 bytes, provider-reported outer SHA256 `8b00389133a306b5063613d9115e72febe7332f90122ca0a33d21a4b7f607791`; not independently downloaded. It is not a GitHub Release or production package.
+- GitHub runner emitted a Node.js 20 deprecation warning for the pinned actions (runner forced Node 24); all action steps completed successfully. Revisit compatible newer action majors in a separate reviewed task, not by floating tags.
+- No signer, tag, release creation, merge, deployment, finance or hardware action. PR #291 remains OPEN/DRAFT/UNMERGED; PRODUCTION NO-GO.
+
+## NEXT EXACT ACTION
+Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTER review of the #291 release-workflow reimplementation route. Keep the PR draft. Any Node runtime modernization must be a separately tested, immutable-pin change; do not restore floating action tags.

@@ -89,3 +89,10 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Test-only parser correction `37f4d3f76ce40f74a0b762abadc18a22f52c35c5` recognized both YAML action-step forms. Exact RED run #44191802009 passed handover, package parity and concurrency checks, then failed on the first mutable action reference `actions/checkout@v4`; publisher was skipped.
 - The current source checkpoint replaces all six floating v4 tags with full immutable SHAs read back from the upstream version tags. The checkout test expectation was aligned to the actual v4.2.2 tag commit. No application code or release authorization changed.
 - Next: exact-head Windows CI and review of the pin guard. Publisher must remain PR-skipped; no signer, tag, release, merge or deployment.
+
+
+## 2026-11-17 UTC22 — PHX-RELEASE immutable Actions pins verified
+
+- Test-first parser correction `37f4d3f76ce40f74a0b762abadc18a22f52c35c5`; exact expected mutable-tag RED [#44191802009](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44191802009). Source/test head `4129a012ec18b7b390cc668b110dae7691a7ec73` passed [#44192255895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192255895): handover/build SUCCESS; publisher SKIPPED. Action-pin, concurrency, synthetic publisher, package parity, native install/uninstall, checksum and unsigned-setup controls PASS.
+- Artifact 14378575285 is an unsigned CI preview only; provider SHA256 `8b003891...`, not independently downloaded. No real signing, GitHub Release, merge or deployment.
+- Follow-up: independent QA and MASTER review; assess Node20 deprecation warning in a separate immutable action-update task. PRODUCTION NO-GO.
