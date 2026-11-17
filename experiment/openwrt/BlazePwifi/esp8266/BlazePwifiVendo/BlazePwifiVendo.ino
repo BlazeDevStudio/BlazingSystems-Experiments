@@ -191,17 +191,26 @@ bool markPendingPostAttempt(){
   record.checksum=pendingChecksum(record);
 
   const char *pendingPaths[]={"/pending.dat","/pending.new","/pending.bak"};
-  bool durablePendingMatches=false;
+  unsigned candidateCount=0;
+  const char *candidatePath=nullptr;
   for(size_t i=0;i<sizeof(pendingPaths)/sizeof(pendingPaths[0]);++i){
     if(LittleFS.exists(pendingPaths[i])){
-      PendingRecord durable{};
-      if(readPendingFile(pendingPaths[i],durable) &&
-         samePendingRecord(record,durable)) durablePendingMatches=true;
+      ++candidateCount;
+      candidatePath=pendingPaths[i];
     }
   }
-  if(!durablePendingMatches){
+  // Never dispatch against one matching record while another candidate could
+  // represent a different unpaid coin or an ambiguous interrupted rotation.
+  if(candidateCount!=1 || !candidatePath){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: no matching durable pending record; coin POST denied.");
+    Serial.println("CRITICAL: exactly one durable pending journal is required before coin POST; coin POST denied.");
+    return false;
+  }
+  PendingRecord durable{};
+  if(!readPendingFile(candidatePath,durable) ||
+     !samePendingRecord(record,durable)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: durable pending journal does not match the coin POST attempt; coin POST denied.");
     return false;
   }
 
