@@ -1,14 +1,17 @@
-# PHX-HARDWARE — latest continuation checkpoint (2026-11-17 UTC11)
+# PHX-HARDWARE — latest continuation checkpoint (2026-11-17 UTC14)
 
-> **DRAFT #318 · FIRMWARE SOURCE FIX CI VERIFIED AT 5d3dc554 · TEST-FIXTURE STATIC RED/GREEN ONLY · NEW EXACT-HEAD CI NOT YET VERIFIED · PHYSICAL ACCEPTANCE NOT TESTED · PRODUCTION NO-GO**
+> **DRAFT #318 · ACTUAL PRODUCTION LOOP HOST LAB CI VERIFIED · FULL VALIDATION FAILED · PHYSICAL ACCEPTANCE NOT TESTED · PRODUCTION NO-GO**
 >
-> Current branch head: `50094d6231ed67d51c74f8a7eeaa35413d1e20b6`  
-> Firmware source-fix head: `5d3dc5547606841209ade10c888dab67e1ffcaa7`  
-> Parent #317 current head: `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`
+> Source/test head: `9873f0ff72ec009ecba89c39b3a783360ec69427`  
+> Current parent #317 head: `4496124580a11f8bdd88c2e5adcdfb86e824b978`  
+> PR #318 merge base: `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`  
+> Current comparison: 31 ahead / 27 behind; diverged; `mergeable=false`.
 >
-> UTC11 test-only correction: the synchronous-poll scenario previously rewound fake time from the 250 ms quiet-window completion to 120 ms. It now places the pulse at 300–380 ms, samples at 320 ms, and ends the simulated timeout at 3600 ms. Local static RED/GREEN comparison is recorded in [the narrow handover](docs/handover/2026-11-17-hw-poll-inhibit-pulse-drain.md). No firmware runtime code changed. The corrected lab has not yet received new exact-head GitHub Actions evidence. A follow-up corrected the timeline guard's C++ comment marker from `#` to `//`; local static RED/GREEN was repeated at `6fda96a7151cd8b55bbcb1781adfcda822f41d3e`, still not Actions or C++ compilation.
+> New `poll_loop_blocking_inhibit_lab.py` compiles the actual production loop and output/poll-window helpers from ESP8266 and ESP32 with only external I/O stubbed. Focused [#44107560083](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107560083), job `134123947096`, passed 7/7 actual-loop scenarios per board and rejected three deliberate regressions per board. The simulated HTTP wait is 3.5 seconds; relay-off and inhibit state are asserted during an injected pulse.
 >
-> PR #318 remains a stacked DRAFT with 17 commits ahead / 8 behind current #317; no rebase, force-push, merge or deployment is authorized.
+> Full [#44107559842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107559842) failed at QA-owned `Missing poll signature check`; ESP32/ESP8266 compile passed and Android was still running at last observation. No unapproved positive poll signature was restored.
+>
+> PR #318 remains a DRAFT stacked child. Its branch is not in current Master ROLE_ASSIGNMENTS.md and diverges from the latest parent #317. Do not rebase, merge or force-push without Master reconciliation. Physical relay/coin, 150 power-cut, 30-device soak and electrical pulse acceptance remain NOT TESTED.
 
 # PHX-HARDWARE — poll inhibit pulse-train quiet follow-up (2026-11-17 UTC10)
 

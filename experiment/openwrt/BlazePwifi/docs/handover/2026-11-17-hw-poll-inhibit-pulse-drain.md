@@ -1,3 +1,70 @@
+## UTC14 — actual production loop under blocked-poll pulse fault injection
+
+**Source/test HEAD:** `9873f0ff72ec009ecba89c39b3a783360ec69427`  
+**Current parent #317 HEAD:** `4496124580a11f8bdd88c2e5adcdfb86e824b978`  
+**PR #318 merge base:** `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`  
+**PR #318 comparison:** 31 commits ahead / 27 behind; diverged; GitHub reports `mergeable=false`. Do not rebase, force-push, cherry-pick or merge without PHX-MASTER stack reconciliation.
+
+### Test coverage added
+
+New hardware-owned lab: `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py`.
+
+The lab extracts the actual production `loop()`, `writeLogical()`, `applyOutputs()`, `coinLineIdle()`, `canStartPoll()`, `coinLineQuietAfterInhibit()` and `beginPollWindow()` functions from both board sketches. It does not substitute a re-created loop. Only external Wi-Fi, HTTP, GPIO, clock and persistence boundaries are stubbed.
+
+The HTTP stub holds the actual extracted loop for 3,500 ms and injects an input pulse 50–130 ms into that blocked interval. It records relay state and `pollIntakeSuspended` while the pulse is active.
+
+Per board, **7/7 actual-loop scenarios PASS**:
+1. Poll starts only after 250 ms continuous quiet.
+2. Relay is off before the poll call and remains off during the 3.5 s wait.
+3. Poll inhibition remains asserted during the wait.
+4. Default-deny response leaves relay/LED off and clears stale positive insert state.
+5. Active-low pulse during drain cancels poll and is recorded by the normal loop.
+6. Active-high pulse during drain cancels poll and is recorded by the normal loop.
+7. Pulse exactly at the 250 ms boundary cancels poll; pending-ready, recovery-latched and filesystem-unavailable gates deny polling.
+
+Three mutations were rejected on **both** boards:
+- remove `beginPollWindow()` from the production loop;
+- remove `!pollIntakeSuspended` from the production output gate;
+- reduce the 250 ms quiet window to 249 ms.
+
+### Exact focused Actions evidence
+
+- Workflow: [#44107560083](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107560083)
+- Job: `134123947096`
+- Exact checked-out SHA: `9873f0ff72ec009ecba89c39b3a783360ec69427`
+- Result: **SUCCESS**
+- Log markers: `POLL_LOOP_INHIBIT_PASS 7/7` for ESP8266 and ESP32; all six board-specific mutation injections rejected (three per board); timeline guard PASS; inherited poll-window suite 13/13 per board and final-quiet-sample mutation rejected.
+
+Evidence classification: **SIMULATED / CI VERIFIED** only. Workflow explicitly emitted `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0` and `PHYSICAL_POWER_CUT_VERIFIED=0`. No physical coin acceptor, relay contact, electrical timing or power interruption was tested.
+
+### Full build status at this checkpoint
+
+- Full build [#44107559842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107559842), exact head `9873f0ff72ec009ecba89c39b3a783360ec69427`.
+- Validation job `134124132471`: **FAILED** at QA-owned legacy controller parity assertion, exact log: `Missing poll signature check` in the ESP8266 sketch.
+- ESP8266 and ESP32 compile jobs passed. x86_64, Ruijie and listed Orange Pi build jobs had passed at last observation; Android was still in progress. Production signing/import and update/release jobs were skipped.
+- Do not restore an unapproved positive `response_sig` path to satisfy this inherited assertion. Master §6.3/§6.7 keeps poll admission default-deny until PHX-CORE publishes the canonical producer/consumer contract and PHX-QA approves exact vectors.
+
+### Live coordination and provenance
+
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- Master coordination branch: `e9e54ca4ac48dd7da72e8093bd252a94b6d31a5c`.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Parent PR #317: `4496124580a11f8bdd88c2e5adcdfb86e824b978`.
+- Parallel hardware refs revalidated: #239 `d83b715b...`; #254 `4054fbcc...`; #283 `a8756729...`; #316 `888e6941...`.
+- Master `ROLE_ASSIGNMENTS.md` still lists #239/#254/#283 for HARDWARE and does not list #317/#318; control-plane #172 body still has an older Master head. The current #318 branch is therefore **not yet reconciled in the canonical role index**.
+- Root README/AGENTS still use historical `BlazingSystems` links although the live repository owner is `BlazeDevStudio`. BlazePwifi README says production 0.3.0 while the safety issue #34 records 0.5.3 as the frozen baseline; this documentation mismatch was not changed.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains inaccessible through the exposed tool surface. Exact-name Library search did not return v11; older registry snapshots were not substituted.
+
+### Ownership and next actions
+
+- **PHX-MASTER:** explicitly register/reconcile #318 and its 31-ahead/27-behind divergence against current #317; update #172/#266 only from current exact heads.
+- **PHX-QA:** repair the owned legacy positive poll-signature assertion and canonical extractor to test the current default-deny behavior; independently rerun Full at the exact combined candidate SHA.
+- **PHX-CORE:** publish the canonical authenticated poll, event-bound receipt/disposition and replay contract before any positive admission.
+- **PHX-HARDWARE:** retain the 250 ms guard and default-deny; do not claim pulse-loss closure until owner-approved noncustomer bench measurements verify relay/acceptor timing and power recovery.
+
+No production firmware behavior changed in this UTC14 test-coverage task. No merge, rebase, force-push, flash, device reset, live coin, financial migration, signing, release tagging or deployment occurred. **PRODUCTION NO-GO.**
+
+
 # PHX-HARDWARE handover — poll inhibit pulse-train quiet guard
 
 ## UTC11 — poll-window fixture chronology correction (test-only)
