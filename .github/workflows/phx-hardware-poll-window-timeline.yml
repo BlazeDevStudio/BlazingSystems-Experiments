@@ -8,6 +8,13 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-poll-window-timeline.yml"
+  pull_request:
+    branches:
+      - phoenix/hardware-clear-pending-marker-match-20261117
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
+      - ".github/workflows/phx-hardware-poll-window-timeline.yml"
 
 permissions:
   contents: read
