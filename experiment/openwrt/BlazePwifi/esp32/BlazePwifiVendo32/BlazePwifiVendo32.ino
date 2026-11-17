@@ -468,7 +468,7 @@ bool quarantineLogRecordValid(const char *line,const char *identity,bool &sameId
   }
 
   cursor=reasonField+8;
-  if(*cursor=='\\0') return false;
+  if(*cursor=='\0') return false;
   const size_t reasonLength=strlen(cursor);
   if(reasonLength>128) return false;
   for(const char *p=cursor;*p;++p){
@@ -496,9 +496,9 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
     int next=prior.read();
     if(next<0){ valid=false; break; }
     ++readCount;
-    if(next=='\\n'){
+    if(next=='\n'){
       if(lineLength==0){ valid=false; break; }
-      line[lineLength]='\\0';
+      line[lineLength]='\0';
       bool sameIdentity=false;
       if(!quarantineLogRecordValid(line,identity,sameIdentity)){
         valid=false;
@@ -511,7 +511,7 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
         alreadyRecorded=true;
       }
       lineLength=0;
-    } else if(next=='\\0' || lineLength+1>=sizeof(line)){
+    } else if(next=='\0' || lineLength+1>=sizeof(line)){
       valid=false;
     } else {
       line[lineLength++]=(char)next;
