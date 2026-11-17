@@ -172,3 +172,18 @@ No production .ino, financial contract, controller API, receipt, migration, or r
 - Full validation [run #44161916884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44161916884), validation job 134317874964: **FAILED** in QA-owned tests/controllers.sh with Missing poll signature check. At the last observation, Android, ESP32/ESP8266 and several target-image jobs were still in progress/queued. No complete target-matrix result is claimed; production import/signing/update/release steps were skipped.
 
 **Limits and next action:** focused evidence is source-extracted C++17 with fake LittleFS/GPIO only. First-file creation semantics are modeled, not measured on physical LittleFS. Physical coin/relay/electrical acceptance, 150 controlled power cuts, 30-device 24-hour soak, signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED/BLOCKED. Keep poll and coin admission default-deny. PHX-QA owns the stale controller assertion; PHX-MASTER owns role-index and #317/#318 stack reconciliation. **PR #317 remains DRAFT / UNMERGED / PRODUCTION NO-GO.**
+
+
+## UTC19 — PHX-HARDWARE stack proposal for #317 / #318
+
+**Live comparison at proposal time:** #317 HEAD 13dab88d443a5b9432f6cd46292af5a5df742204 versus #318 HEAD be371b03a36306a7691b411bf1b29da60b916646. GitHub compare reports **DIVERGED, 49 ahead / 48 behind**, merge base 3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3; PR #318 is mergeable=false. The #318 current-head Actions query returned one Full build only; no current-head PHX-HARDWARE child poll-window run was present.
+
+**Proposal — preserve #317 as canonical parent; do not integrate #318 wholesale.**
+
+1. Keep #317 as the canonical safety parent. It contains the newer pending-attempt marker, quarantine append/readback, pending-clear protections, default-deny behavior and current exact-source focused evidence. It remains DRAFT and unmerged.
+2. Keep #318 as a separate experimental child candidate. Do not rebase, cherry-pick, force-push, merge, close, or copy its whole sketches/test tree without Master approval.
+3. If PHX-MASTER and PHX-QA approve the concept, create a fresh child from the then-current #317 head and reimplement only the reviewed ISR edge-snapshot/fault-latch delta. Do not transplant the child firmware sketches or its older poll-response lab wholesale; they overlap the parent sketches and would reintroduce stale source.
+4. Before any such child is considered integration-ready, add exact-source tests for: marker-open failure followed by reboot; short-write/readback failure followed by reboot; pulse between final drain sample and loop sampling; pulse after drain but before poll snapshot; interrupt attachment on every allowed runtime coin pin; and proof that an edge fault never authorizes POST, clear, or positive poll admission.
+5. The current child implementation has a specific durability limit: latchPollPulseFault sets journalRecoveryRequired in RAM, but if writePollPulseFaultMarker cannot open/create the file, the fault marker is absent after reboot. Its existing lab scenario 21 verifies same-boot denial only; it does not verify reboot recovery after marker-open failure. The marker is also a diagnostic edge-count/millis record, not an event-bound pending coin journal or financial receipt. These are unresolved acceptance questions, not claims that the child is safe to integrate.
+
+**Requested Master decision:** confirm #317 as parent and authorize (or reject) a new minimal #317-based child for the ISR edge snapshot. Until that decision and independent QA review, #318 remains isolated and #317 remains the only candidate to continue validating. No stack rewrite was performed in this activation.
