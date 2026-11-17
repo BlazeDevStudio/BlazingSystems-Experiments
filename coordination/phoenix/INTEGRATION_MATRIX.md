@@ -381,3 +381,37 @@ The #315 source now has the durable one-shot `/pending.attempt` marker and exact
 Before any coin POST, the controller must durably write, flush, close, and read back an attempt marker bound to the pending record. A marker found after reboot (matching, malformed, mismatched, or orphan) blocks automatic replay. Clear the pending record first and the marker last, only after authoritative receipt or durable quarantine disposition. This client fence does not replace server idempotency and remains pending PHX-CORE/PHX-QA review and physical power-cut evidence.
 
 Production remains STRICT NO-GO.
+
+## 7. Live coin POST disposition authority and exact-head reconciliation — 2026-11-17 UTC07
+
+**Exact refs:** Experiments main `f4e8a891...`, v0.5.3 development `aad3aade...`, v0.6 audit foundation `2fbd2475...`, Master #288 pre-change `c121d651...`; COE main `a6513ab4...`, COE #26 `b382d233...`.
+
+| Role | Current open draft(s) / exact head | Exact-head CI observation | Gate state / next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 `c121d651...` before this update | No PR-triggered workflow runs; targeted source-intake tests 11/11 PASS locally; full Master suite NOT RUN | Coordination-only; maintain architecture and migration holds |
+| PHX-CORE | #252 `c82705f2...`; #241 `8aa2529a...`; #248 `a1f80f30...` | #252 run 42698139210 SUCCESS; #241 run 40813818877 FAILURE; #248 run 40882042148 FAILURE | Publish authenticated event-bound coin receipt/disposition contract and idempotency vectors; no Master source edits |
+| PHX-RENTAL | #240 `a7d113fb...`; #287 `a4fffd01...`; #289 `68928774...` | #240 runs 40910311141/40910311159 SUCCESS; #287 43754089203 SUCCESS; #289 43653329235/43653329229 SUCCESS | Scoped software evidence only; physical Device Owner/lease acceptance remains outstanding |
+| PHX-PISONET | #255 `d01fd164...` | Run 42462978704 SUCCESS | Native COM/serial physical acceptance NOT TESTED |
+| PHX-HARDWARE | #315 `4afc7c8bd8ea410049f1da7bc962bfc989b4ba1b`; separate #316 `888e6941...`; older #283 `a8756729...` | #315 focused 44038469936 SUCCESS; full 44038469823 FAILURE in validation job 133887096342; #316 focused 43972511337 SUCCESS/full 43972511250 FAILURE; #283 43634101437 SUCCESS | #315 is current owner candidate; no Master firmware edits. Full validation blocked by stale QA extractor. Current coin POST verifier returns false until approved receipt contract |
+| PHX-QA | #267 `ff536799...`; #279 `8f476ef0...`; #292 `75a3f66d...` | #267 41452247439 SUCCESS; #279/#292 no workflow runs returned | Repair extractor for current #315 dependencies and independently test both-board receipt vectors |
+| PHX-RELEASE | #242 `734b89d9...`; #291 `2c4edff2...` | #242 40882814472 SUCCESS; #291 43744993487 SUCCESS | Scoped Windows CI only; signing/publisher gates remain closed |
+| COE integration owner | COE #26 `b382d233...` | Five workflows remain QUEUED: 43096752609, 43096752632, 43096752800, 43096752563, 43096752557 | Keep draft; reconcile source/destination blobs, imports, tests and license scope before any move |
+
+### 7.1 Current coin POST disposition hold
+
+At exact #315 source blobs ESP8266 `e47d392e...` and ESP32 `5de92f01...` (both mode `100644`), `coinPostDispositionVerified()` returns false until an approved authenticated receipt contract exists. The source persists and readback-verifies `/pending.attempt` before POST and retains the pending evidence on every unapproved response.
+
+COE #26 still stages ESP8266 `c8be98f7...` and ESP32 `3cc7ec54...` (both mode `100644`). Neither pair is byte-identical. The destination lacks the attempt marker and disposition verifier, retains keyless-positive response paths and the prior destructive quarantine-clear mismatch. COE `Hardware/tests/` has only one shell hardening script; it does not import the current source lab.
+
+**Migration decision:** no copy, overwrite, relocation, merge or promotion. Keep COE #26 draft. Exact full blob identities, sizes, test identity and CI are in [the UTC07 audit](COIN_POST_DISPOSITION_AUTHORITY_AUDIT_20261117_UTC07.md).
+
+### 7.2 CI/test interpretation and release gates
+
+The #315 focused run is source-extracted host/fake-filesystem evidence only: 34/34 host scenarios passed, coin disposition default-deny 4/4 per board, pending attempt marker 19/19 per board. The log explicitly reports physical coin acceptance and power-cut verification as zero. The full #315 workflow is failed because the QA-owned extractor omits five current firmware dependencies; ESP target builds passing does not turn that workflow green.
+
+The PHX-MASTER source-intake test file executed locally at its exact fetched source/test blobs: 11/11 passed. This is not the complete Master suite or cross-repository acceptance.
+
+COE #29, #28 and #30 have scoped successes at their pinned heads, but they do not validate the combined #26 tree. Historical financial issues #31/#32, witness #43, hardware acceptance #34 and pulse issue #177 remain open.
+
+**PRODUCTION NO-GO:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration, independent QA, native acceptance, 150 real power cuts and a 30-device/24-hour soak remain mandatory.
+
