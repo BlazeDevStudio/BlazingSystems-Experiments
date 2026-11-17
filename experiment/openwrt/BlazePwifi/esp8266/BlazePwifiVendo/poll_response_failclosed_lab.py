@@ -377,11 +377,14 @@ int main(){
     // the response is checked and the loop releases pollIntakeSuspended.
     resetState();
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn || ledOn) return 19;
+    const uint32_t pollStartedAt=fakeNow;
+    if(pollStartedAt!=250) return 26;
     pulseStart=300; pulseEnd=380;
-    if(pulseStart<250) return 24;
-    fakeNow=320; // pulse is active after the 250 ms quiet window
+    if(pulseStart<(int)pollStartedAt) return 24;
+    fakeNow=pollStartedAt+70; // pulse is active after the 250 ms quiet window
     if(coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
-    fakeNow=3600; // 3.5 s synchronous HTTP timeout has elapsed
+    fakeNow=pollStartedAt+3500; // complete synchronous HTTP timeout has elapsed
+    if(fakeNow-pollStartedAt!=3500) return 27;
     if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
        !relayOffObservedWhileSuspended) return 21;
 
