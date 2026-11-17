@@ -241,7 +241,7 @@ int main(){
          disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired") == std::string::npos)) ||
        (scenario==34 && (disk.logExists || !disk.bytes.empty())) ||
        (scenario==35 && (disk.bytes.empty() || disk.bytes[0]!='U' ||
-         disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired\\n")==std::string::npos)) ||
+         disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired\n")==std::string::npos)) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
