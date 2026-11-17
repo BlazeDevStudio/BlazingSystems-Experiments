@@ -40,3 +40,12 @@ No controller API, response-signature formula, receipt schema, finance, migratio
 **Regression expansion:** the hardware-owned source-extracted lab now has 19 scenarios per board / 38 total, including nonnumeric and uint32-overflow timestamps. The board runner reports both board results. Exact-head GREEN CI is pending; the prior RED remains preserved.
 
 **Limits:** fake LittleFS readback is not proof of flash power-loss durability. Physical coin/relay, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, signer/witness, durable accounting/replay, migration, independent QA and release acceptance remain NOT TESTED/BLOCKED. PR #315 remains DRAFT / UNMERGED / PRODUCTION NO-GO.
+
+
+## Exact-head evidence — malformed timestamp regression (2026-11-17 UTC07)
+
+The test-first commit af0ee82becb2a005c9a2ffc16d8d79e7c6a91b5b added malformed and overflow timestamp cases. [Focused RED run #44041100586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041100586), job 133895620908, failed at scenario 17 as intended.
+
+Source commit efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 corrected both board parsers. [Focused exact-head run #44041398477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398477), job 133896584393, **SUCCESS**: 19/19 quarantine scenarios per board / 38/38 total, plus inherited source-extracted suites.
+
+[Full run #44041398463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398463) validation job 133896701236 **FAILED** in QA-owned poll-loop extraction because it omits five current production dependencies. The QA files were not modified. The focused fake-LittleFS result is SIMULATED/CI VERIFIED only; physical power-cut durability is NOT TESTED.

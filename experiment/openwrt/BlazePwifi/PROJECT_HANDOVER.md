@@ -748,3 +748,20 @@ All of these are source-extracted C++ host/fake-LittleFS simulations, not physic
 **Required cross-role contract:** PHX-CORE must define an event-bound authenticated coin receipt and negative disposition binding controller identity, request nonce, event nonce, target, pulse count, disposition, unique receipt ID, freshness/expiry and key version, including idempotency/replay semantics and canonical serialization. PHX-QA must publish independent positive/negative golden vectors and power-loss/replay cases. PHX-MASTER must approve the contract. Only then may PHX-HARDWARE replace the default-deny helper with a real verifier. Until that happens, coin POST disposition remains intentionally disabled and this branch is not operationally accepted.
 
 No flash, reset, live coin, relay bench, 150 power cuts, 30-device soak, electrical pulse test, production migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+
+
+<!-- PHX-HARDWARE-20261117-QUARANTINE-TIMESTAMP-VALIDATION:START -->
+## PHX-HARDWARE — quarantine-log timestamp validation (2026-11-17 UTC07)
+
+**Defect reproduced:** the prior inspectQuarantineLog parser accepted any token after TIME=. A complete-looking line with a matching PULSES/NONCE/TARGET/REASON identity but a nonnumeric timestamp could be counted as an existing quarantine record; quarantinePending would then clear the pending coin record without a valid firmware-generated record.
+
+**Test-first RED:** [run #44041100586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041100586), job 133895620908, test-only SHA af0ee82becb2a005c9a2ffc16d8d79e7c6a91b5b. The source-extracted C++17 fake-LittleFS lab failed at scenario 17 on the malformed timestamp case.
+
+**Source correction:** commit efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 updates both ESP sketches. inspectQuarantineLog now accepts only canonical decimal uint32 millisecond timestamps (1–10 digits, no leading zero except zero, overflow checked). Invalid/overflowed timestamps fail log inspection, latch journalRecoveryRequired through the existing append path, retain pending evidence and deny automatic POST retry. No receipt/API/finance/crypto contract changed.
+
+**Exact-head focused CI:** [run #44041398477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398477), job 133896584393, exact SHA efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 — **SUCCESS**. Quarantine readback: 19/19 scenarios per board, 38/38 total. Existing poll/register, pending-marker, mount/output, journal-recovery, pending-clear, write/readback and coin-POST-gate labs also passed. Logs explicitly retain SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0 and FINANCIAL_PRODUCTION_AUTHORIZED=0.
+
+**Full workflow:** [run #44041398463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398463), validation job 133896701236 — **FAILED**. The QA-owned extracted-loop harness omits pendingPostAttempted, acceptPollResponse(), markPendingPostAttempt(), coinPostDispositionVerified() and pollJsonTopLevelTrue(). PHX-HARDWARE did not modify QA-owned tests or workflows. Several target jobs were still running at checkpoint time; no Full success is claimed.
+
+Only the narrow hardware handover and this project ledger were updated. CURRENT_STATE.md and CHANGE_LEDGER.md are not present on this branch; no historical branch was imported to create them. No physical flash, relay/coin test, power-cut trial, soak, live payment, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+<!-- PHX-HARDWARE-20261117-QUARANTINE-TIMESTAMP-VALIDATION:END -->
