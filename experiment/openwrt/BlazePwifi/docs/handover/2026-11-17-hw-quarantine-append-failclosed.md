@@ -146,3 +146,29 @@ All quarantine and parity evidence is **SIMULATED / CI VERIFIED** with source-ex
 Master's latest draft role assignment at #288 head 5e11daf8d9a65659e92030df94b212eb9e28d21f still lists #239/#254/#283 but does not list the active #317/#318 stack (rechecked after the UTC15 Master update). PR #318 remains a separate divergent child at a497403bd3886caf105585c0da997a100ad61dc3, mergeable=false, based on stale merge base 3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3. No rebase, cherry-pick, merge or force-push was performed.
 
 **Next:** PHX-MASTER reconciles #317/#318 in ROLE_ASSIGNMENTS and resolves the child stack; PHX-QA replaces the obsolete positive poll-signature assertion with source-linked default-deny cases and reruns Full; PHX-HARDWARE preserves the deny state and awaits approved noncustomer physical acceptance.
+
+
+## UTC19 — first-ever quarantine log creation and absent-file append failure
+
+**Coverage gap:** the source-extracted fake LittleFS always reported /quarantine.log as existing. The production path where no quarantine log exists had not been exercised, even though first-ever quarantine is a normal lifecycle path.
+
+**Test-only correction in the existing hardware-owned PR #317:**
+
+- Fake LittleFS now models logExists independently from its byte contents.
+- exists("/quarantine.log") is false until append mode creates the file.
+- Read-open refuses an absent file; append-open creates it only when the injected open failure is not active.
+- Scenario 33 starts with no log, performs the first append, verifies the new record bytes, and requires successful disposition only after readback.
+- Scenario 34 starts with no log and injects append-open failure; it requires no file creation, no byte mutation, no pending clear, a same-boot recovery latch, no POST eligibility, and a hard stop when the simulated volatile latch is lost while the open failure persists.
+- Existing scenarios continue to cover existing-log append-open failure, short write, verification-open failure, same-size corruption, readback mutation, over-capacity logs, malformed prior records, identity mismatch, and pending-clear refusal.
+
+No production .ino, financial contract, controller API, receipt, migration, or release workflow was changed. This is a test-harness coverage improvement, not a claim that physical LittleFS durability is proven.
+
+**Intermediate test-run correction:** initial test commit c4b09646d662c6b6972266ee37d887c3324b7d49 passed the new 35/35 source-extracted scenarios per board, but its additional mutant-harness assertion failed to detect the injected unconditional-clear mutant. That extra assertion was removed in 3c7d770845388b12f37072d6ced80a1a7561aae6; the actual append-open failure scenarios remain in the normal matrix and directly require clearCount==0 and unchanged pending evidence. The failed intermediate run is preserved, not represented as a green run.
+
+**Final focused exact-source evidence at 3c7d770845388b12f37072d6ced80a1a7561aae6:**
+
+- Quarantine/readback [run #44161916932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44161916932), job 134317697702: **SUCCESS**. Both ESP32 and ESP8266 report SOURCE_QUARANTINE_PASS 35/35; aggregate 70/70. The same workflow also passed pending-attempt marker 28/28 per board, mount 7/7 per board, boot recovery 16/16 per board, pending-clear 17/17 per board, write/readback 22/22 per board, coin POST gate 10/10 per board, and poll-window 11/11 per board. Logs explicitly report SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0, and FINANCIAL_PRODUCTION_AUTHORIZED=0.
+- Relay-output [run #44161916911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44161916911), job 134317697668: **SUCCESS**, 48/48 per board; inverted-polarity and removed-poll-inhibit mutations rejected. Child-only poll-window steps were skipped on this parent stack.
+- Full validation [run #44161916884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44161916884), validation job 134317874964: **FAILED** in QA-owned tests/controllers.sh with Missing poll signature check. At the last observation, Android, ESP32/ESP8266 and several target-image jobs were still in progress/queued. No complete target-matrix result is claimed; production import/signing/update/release steps were skipped.
+
+**Limits and next action:** focused evidence is source-extracted C++17 with fake LittleFS/GPIO only. First-file creation semantics are modeled, not measured on physical LittleFS. Physical coin/relay/electrical acceptance, 150 controlled power cuts, 30-device 24-hour soak, signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED/BLOCKED. Keep poll and coin admission default-deny. PHX-QA owns the stale controller assertion; PHX-MASTER owns role-index and #317/#318 stack reconciliation. **PR #317 remains DRAFT / UNMERGED / PRODUCTION NO-GO.**
