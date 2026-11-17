@@ -247,5 +247,17 @@ subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
 subprocess.run([sys.executable, str(register_lab)], check=True)
 attempt_marker_lab = ROOT / "esp32/BlazePwifiVendo32/pending_attempt_marker_lab.py"
-subprocess.run([sys.executable, str(attempt_marker_lab)], check=True)
+attempt_marker_result = subprocess.run(
+    [sys.executable, str(attempt_marker_lab)],
+    capture_output=True, text=True,
+)
+print(attempt_marker_result.stdout, end="")
+if attempt_marker_result.stderr:
+    print(attempt_marker_result.stderr, file=sys.stderr, end="")
+if attempt_marker_result.returncode:
+    raise SystemExit(attempt_marker_result.returncode)
+if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 19/19") != len(BOARDS):
+    raise SystemExit("PHX-HARDWARE: attempt-marker per-board summary count mismatch")
+if "PHX-HARDWARE: 19/19 source-extracted cases per board (38/38 total) PASS" not in attempt_marker_result.stdout:
+    raise SystemExit("PHX-HARDWARE: attempt-marker aggregate summary mismatch")
 
