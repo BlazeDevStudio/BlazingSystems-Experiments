@@ -124,3 +124,23 @@ This snapshot supersedes earlier live-status tables for the observed heads only;
 | PHX-RELEASE | [#242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242) `734b89d9e7792247e8376335c3f3685500ab3f89`; [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) `2c4edff231d9b2819415086825530d80b8801307` | #242 run 40882814472 success; #291 run 43744993487 success. These do not authorize signing or publication. |
 
 COE integration [#26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12`; all five candidate-head workflows remain queued (43096752609, 43096752632, 43096752800, 43096752563, 43096752557).
+
+
+
+## Live role routing snapshot — 2026-11-17 UTC00
+
+This snapshot updates PR pointers and evidence only; ownership boundaries remain unchanged. PHX-MASTER did not modify CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches.
+
+| Role | Current source PR / head | Current COE draft(s) | Evidence / owner next action |
+|---|---|---|---|
+| PHX-MASTER | #288 / 3d3634dfab35d9f427e159b7d392194edda37930 before this snapshot | #26 integration remains b382d233ff06c8791b1028bed3c617cc7b670d12 | No Master PR-triggered CI. Master owns coordination/phoenix only. |
+| PHX-CORE | #252 / c82705f2de865c89ab733b10efa84f26f56a5cc4 | COE #29 / d0830332dee8a1844a85606150681b41d91fe796 | Experiments run 42698139210 success; COE runs 43653906675/676 success. CORE owns key provisioning, signature, replay and durable ledger semantics. |
+| PHX-RENTAL | #289 / 68928774d0d7cf65adb26bc6b54199a3159d066c | COE #19 / 04c97030096aa5e5a854952e0cc377ffe31d5d07 | Experiments runs 43653329235/229 success; COE 43061768902 case-collision only. |
+| PHX-PISONET | #255 / d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | COE #28 / b21b04617d38a177260258de2d56b24382822117; COE #30 / 4897348d94a0cf7884ecd53244bfcd59e7bf2fbc | Experiments run 42462978704 success; COE runs 43632393888 and 43653415598 success. Synthetic CI only; no native COM acceptance. |
+| PHX-HARDWARE | #315 / 939e6ae09050e3e7244249acf9c7969301a05363; #316 / 888e6941e3a7a81641682c23d937f97d8117d2ea remains open draft | COE #27 / 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 | #315 focused 43982762795 success, full 43982762668 failed in validation; #316 focused 43972511337 success, full 43972511250 failed. COE #27 runs 43079646393/46264 success. Reconcile #315/#316, deny keyless poll admission, preserve durable rejected-event state. |
+| PHX-QA | #292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96; older #267 / ff5367990c2d27b8ebbb822ee208251af0c890e2 | COE #32 / 29b6fe08b10688182d981a66745f482758bd6630 | #292 has no PR-triggered workflows; #267 run 41452247439 success; COE #32 run 43653540607 success. QA must add acceptPollResponse to the extractor and test empty-key denial and reboot/failure cases. |
+| PHX-RELEASE | #291 / 2c4edff231d9b2819415086825530d80b8801307 | COE #31 / f4f93dd7c5e18eab1a653f1f756eb1dbb0a234ab | Experiments run 43744993487 success; COE #31 validation/ESP32/ESP8266 run 43986022373 and case-collision run 43986022315 success. Synthetic packaging/compile only; no signer or physical release acceptance. |
+
+COE #18 PisoWiFi head 331e14bc63e163148f09813da0fdbf4d13581a19 has case-collision-only run 43061613277. COE #26 remains a draft at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows (43096752609, 43096752632, 43096752800, 43096752563, 43096752557). No COE role draft is accepted or merged by this snapshot.
+
+Private Drive registry v11 and newer corrections remain BLOCKED pending authorized Drive read access. Do not substitute historical v5-v7 Library files. Production remains NO-GO.
