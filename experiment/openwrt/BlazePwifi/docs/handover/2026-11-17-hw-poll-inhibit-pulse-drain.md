@@ -82,7 +82,7 @@ The existing exact-source lab now:
 - deliberately mutates the extracted production helper to use millis() < started + quietMs and requires the rollover case to fail;
 - retains the short-debounce mutation and all previous pulse-window scenarios.
 
-At final PR #317 HEAD 1f263114fe003a930028b7fa9610655b03336614:
+At source/test commit 1f263114fe003a930028b7fa9610655b03336614 (the code/test head before the handover-only documentation commit 366a975b26abff196ca002af88bda6f8124676b5):
 
 - Focused quarantine/poll-drain run #44145794015, job 134260428980: SUCCESS.
 - ESP8266: poll-window drain 10/10; short-debounce mutation rejected; unsafe absolute-deadline rollover mutation rejected.
@@ -96,3 +96,13 @@ This is a test-coverage improvement only; no firmware runtime source, poll contr
 PR #318 remains a separate divergent child with the poll-edge ISR snapshot work. The UTC18 PHX-HARDWARE checkpoint records that further child-stack integration is held pending PHX-MASTER reconciliation. No rebase, cherry-pick, merge or force-push was performed.
 
 **Production status: NO-GO.**
+
+### Exact PR-head workflow reconciliation after handover update
+
+At the subsequent documentation-only PR head 366a975b26abff196ca002af88bda6f8124676b5 (source/test SHA remains 1f263114fe003a930028b7fa9610655b03336614):
+
+- Focused quarantine/poll-drain [run #44146113898](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44146113898), job 134261558308: **SUCCESS**; ESP8266 10/10 and ESP32 10/10; both injected mutations rejected.
+- Relay output [run #44146113794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44146113794), job 134261558036: **SUCCESS**.
+- Full build [run #44146113976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44146113976), validation job 134261751855: **FAILED** at QA-owned tests/controllers.sh with “Missing poll signature check”. At 2026-11-17T18:20Z, 13 target jobs had passed and Android remained in progress; no complete target-matrix result is claimed. Production import/signing and release jobs were skipped.
+
+This addendum corrects the distinction between the exact source/test SHA and the documentation-only PR head. No production firmware runtime changed.
