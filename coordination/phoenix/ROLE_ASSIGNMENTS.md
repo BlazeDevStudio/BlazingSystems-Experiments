@@ -144,3 +144,20 @@ This snapshot updates PR pointers and evidence only; ownership boundaries remain
 COE #18 PisoWiFi head 331e14bc63e163148f09813da0fdbf4d13581a19 has case-collision-only run 43061613277. COE #26 remains a draft at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows (43096752609, 43096752632, 43096752800, 43096752563, 43096752557). No COE role draft is accepted or merged by this snapshot.
 
 Private Drive registry v11 and newer corrections remain BLOCKED pending authorized Drive read access. Do not substitute historical v5-v7 Library files. Production remains NO-GO.
+
+
+## Live role routing snapshot — 2026-11-17 UTC02
+
+Exact refs and CI below were refreshed from live PR heads and commit-linked workflow runs. Ownership boundaries are unchanged; this snapshot does not start or transfer work.
+
+| Role | Current Experiments PR / exact head | Current COE role PR / exact head | Exact-head CI observation and next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 / d047c49419c920a546ff9438f2fc9e708566f78a before this snapshot | Integration #26 / b382d233ff06c8791b1028bed3c617cc7b670d12 | No Master PR-triggered runs. Master owns coordination/phoenix only. |
+| PHX-CORE | #252 / c82705f2de865c89ab733b10efa84f26f56a5cc4 | #29 / d0830332dee8a1844a85606150681b41d91fe796 | Experiments 42698139210 success; COE 43653906676/43653906675 success. CORE must define and implement the canonical signed poll producer, key binding and durable rejected-event/replay semantics. |
+| PHX-RENTAL | #240 / a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #287 / a4fffd01c8fb1818c32a53522e0590c1dc8a77cd; #289 / 68928774d0d7cf65adb26bc6b54199a3159d066c | COE #19 remains the prior rental stack; not re-headed in this poll-specific audit | #240 runs 40910311141/40910311159 success; #287 43754089203 success; #289 43653329235/43653329229 success. No rental ownership changes. |
+| PHX-PISONET | #255 / d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | COE #28/#30 are existing Pisonet stacks; not re-headed in this poll-specific audit | Experiments 42462978704 success. Continue source/destination six-blob review; no native COM acceptance. |
+| PHX-HARDWARE | #314 / 556adc20ef0cfd355089aff3b979c0169af79bdd; #315 / b21d05822772e7c07299331d2a6a1670da2b077e; #316 / 888e6941e3a7a81641682c23d937f97d8117d2ea | #27 / 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 | #314 43782088731/43782088748 success; #315 focused 43997886923 success and full 43997886963 validation failure; #316 focused 43972511337 success and full 43972511250 validation failure. #315 is the reported consolidated stack; QA extractor still blocks full validation. Keep keyless denial and durable event disposition. |
+| PHX-QA | #267 / ff5367990c2d27b8ebbb822ee208251af0c890e2; #292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96; #279 / 8f476ef05893193325ef3d1f65a35e144ae7a568 | #32 / 29b6fe08b10688182d981a66745f482758bd6630 | #267 41452247439 success; #292/#279 no PR-triggered runs; COE #32 43653540607 success. Add acceptPollResponse to canonical extractor, test keyless/missing/bad/valid signatures and both-board stale-state cases at exact #315 SHA. |
+| PHX-RELEASE | #242 / 734b89d9e7792247e8376335c3f3685500ab3f89; #291 / 2c4edff231d9b2819415086825530d80b8801307 | #31 / f3f995c91e38b5c5908bf8910056523015c8f0fd | Experiments 40882814472/43744993487 success; COE 44002215761/44002215760 success. Scoped software checks only; no signer, publication or physical release acceptance. |
+
+COE integration #26 remains open/draft at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows. The private Drive registry v11 and newer corrections remain blocked pending authorized Drive access. No role branch, firmware, financial source, release workflow or migration target was modified by PHX-MASTER.
