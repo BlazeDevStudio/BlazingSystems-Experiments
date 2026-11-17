@@ -634,3 +634,34 @@ The source QA entrypoint `experiment/openwrt/BlazePwifi/tests/controllers.sh` is
 The source BlazePwifi subtree has an MIT LICENSE blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. COE #26 has the same blob under sibling `Pisowifi/LICENSE`, but no `Hardware/LICENSE`, `Hardware/NOTICE.md`, root `LICENSE`, or root `NOTICE.md` was found. Do not assume a sibling license covers `Hardware/`; owner/legal applicability and NOTICE mapping must be resolved before any move. The manifest remains `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null.
 
 No destination move, copy, overwrite, cherry-pick, rebase, merge or promotion is authorized. Keep #26/#31 and #317/#318 draft. **PRODUCTION NO-GO.**
+## 23. COE sandbox substrate, ULA and Hardware stack revalidation — 2026-11-17 UTC19
+
+| Candidate | Exact HEAD / evidence | Integration disposition |
+|---|---|---|
+| Experiments main / development | main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; blazepwifi-v0.5.3-development aad3aade72c1156eecba1fed30907c6d0283b2c5 | Development remains separate; no promotion |
+| COE main / #26 | main a6513ab4412b4c014eee2863e45cbe32d06cb243; #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Open/draft; five PR workflows queued, zero jobs; no combined acceptance |
+| COE RELEASE #31 | 390f2acc45969689caa00a4647d365b0122877ca | Path-relative mode regression corrected; shared/hardware 44158649108 and case 44158649064 SUCCESS; mandatory sandbox 44158649032 FAILURE at unprivileged UID-map setup (54 tests, 20 environment-induced failures); no runtime sandbox acceptance |
+| HARDWARE #317 | 7b42713376853337d622979df3a07d36ebc7b045; source/test 5f4aab0cf52854f550dae63c2f555558feed4130 | Focused poll-drain 44159494324 and relay 44159494397 SUCCESS; Full 44159479287 validation fails at stale positive poll-signature fixture; all 14 target builds pass; physical acceptance NOT TESTED |
+| HARDWARE child #318 | be371b03a36306a7691b411bf1b29da60b916646; base/merge-base 3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3 | DIVERGED 49 ahead / 45 behind current #317; mergeable=false; no current-head CI; keep separate/draft |
+
+### Exact Hardware staging parity
+
+| Artifact | Source #317 | COE #26 destination |
+|---|---|---|
+| ESP32 sketch | 6399b471460effe7817ec849b2f6a9ca271fbc57 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 |
+| ESP8266 sketch | b0aba5fb9d18a6c3a51f04eed3a52c1e85074d7b | c8be98f72596681e36a3ad1f8939bf8046c96887 |
+| Source QA entrypoint | controllers.sh f7896647713d6bf8034ff48ed19b6383e4dedea0 | Pisowifi/tests/controllers.sh absent |
+| Destination Hardware test | — | test_firmware_hardening.sh f921c56cecc19cab1989507b9b4ade1f45dac54e |
+| Destination README | — | Hardware/README.md 99af3e5b46cd8b6f35c6479b204683f60c55ebcb |
+
+Both destination firmware blobs differ from current #317. Destination sketches retain sigOk=true defaults and active applyRemoteConfig call sites; current source has no positive sigOk default and no active remote-config call. Destination test/README still expect poll signature and quarantine clear; current source preserves default-deny and quarantine evidence. The routed source controllers.sh has no exact destination at Pisowifi/tests/controllers.sh. No import-equivalence claim.
+
+Source BlazePwifi MIT license blob 1ee55b94183417be977ca287cd7391f9a6f7e721 equals COE Pisowifi/LICENSE, but Hardware/LICENSE, Hardware/NOTICE.md, root LICENSE and root NOTICE.md were not found. Legal applicability and NOTICE mapping remain unresolved.
+
+### Release and ULA holds
+
+COE #31 runner blob 7bf7ec5b2512704aca52bedd8ccc7067786533af includes bounded timeouts/process-group cleanup and invokes unprivileged single-ID bubblewrap. Exact sandbox run 44158649032 fails because the hosted runner denies UID-map setup. --share-net still shares the host network; read-only host-root bind still exposes host files. This is not network isolation/confidentiality.
+
+COE #31 packager blob 0763b1ea18ceff2fb9ccae212d5bb86a78119baf still emits invalid fd00:db8:blaze::/48; profile 6e797cf9c9922209efe4c0da49c49fa1da16c11a has no ula_prefix property and tests 18b13939b6d1e64477737c51f7b97acc1dc45169 have no ULA/IPv6 assertions. Keep §6.9 installation-scoped durable RFC 4193 /48 requirement.
+
+**No source/destination move, copy, overwrite, cherry-pick, rebase, merge or promotion is authorized.** `OWNERSHIP_ROUTES.json` remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. **PRODUCTION NO-GO.**

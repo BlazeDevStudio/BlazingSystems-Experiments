@@ -276,3 +276,16 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 - Canonical private Drive registry v11/newer corrections remain inaccessible through the exposed connector; no older snapshot was substituted and no private contents/IDs were published.
 
 **No destination file was moved, copied, overwritten, or deleted.**
+## Live routing and migration hold — 2026-11-17 UTC19
+
+- PHX-MASTER remains restricted to coordination/phoenix/, architecture/interface contracts, cross-repository provenance, integration matrices and release-gate coordination.
+- COE #26 remains the destination staging candidate at b382d233ff06c8791b1028bed3c617cc7b670d12; five PR-triggered workflows are queued with no jobs. COE #31 is RELEASE-owned at 390f2acc45969689caa00a4647d365b0122877ca and remains a separate draft child.
+- COE #31 source runner is unprivileged single-ID bubblewrap with bounded timeouts, but the hosted runner denies user-namespace setup. Infrastructure owner must authorize an ephemeral no-secret namespace-capable runner. No sudo/helper/broad-ID/unsandboxed fallback.
+- The invalid ULA fd00:db8:blaze::/48 remains in the packager; the EW1200G profile has no ula_prefix field and packaging tests have no ULA assertions. Preserve the site-scoped durable RFC 4193 /48 contract.
+- HARDWARE #317 source heads are 6399b471... (ESP32), b0aba5fb... (ESP8266), and f7896647... (controllers test). COE #26 destination blobs 3cc7ec54... / c8be98f... differ; source controllers.sh is absent at Pisowifi/tests/controllers.sh. Destination Hardware test/README retain positive poll and quarantine-clear expectations. No import-equivalence.
+- Source MIT license blob equals COE Pisowifi/LICENSE, but no Hardware-specific/root license or NOTICE was found. Resolve applicability and NOTICE mapping before any move.
+- HARDWARE #318 is a separate divergent child: current head be371b03..., current #317 parent 7b427133..., 49 ahead/45 behind, mergeable=false, no CI. No rebase/cherry-pick/merge until HARDWARE proposes stack direction and QA verifies exact source/test SHA.
+- `OWNERSHIP_ROUTES.json` remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. It is a review map, not a copy/move command.
+- Canonical private Drive registry v11/newer corrections remain inaccessible; no older snapshot was substituted and no private contents/IDs were published.
+
+**No destination file was moved, copied, overwritten or deleted.**

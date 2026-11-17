@@ -477,3 +477,25 @@ This snapshot supersedes prior role-head pins for this activation only. It is st
 **New stack decision:** #318 is now explicitly registered as a separate HARDWARE child candidate, not an untracked extension of #317. It shares the two firmware sketch paths but is 49 commits ahead / 40 behind current #317 and GitHub reports mergeable=false. No rebase, cherry-pick, force-push or merge until PHX-HARDWARE proposes a stack direction and QA reviews the selected exact source/test SHA. Preserve firmware default-deny.
 
 **Cleanup:** issue #266 remains OPEN and its checklist is not proof of completion. **Production remains NO-GO.**
+## Live exact role and stack refresh — 2026-11-17 UTC19
+
+This snapshot supersedes the UTC18 pins below for current work only. It does not transfer ownership or authorize migration.
+
+| Role / owner | Current exact PR head(s) | Exact-head CI / disposition |
+|---|---|---|
+| PHX-MASTER | #288 pre-audit 598481bfc2eb91efd1f6cb1ced96752de615973c; this UTC19 commit advances the same branch | Open/draft; all pre-audit 61 paths were under coordination/phoenix/; no Master CI run returned |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped; separate CORE automation retains implementation |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 / 43653329229 SUCCESS, scoped |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS, scoped; native COM acceptance unverified |
+| PHX-HARDWARE | #314 556adc20ef0cfd355089aff3b979c0169af79bdd; #315 84fe6b790139d147f330f13a40b3ae3e89a7042d; #316 888e6941e3a7a81641682c23d937f97d8117d2ea; #317 7b42713376853337d622979df3a07d36ebc7b045; child #318 be371b03a36306a7691b411bf1b29da60b916646 | #314 43782088731/43782088748 SUCCESS; #315 44054778537 SUCCESS / 44054778555 FAILURE; #316 43972511337 SUCCESS / 43972511250 FAILURE; #317 focused 44159494324/44159494397 SUCCESS, Full 44159479287 validation FAILURE at stale poll-signature fixture with 14/14 target builds SUCCESS; #318 no runs, DIVERGED 49 ahead/45 behind current #317, mergeable=false |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 43633486963 SUCCESS, scoped; #292 no runs returned (UNKNOWN); owns default-deny fixture correction and independent #31 review |
+| PHX-RELEASE | #291 2c4edff231d9b2819415086825530d80b8801307; COE #31 390f2acc45969689caa00a4647d365b0122877ca | #291 43744993487 SUCCESS, scoped; #31 shared/hardware 44158649108 and case 44158649064 SUCCESS; sandbox 44158649032 FAILURE at unprivileged UID-map setup |
+| COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12; #28 b21b04617d38a177260258de2d56b24382822117; #29 d0830332dee8a1844a85606150681b41d91fe796; #30 4897348d94a0cf7884ecd53244bfcd59e7bf2fbc; #32 29b6fe08b10688182d981a66745f482758bd6630 | #26 five PR-triggered runs queued, zero jobs; #28 43632393888 SUCCESS synthetic; #29 43653906676/43653906675 SUCCESS; #30 43653415598 SUCCESS synthetic with NSIS warning 6000; #32 43653540607 SUCCESS synthetic |
+
+**HARDWARE child stack hold:** #318 live PR metadata head is be371b03..., not the stale head in its PR description. Compare against #317 7b427133... is DIVERGED 49 ahead / 45 behind with mergeable=false and no current-head CI. Keep both drafts separate; HARDWARE must propose stack direction and QA must verify the selected exact SHA.
+
+**Release hold:** COE #31 current source has the unprivileged runner and bounded timeouts, but hosted Ubuntu denies user-namespace setup. A disposable no-secret namespace-capable runner is an infrastructure prerequisite; no privilege or unsandboxed fallback.
+
+**Migration hold:** current #317 source firmware/test blobs differ from COE #26 destination; target retains positive poll/config and quarantine-clear behavior, source test path is missing at destination, Hardware README/test are stale, and Hardware license/NOTICE applicability is unresolved. No copy/move/overwrite.
+
+**Cleanup:** issue #266 remains an open checklist, not proof of completion. **Production remains NO-GO.**
