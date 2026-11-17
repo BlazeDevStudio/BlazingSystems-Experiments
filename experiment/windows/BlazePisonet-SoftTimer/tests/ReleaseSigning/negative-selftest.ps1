@@ -80,7 +80,7 @@ try {
     }
   }
   $requiredActionPins = @(
-    @{ Action='actions/checkout'; Sha='11d5960a326750d5838078e36cf38b85af677262'; Count=3 },
+    @{ Action='actions/checkout'; Sha='11bd71901bbe5b1630ceea73d27597364c9af683'; Count=3 },
     @{ Action='actions/setup-dotnet'; Sha='67a3573c9a986a3f9c594539f4ab511d57bb3ce9'; Count=1 },
     @{ Action='actions/upload-artifact'; Sha='ea165f8d65b6e75b540449e92b4886f43607fa02'; Count=1 },
     @{ Action='actions/download-artifact'; Sha='d3f86a106a0bac45b974a628896c90dbdf5c8093'; Count=1 }

@@ -27,7 +27,7 @@ jobs:
   handover:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -42,12 +42,12 @@ jobs:
     outputs:
       future_release_eligible: ${{ steps.release_version_gate.outputs.future_release_eligible }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '8.0.425'
 
@@ -382,7 +382,7 @@ jobs:
           & "$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1" @params
 
       - name: Upload validated release candidates
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
           path: |
@@ -421,11 +421,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
           ref: ${{ github.sha }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
       # The downloaded final artifact must be re-admitted using the owner-pinned

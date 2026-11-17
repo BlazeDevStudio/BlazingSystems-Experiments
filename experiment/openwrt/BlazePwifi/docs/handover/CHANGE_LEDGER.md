@@ -82,3 +82,10 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Corrected the credential-free PowerShell action-pin assertion to recognize both YAML `- uses:` list entries and named-step `uses:` properties. This is test-only; the release workflow is unchanged.
 - Prior exact-head run #44189232857 passed handover and package parity, then failed at the test parser's action count (1 found instead of 6). No mutable-reference assertion was reached.
 - Next: verify the expected mutable-tag RED, then pin all six external actions to the four verified immutable upstream commits and rerun exact-head Windows CI. Publisher remains PR-skipped; no signing or release action.
+
+
+## 2026-11-17 UTC22 — PHX-RELEASE immutable Actions pinning
+
+- Test-only parser correction `37f4d3f76ce40f74a0b762abadc18a22f52c35c5` recognized both YAML action-step forms. Exact RED run #44191802009 passed handover, package parity and concurrency checks, then failed on the first mutable action reference `actions/checkout@v4`; publisher was skipped.
+- The current source checkpoint replaces all six floating v4 tags with full immutable SHAs read back from the upstream version tags. The checkout test expectation was aligned to the actual v4.2.2 tag commit. No application code or release authorization changed.
+- Next: exact-head Windows CI and review of the pin guard. Publisher must remain PR-skipped; no signer, tag, release, merge or deployment.

@@ -698,3 +698,11 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Exact-head Windows run [#44189232857](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44189232857) had handover PASS and PackageParity PASS, then failed in `negative-selftest.ps1` at the external-action count assertion: the parser counted one `uses:` property but missed YAML list-item `- uses:` entries. This was a test-parser defect; the intended immutable-reference assertion did not run.
 - This test-only checkpoint corrects the parser and line validators to accept both YAML forms. The workflow remains unchanged and still has six mutable `@v4` references, so the next exact-head Windows run should reach the expected RED at the first mutable reference.
 - No signing, publisher execution, tag, release, merge, finance, hardware or deployment action. PR #291 remains draft/unmerged; PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pins committed
+
+- PR #291 branch `phoenix/release-publisher-isolation-20261115` is stacked on #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. Test-only parser correction `37f4d3f76ce40f74a0b762abadc18a22f52c35c5` made the action-reference guard recognize both YAML `- uses:` and `uses:` properties.
+- Exact test-first RED: [Windows run #44191802009](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44191802009): handover PASS; PackageParity SELFTEST PASS; concurrency regression PASS; the action-pin guard then rejected mutable `actions/checkout@v4` at `negative-selftest.ps1:79`. The publisher job was SKIPPED. This is the expected mutable-reference RED, not a package/build failure.
+- This source checkpoint pins all six external action uses to verified upstream tag commit SHAs: checkout v4.2.2 `11bd71901bbe5b1630ceea73d27597364c9af683` (3 uses), setup-dotnet v4.3.1 `67a3573c9a986a3f9c594539f4ab511d57bb3ce9`, upload-artifact v4.6.2 `ea165f8d65b6e75b540449e92b4886f43607fa02`, and download-artifact v4.3.0 `d3f86a106a0bac45b974a628896c90dbdf5c8093`. The checkout expected pin was corrected from an untagged commit to the exact v4.2.2 tag target.
+- Exact-head Windows verification is required next; PR validation must keep `publish-release` skipped. No signing, tag, release creation, merge, finance, hardware or deployment action. PRODUCTION NO-GO.
