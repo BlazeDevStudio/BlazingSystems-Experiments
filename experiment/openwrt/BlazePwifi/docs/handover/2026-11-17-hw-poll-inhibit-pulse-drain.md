@@ -130,3 +130,19 @@ Added one exact-source case to `esp8266/BlazePwifiVendo/poll_window_drain_lab.py
 This is a host C++ simulation using extracted firmware functions and simulated GPIO/time. It is **SIMULATED / pending exact-head CI**, not physical coin, relay, power-cut, or flash evidence. No firmware runtime source, shared API, financial code, QA-owned tests, or release workflow changed.
 
 **Next:** inspect the exact-head quarantine/poll-drain workflow and confirm both board suites pass at the new PR head; keep Full validation and physical acceptance separate.
+
+
+## Exact-head CI outcome — 2026-11-17 UTC19
+
+**Final source/test SHA:** [`5f4aab0`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5f4aab0cf52854f550dae63c2f555558feed4130)  
+**Final PR head before this handover-only update:** `5f4aab0cf52854f550dae63c2f555558feed4130`
+
+The first attempt at `fc1681e` correctly exposed a stale Python-side expected marker (`10/10` after the C++ fixture changed to `11/11`) and failed. Commit `bbdf4b1` corrected the assertion; the next run passed but its human-facing per-board print still said `10/10`. Commit `5f4aab0` corrected that diagnostic. No production firmware code changed in these follow-ups.
+
+At exact source/test SHA `5f4aab0...`:
+
+- Focused quarantine/poll-drain [run #44159261107](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44159261107), job `134308342793`: **SUCCESS**. Logs show ESP8266 **11/11**, ESP32 **11/11**; short-debounce-only and unsafe absolute-deadline rollover mutations rejected on both boards. Inherited quarantine, pending marker, mount/recovery, pending-clear, write/readback and coin POST default-deny suites passed.
+- Relay output [run #44159261154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44159261154), job `134308343039`: **SUCCESS**, 48/48 per board; inverted polarity and removed-poll-inhibit mutations rejected. Physical relay polarity remains `0`.
+- Full [run #44159261249](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44159261249), validation job `134308520599`: **FAILED** in QA-owned `tests/controllers.sh` with `Missing poll signature check`. The parallel Full run [#44159247933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44159247933), validation job `134308490597`, failed on the same assertion. This is the known stale positive poll-signature fixture versus Master §6.3/§6.7 default-deny; PHX-HARDWARE did not edit QA-owned files or weaken the firmware deny. Target jobs were still running at checkpoint time; no Full workflow PASS is claimed.
+
+All focused results are **SIMULATED / CI VERIFIED** from host C++ and fake GPIO/LittleFS. Physical coin pulse, relay/contact, flash durability, electrical recovery and power cuts remain **NOT TESTED**.
