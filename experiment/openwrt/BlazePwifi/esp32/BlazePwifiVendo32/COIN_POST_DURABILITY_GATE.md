@@ -48,3 +48,12 @@ The hardware-owned source lab injects marker open, short-write, readback, mismat
 ## Poll admission authority hold — 2026-11-17 UTC08
 
 The ESP32/ESP8266 consumer must not treat the current derived response_sig expression as an approved authorization contract. Master Architecture Contracts §6.3 requires a canonical producer and independent positive/negative golden vectors at pinned SHAs before configured-key coin admission can be enabled. Until that gate is satisfied, acceptPollResponse() explicitly clears stale target/admission state and returns DENY on both boards. This is a safety hold, not a completed authentication protocol. Do not enable coin intake by toggling a local flag or copying the COE candidate; obtain CORE/QA/Master approval first.
+
+## Exact-head poll authority hold evidence — 2026-11-17 UTC08
+
+Test-first RED: [run 44051036806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051036806), job 133928606170, corrected test SHA 491cd094e77c264b2c8053aff0c59913f0faa229; both board poll labs failed at the positive-looking unapproved-candidate assertion. The preceding 44050812024 run is a C++ literal compile error and is not counted as RED.
+
+Source fix: commit 3c2ccc09dcc0d2eab01c1bdaae5aa7548f245798. Focused exact-head [run 44051446853](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051446853), job 133930014829, SUCCESS. Poll-response fail-closed 11/11 per board; strict root JSON 13/13; coin POST ACK root 4/4; disposition default-deny 4/4; register-config denial 7/7; inherited quarantine 19/19 per board and all other journal/POST labs passed.
+
+Full validation [run 44051446855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051446855), job 133930149201, FAILED because QA-owned tests/controllers.sh still requires an active poll signature check. Update that test to assert default-deny while the contract is unapproved; do not restore the unapproved candidate verifier merely to satisfy the stale assertion. The QA loop-extractor issue remains independent.
+
