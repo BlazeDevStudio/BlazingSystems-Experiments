@@ -27,3 +27,16 @@ The exact-source quarantine lab now extracts the real `canAttemptCoinPost()` fun
 ## Boundaries and next action
 
 No controller API, response-signature formula, receipt schema, finance, migration, release workflow, flashing, reset, physical test, or production state changed. DRAFT remains stacked on #314 and must not merge independently. PHX-QA should independently reproduce open-failure and capacity-exhaustion behavior at the exact head; PHX-CORE/MASTER should decide the durable reboot marker contract. Physical LittleFS power interruption, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, signer/witness, migration, and independent release acceptance remain NOT TESTED / BLOCKED.
+
+
+## Follow-up: malformed quarantine timestamps cannot authorize dedupe (2026-11-17 UTC07)
+
+**New source-confirmed defect:** inspectQuarantineLog previously checked that a line began with TIME= and contained the other field labels, but did not validate the timestamp token. A complete-looking line with TIME=not-a-number and the current event PULSES/NONCE/TARGET/REASON prefix could be treated as an already-persisted quarantine record. quarantinePending would then call clearPending without a firmware-generated valid record.
+
+**Test-first RED:** focused run #44041100586, job 133895620908, exact test head af0ee82becb2a005c9a2ffc16d8d79e7c6a91b5b, failed at SOURCE_QUARANTINE_FAIL scenario=17 on the ESP32 extracted source. This is a C++17 host/fake-LittleFS reproduction, not a physical flash test.
+
+**Fix on both sketches:** inspectQuarantineLog now accepts only canonical decimal uint32 millisecond timestamps (1–10 digits, no leading zero except 0, overflow checked). Malformed and overflowed timestamps make the existing log invalid; append is denied, journalRecoveryRequired is latched, and the pending record remains untouched. No signature, receipt, API, finance, or migration contract was changed.
+
+**Regression expansion:** the hardware-owned source-extracted lab now has 19 scenarios per board / 38 total, including nonnumeric and uint32-overflow timestamps. The board runner reports both board results. Exact-head GREEN CI is pending; the prior RED remains preserved.
+
+**Limits:** fake LittleFS readback is not proof of flash power-loss durability. Physical coin/relay, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, signer/witness, durable accounting/replay, migration, independent QA and release acceptance remain NOT TESTED/BLOCKED. PR #315 remains DRAFT / UNMERGED / PRODUCTION NO-GO.
