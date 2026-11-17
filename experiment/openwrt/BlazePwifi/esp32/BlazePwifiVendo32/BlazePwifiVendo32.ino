@@ -788,7 +788,11 @@ void applyOutputs(){
 // A pulse at any point cancels polling and returns to normal journal handling.
 bool coinLineQuietAfterInhibit(){
   const uint32_t started=millis();
-  while(millis()-started<runDebounceMs){
+  // Drain the supported 30–100 ms coin pulse train before blocking HTTP.
+  // Preserve a larger configured debounce interval; never shorten it.
+  const uint32_t pulseTrainQuietMs=250UL;
+  const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
+  while(millis()-started<quietMs){
     if(!coinLineIdle()) return false;
     delay(1);
   }
