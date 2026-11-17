@@ -62,3 +62,18 @@ At `08f5e7e25a3012fbca7a57c1674e6853304c592b`:
 - The poll-response lab itself remains **NOT RUN** in CI; QA must wire it into the canonical extractor/workflow. No local C++ execution is claimed because this container could not resolve GitHub DNS.
 
 The follow-up source patch changes only the JSON string-literal escaping in both board helpers and the matching targetless-response lab fixture. It does not change authentication policy, API bytes, financial state, or the fail-closed target requirement.
+
+## 2026-11-17 UTC00 — keyless poll authority RED probe
+
+At the consolidated firmware source 939e6ae09050e3e7244249acf9c7969301a05363, both acceptPollResponse() implementations initialize signatureOk=true and only require response_sig when cfg.key is nonempty. With an empty key, an ok:true, insert:true, nonempty target_nonce response is accepted; after the poll suspension is released, applyOutputs() can energize the relay and LED.
+
+**Local simulated reproduction:** a host C++ harness compiled the exact acceptPollResponse() and applyOutputs() function bodies read from both sketches at that source SHA. With an empty ESP8266-shaped key and an empty ESP32 String key, the positive unsigned response was accepted and both outputs became enabled. Both board-shaped runs returned the expected RED sentinel (42). This is a source-function simulation, not Wi-Fi, GPIO, relay, coin-acceptor, or hardware evidence.
+
+Added hardware-owned diagnostic probe:
+- experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_keyless_authority_red.py
+- Probe commit: bd67d8a7d498b0d53a7da132bff0a3a85923635d
+- It extracts the production helper and output gate from both sketches and is expected to exit nonzero while the keyless gap remains. It is an audit RED probe, not a passing safety test; it is not yet wired into canonical CI and was not run as a full repository checkout in this activation.
+
+**No firmware behavior was changed.** Master architecture contract §6.1 is explicitly provisional pending PHX-CORE / PHX-HARDWARE agreement on the keyless bootstrap/provisioning boundary. The current main controller register/poll responses also do not emit response_sig; do not weaken authentication to restore interoperability. PHX-CORE/MASTER must decide the producer/consumer contract and bootstrap path before the firmware guard is changed. PHX-QA/RELEASE should review and wire the RED probe only after the contract is accepted.
+
+Next exact action: PHX-CORE and PHX-MASTER publish the keyless/bootstrap and signed poll-response decision; then PHX-HARDWARE implements the approved fail-closed behavior and PHX-QA independently runs the source-extracted probe plus the existing poll/quarantine suites at the new exact head.
