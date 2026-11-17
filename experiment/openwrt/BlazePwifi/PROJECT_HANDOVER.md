@@ -1,3 +1,28 @@
+# PHX-HARDWARE — poll inhibit pulse-drain follow-up (2026-11-17 UTC10)
+
+> **DRAFT #318 · FOCUSED CI VERIFIED · FULL VALIDATION FAILED · PHYSICAL ACCEPTANCE NOT TESTED · PRODUCTION NO-GO**
+>
+> Branch: `phoenix/hardware-poll-inhibit-settle-20261117`  
+> PR: [#318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/318), stacked on #317  
+> Base: `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`  
+> Source-test head: `5072e8fd352eab63bf479b13704cdfcb9caf9991`
+>
+> **Defect / rationale:** both sketches previously used `runDebounceMs` (20 ms minimum, 40 ms default) as the quiet interval after relay inhibit. Master Architecture Contracts §2.1 permits coin pulses up to 100 ms. The debounce-width interval can therefore finish before a delayed/in-flight pulse appears. This is a bounded software risk model; actual acceptor output delay after de-energization is unknown until measured on isolated hardware.
+>
+> **Test-first evidence:** test-only commit [`3948b9c4`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3948b9c405c57fea6e90e610774ce956ef3a5033); focused RED [#44067323124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44067323124), job `133984253325`, failed at the new 120 ms quiet-window expectation (return 17) against the old 20 ms behavior.
+>
+> **Firmware correction:** ESP8266 [`4e6225b8`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4e6225b8e8bf520715a0e5cb1e176c8e472520b6) and ESP32 [`5072e8fd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5072e8fd352eab63bf479b13704cdfcb9caf9991) now require a quiet interval of `max(runDebounceMs, 100 ms + 20 ms)`. A detected pulse aborts the blocking poll and returns to the normal loop while the line remains observable.
+>
+> **Focused exact-head CI:** [#44067564257](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44067564257), job `133985101193`, **SUCCESS** at source head `5072e8fd352eab63bf479b13704cdfcb9caf9991`. Both boards: debounce 8/8, poll-window 11/11, blocking-poll relay inhibit 1/1; inherited quarantine 23/23, pending marker 28/28, mount 7/7, boot recovery 16/16, pending clear 17/17, pending write/readback 22/22, coin POST gate 10/10 and register-config deny 7/7. All are source-extracted host/fake-filesystem simulations.
+>
+> **Full validation:** [#44067564436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44067564436), validation job `133985242101`, **FAILED** at QA-owned `tests/controllers.sh`: `Missing poll signature check` in the ESP8266 sketch. This conflicts with Master §6.3's current default-deny decision pending CORE's canonical contract and QA-approved vectors. Firmware was not weakened to satisfy the stale assertion. Target jobs were still running at the last observation; no overall Full success is claimed.
+>
+> Explicit lab flags remain `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `FINANCIAL_PRODUCTION_AUTHORIZED=0`. This mitigation is **SIMULATED / CI VERIFIED only**; it does not close #177's physical pulse-loss acceptance.
+>
+> **Next:** PHX-QA reconcile the controller parity assertion with Master §6.3 and independently rerun Full; PHX-MASTER review the 120 ms local timing guard against the electrical acceptance plan; PHX-HARDWARE retain default-deny and await authorized noncustomer bench acceptance.
+
+---
+
 <!-- PHX-HARDWARE-20261115-COIN-JOURNAL-RECOVERY-POST-GATE:START -->
 > **PHX-HARDWARE 2026-11-15 (Asia/Manila), LAB ONLY.** Own branch [DRAFT #293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/293) based on unmerged DRAFT #283. At source commit [`c7823f7f409c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c7823f7f409c1ad2fd483a5d303555f6a837d6b2), both ESP variants refuse boot admission if any pending journal candidate is corrupt/unreadable or more than one `/pending.dat`, `/pending.new`, `/pending.bak` coexist. On ambiguous state they preserve the bytes untouched; `journalRecoveryRequired` blocks raw GPIO coin pulses, relay/LED, pending saves and clears. Valid one-file journals retain evidence without boot-time rename. Nonce/target are validated using bounded `memchr` NUL searches, not unbounded `strlen`. The owned `PENDING_JOURNAL_AMBIGUITY.md` and source-extracted C++ host lab cover 16 cases per board. Follow-up source adds `canAttemptCoinPost()` to both sketches so failed flash saves cannot nevertheless POST RAM-only coins. Owned `COIN_POST_DURABILITY_GATE.md` and a source-extracted C++ test cover that new guard. This header is append-only provenance; all previous handovers below preserved.
 > **Actual verified prior tests:** [#43653481980](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653481980) **COMPLETED SUCCESS** (22 original quarantine + 14 mount + 32 ambiguous boot = 68/68 software host tests), latest completed source sha `466a23837bcf85061a234b83599b9d0f02db1a82`; prior full build [#43653482006](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653482006) was still queued/in progress at checkpoint time. New dispatch helper and docs need **new exact-head CI**; do not inherit previous green tests. No physical flash, 150 power-cuts, 30-device soak, signed receipts/ACK, protected witness, safe money migration, release authority or deployment validated. **NO-GO for production**.
