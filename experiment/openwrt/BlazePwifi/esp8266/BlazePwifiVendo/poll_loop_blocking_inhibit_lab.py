@@ -58,6 +58,7 @@ static int pollCalls=0, saveCalls=0;
 static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
 static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false;
+static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
 bool insertMode=true, lastCoin=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
@@ -124,10 +125,17 @@ String post(const String &action,const String &pulses=String("0"),
     if(injectDuringHttp){
       pulseStart=(int)fakeNow+50;
       pulseEnd=(int)fakeNow+130;
+      fakeNow+=50UL;
+      pollPulseObservedDuringHttp=!coinLineIdle();
+      pollPulseRelayOff=!relayOn;
+      pollPulseSuspended=pollIntakeSuspended;
+      fakeNow+=80UL;
+      fakeNow+=3370UL;
+    } else {
+      fakeNow+=3500UL;
     }
     // Simulate the production HTTPClient timeout. The extracted loop remains
     // blocked while the relay and poll-inhibit state must remain unchanged.
-    fakeNow+=3500UL;
     pollEndAt=fakeNow;
     pollEndRelayOn=relayOn;
     pollEndSuspended=pollIntakeSuspended;
@@ -151,6 +159,7 @@ void resetState(){
   injectDuringHttp=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
+  pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
   insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true;
   controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
   setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
@@ -175,6 +184,7 @@ int main(){
   if(pollCalls!=1 || pollStartAt!=2250 || pollStartAt-2000<250 ||
      pollStartRelayOn || !pollStartSuspended || !pollStartCoinIdle ||
      pollEndAt-pollStartAt!=3500 || pollEndRelayOn || !pollEndSuspended ||
+     !pollPulseObservedDuringHttp || !pollPulseRelayOff || !pollPulseSuspended ||
      pollIntakeSuspended || relayOn || ledOn || insertMode ||
      !activeTarget.empty() || pendingPulses!=0 || lastPoll!=pollEndAt ||
      fakeNow!=pollEndAt+2) return 11;
