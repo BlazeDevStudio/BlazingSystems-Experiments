@@ -176,7 +176,7 @@ int main(){
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
   responseTarget="target-unapproved"; responseInsert=true;
   pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
-  if(acceptPollResponse(String("{\\"ok\\":true}")) || insertMode ||
+  if(acceptPollResponse(String(R"({"ok":true})")) || insertMode ||
      !activeTarget.empty() || relayOn) return 54;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 55;
