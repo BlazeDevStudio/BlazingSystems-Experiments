@@ -188,3 +188,12 @@ The live OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY, pins source_ref to Exp
 For current hardware parity, compare owner PR #315 at cc0743009f44baeda0ea12d84eb6199a8a6916c7 against COE #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. COE PR #27 at 009f70cc2c2775039a5fb072c9d4fdedee76cfc7 contains the same stale ESP32/ESP8266 firmware blobs as #26; its successful scoped CI does not validate the current #315 source. The exact firmware, helper, quarantine-clear, test-import and license-scope findings are in HARDWARE_STAGING_REFRESH_AND_DUPLICATE_CANDIDATE_AUDIT_20261117_UTC08.md.
 
 **Review-before-move hold:** no source copy, destination overwrite, path relocation, merge or promotion. PHX-HARDWARE owns firmware, PHX-QA owns independent regression/extractor verification, COE integration owns destination staging, and PHX-MASTER owns only coordination and provenance. The exact private Drive registry was not available; no older Library artifact was substituted.
+
+
+## Poll-admission fixture and Hardware destination provenance — 2026-11-17 UTC09
+
+The current HARDWARE #315 source `84fe6b790139d147f330f13a40b3ae3e89a7042d` intentionally denies all poll responses until the CORE-owned canonical authorization contract and QA vectors exist. The inherited `tests/v05_firmware_hardening_test.sh` still expects the previous positive `|poll|` signature formula; its wrapper invokes it and current Full validation fails at that assertion. The test files are unchanged in #315. PHX-QA must update its own tests; PHX-MASTER must not modify `experiment/openwrt/BlazePwifi/tests/`.
+
+At COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, ESP32 and ESP8266 firmware blobs remain non-identical to current #315, with older response-driven config and quarantine-clear behavior. The destination has only one Hardware shell test and no Hardware-local LICENSE/NOTICE in the inspected tree. The source repository NOTICE and BlazePwifi LICENSE must be considered in the owner/custodian review; `Pisowifi/LICENSE` alone is not evidence that the Hardware subtree's notice scope is resolved.
+
+Keep #26 draft. Do not copy, overwrite or relocate Hardware files. Require exact source/destination blob+mode, dependency/import, test identity, license/NOTICE and exact-head combined CI review before any per-file proposal. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY` and is not a migration command.

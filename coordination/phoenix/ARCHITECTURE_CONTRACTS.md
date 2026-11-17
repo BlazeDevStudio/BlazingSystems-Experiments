@@ -231,3 +231,12 @@ This contract does not authorize remote configuration, which remains a separate 
 
 Exact source/staging evidence and current CI are in [COIN_POST_DISPOSITION_AUTHORITY_AUDIT_20261117_UTC07.md](COIN_POST_DISPOSITION_AUTHORITY_AUDIT_20261117_UTC07.md). COE #26 remains blocked; no firmware copy or destination edit is authorized. **PRODUCTION NO-GO.**
 
+
+
+## 6.7 Legacy poll-signature fixture must not override default-deny — 2026-11-17 UTC09
+
+The current PHX-HARDWARE #315 source at `84fe6b790139d147f330f13a40b3ae3e89a7042d` deliberately makes `acceptPollResponse()` return DENY on both ESP8266 and ESP32, clearing the candidate insert/target state. `coinPostDispositionVerified()` also remains default-deny. The derived `response_sig` poll construction is not an approved authorization contract; do not reintroduce it to satisfy an inherited test.
+
+The inherited `tests/v05_firmware_hardening_test.sh` still requires `|poll|` and simulates a positive poll signature. It is invoked by `tests/controllers.sh` and is unchanged in PR #315. Current Full validation fails at this stale assertion before reaching the separate v0.6 extractor omission. This is a real CI failure and a test-contract mismatch, not proof that default-deny firmware should be weakened.
+
+**QA contract:** replace the positive legacy assertion with source-linked negative cases for empty/unprovisioned key, provisioned key with unapproved/forged/missing/malformed/stale response, root/nested `ok:true`, mismatched target/nonce and ambiguous responses. Assert intake remains disabled, candidate target is cleared, no credit/relay/LED output is authorized, and pending/attempt evidence is preserved. Keep positive acceptance vectors blocked until PHX-CORE publishes the canonical producer/consumer contract and PHX-QA independently approves both-board golden vectors. PHX-QA owns test files; PHX-HARDWARE owns firmware. **PRODUCTION NO-GO.**

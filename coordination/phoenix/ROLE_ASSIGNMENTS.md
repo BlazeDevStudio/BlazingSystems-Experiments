@@ -280,3 +280,24 @@ This snapshot supersedes older role-head observations only for the exact refs be
 | #19 Rental baseline | 04c97030096aa5e5a854952e0cc377ffe31d5d07 | 43061768902 SUCCESS |
 
 These are isolated PR-head results. They do not validate the combined COE #26 tree, physical acceptance, signing, financial migration or production readiness. The Master run made no CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source changes.
+
+
+## Live role PR / CI reconciliation — 2026-11-17 UTC09
+
+This exact-head snapshot supersedes older status rows for the refs below only. CI success is limited to the named workflow and SHA; it does not establish integration or physical acceptance.
+
+| Role / candidate | Exact PR head | Exact-head CI observation | Current owner action |
+|---|---|---|---|
+| PHX-MASTER #288 | `47f2f6e9107f58902396d5731cfcd77b80598eb5` before this update | No PR-triggered runs returned | Coordination/contracts/provenance only |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | `42698139210` SUCCESS, scoped | Publish canonical poll/receipt contract; source remains separate owner |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | `43653329235`, `43653329229` SUCCESS | Continue authenticated-before-persistence work |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | `42462978704` SUCCESS | Native serial/physical acceptance still outstanding |
+| PHX-HARDWARE #315 | `84fe6b790139d147f330f13a40b3ae3e89a7042d` | Focused `44054778537` SUCCESS; Full `44054778555` FAILURE at validation `133941354361` | Preserve default-deny; QA must repair inherited poll-signature fixture and v0.6 extractor |
+| PHX-HARDWARE separate #316 | `888e6941e3a7a81641682c23d937f97d8117d2ea` | Focused `43972511337` SUCCESS; Full `43972511250` FAILURE | Keep separate; no silent composition |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs | Exact-head recipient retest is not the firmware poll suite |
+| PHX-QA #290 / #279 / #267 | `5c29d159...` / `8f476ef0...` / `ff536799...` | #290 `43633486963` SUCCESS; #279 no runs; #267 `41452247439` SUCCESS | Repair current ESP tests without weakening fail-closed behavior |
+| PHX-RELEASE #291 | `2c4edff231d9b2819415086825530d80b8801307` | `43744993487` SUCCESS, scoped | Keep signing/publication closed |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED | Keep draft; reconcile firmware/tests/license |
+| COE #29 / #30 / #31 / #32 / #28 / #24 | `d0830332...` / `4897348d...` / `df94b3af...` / `29b6fe08...` / `b21b0461...` / `9f976fc5...` | Each has scoped SUCCESS run(s) | Do not treat isolated success as combined #26 acceptance |
+
+No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The separate CORE implementation boundary remains respected.

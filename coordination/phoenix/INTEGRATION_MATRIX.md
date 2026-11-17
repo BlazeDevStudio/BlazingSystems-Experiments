@@ -432,3 +432,20 @@ The current owner source is Experiments HARDWARE PR #315 at cc0743009f44baeda0ea
 Exact firmware blobs differ on both boards; #315 has dormant remote configuration, one-shot attempt/disposition helpers and a deny/no-delete quarantine clear, while #26/#27 retain response-driven config paths, keyless defaults, no attempt marker/disposition helpers and destructive quarantine clear. Source board-local failure labs are not imported into COE Hardware/tests. Hardware license scope remains unresolved. See HARDWARE_STAGING_REFRESH_AND_DUPLICATE_CANDIDATE_AUDIT_20261117_UTC08.md for exact blobs, modes, sizes, test identities and CI.
 
 **Disposition:** keep #26/#27 draft and do not copy, overwrite, relocate or promote firmware. PHX-QA must repair the exact #315 extractor and rerun Full validation; the COE integration owner must reconcile the candidate, tests and license scope. Production remains NO-GO.
+
+
+## 13. Exact-head poll fixture conflict and COE Hardware migration hold — 2026-11-17 UTC09
+
+| Gate | HARDWARE #315 source | COE #26 destination | Result |
+|---|---|---|---|
+| Poll admission | Both sketches' `acceptPollResponse()` return DENY; candidate state is cleared | Older response-driven poll/config path remains | BLOCKED |
+| Coin POST disposition | `coinPostDispositionVerified()` returns DENY pending CORE contract | Current attempt/disposition helpers absent | BLOCKED |
+| Remote configuration | `applyRemoteConfig` definition-only | Three occurrences and two `sigOk=true` defaults per sketch | P0 HOLD |
+| Quarantine clear | HTTP 403; no log deletion | HTTP 200 and `LittleFS.remove("/quarantine.log")` | P0 HOLD |
+| Firmware blobs | ESP32 `c3833a02...`; ESP8266 `77c403ad...` | ESP32 `3cc7ec54...`; ESP8266 `c8be98f7...` | Non-identical |
+| Test imports | Source board-local poll, marker, journal and quarantine labs | One `Hardware/tests/test_firmware_hardening.sh` (`f921c56c...`) | IMPORT GAP |
+| License/NOTICE | BlazePwifi LICENSE + repository NOTICE | Pisowifi/LICENSE only; no root NOTICE or Hardware-local notice in candidate tree | OWNER REVIEW |
+
+Current #315 Full run [44054778555](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054778555) fails at validation job `133941354361`: the inherited v0.5 fixture still requires a positive `|poll|` signature even though the current source intentionally denies poll admission. Focused quarantine run [44054778537](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054778537) succeeds, but does not prove poll admission or physical acceptance. The separate v0.6 extractor omission remains open and was not reached. COE #26's five workflows remain queued.
+
+**Disposition:** no file move/copy/overwrite. PHX-QA repairs the stale test contract and extractor; PHX-CORE approves the canonical poll/receipt contract; PHX-HARDWARE preserves the deny state; COE owner reconciles exact blobs, tests and license scope. See `HARDWARE_POLL_SIGNATURE_FIXTURE_AND_COE_MIGRATION_HOLD_20261117_UTC09.md`. Combined integration and production remain NO-GO.
