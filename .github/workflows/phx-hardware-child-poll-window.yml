@@ -7,6 +7,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-child-poll-window.yml"
 permissions:
@@ -26,6 +27,8 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
       - name: Check monotonic timeline and exact-boundary fixture
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py
+      - name: Execute exact production loop with blocked-poll pulse fault injection
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
       - name: Compile exact-source poll and pulse-window guards for both boards
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py
       - name: Classify evidence without hardware promotion
