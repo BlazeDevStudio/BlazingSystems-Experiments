@@ -175,15 +175,15 @@ int main(){
     if(scenario==23)
       disk.bytes="TIME=1 PULSES=not-a-number NONCE=oldnonce TARGET=oldtarget REASON=old\n";
     if(scenario==24)
-      disk.bytes="TIME=1 PULSES=21 NONCE=oldnonce TARGET=oldtarget REASON=old\\n";
+      disk.bytes="TIME=1 PULSES=21 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
     if(scenario==25)
-      disk.bytes="TIME=1 PULSES=1 NONCE= TARGET=oldtarget REASON=old\\n";
+      disk.bytes="TIME=1 PULSES=1 NONCE= TARGET=oldtarget REASON=old\n";
     if(scenario==26)
-      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET= REASON=old\\n";
+      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET= REASON=old\n";
     if(scenario==27)
       disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=\n";
     if(scenario==28)
-      disk.bytes="TIME=1 PULSES=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\\n";
+      disk.bytes="TIME=1 PULSES=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
