@@ -204,3 +204,16 @@ Architecture decision: the ULA prefix is per-installation/site identity, not reu
 Current role CI also shows HARDWARE #317 at `d6184c097561dd800b09bc7ab3b8739e79000ce9`: Full run 44087267104 failed in validate job 134052853915 because the inherited test still requires a positive poll-signature check; focused quarantine and relay-polarity runs 44087267150 and 44087267306 passed. Preserve firmware default-deny and route the fixture repair to PHX-QA.
 
 The private canonical Drive registry v11 and newer corrections remain inaccessible because no Google Drive file connector is exposed. The public Cloud Artifact Policy and Storage Handover were read; they require the private registry/ledger before mirror operations. No older Library snapshot was substituted. No subsystem source, destination migration, release, secret, payment or hardware operation was performed. **PRODUCTION NO-GO.**
+
+
+## 2026-11-17 scheduled UTC13 — COE ImageBuilder sandbox and ULA revalidation
+
+Refreshed exact COE #31 head 19fc87988e55f47e8c6a512e51b470a91abbf816. The packager still emits invalid fd00:db8:blaze::/48 (blob fd558928...); tests 322b4a4b... and EW1200G profile 6e797cf9... have no ULA assertions/property. The site-scoped ULA architecture decision in §6.9 remains correct; PHX-RELEASE must implement the first-boot durable or deployment-specific validated provisioning path on its own branch.
+
+New P0 release boundary: the current #31 workflow probes bubblewrap but runs Python tests directly; the test launches the generated wrapper directly. Current sandbox run [44098939249](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939249) fails at the UID/GID probe and skips packaging tests. An earlier head's run [44098400955](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098400955) reached the synthetic Makefile test and observed BUILDER-OVERWRITE in the external sentinel. PHX-RELEASE must fix the probe and actually sandbox the Make process; PHX-QA independently verifies. #26 remains five workflows QUEUED.
+
+HARDWARE #317 exact head 4496124580a11f8bdd88c2e5adcdfb86e824b978 has focused quarantine and relay polarity successes, but Full [44097182945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44097182945) fails at the stale positive poll-signature fixture. Preserve firmware default-deny; PHX-QA owns the fixture/extractor repair.
+
+Eight bounded source/CI assertions passed; four Python ipaddress parser cases were executed. No COE Python test suite, OpenWrt UCI/netifd test, full Master suite or physical test was run. PR #288 remains draft; no subsystem source, destination migration, merge, release, signing, secret, hardware or payment operation occurred.
+
+The private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections remain inaccessible; Library search found older snapshots only and no Google Drive connector is exposed. Canonical Cloud Artifact Policy / Cloud Storage Handover GitHub links could not be fetched with the current GitHub connector. **PRODUCTION NO-GO** pending all independent financial, signing, rollback, QA, native and physical acceptance gates.

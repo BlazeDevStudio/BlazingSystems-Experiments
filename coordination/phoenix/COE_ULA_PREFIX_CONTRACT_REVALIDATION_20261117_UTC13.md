@@ -87,3 +87,12 @@ The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corre
 No migration/copy, code change in a subsystem branch, merge, release, signing, flashing, secret provisioning, payment operation or physical test occurred. The full Master Python suite was not run.
 
 **PRODUCTION NO-GO** remains mandatory pending protected signing/anti-rollback witness, crash-atomic financial state, reversible migration, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
+
+
+## Exact-head refresh after the UTC13 ULA decision — current COE #31
+
+Current COE RELEASE #31 advanced from the earlier b29d69a4 / edf4a37 snapshots to exact head 19fc87988e55f47e8c6a512e51b470a91abbf816. Re-fetching the exact current blobs confirms the ULA defect is unchanged: packager fd558928b2869ce1f4b2cb2776b405b4b723b310 still emits fd00:db8:blaze::/48 at line 112; tests 322b4a4b6df35ca91da68c71751ebb7879b6c69a still have no ULA/IPv6 assertions; EW1200G profile 6e797cf9c9922209efe4c0da49c49fa1da16c11a still has no ULA property.
+
+Current exact-head #31 CI is no longer the earlier all-green snapshot: [sandbox run 44098939249](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939249) fails at the privileged bubblewrap UID/GID probe and skips the packaging regressions; [44098939596](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939596) Hardware/Shared Contracts and [44098939148](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939148) case-collision succeed but do not validate ULA. The prior edf4a37 run 44098400955 reached the synthetic Makefile test and observed BUILDER-OVERWRITE in the external sentinel; this is historical evidence at that earlier SHA, not a current-head pass/fail.
+
+The current workflow still runs the Python test suite directly after the separate bwrap probes, and the test itself invokes the generated wrapper directly. See COE_IMAGEBUILDER_SANDBOX_EXECUTION_BOUNDARY_AUDIT_20261117_UTC13.md. The ULA site-identity decision in §6.9 remains unchanged; PHX-RELEASE owns implementation, PHX-QA independent tests, COE owner destination staging, and PHX-HARDWARE later target validation. **P0 / PRODUCTION NO-GO.**

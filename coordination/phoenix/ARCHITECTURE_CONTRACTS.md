@@ -259,3 +259,16 @@ A generic appliance image must not embed a globally shared ULA placeholder. The 
 The implementation owner must choose and verify one target-supported mechanism: (1) first-boot generation plus atomic persistence, or (2) a validated deployment-specific prefix input when an artifact is intentionally unique to one site. Do not silently fall back to a fixed example, regenerate on each build/boot, or assume netifd supplies a valid prefix without target evidence. If neither mechanism is present, keep integration blocked.
 
 **Owner routing:** PHX-RELEASE owns packager/first-boot implementation and tests; the COE integration owner owns destination staging; PHX-QA independently verifies valid/invalid inputs and generated UCI; PHX-HARDWARE validates target behavior only after correction and authorization. PHX-MASTER owns this cross-repo contract and gate only. Exact evidence is in [COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md](COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md). **PRODUCTION NO-GO.**
+
+
+## 6.10 ImageBuilder build execution must actually be sandboxed — 2026-11-17 UTC13
+
+ImageBuilder Makefiles and their recipes are executable inputs that can create symlinks and write files. Installing bubblewrap or proving that a trivial 'bwrap ... true' namespace probe succeeds is not containment. The actual Make/ImageBuilder subprocess that processes the candidate workspace must run inside the approved filesystem boundary.
+
+Minimum contract: only a disposable build workspace may be writable inside the namespace; source inputs and toolchain paths are read-only; operator-owned files and sentinels remain outside the writable bind set or are read-only; caller UID/GID and ownership semantics are preserved; the build fails closed when the namespace cannot be established. Network isolation is a separate property and must not be claimed unless separately configured and verified. Do not expose secrets or write credentials into the build workspace.
+
+The regression must execute a synthetic malicious Makefile inside the same sandbox boundary and prove that a symlinked firmware output cannot change an external sentinel. The test harness must invoke the sandbox wrapper, not merely check that bwrap exists. A standalone capability probe followed by a direct Python/test invocation is not sufficient.
+
+Current COE RELEASE #31 exact head 19fc87988e55f47e8c6a512e51b470a91abbf816 has sandbox run 44098939249 failing at the UID/GID probe; packaging tests are skipped. The workflow's subsequent Python test step is direct, and the test launches the generated shell wrapper directly. An earlier exact head edf4a37 run 44098400955 observed the synthetic external sentinel overwritten. Exact source, job and log evidence: COE_IMAGEBUILDER_SANDBOX_EXECUTION_BOUNDARY_AUDIT_20261117_UTC13.md.
+
+PHX-RELEASE owns the wrapper/workflow/test correction; PHX-QA independently verifies the exact final head. PHX-MASTER owns this cross-repo invariant and release gate only. Keep COE #31/#26 draft and **PRODUCTION NO-GO**.

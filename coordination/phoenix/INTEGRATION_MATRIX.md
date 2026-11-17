@@ -486,3 +486,24 @@ At exact COE #31 head `b29d69a4cd97ca93babbab436bcc00b1e9d8280d`, run [440840150
 **Architecture decision:** ULA is installation/site state, not shared router-profile metadata. Do not add one static prefix to the reusable hardware profile. Require a target-supported first-boot generation + durable persistence path, or a validated deployment-specific build input for a site-unique artifact. Never hard-code a shared prefix or assume implicit netifd behavior without target evidence. PHX-RELEASE implements, COE integration owner stages, PHX-QA independently tests, PHX-HARDWARE validates target behavior, and PHX-MASTER owns the contract only.
 
 Python `ipaddress` rejected the exact invalid literal and accepted a valid fd/48 control. This was not OpenWrt UCI/netifd or router validation. Keep #26/#31 draft; no copy, overwrite, move or promotion. See [COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md](COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md). **PRODUCTION NO-GO.**
+
+
+## 17. COE ImageBuilder sandbox boundary and ULA exact-head refresh — 2026-11-17 UTC13
+
+| Gate | Exact evidence | Disposition |
+|---|---|---|
+| COE #31 current head | 19fc87988e55f47e8c6a512e51b470a91abbf816, based on #26 b382d233... | Draft / no promotion |
+| Packager | fd558928... still emits fd00:db8:blaze::/48 | P0 invalid ULA |
+| Packager tests | 322b4a4b... has no ULA/IPv6 assertions | Test gap |
+| EW1200G profile | 6e797cf9... has no ULA field | No static site prefix in model profile |
+| Sandbox workflow | b0ca74cb... probes bwrap, then directly runs Python tests | Not contained |
+| Current #31 sandbox run | [44098939249](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939249), job 134093412365 | FAILURE at UID/GID probe; packaging tests SKIPPED |
+| #31 Hardware/Shared + case collision | [44098939596](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939596), [44098939148](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098939148) | Scoped SUCCESS only |
+| Earlier #31 sentinel regression | [44098400955](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44098400955) at prior edf4a37 head | FAILURE: external sentinel became BUILDER-OVERWRITE |
+| COE #26 | Five workflows remain QUEUED | No combined acceptance |
+
+The current #31 workflow has a separate bwrap capability probe and UID/GID probe, but the packaging test command is direct Python; the test calls the generated shell wrapper directly. At current head the UID/GID probe fails, so the package regression is skipped. The earlier head reached the test and recorded an external sentinel overwrite. No current-head sandbox containment pass exists.
+
+HARDWARE #317 current head 4496124580a11f8bdd88c2e5adcdfb86e824b978 has focused quarantine run 44097183197 SUCCESS and relay polarity run 44097182916 SUCCESS; Full run 44097182945 fails at QA validation job 134088551798 because the inherited poll fixture still expects a positive signature. Preserve default-deny; PHX-QA owns fixture/extractor correction.
+
+PHX-RELEASE must repair and actually apply the sandbox to the Make process and resolve the installation-scoped ULA contract. PHX-QA independently verifies. COE integration owner keeps #26 draft and reconciles provenance. No file move/copy/overwrite. See COE_IMAGEBUILDER_SANDBOX_EXECUTION_BOUNDARY_AUDIT_20261117_UTC13.md. **PRODUCTION NO-GO.**
