@@ -418,7 +418,7 @@ bool beginPollWindow(){
 bool acceptPollResponse(const String &response){
   bool insertAllowed=jsonTrue(response,"insert");
   String target=jsonString(response,"target_nonce");
-  // Keyless bootstrap is never coin authority: require a provisioned key and valid response signature.
+  // PHX-MASTER ARCHITECTURE_CONTRACTS §6.1: keyless bootstrap is never coin authority; require a provisioned key and valid response signature.
   bool signatureOk=false;
   if(String(cfg.key).length()){
     String signature=jsonString(response,"response_sig");
