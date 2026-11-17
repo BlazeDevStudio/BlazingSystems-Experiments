@@ -197,3 +197,20 @@ The current HARDWARE #315 source `84fe6b790139d147f330f13a40b3ae3e89a7042d` inte
 At COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, ESP32 and ESP8266 firmware blobs remain non-identical to current #315, with older response-driven config and quarantine-clear behavior. The destination has only one Hardware shell test and no Hardware-local LICENSE/NOTICE in the inspected tree. The source repository NOTICE and BlazePwifi LICENSE must be considered in the owner/custodian review; `Pisowifi/LICENSE` alone is not evidence that the Hardware subtree's notice scope is resolved.
 
 Keep #26 draft. Do not copy, overwrite or relocate Hardware files. Require exact source/destination blob+mode, dependency/import, test identity, license/NOTICE and exact-head combined CI review before any per-file proposal. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY` and is not a migration command.
+
+
+## PISONET candidate-stack routing clarification — 2026-11-17 UTC10
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at source `main@f4e8a891...` → COE #26 `b382d233...`, status `DRAFT_REVIEW_ONLY`, with PHX-MASTER target `null`. It is a route proposal, not a copy command.
+
+PISONET owner source PR #255 is `d01fd164...`; COE #28 `b21b046...` and #30 `4897348...` are a separate destination candidate chain, with #30 27 commits ahead of #28. #30 diverges from COE #26 at COE main; it is not a child of #26. Keep the per-file provenance and test-import audit in [PISONET_STACKED_DESTINATION_CANDIDATE_AUDIT_20261117_UTC10.md](PISONET_STACKED_DESTINATION_CANDIDATE_AUDIT_20261117_UTC10.md).
+
+Do not blanket-copy Experiments #255 `SerialHardware.cs` / `AppController.cs`: their boolean active-low status-read path is older and less safe than COE #26/#30 `TryGetSignal` fail-closed handling. Do not promote COE #30's installer until NSIS warning 6000 on the `$COMMONAPPDATA` state guard is corrected and tested. No Pisonet subtree LICENSE/NOTICE was found; owner/custodian must resolve notice scope.
+
+**Review-before-move hold:** no copy, overwrite, relocation, cherry-pick, merge or promotion. PHX-PISONET owns installer/product changes; PHX-QA owns independent native tests; COE integration owner owns destination staging; PHX-MASTER owns only coordination and provenance.
+
+## Current HARDWARE and RELEASE handover heads — 2026-11-17 UTC10
+
+HARDWARE #317 `3ed38225...` is a child of #315 `84fe6b79...`, itself based on #314 `556adc20...`. Focused marker lab [44065129637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129637) succeeds (56/56 source-extracted cases); Full [44065129519](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129519) fails at the QA-owned legacy poll-signature assertion. Preserve default-deny and route the fixture repair to QA.
+
+COE RELEASE #31 current head `d9ac5982...` has scoped runs [44064212523](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44064212523) and [44064212547](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44064212547) SUCCESS; this does not open signing/publishing or production gates.

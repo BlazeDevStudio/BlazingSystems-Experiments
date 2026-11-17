@@ -172,3 +172,16 @@ The current HARDWARE #315 head `84fe6b790139d147f330f13a40b3ae3e89a7042d` intent
 Exact source/destination ESP32 and ESP8266 blob IDs, modes, test identities, license/NOTICE scope and role CI are in [HARDWARE_POLL_SIGNATURE_FIXTURE_AND_COE_MIGRATION_HOLD_20261117_UTC09.md](HARDWARE_POLL_SIGNATURE_FIXTURE_AND_COE_MIGRATION_HOLD_20261117_UTC09.md). COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five workflows queued and older firmware behavior. No copy or migration is authorized.
 
 **Next:** PHX-QA updates the stale v0.5 poll test and the separate v0.6 extractor without weakening default-deny, then reruns Full at exact #315 head. PHX-CORE publishes the canonical poll/receipt contract; COE owner reconciles per-file firmware/test/license provenance. The private v11 Drive registry remains inaccessible through the available connector surface; no older Library snapshot is substituted. **PRODUCTION NO-GO.**
+
+
+## 2026-11-17 UTC10 — PISONET stack graph and installer state guard
+
+Performed a fresh exact-tree comparison of PISONET owner PR #255 against COE #26/#28/#30. #30 is 27 commits ahead of #28, but #26 and #30 diverge from COE main; do not claim #28/#30 are integrated into #26. Exact blob counts, file modes, source-only/candidate-only test identities and license/NOTICE scope are in [PISONET_STACKED_DESTINATION_CANDIDATE_AUDIT_20261117_UTC10.md](PISONET_STACKED_DESTINATION_CANDIDATE_AUDIT_20261117_UTC10.md).
+
+The source #255 active-low external-board error path can invert a failed boolean read into an active state. COE #26/#30 already contain the safer `TryGetSignal` guard; do not overwrite it with the older source blobs. COE #30's Windows synthetic tests include same-handle and 4/4 read-error denial checks, but are not physical acceptance.
+
+**New P0:** COE #30 installer source blob `6a6b7af2...` uses `$COMMONAPPDATA` in its existing-state guard. Exact installer CI [43653415598](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43653415598) emits NSIS warning 6000 and says the variable/constant is ignored. Its literal-string guard test does not catch this. PHX-PISONET must repair and test the actual CommonApplicationData path before any installer promotion. COE #26 remains at five queued workflows; QA #290 has no exact-head run. Migration remains blocked.
+
+Current Hardware #317 focused CI [44065129637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129637) passes, but Full [44065129519](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129519) fails at the stale positive poll-signature fixture. Keep default-deny; PHX-QA owns the fixture/extractor repair. RELEASE #31 has scoped success at current head, not signing approval.
+
+The private canonical Drive registry and newer corrections remain inaccessible; no older Library snapshot was substituted. No source branch, COE destination file, financial state, secret, hardware, release or production workflow was changed by PHX-MASTER. **PRODUCTION NO-GO.**

@@ -301,3 +301,21 @@ This exact-head snapshot supersedes older status rows for the refs below only. C
 | COE #29 / #30 / #31 / #32 / #28 / #24 | `d0830332...` / `4897348d...` / `df94b3af...` / `29b6fe08...` / `b21b0461...` / `9f976fc5...` | Each has scoped SUCCESS run(s) | Do not treat isolated success as combined #26 acceptance |
 
 No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The separate CORE implementation boundary remains respected.
+
+
+## Live role / PR / CI snapshot — 2026-11-17 UTC10
+
+This exact-head snapshot supersedes earlier role-head rows only for the refs below. A scoped CI success is not combined integration, physical acceptance or production readiness.
+
+| Role / candidate | Exact current head(s) | Exact-head CI observation | Owner action / boundary |
+|---|---|---|---|
+| PHX-MASTER #288 | `8bffe20f4a0ff5b722766c42d7dd3f03e97bee78` | No PR-triggered runs returned | `coordination/phoenix/` only; contracts, provenance and integration matrix |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | `42698139210` SUCCESS, scoped | Separate CORE owner/automation retains implementation; no Master source edits |
+| PHX-RENTAL #240 / #287 / #289 | `a7d113fb...` / `a4fffd01...` / `68928774d0d7cf65adb26bc6b54199a3159d066c` | #240 `40910311141`/`40910311159`; #287 `43754089203`; #289 `43653329235`/`43653329229` SUCCESS | Continue authenticated-before-persistence and rollback protections |
+| PHX-PISONET #255 / QA #290 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` / `5c29d15994cee1279058f1eca12f2a3180704292` | #255 `42462978704` SUCCESS; #290 no workflow runs returned | Review old active-low read-error source hazard; preserve safer COE TryGetSignal guard; run #290 native tests |
+| PHX-HARDWARE #314 / #315 / #317 | `556adc20...` / `84fe6b790139d147f330f13a40b3ae3e89a7042d` / `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3` | #317 focused `44065129637` SUCCESS; Full `44065129519` FAILURE at QA validation job `133976753982`; separate #316 `888e6941...` remains | Keep poll/coin admission default-deny; QA repairs legacy poll fixture; no silent #316 composition |
+| PHX-QA #267 / #279 / #290 / #292 | `ff536799...` / `8f476ef0...` / `5c29d159...` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #267 `41452247439` SUCCESS; #279/#290/#292 no workflow runs returned | Execute exact-head native COM and firmware regression suites; do not weaken fail-closed tests |
+| PHX-RELEASE #242 / #291 | `734b89d9...` / `2c4edff231d9b2819415086825530d80b8801307` | #242 `40882814472`; #291 `43744993487` SUCCESS, scoped | Keep signing and publishing closed |
+| COE integration / destination candidates | #26 `b382d233...`; #28 `b21b0461...`; #30 `4897348d...`; #29 `d0830332...`; #31 `d9ac5982017b00b59ca842bc360d3c47ab33ee45`; #32 `29b6fe08...` | #26 five workflows QUEUED; #28 `43632393888`; #30 `43653415598`; #29 `43653906676`/`43653906675`; #31 `44064212523`/`44064212547`; #32 `43653540607` SUCCESS | Keep #26/#28/#30/#31/#32 draft; isolated CI is not combined #26 acceptance |
+
+No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The private Drive registry remains inaccessible through the exposed connector; no older Library snapshot was substituted.
