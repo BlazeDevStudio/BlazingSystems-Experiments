@@ -141,3 +141,16 @@ The current HARDWARE owner branch #315 at 75dc5f0b888f16e2c85e4321f62df4685639ad
 Exact source/destination blob identities, file modes, line locations, README crypto-label discrepancy, test-import gap, license/notice scope, role CI and owner actions are recorded in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md. The source-focused #315 run 44013351048 passed simulated/source-extracted tests; full run 44013351035 failed in the QA-owned controller extractor. COE #26 has five queued workflows. This is not integrated acceptance.
 
 **Disposition: BLOCKED / PRODUCTION NO-GO.** Keep COE #26 draft. Do not migrate or promote the Hardware candidate until PHX-HARDWARE and independent PHX-QA reconcile exact blobs, quarantine route behavior, configuration authentication, test identity, crypto documentation, license/notice scope and exact-head CI. No source files, destination files, financial state, secrets, hardware, release or production workflow were changed by this Master audit.
+
+## 2026-11-17 UTC07 — event-bound coin POST disposition authority and migration hold
+
+**Master scope:** coordination/phoenix only. Re-read the uploaded Master directive, README_FIRST, BLAZE-COMMS/1, root AGENTS.md, live #172/#266, exact default/development refs, Master #288, routing manifest, relevant role PRs/CI, COE main/#26 and current source/destination trees. Private registry access remains blocked; no older snapshot was treated as authoritative.
+
+**New P0 decision:** current HARDWARE #315 at `4afc7c8bd8ea410049f1da7bc962bfc989b4ba1b` intentionally denies every coin POST disposition until an event-bound authenticated receipt contract exists. Both ESP sketches persist and read back the attempt marker before POST; an unapproved response retains the journal/marker, sets recovery hold and denies automatic replay. PHX-CORE must define the signed receipt/idempotency contract and PHX-QA must provide golden vectors before PHX-HARDWARE implements verification.
+
+**Migration remains blocked:** COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12` still stages older ESP blobs without the attempt marker or disposition verifier. Exact source/destination blob identities, modes, sizes, test identities, response-config/quarantine mismatches and license-scope limitations are in [the UTC07 audit](COIN_POST_DISPOSITION_AUTHORITY_AUDIT_20261117_UTC07.md). No source/destination file was copied or modified.
+
+**Evidence:** focused #315 run 44038469936 succeeded (source-extracted/simulated only); full run 44038469823 failed in the QA-owned extractor because five current firmware dependencies are omitted. The targeted Master source-intake suite ran locally: 11/11 passed; the full Master suite and Master PR CI were not executed/returned. Current role PR/CI pins are appended to ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md.
+
+**Next:** PHX-CORE publishes the receipt contract; PHX-QA repairs the extractor and independently tests both-board vectors; PHX-HARDWARE waits for approval; COE integration owner keeps #26 draft and reconciles provenance. No merge, release, signing, flash, physical test, secret provisioning or live payment operation occurred. **PRODUCTION NO-GO.**
+
