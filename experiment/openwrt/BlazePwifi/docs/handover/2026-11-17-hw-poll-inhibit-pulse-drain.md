@@ -218,3 +218,15 @@ The host tests are SIMULATED / CI VERIFIED only. The 250 ms software boundary do
 Current child [PR #318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/318) remains OPEN / DRAFT / UNMERGED at `3abae4e878a1a16c9c42aa4af32778155102f5f6`. Parent #317 is at `839c21877c27c893e2efc73b3afe7c48e1fcfa4e`; comparison reports 47 commits ahead / 35 behind and GitHub mergeable=false. The current Master `ROLE_ASSIGNMENTS.md` at `0b5adc046d6da13e3dd1913e8658e96e712f2bea` lists #239, #254 and #283 but not #318. PHX-MASTER must explicitly reconcile this child stack or provide an approved integration path. No rebase, cherry-pick, merge or force-push was performed.
 
 This is host C++ / source-extracted CI evidence only. `SIMULATED=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`, `PHYSICAL_POWER_CUT_VERIFIED=0`. No pulse is auto-credited from the ISR counter; an edge during the blocked poll is treated as unresolved and latches a recovery hold. Physical relay polarity, pulse waveform, flash durability, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. Poll/coin admission stays default-deny. No flashing, reset, live coin, financial migration, signing, release, merge or deployment occurred.
+
+
+### UTC18 Full-build completion addendum
+
+The exact-source Full run [#44143076437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44143076437) completed at source/test SHA `3abae4e878a1a16c9c42aa4af32778155102f5f6`:
+
+- All **14/14** target build jobs completed SUCCESS: ESP8266, ESP32, Android, x86_64, Ruijie and the Orange Pi target set.
+- Validation job `134251000714` remained FAILED at the QA-owned legacy positive poll-signature assertion (`Missing poll signature check`). This is not a hardware-code compile failure; preserve default-deny pending the CORE contract and QA fixture correction.
+- Production import/signing, production sign handoff, update bundle, v0.4 simulations, candidate gate and publication jobs were SKIPPED.
+- Overall Full workflow is therefore **FAILED**, despite the 14/14 target-build matrix passing.
+
+This addendum supersedes only the earlier note that target jobs were still running; it does not upgrade any physical or production gate.
