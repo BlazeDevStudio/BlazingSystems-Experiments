@@ -59,6 +59,15 @@ try {
       -not $workflow.Contains('github.event.pull_request.head.sha || github.sha')) {
     throw 'Release approval, Unicode gate or literal checkout lost'
   }
+  # Superseded PR checks may be cancelled, but push/manual runs can enter the
+  # write-privileged publisher and must not be interrupted mid-release.
+  $cancelOnPullRequest=('  cancel-in-progress: {0}{1}{1} github.event_name == ''pull_request'' {2}{2}' -f [char]36,[char]123,[char]125)
+  if (-not $workflow.Contains($cancelOnPullRequest) -or
+      ([regex]::Matches($workflow,'(?m)^  cancel-in-progress:')).Count -ne 1) {
+    throw 'Release workflow must cancel only superseded pull-request checks; publisher-capable runs must be non-cancellable'
+  }
+  Write-Output 'RELEASE-CONCURRENCY: PR checks cancellable, push/manual publisher-capable runs non-cancellable PASS'
+
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Pull-request/build workflow token must be read-only'
