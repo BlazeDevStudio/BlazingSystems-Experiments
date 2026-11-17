@@ -659,9 +659,9 @@ bool beginPollWindow(){
 }
 
 
-// Strict, bounded root-object reader for the unsigned poll "ok" status field.
-// It ignores nested keys and quoted text, rejects duplicate/escaped keys, and
-// refuses malformed or trailing top-level input. This is not a general JSON parser.
+// Strict, bounded root-object reader for a single root-level "ok":true status.
+// It rejects nested/quoted decoys, duplicate keys and trailing bytes; it is structural only,
+// not a signature verifier or authenticated financial receipt check.
 bool pollJsonSpace(char c){
   return c==' ' || c=='\t' || c=='\r' || c=='\n';
 }
@@ -841,6 +841,20 @@ bool pollJsonTopLevelTrue(const String &r,const char *wanted){
 
   while(p<n && pollJsonSpace(r[p])) ++p;
   return p==n && found==1 && accepted;
+}
+
+bool coinPostDispositionVerified(const String &response,const String &nonce,
+                                 const String &target,uint8_t pulses){
+  // The current endpoint uses plain HTTP and has no approved event-bound signed
+  // receipt/disposition contract. Body text, including root ok:true or error
+  // strings, is not authority to erase or quarantine an owed coin.
+  (void)response;
+  (void)nonce;
+  (void)target;
+  (void)pulses;
+  // PHX-CORE must define the receipt contract; PHX-QA must approve its vectors.
+  // Until then, preserve the pending journal and one-shot attempt marker.
+  return false;
 }
 
 bool acceptPollResponse(const String &response){
@@ -1023,7 +1037,11 @@ void loop(){
     } else {
       String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
       lastSend=millis();
-      if(r.indexOf("\"ok\":true")>=0){
+      if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
+        journalRecoveryRequired=true;
+        Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
+        applyOutputs();
+      } else if(pollJsonTopLevelTrue(r,"ok")){
         clearPending();
         applyOutputs();
       } else if(r.indexOf("coin window expired")>=0 ||
@@ -1033,10 +1051,9 @@ void loop(){
         quarantinePending(r);
         applyOutputs();
       } else {
-        // A timeout, malformed reply, or unknown error may have followed a
-        // committed server write. Preserve the marker and deny automatic replay.
+        // An authenticated but malformed/unknown disposition remains ambiguous.
         journalRecoveryRequired=true;
-        Serial.println("CRITICAL: coin POST outcome ambiguous; pending evidence retained for operator reconciliation.");
+        Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
         applyOutputs();
       }
     }
