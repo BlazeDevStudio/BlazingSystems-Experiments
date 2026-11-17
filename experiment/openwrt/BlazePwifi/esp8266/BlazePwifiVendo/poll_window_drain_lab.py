@@ -53,20 +53,20 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
   const uint32_t elapsed=(uint32_t)(fakeNow-started);
   if(opened!=expectPoll){
     std::cerr<<"FAIL "<<name<<" poll="<<opened<<" expected="<<expectPoll
-             <<" elapsed="<<elapsed<<"\\n";
+             <<" elapsed="<<elapsed<<"\n";
     return false;
   }
   if(expectPoll){
     if(elapsed!=expectedElapsed || !pollIntakeSuspended || relayOn || ledOn){
       std::cerr<<"FAIL "<<name<<" elapsed="<<elapsed<<" expected="<<expectedElapsed
                <<" inhibit="<<pollIntakeSuspended<<" relay="<<relayOn
-               <<" led="<<ledOn<<"\\n";
+               <<" led="<<ledOn<<"\n";
       return false;
     }
   } else if(pollIntakeSuspended || !relayOn || !ledOn || coinLineIdle()){
     std::cerr<<"FAIL "<<name<<" abort-state inhibit="<<pollIntakeSuspended
              <<" relay="<<relayOn<<" led="<<ledOn
-             <<" idle="<<coinLineIdle()<<"\\n";
+             <<" idle="<<coinLineIdle()<<"\n";
     return false;
   }
   return true;
@@ -93,7 +93,7 @@ int main(){
   ++passed;
   if(!runCase("pulse-during-300ms-debounce",280,360,300,false,0)) return 10;
   ++passed;
-  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/10\\n";
+  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/10\n";
   return 0;
 }
 '''
