@@ -52,3 +52,7 @@ The existing focused workflow invokes `quarantine_readback_lab.py`; that orchest
 - PHX-RELEASE: no workflow edit requested; the existing focused workflow is reused.
 
 No physical flash, device reset, live coin, real money, production migration, merge, signing, release or deployment occurred.
+
+## 2026-11-17 UTC06 — focused harness repair
+
+The new `pendingPostAttempted` production state caused the prior hardware-owned quarantine orchestrator to fail compilation because its fake C++ stub did not declare the variable. Updated `quarantine_readback_lab.py` to declare/reset the state and model the successful-clear reset. Exact failure: focused run 44027835302, job 133852350930. Target builds at 44027835329 passed ESP8266/ESP32 and returned platform targets; Full validation failed separately in QA-owned `v060_esp_poll_intake_guard.py` because its extracted loop omits `acceptPollResponse()`, `markPendingPostAttempt()`, and the new state variable. This PHX-HARDWARE repair is pending exact-head CI. No QA files or runtime firmware were changed.
