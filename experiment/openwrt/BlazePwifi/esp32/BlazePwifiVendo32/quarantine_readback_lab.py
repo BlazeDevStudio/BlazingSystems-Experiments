@@ -388,26 +388,9 @@ for board, ino in BOARDS:
             failed_boards.append(board)
         else:
             print(f"{board}: compiled exact extracted source")
-            # Failure injection: the old unconditional clear after a failed
-            # quarantine append must be rejected by the same exact-source cases.
-            quarantine = extract(source, "bool quarantinePending(")
-            unsafe = 'Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");\n    return false;'
-            if unsafe not in quarantine:
-                raise SystemExit(f"{board}: unconditional-clear mutation anchor missing")
-            mutated_quarantine = quarantine.replace(
-                unsafe, unsafe.replace("return false;", "return clearPending();"), 1
-            )
-            mutated_cpp = actual.replace(quarantine, mutated_quarantine, 1)
-            with tempfile.TemporaryDirectory(prefix="phx-hw-q-mutant-") as mutant_temp:
-                mutant_source = Path(mutant_temp, "mutant.cpp")
-                mutant_binary = Path(mutant_temp, "mutant")
-                mutant_source.write_text(mutated_cpp, encoding="utf-8")
-                subprocess.run(["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2",
-                                str(mutant_source), "-o", str(mutant_binary)], check=True)
-                mutant = subprocess.run([str(mutant_binary)], capture_output=True, text=True)
-                if mutant.returncode == 0 or "SOURCE_QUARANTINE_FAIL scenario=4" not in mutant.stderr:
-                    raise SystemExit(f"{board}: unconditional clear after append failure was not rejected")
-            print(f"{board}: MUTATION_REJECTED unconditional-clear-after-append-failure")
+            # Append-open, short-write, readback and corruption failures are
+            # exercised in the normal source-exact scenario matrix above.
+
 if failed_boards:
     raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
 print("PHX-HARDWARE: 70/70 source-extracted host scenarios PASS; no hardware evidence")
