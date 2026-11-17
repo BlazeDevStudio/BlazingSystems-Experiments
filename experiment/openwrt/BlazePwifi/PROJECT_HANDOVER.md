@@ -683,3 +683,10 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Test-only commit ef12c037caea0abf0fcf9dd75a6dacc8efd26579 introduced a regression requiring six external Actions references to use full 40-hex commit SHAs and the four expected action commits. The first insertion was incomplete; exact run #44188100487 stopped in handover job 134409903714 before the Windows test ran because PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md were stale. build-windows and publish-release were skipped. This was not an expected action-pin RED and not a test result.
 - Follow-up test correction and this synchronized handover checkpoint make the PowerShell assertion syntactically complete. The next exact-head run must pass the freshness gate and then reject the still-floating @v4 references. No action source pin has been changed yet.
 - PR validation must continue to skip the write-privileged publish-release job. No merge, tag, signature, publication, customer deployment, payment migration, or hardware operation occurred. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE UTC22 — action-pin regression parser correction
+
+- Exact-head run #44188856124 checked out 777248fa2e3cde1b1146837552e630b467b4684f. The handover job 134412557331 passed and PackageParity self-test passed, but build-windows job 134412684859 failed at negative-selftest.ps1 line 300 with an unexpected closing parenthesis. The action-pin assertion did not execute; this is an authoring/fixture failure, not the expected mutable-tag RED.
+- Corrective test-only commit 0620e018138aec1fd3de818d39d0af015e11b4be removes the orphaned duplicate tail left by the initial test insertion. It does not change the release workflow or publisher.
+- All three canonical handovers must be advanced after this correction before the next exact-head run. No action pin has changed yet; no signing, tag, publication, merge, financial migration, or hardware operation occurred. PRODUCTION NO-GO.
