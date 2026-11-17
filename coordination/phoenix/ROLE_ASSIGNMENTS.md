@@ -176,3 +176,21 @@ This bounded snapshot covers only roles and PRs relevant to the poll/register co
 | PHX-RELEASE | #242 / `734b89d9e7792247e8376335c3f3685500ab3f89` | #31 / `79f79c6cd67e50d76f63e2321a22c92fc85f7f5a` | Experiments 40882814472 success; COE 44009785780/44009785581 success. | Keep signing, publication and release gates closed; scoped build success is not approval. |
 
 Other role ownership is unchanged. No CORE, HARDWARE, QA, RELEASE, RENTAL or PISONET source branch was modified by PHX-MASTER.
+
+
+## Live remote-config migration role routing — 2026-11-17 UTC04
+
+This snapshot updates the earlier UTC03 register-path finding without changing any source ownership.
+
+| Role | Current exact PR/head | Evidence | Next action |
+|---|---|---|---|
+| PHX-MASTER | #288 / fc9ba1391908f8d49d8f9e9c578e43b49e21417f | Docs-only source/staging audit; no PR-triggered runs | Maintain coordination, contract and migration hold only. |
+| PHX-CORE | #252 / c82705f2de865c89ab733b10efa84f26f56a5cc4 | Run 42698139210 success, scoped | Review register tuple semantics and any future separate configuration-authentication envelope; no firmware edit delegated here. |
+| PHX-RENTAL | #289 / 68928774d0d7cf65adb26bc6b54199a3159d066c | Runs 43653329235 and 43653329229 success, scoped | Continue rental-owned work; no change to this remote-config contract. |
+| PHX-PISONET | #255 / d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Run 42462978704 success, scoped | Continue Pisonet-owned work; no change to this remote-config contract. |
+| PHX-HARDWARE | #315 / 75dc5f0b888f16e2c85e4321f62df4685639ad33 | Focused 44013351048 success; full 44013351035 validation failure | Preserve source-side no-callsite behavior; do not treat the COE destination as corrected. |
+| PHX-QA | #292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96; #267 / ff5367990c2d27b8ebbb822ee208251af0c890e2 | #292 no PR-triggered runs; #267 run 41452247439 success is older/scoped | Repair extractor; independently verify exact #315 and candidate #26 register/poll config-denial behavior. |
+| PHX-RELEASE | #291 / 2c4edff231d9b2819415086825530d80b8801307; #242 / 734b89d9e7792247e8376335c3f3685500ab3f89 | Runs 43744993487 and 40882814472 success, scoped | Keep signing/publication closed; no release authorization. |
+| COE integration owner | #26 / b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued | Reconcile staged firmware, audit claims, license/notice scope and test identity before any per-file transplant. |
+
+The HARDWARE #315 focused register lab is source-extracted CI evidence, not physical acceptance and not destination #26 evidence. No subsystem branch was changed by PHX-MASTER.
