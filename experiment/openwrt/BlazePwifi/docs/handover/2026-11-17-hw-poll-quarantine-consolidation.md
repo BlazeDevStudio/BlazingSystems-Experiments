@@ -303,3 +303,21 @@ The earlier full-validation compatibility RED at `882407d5...` was due the stati
 ## 2026-11-17 UTC05 — durable one-shot coin POST attempt marker
 
 See [the narrow PHX-HARDWARE handover](2026-11-17-hw-pending-post-attempt-marker.md). The current #315 source writes and verifies `/pending.attempt` before a coin POST, blocks same-boot retries, and makes any marker a boot-time reconciliation stop. The durable pending record is removed before the marker. The source-extracted lab is wired into the existing focused quarantine workflow via `quarantine_readback_lab.py`. This is a proposed hardware-journal implementation of Master Architecture Contracts §6.2, pending PHX-CORE / PHX-MASTER agreement and independent PHX-QA exact-head verification. Physical flash durability remains NOT TESTED.
+
+
+## 2026-11-17 UTC06 — blocking-poll relay-inhibit regression
+
+At exact #315 source head \`91aec935a279fda9ce198e3a9339f1f2fdd04386\`, the hardware-owned \`poll_response_failclosed_lab.py\` adds one source-extracted poll-window scenario on both ESP8266 and ESP32:
+
+- Enters the production \`beginPollWindow()\` path and confirms the logical relay/LED outputs are OFF while \`pollIntakeSuspended\` is true.
+- Injects an 80 ms active-low input pulse during a simulated 3.5 s synchronous HTTP wait.
+- Confirms the logical output remains inhibited for the full simulated wait and the source-order guard still requires \`beginPollWindow() -> post("poll") -> acceptPollResponse() -> pollIntakeSuspended=false\`.
+- Poll-window summary is now 9/9 per board; the new blocking-window assertion is 1/1 per board.
+
+**Focused exact-head CI:** [run 44034619567](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44034619567), job \`133874388263\`, **COMPLETED SUCCESS** at source commit \`91aec935...\`. Both board harnesses report poll-response 11/11, strict root JSON 13/13, debounce 8/8, poll-window 9/9, blocking-poll relay inhibit 1/1, register-config denial 7/7, plus the existing quarantine, marker, mount, pending-journal, pending-clear, write/readback and coin POST gate suites.
+
+**Full workflow:** [run 44034619591](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44034619591), validation job \`133874389596\`, **FAILED** in QA-owned \`tests/v060_esp_poll_intake_guard.py\`. The generated loop harness still omits \`pendingPostAttempted\`, \`acceptPollResponse()\` and \`markPendingPostAttempt()\` for both boards. PHX-HARDWARE did not edit QA-owned tests. Other target jobs were still running at the last observation; no Full-workflow success is claimed.
+
+**Evidence limit:** this is a source-extracted host simulation. It proves only that the software output gate stays logically OFF during the modeled blocking interval; it does not prove physical relay polarity/de-energization, coin-acceptor pulse capture, or that no already-in-flight coin can be lost. Electrical timing, physical power cuts, 30-device soak and hardware acceptance remain NOT TESTED.
+
+Next exact action: PHX-QA repairs its canonical loop extractor and independently reruns Full validation at the latest #315 head. PHX-HARDWARE keeps the relay-inhibit behavior and test scoped to the existing DRAFT #315 stack; no API, financial, release or migration changes.
