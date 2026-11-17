@@ -95,4 +95,4 @@ for board,path in BOARDS:
                         str(sourcepath),"-o",str(outputpath)],check=True)
         subprocess.run([str(outputpath)],check=True)
     print(f"{board}: actual canAttemptCoinPost() compiled and tested")
-print("PHX-HARDWARE: 18/18 source-extracted coin POST gate cases PASS; actual money NOT TESTED")
+print("PHX-HARDWARE: 20/20 source-extracted coin POST gate cases PASS; actual money NOT TESTED")
