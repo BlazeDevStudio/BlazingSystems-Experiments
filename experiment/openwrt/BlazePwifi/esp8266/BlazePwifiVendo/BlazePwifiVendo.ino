@@ -246,6 +246,13 @@ String signedBody(const String& action,const String& pulses,const String& target
 }
 
 String post(const String& action,const String& pulses="0",const String& target="",const String& forcedNonce=""){
+  // Master §6.6 requires an event-bound authenticated receipt/disposition.
+  // Until PHX-CORE publishes it and PHX-QA verifies vectors, only discovery
+  // and poll requests may leave this controller; coin/unknown actions are denied.
+  if(action!="register" && action!="poll"){
+    Serial.println("Denied controller POST action; coin receipt contract is not approved.");
+    return "";
+  }
   if(WiFi.status()!=WL_CONNECTED) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+String(cfg.server)+":4455/cgi-bin/vendo";
@@ -452,18 +459,9 @@ void loop(){
     applyOutputs();
   }
 
-  if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
-    String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
-    lastSend=millis();
-    if(r.indexOf("\"ok\":true")>=0){
-      clearPending();
-      applyOutputs();
-    } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
-              r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      quarantinePending(r);
-      applyOutputs();
-    }
-  }
+  // No automatic coin POST, retry, or clear is permitted until the
+  // event-bound authenticated receipt/disposition contract is approved.
+  // Keep recovered/pending journal evidence for operator/CORE reconciliation.
 
   if(setupApOn && strlen(cfg.ssid) && WiFi.status()==WL_CONNECTED && millis()-configuredApSince>600000UL){
     WiFi.softAPdisconnect(true);setupApOn=false;

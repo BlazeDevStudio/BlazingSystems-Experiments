@@ -156,7 +156,7 @@ In accordance with `V060_PHYSICAL_DURABILITY_ACCEPTANCE.md`:
 | Defect ID | Description | Resolution in Branch | Test Verification |
 |---|---|---|---|
 | **HW-P0-1** | Poll/register trust boundary | Register/poll response candidates are non-authorizing; remote configuration and coin admission remain disabled until the separate config and authenticated-poll contracts are approved and independently tested. | QA exact-head negative/positive vectors pending |
-| **HW-P0-2** | Uncredited Coin Quarantine | Pending coin is cleared only after an exact append and post-close size verification; failed open/write/verify/capacity paths retain the pending journal and keep relay admission closed. | `v05_firmware_hardening_test.sh` failure injection |
+| **HW-P0-2** | Uncredited Coin Quarantine / no replay | Automatic coin POST/retry/clear is disabled until an event-bound authenticated receipt/disposition is approved; pending journal evidence is retained for reconciliation. The append helper still lacks byte-for-byte readback and a durable cross-reboot no-replay marker. | Existing append-failure injection is simulated; independent §6.2 reboot tests pending |
 | **HW-P1-1** | Full Hardware RNG Nonce on ESP8266 | Removed `micros()`; uses two 32-bit `ESP.random()` words. | `v05_firmware_hardening_test.sh` |
 | **HW-P2-1** | Setup Portal HTML Escaping | Added `htmlEsc()` for SSID, server, and ID. | `v05_firmware_hardening_test.sh` |
 | **HW-P0-3** | Controller Test Suite Wiring | Hooked `v05_firmware_hardening_test.sh` into `controllers.sh`. | `controllers.sh` execution pass |
