@@ -1,3 +1,9 @@
+## 2026-11-17 UTC23 — PHX-RELEASE Node24-compatible action pins (test-first)
+
+- Existing draft PR #291 only. Updated the negative self-test's expected immutable upstream action commits for checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2 and download-artifact v8.0.2 after reading each tag ref and `action.yml`; all declare Node.js 24 runtime.
+- The release workflow remains unchanged at this test-first checkpoint, so the exact-head action-pin assertion is expected to reject the old pinned commits. CI result pending; no result is claimed.
+- No application code, artifact contents, version, publisher permissions, signing conditions, or release authorization changed. Production remains NO-GO.
+
 PHX-RELEASE UTC08 2026-11-15: Draft #291 test-only commit `fac240d0b1431039b357c77fd06773edccf01221` executes the publisher's actual extracted HTTP lookup decision with nine synthetic CLI/status cases (404, existing, 401, 403, 500, transport, mixed, duplicate 404, successful-CLI 404). No `gh` invocation or release creation in tests. Source-exact CI pending; independent QA/MASTER review required. Prior source-exact run #43675841061 PASS (handover/build), publisher SKIPPED. Rollback: revert test commit and these handover entries. PRODUCTION NO-GO; no real signing, publishing, merging or hardware acceptance.
 
 ## PHX-RELEASE / 2026-11-15 03 UTC / draft PR #291: Release lookup now denies ambiguous multiple HTTP response status lines; only one HTTP 404 can indicate an absent tag. Test-first `876df0a367edaac4cdbe5a4c1352fa5ac613246e`, implementation `e089baab648699210e7137079dfac2dae49f0b60`. Exact-head Windows CI pending; static regression only, no live publisher or signed-positive proof. No merge, signing, publication or hardware action. PRODUCTION NO-GO.

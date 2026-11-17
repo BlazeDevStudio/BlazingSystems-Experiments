@@ -79,20 +79,22 @@ try {
       throw "Release workflow uses a mutable or non-immutable action reference: $line"
     }
   }
+  # Each immutable commit below was read back from its upstream version tag;
+  # the corresponding upstream action.yml declares runs.using: node24.
   $requiredActionPins = @(
-    @{ Action='actions/checkout'; Sha='11bd71901bbe5b1630ceea73d27597364c9af683'; Count=3 },
-    @{ Action='actions/setup-dotnet'; Sha='67a3573c9a986a3f9c594539f4ab511d57bb3ce9'; Count=1 },
-    @{ Action='actions/upload-artifact'; Sha='ea165f8d65b6e75b540449e92b4886f43607fa02'; Count=1 },
-    @{ Action='actions/download-artifact'; Sha='d3f86a106a0bac45b974a628896c90dbdf5c8093'; Count=1 }
+    @{ Action='actions/checkout'; Version='v7.0.1'; Sha='3d3c42e5aac5ba805825da76410c181273ba90b1'; Count=3 },
+    @{ Action='actions/setup-dotnet'; Version='v6.1.0'; Sha='0f4a354dd5547a28c70b7853dbd95d5b67886e73'; Count=1 },
+    @{ Action='actions/upload-artifact'; Version='v7.0.2'; Sha='cf430e030ddbb5b0abf93d22962f4752f3646cd9'; Count=1 },
+    @{ Action='actions/download-artifact'; Version='v8.0.2'; Sha='9000827ccba6bdab643e8b6fd33ac0654aef8333'; Count=1 }
   )
   foreach ($entry in $requiredActionPins) {
     $pattern = '^\s*(?:-\s*)?uses:\s+' + [regex]::Escape($entry.Action+'@'+$entry.Sha) + '(?:\s+#.*)?$'
     $count = @($actionUseLines | Where-Object { $_ -match $pattern }).Count
     if ($count -ne $entry.Count) {
-      throw "Release action pin mismatch for $($entry.Action): expected $($entry.Count), found $count"
+      throw "Release action pin mismatch for $($entry.Action) $($entry.Version): expected $($entry.Count), found $count"
     }
   }
-  Write-Output 'RELEASE-ACTIONS: all external actions pinned to verified immutable commit SHAs PASS'
+  Write-Output 'RELEASE-ACTIONS: all external actions pinned to verified immutable Node24-compatible commit SHAs PASS'
 
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
