@@ -49,3 +49,18 @@ The test-first commit af0ee82becb2a005c9a2ffc16d8d79e7c6a91b5b added malformed a
 Source commit efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 corrected both board parsers. [Focused exact-head run #44041398477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398477), job 133896584393, **SUCCESS**: 19/19 quarantine scenarios per board / 38/38 total, plus inherited source-extracted suites.
 
 [Full run #44041398463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398463) validation job 133896701236 **FAILED** in QA-owned poll-loop extraction because it omits five current production dependencies. The QA files were not modified. The focused fake-LittleFS result is SIMULATED/CI VERIFIED only; physical power-cut durability is NOT TESTED.
+
+
+## Follow-up: quarantine disposition requires the matching attempt marker (2026-11-17 UTC09)
+
+**Defect:** quarantinePending() relied on its current loop caller to have created /pending.attempt. The helper itself did not enforce that prerequisite. A future call path could append a quarantine line and clear the pending event without proving that the exact event had passed the durable one-shot POST-attempt gate.
+
+**Correction:** both ESP sketches now implement pendingAttemptMarkerMatches(). It requires a ready, unambiguous pending event, a set one-shot attempted flag, bounded identity lengths, and a successfully read/validated /pending.attempt whose pulse count, nonce and target exactly match RAM. quarantinePending() denies and latches recovery before any quarantine append or pending clear if this check fails. The existing marker remains until clearPending() removes pending evidence first and the marker last.
+
+**Regression:** hardware-owned quarantine_readback_lab.py now extracts the production helper and quarantine function. New scenarios 19–22 cover absent attempted state, absent marker, invalid marker and mismatched nonce; they require unchanged log bytes, no clear, and a hard stop after simulated loss of the RAM recovery latch. The fixture nonce was corrected to a firmware-valid 16-character value. Existing pending_attempt_marker_lab.py separately extracts the real boot loader/marker functions and verifies matching markers block reboot replay.
+
+- Test-first RED: [run #44053916296](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44053916296), job 133938244153, failed on scenario 19 for both boards.
+- Final focused GREEN: [run #44054509206](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054509206), job 133940278029, exact SHA 4602386add8150b37fdcf8252b68bf27d95bb3d9, quarantine 23/23 per board plus inherited focused suites passed.
+- Full workflow: [run #44054501269](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054501269), validation job 133940390771 FAILED in PHX-QA-owned tests/controllers.sh because it requires an active poll signature check while Master §6.3 requires default-deny until the contract is approved. No QA-owned file was changed.
+
+**Limit:** all evidence is source-extracted C++ host/fake-LittleFS simulation. The current coin receipt verifier remains default-deny; this change does not enable coin admission. Physical flash power-cut durability and all Phoenix release gates remain NOT TESTED/BLOCKED.
