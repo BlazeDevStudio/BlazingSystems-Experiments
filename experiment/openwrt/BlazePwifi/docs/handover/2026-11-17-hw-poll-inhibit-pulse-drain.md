@@ -70,3 +70,29 @@ PHX-QA must repair its owned legacy positive poll-signature assertion/extractor 
 The private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the accessible Library/connector surface. No older registry was substituted and no Drive artifact was created or promoted.
 
 **Production status: NO-GO.**
+
+## UTC18 addendum — wrap-safe poll-drain timing regression
+
+The production coinLineQuietAfterInhibit() already uses unsigned elapsed-time subtraction (millis() - started < quietMs), which is the correct rollover-safe form for this bounded interval. The prior host lab only started its fake clock at zero, so it did not protect that property against a future absolute-deadline rewrite.
+
+The existing exact-source lab now:
+- accepts an arbitrary initial fake millis() value and compares elapsed time using unsigned subtraction;
+- checks the 250 ms quiet floor starting at 0xFFFFFF80, crossing the 32-bit millisecond rollover;
+- checks a larger configured 300 ms debounce across the same rollover;
+- deliberately mutates the extracted production helper to use millis() < started + quietMs and requires the rollover case to fail;
+- retains the short-debounce mutation and all previous pulse-window scenarios.
+
+At final PR #317 HEAD 1f263114fe003a930028b7fa9610655b03336614:
+
+- Focused quarantine/poll-drain run #44145794015, job 134260428980: SUCCESS.
+- ESP8266: poll-window drain 10/10; short-debounce mutation rejected; unsafe absolute-deadline rollover mutation rejected.
+- ESP32: poll-window drain 10/10; short-debounce mutation rejected; unsafe absolute-deadline rollover mutation rejected.
+- The same focused job also passed the inherited source-extracted quarantine, pending-marker, journal-recovery, write/readback and coin-POST-deny labs. It explicitly reports SIMULATED_ONLY=1, physical relay acceptance 0, physical coin pulse acceptance 0 and physical power-cut acceptance 0.
+- Relay output run #44145794054: SUCCESS.
+- Full build run #44145794034, validation job 134260616058: FAILED at QA-owned tests/controllers.sh with “Missing poll signature check”. This remains the inherited positive poll-signature assertion mismatch; preserve Master §6.3/§6.7 default-deny. Target-matrix jobs were incomplete/cancelled after validation failed; no 14/14 claim is made for this head. Production signing/import and release jobs were skipped.
+
+This is a test-coverage improvement only; no firmware runtime source, poll contract, finance schema, migration, QA-owned test, signer, witness or release workflow changed. It is SIMULATED / CI VERIFIED, not HARDWARE ACCEPTED.
+
+PR #318 remains a separate divergent child with the poll-edge ISR snapshot work. The UTC18 PHX-HARDWARE checkpoint records that further child-stack integration is held pending PHX-MASTER reconciliation. No rebase, cherry-pick, merge or force-push was performed.
+
+**Production status: NO-GO.**
