@@ -116,3 +116,17 @@ The final job query now shows the Full workflow **COMPLETED FAILURE**:
 - Production import/signing, update bundle and v0.4/release promotion jobs: **SKIPPED or CANCELLED**.
 
 Therefore the final Full workflow does not establish complete target-matrix acceptance and is not a Full PASS. The focused poll-drain and relay-output workflows remain successful. The final observed PR head at this check was adb961ceb0510dc195f329b92541b80f6d5f9082; it is a documentation-only successor to the tested source/test SHA 1f263114fe003a930028b7fa9610655b03336614. This addendum is documentation-only; no firmware runtime or test logic changed.
+
+
+## Follow-up regression — pulse crossing uint32 millis rollover
+
+**Date:** 2026-11-17 UTC19  
+**Role:** PHX-HARDWARE  
+**Branch:** `phoenix/hardware-clear-pending-marker-match-20261117`  
+**Source/test commit:** [`fc1681e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fc1681e6a0d83fa285284a2a2536cce839eaf1f7)
+
+Added one exact-source case to `esp8266/BlazePwifiVendo/poll_window_drain_lab.py`, which extracts the production helpers from both ESP sketches. The fake clock begins at `0xFFFFFFF0`; a 30 ms active-low pulse begins at `0x20` after rollover, 48 ms into the 250 ms inhibit quiet interval. The expected result is poll cancellation, intake unsuspended, and relay/LED restored so the main loop can sample the pulse. The lab now requires **11/11 cases per board** and retains the unsafe absolute-deadline mutation.
+
+This is a host C++ simulation using extracted firmware functions and simulated GPIO/time. It is **SIMULATED / pending exact-head CI**, not physical coin, relay, power-cut, or flash evidence. No firmware runtime source, shared API, financial code, QA-owned tests, or release workflow changed.
+
+**Next:** inspect the exact-head quarantine/poll-drain workflow and confirm both board suites pass at the new PR head; keep Full validation and physical acceptance separate.
