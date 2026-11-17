@@ -6,7 +6,7 @@ This is a regression check for the test harness, not hardware evidence.
 from pathlib import Path
 
 lab = Path(__file__).with_name("poll_response_failclosed_lab.py").read_text(encoding="utf-8")
-marker = "# Model the complete synchronous HTTP timeout after the real loop has"
+marker = "// Model the complete synchronous HTTP timeout after the real loop has"
 assert marker in lab, "missing synchronous-poll scenario"
 scenario = lab.split(marker, 1)[1].split('std::cout<<\"DEBOUNCE_FLOOR_PASS', 1)[0]
 assert "pulseStart=300; pulseEnd=380;" in scenario, "HTTP-time pulse must begin after 250 ms quiet window"
