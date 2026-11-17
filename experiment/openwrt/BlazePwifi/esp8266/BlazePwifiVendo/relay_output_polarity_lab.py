@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Hardware-owned test-only child stack: DRAFT PR #319, based on DRAFT #317.
 """Source-exact GPIO polarity lab for the ESP32 and ESP8266 output gate.
 
 Compiles the production writeLogical() and applyOutputs() bodies from both
