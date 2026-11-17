@@ -27,7 +27,7 @@ The UTC17 Master decision is now implemented as a RELEASE-owned trial. Exact cur
 |---|---|
 | `tools/run_imagebuilder_sandbox.py` | `7bf7ec5b2512704aca52bedd8ccc7067786533af` |
 | `tools/package_appliance_firmware.py` | `062fd2638f22daa9656bfdafd8003b640ca1c579` |
-| `tools/test_package_appliance_firmware.py` | `b40e6be6c8646b315ed97bc6c8646b315ed97bc6` |
+| `tools/test_package_appliance_firmware.py` | `b40e6be6c8646b315ed97cb0d211a2b228a521a1` |
 | `.github/workflows/release-imagebuilder-sandbox.yml` | `2a865da751e00175bfd18687323899730659799b` |
 
 The runner now requires the invoking non-root identity, uses bubblewrap `--unshare-user --uid 0 --gid 0`, and no longer depends on sudo, SUDO identity variables, or newuidmap/newgidmap. The generated operator wrapper dispatches through this runner. The workflow forces `PHX_REQUIRE_BWRAP=1` on `ubuntu-24.04`.
