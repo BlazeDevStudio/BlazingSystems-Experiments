@@ -170,6 +170,17 @@ int main(){
   std::strcpy(cfg.key,"test-key");
 #endif
 
+  // MASTER §6.3: the current response_sig construction is only a derived candidate.
+  // Until CORE publishes the canonical producer and QA approves exact vectors,
+  // even a provisioned-key positive-looking response must remain denied.
+  insertMode=false; activeTarget=""; responseSignature="valid-signature";
+  responseTarget="target-unapproved"; responseInsert=true;
+  pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
+  if(acceptPollResponse(String("{\\"ok\\":true}")) || insertMode ||
+     !activeTarget.empty() || relayOn) return 54;
+  pollIntakeSuspended=false; applyOutputs();
+  if(relayOn || ledOn) return 55;
+
   // A fresh valid positive poll may restore intake after the inhibit is released.
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
   responseTarget="target-02"; responseInsert=true; pollIntakeSuspended=true; relayOn=true; applyOutputs();
