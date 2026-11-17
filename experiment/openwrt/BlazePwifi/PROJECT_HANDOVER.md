@@ -2,11 +2,11 @@
 
 > **DRAFT #318 · FIRMWARE SOURCE FIX CI VERIFIED AT 5d3dc554 · TEST-FIXTURE STATIC RED/GREEN ONLY · NEW EXACT-HEAD CI NOT YET VERIFIED · PHYSICAL ACCEPTANCE NOT TESTED · PRODUCTION NO-GO**
 >
-> Current branch head: `8c1be6a72b72a044b4d92f409fcd94ee291f477c`  
+> Current branch head: `50094d6231ed67d51c74f8a7eeaa35413d1e20b6`  
 > Firmware source-fix head: `5d3dc5547606841209ade10c888dab67e1ffcaa7`  
 > Parent #317 current head: `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`
 >
-> UTC11 test-only correction: the synchronous-poll scenario previously rewound fake time from the 250 ms quiet-window completion to 120 ms. It now places the pulse at 300–380 ms, samples at 320 ms, and ends the simulated timeout at 3600 ms. Local static RED/GREEN comparison is recorded in [the narrow handover](docs/handover/2026-11-17-hw-poll-inhibit-pulse-drain.md). No firmware runtime code changed. The corrected lab has not yet received new exact-head GitHub Actions evidence.
+> UTC11 test-only correction: the synchronous-poll scenario previously rewound fake time from the 250 ms quiet-window completion to 120 ms. It now places the pulse at 300–380 ms, samples at 320 ms, and ends the simulated timeout at 3600 ms. Local static RED/GREEN comparison is recorded in [the narrow handover](docs/handover/2026-11-17-hw-poll-inhibit-pulse-drain.md). No firmware runtime code changed. The corrected lab has not yet received new exact-head GitHub Actions evidence. A follow-up corrected the timeline guard's C++ comment marker from `#` to `//`; local static RED/GREEN was repeated at `6fda96a7151cd8b55bbcb1781adfcda822f41d3e`, still not Actions or C++ compilation.
 >
 > PR #318 remains a stacked DRAFT with 17 commits ahead / 8 behind current #317; no rebase, force-push, merge or deployment is authorized.
 
