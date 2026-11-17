@@ -566,3 +566,23 @@ COE #31 sandbox run [#44104956173](https://github.com/BlazeDevStudio/CoinOperate
 The source correction resolves the prior generated-shell literal-newline defect at source level, but the final exact-head sandbox job is still running. The test harness invokes the sandbox helper; the generated operator wrapper does not. Do not collapse those two claims. PHX-RELEASE owns the runtime boundary and ULA implementation; PHX-QA owns independent exact-head verification. PHX-MASTER owns architecture, matrix and migration gate only.
 
 **PHX-MASTER bounded static assertions:** 13/13 passed across current packager/test/runner/workflow/manifest blobs. **Not executed:** COE Python packaging suite, Master Python suite, OpenWrt UCI/netifd tests or physical tests. Local Git clone was blocked by DNS resolution; the GitHub Actions sandbox job remains IN_PROGRESS. No subsystem source, destination staging, license record, secret, firmware, payment or financial state was modified. **PRODUCTION NO-GO.**
+
+
+## 21. UTC16 exact-head COE sandbox, ULA, and HARDWARE fixture reconciliation — 2026-11-17
+
+| Gate | Exact ref / evidence | Current disposition |
+|---|---|---|
+| Experiments main / development | `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` | Exact live refs; v0.6 audit foundation remains comparison-only |
+| PHX-MASTER #288 | `phoenix/master-coordination@5e11daf8d9a65659e92030df94b212eb9e28d21f` before UTC16 audit | Open/draft; no PR-triggered runs returned |
+| COE main / integration #26 | `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | #26 open/draft; five workflows remain QUEUED; not combined acceptance |
+| COE RELEASE #31 | `phoenix/release-imagebuilder-failclosed-20261115@9c2bebf50030c03bc4dd1e827e050863ba482eab`, based on #26 | Open/draft; generated operator wrapper now routes through runner at source level |
+| #31 sandbox runtime | [44125258197](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258197), job `134197585782` | CANCELLED at 20-minute workflow timeout after 15 tests; no complete runtime verdict |
+| #31 shared/hardware | [44125258235](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258235) | SUCCESS, scoped only |
+| #31 case collision | [44125258102](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258102) | SUCCESS, scoped only |
+| #31 sandbox runtime observability | Test helper `subprocess.run` and runner `process.communicate` have no per-invocation timeout; workflow timeout is 20 minutes | RELEASE must add bounded child/process-group timeout and diagnostics; QA independently reruns |
+| #31 ULA | Packager blob `f819ef1c...` still emits `fd00:db8:blaze::/48`; tests blob `a5310f90...` lacks ULA parser coverage | P0 invalid ULA remains; block integration |
+| HARDWARE #317 | `839c21877c27c893e2efc73b3afe7c48e1fcfa4e`, based on #315 `84fe6b790139d147f330f13a40b3ae3e89a7042d` | Focused runs 44130911539/44130911583 SUCCESS; Full 44130911522 fails at legacy positive poll-signature fixture; preserve default-deny |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 scoped SUCCESS; #292 no runs returned (UNKNOWN) |
+| OWNERSHIP_ROUTES.json | Existing blob `e4db324315a1b3543fec17a148fbf960170fcb29` | Unchanged, DRAFT_REVIEW_ONLY; PHX-MASTER target null |
+
+The current #31 operator-wrapper source correction supersedes the older bypass finding, but the sandbox runtime suite is incomplete. The ULA P0 remains. HARDWARE Full validation now fails at the QA-owned legacy poll-signature check; do not restore a positive firmware admission path. No destination copy, move, cherry-pick, merge, or promotion is authorized. See [UTC16 audit](COE_IMAGEBUILDER_SANDBOX_TIMEOUT_AND_ULA_AUDIT_20261117_UTC16.md). **PRODUCTION NO-GO.**
