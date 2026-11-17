@@ -212,7 +212,7 @@ int main(){
     const bool expectRecovery=!expectSuccess;
     const unsigned expectRemoveCalls=expectSuccess ? 2U : (scenario==7 || scenario==8 ? 1U : 0U);
     const bool filesCorrect=expectSuccess ? LittleFS.files.empty() : LittleFS.files==originalFiles;
-    const bool expectPendingReady=(scenario!=16);
+    const bool expectPendingReady=(!expectSuccess && scenario!=16);
     if(ok!=expectSuccess || journalRecoveryRequired!=expectRecovery ||
        !filesCorrect || LittleFS.removeCalls!=expectRemoveCalls ||
        pendingReady!=expectPendingReady || pendingPulses!=(expectSuccess?0:4) ||
