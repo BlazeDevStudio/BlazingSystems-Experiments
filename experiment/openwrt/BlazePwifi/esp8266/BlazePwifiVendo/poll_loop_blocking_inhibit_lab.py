@@ -93,6 +93,7 @@ void delay(int ms){ fakeNow+=(uint32_t)ms; }
 struct FakeWiFi {
   int status() const { return WL_CONNECTED; }
   void disconnect() {}
+  void softAPdisconnect(bool) {}
   void begin(const char*,const char*) {}
 } WiFi;
 struct FakeWeb { void handleClient() {} } web;
