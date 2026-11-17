@@ -319,3 +319,16 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 ## UTC21 Hardware source routing supplement — PR #283
 
 PR #283 `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` is a third open Hardware candidate based on main. It changes both ESP sketches, `tests/controllers.sh`, and adds a firmware-hardening test under the QA-owned `tests/` path. The source/test blobs differ from #317 and #318; comparisons show #283 diverged 13/272 from #317 and 13/260 from #318. Current-head run 44182715006 is pending; predecessor run 44182117122 is overall cancelled. Require PHX-HARDWARE stack proposal and PHX-QA ownership/test review. No copy/move/rebase/cherry-pick/merge authorization.
+
+## UTC23 migration hold — current Hardware candidates and COE #26
+
+- Current Experiments candidates: #283 `83646f309a84f3f0de9c1af6dac2c7ee08b61c85`, #317 `a166f91d6c790aa81ff98794038d76b39bc6562d`, #318 `696e28ed4cd53b9189b78095b38aee973d774683`. They are three distinct, divergent drafts; do not treat #283's green workflow as proof that its two new host labs ran.
+- Exact source/destination ESP32 and ESP8266 blobs all differ. Routed source `tests/controllers.sh` is absent at COE `Pisowifi/tests/controllers.sh`; the distinct `Hardware/tests/test_firmware_hardening.sh` still expects positive poll-signature and quarantine-clear behavior. #283's new LittleFS and quarantine-clear host labs are not in COE #26 and not invoked by its current source workflow.
+- COE #26 `SOURCE_INTAKE.json`/`MIGRATION_MAP.md` are still pinned to historical source `6d4c9b...`; the intake explicitly disclaims release authorization, hardware testing, full CI and complete source admission. Refresh only after HARDWARE stack selection and independent QA test-identity review.
+- Source BlazePwifi MIT license equals sibling `Pisowifi/LICENSE`, but no Hardware-specific or COE-root LICENSE/NOTICE exists. Resolve license/NOTICE applicability before any Hardware import. Source and destination build workflows differ and require reimplementation review.
+- Current #318 compare against #317 is DIVERGED (51 ahead / 68 behind); #318 mergeable=false and no current-head CI. Keep all three Hardware PRs separate pending owner decision.
+- #291 current docs head `a74b8b94...`: exact source/test CI 44199068618 SUCCESS, docs-only CI 44199987756 IN_PROGRESS; signing/publisher skipped. COE #31 sandbox 44179122674 remains host-blocked; COE #26 five workflows remain queued.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No destination path is authorized by this audit.
+- Canonical private Drive registry v11/newer corrections are not accessible through the exposed connector/Library; no older snapshot substituted.
+
+**No destination file was moved, copied, overwritten or deleted. No subsystem source branch was modified. PRODUCTION NO-GO.**

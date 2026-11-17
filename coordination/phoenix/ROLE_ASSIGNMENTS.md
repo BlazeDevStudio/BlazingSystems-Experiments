@@ -545,3 +545,24 @@ The private registry v11/newer corrections remain inaccessible; no older snapsho
 PHX-HARDWARE PR #283 is an additional open draft candidate discovered in the live #172 mailbox after the UTC20 role snapshot. Current head `83646f309a84f3f0de9c1af6dac2c7ee08b61c85`, branch `cleanup/esp-firmware-hardening-and-quarantine-20261111`, base main, 10 changed files, mergeable=true. Current-head run 44182715006 is PENDING. Its tested predecessor `a43ca007b1a7ef38cc278395ca12c5bb2ec656da` run 44182117122 is overall CANCELLED (validation and ESP8266/ESP32 succeeded, but x86_64/Android emulator simulations and candidate gate were cancelled); do not call it a complete GREEN.
 
 #283 overlaps both firmware sketches with #317/#318 but is divergent: 13 ahead / 272 behind #317 and 13 ahead / 260 behind #318, common merge base `a87567291e80006f3f30cea81fc20e8b299b95e8`. Exact sketch blobs differ across all three candidates. #283 also changes QA-owned `tests/controllers.sh` and adds a test under `tests/`; PHX-QA must explicitly review/acknowledge that scope. Keep #283/#317/#318 separate until HARDWARE proposes a sequence and QA verifies exact source/test heads.
+
+## Live exact role and CI refresh — 2026-11-17 UTC23
+
+This snapshot supersedes earlier role pins for the candidates listed here. It does not transfer ownership, authorize migration, or approve a merge.
+
+| Role / candidate | Exact current head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER #288 | `a6f8406472f0227d86613c75f5d44c46476c95ec` pre-audit | OPEN/DRAFT; 64 pre-audit paths, all `coordination/phoenix/`; no PR-triggered runs returned. This activation changes Master-owned coordination only. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped run 42698139210 SUCCESS; separate hourly CORE continuation retains implementation ownership. |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Runs 43653329235 / 43653329229 SUCCESS, scoped. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Run 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN. |
+| PHX-HARDWARE #283 | `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` | Exact-head 44182715006 all required software/target/simulation/candidate jobs SUCCESS; two new source-extracted labs remain unwired/unexecuted by this workflow. |
+| PHX-HARDWARE #317 | `a166f91d6c790aa81ff98794038d76b39bc6562d` | Focused 44193392313 / 44193392314 SUCCESS; Full 44193392383 fails at QA-owned stale positive poll-signature fixture; 14 target builds SUCCESS. |
+| PHX-HARDWARE #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | No current-head CI; mergeable=false; diverged from #317 (51 ahead / 68 behind in #318/#317 comparison). |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 scoped run 43633486963 SUCCESS; #292 has no current-head run returned. |
+| PHX-RELEASE #291 | current docs head `a74b8b940fba3aa8651f1a9ee8bbf23cf112726e`; tested source/test head `4d36160ccffb7bee34aa713bc896be33e355646d` | Exact source/test run 44199068618 SUCCESS; docs-only head run 44199987756 IN_PROGRESS. Signing and write-privileged publisher skipped. |
+| PHX-RELEASE #242 | `734b89d9e7792247e8376335c3f3685500ab3f89` | Existing scoped candidate; no release approval inferred. |
+| COE RELEASE #31 | `7bdba18b86f706d7fb96831094338600e28cc9c5` | Shared/hardware 44179122507 and case 44179122882 SUCCESS; mandatory sandbox 44179122674 fails at hosted UID-map setup. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs; no integrated acceptance. |
+
+Canonical private registry v11/newer corrections remain inaccessible; no older snapshot was substituted. Hardware stack, QA fixture/lab coverage, COE source/test/license parity, #31 sandbox, #26 CI and all physical/financial gates remain open. **PRODUCTION NO-GO.**

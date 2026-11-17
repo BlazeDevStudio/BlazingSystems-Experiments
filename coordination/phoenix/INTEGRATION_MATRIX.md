@@ -711,3 +711,21 @@ The #317 failure is a QA fixture/parity failure, not permission to enable positi
 | HARDWARE #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | child of #317 branch but diverged 51/63 | no current-head runs; mergeable=false |
 
 Exact ESP32 and ESP8266 Git blobs differ across #283/#317/#318; #283's `tests/controllers.sh` blob also differs from the shared #317/#318 blob. #283 modifies QA-owned `tests/controllers.sh` and adds `tests/v05_firmware_hardening_test.sh`; require QA review before integration. No candidate is accepted or physically verified.
+
+## UTC23 exact Hardware / COE source-to-staging reconciliation — 2026-11-17
+
+| Artifact | #283 | #317 | #318 | COE #26 |
+|---|---|---|---|---|
+| ESP32 | `91e2add2635d18228065a96a6dd1e3db3409c43a` | `067c79405a6eb81a6c0b292b858191d3a131ed4f` | `7a24b1b643aa90c0056b5f7634d3c67e3ecb5a34` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` |
+| ESP8266 | `dd91ae49abeb675015c8fae38e096156170a2e96` | `2f6dce596368d74f51aa6ab6a66b6dde875511c1` | `ebd1572cf82cd1c6ef2c5afbb7b4075533697440` | `c8be98f72596681e36a3ad1f8939bf8046c96887` |
+| `tests/controllers.sh` | `0f73e9024b98cfe5c6cc131f70a58cf50375d0fe` | `f7896647713d6bf8034ff48ed19b6383e4dedea0` | `f7896647713d6bf8034ff48ed19b6383e4dedea0` | `Pisowifi/tests/controllers.sh` absent |
+
+Destination `Hardware/tests/test_firmware_hardening.sh` is `f921c56cecc19cab1989507b9b4ade1f45dac54e` (100755), not the routed source `controllers.sh`; it still expects `response_sig`, `|poll|` and `/quarantine/clear`. #283 adds `littlefs_mount_failclosed_lab.py` (`8b63f8ec...`) and `quarantine_clear_deny_lab.py` (`e09b3b76...`); both are absent from #317/#318/#26 and not called by source workflow blob `2cd6ce83...`.
+
+COE #26 `SOURCE_INTAKE.json` blob `1b9018ff...` and `MIGRATION_MAP.md` blob `b54fc15d...` remain pinned to historical source `6d4c9b487af4d768c4d7627654d119417fcc6e00`; intake records 61 rootfs files / 47 identical / 14 derived, but `release_authorized`, `hardware_tested`, `full_ci_tested`, and `source_admission_complete` are all false. Current Hardware candidate files/tests are not proven imported.
+
+License: source BlazePwifi MIT blob `1ee55b94...` equals COE `Pisowifi/LICENSE`, but COE has no `Hardware/LICENSE`, `Hardware/NOTICE.md`, root LICENSE or root NOTICE. Workflow `blazepwifi-build.yml` blob `2cd6ce83...` differs from `pisowifi-ci.yml` blob `cf18705f...`; the manifest requires reimplementation review.
+
+Current pairwise compare results: #283/#317 DIVERGED (13 commits unique to #283, 277 unique to #317); #283/#318 DIVERGED (13 unique to #283, 260 unique to #318); #317/#318 DIVERGED (51 unique to #318, 68 unique to #317). Keep drafts separate. No source copy, overwrite, rebase, cherry-pick or merge.
+
+CI: #283 run 44182715006 SUCCESS for validation, ESP boards, target/platform matrix, Android and software simulations; it does not execute the two new labs. #317 focused runs 44193392313/44193392314 PASS; Full 44193392383 fails the stale QA poll-signature assertion while all 14 target builds pass. #318 has no current-head CI. COE #26 five workflows remain queued. No hardware acceptance is inferred.
