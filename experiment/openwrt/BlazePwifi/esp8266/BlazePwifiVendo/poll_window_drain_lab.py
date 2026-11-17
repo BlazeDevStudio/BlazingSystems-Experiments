@@ -150,7 +150,7 @@ def main():
             if "POLL_WINDOW_DRAIN_PASS 11/11" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_POLL_WINDOW_DRAIN_PASS 10/10")
+            print(f"{board}_POLL_WINDOW_DRAIN_PASS 11/11")
 
             quiet_index = signatures.index("bool coinLineQuietAfterInhibit(){")
             mutated = list(functions)
