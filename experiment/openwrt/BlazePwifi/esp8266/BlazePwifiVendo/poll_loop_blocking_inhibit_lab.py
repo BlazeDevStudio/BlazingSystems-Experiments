@@ -48,6 +48,7 @@ struct String : std::string {
     const auto p=find(needle);
     return p==npos?-1:(int)p;
   }
+  bool isEmpty() const { return empty(); }
 };
 static uint32_t fakeNow=2000;
 static int pulseStart=-1, pulseEnd=-1;
@@ -72,7 +73,13 @@ int runCoinPin=4, runLedPin=2, runRelayPin=26;
 int maxWifiRetries=6, wifiFailures=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget="target-01", pendingTarget="", pendingNonce="";
-struct ConfigStub { char ssid[33]="test-ssid"; char pass[65]="test-pass"; } cfg;
+struct ConfigStub {
+#ifdef TARGET_ESP32
+  String ssid="test-ssid", pass="test-pass";
+#else
+  char ssid[33]="test-ssid"; char pass[65]="test-pass";
+#endif
+} cfg;
 int digitalRead(int) {
   const bool active=pulseStart>=0 &&
     fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
@@ -250,7 +257,7 @@ for board,path in BOARDS.items():
     begin=extract(source,"beginPollWindow")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet):
-        return STUBS+write+output_source+idle+can_start+quiet_source+begin+SUPPORT+loop_source+MAIN
+        return ("#define TARGET_ESP32\\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+SUPPORT+loop_source+MAIN
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     mutations=(
