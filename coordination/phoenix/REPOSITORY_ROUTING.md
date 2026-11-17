@@ -147,3 +147,12 @@ COE integration PR #26 at b382d233ff06c8791b1028bed3c617cc7b670d12 still stages 
 License/provenance is also unresolved for Hardware: the candidate Hardware subtree has no LICENSE or NOTICE file, the COE root LICENSE path is absent, and the PisoWiFi-only SOURCE_INTAKE manifest does not inventory Hardware. The source project MIT license and destination Pisowifi/LICENSE are byte-identical, but the destination license scope for Hardware must be confirmed by the owner. This is not a legal conclusion.
 
 No file move, source copy, overwrite, merge, release or hardware operation is authorized by this note.
+
+
+## Current Hardware source/staging provenance hold (2026-11-17 UTC05)
+
+The machine-readable OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY and pins source_ref to Experiments main f4e8a891..., while the current HARDWARE owner source candidate is draft #315 at 75dc5f0b888f16e2c85e4321f62df4685639ad33. These are distinct source snapshots. For Hardware migration review, use the current owner PR #315 as the source candidate and compare it per file with COE draft #26 at b382d233ff06c8791b1028bed3c617cc7b670d12; do not assume the manifest's main SHA contains the latest owner correction.
+
+The current owner source has dormant remote configuration and denies POST /quarantine/clear with HTTP 403 without deleting /quarantine.log. COE #26 still applies remote configuration from register/poll responses and deletes the quarantine log through POST. Exact ESP32/ESP8266 blobs, modes, source-test imports, license/notice scope and CI are in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md.
+
+No route permission changed: PHX-MASTER still owns coordination/phoenix only; PHX-HARDWARE owns firmware; PHX-QA owns independent tests; COE integration remains review-only. Do not copy, overwrite, merge, or close owner PRs based on this note.

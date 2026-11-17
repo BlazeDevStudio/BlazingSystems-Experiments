@@ -336,3 +336,18 @@ This is a source inspection finding, not a live exploit or physical actuation re
 - The Hardware source-intake/license record is incomplete: Pisowifi/SOURCE_INTAKE.json is explicitly PisoWiFi-only; the Hardware subtree has no LICENSE/NOTICE, and the candidate's firmware audit still claims the firmware was not copied although both sketches exist in the PR tree. The source MIT license and Pisowifi/LICENSE share blob 1ee55b94183417be977ca287cd7391f9a6f7e721, but coverage for Hardware is not established.
 
 **Owner sequence:** HARDWARE maintains the source-side deny behavior; QA repairs the extractor and independently tests both boards; CORE reviews the configuration authorization domain; COE integration owner reconciles per-file provenance, license scope and candidate tests. No blind copy, source move or merge is authorized. See REMOTE_CONFIG_MIGRATION_STAGING_AUDIT_20261117_UTC04.md.
+
+
+## 11. Live exact-head Hardware migration hold — 2026-11-17 UTC05
+
+| Gate surface | Current owner source | COE #26 candidate | Disposition |
+|---|---|---|---|
+| ESP32 remote config | #315 blob 38a2d239...; helper definition only; register/poll responses do not apply config | blob 3cc7ec54...; three helper occurrences; register/poll call sites; two keyless-true defaults | BLOCKED |
+| ESP8266 remote config | #315 blob f59e624...; helper definition only; fail-closed register tuple and poll acceptance | blob c8be98f...; three helper occurrences; register/poll call sites; two keyless-true defaults | BLOCKED |
+| Quarantine clear | #315 returns 403; no quarantine-log delete call | #26 deletes /quarantine.log and returns 200; no explicit AP-origin guard | P0 MIGRATION HOLD |
+| Source tests | register config 7/7 and poll/config 11/11 per board in focused #315 source lab | one shell hardening script; no keyless, no-config-callsite, 403/no-delete or AP-origin regressions | IMPORT GAP |
+| License/notice | BlazePwifi MIT LICENSE and source repository NOTICE | Pisowifi/LICENSE only; Hardware/root scope unresolved | OWNER REVIEW |
+
+The exact blobs and modes are recorded in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md. Focused #315 run 44013351048 succeeded on source-extracted host tests; full #315 run 44013351035 failed in the QA-owned controller extractor. COE #26 still has five queued workflows. None of these results establishes integrated acceptance.
+
+**Disposition:** keep #26 draft and do not copy/promote Hardware files until PHX-HARDWARE and independent PHX-QA reconcile exact source/destination blobs, route security, test identities, crypto wording, license/notice scope and candidate CI. No production flash, release, migration or live-money operation is authorized.

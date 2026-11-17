@@ -132,3 +132,12 @@ Private Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was re-read (5
 **Immediate next action:** PHX-PISONET and PHX-QA independently inspect all 11 differing same-path blobs plus the relevant 30/9 one-sided inventory, verify safe status-read failure behavior and dependency/license import requirements at the proposed combined candidate SHA, and record owner approval on the control issue. PHX-QA additionally needs a source-exact run of all 18 Master tests and an actual combined merge/CI review, not merely the four isolated recipient tests. PHX-RELEASE holds approval until protected signing, independent anti-rollback witness, reversible money migration and real 150 power-cut / 30-device 24-hour acceptance are proven.
 
 **Status:** `IN_PROGRESS` for coordination; `BLOCKED` for unreviewed migration; **PRODUCTION NO-GO**. Rollback is limited to the two new Master-only documentation/ledger commits; product runtime PRs are untouched.
+
+
+## 2026-11-17 UTC05 — Hardware migration staging P0 audit
+
+The current HARDWARE owner branch #315 at 75dc5f0b888f16e2c85e4321f62df4685639ad33 has two important corrections on both ESP boards: remote configuration is dormant (applyRemoteConfig definition only; no register/poll response call sites), and POST /quarantine/clear returns HTTP 403 without deleting /quarantine.log. The current COE integration candidate #26 at b382d233ff06c8791b1028bed3c617cc7b670d12 still has the old behavior: register/poll response-driven applyRemoteConfig call sites with bool sigOk=true defaults, plus a quarantine-clear handler that deletes the log and returns HTTP 200 without an explicit AP-origin guard.
+
+Exact source/destination blob identities, file modes, line locations, README crypto-label discrepancy, test-import gap, license/notice scope, role CI and owner actions are recorded in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md. The source-focused #315 run 44013351048 passed simulated/source-extracted tests; full run 44013351035 failed in the QA-owned controller extractor. COE #26 has five queued workflows. This is not integrated acceptance.
+
+**Disposition: BLOCKED / PRODUCTION NO-GO.** Keep COE #26 draft. Do not migrate or promote the Hardware candidate until PHX-HARDWARE and independent PHX-QA reconcile exact blobs, quarantine route behavior, configuration authentication, test identity, crypto documentation, license/notice scope and exact-head CI. No source files, destination files, financial state, secrets, hardware, release or production workflow were changed by this Master audit.

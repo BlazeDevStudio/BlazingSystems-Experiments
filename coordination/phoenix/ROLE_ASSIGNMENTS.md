@@ -194,3 +194,20 @@ This snapshot updates the earlier UTC03 register-path finding without changing a
 | COE integration owner | #26 / b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued | Reconcile staged firmware, audit claims, license/notice scope and test identity before any per-file transplant. |
 
 The HARDWARE #315 focused register lab is source-extracted CI evidence, not physical acceptance and not destination #26 evidence. No subsystem branch was changed by PHX-MASTER.
+
+
+## Live role PR / CI reconciliation — 2026-11-17 UTC05
+
+This snapshot supersedes the older timestamped role/CI table above for the refs listed here. All workflow observations are tied to the exact branch heads inspected in this activation. Success is scoped to the named workflow, not whole-system acceptance.
+
+| Role | Active draft(s) and exact head(s) | CI observation |
+|---|---|---|
+| PHX-MASTER | #288 phoenix/master-coordination@381827401d1733a716675e2e33932e472339d8ce (pre-update head) | No PR-triggered runs returned |
+| PHX-CORE | #252@c82705f2de865c89ab733b10efa84f26f56a5cc4 | Run 42698139210 success |
+| PHX-RENTAL | #240@a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #289@68928774d0d7cf65adb26bc6b54199a3159d066c; #287@a4fffd01c8fb1818c32a53522e0590c1dc8a77cd | #240 runs 40910311141/40910311159 success; #289 runs 43653329235/43653329229 success; #287 run 43754089203 success |
+| PHX-PISONET | #255@d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Run 42462978704 success |
+| PHX-HARDWARE | #315@75dc5f0b888f16e2c85e4321f62df4685639ad33; #316@888e6941e3a7a81641682c23d937f97d8117d2ea; #283@a87567291e80006f3f30cea81fc20e8b299b95e8 | #315 focused 44013351048 success, full 44013351035 validation failure; #316 focused 43972511337 success, full 43972511250 validation failure; #283 run 43634101437 success |
+| PHX-QA | #292@75a3f66d9563e38a0a48b9cf487b0b057a91ea96; #267@ff5367990c2d27b8ebbb822ee208251af0c890e2; #279@8f476ef05893193325ef3d1f65a35e144ae7a568 | #267 run 41452247439 success; #292 and #279 returned no workflow runs |
+| PHX-RELEASE | #242@734b89d9e7792247e8376335c3f3685500ab3f89; #291@2c4edff231d9b2819415086825530d80b8801307 | #242 run 40882814472 success; #291 run 43744993487 success |
+
+COE integration #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows (43096752609, 43096752632, 43096752800, 43096752563, 43096752557). HARDWARE #316 remains a separate open draft but its behavior is consolidated on #315; do not merge #316 independently. QA's canonical controller extractor still fails to include acceptPollResponse() in the full #315 validation harness. CORE source was not modified by PHX-MASTER; the separate CORE continuation ownership boundary remains respected.
