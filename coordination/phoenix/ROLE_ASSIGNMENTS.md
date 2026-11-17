@@ -229,3 +229,23 @@ The historical PR lists above are not a live status feed. The exact current open
 | COE integration owner | COE #26 `integration/ecosystem-nonproprietary-candidate-20261111` | `b382d233...` | Eight workflows still QUEUED | Keep draft; reconcile exact blobs, tests, license scope and CI |
 
 PHX-MASTER owns only `coordination/phoenix/`, architecture/interface contracts, routing and release gates. No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source files were changed in this checkpoint. The separate CORE continuation remains the sole CORE implementation owner.
+
+## 4. Live role routing and CI checkpoint — 2026-11-17 UTC07
+
+This timestamped snapshot supersedes earlier live-status tables for the observed heads only; it does not transfer ownership or authorize merges. `OWNERSHIP_ROUTES.json` remains the path authority and `DRAFT_REVIEW_ONLY`.
+
+| Role | Current open draft(s) / exact head | CI / review state | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination`, pre-change head `c121d651919c4099390d0a78c4cc0e8179e0c3ca` | No PR-triggered runs. Targeted source-intake Python suite 11/11 PASS locally; full Master suite NOT RUN | Own only `coordination/phoenix/`, contracts, provenance and matrix |
+| PHX-CORE | #252 `c82705f2...`; #241 `8aa2529a...`; #248 `a1f80f30...` | #252 run 42698139210 SUCCESS; #241 run 40813818877 FAILURE; #248 run 40882042148 FAILURE | Publish event-bound signed coin receipt/disposition contract, idempotency rules and golden vectors; Master made no CORE source change |
+| PHX-RENTAL | #240 `a7d113fb...`; #287 `a4fffd01...`; #289 `68928774...` | #240 40910311141/40910311159 SUCCESS; #287 43754089203 SUCCESS; #289 43653329235/43653329229 SUCCESS | Preserve authenticated-before-persistence and rollback backup safeguards |
+| PHX-PISONET | #255 `d01fd164...` | Run 42462978704 SUCCESS | Continue native COM/serial validation; physical acceptance remains NOT TESTED |
+| PHX-HARDWARE | #315 `4afc7c8bd8ea410049f1da7bc962bfc989b4ba1b`; separate #316 `888e6941...`; older #283 `a8756729...` | #315 focused 44038469936 SUCCESS; Full 44038469823 FAILURE in validation job 133887096342; #316 focused 43972511337 SUCCESS/Full 43972511250 FAILURE; #283 43634101437 SUCCESS | Keep #315 as owner-controlled source candidate; hold coin disposition DENY until CORE contract and QA vectors exist; no independent #316 composition |
+| PHX-QA | #267 `ff536799...`; #279 `8f476ef0...`; #292 `75a3f66d...` | #267 run 41452247439 SUCCESS; #279 and #292 returned no workflow runs | Repair the current #315 poll-loop extractor and independently run positive/negative disposition vectors on both boards |
+| PHX-RELEASE | #242 `734b89d9...`; #291 `2c4edff2...` | #242 40882814472 SUCCESS; #291 43744993487 SUCCESS | Keep signing, publishing and release promotion closed |
+| COE integration owner | COE #26 `b382d233...`; COE #29 `d0830332...`; #28 `b21b0461...`; #30 `4897348d...` | #26 five workflows QUEUED; #29 two scoped successes; #28 and #30 one scoped success each | Keep #26 draft; reconcile Hardware blobs/tests/licenses and combined CI |
+
+**Current shared interface decision:** no raw coin POST response is financial authority. #315 source deliberately returns DENY until PHX-CORE defines the event-bound receipt and PHX-QA approves vectors. PHX-HARDWARE implements only after that contract; COE #26 remains blocked.
+
+No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The separate CORE implementation ownership boundary remains respected.
+
