@@ -31,3 +31,14 @@ g++ -std=c++17 -Wall -Wextra -Werror -O2 \
 The [focused GitHub workflow](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/phoenix/hardware-core252-deny-consumer-20261030/.github/workflows/phx-hw-controller-auth-focused.yml) pins its checkout to the PR head SHA and also asserts Phase A relay/coin denial. A passing host test is not an Arduino build, hardware flash or customer field acceptance.
 
 **Cleanup intent:** remove only the duplicate digest-to-hex loops and their stdio dependency, preserving identical lowercase output bytes, fixed-length comparisons and fail-closed functions. Independent tests and upstream interface changes belong to their owners.
+
+## Exact-head verification record — 2026-11-17
+
+The non-actuating helper cleanup from source commit `3692ddf889470da8a002e9a16bf0ac2f37f1a9d0` is now validated on its documentation-only successor `16de37a7f3a86e1ec7dbc424b6b2f43227421eee`.
+
+- The compare from `3692ddf` to `16de37a` contains only the three canonical handover documents (`PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, `CHANGE_LEDGER.md`); the helper, test and application source are unchanged.
+- Focused native run [#43633345474](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345474), job `132564650975`, completed successfully at exact SHA `16de37a`. It compiled the actual header against mbedTLS and passed 5/5 synthetic checks: signed response still denied, tampered signature denied, wrong device denied, wrong nonce denied, and invalid signature/empty key denied. Phase A deny guard passed.
+- Full BlazePwifi run [#43633345561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345561) completed successfully at the same exact SHA. Validation job `132564700241`, ESP32 `132564700182`, ESP8266 `132564700146`, Android, returned target builds, v0.4 simulation jobs and update-bundle job all succeeded.
+- The earlier full run [#43632185933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632185933) at source-only SHA `3692ddf` failed the mandatory handover freshness gate. That failure remains historical; the docs-only successor and the new exact-head Full run are the successful correction.
+
+**Classification:** this isolated helper and its synthetic native test are **CI VERIFIED** at `16de37a`. They remain LAB ONLY and are not wired into application coin admission. Production signing, publish/release jobs were skipped; no key was provisioned, no GPIO/relay/coin path changed, and no physical hardware acceptance is claimed. Phase A remains DENY.
