@@ -68,3 +68,15 @@ A second source audit found that **markPendingPostAttempt()** accepted any match
 ### Evidence limits and next action
 
 All results are exact-source C++ host tests with fake LittleFS. They are **SIMULATED / CI VERIFIED**, not physical flash or power-cut acceptance. The full BlazePwifi build at the final head is still being evaluated; no overall Full success is claimed. PHX-QA must repair the canonical controller extractor / stale poll-signature expectation and independently rerun Full validation. PHX-CORE/MASTER review remains required for the provisional one-shot marker contract. No financial receipt authority, coin admission, migration, hardware flash, or production permission is created by this fix.
+
+
+## Final Full-workflow reconciliation (2026-11-17 UTC10)
+
+At final PR HEAD **9f6a7141fa10cd5ed90f267f389cb6212e2e7d1a**, Full run [#44064436567](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436567) completed with overall **FAILURE**.
+
+- Validation job **133974480063 FAILED** in the inherited controller-parity check: it still requires an active poll signature in the ESP sketches. Master PR #288 at **8bffe20f4a0ff5b722766c42d7dd3f03e97bee78**, Architecture Contracts §6.3, keeps poll admission denied until PHX-CORE publishes the canonical producer/consumer contract and PHX-QA approves exact vectors. Do not re-enable the unapproved poll formula to satisfy this stale assertion.
+- All **14 target/platform jobs completed SUCCESS**: ESP8266, ESP32, Android, x86_64, Ruijie, Orange Pi Zero 3, One, PC, Zero, Zero 2, Zero 2W, PC Plus, PC2 and One Plus.
+- Production APK import, production sign handoff, update bundle, v0.4 browser/Android/x86/Orange Pi/Ruijie/ESP simulations, candidate gate and prerelease/release publishing were **SKIPPED**.
+- Focused hardware lab [#44064436574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436574), job **133974328430**, remained **SUCCESS** at the same exact PR head: 28/28 pending-attempt marker cases per board (56/56 total), with inherited source-extracted hardware suites passing.
+
+The Full run is not green. The target builds are CI evidence only; they do not establish physical flash durability, coin pulse acceptance, financial correctness or release readiness. No QA-owned file was changed.

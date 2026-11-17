@@ -830,3 +830,12 @@ Test-first evidence: [RED #44064000610](https://github.com/BlazeDevStudio/Blazin
 Focused exact-head [run #44064230539](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064230539), job **133973625675**, **SUCCESS** at **f2bf1465ddb95cc17a9d814cf68ba556000b9a8d**: pending-attempt marker 28/28 per board (56/56 total); inherited hardware source-extracted labs passed. Full validation remains separate and is not claimed green.
 
 Classification: **SIMULATED / CI VERIFIED**. Physical flash, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Coin receipt verification remains default-deny; no merge, migration, flash, production signing, release or deployment.
+
+
+## PHX-HARDWARE — final Full validation reconciliation (2026-11-17 UTC10)
+
+At PR #317 HEAD **9f6a7141fa10cd5ed90f267f389cb6212e2e7d1a**, Full run [#44064436567](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436567) completed **FAILURE**. Validation job **133974480063** failed because the inherited controller-parity check still requires an active poll signature, contrary to Master Architecture Contracts §6.3 at #288 head **8bffe20f4a0ff5b722766c42d7dd3f03e97bee78**. Keep firmware default-deny; PHX-QA must reconcile the stale assertion and canonical extractor.
+
+All 14 target/platform jobs completed SUCCESS (ESP8266, ESP32, Android, x86_64, Ruijie and the 9 Orange Pi variants). Production import/sign, update bundle, v0.4 simulations/candidate gate and prerelease/release publishing were SKIPPED. Focused exact-head run [#44064436574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436574), job **133974328430**, succeeded with 28/28 pending-attempt marker cases per board (56/56 total).
+
+The Full workflow is FAILED despite target builds passing. This remains SIMULATED / CI VERIFIED only; physical acceptance and all financial/signer/migration gates remain NOT TESTED/BLOCKED. No QA-owned file, shared contract, COE destination, flash, migration or release was changed.
