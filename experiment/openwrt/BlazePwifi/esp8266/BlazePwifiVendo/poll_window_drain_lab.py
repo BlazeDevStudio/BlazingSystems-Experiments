@@ -93,7 +93,9 @@ int main(){
   ++passed;
   if(!runCase("pulse-during-300ms-debounce",280,360,300,false,0)) return 10;
   ++passed;
-  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/10\n";
+  if(!runCase("pulse-after-millis-rollover",0x20,0x50,40,false,0,0xFFFFFFF0UL)) return 11;
+  ++passed;
+  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/11\n";
   return 0;
 }
 '''
