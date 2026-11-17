@@ -440,3 +440,20 @@ The current COE #31 source correction removes the earlier generated-shell litera
 | PHX-RELEASE | #291 `2c4edff231d9b2819415086825530d80b8801307`; COE #31 `9c2bebf50030c03bc4dd1e827e050863ba482eab` | #291 [43744993487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43744993487) SUCCESS, scoped; COE #31 sandbox [44125258197](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258197) CANCELLED; shared/hardware [44125258235](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258235) and case-collision [44125258102](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258102) SUCCESS, scoped |
 
 COE integration #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows. #31 is still a child candidate of #26, not integrated. Private Drive registry v11/newer corrections remain inaccessible through the exposed connector; no older snapshot was substituted. This snapshot is read-only reconciliation, not an ownership transfer. **PRODUCTION NO-GO.**
+
+## Live exact refresh — 2026-11-17 UTC17
+
+This refresh supersedes prior role-head pins for this activation only. It is a status reconciliation, not an ownership transfer.
+
+| Role | Current exact PR head(s) | Exact-head CI observation |
+|---|---|---|
+| PHX-MASTER | #288 `f8f5169b0f06f52f19f6889fd66ae84bb9461a93` before this commit | Open/draft; all Master-owned paths remain under `coordination/phoenix/`; no PR-triggered run returned |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate CORE automation retains implementation |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | 43653329235 and 43653329229 SUCCESS, scoped |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance unverified |
+| PHX-HARDWARE | #317 `839c21877c27c893e2efc73b3afe7c48e1fcfa4e` | 44130911539 and 44130911583 focused SUCCESS; 44130911522 Full FAILURE at inherited positive poll-signature fixture; preserve default-deny |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 43633486963 SUCCESS, scoped; #292 no PR-triggered runs returned |
+| PHX-RELEASE | #291 `2c4edff231d9b2819415086825530d80b8801307`; COE #31 `411eeb103cfeebc589f6dc9c48b1789ebb047913` | #291 43744993487 SUCCESS, scoped; COE #31 sandbox 44137935105 FAILURE at UID-map gate, shared/hardware 44137935148 SUCCESS scoped, case-collision 44137935308 SUCCESS scoped |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; #28 `b21b04617d38a177260258de2d56b24382822117`; #29 `d0830332dee8a1844a85606150681b41d91fe796`; #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`; #32 `29b6fe08b10688182d981a66745f482758bd6630` | #26 five workflows queued; #28 43632393888 SUCCESS synthetic; #29 43653906676/43653906675 SUCCESS; #30 43653415598 SUCCESS synthetic; #32 43653540607 SUCCESS synthetic |
+
+**Decision routed:** PHX-MASTER approves only the unprivileged single-ID namespace model for a RELEASE implementation trial, pending independent QA review. No CORE source work was taken over; no role source branch was modified.

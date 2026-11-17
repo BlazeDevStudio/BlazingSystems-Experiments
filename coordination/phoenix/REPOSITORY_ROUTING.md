@@ -252,3 +252,12 @@ Exact-head sandbox run [44125258197](https://github.com/BlazeDevStudio/CoinOpera
 HARDWARE #317 is now at `839c21877c27c893e2efc73b3afe7c48e1fcfa4e`. Focused labs pass; Full [44130911522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44130911522) fails at the legacy positive poll-signature grep. QA owns the fixture correction; preserve firmware default-deny.
 
 COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows. #31 remains draft and is not integrated. `OWNERSHIP_ROUTES.json` remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. No source copy, destination overwrite, relocation, cherry-pick, merge, or promotion is authorized.
+
+## Live routing refresh — 2026-11-17 UTC17
+
+- PHX-MASTER remains restricted to `coordination/phoenix/`, architecture/interface contracts, integration provenance and release-gate coordination.
+- COE #31 remains RELEASE-owned on `phoenix/release-imagebuilder-failclosed-20261115@411eeb103cfeebc589f6dc9c48b1789ebb047913`; Master makes no edits to its packager, runner, tests or workflow.
+- PHX-QA owns independent review of the proposed unprivileged single-ID namespace trial and the exact-head negative/runtime tests. No QA acceptance is inferred from prior scoped CI.
+- COE #26 remains the integration owner's draft staging branch at `b382d233ff06c8791b1028bed3c617cc7b670d12`; #31 is a separate draft child and is not treated as integrated.
+- `OWNERSHIP_ROUTES.json` is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. It remains a review map, not a copy/move command. No destination files, licences, histories or test identities were changed.
+- The private registry/correction set is unavailable through the exposed connector; no older snapshot was used as authority and no private identifiers or contents were published.

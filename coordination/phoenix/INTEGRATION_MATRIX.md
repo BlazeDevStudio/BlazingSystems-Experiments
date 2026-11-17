@@ -586,3 +586,25 @@ The source correction resolves the prior generated-shell literal-newline defect 
 | OWNERSHIP_ROUTES.json | Existing blob `e4db324315a1b3543fec17a148fbf960170fcb29` | Unchanged, DRAFT_REVIEW_ONLY; PHX-MASTER target null |
 
 The current #31 operator-wrapper source correction supersedes the older bypass finding, but the sandbox runtime suite is incomplete. The ULA P0 remains. HARDWARE Full validation now fails at the QA-owned legacy poll-signature check; do not restore a positive firmware admission path. No destination copy, move, cherry-pick, merge, or promotion is authorized. See [UTC16 audit](COE_IMAGEBUILDER_SANDBOX_TIMEOUT_AND_ULA_AUDIT_20261117_UTC16.md). **PRODUCTION NO-GO.**
+
+## 21. COE #31 unprivileged user-namespace decision and exact-head runtime blocker — 2026-11-17 UTC17
+
+| Gate | Exact source / CI evidence | Current disposition |
+|---|---|---|
+| Experiments main / development | `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` | Refreshed; development remains separate and unpromoted |
+| PHX-MASTER #288 | `phoenix/master-coordination@f8f5169b0f06f52f19f6889fd66ae84bb9461a93` before this commit | Open/draft; Master owns coordination/phoenix only |
+| COE main / integration #26 | `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Open/draft; five workflows queued, no jobs; no combined acceptance |
+| COE RELEASE #31 | `411eeb103cfeebc589f6dc9c48b1789ebb047913`, child of #26 | Open/draft; not merged or promoted |
+| Runner / packager / tests / workflow | blobs `605146f6...` / `f819ef1c...` / `92d8b4c1...` / `e350b17a...` | Runner still root+SUDO+uidmap-helper; generated operator wrapper dispatches through runner |
+| Sandbox CI | [44137935105](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44137935105) | FAILURE at newuidmap UID-map authorization; 52 tests, 20 failures; real timeout regression not reached |
+| Shared/hardware CI | [44137935148](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44137935148) | SUCCESS, scoped only |
+| Case-collision CI | [44137935308](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44137935308) | SUCCESS, scoped only |
+| Namespace policy | Master decision §6.15 | Approve unprivileged single-ID mapping trial only; QA independent review required |
+| ULA output | Packager still emits `fd00:db8:blaze::/48` | Separate P0 invalid prefix; installation-scoped durable RFC 4193 /48 required |
+| Ownership routes | `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, Master target null | No copy/move/overwrite authorization |
+
+The current runner's root/SUDO/newuidmap path is blocked by the hosted runner's UID-map policy. The Master decision approves only a non-root single-ID namespace trial; it does not approve broad subordinate-ID grants or weaken the owner probe. QA must verify the exact final source SHA, host ownership, symlink/sentinel boundary, real timeout path, and fail-closed behavior. The host root remains readable and `--share-net` shares the host network, so this is not a confidentiality or network-isolation boundary.
+
+Current role CI at exact PR heads: CORE #252 `c82705f2...` run 42698139210 SUCCESS (scoped); RENTAL #289 `68928774...` runs 43653329235/43653329229 SUCCESS (scoped); PISONET #255 `d01fd164...` run 42462978704 SUCCESS (scoped); HARDWARE #317 `839c2187...` focused runs 44130911539/44130911583 SUCCESS, Full run 44130911522 FAILURE; QA #290 `5c29d159...` run 43633486963 SUCCESS (scoped), QA #292 `75a3f66d...` has no runs; RELEASE #291 `2c4edff2...` run 43744993487 SUCCESS (scoped). COE candidates: #28 `b21b0461...` run 43632393888 SUCCESS (synthetic); #29 `d0830332...` runs 43653906676/43653906675 SUCCESS; #30 `4897348d...` run 43653415598 SUCCESS (synthetic); #32 `29b6fe08...` run 43653540607 SUCCESS (synthetic). COE #31 remains blocked as above; COE #26 has five queued workflows.
+
+No physical COM acceptance, real OpenWrt UCI/netifd/ImageBuilder execution, native hardware acceptance, financial migration, signing, 150 power cuts, or 30-device/24-hour soak is established. Keep #26/#31 draft and **PRODUCTION NO-GO**.

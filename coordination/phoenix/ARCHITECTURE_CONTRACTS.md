@@ -319,3 +319,13 @@ Runtime acceptance remains **BLOCKED**. Exact-head sandbox run [44125258197](htt
 The independent ULA P0 remains open: packager blob `f819ef1c...` still emits invalid `fd00:db8:blaze::/48`, and test blob `a5310f90...` has no IPv6/ULA parser coverage. Preserve §6.9: the RFC 4193 /48 is durable installation/site identity, not a global hardware-profile constant. RELEASE owns implementation; CORE/COE define provisioning; QA independently verifies; HARDWARE validates only after correction and authorization.
 
 This source correction does not establish a real OpenWrt ImageBuilder build, UCI/netifd acceptance, network isolation, signing, hardware acceptance, or production readiness. Keep #26/#31 draft and **PRODUCTION NO-GO**.
+
+## 6.15 ImageBuilder user-namespace ownership must remain unprivileged — 2026-11-17 UTC17
+
+**MASTER DECISION — APPROVED FOR IMPLEMENTATION TRIAL AND INDEPENDENT QA REVIEW ONLY.** The preferred model is an unprivileged runner process whose user namespace maps namespace UID 0 and GID 0 to the invoking host user's UID and GID, exactly one ID each. Do not elevate the runner with `sudo`, require `SUDO_UID`/`SUDO_GID`, invoke `newuidmap`/`newgidmap`, provision subordinate UID/GID ranges, or grant a broader host identity. Preserve the owner probe, path checks, disposable writable ImageBuilder bind, and fail-closed behavior. If the host cannot create the namespace without elevation or extra IDs, stop; the only alternative for review is a disposable isolated no-secret runner with an explicitly provisioned least-privilege namespace policy.
+
+This decision is a design direction, not proof that the Ubuntu hosted runner supports the mapping and not sandbox acceptance. PHX-RELEASE must implement the trial on the existing COE #31 branch; PHX-QA must independently verify the exact resulting SHA, one-ID UID/GID mapping, host ownership, symlink/sentinel confinement, timeout process-group termination, and fail-closed behavior when user namespaces are unavailable.
+
+The current COE #31 runner still requires root, `SUDO_UID`/`SUDO_GID`, and `newuidmap`/`newgidmap`. Exact-head sandbox run [44137935105](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44137935105), job `134232499311`, fails with `newuidmap: uid range [0-1) -> [1001-1002) not allowed`; the 1-second real-bwrap timeout path was not reached. The current runner uses `--ro-bind / /` and a writable ImageBuilder bind, but `--share-net` retains the host network and the host root remains readable. This is write-confinement only, not confidentiality or network isolation. Do not run untrusted build inputs on a secret-bearing host.
+
+The separate ULA blocker remains open under §6.9. Keep #31/#26 draft and **PRODUCTION NO-GO**.
