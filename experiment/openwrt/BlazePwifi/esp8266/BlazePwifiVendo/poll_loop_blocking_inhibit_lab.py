@@ -118,6 +118,7 @@ static int pulseStart=-1, pulseEnd=-1;
 static bool relayOn=false, ledOn=false;
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
+static bool injectAfterDrainEdge=false;
 static int pollCalls=0, saveCalls=0;
 static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
@@ -225,7 +226,7 @@ void resetState(){
   coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; relayLevelHigh=false; ledLevelHigh=false;
-  injectDuringHttp=false; pollCalls=0; saveCalls=0;
+  injectDuringHttp=false; injectAfterDrainEdge=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
@@ -325,6 +326,16 @@ int main(){
 }
 """
 
+RACE_MAIN = MAIN.replace(
+    "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
+    "  resetState(); injectAfterDrainEdge=true; loop();\n"
+    "  if(pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists(\"/pollpulse.fault\") ||\n"
+    "     relayOn || ledOn || insertMode || !activeTarget.empty()) return 22;\n\n"
+    "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
+    1,
+)
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
         cpp=Path(folder)/"poll_loop.cpp"
@@ -365,13 +376,24 @@ for board,path in BOARDS.items():
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
-                 load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store):
+                 load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
+                 begin_source=begin,main_source=MAIN):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output+idle+can_start+
-                quiet_source+begin+configure_source+accept+write_fault_source+
-                load_fault_source+latch_fault_source+init_store_source+SUPPORT+loop_source+MAIN)
+                quiet_source+begin_source+configure_source+accept_source+write_fault_source+
+                load_fault_source+latch_fault_source+init_store_source+SUPPORT+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    edge_hook = begin.replace(
+        "if(coinLineQuietAfterInhibit()) return true;",
+        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; }",
+        1,
+    )
+    if edge_hook == begin:
+        raise AssertionError(f"{board}: missing post-drain edge injection point")
+    compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
+                    "edge-after-drain-before-snapshot")
+    print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
     mutations=(
       ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),
