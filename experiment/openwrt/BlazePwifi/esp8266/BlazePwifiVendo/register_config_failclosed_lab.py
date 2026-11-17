@@ -262,6 +262,12 @@ int main() {
 failed = []
 for board, path in BOARDS.items():
     source = path.read_text(encoding="utf-8")
+    call_sites = len(re.findall(r"\bapplyRemoteConfig\s*\(", source))
+    if call_sites != 1:
+        raise RuntimeError(
+            f"{board}: expected only the dormant applyRemoteConfig definition; "
+            f"found {call_sites} definition/call occurrences"
+        )
     connect_sta = extract_connect_sta(source)
     code = ("#define TARGET_ESP32\n" if board == "ESP32" else "") + STUBS + connect_sta + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-register-config-") as folder:

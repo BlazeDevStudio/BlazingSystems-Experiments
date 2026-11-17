@@ -273,3 +273,28 @@ The first source correction removed the register response parser entirely. Exact
 The corrected implementation **retains verification of the register tuple** when a provisioned key exists, but does not use that result to authorize any configuration mutation. Empty key, missing signature or invalid signature are logged as unauthenticated; even a valid register-tuple signature cannot call `applyRemoteConfig()`. The test lab now also asserts that the register signature verifier runs for provisioned keys and is skipped for keyless bootstrap, while configuration state remains unchanged in every case.
 
 The `applyRemoteConfig()` helper remains explicitly dormant. The canonical QA test directory and workflow were not modified. A new exact-head focused and full CI result is required after this follow-up.
+
+
+## 2026-11-17 UTC03 — exact-head register-config denial evidence
+
+**Source behavior commit:** `f4cf215300c432f989b4f806594e7c963b2764ed`.
+
+**Focused exact-head workflow:** [44013023461](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44013023461), job `133804269560`, **COMPLETED SUCCESS**:
+- register-response config denial: 7/7 per board (keyless positive, valid register-tuple signature with hostile config, invalid signature, missing signature, nested positive marker under top-level denial, disconnected Wi-Fi, empty SSID);
+- poll/config isolation: 11/11 per board;
+- strict root JSON: 13/13 per board;
+- debounce floor: 8/8 per board;
+- poll-window guard: 8/8 per board;
+- quarantine failure injection: 34/34 total;
+- mount/output: 14/14 total;
+- boot recovery: 32/32 total;
+- pending-clear: 22/22 total;
+- pending write/readback: 44/44 total;
+- coin POST gate: 18/18 total.
+All are source-extracted host/fake-filesystem simulations; physical acceptance is not inferred.
+
+**Full workflow:** [44013023437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44013023437) remains **IN PROGRESS** at the latest snapshot, but validation job `133804366550` is **FAILED**. Its raw log shows PHX-QA-owned `tests/v060_esp_poll_intake_guard.py` compiles the production `loop()` without extracting `acceptPollResponse()`, causing an undeclared-function compile error for both board harnesses. ESP8266 job `133804366196` PASS; ESP32 and several remaining target/Android jobs were still running. Production signing/import/publish and v0.4 candidate/simulation jobs are skipped. No overall full-workflow success is claimed.
+
+The earlier full-validation compatibility RED at `882407d5...` was due the static hardening test requiring the register signature marker; the final source retains provisioned-key register-tuple verification while keeping configuration application disabled. The new hardware-owned lab additionally checks the whole sketch has exactly one `applyRemoteConfig(` occurrence (the dormant function definition only), preventing any poll/register call site from silently returning.
+
+**Ownership:** no QA-owned tests, shared API/schema, CORE financial source, Master coordination files, release workflow, or other role's source was changed. PHX-QA must repair its extractor. Remote config remains disabled until PHX-CORE defines a separate domain-separated config envelope and PHX-QA approves exact golden vectors.
