@@ -80,3 +80,37 @@ At final PR HEAD **9f6a7141fa10cd5ed90f267f389cb6212e2e7d1a**, Full run [#440644
 - Focused hardware lab [#44064436574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436574), job **133974328430**, remained **SUCCESS** at the same exact PR head: 28/28 pending-attempt marker cases per board (56/56 total), with inherited source-extracted hardware suites passing.
 
 The Full run is not green. The target builds are CI evidence only; they do not establish physical flash durability, coin pulse acceptance, financial correctness or release readiness. No QA-owned file was changed.
+
+## Follow-up: quarantine prefix integrity after append (2026-11-17 UTC22)
+
+### Proven gap and test-first reproduction
+
+The prior append verifier checked the resulting file size and byte-for-byte equality of the newly appended suffix, but it did not revalidate the already-existing quarantine-log prefix after the append operation. A same-size write fault could therefore alter an older record while leaving the new suffix exact; the old verifier would not detect that prefix change before quarantinePending() attempted to clear pending state.
+
+- Test-only commit: [30a6d4c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/30a6d4cc4f651735f592b0267f479e4b5481477f).
+- Expected RED: [run #44192438813](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192438813), job 134425056308: scenario 35 failed on both ESP32 and ESP8266 when the fake filesystem changed the first byte of the pre-existing log while preserving the appended suffix.
+
+### Firmware correction
+
+Source commit [9aca2ce](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9aca2cedbf34d42a0257482757682eca81e810f5) updates both sketches:
+
+- inspectQuarantineLog() computes a CRC32 fingerprint while validating the complete existing log.
+- After append, the verifier rereads the pre-existing prefix and compares its CRC32 before checking the appended suffix byte-for-byte.
+- A prefix mismatch, short read, seek failure, size mismatch or suffix mismatch makes the append fail closed; quarantinePending() retains pending state and latches recovery.
+
+CRC32 here is an accidental-corruption detector only. It is not cryptographic authentication, a protected witness, or proof of flash durability across power loss. The new guard adds a second linear read of the existing log (bounded by QUARANTINE_MAX_BYTES); target build and performance review remain required.
+
+### Exact-head evidence
+
+- Harness correction commits: [4259398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4259398e3a7a745a20846318e78134b18f0b3663) and [e63df63](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e63df63ff346897d470ee8c2de1951b135f792a2).
+- Focused quarantine/readback [run #44193079025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44193079025), job 134427284875, completed SUCCESS at exact test head e63df63ff346897d470ee8c2de1951b135f792a2: 36/36 source-extracted scenarios per board, 72/72 total; 12/12 safety helper parity; fail-open parity mutation rejected.
+- Relay output [run #44193079017](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44193079017), job 134427284634, completed SUCCESS: 48/48 per board; polarity and poll-inhibit mutations rejected.
+- Full PR build [run #44193079274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44193079274) remains in progress at checkpoint. The separate push-triggered full run [#44193064334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44193064334), validation job 134427394165, FAILED at the QA-owned legacy “Missing poll signature check”; do not restore positive poll admission to satisfy that stale fixture.
+
+### Classification and next action
+
+Focused evidence is SIMULATED / CI VERIFIED only. Physical LittleFS corruption, power-cut recovery, relay/coin acceptance, 150 controlled power cuts, and 30-device/24-hour soak remain NOT TESTED. No hardware acceptance or production readiness is claimed.
+
+- PHX-QA: replace the obsolete positive poll-signature assertion with the approved default-deny expectation and independently rerun Full validation at the final exact head.
+- PHX-MASTER: keep #317/#318/#283 stack selection under coordination; no cross-branch transplant is implied.
+- PHX-HARDWARE: retain this bounded prefix-integrity guard and await exact target-build outcomes; do not enable coin dispatch or clear financial state without the CORE receipt/disposition contract.
