@@ -109,13 +109,13 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<19;scenario++){
+  for(int scenario=0;scenario<20;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
     fsReady=true;
     journalRecoveryRequired=false;
-    pendingPostAttempted=false;
+    pendingPostAttempted=true;
     pendingPulses=4;
     pendingReady=true;
     pendingNonce="nonce001122334455";
@@ -151,12 +151,13 @@ int main(){
       disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==18)
       disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=overflowed-time\n";
+    if(scenario==19) pendingPostAttempted=false; // no durable attempt marker may not authorize quarantine
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario==19;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -191,7 +192,7 @@ int main(){
       }
     }
     if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
-       scenario==11 || scenario==16 || scenario==17 || scenario==18){
+       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario==19){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
