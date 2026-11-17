@@ -705,11 +705,16 @@ void applyOutputs(){
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
 
-// Observe a full debounce-width quiet interval after disabling intake.
-// A pulse at any point cancels polling and returns to normal journal handling.
+// Observe a pulse-drain quiet interval after disabling intake. Master §2.1
+// allows pulses up to 100 ms, so the configured 20 ms debounce floor alone
+// is too short to exclude an in-flight output pulse before blocking HTTP.
 bool coinLineQuietAfterInhibit(){
   const uint32_t started=millis();
-  while(millis()-started<runDebounceMs){
+  const uint32_t maxCoinPulseMs=100UL;
+  const uint32_t debounceMarginMs=20UL;
+  const uint32_t minimumQuietMs=maxCoinPulseMs+debounceMarginMs;
+  const uint32_t quietMs=runDebounceMs>minimumQuietMs?runDebounceMs:minimumQuietMs;
+  while(millis()-started<quietMs){
     if(!coinLineIdle()) return false;
     delay(1);
   }
