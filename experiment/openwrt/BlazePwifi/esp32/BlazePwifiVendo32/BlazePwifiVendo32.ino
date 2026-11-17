@@ -22,6 +22,16 @@ struct PendingRecord {
   uint32_t checksum;
 };
 
+// The ISR only counts the configured active edge. No String, filesystem,
+// network or logging calls are permitted from interrupt context.
+#if defined(ESP8266)
+void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+#else
+void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+#endif
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
+
+
 // Master Architecture Contracts §2.1: never accept a debounce below 20 ms.
 // Apply the same bound to persisted, local-setup, and controller-provided values.
 uint16_t boundedCoinDebounceMs(long long requested){
@@ -45,12 +55,6 @@ int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 
 volatile uint32_t coinEdgeSequence=0;
-#if defined(ESP8266)
-void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
-#else
-void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
-#endif
-uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
@@ -755,7 +759,7 @@ void latchPollPulseFault(uint32_t pulseEdges){
   activeTarget="";
   const bool persisted=writePollPulseFaultMarker(pulseEdges);
   if(persisted){
-    Serial.println("CRITICAL: coin-line edge during blocking poll; durable fault marker recorded; operator reconciliation required.");
+    Serial.println("CRITICAL: coin-line edge during blocking poll; readback-verified fault marker written; operator reconciliation required.");
   } else {
     Serial.println("CRITICAL: coin-line edge during blocking poll; marker write/readback failed; device remains fail-closed this boot.");
   }

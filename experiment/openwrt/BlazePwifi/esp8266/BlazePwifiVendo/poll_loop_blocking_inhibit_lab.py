@@ -246,6 +246,15 @@ bool recordedPulseState(){
          lastCoin && relayOn && !pollIntakeSuspended && saveCalls==1;
 }
 int main(){
+  // A normal blocked poll remains inhibited and default-deny when no edge occurs.
+  resetState(); loop();
+  if(pollCalls!=1 || pollStartAt!=2250 || pollStartRelayOn ||
+     !pollStartSuspended || !pollStartCoinIdle ||
+     pollEndAt-pollStartAt!=3500 || pollEndRelayOn || !pollEndSuspended ||
+     pollIntakeSuspended || relayOn || ledOn || insertMode ||
+     !activeTarget.empty() || pendingPulses!=0 || journalRecoveryRequired ||
+     LittleFS.exists("/pollpulse.fault") || lastPoll!=pollEndAt ||
+     fakeNow!=pollEndAt+2) return 10;
   // A pulse edge during the 3.5 s synchronous poll must be captured by the
   // production ISR, latched to LittleFS, and never interpreted as a credit.
   resetState(); injectDuringHttp=true; loop();
@@ -293,11 +302,6 @@ int main(){
   resetState(); fakeOpenFail=true; injectDuringHttp=true; loop();
   if(!journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 21;
 
-  // A poll with no unexpected edge remains default-deny without inventing a fault.
-  resetState(); loop();
-  if(pollCalls!=1 || journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") ||
-     insertMode || !activeTarget.empty() || relayOn || ledOn) return 22;
-
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
   if(!recordedPulseState()) return 31;
@@ -315,7 +319,7 @@ int main(){
   resetState(); fsReady=false; applyOutputs(); loop();
   if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 43;
 
-  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 6/6 fault-marker scenarios; existing poll-loop guards 7/7\n";
+  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 7/7 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
   return 0;
 }
@@ -386,8 +390,8 @@ for board,path in BOARDS.items():
             raise AssertionError(f"{board}: insert-state mutation did not apply")
         if name=="retain-stale-target-after-poll" and mut_accept==accept:
             raise AssertionError(f"{board}: stale-target mutation did not apply")
-        compile_and_run(assemble(mut_loop,mut_output,mut_quiet,mut_accept),board,11,name)
-        print(f"{board} MUTATION_REJECTED {name} expected_exit=11")
+        compile_and_run(assemble(mut_loop,mut_output,mut_quiet,mut_accept),board,10,name)
+        print(f"{board} MUTATION_REJECTED {name} expected_exit=10")
 
     extra_mutations=(
       ("remove-edge-interrupt-attachment",loop,output,quiet,accept,
