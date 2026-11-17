@@ -405,7 +405,7 @@ for board,path in BOARDS.items():
                     board,22,"late-snapshot-regression")
     print(f"{board} MUTATION_REJECTED late-poll-edge-snapshot")
     mutations=(
-      ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet,accept),
+      ("remove-beginPollWindow",loop.replace("if(beginPollWindow()){","if(true){",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),
       ("shorten-quiet-window-to-249ms",loop,output,quiet.replace("pulseTrainQuietMs=250UL;","pulseTrainQuietMs=249UL;",1),accept),
       ("keep-insert-enabled-after-poll",loop,output,quiet,accept.replace("insertMode=false;","insertMode=true;",1)),
