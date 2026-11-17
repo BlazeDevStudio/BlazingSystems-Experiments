@@ -366,23 +366,74 @@ void clearPending(){
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
 
+uint32_t quarantineCrc32Update(uint32_t crc,uint8_t value){
+  crc^=value;
+  for(uint8_t bit=0;bit<8;bit++)
+    crc=(crc&1U)?((crc>>1)^0xEDB88320UL):(crc>>1);
+  return crc;
+}
+
+// CRC32 detects accidental same-size corruption only; it is not authentication,
+// a protected freshness witness, or proof of flash durability across power loss.
+bool fingerprintQuarantinePrefix(size_t &length,uint32_t &fingerprint){
+  length=0;
+  fingerprint=0;
+  if(!LittleFS.exists("/quarantine.log")) return true;
+  File prior=LittleFS.open("/quarantine.log","r");
+  if(!prior) return false;
+  length=prior.size();
+  if(length>QUARANTINE_MAX_BYTES){ prior.close(); return false; }
+  uint32_t crc=0xFFFFFFFFUL;
+  for(size_t i=0;i<length;i++){
+    int value=prior.read();
+    if(value<0){ prior.close(); return false; }
+    crc=quarantineCrc32Update(crc,(uint8_t)value);
+  }
+  bool complete=prior.available()==0;
+  prior.close();
+  if(!complete) return false;
+  fingerprint=~crc;
+  return true;
+}
+
+bool verifyQuarantineAppend(size_t before,uint32_t beforeFingerprint,
+                            const char *record,size_t len){
+  File verify=LittleFS.open("/quarantine.log","r");
+  if(!verify) return false;
+  size_t after=verify.size();
+  if(!(after==before+(size_t)len)){ verify.close(); return false; }
+  uint32_t crc=0xFFFFFFFFUL;
+  for(size_t i=0;i<before;i++){
+    int value=verify.read();
+    if(value<0){ verify.close(); return false; }
+    crc=quarantineCrc32Update(crc,(uint8_t)value);
+  }
+  if((~crc)!=beforeFingerprint){ verify.close(); return false; }
+  for(size_t i=0;i<len;i++){
+    int value=verify.read();
+    if(value<0 || (uint8_t)value!=(uint8_t)record[i]){
+      verify.close();
+      return false;
+    }
+  }
+  bool complete=verify.available()==0;
+  verify.close();
+  return complete;
+}
+
 bool appendQuarantineRecord(const String &reason){
   if(!fsReady || pendingPulses==0) return false;
 
   char record[320];
   int len=snprintf(record,sizeof(record),
                    "TIME=%lu PULSES=%u NONCE=%s TARGET=%s REASON=%s\n",
-                   (unsigned long)millis(), (unsigned int)pendingPulses,
-                   pendingNonce.c_str(), pendingTarget.c_str(), reason.c_str());
+                   (unsigned long)millis(),(unsigned int)pendingPulses,
+                   pendingNonce.c_str(),pendingTarget.c_str(),reason.c_str());
   if(len<=0 || (size_t)len>=sizeof(record)) return false;
 
   size_t before=0;
-  if(LittleFS.exists("/quarantine.log")){
-    File prior=LittleFS.open("/quarantine.log","r");
-    if(!prior) return false;
-    before=prior.size();
-    prior.close();
-  }
+  uint32_t beforeFingerprint=0;
+  if(!fingerprintQuarantinePrefix(before,beforeFingerprint)) return false;
   if(before+(size_t)len>QUARANTINE_MAX_BYTES) return false;
 
   File q=LittleFS.open("/quarantine.log","a");
@@ -391,12 +442,7 @@ bool appendQuarantineRecord(const String &reason){
   q.flush();
   q.close();
   if(written!=(size_t)len) return false;
-
-  File verify=LittleFS.open("/quarantine.log","r");
-  if(!verify) return false;
-  size_t after=verify.size();
-  verify.close();
-  return after==before+(size_t)len;
+  return verifyQuarantineAppend(before,beforeFingerprint,record,(size_t)len);
 }
 
 bool quarantinePending(const String &reason){
