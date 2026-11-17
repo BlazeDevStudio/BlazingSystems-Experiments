@@ -235,11 +235,13 @@ int main(){
        (scenario==16 && disk.bytes!=bytesBefore) ||
        (scenario==17 && disk.bytes!=bytesBefore) ||
        (scenario==18 && disk.bytes!=bytesBefore) ||
-       (scenario>=19 && scenario!=31 && scenario!=33 && disk.bytes!=bytesBefore) ||
+       (scenario>=19 && scenario!=31 && scenario!=33 && scenario!=35 && disk.bytes!=bytesBefore) ||
        (scenario==31 && (disk.bytes.find(std::string("window")+char(92)+"x20REASON=expired")==std::string::npos || disk.bytes.find("window REASON=expired")!=std::string::npos)) ||
        (scenario==33 && (!disk.logExists || disk.bytes.empty() ||
          disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired") == std::string::npos)) ||
        (scenario==34 && (disk.logExists || !disk.bytes.empty())) ||
+       (scenario==35 && (disk.bytes.empty() || disk.bytes[0]!='U' ||
+         disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired\\n")==std::string::npos)) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
