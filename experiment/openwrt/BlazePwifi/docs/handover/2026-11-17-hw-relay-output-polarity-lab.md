@@ -39,7 +39,11 @@ A dedicated .github/workflows/phx-hardware-relay-output-polarity.yml pins checko
 - Starting PR #317 HEAD: 3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3
 - Expected normal result: 48 scenarios per board.
 - Expected mutation evidence: both injected regressions must be rejected for both boards.
-- Exact-head CI for the reused PR #317 branch: pending after transfer; do not reuse the exploratory #319 run as proof for the #317 SHA.
+- Exact reused-branch HEAD tested: `9f12e9658797dbd92d09525acba6d8c6803880bf`.
+- Focused polarity [run #44072123813](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44072123813), job `134000692913`: **SUCCESS**; ESP8266 and ESP32 each passed 48/48 normal scenarios, and both injected regressions were rejected on both boards.
+- Inherited quarantine [run #44072123802](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44072123802), job `134000693140`: **SUCCESS**; quarantine 38/38 total, pending-attempt marker 56/56, and inherited mount/recovery/write/readback/coin-gate suites passed.
+- Full [run #44072123887](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44072123887), validation job `134000833456`: **FAILED** at the inherited QA-owned `tests/controllers.sh` check, which still requires an active poll signature contrary to Master Architecture Contracts §6.7. Target jobs were still running at last observation; production import/signing and release bundle were skipped.
+- The exploratory #319 branch was closed unmerged; these are fresh exact-head #317 results, not carried across branches.
 - Physical relay/coin acceptance: **NOT TESTED**.
 - 150 power cuts / 30-device 24-hour soak / electrical pulse recovery: **NOT TESTED**.
 
