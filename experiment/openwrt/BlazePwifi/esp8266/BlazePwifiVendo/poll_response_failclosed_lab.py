@@ -305,7 +305,21 @@ int main(){
     pulseStart=19; pulseEnd=49;
     if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=19) return 18;
-    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 8/8\n";
+
+    // Model the complete synchronous HTTP timeout after the real loop has
+    // entered its poll window. A pulse can appear on the input while the
+    // CPU is blocked, but the acceptor output must remain inhibited until
+    // the response is checked and the loop releases pollIntakeSuspended.
+    resetState();
+    if(!beginPollWindow() || !pollIntakeSuspended || relayOn || ledOn) return 19;
+    pulseStart=100; pulseEnd=180;
+    fakeNow=120; // pulse is active during the simulated POST wait
+    if(coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
+    fakeNow=3600; // 3.5 s synchronous HTTP timeout has elapsed
+    if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
+       !relayOffObservedWhileSuspended) return 21;
+
+    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 9/9; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
     std::cout<<"PHYSICAL_COIN_ACCEPTOR_VERIFIED=0\n";
     return 0;
 }
