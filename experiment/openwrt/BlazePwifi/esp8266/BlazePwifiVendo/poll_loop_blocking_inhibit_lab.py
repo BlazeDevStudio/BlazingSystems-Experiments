@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Execute the actual ESP loop() around the synchronous poll with bounded host I/O stubs.
 
-The production loop, poll-window helpers, and output gate are extracted unchanged
-from both sketches. Only Wi-Fi/HTTP/GPIO/filesystem edges are stubbed. This is
-SIMULATED control-flow evidence, not electrical or physical coin-acceptor proof.
+The production loop, poll-window helpers, output gate and default-deny
+acceptPollResponse() are extracted unchanged from both sketches. Only external
+Wi-Fi/HTTP/GPIO/clock/persistence edges are stubbed. This is SIMULATED
+control-flow evidence, not electrical or physical coin-acceptor proof.
 """
 from pathlib import Path
 import re
@@ -149,14 +150,6 @@ String post(const String &action,const String &pulses=String("0"),
   }
   return String("");
 }
-bool acceptPollResponse(const String&){
-  // The current Master contract is default-deny until CORE/QA approve the
-  // authenticated producer/consumer vectors. A failed response clears stale
-  // admission state; it never re-energizes the coin relay.
-  insertMode=false;
-  activeTarget.clear();
-  return false;
-}
 """
 
 MAIN = r"""
@@ -255,24 +248,31 @@ for board,path in BOARDS.items():
     can_start=extract(source,"canStartPoll")
     quiet=extract(source,"coinLineQuietAfterInhibit")
     begin=extract(source,"beginPollWindow")
+    accept=extract(source,"acceptPollResponse")
 
-    def assemble(loop_source=loop,output_source=output,quiet_source=quiet):
-        return ("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+SUPPORT+loop_source+MAIN
+    def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept):
+        return ("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+accept_source+SUPPORT+loop_source+MAIN
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     mutations=(
       ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet),
-      ("shorten-quiet-window-to-249ms",loop,output,quiet.replace("pulseTrainQuietMs=250UL;","pulseTrainQuietMs=249UL;",1)),
+      ("shorten-quiet-window-to-249ms",loop,output,quiet.replace("pulseTrainQuietMs=250UL;","pulseTrainQuietMs=249UL;",1),accept),
+      ("keep-insert-enabled-after-poll",loop,output,quiet,accept.replace("insertMode=false;","insertMode=true;",1)),
+      ("retain-stale-target-after-poll",loop,output,quiet,accept.replace('activeTarget="";','activeTarget="stale-target";',1)),
     )
-    for name,mut_loop,mut_output,mut_quiet in mutations:
+    for name,mut_loop,mut_output,mut_quiet,mut_accept in mutations:
         if name=="remove-beginPollWindow" and mut_loop==loop:
             raise AssertionError(f"{board}: poll-window call mutation did not apply")
         if name=="ignore-pollIntakeSuspended" and mut_output==output:
             raise AssertionError(f"{board}: output-gate mutation did not apply")
         if name=="shorten-quiet-window-to-249ms" and mut_quiet==quiet:
             raise AssertionError(f"{board}: quiet-window mutation did not apply")
-        compile_and_run(assemble(mut_loop,mut_output,mut_quiet),board,11,name)
+        if name=="keep-insert-enabled-after-poll" and mut_accept==accept:
+            raise AssertionError(f"{board}: insert-state mutation did not apply")
+        if name=="retain-stale-target-after-poll" and mut_accept==accept:
+            raise AssertionError(f"{board}: stale-target mutation did not apply")
+        compile_and_run(assemble(mut_loop,mut_output,mut_quiet,mut_accept),board,11,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit=11")
 
 print("PHX-HARDWARE: actual-loop host simulation passed on ESP8266 and ESP32; no hardware evidence")
