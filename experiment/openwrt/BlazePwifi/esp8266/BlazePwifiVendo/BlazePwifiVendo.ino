@@ -39,7 +39,7 @@ const uint32_t MAGIC=0x42505732;
 
 bool insertMode=false;
 bool lastCoin=false;
-bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
+bool controllerEnabled=false, coinEnabled=false, relayEnabled=false, ledEnabled=false, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
@@ -219,6 +219,8 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
+// Retained for a future separately authenticated configuration envelope only.
+// Master Architecture Contracts §6.4 forbids calling this from register/poll.
 void applyRemoteConfig(const String&r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
   if(rev==remoteRevision && remoteRevision!=0)return;
@@ -258,6 +260,19 @@ void applyOutputs(){
   bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+}
+
+// No poll/register response currently carries an approved control envelope.
+// Keep every actuation flag denied until PHX-CORE publishes the contract and
+// PHX-QA verifies its positive/negative vectors at the exact shared source SHAs.
+void denyRemoteControl(){
+  controllerEnabled=false;
+  coinEnabled=false;
+  relayEnabled=false;
+  ledEnabled=false;
+  insertMode=false;
+  activeTarget="";
+  applyOutputs();
 }
 
 void startSetupAp(){
@@ -322,24 +337,16 @@ void setupPortal(){
 }
 
 void connectSta(){
-  if(!strlen(cfg.ssid))return;
+  if(!strlen(cfg.ssid)) return;
   WiFi.begin(cfg.ssid,cfg.pass);
   uint32_t t=millis();
-  while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
+  while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250);yield(); }
   if(WiFi.status()==WL_CONNECTED){
-    wifiFailures=0;String r=post("register");
-    bool sigOk=true;
-    if(strlen(cfg.key)){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int st=jsonInt(r,"server_time",0);
-        String expected=hexDigest(String(cfg.key)+"|register|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(st)+"|"+String(cfg.key));
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0) applyRemoteConfig(r);
+    wifiFailures=0;
+    // Register/ping is discovery only. response_sig / the derived |register|
+    // tuple does not authenticate the returned configuration object.
+    (void)post("register");
+    denyRemoteControl();
   }
 }
 
@@ -400,7 +407,7 @@ bool quarantinePending(const String &reason){
 void setup(){
   Serial.begin(115200); loadCfg(); initPendingStore();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();setupPortal();connectSta();
 }
 
 void loop(){
@@ -412,24 +419,12 @@ void loop(){
   }
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;String r=post("poll");
-    bool sigOk=true;
-    if(strlen(cfg.key)){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int ins=jsonTrue(r,"insert")?1:0;
-        String tgt=jsonString(r,"target_nonce");
-        int exp=jsonInt(r,"expires",0);
-        String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+String(cfg.key));
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0){
-      insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);
-    }
-    applyOutputs();lastPoll=millis();
+    wifiFailures=0;
+    // Current main poll replies have no response_sig. The derived |poll|
+    // candidate is not an approved producer/consumer contract; ignore all fields.
+    (void)post("poll");
+    denyRemoteControl();
+    lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
