@@ -46,7 +46,7 @@ STUBS = r"""
 #define ICACHE_RAM_ATTR
 #endif
 static constexpr int HIGH=1, LOW=0, WL_CONNECTED=3;
-static constexpr int INPUT_PULLUP=2, OUTPUT=1, CHANGE=3, FALLING=4, RISING=5;
+static constexpr int INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
 static bool fakeShortWrite=false, fakeCorruptReadback=false, fakeOpenFail=false;
 class File {
   std::string *data=nullptr;
@@ -362,7 +362,7 @@ for board,path in BOARDS.items():
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store):
-        board_define = "#define TARGET_ESP32\\n" if board=="ESP32" else "#define ESP8266\\n"
+        board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output+idle+can_start+
                 quiet_source+begin+configure_source+accept+write_fault_source+
                 load_fault_source+latch_fault_source+init_store_source+SUPPORT+loop_source+MAIN)
