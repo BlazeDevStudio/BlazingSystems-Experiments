@@ -120,7 +120,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<29;scenario++){
+  for(int scenario=0;scenario<33;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -185,12 +185,24 @@ int main(){
       disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=\n";
     if(scenario==28)
       disk.bytes="TIME=1 PULSES=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
+    if(scenario==29){
+      pendingTarget="target0011223344 REASON=earlier";
+      std::strcpy(attemptMarker.target,pendingTarget.c_str());
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier REASON=window expired\n";
+    }
+    if(scenario==30){
+      pendingTarget="target with spaces";
+      std::strcpy(attemptMarker.target,pendingTarget.c_str());
+    }
+    if(scenario==31) reason=String("window REASON=expired");
+    if(scenario==32)
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window REASON=expired\n";
     const std::string bytesBefore=disk.bytes;
-    bool expectClear=(scenario==0 || scenario==12 || scenario==14);
+    bool expectClear=(scenario==0 || scenario==12 || scenario==14 || scenario==31);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || (scenario>=19 && scenario!=31);
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -204,7 +216,8 @@ int main(){
        (scenario==16 && disk.bytes!=bytesBefore) ||
        (scenario==17 && disk.bytes!=bytesBefore) ||
        (scenario==18 && disk.bytes!=bytesBefore) ||
-       (scenario>=19 && disk.bytes!=bytesBefore) ||
+       (scenario>=19 && scenario!=31 && disk.bytes!=bytesBefore) ||
+       (scenario==31 && (disk.bytes.find(std::string("window")+char(92)+"x20REASON=expired")==std::string::npos || disk.bytes.find("window REASON=expired")!=std::string::npos)) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -226,7 +239,7 @@ int main(){
       }
     }
     if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
-       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario>=19){
+       scenario==11 || scenario==16 || scenario==17 || scenario==18 || (scenario>=19 && scenario!=31)){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
@@ -234,7 +247,7 @@ int main(){
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
       bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
-                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || scenario>=19);
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || (scenario>=19 && scenario!=31));
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
            clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
