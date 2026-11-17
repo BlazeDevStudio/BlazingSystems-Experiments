@@ -362,10 +362,17 @@ void connectSta(){
   }
 }
 
+void initPendingStore(){
+  // A mount failure can hide an uncredited pending event. Never format here.
+  // Keep the journal unavailable and outputs denied until an explicit recovery.
+  fsReady=LittleFS.begin();
+  if(fsReady) loadPending();
+  else Serial.println("CRITICAL: LittleFS mount failed; automatic format is disabled to preserve pending coin evidence; relay remains disabled.");
+}
+
 void setup(){
   Serial.begin(115200); loadConfig();
-  fsReady=LittleFS.begin(true); if(fsReady) loadPending();
-  else Serial.println("CRITICAL: LittleFS unavailable; relay remains disabled.");
+  initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;

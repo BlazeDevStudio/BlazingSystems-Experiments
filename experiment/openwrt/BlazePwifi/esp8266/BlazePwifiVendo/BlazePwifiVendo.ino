@@ -118,13 +118,11 @@ void loadPending(){
 }
 
 void initPendingStore(){
+  // A mount failure can hide an uncredited pending event. Never format here.
+  // Keep the journal unavailable and outputs denied until an explicit recovery.
   fsReady=LittleFS.begin();
-  if(!fsReady){
-    Serial.println("LittleFS mount failed; formatting Vendo journal.");
-    if(LittleFS.format()) fsReady=LittleFS.begin();
-  }
   if(fsReady) loadPending();
-  else Serial.println("CRITICAL: coin journal unavailable; coin relay will stay disabled.");
+  else Serial.println("CRITICAL: LittleFS mount failed; automatic format is disabled to preserve pending coin evidence; relay remains disabled.");
 }
 
 String esc(const String &s){
