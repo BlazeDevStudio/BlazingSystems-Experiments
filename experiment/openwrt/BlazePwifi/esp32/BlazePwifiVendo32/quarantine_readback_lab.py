@@ -296,8 +296,8 @@ if attempt_marker_result.stderr:
     print(attempt_marker_result.stderr, file=sys.stderr, end="")
 if attempt_marker_result.returncode:
     raise SystemExit(attempt_marker_result.returncode)
-if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 26/26") != len(BOARDS):
+if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 28/28") != len(BOARDS):
     raise SystemExit("PHX-HARDWARE: attempt-marker per-board summary count mismatch")
-if "PHX-HARDWARE: 26/26 source-extracted cases per board (52/52 total) PASS" not in attempt_marker_result.stdout:
+if "PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS" not in attempt_marker_result.stdout:
     raise SystemExit("PHX-HARDWARE: attempt-marker aggregate summary mismatch")
 

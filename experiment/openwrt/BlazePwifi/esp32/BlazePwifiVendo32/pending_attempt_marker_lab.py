@@ -250,7 +250,20 @@ int main(){
         !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
         "corrupt extra pending candidate denies POST marker");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/26 source-extracted cases; physical power cuts NOT TESTED\n";
+
+  // A single recovered candidate in either interrupted-rotation slot remains
+  // eligible for a one-shot marker; the exact-one rule must not require /pending.dat.
+  LittleFS=FakeLittleFS{};reboot();store("/pending.new",record());loadPending();
+  CHECK(pendingReady&&!journalRecoveryRequired&&markPendingPostAttempt()&&
+        LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
+        "single pending.new candidate permits marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.bak",record());loadPending();
+  CHECK(pendingReady&&!journalRecoveryRequired&&markPendingPostAttempt()&&
+        LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
+        "single pending.bak candidate permits marker");
+
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/28 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
@@ -286,4 +299,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 26/26 source-extracted cases per board (52/52 total) PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS; actual flash NOT TESTED")
