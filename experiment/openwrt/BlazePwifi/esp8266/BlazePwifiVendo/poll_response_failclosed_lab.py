@@ -112,6 +112,11 @@ int main(){
   if(pollJsonTopLevelTrue(String("{\"ok\":false,\"detail\":[{\"ok\":true}]}"),"ok")) return 47;
   if(pollJsonTopLevelTrue(String("{\"ok\":true,\"ok\":false}"),"ok")) return 48;
   if(!pollJsonTopLevelTrue(String("{\"ok\":true,\"receipt\":{\"ok\":false}}"),"ok")) return 49;
+  // No approved event-bound receipt contract exists. All raw HTTP dispositions deny.
+  if(coinPostDispositionVerified(String("{\"ok\":true}"),String("nonce-123"),String("target-01"),3)) return 50;
+  if(coinPostDispositionVerified(String("{\"ok\":false,\"error\":\"coin window expired\"}"),String("nonce-123"),String("target-01"),3)) return 51;
+  if(coinPostDispositionVerified(String("{\"ok\":false,\"receipt\":{\"ok\":true}}"),String("nonce-123"),String("target-01"),3)) return 52;
+  if(coinPostDispositionVerified(String(""),String("nonce-123"),String("target-01"),3)) return 53;
   if(!pollJsonTopLevelTrue(String(" { \"ok\" : true, \"controller\":{\"ok\":false} } "),"ok")) return 40;
   if(pollJsonTopLevelTrue(String("{\"o\\u006b\":true}"),"ok")) return 41;
   if(pollJsonTopLevelTrue(String("{\"controller\":bad,\"ok\":true}"),"ok")) return 42;
@@ -211,7 +216,7 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 28;
 
-  std::cout << "poll-response fail-closed cases: 11/11 PASS; strict root JSON cases: 13/13 PASS; coin POST ACK root status: 4/4 PASS\n";
+  std::cout << "poll-response fail-closed cases: 11/11 PASS; strict root JSON cases: 13/13 PASS; coin POST ACK root status: 4/4 PASS; coin disposition default-deny: 4/4 PASS\n";
   return 0;
 }
 """
@@ -221,7 +226,7 @@ for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     loop=extract(source,"loop")
     assert loop.index('String r=post("poll")') < loop.index("acceptPollResponse(r)") < loop.index("pollIntakeSuspended=false") < loop.index("applyOutputs();lastPoll=millis()"), board+": poll release ordering changed"
-    parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue"))
+    parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue","coinPostDispositionVerified"))
     code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
         cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"
@@ -238,16 +243,21 @@ for board,path in BOARDS.items():
             failed.append(board)
         else:
             coin_branch = loop[coin_post:]
+            auth_guard = coin_branch.find("if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses))")
             coin_success = coin_branch.find('if(pollJsonTopLevelTrue(r,"ok"))')
             clear_pending = coin_branch.find("clearPending();")
-            if coin_success < 0 or clear_pending < coin_success:
-                print(board, "COIN_POST_ACK_GUARD RED: coin POST success is not gated by unique root ok:true")
+            quarantine = coin_branch.find("quarantinePending(r);")
+            if auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
+                print(board, "COIN_POST_DISPOSITION RED: no authenticated-disposition deny guard before journal disposition")
+                failed.append(board)
+            elif coin_success < auth_guard or clear_pending < coin_success:
+                print(board, "COIN_POST_DISPOSITION RED: positive ACK path is not ordered after the deny guard")
                 failed.append(board)
             elif coin_branch.find("r.indexOf(", 0, clear_pending) >= 0:
-                print(board, "COIN_POST_ACK_GUARD RED: substring-based success check remains before clearPending")
+                print(board, "COIN_POST_DISPOSITION RED: substring-based success check remains before clearPending")
                 failed.append(board)
             else:
-                print(board, "COIN_POST_ACK_GUARD PASS: strict root status precedes pending clear")
+                print(board, "COIN_POST_DISPOSITION PASS: unauthenticated response denied before clear/quarantine")
 if failed: sys.exit("poll-response fail-closed lab failed: "+",".join(failed))
 print("PHYSICAL_COIN_ACCEPTOR_VERIFIED=0")
 print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
