@@ -220,3 +220,12 @@ COE RELEASE #31 current head `d9ac5982...` has scoped runs [44064212523](https:/
 COE #26 and its release child #31 emit invalid fd00:db8:blaze::/48 from tools/package_appliance_firmware.py::generate_network_uci(). #31's interface/VLAN validation does not validate the ULA prefix; the profile has no networking.ula_prefix field and packager tests have no ULA/IPv6 assertion. This is a destination integration blocker, not permission for PHX-MASTER to edit the release-owned packager.
 
 PHX-RELEASE owns packager/profile/test correction; PHX-CORE and the COE integration owner define deployment-scoped prefix provisioning; PHX-QA independently verifies exact-head generated UCI; PHX-HARDWARE validates only after correction and explicit noncustomer authorization. Keep #26/#31 draft. OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY; no copy, overwrite or move is proposed.
+
+
+## COE RELEASE #31 ImageBuilder boundary — 2026-11-17 UTC14
+
+COE #31 remains a child of integration PR #26 at exact head d45b84c67dc587fca6226662cb1d8bc59bdb11ae, based on b382d233ff06c8791b1028bed3c617cc7b670d12. Its current release-owned changes add a sandbox runner and route synthetic test-harness executions through it. They do not change the ownership-routing manifest or establish a source-repository migration.
+
+The packager's generated build script still does not invoke the runner. Treat the current work as a CI test-harness boundary only; actual build invocation remains unproven. The runner shares the host network and must not be described as network-isolated. Exact evidence and owner actions are in [COE_IMAGEBUILDER_RUNTIME_ENFORCEMENT_AND_ULA_AUDIT_20261117_UTC14.md](COE_IMAGEBUILDER_RUNTIME_ENFORCEMENT_AND_ULA_AUDIT_20261117_UTC14.md).
+
+OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. No source copy, destination overwrite, relocation, cherry-pick, merge or promotion is proposed. COE #26 retains five queued workflows and remains draft.

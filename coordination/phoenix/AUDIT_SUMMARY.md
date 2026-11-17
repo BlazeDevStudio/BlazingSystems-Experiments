@@ -217,3 +217,13 @@ HARDWARE #317 exact head 4496124580a11f8bdd88c2e5adcdfb86e824b978 has focused qu
 Eight bounded source/CI assertions passed; four Python ipaddress parser cases were executed. No COE Python test suite, OpenWrt UCI/netifd test, full Master suite or physical test was run. PR #288 remains draft; no subsystem source, destination migration, merge, release, signing, secret, hardware or payment operation occurred.
 
 The private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections remain inaccessible; Library search found older snapshots only and no Google Drive connector is exposed. Canonical Cloud Artifact Policy / Cloud Storage Handover GitHub links could not be fetched with the current GitHub connector. **PRODUCTION NO-GO** pending all independent financial, signing, rollback, QA, native and physical acceptance gates.
+
+## 2026-11-17 UTC14 — COE ImageBuilder test-harness vs runtime enforcement
+
+The RELEASE-owned COE #31 branch advanced to d45b84c67dc587fca6226662cb1d8bc59bdb11ae. Its test helper now invokes the new UID/GID-mapped bubblewrap runner under the dedicated CI environment, but the packager blob remains unchanged and its generated build script contains no runner/bwrap invocation. The current evidence therefore covers synthetic test-harness execution only; it does not prove that an operator's generated ImageBuilder script is sandbox-enforced. The runner uses --share-net, so network isolation is not present or claimed. Final-head sandbox run 44104956173 is pending with no jobs; shared-contract run 44104956321 and case-collision run 44104956464 succeeded.
+
+The packager still emits invalid fd00:db8:blaze::/48, and its tests still lack ULA/IPv6 assertions. Two Python standard-library parser cases were executed: malformed emitted literal rejected; valid ULA /48 control accepted. This is not OpenWrt or hardware validation.
+
+The exact COE #26 integration head remains b382d233ff06c8791b1028bed3c617cc7b670d12 with five workflows queued. No combined integration acceptance or source migration is established. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY; no copy/move/overwrite is authorized.
+
+Ten bounded exact-blob source assertions passed. The full Master Python suite was not run because no local checkout was available (git clone/ls-remote failed DNS). Public Cloud Artifact Policy and Storage Handover were read; the private v11 registry and newer corrections remain inaccessible and no older Library snapshot was substituted. **PRODUCTION NO-GO.**

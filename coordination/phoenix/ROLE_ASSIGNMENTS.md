@@ -372,3 +372,20 @@ These are exact heads read during this activation; scoped success is not combine
 | COE #26 / #28 / #29 / #30 / #31 / #32 | b382d233ff06c8791b1028bed3c617cc7b670d12 / b21b04617d38a177260258de2d56b24382822117 / d0830332dee8a1844a85606150681b41d91fe796 / 4897348d94a0cf7884ecd53244bfcd59e7bf2fbc / 19fc87988e55f47e8c6a512e51b470a91abbf816 / 29b6fe08b10688182d981a66745f482758bd6630 | #26 five QUEUED; #28 43632393888 SUCCESS; #29 43653906676 + 43653906675 SUCCESS; #30 43653415598 SUCCESS; #31 44098939596 + 44098939148 SUCCESS / 44098939249 FAILURE; #32 43653540607 SUCCESS | #31 ULA and sandbox remain P0; isolated success does not close #26 |
 
 No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The private Drive v11 registry and newer corrections remain unavailable; no older Library snapshot was substituted. Production remains NO-GO.
+
+## Live role / PR / CI snapshot — 2026-11-17 UTC14
+
+These exact PR heads and run observations supersede earlier snapshot rows for this activation only. Scoped success is not integrated, hardware or production acceptance.
+
+| Role / PR | Exact head | Exact-head CI observation | Owner boundary / next action |
+|---|---|---|---|
+| PHX-MASTER #288 | e9e54ca4ac48dd7da72e8093bd252a94b6d31a5c | No PR-triggered runs returned | coordination/phoenix/ only |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped | Separate CORE automation retains implementation |
+| PHX-RENTAL #240 / #287 / #289 | a7d113fb8ae3f0c5e838e64d31cae7a154e37b56 / a4fffd01c8fb1818c32a53522e0590c1dc8a77cd / 68928774d0d7cf65adb26bc6b54199a3159d066c | #240 40910311141 + 40910311159 SUCCESS; #287 43754089203 SUCCESS; #289 43653329235 + 43653329229 SUCCESS | Preserve Android/standalone rental ownership |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS, scoped | Native COM acceptance remains unverified |
+| PHX-HARDWARE #314 / #315 / #316 / #317 | 556adc20ef0cfd355089aff3b979c0169af79bdd / 84fe6b790139d147f330f13a40b3ae3e89a7042d / 888e6941e3a7a81641682c23d937f97d8117d2ea / 4496124580a11f8bdd88c2e5adcdfb86e824b978 | #314 43782088731 + 43782088748 SUCCESS; #315 44054778537 SUCCESS / 44054778555 FAILURE; #316 43972511337 SUCCESS / 43972511250 FAILURE; #317 44097183197 + 44097182916 SUCCESS / 44097182945 FAILURE | Preserve default-deny; PHX-QA owns poll fixture/extractor correction |
+| PHX-QA #267 / #279 / #290 / #292 | ff5367990c2d27b8ebbb822ee208251af0c890e2 / 8f476ef05893193325ef3d1f65a35e144ae7a568 / 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #267 41452247439 SUCCESS; #279 no runs; #290 43633486963 SUCCESS; #292 no runs | Independent verification remains required |
+| PHX-RELEASE #242 / #291 | 734b89d9e7792247e8376335c3f3685500ab3f89 / 2c4edff231d9b2819415086825530d80b8801307 | #242 40882814472 SUCCESS; #291 43744993487 SUCCESS | Signing/publishing remain closed |
+| COE #26 / #28 / #29 / #30 / #31 / #32 | b382d233... / b21b0461... / d0830332... / 4897348d... / d45b84c6... / 29b6fe08... | #26 five QUEUED; #28 43632393888 SUCCESS; #29 43653906676 + 43653906675 SUCCESS; #30 43653415598 SUCCESS with NSIS warning 6000 still requiring correction; #31 44104956173 PENDING / 44104956321 SUCCESS / 44104956464 SUCCESS; #32 43653540607 SUCCESS | No combined #26 acceptance; #31 sandbox runtime enforcement and ULA remain open |
+
+The exact #31 sandbox run remains pending with no jobs returned. The current generated packager wrapper does not invoke the new runner; only the test harness does. Preserve the distinction. The private Drive registry v11 remains unavailable; no older snapshot was substituted.

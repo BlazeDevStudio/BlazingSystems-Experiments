@@ -272,3 +272,11 @@ The regression must execute a synthetic malicious Makefile inside the same sandb
 Current COE RELEASE #31 exact head 19fc87988e55f47e8c6a512e51b470a91abbf816 has sandbox run 44098939249 failing at the UID/GID probe; packaging tests are skipped. The workflow's subsequent Python test step is direct, and the test launches the generated shell wrapper directly. An earlier exact head edf4a37 run 44098400955 observed the synthetic external sentinel overwritten. Exact source, job and log evidence: COE_IMAGEBUILDER_SANDBOX_EXECUTION_BOUNDARY_AUDIT_20261117_UTC13.md.
 
 PHX-RELEASE owns the wrapper/workflow/test correction; PHX-QA independently verifies the exact final head. PHX-MASTER owns this cross-repo invariant and release gate only. Keep COE #31/#26 draft and **PRODUCTION NO-GO**.
+
+## 6.11 CI test-harness containment is not generated-build enforcement — 2026-11-17 UTC14
+
+At COE RELEASE #31 final head d45b84c67dc587fca6226662cb1d8bc59bdb11ae, the test helper invokes run_imagebuilder_sandbox.py when PHX_REQUIRE_BWRAP=1, and the dedicated workflow sets that variable. This proves only that the synthetic test harness attempts to execute its generated wrapper under the runner.
+
+The production packager blob fd558928b2869ce1f4b2cb2776b405b4b723b310 contains no bubblewrap or runner invocation in generate_build_script(). The generated build script therefore does not enforce the same boundary when an operator runs it directly. Runtime build execution remains NOT SANDBOX-ENFORCED / UNKNOWN until RELEASE either integrates the runner into the generated entrypoint or documents and independently verifies a mandatory external isolated build-host boundary.
+
+The current runner explicitly passes --share-net; network isolation is not present or claimed. Its read-only host-root bind is a write boundary, not a confidentiality boundary. Do not describe this as a full sandbox or run untrusted build inputs on a secret-bearing host. PHX-RELEASE owns implementation; PHX-QA independently verifies the actual supported build invocation; PHX-MASTER owns this contract and release gate only.

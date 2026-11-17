@@ -507,3 +507,20 @@ The current #31 workflow has a separate bwrap capability probe and UID/GID probe
 HARDWARE #317 current head 4496124580a11f8bdd88c2e5adcdfb86e824b978 has focused quarantine run 44097183197 SUCCESS and relay polarity run 44097182916 SUCCESS; Full run 44097182945 fails at QA validation job 134088551798 because the inherited poll fixture still expects a positive signature. Preserve default-deny; PHX-QA owns fixture/extractor correction.
 
 PHX-RELEASE must repair and actually apply the sandbox to the Make process and resolve the installation-scoped ULA contract. PHX-QA independently verifies. COE integration owner keeps #26 draft and reconciles provenance. No file move/copy/overwrite. See COE_IMAGEBUILDER_SANDBOX_EXECUTION_BOUNDARY_AUDIT_20261117_UTC13.md. **PRODUCTION NO-GO.**
+
+## 18. COE #31 sandbox test-harness vs generated-build boundary — 2026-11-17 UTC14
+
+| Gate | Exact evidence | Disposition |
+|---|---|---|
+| COE #31 final head | d45b84c67dc587fca6226662cb1d8bc59bdb11ae, based on #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Open / draft |
+| Test harness | Test blob b2cdbcebf111a4f04c0504edf983072323fa2718 calls the sandbox runner when PHX_REQUIRE_BWRAP=1; workflow sets it | Test-harness containment attempt |
+| Runner | Blob f20267d26185238bc82bcaccebf857fee67d929a; read-only root, writable builder, tmpfs, UID/GID mapping; uses --share-net | No network isolation; no confidentiality claim |
+| Generated packager | Blob fd558928b2869ce1f4b2cb2776b405b4b723b310; no bwrap/runner invocation | Runtime build entrypoint does not enforce runner |
+| Final-head sandbox | [44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) PENDING / no jobs | No containment PASS |
+| Final-head shared CI | [44104956321](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956321) SUCCESS | Scoped only |
+| Final-head case collision | [44104956464](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956464) SUCCESS | Scoped only |
+| ULA output | Still fd00:db8:blaze::/48; no ULA assertions in packager tests | P0 invalid configuration |
+
+The sandbox helper is now exercised by the CI test harness, but the generated build artifact does not invoke it. Do not classify the actual ImageBuilder build as sandbox-enforced. PHX-RELEASE must enforce the boundary at the supported build entrypoint or document and prove a separate mandatory isolated build host; PHX-QA must test that actual path. Network isolation remains explicitly unclaimed. The ULA remains a separate P0; require installation/site-scoped durable generation or validated deployment input, not a shared static profile prefix.
+
+COE #26 remains at five queued workflows. Keep #26/#31 draft. No copy, overwrite, move, merge or promotion is authorized by this audit.
