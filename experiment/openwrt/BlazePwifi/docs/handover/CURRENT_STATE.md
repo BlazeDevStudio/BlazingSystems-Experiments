@@ -693,3 +693,22 @@
 
 ## PHX-HW-J 2026-10-30 — focused native C++ firmware header contract (LAB / NO-GO)
 - Draft PR #254 from #239; synthetic actual C++ header test `tests/v060_controller_auth_header_native.cpp` commit `2e7b9a87055bc1ea0f61f6926b871027104a9d5f`; focused mbedTLS GitHub Actions workflow `.github/workflows/phx-hw-controller-auth-focused.yml` commit `7686fa21f537351a5167b13449eb97feeaeb877f`. Checks real `ControllerAuthV1Lab.h` signed DENY positive, corrupt signature, different device/nonce, invalid signature/key and raw policy digest mismatch. CORE PR #252 wire canonical unchanged; Phase A no admission. Exact-head run `40911692725` initially QUEUED, never claim green without checking. No native wire parser, protected reboot highwater, keys, physical trials, flashing, merge or production authority.
+
+## 2026-11-17 UTC04 — PHX-HARDWARE exact-head cleanup verification and handover-gate correction
+
+**Scope:** DRAFT PR #254, stacked on DRAFT #239. This entry supersedes the prior instruction to re-run Full on the 2026-11-14 docs-only successor.
+
+### Verified successful source/validation head
+
+The source cleanup commit is `3692ddf889470da8a002e9a16bf0ac2f37f1a9d0`. Its docs-only successor `16de37a7f3a86e1ec7dbc424b6b2f43227421eee` changed only the three canonical handovers; compare confirms no firmware/header/test source changes.
+
+- Focused [#43633345474](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345474), job `132564650975`, **SUCCESS** at exact SHA `16de37a`. The actual ESP32 lab header compiled with mbedTLS; 5/5 synthetic DENY cases passed (signed-but-denied, tampered signature, wrong device, wrong nonce, invalid signature/empty key).
+- Full [#43633345561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345561), **COMPLETED SUCCESS** at exact SHA `16de37a`. Validation `132564700241`, ESP32 `132564700182`, ESP8266 `132564700146`, Android, all returned target build jobs, the v0.4 simulation matrix and update bundle succeeded. Signing and publication jobs were skipped.
+
+### Subsequent handover-gate RED retained
+
+This UTC04 activation updated the hardware maintainer guide and added a narrow verification handover in commit `877d3ea19e466f03e098fce552922188049cce62`. The ensuing exact-head Full run [#44019660976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44019660976) failed validation job `133825903970` at the mandatory handover freshness gate because `PROJECT_HANDOVER.md` still predated those two hardware-owned documentation files. This is a documentation freshness failure, not a reported ESP target compilation failure. It is preserved, not waived.
+
+The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md` after the guide and narrow handover so the same gate can be re-run without bypass. Exact-head Full validation remains pending until the next run completes.
+
+**Classification:** the non-actuating header cleanup and its 5/5 native synthetic tests are **CI VERIFIED** at `16de37a`; this is not application integration or hardware acceptance. No protected key/witness, physical coin/relay, electrical pulse, 150 power-cut, 30-device soak, production signing, release or deployment evidence is created by these host/CI checks. Phase A remains DENY.
