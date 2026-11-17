@@ -117,8 +117,7 @@ static bool runSaveFailure(){
   sampleCoinPulseEdge(true);
   if(pendingPulses!=1 || saveCalls!=1 || fsReady || !pendingReady)
     return fail("save-failure","failed durable write did not disable filesystem/intake");
-  applyOutputs();
-  if(relayOn || ledOn) return fail("save-failure","outputs remained enabled after failed save");
+  if(relayOn || ledOn) return fail("save-failure","outputs remained enabled immediately after failed save");
   sampleCoinPulseEdge(false);
   fakeNow=200U;
   sampleCoinPulseEdge(true);
