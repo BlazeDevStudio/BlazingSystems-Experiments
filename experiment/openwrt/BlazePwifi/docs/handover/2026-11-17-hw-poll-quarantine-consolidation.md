@@ -298,3 +298,8 @@ All are source-extracted host/fake-filesystem simulations; physical acceptance i
 The earlier full-validation compatibility RED at `882407d5...` was due the static hardening test requiring the register signature marker; the final source retains provisioned-key register-tuple verification while keeping configuration application disabled. The new hardware-owned lab additionally checks the whole sketch has exactly one `applyRemoteConfig(` occurrence (the dormant function definition only), preventing any poll/register call site from silently returning.
 
 **Ownership:** no QA-owned tests, shared API/schema, CORE financial source, Master coordination files, release workflow, or other role's source was changed. PHX-QA must repair its extractor. Remote config remains disabled until PHX-CORE defines a separate domain-separated config envelope and PHX-QA approves exact golden vectors.
+
+
+## 2026-11-17 UTC05 — durable one-shot coin POST attempt marker
+
+See [the narrow PHX-HARDWARE handover](2026-11-17-hw-pending-post-attempt-marker.md). The current #315 source writes and verifies `/pending.attempt` before a coin POST, blocks same-boot retries, and makes any marker a boot-time reconciliation stop. The durable pending record is removed before the marker. The source-extracted lab is wired into the existing focused quarantine workflow via `quarantine_readback_lab.py`. This is a proposed hardware-journal implementation of Master Architecture Contracts §6.2, pending PHX-CORE / PHX-MASTER agreement and independent PHX-QA exact-head verification. Physical flash durability remains NOT TESTED.

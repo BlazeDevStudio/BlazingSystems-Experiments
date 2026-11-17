@@ -241,4 +241,6 @@ poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
 subprocess.run([sys.executable, str(register_lab)], check=True)
+attempt_marker_lab = ROOT / "esp32/BlazePwifiVendo32/pending_attempt_marker_lab.py"
+subprocess.run([sys.executable, str(attempt_marker_lab)], check=True)
 

@@ -45,7 +45,7 @@ bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=tru
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
-bool pendingReady=false, fsReady=false, journalRecoveryRequired=false;
+bool pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
 int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 
@@ -108,13 +108,20 @@ bool readPendingFile(const char *path, PendingRecord &r){
   return true;
 }
 
+bool samePendingRecord(const PendingRecord &left,const PendingRecord &right){
+  return left.magic==right.magic && left.pulses==right.pulses &&
+         strcmp(left.nonce,right.nonce)==0 &&
+         strcmp(left.target,right.target)==0 &&
+         left.checksum==right.checksum;
+}
+
 bool removePendingCandidate(const char *path){
   if(!LittleFS.exists(path)) return true;
   return LittleFS.remove(path) && !LittleFS.exists(path);
 }
 
 bool savePending(){
-  if(!fsReady || journalRecoveryRequired || pendingPulses==0 || pendingPulses>20 ||
+  if(!fsReady || journalRecoveryRequired || pendingPostAttempted || pendingPulses==0 || pendingPulses>20 ||
      pendingNonce.length()<8 || pendingTarget.length()<8) return false;
   PendingRecord r; memset(&r,0,sizeof(r)); r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
   const size_t nonceLength=strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
@@ -159,13 +166,81 @@ bool savePending(){
   return true;
 }
 
+bool markPendingPostAttempt(){
+  if(!fsReady || journalRecoveryRequired || !pendingReady ||
+     pendingPulses==0 || pendingPulses>20 || pendingPostAttempted) return false;
+  if(LittleFS.exists("/pending.attempt")){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: prior coin POST attempt marker exists; reconciliation required.");
+    return false;
+  }
+
+  PendingRecord record{};
+  record.magic=PENDING_MAGIC;
+  record.pulses=pendingPulses;
+  const size_t nonceLength=pendingNonce.length();
+  const size_t targetLength=pendingTarget.length();
+  if(nonceLength<8 || nonceLength>=sizeof(record.nonce) ||
+     targetLength<8 || targetLength>=sizeof(record.target)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending identity cannot be represented in attempt marker.");
+    return false;
+  }
+  memcpy(record.nonce,pendingNonce.c_str(),nonceLength);
+  memcpy(record.target,pendingTarget.c_str(),targetLength);
+  record.checksum=pendingChecksum(record);
+
+  const char *pendingPaths[]={"/pending.dat","/pending.new","/pending.bak"};
+  bool durablePendingMatches=false;
+  for(size_t i=0;i<sizeof(pendingPaths)/sizeof(pendingPaths[0]);++i){
+    if(LittleFS.exists(pendingPaths[i])){
+      PendingRecord durable{};
+      if(readPendingFile(pendingPaths[i],durable) &&
+         samePendingRecord(record,durable)) durablePendingMatches=true;
+    }
+  }
+  if(!durablePendingMatches){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: no matching durable pending record; coin POST denied.");
+    return false;
+  }
+
+  File marker=LittleFS.open("/pending.attempt","w");
+  if(!marker){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: cannot persist coin POST attempt marker; network dispatch denied.");
+    return false;
+  }
+  const size_t written=marker.write((const uint8_t*)&record,sizeof(record));
+  marker.flush();
+  marker.close();
+  PendingRecord verify{};
+  if(written!=sizeof(record) ||
+     !readPendingFile("/pending.attempt",verify) ||
+     !samePendingRecord(record,verify)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: coin POST attempt marker readback failed; network dispatch denied.");
+    return false;
+  }
+  pendingPostAttempted=true;
+  return true;
+}
+
 void loadPending(){
   if(!fsReady) return;
+  pendingPostAttempted=false;
+  const bool hasAttempt=LittleFS.exists("/pending.attempt");
   const bool hasDat=LittleFS.exists("/pending.dat");
   const bool hasNew=LittleFS.exists("/pending.new");
   const bool hasBak=LittleFS.exists("/pending.bak");
   const unsigned journalCount=(unsigned)hasDat+(unsigned)hasNew+(unsigned)hasBak;
-  if(!journalCount) return;
+  if(!journalCount){
+    if(hasAttempt){
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: orphan coin POST attempt marker; operator reconciliation required.");
+    }
+    return;
+  }
   // Multiple candidates can represent DIFFERENT unpaid coins after a power cut.
   // Never choose one and delete another without a durable receipt/ACK contract.
   if(journalCount!=1){
@@ -180,9 +255,25 @@ void loadPending(){
     Serial.println("CRITICAL: corrupt/unreadable pending journal; preserving evidence, coin intake disabled.");
     return;
   }
-  pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
-  pendingReady=true; lastSend=0;
-  // Do not rename or delete evidence at boot. Clear only after authorized receipt ACK.
+  pendingPulses=r.pulses;
+  pendingNonce=String(r.nonce);
+  pendingTarget=String(r.target);
+  pendingReady=true;
+  lastSend=0;
+  if(hasAttempt){
+    PendingRecord attempt{};
+    if(!readPendingFile("/pending.attempt",attempt) ||
+       !samePendingRecord(r,attempt)){
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: coin POST attempt marker is corrupt or mismatched; preserving evidence.");
+    } else {
+      pendingPostAttempted=true;
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: coin POST may have reached the server; automatic replay is denied.");
+    }
+  }
+  // Do not rename or delete evidence at boot. Clear only after an authorized,
+  // durable receipt/quarantine disposition and successful marker reclamation.
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
@@ -382,7 +473,8 @@ String post(const String& action,const String& pulses="0",const String& target="
 
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
+  return fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
+         pendingReady && pendingPulses>0;
 }
 
 bool coinLineIdle(){
@@ -754,20 +846,16 @@ bool clearPending(){
     Serial.println("CRITICAL: cannot clear pending journal while LittleFS is unavailable.");
     return false;
   }
-
   const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
   unsigned candidateCount=0;
   for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
     if(LittleFS.exists(paths[i])) ++candidateCount;
   }
   if(candidateCount>1){
-    // Multiple candidates may represent different unpaid events. Do not begin
-    // destructive cleanup until an operator reconciles every durable record.
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: multiple pending journals at clear; preserving all evidence.");
     return false;
   }
-
   bool removed=true;
   for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
     if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
@@ -778,8 +866,20 @@ bool clearPending(){
     Serial.println("CRITICAL: pending journal deletion failed; preserving RAM event and disabling relay.");
     return false;
   }
-
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
+  // Remove the attempt marker LAST. A power cut after pending deletion but
+  // before marker deletion leaves an orphan marker that blocks boot admission.
+  if(LittleFS.exists("/pending.attempt") &&
+     (!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt"))){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending event cleared but attempt marker remains; operator reconciliation required.");
+    return false;
+  }
+  pendingPulses=0;
+  pendingReady=false;
+  pendingPostAttempted=false;
+  pendingNonce="";
+  pendingTarget="";
+  lastSend=0;
   return true;
 }
 
@@ -979,16 +1079,29 @@ void loop(){
     applyOutputs();
   }
 
-  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
-    String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
-    lastSend=millis();
-    if(r.indexOf("\"ok\":true")>=0){
-      clearPending();
+  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
+    if(!markPendingPostAttempt()){
+      journalRecoveryRequired=true;
       applyOutputs();
-    } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
-              r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      quarantinePending(r);
-      applyOutputs();
+    } else {
+      String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
+      lastSend=millis();
+      if(r.indexOf("\"ok\":true")>=0){
+        clearPending();
+        applyOutputs();
+      } else if(r.indexOf("coin window expired")>=0 ||
+                r.indexOf("coin target mismatch")>=0 ||
+                r.indexOf("no active coin window")>=0 ||
+                r.indexOf("another vendo selected")>=0){
+        quarantinePending(r);
+        applyOutputs();
+      } else {
+        // A timeout, malformed reply, or unknown error may have followed a
+        // committed server write. Preserve the marker and deny automatic replay.
+        journalRecoveryRequired=true;
+        Serial.println("CRITICAL: coin POST outcome ambiguous; pending evidence retained for operator reconciliation.");
+        applyOutputs();
+      }
     }
   }
 

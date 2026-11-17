@@ -31,3 +31,16 @@ negative truth-table cases (18 total), plus source-level verification
 that both live network call sites invoke the helper and failed flash
 saves disable `fsReady`. No device flashes, real payments, or power
 cuts are claimed.
+
+
+## One-shot POST attempt marker — 2026-11-17 DRAFT
+
+Both board sketches persist `/pending.attempt` with the exact pending event identity and verify it by readback **before** the first `post("coin")` call. The marker uses the existing PendingRecord magic/checksum and binds pulse count, nonce and target; it is local crash-state evidence, not a cryptographic witness.
+
+- A verified marker makes `canAttemptCoinPost()` false for the rest of the boot.
+- On reboot, matching, corrupt, mismatched or orphan markers set `journalRecoveryRequired`; no automatic duplicate POST is allowed.
+- A marker open/write/readback failure prevents network dispatch in the current boot.
+- Empty, timed-out, malformed or unknown responses retain the marker and block automatic retry because the server may have committed.
+- The pending record is removed first and the marker last, only after the existing successful receipt or successful quarantine-append path. A failed marker removal leaves an orphan marker that blocks the next boot.
+
+The hardware-owned source lab injects marker open, short-write, readback, mismatch, corruption, orphan, pending-delete and marker-delete failures on both boards. These are host simulations. LittleFS flush/readback has **not** been proven across physical power loss; no 150-cut, electrical or soak acceptance is implied. PHX-CORE must review the uncertain/reconciliation semantics and PHX-QA must independently verify the exact combined SHA before acceptance.
