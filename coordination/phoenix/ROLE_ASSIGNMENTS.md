@@ -161,3 +161,18 @@ Exact refs and CI below were refreshed from live PR heads and commit-linked work
 | PHX-RELEASE | #242 / 734b89d9e7792247e8376335c3f3685500ab3f89; #291 / 2c4edff231d9b2819415086825530d80b8801307 | #31 / f3f995c91e38b5c5908bf8910056523015c8f0fd | Experiments 40882814472/43744993487 success; COE 44002215761/44002215760 success. Scoped software checks only; no signer, publication or physical release acceptance. |
 
 COE integration #26 remains open/draft at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows. The private Drive registry v11 and newer corrections remain blocked pending authorized Drive access. No role branch, firmware, financial source, release workflow or migration target was modified by PHX-MASTER.
+
+
+## Live poll/config role routing snapshot — 2026-11-17 UTC03
+
+This bounded snapshot covers only roles and PRs relevant to the poll/register configuration trust boundary. It does not transfer source ownership.
+
+| Role | Experiments PR / exact head | COE PR / exact head | Exact-head CI observation | Next owner action |
+|---|---|---|---|---|
+| PHX-MASTER | #288 / `2c2b517995365e23d89e423e2b9faeac4135381f` before this snapshot | Integration #26 / `b382d233ff06c8791b1028bed3c617cc7b670d12` | No Master PR-triggered runs; five COE #26 workflows queued. | Own coordination/contracts only; keep NO-GO. |
+| PHX-CORE | #252 / `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #29 / `d0830332dee8a1844a85606150681b41d91fe796` | Experiments 42698139210 success; COE 43653906676/43653906675 success. | Define the separate config-authentication schema, algorithm/domain separation and golden vectors; no firmware edits. |
+| PHX-HARDWARE | #315 / `58ade5df83df0c6894dd8d1e2a70617b90dae374`; #316 / `888e6941e3a7a81641682c23d937f97d8117d2ea` | #27 / `009f70cc2c2775039a5fb072c9d4fdedee76cfc7` | #315 focused 44008962809 success; full 44008962837 failed at validation 133791150681. #316 focused 43972511337 success; full 43972511250 failed. COE #27 runs 43079646393/46264 success. | Guard/remove the remaining `connectSta()` register-path `applyRemoteConfig` call; add empty-key and altered-config register regressions on both boards. |
+| PHX-QA | #292 / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #32 / `29b6fe08b10688182d981a66745f482758bd6630` | #292 no PR-triggered runs returned; COE #32 run 43653540607 success (PISONET external-authority scope, not this config path). | Independently test register config injection and fix canonical extractor omission of `acceptPollResponse()`. |
+| PHX-RELEASE | #242 / `734b89d9e7792247e8376335c3f3685500ab3f89` | #31 / `79f79c6cd67e50d76f63e2321a22c92fc85f7f5a` | Experiments 40882814472 success; COE 44009785780/44009785581 success. | Keep signing, publication and release gates closed; scoped build success is not approval. |
+
+Other role ownership is unchanged. No CORE, HARDWARE, QA, RELEASE, RENTAL or PISONET source branch was modified by PHX-MASTER.
