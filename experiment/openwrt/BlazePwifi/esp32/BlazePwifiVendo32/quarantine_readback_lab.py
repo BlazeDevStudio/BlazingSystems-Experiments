@@ -115,6 +115,7 @@ struct FakeLittleFS {
 
 @@SOURCE_COIN_POST_GATE@@
 @@SOURCE_ENCODE@@
+@@SOURCE_TOKEN_VALID@@
 @@SOURCE_RECORD_VALID@@
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
@@ -162,8 +163,6 @@ int main(){
     if(scenario==16)
       disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier\n"
                  "TIME=9 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=duplicate\n";
-    if(scenario==17)
-      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==17)
       disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==18)
@@ -263,7 +262,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 29/29 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 33/33 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -288,6 +287,7 @@ for board, ino in BOARDS:
     actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
     actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = actual.replace("@@SOURCE_TOKEN_VALID@@", extract(source, "bool quarantineLogTokenValid("))
     actual = actual.replace("@@SOURCE_RECORD_VALID@@", extract(source, "bool quarantineLogRecordValid("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
@@ -309,7 +309,7 @@ for board, ino in BOARDS:
             print(f"{board}: compiled exact extracted source")
 if failed_boards:
     raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
-print("PHX-HARDWARE: 58/58 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 66/66 source-extracted host scenarios PASS; no hardware evidence")
 poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
