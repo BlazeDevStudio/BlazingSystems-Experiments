@@ -545,3 +545,24 @@ PHX-RELEASE owns generated-wrapper correction; PHX-QA owns independent exact-hea
 ### §19 exact-head CI follow-up — 2026-11-17 UTC15:14Z
 
 COE #31 sandbox run [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) at `d45b84c67dc587fca6226662cb1d8bc59bdb11ae` completed **CANCELLED**, job `134126241456`. Fifteen packaging tests reported `ok`, including `test_generated_build_script_passes_posix_shell_syntax_check`; the job was then canceled before `test_generated_wrapper_denies_empty_firmware_payload`. This is incomplete, not PASS or source RED. The local exact-fragment reproduction still showed `sh -n=0` but runtime exit 2 (`Syntax error: Bad fd number`). Shared-contract #44104956321 and case-collision #44104956464 are scoped successes only.
+
+## 20. COE #31 generated-wrapper correction and operator-build boundary — 2026-11-17 UTC15
+
+| Gate | Exact source / CI evidence | Current disposition |
+|---|---|---|
+| Experiments source main / development | `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison-only `2fbd2475e9f54878c316fa7cea2f228386b0e859` | Exact refs refreshed; do not promote development snapshots by assumption |
+| PHX-MASTER #288 | `phoenix/master-coordination@86b91edd2864d796487a9da56a8267ae44ca771c`, base main `f4e8a891...` | Open/draft; no PR-triggered runs returned |
+| COE main / integration #26 | main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Main remains scaffold/structure-only; #26 open/draft; five workflows QUEUED, zero jobs |
+| COE RELEASE #31 | `phoenix/release-imagebuilder-failclosed-20261115@06d8b7c593f8e139891a6a659bf79e694ee229d5`, based on #26 | Open/draft; not integrated into #26 |
+| Generated wrapper correction | Packager blob `66fc283eb52add75caee6131b78dcadbb5d8a7fc`; tests blob `3e917c30654ce629391c3fbd864d5b671b0a2e46` | Literal shell line-break defect corrected in source; exact-head runtime CI still pending |
+| Final-head sandbox | [44113058229](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44113058229), job `134155724688` | IN_PROGRESS; no PASS/failure inferred |
+| Final-head shared/hardware | [44113058271](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44113058271) | SUCCESS, scoped |
+| Final-head case collision | [44113058276](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44113058276) | SUCCESS, scoped |
+| Test-harness vs operator build | Test blob `3e917c30...` calls `run_imagebuilder_sandbox.py` under `PHX_REQUIRE_BWRAP=1`; generated packager template blob `66fc283e...` still invokes `{cmd}` directly and has no runner call | Actual operator build remains NOT SANDBOX-ENFORCED / UNKNOWN |
+| Sandbox network boundary | Runner blob `f20267d26185238bc82bcaccebf857fee67d929a` passes `--share-net` | Network isolation not present or claimed |
+| ULA | Current packager still emits `fd00:db8:blaze::/48`; test blob has no ULA parser assertion | P0 invalid configuration; keep §6.9 contract and block integration |
+| Ownership routes | Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` | `DRAFT_REVIEW_ONLY`; Master target remains null; broad Rental parent remains non-copyable |
+
+The source correction resolves the prior generated-shell literal-newline defect at source level, but the final exact-head sandbox job is still running. The test harness invokes the sandbox helper; the generated operator wrapper does not. Do not collapse those two claims. PHX-RELEASE owns the runtime boundary and ULA implementation; PHX-QA owns independent exact-head verification. PHX-MASTER owns architecture, matrix and migration gate only.
+
+**PHX-MASTER bounded static assertions:** 13/13 passed across current packager/test/runner/workflow/manifest blobs. **Not executed:** COE Python packaging suite, Master Python suite, OpenWrt UCI/netifd tests or physical tests. Local Git clone was blocked by DNS resolution; the GitHub Actions sandbox job remains IN_PROGRESS. No subsystem source, destination staging, license record, secret, firmware, payment or financial state was modified. **PRODUCTION NO-GO.**
