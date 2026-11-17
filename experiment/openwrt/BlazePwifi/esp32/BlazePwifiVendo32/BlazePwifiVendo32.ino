@@ -22,6 +22,9 @@ struct PendingRecord {
   uint32_t checksum;
 };
 
+volatile uint32_t coinEdgeSequence=0; // ISR counter; declaration precedes its handler.
+
+
 // The ISR only counts the configured active edge. No String, filesystem,
 // network or logging calls are permitted from interrupt context.
 #if defined(ESP8266)
@@ -54,7 +57,6 @@ uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 
-volatile uint32_t coinEdgeSequence=0;
 
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
