@@ -95,3 +95,10 @@ Runtime-source commits:
 Configured-key positive authorization remains unavailable until PHX-CORE supplies the approved signed poll response producer/consumer contract; main currently returns no response_sig, so firmware continues to deny those unsigned replies. PHX-QA must update the extractor and independently execute the keyless probe plus poll/quarantine suites at the new exact head. PHX-RELEASE must wire the hardware-owned probe into a canonical workflow. The RAM-only rejected-event latch and durable reboot disposition remain open.
 
 No physical coin/relay test, power cut, electrical pulse test, flash, reset, migration, live money, merge, release or deployment occurred.
+### Keyless regression positive control and CI retry status
+
+A second local host C++ positive-control run used a nonempty test key and matching stub response signature. Both ESP8266-shaped and ESP32-shaped builds accepted the signed positive response and enabled the simulated outputs (exit 0). Together with the empty-key negative case above, this verifies the intended local branch split: provisioned + matching signature may authorize; empty key cannot. Both are SIMULATED control-flow checks, not controller interoperability or hardware acceptance.
+
+The first full workflow associated with the firmware commits was cancelled after later branch commits. The attempted job retry at source commit 1ea307966979cc7ed6d67962b0e22f98cbb516c3 re-ran validation job 133736710809, which again failed because the QA-owned extractor did not declare acceptPollResponse(); the remaining board/target jobs in that run were cancelled. Focused quarantine run 43992328925 job 133735792206 completed success, but it tests only quarantine byte-readback and does not compile or execute the poll helper. A final exact-head full build must be allowed to complete after the last source/test commit.
+
+Do not describe the poll-response regression probe as CI-verified until PHX-QA/PHX-RELEASE wire it into canonical validation and an exact-head job executes it.
