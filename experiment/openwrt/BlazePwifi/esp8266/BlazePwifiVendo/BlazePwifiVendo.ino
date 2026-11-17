@@ -731,9 +731,19 @@ void connectSta(){
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
   if(WiFi.status()==WL_CONNECTED){
     wifiFailures=0;
-    // Register is identity/status only; its response signature does not bind
-    // controller configuration. Never apply remote config from this response.
-    (void)post("register");
+    String r=post("register");
+    // This authenticates only the register tuple, not the returned config.
+    bool registerTupleAuthenticated=false;
+    if(strlen(cfg.key)){
+      String sig=jsonString(r,"response_sig");
+      if(sig.length()){
+        int st=jsonInt(r,"server_time",0);
+        String expected=hexDigest(String(cfg.key)+"|register|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(st)+"|"+String(cfg.key));
+        registerTupleAuthenticated=sig.equalsIgnoreCase(expected);
+      }
+    }
+    if(!registerTupleAuthenticated)
+      Serial.println("Register response unauthenticated; remote configuration remains disabled.");
   }
 }
 

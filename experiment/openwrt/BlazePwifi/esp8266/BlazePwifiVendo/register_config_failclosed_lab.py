@@ -90,6 +90,8 @@ String responseSignature = "valid-signature";
 String expectedSignature = "valid-signature";
 String lastSentNonce = "nonce-123";
 int serverTime = 123;
+int jsonStringCalls = 0;
+int digestCalls = 0;
 
 bool controllerEnabled = true;
 bool coinEnabled = true;
@@ -120,10 +122,12 @@ String post(const char *action) {
   return registerResponse;
 }
 String jsonString(const String &, const char *key) {
-  return std::string(key) == "response_sig" ? responseSignature : String("");
+  if (std::string(key) == "response_sig") { ++jsonStringCalls; return responseSignature; }
+  return String("");
 }
 int jsonInt(const String &, const char *, int) { return serverTime; }
-String hexDigest(const String &) { return expectedSignature; }
+String hexDigest(const String &) { ++digestCalls; return expectedSignature; }
+struct FakeSerial { template<class T> void println(const T &) {} } Serial;
 
 void applyRemoteConfig(const String &) {
   ++applyRemoteConfigCalls;
@@ -166,6 +170,8 @@ void resetState() {
   wifiFailures = 9;
   postCalls = 0;
   applyRemoteConfigCalls = 0;
+  jsonStringCalls = 0;
+  digestCalls = 0;
   fakeNow = 0;
   lastAction.clear();
   registerResponse = "{\"ok\":true,\"controller\":{\"enabled\":0,\"coin_enabled\":0,\"relay_enabled\":0,\"led_enabled\":0,\"coin_pin\":12,\"relay_pin\":13,\"led_pin\":14,\"coin_active_low\":0,\"relay_active_high\":0,\"led_active_high\":0,\"coin_debounce_ms\":1,\"max_wifi_retries\":60}}";
@@ -201,7 +207,7 @@ int main() {
   setKey("");
   responseSignature = "valid-signature";
   connectSta();
-  if (postCalls != 1 || lastAction != "register" || !configUntouched()) return 11;
+  if (postCalls != 1 || lastAction != "register" || jsonStringCalls != 0 || digestCalls != 0 || !configUntouched()) return 11;
 
   // 2. A valid register-tuple signature does not authenticate appended config.
   resetState();
@@ -209,7 +215,7 @@ int main() {
   responseSignature = "valid-signature";
   expectedSignature = "valid-signature";
   connectSta();
-  if (postCalls != 1 || !configUntouched()) return 12;
+  if (postCalls != 1 || jsonStringCalls != 1 || digestCalls != 1 || !configUntouched()) return 12;
 
   // 3. A bad configured-key signature cannot cause a config mutation.
   resetState();
@@ -217,14 +223,14 @@ int main() {
   responseSignature = "bad-signature";
   expectedSignature = "valid-signature";
   connectSta();
-  if (postCalls != 1 || !configUntouched()) return 13;
+  if (postCalls != 1 || jsonStringCalls != 1 || digestCalls != 1 || !configUntouched()) return 13;
 
   // 4. A missing configured-key signature cannot cause a config mutation.
   resetState();
   setKey("test-key");
   responseSignature = "";
   connectSta();
-  if (postCalls != 1 || !configUntouched()) return 14;
+  if (postCalls != 1 || jsonStringCalls != 1 || digestCalls != 0 || !configUntouched()) return 14;
 
   // 5. Nested ok:true under a top-level denial is not configuration authority.
   resetState();

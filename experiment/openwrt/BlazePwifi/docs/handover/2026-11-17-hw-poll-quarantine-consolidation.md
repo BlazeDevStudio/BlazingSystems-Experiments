@@ -264,3 +264,12 @@ PHX-MASTER's current DRAFT #288 contract at `fc9ba1391908f8d49d8f9e9c578e43b49e2
 **Acceptance boundary:** remote configuration stays disabled until PHX-CORE defines a separate domain-separated configuration envelope and PHX-QA independently verifies canonical positive/negative golden vectors, identity/nonce/revision/freshness binding and atomic persistence behavior. This is not an assertion that remote configuration has been replaced or that the controller is production interoperable.
 
 **Remaining blockers:** canonical QA `tests/controllers.sh` still omits `acceptPollResponse()`; configured-key poll producer/consumer compatibility and the shared signature golden vector remain unverified; quarantine failure disposition is still RAM-only across reboot; protected signer/witness, durable accounting/replay, v1-to-v2 migration, physical 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery and independent QA/release acceptance remain open. No flashing, reset, live money, migration, merge, release or deployment.
+
+
+## 2026-11-17 UTC03 — register tuple verification retained; config mutation remains denied
+
+The first source correction removed the register response parser entirely. Exact full workflow [44012826068](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44012826068), validation job `133803739259`, then failed in the pre-existing QA-owned `tests/v05_firmware_hardening_test.sh` because it requires the register signature construction marker `|register|`. This was a compatibility/test-contract RED; the focused hardware-owned lab at [44012826028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44012826028), job `133803638627`, had already passed all source-extracted suites including register-config denial 7/7 per board.
+
+The corrected implementation **retains verification of the register tuple** when a provisioned key exists, but does not use that result to authorize any configuration mutation. Empty key, missing signature or invalid signature are logged as unauthenticated; even a valid register-tuple signature cannot call `applyRemoteConfig()`. The test lab now also asserts that the register signature verifier runs for provisioned keys and is skipped for keyless bootstrap, while configuration state remains unchanged in every case.
+
+The `applyRemoteConfig()` helper remains explicitly dormant. The canonical QA test directory and workflow were not modified. A new exact-head focused and full CI result is required after this follow-up.
