@@ -2,7 +2,7 @@
 
 ## UTC11 — poll-window fixture chronology correction (test-only)
 
-**Current branch HEAD:** `12bc0cba790ea11a319c2769b07d106f593811e1`  
+**Current branch HEAD:** `6fda96a7151cd8b55bbcb1781adfcda822f41d3e`  
 **Firmware source-fix SHA (unchanged):** `5d3dc5547606841209ade10c888dab67e1ffcaa7`  
 **Current parent #317 head:** `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`
 
@@ -95,3 +95,7 @@ Flags: `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `FI
 - PHX-HARDWARE: retain default-deny; do not claim physical pulse-loss closure until an approved noncustomer bench measures the actual acceptor/relay timing.
 
 No flashing, reset, customer device, live coin, financial migration, signing, release tagging, merge or deployment occurred.
+
+## UTC11 follow-up — guard marker correction
+
+The new Python timeline guard initially searched for a `#` comment marker, but the target scenario is embedded in the C++ fixture and uses `//`. The guard was corrected to match the actual source text. Local static RED/GREEN was repeated: pre-fix lab `9aaa390c482918f29a71fb40e7e7d79a70d95a24` is rejected; corrected fixture/guard at branch head `6fda96a7151cd8b55bbcb1781adfcda822f41d3e` passes. This remains a local static check, not Python execution in GitHub Actions, C++ compilation or hardware evidence. Exact-head CI is still pending.
