@@ -415,6 +415,190 @@ bool beginPollWindow(){
 }
 
 
+// Strict, bounded root-object reader for the unsigned poll "ok" status field.
+// It ignores nested keys and quoted text, rejects duplicate/escaped keys, and
+// refuses malformed or trailing top-level input. This is not a general JSON parser.
+bool pollJsonSpace(char c){
+  return c==' ' || c=='\t' || c=='\r' || c=='\n';
+}
+
+bool pollJsonHex(char c){
+  return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
+}
+
+bool pollJsonSkipString(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n || r[p]!='"') return false;
+  ++p;
+  while(p<n){
+    const unsigned char c=(unsigned char)r[p++];
+    if(c=='"') return true;
+    if(c<0x20) return false;
+    if(c=='\\'){
+      if(p>=n) return false;
+      const char e=r[p++];
+      if(e=='u'){
+        for(int i=0;i<4;i++){
+          if(p>=n || !pollJsonHex(r[p])) return false;
+          ++p;
+        }
+      } else if(e!='"' && e!='\\' && e!='/' && e!='b' &&
+                e!='f' && e!='n' && e!='r' && e!='t'){
+        return false;
+      }
+    }
+  }
+  return false;
+}
+
+bool pollJsonSkipComposite(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n || (r[p]!='{' && r[p]!='[')) return false;
+  char closing[16];
+  int depth=0;
+  const char first=r[p++];
+  closing[depth++]=(first=='{')?'}':']';
+  while(depth>0 && p<n){
+    const char c=r[p];
+    if(c=='"'){
+      if(!pollJsonSkipString(r,p)) return false;
+      continue;
+    }
+    if(c=='{' || c=='['){
+      if(depth>=(int)sizeof(closing)) return false;
+      closing[depth++]=(c=='{')?'}':']';
+      ++p;
+      continue;
+    }
+    if(c=='}' || c==']'){
+      if(closing[depth-1]!=c) return false;
+      --depth;
+      ++p;
+      continue;
+    }
+    if((unsigned char)c<0x20 && !pollJsonSpace(c)) return false;
+    ++p;
+  }
+  return depth==0;
+}
+
+bool pollJsonSkipPrimitive(const String &r,int &p){
+  const int n=(int)r.length();
+  const int start=p;
+  while(p<n && r[p]!=',' && r[p]!='}' && !pollJsonSpace(r[p])) ++p;
+  const int end=p;
+  if(start==end) return false;
+  const int length=end-start;
+  if(length==4 && r[start]=='t' && r[start+1]=='r' &&
+     r[start+2]=='u' && r[start+3]=='e') return true;
+  if(length==5 && r[start]=='f' && r[start+1]=='a' &&
+     r[start+2]=='l' && r[start+3]=='s' && r[start+4]=='e') return true;
+  if(length==4 && r[start]=='n' && r[start+1]=='u' &&
+     r[start+2]=='l' && r[start+3]=='l') return true;
+
+  int q=start;
+  if(r[q]=='-') ++q;
+  if(q>=end) return false;
+  if(r[q]=='0'){
+    ++q;
+  } else if(r[q]>='1' && r[q]<='9'){
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+  } else {
+    return false;
+  }
+  if(q<end && r[q]=='.'){
+    ++q;
+    const int fractionStart=q;
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+    if(q==fractionStart) return false;
+  }
+  if(q<end && (r[q]=='e' || r[q]=='E')){
+    ++q;
+    if(q<end && (r[q]=='+' || r[q]=='-')) ++q;
+    const int exponentStart=q;
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+    if(q==exponentStart) return false;
+  }
+  return q==end;
+}
+
+bool pollJsonSkipValue(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n) return false;
+  if(r[p]=='"') return pollJsonSkipString(r,p);
+  if(r[p]=='{' || r[p]=='[') return pollJsonSkipComposite(r,p);
+  return pollJsonSkipPrimitive(r,p);
+}
+
+bool pollJsonTopLevelTrue(const String &r,const char *wanted){
+  if(!wanted) return false;
+  const int n=(int)r.length();
+  int p=0;
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  if(p>=n || r[p++]!='{') return false;
+
+  int wantedLength=0;
+  while(wanted[wantedLength]) ++wantedLength;
+  int found=0;
+  bool accepted=false;
+  bool afterComma=false;
+
+  while(true){
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]=='}'){
+      if(afterComma) return false;
+      ++p;
+      break;
+    }
+    if(p>=n || r[p]!='"') return false;
+
+    const int keyStart=p+1;
+    if(!pollJsonSkipString(r,p)) return false;
+    const int keyEnd=p-1;
+    // Escaped property names are unnecessary for this protocol and can
+    // otherwise alias a duplicate key after JSON escape decoding.
+    for(int i=keyStart;i<keyEnd;i++) if(r[i]=='\\') return false;
+
+    bool matches=(keyEnd-keyStart)==wantedLength;
+    if(matches){
+      for(int i=0;i<wantedLength;i++){
+        if(r[keyStart+i]!=wanted[i]){ matches=false; break; }
+      }
+    }
+
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p>=n || r[p++]!=':') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+
+    if(matches){
+      if(++found!=1) return false;
+      if(p+4>n || r[p]!='t' || r[p+1]!='r' ||
+         r[p+2]!='u' || r[p+3]!='e') return false;
+      p+=4;
+      if(p<n && !pollJsonSpace(r[p]) && r[p]!=',' && r[p]!='}') return false;
+      accepted=true;
+    } else if(!pollJsonSkipValue(r,p)){
+      return false;
+    }
+
+    afterComma=false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]==','){
+      ++p;
+      afterComma=true;
+      continue;
+    }
+    if(p<n && r[p]=='}'){
+      ++p;
+      break;
+    }
+    return false;
+  }
+
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  return p==n && found==1 && accepted;
+}
+
 bool acceptPollResponse(const String &response){
   bool insertAllowed=jsonTrue(response,"insert");
   String target=jsonString(response,"target_nonce");
@@ -431,7 +615,7 @@ bool acceptPollResponse(const String &response){
       signatureOk=false;
     }
   }
-  if(!signatureOk || response.indexOf("\"ok\":true")<0 ||
+  if(!signatureOk || !pollJsonTopLevelTrue(response,"ok") ||
      (insertAllowed && !target.length())){
     // An unauthenticated, rejected or targetless positive response must not
     // reuse stale permission or energize an acceptor without a bound target.

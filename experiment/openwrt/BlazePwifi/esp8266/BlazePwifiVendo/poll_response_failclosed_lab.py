@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Source-exact host lab for fail-closed ESP poll-response handling.
 
-Compiles the production acceptPollResponse() and applyOutputs() functions
-from both board sketches. This is simulated control-flow evidence only.
+Compiles the production poll-status parser, acceptPollResponse(), and applyOutputs() functions from both board sketches. This is simulated control-flow evidence only.
 """
 import re
 import subprocess
@@ -87,6 +86,20 @@ void writeLogical(int pin, bool on, bool) {
 
 MAIN = r"""
 int main(){
+  // Root-only ok parsing: nested objects, arrays and quoted text are not authority.
+  if(!pollJsonTopLevelTrue(String("{\"ok\":true}"),"ok")) return 31;
+  if(pollJsonTopLevelTrue(String("{\"ok\":false,\"controller\":{\"ok\":true}}"),"ok")) return 32;
+  if(pollJsonTopLevelTrue(String("{\"controller\":{\"ok\":true},\"ok\":false}"),"ok")) return 33;
+  if(!pollJsonTopLevelTrue(String("{\"controller\":{\"ok\":false},\"ok\":true}"),"ok")) return 34;
+  if(pollJsonTopLevelTrue(String("{\"ok\":true,\"ok\":true}"),"ok")) return 35;
+  if(pollJsonTopLevelTrue(String("{\"controller\":[{\"ok\":true}]}"),"ok")) return 36;
+  if(pollJsonTopLevelTrue(String("{\"message\":\"\\\"ok\\\":true\",\"ok\":false}"),"ok")) return 37;
+  if(pollJsonTopLevelTrue(String("{\"ok\":true,}"),"ok")) return 38;
+  if(pollJsonTopLevelTrue(String("{\"ok\":true}trailing"),"ok")) return 39;
+  if(!pollJsonTopLevelTrue(String(" { \"ok\" : true, \"controller\":{\"ok\":false} } "),"ok")) return 40;
+  if(pollJsonTopLevelTrue(String("{\"o\\u006b\":true}"),"ok")) return 41;
+  if(pollJsonTopLevelTrue(String("{\"controller\":bad,\"ok\":true}"),"ok")) return 42;
+  if(pollJsonTopLevelTrue(String("{\"controller\":{\"x\":1],\"ok\":true}"),"ok")) return 43;
   // Empty / timed-out poll after a previously positive poll must stay OFF.
   insertMode=true; responseTarget="old-target"; responseSignature="";
   responseInsert=true; pollIntakeSuspended=true; relayOn=true;
@@ -145,7 +158,16 @@ int main(){
   relayOn=true; ledOn=true; applyOutputs();
   if(relayOn || ledOn) return 26;
 
-  std::cout << "poll-response fail-closed cases: 8/8 PASS\n";
+  // A nested ok:true cannot override an explicit top-level denial.
+  insertMode=true; activeTarget="old-target"; responseSignature="valid-signature";
+  responseTarget="target-04"; responseInsert=true; pollIntakeSuspended=true; relayOn=true;
+  applyOutputs();
+  if(acceptPollResponse(String("{\"ok\":false,\"controller\":{\"ok\":true}}")) ||
+     insertMode || !activeTarget.empty() || relayOn) return 27;
+  pollIntakeSuspended=false; applyOutputs();
+  if(relayOn || ledOn) return 28;
+
+  std::cout << "poll-response fail-closed cases: 9/9 PASS; strict root JSON cases: 13/13 PASS\n";
   return 0;
 }
 """
@@ -155,7 +177,8 @@ for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     loop=extract(source,"loop")
     assert loop.index('String r=post("poll")') < loop.index("acceptPollResponse(r)") < loop.index("pollIntakeSuspended=false") < loop.index("applyOutputs();lastPoll=millis()"), board+": poll release ordering changed"
-    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
+    parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue"))
+    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
         cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"
         cpp.write_text(code,encoding="utf-8")

@@ -35,7 +35,7 @@ At initial consolidation commit `d771e78f23b6304945e0fdd466b2d52c46c2a33a`:
 
 This follow-up adds `activeTarget` to the two hardware-owned host fixtures that compile `applyOutputs()`: `journal_mount_failclosed_lab.py` and `pending_journal_recovery_lab.py`. No QA-owned `tests/` or RELEASE-owned `.github/workflows/` files were changed. Exact-head reruns are required.
 
-The existing #294 validation extractor still does not include `acceptPollResponse()`; #316 full validation run `43972511250`, job `133668043447`, failed with an undeclared-function diagnostic. That shared extractor is PHX-QA-owned. The new poll lab remains hardware-owned and is not yet wired into the canonical validation workflow.
+The existing #294 validation extractor still does not include `acceptPollResponse()`; #316 full validation run `43972511250`, job `133668043447`, failed with an undeclared-function diagnostic. That shared extractor is PHX-QA-owned. The hardware-owned poll lab is now invoked by the existing focused quarantine workflow through `quarantine_readback_lab.py`; it remains absent from PHX-QA's canonical `Controller protocol parity` extractor in `blazepwifi-build.yml`.
 
 ## Cross-role contract blockers
 
@@ -102,3 +102,22 @@ A second local host C++ positive-control run used a nonempty test key and matchi
 The first full workflow associated with the firmware commits was cancelled after later branch commits. The attempted job retry at source commit 1ea307966979cc7ed6d67962b0e22f98cbb516c3 re-ran validation job 133736710809, which again failed because the QA-owned extractor did not declare acceptPollResponse(); the remaining board/target jobs in that run were cancelled. Focused quarantine run 43992328925 job 133735792206 completed success, but it tests only quarantine byte-readback and does not compile or execute the poll helper. A final exact-head full build must be allowed to complete after the last source/test commit.
 
 Do not describe the poll-response regression probe as CI-verified until PHX-QA/PHX-RELEASE wire it into canonical validation and an exact-head job executes it.
+
+## 2026-11-17 UTC01 — strict root-only poll status parsing
+
+At the pre-fix exact head \`f99dc2bd4ff28efec73f8da6e188bae514147c72\`, both sketches gated poll acceptance with \`response.indexOf("\\"ok\\":true")\`. That searches the entire byte string rather than the root JSON object, so a nested \`controller.ok\` field or quoted text could satisfy the status check. The poll signature binds \`insert\`, \`target_nonce\`, and \`expires\`, but not the separate \`ok\` status field; the root status therefore must be unambiguous.
+
+Both ESP8266 and ESP32 now use a bounded \`pollJsonTopLevelTrue(response,"ok")\` scanner:
+- requires one unescaped root-level \`ok:true\`;
+- ignores nested object/array keys and string-content decoys;
+- rejects duplicate root \`ok\` keys, escaped property names, invalid scalar values, top-level trailing commas, unbalanced nested values, and trailing bytes;
+- caps nested composite depth at 16 and uses fixed stack storage;
+- changes no controller schema, response-signature formula, provisioning path, or financial behavior.
+
+The hardware poll lab now extracts the actual scanner helpers from each sketch as well as \`acceptPollResponse()\` and \`applyOutputs()\`. It adds 13 root-parser cases and a ninth end-to-end poll-denial case. The existing PHX-HARDWARE focused workflow already invokes \`quarantine_readback_lab.py\`; that lab now invokes the poll lab, so the new tests run without modifying RELEASE-owned workflow files or PHX-QA-owned \`tests/controllers.sh\`.
+
+The general \`jsonString\`, \`jsonTrue\`, and \`jsonInt\` helpers remain unchanged; this is a narrow root-\`ok\` parser, not a claim that the entire firmware JSON parser has been replaced. The main-branch controller poll still omits \`response_sig\`, so configured-key admission remains default-deny pending the CORE/Master producer-consumer contract. The RAM-only quarantine latch and durable rejected-event marker also remain unresolved.
+
+Exact-head focused CI is required before this change can be called CI VERIFIED. The full BlazePwifi workflow remains separately blocked by the QA-owned controller-parity extractor that does not yet include \`acceptPollResponse()\`.
+
+No physical relay, coin, power-cut, electrical, finance, migration, flashing, reset, release, or deployment operation occurred.

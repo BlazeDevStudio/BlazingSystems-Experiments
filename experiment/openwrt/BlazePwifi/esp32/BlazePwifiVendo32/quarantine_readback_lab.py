@@ -237,3 +237,6 @@ for board, ino in BOARDS:
         subprocess.run([str(binary)], check=True)
     print(f"{board}: compiled exact extracted source")
 print("PHX-HARDWARE: 34/34 source-extracted host scenarios PASS; no hardware evidence")
+poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+subprocess.run([sys.executable, str(poll_lab)], check=True)
+
