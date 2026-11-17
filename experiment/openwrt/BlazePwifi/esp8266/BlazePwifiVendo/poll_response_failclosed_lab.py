@@ -345,11 +345,21 @@ int main(){
        !relayOffObservedWhileSuspended || fakeNow!=19) return 16;
     resetState(); runDebounceMs=boundedCoinDebounceMs(1);
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn ||
-       !relayOffObservedWhileSuspended || fakeNow!=20) return 17;
+       !relayOffObservedWhileSuspended || fakeNow!=120) return 17;
     resetState(); runCoinActiveLow=false; runDebounceMs=boundedCoinDebounceMs(1);
     pulseStart=19; pulseEnd=49;
     if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=19) return 18;
+
+    // A pulse can still be propagating from the acceptor output stage after
+    // relay de-energization. The 100 ms contract maximum plus 20 ms margin
+    // must be observed before the blocking poll may start.
+    resetState(); runDebounceMs=boundedCoinDebounceMs(1); pulseStart=80; pulseEnd=180;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 22;
+    resetState(); runDebounceMs=40; pulseStart=80; pulseEnd=180;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 23;
 
     // Model the complete synchronous HTTP timeout after the real loop has
     // entered its poll window. A pulse can appear on the input while the
@@ -364,7 +374,7 @@ int main(){
     if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
        !relayOffObservedWhileSuspended) return 21;
 
-    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 9/9; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
+    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 11/11; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
     std::cout<<"PHYSICAL_COIN_ACCEPTOR_VERIFIED=0\n";
     return 0;
 }
