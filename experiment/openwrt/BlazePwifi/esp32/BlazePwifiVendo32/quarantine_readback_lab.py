@@ -34,7 +34,7 @@ static bool pendingPostAttempted=false;
 static bool attemptMarkerExists=true, attemptMarkerValid=true;
 static uint8_t pendingPulses=4;
 static bool pendingReady=true;
-static String pendingNonce="nonce001122334455";
+static String pendingNonce="nonce00112233445";
 static String pendingTarget="target0011223344";
 struct PendingRecord { uint8_t pulses=0; char nonce[17]{}; char target[33]{}; };
 static PendingRecord attemptMarker{};
@@ -128,7 +128,7 @@ int main(){
     pendingPostAttempted=true;
     pendingPulses=4;
     pendingReady=true;
-    pendingNonce="nonce001122334455";
+    pendingNonce="nonce00112233445";
     pendingTarget="target0011223344";
     attemptMarker=PendingRecord{};
     attemptMarker.pulses=pendingPulses;
@@ -155,18 +155,18 @@ int main(){
     if(scenario==12) reason=String("bad\nRECORD=forged\t\\");
     if(scenario==13) journalRecoveryRequired=true;
     if(scenario==14)
-      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n";
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier\n";
     if(scenario==15)
-      disk.bytes+="TIME=9 PULSES=4 NONCE=nonce001122334455";
+      disk.bytes+="TIME=9 PULSES=4 NONCE=nonce00112233445";
     if(scenario==16)
-      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n"
-                 "TIME=9 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=duplicate\n";
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier\n"
+                 "TIME=9 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=duplicate\n";
     if(scenario==17)
-      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=forged-but-complete\n";
+      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==17)
-      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=forged-but-complete\n";
+      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==18)
-      disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=overflowed-time\n";
+      disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=overflowed-time\n";
     if(scenario==19) pendingPostAttempted=false; // attempted state missing
     if(scenario==20) attemptMarkerExists=false;
     if(scenario==21) attemptMarkerValid=false;

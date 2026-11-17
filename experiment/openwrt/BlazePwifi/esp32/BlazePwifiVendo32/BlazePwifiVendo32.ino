@@ -237,7 +237,8 @@ bool markPendingPostAttempt(){
 bool pendingAttemptMarkerMatches(){
   if(!fsReady || journalRecoveryRequired || !pendingReady ||
      !pendingPostAttempted || pendingPulses==0 || pendingPulses>20 ||
-     pendingNonce.length()<8 || pendingTarget.length()<8) return false;
+     pendingNonce.length()<8 || pendingNonce.length()>=17 ||
+     pendingTarget.length()<8 || pendingTarget.length()>=33) return false;
   PendingRecord attempt{};
   if(!readPendingFile("/pending.attempt",attempt)) return false;
   return attempt.pulses==pendingPulses &&
