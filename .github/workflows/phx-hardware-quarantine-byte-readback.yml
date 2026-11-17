@@ -26,6 +26,8 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_write_readback_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/coin_post_gate_lab.py
           python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
+      - name: Verify pulse capture after poll-drain abort (both board sketches)
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
       - name: Assert real money and hardware are not certified
         run: |
           echo "SIMULATED_ONLY=1"
