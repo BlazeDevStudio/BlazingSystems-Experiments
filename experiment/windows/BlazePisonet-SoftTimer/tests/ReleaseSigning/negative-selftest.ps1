@@ -69,12 +69,30 @@ try {
   Write-Output 'RELEASE-CONCURRENCY: PR checks cancellable, push/manual publisher-capable runs non-cancellable PASS'
 
   # Release-capable workflows must pin every external action to a full immutable commit SHA.
-  $actionUseLines = @($workflow -split '\\r?\\n' | Where-Object { $_ -match '^\\s*uses:\\s+' })
+  $actionUseLines = @($workflow -split '\r?\n' | Where-Object { $_ -match '^\s*uses:\s+' })
   if ($actionUseLines.Count -ne 6) {
     throw "Unexpected external action count in release workflow: $($actionUseLines.Count)"
   }
   foreach ($line in $actionUseLines) {
-    if ($line -notmatch '^\\s*uses:\\s+[^@\\s]+@[0-9a-f]{40}(?:\\s+#.*)?
+    if ($line -notmatch '^\s*uses:\s+[^@\s]+@[0-9a-f]{40}(?:\s+#.*)?$') {
+      throw "Release workflow uses a mutable or non-immutable action reference: $line"
+    }
+  }
+  $requiredActionPins = @(
+    @{ Action='actions/checkout'; Sha='11d5960a326750d5838078e36cf38b85af677262'; Count=3 },
+    @{ Action='actions/setup-dotnet'; Sha='67a3573c9a986a3f9c594539f4ab511d57bb3ce9'; Count=1 },
+    @{ Action='actions/upload-artifact'; Sha='ea165f8d65b6e75b540449e92b4886f43607fa02'; Count=1 },
+    @{ Action='actions/download-artifact'; Sha='d3f86a106a0bac45b974a628896c90dbdf5c8093'; Count=1 }
+  )
+  foreach ($entry in $requiredActionPins) {
+    $pattern = '^\s*uses:\s+' + [regex]::Escape($entry.Action+'@'+$entry.Sha) + '(?:\s+#.*)?$'
+    $count = @($actionUseLines | Where-Object { $_ -match $pattern }).Count
+    if ($count -ne $entry.Count) {
+      throw "Release action pin mismatch for $($entry.Action): expected $($entry.Count), found $count"
+    }
+  }
+  Write-Output 'RELEASE-ACTIONS: all external actions pinned to verified immutable commit SHAs PASS'
+
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Pull-request/build workflow token must be read-only'
