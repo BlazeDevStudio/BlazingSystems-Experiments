@@ -69,12 +69,13 @@ try {
   Write-Output 'RELEASE-CONCURRENCY: PR checks cancellable, push/manual publisher-capable runs non-cancellable PASS'
 
   # Release-capable workflows must pin every external action to a full immutable commit SHA.
-  $actionUseLines = @($workflow -split '\r?\n' | Where-Object { $_ -match '^\s*uses:\s+' })
+  # YAML action steps may use either '- uses:' or a named-step 'uses:' property.
+  $actionUseLines = @($workflow -split '\r?\n' | Where-Object { $_ -match '^\s*(?:-\s*)?uses:\s+' })
   if ($actionUseLines.Count -ne 6) {
     throw "Unexpected external action count in release workflow: $($actionUseLines.Count)"
   }
   foreach ($line in $actionUseLines) {
-    if ($line -notmatch '^\s*uses:\s+[^@\s]+@[0-9a-f]{40}(?:\s+#.*)?$') {
+    if ($line -notmatch '^\s*(?:-\s*)?uses:\s+[^@\s]+@[0-9a-f]{40}(?:\s+#.*)?$') {
       throw "Release workflow uses a mutable or non-immutable action reference: $line"
     }
   }
@@ -85,7 +86,7 @@ try {
     @{ Action='actions/download-artifact'; Sha='d3f86a106a0bac45b974a628896c90dbdf5c8093'; Count=1 }
   )
   foreach ($entry in $requiredActionPins) {
-    $pattern = '^\s*uses:\s+' + [regex]::Escape($entry.Action+'@'+$entry.Sha) + '(?:\s+#.*)?$'
+    $pattern = '^\s*(?:-\s*)?uses:\s+' + [regex]::Escape($entry.Action+'@'+$entry.Sha) + '(?:\s+#.*)?$'
     $count = @($actionUseLines | Where-Object { $_ -match $pattern }).Count
     if ($count -ne $entry.Count) {
       throw "Release action pin mismatch for $($entry.Action): expected $($entry.Count), found $count"

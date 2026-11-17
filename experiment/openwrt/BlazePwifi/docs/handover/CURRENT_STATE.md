@@ -720,3 +720,14 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Exact-head run #44188856124 checked out 777248fa2e3cde1b1146837552e630b467b4684f. The handover job 134412557331 passed and PackageParity self-test passed, but build-windows job 134412684859 failed at negative-selftest.ps1 line 300 with an unexpected closing parenthesis. The action-pin assertion did not execute; this is an authoring/fixture failure, not the expected mutable-tag RED.
 - Corrective test-only commit 0620e018138aec1fd3de818d39d0af015e11b4be removes the orphaned duplicate tail left by the initial test insertion. It does not change the release workflow or publisher.
 - All three canonical handovers must be advanced after this correction before the next exact-head run. No action pin has changed yet; no signing, tag, publication, merge, financial migration, or hardware operation occurred. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pin regression parser correction
+
+- Existing PR #291 branch `phoenix/release-publisher-isolation-20261115`, starting HEAD `507740dff594d110c28f73cb946544b2831fde17`; base remains PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Exact-head Windows run [#44189232857](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44189232857) had handover PASS and PackageParity PASS, then failed in `negative-selftest.ps1` at the external-action count assertion: the parser counted one `uses:` property but missed YAML list-item `- uses:` entries. This was a test-parser defect; the intended immutable-reference assertion did not run.
+- This test-only checkpoint corrects the parser and line validators to accept both YAML forms. The workflow remains unchanged and still has six mutable `@v4` references, so the next exact-head Windows run should reach the expected RED at the first mutable reference.
+- No signing, publisher execution, tag, release, merge, finance, hardware or deployment action. PR #291 remains draft/unmerged; PRODUCTION NO-GO.
+
+## NEXT EXACT ACTION
+Correct the release workflow's six mutable action references to the independently read-back full commit SHAs in the negative test, synchronize all three canonical handovers, then require exact-head Windows CI with the publisher skipped.

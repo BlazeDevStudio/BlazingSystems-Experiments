@@ -75,3 +75,10 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Exact-head run #44188856124 checked out 777248fa2e3cde1b1146837552e630b467b4684f. The handover job 134412557331 passed and PackageParity self-test passed, but build-windows job 134412684859 failed at negative-selftest.ps1 line 300 with an unexpected closing parenthesis. The action-pin assertion did not execute; this is an authoring/fixture failure, not the expected mutable-tag RED.
 - Corrective test-only commit 0620e018138aec1fd3de818d39d0af015e11b4be removes the orphaned duplicate tail left by the initial test insertion. It does not change the release workflow or publisher.
 - All three canonical handovers must be advanced after this correction before the next exact-head run. No action pin has changed yet; no signing, tag, publication, merge, financial migration, or hardware operation occurred. PRODUCTION NO-GO.
+
+
+## 2026-11-17 UTC22 — PHX-RELEASE action-reference test parser correction
+
+- Corrected the credential-free PowerShell action-pin assertion to recognize both YAML `- uses:` list entries and named-step `uses:` properties. This is test-only; the release workflow is unchanged.
+- Prior exact-head run #44189232857 passed handover and package parity, then failed at the test parser's action count (1 found instead of 6). No mutable-reference assertion was reached.
+- Next: verify the expected mutable-tag RED, then pin all six external actions to the four verified immutable upstream commits and rerun exact-head Windows CI. Publisher remains PR-skipped; no signing or release action.
