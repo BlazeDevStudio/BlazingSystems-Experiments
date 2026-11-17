@@ -106,3 +106,13 @@ At the subsequent documentation-only PR head 366a975b26abff196ca002af88bda6f8124
 - Full build [run #44146113976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44146113976), validation job 134261751855: **FAILED** at QA-owned tests/controllers.sh with “Missing poll signature check”. At 2026-11-17T18:20Z, 13 target jobs had passed and Android remained in progress; no complete target-matrix result is claimed. Production import/signing and release jobs were skipped.
 
 This addendum corrects the distinction between the exact source/test SHA and the documentation-only PR head. No production firmware runtime changed.
+
+### Final completion state for Full run #44146113976 — 2026-11-17T18:22Z
+
+The final job query now shows the Full workflow **COMPLETED FAILURE**:
+- Validation job 134261751855: **FAILED** at the QA-owned “Missing poll signature check”.
+- 13/14 target build jobs: **SUCCESS** (ESP8266, ESP32, x86_64, Ruijie and the 9 listed Orange Pi targets).
+- Android job 134261752003: **CANCELLED** after validation failure.
+- Production import/signing, update bundle and v0.4/release promotion jobs: **SKIPPED or CANCELLED**.
+
+Therefore the final Full workflow does not establish complete target-matrix acceptance and is not a Full PASS. The focused poll-drain and relay-output workflows remain successful. The final observed PR head at this check was adb961ceb0510dc195f329b92541b80f6d5f9082; it is a documentation-only successor to the tested source/test SHA 1f263114fe003a930028b7fa9610655b03336614. This addendum is documentation-only; no firmware runtime or test logic changed.
