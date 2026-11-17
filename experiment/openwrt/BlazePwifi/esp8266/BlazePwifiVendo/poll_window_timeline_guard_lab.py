@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Static guard against impossible time travel in the poll-window host fixture."""
+"""Static guard against impossible time travel in the poll-window host fixture.
+
+This is a regression check for the test harness, not hardware evidence.
+"""
 from pathlib import Path
 
 lab = Path(__file__).with_name("poll_response_failclosed_lab.py").read_text(encoding="utf-8")
