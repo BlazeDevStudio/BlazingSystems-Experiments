@@ -121,3 +121,14 @@ The general \`jsonString\`, \`jsonTrue\`, and \`jsonInt\` helpers remain unchang
 Exact-head focused CI is required before this change can be called CI VERIFIED. The full BlazePwifi workflow remains separately blocked by the QA-owned controller-parity extractor that does not yet include \`acceptPollResponse()\`.
 
 No physical relay, coin, power-cut, electrical, finance, migration, flashing, reset, release, or deployment operation occurred.
+
+
+## 2026-11-17 UTC01 — legacy brace-check compatibility correction
+
+The first exact-head full workflow after the root-status parser change reached the existing v05_firmware_hardening_test.sh brace counter and failed at ESP8266 source line 600. That legacy check counts raw opening and closing brace characters without lexing character literals. The new parser had used brace character constants, so the checker reported a false-positive unmatched delimiter at the helper close.
+
+The hardware-owned parser now uses the equivalent ASCII delimiter values 123 and 125 instead of brace character literals. This preserves the scanner's behavior while remaining compatible with the repository's existing raw brace counter. No QA-owned test or RELEASE-owned workflow was edited.
+
+Exact failing evidence: full run [43995933844](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43995933844), validation job 133747891212, Controller protocol parity step. The focused hardware run at the first head 64b9683cbabcd329dadee11ed974e6102f8710e4 was still queued when this note was written; it is not counted as passing. Re-run both focused and full workflows at the new exact head and inspect any subsequent QA extractor result separately.
+
+No physical, financial, migration, flashing, reset, release, or deployment operation occurred.

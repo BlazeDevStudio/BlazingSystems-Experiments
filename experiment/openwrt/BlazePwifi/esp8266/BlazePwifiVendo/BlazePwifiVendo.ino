@@ -453,24 +453,24 @@ bool pollJsonSkipString(const String &r,int &p){
 
 bool pollJsonSkipComposite(const String &r,int &p){
   const int n=(int)r.length();
-  if(p>=n || (r[p]!='{' && r[p]!='[')) return false;
+  if(p>=n || (r[p]!=123 && r[p]!='[')) return false;
   char closing[16];
   int depth=0;
   const char first=r[p++];
-  closing[depth++]=(first=='{')?'}':']';
+  closing[depth++]=(first==123)?125:']';
   while(depth>0 && p<n){
     const char c=r[p];
     if(c=='"'){
       if(!pollJsonSkipString(r,p)) return false;
       continue;
     }
-    if(c=='{' || c=='['){
+    if(c==123 || c=='['){
       if(depth>=(int)sizeof(closing)) return false;
-      closing[depth++]=(c=='{')?'}':']';
+      closing[depth++]=(c==123)?125:']';
       ++p;
       continue;
     }
-    if(c=='}' || c==']'){
+    if(c==125 || c==']'){
       if(closing[depth-1]!=c) return false;
       --depth;
       ++p;
@@ -485,7 +485,7 @@ bool pollJsonSkipComposite(const String &r,int &p){
 bool pollJsonSkipPrimitive(const String &r,int &p){
   const int n=(int)r.length();
   const int start=p;
-  while(p<n && r[p]!=',' && r[p]!='}' && !pollJsonSpace(r[p])) ++p;
+  while(p<n && r[p]!=',' && r[p]!=125 && !pollJsonSpace(r[p])) ++p;
   const int end=p;
   if(start==end) return false;
   const int length=end-start;
@@ -526,7 +526,7 @@ bool pollJsonSkipValue(const String &r,int &p){
   const int n=(int)r.length();
   if(p>=n) return false;
   if(r[p]=='"') return pollJsonSkipString(r,p);
-  if(r[p]=='{' || r[p]=='[') return pollJsonSkipComposite(r,p);
+  if(r[p]==123 || r[p]=='[') return pollJsonSkipComposite(r,p);
   return pollJsonSkipPrimitive(r,p);
 }
 
@@ -535,7 +535,7 @@ bool pollJsonTopLevelTrue(const String &r,const char *wanted){
   const int n=(int)r.length();
   int p=0;
   while(p<n && pollJsonSpace(r[p])) ++p;
-  if(p>=n || r[p++]!='{') return false;
+  if(p>=n || r[p++]!=123) return false;
 
   int wantedLength=0;
   while(wanted[wantedLength]) ++wantedLength;
@@ -545,7 +545,7 @@ bool pollJsonTopLevelTrue(const String &r,const char *wanted){
 
   while(true){
     while(p<n && pollJsonSpace(r[p])) ++p;
-    if(p<n && r[p]=='}'){
+    if(p<n && r[p]==125){
       if(afterComma) return false;
       ++p;
       break;
@@ -575,7 +575,7 @@ bool pollJsonTopLevelTrue(const String &r,const char *wanted){
       if(p+4>n || r[p]!='t' || r[p+1]!='r' ||
          r[p+2]!='u' || r[p+3]!='e') return false;
       p+=4;
-      if(p<n && !pollJsonSpace(r[p]) && r[p]!=',' && r[p]!='}') return false;
+      if(p<n && !pollJsonSpace(r[p]) && r[p]!=',' && r[p]!=125) return false;
       accepted=true;
     } else if(!pollJsonSkipValue(r,p)){
       return false;
@@ -588,7 +588,7 @@ bool pollJsonTopLevelTrue(const String &r,const char *wanted){
       afterComma=true;
       continue;
     }
-    if(p<n && r[p]=='}'){
+    if(p<n && r[p]==125){
       ++p;
       break;
     }
