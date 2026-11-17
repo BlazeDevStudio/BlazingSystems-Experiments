@@ -107,6 +107,11 @@ int main(){
   if(pollJsonTopLevelTrue(String("{\"message\":\"\\\"ok\\\":true\",\"ok\":false}"),"ok")) return 37;
   if(pollJsonTopLevelTrue(String("{\"ok\":true,}"),"ok")) return 38;
   if(pollJsonTopLevelTrue(String("{\"ok\":true}trailing"),"ok")) return 39;
+  // Coin POST acknowledgement must use the same unique root-level status rule.
+  if(pollJsonTopLevelTrue(String("{\"ok\":false,\"detail\":{\"ok\":true}}"),"ok")) return 46;
+  if(pollJsonTopLevelTrue(String("{\"ok\":false,\"detail\":[{\"ok\":true}]}"),"ok")) return 47;
+  if(pollJsonTopLevelTrue(String("{\"ok\":true,\"ok\":false}"),"ok")) return 48;
+  if(!pollJsonTopLevelTrue(String("{\"ok\":true,\"receipt\":{\"ok\":false}}"),"ok")) return 49;
   if(!pollJsonTopLevelTrue(String(" { \"ok\" : true, \"controller\":{\"ok\":false} } "),"ok")) return 40;
   if(pollJsonTopLevelTrue(String("{\"o\\u006b\":true}"),"ok")) return 41;
   if(pollJsonTopLevelTrue(String("{\"controller\":bad,\"ok\":true}"),"ok")) return 42;
@@ -206,7 +211,7 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 28;
 
-  std::cout << "poll-response fail-closed cases: 11/11 PASS; strict root JSON cases: 13/13 PASS\n";
+  std::cout << "poll-response fail-closed cases: 11/11 PASS; strict root JSON cases: 13/13 PASS; coin POST ACK root status: 4/4 PASS\n";
   return 0;
 }
 """
@@ -227,6 +232,22 @@ for board,path in BOARDS.items():
         ran=subprocess.run([str(binary)],capture_output=True,text=True,timeout=10)
         print(board,"PASS" if ran.returncode==0 else "FAIL",ran.stdout.strip(),ran.stderr.strip())
         if ran.returncode: failed.append(board)
+        coin_post = loop.find('String r=post("coin"')
+        if coin_post < 0:
+            print(board, "COIN_POST_ACK_GUARD RED: missing production coin POST")
+            failed.append(board)
+        else:
+            coin_branch = loop[coin_post:]
+            coin_success = coin_branch.find('if(pollJsonTopLevelTrue(r,"ok"))')
+            clear_pending = coin_branch.find("clearPending();")
+            if coin_success < 0 or clear_pending < coin_success:
+                print(board, "COIN_POST_ACK_GUARD RED: coin POST success is not gated by unique root ok:true")
+                failed.append(board)
+            elif coin_branch.find("r.indexOf(", 0, clear_pending) >= 0:
+                print(board, "COIN_POST_ACK_GUARD RED: substring-based success check remains before clearPending")
+                failed.append(board)
+            else:
+                print(board, "COIN_POST_ACK_GUARD PASS: strict root status precedes pending clear")
 if failed: sys.exit("poll-response fail-closed lab failed: "+",".join(failed))
 print("PHYSICAL_COIN_ACCEPTOR_VERIFIED=0")
 print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
