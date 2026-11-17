@@ -429,3 +429,37 @@ for board, path in BOARDS.items():
             raise RuntimeError(f"{board}: poll-window scenarios failed ({ran.returncode}): {ran.stderr}")
         print(f"{board}: {ran.stdout.strip()}; source ordering PASS")
 
+    # Failure injection: removing the final idle sample must be caught by the
+    # pulse that begins exactly at the 250 ms quiet boundary.
+    quiet = extract(source, "coinLineQuietAfterInhibit")
+    if quiet.count("return coinLineIdle();") != 1:
+        raise RuntimeError(f"{board}: expected one final coinLineIdle() sample to mutate")
+    mutated_quiet = quiet.replace("return coinLineIdle();", "return true;", 1)
+    mutated_functions = "\n".join([
+        extract(source, "boundedCoinDebounceMs"),
+        extract(source, "applyOutputs"),
+        extract(source, "coinLineIdle"),
+        extract(source, "canStartPoll"),
+        mutated_quiet,
+        extract(source, "beginPollWindow"),
+    ])
+    mutated_code = WINDOW_STUBS + mutated_functions + WINDOW_MAIN
+    with tempfile.TemporaryDirectory(prefix="phx-poll-window-mutation-") as folder:
+        cpp = Path(folder) / "poll_window_mutated.cpp"
+        binary = Path(folder) / "poll_window_mutated"
+        cpp.write_text(mutated_code, encoding="utf-8")
+        built = subprocess.run(
+            [ "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+              "-Wno-unused-parameter", str(cpp), "-o", str(binary) ],
+            capture_output=True, text=True, timeout=30
+        )
+        if built.returncode:
+            raise RuntimeError(f"{board}: mutated poll-window compile failed:\n{built.stderr[-3000:]}")
+        mutated = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
+        if mutated.returncode != 25:
+            raise RuntimeError(
+                f"{board}: remove-final-quiet-sample mutation was not rejected at exact-boundary case 25; "
+                f"exit={mutated.returncode}; stdout={mutated.stdout}; stderr={mutated.stderr}"
+            )
+        print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
+

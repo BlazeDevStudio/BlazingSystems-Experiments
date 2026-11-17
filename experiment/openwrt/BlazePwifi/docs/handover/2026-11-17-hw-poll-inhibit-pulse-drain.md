@@ -108,3 +108,10 @@ Added a source-extracted boundary case to the existing ESP8266/ESP32 poll-window
 This is host C++ simulation only. It does not prove the physical acceptor's post-relay pulse delay or electrical behavior. The parent PR #317 workflow was fixed at a29c51b to run child poll-window labs only when the guard file exists on the exact checkout. This commit is intended to trigger those tests at the literal child head; no rebase, cherry-pick, merge or force-push is performed.
 
 Current child head before this change: 7cd93a70c84b322f4cdbc46a9df3eb6355d66b86. Current comparison to parent #317 head a29c51b8066095cf1a19a8847849f6da3c344ae7: 22 ahead / 9 behind, diverged, mergeable=false. Master stack reconciliation remains required.
+
+
+## Exact-boundary failure injection — 2026-11-17 UTC12
+
+The 250 ms boundary scenario now has a targeted mutation check. The lab builds a second host binary with the final `return coinLineIdle();` in `coinLineQuietAfterInhibit()` replaced by `return true;`. The mutant must fail specifically at scenario exit 25 (pulse begins at exactly 250 ms); any other exit is treated as a harness failure. The timeline guard requires the mutation code and explicit rejection marker.
+
+Previous exact-head child run [#44082960356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44082960356), job `134037962611`, passed the 13/13 poll-window matrix on both boards before this new mutation was added. New exact-head mutation CI is pending. No firmware runtime changed; physical pulse delay and electrical acceptance remain NOT TESTED.
