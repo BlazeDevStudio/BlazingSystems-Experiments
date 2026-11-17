@@ -147,7 +147,7 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source RED: {result.stderr or result.stdout}")
                 continue
-            if "POLL_WINDOW_DRAIN_PASS 10/10" not in result.stdout:
+            if "POLL_WINDOW_DRAIN_PASS 11/11" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
             print(f"{board}_POLL_WINDOW_DRAIN_PASS 10/10")
