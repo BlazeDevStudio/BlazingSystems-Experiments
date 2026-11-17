@@ -229,7 +229,7 @@ int main(){
         LittleFS.exists("/pending.attempt")&&LittleFS.removed.empty(),
         "corrupt pending candidate retained by clear");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/23 source-extracted cases; physical power cuts NOT TESTED\\n";
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/23 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
