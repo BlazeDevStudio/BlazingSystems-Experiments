@@ -394,6 +394,16 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
+    late_snapshot_loop = loop.replace(
+        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\\n    if(beginPollWindow()){",
+        "    if(beginPollWindow()){\\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
+        1,
+    )
+    if late_snapshot_loop == loop:
+        raise AssertionError(f"{board}: late-snapshot mutation did not apply")
+    compile_and_run(assemble(loop_source=late_snapshot_loop,begin_source=edge_hook,main_source=RACE_MAIN),
+                    board,22,"late-snapshot-regression")
+    print(f"{board} MUTATION_REJECTED late-poll-edge-snapshot")
     mutations=(
       ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),

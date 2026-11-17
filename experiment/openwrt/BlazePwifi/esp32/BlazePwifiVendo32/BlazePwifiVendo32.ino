@@ -1124,8 +1124,9 @@ void loop(){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
+    if(beginPollWindow()){
     wifiFailures=0;
     String r=post("poll");
     // Keep intake inhibited through response handling, then inspect asynchronous GPIO edges.
@@ -1136,6 +1137,7 @@ void loop(){
       latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
     }
     applyOutputs();lastPoll=millis();
+    }
   }
 
   bool raw=digitalRead(runCoinPin);
