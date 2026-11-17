@@ -31,10 +31,19 @@ static bool fsReady=true;
 static bool journalRecoveryRequired=false;
 // Mirrors the production one-shot gate state used by canAttemptCoinPost().
 static bool pendingPostAttempted=false;
+static bool attemptMarkerExists=true, attemptMarkerValid=true;
 static uint8_t pendingPulses=4;
 static bool pendingReady=true;
 static String pendingNonce="nonce001122334455";
 static String pendingTarget="target0011223344";
+struct PendingRecord { uint8_t pulses=0; char nonce[17]{}; char target[33]{}; };
+static PendingRecord attemptMarker{};
+bool readPendingFile(const char *path,PendingRecord &out){
+  if(std::strcmp(path,"/pending.attempt")!=0 || !attemptMarkerExists || !attemptMarkerValid) return false;
+  out=attemptMarker;
+  return true;
+}
+@@SOURCE_ATTEMPT_MATCH@@
 static int clearCount=0;
 static bool clearAllowed=true;
 unsigned long millis(){return 1234UL;}
@@ -44,6 +53,7 @@ bool clearPending(){
   pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();
   // Production clearPending resets this only after durable disposition succeeds.
   pendingPostAttempted=false;
+  attemptMarkerExists=false;
   return true;
 }
 struct FakeSerial {
@@ -109,7 +119,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<20;scenario++){
+  for(int scenario=0;scenario<23;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -120,6 +130,12 @@ int main(){
     pendingReady=true;
     pendingNonce="nonce001122334455";
     pendingTarget="target0011223344";
+    attemptMarker=PendingRecord{};
+    attemptMarker.pulses=pendingPulses;
+    std::strcpy(attemptMarker.nonce,pendingNonce.c_str());
+    std::strcpy(attemptMarker.target,pendingTarget.c_str());
+    attemptMarkerExists=true;
+    attemptMarkerValid=true;
     if(scenario==1) fsReady=false;
     if(scenario==2) pendingPulses=0;
     if(scenario==3) disk.priorOpenFail=true;
@@ -151,13 +167,16 @@ int main(){
       disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==18)
       disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=overflowed-time\n";
-    if(scenario==19) pendingPostAttempted=false; // no durable attempt marker may not authorize quarantine
+    if(scenario==19) pendingPostAttempted=false; // attempted state missing
+    if(scenario==20) attemptMarkerExists=false;
+    if(scenario==21) attemptMarkerValid=false;
+    if(scenario==22) std::strcpy(attemptMarker.nonce,"wrongnonce123456");
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario==19;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -171,6 +190,7 @@ int main(){
        (scenario==16 && disk.bytes!=bytesBefore) ||
        (scenario==17 && disk.bytes!=bytesBefore) ||
        (scenario==18 && disk.bytes!=bytesBefore) ||
+       (scenario>=19 && disk.bytes!=bytesBefore) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -192,7 +212,7 @@ int main(){
       }
     }
     if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
-       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario==19){
+       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario>=19){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
@@ -200,7 +220,7 @@ int main(){
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
       bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
-                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18);
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || scenario>=19);
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
            clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
@@ -216,7 +236,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 19/19 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 23/23 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -239,6 +259,7 @@ failed_boards = []
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
     actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
+    actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))

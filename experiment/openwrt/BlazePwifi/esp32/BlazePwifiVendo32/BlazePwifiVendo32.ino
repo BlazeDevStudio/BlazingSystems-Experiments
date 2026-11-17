@@ -234,6 +234,17 @@ bool markPendingPostAttempt(){
   return true;
 }
 
+bool pendingAttemptMarkerMatches(){
+  if(!fsReady || journalRecoveryRequired || !pendingReady ||
+     !pendingPostAttempted || pendingPulses==0 || pendingPulses>20 ||
+     pendingNonce.length()<8 || pendingTarget.length()<8) return false;
+  PendingRecord attempt{};
+  if(!readPendingFile("/pending.attempt",attempt)) return false;
+  return attempt.pulses==pendingPulses &&
+         strcmp(attempt.nonce,pendingNonce.c_str())==0 &&
+         strcmp(attempt.target,pendingTarget.c_str())==0;
+}
+
 void loadPending(){
   if(!fsReady) return;
   pendingPostAttempted=false;
@@ -494,6 +505,11 @@ bool appendQuarantineRecord(const String &reason){
 
 bool quarantinePending(const String &reason){
   if(pendingPulses==0) return false;
+  if(!pendingAttemptMarkerMatches()){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: quarantine disposition denied without a matching durable coin POST attempt marker.");
+    return false;
+  }
   if(!appendQuarantineRecord(reason)){
     // The controller already rejected this event. If local quarantine
     // persistence is unavailable, block same-boot coin POST retries.
