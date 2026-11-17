@@ -819,3 +819,14 @@ This is source-level fail-closed evidence only. Actual flash durability, 150 pow
 **Cross-role request:** PHX-QA owns `experiment/openwrt/BlazePwifi/tests/`. Please add the orphan-marker-only, missing-candidate, duplicate-candidate, mismatched-record, and both removal-failure cases to the canonical pending-clear exact-source lab and independently run it at this PR's exact head. PHX-HARDWARE did not edit QA-owned tests or workflows.
 
 **Evidence classification:** local failure injection is SIMULATED. New PR exact-head CI is pending. This does not enable coin disposition; `coinPostDispositionVerified()` and `acceptPollResponse()` remain default-deny. Physical flash durability, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED/BLOCKED. **PRODUCTION NO-GO.**
+
+
+## PHX-HARDWARE — exact-one pending journal before coin POST (2026-11-17 UTC10)
+
+A source audit found **markPendingPostAttempt()** could write the one-shot marker when one pending candidate matched RAM while a second conflicting, duplicate, or corrupt **/pending.dat**, **/pending.new**, or **/pending.bak** also existed. The marker boundary now independently requires exactly one durable candidate, validated and matched to the current pending record before marker write or network dispatch.
+
+Test-first evidence: [RED #44064000610](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064000610), job **133972839735**, failed as intended at the conflicting-extra-candidate case. Firmware fix [6100a74](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6100a74f8a94f314d99420917d51c28c75b5847d) updates ESP32 and ESP8266. Positive single-**pending.new** and single-**pending.bak** recovery cases are included in [f2bf146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f2bf1465ddb95cc17a9d814cf68ba556000b9a8d).
+
+Focused exact-head [run #44064230539](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064230539), job **133973625675**, **SUCCESS** at **f2bf1465ddb95cc17a9d814cf68ba556000b9a8d**: pending-attempt marker 28/28 per board (56/56 total); inherited hardware source-extracted labs passed. Full validation remains separate and is not claimed green.
+
+Classification: **SIMULATED / CI VERIFIED**. Physical flash, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Coin receipt verification remains default-deny; no merge, migration, flash, production signing, release or deployment.
