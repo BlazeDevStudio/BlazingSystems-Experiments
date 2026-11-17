@@ -22,7 +22,7 @@ BOARDS = {
 
 def extract(source, name):
     match = re.search(
-        r"\\b(?:void|bool)\\s+" + re.escape(name) + r"\\s*\\([^)]*\\)\\s*\\{",
+        r"\b(?:void|bool)\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{",
         source,
     )
     assert match, f"missing production function: {name}"
@@ -96,7 +96,7 @@ int main(){
 #ifdef TARGET_ESP32
   cfg.key="";
 #else
-  cfg.key[0]='\\0';
+  cfg.key[0]='\0';
 #endif
   // Start with no active target and an unsigned positive poll response.
   insertMode=false;
@@ -109,16 +109,16 @@ int main(){
   if(relayOn || ledOn) return 40; // the in-flight poll must remain inhibited
 
   const bool accepted=acceptPollResponse(
-    String("{\\\"ok\\\":true,\\\"insert\\\":true,\\\"target_nonce\\\":\\\"target-03\\\"}")
+    String("{\"ok\":true,\"insert\":true,\"target_nonce\":\"target-03\"}")
   );
   pollIntakeSuspended=false;
   applyOutputs();
 
   if(accepted && insertMode && activeTarget=="target-03" && relayOn && ledOn){
-    std::cout << "RED: keyless positive poll energized relay and LED\\n";
+    std::cout << "RED: keyless positive poll energized relay and LED\n";
     return 42;
   }
-  std::cout << "keyless positive poll denied\\n";
+  std::cout << "keyless positive poll denied\n";
   return 0;
 }
 """
@@ -127,7 +127,7 @@ failed = []
 reproduced = []
 for board, path in BOARDS.items():
     source = path.read_text(encoding="utf-8")
-    code = ("#define TARGET_ESP32\\n" if board == "ESP32" else "")
+    code = ("#define TARGET_ESP32\n" if board == "ESP32" else "")
     code += STUBS + extract(source, "acceptPollResponse") + extract(source, "applyOutputs") + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-keyless-poll-red-") as folder:
         cpp = Path(folder) / "probe.cpp"
