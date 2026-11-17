@@ -418,7 +418,8 @@ bool beginPollWindow(){
 bool acceptPollResponse(const String &response){
   bool insertAllowed=jsonTrue(response,"insert");
   String target=jsonString(response,"target_nonce");
-  bool signatureOk=true;
+  // Keyless bootstrap is never coin authority: require a provisioned key and valid response signature.
+  bool signatureOk=false;
   if(String(cfg.key).length()){
     String signature=jsonString(response,"response_sig");
     if(signature.length()){
