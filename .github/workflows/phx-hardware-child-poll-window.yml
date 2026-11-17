@@ -1,0 +1,36 @@
+name: PHX-HARDWARE Child Poll-Window LAB
+on:
+  push:
+    branches:
+      - phoenix/hardware-poll-inhibit-settle-20261117
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
+      - ".github/workflows/phx-hardware-child-poll-window.yml"
+permissions:
+  contents: read
+concurrency:
+  group: phx-hardware-child-poll-window
+  cancel-in-progress: false
+jobs:
+  poll-window:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verify literal pushed SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: Check monotonic timeline and exact-boundary fixture
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py
+      - name: Compile exact-source poll and pulse-window guards for both boards
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py
+      - name: Classify evidence without hardware promotion
+        run: |
+          echo "SIMULATED_ONLY=1"
+          echo "PHYSICAL_COIN_ACCEPTOR_VERIFIED=0"
+          echo "PHYSICAL_POWER_CUT_VERIFIED=0"
+          echo "PRODUCTION_FINANCIAL_AUTHORIZED=0"
