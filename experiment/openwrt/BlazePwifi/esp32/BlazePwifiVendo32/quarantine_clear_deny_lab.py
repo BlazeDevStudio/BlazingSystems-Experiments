@@ -31,7 +31,7 @@ def extract_handler(source: str, board: str) -> str:
         if quote is not None:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == quote:
                 quote = None
@@ -93,6 +93,8 @@ def compile_and_run(board: str, body: str, temp: Path) -> None:
               web.status = 0;
               handler();
               assert(web.status == 403);
+              assert(web.content_type == "text/plain");
+              assert(web.response.find("authenticated reconciliation") != std::string::npos);
               assert(LittleFS.remove_calls == 0);
               assert(LittleFS.present == (present == 1));
             }
@@ -118,9 +120,6 @@ def main() -> None:
                 raise SystemExit(f"{board}: missing source {path}")
             source = path.read_text(encoding="utf-8")
             body = extract_handler(source, board)
-            if "LittleFS.remove" in body and "deny" not in body.lower():
-                # The executable fake filesystem assertion below is authoritative.
-                pass
             compile_and_run(board, body, temp)
     print("QUARANTINE_CLEAR_DENY_LAB=PASS (SIMULATED; no physical filesystem touched)")
 
