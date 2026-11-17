@@ -29,6 +29,8 @@ struct String : std::string {
 static constexpr size_t QUARANTINE_MAX_BYTES=4096;
 static bool fsReady=true;
 static bool journalRecoveryRequired=false;
+// Mirrors the production one-shot gate state used by canAttemptCoinPost().
+static bool pendingPostAttempted=false;
 static uint8_t pendingPulses=4;
 static bool pendingReady=true;
 static String pendingNonce="nonce001122334455";
@@ -40,6 +42,8 @@ bool clearPending(){
   ++clearCount;
   if(!clearAllowed){journalRecoveryRequired=true; return false;}
   pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();
+  // Production clearPending resets this only after durable disposition succeeds.
+  pendingPostAttempted=false;
   return true;
 }
 struct FakeSerial {
@@ -111,6 +115,7 @@ int main(){
     clearAllowed=true;
     fsReady=true;
     journalRecoveryRequired=false;
+    pendingPostAttempted=false;
     pendingPulses=4;
     pendingReady=true;
     pendingNonce="nonce001122334455";
