@@ -289,3 +289,17 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 - Canonical private Drive registry v11/newer corrections remain inaccessible; no older snapshot was substituted and no private contents/IDs were published.
 
 **No destination file was moved, copied, overwritten or deleted.**
+
+## Live routing and migration hold — 2026-11-17 UTC20
+
+- PHX-MASTER remains restricted to `coordination/phoenix/`, architecture/interface contracts, provenance, integration matrices and release-gate coordination.
+- Current Experiments refs: main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch before this audit `cdb8c355f82255ccf87aaa78e7afdc99dec6f798`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued, zero jobs. No combined acceptance.
+- COE #31 `93379dde568b956a56c06358d8031f7304667e1a`: packaging validation and both ESP board builds pass, case guard passes, but mandatory sandbox fails because hosted runner denies unprivileged UID-map setup. No sandbox acceptance; no sudo/uidmap/broad-ID/unsandboxed fallback.
+- HARDWARE #317 `2e20e21d1129c5b85493c1b48566d7e663fa6ba4`: focused labs pass; Full validation fails at QA-owned stale poll-signature fixture. #318 `be371b03a36306a7691b411bf1b29da60b916646` has no CI and is nonmergeable; keep separate until owner stack resolution and QA.
+- QA #292 is a test-only branch based on pre-fix Master. The current Master validator rejects unknown/ambiguous recipients; its regression still needs independent rerun against current exact blob and #288 candidate.
+- Invalid ULA `fd00:db8:blaze::/48` remains; site-scoped durable RFC4193 /48 contract still requires CORE/RELEASE definition and QA validation.
+- `OWNERSHIP_ROUTES.json` unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No copy/move authorization.
+- Canonical private Drive registry v11/newer corrections unavailable through the exposed connector/Library; no older snapshot substituted and no private data published.
+
+**No destination file was moved, copied, overwritten or deleted.**

@@ -141,6 +141,14 @@ class CoordinationContractTests(unittest.TestCase):
                 modified["to"] = recipient
                 self.assertTrue(any("Invalid recipient" in e for e in validate_envelope(modified)))
 
+    def test_recipient_type_and_empty_values_are_rejected(self):
+        for recipient in (None, "", "   ", [], ["PHX-QA"], 1, {}):
+            with self.subTest(recipient=recipient):
+                modified = copy.deepcopy(self.example)
+                modified["to"] = recipient
+                errors = validate_envelope(modified)
+                self.assertTrue(any("recipient" in error.lower() for error in errors), errors)
+
     def test_bad_protocol_and_missing_fields_fail(self):
         modified = copy.deepcopy(self.example)
         modified["protocol"] = "NOT-A-PROTOCOL"

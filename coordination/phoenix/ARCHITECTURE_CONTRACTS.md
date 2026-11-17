@@ -353,3 +353,9 @@ The runner still uses `--share-net` and read-only binds the host root: host netw
 **Site-scoped ULA remains mandatory under §6.9.** The current packager's `fd00:db8:blaze::/48` is invalid; no ULA profile property or parser regression exists. Do not guess a replacement or use one global prefix. CORE/RELEASE must define durable installation identity, persistence across reboot/upgrade/restore, and shared same-LAN provisioning; QA must verify generated UCI and negative cases.
 
 **Migration is evidence-gated.** Current #317 firmware/test blobs differ from COE #26 destination, whose sketches/tests/docs retain positive poll/config and quarantine-clear behavior. No file move or destination overwrite is allowed until exact blobs, license/NOTICE applicability, imported test identities, full CI and owner/QA sign-off reconcile. #318 remains a divergent child and cannot be silently composed.
+
+## 6.18 BLAZE-COMMS/1 exact recipient contract — 2026-11-17 UTC20
+
+The envelope `to` field accepts exactly one registered role ID or the literal `ALL`, as defined by `COMMUNICATION_PROTOCOL.md`. It is not a semicolon-delimited recipient list. Unknown roles, list/object/number values, empty values, case variants and leading/trailing whitespace must fail closed. Current Master validator blob `3a6d0ca34cad54cd113abbda17d90898603547b3` enforces this exact rule. QA #292's original RED belongs to older verifier blob `a8a98996...`; its recorded post-fix 4/4 retest used blob `903df403...` at Master commit `0bc5e3fa...`. Current exact-head independent QA rerun is still required; no approval is inferred from the older retest.
+
+The Master regression suite now additionally covers non-string and empty recipient values. Bounded exact-function execution passed 14/14 recipient cases; this is not the full Master suite or CI. **PRODUCTION NO-GO.**

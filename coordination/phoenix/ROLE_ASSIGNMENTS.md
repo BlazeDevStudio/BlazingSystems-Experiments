@@ -499,3 +499,20 @@ This snapshot supersedes the UTC18 pins below for current work only. It does not
 **Migration hold:** current #317 source firmware/test blobs differ from COE #26 destination; target retains positive poll/config and quarantine-clear behavior, source test path is missing at destination, Hardware README/test are stale, and Hardware license/NOTICE applicability is unresolved. No copy/move/overwrite.
 
 **Cleanup:** issue #266 remains an open checklist, not proof of completion. **Production remains NO-GO.**
+
+## Live exact role and CI refresh — 2026-11-17 UTC20
+
+This snapshot supersedes UTC19 refs/status for current work only. It does not transfer ownership, authorize migration, or approve a merge.
+
+| Role / owner | Current exact PR head(s) | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER | #288 pre-audit `cdb8c355f82255ccf87aaa78e7afdc99dec6f798`; UTC20 adds only `coordination/phoenix/` | DRAFT; no Master CI runs returned |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate hourly CORE continuation retains source ownership |
+| PHX-RENTAL | #240 `a7d113fb8ae3f0c5e838e64d31cae7a154e37b56`; #287 `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd`; #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | #289 runs 43653329235 / 43653329229 SUCCESS, scoped |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN |
+| PHX-HARDWARE | #314 `556adc20ef0cfd355089aff3b979c0169af79bdd`; #315 `84fe6b790139d147f330f13a40b3ae3e89a7042d`; #316 `888e6941e3a7a81641682c23d937f97d8117d2ea`; #317 `2e20e21d1129c5b85493c1b48566d7e663fa6ba4`; #318 `be371b03a36306a7691b411bf1b29da60b916646` | #317 focused quarantine 44162553889 and relay 44162553879 SUCCESS; Full 44162553919 fails at stale QA fixture though all 14 target builds passed. #318 no CI, mergeable=false; keep separate |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 43633486963 SUCCESS; #292 no runs. Master recipient fix is present; QA must retest current verifier blob `3a6d0ca34cad54cd113abbda17d90898603547b3` and exact #288 candidate |
+| PHX-RELEASE | #291 `2c4edff231d9b2819415086825530d80b8801307`; COE #31 `93379dde568b956a56c06358d8031f7304667e1a` | #291 43744993487 SUCCESS, scoped. COE #31 packaging/shared/ESP8266/ESP32 pass in 44168101092; case guard 44168101019 pass; mandatory sandbox 44168101250 fails at hosted UID-map denial |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued, zero jobs; no integrated acceptance |
+
+COE #31 still has invalid ULA `fd00:db8:blaze::/48`; sandbox symlink/timeout runtime assertions were not reached on hosted CI. HARDWARE #317 remains default-deny; do not restore positive poll admission. #318 is a separate draft. Registry v11/newer corrections remain unavailable. **PRODUCTION NO-GO.**

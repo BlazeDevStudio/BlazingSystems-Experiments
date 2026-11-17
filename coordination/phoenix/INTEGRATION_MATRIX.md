@@ -665,3 +665,25 @@ COE #31 runner blob 7bf7ec5b2512704aca52bedd8ccc7067786533af includes bounded ti
 COE #31 packager blob 0763b1ea18ceff2fb9ccae212d5bb86a78119baf still emits invalid fd00:db8:blaze::/48; profile 6e797cf9c9922209efe4c0da49c49fa1da16c11a has no ula_prefix property and tests 18b13939b6d1e64477737c51f7b97acc1dc45169 have no ULA/IPv6 assertions. Keep §6.9 installation-scoped durable RFC 4193 /48 requirement.
 
 **No source/destination move, copy, overwrite, cherry-pick, rebase, merge or promotion is authorized.** `OWNERSHIP_ROUTES.json` remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. **PRODUCTION NO-GO.**
+
+## Live coordination and CI refresh — 2026-11-17 UTC20
+
+| Role / candidate | Exact head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER #288 | `cdb8c355f82255ccf87aaa78e7afdc99dec6f798` pre-audit | This run adds a Master-owned recipient-type regression and exact-head audit; PR remains DRAFT |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate CORE automation owns implementation |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | 43653329235 and 43653329229 SUCCESS, scoped |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN |
+| PHX-HARDWARE #317 | `2e20e21d1129c5b85493c1b48566d7e663fa6ba4` | 44162553889 / 44162553879 focused SUCCESS; 44162553919 Full validation FAILURE at stale QA poll-signature fixture; 14/14 target builds SUCCESS |
+| PHX-HARDWARE #318 | `be371b03a36306a7691b411bf1b29da60b916646` | No current-head CI; mergeable=false; separate draft pending stack resolution |
+| PHX-QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | 43633486963 SUCCESS, scoped |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No current-head CI; old post-fix local 4/4 was against Master blob 903df, so rerun against current blob 3a6d and #288 candidate |
+| PHX-RELEASE #291 | `2c4edff231d9b2819415086825530d80b8801307` | 43744993487 SUCCESS, scoped |
+| COE RELEASE #31 | `93379dde568b956a56c06358d8031f7304667e1a` | 44168101092 packaging/shared/ESP8266/ESP32 SUCCESS; 44168101019 case guard SUCCESS; 44168101250 mandatory sandbox FAILURE at hosted UID-map denial |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs; no combined acceptance |
+
+### Coordination recipient regression
+
+Current Master validator blob `3a6d0ca34cad54cd113abbda17d90898603547b3` already rejects unknown and ambiguous recipient strings. QA #292's initial RED was against an older verifier; its recorded post-fix 4/4 run used a prior fixed Master blob, not current HEAD. The Master test suite now explicitly rejects non-string and empty recipient values. Bounded exact-function execution: 14/14 PASS; full Master suite and PR CI NOT RUN. Independent QA must retest the current exact blob and synthetic #288 integration tree.
+
+The COE #31 sandbox remains host-blocked despite final packaging and both board compile jobs passing. ULA, HARDWARE #317 stale fixture, #318 stack, COE #26 queued jobs, registry access and all physical/financial gates remain OPEN/BLOCKED. **PRODUCTION NO-GO.**
