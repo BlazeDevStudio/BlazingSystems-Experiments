@@ -608,3 +608,29 @@ The current runner's root/SUDO/newuidmap path is blocked by the hosted runner's 
 Current role CI at exact PR heads: CORE #252 `c82705f2...` run 42698139210 SUCCESS (scoped); RENTAL #289 `68928774...` runs 43653329235/43653329229 SUCCESS (scoped); PISONET #255 `d01fd164...` run 42462978704 SUCCESS (scoped); HARDWARE #317 `839c2187...` focused runs 44130911539/44130911583 SUCCESS, Full run 44130911522 FAILURE; QA #290 `5c29d159...` run 43633486963 SUCCESS (scoped), QA #292 `75a3f66d...` has no runs; RELEASE #291 `2c4edff2...` run 43744993487 SUCCESS (scoped). COE candidates: #28 `b21b0461...` run 43632393888 SUCCESS (synthetic); #29 `d0830332...` runs 43653906676/43653906675 SUCCESS; #30 `4897348d...` run 43653415598 SUCCESS (synthetic); #32 `29b6fe08...` run 43653540607 SUCCESS (synthetic). COE #31 remains blocked as above; COE #26 has five queued workflows.
 
 No physical COM acceptance, real OpenWrt UCI/netifd/ImageBuilder execution, native hardware acceptance, financial migration, signing, 150 power cuts, or 30-device/24-hour soak is established. Keep #26/#31 draft and **PRODUCTION NO-GO**.
+
+
+## 22. COE #26 hardware staging provenance, #31 runner blocker and #317/#318 stack — 2026-11-17 UTC18
+
+| Candidate | Exact HEAD / evidence | Integration disposition |
+|---|---|---|
+| Experiments main / development | `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` | Development is 293 commits behind main; do not treat as a promotion or destination source without exact path review |
+| COE main / #26 | `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | #26 open/draft; five workflows queued, zero jobs; no combined integration acceptance |
+| COE RELEASE #31 | `d0491517388479aa44c6c0ede8fc876f0be5950c` | Sandbox [44147379837](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44147379837) FAILURE at unprivileged UID-map setup; 53 tests/20 failures; shared [44147379880](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44147379880) and case [44147379865](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44147379865) scoped SUCCESS only |
+| HARDWARE #317 | `d3acdd8f60fb42bbcc6e8dbd7bdb3634fc496c78`; source/test SHA `1f263114fe003a930028b7fa9610655b03336614` | Focused poll/quarantine [44147243190](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44147243190) and relay [44147243095](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44147243095) SUCCESS; Full [44147243144](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44147243144) FAILURE at QA-owned legacy poll-signature assertion; preserve default-deny |
+| HARDWARE child #318 | `be371b03a36306a7691b411bf1b29da60b916646`, base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3` | DIVERGED 49 ahead / 40 behind current #317; mergeable=false; no current-head run returned; keep separate/draft pending owner stack proposal |
+| COE Hardware firmware source/target | ESP32 `6399b471...` vs `3cc7ec54...`; ESP8266 `b0aba5fb...` vs `c8be98f...` | Both destination sketches differ from current #317 source; not byte-identical migration |
+| COE Hardware tests/license | Source `tests/controllers.sh` blob `f7896647...`; target `Pisowifi/tests/controllers.sh` absent; Hardware test `f921c56c...` differs. Source MIT license `1ee55b94...`; no Hardware LICENSE/NOTICE | Import completeness and license/notice applicability unresolved; no copy/move proposed |
+| ULA | Current packager blob `062fd263...` emits `fd00:db8:blaze::/48` | Invalid IPv6 literal; separate P0, no replacement guessed |
+
+### Hardware behavior and test parity hold
+
+Current #317 source sketches are fail-closed: `acceptPollResponse()` returns false, `applyRemoteConfig` has no call site, and POST `/quarantine/clear` returns 403 without deleting evidence. COE #26 destination sketches retain `bool sigOk=true`, active `applyRemoteConfig(r)` calls, and a clear handler that deletes `/quarantine.log` and returns 200. COE #26 `Hardware/README.md` still documents clearing quarantine. This is a safety-significant behavior mismatch, not a cosmetic fork.
+
+The source QA entrypoint `experiment/openwrt/BlazePwifi/tests/controllers.sh` is not present at its routed target `Pisowifi/tests/controllers.sh`. The destination's separate `Hardware/tests/test_firmware_hardening.sh` still asserts a positive `|poll|` signature and clear route; it is not equivalent to the current default-deny source tests. Do not make destination test green by restoring positive poll admission or quarantine deletion.
+
+### License and migration gate
+
+The source BlazePwifi subtree has an MIT LICENSE blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. COE #26 has the same blob under sibling `Pisowifi/LICENSE`, but no `Hardware/LICENSE`, `Hardware/NOTICE.md`, root `LICENSE`, or root `NOTICE.md` was found. Do not assume a sibling license covers `Hardware/`; owner/legal applicability and NOTICE mapping must be resolved before any move. The manifest remains `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null.
+
+No destination move, copy, overwrite, cherry-pick, rebase, merge or promotion is authorized. Keep #26/#31 and #317/#318 draft. **PRODUCTION NO-GO.**
