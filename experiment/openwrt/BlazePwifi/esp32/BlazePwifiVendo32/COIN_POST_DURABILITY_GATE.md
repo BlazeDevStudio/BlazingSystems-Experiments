@@ -57,3 +57,11 @@ Source fix: commit 3c2ccc09dcc0d2eab01c1bdaae5aa7548f245798. Focused exact-head 
 
 Full validation [run 44051446855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051446855), job 133930149201, FAILED because QA-owned tests/controllers.sh still requires an active poll signature check. Update that test to assert default-deny while the contract is unapproved; do not restore the unapproved candidate verifier merely to satisfy the stale assertion. The QA loop-extractor issue remains independent.
 
+
+## Final exact-head reconciliation — 2026-11-17 UTC09
+
+Final PR head before this documentation-only checkpoint: 9c30d8c97763b610c4ab2d0df0168b4ace9cf8a3. Focused [run 44051895971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051895971), job 133931499416, completed SUCCESS at that exact head. Both ESP boards passed poll-response fail-closed 11/11, strict root JSON 13/13, coin POST ACK root 4/4, disposition default-deny 4/4, register-config denial 7/7, quarantine 19/19 and pending-attempt marker 19/19. All tests are source-extracted host/fake-LittleFS simulations.
+
+Full [run 44051896075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051896075) at the same exact head is now COMPLETED FAILURE. Validation job 133931629492 failed in QA-owned tests/controllers.sh because it requires an active poll signature check. This is incompatible with Master §6.3 default-deny; do not restore the unapproved candidate to satisfy the test. The separate v060_esp_poll_intake_guard.py extractor issue remains unresolved and was not reached. ESP8266, ESP32, Android, Ruijie, x86_64 and all returned Orange Pi target jobs completed PASS. Production import/sign, update bundle, v0.4 simulations/candidate gate and release publication were skipped.
+
+Final status remains SIMULATED / CI VERIFIED only. Physical relay/coin acceptance, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain unproven. PRODUCTION NO-GO.
