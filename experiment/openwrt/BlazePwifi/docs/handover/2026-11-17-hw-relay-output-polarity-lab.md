@@ -42,4 +42,4 @@ A dedicated .github/workflows/phx-hardware-relay-output-polarity.yml pins checko
 
 ## Next action
 
-PHX-QA independently review the host extraction and mutation checks; PHX-MASTER preserve the #317 → #319 stack. Physical polarity must remain unaccepted until owner-approved isolated hardware and independent electrical measurements are available.
+PHX-QA independently review the host extraction and mutation checks and reconcile the stale poll-signature assertion; PHX-MASTER preserve the #317 → #319 stack and reconcile the stale §2.2 wording with the later §6.7 default-deny decision. Physical polarity must remain unaccepted until owner-approved isolated hardware and independent electrical measurements are available.
