@@ -395,8 +395,8 @@ for board,path in BOARDS.items():
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
     late_snapshot_loop = loop.replace(
-        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\\n    if(beginPollWindow()){",
-        "    if(beginPollWindow()){\\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
+        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    if(beginPollWindow()){",
+        "    if(beginPollWindow()){\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
         1,
     )
     if late_snapshot_loop == loop:
