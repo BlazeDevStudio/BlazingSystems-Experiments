@@ -330,7 +330,7 @@ void setupPortal(){
   });
   web.on("/quarantine/clear",HTTP_POST,[](){
     // Master Architecture Contracts §6.5: quarantine evidence is not remotely deletable.
-    web.send(403,"text/plain","Quarantine records are retained until authenticated reconciliation.\\n");
+    web.send(403,"text/plain","Quarantine records are retained until authenticated reconciliation.\n");
   });
   web.on("/save",HTTP_POST,[](){
     String newSsid=web.arg("s"), newPass=web.arg("p").length()?web.arg("p"):cfg.pass;
