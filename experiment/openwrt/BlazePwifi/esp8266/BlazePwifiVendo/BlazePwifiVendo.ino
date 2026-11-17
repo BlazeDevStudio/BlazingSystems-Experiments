@@ -543,6 +543,27 @@ bool beginPollWindow(){
   applyOutputs();
   return false;
 }
+ 
+void sampleCoinPulseEdge(bool active){
+  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
+     !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+    if(pendingPulses==0){
+      pendingNonce=freshNonce();
+      pendingTarget=activeTarget;
+    }
+    if(pendingTarget==activeTarget && pendingPulses<20){
+      pendingPulses++;
+      lastEdge=millis();
+      if(!savePending()){
+        fsReady=false;
+        pendingReady=true;
+        Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
+      }
+    }
+  }
+  lastCoin=active;
+}
+
 
 
 // Strict, bounded root-object reader for a single root-level "ok":true status.
@@ -1203,22 +1224,7 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
-    if(pendingPulses==0){
-      pendingNonce=freshNonce();
-      pendingTarget=activeTarget;
-    }
-    if(pendingTarget==activeTarget && pendingPulses<20){
-      pendingPulses++;
-      lastEdge=millis();
-      if(!savePending()){
-        fsReady=false;
-        pendingReady=true;
-        Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
-      }
-    }
-  }
-  lastCoin=active;
+  sampleCoinPulseEdge(active);
 
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){
     pendingReady=true;
