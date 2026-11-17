@@ -211,3 +211,21 @@ This snapshot supersedes the older timestamped role/CI table above for the refs 
 | PHX-RELEASE | #242@734b89d9e7792247e8376335c3f3685500ab3f89; #291@2c4edff231d9b2819415086825530d80b8801307 | #242 run 40882814472 success; #291 run 43744993487 success |
 
 COE integration #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows (43096752609, 43096752632, 43096752800, 43096752563, 43096752557). HARDWARE #316 remains a separate open draft but its behavior is consolidated on #315; do not merge #316 independently. QA's canonical controller extractor still fails to include acceptPollResponse() in the full #315 validation harness. CORE source was not modified by PHX-MASTER; the separate CORE continuation ownership boundary remains respected.
+
+## 3. Live role PR and ownership checkpoint — 2026-11-17 UTC06
+
+The historical PR lists above are not a live status feed. The exact current open draft pins and bounded CI observations are:
+
+| Role | Current PR / branch | Exact head | CI / review state | Next owner action |
+|---|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination` | `7616a3d5...` | No PR-triggered runs | Maintain coordination-only scope and migration holds |
+| PHX-CORE | #252 `fix/phx-core-g-coin-fixture-controller-auth-v1-20261029` | `c82705f2...` | Run 42698139210 SUCCESS (scoped) | Review one-shot POST marker/server idempotency and reconciliation semantics |
+| PHX-RENTAL | #289 `phoenix/rental-revision-guard-cleanup-20261115` | `68928774...` | Runs 43653329235 and 43653329229 SUCCESS (scoped) | Preserve authenticated-before-persistence boundary |
+| PHX-PISONET | #255 `phoenix/pisonet-native-com-interface-20261030` | `d01fd164...` | Run 42462978704 SUCCESS (scoped) | Physical serial stress remains outstanding |
+| PHX-HARDWARE | #315 `phoenix/hardware-quarantine-append-failclosed-20261117` | `c1db0a56...` | Focused run 44030492133 SUCCESS; Full run 44030492146 validation FAILURE | Keep current owner stack; provide exact-head source and hardware evidence |
+| PHX-HARDWARE (separate) | #316 `phoenix/hardware-poll-response-failclosed-20261117` | `888e6941...` | Focused 43972511337 SUCCESS; Full 43972511250 FAILURE | Do not compose or close without explicit owner reconciliation |
+| PHX-QA | #292 `qa/phoenix-comms-recipient-regression-20261115` | `75a3f66d...` | No PR-triggered runs; base `b1ca02e...` is behind current Master | Update canonical ESP extractor for the exact current #315 helpers/state; independently rerun Full |
+| PHX-RELEASE | #291 `phoenix/release-publisher-isolation-20261115` | `2c4edff2...` | Run 43744993487 SUCCESS; publish-release SKIPPED | Keep signer/publisher gates closed |
+| COE integration owner | COE #26 `integration/ecosystem-nonproprietary-candidate-20261111` | `b382d233...` | Eight workflows still QUEUED | Keep draft; reconcile exact blobs, tests, license scope and CI |
+
+PHX-MASTER owns only `coordination/phoenix/`, architecture/interface contracts, routing and release gates. No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source files were changed in this checkpoint. The separate CORE continuation remains the sole CORE implementation owner.

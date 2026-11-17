@@ -351,3 +351,33 @@ This is a source inspection finding, not a live exploit or physical actuation re
 The exact blobs and modes are recorded in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md. Focused #315 run 44013351048 succeeded on source-extracted host tests; full #315 run 44013351035 failed in the QA-owned controller extractor. COE #26 still has five queued workflows. None of these results establishes integrated acceptance.
 
 **Disposition:** keep #26 draft and do not copy/promote Hardware files until PHX-HARDWARE and independent PHX-QA reconcile exact source/destination blobs, route security, test identities, crypto wording, license/notice scope and candidate CI. No production flash, release, migration or live-money operation is authorized.
+
+## 6. Live exact-head reconciliation — 2026-11-17 UTC06
+
+This section supersedes stale PR/CI identifiers in the historical readiness rows above. All CI labels are scoped to the exact listed commit; none implies hardware acceptance.
+
+| Role | Current draft / exact head | Exact CI evidence | Current disposition |
+|---|---|---|---|
+| PHX-MASTER | #288 `7616a3d5de69f4e6d7d9905fc91d0c7500bdfd68` | No PR-triggered workflow runs returned | Draft; local full suite NOT RUN |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS | Scoped CI only |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS | Scoped CI only |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS | Scoped CI only; physical serial NOT TESTED |
+| PHX-HARDWARE | #315 `c1db0a567500302921c0561bcd31446f12767372` | [44030492133](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44030492133) focused SUCCESS; [44030492146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44030492146) Full validation FAILURE | Host/fake-LittleFS labs only; QA extractor blocker |
+| PHX-HARDWARE (separate) | #316 `888e6941e3a7a81641682c23d937f97d8117d2ea` | [43972511337](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43972511337) focused SUCCESS; [43972511250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43972511250) Full FAILURE | Separate open draft; do not compose without owner decision |
+| PHX-QA | #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs returned | Stale base; exact current #315 extractor verification absent |
+| PHX-RELEASE | #291 `2c4edff231d9b2819415086825530d80b8801307` | [43744993487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43744993487) SUCCESS; publish-release SKIPPED | Scoped Windows CI only |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Eight exact-head workflows remain QUEUED: 43096752609, 43096752632, 43096752800, 43096752563, 43096752557, 43096746202, 43096746248, 43096746194 | No completed destination acceptance |
+
+### 6.1 Current hardware migration hold
+
+The current #315 source blobs are ESP8266 `35bc5b20...` and ESP32 `5b448444...`; COE #26 destination blobs remain `c8be98f7...` and `3cc7ec54...`. All four files are mode `100644`, but neither source/destination pair is byte-identical.
+
+The #315 source now has the durable one-shot `/pending.attempt` marker and exact-source host lab; COE #26 has no marker state or marker lab. COE still has keyless-positive remote configuration call sites and a destructive `POST /quarantine/clear` handler. Its Hardware test tree has one shell hardening script, not the source's current negative/failure-injection suite. No Hardware-scoped LICENSE/NOTICE exists under `Hardware/`; scope requires owner review.
+
+**Migration decision:** no copy, overwrite, relocation, or promotion of the current COE Hardware sketches. The exact comparison and owner actions are in [the UTC06 Master audit](COIN_POST_ATTEMPT_MARKER_MIGRATION_AND_QA_EXTRACTOR_AUDIT_20261117_UTC06.md).
+
+### 6.2 Provisional financial replay invariant
+
+Before any coin POST, the controller must durably write, flush, close, and read back an attempt marker bound to the pending record. A marker found after reboot (matching, malformed, mismatched, or orphan) blocks automatic replay. Clear the pending record first and the marker last, only after authoritative receipt or durable quarantine disposition. This client fence does not replace server idempotency and remains pending PHX-CORE/PHX-QA review and physical power-cut evidence.
+
+Production remains STRICT NO-GO.

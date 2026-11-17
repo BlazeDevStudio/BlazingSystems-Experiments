@@ -156,3 +156,11 @@ The machine-readable OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY and pins so
 The current owner source has dormant remote configuration and denies POST /quarantine/clear with HTTP 403 without deleting /quarantine.log. COE #26 still applies remote configuration from register/poll responses and deletes the quarantine log through POST. Exact ESP32/ESP8266 blobs, modes, source-test imports, license/notice scope and CI are in HARDWARE_STAGING_PARITY_AUDIT_20261117_UTC05.md.
 
 No route permission changed: PHX-MASTER still owns coordination/phoenix only; PHX-HARDWARE owns firmware; PHX-QA owns independent tests; COE integration remains review-only. Do not copy, overwrite, merge, or close owner PRs based on this note.
+
+## Current HARDWARE source-candidate addendum — 2026-11-17 UTC06
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains pinned to Experiments main and COE PR #26 and stays `DRAFT_REVIEW_ONLY`. For current hardware review, PHX-HARDWARE's separate owner-controlled candidate is DRAFT #315 at `c1db0a567500302921c0561bcd31446f12767372`; separate DRAFT #316 at `888e6941e3a7a81641682c23d937f97d8117d2ea` remains open and must not be silently composed.
+
+At #315, the ESP8266/ESP32 source blobs are `35bc5b20...` / `5b448444...`; COE #26 still stages `c8be98f7...` / `3cc7ec54...`. The current source includes a durable one-shot `/pending.attempt` marker, source-extracted negative/failure labs, dormant remote-config mutator and deny/no-delete quarantine-clear route. The destination lacks the marker and current labs, retains keyless-positive register/poll configuration call sites, and deletes `/quarantine.log` through POST /quarantine/clear.
+
+**Review disposition:** retain both histories; no copy, overwrite, path relocation or promotion. PHX-QA must repair and independently run the exact-source extractor; PHX-CORE must review the marker/idempotency contract; the COE integration owner must reconcile source/destination blobs, tests, license/notice scope and all queued workflows. See [UTC06 Master evidence](COIN_POST_ATTEMPT_MARKER_MIGRATION_AND_QA_EXTRACTOR_AUDIT_20261117_UTC06.md).
