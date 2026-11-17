@@ -6,7 +6,7 @@
 **PR:** [#283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283) — OPEN / DRAFT / UNMERGED  
 **Branch:** `cleanup/esp-firmware-hardening-and-quarantine-20261111`  
 **Base:** `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`  
-**Firmware source commit:** [a3de2abbd8ffcdac98773b878604042afbe23411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a3de2abbd8ffcdac98773b878604042afbe23411)
+**Firmware source commits:** [a3de2abbd8ffcdac98773b878604042afbe23411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a3de2abbd8ffcdac98773b878604042afbe23411) (poll/register/config deny) and [236e6a6976f9f83a611f97eb82a7a336240fbf4c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/236e6a6976f9f83a611f97eb82a7a336240fbf4c) (coin POST/replay deny)
 
 ## Source finding
 
@@ -23,6 +23,8 @@ At source commit `a3de2abbd8ffcdac98773b878604042afbe23411`:
 - Setup invokes the deny helper after runtime pin configuration.
 - Register/ping is still sent for discovery/heartbeat, but its response is ignored; it cannot invoke `applyRemoteConfig()`.
 - Poll is still sent, but all response fields are ignored and the deny helper runs every poll. This prevents keyless authorization, unapproved derived-signature authorization, and reuse of stale positive poll state.
+- The HTTP `post()` allowlist now permits only `register` and `poll`; `coin` and unknown actions are rejected before network dispatch.
+- The automatic pending-coin POST/retry/clear loop was removed. Any recovered or pending journal remains intact for operator/CORE reconciliation until Master §6.6's event-bound authenticated receipt/disposition contract is approved.
 - `applyRemoteConfig()` remains present only as a future candidate helper and has no register/poll call sites.
 - The audit table no longer claims that the candidate response-signature calculation is an accepted authentication protocol.
 
@@ -45,3 +47,14 @@ PHX-QA owns independent regression fixtures and must add negative tests for empt
 - Protected signer/witness, durable accounting/replay, v1-to-v2 migration, 150 real power cuts, 30-device 24-hour soak, electrical pulse/recovery and independent release signoff remain open.
 
 **Disposition:** PR #283 remains DRAFT / UNMERGED. Coin admission and remote configuration remain denied. PRODUCTION NO-GO.
+
+
+## Additional fail-closed coin-dispatch correction — 2026-11-17 UTC18
+
+At source commit `236e6a6976f9f83a611f97eb82a7a336240fbf4c`:
+
+- `post()` now allows only `register` and `poll`; `coin` and unknown actions are denied before HTTP dispatch.
+- The automatic pending-coin POST/retry/clear loop was removed from both sketches. Pending journals are retained; there is no automatic financial replay or clear based on raw `ok:true`.
+- This is required by Master §6.6 because no event-bound authenticated receipt/disposition contract is approved. It deliberately prevents coin credit until PHX-CORE and PHX-QA complete their contracts and vectors.
+
+No new tests were added or modified by PHX-HARDWARE because independent verification fixtures belong to PHX-QA. The existing #283 generic response-signature simulation is not evidence for this deny path. Full exact-head CI must be rerun on the new source commit.
