@@ -164,3 +164,18 @@ The machine-readable `OWNERSHIP_ROUTES.json` remains pinned to Experiments main 
 At #315, the ESP8266/ESP32 source blobs are `35bc5b20...` / `5b448444...`; COE #26 still stages `c8be98f7...` / `3cc7ec54...`. The current source includes a durable one-shot `/pending.attempt` marker, source-extracted negative/failure labs, dormant remote-config mutator and deny/no-delete quarantine-clear route. The destination lacks the marker and current labs, retains keyless-positive register/poll configuration call sites, and deletes `/quarantine.log` through POST /quarantine/clear.
 
 **Review disposition:** retain both histories; no copy, overwrite, path relocation or promotion. PHX-QA must repair and independently run the exact-source extractor; PHX-CORE must review the marker/idempotency contract; the COE integration owner must reconcile source/destination blobs, tests, license/notice scope and all queued workflows. See [UTC06 Master evidence](COIN_POST_ATTEMPT_MARKER_MIGRATION_AND_QA_EXTRACTOR_AUDIT_20261117_UTC06.md).
+
+## Current coin POST disposition source/staging hold — 2026-11-17 UTC07
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains pinned to Experiments main `f4e8a891...` and COE integration PR #26 `b382d233...`, with status `DRAFT_REVIEW_ONLY`. It is a route proposal, not a copy command. The current HARDWARE owner source candidate is draft #315 at `4afc7c8bd8ea410049f1da7bc962bfc989b4ba1b`; it is a distinct, newer source snapshot and must be reviewed per file rather than silently substituted for the manifest's main ref.
+
+At exact #315/#26 commit trees, both ESP firmware paths are mode `100644` but different blobs:
+- ESP8266 source `e47d392e5fd3724c414e4ec50b3cb74658047c31` → destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- ESP32 source `5de92f01990bd551e4c9dd063ff0eb0572a301e8` → destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+
+The current source contains a durable `/pending.attempt` marker and a `coinPostDispositionVerified()` function that returns DENY until PHX-CORE supplies an approved event-bound authenticated receipt contract. On unapproved response it preserves the pending journal and marker and denies automatic replay. The COE #26 candidate has none of the marker/disposition helpers, still has keyless-positive register/poll response paths and the earlier destructive quarantine-clear behavior. COE `Hardware/tests/` contains only one shell hardening script; the source poll/disposition lab is not imported. Exact source test blob: `84275ece076295387e468da25df506fda9ff3bfb` mode `100644`; destination shell test blob: `f921c56cecc19cab1989507b9b4ade1f45dac54e` mode `100755`.
+
+The #315 focused run 44038469936 passed source-extracted host/fake-filesystem cases, while Full run 44038469823 failed because the QA-owned extractor omitted five current firmware dependencies. The source lab is not physical flash or coin evidence. No Hardware-local LICENSE/NOTICE was found in the destination candidate; scope remains an owner/custodian review, not a legal conclusion.
+
+**Review-before-move hold:** keep COE #26 draft. Do not copy, overwrite, relocate or promote these firmware files. PHX-HARDWARE owns firmware, PHX-QA owns independent tests, COE integration owns destination staging, and PHX-MASTER owns only coordination and provenance. No merge, release, flash or financial action is authorized.
+
