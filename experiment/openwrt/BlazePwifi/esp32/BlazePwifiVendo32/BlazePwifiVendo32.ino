@@ -705,11 +705,14 @@ void applyOutputs(){
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
 
-// Observe a full debounce-width quiet interval after disabling intake.
-// A pulse at any point cancels polling and returns to normal journal handling.
+// A pulse train is complete only after the 250 ms inter-coin quiet interval
+// (Master §2.1). A 20 ms debounce or single-pulse drain is insufficient to
+// prove another pulse in the same coin insertion will not arrive.
 bool coinLineQuietAfterInhibit(){
   const uint32_t started=millis();
-  while(millis()-started<runDebounceMs){
+  const uint32_t pulseTrainQuietMs=250UL;
+  const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
+  while(millis()-started<quietMs){
     if(!coinLineIdle()) return false;
     delay(1);
   }
