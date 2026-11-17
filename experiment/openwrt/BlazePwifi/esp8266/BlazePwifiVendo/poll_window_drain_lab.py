@@ -44,27 +44,29 @@ void writeLogical(int pin,bool on,bool){
 }
 @@FUNCTIONS@@
 static bool runCase(const char*name,int start,int end,uint16_t debounce,
-                    bool expectPoll,uint32_t expectedElapsed){
-  fakeNow=0; pulseStart=start; pulseEnd=end; runDebounceMs=debounce;
+                    bool expectPoll,uint32_t expectedElapsed,uint32_t startAt=0){
+  fakeNow=startAt; pulseStart=start; pulseEnd=end; runDebounceMs=debounce;
   fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
   pollIntakeSuspended=false; relayOn=true; ledOn=true;
+  const uint32_t started=fakeNow;
   const bool opened=beginPollWindow();
+  const uint32_t elapsed=(uint32_t)(fakeNow-started);
   if(opened!=expectPoll){
     std::cerr<<"FAIL "<<name<<" poll="<<opened<<" expected="<<expectPoll
-             <<" elapsed="<<fakeNow<<"\n";
+             <<" elapsed="<<elapsed<<"\\n";
     return false;
   }
   if(expectPoll){
-    if(fakeNow!=expectedElapsed || !pollIntakeSuspended || relayOn || ledOn){
-      std::cerr<<"FAIL "<<name<<" elapsed="<<fakeNow<<" expected="<<expectedElapsed
+    if(elapsed!=expectedElapsed || !pollIntakeSuspended || relayOn || ledOn){
+      std::cerr<<"FAIL "<<name<<" elapsed="<<elapsed<<" expected="<<expectedElapsed
                <<" inhibit="<<pollIntakeSuspended<<" relay="<<relayOn
-               <<" led="<<ledOn<<"\n";
+               <<" led="<<ledOn<<"\\n";
       return false;
     }
   } else if(pollIntakeSuspended || !relayOn || !ledOn || coinLineIdle()){
     std::cerr<<"FAIL "<<name<<" abort-state inhibit="<<pollIntakeSuspended
              <<" relay="<<relayOn<<" led="<<ledOn
-             <<" idle="<<coinLineIdle()<<"\n";
+             <<" idle="<<coinLineIdle()<<"\\n";
     return false;
   }
   return true;
@@ -83,11 +85,15 @@ int main(){
   ++passed;
   if(!runCase("idle-floor", -1,-1,40,true,250)) return 6;
   ++passed;
-  if(!runCase("configured-debounce-300ms",-1,-1,300,true,300)) return 7;
+  if(!runCase("idle-rollover-floor",-1,-1,40,true,250,0xFFFFFF80UL)) return 7;
   ++passed;
-  if(!runCase("pulse-during-300ms-debounce",280,360,300,false,0)) return 8;
+  if(!runCase("configured-debounce-300ms",-1,-1,300,true,300)) return 8;
   ++passed;
-  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/8\n";
+  if(!runCase("configured-debounce-rollover-300ms",-1,-1,300,true,300,0xFFFFFF80UL)) return 9;
+  ++passed;
+  if(!runCase("pulse-during-300ms-debounce",280,360,300,false,0)) return 10;
+  ++passed;
+  std::cout<<"POLL_WINDOW_DRAIN_PASS "<<passed<<"/10\\n";
   return 0;
 }
 '''
@@ -139,10 +145,10 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source RED: {result.stderr or result.stdout}")
                 continue
-            if "POLL_WINDOW_DRAIN_PASS 8/8" not in result.stdout:
+            if "POLL_WINDOW_DRAIN_PASS 10/10" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_POLL_WINDOW_DRAIN_PASS 8/8")
+            print(f"{board}_POLL_WINDOW_DRAIN_PASS 10/10")
 
             quiet_index = signatures.index("bool coinLineQuietAfterInhibit(){")
             mutated = list(functions)
@@ -158,6 +164,21 @@ def main():
                 failures.append(f"{board} short-debounce mutation was not rejected")
                 continue
             print(f"{board}_POLL_WINDOW_MUTATION_REJECTED short-debounce-only")
+
+            mutated = list(functions)
+            needle = "millis()-started<quietMs"
+            if needle not in mutated[quiet_index]:
+                failures.append(f"{board} missing wrap-safe elapsed expression for mutation test")
+                continue
+            mutated[quiet_index] = mutated[quiet_index].replace(
+                needle, "millis()<started+quietMs", 1
+            )
+            rollover_mutation = compile_and_run(mutated)
+            if (rollover_mutation.returncode == 0 or
+                    "FAIL idle-rollover-floor" not in rollover_mutation.stderr):
+                failures.append(f"{board} unsafe absolute-deadline mutation was not rejected")
+                continue
+            print(f"{board}_POLL_WINDOW_MUTATION_REJECTED unsafe-deadline-rollover")
         except Exception as error:
             failures.append(f"{board} lab error: {error}")
     if failures:
