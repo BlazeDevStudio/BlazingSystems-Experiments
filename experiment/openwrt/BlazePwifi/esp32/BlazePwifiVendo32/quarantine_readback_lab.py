@@ -130,6 +130,7 @@ struct FakeLittleFS {
 @@SOURCE_ENCODE@@
 @@SOURCE_TOKEN_VALID@@
 @@SOURCE_RECORD_VALID@@
+@@SOURCE_CRC32_UPDATE@@
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
@@ -316,6 +317,7 @@ PARITY_SIGNATURES = (
     "String quarantineLogField(",
     "bool quarantineLogTokenValid(",
     "bool quarantineLogRecordValid(",
+    "uint32_t quarantineLogCrc32Update(",
     "bool inspectQuarantineLog(",
     "bool appendQuarantineRecord(",
     "bool quarantinePending(",
@@ -361,7 +363,7 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated):
         raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
 
-    print("BOARD_QUARANTINE_PARITY_PASS 11/11 helpers byte-identical")
+    print("BOARD_QUARANTINE_PARITY_PASS 12/12 helpers byte-identical")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
 
 
@@ -374,6 +376,7 @@ for board, ino in BOARDS:
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_TOKEN_VALID@@", extract(source, "bool quarantineLogTokenValid("))
     actual = actual.replace("@@SOURCE_RECORD_VALID@@", extract(source, "bool quarantineLogRecordValid("))
+    actual = actual.replace("@@SOURCE_CRC32_UPDATE@@", extract(source, "uint32_t quarantineLogCrc32Update("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))

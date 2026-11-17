@@ -1063,19 +1063,29 @@ bool quarantineLogRecordValid(const char *line,const char *identity,bool &sameId
   return true;
 }
 
-bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecorded){
-  bytes=0; alreadyRecorded=false;
+uint32_t quarantineLogCrc32Update(uint32_t crc,uint8_t byte){
+  crc^=(uint32_t)byte;
+  for(uint8_t bit=0;bit<8;++bit){
+    crc=(crc&1U)?((crc>>1)^0xEDB88320UL):(crc>>1);
+  }
+  return crc;
+}
+
+bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecorded,uint32_t &prefixCrc32){
+  bytes=0; alreadyRecorded=false; prefixCrc32=0;
   if(!LittleFS.exists("/quarantine.log")) return true;
   File prior=LittleFS.open("/quarantine.log","r");
   if(!prior) return false;
   bytes=prior.size();
   char line[320];
   size_t lineLength=0,readCount=0;
+  uint32_t prefixCrc=0xFFFFFFFFUL;
   bool valid=true;
   while(valid && prior.available()){
     int next=prior.read();
     if(next<0){ valid=false; break; }
     ++readCount;
+    prefixCrc=quarantineLogCrc32Update(prefixCrc,(uint8_t)next);
     if(next=='\n'){
       if(lineLength==0){ valid=false; break; }
       line[lineLength]='\0';
@@ -1100,7 +1110,9 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
   prior.close();
   // Every generated record has exactly one final newline. An unterminated tail
   // is durable evidence of a torn append and must survive reboot as a hard stop.
-  return valid && readCount==bytes && lineLength==0;
+  if(!valid || readCount!=bytes || lineLength!=0) return false;
+  prefixCrc32=~prefixCrc;
+  return true;
 }
 
 bool appendQuarantineRecord(const String &reason){
@@ -1137,7 +1149,8 @@ bool appendQuarantineRecord(const String &reason){
 
   size_t before=0;
   bool alreadyRecorded=false;
-  if(!inspectQuarantineLog(identity,before,alreadyRecorded)){
+  uint32_t prefixCrcBefore=0;
+  if(!inspectQuarantineLog(identity,before,alreadyRecorded,prefixCrcBefore)){
     journalRecoveryRequired=true;
     return false;
   }
@@ -1164,8 +1177,16 @@ bool appendQuarantineRecord(const String &reason){
     return false;
   }
   size_t after=verify.size();
-  bool verified=after==before+(size_t)len &&
-                verify.seek(before,SeekSet);
+  bool verified=after==before+(size_t)len && verify.seek(0,SeekSet);
+  uint32_t prefixCrcAfter=0xFFFFFFFFUL;
+  for(size_t i=0;verified && i<before;++i){
+    int byte=verify.read();
+    if(byte<0){ verified=false; break; }
+    prefixCrcAfter=quarantineLogCrc32Update(prefixCrcAfter,(uint8_t)byte);
+  }
+  // CRC32 detects accidental same-size corruption of old records; it is not authentication.
+  if(verified && ~prefixCrcAfter!=prefixCrcBefore) verified=false;
+  if(verified && !verify.seek(before,SeekSet)) verified=false;
   for(size_t i=0;verified && i<(size_t)len;++i){
     if(verify.read()!=(unsigned char)record[i]) verified=false;
   }
