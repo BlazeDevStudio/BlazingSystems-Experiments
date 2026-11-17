@@ -29,9 +29,21 @@ struct String : std::string {
 static constexpr size_t QUARANTINE_MAX_BYTES=4096;
 static bool fsReady=true;
 static bool journalRecoveryRequired=false;
+// Mirrors the production one-shot gate state used by canAttemptCoinPost().
+static bool pendingPostAttempted=false;
+static bool attemptMarkerExists=true, attemptMarkerValid=true;
 static uint8_t pendingPulses=4;
-static String pendingNonce="nonce001122334455";
+static bool pendingReady=true;
+static String pendingNonce="nonce00112233445";
 static String pendingTarget="target0011223344";
+struct PendingRecord { uint8_t pulses=0; char nonce[17]{}; char target[33]{}; };
+static PendingRecord attemptMarker{};
+bool readPendingFile(const char *path,PendingRecord &out){
+  if(std::strcmp(path,"/pending.attempt")!=0 || !attemptMarkerExists || !attemptMarkerValid) return false;
+  out=attemptMarker;
+  return true;
+}
+@@SOURCE_ATTEMPT_MATCH@@
 static int clearCount=0;
 static bool clearAllowed=true;
 unsigned long millis(){return 1234UL;}
@@ -39,6 +51,9 @@ bool clearPending(){
   ++clearCount;
   if(!clearAllowed){journalRecoveryRequired=true; return false;}
   pendingPulses=0; pendingNonce.clear(); pendingTarget.clear();
+  // Production clearPending resets this only after durable disposition succeeds.
+  pendingPostAttempted=false;
+  attemptMarkerExists=false;
   return true;
 }
 struct FakeSerial {
@@ -98,20 +113,29 @@ struct FakeLittleFS {
   }
 } LittleFS;
 
+@@SOURCE_COIN_POST_GATE@@
 @@SOURCE_ENCODE@@
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<17;scenario++){
+  for(int scenario=0;scenario<23;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
     fsReady=true;
     journalRecoveryRequired=false;
+    pendingPostAttempted=true;
     pendingPulses=4;
-    pendingNonce="nonce001122334455";
+    pendingReady=true;
+    pendingNonce="nonce00112233445";
     pendingTarget="target0011223344";
+    attemptMarker=PendingRecord{};
+    attemptMarker.pulses=pendingPulses;
+    std::strcpy(attemptMarker.nonce,pendingNonce.c_str());
+    std::strcpy(attemptMarker.target,pendingTarget.c_str());
+    attemptMarkerExists=true;
+    attemptMarkerValid=true;
     if(scenario==1) fsReady=false;
     if(scenario==2) pendingPulses=0;
     if(scenario==3) disk.priorOpenFail=true;
@@ -131,27 +155,43 @@ int main(){
     if(scenario==12) reason=String("bad\nRECORD=forged\t\\");
     if(scenario==13) journalRecoveryRequired=true;
     if(scenario==14)
-      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n";
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier\n";
     if(scenario==15)
-      disk.bytes+="TIME=9 PULSES=4 NONCE=nonce001122334455";
+      disk.bytes+="TIME=9 PULSES=4 NONCE=nonce00112233445";
     if(scenario==16)
-      disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n"
-                 "TIME=9 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=duplicate\n";
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier\n"
+                 "TIME=9 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=duplicate\n";
+    if(scenario==17)
+      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
+    if(scenario==17)
+      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
+    if(scenario==18)
+      disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=overflowed-time\n";
+    if(scenario==19) pendingPostAttempted=false; // attempted state missing
+    if(scenario==20) attemptMarkerExists=false;
+    if(scenario==21) attemptMarkerValid=false;
+    if(scenario==22) std::strcpy(attemptMarker.nonce,"wrongnonce123456");
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
-    bool expectRecovery=scenario==3 || (scenario>=5 && scenario<=9) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16;
+    bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
+                        (scenario>=5 && scenario<=10) ||
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
        (scenario==12 &&
         (std::count(disk.bytes.begin(),disk.bytes.end(),'\n')!=2 ||
          disk.bytes.find("bad\\nRECORD=forged\\t\\\\")==std::string::npos)) ||
+       (scenario==4 && disk.bytes!=bytesBefore) ||
+       (scenario==10 && disk.bytes!=bytesBefore) ||
        (scenario==14 && disk.bytes!=bytesBefore) ||
        (scenario==15 && disk.bytes!=bytesBefore) ||
        (scenario==16 && disk.bytes!=bytesBefore) ||
-       journalRecoveryRequired!=expectRecovery){
+       (scenario==17 && disk.bytes!=bytesBefore) ||
+       (scenario==18 && disk.bytes!=bytesBefore) ||
+       (scenario>=19 && disk.bytes!=bytesBefore) ||
+       journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
     }
@@ -165,35 +205,38 @@ int main(){
       disk.mutateOnRead=false;
       clearAllowed=true;
       if(quarantinePending(reason) || disk.bytes!=ambiguousBytes ||
-         clearCount!=attemptsBeforeRetry || !journalRecoveryRequired){
+         clearCount!=attemptsBeforeRetry || !journalRecoveryRequired ||
+         canAttemptCoinPost()){
         std::cerr<<"SOURCE_QUARANTINE_RETRY_MUTATED scenario="<<scenario<<"\n";
         return 1;
       }
     }
-    if((scenario>=5 && scenario<=9) || scenario==11 || scenario==16){
+    if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
+       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario>=19){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
       journalRecoveryRequired=false;
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
-      bool persistentHardStop=(scenario==5 || scenario==7 || scenario==8 || scenario==16);
+      bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || scenario>=19);
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
-           clearCount!=clearsBeforeReboot || pendingPulses!=4){
+           clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
           std::cerr<<"SOURCE_QUARANTINE_TORN_REBOOT_FAIL scenario="<<scenario<<"\n";
           return 1;
         }
       } else {
         if(!rebootOk || journalRecoveryRequired || disk.bytes!=rebootBytes ||
-           clearCount!=clearsBeforeReboot+1 || pendingPulses!=0){
+           clearCount!=clearsBeforeReboot+1 || pendingPulses!=0 || canAttemptCoinPost()){
           std::cerr<<"SOURCE_QUARANTINE_IDEMPOTENT_REBOOT_FAIL scenario="<<scenario<<"\n";
           return 1;
         }
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 17/17 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 23/23 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -212,9 +255,12 @@ def extract(src: str, signature: str) -> str:
                 return src[pos:i + 1]
     raise RuntimeError(f"Unbalanced source: {signature}")
 
+failed_boards = []
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
-    actual = CPP.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
+    actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
+    actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
@@ -224,6 +270,34 @@ for board, ino in BOARDS:
         cpp.write_text(actual, encoding="utf-8")
         subprocess.run(["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2",
                         str(cpp), "-o", str(binary)], check=True)
-        subprocess.run([str(binary)], check=True)
-    print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 34/34 source-extracted host scenarios PASS; no hardware evidence")
+        completed = subprocess.run([str(binary)], capture_output=True, text=True)
+        if completed.stdout:
+            print(completed.stdout, end="")
+        if completed.stderr:
+            print(completed.stderr, file=sys.stderr, end="")
+        if completed.returncode:
+            failed_boards.append(board)
+        else:
+            print(f"{board}: compiled exact extracted source")
+if failed_boards:
+    raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
+print("PHX-HARDWARE: 38/38 source-extracted host scenarios PASS; no hardware evidence")
+poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+subprocess.run([sys.executable, str(poll_lab)], check=True)
+register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
+subprocess.run([sys.executable, str(register_lab)], check=True)
+attempt_marker_lab = ROOT / "esp32/BlazePwifiVendo32/pending_attempt_marker_lab.py"
+attempt_marker_result = subprocess.run(
+    [sys.executable, str(attempt_marker_lab)],
+    capture_output=True, text=True,
+)
+print(attempt_marker_result.stdout, end="")
+if attempt_marker_result.stderr:
+    print(attempt_marker_result.stderr, file=sys.stderr, end="")
+if attempt_marker_result.returncode:
+    raise SystemExit(attempt_marker_result.returncode)
+if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 19/19") != len(BOARDS):
+    raise SystemExit("PHX-HARDWARE: attempt-marker per-board summary count mismatch")
+if "PHX-HARDWARE: 19/19 source-extracted cases per board (38/38 total) PASS" not in attempt_marker_result.stdout:
+    raise SystemExit("PHX-HARDWARE: attempt-marker aggregate summary mismatch")
+

@@ -33,7 +33,7 @@ def extract(source: str, signature: str) -> str:
 TEMPLATE=r'''
 #include <cstdint>
 #include <iostream>
-bool fsReady=false, journalRecoveryRequired=false, pendingReady=false;
+bool fsReady=false, journalRecoveryRequired=false, pendingReady=false, pendingPostAttempted=false;
 uint8_t pendingPulses=0;
 @@FUNCTION@@
 struct Case{
@@ -64,7 +64,13 @@ int main(){
       return 1;
     }
   }
-  std::cout<<"COIN_POST_GATE_PASS 9/9 exact helper scenarios, not hardware evidence\n";
+  pendingPostAttempted=true;
+  fsReady=true; journalRecoveryRequired=false; pendingReady=true; pendingPulses=3;
+  if(canAttemptCoinPost()){
+    std::cerr<<"COIN_POST_GATE_FAIL attempt marker must block dispatch\\n";
+    return 2;
+  }
+  std::cout<<"COIN_POST_GATE_PASS 10/10 exact helper scenarios, not hardware evidence\n";
   return 0;
 }
 '''
@@ -89,4 +95,4 @@ for board,path in BOARDS:
                         str(sourcepath),"-o",str(outputpath)],check=True)
         subprocess.run([str(outputpath)],check=True)
     print(f"{board}: actual canAttemptCoinPost() compiled and tested")
-print("PHX-HARDWARE: 18/18 source-extracted coin POST gate cases PASS; actual money NOT TESTED")
+print("PHX-HARDWARE: 20/20 source-extracted coin POST gate cases PASS; actual money NOT TESTED")

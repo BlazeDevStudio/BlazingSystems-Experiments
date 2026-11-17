@@ -144,6 +144,7 @@ struct FakeLittleFS {
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true;
 bool journalRecoveryRequired=false;
+bool pendingPostAttempted=false;
 uint8_t pendingPulses=3;
 String pendingNonce="0011223344556677";
 String pendingTarget="target001122334455667788";
@@ -156,6 +157,7 @@ static void reset() {
   disk=FakeDisk{};
   fsReady=true;
   journalRecoveryRequired=false;
+  pendingPostAttempted=false;
   pendingPulses=3;
   pendingNonce=String("0011223344556677");
   pendingTarget=String("target001122334455667788");

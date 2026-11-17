@@ -84,7 +84,7 @@ struct FakeLittleFS {
 struct FakeSerial {void println(const char*){}} Serial;
 @@PENDING_STRUCT@@
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
-bool fsReady=true,pendingReady=false,journalRecoveryRequired=false;
+bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool ledEnabled=true,relayEnabled=true;
@@ -94,12 +94,14 @@ bool relayOn=false,ledOn=false;
 uint32_t lastSend=42;
 uint8_t pendingPulses=0;
 String pendingNonce,pendingTarget;
+String activeTarget="target-01";
 void writeLogical(int pin,bool on,bool){
   if(pin==runRelayPin)relayOn=on;
   if(pin==runLedPin)ledOn=on;
 }
 @@CHECKSUM@@
 @@READ@@
+@@SAME_RECORD@@
 @@LOAD@@
 @@CLEAR@@
 @@OUTPUTS@@
@@ -119,7 +121,7 @@ std::vector<uint8_t> bytes(const PendingRecord &r){
 int main(){
   for(int scenario=0;scenario<16;++scenario){
     LittleFS=FakeLittleFS{};
-    fsReady=true;pendingReady=false;journalRecoveryRequired=false;
+    fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;
     pendingPulses=0;pendingNonce.clear();pendingTarget.clear();lastSend=42;
     relayOn=false;ledOn=false;
     auto r=validRecord();
@@ -177,7 +179,7 @@ int main(){
 
   for(int scenario=0;scenario<11;++scenario){
     LittleFS=FakeLittleFS{};
-    fsReady=true;pendingReady=true;journalRecoveryRequired=false;
+    fsReady=true;pendingReady=true;journalRecoveryRequired=false;pendingPostAttempted=false;
     pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";lastSend=42;
     auto r=validRecord();
     switch(scenario){
@@ -240,6 +242,7 @@ for board, path in SKETCHES:
         "@@MAGIC@@":magic.group(1),
         "@@CHECKSUM@@":extract(source,"uint32_t pendingChecksum("),
         "@@READ@@":extract(source,"bool readPendingFile("),
+        "@@SAME_RECORD@@":extract(source,"bool samePendingRecord("),
         "@@LOAD@@":extract(source,"void loadPending(){"),
         "@@CLEAR@@":extract(source,"bool clearPending(){"),
         "@@OUTPUTS@@":extract(source,"void applyOutputs(){"),

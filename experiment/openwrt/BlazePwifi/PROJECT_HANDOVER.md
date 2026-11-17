@@ -675,3 +675,131 @@ Use this default prompt structure and specialize it to the latest milestone:
 Failures should also be logged when meaningful, including reproduction/evidence, suspected cause, what was tried, and the safest next action.
 
 **2026-11-15 exact-head Full CI feedback — NO production success claim:** Original draft HEAD `40658e2b9ff88bf61c04e77930e84d47f40b78bf` focused source-extracted host run [#43635316939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43635316939), job 132570723766 **COMPLETED SUCCESS: 22/22 synthetic cases**, but broader [Full run #43635316868](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43635316868) reached pre-existing `v05_firmware_hardening_test.sh` parity guard and reported missing literal `after==before+(size_t)len`. The new byte-verified code preserved the size equality semantically but expressed it as `verify.size()==...`; this is a source/QA contract mismatch, not a license to remove the safety test. Current follow-up restores explicit `size_t after=verify.size(); bool verified=after==before+(size_t)len && verify.seek(...)` before the byte comparison on BOTH sketches; neither existing strict assertion nor byte integrity check is bypassed. **New exact-head full and focused verification required**; do not inherit previous greens. Hardware/power-cut/money remains NO-GO.
+
+## 2026-11-17 UTC06 — one-shot attempt-marker harness compatibility
+
+At #315 exact source head `0ad3c0146ce473a9fb77523cbacd626ba1c78cd7`, the new one-shot `/pending.attempt` marker added `pendingPostAttempted` to the production `canAttemptCoinPost()` gate. The focused hardware-owned quarantine orchestrator still used its prior C++ stub and failed to declare/reset that state. Exact focused run [44027835302](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44027835302), job `133852350930`, failed at compile with `pendingPostAttempted was not declared`; no runtime test executed. The same head's target build workflow [44027835329](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44027835329) passed ESP8266, ESP32, Orange Pi Zero 3, Ruijie, x86_64 and returned optional targets, but its Full validation failed in the QA-owned `tests/v060_esp_poll_intake_guard.py` extractor: the extracted production loop references `pendingPostAttempted`, `markPendingPostAttempt()`, and `acceptPollResponse()` without extracting/declaring them. PHX-HARDWARE did not edit QA-owned tests.
+
+This activation updates only the hardware-owned `quarantine_readback_lab.py` stub to declare/reset `pendingPostAttempted` and to clear it only in the stub's successful disposition path, matching the production gate state. The separate `pending_attempt_marker_lab.py` continues to compile and fault-inject the actual production marker/read/load/clear/gate functions. New exact-head focused CI is pending; no pass is claimed yet. PHX-QA must independently repair its canonical extractor and rerun Full validation.
+
+No firmware behavior, shared API, financial source, QA-owned test, release workflow, or production state changed. No flash, reset, live coin, money, migration, merge, release, or deployment occurred.
+
+## 2026-11-17 UTC06 — one-shot marker harness dependency alignment
+
+At #315 head `11454643a7444df8e54f301ce0ccf2ec0d14ab1d`, the focused workflow [44028688657](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44028688657), job `133855092803`, failed in the hardware-owned `pending_journal_recovery_lab.py`: the new production `loadPending()` references `samePendingRecord()` and the new `clearPending()/savePending()/canAttemptCoinPost()` state references `pendingPostAttempted`, which the old harness did not extract/declare. The Full build [44028686420](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44028686420), validation job `133855087098`, separately failed in QA-owned `v060_esp_poll_intake_guard.py` for missing `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()` in its extracted-loop harness.
+
+Follow-up hardware-owned test-only commits updated `pending_journal_recovery_lab.py` to declare the one-shot state and extract `samePendingRecord()`, updated `pending_write_readback_lab.py` for the new save gate, and added an explicit attempted-marker denial case to `coin_post_gate_lab.py`. Exact focused run [44028990570](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44028990570), job `133856072612`, **PASS**. Its logs show quarantine 17/17 per board, poll response 11/11 per board, root JSON 13/13 per board, register-config 7/7 per board, pending attempt-marker 19 cases per board, mount 7/7 per board, and the combined hardware orchestrator completed successfully. The marker lab printed an incorrect denominator `19/16` and stale aggregate `32/32`; this documentation/test-output-only update corrects them to `19/19` per board and `38/38` total. A fresh focused run at the new exact head is pending.
+
+Full run [44028990577](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44028990577) remains **NOT GREEN**: QA-owned validation job `133856107226` failed in Controller protocol parity because its loop extractor still omits `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()`. ESP8266 compile and one optional target completed PASS; remaining platform jobs were still running at the last observation. PHX-HARDWARE did not modify QA-owned tests.
+
+No runtime firmware, shared API, finance, release workflow, or production state changed in this follow-up. Physical flash durability, coin electrical acceptance, power cuts, soak, signer/witness, migration and independent release acceptance remain NOT TESTED/BLOCKED.
+
+## 2026-11-17 UTC06 — exact-head marker summary guard
+
+The focused orchestrator now captures the one-shot marker lab output and asserts exactly two `PENDING_ATTEMPT_MARKER_PASS 19/19` board summaries plus the aggregate `38/38 total` line. This prevents a future harness from silently reporting stale denominators. The exact PR #315 head at this test is `ca2275bd4998197c6450d8a00cae367b255335d0`.
+
+- Focused [run 44029841923](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44029841923), job `133858849902`: **COMPLETED SUCCESS at exact HEAD ca2275bd4998197c6450d8a00cae367b255335d0**. The source-extracted matrix passed: quarantine 17/17 per board; poll response 11/11 and strict JSON 13/13 per board; debounce/poll-window 8/8 per board; register-config 7/7 per board; attempt marker 19/19 per board (38/38 total); mount 7/7 per board; pending recovery 16/16 per board; pending clear 11/11 per board; pending write/readback 22/22 per board; coin POST gate 10/10 per board. All fake-filesystem/host simulations only.
+- Full [run 44029841759](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44029841759), validation job `133858850165`: **FAILED** at QA-owned Controller protocol parity. Its extracted-loop harness still lacks `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()` for both boards. Other target jobs were still in progress at the last observation; no Full success is claimed.
+
+PHX-QA must repair its owned `tests/v060_esp_poll_intake_guard.py` and independently rerun Full validation at the current #315 head. No QA-owned source was changed. No runtime firmware change, physical flash, real coin, relay, power cut, electrical pulse, soak, production migration, signing, merge, release or deployment occurred.
+
+## 2026-11-17 UTC06 — coin POST gate aggregate count correction
+
+The coin POST gate lab has 10/10 cases per board after the explicit one-shot-marker denial case was added; its previous aggregate banner still said 18/18. Corrected the banner to `20/20` total. The focused orchestrator workflow reran the actual ESP8266/ESP32 source-extracted suite at exact #315 head `b06034215439ff3264d273d20e0f851fdafc2366`.
+
+- Focused [run 44030370904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44030370904), job `133860589530`: **COMPLETED SUCCESS at exact HEAD b06034215439ff3264d273d20e0f851fdafc2366**. Logs confirm quarantine 17/17 per board; poll 11/11 and strict JSON 13/13 per board; debounce/poll-window 8/8 per board; register-config 7/7 per board; pending marker 19/19 per board (38/38 total); mount 7/7 per board; pending recovery 16/16 and pending clear 11/11 per board; write/readback 22/22 per board; coin POST gate 10/10 per board (20/20 total). Fake LittleFS/source-extracted host checks only.
+- Full [run 44029841759](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44029841759) **COMPLETED CANCELLED** after validation job `133858850165` FAILED in QA-owned Controller protocol parity. The extractor still omits `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()`; ESP8266 compiled successfully, several Orange Pi targets passed, and ESP32/Ruijie/x86/Android plus simulations/release jobs were cancelled. No Full success.
+
+No runtime firmware changed in this activation. PHX-QA still owns the failing extractor. No physical coin/relay/power-cut/electrical/soak test, production migration, signer, merge, release or deployment occurred.
+
+
+## 2026-11-17 UTC07 — coin POST disposition default-deny (P0 financial integrity)
+
+At the pre-fix #315 source head \`c86fd327d96455214d2ec0027d1f2fe2b394ce87\`, the ESP8266 and ESP32 loops accepted any response byte string containing \`"ok":true\` and called \`clearPending()\`. The same response could contain a top-level denial plus a nested or quoted positive decoy (for example \`{"ok":false,"detail":{"ok":true}}\`). The hardware-owned source-extracted poll lab reproduced this wiring defect: focused run [44037582162](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44037582162), job \`133884082616\`, failed on both boards with \`COIN_POST_ACK_GUARD RED\`. The parser-only root-status cases passed 13/13; the production coin POST path was still using substring search.
+
+A second test-first commit \`c574511d50f2acf0b54271888ad89f1a9ac46186\` required an authenticated event-disposition guard before either pending clear or quarantine. Focused run [44038005945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44038005945), job \`133885469359\`, failed because the production verifier did not yet exist. This was the expected RED.
+
+**Source correction at \`79ea039a1f7fe15d471a1e80e33171ff1db615da\`:**
+- Both sketches now call \`coinPostDispositionVerified(response, pendingNonce, pendingTarget, pendingPulses)\` before any response-driven \`clearPending()\` or \`quarantinePending()\`.
+- The helper intentionally returns \`false\` for every response. The current firmware \`post()\` uses plain \`http://\` with \`WiFiClient\`; there is no approved event-bound authenticated receipt/negative-disposition contract in the producer/consumer pair. Neither root \`ok:true\` nor an error string is financial authority.
+- An unauthenticated or ambiguous response now sets \`journalRecoveryRequired\`, leaves the pending record and \`/pending.attempt\` marker intact, denies automatic replay, and leaves logical outputs disabled.
+- The existing strict root-level \`ok:true\` parser remains a structural check only, behind the future verifier. It is not a receipt signature or TLS substitute.
+- No controller API, finance/ledger source, shared schema, QA-owned test or RELEASE-owned workflow was changed.
+
+**Focused exact-head CI:** [run 44038183753](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44038183753), job \`133886056475\`, **COMPLETED SUCCESS at exact source SHA \`79ea039a1f7fe15d471a1e80e33171ff1db615da\`**. Both ESP source-extracted host suites passed:
+- coin disposition default-deny: 4/4 per board;
+- poll-response cases: 11/11 per board;
+- strict root JSON: 13/13 per board;
+- poll-window guard: 9/9 per board;
+- blocking-poll relay-inhibit: 1/1 per board;
+- register-config denial: 7/7 per board;
+- quarantine: 17/17 per board;
+- attempt marker: 19/19 per board;
+- mount/output: 7/7 per board;
+- pending recovery: 16/16 per board;
+- pending clear: 11/11 per board;
+- pending write/readback: 22/22 per board;
+- coin POST gate: 10/10 per board.
+
+All of these are source-extracted C++ host/fake-LittleFS simulations, not physical flash or financial acceptance.
+
+**Full validation remains FAILED:** PR run [44038183730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44038183730), validation job \`133886169030\`, and push run [44038177403](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44038177403), validation job \`133886148625\`, both fail in the QA-owned controller poll-loop extractor. It extracts \`loop()\` without the complete dependency set: \`pendingPostAttempted\`, \`acceptPollResponse()\`, \`markPendingPostAttempt()\`, \`coinPostDispositionVerified()\`, and \`pollJsonTopLevelTrue()\`. PHX-HARDWARE did not edit QA-owned \`tests/v060_esp_poll_intake_guard.py\`. At the latest observation the push ESP8266 job passed and several target jobs passed, while ESP32/x86/Android and remaining PR target jobs were still running; no Full success is claimed. Production import/sign/publish jobs were skipped.
+
+**Required cross-role contract:** PHX-CORE must define an event-bound authenticated coin receipt and negative disposition binding controller identity, request nonce, event nonce, target, pulse count, disposition, unique receipt ID, freshness/expiry and key version, including idempotency/replay semantics and canonical serialization. PHX-QA must publish independent positive/negative golden vectors and power-loss/replay cases. PHX-MASTER must approve the contract. Only then may PHX-HARDWARE replace the default-deny helper with a real verifier. Until that happens, coin POST disposition remains intentionally disabled and this branch is not operationally accepted.
+
+No flash, reset, live coin, relay bench, 150 power cuts, 30-device soak, electrical pulse test, production migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+
+
+<!-- PHX-HARDWARE-20261117-QUARANTINE-TIMESTAMP-VALIDATION:START -->
+## PHX-HARDWARE — quarantine-log timestamp validation (2026-11-17 UTC07)
+
+**Defect reproduced:** the prior inspectQuarantineLog parser accepted any token after TIME=. A complete-looking line with a matching PULSES/NONCE/TARGET/REASON identity but a nonnumeric timestamp could be counted as an existing quarantine record; quarantinePending would then clear the pending coin record without a valid firmware-generated record.
+
+**Test-first RED:** [run #44041100586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041100586), job 133895620908, test-only SHA af0ee82becb2a005c9a2ffc16d8d79e7c6a91b5b. The source-extracted C++17 fake-LittleFS lab failed at scenario 17 on the malformed timestamp case.
+
+**Source correction:** commit efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 updates both ESP sketches. inspectQuarantineLog now accepts only canonical decimal uint32 millisecond timestamps (1–10 digits, no leading zero except zero, overflow checked). Invalid/overflowed timestamps fail log inspection, latch journalRecoveryRequired through the existing append path, retain pending evidence and deny automatic POST retry. No receipt/API/finance/crypto contract changed.
+
+**Exact-head focused CI:** [run #44041398477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398477), job 133896584393, exact SHA efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 — **SUCCESS**. Quarantine readback: 19/19 scenarios per board, 38/38 total. Existing poll/register, pending-marker, mount/output, journal-recovery, pending-clear, write/readback and coin-POST-gate labs also passed. Logs explicitly retain SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0 and FINANCIAL_PRODUCTION_AUTHORIZED=0.
+
+**Full workflow:** [run #44041398463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44041398463), validation job 133896701236 — **FAILED**. The QA-owned extracted-loop harness omits pendingPostAttempted, acceptPollResponse(), markPendingPostAttempt(), coinPostDispositionVerified() and pollJsonTopLevelTrue(). PHX-HARDWARE did not modify QA-owned tests or workflows. Several target jobs were still running at checkpoint time; no Full success is claimed.
+
+Only the narrow hardware handover and this project ledger were updated. CURRENT_STATE.md and CHANGE_LEDGER.md are not present on this branch; no historical branch was imported to create them. No physical flash, relay/coin test, power-cut trial, soak, live payment, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+<!-- PHX-HARDWARE-20261117-QUARANTINE-TIMESTAMP-VALIDATION:END -->
+
+<!-- PHX-HARDWARE-20261117-POLL-AUTHORITY-DENY:START -->
+## PHX-HARDWARE — poll admission remains denied pending approved contract (2026-11-17 UTC08)
+
+**Master contract:** the live Architecture Contracts §6.3 at Master PR #288 head 47f2f6e9107f58902396d5731cfcd77b80598eb5 states that the current poll producer/consumer signature is only a derived candidate: no shared golden vector has been independently executed, and configured-key admission remains fail-closed until CORE publishes the canonical producer and QA verifies both sides at pinned SHAs.
+
+**Test-first RED:** test-only commit 91b0e67c87ead7df0b9a6c783f10bdf2de0a7a00 introduced a positive-looking provisioned-key candidate response that must not enable intake, but its first C++ JSON literal was over-escaped; run 44050812024 is a harness compile failure, not valid RED evidence. Test-only correction 491cd094e77c264b2c8053aff0c59913f0faa229 uses a raw JSON literal. Focused RED run [44051036806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051036806), job 133928606170, then failed at the new default-deny assertion on both boards as expected; existing quarantine tests passed 19/19 per board.
+
+**Source correction:** both ESP sketches now make acceptPollResponse() explicitly clear insertMode and activeTarget and return DENY. The unapproved derived SHA construction is no longer used to authorize relay/coin intake. No shared API, CORE financial source, remote configuration, receipt/disposition, or QA-owned file was changed.
+
+**Scope:** this is a safety hold, not a replacement protocol. CORE must publish the canonical producer/consumer contract, including freshness and canonical serialization; QA must approve positive/negative golden vectors at pinned source SHAs; MASTER must approve before HARDWARE can implement a verifier. Until then, poll-based coin admission remains disabled.
+
+No flash, reset, live coin, relay bench, physical power cut, 30-device soak, electrical pulse test, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+<!-- PHX-HARDWARE-20261117-POLL-AUTHORITY-DENY:END -->
+
+**Exact-head focused GREEN:** [run 44051446853](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051446853), job 133930014829, exact PR head 3c2ccc09dcc0d2eab01c1bdaae5aa7548f245798 — SUCCESS. Both ESP8266 and ESP32: poll-response fail-closed 11/11, strict root JSON 13/13, coin POST ACK root status 4/4, coin disposition default-deny 4/4, register-config denial 7/7. Quarantine 19/19 per board, attempt marker 19/19 per board, mount/output 14/14 total, boot recovery 32/32 total, pending-clear 22/22 total, pending write/readback 22/22 per board, coin POST gate 20/20 total. All are source-extracted host/fake-LittleFS simulations.
+
+**Full validation:** [run 44051446855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051446855), validation job 133930149201 — FAILED in QA-owned experiment/openwrt/BlazePwifi/tests/controllers.sh, which still requires an active poll signature check in the firmware. That expectation conflicts with Master Architecture Contracts §6.3: the current response_sig construction is unapproved and coin admission must remain fail-closed. PHX-HARDWARE did not edit QA-owned tests. The previously observed v060_esp_poll_intake_guard.py extractor omissions remain an independent QA blocker; this run stopped earlier in controllers.sh, so the extractor was not reached. ESP8266 target compilation passed; ESP32 and several platform jobs were still in progress at the latest observation. No Full success is claimed.
+
+
+## Final exact-head reconciliation — 2026-11-17 UTC09
+
+Final PR head before this documentation-only checkpoint: 9c30d8c97763b610c4ab2d0df0168b4ace9cf8a3. Focused [run 44051895971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051895971), job 133931499416, completed SUCCESS at that exact head. Both ESP boards passed poll-response fail-closed 11/11, strict root JSON 13/13, coin POST ACK root 4/4, disposition default-deny 4/4, register-config denial 7/7, quarantine 19/19 and pending-attempt marker 19/19. All tests are source-extracted host/fake-LittleFS simulations.
+
+Full [run 44051896075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051896075) at the same exact head is now COMPLETED FAILURE. Validation job 133931629492 failed in QA-owned tests/controllers.sh because it requires an active poll signature check. This is incompatible with Master §6.3 default-deny; do not restore the unapproved candidate to satisfy the test. The separate v060_esp_poll_intake_guard.py extractor issue remains unresolved and was not reached. ESP8266, ESP32, Android, Ruijie, x86_64 and all returned Orange Pi target jobs completed PASS. Production import/sign, update bundle, v0.4 simulations/candidate gate and release publication were skipped.
+
+Final status remains SIMULATED / CI VERIFIED only. Physical relay/coin acceptance, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain unproven. PRODUCTION NO-GO.
+
+
+## PHX-HARDWARE — quarantine requires a matching durable attempt marker (2026-11-17 UTC09)
+
+Both ESP sketches now require a valid /pending.attempt record bound to the current pending pulse count, nonce and target before quarantinePending() can append a rejected-event record or clear pending evidence. Missing, corrupt, mismatched, unattempted, unready or out-of-range state latches recovery and denies the disposition before filesystem mutation. The existing marker is written and read back before the only coin POST; failed quarantine append leaves it intact, and the existing boot loader treats a matching marker as ambiguous/reconciliation-required.
+
+Test-first RED: exact-head focused run [#44053916296](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44053916296), job 133938244153, failed on both boards at SOURCE_QUARANTINE_FAIL scenario=19 when the attempted-state flag was absent. Final exact-head focused GREEN: [#44054509206](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054509206), job 133940278029, exact PR HEAD 4602386add8150b37fdcf8252b68bf27d95bb3d9: quarantine 23/23 per board; poll/default-deny, register-config denial, attempt-marker 19/19 per board, mount/output 14/14, boot-recovery 32/32, pending-clear 22/22, write/readback 22/22 per board, and coin-POST gate 20/20 passed. Host C++/fake-LittleFS only.
+
+The current coinPostDispositionVerified() remains default-deny, so this guard does not authorize coin disposition or re-enable paid intake. Full build run [#44054501269](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44054501269), validation job 133940390771, FAILED in the QA-owned tests/controllers.sh because it still requires an active poll signature check, contrary to Master Architecture Contracts §6.3. PHX-HARDWARE did not edit QA-owned tests/workflows.
+
+This is source-level fail-closed evidence only. Actual flash durability, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED/BLOCKED. No flash, reset, live payment, merge, migration, signing, release or deployment.

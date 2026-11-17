@@ -17,6 +17,7 @@ BOARDS = [
 CPP = r'''
 #include <iostream>
 #include <cstdint>
+#include <string>
 struct FakeLittleFS {
   bool mountOk=false;
   int beginCalls=0, formatCalls=0;
@@ -33,6 +34,7 @@ bool fsReady=false;
 bool pendingReady=false;
 bool journalRecoveryRequired=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
+std::string activeTarget="target-01";
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;

@@ -22,11 +22,20 @@ struct PendingRecord {
   uint32_t checksum;
 };
 
+// Master Architecture Contracts §2.1: never accept a debounce below 20 ms.
+// Apply the same bound to persisted, local-setup, and controller-provided values.
+uint16_t boundedCoinDebounceMs(long long requested){
+  if(requested<20LL) return 20;
+  if(requested>2000LL) return 2000;
+  return (uint16_t)requested;
+}
+
+
 static const uint32_t PENDING_MAGIC=0x42504332;
 Config cfg;
 Preferences prefs;
 WebServer web(80);
-bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false;
+bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
@@ -34,6 +43,7 @@ uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
+
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
@@ -106,13 +116,20 @@ bool readPendingFile(const char *path, PendingRecord &r){
   return true;
 }
 
+bool samePendingRecord(const PendingRecord &left,const PendingRecord &right){
+  return left.magic==right.magic && left.pulses==right.pulses &&
+         strcmp(left.nonce,right.nonce)==0 &&
+         strcmp(left.target,right.target)==0 &&
+         left.checksum==right.checksum;
+}
+
 bool removePendingCandidate(const char *path){
   if(!LittleFS.exists(path)) return true;
   return LittleFS.remove(path) && !LittleFS.exists(path);
 }
 
 bool savePending(){
-  if(!fsReady || journalRecoveryRequired || pendingPulses==0 || pendingPulses>20 ||
+  if(!fsReady || journalRecoveryRequired || pendingPostAttempted || pendingPulses==0 || pendingPulses>20 ||
      pendingNonce.length()<8 || pendingTarget.length()<8) return false;
   PendingRecord r{}; r.magic=PENDING_MAGIC; r.pulses=pendingPulses;
   const size_t nonceLength=strlcpy(r.nonce,pendingNonce.c_str(),sizeof(r.nonce));
@@ -157,13 +174,93 @@ bool savePending(){
   return true;
 }
 
+bool markPendingPostAttempt(){
+  if(!fsReady || journalRecoveryRequired || !pendingReady ||
+     pendingPulses==0 || pendingPulses>20 || pendingPostAttempted) return false;
+  if(LittleFS.exists("/pending.attempt")){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: prior coin POST attempt marker exists; reconciliation required.");
+    return false;
+  }
+
+  PendingRecord record{};
+  record.magic=PENDING_MAGIC;
+  record.pulses=pendingPulses;
+  const size_t nonceLength=pendingNonce.length();
+  const size_t targetLength=pendingTarget.length();
+  if(nonceLength<8 || nonceLength>=sizeof(record.nonce) ||
+     targetLength<8 || targetLength>=sizeof(record.target)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending identity cannot be represented in attempt marker.");
+    return false;
+  }
+  memcpy(record.nonce,pendingNonce.c_str(),nonceLength);
+  memcpy(record.target,pendingTarget.c_str(),targetLength);
+  record.checksum=pendingChecksum(record);
+
+  const char *pendingPaths[]={"/pending.dat","/pending.new","/pending.bak"};
+  bool durablePendingMatches=false;
+  for(size_t i=0;i<sizeof(pendingPaths)/sizeof(pendingPaths[0]);++i){
+    if(LittleFS.exists(pendingPaths[i])){
+      PendingRecord durable{};
+      if(readPendingFile(pendingPaths[i],durable) &&
+         samePendingRecord(record,durable)) durablePendingMatches=true;
+    }
+  }
+  if(!durablePendingMatches){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: no matching durable pending record; coin POST denied.");
+    return false;
+  }
+
+  File marker=LittleFS.open("/pending.attempt","w");
+  if(!marker){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: cannot persist coin POST attempt marker; network dispatch denied.");
+    return false;
+  }
+  const size_t written=marker.write((const uint8_t*)&record,sizeof(record));
+  marker.flush();
+  marker.close();
+  PendingRecord verify{};
+  if(written!=sizeof(record) ||
+     !readPendingFile("/pending.attempt",verify) ||
+     !samePendingRecord(record,verify)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: coin POST attempt marker readback failed; network dispatch denied.");
+    return false;
+  }
+  pendingPostAttempted=true;
+  return true;
+}
+
+bool pendingAttemptMarkerMatches(){
+  if(!fsReady || journalRecoveryRequired || !pendingReady ||
+     !pendingPostAttempted || pendingPulses==0 || pendingPulses>20 ||
+     pendingNonce.length()<8 || pendingNonce.length()>=17 ||
+     pendingTarget.length()<8 || pendingTarget.length()>=33) return false;
+  PendingRecord attempt{};
+  if(!readPendingFile("/pending.attempt",attempt)) return false;
+  return attempt.pulses==pendingPulses &&
+         strcmp(attempt.nonce,pendingNonce.c_str())==0 &&
+         strcmp(attempt.target,pendingTarget.c_str())==0;
+}
+
 void loadPending(){
   if(!fsReady) return;
+  pendingPostAttempted=false;
+  const bool hasAttempt=LittleFS.exists("/pending.attempt");
   const bool hasDat=LittleFS.exists("/pending.dat");
   const bool hasNew=LittleFS.exists("/pending.new");
   const bool hasBak=LittleFS.exists("/pending.bak");
   const unsigned journalCount=(unsigned)hasDat+(unsigned)hasNew+(unsigned)hasBak;
-  if(!journalCount) return;
+  if(!journalCount){
+    if(hasAttempt){
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: orphan coin POST attempt marker; operator reconciliation required.");
+    }
+    return;
+  }
   // Multiple candidates can represent DIFFERENT unpaid coins after a power cut.
   // Never choose one and delete another without a durable receipt/ACK contract.
   if(journalCount!=1){
@@ -178,9 +275,25 @@ void loadPending(){
     Serial.println("CRITICAL: corrupt/unreadable pending journal; preserving evidence, coin intake disabled.");
     return;
   }
-  pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
-  pendingReady=true; lastSend=0;
-  // Do not rename or delete evidence at boot. Clear only after authorized receipt ACK.
+  pendingPulses=r.pulses;
+  pendingNonce=String(r.nonce);
+  pendingTarget=String(r.target);
+  pendingReady=true;
+  lastSend=0;
+  if(hasAttempt){
+    PendingRecord attempt{};
+    if(!readPendingFile("/pending.attempt",attempt) ||
+       !samePendingRecord(r,attempt)){
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: coin POST attempt marker is corrupt or mismatched; preserving evidence.");
+    } else {
+      pendingPostAttempted=true;
+      journalRecoveryRequired=true;
+      Serial.println("CRITICAL: coin POST may have reached the server; automatic replay is denied.");
+    }
+  }
+  // Do not rename or delete evidence at boot. Clear only after an authorized,
+  // durable receipt/quarantine disposition and successful marker reclamation.
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
@@ -202,20 +315,16 @@ bool clearPending(){
     Serial.println("CRITICAL: cannot clear pending journal while LittleFS is unavailable.");
     return false;
   }
-
   const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
   unsigned candidateCount=0;
   for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
     if(LittleFS.exists(paths[i])) ++candidateCount;
   }
   if(candidateCount>1){
-    // Multiple candidates may represent different unpaid events. Do not begin
-    // destructive cleanup until an operator reconciles every durable record.
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: multiple pending journals at clear; preserving all evidence.");
     return false;
   }
-
   bool removed=true;
   for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
     if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
@@ -226,8 +335,20 @@ bool clearPending(){
     Serial.println("CRITICAL: pending journal deletion failed; preserving RAM event and disabling relay.");
     return false;
   }
-
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
+  // Remove the attempt marker LAST. A power cut after pending deletion but
+  // before marker deletion leaves an orphan marker that blocks boot admission.
+  if(LittleFS.exists("/pending.attempt") &&
+     (!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt"))){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending event cleared but attempt marker remains; operator reconciliation required.");
+    return false;
+  }
+  pendingPulses=0;
+  pendingReady=false;
+  pendingPostAttempted=false;
+  pendingNonce="";
+  pendingTarget="";
+  lastSend=0;
   return true;
 }
 
@@ -275,12 +396,34 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
     if(next=='\n'){
       if(lineLength==0){ valid=false; break; }
       line[lineLength]='\0';
-      if(strncmp(line,"TIME=",5)!=0 ||
+      const char *payload=strchr(line,' ');
+      bool timestampValid=strncmp(line,"TIME=",5)==0 &&
+                          payload && payload>line+5;
+      if(timestampValid){
+        const size_t timestampLength=(size_t)(payload-(line+5));
+        if(timestampLength>10 || (timestampLength>1 && line[5]=='0'))
+          timestampValid=false;
+      }
+      unsigned long parsedTimestamp=0;
+      for(const char *digit=line+5;timestampValid && digit<payload;++digit){
+        if(*digit<'0' || *digit>'9'){
+          timestampValid=false;
+          break;
+        }
+        const unsigned long value=(unsigned long)(*digit-'0');
+        if(parsedTimestamp>(0xFFFFFFFFUL-value)/10UL){
+          timestampValid=false;
+          break;
+        }
+        parsedTimestamp=parsedTimestamp*10UL+value;
+      }
+      // Only canonical uint32 millis timestamps generated by this firmware
+      // may participate in dedupe. Corrupt TIME text is not a receipt.
+      if(!timestampValid ||
          !strstr(line," PULSES=") || !strstr(line," NONCE=") ||
          !strstr(line," TARGET=") || !strstr(line," REASON=")){
         valid=false; break;
       }
-      const char *payload=strchr(line,' ');
       if(payload && strncmp(payload+1,identity,strlen(identity))==0){
         // More than one complete record for one event is conflicting accounting
         // evidence. Preserve pending state until an operator reconciles the log.
@@ -362,7 +505,16 @@ bool appendQuarantineRecord(const String &reason){
 }
 
 bool quarantinePending(const String &reason){
+  if(pendingPulses==0) return false;
+  if(!pendingAttemptMarkerMatches()){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: quarantine disposition denied without a matching durable coin POST attempt marker.");
+    return false;
+  }
   if(!appendQuarantineRecord(reason)){
+    // The controller already rejected this event. If local quarantine
+    // persistence is unavailable, block same-boot coin POST retries.
+    journalRecoveryRequired=true;
     Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");
     return false;
   }
@@ -390,7 +542,7 @@ void loadConfig(){
   cfg.coinActiveLow=prefs.getBool("coinlow",true);
   cfg.relayActiveHigh=prefs.getBool("relayhi",true);
   cfg.ledActiveHigh=prefs.getBool("ledhi",true);
-  cfg.coinDebounceMs=boundedTimingMs(prefs.getUInt("debounce",40),1,2000);
+  cfg.coinDebounceMs=boundedCoinDebounceMs(prefs.getUInt("debounce",40));
   cfg.pulseGroupMs=boundedTimingMs(prefs.getUInt("groupms",400),10,10000);
   if(cfg.apPass.length()<8){
     char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
@@ -444,6 +596,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
+// Intentionally dormant: register/poll admission signatures do not authenticate
+// the returned configuration object. Do not call until CORE defines a separate
+// config envelope and QA verifies its exact positive/negative golden vectors.
 void applyRemoteConfig(const String &r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
   if(rev==remoteRevision && remoteRevision!=0) return;
@@ -460,7 +615,7 @@ void applyRemoteConfig(const String &r){
   bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
   bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
-  runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
+  runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
     runRelayActiveHigh=nextRelayActiveHigh;
@@ -496,7 +651,8 @@ String post(const String &action,const String &pulses="0",const String &target="
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return fsReady && !journalRecoveryRequired && pendingReady && pendingPulses>0;
+  return fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
+         pendingReady && pendingPulses>0;
 }
 
 bool coinLineIdle(){
@@ -512,7 +668,7 @@ bool canStartPoll(){
 }
 
 void applyOutputs(){
-  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && fsReady &&
+  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
@@ -538,6 +694,216 @@ bool beginPollWindow(){
   if(coinLineQuietAfterInhibit()) return true;
   pollIntakeSuspended=false;
   applyOutputs();
+  return false;
+}
+
+
+// Strict, bounded root-object reader for a single root-level "ok":true status.
+// It rejects nested/quoted decoys, duplicate keys and trailing bytes; it is structural only,
+// not a signature verifier or authenticated financial receipt check.
+bool pollJsonSpace(char c){
+  return c==' ' || c=='\t' || c=='\r' || c=='\n';
+}
+
+bool pollJsonHex(char c){
+  return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
+}
+
+bool pollJsonSkipString(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n || r[p]!='"') return false;
+  ++p;
+  while(p<n){
+    const unsigned char c=(unsigned char)r[p++];
+    if(c=='"') return true;
+    if(c<0x20) return false;
+    if(c=='\\'){
+      if(p>=n) return false;
+      const char e=r[p++];
+      if(e=='u'){
+        for(int i=0;i<4;i++){
+          if(p>=n || !pollJsonHex(r[p])) return false;
+          ++p;
+        }
+      } else if(e!='"' && e!='\\' && e!='/' && e!='b' &&
+                e!='f' && e!='n' && e!='r' && e!='t'){
+        return false;
+      }
+    }
+  }
+  return false;
+}
+
+bool pollJsonSkipComposite(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n || (r[p]!=123 && r[p]!='[')) return false;
+  char closing[16];
+  int depth=0;
+  const char first=r[p++];
+  closing[depth++]=(first==123)?125:']';
+  while(depth>0 && p<n){
+    const char c=r[p];
+    if(c=='"'){
+      if(!pollJsonSkipString(r,p)) return false;
+      continue;
+    }
+    if(c==123 || c=='['){
+      if(depth>=(int)sizeof(closing)) return false;
+      closing[depth++]=(c==123)?125:']';
+      ++p;
+      continue;
+    }
+    if(c==125 || c==']'){
+      if(closing[depth-1]!=c) return false;
+      --depth;
+      ++p;
+      continue;
+    }
+    if((unsigned char)c<0x20 && !pollJsonSpace(c)) return false;
+    ++p;
+  }
+  return depth==0;
+}
+
+bool pollJsonSkipPrimitive(const String &r,int &p){
+  const int n=(int)r.length();
+  const int start=p;
+  while(p<n && r[p]!=',' && r[p]!=125 && !pollJsonSpace(r[p])) ++p;
+  const int end=p;
+  if(start==end) return false;
+  const int length=end-start;
+  if(length==4 && r[start]=='t' && r[start+1]=='r' &&
+     r[start+2]=='u' && r[start+3]=='e') return true;
+  if(length==5 && r[start]=='f' && r[start+1]=='a' &&
+     r[start+2]=='l' && r[start+3]=='s' && r[start+4]=='e') return true;
+  if(length==4 && r[start]=='n' && r[start+1]=='u' &&
+     r[start+2]=='l' && r[start+3]=='l') return true;
+
+  int q=start;
+  if(r[q]=='-') ++q;
+  if(q>=end) return false;
+  if(r[q]=='0'){
+    ++q;
+  } else if(r[q]>='1' && r[q]<='9'){
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+  } else {
+    return false;
+  }
+  if(q<end && r[q]=='.'){
+    ++q;
+    const int fractionStart=q;
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+    if(q==fractionStart) return false;
+  }
+  if(q<end && (r[q]=='e' || r[q]=='E')){
+    ++q;
+    if(q<end && (r[q]=='+' || r[q]=='-')) ++q;
+    const int exponentStart=q;
+    while(q<end && r[q]>='0' && r[q]<='9') ++q;
+    if(q==exponentStart) return false;
+  }
+  return q==end;
+}
+
+bool pollJsonSkipValue(const String &r,int &p){
+  const int n=(int)r.length();
+  if(p>=n) return false;
+  if(r[p]=='"') return pollJsonSkipString(r,p);
+  if(r[p]==123 || r[p]=='[') return pollJsonSkipComposite(r,p);
+  return pollJsonSkipPrimitive(r,p);
+}
+
+bool pollJsonTopLevelTrue(const String &r,const char *wanted){
+  if(!wanted) return false;
+  const int n=(int)r.length();
+  int p=0;
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  if(p>=n || r[p++]!=123) return false;
+
+  int wantedLength=0;
+  while(wanted[wantedLength]) ++wantedLength;
+  int found=0;
+  bool accepted=false;
+  bool afterComma=false;
+
+  while(true){
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]==125){
+      if(afterComma) return false;
+      ++p;
+      break;
+    }
+    if(p>=n || r[p]!='"') return false;
+
+    const int keyStart=p+1;
+    if(!pollJsonSkipString(r,p)) return false;
+    const int keyEnd=p-1;
+    // Escaped property names are unnecessary for this protocol and can
+    // otherwise alias a duplicate key after JSON escape decoding.
+    for(int i=keyStart;i<keyEnd;i++) if(r[i]=='\\') return false;
+
+    bool matches=(keyEnd-keyStart)==wantedLength;
+    if(matches){
+      for(int i=0;i<wantedLength;i++){
+        if(r[keyStart+i]!=wanted[i]){ matches=false; break; }
+      }
+    }
+
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p>=n || r[p++]!=':') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+
+    if(matches){
+      if(++found!=1) return false;
+      if(p+4>n || r[p]!='t' || r[p+1]!='r' ||
+         r[p+2]!='u' || r[p+3]!='e') return false;
+      p+=4;
+      if(p<n && !pollJsonSpace(r[p]) && r[p]!=',' && r[p]!=125) return false;
+      accepted=true;
+    } else if(!pollJsonSkipValue(r,p)){
+      return false;
+    }
+
+    afterComma=false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]==','){
+      ++p;
+      afterComma=true;
+      continue;
+    }
+    if(p<n && r[p]==125){
+      ++p;
+      break;
+    }
+    return false;
+  }
+
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  return p==n && found==1 && accepted;
+}
+
+bool coinPostDispositionVerified(const String &response,const String &nonce,
+                                 const String &target,uint8_t pulses){
+  // The current endpoint uses plain HTTP and has no approved event-bound signed
+  // receipt/disposition contract. Body text, including root ok:true or error
+  // strings, is not authority to erase or quarantine an owed coin.
+  (void)response;
+  (void)nonce;
+  (void)target;
+  (void)pulses;
+  // PHX-CORE must define the receipt contract; PHX-QA must approve its vectors.
+  // Until then, preserve the pending journal and one-shot attempt marker.
+  return false;
+}
+
+bool acceptPollResponse(const String &response){
+  // MASTER ARCHITECTURE_CONTRACTS §6.3: the current response_sig expression is
+  // a derived candidate, not an approved poll authorization contract. CORE has
+  // not published the canonical producer/golden vectors and QA has not approved
+  // both sides at pinned SHAs. Never energize coin intake from this candidate.
+  (void)response;
+  insertMode=false;
+  activeTarget="";
   return false;
 }
 
@@ -612,8 +978,8 @@ void setupPortal(){
     }
     cfg.ssid=newSsid; cfg.pass=newPass; cfg.server=web.arg("server"); if(web.arg("k").length()) cfg.key=web.arg("k"); cfg.id=web.arg("id");
     cfg.coinPin=nextCoin; cfg.insertLedPin=nextLed; cfg.relayPin=nextRelay;
-    long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
-    cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
+    long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(pg<10)pg=10;if(pg>10000)pg=10000;
+    cfg.coinDebounceMs=boundedCoinDebounceMs(db); cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
     saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
   });
   web.begin(); configuredApSince=millis();
@@ -625,19 +991,20 @@ void connectSta(){
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250); }
   if(WiFi.status()==WL_CONNECTED){
-    wifiFailures=0; String r=post("register");
-    bool sigOk=true;
+    wifiFailures=0;
+    String r=post("register");
+    // This authenticates only the register tuple, not the returned config.
+    bool registerTupleAuthenticated=false;
     if(cfg.key.length()){
       String sig=jsonString(r,"response_sig");
       if(sig.length()){
         int st=jsonInt(r,"server_time",0);
         String expected=hexDigest(cfg.key+"|register|"+cfg.id+"|"+lastSentNonce+"|"+String(st)+"|"+cfg.key);
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
+        registerTupleAuthenticated=sig.equalsIgnoreCase(expected);
       }
     }
-    if(sigOk && r.indexOf("\"ok\":true")>=0) applyRemoteConfig(r);
+    if(!registerTupleAuthenticated)
+      Serial.println("Register response unauthenticated; remote configuration remains disabled.");
   }
 }
 
@@ -665,24 +1032,10 @@ void loop(){
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
     wifiFailures=0;
     String r=post("poll");
+    // Keep intake inhibited until this response has been accepted or denied.
+    acceptPollResponse(r);
     pollIntakeSuspended=false;
-    bool sigOk=true;
-    if(cfg.key.length()){
-      String sig=jsonString(r,"response_sig");
-      if(sig.length()){
-        int ins=jsonTrue(r,"insert")?1:0;
-        String tgt=jsonString(r,"target_nonce");
-        int exp=jsonInt(r,"expires",0);
-        String expected=hexDigest(cfg.key+"|poll|"+cfg.id+"|"+lastSentNonce+"|"+String(ins)+"|"+tgt+"|"+String(exp)+"|"+cfg.key);
-        sigOk=sig.equalsIgnoreCase(expected);
-      } else {
-        sigOk=false;
-      }
-    }
-    if(sigOk && r.indexOf("\"ok\":true")>=0){
-      insertMode=jsonTrue(r,"insert"); activeTarget=jsonString(r,"target_nonce"); applyRemoteConfig(r);
-    }
-    applyOutputs(); lastPoll=millis();
+    applyOutputs();lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
@@ -696,13 +1049,32 @@ void loop(){
   }
   lastCoin=active;
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
-  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
-    String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce); lastSend=millis();
-    if(r.indexOf("\"ok\":true")>=0){
-      clearPending(); applyOutputs();
-    } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
-              r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      quarantinePending(r); applyOutputs();
+  if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
+    if(!markPendingPostAttempt()){
+      journalRecoveryRequired=true;
+      applyOutputs();
+    } else {
+      String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
+      lastSend=millis();
+      if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
+        journalRecoveryRequired=true;
+        Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
+        applyOutputs();
+      } else if(pollJsonTopLevelTrue(r,"ok")){
+        clearPending();
+        applyOutputs();
+      } else if(r.indexOf("coin window expired")>=0 ||
+                r.indexOf("coin target mismatch")>=0 ||
+                r.indexOf("no active coin window")>=0 ||
+                r.indexOf("another vendo selected")>=0){
+        quarantinePending(r);
+        applyOutputs();
+      } else {
+        // An authenticated but malformed/unknown disposition remains ambiguous.
+        journalRecoveryRequired=true;
+        Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
+        applyOutputs();
+      }
     }
   }
   if(setupApOn && !cfg.ssid.isEmpty() && WiFi.status()==WL_CONNECTED && millis()-configuredApSince>600000UL){ WiFi.softAPdisconnect(true); setupApOn=false; }
