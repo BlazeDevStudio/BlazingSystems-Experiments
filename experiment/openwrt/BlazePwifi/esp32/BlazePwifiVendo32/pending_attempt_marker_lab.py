@@ -229,7 +229,28 @@ int main(){
         LittleFS.exists("/pending.attempt")&&LittleFS.removed.empty(),
         "corrupt pending candidate retained by clear");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/23 source-extracted cases; physical power cuts NOT TESTED\n";
+
+  // A POST marker must bind exactly one pending journal candidate, not merely
+  // find one matching file while another candidate remains ambiguous.
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  store("/pending.bak",record("nonce99999999","target12345678"));
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "conflicting extra pending candidate denies POST marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  store("/pending.bak",record());
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "duplicate extra pending candidate denies POST marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  LittleFS.files["/pending.bak"]={0x01,0x02};
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "corrupt extra pending candidate denies POST marker");
+
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/26 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
@@ -265,4 +286,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 23/23 source-extracted cases per board (46/46 total) PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 26/26 source-extracted cases per board (52/52 total) PASS; actual flash NOT TESTED")
