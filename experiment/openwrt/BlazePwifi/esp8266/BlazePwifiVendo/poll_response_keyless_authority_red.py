@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expected-RED probe for keyless ESP poll authorization.
+"""Source-extracted regression probe for keyless ESP poll authorization.
 
 This audit probe extracts and compiles the production acceptPollResponse() and
 applyOutputs() bodies from both sketches. Exit 1 means the current firmware
