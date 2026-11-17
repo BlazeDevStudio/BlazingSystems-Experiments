@@ -194,7 +194,7 @@ int main(){
   CHECK(journalRecoveryRequired&&!canAttemptCoinPost()&&LittleFS.files.size()==3,
         "multiple pending candidates preserved");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/16 source-extracted cases; physical power cuts NOT TESTED\n";
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/19 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
@@ -229,4 +229,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 32/32 source-extracted cases PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 19/19 source-extracted cases per board (38/38 total) PASS; actual flash NOT TESTED")
