@@ -225,6 +225,8 @@ def main():
          "deny-case-6"),
         ("ignored-save-failure", "fsReady=false;\n        pendingReady=true;", "",
          "save-failure"),
+        ("missing-immediate-output-inhibit", "applyOutputs();\n        Serial.println",
+         "Serial.println", "outputs remained enabled immediately"),
     )
     failures = []
     for board, sketch in BOARDS:
