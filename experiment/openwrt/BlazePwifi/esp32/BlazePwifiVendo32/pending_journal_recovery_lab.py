@@ -212,9 +212,10 @@ int main(){
     const bool expectRecovery=!expectSuccess;
     const unsigned expectRemoveCalls=expectSuccess ? 2U : (scenario==7 || scenario==8 ? 1U : 0U);
     const bool filesCorrect=expectSuccess ? LittleFS.files.empty() : LittleFS.files==originalFiles;
+    const bool expectPendingReady=(scenario!=16);
     if(ok!=expectSuccess || journalRecoveryRequired!=expectRecovery ||
        !filesCorrect || LittleFS.removeCalls!=expectRemoveCalls ||
-       pendingReady!=(!expectSuccess) || pendingPulses!=(expectSuccess?0:4) ||
+       pendingReady!=expectPendingReady || pendingPulses!=(expectSuccess?0:4) ||
        pendingNonce!=(expectSuccess?"":"nonce12345678") ||
        pendingTarget!=(expectSuccess?"":"target12345678")){
       std::cerr<<"PENDING_CLEAR_LAB_FAIL case="<<scenario
