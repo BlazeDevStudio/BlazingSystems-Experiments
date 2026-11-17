@@ -77,3 +77,21 @@ Added hardware-owned diagnostic probe:
 **No firmware behavior was changed.** Master architecture contract §6.1 is explicitly provisional pending PHX-CORE / PHX-HARDWARE agreement on the keyless bootstrap/provisioning boundary. The current main controller register/poll responses also do not emit response_sig; do not weaken authentication to restore interoperability. PHX-CORE/MASTER must decide the producer/consumer contract and bootstrap path before the firmware guard is changed. PHX-QA/RELEASE should review and wire the RED probe only after the contract is accepted.
 
 Next exact action: PHX-CORE and PHX-MASTER publish the keyless/bootstrap and signed poll-response decision; then PHX-HARDWARE implements the approved fail-closed behavior and PHX-QA independently runs the source-extracted probe plus the existing poll/quarantine suites at the new exact head.
+## 2026-11-17 UTC01 — keyless poll admission default-deny fix
+
+Master's current role-routing snapshot at PR #288 head d047c49419c920a546ff9438f2fc9e708566f78a explicitly assigns the firmware correction to PHX-HARDWARE, the signature/replay contract to PHX-CORE, and the canonical extractor/negative tests to PHX-QA. Architecture Contracts §6.1 requires that an empty key is not authentication success.
+
+Both ESP8266 and ESP32 acceptPollResponse() helpers now initialize signatureOk=false. Only a nonempty provisioned cfg.key plus a nonempty response_sig matching the existing expected digest can set it true. Empty-key bootstrap can no longer authorize a positive poll. This changes no controller endpoint, response bytes, key provisioning, receipt schema, or finance behavior; setup/bootstrap remains non-authorizing.
+
+Runtime-source commits:
+- ESP8266: 24525767ebb8371d9a5b5460c7ae652b143a9439
+- ESP32: 1ea307966979cc7ed6d67962b0e22f98cbb516c3
+- Source-extracted keyless regression probe update: 44f0255ee9957ddbf3aa12d6d9b18983fcec2b6e
+
+**Local simulated check:** a host C++ harness using the exact current acceptPollResponse() and applyOutputs() bodies/board-shaped configuration compiled with g++ for ESP8266-shaped and ESP32-shaped stubs. An unsigned ok:true/insert:true/nonempty-target response with an empty key was denied on both; simulated relay and LED remained OFF (both exit 0). This is SIMULATED control-flow evidence only. The source-extracted Python probe is updated to act as a regression check but remains NOT RUN in canonical CI.
+
+**Exact CI at the prior branch head:** focused run 43991222383 job 133731991733 PASSes quarantine byte-readback only. Full run 43991222301 COMPLETED FAILURE at validation job 133732116541 because the QA-owned extractor omits acceptPollResponse() and generated C++ reports it undeclared for both boards. ESP8266 job 133732116666 and ESP32 job 133732116647 both PASS; all listed target/Android builds PASS. Production import/sign, publication and v0.4 candidate/simulation jobs were skipped. The new keyless probe was not executed by either workflow.
+
+Configured-key positive authorization remains unavailable until PHX-CORE supplies the approved signed poll response producer/consumer contract; main currently returns no response_sig, so firmware continues to deny those unsigned replies. PHX-QA must update the extractor and independently execute the keyless probe plus poll/quarantine suites at the new exact head. PHX-RELEASE must wire the hardware-owned probe into a canonical workflow. The RAM-only rejected-event latch and durable reboot disposition remain open.
+
+No physical coin/relay test, power cut, electrical pulse test, flash, reset, migration, live money, merge, release or deployment occurred.
