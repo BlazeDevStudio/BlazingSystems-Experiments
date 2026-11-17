@@ -255,8 +255,8 @@ for board,path in BOARDS.items():
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     mutations=(
-      ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet),
-      ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet),
+      ("remove-beginPollWindow",loop.replace("&& beginPollWindow()){","&& true){",1),output,quiet,accept),
+      ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),
       ("shorten-quiet-window-to-249ms",loop,output,quiet.replace("pulseTrainQuietMs=250UL;","pulseTrainQuietMs=249UL;",1),accept),
       ("keep-insert-enabled-after-poll",loop,output,quiet,accept.replace("insertMode=false;","insertMode=true;",1)),
       ("retain-stale-target-after-poll",loop,output,quiet,accept.replace('activeTarget="";','activeTarget="stale-target";',1)),
