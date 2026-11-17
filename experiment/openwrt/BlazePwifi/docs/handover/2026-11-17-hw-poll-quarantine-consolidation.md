@@ -217,3 +217,14 @@ A LAN/on-path response modifier could append configuration fields while preservi
 **Coordination required:** PHX-CORE/MASTER should decide whether remote configuration is needed and, if so, define a separate config signature over every applied field (including revision, enable flags, pins, polarities and timing bounds). PHX-QA should independently reproduce the config-injection regression at this exact head. No shared API, finance code, QA-owned tests, release workflow, migration or destination repository was changed.
 
 No physical coin acceptor, relay, power-cut, electrical or financial operation occurred.
+
+
+## 2026-11-17 UTC03 — focused poll/config lab fixture RED and correction
+
+The first exact-head focused run after the config-isolation change, [44008391400](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008391400), job `133789169313`, correctly executed both quarantine source suites (34/34 total) and then failed to compile the poll lab host stub: `runRelayActiveHigh` was declared twice in the test-only C++ fixture. The production sketches compiled separately in the full build; this RED is isolated to the hardware-owned test fixture.
+
+Correction: the fixture now declares only the new `runCoinActiveLow` sentinel and reuses its existing `runRelayActiveHigh` variable. The stub still mutates both values if the forbidden `applyRemoteConfig()` call occurs, so the regression remains sensitive to the original trust-boundary defect.
+
+The full build at this source head [44008391473](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008391473) also has the known PHX-QA-owned validation failure: `tests/controllers.sh` extracts `loop()` without `acceptPollResponse()`, causing an undeclared-helper compile error on both board harnesses. PHX-HARDWARE did not edit QA-owned tests. Target builds were still running at the time of this handover update.
+
+No physical coin acceptor, relay, power-cut, electrical or financial operation occurred.

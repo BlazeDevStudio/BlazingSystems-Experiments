@@ -70,7 +70,7 @@ bool responseInsert=true;
 int applyRemoteConfigCalls=0;
 int remoteRevision=7;
 uint16_t runDebounceMs=70;
-bool runCoinActiveLow=true, runRelayActiveHigh=true;
+bool runCoinActiveLow=true;
 String jsonString(const String &, const char *key) {
   if(std::string(key)=="response_sig") return responseSignature;
   if(std::string(key)=="target_nonce") return responseTarget;
