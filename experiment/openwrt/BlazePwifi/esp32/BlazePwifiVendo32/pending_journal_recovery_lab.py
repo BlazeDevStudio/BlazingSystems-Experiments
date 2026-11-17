@@ -236,10 +236,12 @@ for board, path in SKETCHES:
         ("bool savePending(){", "journalRecoveryRequired"),
         ("bool clearPending(){", "journalRecoveryRequired"),
         ("void applyOutputs(){", "!journalRecoveryRequired"),
-        ("void loop(){", "!journalRecoveryRequired"),
+        ("void sampleCoinPulseEdge(bool active){", "!journalRecoveryRequired"),
     ]:
         if token not in extract(source,sig):
             raise SystemExit(f"{board}: no journal deny gate in {sig}")
+    if "sampleCoinPulseEdge(active)" not in extract(source,"void loop(){"):
+        raise SystemExit(f"{board}: loop does not call the source pulse-capture helper")
     if "strlen(r.nonce)" in extract(source,"bool readPendingFile(") or "strlen(r.target)" in extract(source,"bool readPendingFile("):
         raise SystemExit(f"{board}: unsafe unbounded pending string read")
     magic = re.search(r"PENDING_MAGIC\s*=\s*(0x[0-9A-Fa-f]+)", source)
