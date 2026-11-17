@@ -457,3 +457,23 @@ This refresh supersedes prior role-head pins for this activation only. It is a s
 | COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; #28 `b21b04617d38a177260258de2d56b24382822117`; #29 `d0830332dee8a1844a85606150681b41d91fe796`; #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`; #32 `29b6fe08b10688182d981a66745f482758bd6630` | #26 five workflows queued; #28 43632393888 SUCCESS synthetic; #29 43653906676/43653906675 SUCCESS; #30 43653415598 SUCCESS synthetic; #32 43653540607 SUCCESS synthetic |
 
 **Decision routed:** PHX-MASTER approves only the unprivileged single-ID namespace model for a RELEASE implementation trial, pending independent QA review. No CORE source work was taken over; no role source branch was modified.
+
+
+## Live exact role and stack refresh — 2026-11-17 UTC18
+
+This snapshot supersedes prior role-head pins for this activation only. It is status reconciliation, not an ownership transfer.
+
+| Role / owner | Current exact PR head(s) | Exact-head CI / disposition |
+|---|---|---|
+| PHX-MASTER | #288 pre-audit `0b5adc046d6da13e3dd1913e8658e96e712f2bea` | Open/draft; this UTC18 audit changes only `coordination/phoenix/`; no Master CI run returned |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped; separate CORE automation retains implementation |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped; native COM acceptance unverified |
+| PHX-HARDWARE | #314 `556adc20ef0cfd355089aff3b979c0169af79bdd`; #315 `84fe6b790139d147f330f13a40b3ae3e89a7042d`; #316 `888e6941e3a7a81641682c23d937f97d8117d2ea`; #317 `d3acdd8f60fb42bbcc6e8dbd7bdb3634fc496c78`; child #318 `be371b03a36306a7691b411bf1b29da60b916646` | #314 43782088731/43782088748 SUCCESS; #315 44054778537 focused SUCCESS / 44054778555 Full FAILURE; #316 43972511337 focused SUCCESS / 43972511250 Full FAILURE; #317 44147243190/44147243095 focused SUCCESS / 44147243144 Full FAILURE at stale positive poll-signature fixture; #318 current head no run, DIVERGED 49 ahead/40 behind #317, mergeable=false |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS, scoped; #292 no PR-triggered run returned. QA owns the legacy poll-signature fixture and independent #31/#26 review |
+| PHX-RELEASE | #291 `2c4edff231d9b2819415086825530d80b8801307`; COE #31 `d0491517388479aa44c6c0ede8fc876f0be5950c` | #291 [43744993487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43744993487) SUCCESS, scoped; COE #31 sandbox 44147379837 FAILURE at UID-map gate, shared/hardware 44147379880 and case 44147379865 scoped SUCCESS |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; #28 `b21b04617d38a177260258de2d56b24382822117`; #29 `d0830332dee8a1844a85606150681b41d91fe796`; #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`; #32 `29b6fe08b10688182d981a66745f482758bd6630` | #26 five workflows queued; #28 43632393888 SUCCESS synthetic; #29 43653906676/43653906675 SUCCESS; #30 43653415598 SUCCESS synthetic; #32 43653540607 SUCCESS synthetic |
+
+**New stack decision:** #318 is now explicitly registered as a separate HARDWARE child candidate, not an untracked extension of #317. It shares the two firmware sketch paths but is 49 commits ahead / 40 behind current #317 and GitHub reports mergeable=false. No rebase, cherry-pick, force-push or merge until PHX-HARDWARE proposes a stack direction and QA reviews the selected exact source/test SHA. Preserve firmware default-deny.
+
+**Cleanup:** issue #266 remains OPEN and its checklist is not proof of completion. **Production remains NO-GO.**
