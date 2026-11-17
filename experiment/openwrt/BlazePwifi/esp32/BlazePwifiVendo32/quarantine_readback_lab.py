@@ -281,6 +281,69 @@ def extract(src: str, signature: str) -> str:
                 return src[pos:i + 1]
     raise RuntimeError(f"Unbalanced source: {signature}")
 
+
+# These helpers define the pending-event/quarantine safety boundary. They are
+# intentionally byte-identical across ESP32 and ESP8266 so board drift cannot
+# silently weaken one controller while the other remains protected.
+PARITY_SIGNATURES = (
+    "bool readPendingFile(",
+    "bool markPendingPostAttempt(",
+    "bool pendingAttemptMarkerMatches()",
+    "bool clearPending(",
+    "bool canAttemptCoinPost(){",
+    "String quarantineLogField(",
+    "bool quarantineLogTokenValid(",
+    "bool quarantineLogRecordValid(",
+    "bool inspectQuarantineLog(",
+    "bool appendQuarantineRecord(",
+    "bool quarantinePending(",
+)
+
+
+def board_safety_helpers():
+    result = {}
+    for board, ino in BOARDS:
+        source = ino.read_text(encoding="utf-8")
+        result[board] = {
+            signature: extract(source, signature)
+            for signature in PARITY_SIGNATURES
+        }
+    return result
+
+
+def board_parity_mismatches(helpers):
+    return [
+        signature for signature in PARITY_SIGNATURES
+        if helpers["ESP32"][signature] != helpers["ESP8266"][signature]
+    ]
+
+
+def verify_board_safety_parity():
+    helpers = board_safety_helpers()
+    mismatches = board_parity_mismatches(helpers)
+    if mismatches:
+        raise SystemExit(
+            "PHX-HARDWARE: ESP board safety-helper drift: " + ", ".join(mismatches)
+        )
+
+    # Failure injection: a fail-open append result on one board must be
+    # detected before that board can diverge from the reviewed peer.
+    mutated = {board: dict(functions) for board, functions in helpers.items()}
+    signature = "bool appendQuarantineRecord("
+    original = mutated["ESP8266"][signature]
+    if "return verified;" not in original:
+        raise SystemExit("PHX-HARDWARE: parity mutation anchor missing")
+    mutated["ESP8266"][signature] = original.replace(
+        "return verified;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated):
+        raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
+
+    print("BOARD_QUARANTINE_PARITY_PASS 11/11 helpers byte-identical")
+    print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
+
+
+verify_board_safety_parity()
 failed_boards = []
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
