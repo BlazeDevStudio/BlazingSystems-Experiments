@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: blazepisonet-softtimer-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PROJECT_DIR: experiment/windows/BlazePisonet-SoftTimer
