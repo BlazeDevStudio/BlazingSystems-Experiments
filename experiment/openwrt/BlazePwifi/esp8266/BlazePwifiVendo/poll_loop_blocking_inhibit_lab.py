@@ -18,7 +18,7 @@ BOARDS = {
 }
 
 def extract(source, name):
-    pattern = r"\b(?:void|bool|uint16_t)\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{"
+    pattern = r"\b(?:void|bool|uint16_t|uint32_t)\s+(?:(?:IRAM_ATTR|ICACHE_RAM_ATTR)\s+)?" + re.escape(name) + r"\s*\([^)]*\)\s*\{"
     match = re.search(pattern, source)
     if not match:
         raise AssertionError(f"missing production function: {name}")
@@ -34,10 +34,72 @@ def extract(source, name):
 
 STUBS = r"""
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <string>
+#ifndef IRAM_ATTR
+#define IRAM_ATTR
+#endif
+#ifndef ICACHE_RAM_ATTR
+#define ICACHE_RAM_ATTR
+#endif
 static constexpr int HIGH=1, LOW=0, WL_CONNECTED=3;
+static constexpr int INPUT_PULLUP=2, OUTPUT=1, CHANGE=3, FALLING=4, RISING=5;
+static bool fakeShortWrite=false, fakeCorruptReadback=false, fakeOpenFail=false;
+class File {
+  std::string *data=nullptr;
+  size_t pos=0;
+public:
+  File()=default;
+  explicit File(std::string *value):data(value){}
+  explicit operator bool() const { return data!=nullptr; }
+  size_t write(const uint8_t *bytes,size_t length){
+    if(!data) return 0;
+    size_t actual=length;
+    if(fakeShortWrite && actual) --actual;
+    data->append(reinterpret_cast<const char*>(bytes),actual);
+    return actual;
+  }
+  void flush(){}
+  void close(){}
+  size_t size() const { return data?data->size():0; }
+  int read(){
+    if(!data || pos>=data->size()) return -1;
+    unsigned char value=(unsigned char)(*data)[pos++];
+    if(fakeCorruptReadback && pos==1) value^=1;
+    return value;
+  }
+};
+struct FakeLittleFS {
+  std::map<std::string,std::string> files;
+  bool begin(bool){ return true; }
+  bool begin(){ return true; }
+  bool exists(const char *path) const { return files.find(path)!=files.end(); }
+  File open(const char *path,const char *mode){
+    if(fakeOpenFail) return File();
+    const std::string key(path);
+    if(mode[0]=='w'){ files[key].clear(); return File(&files[key]); }
+    auto found=files.find(key);
+    return found==files.end()?File():File(&found->second);
+  }
+} LittleFS;
+static bool interruptAttached=false;
+static int attachedPin=-1, attachedMode=-1;
+static void (*attachedIsr)()=nullptr;
+int digitalPinToInterrupt(int pin){ return pin; }
+void attachInterrupt(int pin,void (*handler)(),int mode){
+  interruptAttached=true; attachedPin=pin; attachedMode=mode; attachedIsr=handler;
+}
+void detachInterrupt(int pin){
+  if(interruptAttached && attachedPin==pin){
+    interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
+  }
+}
+void pinMode(int,int){}
+void loadPending(){}
+volatile uint32_t coinEdgeSequence=0;
 struct String : std::string {
   using std::string::string;
   using std::string::operator=;
@@ -135,6 +197,8 @@ String post(const String &action,const String &pulses=String("0"),
       pulseEnd=(int)fakeNow+130;
       fakeNow+=50UL;
       pollPulseObservedDuringHttp=!coinLineIdle();
+      if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+         attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
       pollPulseRelayOff=!relayOn;
       pollPulseSuspended=pollIntakeSuspended;
       fakeNow+=80UL;
@@ -158,6 +222,8 @@ String post(const String &action,const String &pulses=String("0"),
 MAIN = r"""
 void resetState(){
   fakeNow=2000; pulseStart=-1; pulseEnd=-1;
+  coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
+  fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
@@ -171,6 +237,7 @@ void resetState(){
   pendingPulses=0; runCoinPin=4; runLedPin=2; runRelayPin=26;
   maxWifiRetries=6; wifiFailures=0; runDebounceMs=40; runPulseGroupMs=400;
   activeTarget="target-01"; pendingTarget=""; pendingNonce="";
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   applyOutputs();
 }
 bool recordedPulseState(){
@@ -179,11 +246,9 @@ bool recordedPulseState(){
          lastCoin && relayOn && !pollIntakeSuspended && saveCalls==1;
 }
 int main(){
-  // Actual loop(): relay must be OFF before post("poll"), stay OFF for the
-  // full 3.5 s blocking wait, and remain OFF after default-deny response.
-  resetState();
-  injectDuringHttp=true;
-  loop();
+  // A pulse edge during the 3.5 s synchronous poll must be captured by the
+  // production ISR, latched to LittleFS, and never interpreted as a credit.
+  resetState(); injectDuringHttp=true; loop();
   if(pollCalls!=1 || pollStartAt!=2250 || pollStartAt-2000<250 ||
      pollStartRelayOn || !pollStartSuspended || !pollStartCoinIdle ||
      pollEndAt-pollStartAt!=3500 || pollEndRelayOn || !pollEndSuspended ||
@@ -191,32 +256,66 @@ int main(){
      pollIntakeSuspended || relayOn || ledOn || insertMode ||
      !activeTarget.empty() || pendingPulses!=0 || lastPoll!=pollEndAt ||
      fakeNow!=pollEndAt+2) return 11;
+  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 12;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("POLL_PULSE_DURING_BLOCKING_HTTP")==std::string::npos ||
+     marker.find("edges=1")==std::string::npos) return 13;
 
-  // A pulse observed during the inhibit/drain window cancels the poll and is
-  // sampled by the same production loop after the temporary inhibit is lifted.
-  resetState(); pulseStart=2050; pulseEnd=2130;
-  loop();
-  if(!recordedPulseState()) return 21;
+  // A reboot must restore the persistent fault latch before any output can energize.
+  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
+  applyOutputs();
+  if(!relayOn) return 14;
+  initPendingStore(); applyOutputs();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn) return 15;
 
-  // The opposite input polarity follows the same cancellation path.
-  resetState(); runCoinActiveLow=false; pulseStart=2200; pulseEnd=2280;
-  loop();
-  if(!recordedPulseState()) return 22;
+  // Active-high input polarity must attach the opposite edge and fail closed too.
+  resetState(); runCoinActiveLow=false;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  injectDuringHttp=true; loop();
+  if(attachedMode!=RISING || !journalRecoveryRequired ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 16;
 
-  // A pulse beginning exactly at the 250 ms boundary must cancel polling.
-  resetState(); pulseStart=2250; pulseEnd=2330;
-  loop();
-  if(!recordedPulseState()) return 23;
+  // A short write leaves a path that boot treats as a fault even when readback fails.
+  resetState(); fakeShortWrite=true; injectDuringHttp=true; loop();
+  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 17;
+  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
+  initPendingStore(); applyOutputs();
+  if(!journalRecoveryRequired || relayOn) return 18;
 
-  // Existing pending or recovery state must prevent a poll and keep outputs OFF.
+  // Readback corruption is rejected; existence alone remains a boot-time deny latch.
+  resetState(); fakeCorruptReadback=true; injectDuringHttp=true; loop();
+  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 19;
+  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
+  initPendingStore(); applyOutputs();
+  if(!journalRecoveryRequired || relayOn) return 20;
+
+  // If marker creation itself is unavailable, the current boot still remains denied.
+  resetState(); fakeOpenFail=true; injectDuringHttp=true; loop();
+  if(!journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 21;
+
+  // A poll with no unexpected edge remains default-deny without inventing a fault.
+  resetState(); loop();
+  if(pollCalls!=1 || journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") ||
+     insertMode || !activeTarget.empty() || relayOn || ledOn) return 22;
+
+  // Existing pulse-drain behavior remains intact for a pulse observed before poll.
+  resetState(); pulseStart=2050; pulseEnd=2130; loop();
+  if(!recordedPulseState()) return 31;
+  resetState(); runCoinActiveLow=false; configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  pulseStart=2200; pulseEnd=2280; loop();
+  if(!recordedPulseState()) return 32;
+  resetState(); pulseStart=2250; pulseEnd=2330; loop();
+  if(!recordedPulseState()) return 33;
+
+  // Existing pending/recovery/FS guards remain fail-closed.
   resetState(); pendingReady=true; pendingPulses=1; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 31;
+  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 41;
   resetState(); journalRecoveryRequired=true; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 32;
+  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 42;
   resetState(); fsReady=false; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 33;
+  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 43;
 
-  std::cout<<"POLL_LOOP_INHIBIT_PASS 7/7 actual-loop scenarios; HTTP wait 3500 ms\n";
+  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 6/6 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
   return 0;
 }
@@ -252,9 +351,21 @@ for board,path in BOARDS.items():
     quiet=extract(source,"coinLineQuietAfterInhibit")
     begin=extract(source,"beginPollWindow")
     accept=extract(source,"acceptPollResponse")
+    isr=extract(source,"coinEdgeISR")
+    snapshot=extract(source,"snapshotCoinEdgeSequence")
+    configure=extract(source,"configureRuntimePins")
+    write_fault=extract(source,"writePollPulseFaultMarker")
+    load_fault=extract(source,"loadPollPulseFaultLatch")
+    latch_fault=extract(source,"latchPollPulseFault")
+    init_store=extract(source,"initPendingStore")
 
-    def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept):
-        return ("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+accept_source+SUPPORT+loop_source+MAIN
+    def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
+                 configure_source=configure,isr_source=isr,write_fault_source=write_fault,
+                 load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store):
+        board_define = "#define TARGET_ESP32\\n" if board=="ESP32" else "#define ESP8266\\n"
+        return (board_define+STUBS+isr_source+snapshot+write+output+idle+can_start+
+                quiet_source+begin+configure_source+accept+write_fault_source+
+                load_fault_source+latch_fault_source+init_store_source+SUPPORT+loop_source+MAIN)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     mutations=(
@@ -278,4 +389,21 @@ for board,path in BOARDS.items():
         compile_and_run(assemble(mut_loop,mut_output,mut_quiet,mut_accept),board,11,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit=11")
 
-print("PHX-HARDWARE: actual-loop host simulation passed on ESP8266 and ESP32; no hardware evidence")
+    extra_mutations=(
+      ("remove-edge-interrupt-attachment",loop,output,quiet,accept,
+       configure.replace("attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);","",1),isr,write_fault,load_fault,latch_fault,init_store,12),
+      ("ignore-poll-edge-delta",loop.replace("if(pollEdgeEnd!=pollEdgeStart){","if(false){",1),output,quiet,accept,
+       configure,isr,write_fault,load_fault,latch_fault,init_store,12),
+      ("no-op-coin-isr",loop,output,quiet,accept,configure,
+       isr.replace("coinEdgeSequence++;","coinEdgeSequence+=0;",1),write_fault,load_fault,latch_fault,init_store,12),
+      ("remove-fault-marker-write",loop,output,quiet,accept,configure,isr,
+       write_fault,load_fault,latch_fault.replace("const bool persisted=writePollPulseFaultMarker(pulseEdges);","const bool persisted=false;",1),init_store,12),
+      ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
+       load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
+       latch_fault,init_store,15),
+    )
+    for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
+        compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
+        print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
+
+print("PHX-HARDWARE: blocked-poll edge fault latch and existing loop guards passed on ESP8266 and ESP32; no hardware evidence")
