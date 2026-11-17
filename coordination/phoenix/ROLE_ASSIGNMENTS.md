@@ -319,3 +319,19 @@ This exact-head snapshot supersedes earlier role-head rows only for the refs bel
 | COE integration / destination candidates | #26 `b382d233...`; #28 `b21b0461...`; #30 `4897348d...`; #29 `d0830332...`; #31 `d9ac5982017b00b59ca842bc360d3c47ab33ee45`; #32 `29b6fe08...` | #26 five workflows QUEUED; #28 `43632393888`; #30 `43653415598`; #29 `43653906676`/`43653906675`; #31 `44064212523`/`44064212547`; #32 `43653540607` SUCCESS | Keep #26/#28/#30/#31/#32 draft; isolated CI is not combined #26 acceptance |
 
 No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The private Drive registry remains inaccessible through the exposed connector; no older Library snapshot was substituted.
+
+## Live role / PR / CI snapshot — 2026-11-17 UTC11
+
+| Role / candidate | Exact head | Exact-head CI observation | Owner action |
+|---|---|---|---|
+| PHX-MASTER #288 pre-update | f63357a12ffdd5894f8697cfc6bd4b502108064e | No PR-triggered runs returned | coordination/phoenix only |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped | Separate CORE automation owns implementation |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235, 43653329229 SUCCESS | Preserve owner boundary |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS, scoped | Physical COM acceptance outstanding |
+| PHX-HARDWARE #317 | 3827fb3b2bd58e8f84c6d61020bfd5b863bdf14a | Focused 44072521452, 44072521239 SUCCESS; Full 44072521235 FAILURE in QA fixture | Preserve default-deny; QA owns fixture |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 43633486963 SUCCESS; #292 no PR-triggered run | Independent verification |
+| PHX-RELEASE #291 | 2c4edff231d9b2819415086825530d80b8801307 | 43744993487 SUCCESS, scoped | Signing/publishing remain closed |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED: 43096752609, 43096752632, 43096752800, 43096752563, 43096752557 | Keep draft |
+| COE RELEASE #31 | 43e70422990857168c61c77b47fdd742f34d7846 | 44074188531, 44074188480 SUCCESS, scoped | Correct invalid ULA prefix |
+
+Scoped CI success is not combined integration or production acceptance. The private canonical Drive registry v11 and newer corrections remain inaccessible; no older Library snapshot was substituted.

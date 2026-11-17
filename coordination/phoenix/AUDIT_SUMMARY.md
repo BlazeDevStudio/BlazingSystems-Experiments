@@ -185,3 +185,9 @@ The source #255 active-low external-board error path can invert a failed boolean
 Current Hardware #317 focused CI [44065129637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129637) passes, but Full [44065129519](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129519) fails at the stale positive poll-signature fixture. Keep default-deny; PHX-QA owns the fixture/extractor repair. RELEASE #31 has scoped success at current head, not signing approval.
 
 The private canonical Drive registry and newer corrections remain inaccessible; no older Library snapshot was substituted. No source branch, COE destination file, financial state, secret, hardware, release or production workflow was changed by PHX-MASTER. **PRODUCTION NO-GO.**
+
+## 2026-11-17 UTC11 — COE appliance ULA prefix contract blocker
+
+COE #26 and current release child #31 emit invalid IPv6 prefix fd00:db8:blaze::/48. The #31 packager's interface/VLAN validation does not validate this hard-coded ULA value; the current profile lacks networking.ula_prefix and tests lack IPv6 assertions. Python's standard-library IPv6 parser rejected the literal and accepted a valid ULA /48 control. No OpenWrt uci/netifd, ImageBuilder or router test was run.
+
+COE #31 exact head 43e70422990857168c61c77b47fdd742f34d7846 has two scoped successful workflows, 44074188531 and 44074188480. COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12 has five queued workflows. Keep both drafts; PHX-RELEASE/COE owner correct the prefix contract, PHX-QA independently verifies exact-head output, and PHX-HARDWARE validates only after correction. The private v11 Drive registry remains unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**

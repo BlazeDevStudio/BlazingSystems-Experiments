@@ -462,3 +462,16 @@ A source-vs-destination safety difference is material: old Experiments #255 `Ser
 **New P0:** COE #30's NSIS installer line 44 uses `$COMMONAPPDATA`; exact installer-lab run [43653415598](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43653415598) logs warning 6000 saying that variable/constant is unknown and ignored. Its InstallerLayoutGuard checks only the literal text, so the green job does not prove existing CommonApplicationData state is detected. PHX-PISONET must fix the path resolution, make the relevant compiler warning fatal, and add a sentinel-existing-state test before any installer candidate promotion.
 
 The source root NOTICE and destination/subtree license/notice inventory are not equivalent; no Pisonet-subtree license/notice was found, and Pisowifi/LICENSE does not establish Pisonet scope. Require owner/custodian decision. COE #26's five workflows remain QUEUED; #28/#30 scoped synthetic Windows jobs pass; QA #290 has no exact-head run. Keep #26/#28/#30/#32 draft and migration blocked.
+
+## 15. COE generated ULA prefix is invalid — 2026-11-17 UTC11
+
+| Gate | Exact evidence | Disposition |
+|---|---|---|
+| COE #26 packager | Blob c6ad3807... emits fd00:db8:blaze::/48 | P0 configuration blocker |
+| COE #31 current packager | Blob 5e42d81e... retains the invalid literal | Open |
+| Profile | Blob 6e797cf9... has no networking.ula_prefix | Contract gap |
+| Tests | #31 blob 109d1ee2... has no ULA/IPv6 assertions | Test gap |
+| COE #31 CI | 44074188531 and 44074188480 SUCCESS, scoped | Does not test prefix validity |
+| COE #26 CI | 43096752609, 43096752632, 43096752800, 43096752563, 43096752557 QUEUED | No combined acceptance |
+
+Python ipaddress rejected the exact literal because blaze is non-hex and accepted a valid ULA /48 control. This was not OpenWrt uci/netifd or router validation. Route packager correction to PHX-RELEASE, policy to PHX-CORE/COE owner, independent tests to PHX-QA, and later target validation to PHX-HARDWARE. Master changes coordination only. Keep #26/#31 draft; no migration.

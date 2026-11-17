@@ -214,3 +214,9 @@ Do not blanket-copy Experiments #255 `SerialHardware.cs` / `AppController.cs`: t
 HARDWARE #317 `3ed38225...` is a child of #315 `84fe6b79...`, itself based on #314 `556adc20...`. Focused marker lab [44065129637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129637) succeeds (56/56 source-extracted cases); Full [44065129519](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44065129519) fails at the QA-owned legacy poll-signature assertion. Preserve default-deny and route the fixture repair to QA.
 
 COE RELEASE #31 current head `d9ac5982...` has scoped runs [44064212523](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44064212523) and [44064212547](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44064212547) SUCCESS; this does not open signing/publishing or production gates.
+
+## COE appliance ULA prefix review hold — 2026-11-17 UTC11
+
+COE #26 and its release child #31 emit invalid fd00:db8:blaze::/48 from tools/package_appliance_firmware.py::generate_network_uci(). #31's interface/VLAN validation does not validate the ULA prefix; the profile has no networking.ula_prefix field and packager tests have no ULA/IPv6 assertion. This is a destination integration blocker, not permission for PHX-MASTER to edit the release-owned packager.
+
+PHX-RELEASE owns packager/profile/test correction; PHX-CORE and the COE integration owner define deployment-scoped prefix provisioning; PHX-QA independently verifies exact-head generated UCI; PHX-HARDWARE validates only after correction and explicit noncustomer authorization. Keep #26/#31 draft. OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY; no copy, overwrite or move is proposed.
