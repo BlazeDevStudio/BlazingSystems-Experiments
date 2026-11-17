@@ -1,3 +1,10 @@
+## 2026-11-17 UTC23 — PHX-RELEASE Node24 action runtime migration
+
+- Test-first negative self-test commit: `bffb1d7840df6ea2d87c5e23eaca0ef2592ec026`.
+- Expected RED: [Windows run #44198332958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198332958). Handover and PackageParity passed; concurrency passed; action-pin assertion failed as intended because the workflow still referenced the old checkout v4.2.2 SHA (expected new v7.0.1 pin count 3, found 0). Publisher and subsequent build steps skipped.
+- Source update in this commit replaces checkout x3, setup-dotnet, upload-artifact and download-artifact with immutable upstream commits whose exact `action.yml` metadata declares `runs.using: node24`. The four tag-to-commit resolutions and SHA values are in the release test/handover note.
+- Exact-source Windows validation pending. No app code, package payload, version, publisher permission, signing condition or release authorization changed. PRODUCTION NO-GO.
+
 ## 2026-11-17 UTC23 — PHX-RELEASE Node24-compatible action pins (test-first)
 
 - Existing draft PR #291 only. Updated the negative self-test's expected immutable upstream action commits for checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2 and download-artifact v8.0.2 after reading each tag ref and `action.yml`; all declare Node.js 24 runtime.
