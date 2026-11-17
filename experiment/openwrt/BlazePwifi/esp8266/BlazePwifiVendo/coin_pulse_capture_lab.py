@@ -224,7 +224,7 @@ def main():
          "millis()-lastEdge>=runDebounceMs", "deny-case-9"),
         ("missing-target-binding", "pendingTarget==activeTarget && ", "",
          "deny-case-6"),
-        ("ignored-save-failure", "if(!savePending()){", "if(false){",
+        ("ignored-save-failure", "fsReady=false;\n        pendingReady=true;", "",
          "save-failure"),
     )
     failures = []
