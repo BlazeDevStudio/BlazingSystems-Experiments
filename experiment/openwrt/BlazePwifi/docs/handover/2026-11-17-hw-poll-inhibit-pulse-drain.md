@@ -41,7 +41,7 @@ Evidence classification: **SIMULATED / CI VERIFIED** only. Workflow explicitly e
 
 - Full build [#44107559842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107559842), exact head `9873f0ff72ec009ecba89c39b3a783360ec69427`.
 - Validation job `134124132471`: **FAILED** at QA-owned legacy controller parity assertion, exact log: `Missing poll signature check` in the ESP8266 sketch.
-- ESP8266 and ESP32 compile jobs passed. x86_64, Ruijie and listed Orange Pi build jobs had passed at last observation; Android was still in progress. Production signing/import and update/release jobs were skipped.
+- **All 14/14 target build jobs completed SUCCESS**, including ESP8266, ESP32, Android, x86_64, Ruijie and all listed Orange Pi variants. The separate validation job remains FAILED. Production signing/import, update bundle, release/prerelease publication and v0.4 simulations were skipped.
 - Do not restore an unapproved positive `response_sig` path to satisfy this inherited assertion. Master §6.3/§6.7 keeps poll admission default-deny until PHX-CORE publishes the canonical producer/consumer contract and PHX-QA approves exact vectors.
 
 ### Live coordination and provenance

@@ -9,7 +9,7 @@
 >
 > New `poll_loop_blocking_inhibit_lab.py` compiles the actual production loop and output/poll-window helpers from ESP8266 and ESP32 with only external I/O stubbed. Focused [#44107560083](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107560083), job `134123947096`, passed 7/7 actual-loop scenarios per board and rejected three deliberate regressions per board. The simulated HTTP wait is 3.5 seconds; relay-off and inhibit state are asserted during an injected pulse.
 >
-> Full [#44107559842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107559842) failed at QA-owned `Missing poll signature check`; ESP32/ESP8266 compile passed and Android was still running at last observation. No unapproved positive poll signature was restored.
+> Full [#44107559842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44107559842) failed at QA-owned `Missing poll signature check`; All 14/14 target build jobs completed SUCCESS (ESP8266, ESP32, Android, x86_64, Ruijie and Orange Pi variants); the separate validation job failed at the legacy positive poll-signature assertion. Production signing/import, update bundle, release/prerelease publication and v0.4 simulations were skipped. No unapproved positive poll signature was restored.
 >
 > PR #318 remains a DRAFT stacked child. Its branch is not in current Master ROLE_ASSIGNMENTS.md and diverges from the latest parent #317. Do not rebase, merge or force-push without Master reconciliation. Physical relay/coin, 150 power-cut, 30-device soak and electrical pulse acceptance remain NOT TESTED.
 
