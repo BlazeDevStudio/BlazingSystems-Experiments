@@ -396,8 +396,15 @@ String quarantineLogField(const String &value,size_t maxLen){
     else if(c=='\r') escaped="\\r";
     else if(c=='\n') escaped="\\n";
     else if(c=='\t') escaped="\\t";
+    else if(c==' ' && i+8<=value.length() &&
+            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
+              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
+             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
+              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
+      escaped="\\x20";
     if(escaped){
-      if(out.length()+2>maxLen) break;
+      const size_t escapedLength=strlen(escaped);
+      if(out.length()+escapedLength>maxLen) break;
       out+=escaped;
     } else {
       if(out.length()+1>maxLen) break;
@@ -409,6 +416,16 @@ String quarantineLogField(const String &value,size_t maxLen){
     out+="...";
   }
   return out;
+}
+
+bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
+  const size_t length=value.length();
+  if(length<minLength || length>maxLength) return false;
+  for(size_t i=0;i<length;++i){
+    const unsigned char c=(unsigned char)value[i];
+    if(c<=0x20 || c==0x7f) return false;
+  }
+  return true;
 }
 
 bool quarantineLogRecordValid(const char *line,const char *identity,bool &sameIdentity){
@@ -468,7 +485,7 @@ bool quarantineLogRecordValid(const char *line,const char *identity,bool &sameId
   }
 
   cursor=reasonField+8;
-  if(*cursor=='\0') return false;
+  if(*cursor=='\0' || strstr(cursor," REASON=")) return false;
   const size_t reasonLength=strlen(cursor);
   if(reasonLength>128) return false;
   for(const char *p=cursor;*p;++p){
@@ -525,6 +542,11 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
 
 bool appendQuarantineRecord(const String &reason){
   if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;
+  if(!quarantineLogTokenValid(pendingNonce,8,16) ||
+     !quarantineLogTokenValid(pendingTarget,8,32)){
+    journalRecoveryRequired=true;
+    return false;
+  }
 
   char record[320];
   const String logNonce=quarantineLogField(pendingNonce,40);
@@ -541,6 +563,14 @@ bool appendQuarantineRecord(const String &reason){
                    "TIME=%lu %s%s\n",
                    (unsigned long)millis(),identity,logReason.c_str());
   if(len<=0 || (size_t)len>=sizeof(record)) return false;
+  record[len-1]='\0';
+  bool generatedSameIdentity=false;
+  const bool generatedValid=quarantineLogRecordValid(record,identity,generatedSameIdentity);
+  record[len-1]='\n';
+  if(!generatedValid || !generatedSameIdentity){
+    journalRecoveryRequired=true;
+    return false;
+  }
 
   size_t before=0;
   bool alreadyRecorded=false;
