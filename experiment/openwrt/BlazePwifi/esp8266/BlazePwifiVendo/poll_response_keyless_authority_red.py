@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Source-extracted regression probe for keyless ESP poll authorization.
 
-This audit probe extracts and compiles the production acceptPollResponse() and
-applyOutputs() bodies from both sketches. Exit 1 means the current firmware
-accepted an unsigned keyless positive poll and energized its output. Exit 0
-means this specific gap was not reproduced. This is NOT a hardware test and
+This regression probe extracts and compiles the production acceptPollResponse() and
+applyOutputs() bodies from both sketches. After the default-deny fix, the expected
+result is exit 0 on both boards. Exit 1 means an unsigned keyless positive poll
+was accepted and energized simulated output. This is NOT a hardware test and
 must not be treated as an acceptance gate by itself.
 """
 import re
