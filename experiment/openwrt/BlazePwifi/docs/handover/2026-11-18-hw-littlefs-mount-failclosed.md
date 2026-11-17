@@ -57,3 +57,16 @@ Exact source/test commit `90a9cf8623b54139dabe6ef5360f0a7da91a9519` triggered [B
 - Physical flash/boot recovery, electrical pulse/relay acceptance, 150 controlled power cuts, 30-device 24-hour soak, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED or BLOCKED.
 
 **Next exact action:** PHX-QA adds the new lab invocation to the QA-owned controller test entrypoint, runs it against the exact PR #283 head, and returns the independent job link. PHX-HARDWARE then reviews the exact result and preserves this no-auto-format behavior. Keep PR #283 DRAFT / UNMERGED / NO-GO.
+
+
+## Latest exact-head CI update — 2026-11-17T21:42Z
+
+The initial source commit `90a9cf8623b54139dabe6ef5360f0a7da91a9519` was followed by documentation-only head `a43ca007b1a7ef38cc278395ca12c5bb2ec656da`; the two firmware blobs and new lab are unchanged. Exact-head [Actions #44182117122](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44182117122) at `a43ca007...` reports:
+- ESP8266 job `134389072926`: SUCCESS.
+- ESP32 job `134389073268`: SUCCESS.
+- Full validation job `134389072950`: SUCCESS.
+- Target/platform matrix: 14/14 SUCCESS.
+- Update bundle and completed browser/ESP/Ruijie/Orange Pi simulations: SUCCESS; x86 and Android emulator simulations were still running at checkpoint time.
+- Production APK import/signing and production/release handoff stages: SKIPPED.
+
+The new source-extracted mount lab is still not part of the workflow. Local C++ host failure injection passed on both board function bodies and rejected `begin(true)` plus explicit-format mutations, but this remains SIMULATED, not independent QA or physical durability evidence. PHX-QA must wire and run the lab at the exact current PR head.
