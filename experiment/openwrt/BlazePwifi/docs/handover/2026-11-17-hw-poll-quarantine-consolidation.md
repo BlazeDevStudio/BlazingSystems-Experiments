@@ -198,3 +198,22 @@ The focused run at the same commit [44006532858](https://github.com/BlazeDevStud
 This follow-up moves the helper below `PendingRecord` in both sketches to preserve Arduino prototype ordering. The existing full validation still independently fails in the PHX-QA-owned `tests/controllers.sh` Controller protocol parity extractor because it omits `acceptPollResponse()`; PHX-HARDWARE did not edit that QA-owned file. ESP32 compilation from the prior full run was still in progress at this checkpoint and is not counted.
 
 No physical coin, relay, power-cut, electrical or financial operation occurred.
+
+
+## 2026-11-17 UTC03 — separate poll admission from remote configuration
+
+At parent `919c1fd96144a2ee0ef59fbaab8cab767f9f6034`, source review found that both `acceptPollResponse()` implementations verified an admission signature over only the poll tuple (controller ID, request nonce, insert bit, target nonce and expiry), then passed the same response to `applyRemoteConfig()`. That function can change controller/coin/relay/LED enable flags, GPIO pins and polarity, debounce, pulse grouping and Wi-Fi retry settings. Those configuration fields are not included in the approved admission-signature expression.
+
+Exact producer readback:
+- Experiments main poll body (blob `2e3a1430d08cc6606429a042df3b5848f53c7267`) returns `ok/insert/target_nonce/expires/controller`, without a response signature or config fields.
+- COE PR #26 candidate poll body (blob `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`) adds `response_sig` for the poll tuple, but still does not provide a separately authenticated configuration object or `config_revision`.
+
+A LAN/on-path response modifier could append configuration fields while preserving a valid admission signature, and the firmware would apply those fields as if authenticated. This is a source-confirmed consumer trust-boundary defect; no physical actuation was attempted.
+
+**Fix:** both ESP consumers now stop after applying the authenticated admission state. They no longer call `applyRemoteConfig(response)` from the poll response. The existing remote-config helper remains dormant until PHX-CORE/MASTER define a separate authenticated configuration contract and PHX-QA verifies its exact canonical bytes. This does not change the current producer API or the admission signature algorithm.
+
+**Regression:** the hardware-owned source-extracted poll lab now injects a valid signed positive admission response carrying hostile extra config fields. The test requires relay/LED admission to follow the valid poll tuple while all local GPIO, polarity, debounce and revision sentinels remain unchanged; the stub fails the test if `applyRemoteConfig()` is called. The poll matrix is now 11 cases per board; exact-head CI is pending.
+
+**Coordination required:** PHX-CORE/MASTER should decide whether remote configuration is needed and, if so, define a separate config signature over every applied field (including revision, enable flags, pins, polarities and timing bounds). PHX-QA should independently reproduce the config-injection regression at this exact head. No shared API, finance code, QA-owned tests, release workflow, migration or destination repository was changed.
+
+No physical coin acceptor, relay, power-cut, electrical or financial operation occurred.

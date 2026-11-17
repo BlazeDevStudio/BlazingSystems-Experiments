@@ -635,7 +635,8 @@ bool acceptPollResponse(const String &response){
   }
   insertMode=insertAllowed;
   activeTarget=target;
-  applyRemoteConfig(response);
+  // The admission signature binds only the poll tuple, not remote pin/config fields.
+  // Keep poll authorization separate until CORE/MASTER approve a distinct config signature.
   return true;
 }
 

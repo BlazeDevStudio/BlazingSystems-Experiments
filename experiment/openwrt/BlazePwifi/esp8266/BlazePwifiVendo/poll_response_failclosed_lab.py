@@ -68,6 +68,9 @@ bool relayOn=false, ledOn=false;
 String responseSignature="valid-signature", responseTarget="target-01";
 bool responseInsert=true;
 int applyRemoteConfigCalls=0;
+int remoteRevision=7;
+uint16_t runDebounceMs=70;
+bool runCoinActiveLow=true, runRelayActiveHigh=true;
 String jsonString(const String &, const char *key) {
   if(std::string(key)=="response_sig") return responseSignature;
   if(std::string(key)=="target_nonce") return responseTarget;
@@ -78,7 +81,14 @@ bool jsonTrue(const String &, const char *key) {
 }
 int jsonInt(const String &, const char *, int fallback) { return fallback==0?123:fallback; }
 String hexDigest(const String &) { return String("valid-signature"); }
-void applyRemoteConfig(const String &) { ++applyRemoteConfigCalls; }
+void applyRemoteConfig(const String &) {
+  ++applyRemoteConfigCalls;
+  remoteRevision=99;
+  runRelayPin=12;
+  runCoinActiveLow=false;
+  runRelayActiveHigh=false;
+  runDebounceMs=1;
+}
 void writeLogical(int pin, bool on, bool) {
   if(pin==runRelayPin) relayOn=on;
   if(pin==runLedPin) ledOn=on;
@@ -156,7 +166,16 @@ int main(){
   if(!acceptPollResponse(String("{\"ok\":true}")) || !insertMode || activeTarget!="target-02") return 17;
   if(relayOn) return 18; // intake remains inhibited while response is processed
   pollIntakeSuspended=false; applyOutputs();
-  if(!relayOn || !ledOn || applyRemoteConfigCalls!=1) return 19;
+  if(!relayOn || !ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 || runRelayPin!=26 || !runCoinActiveLow || !runRelayActiveHigh || runDebounceMs!=70) return 19;
+
+  // A valid admission signature must not authorize unauthenticated config fields.
+  responseInsert=true; responseSignature="valid-signature"; responseTarget="target-02b";
+  insertMode=false; activeTarget=""; pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
+  const String configInjection("{\"ok\":true,\"insert\":true,\"target_nonce\":\"target-02b\",\"expires\":123,\"response_sig\":\"valid-signature\",\"config_revision\":99,\"enabled\":1,\"coin_enabled\":1,\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":12,\"led_pin\":2,\"coin_active_low\":0,\"relay_active_high\":0,\"led_active_high\":1,\"coin_debounce_ms\":1,\"pulse_group_ms\":10,\"max_wifi_retries\":60}");
+  if(!acceptPollResponse(configInjection) || !insertMode || activeTarget!="target-02b") return 44;
+  pollIntakeSuspended=false; applyOutputs();
+  if(!relayOn || !ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 ||
+     runRelayPin!=26 || !runCoinActiveLow || !runRelayActiveHigh || runDebounceMs!=70) return 45;
 
   // A valid negative insert state remains disabled.
   responseInsert=false; responseSignature="valid-signature"; responseTarget="target-03";
@@ -187,7 +206,7 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 28;
 
-  std::cout << "poll-response fail-closed cases: 10/10 PASS; strict root JSON cases: 13/13 PASS\n";
+  std::cout << "poll-response fail-closed cases: 11/11 PASS; strict root JSON cases: 13/13 PASS\n";
   return 0;
 }
 """
