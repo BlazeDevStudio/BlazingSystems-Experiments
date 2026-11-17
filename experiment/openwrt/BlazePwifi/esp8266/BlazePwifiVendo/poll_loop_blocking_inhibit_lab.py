@@ -257,7 +257,7 @@ for board,path in BOARDS.items():
     begin=extract(source,"beginPollWindow")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet):
-        return ("#define TARGET_ESP32\\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+SUPPORT+loop_source+MAIN
+        return ("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+write+output_source+idle+can_start+quiet_source+begin+SUPPORT+loop_source+MAIN
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     mutations=(
