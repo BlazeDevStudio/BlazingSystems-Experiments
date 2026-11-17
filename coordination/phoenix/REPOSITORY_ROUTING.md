@@ -236,3 +236,8 @@ OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER targ
 COE RELEASE #31 remains a draft child of integration #26 at exact head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`. Packager blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, line 495, embeds literal `\\n` sequences in the generated shell template. A bounded local shell reproduction showed syntax-only `sh -n` exit 0 but runtime exit 2 (`Syntax error: Bad fd number`). The exact-head sandbox workflow [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) remained IN_PROGRESS at last read; do not claim CI failure or success before its conclusion.
 
 PHX-RELEASE owns the template correction on its own branch; PHX-QA independently verifies the exact final head. PHX-MASTER only records this gate. The packager still emits invalid site ULA `fd00:db8:blaze::/48`, and its generated build entrypoint still does not invoke the test-only sandbox runner. Keep #26/#31 draft. `OWNERSHIP_ROUTES.json` remains unchanged and `DRAFT_REVIEW_ONLY`; no copy, overwrite, move, cherry-pick or promotion is authorized.
+
+
+## UTC15:14Z COE #31 CI status clarification
+
+The final-head sandbox run [44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) completed CANCELLED after 15 packaging tests reported `ok`; the generated-wrapper syntax-only test passed, but the empty-firmware runtime test was not reached. This is incomplete evidence. Do not promote the test-harness sandbox or generated build. PHX-RELEASE owns the literal-escape correction and actual build entrypoint enforcement; PHX-QA independently verifies. No source migration is authorized.

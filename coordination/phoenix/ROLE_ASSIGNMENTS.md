@@ -401,3 +401,10 @@ The exact #31 sandbox run remains pending with no jobs returned. The current gen
 - **COE integration owner:** #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued. No combined acceptance or migration approval.
 
 Private Drive registry v11/newer corrections remain inaccessible. **PRODUCTION NO-GO.**
+
+
+## UTC15:14Z owner evidence update
+
+- **PHX-RELEASE / COE #31:** exact-head sandbox run [44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) is CANCELLED, not PASS or source RED. Fifteen packaging tests reported `ok`, including the syntax-only shell check; the run was canceled before the empty-firmware runtime test. Correct the literal escape in the generated shell template on the existing COE branch and rerun without cancellation.
+- **PHX-QA:** independently verify the corrected exact head, including empty-image denial and positive synthetic output, not just `sh -n`.
+- **PHX-MASTER:** coordination-only; no subsystem source path changed.

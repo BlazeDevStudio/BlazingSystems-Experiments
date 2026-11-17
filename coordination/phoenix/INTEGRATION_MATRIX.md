@@ -540,3 +540,8 @@ COE #26 remains at five queued workflows. Keep #26/#31 draft. No copy, overwrite
 | COE #26 | Five workflows queued at exact head | No combined acceptance |
 
 PHX-RELEASE owns generated-wrapper correction; PHX-QA owns independent exact-head runtime verification. PHX-MASTER owns the architecture contract and integration gate only. No COE source edit or destination migration was performed. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; #26/#31 remain draft. **PRODUCTION NO-GO.**
+
+
+### §19 exact-head CI follow-up — 2026-11-17 UTC15:14Z
+
+COE #31 sandbox run [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) at `d45b84c67dc587fca6226662cb1d8bc59bdb11ae` completed **CANCELLED**, job `134126241456`. Fifteen packaging tests reported `ok`, including `test_generated_build_script_passes_posix_shell_syntax_check`; the job was then canceled before `test_generated_wrapper_denies_empty_firmware_payload`. This is incomplete, not PASS or source RED. The local exact-fragment reproduction still showed `sh -n=0` but runtime exit 2 (`Syntax error: Bad fd number`). Shared-contract #44104956321 and case-collision #44104956464 are scoped successes only.

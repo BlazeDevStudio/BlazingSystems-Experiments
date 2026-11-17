@@ -45,3 +45,10 @@ Source/tree inspection and the minimal shell reproduction were performed. The fu
 The private canonical Drive registry v11 and newer corrections remain inaccessible through the exposed connector surface; no older Library registry was substituted and no private contents were published.
 
 **PRODUCTION NO-GO** remains until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates have independently verified evidence.
+
+
+## Exact-head CI follow-up — 2026-11-17 UTC15:14Z
+
+The exact COE #31 sandbox workflow [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job `134126241456`, has now **COMPLETED / CANCELLED** at head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`. The job log shows the packaging suite started under `PHX_REQUIRE_BWRAP=1`; 15 named tests reported `ok`, including `test_generated_build_script_passes_posix_shell_syntax_check`. GitHub then logged `The operation was canceled` at 15:14:22Z and terminated the Python process. The suite did **not** reach `test_generated_wrapper_denies_empty_firmware_payload`; no full-suite conclusion or runtime-path PASS/FAIL is claimed.
+
+This strengthens the test-gap finding: syntax-only validation passed, while the runtime branch that should expose the literal-escape defect was not executed in this run. The bounded local fragment reproduction remains `sh -n=0`, runtime exit 2 (`Syntax error: Bad fd number`). PHX-RELEASE must obtain a non-cancelled exact-head runtime result after correcting the template; PHX-QA independently reviews it. Shared-contract run [#44104956321](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956321) and case-collision run [#44104956464](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956464) remain scoped successes only. **PRODUCTION NO-GO.**

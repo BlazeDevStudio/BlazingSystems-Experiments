@@ -291,3 +291,8 @@ For generated ImageBuilder wrappers, require both shell syntax validation and ac
 At COE RELEASE #31 exact head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`, packager blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, source line 495 contains literal `\\n` sequences between the empty-image guard and checksum command. A minimal local reproduction returned `sh -n=0` but execution exit 2 (`Syntax error: Bad fd number`). The exact-head sandbox workflow [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job `134126241456`, was IN_PROGRESS at last read; no final CI result is claimed.
 
 PHX-RELEASE owns the correction on COE #31; PHX-QA independently verifies the exact corrected head. PHX-MASTER owns this contract and integration gate only. Keep #31/#26 draft; no migration or release. **PRODUCTION NO-GO.**
+
+
+### §6.12 exact-head CI follow-up — 2026-11-17 UTC15:14Z
+
+COE #31 sandbox run [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job `134126241456`, completed `CANCELLED` at exact head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`. The log shows 15 packaging tests returned `ok`, including the syntax-only generated-wrapper check, then the operation was canceled at 15:14:22Z. The runtime empty-firmware test was not reached. Do not report this as a source-test failure or pass; it is incomplete evidence. Require a non-cancelled exact-head runtime execution after RELEASE corrects the literal `\\n` template sequence, then independent QA review.
