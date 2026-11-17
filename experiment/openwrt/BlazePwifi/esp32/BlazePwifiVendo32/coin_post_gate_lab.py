@@ -84,8 +84,11 @@ for board,path in BOARDS:
         raise SystemExit(f"{board}: coin post bypasses journal guard")
     if 'post("coin"' not in loop:
         raise SystemExit(f"{board}: unexpected coin post call site")
-    if "if(!savePending())" not in loop or "fsReady=false;" not in loop:
-        raise SystemExit(f"{board}: failed journal write handling missing")
+    pulse_capture=extract(source,"void sampleCoinPulseEdge(bool active){")
+    if "if(!savePending())" not in pulse_capture or "fsReady=false;" not in pulse_capture or "pendingReady=true;" not in pulse_capture:
+        raise SystemExit(f"{board}: failed journal write handling missing from pulse-capture helper")
+    if "sampleCoinPulseEdge(active)" not in loop:
+        raise SystemExit(f"{board}: loop does not call the guarded pulse-capture helper")
     code=TEMPLATE.replace("@@FUNCTION@@",func)
     with tempfile.TemporaryDirectory(prefix="phx-post-gate-") as tmp:
         sourcepath=Path(tmp)/"gate.cpp"
