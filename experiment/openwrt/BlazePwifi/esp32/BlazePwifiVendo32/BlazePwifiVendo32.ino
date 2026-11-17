@@ -308,6 +308,8 @@ void initPendingStore(){
 }
 
 
+bool pendingAttemptMarkerMatches();
+
 bool clearPending(){
   if(journalRecoveryRequired) return false;
   if(!fsReady){
@@ -315,30 +317,50 @@ bool clearPending(){
     Serial.println("CRITICAL: cannot clear pending journal while LittleFS is unavailable.");
     return false;
   }
-  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
-  unsigned candidateCount=0;
-  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
-    if(LittleFS.exists(paths[i])) ++candidateCount;
-  }
-  if(candidateCount>1){
+  if(!pendingAttemptMarkerMatches()){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: multiple pending journals at clear; preserving all evidence.");
+    Serial.println("CRITICAL: cannot clear pending journal without a matching durable attempt marker.");
     return false;
   }
-  bool removed=true;
-  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
-    if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
-    if(LittleFS.exists(paths[i])) removed=false;
-  }
-  if(!removed){
+  PendingRecord attempt{};
+  if(!readPendingFile("/pending.attempt",attempt) ||
+     attempt.pulses!=pendingPulses ||
+     strcmp(attempt.nonce,pendingNonce.c_str())!=0 ||
+     strcmp(attempt.target,pendingTarget.c_str())!=0){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: pending journal deletion failed; preserving RAM event and disabling relay.");
+    Serial.println("CRITICAL: attempt marker changed or no longer matches the pending event.");
+    return false;
+  }
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  unsigned candidateCount=0;
+  const char *candidatePath=nullptr;
+  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
+    if(LittleFS.exists(paths[i])){
+      ++candidateCount;
+      candidatePath=paths[i];
+    }
+  }
+  if(candidateCount!=1 || !candidatePath){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: exactly one durable pending journal is required; preserving all evidence.");
+    return false;
+  }
+  PendingRecord durable{};
+  if(!readPendingFile(candidatePath,durable) ||
+     !samePendingRecord(attempt,durable)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending journal does not match the attempt marker; preserving all evidence.");
+    return false;
+  }
+  if(!LittleFS.remove(candidatePath) || LittleFS.exists(candidatePath)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending journal deletion failed; preserving attempt marker and RAM event.");
     return false;
   }
   // Remove the attempt marker LAST. A power cut after pending deletion but
   // before marker deletion leaves an orphan marker that blocks boot admission.
-  if(LittleFS.exists("/pending.attempt") &&
-     (!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt"))){
+  if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: pending event cleared but attempt marker remains; operator reconciliation required.");
     return false;
