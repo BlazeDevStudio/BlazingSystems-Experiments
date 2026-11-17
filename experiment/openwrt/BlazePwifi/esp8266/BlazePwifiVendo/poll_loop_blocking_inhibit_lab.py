@@ -358,6 +358,16 @@ def compile_and_run(code, board, expected=0, label="normal"):
 
 for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
+    edge_decl=source.find("volatile uint32_t coinEdgeSequence")
+    edge_isr=min(
+        (pos for pos in (
+            source.find("void ICACHE_RAM_ATTR coinEdgeISR"),
+            source.find("void IRAM_ATTR coinEdgeISR"),
+        ) if pos >= 0),
+        default=-1,
+    )
+    if edge_decl < 0 or edge_isr < 0 or edge_decl > edge_isr:
+        raise AssertionError(f"{board}: coinEdgeSequence must be declared before coinEdgeISR")
     loop=extract(source,"loop")
     write=extract(source,"writeLogical")
     output=extract(source,"applyOutputs")
