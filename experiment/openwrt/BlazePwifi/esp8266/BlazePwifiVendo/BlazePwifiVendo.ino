@@ -557,6 +557,7 @@ void sampleCoinPulseEdge(bool active){
       if(!savePending()){
         fsReady=false;
         pendingReady=true;
+        applyOutputs();
         Serial.println("CRITICAL: failed to persist coin journal; relay disabled.");
       }
     }
