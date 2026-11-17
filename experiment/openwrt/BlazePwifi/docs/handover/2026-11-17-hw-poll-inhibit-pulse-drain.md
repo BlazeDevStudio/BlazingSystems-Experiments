@@ -1,5 +1,27 @@
 # PHX-HARDWARE handover — poll inhibit pulse-train quiet guard
 
+## UTC11 — poll-window fixture chronology correction (test-only)
+
+**Current branch HEAD:** `12bc0cba790ea11a319c2769b07d106f593811e1`  
+**Firmware source-fix SHA (unchanged):** `5d3dc5547606841209ade10c888dab67e1ffcaa7`  
+**Current parent #317 head:** `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`
+
+A source/test audit found the prior blocking-HTTP scenario in `poll_response_failclosed_lab.py` rewound fake time: `beginPollWindow()` had already advanced to the 250 ms quiet boundary, but the fixture then assigned `fakeNow=120` and labelled the 100–180 ms pulse as occurring during the later HTTP wait. That was an impossible timeline and could give false confidence about the 3.5 s synchronous-poll window.
+
+The test now places the pulse at 300–380 ms, samples at 320 ms, and advances to 3600 ms for the timeout. It explicitly rejects a pulse start before the 250 ms boundary. New `poll_window_timeline_guard_lab.py` keeps the fixture invariant visible and human-debuggable.
+
+**Local static RED/GREEN evidence (not GitHub Actions):**
+- Pre-fix lab at commit `9aaa390c482918f29a71fb40e7e7d79a70d95a24`: expected RED because it contained `fakeNow=120` and the pre-boundary pulse.
+- Corrected lab at commit `12bc0cba790ea11a319c2769b07d106f593811e1`: static timeline guard PASS; pulse is after the quiet boundary and time does not rewind.
+- Both ESP sketches still contain the unchanged `max(runDebounceMs, 250 ms)` quiet guard.
+
+**CI status:** the previous exact-source run [#44069258396](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44069258396), job `133990936760`, passed the earlier 250 ms firmware source and the prior lab, but it predates this fixture correction. The new fixture guard has **not** yet received a new exact-head GitHub Actions result. Full run [#44069254356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44069254356), validation job `133991048028`, remains failed at QA-owned `tests/controllers.sh` (`Missing poll signature check`); ESP8266/ESP32 and listed target builds passed, but Full is not green.
+
+Parent #317 workflow was extended at `8bde0c268b76fe5578b7cba5c29e402c6d7582f2` to include the timeline guard and poll-response/window lab on child PR changes. No new PR-triggered run was returned by the connected GitHub run query. The #318 branch remains a stacked draft based on merge-base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`; it is 17 commits ahead / 8 behind the current #317 head. Do not rebase, force-push or merge without Master stack reconciliation.
+
+No firmware runtime behavior changed in this activation. This is test-fixture correctness work only; physical pulse/relay timing remains NOT TESTED.
+
+
 - Role: PHX-HARDWARE
 - Task: Project Phoenix #177 / control plane #172
 - Repository: `BlazeDevStudio/BlazingSystems-Experiments`
