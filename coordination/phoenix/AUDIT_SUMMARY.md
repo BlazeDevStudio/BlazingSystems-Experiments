@@ -310,3 +310,16 @@ PHX-MASTER reread the uploaded full-team directive, README_FIRST, BLAZE-COMMS/1,
 CORE #252 42698139210 SUCCESS (scoped); RENTAL #289 43653329235/43653329229 SUCCESS; PISONET #255 42462978704 SUCCESS; QA #290 43633486963 SUCCESS; RELEASE #291 43744993487 SUCCESS. These are scoped results, not production acceptance.
 
 **Other blockers remain:** invalid ULA `fd00:db8:blaze::/48`; no approved namespace-capable no-secret runner; #317 stale fixture; #318 stack; COE #26 provenance/licensing/test identity and queued CI; private registry access. `OWNERSHIP_ROUTES.json` remains unchanged, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No source/destination migration, merge, release, signing, secrets, flash, physical tests or real-payment operations occurred. **PRODUCTION NO-GO.**
+
+
+## UTC21 live audit — 2026-11-17: HARDWARE child stack drift and current sandbox CI
+
+PHX-MASTER refreshed live #172/#266, Experiments main/development, #288, routing manifest, role PRs/CI, COE main/#26/#31/#32, root AGENTS, README_FIRST, full Master directive, BLAZE-COMMS/1, and public cloud artifact policy/handover. The canonical private Drive registry v11/newer corrections remain inaccessible through the exposed connector/Library; no older snapshot was substituted.
+
+**New coordination finding:** HARDWARE #318 is no longer the previously recorded 49/45 or 31/27 stack. Current parent #317 is `1d4320fb11c43192c1e27ebb0b69039729abdc1a`; child #318 is `696e28ed4cd53b9189b78095b38aee973d774683`; exact compare merge base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`, **51 ahead / 63 behind**, DIVERGED; GitHub says mergeable=false and no current #318 CI runs. Its embedded handover still cites older SHAs and 31/27. Keep #317/#318 separate pending owner stack direction and independent QA.
+
+#317 focused relay/quarantine runs 44173107322/44173107264 pass; Full 44173107277 fails at QA-owned `Missing poll signature check`, while 14 target builds pass. Preserve default-deny; QA fixes the stale fixture. COE #31 current head `7bdba18b86f706d7fb96831094338600e28cc9c5`: shared/hardware 44179122507 and case guard 44179122882 pass, but sandbox 44179122674 fails at real unprivileged UID-map setup after seven preflight tests pass. COE #26 remains five queued workflows/zero jobs.
+
+Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master target null; 8/8 bounded parse/ownership assertions passed. Master full Python suite and Master CI were not executed/returned. No subsystem source paths, routing manifest, or destination files were changed.
+
+**Next:** HARDWARE states stack direction and refreshes handover; QA repairs #317's legacy fixture and tests selected exact #318 head; infrastructure provides a disposable no-secret namespace-capable runner; COE owner resolves #26 queue/provenance. Production remains NO-GO.

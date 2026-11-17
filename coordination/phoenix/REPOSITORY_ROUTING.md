@@ -303,3 +303,14 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 - Canonical private Drive registry v11/newer corrections unavailable through the exposed connector/Library; no older snapshot substituted and no private data published.
 
 **No destination file was moved, copied, overwritten or deleted.**
+
+
+## UTC21 live stack and migration hold — 2026-11-17
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch before this audit `b58771d5ac3f3c7489551429ea531c460d0f1185`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued, zero jobs.
+- HARDWARE #317 current head `1d4320fb11c43192c1e27ebb0b69039729abdc1a`; child #318 `696e28ed4cd53b9189b78095b38aee973d774683`. Exact compare: merge base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`, 51 ahead / 63 behind, DIVERGED, #318 mergeable=false, no #318 runs. Child handover's 31/27 and older SHAs are stale.
+- #317 Full run 44173107277 fails the QA-owned positive poll-signature assertion; focused labs pass. Keep default-deny.
+- COE #31 `7bdba18b86f706d7fb96831094338600e28cc9c5`: shared/hardware and case-collision checks pass; mandatory sandbox 44179122674 fails because hosted runner denies unprivileged UID-map setup.
+- No migration route or manifest change is authorized. `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No file moved/copied/overwritten/deleted.
+- Registry v11 and newer corrections unavailable; no older Library snapshot substituted. **PRODUCTION NO-GO.**

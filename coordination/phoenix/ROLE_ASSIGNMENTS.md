@@ -516,3 +516,25 @@ This snapshot supersedes UTC19 refs/status for current work only. It does not tr
 | COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued, zero jobs; no integrated acceptance |
 
 COE #31 still has invalid ULA `fd00:db8:blaze::/48`; sandbox symlink/timeout runtime assertions were not reached on hosted CI. HARDWARE #317 remains default-deny; do not restore positive poll admission. #318 is a separate draft. Registry v11/newer corrections remain unavailable. **PRODUCTION NO-GO.**
+
+
+## Live exact role and CI refresh — 2026-11-17 UTC21
+
+This snapshot supersedes the older UTC20 role pins for current work. It is a status reconciliation only; no ownership transfer or merge/migration approval.
+
+| Role / candidate | Current exact head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER #288 | `b58771d5ac3f3c7489551429ea531c460d0f1185` before this audit | OPEN/DRAFT; 63 paths before this audit; no PR-triggered workflow runs returned |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate hourly CORE automation owns implementation |
+| PHX-RENTAL #240 / #287 / #289 | `a7d113fb...` / `a4fffd01...` / `68928774...` | #289 runs 43653329235 and 43653329229 SUCCESS, scoped |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN |
+| PHX-HARDWARE #317 | `1d4320fb11c43192c1e27ebb0b69039729abdc1a` | Focused runs 44173107322 / 44173107264 SUCCESS; Full 44173107277 FAILURE at stale QA poll-signature assertion; 14 target builds SUCCESS |
+| PHX-HARDWARE #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | 51 ahead / 63 behind #317; diverged; mergeable=false; no current-head runs |
+| PHX-QA #267 / #279 / #290 / #292 | `ff536799...` / `8f476ef0...` / `5c29d159...` / `75a3f66d...` | #292 has no current-head runs; rerun recipient regression against current Master candidate |
+| PHX-RELEASE #242 / #291 | `734b89d9...` / `0d990afce562de1b81ef6b9daed112fab7c6c85b` | #291 run 44180669656 SUCCESS, scoped |
+| COE RELEASE #31 | `7bdba18b86f706d7fb96831094338600e28cc9c5` | Shared/hardware 44179122507 and case 44179122882 SUCCESS; mandatory sandbox 44179122674 FAILURE at unprivileged UID-map denial |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs; no combined acceptance |
+
+#318's embedded handover still cites an older child SHA/parent and 31-ahead/27-behind comparison. Current live comparison is 51 ahead / 63 behind; keep the drafts separate until HARDWARE proposes and QA verifies a stack.
+
+The private registry v11/newer corrections remain inaccessible; no older snapshot was substituted. Invalid site ULA, sandbox host denial, QA poll fixture, #26 queued CI, migration provenance, and physical/financial gates remain open. **PRODUCTION NO-GO.**

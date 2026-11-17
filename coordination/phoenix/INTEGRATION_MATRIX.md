@@ -687,3 +687,16 @@ COE #31 packager blob 0763b1ea18ceff2fb9ccae212d5bb86a78119baf still emits inval
 Current Master validator blob `3a6d0ca34cad54cd113abbda17d90898603547b3` already rejects unknown and ambiguous recipient strings. QA #292's initial RED was against an older verifier; its recorded post-fix 4/4 run used a prior fixed Master blob, not current HEAD. The Master test suite now explicitly rejects non-string and empty recipient values. Bounded exact-function execution: 14/14 PASS; full Master suite and PR CI NOT RUN. Independent QA must retest the current exact blob and synthetic #288 integration tree.
 
 The COE #31 sandbox remains host-blocked despite final packaging and both board compile jobs passing. ULA, HARDWARE #317 stale fixture, #318 stack, COE #26 queued jobs, registry access and all physical/financial gates remain OPEN/BLOCKED. **PRODUCTION NO-GO.**
+
+
+## Live exact integration refresh — 2026-11-17 UTC21
+
+| Integration area | Current exact candidate / evidence | State |
+|---|---|---|
+| Master coordination | #288 `b58771d5ac3f3c7489551429ea531c460d0f1185`; no PR-triggered runs returned | DRAFT / PARTIAL |
+| Hardware parent #317 | `1d4320fb11c43192c1e27ebb0b69039729abdc1a`; focused 44173107322 and 44173107264 SUCCESS; Full 44173107277 fails at legacy positive poll-signature fixture | CI PARTIAL / QA BLOCKED |
+| Hardware child #318 | `696e28ed4cd53b9189b78095b38aee973d774683`; compare vs #317 51 ahead / 63 behind; no runs; mergeable=false | STACK BLOCKED |
+| COE ImageBuilder #31 | `7bdba18b86f706d7fb96831094338600e28cc9c5`; shared/hardware + case checks pass; sandbox fails at UID-map permission denial | SANDBOX BLOCKED |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued, zero jobs | INTEGRATION NOT ACCEPTED |
+
+The #317 failure is a QA fixture/parity failure, not permission to enable positive poll admission. #318's 250 ms quiet-window source changes remain unverified on its current head. No native hardware, coin-acceptor, 150 power-cut, or 30-device/24-hour soak evidence was produced. Site-scoped ULA, protected signing/anti-rollback, crash-atomic financial state, reversible migration, and exact per-file provenance remain NO-GO gates.
