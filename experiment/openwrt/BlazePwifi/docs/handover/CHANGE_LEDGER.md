@@ -1,3 +1,12 @@
+## 2026-11-17 UTC23 — PHX-RELEASE Node24 action runtime migration — VERIFIED CI / DRAFT ONLY
+
+- Test-first expected RED [#44198332958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198332958): handover/PackageParity/concurrency PASS; new immutable Node24 pin assertion failed as expected against old checkout pin.
+- Intermediate exact-source run [#44198759075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198759075) failed after the new pin guard passed because a second publisher assertion still hard-coded the old download-artifact SHA. The test was corrected to derive that SHA from the authoritative pin table; no publisher behavior ran.
+- Workflow source commit `070e3f6e54f5da1d2c217a48fe172a339a5bc106`; test/handover correction `4d36160ccffb7bee34aa713bc896be33e355646d`. Exact final source/test-head [Windows run #44199068618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199068618) SUCCESS: handover and build-windows PASS; publisher SKIPPED. No Node20 deprecation warning in final job log.
+- Checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2, download-artifact v8.0.2 are pinned to immutable upstream commits; exact upstream `action.yml` metadata read back as Node24. Six action uses lines: checkout x3, setup-dotnet x1, upload x1, download x1.
+- PR preview artifact ID `14379669398`, 264,827,662 bytes; provider digest `sha256:c3203949297d3b3ef405f02e342a25a00801408cf53e7486197d28057a8ea65f`. Artifact not independently downloaded; UNSIGNED CI preview only. Download action runtime not exercised because privileged publisher job is skipped in PR validation.
+- No signing, release creation, tag, merge, or deployment. Independent PHX-QA and PHX-MASTER reviews remain required. PRODUCTION NO-GO.
+
 ## 2026-11-17 UTC23 — PHX-RELEASE action-pin assertion synchronization
 
 - Source/workflow head `070e3f6e54f5da1d2c217a48fe172a339a5bc106` uses the new Node24 immutable pins.
