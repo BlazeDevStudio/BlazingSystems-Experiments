@@ -765,3 +765,17 @@ No flash, reset, live coin, relay bench, 150 power cuts, 30-device soak, electri
 
 Only the narrow hardware handover and this project ledger were updated. CURRENT_STATE.md and CHANGE_LEDGER.md are not present on this branch; no historical branch was imported to create them. No physical flash, relay/coin test, power-cut trial, soak, live payment, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
 <!-- PHX-HARDWARE-20261117-QUARANTINE-TIMESTAMP-VALIDATION:END -->
+
+<!-- PHX-HARDWARE-20261117-POLL-AUTHORITY-DENY:START -->
+## PHX-HARDWARE — poll admission remains denied pending approved contract (2026-11-17 UTC08)
+
+**Master contract:** the live Architecture Contracts §6.3 at Master PR #288 head 47f2f6e9107f58902396d5731cfcd77b80598eb5 states that the current poll producer/consumer signature is only a derived candidate: no shared golden vector has been independently executed, and configured-key admission remains fail-closed until CORE publishes the canonical producer and QA verifies both sides at pinned SHAs.
+
+**Test-first RED:** test-only commit 491cd094e77c264b2c8053aff0c59913f0faa229 adds a positive-looking provisioned-key candidate response that must not enable intake. The first workflow attempt 44050812024 was an invalid harness run due to a C++ JSON-literal escaping error; corrected test commit 491cd094 produced focused RED run [44051036806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051036806), job 133928606170, where both board poll labs failed at the new default-deny assertion. Existing quarantine tests still passed 19/19 per board.
+
+**Source correction:** both ESP sketches now make acceptPollResponse() explicitly clear insertMode and activeTarget and return DENY. The unapproved derived SHA construction is no longer used to authorize relay/coin intake. No shared API, CORE financial source, remote configuration, receipt/disposition, or QA-owned file was changed.
+
+**Scope:** this is a safety hold, not a replacement protocol. CORE must publish the canonical producer/consumer contract, including freshness and canonical serialization; QA must approve positive/negative golden vectors at pinned source SHAs; MASTER must approve before HARDWARE can implement a verifier. Until then, poll-based coin admission remains disabled.
+
+No flash, reset, live coin, relay bench, physical power cut, 30-device soak, electrical pulse test, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+<!-- PHX-HARDWARE-20261117-POLL-AUTHORITY-DENY:END -->

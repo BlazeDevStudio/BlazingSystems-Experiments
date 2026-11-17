@@ -358,3 +358,13 @@ All of these are source-extracted C++ host/fake-LittleFS simulations, not physic
 **Required cross-role contract:** PHX-CORE must define an event-bound authenticated coin receipt and negative disposition binding controller identity, request nonce, event nonce, target, pulse count, disposition, unique receipt ID, freshness/expiry and key version, including idempotency/replay semantics and canonical serialization. PHX-QA must publish independent positive/negative golden vectors and power-loss/replay cases. PHX-MASTER must approve the contract. Only then may PHX-HARDWARE replace the default-deny helper with a real verifier. Until that happens, coin POST disposition remains intentionally disabled and this branch is not operationally accepted.
 
 No flash, reset, live coin, relay bench, 150 power cuts, 30-device soak, electrical pulse test, production migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+
+## 2026-11-17 UTC08 — deny unapproved poll admission candidate
+
+Master PR #288 §6.3 at head 47f2f6e9107f58902396d5731cfcd77b80598eb5 explicitly says the derived poll response signature is not approved and configured-key coin admission remains fail-closed until CORE publishes the canonical producer and QA independently verifies golden vectors. The prior #315 consumer still accepted the derived candidate and could set insertMode=true and activeTarget from it.
+
+Test-first RED: focused [run 44051036806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44051036806), job 133928606170, exact test SHA 491cd094e77c264b2c8053aff0c59913f0faa229. The new both-board assertion failed as expected after the corrected C++ test literal; the prior attempt 44050812024 was a harness syntax error and is not counted as RED evidence.
+
+Source correction: both sketches now make acceptPollResponse() clear stale admission/target state and return false unconditionally. The unapproved candidate signature no longer enables coin intake. The hardware-owned poll lab now expects default-deny for positive, negative and configuration-bearing candidate responses. This is not a new wire contract and does not change CORE or QA files.
+
+Exact-head focused CI and Full validation are pending. No physical acceptance, migration, flash, payment, signing, merge or release is claimed.

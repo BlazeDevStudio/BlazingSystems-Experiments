@@ -181,27 +181,30 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 55;
 
-  // A fresh valid positive poll may restore intake after the inhibit is released.
+  // A positive-looking candidate response remains denied until the canonical
+  // producer/consumer contract and independent golden vectors are approved.
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
-  responseTarget="target-02"; responseInsert=true; pollIntakeSuspended=true; relayOn=true; applyOutputs();
-  if(!acceptPollResponse(String("{\"ok\":true}")) || !insertMode || activeTarget!="target-02") return 17;
-  if(relayOn) return 18; // intake remains inhibited while response is processed
+  responseTarget="target-02"; responseInsert=true;
+  pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
+  if(acceptPollResponse(String(R"({"ok":true})")) || insertMode || !activeTarget.empty()) return 17;
+  if(relayOn) return 18;
   pollIntakeSuspended=false; applyOutputs();
-  if(!relayOn || !ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 || runRelayPin!=26 || !runCoinActiveLow || !runRelayActiveHigh || runDebounceMs!=70) return 19;
+  if(relayOn || ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 ||
+     runRelayPin!=26 || !runCoinActiveLow || !runRelayActiveHigh || runDebounceMs!=70) return 19;
 
-  // A valid admission signature must not authorize unauthenticated config fields.
+  // A candidate admission signature must not authorize configuration fields either.
   responseInsert=true; responseSignature="valid-signature"; responseTarget="target-02b";
   insertMode=false; activeTarget=""; pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
   const String configInjection("{\"ok\":true,\"insert\":true,\"target_nonce\":\"target-02b\",\"expires\":123,\"response_sig\":\"valid-signature\",\"config_revision\":99,\"enabled\":1,\"coin_enabled\":1,\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":12,\"led_pin\":2,\"coin_active_low\":0,\"relay_active_high\":0,\"led_active_high\":1,\"coin_debounce_ms\":1,\"pulse_group_ms\":10,\"max_wifi_retries\":60}");
-  if(!acceptPollResponse(configInjection) || !insertMode || activeTarget!="target-02b") return 44;
+  if(acceptPollResponse(configInjection) || insertMode || !activeTarget.empty()) return 44;
   pollIntakeSuspended=false; applyOutputs();
-  if(!relayOn || !ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 ||
+  if(relayOn || ledOn || applyRemoteConfigCalls!=0 || remoteRevision!=7 ||
      runRelayPin!=26 || !runCoinActiveLow || !runRelayActiveHigh || runDebounceMs!=70) return 45;
 
-  // A valid negative insert state remains disabled.
+  // A candidate negative response is denied and clears stale target state.
   responseInsert=false; responseSignature="valid-signature"; responseTarget="target-03";
-  pollIntakeSuspended=true; relayOn=true; applyOutputs();
-  if(!acceptPollResponse(String("{\"ok\":true}")) || insertMode || activeTarget!="target-03") return 20;
+  insertMode=true; activeTarget="stale-target"; pollIntakeSuspended=true; relayOn=true; applyOutputs();
+  if(acceptPollResponse(String(R"({"ok":true})")) || insertMode || !activeTarget.empty()) return 20;
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 21;
 

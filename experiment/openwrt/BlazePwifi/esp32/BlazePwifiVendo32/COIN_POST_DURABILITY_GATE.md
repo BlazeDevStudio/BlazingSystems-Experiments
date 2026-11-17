@@ -44,3 +44,7 @@ Both board sketches persist `/pending.attempt` with the exact pending event iden
 - The pending record is removed first and the marker last, only after the existing successful receipt or successful quarantine-append path. A failed marker removal leaves an orphan marker that blocks the next boot.
 
 The hardware-owned source lab injects marker open, short-write, readback, mismatch, corruption, orphan, pending-delete and marker-delete failures on both boards. These are host simulations. LittleFS flush/readback has **not** been proven across physical power loss; no 150-cut, electrical or soak acceptance is implied. PHX-CORE must review the uncertain/reconciliation semantics and PHX-QA must independently verify the exact combined SHA before acceptance.
+
+## Poll admission authority hold — 2026-11-17 UTC08
+
+The ESP32/ESP8266 consumer must not treat the current derived response_sig expression as an approved authorization contract. Master Architecture Contracts §6.3 requires a canonical producer and independent positive/negative golden vectors at pinned SHAs before configured-key coin admission can be enabled. Until that gate is satisfied, acceptPollResponse() explicitly clears stale target/admission state and returns DENY on both boards. This is a safety hold, not a completed authentication protocol. Do not enable coin intake by toggling a local flag or copying the COE candidate; obtain CORE/QA/Master approval first.

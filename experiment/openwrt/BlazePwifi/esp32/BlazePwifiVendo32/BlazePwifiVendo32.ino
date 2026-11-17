@@ -880,34 +880,14 @@ bool coinPostDispositionVerified(const String &response,const String &nonce,
 }
 
 bool acceptPollResponse(const String &response){
-  bool insertAllowed=jsonTrue(response,"insert");
-  String target=jsonString(response,"target_nonce");
-  // PHX-MASTER ARCHITECTURE_CONTRACTS §6.1: keyless bootstrap is never coin authority; require a provisioned key and valid response signature.
-  bool signatureOk=false;
-  if(String(cfg.key).length()){
-    String signature=jsonString(response,"response_sig");
-    if(signature.length()){
-      int insert=insertAllowed?1:0;
-      int expires=jsonInt(response,"expires",0);
-      String expected=hexDigest(String(cfg.key)+"|poll|"+String(cfg.id)+"|"+lastSentNonce+"|"+String(insert)+"|"+target+"|"+String(expires)+"|"+String(cfg.key));
-      signatureOk=signature.equalsIgnoreCase(expected);
-    } else {
-      signatureOk=false;
-    }
-  }
-  if(!signatureOk || !pollJsonTopLevelTrue(response,"ok") ||
-     (insertAllowed && !target.length())){
-    // An unauthenticated, rejected or targetless positive response must not
-    // reuse stale permission or energize an acceptor without a bound target.
-    insertMode=false;
-    activeTarget="";
-    return false;
-  }
-  insertMode=insertAllowed;
-  activeTarget=target;
-  // The admission signature binds only the poll tuple, not remote pin/config fields.
-  // Keep poll authorization separate until CORE/MASTER approve a distinct config signature.
-  return true;
+  // MASTER ARCHITECTURE_CONTRACTS §6.3: the current response_sig expression is
+  // a derived candidate, not an approved poll authorization contract. CORE has
+  // not published the canonical producer/golden vectors and QA has not approved
+  // both sides at pinned SHAs. Never energize coin intake from this candidate.
+  (void)response;
+  insertMode=false;
+  activeTarget="";
+  return false;
 }
 
 void startSetupAp(){
