@@ -280,3 +280,14 @@ At COE RELEASE #31 final head d45b84c67dc587fca6226662cb1d8bc59bdb11ae, the test
 The production packager blob fd558928b2869ce1f4b2cb2776b405b4b723b310 contains no bubblewrap or runner invocation in generate_build_script(). The generated build script therefore does not enforce the same boundary when an operator runs it directly. Runtime build execution remains NOT SANDBOX-ENFORCED / UNKNOWN until RELEASE either integrates the runner into the generated entrypoint or documents and independently verifies a mandatory external isolated build-host boundary.
 
 The current runner explicitly passes --share-net; network isolation is not present or claimed. Its read-only host-root bind is a write boundary, not a confidentiality boundary. Do not describe this as a full sandbox or run untrusted build inputs on a secret-bearing host. PHX-RELEASE owns implementation; PHX-QA independently verifies the actual supported build invocation; PHX-MASTER owns this contract and release gate only.
+
+
+## 6.12 Generated shell templates require runtime-path verification — 2026-11-17 UTC15
+
+A successful `sh -n` check proves only that the shell parser accepts the generated file; it does not prove that each generated command path executes correctly. When Python emits a shell script from a triple-quoted template, a literal `\\n` is not a line break: it becomes backslash-plus-`n` in the emitted script. Do not use escaped line-break text inside a multiline template unless the resulting shell bytes are explicitly intended and tested.
+
+For generated ImageBuilder wrappers, require both shell syntax validation and actual execution of each security-relevant branch using a disposable Makefile. In particular, the empty-image denial must return its expected nonzero status and diagnostic, create no release manifest, and preserve external sentinels. A syntax-only test is not a substitute for the runtime regression.
+
+At COE RELEASE #31 exact head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`, packager blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, source line 495 contains literal `\\n` sequences between the empty-image guard and checksum command. A minimal local reproduction returned `sh -n=0` but execution exit 2 (`Syntax error: Bad fd number`). The exact-head sandbox workflow [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job `134126241456`, was IN_PROGRESS at last read; no final CI result is claimed.
+
+PHX-RELEASE owns the correction on COE #31; PHX-QA independently verifies the exact corrected head. PHX-MASTER owns this contract and integration gate only. Keep #31/#26 draft; no migration or release. **PRODUCTION NO-GO.**

@@ -524,3 +524,19 @@ PHX-RELEASE must repair and actually apply the sandbox to the Make process and r
 The sandbox helper is now exercised by the CI test harness, but the generated build artifact does not invoke it. Do not classify the actual ImageBuilder build as sandbox-enforced. PHX-RELEASE must enforce the boundary at the supported build entrypoint or document and prove a separate mandatory isolated build host; PHX-QA must test that actual path. Network isolation remains explicitly unclaimed. The ULA remains a separate P0; require installation/site-scoped durable generation or validated deployment input, not a shared static profile prefix.
 
 COE #26 remains at five queued workflows. Keep #26/#31 draft. No copy, overwrite, move, merge or promotion is authorized by this audit.
+
+
+## 19. COE generated-wrapper runtime guard recheck — 2026-11-17 UTC15
+
+| Gate | Exact evidence | Disposition |
+|---|---|---|
+| COE RELEASE #31 | `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`, child of #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Open / draft |
+| Packager | blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, line 495 | Literal `\\n` in generated shell template; runtime defect reproduced in minimal shell fragment |
+| Syntax-only test | `test_generated_build_script_passes_posix_shell_syntax_check` | `sh -n` returned 0 in minimal reproduction; insufficient alone |
+| Runtime test | `test_generated_wrapper_denies_empty_firmware_payload` | Relevant exact wrapper execution; expected diagnostic must be verified on corrected head |
+| Current sandbox CI | [#44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job `134126241456` | IN_PROGRESS at last read; no conclusion |
+| ULA | `fd00:db8:blaze::/48` | Still invalid; deployment-scoped durable ULA required |
+| Generated build sandbox | Packager does not invoke runner; runner uses `--share-net` | Actual build boundary unproven; no network-isolation claim |
+| COE #26 | Five workflows queued at exact head | No combined acceptance |
+
+PHX-RELEASE owns generated-wrapper correction; PHX-QA owns independent exact-head runtime verification. PHX-MASTER owns the architecture contract and integration gate only. No COE source edit or destination migration was performed. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; #26/#31 remain draft. **PRODUCTION NO-GO.**

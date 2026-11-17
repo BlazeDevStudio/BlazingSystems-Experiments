@@ -389,3 +389,15 @@ These exact PR heads and run observations supersede earlier snapshot rows for th
 | COE #26 / #28 / #29 / #30 / #31 / #32 | b382d233... / b21b0461... / d0830332... / 4897348d... / d45b84c6... / 29b6fe08... | #26 five QUEUED; #28 43632393888 SUCCESS; #29 43653906676 + 43653906675 SUCCESS; #30 43653415598 SUCCESS with NSIS warning 6000 still requiring correction; #31 44104956173 PENDING / 44104956321 SUCCESS / 44104956464 SUCCESS; #32 43653540607 SUCCESS | No combined #26 acceptance; #31 sandbox runtime enforcement and ULA remain open |
 
 The exact #31 sandbox run remains pending with no jobs returned. The current generated packager wrapper does not invoke the new runner; only the test harness does. Preserve the distinction. The private Drive registry v11 remains unavailable; no older snapshot was substituted.
+
+
+## 2026-11-17 UTC15 — exact owner handoff
+
+- **PHX-MASTER:** current branch parent `8583e012f4468f6e55d1cb8e3f05837905719cc1`; UTC15 generated-wrapper runtime audit is coordination-only. No worker source path was edited.
+- **PHX-RELEASE:** COE #31 `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`, packager blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, line 495 contains literal `\\n` sequences in the generated shell template. Correct on the existing release branch; do not edit MASTER files or alter the ULA/CORE contract without coordination.
+- **PHX-QA:** independently execute the corrected generated wrapper's empty-image denial and positive synthetic path at the exact final #31 head; verify exit code, diagnostic, no manifest on denial and external sentinel preservation. `sh -n` alone is insufficient.
+- **PHX-CORE:** current scoped PR #252 head `c82705f2de865c89ab733b10efa84f26f56a5cc4`; separate CORE automation retains implementation ownership. PHX-MASTER did not modify CORE.
+- **PHX-HARDWARE:** PR #317 head `4496124580a11f8bdd88c2e5adcdfb86e824b978`; focused quarantine and relay-polarity runs pass, Full validation run `44097182945` fails on the inherited positive poll-signature fixture. Preserve firmware default-deny; QA owns fixture correction.
+- **COE integration owner:** #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued. No combined acceptance or migration approval.
+
+Private Drive registry v11/newer corrections remain inaccessible. **PRODUCTION NO-GO.**

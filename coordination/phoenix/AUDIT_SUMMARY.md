@@ -227,3 +227,8 @@ The packager still emits invalid fd00:db8:blaze::/48, and its tests still lack U
 The exact COE #26 integration head remains b382d233ff06c8791b1028bed3c617cc7b670d12 with five workflows queued. No combined integration acceptance or source migration is established. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY; no copy/move/overwrite is authorized.
 
 Ten bounded exact-blob source assertions passed. The full Master Python suite was not run because no local checkout was available (git clone/ls-remote failed DNS). Public Cloud Artifact Policy and Storage Handover were read; the private v11 registry and newer corrections remain inaccessible and no older Library snapshot was substituted. **PRODUCTION NO-GO.**
+
+
+## 2026-11-17 UTC15 — COE generated-wrapper literal-escape runtime defect
+
+Exact COE #31 head `d45b84c67dc587fca6226662cb1d8bc59bdb11ae`, packager blob `fd558928b2869ce1f4b2cb2776b405b4b723b310`, line 495 embeds literal `\\n` sequences inside the generated shell template. A minimal local reproduction returned `sh -n=0` but execution exit 2 (`Syntax error: Bad fd number`). The existing empty-firmware runtime regression is the relevant exact-head check; syntax-only validation is insufficient. COE sandbox run [44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173), job 134126241456, was IN_PROGRESS at last read; no result is inferred. Route correction to PHX-RELEASE and independent verification to PHX-QA. PHX-MASTER made no destination source edit. Keep #26/#31 draft, ULA and actual build sandbox blockers open. **PRODUCTION NO-GO.**
