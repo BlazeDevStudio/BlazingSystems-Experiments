@@ -109,7 +109,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<17;scenario++){
+  for(int scenario=0;scenario<18;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -145,12 +145,14 @@ int main(){
     if(scenario==16)
       disk.bytes="TIME=8 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=earlier\n"
                  "TIME=9 PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=duplicate\n";
+    if(scenario==17)
+      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce001122334455 TARGET=target0011223344 REASON=forged-but-complete\n";
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17;
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -162,6 +164,7 @@ int main(){
        (scenario==14 && disk.bytes!=bytesBefore) ||
        (scenario==15 && disk.bytes!=bytesBefore) ||
        (scenario==16 && disk.bytes!=bytesBefore) ||
+       (scenario==17 && disk.bytes!=bytesBefore) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -183,7 +186,7 @@ int main(){
       }
     }
     if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
-       scenario==11 || scenario==16){
+       scenario==11 || scenario==16 || scenario==17){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
@@ -191,7 +194,7 @@ int main(){
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
       bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
-                                scenario==7 || scenario==8 || scenario==10 || scenario==16);
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17);
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
            clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
@@ -207,7 +210,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 17/17 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 18/18 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -239,9 +242,15 @@ for board, ino in BOARDS:
         cpp.write_text(actual, encoding="utf-8")
         subprocess.run(["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2",
                         str(cpp), "-o", str(binary)], check=True)
-        subprocess.run([str(binary)], check=True)
+        completed = subprocess.run([str(binary)], capture_output=True, text=True)
+        if completed.stdout:
+            print(completed.stdout, end="")
+        if completed.stderr:
+            print(completed.stderr, file=sys.stderr, end="")
+        if completed.returncode:
+            raise SystemExit(f"{board}: source-extracted quarantine regression failed")
     print(f"{board}: compiled exact extracted source")
-print("PHX-HARDWARE: 34/34 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 36/36 source-extracted host scenarios PASS; no hardware evidence")
 poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
