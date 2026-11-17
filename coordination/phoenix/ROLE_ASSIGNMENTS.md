@@ -335,3 +335,22 @@ No PHX-CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified
 | COE RELEASE #31 | 43e70422990857168c61c77b47fdd742f34d7846 | 44074188531, 44074188480 SUCCESS, scoped | Correct invalid ULA prefix |
 
 Scoped CI success is not combined integration or production acceptance. The private canonical Drive registry v11 and newer corrections remain inaccessible; no older Library snapshot was substituted.
+
+
+## Live role / PR / CI snapshot — 2026-11-17 UTC13
+
+| Role / candidate | Exact current head | Exact-head CI observation | Owner action / boundary |
+|---|---|---|---|
+| PHX-MASTER #288 | `5d5ca7a04b81abe3e2771c7ba0f4e0ff135164db` before this update | No PR-triggered runs returned | `coordination/phoenix/` only |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped | Separate CORE automation retains implementation |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | 43653329235 and 43653329229 SUCCESS | Preserve owner boundary |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS | Physical COM acceptance remains unverified |
+| PHX-HARDWARE #317 | `d6184c097561dd800b09bc7ab3b8739e79000ce9` | Full 44087267104 FAILURE at validate job 134052853915; focused 44087267150 and 44087267306 SUCCESS | QA repairs stale poll fixture; preserve default-deny |
+| PHX-HARDWARE #316 | `888e6941e3a7a81641682c23d937f97d8117d2ea` | Focused 43972511337 SUCCESS; Full 43972511250 FAILURE | Keep separate; no silent composition |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 43633486963 SUCCESS; #292 no PR-triggered runs | Exact-head independent verification still needed |
+| PHX-RELEASE #291 | `2c4edff231d9b2819415086825530d80b8801307` | 43744993487 SUCCESS, scoped | Signing/publishing remain closed |
+| COE #26 / #28 / #29 / #30 / #31 / #32 | `b382d233...` / `b21b0461...` / `d0830332...` / `4897348d...` / `b29d69a4...` / `29b6fe08...` | #26 five QUEUED; #28/#29/#30/#31/#32 scoped SUCCESS | No combined #26 acceptance; keep drafts |
+
+COE #31 exact-head validation log reports 57 packaging tests, 18 shared-contract tests, 10 profile validations, ESP32 and ESP8266 compilation all passing. No test asserts ULA validity, so this does not close the P0 prefix blocker. The exact-head #317 Full failure is a separate stale positive poll-signature fixture; do not relax firmware default-deny.
+
+No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch was modified by PHX-MASTER. The private Drive registry v11 remains inaccessible through the exposed connector; no older Library snapshot was substituted.

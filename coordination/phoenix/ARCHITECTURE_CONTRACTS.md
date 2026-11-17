@@ -248,3 +248,14 @@ COE #26 and its current release child #31 both emit the hard-coded option ula_pr
 **Contract:** generated ula_prefix must be a strictly parsed RFC 4193 ULA in fd00::/8 with /48 prefix length. Reject malformed, non-ULA, host-bit-set, wrong-length and missing values before any staged UCI write. Do not substitute one globally hard-coded prefix: define a reviewed profile input or deployment-time generation/persistence policy that gives each independent LAN/site a unique prefix while devices on the same LAN share it. PHX-RELEASE owns packager/profile/tests; PHX-CORE and COE owner define provisioning; PHX-QA independently verifies exact-head output; PHX-HARDWARE validates only after correction. Master owns this contract and routing, not implementation.
 
 See [APPLIANCE_IPV6_ULA_PREFIX_CONTRACT_AUDIT_20261117_UTC11.md](APPLIANCE_IPV6_ULA_PREFIX_CONTRACT_AUDIT_20261117_UTC11.md). Keep #26/#31 draft. **PRODUCTION NO-GO.**
+
+
+## 6.9 ULA prefix is installation identity, not hardware profile — 2026-11-17 UTC13
+
+The shared router profile describes hardware capabilities and is reused across independent installations. A site ULA prefix is deployment identity, not a model property. Do **not** add one static `networking.ula_prefix` to the shared hardware-profile schema as the default fix.
+
+A generic appliance image must not embed a globally shared ULA placeholder. The installation/first-boot authority must create a locally assigned RFC 4193 ULA /48 for that installation, persist it durably before network services consume it, and reuse it across reboot, upgrade and restore. Devices on the same LAN/site share that prefix; independent sites receive independently generated prefixes. Require canonical strict parsing, locally assigned `fd00::/8`, exact `/48` length and network alignment.
+
+The implementation owner must choose and verify one target-supported mechanism: (1) first-boot generation plus atomic persistence, or (2) a validated deployment-specific prefix input when an artifact is intentionally unique to one site. Do not silently fall back to a fixed example, regenerate on each build/boot, or assume netifd supplies a valid prefix without target evidence. If neither mechanism is present, keep integration blocked.
+
+**Owner routing:** PHX-RELEASE owns packager/first-boot implementation and tests; the COE integration owner owns destination staging; PHX-QA independently verifies valid/invalid inputs and generated UCI; PHX-HARDWARE validates target behavior only after correction and authorization. PHX-MASTER owns this cross-repo contract and gate only. Exact evidence is in [COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md](COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md). **PRODUCTION NO-GO.**

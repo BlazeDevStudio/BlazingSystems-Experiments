@@ -475,3 +475,14 @@ The source root NOTICE and destination/subtree license/notice inventory are not 
 | COE #26 CI | 43096752609, 43096752632, 43096752800, 43096752563, 43096752557 QUEUED | No combined acceptance |
 
 Python ipaddress rejected the exact literal because blaze is non-hex and accepted a valid ULA /48 control. This was not OpenWrt uci/netifd or router validation. Route packager correction to PHX-RELEASE, policy to PHX-CORE/COE owner, independent tests to PHX-QA, and later target validation to PHX-HARDWARE. Master changes coordination only. Keep #26/#31 draft; no migration.
+
+
+## 16. COE ULA prefix revalidation and deployment-scope decision — 2026-11-17 UTC13
+
+The current COE #26 and release child #31 both emit the same invalid hard-coded `fd00:db8:blaze::/48` from `tools/package_appliance_firmware.py::generate_network_uci()`. Exact packager blobs: #26 `c6ad3807d7fedb00ab7560813b82810cb8cce751`; #31 `fd558928b2869ce1f4b2cb2776b405b4b723b310`. Their test blobs `8f6b2f849152902c341428067e52fe95f6763b93` and `c183ceaad0c470ee06db9a9c68993844553efc3c` contain no ULA/IPv6 assertions. Shared profile schema `ddc5d2ebad868c99908747c75961b45b8c0edced` and EW1200G Pro profile `6e797cf9c9922209efe4c0da49c49fa1da16c11a` contain no ULA field.
+
+At exact COE #31 head `b29d69a4cd97ca93babbab436bcc00b1e9d8280d`, run [44084015060](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44084015060) passed 57/57 packaging tests, 18/18 shared contracts, 10/10 profiles and both ESP compile jobs; [44084014924](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44084014924) passed case-collision. Those suites do not test ULA validity. COE #26 still has five queued workflows. No combined acceptance is established.
+
+**Architecture decision:** ULA is installation/site state, not shared router-profile metadata. Do not add one static prefix to the reusable hardware profile. Require a target-supported first-boot generation + durable persistence path, or a validated deployment-specific build input for a site-unique artifact. Never hard-code a shared prefix or assume implicit netifd behavior without target evidence. PHX-RELEASE implements, COE integration owner stages, PHX-QA independently tests, PHX-HARDWARE validates target behavior, and PHX-MASTER owns the contract only.
+
+Python `ipaddress` rejected the exact invalid literal and accepted a valid fd/48 control. This was not OpenWrt UCI/netifd or router validation. Keep #26/#31 draft; no copy, overwrite, move or promotion. See [COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md](COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md). **PRODUCTION NO-GO.**
