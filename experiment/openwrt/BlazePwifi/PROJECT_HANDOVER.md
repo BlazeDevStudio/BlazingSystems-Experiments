@@ -843,3 +843,16 @@ At PR #317 HEAD **9f6a7141fa10cd5ed90f267f389cb6212e2e7d1a**, Full run [#4406443
 All 14 target/platform jobs completed SUCCESS (ESP8266, ESP32, Android, x86_64, Ruijie and the 9 Orange Pi variants). Production import/sign, update bundle, v0.4 simulations/candidate gate and prerelease/release publishing were SKIPPED. Focused exact-head run [#44064436574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44064436574), job **133974328430**, succeeded with 28/28 pending-attempt marker cases per board (56/56 total).
 
 The Full workflow is FAILED despite target builds passing. This remains SIMULATED / CI VERIFIED only; physical acceptance and all financial/signer/migration gates remain NOT TESTED/BLOCKED. No QA-owned file, shared contract, COE destination, flash, migration or release was changed.
+
+
+## PHX-HARDWARE — parent/child poll-window workflow scope guard (2026-11-17 UTC12)
+
+**Task:** #177 / #172 / #266 · **Role:** PHX-HARDWARE · **Branch:** `phoenix/hardware-clear-pending-marker-match-20261117` · **Starting HEAD:** `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`
+
+At exact parent PR #317 HEAD `8bde0c268b76fe5578b7cba5c29e402c6d7582f2`, focused run [#44077597223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44077597223), job `134019532118`, compiled the relay-output lab successfully: ESP8266 and ESP32 each passed 48/48 scenarios and both injected regressions were rejected. The next step failed because the workflow invoked `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py`, which is intentionally present on child PR #318 but absent from the parent #317 tree. This was a workflow/stack-scope failure, not a firmware compile or relay-lab failure.
+
+The same parent SHA's Full run [#44077597179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44077597179), validation job `134019533307`, failed at QA-owned `tests/controllers.sh` with the legacy “Missing poll signature check” assertion. Master Architecture Contracts §6.7 keeps poll admission default-deny; PHX-HARDWARE did not change QA-owned files or restore the unapproved `response_sig` candidate.
+
+**Change:** the workflow now runs both child-only poll-window labs only when the timeline-guard file exists in the exact checked-out SHA. On a parent-only SHA, it emits `CHILD_POLL_WINDOW_TESTS=NOT_PRESENT_ON_THIS_SHA` and `NO_CHILD_POLL_WINDOW_CI_CLAIM=1`; it does not silently claim those tests passed. Child PR #318 currently contains the corrected timeline guard and poll lab, but remains 17 commits ahead / 8 behind #317 with no PR-triggered run on its literal head. Do not rebase or compose it without Master stack reconciliation.
+
+**Validation:** exact-head Actions after this workflow change are pending; no GREEN is claimed yet. This commit changes CI wiring and handovers only, not firmware runtime. Host simulations remain SIMULATED; relay polarity, coin waveform, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Production remains NO-GO.
