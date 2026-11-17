@@ -60,6 +60,7 @@ String lastSentNonce="nonce-123";
 String activeTarget="old-target";
 bool insertMode=true, fsReady=true, journalRecoveryRequired=false;
 bool pendingReady=false, pollIntakeSuspended=true;
+bool pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool runRelayActiveHigh=true, runLedActiveHigh=true;
 int runRelayPin=26, runLedPin=2;
@@ -130,6 +131,25 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 23;
 
+  // Keyless setup/bootstrap is not coin authority, even when a response_sig-shaped
+  // value is present but cannot be verified without a provisioned key.
+#ifdef TARGET_ESP32
+  cfg.key="";
+#else
+  cfg.key[0]='\0';
+#endif
+  insertMode=true; activeTarget="old-target"; responseSignature="valid-signature";
+  responseTarget="target-keyless"; responseInsert=true;
+  pollIntakeSuspended=true; relayOn=true; ledOn=true; applyOutputs();
+  if(acceptPollResponse(String("{\"ok\":true}")) || insertMode || !activeTarget.empty() || relayOn) return 29;
+  pollIntakeSuspended=false; applyOutputs();
+  if(relayOn || ledOn) return 30;
+#ifdef TARGET_ESP32
+  cfg.key="test-key";
+#else
+  std::strcpy(cfg.key,"test-key");
+#endif
+
   // A fresh valid positive poll may restore intake after the inhibit is released.
   insertMode=false; activeTarget=""; responseSignature="valid-signature";
   responseTarget="target-02"; responseInsert=true; pollIntakeSuspended=true; relayOn=true; applyOutputs();
@@ -167,7 +187,7 @@ int main(){
   pollIntakeSuspended=false; applyOutputs();
   if(relayOn || ledOn) return 28;
 
-  std::cout << "poll-response fail-closed cases: 9/9 PASS; strict root JSON cases: 13/13 PASS\n";
+  std::cout << "poll-response fail-closed cases: 10/10 PASS; strict root JSON cases: 13/13 PASS\n";
   return 0;
 }
 """

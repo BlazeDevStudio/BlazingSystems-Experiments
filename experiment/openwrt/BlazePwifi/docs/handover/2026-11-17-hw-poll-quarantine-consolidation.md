@@ -40,7 +40,7 @@ The existing #294 validation extractor still does not include `acceptPollRespons
 ## Cross-role contract blockers
 
 1. Main at `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` returns poll JSON with `ok`, `insert`, `target_nonce`, `expires`, and `controller`, but no `response_sig`. With a configured key, the current firmware denies this unsigned poll response. Do not weaken that denial. PHX-CORE/MASTER must define the authenticated poll-response producer/consumer contract.
-2. The current helper still treats an empty controller key as no signature requirement. Master §6.1 proposes default-deny for keyless poll admission; PHX-CORE and PHX-HARDWARE must agree the bootstrap/provisioning boundary before changing this behavior. It is not production-safe evidence.
+2. Keyless poll admission was changed to default-deny in the UTC01 follow-up below: `signatureOk` starts false and only a nonempty provisioned key plus a matching `response_sig` can authorize. Setup/bootstrap remains non-authorizing. PHX-CORE/MASTER still must approve the provisioning and signed-response contract; no keyless admission is allowed.
 3. The quarantine failure latch remains RAM-only. A durable rejected-event marker/reconciliation contract is required before reboot-safe non-replayability can be claimed.
 
 ## Ownership and acceptance boundaries
@@ -132,3 +132,26 @@ The hardware-owned parser now uses the equivalent ASCII delimiter values 123 and
 Exact failing evidence: full run [43995933844](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43995933844), validation job 133747891212, Controller protocol parity step. The focused hardware run at the first head 64b9683cbabcd329dadee11ed974e6102f8710e4 was still queued when this note was written; it is not counted as passing. Re-run both focused and full workflows at the new exact head and inspect any subsequent QA extractor result separately.
 
 No physical, financial, migration, flashing, reset, release, or deployment operation occurred.
+
+
+## 2026-11-17 UTC01 — poll lab fixture repair and keyless regression
+
+At the pre-fix PR #315 head \`d5bb5d482f96c3ed1829a74fcaf2bb1c404a70df\`, the exact-head focused workflow [43996442006](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43996442006), job \`133749556034\`, executed the quarantine source lab successfully (17/17 per board, 34/34 total), then failed while compiling the hardware-owned poll lab. Its C++ stub did not declare \`pinConfigSafe\`, which the actual extracted \`applyOutputs()\` function reads. This was a test-fixture compile failure, not a firmware target compile failure.
+
+The full BlazePwifi run [43996442210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43996442210) also completed with validation job \`133749557166\` failed at the QA-owned Controller protocol parity extractor: it extracts \`loop()\` but not \`acceptPollResponse()\`, so the generated host source reports the helper undeclared for ESP8266 and ESP32. Actual ESP8266 compile job \`133749557234\` and ESP32 compile job \`133749557313\` both passed. Target image builds completed successfully; production sign/import/publish jobs were skipped.
+
+This follow-up makes only hardware-owned lab/handover changes:
+- Adds \`pinConfigSafe\` to the host stub so the actual output gate compiles without weakening it.
+- Adds an empty-key positive-response regression with a nonempty \`response_sig\`-shaped value; both board-shaped runs must reject it, clear stale target/insert state, and leave relay/LED OFF after poll suspension is released.
+- Raises the poll-lab result from 9/9 to 10/10 scenarios per board; the strict root-JSON parser remains 13/13.
+- The existing focused hardware workflow already reaches this lab through \`quarantine_readback_lab.py\`; no RELEASE-owned workflow or QA-owned \`tests/\` file was changed.
+
+The firmware's keyless default-deny fix was already present at the parent head: \`signatureOk=false\`, and only a nonempty provisioned key plus a matching response signature can authorize a positive poll. This commit adds exact-source regression coverage; it does not change runtime firmware or the controller API.
+
+Outstanding:
+- PHX-QA must update its canonical Controller protocol parity extractor to include \`acceptPollResponse()\` and independently run the poll lab at the new exact head.
+- PHX-CORE/MASTER must approve the signed poll producer/consumer contract. Main still does not emit \`response_sig\`; configured-key responses therefore remain fail-closed.
+- The quarantine \`journalRecoveryRequired\` latch is RAM-only; durable rejected-event/replay disposition still needs a CORE/MASTER contract and QA reboot-failure proof.
+- Physical relay polarity/timing, coin waveform, 150 real power cuts, 30-device 24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent release signoff remain NOT TESTED / BLOCKED.
+
+No QA-owned tests, RELEASE-owned workflows, shared API, finance source, migration, signing, physical hardware, flashing, reset, merge, release or deployment were changed or performed.
