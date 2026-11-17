@@ -119,7 +119,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<23;scenario++){
+  for(int scenario=0;scenario<29;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -171,12 +171,25 @@ int main(){
     if(scenario==20) attemptMarkerExists=false;
     if(scenario==21) attemptMarkerValid=false;
     if(scenario==22) std::strcpy(attemptMarker.nonce,"wrongnonce123456");
+    // Malformed prior quarantine records must never authorize pending deletion.
+    if(scenario==23)
+      disk.bytes="TIME=1 PULSES=not-a-number NONCE=oldnonce TARGET=oldtarget REASON=old\\n";
+    if(scenario==24)
+      disk.bytes="TIME=1 PULSES=21 NONCE=oldnonce TARGET=oldtarget REASON=old\\n";
+    if(scenario==25)
+      disk.bytes="TIME=1 PULSES=1 NONCE= TARGET=oldtarget REASON=old\\n";
+    if(scenario==26)
+      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET= REASON=old\\n";
+    if(scenario==27)
+      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=\\n";
+    if(scenario==28)
+      disk.bytes="TIME=1 PULSES=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\\n";
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19 || (scenario>=23 && scenario<=28);
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -191,6 +204,7 @@ int main(){
        (scenario==17 && disk.bytes!=bytesBefore) ||
        (scenario==18 && disk.bytes!=bytesBefore) ||
        (scenario>=19 && disk.bytes!=bytesBefore) ||
+       (scenario>=23 && scenario<=28 && disk.bytes!=bytesBefore) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -236,7 +250,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 23/23 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 29/29 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -281,7 +295,7 @@ for board, ino in BOARDS:
             print(f"{board}: compiled exact extracted source")
 if failed_boards:
     raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
-print("PHX-HARDWARE: 38/38 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 58/58 source-extracted host scenarios PASS; no hardware evidence")
 poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
