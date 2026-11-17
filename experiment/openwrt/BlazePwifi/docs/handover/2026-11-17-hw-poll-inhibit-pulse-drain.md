@@ -115,3 +115,15 @@ Current child head before this change: 7cd93a70c84b322f4cdbc46a9df3eb6355d66b86.
 The 250 ms boundary scenario now has a targeted mutation check. The lab builds a second host binary with the final `return coinLineIdle();` in `coinLineQuietAfterInhibit()` replaced by `return true;`. The mutant must fail specifically at scenario exit 25 (pulse begins at exactly 250 ms); any other exit is treated as a harness failure. The timeline guard requires the mutation code and explicit rejection marker.
 
 Previous exact-head child run [#44082960356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44082960356), job `134037962611`, passed the 13/13 poll-window matrix on both boards before this new mutation was added. New exact-head mutation CI is pending. No firmware runtime changed; physical pulse delay and electrical acceptance remain NOT TESTED.
+
+
+## Exact child-head CI — final UTC12 result
+
+**Test/CI head:** `90262e4677638b01d18a8eb348efdc3cbeff6202`.
+
+- Child poll-window [run #44083290324](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44083290324), job `134039102435`: **SUCCESS**. Timeline guard passed. ESP8266 and ESP32 each passed 13/13 poll-window cases, 8/8 debounce-floor cases, 1/1 blocking-poll relay-inhibit case, 11/11 poll-response default-deny cases, 13/13 strict-root-JSON cases, 4/4 coin POST ACK-root cases and 4/4 coin-disposition default-deny cases. The mutation replacing the final `return coinLineIdle();` with `return true;` was rejected on both boards at expected exit 25. The workflow explicitly reports physical coin acceptor and power-cut verification as 0.
+- Exact-head child Full build [run #44083290724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44083290724): validation job `134039104956` **FAILED** at the QA-owned legacy “Missing poll signature check” assertion. All 14 target jobs completed **SUCCESS** (ESP8266, ESP32, Android, x86_64, Ruijie and 9 Orange Pi targets). Production import/signing, update bundle and v0.4 simulations were SKIPPED.
+- Current comparison against parent #317 head `0e34b623991af6e70ef0a6e55378791a9e84ecde`: **25 ahead / 10 behind, diverged, mergeable=false**; merge base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`. No rebase, cherry-pick, merge or force-push was performed.
+- Firmware source blobs are unchanged across child build head `9154e3f744035265f58e9f5278ea196fe601072e` and test head `90262e...`: ESP8266 `8d2145eee9c80743b2a89e928133d2640c312cff`; ESP32 `f3d31bee514ac75627b6fa6ad93bb7b293e2873e`.
+
+The host tests are SIMULATED / CI VERIFIED only. The 250 ms software boundary does not establish the physical acceptor's delayed pulse behavior, relay contact state or electrical recovery. 150 power cuts, 30-device/24-hour soak and physical pulse acceptance remain NOT TESTED. Production remains NO-GO.
