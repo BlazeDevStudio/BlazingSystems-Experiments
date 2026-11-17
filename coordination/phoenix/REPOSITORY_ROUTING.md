@@ -261,3 +261,18 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 - COE #26 remains the integration owner's draft staging branch at `b382d233ff06c8791b1028bed3c617cc7b670d12`; #31 is a separate draft child and is not treated as integrated.
 - `OWNERSHIP_ROUTES.json` is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. It remains a review map, not a copy/move command. No destination files, licences, histories or test identities were changed.
 - The private registry/correction set is unavailable through the exposed connector; no older snapshot was used as authority and no private identifiers or contents were published.
+
+
+## Live routing and migration hold — 2026-11-17 UTC18
+
+- PHX-MASTER remains limited to `coordination/phoenix/`, architecture/interface contracts, cross-repository provenance, integration matrices and release-gate coordination.
+- COE #26 remains the destination staging candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five workflows are queued. COE #31 remains a RELEASE-owned draft child, not integrated.
+- The current #317 source firmware blobs differ from the staged #26 Hardware ESP32/ESP8266 blobs. Destination code still has active poll authorization defaults and quarantine deletion, while current #317 is default-deny and preserves quarantine evidence. No source copy or destination overwrite is authorized.
+- Source QA test `experiment/openwrt/BlazePwifi/tests/controllers.sh` has no exact target at `Pisowifi/tests/controllers.sh`; the distinct `Hardware/tests/test_firmware_hardening.sh` is not an import-equivalent test and retains positive-poll/clear-route expectations.
+- Source BlazePwifi MIT license blob is `1ee55b94183417be977ca287cd7391f9a6f7e721`; COE #26 places the same blob only under sibling `Pisowifi/LICENSE`. No Hardware-specific or COE-root LICENSE/NOTICE was found. Resolve applicability before any file move.
+- HARDWARE #318 is a separate divergent child from #317 (49 ahead / 40 behind, mergeable=false). Keep both drafts; no rebase, cherry-pick, merge or destination staging from either until owner stack selection and QA review.
+- COE #31's unprivileged single-ID runner is source-present but hosted-runner UID-map setup fails. No sandbox acceptance; infrastructure owner must authorize a disposable no-secret runner with user namespaces enabled. No sudo/helper/broad-ID/unsandboxed fallback.
+- `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. This remains a review map, not a copy/move command.
+- Canonical private Drive registry v11/newer corrections remain inaccessible through the exposed connector; no older snapshot was substituted and no private contents/IDs were published.
+
+**No destination file was moved, copied, overwritten, or deleted.**
