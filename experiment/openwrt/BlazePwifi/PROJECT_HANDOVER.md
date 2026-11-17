@@ -702,3 +702,12 @@ The focused orchestrator now captures the one-shot marker lab output and asserts
 - Full [run 44029841759](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44029841759), validation job `133858850165`: **FAILED** at QA-owned Controller protocol parity. Its extracted-loop harness still lacks `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()` for both boards. Other target jobs were still in progress at the last observation; no Full success is claimed.
 
 PHX-QA must repair its owned `tests/v060_esp_poll_intake_guard.py` and independently rerun Full validation at the current #315 head. No QA-owned source was changed. No runtime firmware change, physical flash, real coin, relay, power cut, electrical pulse, soak, production migration, signing, merge, release or deployment occurred.
+
+## 2026-11-17 UTC06 — coin POST gate aggregate count correction
+
+The coin POST gate lab has 10/10 cases per board after the explicit one-shot-marker denial case was added; its previous aggregate banner still said 18/18. Corrected the banner to `20/20` total. The focused orchestrator workflow reran the actual ESP8266/ESP32 source-extracted suite at exact #315 head `b06034215439ff3264d273d20e0f851fdafc2366`.
+
+- Focused [run 44030370904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44030370904), job `133860589530`: **COMPLETED SUCCESS at exact HEAD b06034215439ff3264d273d20e0f851fdafc2366**. Logs confirm quarantine 17/17 per board; poll 11/11 and strict JSON 13/13 per board; debounce/poll-window 8/8 per board; register-config 7/7 per board; pending marker 19/19 per board (38/38 total); mount 7/7 per board; pending recovery 16/16 and pending clear 11/11 per board; write/readback 22/22 per board; coin POST gate 10/10 per board (20/20 total). Fake LittleFS/source-extracted host checks only.
+- Full [run 44029841759](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44029841759) **COMPLETED CANCELLED** after validation job `133858850165` FAILED in QA-owned Controller protocol parity. The extractor still omits `pendingPostAttempted`, `acceptPollResponse()`, and `markPendingPostAttempt()`; ESP8266 compiled successfully, several Orange Pi targets passed, and ESP32/Ruijie/x86/Android plus simulations/release jobs were cancelled. No Full success.
+
+No runtime firmware changed in this activation. PHX-QA still owns the failing extractor. No physical coin/relay/power-cut/electrical/soak test, production migration, signer, merge, release or deployment occurred.
