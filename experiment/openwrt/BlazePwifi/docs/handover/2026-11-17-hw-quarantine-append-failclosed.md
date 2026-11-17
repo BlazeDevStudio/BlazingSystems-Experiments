@@ -106,3 +106,43 @@ Source commit efe8ee83d521139a3e3f0c8eaf60b29a9f9e4d75 corrected both board pars
 **Exact-source GREEN:** final source/test head [`2bdf494`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2bdf4945ec043a4493b33334b136d34662c97aee). [Quarantine run #44096806381](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44096806381), job `134085961421`, **SUCCESS**: 33/33 scenarios per board (66/66 total), including all four new delimiter/ambiguity cases; inherited attempt-marker 28/28 per board, mount 14/14, boot recovery 32/32, pending-clear 34/34, write/readback 22/22 per board and coin POST-deny 20/20 also passed. [Relay-output run #44096806289](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44096806289), job `134085966578`, **SUCCESS**: 48/48 per board; both polarity and poll-inhibit mutations rejected on both boards.
 
 **Evidence limit:** source-extracted C++17 host tests with fake LittleFS only. `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `FINANCIAL_PRODUCTION_AUTHORIZED=0`. Physical flash durability, relay contact polarity, coin pulses, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. Full BlazePwifi build/validation is tracked separately; no release claim is made. Production remains NO-GO.
+
+
+## UTC15 — ESP32/ESP8266 pending and quarantine safety-helper parity
+
+**DRAFT PR #317 remains OPEN / UNMERGED / NO-GO.** Branch phoenix/hardware-clear-pending-marker-match-20261117. Source/test SHA: f74cd39aaf9045258f5374dd39b1542a142a8424.
+
+### Change
+
+The hardware-owned quarantine_readback_lab.py now extracts 11 safety-critical production helpers from both sketches and requires byte-for-byte parity before compiling either board:
+
+- readPendingFile
+- markPendingPostAttempt
+- pendingAttemptMarkerMatches
+- clearPending
+- canAttemptCoinPost
+- quarantineLogField
+- quarantineLogTokenValid
+- quarantineLogRecordValid
+- inspectQuarantineLog
+- appendQuarantineRecord
+- quarantinePending
+
+This prevents a later board-only edit from weakening pending evidence, POST gating, quarantine validation, or disposition semantics without a focused CI failure. The test includes a deliberate fail-open mutation (return verified; → return true;) in the ESP8266 append helper; the parity guard must reject it.
+
+No firmware runtime source, shared API/schema, QA-owned tests, finance, migration, signer, or release file changed.
+
+### Exact-head CI
+
+- Focused quarantine [run #44117721021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44117721021), job 134160276258: **SUCCESS** at exact source/test SHA f74cd39aaf9045258f5374dd39b1542a142a8424.
+- Exact log markers: BOARD_QUARANTINE_PARITY_PASS 11/11 helpers byte-identical; BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass; SOURCE_QUARANTINE_PASS 33/33 on each board; pending-attempt marker 28/28 each; mount 7/7 each; boot recovery 16/16 each; pending-clear 17/17 each; write/readback 22/22 each; coin POST gate 10/10 each.
+- Relay-output [run #44117721018](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44117721018), job 134160275795: **SUCCESS** at the same exact SHA; 48/48 scenarios per board; inverted-polarity and removed-poll-inhibit mutations rejected on both boards.
+- Full BlazePwifi push run [#44117698099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44117698099): validation job 134160203209 **FAILED** at QA-owned tests/controllers.sh with Missing poll signature check. Other platform jobs were still running at this checkpoint. PR-triggered Full run [#44117721088](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44117721088) was queued. Do not claim Full success.
+
+### Evidence classification and coordination
+
+All quarantine and parity evidence is **SIMULATED / CI VERIFIED** with source-extracted C++17 and fake LittleFS. Physical flash durability, real relay contacts, actual coin acceptor pulses, 150 controlled power cuts, 30-device 24-hour soak, and electrical pulse/recovery remain **NOT TESTED**. Protected witness, durable accounting/replay, v1→v2 migration and independent release approval remain BLOCKED. **Production NO-GO.**
+
+Master's current draft role assignment at #288 head 86b91edd2864d796487a9da56a8267ae44ca771c still lists #239/#254/#283 but does not list the active #317/#318 stack. PR #318 remains a separate divergent child at a497403bd3886caf105585c0da997a100ad61dc3, mergeable=false, based on stale merge base 3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3. No rebase, cherry-pick, merge or force-push was performed.
+
+**Next:** PHX-MASTER reconciles #317/#318 in ROLE_ASSIGNMENTS and resolves the child stack; PHX-QA replaces the obsolete positive poll-signature assertion with source-linked default-deny cases and reruns Full; PHX-HARDWARE preserves the deny state and awaits approved noncustomer physical acceptance.
