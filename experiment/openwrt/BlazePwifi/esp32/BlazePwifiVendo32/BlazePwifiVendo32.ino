@@ -44,6 +44,14 @@ uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 
+volatile uint32_t coinEdgeSequence=0;
+#if defined(ESP8266)
+void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+#else
+void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+#endif
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
+
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
@@ -306,6 +314,39 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
+bool writePollPulseFaultMarker(uint32_t pulseEdges){
+  if(!fsReady) return false;
+  if(LittleFS.exists("/pollpulse.fault")) return true;
+  char record[96];
+  int length=snprintf(record,sizeof(record),
+      "POLL_PULSE_DURING_BLOCKING_HTTP edges=%lu millis=%lu\n",
+      (unsigned long)pulseEdges,(unsigned long)millis());
+  if(length<=0 || (size_t)length>=sizeof(record)) return false;
+  File marker=LittleFS.open("/pollpulse.fault","w");
+  if(!marker) return false;
+  size_t written=marker.write((const uint8_t*)record,(size_t)length);
+  marker.flush();
+  marker.close();
+  if(written!=(size_t)length) return false;
+  File verify=LittleFS.open("/pollpulse.fault","r");
+  if(!verify) return false;
+  bool matches=verify.size()==(size_t)length;
+  for(size_t i=0;matches && i<(size_t)length;++i){
+    if(verify.read()!=(unsigned char)record[i]) matches=false;
+  }
+  verify.close();
+  return matches;
+}
+
+void loadPollPulseFaultLatch(){
+  // Presence alone is a deny latch: partial/corrupt markers are not auto-cleared.
+  if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;
+  journalRecoveryRequired=true;
+  insertMode=false;
+  activeTarget="";
+  Serial.println("CRITICAL: prior coin-line edge during blocking poll found; preserve marker and reconcile offline before enabling intake.");
+}
+
 void initPendingStore(){
   // begin(false) must never silently format unreconciled coin evidence.
   fsReady=LittleFS.begin(false);
@@ -314,6 +355,7 @@ void initPendingStore(){
     return;
   }
   loadPending();
+  loadPollPulseFaultLatch();
 }
 
 
@@ -622,8 +664,10 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+  detachInterrupt(digitalPinToInterrupt(runCoinPin));
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
@@ -703,6 +747,19 @@ void applyOutputs(){
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+}
+
+void latchPollPulseFault(uint32_t pulseEdges){
+  journalRecoveryRequired=true;
+  insertMode=false;
+  activeTarget="";
+  const bool persisted=writePollPulseFaultMarker(pulseEdges);
+  if(persisted){
+    Serial.println("CRITICAL: coin-line edge during blocking poll; durable fault marker recorded; operator reconciliation required.");
+  } else {
+    Serial.println("CRITICAL: coin-line edge during blocking poll; marker write/readback failed; device remains fail-closed this boot.");
+  }
+  applyOutputs();
 }
 
 // A pulse train is complete only after the 250 ms inter-coin quiet interval
@@ -1064,11 +1121,16 @@ void loop(){
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500 && beginPollWindow()){
+    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
     wifiFailures=0;
     String r=post("poll");
-    // Keep intake inhibited until this response has been accepted or denied.
+    // Keep intake inhibited through response handling, then inspect asynchronous GPIO edges.
     acceptPollResponse(r);
     pollIntakeSuspended=false;
+    const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+    if(pollEdgeEnd!=pollEdgeStart){
+      latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
+    }
     applyOutputs();lastPoll=millis();
   }
 
