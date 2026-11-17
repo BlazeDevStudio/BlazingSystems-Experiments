@@ -64,7 +64,7 @@ struct FakeDisk {
   std::string bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
   bool priorOpenFail=false, appendOpenFail=false, verifyOpenFail=false;
   bool logExists=true;
-  bool shortWrite=false, mutateAfterClose=false, mutateOnRead=false;
+  bool shortWrite=false, mutateAfterClose=false, mutatePrefixAfterClose=false, mutateOnRead=false;
   bool removeOneByteAfterClose=false;
   bool hasWritten=false;
 } disk;
@@ -87,6 +87,8 @@ struct File {
   void close(){
     if(d && writing){
       if(d->mutateAfterClose && !d->bytes.empty()) d->bytes.back()='Z';
+      // Simulate same-size corruption of an older record while the new suffix stays intact.
+      if(d->mutatePrefixAfterClose && !d->bytes.empty()) d->bytes[0]='U';
       if(d->removeOneByteAfterClose && !d->bytes.empty()) d->bytes.pop_back();
     }
     d=nullptr;
@@ -132,7 +134,7 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<35;scenario++){
+  for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -211,6 +213,8 @@ int main(){
     if(scenario==33){ disk.logExists=false; disk.bytes.clear(); }
     // First-ever append open failure must not create a log or clear pending.
     if(scenario==34){ disk.logExists=false; disk.bytes.clear(); disk.appendOpenFail=true; }
+    // Scenario 35 corrupts a pre-existing record but leaves the appended suffix exact.
+    if(scenario==35) disk.mutatePrefixAfterClose=true;
     const std::string bytesBefore=disk.bytes;
     bool expectClear=(scenario==0 || scenario==12 || scenario==14 || scenario==31 || scenario==33);
     bool expectClearAttempt=expectClear || scenario==11;
@@ -280,7 +284,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 35/35 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 36/36 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -393,7 +397,7 @@ for board, ino in BOARDS:
 
 if failed_boards:
     raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
-print("PHX-HARDWARE: 70/70 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 72/72 source-extracted host scenarios PASS; no hardware evidence")
 poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
