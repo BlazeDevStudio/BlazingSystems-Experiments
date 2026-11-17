@@ -228,3 +228,26 @@ Correction: the fixture now declares only the new `runCoinActiveLow` sentinel an
 The full build at this source head [44008391473](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008391473) also has the known PHX-QA-owned validation failure: `tests/controllers.sh` extracts `loop()` without `acceptPollResponse()`, causing an undeclared-helper compile error on both board harnesses. PHX-HARDWARE did not edit QA-owned tests. Target builds were still running at the time of this handover update.
 
 No physical coin acceptor, relay, power-cut, electrical or financial operation occurred.
+
+
+## 2026-11-17 UTC03 — exact-head poll/config regression result
+
+After correcting the test-only duplicate declaration in `853d2ada6d7111cfdc044fb73475ffb2d90c9085`, focused workflow [44008556093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008556093), job `133789714381`, completed **SUCCESS** at that exact source head:
+- Poll-response/config-isolation: **11/11 per board**.
+- Strict root JSON: **13/13 per board**.
+- Debounce floor: **8/8 per board**.
+- Poll-window guard: **8/8 per board**.
+- Quarantine: **34/34 total**.
+- Fake-LittleFS mount/output: **14/14 total**.
+- Boot recovery: **32/32 total**.
+- Pending-clear protection: **22/22 total**.
+- Pending write/readback: **44/44 total**.
+- Coin POST gate: **18/18 total**.
+
+All are source-extracted host/fake-filesystem simulations. The workflow explicitly reports physical coin acceptor and production financial authorization as false.
+
+Full BlazePwifi run [44008556084](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008556084) had validation job `133789824548` **FAILED** because the PHX-QA-owned `tests/controllers.sh` extractor still omits `acceptPollResponse()` from the extracted `loop()` harness. ESP8266 target compile `133789824864` **PASS**; ESP32 compile `133789824811` and several optional target/Android jobs were still in progress at the `2026-11-17T03:14:00Z` observation. No overall full-workflow success is claimed.
+
+The prior test-only RED at [44008391400](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44008391400) is retained above: it was caused by a duplicate `runRelayActiveHigh` declaration in the hardware-owned C++ stub and was corrected in `853d2ada`. No production firmware failure was reported by that run.
+
+**Next:** PHX-QA must independently repair and rerun the canonical extractor at the current exact PR head; PHX-CORE/MASTER must approve a separate authenticated remote-config contract before any remote config is re-enabled. Physical pulse/relay behavior, 150 power cuts, 30-device 24-hour soak and electrical recovery remain NOT TESTED.
