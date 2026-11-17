@@ -183,3 +183,18 @@ The full build [44006269369](https://github.com/BlazeDevStudio/BlazingSystems-Ex
 Follow-up corrects the hardware-owned extractor to accept `uint16_t` functions and pass function names, then re-runs the actual debounce/poll-window bodies. ESP32/ESP8266 compile jobs from the full run were still in progress at this checkpoint; no compile result is inferred.
 
 No physical coin acceptor, relay, power-cut or financial operation was performed.
+
+
+## 2026-11-17 UTC02 — Arduino prototype-order RED and correction
+
+The first full build at source commit `b30bbee26c29fbc30cc02ef8ba6ff9864c23d5a0` exposed a genuine ESP8266 compile failure: the new `boundedCoinDebounceMs()` definition sat before `struct PendingRecord`, and Arduino's prototype generation emitted later `PendingRecord` function declarations before the type. Full run [44006532865](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44006532865), ESP8266 job `133783230092`, failed with `PendingRecord does not name a type` at `pendingChecksum` / `readPendingFile`. This is retained as a real RED; it was not a test-only issue.
+
+The focused run at the same commit [44006532858](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44006532858), job `133783130977`, passed the new poll-window/debounce lab after the earlier extractor correction:
+- debounce floor 8/8;
+- poll-window guard 8/8 per board;
+- poll-response 10/10 and strict root JSON 13/13 per board;
+- quarantine 34/34, mount/output 14/14, boot recovery 32/32, pending-clear 22/22, pending write/readback 44/44, coin POST gate 18/18.
+
+This follow-up moves the helper below `PendingRecord` in both sketches to preserve Arduino prototype ordering. The existing full validation still independently fails in the PHX-QA-owned `tests/controllers.sh` Controller protocol parity extractor because it omits `acceptPollResponse()`; PHX-HARDWARE did not edit that QA-owned file. ESP32 compilation from the prior full run was still in progress at this checkpoint and is not counted.
+
+No physical coin, relay, power-cut, electrical or financial operation occurred.
