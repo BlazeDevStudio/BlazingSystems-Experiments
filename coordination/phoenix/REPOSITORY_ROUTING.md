@@ -241,3 +241,14 @@ PHX-RELEASE owns the template correction on its own branch; PHX-QA independently
 ## UTC15:14Z COE #31 CI status clarification
 
 The final-head sandbox run [44104956173](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44104956173) completed CANCELLED after 15 packaging tests reported `ok`; the generated-wrapper syntax-only test passed, but the empty-firmware runtime test was not reached. This is incomplete evidence. Do not promote the test-harness sandbox or generated build. PHX-RELEASE owns the literal-escape correction and actual build entrypoint enforcement; PHX-QA independently verifies. No source migration is authorized.
+
+
+## COE RELEASE #31 UTC16 — operator wrapper source correction and runtime hold
+
+COE #31 exact head is `9c2bebf50030c03bc4dd1e827e050863ba482eab`, based on integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. The current packager wrapper now re-enters through the release-owned sandbox runner for an uncontained operator invocation. This supersedes the prior UTC14/UTC15 source observation that the operator wrapper invoked Make directly. The runner uses a read-only host root, a writable ImageBuilder bind, and `--share-net`; network isolation is not claimed.
+
+Exact-head sandbox run [44125258197](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44125258197) was CANCELLED at its 20-minute workflow timeout after 15 packaging tests reported `ok`; no complete runtime verdict exists. The test helper and runner lack per-invocation timeouts. RELEASE owns bounded process execution and retry; QA independently verifies. The invalid `fd00:db8:blaze::/48` ULA remains in the packager and blocks integration.
+
+HARDWARE #317 is now at `839c21877c27c893e2efc73b3afe7c48e1fcfa4e`. Focused labs pass; Full [44130911522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44130911522) fails at the legacy positive poll-signature grep. QA owns the fixture correction; preserve firmware default-deny.
+
+COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows. #31 remains draft and is not integrated. `OWNERSHIP_ROUTES.json` remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. No source copy, destination overwrite, relocation, cherry-pick, merge, or promotion is authorized.
