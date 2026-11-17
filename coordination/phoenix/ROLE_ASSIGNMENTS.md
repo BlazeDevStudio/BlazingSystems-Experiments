@@ -538,3 +538,10 @@ This snapshot supersedes the older UTC20 role pins for current work. It is a sta
 #318's embedded handover still cites an older child SHA/parent and 31-ahead/27-behind comparison. Current live comparison is 51 ahead / 63 behind; keep the drafts separate until HARDWARE proposes and QA verifies a stack.
 
 The private registry v11/newer corrections remain inaccessible; no older snapshot was substituted. Invalid site ULA, sandbox host denial, QA poll fixture, #26 queued CI, migration provenance, and physical/financial gates remain open. **PRODUCTION NO-GO.**
+
+
+## Live Hardware candidate supplement — 2026-11-17 UTC21
+
+PHX-HARDWARE PR #283 is an additional open draft candidate discovered in the live #172 mailbox after the UTC20 role snapshot. Current head `83646f309a84f3f0de9c1af6dac2c7ee08b61c85`, branch `cleanup/esp-firmware-hardening-and-quarantine-20261111`, base main, 10 changed files, mergeable=true. Current-head run 44182715006 is PENDING. Its tested predecessor `a43ca007b1a7ef38cc278395ca12c5bb2ec656da` run 44182117122 is overall CANCELLED (validation and ESP8266/ESP32 succeeded, but x86_64/Android emulator simulations and candidate gate were cancelled); do not call it a complete GREEN.
+
+#283 overlaps both firmware sketches with #317/#318 but is divergent: 13 ahead / 272 behind #317 and 13 ahead / 260 behind #318, common merge base `a87567291e80006f3f30cea81fc20e8b299b95e8`. Exact sketch blobs differ across all three candidates. #283 also changes QA-owned `tests/controllers.sh` and adds a test under `tests/`; PHX-QA must explicitly review/acknowledge that scope. Keep #283/#317/#318 separate until HARDWARE proposes a sequence and QA verifies exact source/test heads.

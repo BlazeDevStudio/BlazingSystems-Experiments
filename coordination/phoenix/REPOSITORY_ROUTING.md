@@ -314,3 +314,8 @@ COE #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five qu
 - COE #31 `7bdba18b86f706d7fb96831094338600e28cc9c5`: shared/hardware and case-collision checks pass; mandatory sandbox 44179122674 fails because hosted runner denies unprivileged UID-map setup.
 - No migration route or manifest change is authorized. `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No file moved/copied/overwritten/deleted.
 - Registry v11 and newer corrections unavailable; no older Library snapshot substituted. **PRODUCTION NO-GO.**
+
+
+## UTC21 Hardware source routing supplement — PR #283
+
+PR #283 `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` is a third open Hardware candidate based on main. It changes both ESP sketches, `tests/controllers.sh`, and adds a firmware-hardening test under the QA-owned `tests/` path. The source/test blobs differ from #317 and #318; comparisons show #283 diverged 13/272 from #317 and 13/260 from #318. Current-head run 44182715006 is pending; predecessor run 44182117122 is overall cancelled. Require PHX-HARDWARE stack proposal and PHX-QA ownership/test review. No copy/move/rebase/cherry-pick/merge authorization.

@@ -700,3 +700,14 @@ The COE #31 sandbox remains host-blocked despite final packaging and both board 
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued, zero jobs | INTEGRATION NOT ACCEPTED |
 
 The #317 failure is a QA fixture/parity failure, not permission to enable positive poll admission. #318's 250 ms quiet-window source changes remain unverified on its current head. No native hardware, coin-acceptor, 150 power-cut, or 30-device/24-hour soak evidence was produced. Site-scoped ULA, protected signing/anti-rollback, crash-atomic financial state, reversible migration, and exact per-file provenance remain NO-GO gates.
+
+
+## Hardware candidate #283 — exact-head supplement, 2026-11-17 UTC21
+
+| Candidate | Exact head | Base / stack | CI |
+|---|---|---|---|
+| HARDWARE #283 | `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` | `main@f4e8a891...`; diverged from #317 13/272 and #318 13/260 | Current run 44182715006 PENDING; predecessor run 44182117122 overall CANCELLED |
+| HARDWARE #317 | `1d4320fb11c43192c1e27ebb0b69039729abdc1a` | stacked on #315 branch | focused labs pass; Full fails at QA stale poll-signature fixture |
+| HARDWARE #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | child of #317 branch but diverged 51/63 | no current-head runs; mergeable=false |
+
+Exact ESP32 and ESP8266 Git blobs differ across #283/#317/#318; #283's `tests/controllers.sh` blob also differs from the shared #317/#318 blob. #283 modifies QA-owned `tests/controllers.sh` and adds `tests/v05_firmware_hardening_test.sh`; require QA review before integration. No candidate is accepted or physically verified.

@@ -323,3 +323,8 @@ PHX-MASTER refreshed live #172/#266, Experiments main/development, #288, routing
 Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master target null; 8/8 bounded parse/ownership assertions passed. Master full Python suite and Master CI were not executed/returned. No subsystem source paths, routing manifest, or destination files were changed.
 
 **Next:** HARDWARE states stack direction and refreshes handover; QA repairs #317's legacy fixture and tests selected exact #318 head; infrastructure provides a disposable no-secret namespace-capable runner; COE owner resolves #26 queue/provenance. Production remains NO-GO.
+
+
+## UTC21 follow-up — third Hardware candidate #283
+
+The live #172 mailbox now includes PHX-HARDWARE PR #283 at `83646f309a84f3f0de9c1af6dac2c7ee08b61c85`, base main, current run 44182715006 PENDING. Its predecessor run 44182117122 is overall CANCELLED despite validation and ESP board jobs passing; several simulations and candidate gate were cancelled. #283 diverges from #317 (13 ahead / 272 behind) and #318 (13 ahead / 260 behind). Exact ESP32/ESP8266 blobs differ across all three candidates; #283 also changes QA-owned `tests/controllers.sh` and adds another QA-path test. Register it as a third draft, require HARDWARE stack direction and QA scope review, and do not compose branches automatically. No source migration occurred. **PRODUCTION NO-GO.**

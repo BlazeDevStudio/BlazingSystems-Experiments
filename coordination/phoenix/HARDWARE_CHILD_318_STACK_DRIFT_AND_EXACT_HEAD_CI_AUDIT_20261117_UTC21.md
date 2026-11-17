@@ -91,3 +91,35 @@ These refs are role-owned candidates, not a combined green integration tree.
 5. **COE integration owner:** resolve #26's five queued workflows and continue per-file source/destination blob, mode, license/NOTICE, test identity and CI reconciliation.
 
 No merge, migration, release, signing, secret provisioning, flashing, physical test, customer payment, or financial state mutation occurred. **PRODUCTION NO-GO** remains in force pending protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized gates.
+
+
+## UTC21 follow-up — third divergent Hardware candidate #283
+
+A fresh PHX-HARDWARE checkpoint appeared on control-plane #172 after the initial #317/#318 reconciliation. PR #283 must now be included in the source/stack review; it was absent from the prior role snapshot.
+
+| Item | Current identity |
+|---|---|
+| PR #283 | `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` |
+| Branch / base | `cleanup/esp-firmware-hardening-and-quarantine-20261111` / `main@f4e8a891...` |
+| PR state | OPEN/DRAFT, mergeable=true, 10 changed files |
+| Current-head run | [44182715006](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44182715006) PENDING |
+| Predecessor | `a43ca007b1a7ef38cc278395ca12c5bb2ec656da` |
+| Predecessor run | [44182117122](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44182117122) overall CANCELLED; validation, ESP8266/ESP32 and several target/simulation jobs passed, while x86_64 and Android emulator simulations and candidate gate were cancelled. Not a full success. |
+
+The current #283 head is one documentation-only commit ahead of that predecessor. It is still a separate candidate: comparison against #317 is DIVERGED (13 ahead / 272 behind; merge base `a87567291e80006f3f30cea81fc20e8b299b95e8`); comparison against #318 is DIVERGED (13 ahead / 260 behind; same merge base). No merge or automatic rebase is safe.
+
+### Exact source-blob comparison across all three Hardware candidates
+
+| Path | #283 `83646f30...` | #317 `1d4320fb...` | #318 `696e28ed...` |
+|---|---|---|---|
+| ESP32 sketch | `91e2add2635d18228065a96a6dd1e3db3409c43a` | `cfad679458ac1078b16810a259d5265b3f74030f` | `7a24b1b643aa90c0056b5f7634d3c67e3ecb5a34` |
+| ESP8266 sketch | `dd91ae49abeb675015c8fae38e096156170a2e96` | `92b7da0b5c4960ef614108dbfbb910f3456bf250` | `ebd1572cf82cd1c6ef2c5afbb7b4075533697440` |
+| `tests/controllers.sh` | `0f73e9024b98cfe5c6cc131f70a58cf50375d0fe` | `f7896647713d6bf8034ff48ed19b6383e4dedea0` | `f7896647713d6bf8034ff48ed19b6383e4dedea0` |
+
+All three firmware sketch blobs differ. #317 and #318 share the same controller test blob, while #283 changes it and adds `tests/v05_firmware_hardening_test.sh`. That test path is QA-owned under the current Master ownership map; #283 therefore requires explicit PHX-QA review/acknowledgment of the test changes before any integration decision. This is an ownership-review hold, not an accusation of bad intent.
+
+#283's source patch includes default-disabled actuation flags, deny-by-default unknown controller POST actions, a retained-but-not-called remote-config function, HTML escaping, non-formatting LittleFS mount failure, and a deny-only quarantine-clear handler. Those source claims are read from the patch; current-head CI is still pending. Its predecessor's overall cancelled run cannot be promoted to a current-head PASS.
+
+### Master disposition
+
+Register #283 alongside #317/#318 as a third, divergent Hardware candidate. Keep all three drafts separate. PHX-HARDWARE must identify the intended authoritative sequence and publish exact source/test blobs; PHX-QA must review the #283 test-path ownership and run the chosen candidate(s) at current exact heads. No cherry-pick, rebase, force-push, merge, or source migration is authorized by this audit.
