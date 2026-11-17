@@ -9,6 +9,8 @@ lab = Path(__file__).with_name("poll_response_failclosed_lab.py").read_text(enco
 marker = "// Model the complete synchronous HTTP timeout after the real loop has"
 assert marker in lab, "missing synchronous-poll scenario"
 scenario = lab.split(marker, 1)[1].split('std::cout<<\"DEBOUNCE_FLOOR_PASS', 1)[0]
+assert "pulseStart=250; pulseEnd=330;" in lab, "missing pulse at exact 250 ms quiet boundary"
+assert "POLL_WINDOW_GUARD_PASS 13/13" in lab, "poll-window scenario count must include exact-boundary case"
 assert "pulseStart=300; pulseEnd=380;" in scenario, "HTTP-time pulse must begin after 250 ms quiet window"
 assert "fakeNow=320;" in scenario, "HTTP-time pulse must be sampled after the 250 ms quiet window"
 assert "fakeNow=3600;" in scenario, "HTTP timeout must advance after the pulse sample"

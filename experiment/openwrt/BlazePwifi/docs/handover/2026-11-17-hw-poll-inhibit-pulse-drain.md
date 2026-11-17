@@ -99,3 +99,12 @@ No flashing, reset, customer device, live coin, financial migration, signing, re
 ## UTC11 follow-up — guard marker correction
 
 The new Python timeline guard initially searched for a `#` comment marker, but the target scenario is embedded in the C++ fixture and uses `//`. The guard was corrected to match the actual source text. Local static RED/GREEN was repeated: pre-fix lab `9aaa390c482918f29a71fb40e7e7d79a70d95a24` is rejected; corrected fixture/guard at branch head `6fda96a7151cd8b55bbcb1781adfcda822f41d3e` passes. This remains a local static check, not Python execution in GitHub Actions, C++ compilation or hardware evidence. Exact-head CI is still pending.
+
+
+## Exact 250 ms quiet-boundary pulse regression — 2026-11-17 UTC12
+
+Added a source-extracted boundary case to the existing ESP8266/ESP32 poll-window lab: a pulse beginning at exactly t=250 ms after relay inhibit must make the final idle check fail, cancel the synchronous poll, release the temporary inhibit, and leave the pulse line active for the normal loop to sample. The lab now expects 13/13 poll-window cases per board. The static timeline guard also requires this exact-boundary scenario and the updated count.
+
+This is host C++ simulation only. It does not prove the physical acceptor's post-relay pulse delay or electrical behavior. The parent PR #317 workflow was fixed at a29c51b to run child poll-window labs only when the guard file exists on the exact checkout. This commit is intended to trigger those tests at the literal child head; no rebase, cherry-pick, merge or force-push is performed.
+
+Current child head before this change: 7cd93a70c84b322f4cdbc46a9df3eb6355d66b86. Current comparison to parent #317 head a29c51b8066095cf1a19a8847849f6da3c344ae7: 22 ahead / 9 behind, diverged, mergeable=false. Master stack reconciliation remains required.
