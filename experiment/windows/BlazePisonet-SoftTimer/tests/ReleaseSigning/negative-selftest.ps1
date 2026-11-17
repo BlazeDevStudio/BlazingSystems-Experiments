@@ -104,6 +104,11 @@ try {
   if ($publisherJobStart -lt 0) { throw 'Dedicated publisher job missing' }
   $buildPart=$workflow.Substring(0,$publisherJobStart)
   $publisherJob=$workflow.Substring($publisherJobStart)
+  # Reuse the authoritative immutable pin table so the publisher readback
+  # assertion cannot drift from the action-pin regression above.
+  $downloadArtifactPins = @($requiredActionPins | Where-Object { $_.Action -eq 'actions/download-artifact' })
+  if ($downloadArtifactPins.Count -ne 1) { throw 'Exactly one download-artifact pin is required' }
+  $downloadArtifactPin = $downloadArtifactPins[0]
   if ($buildPart.Contains('contents: write') -or $buildPart.Contains('gh release create')) {
     throw 'Untrusted build or PR code retains GitHub release write authority'
   }
@@ -112,7 +117,7 @@ try {
       -not $publisherJob.Contains("vars.SOFTTIMER_RELEASE_APPROVED == 'true'") -or
       -not $publisherJob.Contains("github.ref == 'refs/heads/main'") -or
       -not $publisherJob.Contains('persist-credentials: false') -or
-      -not $publisherJob.Contains('actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093') -or
+      -not $publisherJob.Contains('actions/download-artifact@'+$downloadArtifactPin.Sha) -or
       -not $publisherJob.Contains('gh release create $releaseTag')) {
     throw 'Publisher authorization, artifact readback or dependent build gate missing'
   }

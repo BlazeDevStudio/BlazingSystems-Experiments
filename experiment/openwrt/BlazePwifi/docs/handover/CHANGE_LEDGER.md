@@ -1,3 +1,10 @@
+## 2026-11-17 UTC23 — PHX-RELEASE action-pin assertion synchronization
+
+- Source/workflow head `070e3f6e54f5da1d2c217a48fe172a339a5bc106` uses the new Node24 immutable pins.
+- Exact run [#44198759075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198759075) completed FAILURE: handover PASS, PackageParity PASS, immutable action-pin guard PASS; a later publisher-boundary assertion still contained the old download-artifact v4 SHA and failed. Publisher and later build steps were skipped. This is a stale test expectation, not a runtime or release failure.
+- The test now derives the publisher's download-artifact SHA from the authoritative `requiredActionPins` table, eliminating duplicate pin state. Exact-head retest pending.
+- No publisher/signing/tag/release operation occurred. PRODUCTION NO-GO.
+
 ## 2026-11-17 UTC23 — PHX-RELEASE Node24 action runtime migration
 
 - Test-first negative self-test commit: `bffb1d7840df6ea2d87c5e23eaca0ef2592ec026`.
