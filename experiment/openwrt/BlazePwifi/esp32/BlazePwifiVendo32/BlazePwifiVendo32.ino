@@ -2,6 +2,7 @@
 #include <WebServer.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
+#include <nvs.h>
 #include <LittleFS.h>
 #include <string.h>
 #include <mbedtls/sha256.h>
@@ -57,7 +58,7 @@ uint16_t boundedCoinDebounceMs(long long requested){
 static const uint32_t PENDING_MAGIC=0x42504332;
 Config cfg;
 Preferences prefs;
-Preferences faultPrefs;
+nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
@@ -362,32 +363,38 @@ bool validPollFaultRecord(const PollFaultRecord &record){
 
 
 bool pollFaultBackupPresentOrCorrupt(){
-  // Any non-empty record is a permanent deny marker; malformed data also denies.
+  // Only a genuine missing-key result is clean. Type mismatch, corruption,
+  // and every other NVS read error remain a permanent deny state.
   if(!pollFaultBackupReady) return true;
-  if(!faultPrefs.isKey("poll_fault")) return false;
-  const size_t length=faultPrefs.getBytesLength("poll_fault");
-  if(length==0) return true;
-  if(length!=sizeof(PollFaultRecord)) return true;
-  PollFaultRecord stored{};
-  if(faultPrefs.getBytes("poll_fault",&stored,sizeof(stored))!=sizeof(stored)) return true;
-  return !validPollFaultRecord(stored) || stored.magic==POLL_FAULT_RECORD_MAGIC;
+  size_t storedLength=0;
+  const esp_err_t result=nvs_get_blob(pollFaultNvsHandle,"poll_fault",nullptr,&storedLength);
+  return result!=ESP_ERR_NVS_NOT_FOUND;
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
   if(!pollFaultBackupReady) return false;
-  if(pollFaultBackupPresentOrCorrupt()) return true;
+  size_t existingLength=0;
+  const esp_err_t existing=nvs_get_blob(pollFaultNvsHandle,"poll_fault",nullptr,&existingLength);
+  if(existing==ESP_OK) return true; // Any existing value, including malformed data, keeps the deny latch.
+  if(existing!=ESP_ERR_NVS_NOT_FOUND) return false;
+
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
-  if(faultPrefs.putBytes("poll_fault",&record,sizeof(record))!=sizeof(record)) return false;
+  if(nvs_set_blob(pollFaultNvsHandle,"poll_fault",&record,sizeof(record))!=ESP_OK) return false;
+  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK) return false;
+
   PollFaultRecord verify{};
-  const size_t read=faultPrefs.getBytes("poll_fault",&verify,sizeof(verify));
-  return read==sizeof(verify) && validPollFaultRecord(verify) &&
-         memcmp(&record,&verify,sizeof(record))==0;
+  size_t readLength=sizeof(verify);
+  const esp_err_t read=nvs_get_blob(pollFaultNvsHandle,"poll_fault",&verify,&readLength);
+  return read==ESP_OK && readLength==sizeof(verify) &&
+         validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
 }
 
 void initPollFaultBackupStore(){
   // NVS is a separate flash partition from LittleFS, not an independent physical witness.
-  pollFaultBackupReady=faultPrefs.begin("phx_fault",false);
+  pollFaultNvsHandle=0;
+  pollFaultBackupReady=nvs_open("phx_fault",NVS_READWRITE,&pollFaultNvsHandle)==ESP_OK;
   if(!pollFaultBackupReady){
+    pollFaultNvsHandle=0;
     journalRecoveryRequired=true;
     insertMode=false;
     activeTarget="";

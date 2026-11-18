@@ -50,7 +50,7 @@ def constants(source: str, names):
 
 def harness(board: str, source: str) -> str:
     record = extract_block(source, "struct PollFaultRecord") + ";"
-    helpers = "\n".join(extract_function(source, name) for name in (
+    helper_names = [
         "pollFaultRecordChecksum",
         "makePollFaultRecord",
         "validPollFaultRecord",
@@ -58,46 +58,79 @@ def harness(board: str, source: str) -> str:
         "writePollFaultBackup",
         "loadPollPulseFaultLatch",
         "latchPollPulseFault",
-    ))
-    consts = constants(source, (
-        "POLL_FAULT_RECORD_MAGIC",
-        "POLL_FAULT_RECORD_VERSION",
-        "POLL_FAULT_EEPROM_OFFSET",
-        "POLL_FAULT_EEPROM_BYTES",
-    ))
+    ]
     if board == "ESP32":
         backend = r"""
-struct Preferences {
+using nvs_handle_t = uint32_t;
+using esp_err_t = int;
+static constexpr esp_err_t ESP_OK=0;
+static constexpr esp_err_t ESP_ERR_NVS_NOT_FOUND=1;
+static constexpr esp_err_t ESP_ERR_NVS_TYPE_MISMATCH=2;
+static constexpr esp_err_t ESP_ERR_NVS_INVALID_LENGTH=3;
+static constexpr esp_err_t ESP_FAIL=4;
+static constexpr int NVS_READWRITE=1;
+struct NvsFlash {
   static std::vector<uint8_t> durable;
-  bool failPut=false, failRead=false;
-  // Arduino-ESP32 isKey() collapses failed getType() lookups to false.
-  bool isKey(const char*) const { return !failRead && !durable.empty(); }
-  size_t getBytesLength(const char*) const { return durable.size(); }
-  size_t putBytes(const char*, const void* src, size_t n) {
-    if(failPut) return 0;
-    if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
-    const uint8_t* p=(const uint8_t*)src;
-    durable.assign(p,p+n);
-    return n;
-  }
-  size_t getBytes(const char*, void* dst, size_t n) {
-    if(failRead) return 0;
-    if(durable.size()<n) return durable.size();
-    memcpy(dst,durable.data(),n);
-    return n;
-  }
+  static std::vector<uint8_t> staged;
 };
-std::vector<uint8_t> Preferences::durable;
-Preferences faultPrefs;
-bool pollFaultBackupReady=true;
-void resetStorage(){ Preferences::durable.clear(); faultPrefs.failPut=false; faultPrefs.failRead=false; pollFaultBackupReady=true; }
-void rebootStorage(){ faultPrefs=Preferences(); pollFaultBackupReady=true; }
-void corruptStorage(){ if(!Preferences::durable.empty()) Preferences::durable[0]^=0x01; }
+std::vector<uint8_t> NvsFlash::durable;
+std::vector<uint8_t> NvsFlash::staged;
+static bool nvsReadError=false, nvsFailSet=false, nvsFailCommit=false;
+static bool nvsFailOpen=false, nvsTypeMismatch=false, nvsFailReadback=false;
+nvs_handle_t pollFaultNvsHandle=0;
+bool pollFaultBackupReady=false;
+void initPollFaultBackupStore();
+esp_err_t nvs_open(const char*,int,nvs_handle_t* handle){
+  if(nvsFailOpen) return ESP_FAIL;
+  *handle=1;
+  return ESP_OK;
+}
+esp_err_t nvs_get_blob(nvs_handle_t handle,const char*,void* value,size_t* length){
+  if(handle==0 || !length || nvsReadError) return ESP_FAIL;
+  if(nvsTypeMismatch) return ESP_ERR_NVS_TYPE_MISMATCH;
+  if(NvsFlash::durable.empty()) return ESP_ERR_NVS_NOT_FOUND;
+  if(!value){ *length=NvsFlash::durable.size(); return ESP_OK; }
+  if(*length<NvsFlash::durable.size()){
+    *length=NvsFlash::durable.size();
+    return ESP_ERR_NVS_INVALID_LENGTH;
+  }
+  memcpy(value,NvsFlash::durable.data(),NvsFlash::durable.size());
+  *length=NvsFlash::durable.size();
+  return ESP_OK;
+}
+esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t length){
+  if(handle==0 || nvsFailSet) return ESP_FAIL;
+  const uint8_t* bytes=(const uint8_t*)value;
+  NvsFlash::staged.assign(bytes,bytes+length);
+  return ESP_OK;
+}
+esp_err_t nvs_commit(nvs_handle_t handle){
+  if(handle==0 || nvsFailCommit) return ESP_FAIL;
+  NvsFlash::durable=NvsFlash::staged;
+  if(nvsFailReadback) nvsReadError=true;
+  return ESP_OK;
+}
+void resetStorage(){
+  NvsFlash::durable.clear(); NvsFlash::staged.clear();
+  nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
+  nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
+  pollFaultNvsHandle=0; pollFaultBackupReady=false;
+  initPollFaultBackupStore();
+}
+void rebootStorage(){
+  nvsReadError=false; nvsFailReadback=false;
+  pollFaultNvsHandle=0; pollFaultBackupReady=false;
+  initPollFaultBackupStore();
+}
+void corruptStorage(){
+  if(!NvsFlash::durable.empty()) NvsFlash::durable[0]^=0x01;
+}
 """
-        fail_write = "faultPrefs.failPut=true;"
-        fail_read = "faultPrefs.failRead=true;"
-        clear_fail = "faultPrefs.failPut=false; faultPrefs.failRead=false;"
-        no_marker = "Preferences::durable.clear();"
+        fail_write = "nvsFailCommit=true;"
+        fail_read = "nvsFailReadback=true;"
+        clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
+        no_marker = "NvsFlash::durable.clear(); NvsFlash::staged.clear();"
+
     else:
         backend = r"""
 struct FakeEEPROM {
@@ -268,10 +301,16 @@ int main(){
 """
     nvs_read_error = r"""
   resetRuntime();
-  faultPrefs.failRead=true;
+  nvsReadError=true;
   loadPollPulseFaultLatch();
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 21;
-  faultPrefs.failRead=false;
+  nvsReadError=false;
+
+  resetRuntime();
+  nvsTypeMismatch=true;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 22;
+  nvsTypeMismatch=false;
 """
     if board != "ESP32":
         nvs_read_error = ""
