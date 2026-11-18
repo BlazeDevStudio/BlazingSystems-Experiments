@@ -843,3 +843,21 @@ The table below is a current PR API snapshot, not an ownership transfer. Source 
 | COE integration owner | COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five queued workflows / zero jobs; no combined acceptance or migration |
 
 Repository admin must configure and independently read back branch protection; registry custodian must restore private Drive v11/newer-correction access. Master owns neither role's implementation paths.
+
+
+## 2026-11-18 UTC16 — current owner routing and next actions
+
+| Role | Current owned candidate | Required next action |
+|---|---|---|
+| PHX-MASTER | #288 3e60c9fd... before this update | Maintain coordination/phoenix only; keep manifest unchanged and migration target null |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | Separate CORE continuation retains source ownership; define canonical poll producer/consumer envelope and golden vectors; Master did not touch CORE |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | Scoped CI 43653329235/43653329229 SUCCESS; retain owner scope |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Scoped CI 42462978704 SUCCESS; native COM acceptance remains separate |
+| PHX-HARDWARE | #323 988904e8bcd058b62a9fac4aa6319a9b7c5b2470, parent #322 50d93e0... | Refresh PR description; preserve both-board unknown-polarity INPUT gates; no positive poll/coin admission; request QA review of source/test tree 359bd8f... |
+| PHX-QA | #290 5c29d159...; #292 75a3f66d... | Independently verify ESP8266/ESP32 boot labs at exact #323 tree; replace positive response_sig / |poll| string checks with negative deny-behavior tests; #292 has no current-head CI |
+| PHX-RELEASE | #291 ed356539...; COE #35 b398906e... | #291 publisher remains skipped; provide authorized bubblewrap-capable runner for #35, without privileged install or unsandboxed fallback |
+| COE integration owner | #26 b382d233... | Reconcile source/destination firmware blobs, missing labs, poll contract, license/NOTICE scope and import inventory before staging; five workflows remain queued |
+| Repository administrator | Experiments main/dev/Master + COE main | Configure and independently read back branch protection and required checks |
+| Registry custodian | Private Drive v11 + newer corrections | Provide authorized Drive access; no older registry substitute |
+
+The current development branch is blazepwifi-v0.6.0-audit-foundation@2fbd2475.... The separate CORE continuation remains the only CORE implementation owner. No competing CORE worker or source change was started.
