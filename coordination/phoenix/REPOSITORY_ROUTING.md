@@ -429,3 +429,13 @@ No copy/move/overwrite is authorized. Preserve the existing exact source/destina
 The source MIT license blob matches sibling Pisowifi/LICENSE, but Hardware/root license and NOTICE applicability remains unresolved. The source root NOTICE is absent from the destination tree. No file-by-file complete import, license/NOTICE approval or combined exact-head CI exists. **No copy/move/overwrite is authorized.** The unchanged manifest remains DRAFT_REVIEW_ONLY, PHX-MASTER target null.
 
 See [HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md](HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md).
+
+## COE Universal / INTERCON source-provenance gate — 2026-11-18 UTC10
+
+COE PR #36 is stacked on integration #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`; #38 is stacked on #36; #39/#40/#42 are parallel Stage-3 children of #38; #41 is a Stage-4 child of #39; #43 is a Stage-4 child of #42. None of #36–#43 is merged or already present in #26. The #26 integration branch still returns 404 for `Hardware/esp8266/BlazePisonetUniversal/`.
+
+**Verified import scope:** Labs main `5d8e4f1d95b6bfc551996634df9c6f7b86af56b4` contains three files in `embedded/blaze-pisonet-universal/`. COE #36's legacy `.ino` is an exact blob match (`3fb15ecb...`, 73,632 bytes). The source README and browser-only preview are not copied; the destination parent README is a new, different blob. Labs root NOTICE is also absent from COE. No explicit LICENSE was found in the source root/source directory or destination root/Hardware listing. The public-safe NOTICE is not a license grant. Treat the import as **one-file exact archival preservation only**, not a complete source-directory mirror or license-cleared redistribution.
+
+The active staging firmware is a separate V1.5-derived implementation; COE's audit says the locally delivered V1.5 artifact is not verified in GitHub. Experiments main/development ESP8266 trees contain BlazePwifiVendo and README only, not the Universal project. Therefore the existing Experiments-only `OWNERSHIP_ROUTES.json` mapping does not establish provenance for the Labs source or the new COE-native staging code. No route change is authorized.
+
+Stage-3/Stage-4 branches use incompatible record layouts (64 / 76 / 92 bytes) and two different Stage-4 behaviors. Keep all candidate branches draft and separate. Exact CI is host/static simulation plus ESP8266 compile; it is not real flash, coin, relay, brownout or 150-power-cut acceptance. See the current Integration Matrix UTC10 snapshot for exact run IDs and test identities.
