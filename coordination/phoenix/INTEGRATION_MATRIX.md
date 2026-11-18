@@ -972,3 +972,35 @@ COE #36 Stage-1 head `b4d7434764aab72673de1f496ed9e442f031ddff` contains the sta
 Parallel V1.6 branch `1e9b0269e3ed2138813fcd0c838b0034a08dfd90` has separate source/parser/test/workflow paths; [44226761277](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44226761277), case [44226761300](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44226761300), and Hardware/Shared [44226761298](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44226761298) SUCCESS. No open PR was found for that branch. Do not equate its branch CI with #36 or #26 integration acceptance.
 
 Current integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Current #35 `0e6787160b98ceb650fe1ece03366c3116117cbe` shared/board and case checks pass, mandatory sandbox [44284450618](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44284450618) fails closed. Current Hardware #323 `1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17` focused labs pass, Full [44278980291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980291) fails at the QA-owned positive poll-signature fixture. COE Stage-4 #41/#43 host/simulation and ESP8266 compile jobs pass, but their disclosed durability gaps and physical acceptance remain open.
+
+
+## 2026-11-18 UTC11 — Hardware parallel stack and exact-head CI refresh
+
+The current Hardware branch topology is not a single linear stack. #321 is based on #317 at `fce915c...`; #322 is based on #320 at `b2b41a3...`; #323 and #324 are sibling children of #322 at `50d93e0...`. #318 currently has base `3ed38225...`, not current #317 head `fce915c...`, and no exact-head workflow runs were returned for #318 head `5af39837...`.
+
+| PR | Exact current head | Base | Focused CI | Full CI |
+|---|---|---|---|---|
+| #317 | `fce915c1167fc43c6936f3594ae9efce376b711f` | #315 `84fe6b79...` | [44209812693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812693), [44209812920](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812920) PASS | [44209812745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812745) FAIL |
+| #318 | `5af39837f5ce42b45e8e707c86fa015a415cc75d` | `3ed38225...` | No exact-head run | No exact-head run |
+| #321 | `4c54d6299388617e9ff3d41d5501358ea545c54a` | #317 `fce915c...` | [44294008493](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008493), [44294008398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008398) PASS | [44294008523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008523) FAIL |
+| #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | #320 `b2b41a3...` | [44232877611](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877611), [44232877649](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877649) PASS | [44232877624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624) FAIL |
+| #323 | `1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17` | #322 `50d93e0...` | [44278980263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980263), [44278980129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980129) PASS | [44278980291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980291) FAIL |
+| #324 | `8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba` | #322 `50d93e0...` | [44290338178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338178), [44290338468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338468) PASS | [44290338340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338340) FAIL |
+
+#321/#322 share four changed paths (workflow, both board sketches, output-enable lab). #323/#324 share three changed paths (both sketches and poll-loop inhibit lab). #323 already applies outputs OFF before secondary and LittleFS persistence; #324 adds the direct marker-open observer/latch regression that is absent from #323's current lab. These are source/test overlaps, not authority to merge or rebase. PHX-HARDWARE must choose the canonical stack and port any desired test explicitly.
+
+#321 and #324 Full validation logs fail at the QA-owned legacy `Missing poll signature check`; do not weaken deny-only firmware. QA owns the negative deny-behavior replacement.
+
+### Other live owner/destination refs — UTC11
+
+- #252 CORE `c82705f2...`: scoped [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS.
+- #289 RENTAL `68928774...`: [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS.
+- #255 PISONET `d01fd164...`: [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM acceptance unknown.
+- #290 QA `5c29d159...`: [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 `75a3f66d...` has no exact-head runs.
+- #291 RELEASE `18f61977...`: [44296238509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296238509) PASS; signing and publish jobs skipped.
+- COE #35 `ad69c4e9...`: case guard PASS; shared packaging suite fails one test because the test expects `exit 125` while workflow uses `exit 1`; mandatory sandbox fails closed.
+- COE #45 `9d76a134...`: case guard and Pisowifi suite PASS; separate candidate, not integrated into #26.
+- COE #26 `b382d233...`: five workflows QUEUED, zero jobs; no combined integration acceptance.
+- COE #36–#43 remain separate, unmerged INTERCON candidate stacks; their host/static/compile CI is not physical acceptance.
+
+Master branch before this audit was `2dae0d4f...`; Experiments main `f4e8a891...`, development `aad3aade...`, and COE main `a6513ab4...`. Master CI returned no exact-head runs.
