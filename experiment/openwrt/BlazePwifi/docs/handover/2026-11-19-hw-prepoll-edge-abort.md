@@ -33,14 +33,16 @@ Both sketches now compare `snapshotCoinEdgeSequence()` with the pre-drain snapsh
 
 If `beginPollWindow()` detects an active pulse through GPIO and aborts normally, the existing loop path still samples that pulse and writes the pending journal. Edges observed during the later 3.5 s HTTP wait continue to use the existing post-wait fault latch. No positive poll, coin admission, credit, receipt, replay, finance API, migration, shared schema, signer, or QA-owned test file changed.
 
-## GREEN criteria and residual risk
+## Exact-head verification
 
-Exact-head focused CI must show:
-- Both board loop labs persist `COIN_INGRESS_UNRESOLVED pulses=1` before any `post("poll")`.
-- No pending credit is created for the unresolved edge; no HTTP poll occurs.
-- Relay/LED are logically OFF at both persistence boundaries.
-- A mutation that removes the pre-poll edge guard is rejected on both board fixtures.
-- Existing quarantine/readback, poll-window, pulse-capture, boot-polarity and output-order tests remain green.
+**Source/test SHA:** `a4b22b68a4a745d9749687a972a608f1ff6b1d21`  
+**Current source commits:** ESP8266 `5a6acb8031f727f07c85db6f67060c10c08a294f`; ESP32 `900e9ede0a9f14c36bb374845c3f041db2ee6a1b`.  
+**Test-first RED:** `43187f01a068e012aa96ea8bf47b0a78884eb463`.
+
+- Quarantine/readback [run #44363238933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44363238933), job `135009999752`: **SUCCESS**. Both ESP8266 and ESP32 poll-loop race cases pass; `POLL_EDGE_SNAPSHOT_RACE_PASS` and `MUTATION_REJECTED missing-pre-poll-edge-abort` appear on both fixtures. Existing pulse capture is 8/8 per board; the full poll-loop mutation set is rejected; quarantine/readback and poll-response default-deny suites pass.
+- Relay/output [run #44363239280](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44363239280), job `135010001678`: **SUCCESS**; ESP32 boot-polarity job `135010000647`: **SUCCESS**. Poll-window timeline, response fail-closed, output polarity and pre-persistence output-inhibit checks pass.
+- Full BlazePwifi build [run #44363238868](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44363238868): validation job `135010181665` **FAILED** at inherited `Controller protocol parity` / `Missing poll signature check`. This is the known stale positive poll-signature assertion; no unauthenticated signature acceptance was added. ESP8266 target job `135010181475` passed; ESP32 target job `135010181401` and remaining target jobs were still running at the checkpoint. Full target matrix is not accepted.
+- Earlier intermediate focused runs failed while existing ordering assertions and the new mutation anchor were being updated; those were harness-order/escaping issues. The final exact source/test SHA above has both focused workflows SUCCESS.
 
 These are source-extracted host/fake-I/O simulations and CI only. They do not prove ISR timing on silicon, relay/acceptor propagation, flash atomicity, reboot durability if both stores fail, physical electrical pulse recovery, 150 power cuts or 30-device/24-hour soak. No flash, reset, live coin, customer money, migration, merge, release or deployment occurred.
 
