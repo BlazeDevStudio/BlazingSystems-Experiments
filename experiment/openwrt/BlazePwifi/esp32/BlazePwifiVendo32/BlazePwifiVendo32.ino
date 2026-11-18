@@ -84,10 +84,31 @@ uint32_t pendingChecksum(const PendingRecord &r){
 
 bool readPendingFile(const char *path, PendingRecord &r){
   if(!fsReady || !LittleFS.exists(path)) return false;
-  File f=LittleFS.open(path,"r"); if(!f) return false;
-  size_t n=f.readBytes((char*)&r,sizeof(r)); f.close();
-  return n==sizeof(r) && r.magic==PENDING_MAGIC && r.pulses>0 && r.pulses<=20 &&
-         r.checksum==pendingChecksum(r) && strlen(r.nonce)>=8 && strlen(r.target)>=8;
+  File f=LittleFS.open(path,"r");
+  if(!f) return false;
+  const size_t storedSize=f.size();
+  const size_t n=f.readBytes((char*)&r,sizeof(r));
+  f.close();
+
+  if(storedSize!=sizeof(r) || n!=sizeof(r) ||
+     r.magic!=PENDING_MAGIC || r.pulses==0 || r.pulses>20 ||
+     r.checksum!=pendingChecksum(r)) return false;
+
+  const char *nonceEnd=(const char*)memchr(r.nonce,'\\0',sizeof(r.nonce));
+  const char *targetEnd=(const char*)memchr(r.target,'\\0',sizeof(r.target));
+  if(!nonceEnd || !targetEnd) return false;
+
+  const size_t nonceLength=(size_t)(nonceEnd-r.nonce);
+  const size_t targetLength=(size_t)(targetEnd-r.target);
+  if(nonceLength<8 || targetLength<8) return false;
+
+  for(const char *p=nonceEnd+1;p<r.nonce+sizeof(r.nonce);++p){
+    if(*p!='\\0') return false;
+  }
+  for(const char *p=targetEnd+1;p<r.target+sizeof(r.target);++p){
+    if(*p!='\\0') return false;
+  }
+  return true;
 }
 
 bool savePending(){
@@ -110,15 +131,39 @@ bool savePending(){
 }
 
 void loadPending(){
-  PendingRecord r{}; const char *chosen=nullptr;
-  if(readPendingFile("/pending.dat",r)) chosen="/pending.dat";
-  else if(readPendingFile("/pending.new",r)) chosen="/pending.new";
-  else if(readPendingFile("/pending.bak",r)) chosen="/pending.bak";
-  if(!chosen) return;
-  pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
-  pendingReady=true; lastSend=0;
-  if(strcmp(chosen,"/pending.dat")!=0){ LittleFS.remove("/pending.dat"); LittleFS.rename(chosen,"/pending.dat"); }
-  Serial.println("Recovered unacknowledged coin event from flash.");
+  if(!fsReady) return;
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  const char *candidate=nullptr;
+  size_t candidateCount=0;
+  for(const char *path:paths){
+    if(LittleFS.exists(path)){
+      candidate=path;
+      ++candidateCount;
+    }
+  }
+  if(candidateCount==0) return;
+  if(candidateCount!=1){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: multiple pending journal candidates; preserving all files and denying intake until reconciliation.");
+    return;
+  }
+
+  PendingRecord r{};
+  if(!readPendingFile(candidate,r)){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: pending journal candidate is invalid; preserving file and denying intake until reconciliation.");
+    return;
+  }
+
+  pendingPulses=r.pulses;
+  pendingNonce=String(r.nonce);
+  pendingTarget=String(r.target);
+  pendingReady=true;
+  lastSend=0;
+  Serial.println("Recovered unacknowledged coin event from flash; source candidate retained.");
 }
 
 void clearPending(){
