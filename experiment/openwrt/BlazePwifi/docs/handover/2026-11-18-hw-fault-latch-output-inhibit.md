@@ -36,7 +36,7 @@ The lab now also removes the pre-persistence `applyOutputs()` call as a delibera
 
 - Focused relay/output/poll-latch [#44289412623](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44289412623), job `134750412371`: **SUCCESS** at head `1b9c7ef...`. Both ESP8266 and ESP32 poll-blocking labs pass; `defer-fault-output-inhibit` mutation is rejected on both boards with expected exit `23`. Existing poll-loop, ISR, boot-latch, pulse-capture, response-default-deny, poll-window, relay-polarity and output-enable checks pass.
 - Quarantine/readback [#44289412633](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44289412633), job `134750412166`: **SUCCESS**.
-- Full BlazePwifi build [#44289412659](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44289412659): validation job `134750553515` **FAILED** at inherited QA-owned `Missing poll signature check`. At handover, target builds were still running; no complete target-matrix claim is made. Downstream simulations/import/signing/publishing remain skipped. Do not weaken the deny-only consumer to satisfy the stale assertion.
+- Full BlazePwifi build [#44289412659](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44289412659): overall **CANCELLED** after validation job `134750553515` **FAILED** at inherited QA-owned `Missing poll signature check`. ESP8266, Ruijie, x86_64, Orange Pi PC2 and Zero2 jobs completed SUCCESS; ESP32, Android and the remaining target jobs were CANCELLED. This is a partial matrix, not full target acceptance. Downstream simulations/import/signing/publishing were skipped. Do not weaken the deny-only consumer to satisfy the stale assertion.
 
 ## Scope and limitations
 
