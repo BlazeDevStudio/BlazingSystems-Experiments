@@ -103,3 +103,32 @@ These are source/tree assertions, not Python-suite execution, destination CI, in
 No files were copied, moved, overwritten or deleted. No merge, rebase, release, signing, flashing, physical test, real-payment operation or production approval occurred.
 
 **PRODUCTION NO-GO** remains mandatory: independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
+
+
+## Later UTC17 live role-head reconciliation — 2026-11-18
+
+### PHX-HARDWARE child PR #326
+
+The current Hardware candidate has advanced beyond the initial #323-only snapshot. PR #326 is OPEN / DRAFT, child of #323 at base `988904e8bcd058b62a9fac4aa6319a9b7c5b2470`; current head is `28e13fc82a250821e815fd84b5fd61f1769e7106`.
+
+Current changed blobs:
+- ESP32 firmware `921a3ef4b7f06e199b957ec33421460154109a8f`.
+- ESP8266 firmware `a4345f0a8338fdf4d921a7851fc2d537d582a42a`.
+- ESP8266 pulse-capture lab `e6dfe3f5fdc0fea38357e7c3f87e1904179d6415`.
+- ESP8266 poll-loop lab `ea912a56d4d3c5a88a69f7e04edb88ae87bcad47`.
+- Hardware handover `1a8d30336228ae56d00b21977238e4b01b077a44`.
+
+The source patch calls `latchPollPulseFault(pendingPulses)` before setting `fsReady=false` after a failed pending-journal write, and generalizes the marker text to `COIN_INGRESS_UNRESOLVED`. This is a Hardware-owned runtime change; Master has not edited it.
+
+A previous #326 head `02a4429adfd02ab80ced7a1fcabe9f73039038a2` produced two focused failures because the mutation anchor `ignored-save-failure` was not found, despite the 8/8 pulse scenarios themselves passing. The current head `28e13fc82a250821e815fd84b5fd61f1769e7106` has current focused runs [44357779192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779192) and [44357779195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779195) IN PROGRESS; Full [44357779219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779219) is also IN PROGRESS. No latest-head pass is claimed. The Hardware role's earlier UTC17 lock said no firmware runtime change was planned, while the current PR diff includes both firmware sketches; the PR diff/head is authoritative, and the owner should refresh its checkpoint to match.
+
+### PHX-RELEASE COE #35 current head
+
+COE #35 has advanced from `b398906e...` to current head `462d02fb01e689556efcf5bf1019af951807b130`, base #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`.
+
+- Case-collision [44357449403](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44357449403): SUCCESS.
+- Mandatory sandbox [44357449505](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44357449505): FAILED CLOSED because bubblewrap is absent, after 13/13 host-preflight tests passed; exit 125.
+- Shared validation [44357449644](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44357449644): FAILED, 101 tests with one failure: `test_stage_overlay_rejects_parent_swapped_to_symlink_during_copy`. The assertion observed `generated-overlay` under the operator-owned external parent after the injected parent-to-symlink swap. ESP32/ESP8266 compile jobs were skipped.
+
+This is a release-owned security regression under the test's injected race; PHX-RELEASE must fix and rerun exact-head tests. Master did not modify COE #35 source or tests. No unsandboxed fallback is permitted.
+

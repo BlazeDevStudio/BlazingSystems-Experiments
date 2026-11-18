@@ -880,3 +880,9 @@ This snapshot supersedes older PR/head pins in this role index for current work;
 **Hardware candidate reconciliation:** #323 has source-extracted two-board ConfigV3 boot/output-polarity labs, but the Full build remains blocked by the inherited positive poll-signature fixture. #318 is non-mergeable and #324 is a sibling candidate; no branch composition or canonical-stack promotion is authorized by this status note.
 
 **Destination hold:** COE #26 remains five queued workflows / zero jobs. The exact Hardware source/destination blob, test, 17-lab import and license/notice gaps are recorded in `HARDWARE323_CONFIGV3_AND_COE26_DESTINATION_PROVENANCE_AUDIT_20261118_UTC16.md` and the new UTC17 audit. No migration is approved.
+
+
+### Later UTC17 live branch delta
+
+- **HARDWARE:** PR #323 remains the review parent at `988904e8...`; active child #326 is now `28e13fc82a250821e815fd84b5fd61f1769e7106`. Its latest focused and Full CI are still in progress. The earlier #326 head had two mutation-anchor failures; do not transfer its 8/8 scenario count to the current head or call the current head green.
+- **RELEASE:** COE #35 is now `462d02fb01e689556efcf5bf1019af951807b130`; case guard passes, sandbox is blocked by missing bubblewrap, and shared validation fails the injected parent-to-symlink staging test. Release ownership remains unchanged.

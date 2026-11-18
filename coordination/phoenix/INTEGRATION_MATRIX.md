@@ -1157,3 +1157,9 @@ Experiments main f4e8a891..., development 2fbd2475..., Master 18cd5064..., and C
 Evidence: [Hardware focused quarantine](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347847077) · [two-board polarity](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347847191) · [Full validation failure](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347846832) · [COE #35 sandbox](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44345859641) · [Experiments #291 build/handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353380470).
 
 **Production: NO-GO.** Gates 4 and 5 remain closed.
+
+
+### Later UTC17 exact-head delta — 2026-11-18
+
+- Hardware #326 is the current child candidate of #323 at `28e13fc82a250821e815fd84b5fd61f1769e7106`. Its focused and Full runs are in progress; previous head `02a4429a...` failed the mutation-anchor guard. Do not promote #326 or infer green status before terminal current-head runs and independent QA.
+- COE #35 current head is `462d02fb01e689556efcf5bf1019af951807b130`. Case-collision passes; mandatory sandbox is blocked by absent bubblewrap; shared validation fails the injected parent-symlink swap regression, which observed an external `generated-overlay` write. Release owner must resolve and rerun.

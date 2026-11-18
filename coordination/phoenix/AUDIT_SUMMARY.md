@@ -602,3 +602,10 @@ Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `aad3aa
 The latest Hardware review candidate #323 has two-board ConfigV3 boot-polarity source and host labs, but COE #26 is not a byte/test/license-equivalent destination. Exact tree comparison found 14 files under each source board directory, including 17 lab files; COE #26 has only two Hardware sketches and one generic test. Both sketch blobs differ. The destination lacks all 17 source board labs, its generic test blob differs and asserts positive `response_sig` / `|poll|` strings, and the current #323 Full validation fails at that same inherited positive fixture. The source MIT license blob is present only as `Pisowifi/LICENSE`; COE root and Hardware have no license, and source `NOTICE.md` is absent. See [UTC17 exact audit](HARDWARE323_CONFIGV3_LICENSE_AND_TEST_IMPORT_GAP_AUDIT_20261118_UTC17.md).
 
 **Classification:** HARDWARE focused labs = SIMULATED / CI VERIFIED; Full validation = FAILED; COE #26 combined destination CI = NOT RUN (five queued / zero jobs); license/import/test parity = BLOCKED; physical acceptance = NOT TESTED. No migration, copy, overwrite, merge or release.
+
+
+## UTC17 follow-up — active Hardware child and Release race regression
+
+After the initial destination audit, HARDWARE opened child PR #326 on #323. Current head `28e13fc82a250821e815fd84b5fd61f1769e7106` changes both firmware sketches and two labs to latch a durable coin-ingress fault before marking LittleFS unavailable after a failed pending write. Current focused/Full CI is IN PROGRESS; an earlier head failed its mutation-anchor checks. No latest-head pass or QA acceptance is established.
+
+RELEASE COE #35 current head `462d02fb01e689556efcf5bf1019af951807b130` has a new failing shared-validation regression: a parent-directory symlink swap during staging left `generated-overlay` under the external operator-owned directory. Its mandatory sandbox also fails closed because bubblewrap is absent. Both are release-owned blockers; no Master source takeover.

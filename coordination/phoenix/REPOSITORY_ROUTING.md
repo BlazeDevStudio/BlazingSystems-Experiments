@@ -515,3 +515,10 @@ COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, five wor
 ## Hardware destination license/test gate — 2026-11-18 UTC17
 
 The manifest still maps Experiments `esp32/` and `esp8266/` into COE `Hardware/esp32/` and `Hardware/esp8266/`, but the current #323 candidate is not yet present byte-for-byte in #26. The source project MIT license is at `experiment/openwrt/BlazePwifi/LICENSE`; COE #26 carries the identical blob only at `Pisowifi/LICENSE`, with no root or Hardware-scoped LICENSE and no imported source `NOTICE.md`. The destination has two different firmware blobs, a different generic test and none of the 17 source board labs. Do not recursively copy or infer legal/test equivalence. Require owner-approved per-file source/test/license mapping and exact-head QA before any destination change. Full details: [UTC17 audit](HARDWARE323_CONFIGV3_LICENSE_AND_TEST_IMPORT_GAP_AUDIT_20261118_UTC17.md).
+
+
+## UTC17 child-candidate / release safety update — 2026-11-18
+
+Hardware #326 is now an active child of #323 with two firmware blobs and two source-extracted labs changed. Its latest focused and Full CI are still running; the earlier head failed mutation-anchor assertions. Keep #326 review-only until terminal exact-head CI and independent QA. This does not change the COE #26 source/destination blob, 17-lab import, or license/NOTICE gaps above.
+
+COE #35 current head `462d02fb01e689556efcf5bf1019af951807b130` fails the injected parent-symlink staging regression and still cannot run mandatory packaging under bubblewrap on the hosted runner. No destination migration or release approval follows from this work.
