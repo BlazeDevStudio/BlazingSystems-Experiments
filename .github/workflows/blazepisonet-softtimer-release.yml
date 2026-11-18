@@ -31,6 +31,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Verify shared BlazePwifi and SoftTimer handover freshness
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Verify stale and partial handovers are rejected
