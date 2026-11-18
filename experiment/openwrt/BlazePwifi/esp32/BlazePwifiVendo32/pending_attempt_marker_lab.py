@@ -94,6 +94,7 @@ struct FakeSerial{template<class T>void println(const T&){} } Serial;
 @@STRUCT@@
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
+bool outputPolarityKnown=true;
 uint8_t pendingPulses=0;
 uint32_t lastSend=0;
 String pendingNonce,pendingTarget;

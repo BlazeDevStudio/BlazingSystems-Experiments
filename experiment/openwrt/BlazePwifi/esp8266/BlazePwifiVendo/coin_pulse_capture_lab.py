@@ -9,6 +9,7 @@ Host C++ with fake GPIO/time/storage only; no physical acceptance is claimed.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +28,7 @@ static uint32_t lastEdge=0;
 static uint32_t pulseStart=0,pulseEnd=0;
 static bool pulseEnabled=false;
 static bool fsReady=true,journalRecoveryRequired=false,pendingReady=false;
+static bool outputPolarityKnown=true;
 static bool insertMode=true,lastCoin=false;
 static bool runCoinActiveLow=true,pollIntakeSuspended=false;
 static bool pinConfigSafe=true,controllerEnabled=true,coinEnabled=true;
@@ -64,7 +66,7 @@ bool savePending(){++saveCalls;return saveResult;}
 static void resetState(uint32_t now=0,bool activeLow=true){
   fakeNow=now;runDebounceMs=40;lastEdge=0;
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
-  fsReady=true;journalRecoveryRequired=false;pendingReady=false;
+  fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
   insertMode=true;lastCoin=false;runCoinActiveLow=activeLow;
   pollIntakeSuspended=false;pinConfigSafe=true;controllerEnabled=true;coinEnabled=true;
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;
@@ -264,3 +266,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=START", flush=True)
+    poll_loop_lab = Path(__file__).with_name("poll_loop_blocking_inhibit_lab.py")
+    if not poll_loop_lab.is_file():
+        raise RuntimeError(f"missing companion lab: {poll_loop_lab}")
+    subprocess.run([sys.executable, str(poll_loop_lab)], check=True)
+    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS", flush=True)

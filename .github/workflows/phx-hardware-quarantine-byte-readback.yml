@@ -22,6 +22,7 @@ jobs:
           set -euo pipefail
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_readback_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/journal_mount_failclosed_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_dual_store_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_journal_recovery_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_write_readback_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/coin_post_gate_lab.py

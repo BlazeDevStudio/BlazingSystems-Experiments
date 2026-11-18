@@ -2,9 +2,9 @@
 """Execute the actual ESP loop() around the synchronous poll with bounded host I/O stubs.
 
 The production loop, poll-window helpers, output gate and default-deny
-acceptPollResponse() are extracted unchanged from both sketches. Only external
-Wi-Fi/HTTP/GPIO/clock/persistence edges are stubbed. This is SIMULATED
-control-flow evidence, not electrical or physical coin-acceptor proof.
+acceptPollResponse() are extracted unchanged from both sketches. Secondary
+NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
+separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
 import re
@@ -46,7 +46,7 @@ STUBS = r"""
 #define ICACHE_RAM_ATTR
 #endif
 static constexpr int HIGH=1, LOW=0, WL_CONNECTED=3;
-static constexpr int INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
+static constexpr int INPUT=0, INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
 static bool fakeShortWrite=false, fakeCorruptReadback=false, fakeOpenFail=false;
 class File {
   std::string *data=nullptr;
@@ -72,6 +72,7 @@ public:
     return value;
   }
 };
+void observeFaultMarkerOpen();
 struct FakeLittleFS {
   std::map<std::string,std::string> files;
   bool begin(bool){ return true; }
@@ -80,6 +81,7 @@ struct FakeLittleFS {
   File open(const char *path,const char *mode){
     if(fakeOpenFail) return File();
     const std::string key(path);
+    if(key=="/pollpulse.fault" && mode[0]=='w') observeFaultMarkerOpen();
     if(mode[0]=='w'){ files[key].clear(); return File(&files[key]); }
     auto found=files.find(key);
     return found==files.end()?File():File(&found->second);
@@ -99,6 +101,12 @@ void detachInterrupt(int pin){
 }
 void pinMode(int,int){}
 void loadPending(){}
+// This lab isolates the production loop and LittleFS marker path. The exact
+// secondary-store implementation and reboot fallback are covered separately
+// by poll_fault_dual_store_lab.py.
+bool pollFaultBackupPresentOrCorrupt(){ return false; }
+void observeBackupWrite();
+bool writePollFaultBackup(uint32_t){ observeBackupWrite(); return false; }
 volatile uint32_t coinEdgeSequence=0;
 struct String : std::string {
   using std::string::string;
@@ -116,6 +124,10 @@ struct String : std::string {
 static uint32_t fakeNow=2000;
 static int pulseStart=-1, pulseEnd=-1;
 static bool relayOn=false, ledOn=false;
+static bool backupWriteSawRelayOn=false, backupWriteSawLedOn=false;
+static bool markerOpenSawRelayOn=false, markerOpenSawLedOn=false;
+void observeBackupWrite(){ backupWriteSawRelayOn=relayOn; backupWriteSawLedOn=ledOn; }
+void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
 static bool injectAfterDrainEdge=false;
@@ -126,6 +138,7 @@ static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false
 static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
 bool insertMode=true, lastCoin=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool outputPolarityKnown=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
@@ -225,12 +238,13 @@ void resetState(){
   fakeNow=2000; pulseStart=-1; pulseEnd=-1;
   coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
-  relayOn=false; ledOn=false; relayLevelHigh=false; ledLevelHigh=false;
+  relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
+  markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
-  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true;
+  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true; outputPolarityKnown=true;
   controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
   setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
   pendingReady=false; fsReady=true; journalRecoveryRequired=false; pendingPostAttempted=false;
@@ -256,6 +270,17 @@ int main(){
      !activeTarget.empty() || pendingPulses!=0 || journalRecoveryRequired ||
      LittleFS.exists("/pollpulse.fault") || lastPoll!=pollEndAt ||
      fakeNow!=pollEndAt+2) return 10;
+
+  // Verify the latch requests OFF before either persistent store is entered.
+  // The first hook is the secondary NVS/EEPROM writer; the second is LittleFS open.
+  resetState();
+  relayOn=true; ledOn=true; insertMode=true; activeTarget="target-01";
+  latchPollPulseFault(1);
+  if(backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn || relayOn || ledOn ||
+     !journalRecoveryRequired || insertMode || !activeTarget.empty()) return 23;
+  std::cout<<"POLL_FAULT_PRE_PERSISTENCE_OUTPUT_OFF_PASS backup-write and LittleFS-open\\n";
+
   // A pulse edge during the 3.5 s synchronous poll must be captured by the
   // production ISR, latched to LittleFS, and never interpreted as a credit.
   resetState(); injectDuringHttp=true; loop();
@@ -438,19 +463,35 @@ for board,path in BOARDS.items():
 
     extra_mutations=(
       ("remove-edge-interrupt-attachment",loop,output,quiet,accept,
-       configure.replace("attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);","",1),isr,write_fault,load_fault,latch_fault,init_store,12),
+       configure.replace("attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);",""),isr,write_fault,load_fault,latch_fault,init_store,12),
       ("ignore-poll-edge-delta",loop.replace("if(pollEdgeEnd!=pollEdgeStart){","if(false){",1),output,quiet,accept,
        configure,isr,write_fault,load_fault,latch_fault,init_store,12),
       ("no-op-coin-isr",loop,output,quiet,accept,configure,
        isr.replace("coinEdgeSequence++;","coinEdgeSequence+=0;",1),write_fault,load_fault,latch_fault,init_store,12),
       ("remove-fault-marker-write",loop,output,quiet,accept,configure,isr,
-       write_fault,load_fault,latch_fault.replace("const bool persisted=writePollPulseFaultMarker(pulseEdges);","const bool persisted=false;",1),init_store,12),
+       write_fault,load_fault,latch_fault.replace("const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);","const bool littleFsPersisted=false;",1),init_store,12),
+      ("defer-fault-output-inhibit",loop,output,quiet,accept,configure,isr,write_fault,load_fault,
+       latch_fault.replace("  // Deassert the physical outputs before any flash persistence can block.\n  applyOutputs();\n  const bool backupPersisted=writePollFaultBackup(pulseEdges);",
+                           "  const bool backupPersisted=writePollFaultBackup(pulseEdges);",1),
+       init_store,23),
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
-       load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
+       load_fault.replace("if(backupHold || littleFsHold){","if(backupHold && littleFsHold){",1),
        latch_fault,init_store,15),
     )
     for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
+        if name=="remove-edge-interrupt-attachment" and mc==configure:
+            raise AssertionError(f"{board}: interrupt-attachment mutation did not apply")
+        if name=="ignore-poll-edge-delta" and ml==loop:
+            raise AssertionError(f"{board}: poll-edge-delta mutation did not apply")
+        if name=="no-op-coin-isr" and mi==isr:
+            raise AssertionError(f"{board}: ISR mutation did not apply")
+        if name=="remove-fault-marker-write" and mlatch==latch_fault:
+            raise AssertionError(f"{board}: fault-marker mutation did not apply")
+        if name=="defer-fault-output-inhibit" and mlatch==latch_fault:
+            raise AssertionError(f"{board}: pre-persistence output-inhibit mutation did not apply")
+        if name=="remove-boot-fault-latch" and mload==load_fault:
+            raise AssertionError(f"{board}: boot-latch mutation did not apply")
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
-print("PHX-HARDWARE: blocked-poll edge fault latch and existing loop guards passed on ESP8266 and ESP32; no hardware evidence")
+print("PHX-HARDWARE: poll-fault output inhibition before secondary-store and LittleFS persistence passed on ESP8266 and ESP32; no hardware evidence")

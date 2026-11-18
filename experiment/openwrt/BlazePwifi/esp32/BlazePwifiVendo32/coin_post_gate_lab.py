@@ -34,6 +34,7 @@ TEMPLATE=r'''
 #include <cstdint>
 #include <iostream>
 bool fsReady=false, journalRecoveryRequired=false, pendingReady=false, pendingPostAttempted=false;
+bool outputPolarityKnown=true;
 uint8_t pendingPulses=0;
 @@FUNCTION@@
 struct Case{

@@ -86,6 +86,7 @@ struct FakeSerial {void println(const char*){}} Serial;
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool outputPolarityKnown=true;
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool ledEnabled=true,relayEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;

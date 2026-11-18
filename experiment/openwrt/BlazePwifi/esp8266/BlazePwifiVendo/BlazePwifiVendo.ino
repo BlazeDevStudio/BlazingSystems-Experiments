@@ -19,7 +19,8 @@ struct ConfigV1 {
   uint8_t coinActiveLow;
 };
 
-struct Config {
+// Exact legacy v2 layout. Never reinterpret old bytes as the larger v3 record.
+struct ConfigV2 {
   uint32_t magic;
   char ssid[33];
   char pass[65];
@@ -33,16 +34,40 @@ struct Config {
   uint8_t coinActiveLow;
 };
 
+// v3 adds an explicit local-only output-polarity profile and corruption check.
+// A migrated v1/v2 config remains unconfigured until an operator selects both
+// polarities through the WPA2 setup AP; no remote response may set them.
+struct Config {
+  uint32_t magic;
+  char ssid[33];
+  char pass[65];
+  char server[64];
+  char key[65];
+  char id[33];
+  char apPass[17];
+  uint8_t coinPin;
+  uint8_t insertLedPin;
+  uint8_t relayPin;
+  uint8_t coinActiveLow;
+  uint8_t relayActiveHigh;
+  uint8_t ledActiveHigh;
+  uint8_t outputPolarityConfigured;
+  uint32_t checksum;
+};
+
 Config cfg;
+bool pollFaultBackupReady=false;
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
-const uint32_t MAGIC=0x42505732;
+const uint32_t MAGIC_V2=0x42505732;
+const uint32_t MAGIC=0x42505733;
 
 bool insertMode=false;
 bool lastCoin=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
-bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
+bool outputPolarityKnown=false;
+bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=false;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 bool pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
@@ -58,6 +83,24 @@ struct PendingRecord {
   char target[33];
   uint32_t checksum;
 };
+
+struct PollFaultRecord {
+  uint32_t magic;
+  uint16_t version;
+  uint16_t size;
+  uint32_t pulseEdges;
+  uint32_t bootMillis;
+  uint32_t checksum;
+};
+static const uint32_t POLL_FAULT_RECORD_MAGIC=0x50484631;
+static const uint16_t POLL_FAULT_RECORD_VERSION=1;
+static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
+static const size_t POLL_FAULT_EEPROM_OFFSET=512;
+static const size_t POLL_FAULT_EEPROM_BYTES=544;
+static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,
+              "Config v3 overlaps the reserved poll-fault EEPROM record");
+static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
+static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
 
@@ -309,6 +352,66 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
+
+uint32_t pollFaultRecordChecksum(const PollFaultRecord &record){
+  const uint8_t *bytes=(const uint8_t*)&record;
+  uint32_t hash=2166136261UL;
+  for(size_t i=0;i<sizeof(PollFaultRecord)-sizeof(record.checksum);++i){
+    hash^=bytes[i];
+    hash*=16777619UL;
+  }
+  return hash;
+}
+
+PollFaultRecord makePollFaultRecord(uint32_t pulseEdges){
+  PollFaultRecord record{};
+  record.magic=POLL_FAULT_RECORD_MAGIC;
+  record.version=POLL_FAULT_RECORD_VERSION;
+  record.size=(uint16_t)sizeof(record);
+  record.pulseEdges=pulseEdges;
+  record.bootMillis=millis();
+  record.checksum=pollFaultRecordChecksum(record);
+  return record;
+}
+
+bool validPollFaultRecord(const PollFaultRecord &record){
+  return record.magic==POLL_FAULT_RECORD_MAGIC &&
+         record.version==POLL_FAULT_RECORD_VERSION &&
+         record.size==sizeof(PollFaultRecord) &&
+         record.checksum==pollFaultRecordChecksum(record);
+}
+
+
+bool pollFaultBackupPresentOrCorrupt(){
+  // EEPROM emulation is a separate reserved sector from LittleFS on the same flash chip.
+  // Any non-erased byte is a permanent deny marker, including malformed/partial records.
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return true;
+  PollFaultRecord stored{};
+  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,stored);
+  const uint8_t *bytes=(const uint8_t*)&stored;
+  for(size_t i=0;i<sizeof(stored);++i) if(bytes[i]!=0xFF) return true;
+  return false;
+}
+
+bool writePollFaultBackup(uint32_t pulseEdges){
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+  if(pollFaultBackupPresentOrCorrupt()) return true;
+  const PollFaultRecord record=makePollFaultRecord(pulseEdges);
+  EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
+  if(!EEPROM.commit()) return false;
+  // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
+  EEPROM.end();
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+  PollFaultRecord verify{};
+  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,verify);
+  return validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+}
+
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   if(!fsReady) return false;
   if(LittleFS.exists("/pollpulse.fault")) return true;
@@ -334,18 +437,24 @@ bool writePollPulseFaultMarker(uint32_t pulseEdges){
 }
 
 void loadPollPulseFaultLatch(){
-  // Presence alone is a deny latch: partial/corrupt markers are not auto-cleared.
-  if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;
-  journalRecoveryRequired=true;
-  insertMode=false;
-  activeTarget="";
-  Serial.println("CRITICAL: prior coin-line edge during blocking poll found; preserve marker and reconcile offline before enabling intake.");
+  // Either persistent domain is enough to keep the device denied; never auto-clear either.
+  const bool backupHold=pollFaultBackupPresentOrCorrupt();
+  const bool littleFsHold=fsReady && LittleFS.exists("/pollpulse.fault");
+  if(backupHold || littleFsHold){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    Serial.println("CRITICAL: persistent poll-pulse fault found; preserve evidence and reconcile offline before enabling intake.");
+  }
 }
 
 void initPendingStore(){
-  // Never format a failed-to-mount payment journal. It may contain coin evidence.
   fsReady=LittleFS.begin();
   if(!fsReady){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    loadPollPulseFaultLatch();
     Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
     return;
   }
@@ -383,19 +492,104 @@ void makeSetupPassword(){
 }
 
 void defaults(){
-  memset(&cfg,0,sizeof(cfg)); cfg.magic=MAGIC;
-  strcpy(cfg.server,"10.0.0.1"); strcpy(cfg.id,"vendo-01");
-  cfg.coinPin=4; cfg.insertLedPin=14; cfg.relayPin=5; cfg.coinActiveLow=1;
+  memset(&cfg,0,sizeof(cfg));
+  cfg.magic=MAGIC;
+  strcpy(cfg.server,"10.0.0.1");
+  strcpy(cfg.id,"vendo-01");
+  cfg.coinPin=4;
+  cfg.insertLedPin=14;
+  cfg.relayPin=5;
+  cfg.coinActiveLow=1;
+  cfg.relayActiveHigh=0;
+  cfg.ledActiveHigh=0;
+  cfg.outputPolarityConfigured=0;
+  cfg.checksum=0;
+  outputPolarityKnown=false;
+  runRelayActiveHigh=false;
+  runLedActiveHigh=false;
+  pinConfigSafe=false;
+  insertMode=false;
+  activeTarget="";
   makeSetupPassword();
 }
 
-void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
+uint32_t configChecksum(const Config &c){
+  const uint8_t *bytes=(const uint8_t*)&c;
+  uint32_t hash=2166136261UL;
+  for(size_t i=0;i<offsetof(Config,checksum);++i){
+    hash^=bytes[i];
+    hash*=16777619UL;
+  }
+  return hash;
+}
+
+bool configPolarityFieldsValid(const Config &c){
+  return c.relayActiveHigh<=1 &&
+         c.ledActiveHigh<=1 &&
+         c.outputPolarityConfigured<=1;
+}
+
+// Only a fully erased Config-sized region is eligible for first-boot defaults.
+// Unknown future schemas, partial writes, and unreadable/corrupt bytes are
+// preserved and fail closed instead of being overwritten by older firmware.
+bool configRecordErased(const Config &record){
+  const uint8_t *bytes=(const uint8_t*)&record;
+  for(size_t i=0;i<sizeof(record);++i){
+    if(bytes[i]!=0xFF) return false;
+  }
+  return true;
+}
+
+bool saveCfg(){
+  if(!pollFaultBackupReady || EEPROM.length()<sizeof(Config)) return false;
+  cfg.magic=MAGIC;
+  cfg.checksum=configChecksum(cfg);
+  EEPROM.put(0,cfg);
+  if(!EEPROM.commit()) return false;
+
+  // Re-open the emulated EEPROM before readback so verification does not use
+  // the mutable RAM image that was just written.
+  EEPROM.end();
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  if(!pollFaultBackupReady) return false;
+
+  Config verify{};
+  EEPROM.get(0,verify);
+  if(verify.magic!=MAGIC ||
+     !configStringsTerminated(verify) ||
+     !configPolarityFieldsValid(verify) ||
+     verify.checksum!=configChecksum(verify) ||
+     memcmp(&cfg,&verify,sizeof(Config))!=0) return false;
+  cfg=verify;
+  return true;
+}
+
+void latchConfigPersistenceFailure(const char *reason){
+  outputPolarityKnown=false;
+  runRelayActiveHigh=false;
+  runLedActiveHigh=false;
+  pinConfigSafe=false;
+  insertMode=false;
+  activeTarget="";
+  journalRecoveryRequired=true;
+  Serial.println(reason);
+}
 
 bool fixedStringTerminated(const char *value,size_t capacity){
   return memchr(value,'\0',capacity)!=nullptr;
 }
 
 bool configStringsTerminated(const Config &c){
+  return fixedStringTerminated(c.ssid,sizeof(c.ssid)) &&
+         fixedStringTerminated(c.pass,sizeof(c.pass)) &&
+         fixedStringTerminated(c.server,sizeof(c.server)) &&
+         fixedStringTerminated(c.key,sizeof(c.key)) &&
+         fixedStringTerminated(c.id,sizeof(c.id)) &&
+         fixedStringTerminated(c.apPass,sizeof(c.apPass));
+}
+
+bool configStringsTerminated(const ConfigV2 &c){
   return fixedStringTerminated(c.ssid,sizeof(c.ssid)) &&
          fixedStringTerminated(c.pass,sizeof(c.pass)) &&
          fixedStringTerminated(c.server,sizeof(c.server)) &&
@@ -413,37 +607,115 @@ bool configStringsTerminated(const ConfigV1 &c){
 }
 
 void loadCfg(){
-  EEPROM.begin(sizeof(Config));
-  EEPROM.get(0,cfg);
-  if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
-     strnlen(cfg.apPass,sizeof(cfg.apPass))>=8) return;
-  if(cfg.magic==MAGIC){
-    Serial.println("CRITICAL: malformed current configuration; discarding unterminated EEPROM fields.");
-  }
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  outputPolarityKnown=false;
+  runRelayActiveHigh=false;
+  runLedActiveHigh=false;
+  pinConfigSafe=false;
+  insertMode=false;
+  activeTarget="";
 
-  ConfigV1 oldCfg;
-  EEPROM.get(0,oldCfg);
-  if(oldCfg.magic==MAGIC_V1 && configStringsTerminated(oldCfg)){
+  if(!pollFaultBackupReady){
     defaults();
-    strlcpy(cfg.ssid,oldCfg.ssid,sizeof(cfg.ssid));
-    strlcpy(cfg.pass,oldCfg.pass,sizeof(cfg.pass));
-    strlcpy(cfg.server,oldCfg.server,sizeof(cfg.server));
-    strlcpy(cfg.key,oldCfg.key,sizeof(cfg.key));
-    strlcpy(cfg.id,oldCfg.id,sizeof(cfg.id));
-    cfg.coinPin=oldCfg.coinPin;
-    cfg.insertLedPin=oldCfg.insertLedPin;
-    cfg.relayPin=oldCfg.relayPin;
-    cfg.coinActiveLow=oldCfg.coinActiveLow;
-    saveCfg();
-    Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
+    latchConfigPersistenceFailure("CRITICAL: EEPROM configuration/fault region unavailable; output polarity unknown and coin admission denied.");
     return;
   }
-  if(oldCfg.magic==MAGIC_V1){
-    Serial.println("CRITICAL: malformed v1 configuration; migration refused.");
+
+  Config current{};
+  EEPROM.get(0,current);
+  if(current.magic==MAGIC){
+    if(!configStringsTerminated(current) ||
+       strnlen(current.apPass,sizeof(current.apPass))<8 ||
+       !configPolarityFieldsValid(current) ||
+       current.checksum!=configChecksum(current)){
+      defaults();
+      latchConfigPersistenceFailure("CRITICAL: v3 configuration fields/checksum invalid; preserve EEPROM and keep outputs disabled.");
+      return;
+    }
+    cfg=current;
+    if(cfg.outputPolarityConfigured==1){
+      outputPolarityKnown=true;
+      runRelayActiveHigh=cfg.relayActiveHigh!=0;
+      runLedActiveHigh=cfg.ledActiveHigh!=0;
+      pinConfigSafe=true;
+    } else {
+      Serial.println("CRITICAL: local relay/LED polarity is unconfigured; outputs remain INPUT and coin paths denied.");
+    }
+    return;
+  }
+
+  ConfigV2 oldV2{};
+  EEPROM.get(0,oldV2);
+  if(oldV2.magic==MAGIC_V2){
+    if(!configStringsTerminated(oldV2) || strnlen(oldV2.apPass,sizeof(oldV2.apPass))<8){
+      defaults();
+      latchConfigPersistenceFailure("CRITICAL: malformed v2 configuration; migration refused and outputs disabled.");
+      return;
+    }
+    defaults();
+    strlcpy(cfg.ssid,oldV2.ssid,sizeof(cfg.ssid));
+    strlcpy(cfg.pass,oldV2.pass,sizeof(cfg.pass));
+    strlcpy(cfg.server,oldV2.server,sizeof(cfg.server));
+    strlcpy(cfg.key,oldV2.key,sizeof(cfg.key));
+    strlcpy(cfg.id,oldV2.id,sizeof(cfg.id));
+    strlcpy(cfg.apPass,oldV2.apPass,sizeof(cfg.apPass));
+    cfg.coinPin=oldV2.coinPin;
+    cfg.insertLedPin=oldV2.insertLedPin;
+    cfg.relayPin=oldV2.relayPin;
+    cfg.coinActiveLow=oldV2.coinActiveLow;
+    // Legacy v2 did not persist a validated local relay/LED polarity profile.
+    cfg.relayActiveHigh=0;
+    cfg.ledActiveHigh=0;
+    cfg.outputPolarityConfigured=0;
+    if(!saveCfg()){
+      latchConfigPersistenceFailure("CRITICAL: v2-to-v3 config migration readback failed; outputs remain disabled.");
+      return;
+    }
+    Serial.println("Migrated BlazePwifi Vendo v2 configuration; local output polarity remains unconfigured.");
+    return;
+  }
+
+  ConfigV1 oldV1{};
+  EEPROM.get(0,oldV1);
+  if(oldV1.magic==MAGIC_V1){
+    if(!configStringsTerminated(oldV1)){
+      defaults();
+      latchConfigPersistenceFailure("CRITICAL: malformed v1 configuration; migration refused and outputs disabled.");
+      return;
+    }
+    defaults();
+    strlcpy(cfg.ssid,oldV1.ssid,sizeof(cfg.ssid));
+    strlcpy(cfg.pass,oldV1.pass,sizeof(cfg.pass));
+    strlcpy(cfg.server,oldV1.server,sizeof(cfg.server));
+    strlcpy(cfg.key,oldV1.key,sizeof(cfg.key));
+    strlcpy(cfg.id,oldV1.id,sizeof(cfg.id));
+    cfg.coinPin=oldV1.coinPin;
+    cfg.insertLedPin=oldV1.insertLedPin;
+    cfg.relayPin=oldV1.relayPin;
+    cfg.coinActiveLow=oldV1.coinActiveLow;
+    cfg.relayActiveHigh=0;
+    cfg.ledActiveHigh=0;
+    cfg.outputPolarityConfigured=0;
+    if(!saveCfg()){
+      latchConfigPersistenceFailure("CRITICAL: v1-to-v3 config migration readback failed; outputs remain disabled.");
+      return;
+    }
+    Serial.println("Migrated BlazePwifi Vendo v1 configuration; local output polarity remains unconfigured.");
+    return;
+  }
+
+  if(!configRecordErased(current)){
+    latchConfigPersistenceFailure("CRITICAL: unrecognized EEPROM config schema; preserve existing bytes and keep outputs disabled.");
+    return;
   }
 
   defaults();
-  saveCfg();
+  if(!saveCfg()){
+    latchConfigPersistenceFailure("CRITICAL: default v3 configuration commit/readback failed; outputs remain disabled.");
+    return;
+  }
+  Serial.println("CRITICAL: no validated local output polarity profile; configure through the setup AP before enabling outputs.");
 }
 
 String jsonString(const String&r,const String&k){
@@ -480,16 +752,39 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
-  if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
-  if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+  // Never drive either output while local polarity or GPIO validation is unknown.
+  if(!outputPolarityKnown || !pinConfigSafe){
+    pinMode(runRelayPin,INPUT);
+    pinMode(runLedPin,INPUT);
+  } else {
+    if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
+    if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+  }
+
   detachInterrupt(digitalPinToInterrupt(runCoinPin));
-  runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
-  // Preload logical OFF before enabling either output driver.
+  runCoinPin=coinPin;
+  runRelayPin=relayPin;
+  runLedPin=ledPin;
+  pinMode(runCoinPin,INPUT_PULLUP);
+
+  if(!outputPolarityKnown || !pinConfigSafe){
+    pinMode(runRelayPin,INPUT);
+    pinMode(runLedPin,INPUT);
+    pinConfigSafe=false;
+    insertMode=false;
+    activeTarget="";
+    attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+    return;
+  }
+
+  // Preload the validated logical OFF level before enabling either output driver.
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
-  pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
+  pinMode(runRelayPin,OUTPUT);
+  pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-  writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
@@ -504,15 +799,11 @@ void applyRemoteConfig(const String&r){
   int nextCoin=cp>=0?cp:runCoinPin, nextRelay=rp>=0?rp:runRelayPin, nextLed=lp>=0?lp:runLedPin;
   bool nextPinsSafe=runtimePinsSafe(nextCoin,nextRelay,nextLed);
   bool nextCoinActiveLow=jsonInt(r,"coin_active_low",runCoinActiveLow?1:0)!=0;
-  bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
-  bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   runDebounceMs=boundedCoinDebounceMs(jsonInt(r,"coin_debounce_ms",40));
   runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    runRelayActiveHigh=nextRelayActiveHigh;
-    runLedActiveHigh=nextLedActiveHigh;
     configureRuntimePins(nextCoin,nextRelay,nextLed);
     pinConfigSafe=true;
   } else {
@@ -544,8 +835,8 @@ String post(const String& action,const String& pulses="0",const String& target="
 
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
-         pendingReady && pendingPulses>0;
+  return outputPolarityKnown && fsReady && !journalRecoveryRequired &&
+         !pendingPostAttempted && pendingReady && pendingPulses>0;
 }
 
 bool coinLineIdle(){
@@ -556,11 +847,12 @@ bool coinLineIdle(){
 // Synchronous HTTP can block GPIO sampling for 3.5 seconds. Start a poll only
 // with no unsettled/owed coin and inhibit the acceptor before network I/O.
 bool canStartPoll(){
-  return fsReady && !journalRecoveryRequired && !pendingReady &&
-         pendingPulses==0 && coinLineIdle();
+  return outputPolarityKnown && fsReady && !journalRecoveryRequired &&
+         !pendingReady && pendingPulses==0 && coinLineIdle();
 }
 
 void applyOutputs(){
+  if(!outputPolarityKnown) return;
   bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -571,13 +863,19 @@ void latchPollPulseFault(uint32_t pulseEdges){
   journalRecoveryRequired=true;
   insertMode=false;
   activeTarget="";
-  const bool persisted=writePollPulseFaultMarker(pulseEdges);
-  if(persisted){
-    Serial.println("CRITICAL: coin-line edge during blocking poll; readback-verified fault marker written; operator reconciliation required.");
-  } else {
-    Serial.println("CRITICAL: coin-line edge during blocking poll; marker write/readback failed; device remains fail-closed this boot.");
-  }
+  // Deassert the physical outputs before any flash persistence can block.
   applyOutputs();
+  const bool backupPersisted=writePollFaultBackup(pulseEdges);
+  const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);
+  if(backupPersisted && littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault recorded in NVS/EEPROM and LittleFS; operator reconciliation required.");
+  } else if(backupPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in secondary NVS/EEPROM; LittleFS marker failed; operator reconciliation required.");
+  } else if(littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in LittleFS; secondary NVS/EEPROM marker failed; operator reconciliation required.");
+  } else {
+    Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
+  }
 }
 
 
@@ -869,15 +1167,19 @@ void setupPortal(){
 
   web.on("/",[](){
     if(!requireSetupApRequest()) return;
+    String relayPolarityValue=cfg.outputPolarityConfigured?String(cfg.relayActiveHigh):String("");
+    String ledPolarityValue=cfg.outputPolarityConfigured?String(cfg.ledActiveHigh):String("");
     String h="<meta name=viewport content='width=device-width'><h2>BlazePwifi Vendo</h2>"
-      "<p>Setup AP is WPA2 protected. Save changes to reboot.</p>"
+      "<p>Setup AP is WPA2 protected. Relay/LED outputs stay INPUT until both local polarities are explicitly selected. Verify the actual module before choosing.</p>"
       "<form method=POST action=/save>SSID <input name=s value='"+htmlEsc(String(cfg.ssid))+"'><br>"
       "Password <input name=p type=password><br>Server <input name=server value='"+htmlEsc(String(cfg.server))+"'><br>"
       "Vendo key <input name=k type=password><br>ID <input name=id value='"+htmlEsc(String(cfg.id))+"'><br>"
       "Coin GPIO <input name=coin value='"+String(cfg.coinPin)+"'><br>"
       "LED GPIO <input name=led value='"+String(cfg.insertLedPin)+"'><br>"
-      "Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br><button>Save & reboot</button></form>"
-      "<p>STA: "+WiFi.localIP().toString()+"</p>"
+      "Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br>";
+    h+="Relay active high (1) / active low (0) <input name=relay_active_high value='"+relayPolarityValue+"'><br>";
+    h+="LED active high (1) / active low (0) <input name=led_active_high value='"+ledPolarityValue+"'><br>";
+    h+="<button>Save & reboot</button></form><p>STA: "+WiFi.localIP().toString()+"</p>"
       "<hr><p><a href='/quarantine'>View Quarantine Log</a></p>";
     web.send(200,"text/html",h);
   });
@@ -909,6 +1211,13 @@ void setupPortal(){
       web.send(400,"text/plain","Unsafe or colliding GPIO assignment. Settings were NOT saved.");
       return;
     }
+    String relayPolarity=web.arg("relay_active_high");
+    String ledPolarity=web.arg("led_active_high");
+    if((relayPolarity!="0" && relayPolarity!="1") ||
+       (ledPolarity!="0" && ledPolarity!="1")){
+      web.send(400,"text/plain","Relay and LED polarity must both be explicitly selected as 0 or 1. Settings were NOT saved.");
+      return;
+    }
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
       if(strlen(cfg.ssid))WiFi.begin(cfg.ssid,cfg.pass); startSetupAp(); return;
@@ -916,7 +1225,17 @@ void setupPortal(){
     strlcpy(cfg.ssid,newSsid.c_str(),sizeof(cfg.ssid));strlcpy(cfg.pass,newPass.c_str(),sizeof(cfg.pass));
     strlcpy(cfg.server,web.arg("server").c_str(),sizeof(cfg.server));if(web.arg("k").length())strlcpy(cfg.key,web.arg("k").c_str(),sizeof(cfg.key));strlcpy(cfg.id,web.arg("id").c_str(),sizeof(cfg.id));
     cfg.coinPin=nextCoin;cfg.insertLedPin=nextLed;cfg.relayPin=nextRelay;
-    saveCfg();web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
+    cfg.relayActiveHigh=relayPolarity=="1"?1:0;
+    cfg.ledActiveHigh=ledPolarity=="1"?1:0;
+    cfg.outputPolarityConfigured=1;
+    if(!saveCfg()){
+      latchConfigPersistenceFailure("CRITICAL: setup configuration commit/readback failed; outputs remain disabled.");
+      web.send(500,"text/plain","Configuration persistence could not be verified. Outputs remain disabled; retry local setup.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi and local output polarity settings verified and saved. Rebooting...");
+    delay(700);
+    ESP.restart();
   });
   web.begin();
   configuredApSince=millis();
@@ -1286,8 +1605,11 @@ void setup(){
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
     pinConfigSafe=false;
+    outputPolarityKnown=false;
+    runRelayActiveHigh=false;
+    runLedActiveHigh=false;
     runCoinPin=4;runLedPin=14;runRelayPin=5;
-    Serial.println("CRITICAL: stored GPIO assignment unsafe; using disabled safe defaults until corrected.");
+    Serial.println("CRITICAL: stored GPIO assignment unsafe; outputs remain INPUT until corrected.");
   }
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
 }

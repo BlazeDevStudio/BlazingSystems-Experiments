@@ -38,9 +38,10 @@ def extract(source: str, name: str) -> str:
 
 CPP = r'''
 #include <iostream>
+#include <string>
 #include <vector>
 
-static constexpr int HIGH=1, LOW=0, INPUT_PULLUP=2, OUTPUT=3;
+static constexpr int HIGH=1, LOW=0, INPUT=4, INPUT_PULLUP=2, OUTPUT=3;
 struct Event { int kind; int pin; int value; };
 std::vector<Event> events;
 void digitalWrite(int pin,int level){ events.push_back({1,pin,level}); }
@@ -53,8 +54,11 @@ void coinEdgeISR() {}
 
 int runCoinPin=4, runRelayPin=5, runLedPin=14;
 bool runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=false;
+bool outputPolarityKnown=true, pinConfigSafe=true, insertMode=true;
+std::string activeTarget="target";
 @@WRITE_LOGICAL@@
 @@CONFIGURE@@
+static constexpr bool HAS_LOCAL_POLARITY_GUARD=@@HAS_LOCAL_POLARITY_GUARD@@;
 
 int firstEvent(int kind,int pin,int value,int after=-1){
   for(size_t i=0;i<events.size();++i)
@@ -66,6 +70,7 @@ int firstEvent(int kind,int pin,int value,int after=-1){
 int scenario(bool activeHigh){
   events.clear();
   runCoinPin=4; runRelayPin=5; runLedPin=14;
+  outputPolarityKnown=true; pinConfigSafe=true; insertMode=true; activeTarget="target";
   runRelayActiveHigh=activeHigh; runLedActiveHigh=activeHigh;
   configureRuntimePins(12,13,15);
   const int offLevel=activeHigh?LOW:HIGH;
@@ -92,9 +97,37 @@ int scenario(bool activeHigh){
   return 0;
 }
 
+
+int unknownPolarityScenario(){
+  events.clear();
+  runCoinPin=4; runRelayPin=5; runLedPin=14;
+  outputPolarityKnown=false; pinConfigSafe=true; insertMode=true; activeTarget="target";
+  configureRuntimePins(12,13,15);
+  if(firstEvent(2,12,INPUT_PULLUP)<0 ||
+     firstEvent(2,13,INPUT)<0 || firstEvent(2,15,INPUT)<0){
+    std::cerr<<"OUTPUT_UNKNOWN_POLARITY_FAIL relay/LED must remain INPUT"; return 20;
+  }
+  if(firstEvent(2,13,OUTPUT)>=0 || firstEvent(2,15,OUTPUT)>=0){
+    std::cerr<<"OUTPUT_UNKNOWN_POLARITY_FAIL output driver enabled"; return 21;
+  }
+  for(const auto &event : events){
+    if(event.kind==1 && (event.pin==13 || event.pin==15)){
+      std::cerr<<"OUTPUT_UNKNOWN_POLARITY_FAIL unknown-polarity pin was driven"; return 22;
+    }
+  }
+  if(pinConfigSafe || insertMode || !activeTarget.empty()){
+    std::cerr<<"OUTPUT_UNKNOWN_POLARITY_FAIL admission state not cleared"; return 23;
+  }
+  return 0;
+}
+
 int main(){
   int result=scenario(true); if(result) return result;
   result=scenario(false); if(result) return result;
+  if(HAS_LOCAL_POLARITY_GUARD){
+    result=unknownPolarityScenario(); if(result) return result;
+    std::cout<<"OUTPUT_UNKNOWN_POLARITY_DENY_PASS"<<std::endl;
+  }
   std::cout<<"OUTPUT_SEQUENCE_PASS active-high and active-low OFF preloaded before OUTPUT\n";
   return 0;
 }
@@ -105,8 +138,7 @@ def unsafe_mutation(configure: str) -> str:
     # Remove only the two new-pin preloads; retain old-pin shutdown and the
     # post-enable OFF confirmation so the regression isolates the latch race.
     pattern = (
-        r"(runCoinPin=coinPin;\s*runRelayPin=relayPin;\s*runLedPin=ledPin;)\s*"
-        r"(?://[^\n]*\n\s*)?"
+        r"(// Preload[^\n]*\n\s*)"
         r"writeLogical\(runRelayPin,false,runRelayActiveHigh\);\s*"
         r"writeLogical\(runLedPin,false,runLedActiveHigh\);"
     )
@@ -116,8 +148,12 @@ def unsafe_mutation(configure: str) -> str:
     return mutated
 
 
-def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool) -> None:
-    code = CPP.replace("@@WRITE_LOGICAL@@", write_logical).replace("@@CONFIGURE@@", configure)
+def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool,
+                  has_local_polarity_guard: bool) -> None:
+    code = (CPP.replace("@@WRITE_LOGICAL@@", write_logical)
+            .replace("@@CONFIGURE@@", configure)
+            .replace("@@HAS_LOCAL_POLARITY_GUARD@@",
+                     "true" if has_local_polarity_guard else "false"))
     with tempfile.TemporaryDirectory(prefix="phx-output-sequence-") as tmp:
         source_path = Path(tmp) / "sequence.cpp"
         binary_path = Path(tmp) / "sequence"
@@ -140,12 +176,40 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
         print(f"{board}: unsafe-order mutation rejected at exit {result.returncode}")
 
 
+
+def remove_local_polarity_gate(configure: str) -> str:
+    # ESP8266 has two combined polarity/pin-safety guards; ESP32 keeps one
+    # early unknown-polarity INPUT-only block. Remove the board's actual gate,
+    # not a textual pattern copied from the other architecture.
+    mutated, count = re.subn(r"!outputPolarityKnown\s*\|\|\s*", "", configure)
+    if count == 2:
+        return mutated
+
+    if count == 0:
+        pattern = (
+            r"(?s)\n\s*if\(!outputPolarityKnown\)\{\s*"
+            r"// No default or remote value can establish physical relay/LED polarity\.\s*"
+            r".*?\s*return;\s*\}"
+        )
+        mutated, count = re.subn(pattern, "\n", configure, count=1)
+        if count == 1:
+            return mutated
+
+    raise RuntimeError(f"could not remove one board-specific local polarity gate (combined guards={count})")
+
+
 for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
     write_logical = extract(source, "writeLogical")
     configure = extract(source, "configureRuntimePins")
-    build_and_run(board, write_logical, configure, expect_pass=True)
-    build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False)
+    has_local_polarity_guard = "outputPolarityKnown" in configure
+    build_and_run(board, write_logical, configure, expect_pass=True,
+                  has_local_polarity_guard=has_local_polarity_guard)
+    build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False,
+                  has_local_polarity_guard=has_local_polarity_guard)
+    if has_local_polarity_guard:
+        build_and_run(board, write_logical, remove_local_polarity_gate(configure),
+                      expect_pass=False, has_local_polarity_guard=True)
 
-print("PHX-HARDWARE: 4/4 output-enable sequence checks PASS; physical GPIO/relay behavior NOT TESTED")
+print("PHX-HARDWARE: 5/5 output-enable/polarity host checks PASS; physical GPIO/relay behavior NOT TESTED")
 

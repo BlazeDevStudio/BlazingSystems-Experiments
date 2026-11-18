@@ -59,6 +59,7 @@ struct Config {
 String lastSentNonce="nonce-123";
 String activeTarget="old-target";
 bool insertMode=true, fsReady=true, journalRecoveryRequired=false;
+bool outputPolarityKnown=true;
 bool pendingReady=false, pollIntakeSuspended=true;
 bool pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
@@ -289,6 +290,7 @@ struct String : std::string {
   size_t length() const { return size(); }
 };
 bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
+bool outputPolarityKnown=true;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool insertMode=true, runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=true;
