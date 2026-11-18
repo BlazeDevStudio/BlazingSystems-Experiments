@@ -153,3 +153,13 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - Workflow correction commit: `2837f64a8d7a484fa4c87466e293169f23259afc`. Added `persist-credentials: false` to the handover and Windows build checkouts. The separate publisher checkout already had it. No checkout ref, action pin, token permission, job boundary, signer condition, version gate, artifact content or publish condition changed.
 - All three canonical handovers are synchronized in this docs-only commit sequence. Next: exact-head Windows CI must pass handover freshness, all release negative controls, native build/install/uninstall, package parity and checksums; the write-privileged publisher job must remain SKIPPED on PR validation.
 - No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — all checkout credentials disabled
+
+- Exact test-first RED [#44265884161](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265884161): handover freshness PASS; package-parity selftest PASS; `RELEASE-SIGN test fail-closed negative controls` failed at line 109 because the second (Windows build) checkout still used the default persisted read token. The first correction had updated only the handover checkout; publisher remained separately skipped. This is the expected remaining failure, not a compile or package failure.
+- First workflow correction `2837f64a8d7a484fa4c87466e293169f23259afc` disabled credential persistence on the handover checkout. Second workflow correction `a27cb084589358f3bf72f368a41e7cd6692af3ac` disables it on the Windows build checkout. The publisher checkout already had `persist-credentials: false`.
+- Exact workflow readback now finds three immutable checkout steps and confirms all three set `persist-credentials: false`; workflow-level `contents: read`, publisher-only `contents: write`, exact PR-head checkout refs and immutable Node24 action pins are unchanged.
+- The earlier [#44265207630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265207630) failure was a PowerShell parser error in the newly added test fixture and is not counted as a regression result. Test syntax was corrected before the two valid expected-RED runs.
+- Next: verify this exact source/test head through the synchronized handover gate, release-negative controls, native Windows build/install/uninstall, package parity, SHA256SUMS and artifact upload. The privileged publisher must remain SKIPPED on PR validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
