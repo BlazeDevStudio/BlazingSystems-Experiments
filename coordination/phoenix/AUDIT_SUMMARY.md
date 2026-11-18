@@ -650,7 +650,7 @@ Master-only exact-head refresh on `phoenix/master-coordination`. Current pre-upd
 
 **Other roles:** CORE #252 scoped PASS; RENTAL #289 two scoped PASS; PISONET #255 scoped build PASS but native acceptance unverified; QA #290 build/handover PASS but native COM lab not invoked; QA #292 no CI and stale Master base; RELEASE #291 build/handover PASS with publisher skipped. COE #26 remains five queued / zero jobs and non-equivalent to current Hardware source; no migration proposed.
 
-**Governance:** cleanup #266 remains OPEN with stale historical PR pins. Branch objects report protected=false for Experiments main/development/Master and COE main; rulesets arrays are empty. Private Drive v11/newer corrections and AGENTS-linked cloud policy/storage handover remain inaccessible; no older registry substitute or private data publication. CORE remained untouched.
+**Governance:** cleanup #266 remains OPEN with stale historical PR pins. Branch objects report protected=false for Experiments main/development/Master and COE main; rulesets arrays are empty. Private Drive v11/newer corrections and Cloud Artifact Policy and Cloud Storage Handover were read; only private Drive registry v11/newer corrections remain inaccessible; no older registry substitute or private data publication. CORE remained untouched.
 
 **Verification:** 14/14 bounded authoring-time consistency assertions passed; these are not the full Master Python suite. Master suite NOT RUN; Master CI no runs returned. Physical hardware, power-cut and soak tests NOT TESTED. **PRODUCTION NO-GO.**
 
