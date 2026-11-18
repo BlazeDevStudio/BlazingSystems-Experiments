@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""PHX-HARDWARE exact-source pulse capture after poll-drain abort.
+"""PHX-HARDWARE exact-source coin pulse and failed-journal safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
 coinLineQuietAfterInhibit(), beginPollWindow(), and sampleCoinPulseEdge()
-from both ESP sketches. It verifies a pulse observed during the inhibit drain
-is captured by the next normal loop sample and sent through savePending().
-Host C++ with fake GPIO/time/storage only; no physical acceptance is claimed.
+from both ESP sketches. It verifies pulse capture after poll-drain abort and
+requires a failed savePending() to invoke the sticky dual-store deny latch
+before LittleFS is marked unavailable. Host C++ with fake GPIO/time/storage
+only; the separate dual-store lab verifies persistence helpers independently.
+No physical acceptance is claimed.
 """
 from pathlib import Path
 import subprocess
