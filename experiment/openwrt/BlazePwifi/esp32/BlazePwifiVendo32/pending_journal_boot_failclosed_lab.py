@@ -267,7 +267,7 @@ int main() {
   ok &= check("duplicate candidate paths remain ambiguous",false,true,0,"","");
 
   if(!ok) return 1;
-  std::cout<<"PENDING_JOURNAL_BOOT_FAILCLOSED=PASS 13/13; SIMULATED ONLY\n";
+  std::cout<<"PENDING_JOURNAL_BOOT_FAILCLOSED=PASS 14/14; SIMULATED ONLY\n";
   return 0;
 }
 '''
