@@ -219,3 +219,72 @@ The raw-read failure is now distinguished from a proven existing marker, and sam
 **PHX-QA / PHX-CORE:** the Full workflow's stale positive poll-signature assertion remains QA/contract-owned. Do not synthesize `response_sig` or weaken the default-deny consumer to make the old check pass.
 
 Classification: poll-drain source behavior is **SIMULATED / CI subtest PASS**; the overall focused job is **FAIL** due to the separate config-read lab. Physical coin/relay, power-cut and electrical recovery acceptance remain **NOT TESTED**. PR #327 remains OPEN / DRAFT / UNMERGED. No flash, reset, migration, signer provisioning, merge, release or deployment occurred.
+
+
+## UTC23 — full-image EEPROM read verification (2026-11-18T23Z)
+
+**Disposition:** source correction committed; focused host/CI regression labs PASS; Full validation remains blocked by the inherited QA-owned poll-signature assertion. Hardware acceptance is NOT TESTED; production remains NO-GO.
+
+### Defect and source correction
+
+ESP8266 Arduino core 3.1.2 `EEPROMClass::begin()` invokes the flash read but does not expose its failure status to the sketch. An erased-looking or partially populated EEPROM RAM image therefore cannot be trusted as proof that the configuration region is blank.
+
+Firmware source commit: `40cfc0799a6e65e4a724e8ccbe6baa0f5f51de54`
+
+- Added `configImageReadVerified`, true only after a status-bearing read of the complete 544-byte EEPROM image and RAM-buffer reconciliation.
+- Added `readFullEepromImage()`, using the EEPROM emulation sector mapping and `ESP.flashRead()` status.
+- Added `restoreEepromRamImage()`, which copies the verified image into the EEPROM emulation buffer, preserving the reserved poll-fault record at offset 512.
+- Added `refreshVerifiedEepromImage()`, which clears the verified flag and marks the backup unavailable on any full-image read/restore failure.
+- `loadCfg()` now returns through the persistence-failure latch before reading configuration, applying defaults or committing when the complete image cannot be verified.
+- `saveCfg()` and `writePollFaultBackup()` require a verified full image and revalidate after reopening the emulated EEPROM.
+- `pollFaultBackupPresentOrCorrupt()` treats an unverified image as a deny condition.
+- No EEPROM schema, offset or layout change; ESP32 source, shared financial semantics and QA-owned protocol validation were not modified.
+
+Relevant source: [ESP8266 sketch, verified-image helpers](../esp8266/BlazePwifiVendo/BlazePwifiVendo.ino) (lines 391–423, 433–478, 618–647, 691–711).
+
+### Test-first and CI evidence
+
+The test-first RED was already present at the prior exact head: run [#44414150601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414150601), job `135189867065`, source/test SHA `ed667e88f6844284834ebd3a337dfce07a817e8c`; `config_load_read_failure_lab.py` exited 31.
+
+The first correction attempt exposed stale host-lab adapters:
+- [#44423553296](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423553296), job `135222434794`: generated C++ missing `configImageReadVerified`/helper declarations and a fake `EEPROM.end()` signature mismatch.
+- [#44423560632](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423560632), job `135222459689`: stale `saveCfg` commit-failure instrumentation anchor.
+
+Test-harness correction commit: `6b52d63f889a9567303f9f2de464c743c1991f0c`. It updates only hardware-owned source-extracted labs: `poll_fault_dual_store_lab.py` and `esp8266_boot_polarity_lab.py`.
+
+Final exact-head focused evidence at source/test SHA `6b52d63f889a9567303f9f2de464c743c1991f0c`:
+- PR quarantine [#44423903845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903845), job `135223655499`: PASS. Logs include:
+  - `ESP8266_EEPROM_BEGIN_READ_FAIL_THEN_FULL_READ_RECOVER_MARKER_PRESERVED_PASS`
+  - `ESP8266_EEPROM_RECOVERED_IMAGE_COLD_BOOT_DENY_PASS`
+  - `ESP8266_EEPROM_FULL_READ_FAIL_MARKER_ONLY_RECOVERY_NO_COMMIT_PASS`
+  - `ESP8266_EEPROM_FULL_READ_PERSISTENT_FAILURE_NO_COMMIT_PASS`
+- Push quarantine [#44423897994](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423897994), job `135223632718`: PASS.
+- Relay/output PR [#44423903842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903842), jobs `135223656681` and `135223657258`: PASS. Both boards passed 48/48 polarity scenarios; ESP8266 commit-failure trace, unknown-schema preservation, output-preload, poll-window and pulse-capture checks passed.
+
+Full build:
+- Push [#44423897080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423897080): all 13 firmware/platform targets plus Android PASS (14 build jobs); validation job `135223766175` FAIL at `Missing poll signature check`; downstream simulation/update/signing jobs skipped.
+- PR [#44423903891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903891): all 13 firmware/platform targets plus Android PASS (14 build jobs); validation job `135223796039` FAIL at the same inherited assertion; downstream jobs skipped.
+
+These are CI/host simulations, not flash-physics evidence. Logs explicitly retain `SIMULATED_ONLY=1` and `PHYSICAL_POWER_CUT_VERIFIED=0`.
+
+### Coordination and provenance
+
+- Full BLAZE-COMMS/1 checkpoint: [#172 comment 6995143780](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-6995143780).
+- #177 pointer: [comment 6995144367](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177#issuecomment-6995144367).
+- PR evidence: [#327 comment 6995144902](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327#issuecomment-6995144902).
+- #327 remains OPEN/DRAFT/UNMERGED, stacked on #326 head `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Revalidated stack: #239 `d83b715b116185107737fef721c2eece8feebf39`; #254 `4054fbccd9b2a4ad0e5fe7cfca5a27aa629eed84`; #283 `830c355376380f9b5533d5cda2558beed41a593a`; Master #288 `f16e17683cea47aee9bc48e96cf5b8b9ab16f780`.
+- Experiments repository ownership is `BlazeDevStudio`; the former `BlazingSystems/BlazingSystems-Experiments` API endpoint returns Moved Permanently to repository ID `1389289885`.
+- COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 and #44 remain OPEN/DRAFT. No COE or Labs/Projects source was modified.
+- `README_FIRST(9).md`, `COMMUNICATION_PROTOCOL.md`, `README(10).md` and `phoenix-hourly-signal.yml` were read from Library. The signal remains signal-only.
+- The exact owner upload `04_HARDWARE_FIRMWARE(1).txt` and private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` were not available in the searchable Library; no Google Drive connector was exposed. The full execution prompt in the active owner request was applied; registry provenance remains unverified.
+- Repository rulesets query returned an empty list; branch-protection endpoint returned 403. Effective branch protection is therefore unverified.
+
+### Remaining blockers and next action
+
+1. PHX-QA must independently review the exact source/test SHA and reconcile the positive poll-signature assertion without enabling unauthenticated register/poll admission.
+2. PHX-MASTER must refresh the #327 exact-head stack row.
+3. PHX-HARDWARE will continue a non-destructive cold-boot audit with a valid non-erased configuration image under injected full-read failure, then verify that no defaults or writes occur.
+4. Protected anti-rollback signer/witness, financial v1-to-v2 migration, durable accounting/replay, 150 real power cuts, 30-device/24-hour soak, electrical pulse/recovery and independent QA/release signoff remain outstanding.
+
+No physical flashing, live coin/money operation, production migration, signer provisioning, merge, release or deployment occurred.
