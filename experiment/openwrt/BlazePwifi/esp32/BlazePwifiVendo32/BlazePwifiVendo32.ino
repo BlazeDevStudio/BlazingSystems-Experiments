@@ -11,7 +11,9 @@
 struct Config {
   String ssid, pass, server, key, id, apPass;
   int coinPin=27, insertLedPin=2, relayPin=26;
-  bool coinActiveLow=true, relayActiveHigh=true, ledActiveHigh=true;
+  // Relay/LED polarity has no trusted default. Only the local setup AP may
+  // establish it after Preferences commit/readback.
+  bool coinActiveLow=true, relayActiveHigh=false, ledActiveHigh=false;
   uint16_t coinDebounceMs=40, pulseGroupMs=400;
 };
 
@@ -58,13 +60,14 @@ uint16_t boundedCoinDebounceMs(long long requested){
 static const uint32_t PENDING_MAGIC=0x42504332;
 Config cfg;
 Preferences prefs;
+bool outputPolarityKnown=false;
 nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
-bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
+bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=false;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
@@ -795,8 +798,40 @@ uint16_t boundedTimingMs(uint32_t raw,uint16_t minimum,uint16_t maximum){
   return (uint16_t)raw;
 }
 
+bool loadLocalOutputPolarity(){
+  outputPolarityKnown=false;
+  cfg.relayActiveHigh=false;
+  cfg.ledActiveHigh=false;
+  runRelayActiveHigh=false;
+  runLedActiveHigh=false;
+  pinConfigSafe=false;
+  insertMode=false;
+  activeTarget="";
+  if(!prefs.isKey("polarityv") ||
+     !prefs.isKey("relayhi") ||
+     !prefs.isKey("ledhi")){
+    Serial.println("CRITICAL: local relay/LED polarity is unconfigured; outputs remain INPUT.");
+    return false;
+  }
+  const uint8_t version=prefs.getUChar("polarityv",0xFF);
+  const uint8_t relay=prefs.getUChar("relayhi",0xFF);
+  const uint8_t led=prefs.getUChar("ledhi",0xFF);
+  if(version!=1 || relay>1 || led>1){
+    Serial.println("CRITICAL: local relay/LED polarity marker or values are invalid; outputs remain INPUT.");
+    return false;
+  }
+  cfg.relayActiveHigh=relay!=0;
+  cfg.ledActiveHigh=led!=0;
+  runRelayActiveHigh=cfg.relayActiveHigh;
+  runLedActiveHigh=cfg.ledActiveHigh;
+  outputPolarityKnown=true;
+  pinConfigSafe=true;
+  return true;
+}
+
 void loadConfig(){
   prefs.begin("blazevendo",false);
+  outputPolarityKnown=false;
   cfg.ssid=prefs.getString("ssid","");
   cfg.pass=prefs.getString("pass","");
   cfg.server=prefs.getString("server","10.0.0.1");
@@ -807,8 +842,7 @@ void loadConfig(){
   cfg.insertLedPin=prefs.getInt("ledpin",2);
   cfg.relayPin=prefs.getInt("relaypin",26);
   cfg.coinActiveLow=prefs.getBool("coinlow",true);
-  cfg.relayActiveHigh=prefs.getBool("relayhi",true);
-  cfg.ledActiveHigh=prefs.getBool("ledhi",true);
+  loadLocalOutputPolarity();
   cfg.coinDebounceMs=boundedCoinDebounceMs(prefs.getUInt("debounce",40));
   cfg.pulseGroupMs=boundedTimingMs(prefs.getUInt("groupms",400),10,10000);
   if(cfg.apPass.length()<8){
@@ -817,12 +851,34 @@ void loadConfig(){
   }
 }
 
-void saveConfig(){
+bool persistLocalOutputPolarity(){
+  const uint8_t relay=cfg.relayActiveHigh?1:0;
+  const uint8_t led=cfg.ledActiveHigh?1:0;
+  // Invalidate first; a torn update must never leave a valid-looking profile.
+  if(prefs.putUChar("polarityv",0)!=1) return false;
+  if(prefs.putUChar("relayhi",relay)!=1) return false;
+  if(prefs.putUChar("ledhi",led)!=1) return false;
+  // Commit the validity marker last, then read every field back.
+  if(prefs.putUChar("polarityv",1)!=1) return false;
+  if(!prefs.isKey("polarityv") ||
+     !prefs.isKey("relayhi") ||
+     !prefs.isKey("ledhi") ||
+     prefs.getUChar("polarityv",0xFF)!=1 ||
+     prefs.getUChar("relayhi",0xFF)!=relay ||
+     prefs.getUChar("ledhi",0xFF)!=led) return false;
+  outputPolarityKnown=true;
+  runRelayActiveHigh=cfg.relayActiveHigh;
+  runLedActiveHigh=cfg.ledActiveHigh;
+  return true;
+}
+
+bool saveConfig(){
   prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
   prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
   prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
-  prefs.putBool("coinlow",cfg.coinActiveLow); prefs.putBool("relayhi",cfg.relayActiveHigh); prefs.putBool("ledhi",cfg.ledActiveHigh);
+  prefs.putBool("coinlow",cfg.coinActiveLow);
   prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
+  return persistLocalOutputPolarity();
 }
 
 String jsonString(const String &r,const String &k){
@@ -856,6 +912,22 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
+  if(!outputPolarityKnown){
+    // No default or remote value can establish physical relay/LED polarity.
+    // Keep both outputs as high-impedance inputs until local confirmation.
+    detachInterrupt(digitalPinToInterrupt(runCoinPin));
+    pinMode(runRelayPin,INPUT);
+    pinMode(runLedPin,INPUT);
+    runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
+    pinMode(runCoinPin,INPUT_PULLUP);
+    pinMode(runRelayPin,INPUT);
+    pinMode(runLedPin,INPUT);
+    pinConfigSafe=false;
+    insertMode=false;
+    activeTarget="";
+    attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+    return;
+  }
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
   detachInterrupt(digitalPinToInterrupt(runCoinPin));
@@ -884,14 +956,10 @@ void applyRemoteConfig(const String &r){
   int nextLed=lp>=0?lp:runLedPin;
   bool nextPinsSafe=runtimePinsSafe(nextCoin,nextRelay,nextLed);
   bool nextCoinActiveLow=jsonInt(r,"coin_active_low",runCoinActiveLow?1:0)!=0;
-  bool nextRelayActiveHigh=jsonInt(r,"relay_active_high",runRelayActiveHigh?1:0)!=0;
-  bool nextLedActiveHigh=jsonInt(r,"led_active_high",runLedActiveHigh?1:0)!=0;
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
   runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    runRelayActiveHigh=nextRelayActiveHigh;
-    runLedActiveHigh=nextLedActiveHigh;
     configureRuntimePins(nextCoin,nextRelay,nextLed);
     pinConfigSafe=true;
   } else {
@@ -923,7 +991,7 @@ String post(const String &action,const String &pulses="0",const String &target="
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
+  return outputPolarityKnown && fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
          pendingReady && pendingPulses>0;
 }
 
@@ -935,11 +1003,12 @@ bool coinLineIdle(){
 // Synchronous HTTP can block GPIO sampling for 3.5 seconds. Start a poll only
 // with no unsettled/owed coin and inhibit the acceptor before network I/O.
 bool canStartPoll(){
-  return fsReady && !journalRecoveryRequired && !pendingReady &&
+  return outputPolarityKnown && fsReady && !journalRecoveryRequired && !pendingReady &&
          pendingPulses==0 && coinLineIdle();
 }
 
 void applyOutputs(){
+  if(!outputPolarityKnown) return;
   bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -1250,6 +1319,8 @@ void setupPortal(){
   startSetupAp();
   web.on("/",[](){
     if(!requireSetupApRequest()) return;
+    String relayPolarityValue=outputPolarityKnown?String(cfg.relayActiveHigh?1:0):String("");
+    String ledPolarityValue=outputPolarityKnown?String(cfg.ledActiveHigh?1:0):String("");
     String h="<meta name=viewport content='width=device-width'><h2>BlazePwifi ESP32 Vendo</h2><form method=POST action=/save>"
       "SSID <input name=s value='"+htmlEsc(cfg.ssid)+"'><br>WiFi credential <input name=p type=password><br>"
       "Server <input name=server value='"+htmlEsc(cfg.server)+"'><br>Controller key <input name=k type=password><br>"
@@ -1257,8 +1328,8 @@ void setupPortal(){
       "LED GPIO <input name=led value='"+String(cfg.insertLedPin)+"'><br>Relay GPIO <input name=relay value='"+String(cfg.relayPin)+"'><br>"
       "Debounce ms <input name=db value='"+String(cfg.coinDebounceMs)+"'><br>Pulse group ms <input name=pg value='"+String(cfg.pulseGroupMs)+"'><br>"
       "Coin active low <input name=cl value='"+String(cfg.coinActiveLow?1:0)+"'><br>"
-      "Relay active high <input name=rh value='"+String(cfg.relayActiveHigh?1:0)+"'><br>"
-      "LED active high <input name=lh value='"+String(cfg.ledActiveHigh?1:0)+"'><br><button>Save & reboot</button></form>"
+      "Relay active high <input name=rh value='"+relayPolarityValue+"'><br>"
+      "LED active high <input name=lh value='"+ledPolarityValue+"'><br><button>Save & reboot</button></form>"
       "<hr><p><a href='/quarantine'>View Quarantine Log</a></p>";
     web.send(200,"text/html",h);
   });
@@ -1287,6 +1358,15 @@ void setupPortal(){
       web.send(400,"text/plain","Unsafe or colliding GPIO assignment. Settings were NOT saved.");
       return;
     }
+    String relayPolarity=web.arg("rh"), ledPolarity=web.arg("lh");
+    if((relayPolarity!="0" && relayPolarity!="1") ||
+       (ledPolarity!="0" && ledPolarity!="1")){
+      web.send(400,"text/plain","Relay and LED polarity must both be explicitly selected as 0 or 1. Settings were NOT saved.");
+      return;
+    }
+    // Stop accepting before changing the persisted local output profile.
+    insertMode=false; activeTarget="";
+    applyOutputs();
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
       if(!cfg.ssid.isEmpty()) WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str());
@@ -1295,8 +1375,13 @@ void setupPortal(){
     cfg.ssid=newSsid; cfg.pass=newPass; cfg.server=web.arg("server"); if(web.arg("k").length()) cfg.key=web.arg("k"); cfg.id=web.arg("id");
     cfg.coinPin=nextCoin; cfg.insertLedPin=nextLed; cfg.relayPin=nextRelay;
     long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(pg<10)pg=10;if(pg>10000)pg=10000;
-    cfg.coinDebounceMs=boundedCoinDebounceMs(db); cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
-    saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
+    cfg.coinDebounceMs=boundedCoinDebounceMs(db); cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0";
+    cfg.relayActiveHigh=relayPolarity=="1"; cfg.ledActiveHigh=ledPolarity=="1";
+    if(!saveConfig()){
+      web.send(500,"text/plain","Local output polarity commit/readback failed. Outputs remain inhibited; retry setup.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi and local output polarity settings verified and saved. Rebooting..."); delay(700); ESP.restart();
   });
   web.begin(); configuredApSince=millis();
 }
