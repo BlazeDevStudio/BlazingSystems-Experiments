@@ -475,7 +475,7 @@ for board, path in BOARDS.items():
     # completion must latch and fail even though the final clock value is later.
     rewind_code = code.replace(
         "setFakeNow(pollStartedAt+3500);",
-        "setFakeNow(pollStartedAt+1);\\n    setFakeNow(pollStartedAt+3500);",
+        "setFakeNow(pollStartedAt+1);\n    setFakeNow(pollStartedAt+3500);",
         1,
     )
     with tempfile.TemporaryDirectory(prefix="phx-poll-window-rewind-mutation-") as folder:
