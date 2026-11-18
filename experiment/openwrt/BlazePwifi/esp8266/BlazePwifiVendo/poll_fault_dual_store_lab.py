@@ -85,6 +85,7 @@ struct NvsFlash {
 std::vector<uint8_t> NvsFlash::durable;
 std::vector<uint8_t> NvsFlash::staged;
 static bool nvsReadError=false, nvsFailSet=false, nvsFailCommit=false;
+static bool nvsFailCommitAfterWrite=false;
 static bool nvsFailOpen=false, nvsTypeMismatch=false, nvsFailReadback=false;
 nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
@@ -116,12 +117,15 @@ esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t 
 esp_err_t nvs_commit(nvs_handle_t handle){
   if(handle==0 || nvsFailCommit) return ESP_FAIL;
   NvsFlash::durable=NvsFlash::staged;
+  // Model an ambiguous API result: bytes reached durable media, but commit reports failure.
+  if(nvsFailCommitAfterWrite) return ESP_FAIL;
   if(nvsFailReadback) nvsReadError=true;
   return ESP_OK;
 }
 void resetStorage(){
   NvsFlash::durable.clear(); NvsFlash::staged.clear();
   nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
+  nvsFailCommitAfterWrite=false;
   nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
   pollFaultNvsHandle=0; pollFaultBackupReady=false;
   initPollFaultBackupStore();
@@ -137,7 +141,8 @@ void corruptStorage(){
 """
         fail_write = "nvsFailCommit=true;"
         fail_read = "nvsFailReadback=true;"
-        clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
+        ambiguous_commit_setup = "nvsFailCommitAfterWrite=true;"
+        clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailCommitAfterWrite=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
         no_marker = "NvsFlash::durable.clear(); NvsFlash::staged.clear();"
         nvs_read_error = r"""
   resetRuntime();
@@ -168,7 +173,7 @@ struct FakeEEPROM {
   static std::vector<uint8_t> flash;
   std::vector<uint8_t> buffer;
   size_t size=0;
-  bool ready=true, failCommit=false, failRead=false, failReadAfterCommit=false;
+  bool ready=true, failCommit=false, failCommitAfterWrite=false, failRead=false, failReadAfterCommit=false;
   bool begin(size_t n) {
     if(!ready) return false;
     size=n;
@@ -181,6 +186,8 @@ struct FakeEEPROM {
     if(failCommit) return false;
     if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
     flash=buffer;
+    // Model a write that reached flash even though the API reports a failed commit.
+    if(failCommitAfterWrite) return false;
     if(failReadAfterCommit) failRead=true;
     return true;
   }
@@ -210,7 +217,8 @@ void corruptStorage(){
 """
         fail_write = "EEPROM.failCommit=true;"
         fail_read = "EEPROM.failReadAfterCommit=true;"
-        clear_fail = "EEPROM.failCommit=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false;"
+        ambiguous_commit_setup = "EEPROM.failCommitAfterWrite=true;"
+        clear_fail = "EEPROM.failCommit=false; EEPROM.failCommitAfterWrite=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false;"
         no_marker = "FakeEEPROM::flash.clear(); rebootStorage();"
         nvs_read_error = ""
 
@@ -308,6 +316,21 @@ int main(){
   loadPollPulseFaultLatch();
   assert(journalRecoveryRequired && !insertMode);
 
+  // A commit can report failure after bytes reached flash. Reboot must still
+  // discover the sticky marker rather than treating the failed return as absence.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  AMBIGUOUS_COMMIT_SETUP
+  fsMarkerWriteResult=false;
+  latchPollPulseFault(7);
+  assert(journalRecoveryRequired && !insertMode && outputsInhibited);
+  assert(!LittleFS.marker);
+  AMBIGUOUS_COMMIT_CLEAR
+  rebootStorage();
+  assertBootDenied();
+  std::cout << "AMBIGUOUS_COMMIT_REBOOT_DENY_PASS board=BOARD_NAME\\n";
+
   // The primary LittleFS marker remains a valid fallback if the secondary
   // store cannot commit.
   resetStorage();
@@ -339,6 +362,7 @@ int main(){
     main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
     main = main.replace("READ_FAIL_SETUP", fail_read).replace("READ_FAIL_CLEAR", clear_fail)
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
+    main = main.replace("AMBIGUOUS_COMMIT_SETUP", ambiguous_commit_setup).replace("AMBIGUOUS_COMMIT_CLEAR", clear_fail)
     main = main.replace("NO_MARKER_RESET", no_marker)
     main = main.replace("BOARD_NAME", board)
     return "\n".join([
