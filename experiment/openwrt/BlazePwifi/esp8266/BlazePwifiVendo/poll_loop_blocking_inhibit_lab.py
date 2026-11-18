@@ -463,7 +463,7 @@ for board,path in BOARDS.items():
        load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
        latch_fault,init_store,15),
       ("defer-fault-output-inhibit",loop,output,quiet,accept,configure,isr,write_fault,load_fault,
-       latch_fault.replace("  applyOutputs();\\n  const bool persisted=writePollPulseFaultMarker(pulseEdges);",
+       latch_fault.replace("  applyOutputs();"+chr(10)+"  const bool persisted=writePollPulseFaultMarker(pulseEdges);",
                            "  const bool persisted=writePollPulseFaultMarker(pulseEdges);",1),
        init_store,23),
     )
