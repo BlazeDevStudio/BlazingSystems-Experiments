@@ -865,7 +865,12 @@ bool persistLocalOutputPolarity(){
      !prefs.isKey("ledhi") ||
      prefs.getUChar("polarityv",0xFF)!=1 ||
      prefs.getUChar("relayhi",0xFF)!=relay ||
-     prefs.getUChar("ledhi",0xFF)!=led) return false;
+     prefs.getUChar("ledhi",0xFF)!=led){
+    // Best-effort invalidation prevents a mismatched readback being trusted
+    // after reboot. Runtime remains on the previous profile, already OFF.
+    prefs.putUChar("polarityv",0);
+    return false;
+  }
   outputPolarityKnown=true;
   runRelayActiveHigh=cfg.relayActiveHigh;
   runLedActiveHigh=cfg.ledActiveHigh;
@@ -873,6 +878,9 @@ bool persistLocalOutputPolarity(){
 }
 
 bool saveConfig(){
+  // Invalidate local polarity before any other configuration write. A cut
+  // during the save leaves the next boot in the INPUT-only unknown state.
+  if(prefs.putUChar("polarityv",0)!=1) return false;
   prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
   prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
   prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
