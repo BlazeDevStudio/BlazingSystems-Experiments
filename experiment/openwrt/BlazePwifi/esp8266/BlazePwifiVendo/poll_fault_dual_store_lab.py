@@ -43,7 +43,7 @@ def extract_function(source: str, name: str) -> str:
 def constants(source: str, names):
     selected = []
     for line in source.splitlines():
-        if any(name in line for name in names):
+        if line.lstrip().startswith("static const ") and any(name in line for name in names):
             selected.append(line)
     return "\n".join(selected)
 
