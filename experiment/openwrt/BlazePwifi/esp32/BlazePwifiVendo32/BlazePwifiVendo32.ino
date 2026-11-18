@@ -769,6 +769,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
   detachInterrupt(digitalPinToInterrupt(runCoinPin));
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
+  // Preload logical OFF before enabling either output driver.
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
