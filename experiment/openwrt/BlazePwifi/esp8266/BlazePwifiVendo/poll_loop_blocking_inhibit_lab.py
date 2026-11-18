@@ -278,6 +278,7 @@ int main(){
   if(backupWriteSawRelayOn || backupWriteSawLedOn ||
      markerOpenSawRelayOn || markerOpenSawLedOn || relayOn || ledOn ||
      !journalRecoveryRequired || insertMode || !activeTarget.empty()) return 23;
+  std::cout<<"POLL_FAULT_PRE_PERSISTENCE_OUTPUT_OFF_PASS backup-write and LittleFS-open\\n";
 
   // A pulse edge during the 3.5 s synchronous poll must be captured by the
   // production ISR, latched to LittleFS, and never interpreted as a credit.
@@ -469,7 +470,7 @@ for board,path in BOARDS.items():
       ("remove-fault-marker-write",loop,output,quiet,accept,configure,isr,
        write_fault,load_fault,latch_fault.replace("const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);","const bool littleFsPersisted=false;",1),init_store,12),
       ("defer-fault-output-inhibit",loop,output,quiet,accept,configure,isr,write_fault,load_fault,
-       latch_fault.replace("  // Deassert the physical outputs before any flash persistence can block.\\n  applyOutputs();\\n  const bool backupPersisted=writePollFaultBackup(pulseEdges);",
+       latch_fault.replace("  // Deassert the physical outputs before any flash persistence can block.\n  applyOutputs();\n  const bool backupPersisted=writePollFaultBackup(pulseEdges);",
                            "  const bool backupPersisted=writePollFaultBackup(pulseEdges);",1),
        init_store,23),
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
