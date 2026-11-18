@@ -174,3 +174,25 @@ Focused evidence is SIMULATED / CI VERIFIED only. Physical LittleFS corruption, 
 5. **Drive owner/authorized connector:** provide current private registry v11 and current manifest/ledger readback before any new artifact/folder or Drive mirror operation.
 
 **Classification:** focused tests are SIMULATED / CI VERIFIED as listed; physical hardware acceptance is NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC00 — parent poll-intake labs wired into exact-head CI
+
+**Workflow-only source change:** commit `ddc7ed1f15865b629f78b87536dec8fb6f513353` adds path filters and exact-head execution for the two existing hardware-owned parent labs in `.github/workflows/phx-hardware-relay-output-polarity.yml`. It does not modify either firmware sketch, QA-owned `tests/`, shared APIs, financial code, or release/signing workflows.
+
+The job checks out `${{ github.event.pull_request.head.sha || github.sha }}` and verifies `git rev-parse HEAD` equals that literal SHA before running the tests.
+
+**Exact-head focused evidence at `ddc7ed1f15865b629f78b87536dec8fb6f513353`:**
+
+- Relay/poll-intake workflow [#44209657629](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209657629), job `134484475203`: **SUCCESS**.
+  - Output polarity: ESP8266 48/48 and ESP32 48/48; inverted-output and removed-poll-inhibit mutations rejected on both boards.
+  - Poll inhibit drain: ESP8266 11/11 and ESP32 11/11; short-debounce and unsafe absolute-deadline rollover mutations rejected on both.
+  - Pulse capture after poll abort: ESP8266 8/8 and ESP32 8/8; missing-edge-latch, inclusive-debounce, missing-target-binding, ignored-save-failure and missing-immediate-output-inhibit mutations rejected on both.
+- Quarantine/readback workflow [#44209657736](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209657736), job `134484475383`: **SUCCESS**. It independently reran the poll-drain 11/11 and pulse-capture 8/8 suites on each board alongside quarantine, pending-marker, mount, recovery and POST-deny labs.
+- Both focused jobs print `SIMULATED_ONLY=1` and explicit zero physical relay/coin/power-cut acceptance.
+
+**Full workflow remains blocked:** [#44209657636](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209657636), validation job `134484476299`, **FAILED** in QA-owned `tests/controllers.sh` with `Missing poll signature check`. The test log shows the legacy positive poll-signature expectation; firmware remains default-deny pending CORE's canonical contract and QA's replacement negative vectors. Other target builds were still running at the last observation; no complete 14-target result is claimed here.
+
+**Stack / release limits:** PR #317 remains OPEN/DRAFT/UNMERGED, stacked on #315. #318 remains a separate divergent child; its labs are not present on this #317 SHA and the workflow reports that absence rather than claiming them. No rebase, cherry-pick, merge, flash, device reset, production migration, signing, release or payment operation occurred.
+
+**Next exact actions:** PHX-QA replaces the stale positive poll assertion only after CORE's contract is published; PHX-MASTER records the canonical #317/#318 stack decision; PHX-HARDWARE continues on the selected owner branch. Physical 150-power-cut, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED.
