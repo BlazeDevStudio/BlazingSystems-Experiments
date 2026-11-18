@@ -863,3 +863,13 @@ Task: #172 / #266 / #291 / #327. Scope is limited to the PHX-RELEASE-owned `.git
 - No real signing, release/tag, merge, hardware flashing, payment migration, customer deployment, or physical acceptance occurred. Production remains NO-GO.
 
 Next exact action: inspect the new docs-head PR-triggered Actions after this handover refresh; verify the handover gate result and record any later QA-owned validation blocker without weakening it. PHX-QA/PHX-MASTER review the release-owned workflow change; PHX-HARDWARE independently revalidates the stack.
+
+
+## PHX-RELEASE UTC21 — shared build workflow checkout credential guard (test-first)
+
+- Existing release child PR #291 branch `phoenix/release-publisher-isolation-20261115` began this task at `4e05350d9a3d65446770e97ced88200eecc27979`. Baseline exact-head build [#44401735492](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44401735492) completed SUCCESS: toolchain pin guard, validate, OpenWrt target builds/checksums, ESP8266/ESP32 compile and uploads, Android, and simulations passed; production import/sign/publish jobs were SKIPPED.
+- Inspection found 20 `actions/checkout@v4` steps in `.github/workflows/blazepwifi-build.yml`, none setting `persist-credentials: false`. That workflow executes PR-controlled project scripts after checkout, so the default persisted read token remained in local Git configuration.
+- Test-only commit [`851af2c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/851af2c59759e94581fc444a4b2b8b2a2359da23) adds a negative release self-test requiring every shared build checkout to use the already verified immutable Node24 checkout v7.0.1 pin and disable credential persistence. The shared build workflow is unchanged in this test-first commit.
+- Expected RED is pending exact-head Windows CI. Next: confirm the regression fails at the missing credential setting, then harden all 20 checkout steps and make the SoftTimer release workflow re-run this guard whenever the shared build workflow changes.
+
+No firmware source, finance, signer, publisher permission, hardware, CORE, RENTAL, PISONET, QA or MASTER implementation was changed. **PRODUCTION NO-GO.**
