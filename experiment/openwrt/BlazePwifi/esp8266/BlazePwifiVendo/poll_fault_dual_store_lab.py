@@ -74,6 +74,7 @@ struct Preferences {
   size_t getBytesLength(const char*) const { return durable.size(); }
   size_t putBytes(const char*, const void* src, size_t n) {
     if(failPut) return 0;
+    if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
     const uint8_t* p=(const uint8_t*)src;
     durable.assign(p,p+n);
     return n;
@@ -111,7 +112,7 @@ struct FakeEEPROM {
     return true;
   }
   void end(){ size=0; buffer.clear(); }
-  bool commit(){ if(failCommit) return false; flash=buffer; if(failReadAfterCommit) failRead=true; return true; }
+  bool commit(){ if(failCommit) return false; if(!outputsInhibited) persistenceBeforeOutputInhibit=true; flash=buffer; if(failReadAfterCommit) failRead=true; return true; }
   size_t length() const { return size; }
   template<class T> void put(size_t offset,const T& value) {
     memcpy(buffer.data()+offset,&value,sizeof(T));
@@ -162,10 +163,16 @@ bool journalRecoveryRequired=false;
 bool insertMode=true;
 std::string activeTarget="target";
 bool fsMarkerWriteResult=false;
+bool outputsInhibited=false;
+bool persistenceBeforeOutputInhibit=false;
 int outputApplyCount=0;
-void applyOutputs(){ ++outputApplyCount; }
+void applyOutputs(){
+  ++outputApplyCount;
+  outputsInhibited=journalRecoveryRequired && !insertMode && activeTarget.empty();
+}
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   (void)pulseEdges;
+  if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
   if(fsMarkerWriteResult) LittleFS.marker=true;
   return fsMarkerWriteResult;
 }
@@ -178,6 +185,9 @@ void resetRuntime(){
   fsReady=true;
   LittleFS.marker=false;
   fsMarkerWriteResult=false;
+  outputsInhibited=false;
+  persistenceBeforeOutputInhibit=false;
+  outputApplyCount=0;
 }
 void assertBootDenied(){
   journalRecoveryRequired=false;
@@ -197,6 +207,8 @@ int main(){
   // LittleFS open/write failure must fall back to the secondary store.
   latchPollPulseFault(3);
   assert(journalRecoveryRequired && !insertMode);
+  assert(outputsInhibited);
+  assert(!persistenceBeforeOutputInhibit);
   assert(pollFaultBackupPresentOrCorrupt());
   rebootStorage();
   assertBootDenied();
