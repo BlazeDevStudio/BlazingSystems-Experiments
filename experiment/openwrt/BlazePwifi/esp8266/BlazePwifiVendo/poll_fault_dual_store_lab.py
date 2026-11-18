@@ -145,12 +145,22 @@ void corruptStorage(){
   loadPollPulseFaultLatch();
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 21;
   nvsReadError=false;
+  std::cout << "ESP32_NVS_READ_ERROR_DENY_PASS\\n";
 
   resetRuntime();
   nvsTypeMismatch=true;
   loadPollPulseFaultLatch();
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 22;
   nvsTypeMismatch=false;
+  std::cout << "ESP32_NVS_TYPE_MISMATCH_DENY_PASS\\n";
+
+  // Failure to open the secondary store must also latch deny before intake.
+  resetRuntime();
+  nvsFailOpen=true;
+  initPollFaultBackupStore();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 23;
+  nvsFailOpen=false;
+  std::cout << "ESP32_NVS_OPEN_FAILURE_DENY_PASS\\n";
 """
     else:
         backend = r"""
