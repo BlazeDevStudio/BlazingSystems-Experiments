@@ -1306,3 +1306,29 @@ The private Drive v11 registry and newer corrections remain unavailable: no Goog
 - Private Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted.
 
 **No migration is approved or proposed. Production remains NO-GO.**
+
+
+## UTC21 post-checkpoint exact-head correction — 2026-11-18
+
+This refresh supersedes the earlier #327 head/run pins above; no source ownership or migration approval changes.
+
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- Current development/comparison branch: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; older `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` remains a separate historical branch.
+- Master before this update: `phoenix/master-coordination@943a13937ea0c29857fd4f53609533c21481cc34`; PR #288 OPEN/DRAFT on main, 88 changed paths, all under `coordination/phoenix/`.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration PR #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, 205 changed paths.
+
+| Role | Exact PR head | Current bounded CI evidence |
+|---|---|---|
+| CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped; CORE implementation remains outside Master scope |
+| RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped; native COM acceptance not established |
+| HARDWARE | #323 `988904e8bcd058b62a9fac4aa6319a9b7c5b2470` → #326 `58c558fb6a237935214621adc3dee65a10fe1a51` → #327 `b346eba3ebee228abcff03456deb7889f2d39144` | #327 quarantine [44404536230](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536230) FAIL (job 135156120858, new drain-abort false-return case exits 25); relay/output [44404536459](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536459) FAIL (job 135156122573, same ESP8266 case); ESP32 boot-polarity subjob 135156121872 PASS; Full [44404536187](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536187) FAIL at QA-owned positive `Missing poll signature check` |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS for build/handover only; native COM lab not invoked. #292 has no runs and stale Master base |
+| RELEASE | #291 `4e05350d9a3d65446770e97ced88200eecc27979` | [44401735467](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44401735467) and [44401735492](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44401735492) SUCCESS, scoped; privileged publisher not evidenced |
+| COE RELEASE | #35 `1a5be48d2845781b0b07bad39a37f8440cea4d4f` → #44 `582fd5d5e83e36b36546ac28534740298ba94af4` | #44 shared [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) and case [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) SUCCESS; mandatory sandbox [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAILS closed because bubblewrap is unavailable |
+| COE CORE | #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) and [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) SUCCESS, scoped |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; no combined destination acceptance |
+
+#327 current source/test head adds the false-return drain-abort case. Its focused CI is not green. Full validation fails separately at the inherited QA positive poll-signature fixture; all 13 firmware/platform target jobs and Android completed SUCCESS, while simulations, update bundle, candidate gate, signing and publishing were SKIPPED. Preserve deny-only firmware.
+
+COE #26 remains non-equivalent to the current Hardware source: source ESP8266 blob `4d73c5dc451c29f2ffd64a5cb2d230cc84a78ed5` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`; source ESP32 blob `ada9723c5f07879775284eb128a986ac865394f7` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. The 18 source board labs have no corresponding Hardware Python labs in #26. Destination generic test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` still asserts positive `response_sig` / `|poll|`; workflow blob `fe79adbdb3745a22c5ef6d1f0c87c868b7785793` runs that shell test and shared tests, not the source-extracted labs. License/NOTICE scope remains unresolved. No migration proposed.
