@@ -114,7 +114,7 @@ This does not establish flash atomicity, cross-reboot no-replay, a protected fre
 | LittleFS mount failure | No auto-format fallback; pending store unavailable; actuation denied | Source-extracted host test; SIMULATED, not physical flash proof |
 | Multiple / corrupt pending candidates | Preserve candidates and deny rather than selecting or deleting an ambiguous record | Pending-journal boot lab; SIMULATED |
 | Quarantine append open/write/readback failure | Append returns false; pending event is not cleared | Quarantine append lab; SIMULATED |
-| Pending candidate removal failure | Child #325 keeps RAM hold, applies outputs OFF and returns false when remove reports failure or a candidate remains | New exact-source lab is pending final CI at the current child head |
+| Pending candidate removal failure | Child #325 keeps RAM hold, applies outputs OFF and returns false when remove reports failure or a candidate remains | Exact-head focused CI is VERIFIED at checkout 18de1edae0a8b344ae600ff517f65b418d8ae3af: workflow run #44307404773, job 134812426061, SUCCESS. Append 13/13, boot recovery 14/14 and pending-clear 11/11 pass on both board fixtures; all are SIMULATED host tests. |
 | Register/poll response injection | No response fields are accepted for remote control; no positive response authentication is implemented | Fail-closed source behavior only; positive authentication is NOT TESTED |
 | Coin POST timeout / replay | Automatic coin POST/retry is disabled; no positive disposition is accepted | Source behavior only; durable financial replay remains BLOCKED |
 | Coin pulse during synchronous poll | No positive coin admission is enabled in this candidate | Physical pulse capture and electrical recovery are NOT TESTED |
@@ -176,8 +176,8 @@ Protected anti-rollback signer/witness, durable accounting/replay, reversible v1
 
 **Test-first evidence**
 - Expected RED against the original #283 source: [Actions run #44305881613](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44305881613), job `134807202118`, exact test-only head `1c528abfc8f03a5c0859eb245c6649eb9cd3b387`. The new harness failed because the production function was still `void clearPending()`; this reproduced the missing checked-removal contract. The existing append/readback lab completed 13/13 scenarios per board in that run.
-- Intermediate harness failures after the source change exposed missing/incorrect host stubs; they are test-harness defects, not claimed firmware regressions. The stub was corrected in commit `cc6b0e49ce1b74c3c4882d325f83afdacce83fe7`.
-- Exact-head post-correction focused CI: **PENDING / NOT VERIFIED** at this document revision. Do not infer PASS from the RED run or from the earlier append-only lab.
+- Intermediate harness failures after the source change exposed a missing applyOutputs stub and then an escaped-newline error in the generated C++ fixture. These were test-harness defects, not firmware regressions; the fixes are in cc6b0e49ce1b74c3c4882d325f83afdacce83fe7 and 26788b6f6178a70ab9e07d04fcb6eddb6e326d32.
+- Exact-head focused CI is SUCCESS: run #44307404773, job 134812426061, checkout 18de1edae0a8b344ae600ff517f65b418d8ae3af. The append/readback lab passed 13/13 per board, pending-boot lab 14/14 per board, and the new pending-clear lab 11/11 per board. All are SIMULATED host fixtures. The full BlazePwifi build run #44307404941 is still in progress at this revision; no full matrix conclusion is claimed.
 
 **Limitations:** source-extracted host tests are SIMULATED. They do not prove LittleFS metadata durability, flash erase/program atomicity, behavior during a physical power cut, or recovery after simultaneous storage faults. No coin, relay, GPIO, live money, signer, migration, flash or production action occurred.
 
