@@ -353,9 +353,17 @@ int main(){
 
 RACE_MAIN = MAIN.replace(
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
+    "  // An ISR edge after the final quiet sample must be persisted before HTTP begins.\n"
     "  resetState(); injectAfterDrainEdge=true; loop();\n"
-    "  if(pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists(\"/pollpulse.fault\") ||\n"
-    "     relayOn || ledOn || insertMode || !activeTarget.empty()) return 22;\n\n"
+    "  if(pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||\n"
+    "     !LittleFS.exists(\"/pollpulse.fault\") || relayOn || ledOn ||\n"
+    "     insertMode || !activeTarget.empty() || pollIntakeSuspended ||\n"
+    "     pendingPulses!=0 || lastPoll+2!=fakeNow ||\n"
+    "     backupWriteSawRelayOn || backupWriteSawLedOn ||\n"
+    "     markerOpenSawRelayOn || markerOpenSawLedOn) return 22;\n"
+    "  const std::string prePollMarker=LittleFS.files[\"/pollpulse.fault\"];\n"
+    "  if(prePollMarker.find(\"COIN_INGRESS_UNRESOLVED\")==std::string::npos ||\n"
+    "     prePollMarker.find(\"pulses=1\")==std::string::npos) return 24;\n\n"
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
     1,
 )
