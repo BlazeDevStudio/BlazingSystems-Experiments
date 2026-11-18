@@ -30,6 +30,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   ci_decision:
@@ -41,8 +44,9 @@ jobs:
     outputs:
       run_heavy: ${{ steps.filter.outputs.run_heavy }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: RELEASE-TOOLCHAIN enforce observed board-core pins
@@ -95,8 +99,9 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Mandatory handover freshness gate
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
@@ -429,7 +434,9 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: arduino/setup-arduino-cli@v2
       - name: Install ESP8266 core
         run: |
@@ -457,7 +464,9 @@ jobs:
       matrix:
         target: [ruijie, x86_64, orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -476,7 +485,9 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: arduino/setup-arduino-cli@v2
       - name: Install ESP32 core
         run: |
@@ -506,7 +517,9 @@ jobs:
       matrix:
         target: [orangepi_pc_plus, orangepi_pc2, orangepi_zero, orangepi_zero2, orangepi_zero2w, orangepi_one_plus]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build optional OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -526,8 +539,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Install Android SDK 27 and isolate legacy SDK root
         shell: bash
@@ -622,7 +636,9 @@ jobs:
     needs: [validate]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build current no-reflash update assets
         shell: bash
         run: |
@@ -645,7 +661,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -667,7 +685,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-android-current
@@ -715,7 +735,9 @@ jobs:
       matrix:
         kind: [esp8266, esp32]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-${{ matrix.kind }}-firmware
@@ -738,7 +760,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-ruijie-firmware
@@ -761,7 +785,9 @@ jobs:
       matrix:
         target: [orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
@@ -780,7 +806,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-x86_64-firmware
@@ -810,7 +838,9 @@ jobs:
       - v04_x86_simulation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Record passing candidate
         shell: bash
         run: |
@@ -837,7 +867,9 @@ jobs:
     needs: [validate, android]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: BlazePwifi-android-BlazeRental
@@ -919,8 +951,9 @@ jobs:
       APK_SHA256: '2062c0ad1245b1a5dbfec8fea1cfef4286906f943ba54c6a7005ca7ca872bac0'
       CERT_SHA256: '49b2f1ad1c8214b35935fa266f6afdd5db12f9739dee0eef0b31c69848dcd09e'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: blazepwifi-v0.3.0-production
       - name: Download verified production signing handoff
         run: |
@@ -944,7 +977,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$DEST"
           git commit -m "release(blazepwifi): add signed BlazeRental.apk [skip ci]"
-          git push origin HEAD:blazepwifi-v0.3.0-production
+          cat > "$RUNNER_TEMP/git-askpass.sh" <<'ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
+          chmod 700 "$RUNNER_TEMP/git-askpass.sh"
+          trap 'rm -f "$RUNNER_TEMP/git-askpass.sh"' EXIT
+          GIT_ASKPASS="$RUNNER_TEMP/git-askpass.sh" GIT_TERMINAL_PROMPT=0 git push origin HEAD:blazepwifi-v0.3.0-production
 
   publish_prerelease:
     if: github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && contains(github.event.head_commit.message, '[release]')
@@ -956,7 +999,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: v0.3.0-rc.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           pattern: BlazePwifi-*
@@ -1007,7 +1052,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: v0.3.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -1092,7 +1139,7 @@ jobs:
       LAB_TAG: v0.6.0-alpha.4
       NOTES: experiment/openwrt/BlazePwifi/releases/0.6.0-alpha.4/RELEASE_NOTES.md
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
