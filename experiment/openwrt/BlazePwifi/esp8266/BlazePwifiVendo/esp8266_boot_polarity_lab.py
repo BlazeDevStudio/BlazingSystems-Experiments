@@ -120,7 +120,7 @@ def main() -> None:
                      "configPolarityFieldsValid", "makeSetupPassword",
                      "defaults", "saveCfg", "latchConfigPersistenceFailure",
                      "loadCfg", "writeLogical", "configureRuntimePins",
-                     "applyOutputs", "canStartPoll", "canAttemptCoinPost")
+                     "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost")
     )
     string_checks = "\n".join(extract_functions(source, "configStringsTerminated"))
     require(len(extract_functions(source, "configStringsTerminated")) == 3,
@@ -260,10 +260,18 @@ bool saveCfg();
 void latchConfigPersistenceFailure(const char *reason);
 void loadCfg();
 
-""" + string_checks + "\n" + functions + r"""
-
 static const int INPUT=0, OUTPUT=1, INPUT_PULLUP=2;
 static const int HIGH=1, LOW=0, FALLING=2, RISING=3;
+void pinMode(int,int);
+void digitalWrite(int,int);
+int digitalPinToInterrupt(int);
+void detachInterrupt(int);
+void coinEdgeISR();
+void attachInterrupt(int,void(*)(),int);
+int digitalRead(int);
+
+""" + string_checks + "\n" + functions + r"""
+
 std::map<int,int> pinModes, pinLevels;
 std::vector<std::string> gpioOps;
 void pinMode(int pin,int mode){
@@ -278,7 +286,7 @@ int digitalPinToInterrupt(int pin){ return pin; }
 void detachInterrupt(int){}
 void coinEdgeISR(){}
 void attachInterrupt(int,void(*)(),int){}
-bool coinLineIdle(){ return true; }
+int digitalRead(int){ return HIGH; }
 
 void resetState(){
   EEPROM=FakeEEPROM();
