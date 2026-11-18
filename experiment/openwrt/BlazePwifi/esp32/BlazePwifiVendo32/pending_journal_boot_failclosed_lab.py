@@ -247,7 +247,7 @@ int main() {
 
   reset();
   record=validRecord();
-  record.target[14]='X'; // non-zero data after the first NUL
+  record.target[15]='X'; // non-zero data after the first NUL
   record.checksum=pendingChecksum(record);
   LittleFS.files["/pending.dat"]=recordBytes(record);
   ok &= check("hidden target suffix rejected",false,true,0,"","");
