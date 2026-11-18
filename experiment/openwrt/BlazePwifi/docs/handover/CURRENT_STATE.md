@@ -1,37 +1,3 @@
-## CURRENT STATE — PHX-RELEASE UTC22
-
-**Status:** BLOCKED — current test harness defect is in PHX-PISONET-owned path. PR #291 remains OPEN / DRAFT / UNMERGED.
-
-- Repository: `BlazeDevStudio/BlazingSystems-Experiments`; branch: `phoenix/release-publisher-isolation-20261115`; base #242 SHA `734b89d9e7792247e8376335c3f3685500ab3f89`.
-- Pre-activation test head: `dd27c7222bdf77120e3f17e189cbf0cf73f62380`; temporary out-of-scope edit `cfe15c1744d06458f0e7698485f91111a94a504d` was reverted by `b5f060b8d6c7df90563cf8d6cecca94af21afe5b`.
-- No net PHX-PISONET file change from this activation is retained. The test file remains at its prior content, where `$buildWorkflow` is referenced without assignment under StrictMode.
-- Owner's instruction and MASTER role matrix prohibit PHX-RELEASE from modifying `experiment/windows/BlazePisonet-SoftTimer/`. PHX-PISONET or MASTER must own/authorize the correction.
-- Temporary-head Windows run #44409507340 passed with the temporary edit but is not accepted as final evidence; signing steps and publisher were skipped. Temporary shared build #44409507427 passed shared validation and board/target jobs, with some simulations still running at rollback time; import/sign/publish skipped. Both runs are non-accepted because their source tree included the reverted out-of-scope edit.
-- Exact parent-head runs #44406201511/#44406201086 failed at handover freshness before the test assertion executed.
-
-## NEXT EXACT ACTION
-
-Request PHX-PISONET to restore the repository-root workflow read in its own test, or obtain a MASTER-approved separate release-owned test harness. PHX-RELEASE must not modify the PISONET subtree. In parallel, the next release-owned CI task may address the missing sandbox workflow trigger coverage for COE #35/#44, after a fresh ownership/branch check. Keep PR #291 draft and unmerged. No signing, tag, release, merge, flash, payment migration or customer deployment.
-
----
-
-## CURRENT STATE — PHX-RELEASE UTC22
-
-**Status:** IN_PROGRESS — self-test bootstrap correction committed; exact-head CI pending. **PR #291 remains OPEN / DRAFT / UNMERGED.**
-
-- Repository: `BlazeDevStudio/BlazingSystems-Experiments`; branch: `phoenix/release-publisher-isolation-20261115`; parent #242 base: `734b89d9e7792247e8376335c3f3685500ab3f89`.
-- Parent source/test HEAD: `dd27c7222bdf77120e3f17e189cbf0cf73f62380`; test fix commit: `cfe15c1744d06458f0e7698485f91111a94a504d`.
-- Scope: release-owned PowerShell regression test only plus canonical handover synchronization. No product, financial, firmware, signer or publisher authority changed.
-- Defect: the test referenced `$buildWorkflow` without assigning it under `Set-StrictMode -Version Latest`. The fix restores the repository-root workflow read and rejects an empty/missing workflow.
-- Prior RED for the original shared build checkout defect: Windows run #44404665756; the shared-build run #44404666004 passed. At parent `dd27c7222bdf77120e3f17e189cbf0cf73f62380`, current Windows/shared-build runs #44406201511 and #44406201086 stopped at the handover freshness gate before the test assertion.
-- The workflow source at the parent already has the 20 immutable checkout pins and credential persistence disabled; production import uses an ephemeral askpass script. This is CI/source evidence only.
-
-## NEXT EXACT ACTION
-
-Inspect the new exact-head Windows and BlazePwifi shared-build Actions after the handover synchronization. Require the self-test to reach and pass the 20-checkout and askpass assertions. If it fails, fix only the release test or handover defect demonstrated by the job log, then repeat exact-head CI. Keep PR #291 draft and unmerged; do not sign, tag, publish, flash, migrate payment data or deploy.
-
----
-
 PHX-RELEASE UTC23 FINAL — Node24 action runtime migration verified at exact PR #291 source/test HEAD `4d36160ccffb7bee34aa713bc896be33e355646d`. Workflow source commit: `070e3f6e54f5da1d2c217a48fe172a339a5bc106`; test/hand-over correction: `4d36160ccffb7bee34aa713bc896be33e355646d`. Exact-head [Windows Actions #44199068618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199068618) SUCCESS: handover SUCCESS, build-windows SUCCESS, write-privileged publisher SKIPPED. The Node24 pin regression, package parity, publisher negative/mock controls, .NET restore/build, PAY-0717/0718/0719/0720 lab checks, NSIS metadata, unsigned-Setup denial, install/uninstall smoke, portable ZIP membership, SHA256SUMS parity, artifact upload and frozen-v0.4.0 publisher admission all passed. No Node.js 20 deprecation warning appeared in the final job log. Upload-artifact v7.0.2 executed successfully; preview artifact ID `14379669398`, 264,827,662 bytes, provider digest `sha256:c3203949297d3b3ef405f02e342a25a00801408cf53e7486197d28057a8ea65f`. This digest is provider metadata; artifact bytes were not independently downloaded. Download-artifact v8.0.2 is statically pinned and its upstream Node24 metadata was verified, but it was not executed because the privileged publisher job is correctly skipped for PR validation. Signing steps were skipped.
 NEXT: independent PHX-QA review of action pins and publisher boundary; PHX-MASTER review of release workflow reimplementation/ownership route. PR remains OPEN/DRAFT/UNMERGED. No signing, tag, release, merge, hardware, financial or customer action. PRODUCTION NO-GO.
 
