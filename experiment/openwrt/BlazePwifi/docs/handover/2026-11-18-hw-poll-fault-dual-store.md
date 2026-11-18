@@ -247,3 +247,36 @@ Master's latest coordination commit [9fb0d615](https://github.com/BlazeDevStudio
 This PR's UTC07 source/test change is limited to ambiguous NVS/EEPROM commit-result reboot coverage. It does not touch `acceptPollResponse()`, `coinPostDispositionVerified()`, the poll producer, QA-owned files, CORE schemas or Release workflows. The #323 child remains a draft-only candidate of #322; Master retains the review lineage #314 → #315 → #317 → #320 → #322, with #323 requiring explicit stack/QA review and no integration or migration authority.
 
 No change to production status: focused host fixtures CI VERIFIED at source/test SHA `c13dfb8d...`; Full validation remains blocked by the stale QA fixture; physical flash, electrical pulse, 150 power cuts, 30-device/24-hour soak, independent witness and production readiness remain NOT TESTED / BLOCKED.
+
+
+## UTC09 exact-source extraction hardening — source/test SHA 606ba4eeb90ffe7bb784a3c929ab5a9df45a0951
+
+**Scope:** hardware-owned poll_fault_dual_store_lab.py only; no production .ino, QA-owned test path, shared API, CORE ledger, Release workflow, or COE destination changed.
+
+### Cleanup and regression protection
+
+The prior C/C++ source extractor counted every brace byte, including braces inside comments and string literals, and selected the first textual name( occurrence rather than requiring a function definition. That made the test harness unnecessarily fragile when firmware comments/literals or call order changed.
+
+The lab now:
+- scans nested C/C++ blocks while ignoring line/block comments, escaped string/character literals, and delimited raw strings;
+- selects a function definition with a return-type/signature anchor, not a call, comment, or forward declaration;
+- fails closed on missing or unterminated blocks;
+- runs a small extractor self-test before either board harness, covering braces in comments, strings, characters, raw strings, nested initializers, a call before the definition, and an unterminated block.
+
+### Exact-head CI evidence
+
+- Initial implementation commit 86690c8acc3b87ea4386ad38a0c59c3460eb166a had a Python f-string syntax error in the signature pattern. The exact-head quarantine run [44273780927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44273780927), job 134696640191, failed at that SyntaxError. This was an implementation error, not an expected regression RED.
+- Corrected source/test commit: 606ba4eeb90ffe7bb784a3c929ab5a9df45a0951.
+- Exact-head quarantine/readback [44273906126](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44273906126), job 134697064391: **SUCCESS**. POLL_FAULT_EXTRACTOR_SELFTEST=PASS; ESP32 and ESP8266 POLL_FAULT_DUAL_STORE_LAB=PASS; NVS read-error/type-mismatch/open-failure deny cases and ambiguous-commit/reboot deny cases pass. Existing quarantine 36/36 per board, pending marker 28/28 per board, mount 8/8 per board, pending journal 16/16, pending clear 17/17, pending write/readback 22/22, coin POST gate 10/10, poll-window 11/11, pulse capture 8/8 and blocking-poll fault 7/7 per board also pass.
+- Exact-head relay/output [44273906309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44273906309), job 134697065140: **SUCCESS**. Relay polarity 48/48 per board; output-enable sequence 4/4; poll drain 11/11 per board; pulse capture 8/8 per board; blocking-poll regression and mutation checks pass.
+- Full build [44273906143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44273906143): **FAILURE** at validation job 134697204281, existing QA-owned Missing poll signature check. All 14 firmware/platform jobs, including ESP8266, ESP32, Ruijie, Orange Pi and x86 targets, plus Android, completed **SUCCESS**. Production import/signing, update bundle, simulations, candidate gate and publishing were skipped after validation failure.
+
+All new green evidence is source-extracted host simulation / CI only. PHYSICAL_COIN_ACCEPTOR_VERIFIED=0, PHYSICAL_RELAY_POLARITY_VERIFIED=0, and PHYSICAL_POWER_CUT_VERIFIED=0 remain. No physical flash, relay, coin, power cut, reset, live money, signer, migration, merge, release or deployment occurred.
+
+### Coordination
+
+- PHX-MASTER UTC08 decision remains binding: poll admission and coin POST disposition stay hard-deny; QA replaces the positive response_sig / |poll| assertion with negative deny-behavior tests; CORE owns the canonical response envelope and golden vectors.
+- PHX-QA review is requested for the extractor cleanup and exact source/test SHA. This hardware-local lab is not independent QA evidence.
+- PR #323 remains a draft candidate child of #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08; no stack integration is authorized.
+- The canonical private Google Drive registry v11 and newer corrections remain unavailable through the exposed Library/connector surface. No older registry was substituted.
+- **Production remains NO-GO.**
