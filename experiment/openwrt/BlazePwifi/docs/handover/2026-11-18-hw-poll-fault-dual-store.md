@@ -386,7 +386,7 @@ Both `sampleCoinPulseEdge()` implementations now call `latchPollPulseFault(pendi
 - Exact checkout confirmed in both focused jobs: `45b3cad0374e15a12128e8b4e41f4a1affeb53c5`.
 - Quarantine [run #44353058266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353058266), job `134973658989`: **SUCCESS**. Both board dual-store labs pass; both `COIN_PULSE_CAPTURE_PASS 8/8`; both reject `missing-persistent-fault-latch`; poll-blocked edge fault `7/7` and ISR snapshot-race checks pass.
 - Relay/output [run #44353058548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353058548), jobs `134973659930` (ESP32 boot-polarity) and `134973660327` (source/output): **SUCCESS**. Exact checkout `45b3cad`; unknown EEPROM schema preservation and both-board poll/pulse regressions pass.
-- Full build [run #44353059476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353059476), validation job `134973708678`: **FAILED** at the inherited QA-owned `Missing poll signature check`. Some target jobs completed successfully and others were still running at the last read; no complete target matrix or Full CI acceptance is claimed.
+- Full build [run #44353059476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353059476), validation job `134973708678`: **FAILED** at the inherited QA-owned `Missing poll signature check`. All 14 firmware/Android target jobs completed SUCCESS, but downstream simulations, update bundle, signing handoff, candidate gate and publishing were skipped. The overall Full workflow is not green and is not release acceptance.
 
 ### Limits and required review
 
