@@ -122,7 +122,7 @@ def extract_function(source: str, name: str, optional=False) -> str:
 def extract_constants(source: str, names):
     selected = []
     for line in source.splitlines():
-        if line.lstrip().startswith("static const ") and any(name in line for name in names):
+        if line.lstrip().startswith(("static const ", "const ")) and any(name in line for name in names):
             selected.append(line)
     return "\n".join(selected)
 
@@ -159,10 +159,10 @@ def source_functions(source: str) -> str:
 
 def harness(source: str) -> str:
     structs = "\n\n".join([
-        extract_block(source, "struct ConfigV1"),
-        extract_block(source, "struct ConfigV2"),
-        extract_block(source, "struct Config {"),
-        extract_block(source, "struct PollFaultRecord"),
+        extract_block(source, "struct ConfigV1") + ";",
+        extract_block(source, "struct ConfigV2") + ";",
+        extract_block(source, "struct Config {") + ";",
+        extract_block(source, "struct PollFaultRecord") + ";",
     ])
     constants = extract_constants(source, (
         "MAGIC_V1", "MAGIC_V2", "MAGIC",
@@ -323,16 +323,15 @@ void resetEepromObject(){
   flashWriteCount=0;
   fakeCommitFailure=false;
 }
-void coldBootAndCheckMarker(){
+bool coldBootAndCheckMarker(){
+  resetRuntime();
   resetEepromObject();
   rawReadFailFirstCount=0;
   rawReadPersistentFailure=false;
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
-  resetRuntime();
   loadPollPulseFaultLatch();
-  if(!journalRecoveryRequired || insertMode || !activeTarget.empty())
-    throw std::runtime_error("cold boot did not restore deny from the preserved marker");
+  return journalRecoveryRequired && !insertMode && activeTarget.empty();
 }
 int main(){
   // RED target: EEPROM.begin's first 544-byte read fails, then a direct full
@@ -348,7 +347,7 @@ int main(){
      !markerUnchanged(marker)) return 31;
   if(!pollFaultBackupPresentOrCorrupt()) return 32;
   std::cout<<"ESP8266_EEPROM_BEGIN_READ_FAIL_THEN_FULL_READ_RECOVER_MARKER_PRESERVED_PASS\n";
-  coldBootAndCheckMarker();
+  if(!coldBootAndCheckMarker()) return 33;
   if(!markerUnchanged(marker)) return 33;
   std::cout<<"ESP8266_EEPROM_RECOVERED_IMAGE_COLD_BOOT_DENY_PASS\n";
 
@@ -363,7 +362,7 @@ int main(){
   loadCfg();
   if(configImageReadVerified || !journalRecoveryRequired || insertMode ||
      !activeTarget.empty() || flashWriteCount!=0 || !markerUnchanged(marker)) return 34;
-  coldBootAndCheckMarker();
+  if(!coldBootAndCheckMarker()) return 35;
   if(!markerUnchanged(marker)) return 35;
   std::cout<<"ESP8266_EEPROM_FULL_READ_FAIL_MARKER_ONLY_RECOVERY_NO_COMMIT_PASS\n";
 
@@ -382,7 +381,7 @@ int main(){
   rawReadPersistentFailure=false; // the existing marker-only read is now available
   if(writePollFaultBackup(9) && flashWriteCount!=0) return 38;
   if(flashWriteCount!=0 || !markerUnchanged(marker)) return 39;
-  coldBootAndCheckMarker();
+  if(!coldBootAndCheckMarker()) return 40;
   if(!markerUnchanged(marker)) return 40;
   std::cout<<"ESP8266_EEPROM_FULL_READ_PERSISTENT_FAILURE_NO_COMMIT_PASS\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_POWER_CUT_VERIFIED=0 CONFIG_MIGRATION_AUTHORIZED=0\n";
