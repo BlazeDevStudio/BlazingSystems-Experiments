@@ -7,6 +7,7 @@ power-loss timing, wear, or an independent physical witness.
 from pathlib import Path
 import subprocess
 import tempfile
+import sys
 
 ROOT = Path.cwd()
 ESP32 = ROOT / "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
@@ -273,7 +274,12 @@ def run(board: str, path: Path):
             ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
             check=True,
         )
-        result = subprocess.run([str(exe)], check=True, text=True, capture_output=True)
+        try:
+            result = subprocess.run([str(exe)], check=True, text=True, capture_output=True)
+        except subprocess.CalledProcessError as exc:
+            print(exc.stdout or "", end="")
+            print(exc.stderr or "", file=sys.stderr, end="")
+            raise
         print(result.stdout, end="")
 
 if __name__ == "__main__":
