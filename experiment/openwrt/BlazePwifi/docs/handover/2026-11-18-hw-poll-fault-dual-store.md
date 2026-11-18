@@ -73,3 +73,20 @@ The secondary NVS/EEPROM records remain same-chip fallback regions, not an indep
 
 
 **Final UTC04 full-matrix update:** run 44240322231 is complete with all 14 target/platform jobs successful, including both ESP boards. The workflow remains FAILED solely at the inherited QA-owned Missing poll signature check; no signing, publishing, simulation or candidate gate ran. Do not count this as a full release pass.
+
+
+## UTC05 exact-source correction — immediate output inhibit before flash writes
+
+A second source audit found that `latchPollPulseFault()` set the RAM deny state but called `applyOutputs()` only **after** attempting NVS/EEPROM and LittleFS writes. Those flash operations may block while the relay remains at its previous physical state. The fix now deasserts relay/LED outputs immediately after setting `journalRecoveryRequired=true`, `insertMode=false`, and clearing `activeTarget`, before either persistence attempt.
+
+### Test-first evidence
+
+- Test-only RED commit: `c8e8e80a1eb4d6133043685e54795a7615cc9b3b`.
+- Exact-source RED [run 44241798015](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241798015), job `134591217970`: expected assertion failure `!persistenceBeforeOutputInhibit` against the unchanged latch ordering. The extracted ESP32 harness stopped at the first failing board, so this RED is not claimed as two-board execution.
+- ESP32 source fix: `048f55df4dfd8a719afe9f7f12486ef0e9e8da16`.
+- ESP8266 source fix / current source-test SHA: `6738171209a748c3c210ac13ebe69450eb6405f5`.
+- Exact-head quarantine/journal/poll-fault [run 44241883128](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241883128), job `134591494280`: SUCCESS. Both boards report `POLL_FAULT_DUAL_STORE_LAB=PASS`; both-store failure is explicitly reported as `EXPECTED_CURRENT_BOOT_ONLY`. Existing quarantine 36/36 per board, pending-attempt 28/28 per board, mount 8/8 per board, pending-journal 16/16 per board, pending-clear 17/17 per board, write/readback 22/22 per board, coin POST gate 10/10 per board, poll-window 11/11 per board and pulse-capture 8/8 per board passed.
+- Exact-head relay/pulse/output lab [run 44241883164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241883164), job `134591494480`: SUCCESS. The `missing-immediate-output-inhibit` mutation is rejected on both ESP8266 and ESP32; pulse capture 8/8 per board and poll-window guards pass.
+- Full build [run 44241883197](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241883197): validation already FAILED at the QA-owned legacy `Missing poll signature check`; target matrix jobs were still running at this checkpoint. This is not Full CI acceptance.
+
+All green results above are source-extracted host simulations / CI builds, not physical relay measurements. `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_COIN_PULSE_ACCEPTANCE=0` remain explicit. The same-chip NVS/EEPROM fallback remains neither an independent witness nor an anti-rollback primitive. No flash, reset, coin, payment, migration, signing, merge, release or deployment occurred.
