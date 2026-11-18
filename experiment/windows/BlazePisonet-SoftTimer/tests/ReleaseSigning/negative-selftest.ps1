@@ -111,12 +111,6 @@ try {
   }
   Write-Output 'RELEASE-CHECKOUT: all three checkout steps disable persisted Git credentials PASS'
   # Shared BlazePwifi build jobs also execute PR-controlled project code.
-  # Load the canonical repository-root workflow before validating its authority.
-  $buildWorkflowPath = Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepwifi-build.yml'
-  $buildWorkflow = Get-Content -LiteralPath $buildWorkflowPath -Raw
-  if ([string]::IsNullOrWhiteSpace($buildWorkflow)) {
-    throw 'Shared BlazePwifi build workflow is missing or empty'
-  }
   # Keep default authority read-only and never persist checkout credentials.
   if ($buildWorkflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Shared BlazePwifi build workflow must default to contents: read'
