@@ -1628,19 +1628,28 @@ void loop(){
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
     if(beginPollWindow()){
-    wifiFailures=0;
-    String r=post("poll");
-    // Keep intake inhibited until this response has been accepted or denied.
-    acceptPollResponse(r);
-    pollIntakeSuspended=false;
-    const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
-    if(pollEdgeEnd!=pollEdgeStart){
-      latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
-    }
-    applyOutputs();lastPoll=millis();
+      // Persist any ISR edge captured during the drain before a synchronous HTTP wait.
+      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
+      if(pollEdgeAfterDrain!=pollEdgeStart){
+        latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      } else {
+        wifiFailures=0;
+        String r=post("poll");
+        // Keep intake inhibited until this response has been accepted or denied.
+        acceptPollResponse(r);
+        pollIntakeSuspended=false;
+        const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+        if(pollEdgeEnd!=pollEdgeStart){
+          latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
+        }
+        applyOutputs();
+        lastPoll=millis();
+      }
     }
   }
-
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
   sampleCoinPulseEdge(active);
