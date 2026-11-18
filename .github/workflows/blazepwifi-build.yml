@@ -11,6 +11,8 @@ on:
       - '!experiment/openwrt/BlazePwifi/AUDIT.md'
       - '!experiment/openwrt/BlazePwifi/README.md'
       - '.github/workflows/blazepwifi-build.yml'
+      - '.github/scripts/**'
+      - '.github/PHX_RELEASE_HANDOVER.md'
       - '.github/workflows/blazepwifi-v053-release.yml'
       - '.github/workflows/blazerental-v053-lineage2-sign.yml'
   pull_request:
@@ -49,6 +51,8 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: RELEASE-ACTIONS enforce immutable Node24 artifact action pins
+        run: python3 .github/scripts/test_release_artifact_action_pins.py
       - name: RELEASE-TOOLCHAIN enforce observed board-core pins
         shell: bash
         run: |
