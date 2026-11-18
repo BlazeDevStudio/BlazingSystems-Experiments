@@ -21,7 +21,7 @@ WORKFLOWS = {
     },
 }
 PATTERN = re.compile(
-    r"^\s*-\s*uses:\s*(actions/(?:upload-artifact|download-artifact))@([^\s#]+)(?:\s+#.*)?$",
+    r"^\s*(?:-\s*)?uses:\s*(actions/(?:upload-artifact|download-artifact))@([^\s#]+)(?:\s+#.*)?$",
     re.MULTILINE,
 )
 
