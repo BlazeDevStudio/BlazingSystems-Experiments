@@ -784,3 +784,12 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Corrected the release-owned test file by removing the duplicated trailing fragment. Corrected test-only commit: `c10bf9ee2a64dbe985ab95e6250df7e4a776b5ce`. No workflow/source behavior changed.
 - Next exact-head run must pass the handover gate and package-parity selftest, then reach the new assertion requiring all three checkout steps to use `persist-credentials: false`. Only after the expected RED is confirmed will the two read-only checkout steps be changed.
 - Existing PR remains draft; publisher/signing stay skipped. No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — checkout credentials fail-closed correction
+
+- Test-first regression is in `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`; source/test head before workflow correction: `3673fc3227aa7650903651677885e6678806c126`.
+- Expected RED: [Windows run #44265603270](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265603270). Handover gate PASS; PackageParity selftest PASS; the new `RELEASE-SIGN test fail-closed negative controls` step failed exactly at line 109: `Every release workflow checkout must set persist-credentials: false`. This confirms two read-only PR/build checkout steps lacked the setting. The publisher job was skipped. Earlier run #44265207630 was a test-authoring ParserError at line 323 and is not counted as the expected RED.
+- Workflow correction commit: `2837f64a8d7a484fa4c87466e293169f23259afc`. Added `persist-credentials: false` to the handover and Windows build checkouts. The separate publisher checkout already had it. No checkout ref, action pin, token permission, job boundary, signer condition, version gate, artifact content or publish condition changed.
+- All three canonical handovers are synchronized in this docs-only commit sequence. Next: exact-head Windows CI must pass handover freshness, all release negative controls, native build/install/uninstall, package parity and checksums; the write-privileged publisher job must remain SKIPPED on PR validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
