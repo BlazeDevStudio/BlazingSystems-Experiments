@@ -253,3 +253,13 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Parent-head validation runs [#44406201511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201511) and [#44406201086](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201086) failed at mandatory handover freshness before the new assertion executed. Windows build/publisher skipped; shared CI-0701 passed, validate failed at the gate, ESP8266/ESP32/Android and target builds passed, downstream simulations/sign/publish skipped.
 - This commit synchronizes the canonical handover after the test fix. Exact-head Actions are pending; no result is claimed. Status: `in_progress`, not validated.
 - Next exact action: inspect exact-head Windows/shared-build Actions; require the regression to execute and pass. Preserve failed runs; keep PR draft/unmerged. Production NO-GO.
+
+
+## 2026-11-18 UTC22 — PHX-RELEASE ownership correction — BLOCKED / OUT-OF-SCOPE EDIT REVERTED
+
+- The attempted test bootstrap `cfe15c1744d06458f0e7698485f91111a94a504d` changed `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`. Live MASTER role assignments and the owner's instruction reserve the SoftTimer subtree to PHX-PISONET; PHX-RELEASE must not edit it.
+- Revert commit `b5f060b8d6c7df90563cf8d6cecca94af21afe5b` restores the file to the pre-activation content at `dd27c7222bdf77120e3f17e189cbf0cf73f62380`. No net PISONET source/test change is retained from this activation.
+- Temporary-head Windows run [#44409507340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44409507340) succeeded, but is explicitly **not accepted** because it tested the temporary out-of-scope edit; signing steps and publisher were skipped.
+- Temporary shared build [#44409507427](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44409507427) reported shared validation and board/target jobs passing; some simulations remained in progress at rollback time; import/sign/publish skipped. Also **not accepted** as final-branch evidence.
+- Exact pre-edit head runs [#44406201511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201511) and [#44406201086](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201086) failed at the mandatory handover freshness gate before the regression assertion ran.
+- Status: `blocked`. Next exact action: PHX-PISONET owns the test correction, or PHX-MASTER must authorize a separate release-owned test path. Do not edit PISONET without that decision. Production remains NO-GO.

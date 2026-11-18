@@ -1,3 +1,14 @@
+PHX-RELEASE UTC22 — PISONET-owned test edit reverted after ownership review; release task BLOCKED.
+
+- Existing draft [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), branch `phoenix/release-publisher-isolation-20261115`, base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- The attempted test bootstrap commit [`cfe15c17`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/cfe15c1744d06458f0e7698485f91111a94a504d) touched `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`. MASTER role ownership and the owner's current instruction place the entire SoftTimer subtree under PHX-PISONET; PHX-RELEASE must not edit it.
+- That edit has been reverted by commit [`b5f060b8`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b5f060b8d6c7df90563cf8d6cecca94af21afe5b). The PISONET test file is restored byte-for-byte to its pre-activation content at `dd27c7222bdf77120e3f17e189cbf0cf73f62380`; no net PISONET source/test change is retained from this activation.
+- Temporary-head Windows run [#44409507340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44409507340) completed SUCCESS with the temporary test edit; all three signing steps and the privileged publisher job were SKIPPED. This result is **not accepted as release evidence** because the tested tree included an out-of-scope PISONET edit that has been reverted.
+- Temporary-head shared build [#44409507427](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44409507427): shared validation, ESP32/ESP8266, Android and OpenWrt target jobs reported SUCCESS; at rollback time some simulations were still in progress; import/sign/publish jobs were SKIPPED. This result is likewise **not accepted as final-branch evidence**.
+- Before the temporary edit, exact head `dd27c722` had Windows [#44406201511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201511) and shared build [#44406201086](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44406201086) fail at the mandatory handover freshness gate before the regression assertion executed.
+
+NEXT EXACT ACTION: PHX-PISONET must repair the uninitialized `$buildWorkflow` read in its owned test, or PHX-MASTER must explicitly authorize a release-owned replacement test path. PHX-RELEASE will not edit the PISONET subtree without that ownership decision. Keep all PRs draft/unmerged; PRODUCTION NO-GO.
+
 PHX-RELEASE UTC22 — shared-build credential regression self-test bootstrap corrected; exact-head CI pending.
 
 - Existing draft: [Experiments PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), branch `phoenix/release-publisher-isolation-20261115`, base PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
