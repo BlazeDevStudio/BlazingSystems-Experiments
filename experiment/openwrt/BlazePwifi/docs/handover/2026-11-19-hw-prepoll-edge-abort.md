@@ -186,3 +186,36 @@ pollFaultBackupPresentOrCorrupt() intentionally returns true when the direct raw
 The raw-read failure is now distinguished from a proven existing marker, and same-boot ambiguous-write retries remain blocked by the earlier RAM latch. This is still source-extracted host/fake-I/O simulation and CI only. It does not establish flash physics, cold-boot durability if both LittleFS and EEPROM/NVS fail, an independent anti-rollback witness, physical relay/acceptor behavior, 150 power cuts, 30-device/24-hour soak or electrical pulse/recovery. The two stores share the same flash chip on these boards; they are not an independent witness.
 
 **Next exact action:** obtain PHX-QA independent review of the combined source/test SHA dfa7f50b...; request PHX-MASTER to refresh the #327 current-head/stack record; keep the stale positive poll-signature fixture with PHX-QA and preserve firmware deny-only behavior. No merge, flash, migration, signer provisioning, release or deployment.
+
+
+## UTC22 — poll-drain abort inhibit continuity and exact-source mutation coverage
+
+**Task:** P0 #177 / #172 — keep the poll intake inhibit asserted until the ISR sequence is reconciled for both successful and aborted quiet-drain outcomes. The firmware correction is already present in this stacked hardware branch; this activation repaired the hardware-owned source-extraction lab so it detects transient relay re-energization and its mutations still match the current production loop.
+
+### Firmware behavior at the exact branch source
+
+- Firmware correction: [ddb386847e152e8ca4992e9f6b3370bfa3f20462](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ddb386847e152e8ca4992e9f6b3370bfa3f20462).
+- `beginPollWindow()` now leaves `pollIntakeSuspended` asserted when the quiet drain returns false. It does not release the inhibit or call `applyOutputs()` from inside the helper.
+- The caller snapshots `coinEdgeSequence` after either drain result. If an edge arrived, it latches the unresolved ingress fault and deasserts outputs before persistence, then releases the poll inhibit. Only the no-edge false-return path releases the inhibit after the sequence reconciliation.
+- No response-signature contract, positive remote admission, coin POST, financial API or replay semantics were changed.
+
+### Test-harness corrections in this activation
+
+- [104b7caf70dcb27697103df204a1f3a1f5cfef58](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/104b7caf70dcb27697103df204a1f3a1f5cfef58) adds a harness-side observation that records any relay/LED re-energization after the injected drain-abort edge but before `journalRecoveryRequired` becomes sticky. The exact-source assertions cover active-low and active-high coin wiring.
+- [427158c95d97b4ac1f87803df73d936b687b296a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/427158c95d97b4ac1f87803df73d936b687b296a) updates the late-snapshot mutation anchor to include the production reconciliation comment.
+- [ed667e88f6844284834ebd3a337dfce07a817e8c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ed667e88f6844284834ebd3a337dfce07a817e8c) updates the remove-`beginPollWindow` mutation to target the current `pollWindowReady=beginPollWindow()` call site rather than an obsolete `if(beginPollWindow())` form.
+
+### Exact-head CI results
+
+- Focused [run #44413615691](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44413615691), job [135187982356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44413615691/job/135187982356), exact source/test SHA `ed667e88...`: **overall FAILURE**, but the poll-loop subtest completed on ESP8266 and ESP32. Both logs show `POLL_ABORT_DRAIN_INHIBIT_CONTINUITY_PASS`, active-low and active-high abort-edge persistence, and rejection of release-before-reconciliation, missing-pre-poll-edge and late-snapshot mutations. All remaining poll-window, pulse-capture, output-inhibit and boot-latch mutations in that lab also rejected as expected.
+- The same focused job then failed in the separate `config_load_read_failure_lab.py` on ESP8266: `expected exit 0, got 31`. This is a **separate P0 source defect**, not a failure of the poll-drain correction. The lab's first scenario seeds a pre-existing poll-fault marker, injects failure of the `EEPROM.begin()` full-image read, and requires a subsequent status-bearing raw full-image read before config defaults/save can proceed. Current `loadCfg()` checks `EEPROM.length()` then uses `EEPROM.get()` without proving that the complete config image was read successfully; the test therefore exits 31 before reaching its recovery assertions. No fix for this separate issue is included in this UTC22 task.
+- Relay/output run [#44413628747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44413628747): ESP32 boot-polarity job succeeded; source-output job failed at the same config-read lab, after the poll-drain regression cases passed on both boards.
+- Full build [#44413615638](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44413615638): validation job [135188137963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44413615638/job/135188137963) **FAILED** at inherited `Missing poll signature check`. ESP8266 and ESP32 compile jobs and all 13 firmware/platform target jobs were SUCCESS at last observation. Android was still IN PROGRESS; no completed Android pass or overall Full pass is claimed. Downstream simulations, update bundle, signing and publishing were skipped.
+
+### Next bounded action and release limits
+
+**Next PHX-HARDWARE action:** fix the separate ESP8266 `loadCfg()` full-image read-failure hazard with a status-bearing raw image read before decoding, defaults or `EEPROM.commit()`; preserve the existing poll-fault marker on transient and persistent read failure. Keep the existing failure lab's three scenarios: first read fails then full read recovers; two full-image reads fail and no commit occurs; persistent read failure remains deny-only and marker bytes survive. Coordinate any EEPROM layout/API assumptions with PHX-MASTER/PHX-CORE before changing shared semantics.
+
+**PHX-QA / PHX-CORE:** the Full workflow's stale positive poll-signature assertion remains QA/contract-owned. Do not synthesize `response_sig` or weaken the default-deny consumer to make the old check pass.
+
+Classification: poll-drain source behavior is **SIMULATED / CI subtest PASS**; the overall focused job is **FAIL** due to the separate config-read lab. Physical coin/relay, power-cut and electrical recovery acceptance remain **NOT TESTED**. PR #327 remains OPEN / DRAFT / UNMERGED. No flash, reset, migration, signer provisioning, merge, release or deployment occurred.
