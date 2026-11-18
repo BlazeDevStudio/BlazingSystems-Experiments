@@ -448,3 +448,18 @@ COE #36 now contains a GitHub Stage-1 staging snapshot at `b4d7434764aab72673de1
 A separate V1.6 branch `1e9b0269e3ed2138813fcd0c838b0034a08dfd90` has a distinct path and test/workflow identity, with branch CI passing but no open PR. Neither branch is in #26 or selected as canonical.
 
 The legacy Labs import remains one exact `.ino` blob only (`3fb15ecb9272b65500260bc7c92f05590163fa6d`); README, preview and Labs root NOTICE are absent from the COE destination, and explicit redistribution rights remain unverified. `OWNERSHIP_ROUTES.json` has no COE Universal/INTERCON route. Directory placement does not create a formal owner: COE integration owner must nominate an accountable owner; request PHX-HARDWARE firmware-domain review and PHX-PISONET interface review. No route change, copy, move, cherry-pick, rebase or merge is authorized.
+
+
+## UTC11 — Hardware stack and destination routing hold (2026-11-18)
+
+No Hardware candidate was copied, moved, cherry-picked, rebased, merged or assigned a new route. The current branch families overlap:
+
+- #321 (#317 child) and #322 (#320 child) share four output-preload source/test paths but have different ancestry.
+- #323 and #324 are siblings of #322; both edit the ESP32/ESP8266 sketches and poll-loop lab. #323 already applies outputs OFF before both persistence attempts; #324 adds a direct marker-open output-state assertion and mutation that #323's current lab lacks.
+- #318's current base SHA `3ed38225...` is not current #317 head `fce915c...`; exact-head CI for #318 `5af39837...` is absent.
+
+PHX-HARDWARE must select the canonical branch family and explicitly decide whether to port #324's regression into #323. PHX-QA owns the stale `Missing poll signature check` fixture. PHX-RELEASE owns COE #35's `exit 125` test/workflow mismatch and sandbox runner request. PHX-MASTER owns only this provenance and routing record.
+
+COE #26 remains at `b382d233...`, five queued workflows / zero jobs. COE #35 current head `ad69c4e9...` has a packaging assertion failure and mandatory sandbox failure. COE #45 is a separate candidate and must not be treated as integrated into #26. Existing COE #36–#43 candidates remain draft-only pending source, license/NOTICE, import completeness, QA and exact-head integration review.
+
+The unchanged `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Private Drive registry v11/newer corrections are unavailable through the current connector surface; no older Library snapshot substitutes for them. No migration is proposed.
