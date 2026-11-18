@@ -90,3 +90,16 @@ A second source audit found that `latchPollPulseFault()` set the RAM deny state 
 - Full build [run 44241883197](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241883197): validation already FAILED at the QA-owned legacy `Missing poll signature check`; target matrix jobs were still running at this checkpoint. This is not Full CI acceptance.
 
 All green results above are source-extracted host simulations / CI builds, not physical relay measurements. `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_COIN_PULSE_ACCEPTANCE=0` remain explicit. The same-chip NVS/EEPROM fallback remains neither an independent witness nor an anti-rollback primitive. No flash, reset, coin, payment, migration, signing, merge, release or deployment occurred.
+
+
+## UTC05 final Full-build readback at exact source/test SHA
+
+The exact-source Full build [44241883197](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44241883197) completed **CANCELLED** after validation job `134591565845` failed at the QA-owned legacy `Missing poll signature check`. At this SHA, ESP8266 job `134591565856` completed SUCCESS; ESP32 job `134591565871` and the remaining target matrix were cancelled; downstream simulations, update bundle, candidate gate and signing/publishing jobs did not run. Do not carry forward the predecessor #323 14/14 matrix result as exact-head evidence.
+
+Therefore, at source/test SHA `6738171209a748c3c210ac13ebe69450eb6405f5`:
+- Focused source-extracted quarantine/dual-store suite: CI VERIFIED, both boards.
+- Focused source-extracted relay/output/pulse suite: CI VERIFIED, both boards.
+- ESP8266 target build: CI VERIFIED.
+- ESP32 target build: NOT TESTED at this exact SHA (cancelled before execution).
+- Full target matrix / Full workflow: NOT VERIFIED; cancelled after QA validation failure.
+- Physical GPIO, relay, flash and power-cut acceptance: NOT TESTED.
