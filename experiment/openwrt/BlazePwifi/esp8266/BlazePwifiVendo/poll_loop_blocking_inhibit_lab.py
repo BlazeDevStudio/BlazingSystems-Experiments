@@ -373,7 +373,6 @@ int main(){
      backupWriteSawRelayOn || backupWriteSawLedOn ||
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
-  std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS\\n";
 
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
@@ -476,8 +475,8 @@ for board,path in BOARDS.items():
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     edge_hook = begin.replace(
-        "if(coinLineQuietAfterInhibit()) return true;",
-        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; }",
+        "return coinLineQuietAfterInhibit();",
+        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; } return false;",
         1,
     )
     if edge_hook == begin:
@@ -511,7 +510,7 @@ for board,path in BOARDS.items():
     if poll_guard_removed == loop:
         raise AssertionError(f"{board}: missing pre-poll edge-abort guard")
     compile_and_run(assemble(loop_source=poll_guard_removed,begin_source=edge_hook,main_source=RACE_MAIN),
-                    board,22,"missing-pre-poll-edge-abort")
+                    board,25,"missing-drain-abort-edge-reconciliation")
     print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
     late_snapshot_loop = loop.replace(
         "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
@@ -521,7 +520,7 @@ for board,path in BOARDS.items():
     if late_snapshot_loop == loop:
         raise AssertionError(f"{board}: late-snapshot mutation did not apply")
     compile_and_run(assemble(loop_source=late_snapshot_loop,begin_source=edge_hook,main_source=RACE_MAIN),
-                    board,22,"late-snapshot-regression")
+                    board,25,"late-snapshot-regression")
     print(f"{board} MUTATION_REJECTED late-poll-edge-snapshot")
     mutations=(
       ("remove-beginPollWindow",loop.replace("if(beginPollWindow()){","if(true){",1),output,quiet,accept),

@@ -345,7 +345,7 @@ int main(){
         std::cerr<<"DEBOUNCE_FLOOR_FAIL\n"; return 1;
     }
     resetState(); pulseStart=0; pulseEnd=80;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn || relayOffObservedWhileSuspended) return 11;
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn || !relayOffObservedWhileSuspended) return 11;
     resetState(); pendingPulses=1;
     if(beginPollWindow() || pollIntakeSuspended || !relayOn) return 12;
     resetState(); pendingReady=true; applyOutputs();
@@ -355,34 +355,34 @@ int main(){
     resetState(); fsReady=false; applyOutputs();
     if(beginPollWindow() || pollIntakeSuspended || relayOn) return 15;
     resetState(); runDebounceMs=boundedCoinDebounceMs(1); pulseStart=19; pulseEnd=49;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=19) return 16;
     resetState(); runDebounceMs=boundedCoinDebounceMs(1);
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=250) return 17;
     resetState(); runCoinActiveLow=false; runDebounceMs=boundedCoinDebounceMs(1);
     pulseStart=19; pulseEnd=49;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=19) return 18;
 
     // A pulse can still be propagating from the acceptor output stage after
     // relay de-energization. The 100 ms contract maximum plus 20 ms margin
     // must be observed before the blocking poll may start.
     resetState(); runDebounceMs=boundedCoinDebounceMs(1); pulseStart=80; pulseEnd=180;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 22;
     resetState(); runDebounceMs=40; pulseStart=80; pulseEnd=180;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 23;
     // A second pulse 200 ms after inhibit is still inside the 250 ms
     // inter-coin quiet boundary and must cancel the blocking poll.
     resetState(); runDebounceMs=40; pulseStart=200; pulseEnd=280;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=200 || coinLineIdle()) return 24;
 
     // A pulse beginning exactly at the 250 ms quiet boundary must cancel the poll.
     resetState(); runDebounceMs=40; pulseStart=250; pulseEnd=330;
-    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+    if(beginPollWindow() || !pollIntakeSuspended || relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=250 || coinLineIdle()) return 25;
 
     // Model the complete synchronous HTTP timeout after the real loop has
