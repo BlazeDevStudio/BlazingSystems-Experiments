@@ -110,6 +110,30 @@ try {
     }
   }
   Write-Output 'RELEASE-CHECKOUT: all three checkout steps disable persisted Git credentials PASS'
+  # The shared BlazePwifi build workflow executes PR-controlled project scripts.
+  # Do not leave the checkout token in .git/config after the action completes.
+  $buildWorkflowPath=Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepwifi-build.yml'
+  $buildWorkflow=Get-Content -LiteralPath $buildWorkflowPath -Raw
+  $buildCheckoutStepMatches = [regex]::Matches(
+    $buildWorkflow,
+    '(?ms)^[ ]{6}- uses: actions/checkout@(?<ref>[^\s#]+)[^\r\n]*\r?\n(?<block>.*?)(?=^[ ]{6}- |^[ ]{2}[A-Za-z0-9_-]+:|\z)'
+  )
+  if ($buildCheckoutStepMatches.Count -lt 1) {
+    throw 'Shared BlazePwifi build workflow has no visible checkout steps'
+  }
+  $sharedBuildCheckoutPins = @($requiredActionPins | Where-Object { $_.Action -eq 'actions/checkout' })
+  if ($sharedBuildCheckoutPins.Count -ne 1) {
+    throw 'Exactly one verified immutable checkout pin must be defined'
+  }
+  foreach ($checkoutStep in $buildCheckoutStepMatches) {
+    if ($checkoutStep.Groups['block'].Value -notmatch '(?m)^[ ]{10}persist-credentials: false') {
+      throw 'Every shared BlazePwifi build checkout must set persist-credentials: false'
+    }
+    if ($checkoutStep.Groups['ref'].Value -ne $sharedBuildCheckoutPins[0].Sha) {
+      throw "Every shared BlazePwifi build checkout must use immutable checkout $($sharedBuildCheckoutPins[0].Sha)"
+    }
+  }
+  Write-Output "RELEASE-CHECKOUT: all $($buildCheckoutStepMatches.Count) shared build checkouts use immutable Node24 pin and disable persisted credentials PASS"
 
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
