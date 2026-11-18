@@ -274,6 +274,9 @@ static bool nvsFailCommitAfterWrite=false;
 static bool nvsFailOpen=false, nvsTypeMismatch=false, nvsFailReadback=false;
 nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
+bool pollFaultBackupWriteFailed=false;
+static unsigned nvsCommitCalls=0;
+unsigned backupCommitCalls(){ return nvsCommitCalls; }
 void initPollFaultBackupStore();
 esp_err_t nvs_open(const char*,int,nvs_handle_t* handle){
   if(nvsFailOpen) return ESP_FAIL;
@@ -300,6 +303,7 @@ esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t 
   return ESP_OK;
 }
 esp_err_t nvs_commit(nvs_handle_t handle){
+  ++nvsCommitCalls;
   if(handle==0 || nvsFailCommit) return ESP_FAIL;
   NvsFlash::durable=NvsFlash::staged;
   // Model an ambiguous API result: bytes reached durable media, but commit reports failure.
@@ -310,12 +314,13 @@ esp_err_t nvs_commit(nvs_handle_t handle){
 void resetStorage(){
   NvsFlash::durable.clear(); NvsFlash::staged.clear();
   nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
-  nvsFailCommitAfterWrite=false;
+  nvsFailCommitAfterWrite=false; nvsCommitCalls=0; pollFaultBackupWriteFailed=false;
   nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
   pollFaultNvsHandle=0; pollFaultBackupReady=false;
   initPollFaultBackupStore();
 }
 void rebootStorage(){
+  pollFaultBackupWriteFailed=false;
   nvsReadError=false; nvsFailReadback=false;
   pollFaultNvsHandle=0; pollFaultBackupReady=false;
   initPollFaultBackupStore();
@@ -359,6 +364,7 @@ struct FakeEEPROM {
   std::vector<uint8_t> buffer;
   size_t size=0;
   bool ready=true, failCommit=false, failCommitAfterWrite=false, failRead=false, failReadAfterCommit=false;
+  unsigned commitCalls=0;
   bool begin(size_t n) {
     if(!ready) return false;
     size=n;
@@ -368,6 +374,7 @@ struct FakeEEPROM {
   }
   void end(){ size=0; buffer.clear(); }
   bool commit(){
+    ++commitCalls;
     if(failCommit) return false;
     if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
     flash=buffer;
@@ -388,12 +395,17 @@ struct FakeEEPROM {
 std::vector<uint8_t> FakeEEPROM::flash;
 FakeEEPROM EEPROM;
 bool pollFaultBackupReady=true;
+bool pollFaultBackupWriteFailed=false;
+unsigned backupCommitCalls(){ return EEPROM.commitCalls; }
 void resetStorage(){
   FakeEEPROM::flash.clear(); EEPROM=FakeEEPROM();
+  pollFaultBackupWriteFailed=false;
   pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
 }
 void rebootStorage(){
-  EEPROM.end(); pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  EEPROM.end();
+  pollFaultBackupWriteFailed=false;
+  pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
 }
 void corruptStorage(){
   if(FakeEEPROM::flash.size()>POLL_FAULT_EEPROM_OFFSET)
@@ -515,6 +527,21 @@ int main(){
   rebootStorage();
   assertBootDenied();
   std::cout << "AMBIGUOUS_COMMIT_REBOOT_DENY_PASS board=BOARD_NAME\\n";
+
+  // A failed commit is ambiguous for this boot. Never let a dirty EEPROM/NVS
+  // cache make a later call report a durable marker without a fresh boot read.
+  resetStorage();
+  resetRuntime();
+  WRITE_FAIL_SETUP
+  assert(!writePollFaultBackup(8));
+  if(!pollFaultBackupWriteFailed) return 24;
+  const unsigned commitsBeforeRetry=backupCommitCalls();
+  WRITE_FAIL_CLEAR
+  if(writePollFaultBackup(8)) return 25;
+  if(backupCommitCalls()!=commitsBeforeRetry) return 26;
+  rebootStorage();
+  if(pollFaultBackupPresentOrCorrupt()) return 27;
+  std::cout << "FAILED_COMMIT_RETRY_HELD_UNTIL_REBOOT_PASS board=BOARD_NAME\\n";
 
   // The primary LittleFS marker remains a valid fallback if the secondary
   // store cannot commit.
