@@ -438,6 +438,21 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
+    pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
+    poll_call = loop.find('String r=post("poll")')
+    if pre_poll_guard < 0 or poll_call < 0 or pre_poll_guard > poll_call:
+        raise AssertionError(f"{board}: pre-poll edge guard must precede HTTP poll")
+
+    poll_guard_removed = loop.replace(
+        "      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();\\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
+        "      const uint32_t pollEdgeAfterDrain=pollEdgeStart;\\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
+        1,
+    )
+    if poll_guard_removed == loop:
+        raise AssertionError(f"{board}: missing pre-poll edge-abort guard")
+    compile_and_run(assemble(loop_source=poll_guard_removed,begin_source=edge_hook,main_source=RACE_MAIN),
+                    board,22,"missing-pre-poll-edge-abort")
+    print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
     late_snapshot_loop = loop.replace(
         "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    if(beginPollWindow()){",
         "    if(beginPollWindow()){\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
