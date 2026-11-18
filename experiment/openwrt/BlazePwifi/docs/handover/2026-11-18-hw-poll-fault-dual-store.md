@@ -344,3 +344,17 @@ Master UTC15 audit `18cd5064f0b0682bb50b8c53b145cb0fd356ea0d` identified a real 
 - No ESP32 target build, physical GPIO/relay polarity, relay contact, electrical recovery, 150 power cuts or 30-device/24-hour soak is established by this local host lab.
 
 **Next exact PHX-HARDWARE action:** instrument the ESP8266 fake-EEPROM commit/readback path on #323 so the test reports whether `commit()`, `saveCfg()` and the actual failure-latch body executed; change only the confirmed defect. Keep poll/coin admission default-deny and PR #323 DRAFT / UNMERGED / PRODUCTION NO-GO.
+
+
+## UTC16 follow-up — both-board polarity parity and exact-head CI
+
+**Current candidate head before this handover update:** `4cbdacfaa0f07b14e41446457c8348eb38743fc5`.
+
+The first exact-head quarantine run after the ESP32 gate failed because `quarantine_readback_lab.py` still treated the local polarity guard as ESP8266-only. The firmware gates were now present on both boards; the harness normalization was stale. Updated the parity lab to require `outputPolarityKnown && fsReady` on **both** boards, compare normalized gates directly, and inject removal mutations independently on ESP8266 and ESP32.
+
+- [ESP32 boot-polarity run #44342438904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44342438904), job `134935752590`: **SUCCESS**, exact checkout `4cbdacfaa0f07b14e41446457c8348eb38743fc5`; boot gate, unknown/legacy INPUT hold, marker/readback, active-high/active-low OFF preload and remote-authority denial PASS.
+- [Quarantine/source run #44342439366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44342439366), job `134935752348`: **SUCCESS**, exact checkout `4cbdacfaa0f07b14e41446457c8348eb38743fc5`; 11/11 shared quarantine helpers, both-board polarity guards, mutation rejection, ESP8266/ESP32 poll-fault pre-persistence output inhibition and poll-edge snapshot tests PASS.
+- [Relay/output run #44342438904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44342438904), job `134935751790`: **FAILURE** in the inherited ESP8266 boot lab at `journalRecoveryRequired` after injected EEPROM commit failure. This is the next hardware-owned investigation; no root cause is claimed.
+- [Full build run #44342438874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44342438874), validation job `134935949824`: **FAILURE** at QA-owned `Missing poll signature check` in the ESP8266 sketch. Other target jobs were still running at the last poll; full target matrix is not verified.
+
+The ESP32 gate is **CI VERIFIED / SIMULATED**, not hardware accepted. No physical relay polarity, electrical recovery, power-cut or soak evidence is implied.
