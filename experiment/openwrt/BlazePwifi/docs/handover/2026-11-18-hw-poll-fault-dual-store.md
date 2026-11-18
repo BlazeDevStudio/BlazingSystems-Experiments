@@ -396,3 +396,54 @@ Both `sampleCoinPulseEdge()` implementations now call `latchPollPulseFault(pendi
 - Poll admission and coin POST disposition remain hard-deny. No shared API, finance schema, migration, or CORE-owned code changed.
 - PHX-MASTER must review the retained legacy marker/path semantics and stack placement; PHX-QA must independently review the exact-head tests and stale signature assertion; PHX-CORE must review the reconciliation/ledger implications.
 - Physical coin/relay acceptance, electrical recovery, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. Production remains **NO-GO**.
+
+
+## 2026-11-18 UTC17 — production latch integrated into pulse-capture regression
+
+**Candidate:** [PR #326](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/326), OPEN / DRAFT / UNMERGED; child of #323.  
+**Branch:** `phoenix/hardware-pending-write-fault-latch-20261119`  
+**Exact source/test SHA:** `28e13fc82a250821e815fd84b5fd61f1769e7106`  
+**Scope:** test-only change to `coin_pulse_capture_lab.py`; no firmware runtime or protocol change in this activation.
+
+### Test integrity correction
+
+The earlier pulse-capture lab replaced `latchPollPulseFault()` with a simplified stub while a separate lab tested the persistence helpers. That left the production pulse-capture → fault-latch call chain unexecuted as one unit.
+
+The lab now extracts and compiles the actual production `latchPollPulseFault()` together with `sampleCoinPulseEdge()` for both ESP8266 and ESP32. Only `writePollFaultBackup()` and `writePollPulseFaultMarker()` are fault-injected backend boundaries; the production latch and pulse-capture control flow are not stubbed.
+
+The integration harness exercises all four backend outcomes:
+
+- Both secondary NVS/EEPROM and LittleFS writes succeed.
+- Secondary NVS/EEPROM succeeds; LittleFS fails.
+- LittleFS succeeds; secondary NVS/EEPROM fails.
+- Both stores fail.
+
+For every outcome, it asserts that the actual latch has set the RAM deny state and logically deasserted relay and LED **before either persistence call**, that both calls receive the unresolved pulse count while LittleFS is still marked available, and that no later pulse or automatic persistence retry is accepted in that boot. The dual-failure case must emit the explicit **current-boot-only / reboot durability NOT established** diagnostic. This is not a claim of reboot durability.
+
+### Exact-head focused CI
+
+Both focused workflows checked out and asserted literal source/test SHA `28e13fc82a250821e815fd84b5fd61f1769e7106`.
+
+- Quarantine/readback [run #44357779195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779195), job `134990445624`: **SUCCESS**.
+- Relay/output [run #44357779192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779192), job `134990445536`: **SUCCESS**.
+- ESP32 boot-polarity job `134990446178` in the same relay/output run: **SUCCESS**.
+- Both boards report `COIN_PULSE_CAPTURE_PASS 8/8`.
+- Both boards reject all six mutations: `missing-edge-latch`, `inclusive-debounce`, `missing-target-binding`, `ignored-save-failure`, `missing-persistent-fault-latch`, and `missing-latch-output-inhibit`.
+- Existing dual-store, quarantine, poll-window, poll-blocked edge, ISR snapshot-race, pending-journal, output and boot-polarity regressions also pass in those focused jobs.
+
+Two intermediate exact-head attempts exposed test-harness defects only: the first checked only the final diagnostic line, and the next had over-escaped newline mutation anchors. Those test-only defects were corrected before the successful exact-head run; no firmware runtime defect was inferred from those intermediate failures.
+
+### Full build disposition
+
+[Full build #44357779219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779219) completed with validation job `134990642238` **FAILED** at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch.
+
+All 14 firmware/Android target jobs completed **SUCCESS** (ESP8266, ESP32, Ruijie, x86-64, Orange Pi PC/PC2/One/Zero/Zero2/Zero2W/PC+/One+, and Android). Because validation failed, all downstream simulations, update bundle, signed-import handoff, candidate gate and publishing were **SKIPPED**. Therefore this is a successful target-compilation subset, not a green Full workflow or release acceptance.
+
+### Limits and coordination
+
+- PHX-QA owns the stale positive poll-signature assertion; replace it only with source-linked negative deny-behavior tests.
+- PHX-CORE owns the canonical authenticated response/receipt contract. No positive poll or coin admission was added.
+- If both secondary NVS/EEPROM and LittleFS fail, the current boot remains denied but reboot durability is **NOT ESTABLISHED**. A same-chip second region is not an independent witness.
+- No physical relay/LED polarity, electrical pulse, reboot, brown-out, 150 power cuts or 30-device/24-hour soak was tested.
+- The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through the exposed Library/connector surface; older snapshots were not substituted.
+- PR #326 remains DRAFT / UNMERGED / PRODUCTION NO-GO.
