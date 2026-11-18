@@ -8,7 +8,7 @@
 - Parent branch: `phoenix/hardware-poll-edge-latch-20261118`
 - Parent HEAD at branch creation: `b2b41a3d6ce7887b9624137c966f58462895d3fa`
 - Child branch: `phoenix/hardware-output-preload-child-20261118`
-- New child PR: pending creation
+- New child PR: [#322](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/322) (OPEN/DRAFT/UNMERGED)
 - Separate test-first RED candidate #321 remains OPEN/DRAFT and is not rebased, retargeted, merged or force-pushed.
 
 ## Defect and correction
@@ -31,8 +31,11 @@ No coin admission, poll, POST, receipt, ledger, API, migration, signing, or rele
 - Relay-output workflow [#44226524555](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44226524555), job `134540917601`, failed exactly at `OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode` after the existing polarity lab passed 48/48 for each board.
 - The new lab compiles the exact extracted `writeLogical()` and `configureRuntimePins()` functions for both boards. It checks active-high and active-low ordering and injects a mutation that removes only the new-pin preloads while retaining old-pin shutdown and post-enable OFF confirmation.
 - The mutation injector was tightened to target the exact assignment/preload sequence; this avoids the earlier test-only implementation's overly narrow text window.
+- First #322 focused attempt [#44232408796](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232408796), job `134560390600`, failed because the extracted C++ harness lacked Arduino interrupt stubs (`digitalPinToInterrupt`, `detachInterrupt`, `attachInterrupt`, edge constants and ISR symbol). This was a test-harness compile failure, not a firmware compile failure. Added deterministic no-op host stubs and a `runCoinActiveLow` fixture binding at `bdddb96aeea4f0ace088233563f780822d1377c8`; exact-head rerun is pending.
 
 ## Commits
+
+- Test-harness compile correction: `bdddb96aeea4f0ace088233563f780822d1377c8`
 
 - ESP8266 source: `e55570b52d66b3a85526d89827f3bddd9c277432`
 - ESP32 source: `279e8ccb8259d066e50f37322a984b822c2ac0cb`
