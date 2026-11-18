@@ -32,7 +32,6 @@ struct Config {
   uint8_t relayPin;
   uint8_t coinActiveLow;
 };
-static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
 
 Config cfg;
 bool pollFaultBackupReady=false;
@@ -74,6 +73,8 @@ static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
 static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
+static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
+static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
@@ -377,7 +378,8 @@ bool writePollFaultBackup(uint32_t pulseEdges){
   if(!EEPROM.commit()) return false;
   // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
   EEPROM.end();
-  pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
   if(!pollFaultBackupReady ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
   PollFaultRecord verify{};
