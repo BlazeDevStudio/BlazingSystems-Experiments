@@ -293,8 +293,8 @@ int main(){
      fakeNow!=pollEndAt+2) return 11;
   if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 12;
   const std::string marker=LittleFS.files["/pollpulse.fault"];
-  if(marker.find("POLL_PULSE_DURING_BLOCKING_HTTP")==std::string::npos ||
-     marker.find("edges=1")==std::string::npos) return 13;
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 13;
 
   // A reboot must restore the persistent fault latch before any output can energize.
   journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";

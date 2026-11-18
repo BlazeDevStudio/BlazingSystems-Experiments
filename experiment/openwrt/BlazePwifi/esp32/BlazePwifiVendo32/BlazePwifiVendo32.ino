@@ -405,12 +405,13 @@ void initPollFaultBackupStore(){
   }
 }
 
+// Legacy /pollpulse.fault path is retained so older firmware keeps denying on any existing marker.
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   if(!fsReady) return false;
   if(LittleFS.exists("/pollpulse.fault")) return true;
   char record[96];
   int length=snprintf(record,sizeof(record),
-      "POLL_PULSE_DURING_BLOCKING_HTTP edges=%lu millis=%lu\n",
+      "COIN_INGRESS_UNRESOLVED pulses=%lu millis=%lu\n",
       (unsigned long)pulseEdges,(unsigned long)millis());
   if(length<=0 || (size_t)length>=sizeof(record)) return false;
   File marker=LittleFS.open("/pollpulse.fault","w");
@@ -437,7 +438,7 @@ void loadPollPulseFaultLatch(){
     journalRecoveryRequired=true;
     insertMode=false;
     activeTarget="";
-    Serial.println("CRITICAL: persistent poll-pulse fault found; preserve evidence and reconcile offline before enabling intake.");
+    Serial.println("CRITICAL: persistent coin-ingress fault found; preserve evidence and reconcile offline before enabling intake.");
   }
 }
 
@@ -1032,11 +1033,11 @@ void latchPollPulseFault(uint32_t pulseEdges){
   const bool backupPersisted=writePollFaultBackup(pulseEdges);
   const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);
   if(backupPersisted && littleFsPersisted){
-    Serial.println("CRITICAL: poll-pulse fault recorded in NVS/EEPROM and LittleFS; operator reconciliation required.");
+    Serial.println("CRITICAL: coin-ingress fault recorded in NVS/EEPROM and LittleFS; operator reconciliation required.");
   } else if(backupPersisted){
-    Serial.println("CRITICAL: poll-pulse fault persisted in secondary NVS/EEPROM; LittleFS marker failed; operator reconciliation required.");
+    Serial.println("CRITICAL: coin-ingress fault persisted in secondary NVS/EEPROM; LittleFS marker failed; operator reconciliation required.");
   } else if(littleFsPersisted){
-    Serial.println("CRITICAL: poll-pulse fault persisted in LittleFS; secondary NVS/EEPROM marker failed; operator reconciliation required.");
+    Serial.println("CRITICAL: coin-ingress fault persisted in LittleFS; secondary NVS/EEPROM marker failed; operator reconciliation required.");
   } else {
     Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
   }
@@ -1079,10 +1080,12 @@ void sampleCoinPulseEdge(bool active){
       pendingPulses++;
       lastEdge=millis();
       if(!savePending()){
+        // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
+        latchPollPulseFault(pendingPulses);
         fsReady=false;
         pendingReady=true;
         applyOutputs();
-        Serial.println("CRITICAL: pending journal write failed; relay disabled.");
+        Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
       }
     }
   }
