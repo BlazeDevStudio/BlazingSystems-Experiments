@@ -136,6 +136,7 @@ static int drainAbortReadCount=0;
 static bool drainAbortInjected=false;
 static bool drainAbortSawRelayOn=false;
 static bool drainAbortSampleSawRelayOn=false;
+static bool drainAbortReenabledBeforeLatch=false;
 static int pollCalls=0, saveCalls=0;
 static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
@@ -188,6 +189,10 @@ void digitalWrite(int pin,int level) {
     ledLevelHigh=(level==HIGH);
     ledOn=(level==(runLedActiveHigh?HIGH:LOW));
   }
+  // During a drain-abort injection, any re-energized output before the sticky
+  // recovery latch is set proves that the poll inhibit was released too early.
+  if(injectDuringDrainAbort && drainAbortInjected && !journalRecoveryRequired &&
+     (relayOn || ledOn)) drainAbortReenabledBeforeLatch=true;
 }
 uint32_t millis(){ return fakeNow; }
 void delay(int ms){ fakeNow+=(uint32_t)ms; }
@@ -258,7 +263,8 @@ void resetState(){
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
-  drainAbortSampleSawRelayOn=false; pollCalls=0; saveCalls=0;
+  drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
+  pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
@@ -350,7 +356,7 @@ int main(){
   // The ISR sequence must be reconciled and the deny marker persisted before release.
   resetState(); injectDuringDrainAbort=true; loop();
   if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
-     pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||
+     drainAbortReenabledBeforeLatch || pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
      insertMode || !activeTarget.empty() || pendingPulses!=0 ||
      pollIntakeSuspended || lastPoll+2!=fakeNow ||
@@ -359,6 +365,7 @@ int main(){
   const std::string abortMarker=LittleFS.files["/pollpulse.fault"];
   if(abortMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      abortMarker.find("pulses=1")==std::string::npos) return 27;
+  std::cout<<"POLL_ABORT_DRAIN_INHIBIT_CONTINUITY_PASS\\n";
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS\\n";
 
   // The same drain-abort edge must be caught for active-high coin wiring.
@@ -366,7 +373,7 @@ int main(){
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   injectDuringDrainAbort=true; loop();
   if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
-     pollCalls!=0 || !journalRecoveryRequired ||
+     drainAbortReenabledBeforeLatch || pollCalls!=0 || !journalRecoveryRequired ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
      insertMode || !activeTarget.empty() || pendingPulses!=0 ||
      pollIntakeSuspended || lastPoll+2!=fakeNow ||
