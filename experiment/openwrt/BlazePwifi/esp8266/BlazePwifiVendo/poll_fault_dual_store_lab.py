@@ -543,6 +543,21 @@ int main(){
   if(pollFaultBackupPresentOrCorrupt()) return 27;
   std::cout << "FAILED_COMMIT_RETRY_HELD_UNTIL_REBOOT_PASS board=BOARD_NAME\\n";
 
+  // An ambiguous commit may have reached flash despite returning failure.
+  // Do not retry from the same boot; after reboot, inspect the actual durable bytes.
+  resetStorage();
+  resetRuntime();
+  AMBIGUOUS_COMMIT_SETUP
+  if(writePollFaultBackup(9)) return 28;
+  if(!pollFaultBackupWriteFailed) return 29;
+  const unsigned ambiguousCommitCalls=backupCommitCalls();
+  AMBIGUOUS_COMMIT_CLEAR
+  if(writePollFaultBackup(9)) return 30;
+  if(backupCommitCalls()!=ambiguousCommitCalls) return 31;
+  rebootStorage();
+  if(!pollFaultBackupBackupPresentOrCorrupt()) return 32;
+  std::cout << "AMBIGUOUS_COMMIT_RETRY_DENY_REBOOT_MARKER_PASS board=BOARD_NAME\\n";
+
   // The primary LittleFS marker remains a valid fallback if the secondary
   // store cannot commit.
   resetStorage();
