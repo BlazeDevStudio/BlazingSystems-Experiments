@@ -227,6 +227,10 @@ def main() -> None:
             source = path.read_text(encoding="utf-8")
             compile_and_run(board, source, temp)
     print("QUARANTINE_APPEND_READBACK_LAB=PASS (SIMULATED; no physical flash/power cut)")
+    subprocess.run(
+        [sys.executable, str(Path(__file__).with_name("pending_journal_boot_failclosed_lab.py"))],
+        check=True,
+    )
 
 if __name__ == "__main__":
     main()
