@@ -94,8 +94,8 @@ bool readPendingFile(const char *path, PendingRecord &r){
      r.magic!=PENDING_MAGIC || r.pulses==0 || r.pulses>20 ||
      r.checksum!=pendingChecksum(r)) return false;
 
-  const char *nonceEnd=(const char*)memchr(r.nonce,'\\0',sizeof(r.nonce));
-  const char *targetEnd=(const char*)memchr(r.target,'\\0',sizeof(r.target));
+  const char *nonceEnd=(const char*)memchr(r.nonce,'\0',sizeof(r.nonce));
+  const char *targetEnd=(const char*)memchr(r.target,'\0',sizeof(r.target));
   if(!nonceEnd || !targetEnd) return false;
 
   const size_t nonceLength=(size_t)(nonceEnd-r.nonce);
@@ -103,10 +103,10 @@ bool readPendingFile(const char *path, PendingRecord &r){
   if(nonceLength<8 || targetLength<8) return false;
 
   for(const char *p=nonceEnd+1;p<r.nonce+sizeof(r.nonce);++p){
-    if(*p!='\\0') return false;
+    if(*p!='\0') return false;
   }
   for(const char *p=targetEnd+1;p<r.target+sizeof(r.target);++p){
-    if(*p!='\\0') return false;
+    if(*p!='\0') return false;
   }
   return true;
 }
