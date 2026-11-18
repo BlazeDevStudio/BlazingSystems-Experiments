@@ -17,7 +17,7 @@ EXPECTED = {
     "actions/setup-python": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",  # v7.1.0, node24
     "actions/upload-artifact": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",  # v7.0.2, node24
     "actions/download-artifact": "9000827ccba6bdab643e8b6fd33ac0654aef8333",  # v8.0.2, node24
-    "arduino/setup-arduino-cli": "81d310742121c928ea9c8bbd407b4217b432ae02",  # v2.0.0, node20
+    "arduino/setup-arduino-cli": "b3cda96fddef6af6c56b4c5efb5c47e2357935db",  # current @v2 resolution, signed Node24 commit
     "reactivecircus/android-emulator-runner": "a421e43855164a8197daf9d8d40fe71c6996bb0d",  # v2.38.0, node24; upstream commit unsigned
 }
 
