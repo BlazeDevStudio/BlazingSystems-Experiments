@@ -50,7 +50,6 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           lines = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8").splitlines()
 
@@ -71,12 +70,13 @@ jobs:
               ("Install ESP32 core", "esp32:esp32@3.3.13"),
           )
           for step_name, expected in cases:
-              installs = []
-              for line in install_block(step_name):
-                  match = re.match(r"\\s*arduino-cli core install\\s+(\\S+)\\s*$", line)
-                  if match:
-                      installs.append(match.group(1))
-              if installs != [expected]:
+              installs = [
+                  line.strip()
+                  for line in install_block(step_name)
+                  if line.strip().startswith("arduino-cli core install ")
+              ]
+              expected_line = f"arduino-cli core install {expected}"
+              if installs != [expected_line]:
                   raise SystemExit(
                       f"RELEASE-TOOLCHAIN-RED: {step_name} must install exactly {expected}; found {installs}"
                   )
