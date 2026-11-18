@@ -331,3 +331,7 @@ if __name__ == "__main__":
         raise RuntimeError(f"missing companion lab: {poll_loop_lab}")
     subprocess.run([sys.executable, str(poll_loop_lab)], check=True)
     print("POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS", flush=True)
+    config_lab = Path(__file__).with_name("config_load_read_failure_lab.py")
+    print("ESP8266_CONFIG_READ_LAB=START", flush=True)
+    subprocess.run([sys.executable, str(config_lab)], check=True)
+    print("ESP8266_CONFIG_READ_LAB=END", flush=True)

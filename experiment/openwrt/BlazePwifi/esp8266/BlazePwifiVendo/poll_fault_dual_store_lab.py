@@ -673,5 +673,3 @@ if __name__ == "__main__":
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
     run("ESP8266", ESP8266)
-    config_lab = Path(__file__).with_name("config_load_read_failure_lab.py")
-    subprocess.run([sys.executable, str(config_lab)], check=True)
