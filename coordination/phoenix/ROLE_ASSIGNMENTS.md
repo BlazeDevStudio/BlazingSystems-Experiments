@@ -747,3 +747,9 @@ COE #26 remains five workflows QUEUED / zero jobs. COE root AGENTS.md returned 4
 | COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; no combined acceptance |
 
 HARDWARE #323/#317 and QA #292 remain draft/review-only. Do not edit worker-owned firmware, QA fixtures, release workflows or destination files from PHX-MASTER.
+
+## COE Universal / INTERCON ownership clarification — 2026-11-18 UTC10
+
+The COE path `Hardware/esp8266/BlazePisonetUniversal/` is ESP8266 firmware and therefore falls under **PHX-HARDWARE implementation ownership**. PHX-PISONET's owned source remains Windows SoftTimer (`experiment/windows/BlazePisonet-SoftTimer/`); it may review the timer/credit interface but must not take over the Hardware firmware subtree. The “Pisonet” product label does not change directory ownership.
+
+COE PRs #36–#43 are destination-side Universal/INTERCON development stacked from integration #26, not a verified import of an Experiments Universal source path. The only exact legacy source import is one Labs `.ino` blob; the companion README/preview and Labs NOTICE are absent from the destination, and no explicit license grant has been verified. The staged V1.5-derived code has no GitHub source snapshot yet. Keep `OWNERSHIP_ROUTES.json` unchanged and do not assign a new migration route until PHX-HARDWARE, PHX-PISONET interface stakeholders and the license custodian review the exact files.
