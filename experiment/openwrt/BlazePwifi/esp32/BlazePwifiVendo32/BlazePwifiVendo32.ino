@@ -20,7 +20,7 @@ struct PendingRecord {
   char nonce[17];
   char target[33];
   uint32_t checksum;
-}
+};
 
 volatile uint32_t coinEdgeSequence=0;
 
@@ -32,7 +32,6 @@ void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
 void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
 #endif
 uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
-;
 
 // Master Architecture Contracts §2.1: never accept a debounce below 20 ms.
 // Apply the same bound to persisted, local-setup, and controller-provided values.
