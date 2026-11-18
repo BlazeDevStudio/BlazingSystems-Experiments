@@ -275,7 +275,6 @@ size_t strlcpy(char* destination,const char* source,size_t capacity){
   return length;
 }
 
-Config cfg{};
 bool pollFaultBackupReady=false;
 bool pollFaultBackupWriteFailed=false;
 bool configImageReadVerified=false;
@@ -391,6 +390,7 @@ int main(){
     return "\n".join([
         prelude,
         structs,
+        "Config cfg{};",
         constants,
         functions,
         main,
