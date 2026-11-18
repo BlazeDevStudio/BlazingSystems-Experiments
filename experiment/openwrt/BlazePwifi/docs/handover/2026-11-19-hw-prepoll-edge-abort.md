@@ -89,3 +89,12 @@ Focused source-extracted host tests are SIMULATED / CI VERIFIED only. They do no
 - PHX-MASTER: reconcile #327's child placement under #326 and confirm the stack remains candidate-only.
 - PHX-CORE: review unresolved-ingress reconciliation semantics; this remains a hardware deny marker only.
 - PHX-HARDWARE: next activation, inspect the exact ESP8266 core EEPROM emulation and ESP32 Arduino/IDF NVS versions used by the build, then extend only source-backed reboot tests. Keep the dual-store-failure reboot gap explicit.
+
+
+### UTC18 terminal full-build update
+
+The full BlazePwifi workflow [#44373043812](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373043812) is now **COMPLETED / CANCELLED** after validation job 135044774969 failed at the inherited QA-owned “Missing poll signature check”.
+
+Target jobs **SUCCESS**: ESP8266 135044774217; Ruijie 135044775035; Orange Pi PC 135044774806; Orange Pi Zero3 135044775124; Orange Pi One 135044775012; Orange Pi Zero 135044775459; Orange Pi Zero2 135044775029; Orange Pi Zero2W 135044774965; Orange Pi PC+ 135044774768; Orange Pi PC2 135044775116; Orange Pi One+ 135044774963.
+
+Target jobs **CANCELLED**: ESP32 135044774992; x86_64 135044775179; Android 135044774734. The v0.4 ESP/Ruijie/Orange Pi/x86/Android simulations, production sign handoff, candidate gate and both prerelease/release publishers were cancelled or skipped. Therefore the target matrix is PARTIAL, not complete, and Full CI is FAILED/CANCELLED; no signing or publication evidence exists.
