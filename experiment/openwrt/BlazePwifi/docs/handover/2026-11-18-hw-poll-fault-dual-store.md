@@ -1,6 +1,6 @@
 # PHX-HARDWARE handover — poll-fault secondary-store fallback
 
-**Disposition:** candidate implementation committed on a child of PR #322; exact-source host labs CI VERIFIED; ESP8266 target build CI VERIFIED; ESP32 and remaining target matrix IN PROGRESS at last read; SIMULATED only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+**Disposition:** candidate implementation committed on a child of PR #322; exact-source host labs CI VERIFIED; ESP8266 and ESP32 target builds CI VERIFIED; all 14/14 target/platform matrix jobs CI VERIFIED; SIMULATED only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
 
 ## Lineage and ownership
 
@@ -57,7 +57,7 @@ No flash, reset, relay actuation, real coin, live money, signer, migration, merg
   - existing source-extracted quarantine, pending-journal, mount, pending-clear, pending-write/readback, coin-post-gate, poll-window and pulse-capture labs passed
   - physical flash/power-cut flags explicitly remain zero
 - Relay output polarity workflow: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322285 SUCCESS on the same exact source/test SHA.
-- Full BlazePwifi build: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322231 remained IN_PROGRESS at last read. Validation job 134586409067 FAILED at the existing QA-owned assertion Missing poll signature check. ESP8266 target job 134586409487 PASS; Orange Pi Zero 3, Orange Pi One, Orange Pi One Plus and Orange Pi PC2 jobs PASS; ESP32 and several other matrix targets were still IN_PROGRESS. Downstream signed-import, update-bundle and browser-simulation jobs were SKIPPED after validation failure. This is not Full CI acceptance.
+- Full BlazePwifi build: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322231 completed FAILURE. Validation job 134586409067 FAILED at the existing QA-owned assertion Missing poll signature check. All 14/14 target/platform matrix jobs PASS, including ESP32 job 134586409380 and ESP8266 job 134586409487. Downstream signed-import, update-bundle, browser/ESP/x86/Ruijie/Orange Pi simulations, candidate gate and publish/sign handoff jobs were SKIPPED after validation failure. This is target-build CI evidence, not Full CI acceptance.
 - Earlier exact-head lab/harness failures were retained in Actions history and corrected before the successful 94c5 run: the mount lab now isolates the new backup-reader seam and resets per-scenario state; the dual-store lab now extracts only persistent-format declarations and injects EEPROM readback failure after commit, matching the actual ESP8266 API.
 
 ## Live stack revalidation at UTC04
@@ -70,3 +70,6 @@ No flash, reset, relay actuation, real coin, live money, signer, migration, merg
 - Re-audit of #283 current source: both sketches now return before clearPending when quarantine append fails; this supersedes the earlier unconditional-clear finding. The no-retry latch after append failure remains a future-enable blocker, and the main producer still does not emit the response_sig expected by #283. Keep default-deny; no positive poll or config interoperability is claimed.
 
 The secondary NVS/EEPROM records remain same-chip fallback regions, not an independent physical witness. Simultaneous failure of LittleFS and the secondary store is explicitly only current-boot fail-closed; reboot durability is not established in that case. QA/Master/CORE approval remains required before composition.
+
+
+**Final UTC04 full-matrix update:** run 44240322231 is complete with all 14 target/platform jobs successful, including both ESP boards. The workflow remains FAILED solely at the inherited QA-owned Missing poll signature check; no signing, publishing, simulation or candidate gate ran. Do not count this as a full release pass.
