@@ -762,3 +762,19 @@ The prior UTC10 sentence saying the COE V1.5-derived staging code had no GitHub 
 A separate V1.6 branch `feature/blaze-pisonet-intercon-v1-6-apsta-discovery-20261118@1e9b0269e3ed2138813fcd0c838b0034a08dfd90` has different source/parser/test/workflow blobs; its parser+ESP8266 compile [44226761277](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44226761277) passed, but no open PR was found for that exact branch. It is not the #36 Stage-1 tree or integration acceptance.
 
 **Formal ownership correction:** `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY` and has no COE Universal/INTERCON route. The path is an ESP8266 firmware-domain review, but no formal role assignment is created by directory placement. The COE integration owner must nominate the accountable implementation owner; PHX-HARDWARE is the technical reviewer to request, while PHX-PISONET is an interface stakeholder only. No route or role ownership changed.
+
+
+## Live exact owner refs — 2026-11-18 UTC11
+
+| Role | Current exact owner PR/head | Current evidence and boundary |
+|---|---|---|
+| PHX-MASTER | #288 `2dae0d4f1ffe608713dbc603d8ea3efc3ef757af` before UTC11 audit | Coordination/phoenix only; no exact-head Master CI run |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped CI [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; separate active CORE continuation retains implementation ownership |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM acceptance unknown |
+| PHX-HARDWARE | #317 `fce915c...`; #318 `5af39837...`; #321 `4c54d629...`; #322 `50d93e0...`; #323 `1761bf38...`; #324 `8e7f0220...` | Multiple divergent/overlapping candidates. #318 has no exact-head CI and old base; #321/#322 share four paths; #323/#324 share three. Do not select or compose without PHX-HARDWARE owner decision. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 scoped PASS; #292 no exact-head run. QA owns stale positive poll-signature fixture; replace with negative deny tests, not firmware changes. |
+| PHX-RELEASE | #291 `18f61977ba374b90d4002887bce29cb7921bee78`; COE #35 `ad69c4e945045ebe1c29c2645e40927249c29b4f` | #291 build/handover PASS, signing/publishing skipped; #35 shared packaging assertion and sandbox fail. Release retains all release-owned corrections. |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #45 `9d76a134...` | #26 five queued workflows / zero jobs; #45 is separate CORE candidate, not integrated. |
+
+The role/ownership routing manifest is unchanged: `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543f3ec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No new owner or route was assigned. The separate `Blaze Production Continuation` remains the CORE implementation owner; PHX-MASTER did not launch a competing CORE worker.
