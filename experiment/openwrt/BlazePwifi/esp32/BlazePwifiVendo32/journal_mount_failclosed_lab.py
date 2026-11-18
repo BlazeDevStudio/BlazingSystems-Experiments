@@ -22,6 +22,8 @@ struct FakeLittleFS {
   bool mountOk=false;
   int beginCalls=0, formatCalls=0;
   bool formatOnFailure=false;
+  bool faultMarkerExists=false;
+  bool exists(const char *path) const { (void)path; return faultMarkerExists; }
   bool begin(bool formatOnFail=false) {
     ++beginCalls;
     formatOnFailure=formatOnFail;
@@ -42,6 +44,7 @@ int runRelayPin=5,runLedPin=2;
 bool relayOn=false,ledOn=false;
 int loadCalls=0;
 void loadPending(){++loadCalls;}
+@@POLL_PULSE_LATCH@@
 void writeLogical(int pin,bool enable,bool){
   if(pin==runRelayPin) relayOn=enable;
   if(pin==runLedPin) ledOn=enable;
@@ -49,8 +52,9 @@ void writeLogical(int pin,bool enable,bool){
 @@INIT_FUNCTION@@
 @@OUTPUTS_FUNCTION@@
 int main(){
-  for(int scenario=0;scenario<7;++scenario){
+  for(int scenario=0;scenario<8;++scenario){
     LittleFS=FakeLittleFS{};
+    LittleFS.faultMarkerExists=(scenario==7);
     fsReady=false;pendingReady=false;journalRecoveryRequired=false;
     insertMode=true;controllerEnabled=true;coinEnabled=true;
     relayEnabled=true;ledEnabled=true;
@@ -69,6 +73,9 @@ int main(){
        LittleFS.formatCalls!=0 ||
        LittleFS.formatOnFailure ||
        loadCalls!=(LittleFS.mountOk?1:0) ||
+       journalRecoveryRequired!=(scenario==6 || scenario==7) ||
+       insertMode!=(scenario!=5 && scenario!=7) ||
+       (scenario==7 && !activeTarget.empty()) ||
        relayOn!=expectedRelay ||
        ledOn!=expectedRelay) {
       std::cerr<<"MOUNT_SOURCE_LAB_FAIL scenario="<<scenario
@@ -81,7 +88,7 @@ int main(){
       return 1;
     }
   }
-  std::cout<<"MOUNT_SOURCE_LAB_PASS 7/7 source-extracted scenarios, no physical tests\n";
+  std::cout<<"MOUNT_SOURCE_LAB_PASS 8/8 source-extracted scenarios, no physical tests\n";
   return 0;
 }
 '''
@@ -108,7 +115,8 @@ for board, path in BOARDS:
         raise SystemExit(f"{board}: setup does not call guarded journal mount")
     if "LittleFS.format()" in real or "LittleFS.begin(true)" in real:
         raise SystemExit(f"{board}: dangerous automatic journal formatting remains")
-    code = CPP.replace("@@INIT_FUNCTION@@", extract(real, "void initPendingStore(){"))
+    code = CPP.replace("@@POLL_PULSE_LATCH@@", extract(real, "void loadPollPulseFaultLatch(){"))
+    code = code.replace("@@INIT_FUNCTION@@", extract(real, "void initPendingStore(){"))
     code = code.replace("@@OUTPUTS_FUNCTION@@", extract(real, "void applyOutputs(){"))
     with tempfile.TemporaryDirectory(prefix="phx-hw-mount-") as tmp:
         source = Path(tmp) / "mount.cpp"
@@ -118,4 +126,4 @@ for board, path in BOARDS:
                         str(source), "-o", str(executable)], check=True)
         subprocess.run([str(executable)], check=True)
     print(f"{board}: real mount/output functions compiled and exercised")
-print("PHX-HARDWARE: 14/14 fake-LittleFS mount/relay scenarios PASS; actual devices NOT TESTED")
+print("PHX-HARDWARE: 16/16 fake-LittleFS mount/relay scenarios PASS; actual devices NOT TESTED")
