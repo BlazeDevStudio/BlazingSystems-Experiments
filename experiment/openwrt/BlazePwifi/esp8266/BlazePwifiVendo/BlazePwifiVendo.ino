@@ -660,6 +660,8 @@ void latchPollPulseFault(uint32_t pulseEdges){
   journalRecoveryRequired=true;
   insertMode=false;
   activeTarget="";
+  // Deassert the physical outputs before any flash persistence can block.
+  applyOutputs();
   const bool backupPersisted=writePollFaultBackup(pulseEdges);
   const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);
   if(backupPersisted && littleFsPersisted){
@@ -671,7 +673,6 @@ void latchPollPulseFault(uint32_t pulseEdges){
   } else {
     Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
   }
-  applyOutputs();
 }
 
 
