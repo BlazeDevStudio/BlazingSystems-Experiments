@@ -6,6 +6,7 @@ both ESP sketches against a failure-injectable fake LittleFS. SIMULATED only.
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
