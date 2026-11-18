@@ -93,7 +93,7 @@ def _mask_non_code(source: str) -> str:
 
     def blank(start: int, end: int) -> None:
         for position in range(start, end):
-            if source[position] not in "\\r\\n":
+            if source[position] not in "\r\n":
                 masked[position] = " "
 
     index = 0
@@ -101,7 +101,7 @@ def _mask_non_code(source: str) -> str:
         if source.startswith("//", index):
             start = index
             index += 2
-            while index < len(source) and source[index] not in "\\r\\n":
+            while index < len(source) and source[index] not in "\r\n":
                 index += 1
             blank(start, index)
             continue
@@ -120,7 +120,7 @@ def _mask_non_code(source: str) -> str:
             paren = source.find("(", delimiter_start)
             if paren != -1 and paren - delimiter_start <= 16:
                 delimiter = source[delimiter_start:paren]
-                if not any(ch.isspace() or ch in "\\\\()" for ch in delimiter):
+                if not any(ch.isspace() or ch in "\\()" for ch in delimiter):
                     terminator = ")" + delimiter + '"'
                     end = source.find(terminator, paren + 1)
                     if end < 0:
@@ -135,7 +135,7 @@ def _mask_non_code(source: str) -> str:
             start = index
             index += 1
             while index < len(source):
-                if source[index] == "\\\\":
+                if source[index] == "\\":
                     index += 2
                     continue
                 if source[index] == quote:
@@ -170,9 +170,9 @@ def extract_function(source: str, name: str) -> str:
     # The signature set used by this lab has simple, single-line parameters.
     masked = _mask_non_code(source)
     signature = re.compile(
-        rf"(?m)^[ \\t]*(?:(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)\\s+)*"
-        rf"(?:[A-Za-z_][\\w:<>*&]*[ \\t]+)+{re.escape(name)}"
-        r"\\s*\\([^;{}]*\\)\\s*(?:const\\s*)?\\{"
+        rf"(?m)^[ \t]*(?:(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)\s+)*"
+        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
+        r"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
     )
     match = signature.search(masked)
     if not match:
