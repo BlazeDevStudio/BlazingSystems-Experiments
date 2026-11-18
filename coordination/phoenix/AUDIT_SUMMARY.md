@@ -453,3 +453,13 @@ COE #26 has a different vendo blob 0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e that
 Current #323 ESP8266/ESP32 consumers at source/test SHA c13dfb8d9b7ae83c15aa97c94842c339db8b8584 hard-deny poll and coin disposition. Exact source blobs: 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc (ESP8266) and bd74b11c1496b0943404ff387ee72bb45d4743e5 (ESP32). The legacy QA fixture v05_firmware_hardening_test.sh blob 41211b2c110ab409f6d9d1812ef12fda73b13211 requires a positive |poll| string and causes current Full validation failure. QA owns replacing it with negative deny-behavior tests; Master does not edit that fixture.
 
 No file was copied, moved, overwritten or deleted. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. The canonical Drive registry v11/newer corrections remain inaccessible, so no migration proposal is made. See POLL_RESPONSE_PRODUCER_CONSUMER_RECONCILIATION_20261118_UTC08.md.
+
+## 2026-11-18 UTC09 — current #323 / COE #26 staging hold
+
+The #323 source/test head d37d5da9 and current branch/docs head 1761bf38 are now pinned. Its dual-store lab is not present in COE #26, the two staged firmware sketches have different blobs, and the destination generic Hardware workflow/test do not execute the source lab. The target QA fixture still positively greps response_sig and |poll|, while current firmware is deny-only; Full #323 run [44278980291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980291) fails at that assertion after target builds pass. No copy/move.
+
+COE #26 has five queued workflows and zero jobs. COE #35 shared/board and case checks pass, but mandatory bubblewrap UID-map setup fails closed; packaging regressions are skipped. COE Hardware license/NOTICE applicability remains unresolved.
+
+**Exact release handover correction:** CHANGE_LEDGER.md is 0 bytes at #242 base and #242 head, and 45,738 bytes / 198 lines at #291 current head. The prior assistant's claimed 3,360-to-188 deletion is unsupported by exact refs; do not create a restoration task from that claim.
+
+The canonical private Drive v11 registry and newer corrections remain unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**

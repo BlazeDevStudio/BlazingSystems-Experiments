@@ -509,3 +509,16 @@ COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with f
 The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not available through the exposed Library/Drive surface. The AGENTS-linked cloud artifact policy/storage handover could not be retrieved through the GitHub connector or web endpoint; COE root `AGENTS.md` returned 404. No older registry snapshot was substituted and no private registry contents were published.
 
 **Status:** DEVELOPMENT / LAB ONLY; integrated acceptance UNKNOWN; physical acceptance NOT TESTED; **PRODUCTION NO-GO**. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+## 6.24 Current HARDWARE #323 to COE #26 provenance and test-identity hold — 2026-11-18 UTC09
+
+**Decision:** keep #323 and COE #26 separate DRAFTs. The current source candidate is not byte-identical to the staged destination and its source dual-store lab is not imported or invoked there. No copy/move/overwrite or positive poll admission is authorized.
+
+- Current Hardware branch/docs head: 1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17; exact source/test SHA: d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb; parent #322: 50d93e0de3d682550b6f02fb43484e76ad9c7e08.
+- COE #26 head: b382d233ff06c8791b1028bed3c617cc7b670d12. ESP32 source/destination blobs bd74b11c1496b0943404ff387ee72bb45d4743e5 / 3cc7ec54b476943dc04a8d1af5e2df5fe054e422; ESP8266 source/destination blobs 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc / c8be98f72596681e36a3ad1f8939bf8046c96887. Both pairs differ.
+- Source dual-store lab blob 25f5e8bd1a344d69acc0505324156f66a1abffa4 has no COE #26 mapped counterpart. The source Hardware workflow blob 2358e4ab940b9879e961046180f01fc3d5356709 is not the COE Hardware workflow blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793; COE's workflow invokes a different generic test script.
+- COE #26 test blob f921c56cecc19cab1989507b9b4ade1f45dac54e still greps for response_sig and |poll|; current source remains deny-only. COE Hardware README's keyed SHA-256 concatenation label is not standard HMAC.
+- Source MIT license blob 1ee55b94183417be977ca287cd7391f9a6f7e721 equals sibling Pisowifi/LICENSE, but Hardware/root LICENSE/NOTICE applicability is unresolved; source root NOTICE is absent in the destination tree.
+- #323 current-head focused CI [44278980129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980129) and [44278980263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980263) PASS; Full [44278980291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980291) fails at Missing poll signature check. COE #26 has five queued workflows and zero jobs.
+
+The source MIT license and sibling Pisowifi license match does not establish Hardware subtree licensing. The current QA fixture mismatch is not permission to add synthetic signatures or enable positive admission. See [HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md](HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md). **PRODUCTION NO-GO.**

@@ -421,3 +421,11 @@ Source Experiments development vendo blob a1c19180385e618c412b4af21c0e91c1f47da1
 The #323 source/test sketch blobs are ESP8266 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc and ESP32 bd74b11c1496b0943404ff387ee72bb45d4743e5. The QA-owned positive poll-string fixture fails current Full CI at [run 44262258842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258842), while focused host labs [44262258247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258247) and [44262258937](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258937) pass. COE #26 still has five queued workflows and zero jobs.
 
 No copy/move/overwrite is authorized. Preserve the existing exact source/destination blobs, license/NOTICE review, full import inventory, test identities and exact-head CI requirements. Private Drive v11/newer corrections are unavailable; no older snapshot is substituted. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY, PHX-MASTER target null. PRODUCTION NO-GO.
+
+## 2026-11-18 UTC09 — current Hardware #323 staging review
+
+#323 branch/docs head 1761bf38 and source/test SHA d37d5da9 remain PHX-HARDWARE-owned. COE #26 b382d233 contains different ESP32/ESP8266 sketch blobs, lacks the new dual-store and related source lab files, and its Hardware workflow invokes a different generic test script. The #26 positive poll-signature grep conflicts with the current deny-only source and is not an acceptable migration test identity.
+
+The source MIT license blob matches sibling Pisowifi/LICENSE, but Hardware/root license and NOTICE applicability remains unresolved. The source root NOTICE is absent from the destination tree. No file-by-file complete import, license/NOTICE approval or combined exact-head CI exists. **No copy/move/overwrite is authorized.** The unchanged manifest remains DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+See [HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md](HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md).

@@ -732,3 +732,18 @@ COE INTERCON #39/#40/#42 remain incompatible unselected Stage-3 candidates; #41 
 | PHX-RELEASE | #291 b812c40e6a000cbedfc0789d9e62107b1b6f637a | #44269469055 IN_PROGRESS at readback; handover PASS, build-windows running | Keep write-privileged publishing closed until owner gates |
 
 COE #26 remains five workflows QUEUED / zero jobs. COE root AGENTS.md returned 404. The private Drive v11 registry and newer corrections remain unavailable; no historical snapshot was substituted. Do not assign or edit another role's source/test paths.
+
+## 5. Live exact owner refs — 2026-11-18 UTC09
+
+| Role | Current branch / PR head | Exact CI observation / ownership boundary |
+|---|---|---|
+| PHX-MASTER | phoenix/master-coordination@0f53e469b430f5fb8707623acf1dfd5f22331ce0 (pre-audit) | Master CI no runs returned; coordination/phoenix only |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped; separate CORE automation owns implementation |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped; native COM acceptance unknown |
+| PHX-HARDWARE | #323 branch/docs 1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17, source/test d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb; #317 fce915c1167fc43c6936f3594ae9efce376b711f; #318 696e28ed4cd53b9189b78095b38aee973d774683 | #323 focused PASS / Full FAIL; #317 focused PASS / Full FAIL; #318 no current-head runs, mergeable=false |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS, scoped; #292 no current-head run |
+| PHX-RELEASE | #291 bf96680ab1d0040da8b70641c7dd3b1ca21ccea4; COE #35 f751c542bfc82602554c6d0900504080aedc99fe | #291 [44270351439](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44270351439) SUCCESS, publisher skipped; #35 mandatory sandbox host-blocked |
+| COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; no combined acceptance |
+
+HARDWARE #323/#317 and QA #292 remain draft/review-only. Do not edit worker-owned firmware, QA fixtures, release workflows or destination files from PHX-MASTER.

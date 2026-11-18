@@ -60,5 +60,21 @@ class PollResponseArchitectureTests(unittest.TestCase):
         self.assertIn("30-device/24-hour soak", section)
 
 
+    def test_hardware_323_destination_is_not_copy_ready(self):
+        section = DOC[DOC.index("## 6.24 Current HARDWARE #323 to COE #26 provenance and test-identity hold"):]
+        for sha in (
+            "bd74b11c1496b0943404ff387ee72bb45d4743e5",
+            "3cc7ec54b476943dc04a8d1af5e2df5fe054e422",
+            "8e79b9eb8856e67d966f4c6385f89fccdc8be7fc",
+            "c8be98f72596681e36a3ad1f8939bf8046c96887",
+            "25f5e8bd1a344d69acc0505324156f66a1abffa4",
+        ):
+            with self.subTest(sha=sha):
+                self.assertIn(sha, section)
+        self.assertIn("not standard HMAC", section)
+        self.assertIn("No copy/move", section)
+        self.assertIn("PRODUCTION NO-GO", section)
+
+
 if __name__ == "__main__":
     unittest.main()
