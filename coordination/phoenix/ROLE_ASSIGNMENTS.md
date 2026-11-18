@@ -929,3 +929,23 @@ This snapshot supersedes older active-PR pins above for current coordination onl
 
 Automation deconflict: the accessible automation inventory showed enabled Master, Release and a Hardware continuation; it did not expose an enabled task with the exact title “Blaze Production Continuation.” CORE remains untouched as explicitly directed; no CORE branch or PR was edited and no competing CORE worker was started. This observation does not reassign CORE ownership.
 
+
+
+## Live role-owner reconciliation — 2026-11-18 UTC19 (2026-11-18T19:35Z)
+
+This snapshot supersedes the UTC18 active-PR pins for coordination only; it does not change source ownership.
+
+| Role | Current owner PR / exact head | Bounded evidence | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 `d2cb869d76b1e0ef694a8b9ce6bb7c0d427d4243` before this update | 86 paths, all under `coordination/phoenix/`; no Master CI run returned. | Maintain contract/matrix/provenance only; keep manifest review-only. |
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS (scoped); COE #45 [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) / [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) SUCCESS. | Continue only under separate CORE ownership; Master makes no CORE edits. |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) / [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS. | Continue in Rental-owned paths only. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS (scoped build). | Complete native COM/device acceptance; do not infer from build CI. |
+| PHX-HARDWARE | #323 `988904e8...` → #326 `58c558fb...` → #327 `0a264680...` (source/test `e774420c...`) | #327 focused runs 44373742439 / 44373742382 SUCCESS; Full 44373742348 FAILURE at QA poll fixture and Android dependency resolution. | Preserve deny-only and both-store reboot-durability limitation; obtain independent QA on same SHA. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 43633486963 SUCCESS for build/handover only; native COM lab not invoked. #292 has no runs and stale Master base `b1ca02e...`. | Replace positive poll fixture with negative deny tests; rebase/retest #292 on current Master; independently review #327. |
+| PHX-RELEASE | Experiments #291 `691ed55dbe39a79a88eac45f6eebff81cee5e628`; COE #35 `1a5be48d...` → #44 `0ad58f03...` | #291 build/handover SUCCESS, publisher skipped. #35/#44 shared and case checks SUCCESS; mandatory sandbox fails closed because bubblewrap is missing. | Define site-scoped ULA authority for same-site appliances; provide authorized bubblewrap-capable runner; no fallback. |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; exact Hardware provenance/test/license gaps remain. | Produce per-file source/blob/license/test/mode map and unblock destination CI before any move. |
+| Repository administrator | Experiments main/development/Master; COE main | Branch objects `protected=false`; rulesets arrays empty. | Configure and independently read back branch protection and required checks. |
+| Registry custodian | Private Drive v11 and newer corrections | Not accessible through current connector surface; no older snapshot substituted. | Restore authorized read access without publishing private IDs/content. |
+
+CORE remains exclusively under its separate continuation. No CORE branch, PR or source file was edited; no competing CORE worker was started.

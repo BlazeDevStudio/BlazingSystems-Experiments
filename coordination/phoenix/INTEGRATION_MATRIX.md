@@ -1229,3 +1229,44 @@ The source project MIT license `1ee55b94183417be977ca287cd7391f9a6f7e721` is byt
 No copy, move, overwrite, rename, deletion, rebase or destination proposal was made. Keep the manifest DRAFT_REVIEW_ONLY / Master target null until owner-approved per-file source, license, test, mode, import and exact-SHA CI mapping is complete.
 
 **Production: NO-GO.**
+
+
+## Live exact integration refresh — 2026-11-18 UTC19 (2026-11-18T19:35Z)
+
+### Repository and branch pins
+
+| Ref | Exact SHA | Readback |
+|---|---|---|
+| Experiments default `main` | `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | branch object `protected=false` |
+| Experiments development/audit `blazepwifi-v0.6.0-audit-foundation` | `2fbd2475e9f54878c316fa7cea2f228386b0e859` | branch object `protected=false` |
+| Experiments Master `phoenix/master-coordination` | `d2cb869d76b1e0ef694a8b9ce6bb7c0d427d4243` before this commit | branch object `protected=false` |
+| COE default `main` | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | branch object `protected=false` |
+| COE integration PR #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT |
+
+Master PR #288 is OPEN / DRAFT on `phoenix/master-coordination`, base `main@f4e8a891...`; 86 changed paths, all under `coordination/phoenix/`. No exact-head Master CI run returned. Both repository rulesets reads are empty. The routing manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+### Role-owned exact heads and bounded CI
+
+| Role | Current candidate | Exact-head evidence / limitation |
+|---|---|---|
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Experiments [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS (scoped); COE #45 [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) and [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) SUCCESS (scoped). Master did not edit CORE. |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS (scoped). |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS (scoped build); native COM/device acceptance remains unverified. |
+| PHX-HARDWARE | #323 `988904e8...` → #326 `58c558fb...` → #327 docs head `0a264680...`, source/test `e774420c...` | #327 focused quarantine [44373742439](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373742439) and relay/output [44373742382](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373742382) SUCCESS; Full [44373742348](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373742348) FAILURE at stale QA positive poll-signature assertion and Android protobuf Gradle plugin 0.8.3 resolution. Host/fake-I/O only; physical acceptance NOT TESTED. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS for build/handover, but native COM lab not invoked. #292 has no runs and is based on stale Master `b1ca02e...`, not current `d2cb869...`; rebase/retest and replace positive poll fixture with negative deny tests. |
+| PHX-RELEASE | Experiments #291 `691ed55dbe39a79a88eac45f6eebff81cee5e628`; COE #35 `1a5be48d...` → #44 `0ad58f03...` | #291 [44353380470](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353380470) SUCCESS, privileged publisher skipped. COE #35 shared/case [44370198378](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198378) / [44370198334](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198334) SUCCESS; sandbox [44370198386](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198386) FAILS for missing bubblewrap. Child #44 shared/case [44380663938](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44380663938) / [44380663872](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44380663872) SUCCESS; mandatory sandbox [44380664237](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44380664237) FAILS closed because `bwrap` is absent after 14/14 host-preflight tests. #44's per-install random ULA does not yet prove §6.9 same-site multi-appliance sharing. |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs. Existing exact audit remains current because the destination SHA is unchanged: firmware blobs differ, source board labs are missing/not invoked, destination test identity is not source-equivalent, and Hardware license/NOTICE scope is unresolved. No migration proposal. |
+
+### Integration disposition
+
+Keep Hardware #327 and COE #26 separate DRAFTs. The previous exact source/destination comparison remains pinned to the unchanged #26 SHA: source/destination firmware blobs differ; 18 source Python board labs are absent from the destination; the generic destination test still expects positive poll signatures while source firmware remains deny-only; the destination workflow does not invoke the source Hardware labs; and Hardware license/NOTICE scope is unresolved. No copy, move, overwrite, rename or route change.
+
+COE #44 remains DRAFT until site-scoped ULA authority is defined and independently verified. COE #26 remains five queued / zero jobs; this is not combined destination acceptance.
+
+### Governance and access
+
+Cleanup issue #266 remains OPEN with a 2026-10-31 source snapshot and historical PR pins; refresh its task/owner pins before treating it as a current cleanup completion record. Branch objects show protection disabled on Experiments main/development/Master and COE main; both rulesets reads are empty. Repository administrator action is required.
+
+The private Drive v11 registry and newer corrections remain unavailable: no Google Drive connector is exposed and exact-title Library search did not find v11. Older v3–v7 snapshots were not substituted. AGENTS-linked cloud policy/storage handover could not be read through the current GitHub connector path. No private data or IDs were published.
+
+**Production: NO-GO.**
