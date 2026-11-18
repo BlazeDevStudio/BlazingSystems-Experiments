@@ -462,8 +462,14 @@ for board,path in BOARDS.items():
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
        load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
        latch_fault,init_store,15),
+      ("defer-fault-output-inhibit",loop,output,quiet,accept,configure,isr,write_fault,load_fault,
+       latch_fault.replace("  applyOutputs();\\n  const bool persisted=writePollPulseFaultMarker(pulseEdges);",
+                           "  const bool persisted=writePollPulseFaultMarker(pulseEdges);",1),
+       init_store,23),
     )
     for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
+        if name=="defer-fault-output-inhibit" and mlatch==latch_fault:
+            raise AssertionError(f"{board}: fault-latch ordering mutation did not apply")
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
