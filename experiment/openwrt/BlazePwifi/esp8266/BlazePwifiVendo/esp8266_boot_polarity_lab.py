@@ -348,6 +348,13 @@ void seedV1(){
   c.coinPin=4;c.insertLedPin=14;c.relayPin=5;c.coinActiveLow=1;
   std::memcpy(EEPROM.flash.data(),&c,sizeof(c));
 }
+
+// A future schema marker must never be rewritten by older firmware.
+void seedUnknownFutureVersion(){
+  std::memset(EEPROM.flash.data(),0xA5,EEPROM.flash.size());
+  const uint32_t futureMagic=0x42505734;
+  std::memcpy(EEPROM.flash.data(),&futureMagic,sizeof(futureMagic));
+}
 std::vector<uint8_t> markerBytes(){
   return std::vector<uint8_t>(EEPROM.flash.begin()+POLL_FAULT_EEPROM_OFFSET,
                               EEPROM.flash.begin()+POLL_FAULT_EEPROM_OFFSET+20);
@@ -407,6 +414,14 @@ int main(){
   loadCfg(); // erased/missing configuration
   assertUnknownPolarity();
   assert(cfg.magic==MAGIC && cfg.outputPolarityConfigured==0);
+
+  resetState();
+  seedUnknownFutureVersion();
+  const auto futureBytesBefore=EEPROM.flash;
+  loadCfg();
+  assertUnknownPolarity();
+  assert(journalRecoveryRequired);
+  assert(EEPROM.flash==futureBytesBefore);
 
   resetState();
   EEPROM.failCommit=true;
