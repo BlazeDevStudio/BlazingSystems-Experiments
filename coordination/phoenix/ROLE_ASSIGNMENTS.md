@@ -816,3 +816,14 @@ The table below is a current PR API snapshot, not an ownership transfer. Source 
 
 **Current owner actions:** HARDWARE must resolve #318's divergent ancestry and refresh stale PR descriptions; assess ESP8266 boot-time polarity before claiming active-low support; reconcile #324's remaining delta without duplicating its already-covered marker-open assertion; keep #325 separate until its own parent/QA review. QA owns the stale positive poll-signature fixture and independent boot-polarity regressions. RELEASE/infra own the missing bubblewrap runner. No Master source takeover is authorized.
 
+
+
+## 2026-11-18 UTC14 — exact owner follow-up
+
+- **PHX-MASTER:** remains limited to coordination/phoenix/ and architecture/interface contracts. Current branch is phoenix/master-coordination at dd4df401bef10540d1faa9fd8a56f0ae7b0415f9 before this UTC14 documentation update. No subsystem source takeover.
+- **PHX-HARDWARE:** #323 is OPEN/DRAFT at 9cd889ec184c81d96569d3994602da3076efb537, child of #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08. Owner ACK 6980748685 proposes a local ConfigV3 polarity migration, but the exact current sketch blob 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc does not contain that implementation. The new boot-polarity lab blob f08e1aadc40acf09e08ad055c92a38073c33f6c2 requires symbols absent from the sketch; workflow blob dd2692df58c5311ad5d365a5539279da2018d8f7 does not invoke it as a separate command. Correct source and workflow before claiming the test is green. #318 remains on its older ancestry; no PR-triggered run returned for current head de428b7a. #321/#322/#324 remain separate overlapping candidates; #325 is a separate child of the #283 line.
+- **PHX-QA:** #290 head 5c29d15994cee1279058f1eca12f2a3180704292 has scoped PASS 43633486963; #292 head 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 has no PR-triggered run returned. QA must independently verify cold-boot polarity and replace the stale positive poll-signature assertion with negative deny-behavior tests.
+- **PHX-RELEASE:** #291 head 37ee86d2f192fcc6bc6ea3b7a38c86c21b3fdab8 has workflow 44296971291 SUCCESS, with privileged publisher/signing skipped. COE #35 head 7e41b9acf41ccca7127d36421541db722175668b has shared/case PASS but mandatory sandbox failure 44312868726; infrastructure owns the bubblewrap-capable runner.
+- **PHX-CORE:** #252 remains c82705f2de865c89ab733b10efa84f26f56a5cc4; the separate Blaze Production Continuation owns CORE implementation. No competing worker or source change was started.
+- **COE integration owner:** #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12, five queued workflows / zero jobs. Separate candidate PRs are not combined acceptance.
+- **Repository administrator:** branch API returns protected=false / protection.enabled=false for Experiments main, development, Master, and COE main; rulesets are empty for both repositories. Configure required protections and status checks, then provide readback evidence.

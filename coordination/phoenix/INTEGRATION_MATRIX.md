@@ -1077,3 +1077,22 @@ The #323/#325 Full failures are QA fixture/contract blockers, not permission to 
 
 **PR-description drift:** current PR API heads supersede stale head strings in the bodies of #317, #318, #323, #283 and COE #35. Owners should refresh those descriptions before relying on their embedded SHA/checkpoint text. Master did not edit owner PR descriptions.
 
+
+
+## 2026-11-18 UTC14 — exact ESP8266 boot-polarity test-wiring reconciliation
+
+HARDWARE #323 remains OPEN / DRAFT / UNMERGED, parent #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08, current PR head 9cd889ec184c81d96569d3994602da3076efb537. Exact source/test blobs are ESP8266 sketch 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc, boot-polarity lab f08e1aadc40acf09e08ad055c92a38073c33f6c2, and relay workflow dd2692df58c5311ad5d365a5539279da2018d8f7.
+
+The sketch still has only the V1 and current V2 configuration records and no local output-polarity validity state. The new lab requires ConfigV2/ConfigV3 and local polarity fields that are absent from the sketch. The workflow folds the second Python line into the first run scalar; exact run 44320124000 logs one command containing both script names, so only relay_output_polarity_lab.py ran. Do not count that green run as boot-polarity coverage.
+
+| Exact-head run | Result | Correct interpretation |
+|---|---|---|
+| [44320123810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123810) | SUCCESS | Quarantine/readback focused lab only |
+| [44320124000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320124000) | SUCCESS | Existing relay-output lab only; new boot-polarity lab was not invoked |
+| [44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) | IN_PROGRESS at last read | Full validation already failed at the QA-owned Controller protocol parity assertion; ESP8266 target passed, remaining target jobs not all terminal |
+
+Other current exact-head role evidence: CORE #252 42698139210 PASS; PISONET #255 42462978704 PASS; RENTAL #289 43653329235 and 43653329229 PASS; QA #290 43633486963 PASS; QA #292 no PR-triggered run returned; RELEASE #291 44296971291 SUCCESS with privileged publishing skipped. HARDWARE #321 focused runs 44294008493/44294008398 PASS and Full 44294008523 FAIL; #322 focused 44232877611/44232877649 PASS and Full 44232877624 FAIL; #324 focused 44290338178/44290338468 PASS and Full 44290338340 FAIL; #325 focused 44311211095 PASS and Full 44311211166 FAIL. These results are scoped to their exact SHAs and do not imply integrated acceptance.
+
+COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243. COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12 with five workflows QUEUED and zero jobs. COE #35 head 7e41b9acf41ccca7127d36421541db722175668b has case/shared PASS but mandatory sandbox run 44312868726 FAILS because bubblewrap is unavailable. No combined migration acceptance exists.
+
+**Governance correction:** live branch API reads show protected=false and protection.enabled=false for Experiments main f4e8a891..., development aad3aade..., Master dd4df401..., and COE main a6513ab4.... Both repository rulesets endpoints returned an empty list. This supersedes the earlier Master statement that branch protection was UNKNOWN. Repository administrators must configure and independently verify required protections/checks before release or protected financial work.

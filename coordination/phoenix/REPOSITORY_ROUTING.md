@@ -475,3 +475,13 @@ COE #35 current head ddca6f07c04b6d3772b1f4a55826fce0bbf742d6 has passing case/s
 COE #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs. #36–#43 remain separate INTERCON candidates; #45 remains a separate CORE candidate. No file was copied, moved, overwritten, renamed, rebased, merged or deleted. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
 
 Private Drive registry v11 and newer corrections remain BLOCKED: no Google Drive connector was exposed and Library search did not return the canonical file. The Cloud Artifact Policy and Storage Recovery Handover were read; the policy requires BLOCKED rather than a simulated transfer. No older registry was substituted and no private contents were published. COE root AGENTS.md returned 404.
+
+## 2026-11-18 UTC14 — no migration; current Hardware source/test mismatch
+
+The ownership manifest remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, with PHX-MASTER target null. It is a review map, not a copy/move instruction.
+
+Do not stage or copy the current #323 ESP8266 local boot-polarity test as an accepted implementation. At exact head 9cd889ec184c81d96569d3994602da3076efb537, the sketch blob 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc lacks the ConfigV3/local-polarity implementation expected by test blob f08e1aadc40acf09e08ad055c92a38073c33f6c2; workflow blob dd2692df58c5311ad5d365a5539279da2018d8f7 folds the second test command into the first shell command. This exact mismatch must be corrected and independently verified before any per-file migration comparison can treat the new lab as included test coverage.
+
+Migration remains blocked on exact source/destination blob comparison, license/NOTICE review, complete import inventory, test identity and exact-head CI, owner assignment, and the private Drive registry/sync-ledger read. No source or destination files were moved, copied, renamed, deleted, overwritten or rebased.
+
+**Governance hold:** Experiments main, development, Master and COE main currently report protected=false / protection.enabled=false, with no repository rulesets returned. Repository administrator must establish and verify branch protection and required checks before release or financial integration.

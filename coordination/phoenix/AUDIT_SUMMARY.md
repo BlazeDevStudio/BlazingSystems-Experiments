@@ -544,3 +544,25 @@ An explicit GitHub REST read of classic branch protection returned HTTP 403 (Res
 
 **Disposition:** coordination-only documentation audit. No source files, hardware, migration targets, secrets, financial state, or release workflows were changed. **PRODUCTION NO-GO** remains binding.
 
+
+
+## 2026-11-18 UTC14 — exact boot-polarity test-wiring audit
+
+**Master finding: the current HARDWARE #323 head does not contain the promised ESP8266 local boot-polarity implementation, and its new test is not executed by the green focused workflow.**
+
+At #323 head 9cd889ec184c81d96569d3994602da3076efb537, the ESP8266 sketch blob 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc has only ConfigV1/current Config (MAGIC V2); it has no ConfigV2/ConfigV3, outputPolarityConfigured, outputPolarityKnown or configChecksum, and no local relay/LED polarity setup fields. loadCfg() does not migrate a polarity record, and setup() reaches configureRuntimePins() without a validated local polarity source. Remote polarity fields exist only in the intentionally dormant unauthenticated applyRemoteConfig() path.
+
+The new lab blob f08e1aadc40acf09e08ad055c92a38073c33f6c2 explicitly requires symbols absent from the exact source. The workflow blob dd2692df58c5311ad5d365a5539279da2018d8f7 puts the new lab command on a folded YAML plain scalar. Exact Actions job 134856529046 for run 44320124000 logs a single command containing both script names; the existing relay lab ran, but esp8266_boot_polarity_lab.py did not. The green result is not evidence for the new test. This is a source/test/CI wiring mismatch, not a passing implementation.
+
+Evidence:
+- Owner's implementation plan, still IN_PROGRESS: [control-plane comment 6980748685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-6980748685).
+- Current candidate [PR #323](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/323), exact head 9cd889ec184c81d96569d3994602da3076efb537, parent #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08.
+- [Quarantine/readback 44320123810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123810) SUCCESS.
+- [Relay/output 44320124000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320124000) SUCCESS for the existing relay lab only.
+- [Full build 44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) was IN_PROGRESS at last read; validation already failed at the QA-owned Controller protocol parity assertion.
+
+**Governance P0:** Experiments main, development, Master and COE main all report protected=false / protection.enabled=false. Both repository rulesets endpoints return []. No branch-protection changes were made. Repository administrator must configure and verify protected refs and required status checks.
+
+The private canonical Drive registry v11 and newer corrections remain unavailable: Library search did not return the exact file and no Google Drive connector is exposed. No older registry was substituted and no private contents/IDs were published. The cloud artifact policy and storage handover were reread from BlazeDevStudio/BlazingSystems after the repository move; they require BLOCKED rather than a simulated Drive transfer.
+
+Local Git checkout/test execution remains unavailable because the container cannot resolve github.com. Source/tree inspection and existing GitHub Actions evidence are reported separately; the full Master Python suite was NOT RUN. No migration, source edit, hardware operation, merge, release, signing or production action occurred. **PRODUCTION NO-GO.**
