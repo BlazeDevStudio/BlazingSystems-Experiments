@@ -858,7 +858,7 @@ Task: #172 / #266 / #291 / #327. Scope is limited to the PHX-RELEASE-owned `.git
 
 - PR #291 remains OPEN / DRAFT / UNMERGED. Its base is Experiments PR #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`; this work reused the existing release child branch `phoenix/release-publisher-isolation-20261115`.
 - MASTER ownership manifest `coordination/phoenix/OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`. It routes this source workflow to COE `.github/workflows/pisowifi-ci.yml` as `reimplementation-review`. That destination workflow was not modified; PHX-MASTER and the COE integration owner must coordinate any adoption.
-- The current #291 `CHANGE_LEDGER.md` remains an additive-only record with its historical provenance discrepancy unresolved (current branch file 228 lines versus the 3,502-line base blob reported by MASTER). This entry does not restore, delete, or rewrite historical entries; PHX-MASTER and PHX-QA still own that reconciliation.
+- The current #291 `CHANGE_LEDGER.md` remains an additive-only record with its historical provenance discrepancy unresolved (pre-addendum branch file 228 lines, now extended only by this UTC21 entry, versus the 3,502-line base blob reported by MASTER). This entry does not restore, delete, or rewrite historical entries; PHX-MASTER and PHX-QA still own that reconciliation.
 - Private Drive registry v11 was not available through the current Library search; older registry files are not substituted. No private registry contents were copied or exposed.
 - No real signing, release/tag, merge, hardware flashing, payment migration, customer deployment, or physical acceptance occurred. Production remains NO-GO.
 
