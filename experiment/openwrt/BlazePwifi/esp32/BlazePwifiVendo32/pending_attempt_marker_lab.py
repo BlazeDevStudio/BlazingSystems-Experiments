@@ -102,6 +102,7 @@ String pendingNonce,pendingTarget;
 @@SAME@@
 @@LOAD@@
 @@MARK@@
+@@ATTEMPT_MATCH@@
 @@CLEAR@@
 @@GATE@@
 PendingRecord record(const char*n="nonce12345678",const char*t="target12345678",uint8_t p=4){
@@ -194,7 +195,75 @@ int main(){
   CHECK(journalRecoveryRequired&&!canAttemptCoinPost()&&LittleFS.files.size()==3,
         "multiple pending candidates preserved");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/19 source-extracted cases; physical power cuts NOT TESTED\n";
+
+  // clearPending must not delete the only remaining attempt evidence.
+  LittleFS=FakeLittleFS{};reboot();pendingReady=true;pendingPostAttempted=true;
+  pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";
+  store("/pending.attempt",record());
+  CHECK(!clearPending()&&journalRecoveryRequired&&LittleFS.exists("/pending.attempt")&&
+        LittleFS.files.size()==1&&LittleFS.removed.empty()&&pendingPulses==4&&pendingReady,
+        "orphan attempt marker retained by clear");
+
+  // Multiple candidates remain ambiguous even when one matches the marker.
+  LittleFS=FakeLittleFS{};reboot();pendingReady=true;pendingPostAttempted=true;
+  pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";
+  store("/pending.dat",record());store("/pending.bak",record());store("/pending.attempt",record());
+  CHECK(!clearPending()&&journalRecoveryRequired&&LittleFS.files.size()==3&&LittleFS.removed.empty(),
+        "duplicate candidates retained by clear");
+
+  // A single but different journal must not be erased by a matching RAM marker.
+  LittleFS=FakeLittleFS{};reboot();pendingReady=true;pendingPostAttempted=true;
+  pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";
+  store("/pending.dat",record("nonce99999999","target12345678"));
+  store("/pending.attempt",record());
+  CHECK(!clearPending()&&journalRecoveryRequired&&LittleFS.exists("/pending.dat")&&
+        LittleFS.exists("/pending.attempt")&&LittleFS.removed.empty(),
+        "mismatched pending candidate retained by clear");
+
+  // A corrupt single candidate must also be preserved for reconciliation.
+  LittleFS=FakeLittleFS{};reboot();pendingReady=true;pendingPostAttempted=true;
+  pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";
+  auto corruptPending=record();corruptPending.checksum^=1;
+  store("/pending.dat",corruptPending);store("/pending.attempt",record());
+  CHECK(!clearPending()&&journalRecoveryRequired&&LittleFS.exists("/pending.dat")&&
+        LittleFS.exists("/pending.attempt")&&LittleFS.removed.empty(),
+        "corrupt pending candidate retained by clear");
+
+
+  // A POST marker must bind exactly one pending journal candidate, not merely
+  // find one matching file while another candidate remains ambiguous.
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  store("/pending.bak",record("nonce99999999","target12345678"));
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "conflicting extra pending candidate denies POST marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  store("/pending.bak",record());
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "duplicate extra pending candidate denies POST marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  LittleFS.files["/pending.bak"]={0x01,0x02};
+  CHECK(!markPendingPostAttempt()&&journalRecoveryRequired&&
+        !LittleFS.exists("/pending.attempt")&&pendingReady&&pendingPulses==4,
+        "corrupt extra pending candidate denies POST marker");
+
+
+  // A single recovered candidate in either interrupted-rotation slot remains
+  // eligible for a one-shot marker; the exact-one rule must not require /pending.dat.
+  LittleFS=FakeLittleFS{};reboot();store("/pending.new",record());loadPending();
+  CHECK(pendingReady&&!journalRecoveryRequired&&markPendingPostAttempt()&&
+        LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
+        "single pending.new candidate permits marker");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.bak",record());loadPending();
+  CHECK(pendingReady&&!journalRecoveryRequired&&markPendingPostAttempt()&&
+        LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
+        "single pending.bak candidate permits marker");
+
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/28 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
@@ -218,6 +287,7 @@ for board,path in BOARDS:
       "@@SAME@@":extract(src,"bool samePendingRecord("),
       "@@LOAD@@":extract(src,"void loadPending(){"),
       "@@MARK@@":extract(src,"bool markPendingPostAttempt(){"),
+      "@@ATTEMPT_MATCH@@":extract(src,"bool pendingAttemptMarkerMatches(){"),
       "@@CLEAR@@":extract(src,"bool clearPending(){"),
       "@@GATE@@":gate,
     }
@@ -229,4 +299,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 19/19 source-extracted cases per board (38/38 total) PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS; actual flash NOT TESTED")

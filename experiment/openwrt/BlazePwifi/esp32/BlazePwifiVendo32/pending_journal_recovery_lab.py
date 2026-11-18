@@ -103,6 +103,7 @@ void writeLogical(int pin,bool on,bool){
 @@READ@@
 @@SAME_RECORD@@
 @@LOAD@@
+@@ATTEMPT_MATCH@@
 @@CLEAR@@
 @@OUTPUTS@@
 PendingRecord validRecord(){
@@ -177,13 +178,14 @@ int main(){
   }
   std::cout<<"PENDING_JOURNAL_LAB_PASS 16/16 source-extracted cases; physical tests NOT RUN\n";
 
-  for(int scenario=0;scenario<11;++scenario){
+  for(int scenario=0;scenario<17;++scenario){
     LittleFS=FakeLittleFS{};
-    fsReady=true;pendingReady=true;journalRecoveryRequired=false;pendingPostAttempted=false;
+    fsReady=true;pendingReady=true;journalRecoveryRequired=false;pendingPostAttempted=true;
     pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";lastSend=42;
-    auto r=validRecord();
+    auto r=validRecord();r.pulses=4;r.checksum=pendingChecksum(r);
+    LittleFS.files["/pending.attempt"]=bytes(r);
     switch(scenario){
-      case 0:break;
+      case 0:break; // orphan marker: no pending candidate
       case 1:LittleFS.files["/pending.dat"]=bytes(r);break;
       case 2:LittleFS.files["/pending.new"]=bytes(r);break;
       case 3:LittleFS.files["/pending.bak"]=bytes(r);break;
@@ -197,16 +199,23 @@ int main(){
       case 8:LittleFS.files["/pending.dat"]=bytes(r);LittleFS.ghostRemove=true;break;
       case 9:LittleFS.files["/pending.dat"]=bytes(r);fsReady=false;break;
       case 10:LittleFS.files["/pending.dat"]=bytes(r);journalRecoveryRequired=true;break;
+      case 11:{auto bad=r;std::strcpy(bad.target,"target99999999");bad.checksum=pendingChecksum(bad);LittleFS.files["/pending.dat"]=bytes(r);LittleFS.files["/pending.attempt"]=bytes(bad);break;}
+      case 12:{auto bad=r;std::strcpy(bad.nonce,"nonce99999999");bad.checksum=pendingChecksum(bad);LittleFS.files["/pending.dat"]=bytes(bad);break;}
+      case 13:{auto bad=r;bad.checksum^=1;LittleFS.files["/pending.dat"]=bytes(bad);break;}
+      case 14:LittleFS.files.erase("/pending.attempt");LittleFS.files["/pending.dat"]=bytes(r);break;
+      case 15:pendingPostAttempted=false;LittleFS.files["/pending.dat"]=bytes(r);break;
+      case 16:pendingReady=false;LittleFS.files["/pending.dat"]=bytes(r);break;
     }
     const auto originalFiles=LittleFS.files;
     const bool ok=clearPending();
-    const bool expectSuccess=scenario<=3;
-    const bool expectRecovery=scenario>=4;
-    const unsigned expectRemoveCalls=(scenario>=1 && scenario<=3) || scenario==7 || scenario==8 ? 1U : 0U;
+    const bool expectSuccess=scenario>=1 && scenario<=3;
+    const bool expectRecovery=!expectSuccess;
+    const unsigned expectRemoveCalls=expectSuccess ? 2U : (scenario==7 || scenario==8 ? 1U : 0U);
     const bool filesCorrect=expectSuccess ? LittleFS.files.empty() : LittleFS.files==originalFiles;
+    const bool expectPendingReady=(!expectSuccess && scenario!=16);
     if(ok!=expectSuccess || journalRecoveryRequired!=expectRecovery ||
        !filesCorrect || LittleFS.removeCalls!=expectRemoveCalls ||
-       pendingReady!=(!expectSuccess) || pendingPulses!=(expectSuccess?0:4) ||
+       pendingReady!=expectPendingReady || pendingPulses!=(expectSuccess?0:4) ||
        pendingNonce!=(expectSuccess?"":"nonce12345678") ||
        pendingTarget!=(expectSuccess?"":"target12345678")){
       std::cerr<<"PENDING_CLEAR_LAB_FAIL case="<<scenario
@@ -216,7 +225,7 @@ int main(){
       return 1;
     }
   }
-  std::cout<<"PENDING_CLEAR_LAB_PASS 11/11 source-extracted cases; physical tests NOT RUN\n";
+  std::cout<<"PENDING_CLEAR_LAB_PASS 17/17 source-extracted cases; physical tests NOT RUN\n";
   return 0;
 }
 '''
@@ -227,10 +236,12 @@ for board, path in SKETCHES:
         ("bool savePending(){", "journalRecoveryRequired"),
         ("bool clearPending(){", "journalRecoveryRequired"),
         ("void applyOutputs(){", "!journalRecoveryRequired"),
-        ("void loop(){", "!journalRecoveryRequired"),
+        ("void sampleCoinPulseEdge(bool active){", "!journalRecoveryRequired"),
     ]:
         if token not in extract(source,sig):
             raise SystemExit(f"{board}: no journal deny gate in {sig}")
+    if "sampleCoinPulseEdge(active)" not in extract(source,"void loop(){"):
+        raise SystemExit(f"{board}: loop does not call the source pulse-capture helper")
     if "strlen(r.nonce)" in extract(source,"bool readPendingFile(") or "strlen(r.target)" in extract(source,"bool readPendingFile("):
         raise SystemExit(f"{board}: unsafe unbounded pending string read")
     magic = re.search(r"PENDING_MAGIC\s*=\s*(0x[0-9A-Fa-f]+)", source)
@@ -244,6 +255,7 @@ for board, path in SKETCHES:
         "@@READ@@":extract(source,"bool readPendingFile("),
         "@@SAME_RECORD@@":extract(source,"bool samePendingRecord("),
         "@@LOAD@@":extract(source,"void loadPending(){"),
+        "@@ATTEMPT_MATCH@@":extract(source,"bool pendingAttemptMarkerMatches(){"),
         "@@CLEAR@@":extract(source,"bool clearPending(){"),
         "@@OUTPUTS@@":extract(source,"void applyOutputs(){"),
     }.items():
@@ -256,4 +268,4 @@ for board, path in SKETCHES:
                         str(path_cpp),"-o",str(path_bin)],check=True)
         subprocess.run([str(path_bin)],check=True)
     print(f"{board}: exact source journal parser/recovery and output gate verified")
-print("PHX-HARDWARE: 32/32 boot-recovery and 22/22 pending-clear cases PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 32/32 boot-recovery and 34/34 pending-clear cases PASS; actual flash NOT TESTED")

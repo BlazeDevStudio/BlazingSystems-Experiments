@@ -63,7 +63,8 @@ enum SeekMode { SeekSet };
 struct FakeDisk {
   std::string bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
   bool priorOpenFail=false, appendOpenFail=false, verifyOpenFail=false;
-  bool shortWrite=false, mutateAfterClose=false, mutateOnRead=false;
+  bool logExists=true;
+  bool shortWrite=false, mutateAfterClose=false, mutatePrefixAfterClose=false, mutateOnRead=false;
   bool removeOneByteAfterClose=false;
   bool hasWritten=false;
 } disk;
@@ -86,6 +87,8 @@ struct File {
   void close(){
     if(d && writing){
       if(d->mutateAfterClose && !d->bytes.empty()) d->bytes.back()='Z';
+      // Simulate same-size corruption of an older record while the new suffix stays intact.
+      if(d->mutatePrefixAfterClose && !d->bytes.empty()) d->bytes[0]='U';
       if(d->removeOneByteAfterClose && !d->bytes.empty()) d->bytes.pop_back();
     }
     d=nullptr;
@@ -103,23 +106,36 @@ struct File {
   }
 };
 struct FakeLittleFS {
-  bool exists(const char* path){return strcmp(path,"/quarantine.log")==0;}
+  bool exists(const char* path){
+    return strcmp(path,"/quarantine.log")==0 && disk.logExists;
+  }
   File open(const char* path,const char* mode){
     if(strcmp(path,"/quarantine.log")!=0)return {};
-    if(strcmp(mode,"a")==0) return disk.appendOpenFail?File():File(&disk,true);
-    if(strcmp(mode,"r")==0) return (!disk.hasWritten && disk.priorOpenFail)
-       || (disk.hasWritten && disk.verifyOpenFail)?File():File(&disk,false);
+    if(strcmp(mode,"a")==0){
+      if(disk.appendOpenFail)return {};
+      // Append mode creates the first quarantine log when it is absent.
+      disk.logExists=true;
+      return File(&disk,true);
+    }
+    if(strcmp(mode,"r")==0){
+      if(!disk.logExists || (!disk.hasWritten && disk.priorOpenFail) ||
+         (disk.hasWritten && disk.verifyOpenFail)) return {};
+      return File(&disk,false);
+    }
     return {};
   }
 } LittleFS;
 
 @@SOURCE_COIN_POST_GATE@@
 @@SOURCE_ENCODE@@
+@@SOURCE_TOKEN_VALID@@
+@@SOURCE_RECORD_VALID@@
+@@SOURCE_CRC32_UPDATE@@
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
-  for(int scenario=0;scenario<23;scenario++){
+  for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
     clearAllowed=true;
@@ -163,20 +179,49 @@ int main(){
                  "TIME=9 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=duplicate\n";
     if(scenario==17)
       disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
-    if(scenario==17)
-      disk.bytes="TIME=not-a-number PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=forged-but-complete\n";
     if(scenario==18)
       disk.bytes="TIME=4294967296 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=overflowed-time\n";
     if(scenario==19) pendingPostAttempted=false; // attempted state missing
     if(scenario==20) attemptMarkerExists=false;
     if(scenario==21) attemptMarkerValid=false;
     if(scenario==22) std::strcpy(attemptMarker.nonce,"wrongnonce123456");
+    // Malformed prior quarantine records must never authorize pending deletion.
+    if(scenario==23)
+      disk.bytes="TIME=1 PULSES=not-a-number NONCE=oldnonce TARGET=oldtarget REASON=old\n";
+    if(scenario==24)
+      disk.bytes="TIME=1 PULSES=21 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
+    if(scenario==25)
+      disk.bytes="TIME=1 PULSES=1 NONCE= TARGET=oldtarget REASON=old\n";
+    if(scenario==26)
+      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET= REASON=old\n";
+    if(scenario==27)
+      disk.bytes="TIME=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=\n";
+    if(scenario==28)
+      disk.bytes="TIME=1 PULSES=1 PULSES=1 NONCE=oldnonce TARGET=oldtarget REASON=old\n";
+    if(scenario==29){
+      pendingTarget="target0011223344 REASON=earlier";
+      std::strcpy(attemptMarker.target,pendingTarget.c_str());
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=earlier REASON=window expired\n";
+    }
+    if(scenario==30){
+      pendingTarget="target with spaces";
+      std::strcpy(attemptMarker.target,pendingTarget.c_str());
+    }
+    if(scenario==31) reason=String("window REASON=expired");
+    if(scenario==32)
+      disk.bytes="TIME=8 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window REASON=expired\n";
+    // First-ever quarantine record: no file exists before append.
+    if(scenario==33){ disk.logExists=false; disk.bytes.clear(); }
+    // First-ever append open failure must not create a log or clear pending.
+    if(scenario==34){ disk.logExists=false; disk.bytes.clear(); disk.appendOpenFail=true; }
+    // Scenario 35 corrupts a pre-existing record but leaves the appended suffix exact.
+    if(scenario==35) disk.mutatePrefixAfterClose=true;
     const std::string bytesBefore=disk.bytes;
-    bool expectClear=(scenario==0 || scenario==12 || scenario==14);
+    bool expectClear=(scenario==0 || scenario==12 || scenario==14 || scenario==31 || scenario==33);
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario>=19;
+                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario==34 || (scenario>=19 && scenario!=31 && scenario!=33);
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -190,7 +235,13 @@ int main(){
        (scenario==16 && disk.bytes!=bytesBefore) ||
        (scenario==17 && disk.bytes!=bytesBefore) ||
        (scenario==18 && disk.bytes!=bytesBefore) ||
-       (scenario>=19 && disk.bytes!=bytesBefore) ||
+       (scenario>=19 && scenario!=31 && scenario!=33 && scenario!=35 && disk.bytes!=bytesBefore) ||
+       (scenario==31 && (disk.bytes.find(std::string("window")+char(92)+"x20REASON=expired")==std::string::npos || disk.bytes.find("window REASON=expired")!=std::string::npos)) ||
+       (scenario==33 && (!disk.logExists || disk.bytes.empty() ||
+         disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired") == std::string::npos)) ||
+       (scenario==34 && (disk.logExists || !disk.bytes.empty())) ||
+       (scenario==35 && (disk.bytes.empty() || disk.bytes[0]!='U' ||
+         disk.bytes.find("TIME=1234 PULSES=4 NONCE=nonce00112233445 TARGET=target0011223344 REASON=window expired\n")==std::string::npos)) ||
        journalRecoveryRequired!=expectRecovery || canAttemptCoinPost()){
       std::cerr<<"SOURCE_QUARANTINE_FAIL scenario="<<scenario<<"\n";
       return 1;
@@ -212,7 +263,7 @@ int main(){
       }
     }
     if(scenario==3 || scenario==4 || (scenario>=5 && scenario<=10) ||
-       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario>=19){
+       scenario==11 || scenario==16 || scenario==17 || scenario==18 || scenario==34 || (scenario>=19 && scenario!=31 && scenario!=33)){
       // Simulate volatile latch loss on reboot while retaining LittleFS bytes.
       const std::string rebootBytes=disk.bytes;
       const int clearsBeforeReboot=clearCount;
@@ -220,7 +271,7 @@ int main(){
       disk.hasWritten=false;
       bool rebootOk=quarantinePending(reason);
       bool persistentHardStop=(scenario==3 || scenario==4 || scenario==5 ||
-                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || scenario>=19);
+                                scenario==7 || scenario==8 || scenario==10 || scenario==16 || scenario==17 || scenario==18 || scenario==34 || (scenario>=19 && scenario!=31 && scenario!=33));
       if(persistentHardStop){
         if(rebootOk || !journalRecoveryRequired || disk.bytes!=rebootBytes ||
            clearCount!=clearsBeforeReboot || pendingPulses!=4 || canAttemptCoinPost()){
@@ -236,7 +287,7 @@ int main(){
       }
     }
   }
-  std::cout<<"SOURCE_QUARANTINE_PASS 23/23 scenarios (physical power cut NOT tested)\n";
+  std::cout<<"SOURCE_QUARANTINE_PASS 36/36 scenarios (physical power cut NOT tested)\n";
 }
 '''
 
@@ -255,12 +306,79 @@ def extract(src: str, signature: str) -> str:
                 return src[pos:i + 1]
     raise RuntimeError(f"Unbalanced source: {signature}")
 
+
+# These helpers define the pending-event/quarantine safety boundary. They are
+# intentionally byte-identical across ESP32 and ESP8266 so board drift cannot
+# silently weaken one controller while the other remains protected.
+PARITY_SIGNATURES = (
+    "bool readPendingFile(",
+    "bool markPendingPostAttempt(",
+    "bool pendingAttemptMarkerMatches()",
+    "bool clearPending(",
+    "bool canAttemptCoinPost(){",
+    "String quarantineLogField(",
+    "bool quarantineLogTokenValid(",
+    "bool quarantineLogRecordValid(",
+    "uint32_t quarantineLogCrc32Update(",
+    "bool inspectQuarantineLog(",
+    "bool appendQuarantineRecord(",
+    "bool quarantinePending(",
+)
+
+
+def board_safety_helpers():
+    result = {}
+    for board, ino in BOARDS:
+        source = ino.read_text(encoding="utf-8")
+        result[board] = {
+            signature: extract(source, signature)
+            for signature in PARITY_SIGNATURES
+        }
+    return result
+
+
+def board_parity_mismatches(helpers):
+    return [
+        signature for signature in PARITY_SIGNATURES
+        if helpers["ESP32"][signature] != helpers["ESP8266"][signature]
+    ]
+
+
+def verify_board_safety_parity():
+    helpers = board_safety_helpers()
+    mismatches = board_parity_mismatches(helpers)
+    if mismatches:
+        raise SystemExit(
+            "PHX-HARDWARE: ESP board safety-helper drift: " + ", ".join(mismatches)
+        )
+
+    # Failure injection: a fail-open append result on one board must be
+    # detected before that board can diverge from the reviewed peer.
+    mutated = {board: dict(functions) for board, functions in helpers.items()}
+    signature = "bool appendQuarantineRecord("
+    original = mutated["ESP8266"][signature]
+    if "return verified;" not in original:
+        raise SystemExit("PHX-HARDWARE: parity mutation anchor missing")
+    mutated["ESP8266"][signature] = original.replace(
+        "return verified;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated):
+        raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
+
+    print("BOARD_QUARANTINE_PARITY_PASS 12/12 helpers byte-identical")
+    print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
+
+
+verify_board_safety_parity()
 failed_boards = []
 for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
     actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
     actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
+    actual = actual.replace("@@SOURCE_TOKEN_VALID@@", extract(source, "bool quarantineLogTokenValid("))
+    actual = actual.replace("@@SOURCE_RECORD_VALID@@", extract(source, "bool quarantineLogRecordValid("))
+    actual = actual.replace("@@SOURCE_CRC32_UPDATE@@", extract(source, "uint32_t quarantineLogCrc32Update("))
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
@@ -279,9 +397,12 @@ for board, ino in BOARDS:
             failed_boards.append(board)
         else:
             print(f"{board}: compiled exact extracted source")
+            # Append-open, short-write, readback and corruption failures are
+            # exercised in the normal source-exact scenario matrix above.
+
 if failed_boards:
     raise SystemExit("PHX-HARDWARE: quarantine regression failed on " + ", ".join(failed_boards))
-print("PHX-HARDWARE: 38/38 source-extracted host scenarios PASS; no hardware evidence")
+print("PHX-HARDWARE: 72/72 source-extracted host scenarios PASS; no hardware evidence")
 poll_lab = ROOT / "esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
 subprocess.run([sys.executable, str(poll_lab)], check=True)
 register_lab = ROOT / "esp8266/BlazePwifiVendo/register_config_failclosed_lab.py"
@@ -296,8 +417,8 @@ if attempt_marker_result.stderr:
     print(attempt_marker_result.stderr, file=sys.stderr, end="")
 if attempt_marker_result.returncode:
     raise SystemExit(attempt_marker_result.returncode)
-if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 19/19") != len(BOARDS):
+if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 28/28") != len(BOARDS):
     raise SystemExit("PHX-HARDWARE: attempt-marker per-board summary count mismatch")
-if "PHX-HARDWARE: 19/19 source-extracted cases per board (38/38 total) PASS" not in attempt_marker_result.stdout:
+if "PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS" not in attempt_marker_result.stdout:
     raise SystemExit("PHX-HARDWARE: attempt-marker aggregate summary mismatch")
 

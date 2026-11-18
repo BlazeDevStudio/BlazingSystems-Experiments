@@ -345,7 +345,7 @@ int main(){
        !relayOffObservedWhileSuspended || fakeNow!=19) return 16;
     resetState(); runDebounceMs=boundedCoinDebounceMs(1);
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn ||
-       !relayOffObservedWhileSuspended || fakeNow!=20) return 17;
+       !relayOffObservedWhileSuspended || fakeNow!=250) return 17;
     resetState(); runCoinActiveLow=false; runDebounceMs=boundedCoinDebounceMs(1);
     pulseStart=19; pulseEnd=49;
     if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
@@ -357,10 +357,10 @@ int main(){
     // the response is checked and the loop releases pollIntakeSuspended.
     resetState();
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn || ledOn) return 19;
-    pulseStart=100; pulseEnd=180;
-    fakeNow=120; // pulse is active during the simulated POST wait
+    pulseStart=300; pulseEnd=380;
+    fakeNow=320; // pulse is active after the 250 ms drain during the simulated POST wait
     if(coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
-    fakeNow=3600; // 3.5 s synchronous HTTP timeout has elapsed
+    fakeNow=3750; // 3.5 s synchronous HTTP timeout after the 250 ms drain has elapsed
     if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
        !relayOffObservedWhileSuspended) return 21;
 

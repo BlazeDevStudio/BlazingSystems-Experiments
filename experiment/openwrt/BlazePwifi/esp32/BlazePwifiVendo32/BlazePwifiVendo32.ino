@@ -199,17 +199,26 @@ bool markPendingPostAttempt(){
   record.checksum=pendingChecksum(record);
 
   const char *pendingPaths[]={"/pending.dat","/pending.new","/pending.bak"};
-  bool durablePendingMatches=false;
+  unsigned candidateCount=0;
+  const char *candidatePath=nullptr;
   for(size_t i=0;i<sizeof(pendingPaths)/sizeof(pendingPaths[0]);++i){
     if(LittleFS.exists(pendingPaths[i])){
-      PendingRecord durable{};
-      if(readPendingFile(pendingPaths[i],durable) &&
-         samePendingRecord(record,durable)) durablePendingMatches=true;
+      ++candidateCount;
+      candidatePath=pendingPaths[i];
     }
   }
-  if(!durablePendingMatches){
+  // Never dispatch against one matching record while another candidate could
+  // represent a different unpaid coin or an ambiguous interrupted rotation.
+  if(candidateCount!=1 || !candidatePath){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: no matching durable pending record; coin POST denied.");
+    Serial.println("CRITICAL: exactly one durable pending journal is required before coin POST; coin POST denied.");
+    return false;
+  }
+  PendingRecord durable{};
+  if(!readPendingFile(candidatePath,durable) ||
+     !samePendingRecord(record,durable)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: durable pending journal does not match the coin POST attempt; coin POST denied.");
     return false;
   }
 
@@ -308,6 +317,8 @@ void initPendingStore(){
 }
 
 
+bool pendingAttemptMarkerMatches();
+
 bool clearPending(){
   if(journalRecoveryRequired) return false;
   if(!fsReady){
@@ -315,30 +326,50 @@ bool clearPending(){
     Serial.println("CRITICAL: cannot clear pending journal while LittleFS is unavailable.");
     return false;
   }
-  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
-  unsigned candidateCount=0;
-  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
-    if(LittleFS.exists(paths[i])) ++candidateCount;
-  }
-  if(candidateCount>1){
+  if(!pendingAttemptMarkerMatches()){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: multiple pending journals at clear; preserving all evidence.");
+    Serial.println("CRITICAL: cannot clear pending journal without a matching durable attempt marker.");
     return false;
   }
-  bool removed=true;
-  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
-    if(LittleFS.exists(paths[i]) && !LittleFS.remove(paths[i])) removed=false;
-    if(LittleFS.exists(paths[i])) removed=false;
-  }
-  if(!removed){
+  PendingRecord attempt{};
+  if(!readPendingFile("/pending.attempt",attempt) ||
+     attempt.pulses!=pendingPulses ||
+     strcmp(attempt.nonce,pendingNonce.c_str())!=0 ||
+     strcmp(attempt.target,pendingTarget.c_str())!=0){
     journalRecoveryRequired=true;
-    Serial.println("CRITICAL: pending journal deletion failed; preserving RAM event and disabling relay.");
+    Serial.println("CRITICAL: attempt marker changed or no longer matches the pending event.");
+    return false;
+  }
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  unsigned candidateCount=0;
+  const char *candidatePath=nullptr;
+  for(size_t i=0;i<sizeof(paths)/sizeof(paths[0]);++i){
+    if(LittleFS.exists(paths[i])){
+      ++candidateCount;
+      candidatePath=paths[i];
+    }
+  }
+  if(candidateCount!=1 || !candidatePath){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: exactly one durable pending journal is required; preserving all evidence.");
+    return false;
+  }
+  PendingRecord durable{};
+  if(!readPendingFile(candidatePath,durable) ||
+     !samePendingRecord(attempt,durable)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending journal does not match the attempt marker; preserving all evidence.");
+    return false;
+  }
+  if(!LittleFS.remove(candidatePath) || LittleFS.exists(candidatePath)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: pending journal deletion failed; preserving attempt marker and RAM event.");
     return false;
   }
   // Remove the attempt marker LAST. A power cut after pending deletion but
   // before marker deletion leaves an orphan marker that blocks boot admission.
-  if(LittleFS.exists("/pending.attempt") &&
-     (!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt"))){
+  if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: pending event cleared but attempt marker remains; operator reconciliation required.");
     return false;
@@ -365,8 +396,15 @@ String quarantineLogField(const String &value,size_t maxLen){
     else if(c=='\r') escaped="\\r";
     else if(c=='\n') escaped="\\n";
     else if(c=='\t') escaped="\\t";
+    else if(c==' ' && i+8<=value.length() &&
+            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
+              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
+             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
+              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
+      escaped="\\x20";
     if(escaped){
-      if(out.length()+2>maxLen) break;
+      const size_t escapedLength=strlen(escaped);
+      if(out.length()+escapedLength>maxLen) break;
       out+=escaped;
     } else {
       if(out.length()+1>maxLen) break;
@@ -380,51 +418,120 @@ String quarantineLogField(const String &value,size_t maxLen){
   return out;
 }
 
-bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecorded){
-  bytes=0; alreadyRecorded=false;
+bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
+  const size_t length=value.length();
+  if(length<minLength || length>maxLength) return false;
+  for(size_t i=0;i<length;++i){
+    const unsigned char c=(unsigned char)value[i];
+    if(c<=0x20 || c==0x7f) return false;
+  }
+  return true;
+}
+
+bool quarantineLogRecordValid(const char *line,const char *identity,bool &sameIdentity){
+  sameIdentity=false;
+  if(!line) return false;
+
+  const char *cursor=line;
+  if(strncmp(cursor,"TIME=",5)!=0) return false;
+  cursor+=5;
+  const char *timeEnd=strchr(cursor,' ');
+  if(!timeEnd || timeEnd==cursor) return false;
+  const size_t timeLength=(size_t)(timeEnd-cursor);
+  if(timeLength>10 || (timeLength>1 && cursor[0]=='0')) return false;
+  unsigned long parsedTimestamp=0;
+  for(const char *digit=cursor;digit<timeEnd;++digit){
+    if(*digit<'0' || *digit>'9') return false;
+    const unsigned long value=(unsigned long)(*digit-'0');
+    if(parsedTimestamp>(0xFFFFFFFFUL-value)/10UL) return false;
+    parsedTimestamp=parsedTimestamp*10UL+value;
+  }
+  (void)parsedTimestamp;
+
+  cursor=timeEnd+1;
+  if(strncmp(cursor,"PULSES=",7)!=0) return false;
+  cursor+=7;
+  const char *pulsesEnd=strchr(cursor,' ');
+  if(!pulsesEnd || pulsesEnd==cursor) return false;
+  const size_t pulseLength=(size_t)(pulsesEnd-cursor);
+  if(pulseLength>2 || (pulseLength>1 && cursor[0]=='0')) return false;
+  unsigned int pulses=0;
+  for(const char *digit=cursor;digit<pulsesEnd;++digit){
+    if(*digit<'0' || *digit>'9') return false;
+    pulses=pulses*10U+(unsigned int)(*digit-'0');
+  }
+  if(pulses==0 || pulses>20) return false;
+
+  cursor=pulsesEnd+1;
+  if(strncmp(cursor,"NONCE=",6)!=0) return false;
+  cursor+=6;
+  const char *targetField=strstr(cursor," TARGET=");
+  if(!targetField || targetField==cursor) return false;
+  const size_t nonceLength=(size_t)(targetField-cursor);
+  if(nonceLength<8 || nonceLength>=17) return false;
+  for(const char *p=cursor;p<targetField;++p){
+    const unsigned char c=(unsigned char)*p;
+    if(c<=0x20 || c==0x7f) return false;
+  }
+
+  cursor=targetField+8;
+  const char *reasonField=strstr(cursor," REASON=");
+  if(!reasonField || reasonField==cursor) return false;
+  const size_t targetLength=(size_t)(reasonField-cursor);
+  if(targetLength<8 || targetLength>=33) return false;
+  for(const char *p=cursor;p<reasonField;++p){
+    const unsigned char c=(unsigned char)*p;
+    if(c<=0x20 || c==0x7f) return false;
+  }
+
+  cursor=reasonField+8;
+  if(*cursor=='\0' || strstr(cursor," REASON=")) return false;
+  const size_t reasonLength=strlen(cursor);
+  if(reasonLength>128) return false;
+  for(const char *p=cursor;*p;++p){
+    const unsigned char c=(unsigned char)*p;
+    if(c<0x20 || c==0x7f) return false;
+  }
+
+  if(identity){
+    const size_t identityLength=strlen(identity);
+    sameIdentity=strncmp(timeEnd+1,identity,identityLength)==0;
+  }
+  return true;
+}
+
+uint32_t quarantineLogCrc32Update(uint32_t crc,uint8_t byte){
+  crc^=(uint32_t)byte;
+  for(uint8_t bit=0;bit<8;++bit){
+    crc=(crc&1U)?((crc>>1)^0xEDB88320UL):(crc>>1);
+  }
+  return crc;
+}
+
+bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecorded,uint32_t &prefixCrc32){
+  bytes=0; alreadyRecorded=false; prefixCrc32=0;
   if(!LittleFS.exists("/quarantine.log")) return true;
   File prior=LittleFS.open("/quarantine.log","r");
   if(!prior) return false;
   bytes=prior.size();
   char line[320];
   size_t lineLength=0,readCount=0;
+  uint32_t prefixCrc=0xFFFFFFFFUL;
   bool valid=true;
   while(valid && prior.available()){
     int next=prior.read();
     if(next<0){ valid=false; break; }
     ++readCount;
+    prefixCrc=quarantineLogCrc32Update(prefixCrc,(uint8_t)next);
     if(next=='\n'){
       if(lineLength==0){ valid=false; break; }
       line[lineLength]='\0';
-      const char *payload=strchr(line,' ');
-      bool timestampValid=strncmp(line,"TIME=",5)==0 &&
-                          payload && payload>line+5;
-      if(timestampValid){
-        const size_t timestampLength=(size_t)(payload-(line+5));
-        if(timestampLength>10 || (timestampLength>1 && line[5]=='0'))
-          timestampValid=false;
+      bool sameIdentity=false;
+      if(!quarantineLogRecordValid(line,identity,sameIdentity)){
+        valid=false;
+        break;
       }
-      unsigned long parsedTimestamp=0;
-      for(const char *digit=line+5;timestampValid && digit<payload;++digit){
-        if(*digit<'0' || *digit>'9'){
-          timestampValid=false;
-          break;
-        }
-        const unsigned long value=(unsigned long)(*digit-'0');
-        if(parsedTimestamp>(0xFFFFFFFFUL-value)/10UL){
-          timestampValid=false;
-          break;
-        }
-        parsedTimestamp=parsedTimestamp*10UL+value;
-      }
-      // Only canonical uint32 millis timestamps generated by this firmware
-      // may participate in dedupe. Corrupt TIME text is not a receipt.
-      if(!timestampValid ||
-         !strstr(line," PULSES=") || !strstr(line," NONCE=") ||
-         !strstr(line," TARGET=") || !strstr(line," REASON=")){
-        valid=false; break;
-      }
-      if(payload && strncmp(payload+1,identity,strlen(identity))==0){
+      if(sameIdentity){
         // More than one complete record for one event is conflicting accounting
         // evidence. Preserve pending state until an operator reconciles the log.
         if(alreadyRecorded){ valid=false; break; }
@@ -440,11 +547,18 @@ bool inspectQuarantineLog(const char *identity,size_t &bytes,bool &alreadyRecord
   prior.close();
   // Every generated record has exactly one final newline. An unterminated tail
   // is durable evidence of a torn append and must survive reboot as a hard stop.
-  return valid && readCount==bytes && lineLength==0;
+  if(!valid || readCount!=bytes || lineLength!=0) return false;
+  prefixCrc32=~prefixCrc;
+  return true;
 }
 
 bool appendQuarantineRecord(const String &reason){
   if(!fsReady || journalRecoveryRequired || pendingPulses==0) return false;
+  if(!quarantineLogTokenValid(pendingNonce,8,16) ||
+     !quarantineLogTokenValid(pendingTarget,8,32)){
+    journalRecoveryRequired=true;
+    return false;
+  }
 
   char record[320];
   const String logNonce=quarantineLogField(pendingNonce,40);
@@ -461,10 +575,19 @@ bool appendQuarantineRecord(const String &reason){
                    "TIME=%lu %s%s\n",
                    (unsigned long)millis(),identity,logReason.c_str());
   if(len<=0 || (size_t)len>=sizeof(record)) return false;
+  record[len-1]='\0';
+  bool generatedSameIdentity=false;
+  const bool generatedValid=quarantineLogRecordValid(record,identity,generatedSameIdentity);
+  record[len-1]='\n';
+  if(!generatedValid || !generatedSameIdentity){
+    journalRecoveryRequired=true;
+    return false;
+  }
 
   size_t before=0;
   bool alreadyRecorded=false;
-  if(!inspectQuarantineLog(identity,before,alreadyRecorded)){
+  uint32_t prefixCrcBefore=0;
+  if(!inspectQuarantineLog(identity,before,alreadyRecorded,prefixCrcBefore)){
     journalRecoveryRequired=true;
     return false;
   }
@@ -491,8 +614,16 @@ bool appendQuarantineRecord(const String &reason){
     return false;
   }
   size_t after=verify.size();
-  bool verified=after==before+(size_t)len &&
-                verify.seek(before,SeekSet);
+  bool verified=after==before+(size_t)len && verify.seek(0,SeekSet);
+  uint32_t prefixCrcAfter=0xFFFFFFFFUL;
+  for(size_t i=0;verified && i<before;++i){
+    int byte=verify.read();
+    if(byte<0){ verified=false; break; }
+    prefixCrcAfter=quarantineLogCrc32Update(prefixCrcAfter,(uint8_t)byte);
+  }
+  // CRC32 detects accidental same-size corruption of old records; it is not authentication.
+  if(verified && ~prefixCrcAfter!=prefixCrcBefore) verified=false;
+  if(verified && !verify.seek(before,SeekSet)) verified=false;
   for(size_t i=0;verified && i<(size_t)len;++i){
     if(verify.read()!=(unsigned char)record[i]) verified=false;
   }
@@ -678,7 +809,11 @@ void applyOutputs(){
 // A pulse at any point cancels polling and returns to normal journal handling.
 bool coinLineQuietAfterInhibit(){
   const uint32_t started=millis();
-  while(millis()-started<runDebounceMs){
+  // Drain the supported 30–100 ms coin pulse train before blocking HTTP.
+  // Preserve a larger configured debounce interval; never shorten it.
+  const uint32_t pulseTrainQuietMs=250UL;
+  const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
+  while(millis()-started<quietMs){
     if(!coinLineIdle()) return false;
     delay(1);
   }
@@ -696,6 +831,25 @@ bool beginPollWindow(){
   applyOutputs();
   return false;
 }
+ 
+void sampleCoinPulseEdge(bool active){
+  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
+     !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
+    if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
+    if(pendingTarget==activeTarget && pendingPulses<20){
+      pendingPulses++;
+      lastEdge=millis();
+      if(!savePending()){
+        fsReady=false;
+        pendingReady=true;
+        applyOutputs();
+        Serial.println("CRITICAL: pending journal write failed; relay disabled.");
+      }
+    }
+  }
+  lastCoin=active;
+}
+
 
 
 // Strict, bounded root-object reader for a single root-level "ok":true status.
@@ -1040,14 +1194,7 @@ void loop(){
 
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
-  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() && !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
-    if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
-    if(pendingTarget==activeTarget && pendingPulses<20){
-      pendingPulses++; lastEdge=millis();
-      if(!savePending()){ fsReady=false; pendingReady=true; Serial.println("CRITICAL: pending journal write failed; relay disabled."); }
-    }
-  }
-  lastCoin=active;
+  sampleCoinPulseEdge(active);
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
   if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
     if(!markPendingPostAttempt()){
