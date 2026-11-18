@@ -962,3 +962,16 @@ CORE remains exclusively under its separate continuation. No CORE branch, PR or 
 - **Registry custodian / repository administrator:** restore private v11/newer-correction access; configure and independently verify required branch protections and checks.
 
 All owners retain their existing source branches and review authority. These are scoped follow-up requests, not reassignment of implementation ownership.
+
+
+## UTC21 #327 drain-abort false-return follow-up — no ownership transfer
+
+- **PHX-MASTER:** architecture §6.32, exact-head CI matrix and provenance audit only. No Hardware, QA, Release or CORE source edits.
+- **PHX-HARDWARE — PR #327 / task #177:** reconcile the ISR sequence after both true and false returns from `beginPollWindow()`. Keep the inhibit asserted until the edge is latched/persisted; do not let a pulse that ends during the drain abort disappear before the next ordinary sample. Fix the failing source-extracted case on the existing Hardware branch.
+- **PHX-QA:** independently review the corrected exact SHA on both boards; retain negative/default-deny poll assertions. Do not add `response_sig` or `|poll|` strings to firmware to satisfy the inherited fixture.
+- **PHX-RELEASE:** pin ESP8266 core 3.1.2 or assert the resolved core version because the EEPROM whole-image failure analysis depends on its `EEPROM.begin()` behavior; continue sandbox runner remediation on the Release-owned branch.
+- **COE integration owner:** keep #26 draft; reconcile exact source/destination firmware blobs, missing board labs, test identity and license/NOTICE scope before any import.
+- **PHX-CORE:** retain its separate financial-ledger/reconciliation ownership. The accessible automation inventory surfaced a PHX-HARDWARE hourly task but not the exact title “Blaze Production Continuation”; Master made no CORE changes and started no competing CORE work.
+- **Registry custodian / repository administrator:** restore authorized private v11/newer-correction access and independently verify branch protection/required checks.
+
+The current #327 focused runs fail at the new ESP8266 false-return case; the Full run fails at the QA-owned positive poll-signature fixture. No role is marked verified from the failed or skipped jobs.
