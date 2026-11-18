@@ -27,8 +27,8 @@ assert "POLL_WINDOW_MUTATION_REJECTED clock-rewind" in lab, "missing deliberate 
 ordered = [
     scenario.index("const uint32_t pollStartedAt=fakeNow;"),
     scenario.index("pulseStart=300; pulseEnd=380;"),
-    scenario.index("fakeNow=pollStartedAt+70;"),
-    scenario.index("fakeNow=pollStartedAt+3500;"),
+    scenario.index("setFakeNow(pollStartedAt+70);"),
+    scenario.index("setFakeNow(pollStartedAt+3500);"),
 ]
 assert ordered == sorted(ordered), "poll-window fixture events are not monotonic"
 assert "fakeNow=120" not in scenario, "fixture rewinds time before simulating the HTTP-time pulse"
