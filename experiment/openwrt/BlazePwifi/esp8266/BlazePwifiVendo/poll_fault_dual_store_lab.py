@@ -248,6 +248,9 @@ def harness(board: str, source: str) -> str:
         helper_names.append("initPollFaultBackupStore")
     else:
         helper_names.insert(3,"readPollFaultBackupFlash")
+        helper_names.insert(3,"readFullEepromImage")
+        helper_names.insert(4,"restoreEepromRamImage")
+        helper_names.insert(5,"refreshVerifiedEepromImage")
     helpers = "\n".join(extract_function(source, name) for name in helper_names)
     consts = constants(source, (
         "POLL_FAULT_RECORD_MAGIC",
@@ -379,7 +382,7 @@ struct FakeEEPROM {
     (void)fakeFlashRead((uint32_t)(EEPROM_start-0x40200000UL),buffer.data(),n);
     return true;
   }
-  void end(){ size=0; buffer.clear(); }
+  bool end(){ size=0; buffer.clear(); return true; }
   bool commit(){
     ++commitCalls;
     if(failCommit) return false;
@@ -391,6 +394,8 @@ struct FakeEEPROM {
     return true;
   }
   size_t length() const { return size; }
+  uint8_t* getDataPtr(){ return buffer.empty()?nullptr:buffer.data(); }
+  const uint8_t* getConstDataPtr() const { return buffer.empty()?nullptr:buffer.data(); }
   template<class T> void put(size_t offset,const T& value) {
     memcpy(buffer.data()+offset,&value,sizeof(T));
   }
@@ -416,6 +421,7 @@ struct EspFlashStub {
 } ESP;
 FakeEEPROM EEPROM;
 bool pollFaultBackupReady=true;
+bool configImageReadVerified=true; // This lab starts after loadCfg() has verified the full image.
 bool pollFaultBackupWriteFailed=false;
 unsigned backupCommitCalls(){ return EEPROM.commitCalls; }
 void resetStorage(){
@@ -423,11 +429,13 @@ void resetStorage(){
   rawFlashReadFailure=false; lastRawFlashReadAddress=UINT32_MAX;
   pollFaultBackupWriteFailed=false;
   pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  configImageReadVerified=true;
 }
 void rebootStorage(){
   EEPROM.end();
   pollFaultBackupWriteFailed=false;
   pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  configImageReadVerified=true;
 }
 void corruptStorage(){
   if(FakeEEPROM::flash.size()>POLL_FAULT_EEPROM_OFFSET)

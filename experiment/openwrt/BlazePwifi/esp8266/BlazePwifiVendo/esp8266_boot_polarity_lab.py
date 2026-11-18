@@ -120,8 +120,9 @@ def main() -> None:
                        for name in ("ConfigV1", "ConfigV2", "Config"))
     function_names = (
         "fixedStringTerminated", "configChecksum",
-        "configPolarityFieldsValid", "configRecordErased", "makeSetupPassword",
-        "defaults", "saveCfg", "latchConfigPersistenceFailure",
+        "configPolarityFieldsValid", "configRecordErased",
+        "readFullEepromImage", "restoreEepromRamImage", "refreshVerifiedEepromImage",
+        "makeSetupPassword", "defaults", "saveCfg", "latchConfigPersistenceFailure",
         "loadCfg", "writeLogical", "configureRuntimePins",
         "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost"
     )
@@ -131,11 +132,18 @@ def main() -> None:
         require(len(extracted) == 1, "expected one extracted function: " + name)
         function = extracted[0]
         if name == "saveCfg":
-            anchor = "if(!EEPROM.commit()) return false;"
+            anchor = """if(!EEPROM.commit()){
+    pollFaultBackupReady=false;
+    return false;
+  }"""
             require(anchor in function, "saveCfg commit-failure trace anchor is missing")
             function = function.replace(
                 anchor,
-                "if(!EEPROM.commit()){ ++saveCfgCommitFailureReturns; return false; }",
+                """if(!EEPROM.commit()){
+    ++saveCfgCommitFailureReturns;
+    pollFaultBackupReady=false;
+    return false;
+  }""",
                 1,
             )
         elif name == "latchConfigPersistenceFailure":
@@ -202,6 +210,7 @@ static const uint32_t MAGIC_V2=0x42505732;
 static const uint32_t MAGIC=0x42505733;
 static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
+static const uint32_t EEPROM_start=0x40210000UL;
 
 struct String {
   std::string value;
@@ -210,7 +219,13 @@ struct String {
   String &operator=(const char *s) { value=s ? s : ""; return *this; }
   size_t length() const { return value.size(); }
 };
-struct EspStub { uint32_t random(){ return 0x12345678u; } } ESP;
+bool fakeFlashRead(uint32_t address,uint8_t *data,size_t length);
+struct EspStub {
+  uint32_t random(){ return 0x12345678u; }
+  bool flashRead(uint32_t address,uint8_t *data,size_t length){
+    return fakeFlashRead(address,data,length);
+  }
+} ESP;
 struct SerialStub { void println(const char*){} } Serial;
 
 size_t strlcpy(char *dst,const char *src,size_t cap){
@@ -247,6 +262,8 @@ struct FakeEEPROM {
     return ok;
   }
   size_t length() const { return size; }
+  uint8_t* getDataPtr(){ return buffer.empty()?nullptr:buffer.data(); }
+  const uint8_t* getConstDataPtr() const { return buffer.empty()?nullptr:buffer.data(); }
   template<class T> void get(size_t offset,T &value){
     ++getCalls;
     if(failRead || offset+sizeof(T)>buffer.size()){
@@ -261,11 +278,21 @@ struct FakeEEPROM {
     std::memcpy(buffer.data()+offset,&value,sizeof(T));
   }
 } EEPROM;
+bool fakeFlashRead(uint32_t address,uint8_t *data,size_t length){
+  if(EEPROM.failRead) return false;
+  const uint32_t base=(uint32_t)EEPROM_start-0x40200000UL;
+  if(address<base) return false;
+  const size_t offset=(size_t)(address-base);
+  if(offset+length>EEPROM.flash.size()) return false;
+  std::memcpy(data,EEPROM.flash.data()+offset,length);
+  return true;
+}
 int saveCfgCommitFailureReturns=0;
 int configFailureLatchCalls=0;
 
 Config cfg{};
 bool pollFaultBackupReady=false;
+bool configImageReadVerified=false;
 bool outputPolarityKnown=false;
 bool pinConfigSafe=true;
 bool journalRecoveryRequired=false;
@@ -329,6 +356,7 @@ void resetState(){
   configFailureLatchCalls=0;
   cfg=Config{};
   pollFaultBackupReady=false;
+  configImageReadVerified=false;
   outputPolarityKnown=false;
   pinConfigSafe=true;
   journalRecoveryRequired=false;
