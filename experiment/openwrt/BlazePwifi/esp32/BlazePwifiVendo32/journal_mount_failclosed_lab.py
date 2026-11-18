@@ -58,6 +58,7 @@ int main(){
     LittleFS=FakeLittleFS{};
     LittleFS.faultMarkerExists=(scenario==7);
     fsReady=false;pendingReady=false;journalRecoveryRequired=false;
+    activeTarget="target-01";
     insertMode=true;controllerEnabled=true;coinEnabled=true;
     relayEnabled=true;ledEnabled=true;
     relayOn=false;ledOn=false;loadCalls=0;
