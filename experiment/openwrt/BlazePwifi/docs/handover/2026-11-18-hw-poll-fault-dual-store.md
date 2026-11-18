@@ -236,3 +236,14 @@ The delayed exact-head Actions results are now available:
 **Classification at exact source/test SHA c13dfb8d:** new ambiguous-commit reboot scenario CI VERIFIED in host fixtures for ESP32 and ESP8266; focused source-extracted suites CI VERIFIED; relay source lab CI VERIFIED; ESP8266 target build CI VERIFIED; ESP32 target build NOT TESTED at this SHA; full matrix NOT VERIFIED; physical acceptance NOT TESTED; production NO-go.
 
 This test models an ambiguous API completion outcome. It does not prove flash erase/program atomicity, brown-out behavior, real power-cut recovery, or independent witness durability. The same-chip NVS/EEPROM fallback remains candidate-only. QA, CORE and Master review remain required; the stale positive poll-signature assertion must not be “fixed” by enabling unauthenticated admission.
+
+
+## UTC07 Master decision reconciliation — poll and coin disposition remain hard-deny
+
+Master's latest coordination commit [9fb0d615](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9fb0d615c58731e488ea8f876e96d3e81425efb3) and audit [HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/9fb0d615c58731e488ea8f876e96d3e81425efb3/coordination/phoenix/HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md) were re-read after publication.
+
+**Binding decision:** `acceptPollResponse()` and `coinPostDispositionVerified()` remain hard false on both boards. No unsigned poll or response may enable insertion, retain a target, clear pending evidence or authorize coin disposition. The current main CGI poll producer does not emit `response_sig`; the legacy QA fixture's positive `response_sig` / `|poll|` string-presence assertions are stale and must be replaced by negative behavior tests by PHX-QA. No synthetic signature string, positive admission or firmware relaxation is authorized.
+
+This PR's UTC07 source/test change is limited to ambiguous NVS/EEPROM commit-result reboot coverage. It does not touch `acceptPollResponse()`, `coinPostDispositionVerified()`, the poll producer, QA-owned files, CORE schemas or Release workflows. The #323 child remains a draft-only candidate of #322; Master retains the review lineage #314 → #315 → #317 → #320 → #322, with #323 requiring explicit stack/QA review and no integration or migration authority.
+
+No change to production status: focused host fixtures CI VERIFIED at source/test SHA `c13dfb8d...`; Full validation remains blocked by the stale QA fixture; physical flash, electrical pulse, 150 power cuts, 30-device/24-hour soak, independent witness and production readiness remain NOT TESTED / BLOCKED.
