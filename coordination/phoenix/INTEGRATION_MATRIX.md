@@ -785,7 +785,7 @@ The current #35 packager still emits invalid placeholder ULA fd00:db8:blaze::/48
 |---|---|---|
 | Hardware #314 → #315 → #317 → #320 → #322 | Linear exact ancestry; #322 head `50d93e0d...` has source/test SHA `7ba56c1b...` and exact base #320 `b2b41a3d...` | Candidate lineage for review only; no merge/migration authority |
 | Hardware #322 output ordering | Current-head output run 44232877611 SUCCESS; logs report active-high/active-low `OUTPUT_SEQUENCE_PASS` on ESP8266 and ESP32; quarantine/readback 44232877649 SUCCESS | SIMULATED / CI VERIFIED only; GPIO/relay transient NOT TESTED |
-| Hardware #322 Full | 44232877624 validation FAILED at QA-owned `Missing poll signature check`; 13 target jobs SUCCESS, Android IN_PROGRESS at last read; downstream simulations skipped | Not a Full CI pass |
+| Hardware #322 Full | 44232877624 validation FAILED at QA-owned `Missing poll signature check`; 14/14 target/platform jobs completed SUCCESS; 12 downstream simulation/update/publish/signing jobs SKIPPED after the validation failure | Not a Full CI pass |
 | Hardware #320 poll edge | Focused 44225475672 PASS is predecessor SHA `b6e9cfa...`; current-head focused quarantine/relay 44225714826/44225714732 PASS; Full 44225708501 validation FAIL, 14 target builds PASS, simulations/release skipped | Poll-edge current-head evidence still incomplete; marker-open failure has no reboot proof |
 | Hardware #283 | Current head 830c355; Full 44219099256 and append/readback 44219099309 PASS | Separate main-based candidate; QA test ownership review required |
 | Hardware #318 | DIVERGED from #317 51 ahead / 71 behind; no current-head CI | Keep separate |

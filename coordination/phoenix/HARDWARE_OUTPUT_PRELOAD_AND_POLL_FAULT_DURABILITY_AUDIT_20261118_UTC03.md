@@ -33,7 +33,7 @@ This prevents an active-low relay from seeing the default LOW output latch durin
 **Exact-head CI:**
 - [44232877611 — Relay Output Polarity LAB](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877611): SUCCESS. Job log reports `OUTPUT_SEQUENCE_PASS` for ESP8266 and ESP32; active-high/active-low ordering and the missing-preload mutation are covered.
 - [44232877649 — Quarantine/readback](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877649): SUCCESS.
-- [44232877624 — Full build](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624): validation FAILED at QA-owned `Missing poll signature check`. At last read, 13 target/platform jobs had completed successfully and Android remained in progress; downstream simulations/update/publish jobs were skipped. This is not a Full CI pass.
+- [44232877624 — Full build](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624): validation FAILED at QA-owned `Missing poll signature check`. At last read, 14/14 target/platform jobs completed SUCCESS; 12 downstream simulation/update/publish/signing jobs SKIPPED after the validation failure. This is not a Full CI pass.
 
 The test-first RED was [44226524555](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44226524555). The first #322 harness attempt [44232408796](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232408796) failed because Arduino interrupt stubs were missing; the test harness was corrected before the green exact-head focused run. Host call-order simulation is not GPIO voltage or relay acceptance.
 
