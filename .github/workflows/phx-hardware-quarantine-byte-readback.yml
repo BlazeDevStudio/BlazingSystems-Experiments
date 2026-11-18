@@ -1,5 +1,12 @@
 name: PHX-HARDWARE Quarantine Byte Readback LAB
 on:
+  push:
+    branches:
+      - "phoenix/hardware-prepoll-edge-abort-20261119"
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
+      - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
