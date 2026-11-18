@@ -653,3 +653,18 @@ Master-only exact-head refresh on `phoenix/master-coordination`. Current pre-upd
 **Governance:** cleanup #266 remains OPEN with stale historical PR pins. Branch objects report protected=false for Experiments main/development/Master and COE main; rulesets arrays are empty. Private Drive v11/newer corrections and AGENTS-linked cloud policy/storage handover remain inaccessible; no older registry substitute or private data publication. CORE remained untouched.
 
 **Verification:** 14/14 bounded authoring-time consistency assertions passed; these are not the full Master Python suite. Master suite NOT RUN; Master CI no runs returned. Physical hardware, power-cut and soak tests NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## UTC21 Master audit — 2026-11-18
+
+**New P0 review item:** Hardware #327's marker-only raw flash read is source-consistent with ESP8266 core 3.1.2 and focused CI passes. However, loadCfg still relies on EEPROM.begin() length rather than a full-image read status. Core 3.1.2 logs but ignores the flashRead failure; an erased-looking RAM buffer can take the default-config path and commit the full 544-byte image before the later poll-fault marker check. This could overwrite an existing marker in a possible failure state. Hardware #177 must add a fail-first whole-image regression; QA must independently review. This is not a confirmed physical data-loss event.
+
+**Current #327 CI:** quarantine [44395507848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395507848) PASS; relay [44395508081](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395508081) PASS; Full [44395507878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395507878) FAIL at the inherited positive poll-signature fixture. All 13 firmware/platform targets and Android passed; downstream simulation/update/candidate/signing/publishing skipped. No physical acceptance.
+
+**COE #26:** current tree has 18 source board labs vs 0 destination board labs, two non-identical sketches, a generic positive-poll test, and five queued workflows / zero jobs. Source root NOTICE.md is present and destination root NOTICE is absent; this corrects the prior audit wording. License scope remains unresolved. No migration proposed.
+
+**Governance:** issue #266 remains OPEN; branch objects for Experiments main/development/Master and COE main report protected=false, and both rulesets endpoints are empty. Canonical private registry v11/newer corrections are inaccessible through the exposed connector; no Google Drive connector is available and no older snapshot was substituted. No private contents or IDs published.
+
+Master verification: 13/13 source/tree assertions PASS; bounded failure-state model 1/1 reproduces the possible marker overwrite; full Master Python suite NOT RUN; Master Actions none. These checks do not replace owner regression, independent QA or hardware acceptance.
+
+**PRODUCTION NO-GO** remains mandatory. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain outstanding.

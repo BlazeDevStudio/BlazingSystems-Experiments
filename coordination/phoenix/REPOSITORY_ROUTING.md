@@ -549,3 +549,16 @@ License-path correction: project MIT LICENSE `1ee55b94...` matches COE `Pisowifi
 
 This narrows and corrects the previous UTC17 notice wording; it does not clear the license-scope gate. Keep the destination blocked until per-file owner-approved source/test/license/import mapping and exact-head destination CI are independently reviewed. No copy, move, overwrite, rebase or deletion occurred.
 
+
+
+## UTC21 exact Hardware destination provenance refresh
+
+Source tree: Experiments Hardware candidate #327 head `c51271938c15e13998d1c99f1d311ca777bb1cc2`. Destination tree: COE integration #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- Source contains 18 Python board-lab files across ESP32/ESP8266; destination Hardware contains zero corresponding Python board labs.
+- Both firmware sketches are present but byte-different: ESP8266 source blob `4d73c5dc451c29f2ffd64a5cb2d230cc84a78ed5` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`; ESP32 source `ada9723c5f07879775284eb128a986ac865394f7` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- Destination generic test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` requires positive response_sig and poll strings; destination workflow blob `fe79adbdb3745a22c5ef6d1f0c87c868b7785793` invokes it. Current source Full validation is deny-only and fails at the inherited positive poll-signature fixture.
+- **NOTICE correction:** current source root NOTICE.md exists (blob `f6d92cd21465312be5993631fe26977219be0fb9`) and COE #26 has no corresponding root NOTICE. The earlier statement that source root NOTICE was absent is superseded. TailAdmin vendor NOTICE remains byte-identical. The source MIT LICENSE blob matches COE Pisowifi/LICENSE, but sibling-directory scope over Hardware remains unresolved.
+- COE #26 has five queued workflows and zero jobs.
+
+No destination staging file was changed. The ownership manifest remains `DRAFT_REVIEW_ONLY` and PHX-MASTER destination remains null. Do not copy, move, overwrite, rebase or propose a migration until exact per-file provenance, license/notice scope, test identity, import completeness and destination CI are reconciled by the owners.

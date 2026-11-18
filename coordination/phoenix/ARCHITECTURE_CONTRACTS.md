@@ -639,3 +639,20 @@ COE Release child PR #44 at `0ad58f0388dc8e4e9309e64098b439bf368a3558` now gener
 **Acceptance before contract completion:** define the site assignment authority; verify two appliances on one site share the same prefix, independent sites receive distinct prefixes, and reboot/upgrade/restore preserve identity. Missing, malformed, unavailable or conflicting authority must fail closed before network services consume the prefix. No global static fallback is permitted.
 
 **Owner routing:** PHX-RELEASE owns first-boot implementation; COE integration owner owns destination staging; PHX-CORE/COE owners define provisioning authority; PHX-QA independently verifies exact-source behavior; PHX-HARDWARE validates target behavior only after authorization. PHX-MASTER owns the contract and integration gate only. PR #44 remains OPEN / DRAFT; no merge or production approval. **PRODUCTION NO-GO.**
+
+
+## 6.31 ESP8266 EEPROM full-image read failure is not an erased Config state — UTC21 P0 review
+
+**Status:** P0 owner review required; source-level hazard, not confirmed field data loss.
+
+At Hardware #327 current head `c51271938c15e13998d1c99f1d311ca777bb1cc2`, ESP8266 reserves EEPROM bytes 512–543 of a 544-byte image for the poll-fault record. The new marker-only `readPollFaultBackupFlash()` is correctly status-bearing and its address calculation matches ESP8266 Arduino core 3.1.2 EEPROM sector mapping.
+
+However, `loadCfg()` still calls `EEPROM.begin(544)`, checks only `EEPROM.length()`, then reads Config from the EEPROM RAM buffer. If `configRecordErased(current)` sees an all-0xFF-looking Config prefix, it runs defaults and calls `saveCfg()`. That function writes the Config prefix and commits the full EEPROM image.
+
+ESP8266 core 3.1.2 EEPROM.cpp allocates the RAM buffer, calls `ESP.flashRead()`, logs a read failure without returning status, and later commits by erasing the sector and writing the configured buffer. A failed initial whole-image read can therefore leave an untrusted RAM image. If that image appears erased, the Config default path can commit before `initPendingStore()` performs the later marker-only raw read, potentially overwriting a pre-existing poll-fault marker in bytes 512–543.
+
+The current #327 dual-store lab models an erased-looking failed-read buffer but does not execute `loadCfg()`, `configRecordErased()` or the default `saveCfg()` path. Its marker-only read/write denial tests do not close this full-image path.
+
+**Required contract:** never treat a failed/unverified EEPROM image as erased; never commit from an unverified RAM image; preserve both Config and the poll-fault record when the initial full-image read fails. Add source-extracted transient and persistent read-failure regressions with a pre-existing marker and a cold-boot assertion. PHX-HARDWARE owns the correction on #327; PHX-QA independently reviews the exact corrected SHA. PHX-RELEASE should pin or assert ESP8266 core 3.1.2. Master does not modify firmware.
+
+References: [#327 ESP8266 source](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/c51271938c15e13998d1c99f1d311ca777bb1cc2/experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino), [core 3.1.2 EEPROM begin](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp#L46-L73), [core 3.1.2 EEPROM commit](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp#L126-L143). Physical behavior remains NOT TESTED.

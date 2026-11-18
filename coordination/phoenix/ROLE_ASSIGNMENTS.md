@@ -949,3 +949,16 @@ This snapshot supersedes the UTC18 active-PR pins for coordination only; it does
 | Registry custodian | Private Drive v11 and newer corrections | Not accessible through current connector surface; no older snapshot substituted. | Restore authorized read access without publishing private IDs/content. |
 
 CORE remains exclusively under its separate continuation. No CORE branch, PR or source file was edited; no competing CORE worker was started.
+
+
+## UTC21 owner actions — no ownership transfer
+
+- **PHX-MASTER:** coordination/phoenix only. Owns Architecture §6.31, integration provenance and this audit. No CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source edits.
+- **PHX-HARDWARE — task #177 / PR #327:** investigate the initial whole-image EEPROM.begin read-failure path. Add fail-first and fail-then-recover regressions that execute loadCfg/default/saveCfg with a pre-existing poll-fault marker; prove no commit can overwrite unverified Config/marker bytes. Preserve the current marker-only raw-read correction.
+- **PHX-QA:** independently review the exact corrected Hardware SHA; add cold-boot marker-preservation and negative/default-deny tests. Replace the inherited positive poll-signature fixture; do not weaken firmware to satisfy it.
+- **PHX-RELEASE:** pin ESP8266 core 3.1.2 or add an explicit resolved-version assertion to the build workflow. Current #327 run resolved 3.1.2, but the workflow install command is unpinned. Continue to provide a bubblewrap-capable authorized runner for COE sandbox acceptance.
+- **PHX-CORE:** retain ownership of financial reconciliation semantics and unresolved coin-ingress handling under its separate continuation. Master makes no CORE changes.
+- **COE integration owner:** keep #26 draft; map every Hardware source blob, license/NOTICE scope, board lab/test identity and exact-head CI before proposing an import. No copy/move is authorized.
+- **Registry custodian / repository administrator:** restore private v11/newer-correction access; configure and independently verify required branch protections and checks.
+
+All owners retain their existing source branches and review authority. These are scoped follow-up requests, not reassignment of implementation ownership.

@@ -1270,3 +1270,39 @@ Cleanup issue #266 remains OPEN with a 2026-10-31 source snapshot and historical
 The private Drive v11 registry and newer corrections remain unavailable: no Google Drive connector is exposed and exact-title Library search did not find v11. Older v3–v7 snapshots were not substituted. AGENTS-linked cloud policy/storage handover could not be read through the current GitHub connector path. No private data or IDs were published.
 
 **Production: NO-GO.**
+
+
+## UTC21 exact-head refresh — 2026-11-18
+
+| Repository/ref | Exact head | State / evidence |
+|---|---|---|
+| Experiments main | `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | Default branch; branch object reports protected=false |
+| Experiments development | `2fbd2475e9f54878c316fa7cea2f228386b0e859` | Current comparison/development branch; protected=false |
+| PHX-MASTER / PR #288 | `4c926ce7de5c6fdd2e59523b7bad55d004df9ea7` before UTC21 commit | OPEN / DRAFT; 87 paths, all under coordination/phoenix; no Master CI run |
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only main; protected=false |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT; 205 changed files; five workflows queued / zero jobs |
+
+### Current role PRs and exact-head CI
+
+| Role | PR/head | Latest exact-head evidence |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2...` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; CORE remains owned by its separate continuation |
+| RENTAL | Experiments #289 `68928774...` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS |
+| PISONET | Experiments #255 `d01fd164...` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE | #323 `988904e8...`, #326 `58c558fb...`, #327 `c5127193...` | #327 quarantine [44395507848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395507848) PASS; relay [44395508081](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395508081) PASS; Full [44395507878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44395507878) FAIL at inherited positive poll-signature fixture |
+| QA | #290 `5c29d159...`, #292 `75a3f66d...` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS (native COM lab not invoked); #292 no current-head run; stale base |
+| RELEASE | Experiments #291 `691ed55d...` | [44353380470](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353380470) build/handover PASS; privileged publisher skipped |
+| COE RELEASE | COE #35 `1a5be48d...`, child #44 `582fd5d5...` | #44 shared [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) PASS; case [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) PASS; mandatory sandbox [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAILS closed: bubblewrap missing after 14/14 preflight |
+| COE CORE | #45 `9d76a134...` | [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903), [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) PASS |
+
+### Current integration blockers
+
+- Hardware #327 raw marker-only read correction is focused-CI verified, but the full EEPROM image read path in loadCfg remains unverified; see Architecture §6.31 and the UTC21 audit.
+- #327 Full validation fails at the inherited positive `Missing poll signature check`; preserve deny-only firmware.
+- COE #26 source Hardware tree has 18 Python board labs; destination has zero. Both sketch blobs differ. Destination generic test still asserts positive response_sig / poll. Five workflows are queued with zero jobs.
+- Source root NOTICE.md is present at blob `f6d92cd21465312be5993631fe26977219be0fb9` and absent from COE #26. The project MIT LICENSE blob matches COE Pisowifi/LICENSE; intended scope over sibling Hardware remains unresolved. Vendor TailAdmin NOTICE is identical.
+- COE #44 site-scoped ULA authority remains pending; mandatory sandbox is infrastructure-blocked.
+- Experiments main/development/Master and COE main branch objects report protected=false; both repository rulesets lists are empty. No protection settings were changed.
+- Private Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted.
+
+**No migration is approved or proposed. Production remains NO-GO.**
