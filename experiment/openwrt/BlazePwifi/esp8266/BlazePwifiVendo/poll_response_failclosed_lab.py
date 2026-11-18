@@ -240,7 +240,15 @@ failed=[]
 for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     loop=extract(source,"loop")
-    assert loop.index('String r=post("poll")') < loop.index("acceptPollResponse(r)") < loop.index("pollIntakeSuspended=false") < loop.index("applyOutputs();lastPoll=millis()"), board+": poll release ordering changed"
+    pre_poll_guard=loop.index("if(pollEdgeAfterDrain!=pollEdgeStart)")
+    pre_poll_latch=loop.index("latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart)",pre_poll_guard)
+    pre_poll_release=loop.index("pollIntakeSuspended=false",pre_poll_latch)
+    poll_call=loop.index('String r=post("poll")')
+    accept=loop.index("acceptPollResponse(r)",poll_call)
+    post_release=loop.index("pollIntakeSuspended=false",accept)
+    outputs=loop.index("applyOutputs();",post_release)
+    last_poll=loop.index("lastPoll=millis()",outputs)
+    assert pre_poll_guard < pre_poll_latch < pre_poll_release < poll_call < accept < post_release < outputs < last_poll, board+": poll release ordering changed"
     parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue","coinPostDispositionVerified"))
     code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
