@@ -798,3 +798,18 @@ The current #35 packager still emits invalid placeholder ULA fd00:db8:blaze::/48
 **Release gap:** #35's current packager still emits `fd00:db8:blaze::/48`; CORE/COE must define installation-scoped durable ULA provisioning before RELEASE implements it. Mandatory sandbox remains blocked by host namespace policy; no privileged or unsandboxed fallback.
 
 No source/destination file move, copy, overwrite, merge or route change occurred.
+
+
+## 2026-11-18 UTC04 — COE INTERCON candidate matrix and integration hold
+
+| COE PR | Exact head | Base | Candidate | Exact CI disposition | Acceptance |
+|---|---|---|---|---|---|
+| #36 | `b4d7434764aab72673de1f496ed9e442f031ddff` | #26 `b382d233...` | Legacy Labs-source intake + V1.5-derived staging | #44226768392 Stage-1 compile, #44226768488 shared, #44226768389 case: SUCCESS | License UNKNOWN; no hardware |
+| #37 | `1e9b0269e3ed2138813fcd0c838b0034a08dfd90` | old #36 snapshot `f58e6951...` | V1.6 AP+STA/discovery | #44226761277 firmware, #44226761298 shared, #44226761300 case: SUCCESS | Current #36 compare diverged 7 ahead / 11 behind; no hardware |
+| #38 | `8dc5cc650b6c50e410f1d95c0ca18073122328da` | #36 `b4d74347...` | V1.7 authenticated peer transport | #44229469988 Stage-2, #44229470016 shared, #44229470030 case: SUCCESS | No live credit authority |
+| #39 | `33e87fbd7f287955d85509cbb05ff5ca20a26a4b` | #38 `8dc5cc65...` | Stage-3 64-byte journal | #44234479271: host journal test + NodeMCU compile SUCCESS | Alternative A; no hardware |
+| #40 | `85f38c6e2ba879fca9f26f708c1cbeb1736dd01c` | #38 `8dc5cc65...` | Stage-3 76-byte journal | #44235077999: 76-write fault test + NodeMCU compile SUCCESS | Alternative B; no hardware |
+| #42 | `a35672fb60228fb8f84801405d032293f0266023` | #38 `8dc5cc65...` | Stage-3 92-byte journal | #44235625165: image fault test + NodeMCU compile SUCCESS | Alternative C; no hardware |
+| #41 | `021e2474c5bc8df37ab016a586db516fb4f2445f` | #39 `33e87fbd...` | Stage-4 shadow-credit test | #44235451605: signed two-node host simulation + NodeMCU compile SUCCESS | Depends on #39; not portable to #40/#42 without reconciliation |
+
+All PRs remain OPEN/DRAFT/UNMERGED. #39/#40/#42 diverge from one another; #41 is specifically stacked on #39. COE #26 remains at `b382d233...` with five queued workflows and zero jobs. No candidate is integrated into #26 or main. Host/compile CI is not physical flash, brownout, power-cut, radio, relay or coin acceptance. See the detailed exact-blob and job-log audit in [COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md](COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md).

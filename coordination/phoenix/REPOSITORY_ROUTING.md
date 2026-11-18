@@ -373,3 +373,10 @@ The current Hardware review lineage is #314 → #315 → #317 → #320 → #322.
 COE #26 remains the destination integration candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`, but its five workflows are queued with zero jobs. COE #27 remains a separate main-based candidate and is not integrated. COE RELEASE #35 is a child of #31, but the mandatory sandbox remains host-blocked and the current packager ULA placeholder remains invalid.
 
 `OWNERSHIP_ROUTES.json` is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: `DRAFT_REVIEW_ONLY`, destination PR #26, PHX-MASTER target `null`. Do not alter route destinations, copy files, or promote staging until exact source/destination blobs, modes, license/NOTICE applicability, import completeness, test identities and exact-head CI are independently reconciled. No migration, merge, copy, overwrite or delete occurred.
+
+
+## 2026-11-18 UTC04 — COE INTERCON source provenance and routing hold
+
+COE #36's legacy source is a selective import from Labs `embedded/blaze-pisonet-universal/`: the original .ino blob and COE legacy copy are identical (`3fb15ecb9272b65500260bc7c92f05590163fa6d`). The Labs folder also contains README.md and browser-only preview.html; COE adapts the README and omits the non-firmware preview. No explicit license grant was found in the Labs root/source or COE root; NOTICE.md is an engineering handling notice, not a license. Do not copy this source farther into #26/main until rights are confirmed.
+
+The new COE path `Hardware/esp8266/BlazePisonetUniversal/` is absent from the current Phoenix ownership manifest. It is not the Windows `Pisonet/SoftTimer/` route and not the BlazePwifi `Hardware/esp8266/` route. Keep #36–#42 as separate review candidates, with #39/#40/#42 unselected and #41 tied to #39. The manifest remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null; no copy/move is authorized. See [COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md](COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md).

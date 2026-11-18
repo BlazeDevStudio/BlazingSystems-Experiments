@@ -658,3 +658,8 @@ This snapshot supersedes older pins only for the exact refs below. It does not t
 **COE RELEASE:** #31 current head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; shared 44222517238 and case 44222517258 SUCCESS, mandatory sandbox 44222517263 FAILED at unprivileged bubblewrap UID-map setup after 8/8 host-preflight tests passed; packaging regressions skipped. #35 current docs head `729c3e9c622c8f13bd949aebec750567c5382ed7`, source/test head `e5fb3be13c8ae0d82e943d6d71095c9a1db8223d`, based on current #31 and 7 ahead / 0 behind. Case 44228970740 and shared/firmware 44228970878 SUCCESS; mandatory sandbox 44228970827 FAILED at the same UID-map probe; packaging regressions skipped. Current packager blob `0bfc6404dee2f90a0c941f8ec40f3cb59c386d01` still contains invalid placeholder ULA `fd00:db8:blaze::/48`.
 
 All CI results above are scoped to their exact refs and jobs; none proves a combined COE tree, native hardware acceptance, financial authority or production readiness.
+
+
+## 2026-11-18 UTC04 — COE INTERCON ownership boundary
+
+New COE drafts #36–#42 preserve a Labs-origin ESP8266 Blaze Pisonet Universal source and develop a separate INTERCON staging tree. This tree is not currently assigned by `OWNERSHIP_ROUTES.json`: PHX-PISONET remains the Windows SoftTimer source owner; PHX-HARDWARE's mapped source is BlazePwifi ESP32/ESP8266; PHX-MASTER owns coordination only. Do not infer ownership from the COE destination folder or PR title, and do not take over the new source branches. The COE INTERCON maintainer must nominate an accountable owner and coordinate with PHX-HARDWARE/PHX-QA before any shared contract or integration change. The routing manifest remains unchanged and review-only.

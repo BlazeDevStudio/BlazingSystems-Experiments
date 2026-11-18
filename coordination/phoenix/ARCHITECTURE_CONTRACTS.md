@@ -412,3 +412,8 @@ Required before any durability claim:
 - Keep poll admission, coin POST disposition, automatic replay and relay output fail-closed until the combined exact-head behavior is verified.
 
 Bounded Master source assertions on the exact #320/#322 files passed 15/15; these were static source checks, not firmware runtime tests. The #320 focused poll-edge workflow [44225475672](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44225475672) is attached to predecessor source/test SHA `b6e9cfa75105e6cd29c29b93266255d3110c8296`, not the final #320 head. The current #320 focused quarantine/relay runs passed, but no current-head poll-edge run was returned. This section records a test/contract gap; it does not approve a durable implementation.
+
+
+## 6.19 COE INTERCON journal formats remain unadopted — 2026-11-18 UTC04
+
+COE draft PRs #39, #40 and #42 independently implement the same Stage-3 staging path from #38 but define different on-flash formats: 64-byte (#39), 76-byte (#40) and 92-byte (#42). Their sketch, workflow and journal/test blobs differ; #41 is a Stage-4 child of #39 only. These are review candidates, **not the canonical Phoenix financial receipt/journal contract**. Do not connect any of them to BlazePwifi Vendo, the live Pisonet timer, customer balances or COE #26 until one format is selected by its owner, independently reviewed by QA, and validated on actual hardware. CRC32 detects corruption; it does not authenticate a peer or authorize money. The host fault-injection runs do not prove real LittleFS/power-cut atomicity. See [COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md](COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md). **PRODUCTION NO-GO.**
