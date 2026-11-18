@@ -5,6 +5,7 @@ This host lab models the NVS and EEPROM APIs. It does not emulate flash physics,
 power-loss timing, wear, or an independent physical witness.
 """
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import sys
@@ -13,33 +14,105 @@ ROOT = Path.cwd()
 ESP32 = ROOT / "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 ESP8266 = ROOT / "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
 
-def extract_block(source: str, marker: str) -> str:
-    start = source.index(marker)
-    brace = source.index("{", start)
+def _matching_brace(source: str, opening: int) -> int:
+    """Return the matching C/C++ closing brace, ignoring comments and literals."""
+    if opening < 0 or opening >= len(source) or source[opening] != "{":
+        raise ValueError("opening index must point to '{'")
+
     depth = 0
-    for end in range(brace, len(source)):
-        if source[end] == "{":
-            depth += 1
-        elif source[end] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:end + 1]
-    raise RuntimeError(f"unclosed block: {marker}")
+    state = "code"
+    raw_terminator = ""
+    index = opening
+
+    while index < len(source):
+        char = source[index]
+
+        if state == "code":
+            if source.startswith("//", index):
+                state = "line_comment"
+                index += 2
+                continue
+            if source.startswith("/*", index):
+                state = "block_comment"
+                index += 2
+                continue
+            if source.startswith('R"', index):
+                delimiter_start = index + 2
+                paren = source.find("(", delimiter_start)
+                if paren != -1 and paren - delimiter_start <= 16:
+                    delimiter = source[delimiter_start:paren]
+                    if not any(ch.isspace() or ch in "\\()"
+                               for ch in delimiter):
+                        raw_terminator = ")" + delimiter + '"'
+                        state = "raw_string"
+                        index = paren + 1
+                        continue
+            if char == '"':
+                state = "string"
+            elif char == "'":
+                state = "char"
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return index
+
+        elif state == "line_comment":
+            if char == "\n":
+                state = "code"
+
+        elif state == "block_comment":
+            if source.startswith("*/", index):
+                state = "code"
+                index += 2
+                continue
+
+        elif state in ("string", "char"):
+            if char == "\\":
+                index += 2
+                continue
+            if ((state == "string" and char == '"') or
+                    (state == "char" and char == "'")):
+                state = "code"
+
+        elif state == "raw_string":
+            if source.startswith(raw_terminator, index):
+                state = "code"
+                index += len(raw_terminator)
+                continue
+
+        index += 1
+
+    raise RuntimeError("unclosed C/C++ block")
+
+
+def extract_block(source: str, marker: str) -> str:
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError(f"missing block marker: {marker}")
+    brace = source.find("{", start)
+    if brace < 0:
+        raise RuntimeError(f"missing block opener: {marker}")
+    end = _matching_brace(source, brace)
+    return source[start:end + 1]
+
 
 def extract_function(source: str, name: str) -> str:
-    marker = name + "("
-    index = source.index(marker)
-    start = source.rfind("\n", 0, index) + 1
-    brace = source.index("{", index)
-    depth = 0
-    for end in range(brace, len(source)):
-        if source[end] == "{":
-            depth += 1
-        elif source[end] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:end + 1]
-    raise RuntimeError(f"unclosed function: {name}")
+    # Match a definition, not a call, comment, or forward declaration.
+    # The signature set used by this lab has simple, single-line parameters.
+    signature = re.compile(
+        rf"(?m)^[ \t]*(?:(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)\s+)*"
+        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
+        rf"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
+    )
+    match = signature.search(source)
+    if not match:
+        raise RuntimeError(f"missing function definition: {name}")
+    opening = match.end() - 1
+    end = _matching_brace(source, opening)
+    return source[match.start():end + 1]
+
 
 def constants(source: str, names):
     selected = []
@@ -47,6 +120,41 @@ def constants(source: str, names):
         if line.lstrip().startswith("static const ") and any(name in line for name in names):
             selected.append(line)
     return "\n".join(selected)
+
+def test_extractors():
+    sample = r'''
+// bool selected(int value) { this is only a comment }
+void caller() { selected(1); }
+struct Record {
+  const char *text = "}";
+  char brace = '{';
+  // } { inside a line comment
+  /* { } inside a block comment */
+  const char *raw = R"tag({ raw } )tag";
+  int nested[2] = {1, 2};
+};
+bool selected(int value) {
+  const char *text = "}";
+  if (value) { return true; }
+  return false;
+}
+'''
+    record = extract_block(sample, "struct Record")
+    function = extract_function(sample, "selected")
+    if "int nested[2] = {1, 2};" not in record:
+        raise AssertionError("struct extractor stopped inside a literal/comment")
+    if not function.startswith("bool selected") or "if (value) { return true; }" not in function:
+        raise AssertionError("function extractor did not select the definition")
+    if not function.endswith("}"):
+        raise AssertionError("function extractor returned an incomplete body")
+
+    try:
+        extract_block('struct Broken { const char *value = "}" ;', "struct Broken")
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("unterminated block must fail closed")
+
 
 def harness(board: str, source: str) -> str:
     record = extract_block(source, "struct PollFaultRecord") + ";"
@@ -394,5 +502,7 @@ def run(board: str, path: Path):
         print(result.stdout, end="")
 
 if __name__ == "__main__":
+    test_extractors()
+    print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
     run("ESP8266", ESP8266)
