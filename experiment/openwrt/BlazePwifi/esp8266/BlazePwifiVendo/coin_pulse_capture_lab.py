@@ -9,6 +9,7 @@ Host C++ with fake GPIO/time/storage only; no physical acceptance is claimed.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -264,3 +265,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=START", flush=True)
+    poll_loop_lab = Path(__file__).with_name("poll_loop_blocking_inhibit_lab.py")
+    if not poll_loop_lab.is_file():
+        raise RuntimeError(f"missing companion lab: {poll_loop_lab}")
+    subprocess.run([sys.executable, str(poll_loop_lab)], check=True)
+    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS", flush=True)
