@@ -364,8 +364,9 @@ bool validPollFaultRecord(const PollFaultRecord &record){
 bool pollFaultBackupPresentOrCorrupt(){
   // Any non-empty record is a permanent deny marker; malformed data also denies.
   if(!pollFaultBackupReady) return true;
+  if(!faultPrefs.isKey("poll_fault")) return false;
   const size_t length=faultPrefs.getBytesLength("poll_fault");
-  if(length==0) return false;
+  if(length==0) return true;
   if(length!=sizeof(PollFaultRecord)) return true;
   PollFaultRecord stored{};
   if(faultPrefs.getBytes("poll_fault",&stored,sizeof(stored))!=sizeof(stored)) return true;

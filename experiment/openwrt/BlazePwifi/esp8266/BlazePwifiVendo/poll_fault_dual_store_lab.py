@@ -69,6 +69,7 @@ def harness(board: str, source: str) -> str:
 struct Preferences {
   static std::vector<uint8_t> durable;
   bool failPut=false, failRead=false;
+  bool isKey(const char*) const { return !durable.empty(); }
   size_t getBytesLength(const char*) const { return durable.size(); }
   size_t putBytes(const char*, const void* src, size_t n) {
     if(failPut) return 0;

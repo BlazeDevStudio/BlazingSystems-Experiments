@@ -74,6 +74,7 @@ static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
 static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
+static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
 
