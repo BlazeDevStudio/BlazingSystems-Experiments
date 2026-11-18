@@ -297,6 +297,7 @@ uint16_t runDebounceMs=40;
 String activeTarget="target-01";
 bool relayOn=false, ledOn=false, relayOffObservedWhileSuspended=false;
 uint32_t fakeNow=0;
+bool timeWentBackwards=false;
 int pulseStart=-1, pulseEnd=-1;
 int digitalRead(int) {
     const bool active=pulseStart>=0 && fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
@@ -304,6 +305,10 @@ int digitalRead(int) {
     return active?1:0;
 }
 uint32_t millis(){ return fakeNow; }
+void setFakeNow(uint32_t value) {
+    if(value<fakeNow) timeWentBackwards=true;
+    fakeNow=value;
+}
 void delay(int ms){ fakeNow+=(uint32_t)ms; }
 void writeLogical(int pin,bool on,bool) {
     if(pin==runRelayPin){
@@ -320,7 +325,7 @@ void resetState(){
     relayEnabled=true; ledEnabled=true; insertMode=true; runRelayActiveHigh=true;
     runLedActiveHigh=true; runCoinActiveLow=true; runCoinPin=4; runRelayPin=26; runLedPin=2;
     runDebounceMs=40; activeTarget="target-01"; relayOn=false; ledOn=false;
-    relayOffObservedWhileSuspended=false; fakeNow=0; pulseStart=-1; pulseEnd=-1;
+    relayOffObservedWhileSuspended=false; fakeNow=0; timeWentBackwards=false; pulseStart=-1; pulseEnd=-1;
     applyOutputs();
 }
 int main(){
@@ -381,11 +386,11 @@ int main(){
     if(pollStartedAt!=250) return 26;
     pulseStart=300; pulseEnd=380;
     if(pulseStart<(int)pollStartedAt) return 24;
-    fakeNow=pollStartedAt+70; // pulse is active after the 250 ms quiet window
-    if(coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
-    fakeNow=pollStartedAt+3500; // complete synchronous HTTP timeout has elapsed
+    setFakeNow(pollStartedAt+70); // pulse is active after the 250 ms quiet window
+    if(timeWentBackwards || coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
+    setFakeNow(pollStartedAt+3500); // complete synchronous HTTP timeout has elapsed
     if(fakeNow-pollStartedAt!=3500) return 27;
-    if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
+    if(timeWentBackwards || !coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
        !relayOffObservedWhileSuspended) return 21;
 
     std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 13/13; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
@@ -465,4 +470,30 @@ for board, path in BOARDS.items():
                 f"exit={mutated.returncode}; stdout={mutated.stdout}; stderr={mutated.stderr}"
             )
         print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
+
+    # Failure injection: a rewind between the active-pulse sample and timeout
+    # completion must latch and fail even though the final clock value is later.
+    rewind_code = code.replace(
+        "setFakeNow(pollStartedAt+3500);",
+        "setFakeNow(pollStartedAt+1);\\n    setFakeNow(pollStartedAt+3500);",
+        1,
+    )
+    with tempfile.TemporaryDirectory(prefix="phx-poll-window-rewind-mutation-") as folder:
+        cpp = Path(folder) / "poll_window_rewind.cpp"
+        binary = Path(folder) / "poll_window_rewind"
+        cpp.write_text(rewind_code, encoding="utf-8")
+        built = subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
+            capture_output=True, text=True, timeout=30
+        )
+        if built.returncode:
+            raise RuntimeError(f"{board}: rewind mutation compile failed:\\n{built.stderr[-3000:]}")
+        rewound = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
+        if rewound.returncode != 21:
+            raise RuntimeError(
+                f"{board}: clock-rewind mutation was not rejected at timeout completion; "
+                f"exit={rewound.returncode}; stdout={rewound.stdout}; stderr={rewound.stderr}"
+            )
+        print(f"{board}: POLL_WINDOW_MUTATION_REJECTED clock-rewind (exit=21)")
 
