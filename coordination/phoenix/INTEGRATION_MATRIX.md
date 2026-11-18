@@ -925,3 +925,41 @@ No source/destination copy or migration occurred. Physical acceptance and produc
 - #291 bf96680ab1d0040da8b70641c7dd3b1ca21ccea4 Windows docs-head run [44270351439](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44270351439) PASS; write-privileged publisher skipped. QA #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 has no current-head run.
 - Exact CHANGE_LEDGER readback: 0 bytes at #242 base 6d4c9b... and #242 head 734b89d9...; 45,738 bytes / 198 lines at #291 head bf96680... The prior assistant's 3,360-to-188 deletion claim is unsupported; no restoration task is warranted.
 - Private Drive v11/newer corrections remain unavailable; older Library checkpoint not substituted. **PRODUCTION NO-GO.**
+
+## COE Universal / INTERCON lineage and candidate reconciliation — 2026-11-18 UTC10
+
+**Master disposition: REVIEW-ONLY / NO MIGRATION / PRODUCTION NO-GO.** This is an exact-ref coordination snapshot, not an owner selection or license determination.
+
+### Exact refs
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Labs main: `5d8e4f1d95b6bfc551996634df9c6f7b86af56b4`.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- COE #36: `b4d7434764aab72673de1f496ed9e442f031ddff` (base #26); #38: `8dc5cc650b6c50e410f1d95c0ca18073122328da` (base #36).
+- COE Stage 3: #39 `33e87fbd7f287955d85509cbb05ff5ca20a26a4b` (64-byte record), #40 `85f38c6e2ba879fca9f26f708c1cbeb1736dd01c` (76-byte record), #42 `a35672fb60228fb8f84801405d032293f0266023` (92-byte record).
+- COE Stage 4: #41 `021e2474c5bc8df37ab016a586db516fb4f2445f` is stacked on #39; #43 `8f5eec790dc2a3e25c219a6f51651113cd1c90cd` is stacked on #42. These are parallel, incompatible candidate lines; neither is canonical.
+
+### Source / import / license completeness
+The Labs source directory at the exact main HEAD contains three files:
+- `BLAZE_PISONET_UNIVERSAL_PUBLIC.ino`: blob `3fb15ecb9272b65500260bc7c92f05590163fa6d`, 73,632 bytes.
+- `README.md`: blob `7281abd6a72f73cfd4b23b4786b1eeb2c33b59fd`, 1,217 bytes.
+- `preview.html`: blob `106411cce68b0da0b20836d036382ce0d82892f3`, 1,802 bytes.
+
+COE #36 imports the legacy `.ino` with the exact same blob and size. The source README and preview are not copied; the new parent Hardware README is a different blob (`bcea0ec438ba5ae2f4da9c91e5b5a5d175dab2f1`, 4,778 bytes). Labs root NOTICE blob `403478d10bdaf1582fa0ab4287865d3314dc0885` is not present in the COE root/Hardware tree. No explicit LICENSE was present in the Labs root/source-directory listings; COE root and Hardware listings likewise showed no LICENSE/NOTICE. The NOTICE describes public-safe development-source handling; it is not itself an explicit license grant. **Redistribution rights remain unverified; obtain license-custodian review.** This is a verified one-file archival import, not a complete directory mirror.
+
+The new staged V1.5-derived firmware is separate from the exact legacy import. COE #36's audit says the locally delivered V1.5 artifact was not verified in GitHub. Its exact source lineage remains unverified. Experiments main and development ESP8266 directories contain only `BlazePwifiVendo/` and `README.md`; no `BlazePisonetUniversal` path exists there. COE #26 also lacks `Hardware/esp8266/BlazePisonetUniversal/`; #36 is a child of #26, not content already present in #26.
+
+The #36 Stage-1 workflow runs the static contract script against the new staging sketch and compiles that staging directory. It does not compile the legacy imported `.ino`, verify the three-file source-directory completeness, or test license/NOTICE coverage.
+
+### Candidate test identity and CI boundary
+- #39 Stage-3 workflow [44234479271](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44234479271), Hardware/Shared [44234479266](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44234479266), case guard [44234479329](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44234479329): PASS.
+- #40 Stage-3 workflow [44235077999](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235077999), Hardware/Shared [44235077989](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235077989), case guard [44235078142](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235078142): PASS.
+- #42 Stage-3 workflow [44235625165](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235625165), Hardware/Shared [44235625122](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235625122), case guard [44235625147](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235625147): PASS.
+- #41 Stage-4 workflow [44235451605](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44235451605): exact job log compiled and ran secure-wire, credit-ledger, durable-journal and lab-transfer host tests; all emitted PASS. ESP8266 compile/static-contract jobs also passed.
+- #43 Stage-4 workflow [44246962253](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44246962253): exact job log compiled and ran secure-wire, credit-ledger, journal-fault and Stage-4 end-to-end host tests; all emitted PASS. ESP8266 compile/static-contract jobs also passed.
+- #41 is journal-only shadow credit; #43 is an authoritative timer candidate. #43's own PR disclosure still lists volatile unresolved-pulse alarm, up-to-60-second timer checkpoint recovery, no BlazePwifi accounting/multi-slave integration, and unverified physical flash/brownout/coin timing. Host simulations and ESP8266 compile are not real power-cut or native acceptance evidence.
+- Integration #26 still has five queued workflows and zero jobs. COE Release #35 [44275990821](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44275990821) fails closed at bubblewrap UID-map setup (`Permission denied`); its 9/9 host preflight tests pass, but mandatory sandbox packaging tests are skipped. Hardware/Shared [44275990852](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44275990852) and case guard [44275990853](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44275990853) pass.
+
+### Ownership and decision
+`Hardware/esp8266/BlazePisonetUniversal/` is ESP8266 firmware: implementation ownership is PHX-HARDWARE. PHX-PISONET owns Windows SoftTimer and may be an interface stakeholder; the product name “Pisonet” does not reassign firmware ownership. Existing `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No Labs-source route has been added.
+
+Do not copy, move, overwrite, cherry-pick, rebase, merge or promote any #36–#43 candidate. Require: license/NOTICE custodian disposition; complete per-file source/provenance decision; PHX-HARDWARE owner selection between Stage-3/Stage-4 alternatives; independent QA; exact-head integration CI; physical coin/relay/flash/power-cut acceptance.
