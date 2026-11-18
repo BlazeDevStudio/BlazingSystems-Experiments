@@ -1145,3 +1145,15 @@ Other exact role heads: CORE #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` (42
 Current #323 ESP32/ESP8266 blobs 7ebf0d34... / 312884c5... differ from COE #26 3cc7ec54... / c8be98f7.... New ESP32 boot, ESP8266 boot and ESP8266 dual-store labs are absent from #26. Destination Hardware test f921c56c... requires positive poll-signature strings; destination workflow fe79adbd... runs that generic test, not the new labs. Source main/dev producer blobs 2e3a1430... / db58041c... do not emit signed poll responses, while destination producer 0a71c4e2... defines vendo_poll_sig. Source MIT license 1ee55b94... matches Pisowifi/LICENSE, but no Hardware-scoped LICENSE/NOTICE or COE root LICENSE/NOTICE was found. Import completeness, interface and license scope remain unresolved; no migration.
 
 Experiments main f4e8a891..., development 2fbd2475..., Master 18cd5064..., and COE main a6513ab4... report protected=false; both rulesets endpoints are empty and classic protection endpoints return 403. Repository administrator must configure and independently verify protection and required checks.
+
+
+## Live exact integration refresh — 2026-11-18 UTC17
+
+- Hardware #323 current PR head `988904e8bcd058b62a9fac4aa6319a9b7c5b2470`; source/test tree `359bd8f685a2a464f4a77b84501fcf4055944d5c`. Focused quarantine and two-board boot/output-polarity labs pass; Full validation fails at QA-owned `Missing poll signature check`. This is simulated host evidence only.
+- COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. Its ESP32/ESP8266 sketches are different blobs from #323, 17 source board labs are absent, its generic test has a different blob and retains positive `response_sig` / `|poll|` assertions, and Hardware license/NOTICE mapping is incomplete.
+- COE #35 mandatory sandbox is blocked by absent bubblewrap after 13/13 host preflight tests; no unsandboxed fallback. Experiments #291 build/handover passed but privileged publisher was skipped.
+- Migration remains blocked until exact per-file provenance, license scope, test identity, import completeness, same-SHA destination CI and independent QA are verified. Do not infer parity from matching filenames or a green scoped workflow.
+
+Evidence: [Hardware focused quarantine](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347847077) · [two-board polarity](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347847191) · [Full validation failure](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44347846832) · [COE #35 sandbox](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44345859641) · [Experiments #291 build/handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353380470).
+
+**Production: NO-GO.** Gates 4 and 5 remain closed.

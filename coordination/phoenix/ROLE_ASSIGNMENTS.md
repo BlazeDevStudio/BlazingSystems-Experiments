@@ -861,3 +861,22 @@ Repository admin must configure and independently read back branch protection; r
 | Registry custodian | Private Drive v11 + newer corrections | Provide authorized Drive access; no older registry substitute |
 
 The current development branch is blazepwifi-v0.6.0-audit-foundation@2fbd2475.... The separate CORE continuation remains the only CORE implementation owner. No competing CORE worker or source change was started.
+
+
+## Live exact refresh — 2026-11-18 UTC17
+
+This snapshot supersedes older PR/head pins in this role index for current work; it does not transfer ownership.
+
+| Role | Current PR / exact head | Current bounded evidence |
+|---|---|---|
+| PHX-MASTER | #288 `dacde8ba60bd47e4d549d4000a1e37b5409e4a9f` | 83 changed paths; all under `coordination/phoenix/`; no PR-triggered Master CI returned |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; Master did not touch CORE |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | 43653329235 / 43653329229 SUCCESS, scoped |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance unverified |
+| PHX-HARDWARE | #323 `988904e8bcd058b62a9fac4aa6319a9b7c5b2470`, child of #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | Focused 44347847077 / 44347847191 SUCCESS; Full 44347846832 FAILS at QA-owned Missing poll signature check. #323 is a review candidate only, not a promoted canonical stack |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 43633486963 SUCCESS for Pisonet scope; #292 no current-head run returned |
+| PHX-RELEASE | #291 `691ed55dbe39a79a88eac45f6eebff81cee5e628`; COE #35 `b398906e23f95400ed39d08507e8a3ea1966dbff` | #291 44353380470 handover/build SUCCESS, publisher skipped; #35 shared/case SUCCESS, mandatory sandbox FAILS closed without bubblewrap |
+
+**Hardware candidate reconciliation:** #323 has source-extracted two-board ConfigV3 boot/output-polarity labs, but the Full build remains blocked by the inherited positive poll-signature fixture. #318 is non-mergeable and #324 is a sibling candidate; no branch composition or canonical-stack promotion is authorized by this status note.
+
+**Destination hold:** COE #26 remains five queued workflows / zero jobs. The exact Hardware source/destination blob, test, 17-lab import and license/notice gaps are recorded in `HARDWARE323_CONFIGV3_AND_COE26_DESTINATION_PROVENANCE_AUDIT_20261118_UTC16.md` and the new UTC17 audit. No migration is approved.

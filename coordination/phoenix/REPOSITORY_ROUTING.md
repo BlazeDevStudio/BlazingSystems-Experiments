@@ -510,3 +510,8 @@ Current #323 head 988904e8bcd058b62a9fac4aa6319a9b7c5b2470 (source/test tree 359
 Source main/dev poll producers 2e3a1430... / db58041c... emit member-route signatures but no signed poll response; COE #26 destination producer 0a71c4e2... defines vendo_poll_sig. This is an interface divergence, not a safe file-copy candidate. Source project MIT license 1ee55b94... matches Pisowifi/LICENSE, but no Hardware-scoped LICENSE/NOTICE or COE root LICENSE/NOTICE exists at the inspected ref. Import inventory, test identity, producer/consumer contract and license scope remain incomplete.
 
 COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows QUEUED / zero jobs. No file was copied, moved, renamed, overwritten, rebased or deleted. No destination staging change is proposed.
+
+
+## Hardware destination license/test gate — 2026-11-18 UTC17
+
+The manifest still maps Experiments `esp32/` and `esp8266/` into COE `Hardware/esp32/` and `Hardware/esp8266/`, but the current #323 candidate is not yet present byte-for-byte in #26. The source project MIT license is at `experiment/openwrt/BlazePwifi/LICENSE`; COE #26 carries the identical blob only at `Pisowifi/LICENSE`, with no root or Hardware-scoped LICENSE and no imported source `NOTICE.md`. The destination has two different firmware blobs, a different generic test and none of the 17 source board labs. Do not recursively copy or infer legal/test equivalence. Require owner-approved per-file source/test/license mapping and exact-head QA before any destination change. Full details: [UTC17 audit](HARDWARE323_CONFIGV3_LICENSE_AND_TEST_IMPORT_GAP_AUDIT_20261118_UTC17.md).

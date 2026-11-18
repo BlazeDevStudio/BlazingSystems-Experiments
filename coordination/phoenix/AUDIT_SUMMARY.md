@@ -595,3 +595,10 @@ Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `aad3aa
 **Migration remains blocked:** COE #26 firmware blobs differ from #323; the new boot/dual-store labs are absent; destination tests still expect positive poll signatures; source main/dev poll producer does not emit that response while destination producer does. The MIT license file is identical under source project and COE Pisowifi, but Hardware-scoped license/NOTICE coverage is not established. Five #26 workflows are queued with zero jobs. COE #35 sandbox remains blocked by missing bubblewrap after 13 host preflight tests pass.
 
 **Governance:** Experiments main f4e8a891..., development 2fbd2475..., Master 18cd5064..., and COE main a6513ab4... are unprotected in branch-object reads; rulesets are empty and protection endpoints return 403. Private Drive v11/newer corrections remain unavailable. OWNERSHIP_ROUTES.json remains e4db324..., DRAFT_REVIEW_ONLY, target null. **PRODUCTION NO-GO.**
+
+
+## Live exact audit — 2026-11-18 UTC17: COE Hardware destination parity
+
+The latest Hardware review candidate #323 has two-board ConfigV3 boot-polarity source and host labs, but COE #26 is not a byte/test/license-equivalent destination. Exact tree comparison found 14 files under each source board directory, including 17 lab files; COE #26 has only two Hardware sketches and one generic test. Both sketch blobs differ. The destination lacks all 17 source board labs, its generic test blob differs and asserts positive `response_sig` / `|poll|` strings, and the current #323 Full validation fails at that same inherited positive fixture. The source MIT license blob is present only as `Pisowifi/LICENSE`; COE root and Hardware have no license, and source `NOTICE.md` is absent. See [UTC17 exact audit](HARDWARE323_CONFIGV3_LICENSE_AND_TEST_IMPORT_GAP_AUDIT_20261118_UTC17.md).
+
+**Classification:** HARDWARE focused labs = SIMULATED / CI VERIFIED; Full validation = FAILED; COE #26 combined destination CI = NOT RUN (five queued / zero jobs); license/import/test parity = BLOCKED; physical acceptance = NOT TESTED. No migration, copy, overwrite, merge or release.
