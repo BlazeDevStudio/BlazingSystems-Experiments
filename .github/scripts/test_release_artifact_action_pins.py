@@ -7,9 +7,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Upstream tags were resolved to full commit SHAs and action.yml was read at
-# each exact commit. Arduino setup remains the upstream Node20 action; the
-# other newly pinned setup/emulator actions declare Node24.
+# Upstream refs were resolved to full commit SHAs and action.yml was read at
+# each exact commit. All pinned JavaScript actions now declare Node24; signature
+# provenance, including the unsigned Android emulator action, is in the handover.
 EXPECTED = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",  # v7.0.1, node24
     "actions/setup-dotnet": "0f4a354dd5547a28c70b7853dbd95d5b67886e73",  # v6.1.0, node24
