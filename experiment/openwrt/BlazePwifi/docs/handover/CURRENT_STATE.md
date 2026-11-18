@@ -776,3 +776,11 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Existing workflow action metadata was independently read at the exact pinned commits: checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2 and download-artifact v8.0.2 all declare `runs.using: node24`. The prior Windows run [#44199987756](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199987756) passed handover/build; the publisher job was skipped.
 - Next: synchronize the three canonical handovers, rerun the exact test head to obtain the intended RED at the new checkout-credential assertion, then add `persist-credentials: false` to the two unprivileged checkouts and rerun Windows CI. Keep the privileged publisher skipped on PR validation.
 - No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — regression fixture syntax correction
+
+- The first exact-head run after synchronizing the handovers, [#44265207630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265207630), passed the mandatory handover gate and package-parity selftest, then **FAILED at PowerShell parse time** in `negative-selftest.ps1:323` with `Unexpected token ')'`. The new checkout-credential assertion was not reached; this is a test-authoring error, not the expected regression RED or a product failure.
+- Corrected the release-owned test file by removing the duplicated trailing fragment. Corrected test-only commit: `c10bf9ee2a64dbe985ab95e6250df7e4a776b5ce`. No workflow/source behavior changed.
+- Next exact-head run must pass the handover gate and package-parity selftest, then reach the new assertion requiring all three checkout steps to use `persist-credentials: false`. Only after the expected RED is confirmed will the two read-only checkout steps be changed.
+- Existing PR remains draft; publisher/signing stay skipped. No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
