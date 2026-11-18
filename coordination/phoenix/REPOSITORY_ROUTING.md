@@ -562,3 +562,17 @@ Source tree: Experiments Hardware candidate #327 head `c51271938c15e13998d1c99f1
 - COE #26 has five queued workflows and zero jobs.
 
 No destination staging file was changed. The ownership manifest remains `DRAFT_REVIEW_ONLY` and PHX-MASTER destination remains null. Do not copy, move, overwrite, rebase or propose a migration until exact per-file provenance, license/notice scope, test identity, import completeness and destination CI are reconciled by the owners.
+
+
+## UTC21 current Hardware source / COE #26 destination provenance hold
+
+Current Hardware PR #327 head is `b346eba3ebee228abcff03456deb7889f2d39144`; COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`. The ownership manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+| Artifact | Experiments #327 | COE #26 |
+|---|---|---|
+| ESP8266 sketch | `4d73c5dc451c29f2ffd64a5cb2d230cc84a78ed5` | `c8be98f72596681e36a3ad1f8939bf8046c96887` |
+| ESP32 sketch | `ada9723c5f07879775284eb128a986ac865394f7` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` |
+| Hardware test | source-extracted Python labs; current poll-loop lab `c3e34297...` | generic shell test `f921c56c...` |
+| CI entrypoint | source-extracted board labs | workflow `fe79adbd...` invokes generic shell + Shared tests, not source labs |
+
+The source tree has 18 ESP32/ESP8266 Python board labs; #26 has zero corresponding Hardware Python labs. Its generic test still requires positive `response_sig` and `|poll|` strings, inconsistent with the current deny-only source consumer. Source project MIT LICENSE matches COE `Pisowifi/LICENSE`, but sibling `Hardware/` license scope remains unresolved; source root NOTICE exists and COE root NOTICE is absent. No destination route or file mapping is approved. Do not copy, move, overwrite, rebase or promote until per-file blob/license/test/import completeness and exact-head destination CI are reviewed by owners.
