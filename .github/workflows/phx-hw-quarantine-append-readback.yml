@@ -1,10 +1,11 @@
-name: PHX-HARDWARE Quarantine Append Readback
+name: PHX-HARDWARE Quarantine Append and Pending Clear Readback
 on:
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_clear_remove_readback_lab.py'
       - '.github/workflows/phx-hw-quarantine-append-readback.yml'
   workflow_dispatch:
 permissions:
@@ -19,5 +20,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify exact checkout
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
-      - name: Compile and run source-extracted ESP32 and ESP8266 failure injection
+      - name: Compile and run source-extracted ESP32 and ESP8266 quarantine append failure injection
         run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py
+      - name: Compile and run source-extracted ESP32 and ESP8266 pending removal failure injection
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_clear_remove_readback_lab.py
