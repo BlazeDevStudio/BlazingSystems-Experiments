@@ -105,6 +105,10 @@ def main() -> None:
     save_cfg = extract_functions(source, "saveCfg")
     latch_failure = extract_functions(source, "latchConfigPersistenceFailure")
     require(len(load_cfg) == 1, "expected one loadCfg implementation")
+    config_record_erased = extract_functions(source, "configRecordErased")
+    require(len(config_record_erased) == 1, "erased-record detector is required")
+    require("if(!configRecordErased(current))" in load_cfg[0],
+            "unknown/non-erased EEPROM config must fail closed before defaults")
     require(len(configure) == 1, "expected one configureRuntimePins implementation")
     require(len(apply_outputs) == 1, "expected one applyOutputs implementation")
     require(len(can_poll) == 1 and len(can_post) == 1, "admission helpers missing")
@@ -116,7 +120,7 @@ def main() -> None:
                        for name in ("ConfigV1", "ConfigV2", "Config"))
     function_names = (
         "fixedStringTerminated", "configChecksum",
-        "configPolarityFieldsValid", "makeSetupPassword",
+        "configPolarityFieldsValid", "configRecordErased", "makeSetupPassword",
         "defaults", "saveCfg", "latchConfigPersistenceFailure",
         "loadCfg", "writeLogical", "configureRuntimePins",
         "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost"

@@ -529,6 +529,17 @@ bool configPolarityFieldsValid(const Config &c){
          c.outputPolarityConfigured<=1;
 }
 
+// Only a fully erased Config-sized region is eligible for first-boot defaults.
+// Unknown future schemas, partial writes, and unreadable/corrupt bytes are
+// preserved and fail closed instead of being overwritten by older firmware.
+bool configRecordErased(const Config &record){
+  const uint8_t *bytes=(const uint8_t*)&record;
+  for(size_t i=0;i<sizeof(record);++i){
+    if(bytes[i]!=0xFF) return false;
+  }
+  return true;
+}
+
 bool saveCfg(){
   if(!pollFaultBackupReady || EEPROM.length()<sizeof(Config)) return false;
   cfg.magic=MAGIC;
@@ -691,6 +702,11 @@ void loadCfg(){
       return;
     }
     Serial.println("Migrated BlazePwifi Vendo v1 configuration; local output polarity remains unconfigured.");
+    return;
+  }
+
+  if(!configRecordErased(current)){
+    latchConfigPersistenceFailure("CRITICAL: unrecognized EEPROM config schema; preserve existing bytes and keep outputs disabled.");
     return;
   }
 
