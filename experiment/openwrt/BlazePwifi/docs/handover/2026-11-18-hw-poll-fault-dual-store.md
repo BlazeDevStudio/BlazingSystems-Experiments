@@ -1,6 +1,6 @@
 # PHX-HARDWARE handover — poll-fault secondary-store fallback
 
-**Disposition:** candidate implementation committed on a child of PR #322; exact-source host lab and board builds pending; SIMULATED only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+**Disposition:** candidate implementation committed on a child of PR #322; exact-source host labs CI VERIFIED; ESP8266 target build CI VERIFIED; ESP32 and remaining target matrix IN PROGRESS at last read; SIMULATED only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
 
 ## Lineage and ownership
 
@@ -45,3 +45,28 @@ The host fixture is SIMULATED. It does not measure flash wear, brown-out behavio
 - PHX-RELEASE: review the new narrowly scoped hardware workflow path.
 
 No flash, reset, relay actuation, real coin, live money, signer, migration, merge, release or deployment occurred.
+
+
+## UTC04 exact-head evidence update
+
+- Source/test SHA: 94c5ad327304bea8f42d5bc620ea9d804035f424
+- PR #323 head at evidence read: 94c5ad327304bea8f42d5bc620ea9d804035f424
+- Focused quarantine / journal / poll-fault workflow: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322241 SUCCESS on the exact source/test SHA. Logs show:
+  - DUAL_STORE_FAILURE_LIMITATION=EXPECTED_CURRENT_BOOT_ONLY for ESP32 and ESP8266
+  - POLL_FAULT_DUAL_STORE_LAB=PASS for both boards
+  - existing source-extracted quarantine, pending-journal, mount, pending-clear, pending-write/readback, coin-post-gate, poll-window and pulse-capture labs passed
+  - physical flash/power-cut flags explicitly remain zero
+- Relay output polarity workflow: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322285 SUCCESS on the same exact source/test SHA.
+- Full BlazePwifi build: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44240322231 remained IN_PROGRESS at last read. Validation job 134586409067 FAILED at the existing QA-owned assertion Missing poll signature check. ESP8266 target job 134586409487 PASS; Orange Pi Zero 3, Orange Pi One, Orange Pi One Plus and Orange Pi PC2 jobs PASS; ESP32 and several other matrix targets were still IN_PROGRESS. Downstream signed-import, update-bundle and browser-simulation jobs were SKIPPED after validation failure. This is not Full CI acceptance.
+- Earlier exact-head lab/harness failures were retained in Actions history and corrected before the successful 94c5 run: the mount lab now isolates the new backup-reader seam and resets per-scenario state; the dual-store lab now extracts only persistent-format declarations and injects EEPROM readback failure after commit, matching the actual ESP8266 API.
+
+## Live stack revalidation at UTC04
+
+- PR #239 head d83b715b116185107737fef721c2eece8feebf39; scoped native journal gate #40815737375 and BlazePwifi build #40815737447 SUCCESS.
+- PR #254 head 4054fbccd9b2a4ad0e5fe7cfca5a27aa629eed84; scoped build #44019837616 and controller-header lab #44019837617 SUCCESS.
+- PR #283 head 830c355376380f9b5533d5cda2558beed41a593a; scoped quarantine append/readback #44219099309 and build #44219099256 SUCCESS.
+- PR #322 remains at 50d93e0de3d682550b6f02fb43484e76ad9c7e08; #323 is a child of that exact head.
+- Master PR #288 advanced to e95cda0ae3f08c4f1dbdfcdfa79808cc887cd7b3; Architecture Contracts §6.2 still requires a durable disposition/hold and independent QA of reboot/failure cases.
+- Re-audit of #283 current source: both sketches now return before clearPending when quarantine append fails; this supersedes the earlier unconditional-clear finding. The no-retry latch after append failure remains a future-enable blocker, and the main producer still does not emit the response_sig expected by #283. Keep default-deny; no positive poll or config interoperability is claimed.
+
+The secondary NVS/EEPROM records remain same-chip fallback regions, not an independent physical witness. Simultaneous failure of LittleFS and the secondary store is explicitly only current-boot fail-closed; reboot durability is not established in that case. QA/Master/CORE approval remains required before composition.
