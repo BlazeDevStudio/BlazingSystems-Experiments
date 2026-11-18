@@ -178,10 +178,24 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
 
 
 def remove_local_polarity_gate(configure: str) -> str:
+    # ESP8266 has two combined polarity/pin-safety guards; ESP32 keeps one
+    # early unknown-polarity INPUT-only block. Remove the board's actual gate,
+    # not a textual pattern copied from the other architecture.
     mutated, count = re.subn(r"!outputPolarityKnown\s*\|\|\s*", "", configure)
-    if count != 2:
-        raise RuntimeError(f"expected two local polarity guards, removed {count}")
-    return mutated
+    if count == 2:
+        return mutated
+
+    if count == 0:
+        pattern = (
+            r"(?s)\n\s*if\(!outputPolarityKnown\)\{\s*"
+            r"// No default or remote value can establish physical relay/LED polarity\.\s*"
+            r".*?\s*return;\s*\}"
+        )
+        mutated, count = re.subn(pattern, "\n", configure, count=1)
+        if count == 1:
+            return mutated
+
+    raise RuntimeError(f"could not remove one board-specific local polarity gate (combined guards={count})")
 
 
 for board, path in BOARDS:
