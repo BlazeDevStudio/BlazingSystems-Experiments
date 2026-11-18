@@ -240,7 +240,11 @@ failed=[]
 for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     loop=extract(source,"loop")
-    pre_poll_guard=loop.index("if(pollEdgeAfterDrain!=pollEdgeStart)")
+    poll_start=loop.index("const uint32_t pollEdgeStart=snapshotCoinEdgeSequence()")
+    begin_poll=loop.index("const bool pollWindowReady=beginPollWindow()",poll_start)
+    drain_snapshot=loop.index("const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence()",begin_poll)
+    pre_poll_guard=loop.index("if(pollEdgeAfterDrain!=pollEdgeStart)",drain_snapshot)
+    assert poll_start < begin_poll < drain_snapshot < pre_poll_guard, board+": drain ISR reconciliation must follow both helper outcomes"
     pre_poll_latch=loop.index("latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart)",pre_poll_guard)
     pre_poll_release=loop.index("pollIntakeSuspended=false",pre_poll_latch)
     poll_call=loop.index('String r=post("poll")')

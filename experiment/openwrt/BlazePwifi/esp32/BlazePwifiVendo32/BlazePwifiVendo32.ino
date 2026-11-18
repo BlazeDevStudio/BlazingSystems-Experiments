@@ -1080,10 +1080,9 @@ bool beginPollWindow(){
   if(!canStartPoll()) return false;
   pollIntakeSuspended=true;
   applyOutputs();
-  if(coinLineQuietAfterInhibit()) return true;
-  pollIntakeSuspended=false;
-  applyOutputs();
-  return false;
+  // The caller must reconcile the ISR sequence before releasing this inhibit,
+  // whether the quiet drain succeeds or aborts.
+  return coinLineQuietAfterInhibit();
 }
  
 void sampleCoinPulseEdge(bool active){
@@ -1458,27 +1457,31 @@ void loop(){
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
-    if(beginPollWindow()){
-      // Persist any ISR edge captured during the drain before a synchronous HTTP wait.
-      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
-      if(pollEdgeAfterDrain!=pollEdgeStart){
-        latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
-        pollIntakeSuspended=false;
-        applyOutputs();
-        lastPoll=millis();
-      } else {
-        wifiFailures=0;
-        String r=post("poll");
-        // Keep intake inhibited until this response has been accepted or denied.
-        acceptPollResponse(r);
-        pollIntakeSuspended=false;
-        const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
-        if(pollEdgeEnd!=pollEdgeStart){
-          latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
-        }
-        applyOutputs();
-        lastPoll=millis();
+    const bool pollWindowReady=beginPollWindow();
+    // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.
+    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
+    if(pollEdgeAfterDrain!=pollEdgeStart){
+      latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
+      pollIntakeSuspended=false;
+      applyOutputs();
+      lastPoll=millis();
+    } else if(pollWindowReady){
+      wifiFailures=0;
+      String r=post("poll");
+      // Keep intake inhibited until this response has been accepted or denied.
+      acceptPollResponse(r);
+      pollIntakeSuspended=false;
+      const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+      if(pollEdgeEnd!=pollEdgeStart){
+        latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
       }
+      applyOutputs();
+      lastPoll=millis();
+    } else if(pollIntakeSuspended){
+      // Drain aborted without an ISR delta; release only after sequence reconciliation.
+      pollIntakeSuspended=false;
+      applyOutputs();
+      lastPoll=millis();
     }
   }
   bool raw=digitalRead(runCoinPin);

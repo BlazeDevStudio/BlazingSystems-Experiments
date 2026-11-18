@@ -64,7 +64,7 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
                <<" led="<<ledOn<<"\n";
       return false;
     }
-  } else if(pollIntakeSuspended || !relayOn || !ledOn || coinLineIdle()){
+  } else if(!pollIntakeSuspended || relayOn || ledOn || coinLineIdle()){
     std::cerr<<"FAIL "<<name<<" abort-state inhibit="<<pollIntakeSuspended
              <<" relay="<<relayOn<<" led="<<ledOn
              <<" idle="<<coinLineIdle()<<"\n";

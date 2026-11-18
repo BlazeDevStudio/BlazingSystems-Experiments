@@ -350,10 +350,29 @@ int main(){
   // The ISR sequence must be reconciled and the deny marker persisted before release.
   resetState(); injectDuringDrainAbort=true; loop();
   if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
+     pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty() || pendingPulses!=0 ||
+     pollIntakeSuspended || lastPoll+2!=fakeNow ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 25;
+  const std::string abortMarker=LittleFS.files["/pollpulse.fault"];
+  if(abortMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     abortMarker.find("pulses=1")==std::string::npos) return 27;
+  std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS\\n";
+
+  // The same drain-abort edge must be caught for active-high coin wiring.
+  resetState(); runCoinActiveLow=false;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  injectDuringDrainAbort=true; loop();
+  if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
      pollCalls!=0 || !journalRecoveryRequired ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
      insertMode || !activeTarget.empty() || pendingPulses!=0 ||
-     pollIntakeSuspended || lastPoll!=fakeNow) return 25;
+     pollIntakeSuspended || lastPoll+2!=fakeNow ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
+  std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS\\n";
 
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
@@ -466,14 +485,27 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
+    release_on_abort = begin.replace(
+        "return coinLineQuietAfterInhibit();",
+        "if(coinLineQuietAfterInhibit()) return true;\n  pollIntakeSuspended=false;\n  applyOutputs();\n  return false;",
+        1,
+    )
+    if release_on_abort == begin:
+        raise AssertionError(f"{board}: drain-abort release mutation anchor missing")
+    compile_and_run(assemble(begin_source=release_on_abort),board,25,"release-before-drain-abort-reconciliation")
+    print(f"{board} MUTATION_REJECTED release-before-drain-abort-reconciliation")
     pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
     poll_call = loop.find('String r=post("poll")')
     if pre_poll_guard < 0 or poll_call < 0 or pre_poll_guard > poll_call:
         raise AssertionError(f"{board}: pre-poll edge guard must precede HTTP poll")
 
+    begin_poll = loop.find("const bool pollWindowReady=beginPollWindow();")
+    drain_snapshot = loop.find("const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();", begin_poll)
+    if begin_poll < 0 or drain_snapshot < begin_poll or pre_poll_guard < drain_snapshot:
+        raise AssertionError(f"{board}: ISR snapshot must follow either drain outcome before branching")
     poll_guard_removed = loop.replace(
-        "      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
-        "      const uint32_t pollEdgeAfterDrain=pollEdgeStart;\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
+        "const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
+        "const uint32_t pollEdgeAfterDrain=pollEdgeStart;",
         1,
     )
     if poll_guard_removed == loop:
@@ -482,8 +514,8 @@ for board,path in BOARDS.items():
                     board,22,"missing-pre-poll-edge-abort")
     print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
     late_snapshot_loop = loop.replace(
-        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    if(beginPollWindow()){",
-        "    if(beginPollWindow()){\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
+        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
+        "    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
         1,
     )
     if late_snapshot_loop == loop:

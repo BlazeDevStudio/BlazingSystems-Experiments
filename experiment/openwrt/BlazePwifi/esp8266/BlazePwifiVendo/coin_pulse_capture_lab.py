@@ -115,8 +115,11 @@ static bool runDrainCapture(const char*name,uint32_t startAt,uint32_t pulseAt,
   runDebounceMs=debounce;lastEdge=priorEdge;
   pulseEnabled=true;pulseStart=pulseAt;pulseEnd=pulseUntil;
   if(beginPollWindow()) return fail(name,"poll unexpectedly started");
+  // This helper-only case has no ISR edge; model the loop releasing the
+  // temporary inhibit only after confirming the edge sequence is unchanged.
+  if(pollIntakeSuspended){ pollIntakeSuspended=false; applyOutputs(); }
   if(pollIntakeSuspended || !relayOn || !ledOn)
-    return fail(name,"abort did not restore normal sampling outputs");
+    return fail(name,"no-edge abort did not release for normal sampling");
   const int raw=digitalRead(runCoinPin);
   const bool active=runCoinActiveLow?(raw==LOW):(raw==HIGH);
   if(!active) return fail(name,"drain abort did not leave an active pulse sample");
