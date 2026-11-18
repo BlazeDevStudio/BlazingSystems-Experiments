@@ -255,9 +255,9 @@ int main(){
     main = main.replace("BOARD_NAME", board)
     return "\n".join([
         prelude,
-        backend,
         record,
         consts,
+        backend,
         helpers,
         main,
     ])

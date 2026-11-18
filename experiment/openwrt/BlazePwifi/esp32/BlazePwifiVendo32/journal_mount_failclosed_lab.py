@@ -32,6 +32,8 @@ struct FakeLittleFS {
   bool format() {++formatCalls;return true;}
 } LittleFS;
 struct FakeSerial {void println(const char*){}} Serial;
+// This lab isolates LittleFS mount behavior; the dedicated dual-store lab tests the real backup reader.
+bool pollFaultBackupPresentOrCorrupt(){ return false; }
 bool fsReady=false;
 bool pendingReady=false;
 bool journalRecoveryRequired=false;
@@ -73,9 +75,9 @@ int main(){
        LittleFS.formatCalls!=0 ||
        LittleFS.formatOnFailure ||
        loadCalls!=(LittleFS.mountOk?1:0) ||
-       journalRecoveryRequired!=(scenario==6 || scenario==7) ||
-       insertMode!=(scenario!=5 && scenario!=7) ||
-       (scenario==7 && !activeTarget.empty()) ||
+       journalRecoveryRequired!=(scenario==0 || scenario==6 || scenario==7) ||
+       insertMode!=(scenario!=0 && scenario!=5 && scenario!=7) ||
+       ((scenario==0 || scenario==7) && !activeTarget.empty()) ||
        relayOn!=expectedRelay ||
        ledOn!=expectedRelay) {
       std::cerr<<"MOUNT_SOURCE_LAB_FAIL scenario="<<scenario
