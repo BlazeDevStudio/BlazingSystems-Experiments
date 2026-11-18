@@ -3,8 +3,8 @@
 **Document Reference:** `docs/audits/HARDWARE_FIRMWARE_AUDIT.md`  
 **Role:** PHX-HARDWARE (Hardware / Firmware Integration Engineer)  
 **Classification:** LAB & CODE HARDENING ONLY — STRICT PRODUCTION NO-GO  
-**Target Baseline:** `main` (`f4e8a89`) / `blazepwifi-v0.6.0-audit-foundation` (`2fbd2475`)  
-**Active Working Branch:** `cleanup/esp-firmware-hardening-and-quarantine-20261111` (PR #283)
+**Target Baseline:** `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; parallel firmware candidate `PR #283@830c355376380f9b5533d5cda2558beed41a593a`  
+**Active Review Branch:** `phoenix/hardware-clear-pending-remove-verify-20261118` (DRAFT PR #325, child of PR #283)
 
 ---
 
@@ -73,104 +73,121 @@ To prevent users from dropping coins when the system is offline, unassigned, or 
 
 ---
 
-## 4. End-to-End State Machine & Event Traceability
+## 4. Current firmware state machine and event traceability
 
-```
-[ Physical Coin Inserted ]
-       │
-       ▼
-[ Electrical Optocoupler Pulse ]
-       │ (Debounce Filter: millis() - lastEdge > runDebounceMs)
-       ▼
-[ In-Memory Pulse Accumulation ]
-       │ (pendingPulses++, max 20)
-       ▼
-[ Atomic LittleFS Journal Write ]
-       │ - Write struct to /pending.new
-       │ - Flush & verify byte count == sizeof(PendingRecord)
-       │ - Atomic rename /pending.dat -> /pending.bak
-       │ - Atomic rename /pending.new -> /pending.dat
-       │ - Remove /pending.bak
-       ▼
-[ Pulse Group Settlement ]
-       │ (millis() - lastEdge > runPulseGroupMs)
-       ▼
-[ pendingReady = true ]
-       │ (Relay drops to inhibit further coins during network transit)
-       ▼
-[ HTTP POST /cgi-bin/vendo (action=coin) ]
-       │ - Sent with signedBody (key|action|id|nonce|pulses|target|key)
-       ▼
-[ Router Backend Admission & Credit ]
-       │ - Atomic ledger write with idempotent event marker
-       ▼
-[ Router Response Received & Verified ]
-       ├─► HTTP 200 "ok":true ──────────────────► clearPending() (delete /pending.dat)
-       └─► Error ("coin window expired", etc.) ─► quarantinePending(reason) (write /quarantine.log)
+**Review lineage**
+- Experiments main baseline: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`
+- Parallel deny-only firmware candidate: PR #283, branch `cleanup/esp-firmware-hardening-and-quarantine-20261111`, exact parent head `830c355376380f9b5533d5cda2558beed41a593a`
+- This scoped hardware child: PR #325, branch `phoenix/hardware-clear-pending-remove-verify-20261118`; it is a draft child of #283, not part of the separate #322 → #323 review-candidate stack.
+
+**Current deny-only runtime**
+1. Boot mounts LittleFS without format-on-failure. A mount failure leaves the pending store unavailable and keeps remote actuation denied; it does not format away uncredited evidence.
+2. Pending recovery accepts exactly one valid candidate. Multiple, corrupt, truncated or ambiguous candidates are preserved and keep intake denied.
+3. Register and poll are discovery/heartbeat requests only. Their response fields are ignored; `denyRemoteControl()` reasserts all actuation flags OFF. The current source does not call `applyRemoteConfig()` from these responses.
+4. Automatic coin POST, retry and positive-response clearing are removed. There is no approved authenticated response/receipt-disposition contract, and coin admission remains disabled.
+5. `appendQuarantineRecord()` validates the existing prefix fingerprint and exact appended suffix bytes in the host fixture. `quarantinePending()` is defined but has no active runtime callsite in this candidate.
+6. In this child, `clearPending()` returns a status. It holds `pendingReady` true while checking filesystem readiness, every existing `/pending.dat`, `/pending.new`, and `/pending.bak` removal result, and post-removal absence. Any unverified removal applies the denied output state and returns false without clearing the in-memory event. `quarantinePending()` now returns false if this cleanup is not verified.
+
+The resulting software flow is:
+
+```text
+coin edge / pending journal
+        |
+        v
+pending event retained; remote admission remains DENY
+        |
+        +--> no automatic coin POST or retry
+        |
+        +--> operator / CORE reconciliation only
+                 |
+                 +--> future authenticated disposition contract required
 ```
 
----
-
-## 5. Threat & Failure Model
-
-| Failure Scenario | Physical / Electrical Effect | Firmware Defense Mechanism | Status |
-|---|---|---|---|
-| **Sudden Power Loss During Coin Fall** | MCU loses 3.3V rail while coin is physically traversing slot | If pulse group not completed, pulse lost before journal. If LittleFS write completed (`/pending.dat`), coin is recovered on next boot by `loadPending()`. | **VERIFIED** in LittleFS atomic rename logic |
-| **Flash Write Failure / Brown-Out** | Power supply voltage sags below 2.7V during SPI flash write | `savePending()` detects incomplete write (`n != sizeof(r)`); sets `fsReady = false`; `applyOutputs()` de-energizes relay; halts intake. | **VERIFIED** in sketch error handling |
-| **Network Loss / Lost Router ACK** | Coin accepted and journaled, but HTTP response lost | Event stays in `/pending.dat`. Retry loop fires every 900 ms with identical `pendingNonce`. Backend recognizes duplicate and ACKs without re-crediting. | **VERIFIED** in protocol specification |
-| **Response Injection / Man-in-the-Middle** | Spoofed LAN packet attempts to inject remote configuration | Client-side response signature verification (HW-P0-1) checks `response_sig` against keyed HMAC over request nonce. Discards untrusted replies. | **VERIFIED** in `v05_firmware_hardening_test.sh` |
-| **Uncredited Swallowed Coin** | Coin window expires before user drops coin; backend returns error | Pre-v0.5 firmware called `clearPending()` (silent drop). Hardened firmware (HW-P0-2) calls `quarantinePending(reason)`, appending record to `/quarantine.log`. | **VERIFIED** in `v05_firmware_hardening_test.sh` |
-| **Weak Nonce / Predictable PRNG** | Nonce predictable if based on `micros()` | HW-P1-1 replaces predictable microsecond low-word with dual 32-bit hardware RNG reads (`ESP.random()`). | **VERIFIED** in `v05_firmware_hardening_test.sh` |
-| **Setup Portal XSS** | Malicious SSID or server string injected via captive portal | HW-P2-1 applies `htmlEsc()` escaping `&`, `'`, `"`, `<`, `>` to all form fields. | **VERIFIED** in `v05_firmware_hardening_test.sh` |
+This does not establish flash atomicity, cross-reboot no-replay, a protected freshness witness, or a positive financial receipt. LittleFS `exists()` cannot distinguish a genuinely absent path from every possible lower-level metadata I/O error; physical power-cut behavior remains unproven.
 
 ---
 
-## 6. Viable Image & Firmware Target Matrix
+## 5. Threat and failure model — current evidence
 
-| Device / Architecture | Flash / RAM | OpenWrt Target | Viability / Packaging Status | Field Qualification Notes |
-|---|---|---|---|---|
-| **Ruijie RG-EW1200G Pro v1.1** | 16 MB NOR / 128 MB DDR3 | `ramips/mt7621` (OpenWrt 25.12.5) | **Primary Target**; Sysupgrade & recovery initramfs generated in CI. | Tight flash budget (16 MB). Requires lean BusyBox/UCI image without heavy runtime components. |
-| **Ruijie EW1300G Pro / EW300 Pro** | 16 MB / 128 MB | `ramips/mt7621` | **Candidate**; Requires board-specific DTS and partition verification before image build. | Do not flash stock vendor firmware without serial/TFTP unbrick proof. |
-| **Boosteven ZLT-R281** | 128 MB NAND / 128 MB RAM | `ramips/mt7621` | **Experimental Reference**; Custom OpenWrt port exists in archive. | NAND flash bad block management required. Bootloader recovery must be kept on file. |
-| **Orange Pi Zero 3** | MicroSD/eMMC, 1GB–2GB RAM | `allwinner/h618` (AArch64) | **Supported SBC**; Linux GPIO agent verified via `libgpiod`. | High performance, capable of acting as both router/gateway and coin controller. |
-| **x86_64 PC / Appliance** | Dual SATA/NVMe, >= 2GB RAM | `x86/64` (BIOS + UEFI) | **Supported Edge Server**; Combined image builds in CI. | Used for high-volume multi-slot internet café (Pisonet) installations. |
+| Failure / threat | Current firmware behavior | Evidence class and limitation |
+|---|---|---|
+| LittleFS mount failure | No auto-format fallback; pending store unavailable; actuation denied | Source-extracted host test; SIMULATED, not physical flash proof |
+| Multiple / corrupt pending candidates | Preserve candidates and deny rather than selecting or deleting an ambiguous record | Pending-journal boot lab; SIMULATED |
+| Quarantine append open/write/readback failure | Append returns false; pending event is not cleared | Quarantine append lab; SIMULATED |
+| Pending candidate removal failure | Child #325 keeps RAM hold, applies outputs OFF and returns false when remove reports failure or a candidate remains | New exact-source lab is pending final CI at the current child head |
+| Register/poll response injection | No response fields are accepted for remote control; no positive response authentication is implemented | Fail-closed source behavior only; positive authentication is NOT TESTED |
+| Coin POST timeout / replay | Automatic coin POST/retry is disabled; no positive disposition is accepted | Source behavior only; durable financial replay remains BLOCKED |
+| Coin pulse during synchronous poll | No positive coin admission is enabled in this candidate | Physical pulse capture and electrical recovery are NOT TESTED |
+| Relay / LED state | Software output helper is deny-only in this branch | Host simulation is not GPIO voltage, contact-release or electrical acceptance |
+| Brown-out / power cut | No physical durability conclusion | NOT TESTED |
 
----
-
-## 7. Physical Durability & Non-Customer Acceptance Gates
-
-In accordance with `V060_PHYSICAL_DURABILITY_ACCEPTANCE.md`:
-1. **150 Controlled Power-Cut Trials:**
-   - 3 architectures (Ruijie MIPS, Orange Pi AArch64, x86_64).
-   - 5 physical fault checkpoints (pre-journal, during-journal, post-journal/pre-HTTP, post-HTTP/pre-ACK, during-ACK).
-   - 10 repeated trials per checkpoint per architecture.
-2. **30-Device 24-Hour Soak:**
-   - Continuous operation under load without kernel panic, memory leak, or filesystem corruption.
-3. **Traceability Contract:**
-   - Verification using `tools/v060_physical_evidence_contract.py` requiring genuine commit SHA-1 and SHA-256 package digests.
+The legacy QA-owned `tests/controllers.sh` and `v05_firmware_hardening_test.sh` contain static `response_sig`, `|register|` and `|poll|` token checks. Those strings do not prove a working authenticated response contract. PHX-HARDWARE does not edit those QA-owned files; PHX-QA must replace or qualify the stale assertions independently.
 
 ---
 
-## 8. Defect Identifiers & Hardening Status
+## 6. Target matrix — candidate status, not hardware support
 
-| Defect ID | Description | Resolution in Branch | Test Verification |
-|---|---|---|---|
-| **HW-P0-1** | Poll/register trust boundary | Register/poll response candidates are non-authorizing; remote configuration and coin admission remain disabled until the separate config and authenticated-poll contracts are approved and independently tested. | QA exact-head negative/positive vectors pending |
-| **HW-P0-2** | Uncredited Coin Quarantine / no replay | Automatic coin POST/retry/clear is disabled until an event-bound authenticated receipt/disposition is approved; pending journal evidence is retained for reconciliation. The append helper still lacks byte-for-byte readback and a durable cross-reboot no-replay marker. | Existing append-failure injection is simulated; independent §6.2 reboot tests pending |
-| **HW-P1-1** | Full Hardware RNG Nonce on ESP8266 | Removed `micros()`; uses two 32-bit `ESP.random()` words. | `v05_firmware_hardening_test.sh` |
-| **HW-P2-1** | Setup Portal HTML Escaping | Added `htmlEsc()` for SSID, server, and ID. | `v05_firmware_hardening_test.sh` |
-| **HW-P0-3** | Controller Test Suite Wiring | Hooked `v05_firmware_hardening_test.sh` into `controllers.sh`. | `controllers.sh` execution pass |
+| Target | Current classification | Remaining proof |
+|---|---|---|
+| ESP8266 NodeMCU / ESP-12 | Firmware source candidate; CI compilation is SHA-specific | Physical pulse, relay polarity, storage and power-cut acceptance |
+| ESP32 DevKitC / WROOM-32 | Firmware source candidate; CI compilation is SHA-specific | Physical pulse, relay polarity, storage and power-cut acceptance |
+| Ruijie RG-EW1200G Pro v1.1 | OpenWrt deployment candidate | Exact board/partition/bootloader recovery proof and noncustomer acceptance |
+| EW1300G Pro / EW300 Pro | Candidate only | Board-specific DTS, partition and recovery proof |
+| Boosteven ZLT-R281 | Experimental reference only | NAND layout, bad-block handling and recovery proof |
+| Orange Pi Zero 3 | Linux GPIO software target | Physical GPIO/electrical acceptance and recovery |
+| x86_64 appliance | Software/build target | Exact appliance boot/recovery and physical acceptance |
+| Windows SoftTimer | Separate PHX-PISONET ownership | Not a PHX-HARDWARE firmware acceptance target |
 
+A target build or host test is not proof that a device is supported, safely flashable, or field-qualified.
 
 ---
 
-## 9. PHX-HARDWARE checkpoint — 2026-11-15 UTC
+## 7. Required noncustomer hardware acceptance
 
-**Task:** HW-P0-2 fail-closed quarantine commit (`d4a9646df39dad6afb35c52a0e4acb24f2e6935b` source/test head).
+All items below remain **NOT TESTED** unless a separate, exact-device evidence record is independently attached:
 
-- ESP32 and ESP8266 now isolate quarantine persistence in `appendQuarantineRecord()`.
-- The active pending coin is retained unless the append reports the exact byte count and reopening the log proves the expected size increase.
-- LittleFS open failure, record truncation, 32 KiB capacity exhaustion, short write, and post-close verification failure all return without `clearPending()`; `pendingReady` therefore remains true and `applyOutputs()` keeps admission closed.
-- `v05_firmware_hardening_test.sh` is source-linked to both sketches and injects open, short-write, verification, size-mismatch, and simulated reboot failures.
+1. **150 controlled power cuts** across the approved noncustomer architectures and documented fault checkpoints.
+2. **30-device, 24-hour soak** with continuous storage, pulse and recovery observation.
+3. Electrical pulse conditioning, isolation, active-low/active-high relay behavior, contact release, brown-out and recovery measurements.
+4. Repeated coin insertion and recovery with no customer coins or customer persistent media.
+5. Reproducible per-target firmware artifacts, SHA256 provenance, reversible upgrade and recovery instructions.
 
-**Evidence classification:** CI pending at checkpoint publication. Failure injection is **SIMULATED** until the exact-head workflow completes. Physical power-cut, electrical pulse/recovery, 30-device soak, and noncustomer board acceptance remain **NOT TESTED**. This branch and PR #283 remain draft and **PRODUCTION NO-GO**.
+Protected anti-rollback signer/witness, durable accounting/replay, reversible v1→v2 financial migration, target-supported release builds, independent QA and Master/release signoff are separate production gates. This audit does not satisfy them.
+
+---
+
+## 8. Defect identifiers and current disposition
+
+| Defect | Current disposition | Evidence / owner |
+|---|---|---|
+| HW-P0-1 — response trust boundary | **DENY ONLY**. Register/poll response fields are ignored; no positive response signature contract is implemented. | PHX-CORE owns the canonical response envelope; PHX-QA owns independent golden vectors |
+| HW-P0-2 — uncredited pending/quarantine evidence | Automatic coin POST/retry/clear remains disabled. Append is source-checked; pending removal now has a fail-closed result contract in child #325. No active quarantine callsite or cross-reboot no-replay proof is claimed. | PHX-HARDWARE #283 / #325; PHX-QA independent review pending |
+| HW-P0-3 — legacy controller test assertions | Static token checks are not authentication evidence and are stale against the current deny-only producer/consumer. | PHX-QA owns `tests/controllers.sh` and `v05_firmware_hardening_test.sh` |
+| HW-P1-1 — nonce generation | Board RNG source is present; no entropy measurement or hardware RNG health acceptance is claimed. | PHX-HARDWARE source only |
+| HW-P2-1 — setup portal escaping | Escaping helper is present; no independent browser/XSS acceptance is claimed. | PHX-HARDWARE source only |
+
+---
+
+## 9. Pending-journal removal correction — PR #325
+
+**Scope:** ESP32 and ESP8266 `clearPending()` plus its `quarantinePending()` caller, one hardware-owned source-extracted lab, the dedicated hardware-only workflow and this audit.
+
+**Invariant implemented:** do not clear pulse count, nonce, target, pending-ready state or retry state until every existing pending candidate has a successful remove result and all three candidate paths are absent on the subsequent check. Filesystem-unavailable, failed remove, ambiguous false return, or a candidate that remains causes a false return, keeps the in-memory hold and reapplies logical outputs OFF. The quarantine caller now reports failure when cleanup is not verified.
+
+**Test-first evidence**
+- Expected RED against the original #283 source: [Actions run #44305881613](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44305881613), job `134807202118`, exact test-only head `1c528abfc8f03a5c0859eb245c6649eb9cd3b387`. The new harness failed because the production function was still `void clearPending()`; this reproduced the missing checked-removal contract. The existing append/readback lab completed 13/13 scenarios per board in that run.
+- Intermediate harness failures after the source change exposed missing/incorrect host stubs; they are test-harness defects, not claimed firmware regressions. The stub was corrected in commit `cc6b0e49ce1b74c3c4882d325f83afdacce83fe7`.
+- Exact-head post-correction focused CI: **PENDING / NOT VERIFIED** at this document revision. Do not infer PASS from the RED run or from the earlier append-only lab.
+
+**Limitations:** source-extracted host tests are SIMULATED. They do not prove LittleFS metadata durability, flash erase/program atomicity, behavior during a physical power cut, or recovery after simultaneous storage faults. No coin, relay, GPIO, live money, signer, migration, flash or production action occurred.
+
+---
+
+## 10. Next exact actions
+
+1. PHX-QA independently reviews the new pending-removal vectors and replaces the stale positive poll-signature assertion without weakening deny-only firmware.
+2. PHX-MASTER confirms the #322 → #323 candidate stack separately; PR #325 remains a child of the parallel #283 branch and must not be merged or silently composed.
+3. PHX-CORE defines the canonical authenticated response and event-bound receipt/disposition contract before any positive firmware admission is considered.
+4. PHX-HARDWARE refreshes all heads and obtains exact-head focused CI plus independent review before proposing any integration.
+
+**Standing disposition: OPEN / DRAFT / UNMERGED / SIMULATED ONLY / HARDWARE ACCEPTANCE NOT TESTED / PRODUCTION NO-GO.**
