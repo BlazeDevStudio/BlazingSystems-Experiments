@@ -176,6 +176,8 @@ def main() -> None:
     require('relayPolarity!="0"' in portal and 'relayPolarity!="1"' in portal and
             'ledPolarity!="0"' in portal and 'ledPolarity!="1"' in portal,
             "local relay and LED polarity values must be strictly 0 or 1")
+    require("if(!saveConfig())" in portal and "web.send(500" in portal,
+            "setup must refuse success/reboot when local polarity persistence fails")
     require("relay_active_high" not in remote and
             "led_active_high" not in remote and
             "nextRelayActiveHigh" not in remote and
@@ -228,10 +230,13 @@ class String {
 struct Preferences {
   std::map<std::string,uint8_t> values;
   std::string fail_key;
+  std::string read_override_key;
+  uint8_t read_override_value=0;
   bool isKey(const char *key) const {
     return values.find(key) != values.end();
   }
   uint8_t getUChar(const char *key,uint8_t fallback) const {
+    if(read_override_key==key) return read_override_value;
     auto it=values.find(key);
     return it==values.end()?fallback:it->second;
   }
@@ -271,6 +276,7 @@ void detachInterrupt(int) {}
 void coinEdgeISR() {}
 void attachInterrupt(int,void(*)(),int) {}
 bool coinLineIdle() { return true; }
+struct SerialStub { void println(const char *) {} } Serial;
 
 """ + functions + r"""
 
@@ -342,6 +348,16 @@ int main() {
   cfg.relayActiveHigh=true;
   cfg.ledActiveHigh=false;
   prefs.fail_key="ledhi";
+  assert(!persistLocalOutputPolarity());
+  assert(prefs.values["polarityv"]==0);
+  assert(!outputPolarityKnown);
+
+  // A valid-looking but mismatched readback must invalidate the marker again.
+  resetState();
+  cfg.relayActiveHigh=true;
+  cfg.ledActiveHigh=true;
+  prefs.read_override_key="ledhi";
+  prefs.read_override_value=0;
   assert(!persistLocalOutputPolarity());
   assert(prefs.values["polarityv"]==0);
   assert(!outputPolarityKnown);
