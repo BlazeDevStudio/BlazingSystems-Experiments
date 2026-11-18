@@ -621,7 +621,17 @@ int main(){
   loadPollPulseFaultLatch();
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 33;
   if(lastRawFlashReadAddress != (uint32_t)(EEPROM_start-0x40200000UL)+POLL_FAULT_EEPROM_OFFSET) return 34;
+  // A failed raw read is NOT evidence that a deny marker already exists.
+  // The writer must refuse to claim secondary-store persistence or skip the write.
+  resetStorage();
+  resetRuntime();
+  rawFlashReadFailure=true;
+  const unsigned commitsBeforeUnavailableRead=backupCommitCalls();
+  if(writePollFaultBackup(11)) return 35;
+  if(!pollFaultBackupWriteFailed) return 36;
+  if(backupCommitCalls()!=commitsBeforeUnavailableRead) return 37;
   rawFlashReadFailure=false;
+  std::cout << "ESP8266_RAW_FLASH_READ_ERROR_WRITE_DENY_PASS\\n";
   std::cout << "ESP8266_RAW_FLASH_READ_ERROR_DENY_PASS\\n";
 """
     main = main.replace("RAW_FLASH_READ_ERROR_SCENARIO", raw_flash_read_error if board == "ESP8266" else "")
