@@ -463,7 +463,7 @@ for board,path in BOARDS.items():
 
     extra_mutations=(
       ("remove-edge-interrupt-attachment",loop,output,quiet,accept,
-       configure.replace("attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);","",1),isr,write_fault,load_fault,latch_fault,init_store,12),
+       configure.replace("attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);",""),isr,write_fault,load_fault,latch_fault,init_store,12),
       ("ignore-poll-edge-delta",loop.replace("if(pollEdgeEnd!=pollEdgeStart){","if(false){",1),output,quiet,accept,
        configure,isr,write_fault,load_fault,latch_fault,init_store,12),
       ("no-op-coin-isr",loop,output,quiet,accept,configure,
