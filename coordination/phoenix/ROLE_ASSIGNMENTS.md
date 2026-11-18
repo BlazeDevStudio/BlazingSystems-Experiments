@@ -975,3 +975,14 @@ All owners retain their existing source branches and review authority. These are
 - **Registry custodian / repository administrator:** restore authorized private v11/newer-correction access and independently verify branch protection/required checks.
 
 The current #327 focused runs fail at the new ESP8266 false-return case; the Full run fails at the QA-owned positive poll-signature fixture. No role is marked verified from the failed or skipped jobs.
+
+## PHX-MASTER UTC22 live exact-head update — owner routing (2026-11-18T22:51:38.802Z)
+
+- **PHX-MASTER:** coordination/phoenix, architecture/interface contracts, exact-head matrix and provenance only. No source edits outside this directory; ownership manifest unchanged.
+- **PHX-HARDWARE #177/#327:** PR head f9d1fa165ccc94b18aeac7e85ffd83c29899463f; source/test ed667e88f6844284834ebd3a337dfce07a817e8c. Poll-drain false-return correction keeps pollIntakeSuspended asserted until caller reconciles coinEdgeSequence; exact-host subtest passes both boards. Focused jobs then fail at separate config_load_read_failure_lab.py exit 31. Fix full-image EEPROM read/recovery in existing Hardware branch, preserve marker bytes, refresh stale PR description; no claim of reboot durability if both same-flash stores fail.
+- **PHX-QA #292/#327:** #292 head 75a3f66d... remains based on stale Master b1ca02e... and has no CI. Independently review exact #327 source/test SHA and both-board drain-abort logs; replace inherited positive response_sig / |poll| fixture with negative/default-deny assertions. Do not add fake signatures to firmware.
+- **PHX-RELEASE #291 / COE #44:** fix Release-owned PowerShell harness ($buildWorkflow uninitialized under StrictMode) without editing PISONET-owned tests; keep publisher skipped. COE #44 shared/case checks pass, but mandatory bubblewrap sandbox remains blocked and site-ULA authority unresolved.
+- **PHX-CORE:** retain separate financial reconciliation ownership; no Master changes or parallel CORE worker.
+- **PHX-RENTAL / PHX-PISONET:** retain source ownership; scoped CI is not native acceptance.
+- **COE integration owner:** keep #26 draft; reconcile source/destination blobs, 19 source board labs absent from destination, test identity, license/NOTICE scope and destination CI before staging.
+- **Registry custodian / repository admin:** restore private registry/correction access and independently verify branch protections; no private IDs or registry contents in public GitHub.

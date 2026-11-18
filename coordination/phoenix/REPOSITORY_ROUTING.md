@@ -576,3 +576,26 @@ Current Hardware PR #327 head is `b346eba3ebee228abcff03456deb7889f2d39144`; COE
 | CI entrypoint | source-extracted board labs | workflow `fe79adbd...` invokes generic shell + Shared tests, not source labs |
 
 The source tree has 18 ESP32/ESP8266 Python board labs; #26 has zero corresponding Hardware Python labs. Its generic test still requires positive `response_sig` and `|poll|` strings, inconsistent with the current deny-only source consumer. Source project MIT LICENSE matches COE `Pisowifi/LICENSE`, but sibling `Hardware/` license scope remains unresolved; source root NOTICE exists and COE root NOTICE is absent. No destination route or file mapping is approved. Do not copy, move, overwrite, rebase or promote until per-file blob/license/test/import completeness and exact-head destination CI are reviewed by owners.
+
+## PHX-MASTER UTC22 live exact-head update — exact source/destination provenance (2026-11-18T22:51:38.802Z)
+
+Source #327 PR head f9d1fa165ccc94b18aeac7e85ffd83c29899463f (source/test ed667e88f6844284834ebd3a337dfce07a817e8c); destination COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Artifact | Experiments #327 | COE #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | cd1acb1da298d4f9598e943dae05918b088e5363 | c8be98f72596681e36a3ad1f8939bf8046c96887 | DIFFERENT |
+| ESP32 sketch | ef498761e46d37134730dd41de1cc322d5d443e8 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | DIFFERENT |
+| Python board labs | 19 ESP32/ESP8266 Python labs | 0 Hardware Python labs | INCOMPLETE |
+| COE Hardware test | source-extracted board labs | Hardware/tests/test_firmware_hardening.sh blob f921c56cecc19cab1989507b9b4ade1f45dac54e | Different test identity |
+| COE workflow | source labs run by source workflows | hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 | Does not invoke source labs |
+
+COE's shell test still positively greps for response_sig and |poll|; current source is deny-only. COE #26 has five queued workflows and zero jobs.
+
+### License / NOTICE scope
+
+- Experiments experiment/openwrt/BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical blob 1ee55b94183417be977ca287cd7391f9a6f7e721.
+- Experiments root NOTICE.md exists (blob f6d92cd21465312be5993631fe26977219be0fb9); COE root NOTICE.md is absent.
+- COE Hardware/LICENSE and Hardware/NOTICE.md are absent. Pisowifi/LICENSE is in a sibling directory; its intended scope over Hardware is unresolved.
+- QR-code and TailAdmin vendor LICENSE/NOTICE blobs match; that does not resolve root/Hardware scope.
+
+No copy, move, overwrite, rebase or migration proposal. OWNERSHIP_ROUTES remains DRAFT_REVIEW_ONLY, Master destination null.

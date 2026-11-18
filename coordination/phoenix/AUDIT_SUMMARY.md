@@ -688,3 +688,19 @@ COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queue
 Other exact-head role observations remain scoped: CORE #252 PASS (separate owner); RENTAL #289 two PASS; PISONET #255 PASS; QA #290 build/handover PASS only, #292 no runs/stale base; RELEASE #291 two scoped PASS; COE #44 shared/case PASS but mandatory bubblewrap sandbox FAIL. None constitutes production acceptance.
 
 Master Python suite NOT RUN; Master PR CI returned no runs. Source/tree inspection and GitHub Actions evidence above are distinct. No physical GPIO/coin, power-cut, soak, payment, signer or production test occurred. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC22 live exact-head update — disposition (2026-11-18T22:51:38.802Z)
+
+**Production NO-GO. Migration BLOCKED. Master scope coordination/phoenix only.**
+
+The #327 poll-drain false-return issue is corrected in Hardware source and its source-extracted scenario passes both boards. Focused workflows still fail later at the separate ESP8266 full-image EEPROM read/recovery lab (exit 31). Full validation fails at QA's inherited positive poll-signature assertion. #327 PR description cites c512719... instead of live head f9d1fa... and needs owner refresh.
+
+Release #291 shared build passes, Windows harness fails because $buildWorkflow is uninitialized under StrictMode; publisher skipped. COE #44 shared/case checks pass, mandatory sandbox fails closed because bubblewrap unavailable. COE #26 remains five queued workflows / zero jobs and is not import-complete or test-equivalent.
+
+Source tree has 19 ESP32/ESP8266 Python board labs; COE #26 has none under Hardware and runs only a generic shell test with positive poll-signature assertions. Sketches differ. Source project license matches sibling Pisowifi LICENSE; Hardware license/NOTICE scope unresolved.
+
+Both rulesets endpoints returned empty arrays. Main branch-protection reads returned 403 Resource not accessible by integration; protections/required checks NOT independently verified. AGENTS.md was read; linked cloud policy/recovery files were not readable at referenced paths. No Google Drive connector is exposed; private registry/newer corrections unavailable in Library. Older v3-v7 snapshots not substituted. Issue #266 OPEN with historical pins; refresh before cleanup moves.
+
+GitHub source/tree inspection and exact CI logs were performed. Master Python suite NOT RUN; no Master PR workflow runs returned. Exact-SHA git clone failed because this runtime could not resolve github.com. No physical tests, flash, power cuts, soak, signing, financial migration, merge or release occurred.
+
+Next: PHX-HARDWARE fixes full-image EEPROM read/recovery; PHX-QA independently reviews exact SHA and negative poll contract; PHX-RELEASE fixes #291 harness and obtains bubblewrap runner; COE owner completes provenance/CI; repository admin and registry custodian restore access/protection.

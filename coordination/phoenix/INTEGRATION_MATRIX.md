@@ -1332,3 +1332,28 @@ This refresh supersedes the earlier #327 head/run pins above; no source ownershi
 #327 current source/test head adds the false-return drain-abort case. Its focused CI is not green. Full validation fails separately at the inherited QA positive poll-signature fixture; all 13 firmware/platform target jobs and Android completed SUCCESS, while simulations, update bundle, candidate gate, signing and publishing were SKIPPED. Preserve deny-only firmware.
 
 COE #26 remains non-equivalent to the current Hardware source: source ESP8266 blob `4d73c5dc451c29f2ffd64a5cb2d230cc84a78ed5` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`; source ESP32 blob `ada9723c5f07879775284eb128a986ac865394f7` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. The 18 source board labs have no corresponding Hardware Python labs in #26. Destination generic test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` still asserts positive `response_sig` / `|poll|`; workflow blob `fe79adbdb3745a22c5ef6d1f0c87c868b7785793` runs that shell test and shared tests, not the source-extracted labs. License/NOTICE scope remains unresolved. No migration proposed.
+
+## PHX-MASTER UTC22 live exact-head update (2026-11-18T22:51:38.802Z)
+
+| Ref | Exact SHA / state |
+|---|---|
+| Experiments main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b |
+| Experiments development | blazepwifi-v0.5.3-development @ aad3aade72c1156eecba1fed30907c6d0283b2c5 |
+| Comparison branch | blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859 |
+| Master pre-update | phoenix/master-coordination @ 0f64a25a9948322d3dfd9e7e190fce1c8c8bcf14 |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243 |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 — OPEN/DRAFT; five workflows QUEUED, zero jobs |
+| OWNERSHIP_ROUTES | e4db324315a1b3543fec17a148fbf960170fcb29 — DRAFT_REVIEW_ONLY; Master target null |
+
+| Role / PR | Exact head | Current CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped; separate owner |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 + 43653329229 SUCCESS; new Android instrumentation not proven |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS; physical COM acceptance NOT TESTED |
+| HARDWARE #327 | PR head f9d1fa165ccc94b18aeac7e85ffd83c29899463f; source/test ed667e88f6844284834ebd3a337dfce07a817e8c | 44414150601 + 44414150956 FAIL at config-read exit 31 after poll-drain subtest passes both boards; Full 44414150578 FAIL at positive poll-signature fixture |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96; base b1ca02e2087f3b1a7169ceab9c34e52646e700df | No runs; stale Master base |
+| RELEASE #291 | 5020f71060cd47d0ebdad394757863171b1cad40 | Windows 44411293227 FAIL ($buildWorkflow uninitialized under StrictMode); shared 44411293180 SUCCESS; publisher skipped |
+| COE RELEASE #44 | code/test 81cb1747342b0335d586184c5ba58cb138d6201a; docs 582fd5d5e83e36b36546ac28534740298ba94af4 | case 44390136296 PASS; shared 44390136309 PASS; sandbox 44390136327 FAIL (bubblewrap unavailable) |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | 44295049903 + 44295049727 SUCCESS, scoped |
+
+Role-scoped successes are not production acceptance. Separate PHX-HARDWARE and PHX-RELEASE tasks remain separate; user-designated CORE continuation respected; no CORE work performed.
