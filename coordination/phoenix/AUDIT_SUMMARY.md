@@ -352,3 +352,21 @@ Master refreshed the uploaded full-team directive, latest README_FIRST and BLAZE
 **Release blocker:** COE #31 invalid ULA fd00:db8:blaze::/48 remains in packager; mandatory sandbox 44206767227 fails closed at hosted UID-map setup. COE #26 five workflows remain queued with zero jobs. Registry v11/newer corrections remain unavailable through exposed Library/connector.
 
 **Next:** QA exact-head tests and review; HARDWARE owner stack direction; CORE authenticated poll/receipt contract; RELEASE site ULA and authorized runner; COE per-file provenance/license review; registry custodian restores private v11 access. No merge/migration/release/flash/payment operation. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC01 — Release stack and destination candidate blockers
+
+### Current evidence
+- #31 sandbox run 44213707995 fails at unprivileged user-namespace setup; all seven preflight unit tests pass, but the real bwrap UID map is denied and mandatory packaging regressions are skipped.
+- #35 is a divergent, nonmergeable child of stale #31 head 7bdba18b; it overlaps current #31 packager/test paths and has no mandatory sandbox run because its branch/base do not match the workflow filters.
+- COE #27 is a separate main-based candidate diverged from #26 (3 ahead / 83 behind). Its firmware blobs equal #26, but both differ from current Experiments #283/#317 firmware.
+- COE #26 remains five queued workflows with zero jobs. #317 Full validation still fails at QA's legacy poll-signature fixture; #318 has no current-head CI.
+- Private Drive v11/newer corrections remain inaccessible through the exposed connector; no older registry substituted.
+
+### Exact owner actions
+1. PHX-RELEASE reconcile #35 with current #31 and run mandatory sandbox at exact resulting head.
+2. Infrastructure provide authorized disposable no-secret unprivileged-user-namespace runner; no privileged/unsandboxed fallback.
+3. PHX-HARDWARE + PHX-QA select authoritative #283/#317/#318 sequence and repair the QA-owned default-deny fixture.
+4. COE integration owner reconcile #27/#26 and current source/test/license provenance before any destination change.
+5. Registry custodian restore authorized read-only access to canonical Drive v11 and newer corrections.
+
+No subsystem source changes or migration performed. **PRODUCTION NO-GO.**

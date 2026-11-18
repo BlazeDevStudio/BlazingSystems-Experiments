@@ -346,3 +346,13 @@ COE #26 remains historical-rootfs staging at SOURCE_INTAKE/MIGRATION_MAP source 
 COE #31 still has invalid site ULA fd00:db8:blaze::/48 and hosted user-namespace failure. No privileged or unsandboxed fallback. Private registry v11/newer corrections remain inaccessible; no historical snapshot is substituted.
 
 OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+## 2026-11-18 UTC01 — COE Release stack and destination candidate hold
+
+- COE #31 current head is `20e75fc0e6fb7e7ada560a9ec41cb9695d198fa8`; mandatory sandbox run 44213707995 failed closed at `bwrap: setting up uid map: Permission denied` after 7/7 host-preflight tests passed. Packaging regressions were skipped. Shared/firmware run 44213709669 and case guard 44213707845 passed, scoped only.
+- COE #35 `61e2d8ef77e5cd3740ab9e630e5bfcc1994b7d09` is based on old #31 head `7bdba18b...`; compared with current #31 it is DIVERGED 2 ahead / 7 behind and mergeable=false. It modifies the same two Release paths, `tools/package_appliance_firmware.py` and `tools/test_package_appliance_firmware.py`. Its exact-head case/shared/firmware runs pass, but no mandatory sandbox run was returned. The workflow PR trigger only targets COE integration branch and its push trigger only targets the parent Release branch; #35 is outside both filters. Require Release owner reconciliation and exact-head sandbox execution.
+- COE #27 `009f70cc2c2775039a5fb072c9d4fdedee76cfc7` is based on COE main, not #26. Compare #26 → #27 is DIVERGED 3 ahead / 83 behind. Its ESP32/ESP8266 blobs are byte-identical to #26 staging, but differ from current Experiments #283 and #317. It is a separate historical destination candidate, not proof of current-source import.
+- COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Do not use #27's scoped green CI as #26 acceptance.
+- Current #317 Full validation 44209812745 fails at the QA-owned legacy positive poll-signature assertion; focused runs pass. Preserve default-deny. #318 has no current-head CI and is nonmergeable.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No destination route is newly authorized.
+- No source/destination file was copied, moved, overwritten or deleted. **PRODUCTION NO-GO.**

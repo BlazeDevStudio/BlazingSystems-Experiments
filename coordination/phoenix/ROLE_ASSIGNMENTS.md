@@ -589,3 +589,28 @@ This refresh supersedes older role pins for the exact refs below only. It does n
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED, zero jobs; no integrated acceptance |
 
 Hardware stack comparisons are now #283 vs #317 DIVERGED (15 ahead / 280 behind), #318 vs #317 DIVERGED (51 ahead / 71 behind), and #318 vs #283 DIVERGED (260 ahead / 15 behind). Keep all drafts separate. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC01 — COE Release stack and destination candidate revalidation
+
+This exact-head refresh supersedes earlier role pins only where a current head is listed. It does not transfer ownership or authorize integration.
+
+| Role / candidate | Exact current head | Exact CI / disposition |
+|---|---|---|
+| PHX-MASTER #288 | `583a2053cc29825b63ead1b614192331d78fd730` | OPEN/DRAFT; no PR-triggered runs returned |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate hourly CORE continuation owns source implementation |
+| PHX-RENTAL #240 / #287 / #289 | `a7d113fb...` / `a4fffd01...` / `68928774...` | 40910311141/40910311159; 43754089203; 43653329235/43653329229 SUCCESS, scoped |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN |
+| PHX-HARDWARE #283 / #314 / #315 / #316 / #317 / #318 | `e8c6619b...` / `556adc20...` / `84fe6b79...` / `888e6941...` / `fce915c1...` / `696e28ed...` | #283 44203456152/44203456142 SUCCESS; #314 43782088731/43782088748 SUCCESS; #315 44054778537 SUCCESS / 44054778555 FAILURE; #316 43972511337 SUCCESS / 43972511250 FAILURE; #317 focused 44209812693/44209812920 SUCCESS / Full 44209812745 FAILURE at QA poll fixture; #318 no current-head CI, mergeable=false |
+| PHX-QA #267 / #290 / #292 | `ff536799...` / `5c29d159...` / `75a3f66d...` | #267 41452247439 SUCCESS; #290 43633486963 SUCCESS; #292 no current-head runs returned |
+| PHX-RELEASE Experiments #291 | `a74b8b940fba3aa8651f1a9ee8bbf23cf112726e` | 44199987756 SUCCESS, scoped; signing/publishing skipped |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | five workflows QUEUED, zero jobs |
+| COE Hardware/Shared #27 | `009f70cc2c2775039a5fb072c9d4fdedee76cfc7` | DIVERGED from #26 by 3 ahead / 83 behind; exact firmware blobs match #26, not current Experiments #283/#317; 43079646393/43079646264 SUCCESS, scoped |
+| COE RELEASE #31 | `20e75fc0e6fb7e7ada560a9ec41cb9695d198fa8` | sandbox 44213707995 FAILURE at host UID-map preflight (7/7 preflight tests passed; package regressions skipped); shared/firmware 44213709669 SUCCESS; case 44213707845 SUCCESS |
+| COE RELEASE child #35 | `61e2d8ef77e5cd3740ab9e630e5bfcc1994b7d09` | based on stale #31 head 7bdba18b; DIVERGED from current #31 2 ahead / 7 behind, mergeable=false; only case 44180549932 and shared/firmware 44180549950 returned SUCCESS; no mandatory sandbox run |
+| COE CORE #29 / PISONET #28 and #30 / QA #32 | `d0830332...` / `b21b0461...` / `4897348d...` / `29b6fe08...` | 43653906676/43653906675; 43632393888; 43653415598; 43653540607 SUCCESS, scoped |
+
+#35 changes the same two Release paths as its current parent (#31) but is seven commits behind and nonmergeable. Its branch/base do not match the mandatory sandbox workflow's automatic branch filters. PHX-RELEASE must reconcile the child and run the sandbox on its exact resulting head; Master does not rebase or edit Release source.
+
+#27 is a separate COE main-based candidate, not integrated into #26. Matching the two staged firmware blobs is not proof of full file/test/license parity. Keep #27 and #26 separate.
+
+The canonical private registry v11/newer corrections remain unavailable through the exposed connector surface. **PRODUCTION NO-GO.**

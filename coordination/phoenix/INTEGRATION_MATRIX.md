@@ -745,3 +745,22 @@ CI: #283 run 44182715006 SUCCESS for validation, ESP boards, target/platform mat
 COE #26 SOURCE_INTAKE.json 1b9018ff... and Pisowifi/MIGRATION_MAP.md b54fc15d... remain pinned to historical source 6d4c9b..., with 61 rootfs files / 47 byte-identical / 14 derived / zero unrecovered / two unchanged tests. This does not prove current Hardware candidate import. COE Hardware test f921c56c... differs from source controllers.sh; target Pisowifi/tests/controllers.sh is absent. Source BlazePwifi LICENSE and COE Pisowifi/LICENSE are identical blob 1ee55b94..., but no Hardware-specific or root LICENSE/NOTICE exists.
 
 COE #31 current packager still emits invalid fd00:db8:blaze::/48 and mandatory bubblewrap run 44206767227 fails closed at unprivileged UID-map setup. COE #26 still has five queued workflows and zero jobs. No destination files were moved/copied/overwritten/deleted. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC01 — COE #27/#26 and Release #31/#35 exact-head matrix
+
+| Artifact / check | COE #26 | COE #27 | Current Experiments source |
+|---|---|---|---|
+| ESP32 | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | same | #283 `d86d94568c0de9a5be6648e8d83c219a9cc58c62`; #317 `067c79405a6eb81a6c0b292b858191d3a131ed4f` |
+| ESP8266 | `c8be98f72596681e36a3ad1f8939bf8046c96887` | same | #283 `710572a1aae661cfa7ba3936f2170f921200150e`; #317 `2f6dce596368d74f51aa6ab6a66b6dde875511c1` |
+| Branch compare | — | DIVERGED 3 ahead / 83 behind #26 | Neither current source candidate is byte-identical to COE staged firmware |
+
+#27's two firmware blobs equal #26, but its branch is separate and its available runs 43079646393/43079646264 are scoped only. Five #26 workflows remain QUEUED with zero jobs. No combined acceptance.
+
+| Release candidate | Exact relationship | CI |
+|---|---|---|
+| #31 `20e75fc0...` | Based on #26 `b382d233...` | 44213707995 sandbox FAILURE at UID-map capability; 7/7 preflight unit tests PASS, packaging tests SKIPPED; 44213709669 shared/firmware PASS; 44213707845 case PASS |
+| #35 `61e2d8ef...` | Based on old #31 `7bdba18b...`; compared with current #31 DIVERGED 2 ahead / 7 behind; mergeable=false; overlaps same packager/test paths | 44180549932 case PASS; 44180549950 shared/firmware/ESP builds PASS; no mandatory sandbox run returned |
+
+The sandbox workflow's current automatic PR filter targets only the COE integration base branch; its push filter targets only the parent #31 branch. #35 is outside both automatic filters. Manual dispatch exists but no exact-head dispatch result was found. Release owner must repair the stack/trigger and produce exact-head sandbox evidence before any acceptance.
+
+**Migration remains blocked.** Exact source/test/license/import completeness and destination CI must be reverified on the selected authoritative source. No file move/copy is authorized by this matrix.
