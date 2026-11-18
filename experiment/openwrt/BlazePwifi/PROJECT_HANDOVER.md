@@ -880,3 +880,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Exact draft PR #291 source head `c5f96cd3aa95a4b73c3437362208f13549a5015f` contains the existing-owner's narrow checkout/action-pin and credential-persistence correction plus its regression coverage. This handover entry records provenance only; it does not endorse unrun source behavior.
 - Exact Windows run [#44414528967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414528967) and shared-build run [#44414529001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414529001) stopped at the mandatory handover-freshness gate before the source validation/build paths. The Windows publisher and shared production sign/publish jobs were skipped.
 - Refreshing this handover is intentionally additive and should unblock the next exact-head CI observation. PR #291 remains draft and unmerged; independent review, protected admission/signer, durable finance/migration and physical acceptance are still absent. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC23 — action-pin guard source refinement (blocked CI)
+
+- Exact draft PR #291 source head `e23a004fe4b5fcce2145d73b65e06f133d74310d` refines the existing shared-build action-pin guard/workflow correction. This entry is provenance only; the source change is not validated by the blocked workflows below.
+- Exact Windows [#44419768450](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768450) and shared-build [#44419768453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768453) runs failed at mandatory handover freshness before their build/validation paths; signing and publisher paths were skipped.
+- This additive refresh enables fresh exact-head CI only. PR #291 remains draft/unmerged; independent review and all production gates remain unresolved. **PRODUCTION NO-GO.**
