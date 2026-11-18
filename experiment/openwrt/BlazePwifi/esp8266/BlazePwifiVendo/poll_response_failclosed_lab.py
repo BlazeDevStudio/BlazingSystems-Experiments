@@ -59,6 +59,7 @@ struct Config {
 String lastSentNonce="nonce-123";
 String activeTarget="old-target";
 bool insertMode=true, fsReady=true, journalRecoveryRequired=false;
+bool outputPolarityKnown=true;
 bool pendingReady=false, pollIntakeSuspended=true;
 bool pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;

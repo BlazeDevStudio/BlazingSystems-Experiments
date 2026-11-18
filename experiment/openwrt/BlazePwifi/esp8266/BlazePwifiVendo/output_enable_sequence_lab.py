@@ -138,8 +138,7 @@ def unsafe_mutation(configure: str) -> str:
     # Remove only the two new-pin preloads; retain old-pin shutdown and the
     # post-enable OFF confirmation so the regression isolates the latch race.
     pattern = (
-        r"(runCoinPin=coinPin;\s*runRelayPin=relayPin;\s*runLedPin=ledPin;)\s*"
-        r"(?://[^\n]*\n\s*)?"
+        r"(// Preload[^\n]*\n\s*)"
         r"writeLogical\(runRelayPin,false,runRelayActiveHigh\);\s*"
         r"writeLogical\(runLedPin,false,runLedActiveHigh\);"
     )
