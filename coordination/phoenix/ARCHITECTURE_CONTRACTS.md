@@ -432,3 +432,19 @@ These are separate regions on the same physical flash chip, **not an independent
 Exact-head source-extracted dual-store lab [44242190343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190343) reports PASS for both boards and `EXPECTED_CURRENT_BOOT_ONLY` for both-store failure. Relay/output lab [44242190332](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190332) passes logical host scenarios. Full build [44242190324](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190324) fails the QA-owned legacy `Missing poll signature check` assertion; 14 target/platform builds pass, downstream simulations/signing/publishing are skipped. These are CI/source-extracted results, not real flash or physical acceptance.
 
 Require independent QA reboot vectors for primary/secondary read/write failure, corrupt/partial records and both-store failure. Preserve poll/coin default-deny. Keep #323 draft-only; no COE #26 migration or production authority is granted. See [HARDWARE_POLL_FAULT_DUAL_STORE_AND_COE_STAGING_RECONCILIATION_20261118_UTC05.md](HARDWARE_POLL_FAULT_DUAL_STORE_AND_COE_STAGING_RECONCILIATION_20261118_UTC05.md). **PRODUCTION NO-GO.**
+
+---
+
+## 6.21 COE INTERCON Stage-3/Stage-4 candidates — provisional integration boundary (2026-11-18 UTC06)
+
+COE INTERCON is not an adopted Phoenix financial authority. Three incompatible Stage-3 candidates remain open: #39 uses a 64-byte record, #40 a 76-byte record, and #42 a 92-byte record. Stage-4 #41 is a journal-only shadow-credit child of #39; Stage-4 #43 is a live timer/relay child of #42. Do not combine these formats or call either Stage-4 branch canonical without an explicit COE owner decision, independent QA and a reversible format migration plan.
+
+The #43 source commits Master pending state before CRED and commits Slave paid time + receipt/sequence before live timer/output changes. That is useful candidate ordering, but it is a two-device prototype, not integration with the Phoenix CORE ledger: the PR explicitly leaves the BlazePwifi router adapter and multi-target accounting separate. Any future integration must map to the canonical receipt/event identity, idempotency, disposition and reconciliation contracts in §§1–2. A local 64-bit sequence and paid-event count are not by themselves proof of cross-system receipt parity.
+
+The current #43 unresolved pulse count is RAM-only and absent from its journal record. A failed/unavailable Master journal can therefore leave an unresolved physical coin alarm without demonstrated reboot persistence. Such a state must remain deny/CS-off and must be durably reconciled before another paid event is admitted.
+
+The inspected peer-auth source stores a raw 32-byte shared key in a LittleFS config record. No protected key store or independent signer is shown in the inspected files. HMAC transport and a checksum do not satisfy the independent protected P-256 signer / anti-rollback witness gate.
+
+The #43 host end-to-end test models two journal slots in RAM and copies encoded bytes to simulate a rename boundary. It does not certify actual LittleFS metadata atomicity, flash brownouts, watchdog behavior or power-cut recovery. Its 650 ms burst grouping and 60-second timer checkpoint are prototype assumptions; the latter can restore up to approximately 60 seconds of consumed time after a sudden outage. Physical coin acceptance, CS inhibit/hold-up, relay behavior and real flash recovery remain NOT TESTED.
+
+#41 remains shadow-only and must not be represented as live paid-time acceptance. #43 changes live timer/relay behavior but remains DRAFT / NO-GO. No COE INTERCON source route exists in OWNERSHIP_ROUTES.json; no PHX-PISONET or PHX-HARDWARE ownership is inferred for this subtree.
