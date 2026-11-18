@@ -131,6 +131,11 @@ void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
 static bool injectAfterDrainEdge=false;
+static bool injectDuringDrainAbort=false;
+static int drainAbortReadCount=0;
+static bool drainAbortInjected=false;
+static bool drainAbortSawRelayOn=false;
+static bool drainAbortSampleSawRelayOn=false;
 static int pollCalls=0, saveCalls=0;
 static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
@@ -158,6 +163,17 @@ struct ConfigStub {
 #endif
 } cfg;
 int digitalRead(int) {
+  if(injectDuringDrainAbort){
+    ++drainAbortReadCount;
+    if(drainAbortReadCount==2 && !drainAbortInjected){
+      drainAbortInjected=true;
+      if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+         attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
+      drainAbortSawRelayOn=relayOn;
+      return runCoinActiveLow?LOW:HIGH;
+    }
+    if(drainAbortReadCount==3) drainAbortSampleSawRelayOn=relayOn;
+  }
   const bool active=pulseStart>=0 &&
     fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
   if(runCoinActiveLow) return active?LOW:HIGH;
@@ -240,7 +256,9 @@ void resetState(){
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
-  injectDuringHttp=false; injectAfterDrainEdge=false; pollCalls=0; saveCalls=0;
+  injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
+  drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
+  drainAbortSampleSawRelayOn=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
@@ -327,6 +345,16 @@ int main(){
   // If marker creation itself is unavailable, the current boot still remains denied.
   resetState(); fakeOpenFail=true; injectDuringHttp=true; loop();
   if(!journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 21;
+
+  // A pulse can abort the drain and end before the next loop sample. Its ISR edge
+  // must still be persisted before outputs are released or the next poll is attempted.
+  resetState(); injectDuringDrainAbort=true; loop();
+  if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
+     pollCalls!=0 || !journalRecoveryRequired ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty() || pendingPulses!=0 ||
+     pollIntakeSuspended || lastPoll!=fakeNow) return 25;
+  std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS\\n";
 
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
