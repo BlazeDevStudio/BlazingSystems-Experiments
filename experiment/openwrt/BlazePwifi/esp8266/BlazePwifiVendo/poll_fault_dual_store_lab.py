@@ -104,7 +104,7 @@ def extract_function(source: str, name: str) -> str:
     signature = re.compile(
         rf"(?m)^[ \t]*(?:(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)\s+)*"
         rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
-        rf"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
+        r"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
     )
     match = signature.search(source)
     if not match:
