@@ -805,7 +805,7 @@ The table below is a current PR API snapshot, not an ownership transfer. Source 
 
 | Role | Current owner PR / exact head | Exact CI observation at this refresh |
 |---|---|---|
-| PHX-MASTER | #288 `6a73722b7fa990771a94969c4aed11531f184fb4` (this audit advances it) | Docs-only Master CI has no run returned; no source suite is claimed |
+| PHX-MASTER | #288 `8026956c5b3922c34e44e6b769a4f217647af6d6` (current docs-only audit head) | Docs-only Master CI has no run returned; no source suite is claimed |
 | PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped; separate CORE automation retains implementation |
 | PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
 | PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped; native COM acceptance remains unverified |
