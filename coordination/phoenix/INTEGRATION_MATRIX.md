@@ -1123,3 +1123,25 @@ Experiments #291 head ed3565395bd70c4de696e49a84f0bb454efebc8b run 44328674893 S
 HARDWARE #323's block-scalar workflow now executes the boot-polarity lab; the remaining assertion is a real CI failure at this SHA. ESP8266 source visibly latches failed default-config persistence, but the source-extracted harness reports the latch missing; Hardware must instrument and reconcile. ESP32 blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` still lacks the ESP8266 ConfigV3 unknown-polarity gate and configures OUTPUT before the setup portal; do not claim cross-board polarity parity.
 
 Other exact role heads: CORE #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` (42698139210 SUCCESS, scoped); RENTAL #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` (43653329235/43653329229 SUCCESS); PISONET #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` (42462978704 SUCCESS); QA #290 `5c29d15994cee1279058f1eca12f2a3180704292` (43633486963 SUCCESS); QA #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` (no PR-triggered run); RELEASE #291 `ed3565395bd70c4de696e49a84f0bb454efebc8b` (44328674893 SUCCESS, privileged publisher skipped). These are scoped results, not combined acceptance.
+
+
+## 2026-11-18 UTC16 — exact Hardware/COE staging and role refresh
+
+| Role / candidate | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| PHX-MASTER #288 | 3e60c9fd52009e0a1379c7c98639bf48b4f2b2da before this update | OPEN / DRAFT, base main f4e8a891...; 83 existing paths, all coordination/phoenix; no Master CI run returned |
+| Experiments development | blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859 | Current development branch API read; prior aad3aade... snapshot is stale |
+| HARDWARE #323 | 988904e8bcd058b62a9fac4aa6319a9b7c5b2470 (source/test tree 359bd8f...) | Quarantine 44347847077 PASS; focused two-board boot/output 44347847191 PASS; Full 44347846832 FAIL at QA positive poll-signature fixture; 13/13 target builds + Android passed |
+| HARDWARE #317 / #318 | fce915c... / de428b7... | #317 focused PASS, Full FAIL; #318 no current PR-triggered run |
+| HARDWARE #321 / #322 / #324 / #325 | 4c54d629... / 50d93e0... / 8e7f0220... / f66b45ec... | Focused results pass at their own SHAs; Full runs fail at inherited controller fixture. Separate branches; no composition |
+| QA #290 / #292 | 5c29d159... / 75a3f66d... | #290 43633486963 PASS; #292 no current-head run returned |
+| RELEASE #291 | ed356539... | 44328674893 SUCCESS for handover/build; publisher skipped |
+| COE RELEASE #35 | b398906e23f95400ed39d08507e8a3ea1966dbff | Shared 44345859504 + case 44345859677 PASS; sandbox 44345859641 FAILS at missing bubblewrap after 13/13 host preflight tests |
+| COE CORE #45 | 9d76a134... | 44295049727 shell suite + 44295049903 case guard PASS; separate CORE-owned candidate |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; no combined acceptance |
+
+### Exact destination staging comparison
+
+Current #323 ESP32/ESP8266 blobs 7ebf0d34... / 312884c5... differ from COE #26 3cc7ec54... / c8be98f7.... New ESP32 boot, ESP8266 boot and ESP8266 dual-store labs are absent from #26. Destination Hardware test f921c56c... requires positive poll-signature strings; destination workflow fe79adbd... runs that generic test, not the new labs. Source main/dev producer blobs 2e3a1430... / db58041c... do not emit signed poll responses, while destination producer 0a71c4e2... defines vendo_poll_sig. Source MIT license 1ee55b94... matches Pisowifi/LICENSE, but no Hardware-scoped LICENSE/NOTICE or COE root LICENSE/NOTICE was found. Import completeness, interface and license scope remain unresolved; no migration.
+
+Experiments main f4e8a891..., development 2fbd2475..., Master 18cd5064..., and COE main a6513ab4... report protected=false; both rulesets endpoints are empty and classic protection endpoints return 403. Repository administrator must configure and independently verify protection and required checks.
