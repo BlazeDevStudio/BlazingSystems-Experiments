@@ -356,3 +356,12 @@ OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fc
 - Current #317 Full validation 44209812745 fails at the QA-owned legacy positive poll-signature assertion; focused runs pass. Preserve default-deny. #318 has no current-head CI and is nonmergeable.
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No destination route is newly authorized.
 - No source/destination file was copied, moved, overwritten or deleted. **PRODUCTION NO-GO.**
+
+
+## UTC03 — Hardware candidate lineage and COE Release exact-head reconciliation
+
+PHX-MASTER accepts the HARDWARE-proposed #314 → #315 → #317 → #320 ancestry as the current candidate lineage for continued review only. Exact compare #317→#320 is 11 ahead / 0 behind with merge base equal to #317 HEAD. #318 remains a divergent 51/71 child of an older #317 base with no current-head CI. #283 remains a separate main-based candidate and its QA-owned test additions require independent review.
+
+COE RELEASE #35 is now a clean child of current #31 at exact base 59ed44d0..., 7 ahead / 0 behind. This supersedes the prior UTC01 stale-child finding. Its mandatory sandbox still fails closed at hosted user-namespace UID-map setup; packaging regressions were skipped. COE #26 remains five queued workflows / zero jobs.
+
+OWNERSHIP_ROUTES.json is unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. No route or destination copy permission was added. No source/destination files moved or copied.

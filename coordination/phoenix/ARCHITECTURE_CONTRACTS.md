@@ -367,3 +367,17 @@ A direct test of clearPending() proves only its deletion preconditions. It does 
 The source-extracted pending-journal lab compiles the real readPendingFile, checksum, loadPending, attempt-marker match, clearPending and output-gate helpers against fake LittleFS. Its 16 boot and 17 pending-clear scenarios per board are useful software evidence, but not flash durability, crash atomicity, receipt authority or physical power-cut evidence.
 
 Static presence checks for response_sig, |register| or |poll| are not signature verification. In current #283 source, the |poll| and response_sig tokens appear in comments describing the rejected candidate, while register/poll paths call denyRemoteControl(). QA must assert the actual source behavior: poll admission remains denied, target is cleared, outputs remain off, and ambiguous coin disposition preserves pending evidence. CORE owns the producer/receipt contract; QA owns independent vectors/tests; HARDWARE owns firmware. This clarification does not change the existing default-deny contract or authorize a positive path.
+
+
+## 6.10 Poll-edge fault marker failure is not a reboot guarantee — 2026-11-18 UTC03
+
+At HARDWARE #320 exact head b2b41a3d6ce7887b9624137c966f58462895d3fa, both ESP32 and ESP8266 sketches latch journalRecoveryRequired, disable insert mode, clear the active target, attempt a /pollpulse.fault write, flush/close it, and verify exact size plus byte-for-byte readback. If persistence fails, the source explicitly describes the device as fail-closed this boot. The RAM latch is not proof that a pulse edge survives reboot when no other durable pending record remains.
+
+The boot path treats an existing marker as a deny latch and does not auto-clear it. The writer's failure path has no independent durable fallback. Therefore:
+- Do not claim reboot/power-cut durability from the RAM-only failure latch.
+- Do not enable poll/coin intake or clear evidence after an ambiguous marker write/readback.
+- Require exact-head QA failure injection for marker open/short-write/readback failure, mount failure, reboot with a valid/partial marker, and reboot when marker persistence failed and no pending record exists.
+- CORE/MASTER must define durable recovery semantics; HARDWARE owns implementation; QA owns independent vectors.
+- coinPostDispositionVerified() and acceptPollResponse() remain hard false on both boards. No positive poll or financial disposition path is authorized.
+
+This clarifies the durability boundary only; it does not alter firmware or grant production authority.

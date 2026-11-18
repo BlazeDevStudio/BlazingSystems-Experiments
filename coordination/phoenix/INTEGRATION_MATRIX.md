@@ -764,3 +764,17 @@ COE #31 current packager still emits invalid fd00:db8:blaze::/48 and mandatory b
 The sandbox workflow's current automatic PR filter targets only the COE integration base branch; its push filter targets only the parent #31 branch. #35 is outside both automatic filters. Manual dispatch exists but no exact-head dispatch result was found. Release owner must repair the stack/trigger and produce exact-head sandbox evidence before any acceptance.
 
 **Migration remains blocked.** Exact source/test/license/import completeness and destination CI must be reverified on the selected authoritative source. No file move/copy is authorized by this matrix.
+
+
+## UTC03 — Exact Hardware and COE Release candidate matrix
+
+| Candidate | Exact relationship | Exact-head CI | Integration status |
+|---|---|---|---|
+| #314 → #315 → #317 → #320 | Linear; #320 is 11 ahead / 0 behind #317 | #320 focused quarantine + relay PASS; Full validation FAIL; poll-edge PASS exists only at predecessor SHA | Candidate lineage accepted for review only |
+| #318 | DIVERGED 51 ahead / 71 behind current #317 | No current-head run; owner-local Python/timeline report only; C++ lab not run | Keep separate |
+| #283 | Main-based, outside #317 chain | Full + append-readback PASS; three mount/boot/clear labs not invoked; static QA string test is not behavior proof | Keep separate; QA review required |
+| COE #31 → #35 | Linear; #35 7 ahead / 0 behind #31 | Shared + case PASS; mandatory sandbox FAIL at UID-map probe; packaging regressions skipped | Draft; no sandbox acceptance |
+| COE #26 | Integration candidate on main | Five workflows QUEUED, zero jobs | No combined acceptance |
+| COE #27 | Separate main-based candidate | Scoped shared/case PASS; firmware blobs match #26, not current source candidates | Not integrated |
+
+The current #35 packager still emits invalid placeholder ULA fd00:db8:blaze::/48. No replacement prefix is guessed. No migration or destination move is authorized.

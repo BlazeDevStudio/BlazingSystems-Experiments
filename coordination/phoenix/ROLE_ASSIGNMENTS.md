@@ -614,3 +614,20 @@ This exact-head refresh supersedes earlier role pins only where a current head i
 #27 is a separate COE main-based candidate, not integrated into #26. Matching the two staged firmware blobs is not proof of full file/test/license parity. Keep #27 and #26 separate.
 
 The canonical private registry v11/newer corrections remain unavailable through the exposed connector surface. **PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC03 — Hardware lineage and Release child exact-head refresh
+
+| Role / PR | Exact current head | Exact-head evidence / disposition |
+|---|---|---|
+| HARDWARE #314 | 556adc20ef0cfd355089aff3b979c0169af79bdd | Parent of #315 |
+| HARDWARE #315 | 84fe6b790139d147f330f13a40b3ae3e89a7042d | Exact child of #314 |
+| HARDWARE #317 | fce915c1167fc43c6936f3594ae9efce376b711f | Exact child of #315; focused 44209812693/44209812920 PASS; Full 44209812745 FAIL at QA poll-signature fixture |
+| HARDWARE #320 | b2b41a3d6ce7887b9624137c966f58462895d3fa | Exact child of #317; current-head quarantine 44225714826 and relay 44225714732 PASS; Full 44225708501 validation FAIL, 14/14 target builds PASS, 12 release/simulation jobs SKIPPED; poll-edge run 44225475672 is predecessor SHA b6e9cfa, not current head |
+| HARDWARE #318 | 696e28ed4cd53b9189b78095b38aee973d774683 | DIVERGED from current #317 51 ahead / 71 behind; no current-head CI |
+| HARDWARE #283 | 830c355376380f9b5533d5cda2558beed41a593a | Main-based separate candidate; Full 44219099256 and append-readback 44219099309 PASS; three new mount/boot/clear labs are not invoked; QA static token fixture is not behavior proof |
+| RELEASE COE #31 | 59ed44d0b911e176f1a95b9cf5585ef811ffd31b | Shared 44222517238 and case 44222517258 PASS; mandatory sandbox 44222517263 FAIL at UID-map preflight |
+| RELEASE COE #35 | 729c3e9c622c8f13bd949aebec750567c5382ed7 | Clean child of current #31, 7 ahead / 0 behind; case 44228970740 and shared 44228970878 PASS; sandbox 44228970827 FAIL at UID-map preflight |
+| RELEASE #291 | a74b8b940fba3aa8651f1a9ee8bbf23cf112726e | 44199987756 SUCCESS, scoped; signing/publishing skipped |
+
+**Master sequencing decision:** #314 → #315 → #317 → #320 is accepted as the current candidate lineage for continued review only. #283 and #318 remain separate. No source ownership, merge, migration or release authority changes.

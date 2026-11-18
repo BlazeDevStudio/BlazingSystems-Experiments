@@ -370,3 +370,15 @@ Master refreshed the uploaded full-team directive, latest README_FIRST and BLAZE
 5. Registry custodian restore authorized read-only access to canonical Drive v11 and newer corrections.
 
 No subsystem source changes or migration performed. **PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC03 — Current Hardware lineage and Release sandbox blockers
+
+- Master accepted #314→#315→#317→#320 as a candidate lineage for continued review only; #318 remains diverged and #283 remains a separate main-based candidate.
+- #320 current-head focused quarantine/relay runs pass, but its Full validation fails at the QA-owned positive poll-signature fixture. The poll-edge focused run is at predecessor SHA b6e9cfa, not current head b2b41a3.
+- #283 Full/append-readback CI passes, but its new mount/boot/clear labs are not wired into the current workflows; its response_sig/|poll| grep checks match comments that explicitly reject the derived tuple, not authenticated behavior.
+- COE #35 is now a clean 7-ahead/0-behind child of current #31, superseding the earlier stale-child note. Current exact-head mandatory sandbox still fails at bwrap: setting up uid map: Permission denied; packaging regressions are skipped.
+- COE #26 remains five queued workflows with zero jobs. The #35 packager still contains invalid placeholder ULA fd00:db8:blaze::/48.
+- Private Drive v11/newer corrections are unavailable; no older registry substituted. Full Master Python suite not run because the container cannot resolve github.com; no Master PR CI run returned.
+
+**Next:** QA replaces stale static poll assertions with source-linked default-deny vectors and reruns #320 Full plus poll-edge lab at exact head; HARDWARE/CORE define durable reboot-safe fault evidence; RELEASE/infrastructure unblock the mandatory sandbox without privilege fallback; COE owner resolves #26 CI/provenance. **PRODUCTION NO-GO.**
