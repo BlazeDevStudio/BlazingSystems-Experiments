@@ -135,6 +135,8 @@ def source_functions(source: str) -> str:
         "configPolarityFieldsValid",
         "configRecordErased",
         "readFullEepromImage",
+        "restoreEepromRamImage",
+        "refreshVerifiedEepromImage",
         "readPollFaultBackupFlash",
         "pollFaultRecordChecksum",
         "makePollFaultRecord",
@@ -327,8 +329,7 @@ bool coldBootAndCheckMarker(){
   resetEepromObject();
   rawReadFailFirstCount=0;
   rawReadPersistentFailure=false;
-  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
-  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  loadCfg();
   loadPollPulseFaultLatch();
   return journalRecoveryRequired && !insertMode && activeTarget.empty();
 }

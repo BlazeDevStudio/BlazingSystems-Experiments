@@ -58,6 +58,8 @@ struct Config {
 
 Config cfg;
 bool pollFaultBackupReady=false;
+// True only after a status-bearing full-image read and EEPROM RAM reconciliation.
+bool configImageReadVerified=false;
 // A failed commit is ambiguous until a cold boot reads the flash-backed store.
 // Never treat the still-dirty EEPROM RAM buffer as a durable deny marker.
 bool pollFaultBackupWriteFailed=false;
@@ -386,6 +388,40 @@ bool validPollFaultRecord(const PollFaultRecord &record){
 }
 
 
+bool readFullEepromImage(uint8_t *image,size_t length){
+  if(!image || !pollFaultBackupReady ||
+     length!=POLL_FAULT_EEPROM_BYTES || EEPROM.length()<length) return false;
+  // Match EEPROMClass::begin()'s sector base, but preserve the flashRead status.
+  const uint32_t flashAddress=(uint32_t)EEPROM_start-0x40200000UL;
+  return ESP.flashRead(flashAddress,image,length);
+}
+
+bool restoreEepromRamImage(const uint8_t *image,size_t length){
+  if(!image || !pollFaultBackupReady ||
+     length!=POLL_FAULT_EEPROM_BYTES || EEPROM.length()<length) return false;
+  // getDataPtr() marks the RAM image dirty; no commit occurs for read recovery alone.
+  // The next intended config/marker commit writes this verified image plus its mutation.
+  uint8_t *current=EEPROM.getDataPtr();
+  if(!current) return false;
+  memcpy(current,image,length);
+  const uint8_t *verify=EEPROM.getConstDataPtr();
+  return verify && memcmp(verify,image,length)==0;
+}
+
+bool refreshVerifiedEepromImage(){
+  configImageReadVerified=false;
+  alignas(4) uint8_t image[POLL_FAULT_EEPROM_BYTES];
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_BYTES ||
+     !readFullEepromImage(image,sizeof(image)) ||
+     !restoreEepromRamImage(image,sizeof(image))){
+    pollFaultBackupReady=false;
+    return false;
+  }
+  configImageReadVerified=true;
+  return true;
+}
+
 bool readPollFaultBackupFlash(PollFaultRecord &stored){
   // Match ESP8266 core EEPROM.cpp's sector mapping, but use the status-bearing
   // raw read API: EEPROM.begin() logs and ignores a flashRead failure.
@@ -397,7 +433,7 @@ bool readPollFaultBackupFlash(PollFaultRecord &stored){
 bool pollFaultBackupPresentOrCorrupt(){
   // EEPROM emulation is a separate reserved sector from LittleFS on the same flash chip.
   // Any non-erased byte is a permanent deny marker, including malformed/partial records.
-  if(!pollFaultBackupReady ||
+  if(!pollFaultBackupReady || !configImageReadVerified ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return true;
   PollFaultRecord stored{};
   if(!readPollFaultBackupFlash(stored)) return true;
@@ -407,7 +443,7 @@ bool pollFaultBackupPresentOrCorrupt(){
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
-  if(!pollFaultBackupReady || pollFaultBackupWriteFailed ||
+  if(!pollFaultBackupReady || !configImageReadVerified || pollFaultBackupWriteFailed ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
   // Presence-or-corrupt also returns true on raw-read failure. Do not confuse
   // an unavailable flash read with proof that a durable deny marker already exists.
@@ -420,16 +456,23 @@ bool writePollFaultBackup(uint32_t pulseEdges){
   for(size_t i=0;i<sizeof(existing);++i) if(existingBytes[i]!=0xFF) return true;
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
   EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
+  configImageReadVerified=false;
   if(!EEPROM.commit()){
     pollFaultBackupWriteFailed=true;
+    pollFaultBackupReady=false;
     return false;
   }
-  // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
-  EEPROM.end();
+  // Re-open, then prove the entire EEPROM image before any later buffer use.
+  if(!EEPROM.end()){
+    pollFaultBackupWriteFailed=true;
+    pollFaultBackupReady=false;
+    return false;
+  }
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
   if(!pollFaultBackupReady ||
-     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)){
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord) ||
+     !refreshVerifiedEepromImage()){
     pollFaultBackupWriteFailed=true;
     return false;
   }
@@ -573,18 +616,25 @@ bool configRecordErased(const Config &record){
 }
 
 bool saveCfg(){
-  if(!pollFaultBackupReady || EEPROM.length()<sizeof(Config)) return false;
+  if(!pollFaultBackupReady || !configImageReadVerified ||
+     EEPROM.length()<sizeof(Config)) return false;
   cfg.magic=MAGIC;
   cfg.checksum=configChecksum(cfg);
   EEPROM.put(0,cfg);
-  if(!EEPROM.commit()) return false;
+  configImageReadVerified=false;
+  if(!EEPROM.commit()){
+    pollFaultBackupReady=false;
+    return false;
+  }
 
-  // Re-open the emulated EEPROM before readback so verification does not use
-  // the mutable RAM image that was just written.
-  EEPROM.end();
+  // Re-open, then status-read and reconcile the full image before Config readback.
+  if(!EEPROM.end()){
+    pollFaultBackupReady=false;
+    return false;
+  }
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
-  if(!pollFaultBackupReady) return false;
+  if(!pollFaultBackupReady || !refreshVerifiedEepromImage()) return false;
 
   Config verify{};
   EEPROM.get(0,verify);
@@ -641,6 +691,7 @@ bool configStringsTerminated(const ConfigV1 &c){
 void loadCfg(){
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  configImageReadVerified=false;
   outputPolarityKnown=false;
   runRelayActiveHigh=false;
   runLedActiveHigh=false;
@@ -651,6 +702,11 @@ void loadCfg(){
   if(!pollFaultBackupReady){
     defaults();
     latchConfigPersistenceFailure("CRITICAL: EEPROM configuration/fault region unavailable; output polarity unknown and coin admission denied.");
+    return;
+  }
+
+  if(!refreshVerifiedEepromImage()){
+    latchConfigPersistenceFailure("CRITICAL: full EEPROM image read/restore failed; preserve configuration and poll-fault bytes; outputs disabled.");
     return;
   }
 
