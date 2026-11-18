@@ -60,6 +60,15 @@ def harness(board: str, source: str) -> str:
         "latchPollPulseFault",
     ]
     if board == "ESP32":
+        helper_names.append("initPollFaultBackupStore")
+    helpers = "\n".join(extract_function(source, name) for name in helper_names)
+    consts = constants(source, (
+        "POLL_FAULT_RECORD_MAGIC",
+        "POLL_FAULT_RECORD_VERSION",
+        "POLL_FAULT_EEPROM_OFFSET",
+        "POLL_FAULT_EEPROM_BYTES",
+    ))
+    if board == "ESP32":
         backend = r"""
 using nvs_handle_t = uint32_t;
 using esp_err_t = int;
@@ -130,7 +139,19 @@ void corruptStorage(){
         fail_read = "nvsFailReadback=true;"
         clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
         no_marker = "NvsFlash::durable.clear(); NvsFlash::staged.clear();"
+        nvs_read_error = r"""
+  resetRuntime();
+  nvsReadError=true;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 21;
+  nvsReadError=false;
 
+  resetRuntime();
+  nvsTypeMismatch=true;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 22;
+  nvsTypeMismatch=false;
+"""
     else:
         backend = r"""
 struct FakeEEPROM {
@@ -146,7 +167,13 @@ struct FakeEEPROM {
     return true;
   }
   void end(){ size=0; buffer.clear(); }
-  bool commit(){ if(failCommit) return false; if(!outputsInhibited) persistenceBeforeOutputInhibit=true; flash=buffer; if(failReadAfterCommit) failRead=true; return true; }
+  bool commit(){
+    if(failCommit) return false;
+    if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
+    flash=buffer;
+    if(failReadAfterCommit) failRead=true;
+    return true;
+  }
   size_t length() const { return size; }
   template<class T> void put(size_t offset,const T& value) {
     memcpy(buffer.data()+offset,&value,sizeof(T));
@@ -169,13 +196,13 @@ void rebootStorage(){
 void corruptStorage(){
   if(FakeEEPROM::flash.size()>POLL_FAULT_EEPROM_OFFSET)
     FakeEEPROM::flash[POLL_FAULT_EEPROM_OFFSET]^=0x01;
-  rebootStorage();
 }
 """
         fail_write = "EEPROM.failCommit=true;"
         fail_read = "EEPROM.failReadAfterCommit=true;"
         clear_fail = "EEPROM.failCommit=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false;"
         no_marker = "FakeEEPROM::flash.clear(); rebootStorage();"
+        nvs_read_error = ""
 
     prelude = r"""
 #include <algorithm>
@@ -299,21 +326,6 @@ int main(){
   std::cout << "POLL_FAULT_DUAL_STORE_LAB=PASS board=BOARD_NAME\n";
 }
 """
-    nvs_read_error = r"""
-  resetRuntime();
-  nvsReadError=true;
-  loadPollPulseFaultLatch();
-  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 21;
-  nvsReadError=false;
-
-  resetRuntime();
-  nvsTypeMismatch=true;
-  loadPollPulseFaultLatch();
-  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 22;
-  nvsTypeMismatch=false;
-"""
-    if board != "ESP32":
-        nvs_read_error = ""
     main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
     main = main.replace("READ_FAIL_SETUP", fail_read).replace("READ_FAIL_CLEAR", clear_fail)
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
