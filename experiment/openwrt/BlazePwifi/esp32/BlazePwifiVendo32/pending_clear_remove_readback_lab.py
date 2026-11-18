@@ -58,15 +58,19 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
 
         using String = std::string;
 
+        bool outputsOn = true;
         struct FakeLittleFS {
           std::set<std::string> files;
           std::string failPath;
           int failMode = 0; // 1: return false/keep; 2: return true/keep; 3: delete/return false
           int removeCalls = 0;
-          bool exists(const char *path) const {
+          bool sawOutputsOnAtAccess = false;
+          bool exists(const char *path) {
+            if (outputsOn) sawOutputsOnAtAccess = true;
             return files.count(path) != 0;
           }
           bool remove(const char *path) {
+            if (outputsOn) sawOutputsOnAtAccess = true;
             ++removeCalls;
             const std::string key(path);
             if (key == failPath) {
@@ -88,7 +92,6 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
         bool coinEnabled = true;
         bool relayEnabled = true;
         bool insertMode = true;
-        bool outputsOn = true;
         bool appendOk = true;
 
         struct FakeSerial {
@@ -122,7 +125,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
         }
 
         static void expectHeld(const char *scenario) {
-          if (pendingPulses != 5 || !pendingReady ||
+          if (LittleFS.sawOutputsOnAtAccess || pendingPulses != 5 || !pendingReady ||
               pendingNonce != "nonce-1234567890" ||
               pendingTarget != "target-1234567890" || outputsOn) {
             std::cerr << "FAIL " << scenario << ": pending state/output was cleared\n";
@@ -131,7 +134,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
         }
 
         static void expectCleared(const char *scenario) {
-          if (pendingPulses != 0 || pendingReady || !pendingNonce.empty() ||
+          if (LittleFS.sawOutputsOnAtAccess || pendingPulses != 0 || pendingReady || !pendingNonce.empty() ||
               !pendingTarget.empty() || lastSend != 0 ||
               LittleFS.exists("/pending.dat") ||
               LittleFS.exists("/pending.new") ||
