@@ -409,14 +409,16 @@ for board, path in BOARDS.items():
     if source.count("boundedCoinDebounceMs(") < minimum_calls:
         raise RuntimeError(f"{board}: not all debounce configuration paths use the 20 ms clamp")
     loop = extract(source, "loop")
-    order = [
-        loop.find("beginPollWindow()"),
-        loop.find('String r=post("poll")'),
-        loop.find("acceptPollResponse(r)"),
-        loop.find("pollIntakeSuspended=false"),
-    ]
+    begin = loop.find("beginPollWindow()")
+    pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
+    pre_poll_latch = loop.find("latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart)", pre_poll_guard)
+    pre_poll_release = loop.find("pollIntakeSuspended=false", pre_poll_latch)
+    poll_call = loop.find('String r=post("poll")')
+    response_accept = loop.find("acceptPollResponse(r)", poll_call)
+    response_release = loop.find("pollIntakeSuspended=false", response_accept)
+    order = [begin, pre_poll_guard, pre_poll_latch, pre_poll_release, poll_call, response_accept, response_release]
     if any(pos < 0 for pos in order) or order != sorted(order):
-        raise RuntimeError(f"{board}: poll guard/response/release ordering changed: {order}")
+        raise RuntimeError(f"{board}: pre-poll abort / response / release ordering changed: {order}")
     functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
         extract(source, "applyOutputs"),
