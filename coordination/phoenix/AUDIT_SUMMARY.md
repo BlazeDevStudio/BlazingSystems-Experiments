@@ -463,3 +463,9 @@ COE #26 has five queued workflows and zero jobs. COE #35 shared/board and case c
 **Exact release handover correction:** CHANGE_LEDGER.md is 0 bytes at #242 base and #242 head, and 45,738 bytes / 198 lines at #291 current head. The prior assistant's claimed 3,360-to-188 deletion is unsupported by exact refs; do not create a restoration task from that claim.
 
 The canonical private Drive v11 registry and newer corrections remain unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**
+
+## UTC10 — COE Universal / INTERCON provenance and ownership decision (2026-11-18)
+
+Master completed a source-grounded review of COE #36–#43 against Labs main, Experiments main/development, COE main and integration #26. The legacy Universal `.ino` is a one-file exact blob import; two companion source files and Labs root NOTICE are not in the destination, no explicit license grant was verified, and the new V1.5-derived staging code has no GitHub source snapshot. Stage-3/Stage-4 candidates use incompatible 64/76/92-byte journal formats and remain separate drafts. Implementation ownership is PHX-HARDWARE because the path is under `Hardware/esp8266/`; PHX-PISONET remains Windows SoftTimer owner/interface stakeholder.
+
+Current exact CI remains mixed: #41/#43 host tests and ESP8266 compiles pass, #26 workflows remain queued, #35 mandatory namespace sandbox fails closed, and Hardware #323 focused labs pass while Full validation fails on the stale QA-owned poll-signature assertion. No migration, license determination, route change, merge or production approval. Private Drive registry v11/newer corrections remain inaccessible through the current connector surface; no older Library snapshot was substituted. **PRODUCTION NO-GO.**
