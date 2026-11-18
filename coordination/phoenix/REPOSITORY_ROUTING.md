@@ -365,3 +365,11 @@ PHX-MASTER accepts the HARDWARE-proposed #314 → #315 → #317 → #320 ancestr
 COE RELEASE #35 is now a clean child of current #31 at exact base 59ed44d0..., 7 ahead / 0 behind. This supersedes the prior UTC01 stale-child finding. Its mandatory sandbox still fails closed at hosted user-namespace UID-map setup; packaging regressions were skipped. COE #26 remains five queued workflows / zero jobs.
 
 OWNERSHIP_ROUTES.json is unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. No route or destination copy permission was added. No source/destination files moved or copied.
+
+## UTC03 — current Hardware child and COE destination hold
+
+The current Hardware review lineage is #314 → #315 → #317 → #320 → #322. #322 is a clean child of exact #320 head `b2b41a3d6ce7887b9624137c966f58462895d3fa`; its source/test changes are limited to output-enable ordering in the two firmware sketches, a source-extracted lab, a Hardware-specific focused workflow and a handover. This is a review candidate only. #283 remains main-based, #318 remains divergent, and #321 remains a separate test-only RED branch. PHX-MASTER does not own any of those source paths.
+
+COE #26 remains the destination integration candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`, but its five workflows are queued with zero jobs. COE #27 remains a separate main-based candidate and is not integrated. COE RELEASE #35 is a child of #31, but the mandatory sandbox remains host-blocked and the current packager ULA placeholder remains invalid.
+
+`OWNERSHIP_ROUTES.json` is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: `DRAFT_REVIEW_ONLY`, destination PR #26, PHX-MASTER target `null`. Do not alter route destinations, copy files, or promote staging until exact source/destination blobs, modes, license/NOTICE applicability, import completeness, test identities and exact-head CI are independently reconciled. No migration, merge, copy, overwrite or delete occurred.

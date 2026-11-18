@@ -382,3 +382,18 @@ No subsystem source changes or migration performed. **PRODUCTION NO-GO.**
 - Private Drive v11/newer corrections are unavailable; no older registry substituted. Full Master Python suite not run because the container cannot resolve github.com; no Master PR CI run returned.
 
 **Next:** QA replaces stale static poll assertions with source-linked default-deny vectors and reruns #320 Full plus poll-edge lab at exact head; HARDWARE/CORE define durable reboot-safe fault evidence; RELEASE/infrastructure unblock the mandatory sandbox without privilege fallback; COE owner resolves #26 CI/provenance. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC03 — current Master checkpoint
+
+**Master-only work:** exact-head review of HARDWARE #322, its #320 parent durability boundary, and current COE #31/#35 sandbox and #26 staging status. New audit report: [HARDWARE_OUTPUT_PRELOAD_AND_POLL_FAULT_DURABILITY_AUDIT_20261118_UTC03.md](HARDWARE_OUTPUT_PRELOAD_AND_POLL_FAULT_DURABILITY_AUDIT_20261118_UTC03.md).
+
+- #322 extends the accepted-for-review Hardware lineage to #314 → #315 → #317 → #320 → #322. Its output-preload lab is exact-head CI green on both boards, but all evidence is simulated; Full validation still fails at the QA-owned stale positive poll-signature assertion.
+- #320's `fakeOpenFail` scenario verifies only same-boot denial. Because boot recovery requires marker presence, a reboot after marker-open failure with no surviving pending record remains unproven. QA must add the reboot vector; HARDWARE/CORE must define a durable fallback.
+- #35 remains a clean child of current #31, but mandatory sandbox run 44228970827 fails at unprivileged bubblewrap UID-map setup; packaging regressions are skipped. The packager still contains invalid `fd00:db8:blaze::/48`.
+- COE #26 remains five queued workflows / zero jobs. #27 is a separate, divergent main-based candidate. No destination staging move is authorized.
+- OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+- Canonical private Drive registry v11/newer corrections and the AGENTS-linked cloud policy/handover could not be retrieved through the available connector surface. Library listing exposed only registry v3–v7 and older artifact/ledger files; none was substituted. No private record was published or written.
+
+**Executed checks:** bounded Master source assertions 15/15 PASS (static source checks only); #322 exact-head output-order and quarantine/readback Actions PASS. Full Master Python suite NOT RUN because container GitHub checkout failed DNS resolution. Master PR #288 has no PR-triggered workflow run returned. No hardware/physical test was performed.
+
+**Next:** PHX-QA independently adds the marker-open-failure reboot vector and replaces the stale positive poll-signature assertion; PHX-HARDWARE/CORE define durable fault recovery; PHX-RELEASE/Infrastructure provide an authorized no-secret namespace-capable runner and resolve site ULA provisioning; COE integration owner refreshes #26 provenance and unblocks its queued CI; registry custodian restores authorized Drive v11 access.

@@ -48,6 +48,23 @@ Every coin insertion, member time transfer, or rental payment event must emit a 
 - **Debounce Threshold:** Minimum 20ms stable signal before edge transition is recognized.
 - **Inter-Coin Timeout:** 250ms quiet period marks completion of a pulse train before credit calculation.
 
+### 2.1.1 Relay/LED OFF preload before output enable — provisional software invariant (2026-11-18 UTC03)
+
+For runtime pin reassignment on both ESP32 and ESP8266, the relay and LED must be placed at their polarity-correct logical OFF level before the new output driver is enabled:
+
+1. Drive the old relay and LED pins logically OFF using the old polarity before changing pin assignments.
+2. Assign the new coin, relay and LED pin numbers.
+3. Preload the new relay and LED logical OFF levels while those pins are not yet configured as OUTPUT.
+4. Only then call `pinMode(..., OUTPUT)`.
+5. Attach the coin interrupt after the output pins are configured.
+6. Reassert logical OFF after output enable.
+
+This is especially important for active-low relay wiring, where a default LOW output latch can energize the relay during an OUTPUT-mode transition. HARDWARE owns the firmware implementation; QA owns independent source-linked verification. This invariant does not authorize relay actuation, coin admission or financial disposition.
+
+Source: HARDWARE PR #322, source/test SHA `7ba56c1ba92dcffa2555e4cce10d3010c3afaf5b`; current docs-only PR head `50d93e0de3d682550b6f02fb43484e76ad9c7e08`. Exact-head focused output-order run [44232877611](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877611) passed on both boards; logs report `OUTPUT_SEQUENCE_PASS` for ESP8266 and ESP32 and the workflow explicitly classifies evidence as SIMULATED ONLY. The companion quarantine/readback run [44232877649](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877649) also passed.
+
+The current-head Full build [44232877624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624) is not a Full pass: its validation job failed at the inherited QA-owned `Missing poll signature check`; 13 target/platform jobs had completed successfully and Android remained in progress at last read. Physical GPIO voltage, relay transient, contacts, electrical pulse behavior and hardware acceptance remain NOT TESTED.
+
 ### 2.2 Client-Side Response Verification (Firmware)
 - ESP32 (`BlazePwifiVendo32.ino`) and ESP8266 (`BlazePwifiVendo.ino`) sketches MUST store `lastSentNonce` and verify `response_sig` returned by `/cgi-bin/vendo` for `register` and `poll` actions.
 - Unauthenticated or signature-mismatched HTTP/CGI responses MUST be logged and ignored to prevent LAN spoofing.
@@ -381,3 +398,17 @@ The boot path treats an existing marker as a deny latch and does not auto-clear 
 - coinPostDispositionVerified() and acceptPollResponse() remain hard false on both boards. No positive poll or financial disposition path is authorized.
 
 This clarifies the durability boundary only; it does not alter firmware or grant production authority.
+
+## 6.11 Poll-fault marker-open failure has no reboot proof — 2026-11-18 UTC03
+
+At HARDWARE PR #320 exact head `b2b41a3d6ce7887b9624137c966f58462895d3fa`, both sketches implement a readback-verified `/pollpulse.fault` marker. The writer checks open, full write length, flush/close, exact file size and byte-for-byte readback. `latchPollPulseFault()` sets `journalRecoveryRequired`, disables insertion, clears the active target and applies outputs before attempting persistence. If marker creation/readback fails, the source explicitly reports only that the device remains fail-closed **this boot**.
+
+The boot loader restores this fault latch only when `/pollpulse.fault` exists. If marker creation itself fails and no other durable pending record survives, the RAM-only latch can disappear on reboot. The current `poll_loop_blocking_inhibit_lab.py` injects `fakeOpenFail` and checks same-boot relay/LED denial, but the open-failure case does not reboot or call `initPendingStore()` afterward. It therefore does not prove reboot-safe recovery for the no-marker case.
+
+Required before any durability claim:
+- PHX-QA adds an exact-source reboot/reset vector after marker-open failure and after short-write/readback failure, including the case with no surviving pending record.
+- PHX-HARDWARE implements an owner-reviewed durable fallback/witness or preserves another durable record that causes boot to remain denied.
+- PHX-CORE reviews event identity, receipt/replay and reconciliation semantics; PHX-QA independently verifies the same exact source SHA.
+- Keep poll admission, coin POST disposition, automatic replay and relay output fail-closed until the combined exact-head behavior is verified.
+
+Bounded Master source assertions on the exact #320/#322 files passed 15/15; these were static source checks, not firmware runtime tests. The #320 focused poll-edge workflow [44225475672](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44225475672) is attached to predecessor source/test SHA `b6e9cfa75105e6cd29c29b93266255d3110c8296`, not the final #320 head. The current #320 focused quarantine/relay runs passed, but no current-head poll-edge run was returned. This section records a test/contract gap; it does not approve a durable implementation.

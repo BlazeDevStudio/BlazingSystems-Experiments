@@ -631,3 +631,30 @@ The canonical private registry v11/newer corrections remain unavailable through 
 | RELEASE #291 | a74b8b940fba3aa8651f1a9ee8bbf23cf112726e | 44199987756 SUCCESS, scoped; signing/publishing skipped |
 
 **Master sequencing decision:** #314 → #315 → #317 → #320 is accepted as the current candidate lineage for continued review only. #283 and #318 remain separate. No source ownership, merge, migration or release authority changes.
+
+## 2026-11-18 UTC03 — exact role, child-stack and CI refresh
+
+This snapshot supersedes older pins only for the exact refs below. It does not transfer source ownership, approve merges, or authorize migration.
+
+| Role / candidate | Current exact head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER #288 | `292832d76aabde74a1437ef439fb7f7e3dd037a6` before this coordination update | OPEN/DRAFT; no PR-triggered workflow run returned; all 68 current PR paths are under `coordination/phoenix/` |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS, scoped; separate hourly CORE continuation retains source ownership |
+| PHX-RENTAL #240 / #287 / #289 | `a7d113fb8ae3f0c5e838e64d31cae7a154e37b56` / `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd` / `68928774d0d7cf65adb26bc6b54199a3159d066c` | 40910311141/40910311159; 43754089203; 43653329235/43653329229 SUCCESS, scoped |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS, scoped; native COM acceptance remains UNKNOWN |
+| PHX-HARDWARE #314 / #315 / #317 | `556adc20ef0cfd355089aff3b979c0169af79bdd` / `84fe6b790139d147f330f13a40b3ae3e89a7042d` / `fce915c1167fc43c6936f3594ae9efce376b711f` | #314 runs 43782088731/43782088748 SUCCESS; #315 focused 44054778537 SUCCESS / Full 44054778555 FAILURE; #317 focused 44209812693/44209812920 SUCCESS / Full 44209812745 FAILURE at QA poll-signature fixture |
+| PHX-HARDWARE #320 | `b2b41a3d6ce7887b9624137c966f58462895d3fa` | Exact child of #317 (11 ahead / 0 behind); focused 44225714732/44225714826 SUCCESS; push Full 44225708501 validation FAILURE with 14 target builds SUCCESS and simulations/release jobs SKIPPED; PR Full 44225714932 CANCELLED. Poll-edge run 44225475672 is predecessor SHA `b6e9cfa...`, not current #320 head |
+| PHX-HARDWARE #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` (source/test `7ba56c1ba92dcffa2555e4cce10d3010c3afaf5b`) | Exact child of #320; output-order 44232877611 and quarantine/readback 44232877649 SUCCESS; Full 44232877624 validation FAILURE at `Missing poll signature check`, 13 target jobs SUCCESS and Android IN_PROGRESS at last read |
+| PHX-HARDWARE #283 | `830c355376380f9b5533d5cda2558beed41a593a` | Full 44219099256 and append/readback 44219099309 SUCCESS; separate main-based candidate; QA review remains required |
+| PHX-HARDWARE #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | DIVERGED from #317 51 ahead / 71 behind, mergeable=false; no current-head CI |
+| PHX-HARDWARE #321 | `8efc4308d5c205976838092bbb746ce6f2c56113` | Separate test-only RED candidate; not rebased or merged into #322 |
+| PHX-QA #267 / #279 / #290 / #292 | `ff5367990c2d27b8ebbb822ee208251af0c890e2` / `8f476ef05893193325ef3d1f65a35e144ae7a568` / `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #267 41452247439 SUCCESS; #279 no current-head run; #290 43633486963 SUCCESS; #292 no current-head run |
+| PHX-RELEASE #291 | `a74b8b940fba3aa8651f1a9ee8bbf23cf112726e` | 44199987756 SUCCESS, scoped; signing/publishing skipped |
+
+**Hardware lineage:** #314 → #315 → #317 → #320 → #322 is a linear candidate chain; #322 base SHA equals #320 head. Continue review only. Keep #283 and #318 separate; keep #321 as a separate test-only branch. No stack merge or source migration is authorized.
+
+**COE destination refs:** #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN/DRAFT with five workflows QUEUED and zero jobs. #27 `009f70cc2c2775039a5fb072c9d4fdedee76cfc7` remains a separate main-based candidate, DIVERGED from #26 by 3 ahead / 83 behind; its two firmware blobs match #26, not the current Experiments Hardware candidates. COE #28 `b21b04617d38a177260258de2d56b24382822117`, #29 `d0830332dee8a1844a85606150681b41d91fe796`, #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc` and #32 `29b6fe08b10688182d981a66745f482758bd6630` have their scoped 43632393888, 43653906675/43653906676, 43653415598 and 43653540607 runs SUCCESS. These are not combined #26 acceptance.
+
+**COE RELEASE:** #31 current head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; shared 44222517238 and case 44222517258 SUCCESS, mandatory sandbox 44222517263 FAILED at unprivileged bubblewrap UID-map setup after 8/8 host-preflight tests passed; packaging regressions skipped. #35 current docs head `729c3e9c622c8f13bd949aebec750567c5382ed7`, source/test head `e5fb3be13c8ae0d82e943d6d71095c9a1db8223d`, based on current #31 and 7 ahead / 0 behind. Case 44228970740 and shared/firmware 44228970878 SUCCESS; mandatory sandbox 44228970827 FAILED at the same UID-map probe; packaging regressions skipped. Current packager blob `0bfc6404dee2f90a0c941f8ec40f3cb59c386d01` still contains invalid placeholder ULA `fd00:db8:blaze::/48`.
+
+All CI results above are scoped to their exact refs and jobs; none proves a combined COE tree, native hardware acceptance, financial authority or production readiness.
