@@ -247,7 +247,7 @@ def harness(board: str, source: str) -> str:
     if board == "ESP32":
         helper_names.append("initPollFaultBackupStore")
     else:
-        helper_names.append("readPollFaultBackupFlash")
+        helper_names.insert(3,"readPollFaultBackupFlash")
     helpers = "\n".join(extract_function(source, name) for name in helper_names)
     consts = constants(source, (
         "POLL_FAULT_RECORD_MAGIC",
