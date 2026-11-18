@@ -241,3 +241,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Found 20 mutable `actions/checkout@v4` steps in `.github/workflows/blazepwifi-build.yml`, none setting `persist-credentials: false`.
 - Test-only commit [`851af2c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/851af2c59759e94581fc444a4b2b8b2a2359da23) adds an exact-workflow regression to the existing PHX-RELEASE negative self-test. Expected RED is pending; no workflow source fix is included yet.
 - Next: verify expected RED, pin all shared build checkouts to the already verified immutable v7.0.1 commit and disable persisted credentials, then verify exact-head Windows and shared build CI.
+
+
+## PHX-RELEASE UTC22 — shared build action/credential hardening source head (blocked CI)
+
+- Exact draft PR #291 source head `c5f96cd3aa95a4b73c3437362208f13549a5015f` contains the existing-owner's narrow checkout/action-pin and credential-persistence correction plus its regression coverage. This handover entry records provenance only; it does not endorse unrun source behavior.
+- Exact Windows run [#44414528967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414528967) and shared-build run [#44414529001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414529001) stopped at the mandatory handover-freshness gate before the source validation/build paths. The Windows publisher and shared production sign/publish jobs were skipped.
+- Refreshing this handover is intentionally additive and should unblock the next exact-head CI observation. PR #291 remains draft and unmerged; independent review, protected admission/signer, durable finance/migration and physical acceptance are still absent. **PRODUCTION NO-GO.**
