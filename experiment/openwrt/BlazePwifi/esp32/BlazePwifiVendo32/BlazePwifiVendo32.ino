@@ -170,6 +170,8 @@ void loadPending(){
 bool clearPending(){
   // Keep the RAM hold asserted until every possible pending candidate is absent.
   pendingReady=true;
+  // Drive relay/LED OFF before the first filesystem operation can block.
+  applyOutputs();
   if(!fsReady){
     Serial.println("CRITICAL: pending journal clear refused; LittleFS is unavailable.");
     applyOutputs();
