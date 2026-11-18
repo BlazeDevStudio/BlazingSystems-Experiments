@@ -892,3 +892,18 @@ This snapshot supersedes older PR/head pins in this role index for current work;
 
 - **HARDWARE #326** current head `28e13fc82a250821e815fd84b5fd61f1769e7106`: focused quarantine and relay/output runs 44357779195 / 44357779192 SUCCESS; Full 44357779219 terminal FAILURE at QA-owned `Missing poll signature check`, while 13 firmware/platform targets and Android succeeded and downstream jobs skipped. Source-extracted host evidence only.
 - **RELEASE COE #35** current head `91691a377af5fa4251c0f4695dbf4c4484305f83`: shared 44358115225 SUCCESS (102 tests, 2 intentional skips, both board compiles pass; symlink-swap regression now passes); case 44358114424 SUCCESS; mandatory sandbox 44358114284 FAILS closed because bubblewrap is absent after 13/13 host preflight tests.
+
+
+## Live role-owner reconciliation — 2026-11-18T17:39:33Z
+
+| Role | Current exact owner PR head | Current evidence / next owner action |
+|---|---|---|
+| PHX-MASTER | #288 `97c895b699533ec4fd552f433c54210f808eb944` before this follow-up | Coordination only; no Master CI run returned. |
+| PHX-CORE | Experiments #252 `c82705f2...`; COE #29 `d0830332...`, #45 `9d76a134...` | Scoped CI passes; CORE source remains exclusively with the separate CORE continuation. |
+| PHX-RENTAL | #289 `68928774...` | Two scoped CI runs pass; no source ownership change. |
+| PHX-PISONET | #255 `d01fd164...`; COE #28 `b21b0461...`, #30 `4897348d...` | Scoped CI passes; native COM/device acceptance remains unverified. |
+| PHX-HARDWARE | #323 `988904e8...` → child #326 `58c558fb...`; sibling candidates #317/#321/#322/#324/#325 remain separate | #326 focused runs pass; Full fails at QA-owned poll-signature fixture. Hardware must retain source ownership and report dual-store failure as reboot-durability unknown. |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...`; COE #32 `29b6fe08...` | #290/#32 scoped CI pass; #292 no run and nonmergeable. QA must replace the positive poll fixture with negative deny tests and independently review #326. |
+| PHX-RELEASE | Experiments #291 `691ed55d...`; COE #31 `59ed44d0...` → child #35 `36036c41...`; COE #44 `1736b379...` | #35 shared/case pass; mandatory sandbox fails closed for missing bubblewrap. #44 is nonmergeable on a stale parent and has an outdated sandbox assertion; Release owns reconciliation. |
+
+No Master source takeover, branch composition or reassignment occurred. COE #26 remains unverified and migration-blocked.

@@ -1170,3 +1170,14 @@ Evidence: [Hardware focused quarantine](https://github.com/BlazeDevStudio/Blazin
 - Hardware #326 `28e13fc82a250821e815fd84b5fd61f1769e7106`: focused quarantine and relay/output labs PASS; Full `44357779219` terminal FAIL at QA-owned `Missing poll signature check`. All firmware/platform targets and Android succeeded; downstream gates skipped. Host simulations only.
 - COE #35 `91691a377af5fa4251c0f4695dbf4c4484305f83`: shared `44358115225` PASS (102 tests, two intentional skips, both board compiles); the prior symlink-swap test failure is fixed at this head. Case guard PASS; mandatory sandbox still fails closed because bubblewrap is absent.
 - COE #26 remains five queued / zero jobs and is not destination-verified.
+
+
+## Live exact integration refresh — 2026-11-18T17:39:33Z
+
+- Experiments main `f4e8a891...`; development `blazepwifi-v0.6.0-audit-foundation@2fbd2475...`; Master `97c895b6...` before this follow-up.
+- HARDWARE #326 PR head `58c558fb...`: focused [44358712365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44358712365) and [44358712238](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44358712238) PASS; Full [44358712823](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44358712823) FAIL at QA-owned `Missing poll signature check`. Source/test commit `28e13fc...`; host simulations only.
+- COE RELEASE #35 head `36036c41...`: shared [44358536870](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358536870) PASS (102 tests, two intentional skips, both board compiles, ten profiles); case [44358536865](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358536865) PASS; mandatory sandbox [44358536882](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358536882) FAILS closed after 13/13 host preflight tests because bubblewrap is absent (exit 125).
+- COE #26 remains `b382d233...`, five workflows QUEUED / zero jobs. Prior exact Hardware source/destination blob, 17-lab import, test-identity and license/NOTICE gaps are unchanged; no migration.
+- Other current scoped role checks: CORE #252 42698139210 PASS; RENTAL #289 43653329235/43653329229 PASS; PISONET #255 42462978704 PASS; QA #290 43633486963 PASS, #292 no run; Release #291 44353380470 PASS with privileged publisher skipped.
+
+No scoped PASS is combined COE acceptance. Keep the integration gate BLOCKED.

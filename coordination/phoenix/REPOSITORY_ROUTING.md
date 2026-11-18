@@ -527,3 +527,10 @@ COE #35 current head `462d02fb01e689556efcf5bf1019af951807b130` fails the inject
 ## Latest UTC17 exact-head CI correction — 2026-11-18
 
 Hardware #326 current head `28e13fc82a250821e815fd84b5fd61f1769e7106` has focused labs passing but Full validation fails at `Missing poll signature check`; it is not QA-accepted or hardware-accepted. COE #35 current head `91691a377af5fa4251c0f4695dbf4c4484305f83` has shared 102-test and case-collision CI passing, including the symlink-swap staging regression, but mandatory sandbox remains blocked by missing bubblewrap. COE #26 remains unchanged and migration-blocked.
+
+
+## Live routing gate — 2026-11-18T17:39:33Z
+
+The canonical `OWNERSHIP_ROUTES.json` blob remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null. It was read at Master head `97c895b699533ec4fd552f433c54210f808eb944` and is not modified by this follow-up. COE #26 remains `b382d233...`, five workflows queued / zero jobs. Current Hardware #326 source/test and COE #26 firmware/test/license trees are not equivalent; 17 source Hardware labs remain absent from the destination and license/NOTICE scope remains unresolved. No copy, move, overwrite or destination proposal is authorized.
+
+The canonical private Drive v11 registry and newer corrections remain unavailable through the exposed tools. Do not substitute v7 or publish private registry material. Preserve all source refs and ask the registry custodian for authorized access.
