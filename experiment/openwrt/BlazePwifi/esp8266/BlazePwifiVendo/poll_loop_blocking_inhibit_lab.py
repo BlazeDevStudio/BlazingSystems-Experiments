@@ -445,7 +445,7 @@ for board,path in BOARDS.items():
 
     poll_guard_removed = loop.replace(
         "      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
-        "      const uint32_t pollEdgeAfterDrain=pollEdgeStart;\\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
+        "      const uint32_t pollEdgeAfterDrain=pollEdgeStart;\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
         1,
     )
     if poll_guard_removed == loop:
