@@ -439,3 +439,12 @@ COE PR #36 is stacked on integration #26 at `b382d233ff06c8791b1028bed3c617cc7b6
 The active staging firmware is a separate V1.5-derived implementation; COE's audit says the locally delivered V1.5 artifact is not verified in GitHub. Experiments main/development ESP8266 trees contain BlazePwifiVendo and README only, not the Universal project. Therefore the existing Experiments-only `OWNERSHIP_ROUTES.json` mapping does not establish provenance for the Labs source or the new COE-native staging code. No route change is authorized.
 
 Stage-3/Stage-4 branches use incompatible record layouts (64 / 76 / 92 bytes) and two different Stage-4 behaviors. Keep all candidate branches draft and separate. Exact CI is host/static simulation plus ESP8266 compile; it is not real flash, coin, relay, brownout or 150-power-cut acceptance. See the current Integration Matrix UTC10 snapshot for exact run IDs and test identities.
+
+
+## 2026-11-18 UTC10 — corrected COE Universal / INTERCON provenance gate
+
+COE #36 now contains a GitHub Stage-1 staging snapshot at `b4d7434764aab72673de1f496ed9e442f031ddff`; the previous statement that no staging snapshot existed is corrected. The exact Stage-1 sketch/header/types blobs and static/ESP8266 compile run are recorded in `COE_INTERCON_STAGE1_SNAPSHOT_V16_PARALLEL_BRANCH_RECONCILIATION_20261118_UTC10.md`. The original V1.5 local attachment lineage remains unverified; do not describe the staged snapshot as byte-identical or source-cleared.
+
+A separate V1.6 branch `1e9b0269e3ed2138813fcd0c838b0034a08dfd90` has a distinct path and test/workflow identity, with branch CI passing but no open PR. Neither branch is in #26 or selected as canonical.
+
+The legacy Labs import remains one exact `.ino` blob only (`3fb15ecb9272b65500260bc7c92f05590163fa6d`); README, preview and Labs root NOTICE are absent from the COE destination, and explicit redistribution rights remain unverified. `OWNERSHIP_ROUTES.json` has no COE Universal/INTERCON route. Directory placement does not create a formal owner: COE integration owner must nominate an accountable owner; request PHX-HARDWARE firmware-domain review and PHX-PISONET interface review. No route change, copy, move, cherry-pick, rebase or merge is authorized.
