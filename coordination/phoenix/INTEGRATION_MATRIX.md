@@ -854,3 +854,21 @@ The source MIT license blob `1ee55b94...` matches COE `Pisowifi/LICENSE`, but CO
 | COE INTERCON #39/#40/#41/#42 | `33e87fbd...` / `85f38c6e...` / `021e2474...` / `a35672fb...` | #44234479271 / #44235077999 / #44235451605 / #44235625165 SUCCESS, host/compile only; three Stage-3 schemas remain unselected |
 
 No candidate is integrated into COE #26. No file move, copy, overwrite, merge or routing-manifest change occurred. **PRODUCTION NO-GO.**
+
+---
+
+## 2026-11-18 UTC06 — live exact-head integration refresh
+
+| Candidate | Exact head | Current evidence | Readiness |
+|---|---|---|---|
+| PHX-MASTER #288 | c1500a585b07a5ecb2772bf58bf25c0e9df816e8 at refresh start | Master Python suite NOT RUN; no Master PR CI returned | DRAFT / PARTIAL |
+| HARDWARE #323 | 82b0ed15e4aeb8b9b5af40e457e19d308d4a2cfb (source/test 30fb7cd2...) | Focused #44246998831/#44246999048 PASS; Full #44246998969 fails stale QA poll-signature fixture; 14/14 target builds pass | LAB ONLY / QA BLOCKED |
+| COE Stage-3 #39 / #40 / #42 | 33e87fbd / 85f38c6e / a35672fb | Exact build/shared/case workflows pass; incompatible 64/76/92-byte records | UNSELECTED |
+| COE Stage-4 #41 | 021e2474, child of #39 | Shadow-only host test + ESP8266 compile CI pass | DRAFT / NO-GO |
+| COE Stage-4 #43 | 8f5eec79, child of #42 | HMAC/journal host model + ESP8266 compile CI pass | DRAFT / NO-GO |
+| COE Release #35 | d73986d2, source/test aaecb633 | 84 tests, 10/10 profiles, both board builds and case guard pass; mandatory sandbox fails UID-map probe | SANDBOX BLOCKED |
+| COE integration #26 | b382d233 | Five workflows queued, zero jobs | NOT ACCEPTED |
+
+Current role refs: CORE #252 c82705f2 (scoped CI success); RENTAL #289 68928774 (two scoped successes); PISONET #255 d01fd164 (scoped success); QA #290 5c29d159 (scoped success), QA #292 75a3f66d (no current-head run); RELEASE #291 a74b8b94 (scoped success). These isolated results do not validate the combined COE #26 tree.
+
+The #43 Intercon paid-time path has no demonstrated BlazePwifi CORE ledger adapter, no durable unresolved-pulse field, no protected key store and no physical acceptance. #41 is shadow-only. Do not promote either candidate or combine Stage-3 formats without owner selection and independent QA.
