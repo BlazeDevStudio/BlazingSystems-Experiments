@@ -305,3 +305,42 @@ All passing hardware labs are source-extracted host simulations / CI evidence on
 
 **Next exact action:** PHX-QA independently review the extractor and failure vectors at this exact source/test SHA; PHX-MASTER retain #323 as candidate-only until canonical stack review; PHX-CORE publish the approved authenticated poll/receipt contract. Keep all admission and coin disposition deny-only.
 
+
+
+## UTC15 — ESP32 local polarity authority and INPUT-only unknown boot
+
+**Current PR #323 head:** `efd68e857a4cbbdfaeb8b4c41b372cc922464e0c`  
+**Parent #322 head:** `50d93e0de3d682550b6f02fb43484e76ad9c7e08`  
+**ESP32 source blob:** `7ebf0d3489c87abb52ca980f862cd6314a20af6e`  
+**ESP32 lab blob:** `17f45e30402c1481983d3710336f7252f484ac6b`  
+**Hardware workflow blob:** `9fee8f85dcd775713aa2c49f87f7e0b7f3b32e04`
+
+Master UTC15 audit `18cd5064f0b0682bb50b8c53b145cb0fd356ea0d` identified a real ESP32 board-parity gap: absent Preferences keys defaulted relay/LED polarity to active-high, and `setup()` configured output pins before the setup AP could obtain local polarity confirmation.
+
+### Source correction
+
+- ESP32 `Config` no longer has active-high defaults for relay/LED; runtime polarity starts unknown.
+- Added versioned local Preferences marker `polarityv=1`, plus explicit `relayhi` and `ledhi` values. Legacy keys without the marker, unsupported marker versions and values outside 0/1 are rejected.
+- Save path invalidates the marker before other config writes, writes both polarity values, commits the marker last, then reads all three fields back. A partial write or mismatched readback returns failure and best-effort invalidates the marker again.
+- Local setup AP shows blank polarity fields while unknown and accepts only explicit 0/1 values. Save failure returns HTTP 500 without reboot/success.
+- `configureRuntimePins()` keeps relay/LED pins INPUT until local polarity is valid. `applyOutputs()`, poll admission and coin-POST admission remain denied while unknown.
+- Removed remote relay/LED polarity parsing from the dormant `applyRemoteConfig()`; remote configuration is not a polarity authority.
+
+### Regression and local evidence
+
+- Test-first test file commit: `5216fe05b7c6284bb3a71d83a256efaff6e8afcf`.
+- Independent ESP32 lab job and branch-push trigger commits: `19097e1d95182241fa4b54195cdb9ace5de90c43`, `4cccd3bf5b06a4d1507a4b401a3a70ce75535fd8`.
+- Firmware implementation commits: `01fe37cf23e9af758b3b7936962ae183c9010ac1`, `4d345dba04116bd62b2534cdd4df2a24da7e3467`.
+- Test additions/final assertion correction: `62d0d7526d2eb3be72726a104a14fb4dc589c466`, `efd68e857a4cbbdfaeb8b4c41b372cc922464e0c`.
+- Expected RED was reproduced locally against the pre-gate source blob `bd74b11c1496b0943404ff387ee72bb45d4743e5`: `ESP32 boot polarity authority is missing`.
+- Final source-extracted C++ host lab passed locally against source blob `7ebf0d3` and lab blob `17f45e3`: unknown/legacy profile INPUT hold, invalid marker/value denial, failed partial-write marker invalidation, mismatched-readback invalidation, successful marker/readback, active-high LOW preload and active-low HIGH preload all PASS.
+- **Classification:** SIMULATED / LOCAL HOST PASS. The connected GitHub Actions run lookup returned no run for current head `efd68e8`; no current-head CI PASS is claimed. The workflow now contains a separate `esp32-boot-polarity` job and a role-branch push trigger, but this activation could not dispatch or observe a run through the available GitHub actions surface.
+
+### Unresolved inherited blockers
+
+- At prior #323 source head `bc0447f013698a2e45c154b0ae69a098b0e75fe5`, relay/boot run [44330729195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44330729195) failed after the injected ESP8266 EEPROM commit-failure case at `journalRecoveryRequired`. Master says the source visibly calls the latch; root cause remains UNKNOWN. This activation did not modify that ESP8266 failure path.
+- Prior quarantine run [44330729133](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44330729133) passed at that older head.
+- Prior Full validation [44330728928](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44330728928) failed at QA-owned `Missing poll signature check`; it is not current-head evidence.
+- No ESP32 target build, physical GPIO/relay polarity, relay contact, electrical recovery, 150 power cuts or 30-device/24-hour soak is established by this local host lab.
+
+**Next exact PHX-HARDWARE action:** instrument the ESP8266 fake-EEPROM commit/readback path on #323 so the test reports whether `commit()`, `saveCfg()` and the actual failure-latch body executed; change only the confirmed defect. Keep poll/coin admission default-deny and PR #323 DRAFT / UNMERGED / PRODUCTION NO-GO.
