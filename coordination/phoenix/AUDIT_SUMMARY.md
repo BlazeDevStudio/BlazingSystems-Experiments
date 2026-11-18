@@ -668,3 +668,23 @@ Master-only exact-head refresh on `phoenix/master-coordination`. Current pre-upd
 Master verification: 13/13 source/tree assertions PASS; bounded failure-state model 1/1 reproduces the possible marker overwrite; full Master Python suite NOT RUN; Master Actions none. These checks do not replace owner regression, independent QA or hardware acceptance.
 
 **PRODUCTION NO-GO** remains mandatory. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain outstanding.
+
+
+## UTC21 latest exact-head correction — Hardware #327 drain-abort false-return
+
+Current PHX-MASTER branch before this update: `phoenix/master-coordination@943a13937ea0c29857fd4f53609533c21481cc34`; PR #288 OPEN/DRAFT, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 88 paths all under `coordination/phoenix/`. Ownership manifest `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+Hardware #327 advanced after the prior UTC21 checkpoint to head `b346eba3ebee228abcff03456deb7889f2d39144`, child of #326 `58c558fb6a237935214621adc3dee65a10fe1a51`. Source-extracted lab blob `c3e34297e62c34e2a459203b33bcc29e14405fc8` adds `injectDuringDrainAbort`. It reproduces a missing ISR reconciliation when `beginPollWindow()` returns false: the helper releases `pollIntakeSuspended` before the caller compares the ISR sequence, and the next sample can be idle after the pulse ends.
+
+Exact current-head CI:
+- Quarantine/readback [44404536230](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536230), job `135156120858`: FAIL; ESP8266 exact-source test expected exit 0, got 25. The new `POLL_ABORTED_DRAIN_ISR_EDGE_PERSISTED_PASS` line is not reached.
+- Relay/output [44404536459](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536459), job `135156122573`: FAIL at the same ESP8266 exit-25 case. ESP8266/ESP32 output-polarity labs 48/48 each, ESP8266 boot-polarity lab, and output-enable checks pass before the failing poll-loop test; ESP32 boot-polarity subjob `135156121872` succeeds. The new false-return case does not reach ESP32 in the failed run.
+- Full build [44404536187](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44404536187), validation job `135156123737`: FAIL at inherited QA-owned `Missing poll signature check`. All 13 firmware/platform target jobs and Android succeed; simulation, update bundle, candidate, signing and publishing jobs are skipped.
+
+The earlier full-image EEPROM read-failure issue remains separate and open: ESP8266 `loadCfg()` still trusts `EEPROM.begin()` length and can enter default-`saveCfg()` after an ignored initial flash-read failure. The marker-only raw read helper does not prove the whole 544-byte image was read successfully.
+
+COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Current source/destination sketch blobs differ; 18 source board labs have no corresponding destination Hardware Python labs; destination test `f921c56c...` asserts positive poll-signature strings and workflow `fe79adbd...` does not invoke source-extracted labs. License/NOTICE scope remains unresolved. No file was copied, moved, overwritten, rebased or deleted.
+
+Other exact-head role observations remain scoped: CORE #252 PASS (separate owner); RENTAL #289 two PASS; PISONET #255 PASS; QA #290 build/handover PASS only, #292 no runs/stale base; RELEASE #291 two scoped PASS; COE #44 shared/case PASS but mandatory bubblewrap sandbox FAIL. None constitutes production acceptance.
+
+Master Python suite NOT RUN; Master PR CI returned no runs. Source/tree inspection and GitHub Actions evidence above are distinct. No physical GPIO/coin, power-cut, soak, payment, signer or production test occurred. **PRODUCTION NO-GO.**
