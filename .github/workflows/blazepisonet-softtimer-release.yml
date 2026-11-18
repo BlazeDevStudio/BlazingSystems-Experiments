@@ -5,11 +5,13 @@ on:
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/workflows/blazepwifi-build.yml'
   push:
     branches: [main]
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/workflows/blazepwifi-build.yml'
   workflow_dispatch:
 
 permissions:
