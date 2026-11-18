@@ -1089,7 +1089,7 @@ The sketch still has only the V1 and current V2 configuration records and no loc
 |---|---|---|
 | [44320123810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123810) | SUCCESS | Quarantine/readback focused lab only |
 | [44320124000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320124000) | SUCCESS | Existing relay-output lab only; new boot-polarity lab was not invoked |
-| [44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) | IN_PROGRESS at last read | Full validation already failed at the QA-owned Controller protocol parity assertion; ESP8266 target passed, remaining target jobs not all terminal |
+| [44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) | FAILURE | Controller protocol parity failed at Missing poll signature check; 13/13 firmware target jobs and Android passed; downstream simulation/signing/publishing/candidate jobs skipped |
 
 Other current exact-head role evidence: CORE #252 42698139210 PASS; PISONET #255 42462978704 PASS; RENTAL #289 43653329235 and 43653329229 PASS; QA #290 43633486963 PASS; QA #292 no PR-triggered run returned; RELEASE #291 44296971291 SUCCESS with privileged publishing skipped. HARDWARE #321 focused runs 44294008493/44294008398 PASS and Full 44294008523 FAIL; #322 focused 44232877611/44232877649 PASS and Full 44232877624 FAIL; #324 focused 44290338178/44290338468 PASS and Full 44290338340 FAIL; #325 focused 44311211095 PASS and Full 44311211166 FAIL. These results are scoped to their exact SHAs and do not imply integrated acceptance.
 

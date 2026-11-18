@@ -54,7 +54,7 @@ The existing relay lab ran and reported 48/48 scenarios for each board. The boot
 
 - [Quarantine/readback 44320123810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123810): SUCCESS.
 - [Relay/output 44320124000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320124000): SUCCESS for the existing relay-output lab only; the new boot-polarity lab was not invoked.
-- [Full BlazePwifi build 44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851): IN_PROGRESS at the last read. Validation job 134856529480 had already failed at the QA-owned Controller protocol parity assertion. ESP8266 target job 134856530069 passed; ESP32 and some other matrix jobs were still in progress. No Full pass is claimed.
+- [Full BlazePwifi build 44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851): completed FAILURE. Validation job 134856529480 failed at Controller protocol parity with exact message Missing poll signature check. All 13/13 firmware target jobs and Android job 134856530339 completed SUCCESS; downstream simulations, update bundle, candidate gate, signing and publishing jobs were SKIPPED. No Full pass is claimed.
 
 All focused results are CI/host-simulation evidence. Physical GPIO voltage, relay contact behavior, cold boot, reset pull levels, flash power-loss behavior and coin acceptance are NOT TESTED.
 

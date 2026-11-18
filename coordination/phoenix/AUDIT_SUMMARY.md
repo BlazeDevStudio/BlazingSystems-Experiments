@@ -559,7 +559,7 @@ Evidence:
 - Current candidate [PR #323](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/323), exact head 9cd889ec184c81d96569d3994602da3076efb537, parent #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08.
 - [Quarantine/readback 44320123810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123810) SUCCESS.
 - [Relay/output 44320124000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320124000) SUCCESS for the existing relay lab only.
-- [Full build 44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) was IN_PROGRESS at last read; validation already failed at the QA-owned Controller protocol parity assertion.
+- [Full build 44320123851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44320123851) completed FAILURE at Controller protocol parity / Missing poll signature check; 13/13 firmware target jobs and Android passed, while downstream simulations, signing, publishing and candidate-gate jobs were skipped.
 
 **Governance P0:** Experiments main, development, Master and COE main all report protected=false / protection.enabled=false. Both repository rulesets endpoints return []. No branch-protection changes were made. Repository administrator must configure and verify protected refs and required status checks.
 
