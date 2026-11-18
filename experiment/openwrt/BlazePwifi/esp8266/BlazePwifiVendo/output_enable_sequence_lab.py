@@ -45,9 +45,14 @@ struct Event { int kind; int pin; int value; };
 std::vector<Event> events;
 void digitalWrite(int pin,int level){ events.push_back({1,pin,level}); }
 void pinMode(int pin,int mode){ events.push_back({2,pin,mode}); }
+static constexpr int FALLING=4, RISING=5;
+int digitalPinToInterrupt(int pin){ return pin; }
+void detachInterrupt(int) {}
+void attachInterrupt(int,void (*)(void),int) {}
+void coinEdgeISR() {}
 
 int runCoinPin=4, runRelayPin=5, runLedPin=14;
-bool runRelayActiveHigh=true, runLedActiveHigh=true;
+bool runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=false;
 @@WRITE_LOGICAL@@
 @@CONFIGURE@@
 
@@ -101,6 +106,7 @@ def unsafe_mutation(configure: str) -> str:
     # post-enable OFF confirmation so the regression isolates the latch race.
     pattern = (
         r"(runCoinPin=coinPin;\s*runRelayPin=relayPin;\s*runLedPin=ledPin;)\s*"
+        r"(?://[^\n]*\n\s*)?"
         r"writeLogical\(runRelayPin,false,runRelayActiveHigh\);\s*"
         r"writeLogical\(runLedPin,false,runLedActiveHigh\);"
     )
