@@ -499,3 +499,14 @@ The current routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fc
 Current Hardware #323 source candidate `bc0447f013698a2e45c154b0ae69a098b0e75fe5` contains ESP8266 ConfigV3 but its boot-polarity failure-latch lab fails; ESP32 source blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` does not provide equivalent unknown-polarity boot authority. Do not stage these firmware files as a verified parity set. Before any future proposal, compare exact source/destination blobs and modes, complete tests/imports, license/NOTICE scope, and exact-head CI with role-owner and independent QA review.
 
 Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain unavailable through the complete accessible Library listing and no Google Drive connector is exposed. No older registry was substituted; no private IDs/content published. No files were copied, moved, renamed, deleted, overwritten or rebased. **Migration BLOCKED / PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC16 — exact #323 to COE #26 provenance hold
+
+The manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. It is a review map, not a copy/move instruction.
+
+Current #323 head 988904e8bcd058b62a9fac4aa6319a9b7c5b2470 (source/test tree 359bd8f...) is not byte-identical to COE #26. ESP32/ESP8266 source blobs 7ebf0d34... / 312884c5... differ from destination 3cc7ec54... / c8be98f7.... The new ESP32 boot lab 17f45e30..., ESP8266 boot lab db0ac511... and dual-store lab 25f5e8bd... are absent at the destination. The COE generic Hardware test f921c56c... still requires positive poll-signature strings, and workflow fe79adbd... does not invoke the new labs.
+
+Source main/dev poll producers 2e3a1430... / db58041c... emit member-route signatures but no signed poll response; COE #26 destination producer 0a71c4e2... defines vendo_poll_sig. This is an interface divergence, not a safe file-copy candidate. Source project MIT license 1ee55b94... matches Pisowifi/LICENSE, but no Hardware-scoped LICENSE/NOTICE or COE root LICENSE/NOTICE exists at the inspected ref. Import inventory, test identity, producer/consumer contract and license scope remain incomplete.
+
+COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows QUEUED / zero jobs. No file was copied, moved, renamed, overwritten, rebased or deleted. No destination staging change is proposed.
