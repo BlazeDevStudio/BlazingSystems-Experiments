@@ -103,3 +103,64 @@ Therefore, at source/test SHA `6738171209a748c3c210ac13ebe69450eb6405f5`:
 - ESP32 target build: NOT TESTED at this exact SHA (cancelled before execution).
 - Full target matrix / Full workflow: NOT VERIFIED; cancelled after QA validation failure.
 - Physical GPIO, relay, flash and power-cut acceptance: NOT TESTED.
+
+
+## UTC05 — blocking-poll regression restored to focused CI; storage and physical acceptance plan
+
+**Current source/test SHA:** `30fb7cd2de0af13c70aa8716da8d7cd9e43ce548`  
+**PR #323:** OPEN / DRAFT / UNMERGED; parent #322 remains `50d93e0de3d682550b6f02fb43484e76ad9c7e08`.
+
+### Test coverage defect and correction
+
+The existing `poll_loop_blocking_inhibit_lab.py` exercised the actual synchronous poll loop and LittleFS marker path, but it was not invoked by the focused CI entrypoint and had become incompatible with the new secondary-store helper calls. Its old mutation anchors for marker-write removal and boot-latch removal no longer matched current firmware, so those mutations could silently become no-ops.
+
+The hardware-owned `coin_pulse_capture_lab.py` entrypoint now invokes the companion poll-loop lab. No Release-owned workflow file was changed. The poll-loop lab explicitly stubs only the secondary NVS/EEPROM seam; `poll_fault_dual_store_lab.py` separately extracts and tests the real secondary-store helpers. The poll-loop lab now rejects missing mutation anchors rather than silently accepting stale mutations.
+
+Test-first history:
+- Runner-only RED commit `9559c37131163dfb17f7c2d18cbd52c6a7f417b5`: [run 44246521728](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44246521728), job `134606678746`, failed as expected because the stale lab lacked `pollFaultBackupPresentOrCorrupt` and `writePollFaultBackup` seams.
+- First fixture repair `301e81db6425637764b8d35dfc65efedafc25194`: [run 44246626671](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44246626671), job `134607022281`, progressed through the board scenarios but exposed a `-Werror` unused-variable compile failure in the boot-latch mutation.
+- Final test correction `30fb7cd2de0af13c70aa8716da8d7cd9e43ce548` changes that mutation to `backupHold && littleFsHold`, which keeps both source variables used and causes the expected runtime denial failure. It also documents the separate dual-store test boundary.
+
+Exact-head GREEN:
+- [Quarantine Byte Readback LAB 44246760443](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44246760443), job `134607466918`: SUCCESS. Both ESP32 and ESP8266 report `POLL_FAULT_DUAL_STORE_LAB=PASS` and `DUAL_STORE_FAILURE_LIMITATION=EXPECTED_CURRENT_BOOT_ONLY`. The invoked poll-loop lab reports 7/7 fault-marker scenarios and 7/7 existing guards per board, poll-edge snapshot-race PASS, and 10 failure mutations rejected per board, including marker-write and boot-latch removal. Coin-pulse capture remains 8/8 per board.
+- [Relay Output Polarity LAB 44246760676](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44246760676), job `134607466771`: SUCCESS. The same blocking-poll, marker, race and mutation checks pass on both boards alongside output-polarity checks.
+- Both runs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`, `PHYSICAL_RELAY_POLARITY_VERIFIED=0`, and `PHYSICAL_POWER_CUT_VERIFIED=0`.
+
+The runner integration closes a CI invocation gap; it does not establish flash physics, physical relay behavior, or cross-reboot durability when both persistent stores fail.
+
+### Board storage layout and assumptions
+
+**ESP32**
+- Sticky fallback record: Preferences/NVS namespace `phx_fault`, key `poll_fault`, fixed 20-byte versioned record.
+- The NVS partition is separate from the LittleFS partition but remains on the same physical flash chip and shares the board's flash failure/power domain.
+- Write length and exact record readback are checked. Existing, malformed, or unreadable record state is treated as a deny hold; there is no automatic clear path.
+- The record checksum is corruption detection only, not authentication, signing, anti-rollback, or independent witness evidence.
+
+**ESP8266**
+- EEPROM-emulation buffer is 544 bytes; the 20-byte sticky fallback record is reserved at offset 512.
+- Compile-time assertions keep the existing `Config` structure at or below offset 512 and the record within the reserved buffer.
+- The code commits, ends/reopens the EEPROM-emulation buffer, then checks the record readback.
+- Any non-erased bytes in the reserved record are treated as a deny hold; partial/malformed bytes are never auto-cleared.
+- EEPROM emulation and LittleFS remain regions on the same physical flash chip. They are not independent power-loss domains.
+
+**Shared invariant**
+- Set the RAM recovery deny, disable insertion, clear the active target, and apply outputs before any potentially blocking persistence call.
+- If either durable marker succeeds, boot remains denied.
+- If both writes fail, only the current boot is known fail-closed; reboot durability is explicitly NOT ESTABLISHED. Do not claim otherwise and do not auto-replay or re-enable coin admission.
+
+Before physical work, record the exact board revision, flash part, partition table, NVS/LittleFS partition boundaries, EEPROM-emulation sector and firmware SHA for each test unit. Confirm non-overlap from read-only partition metadata; do not infer layout from board model alone.
+
+### Physical acceptance plan — NOT EXECUTED
+
+This is a proposed owner-authorized noncustomer lab plan, not a test result. It requires disposable boards, isolated storage, an external pulse generator/coin simulator (no real money), dummy relay loads, and independent measurement/power telemetry.
+
+1. **Preflight and provenance:** identify board revision and flash part; capture partition map, firmware/source SHA, pin map, relay polarity, coin input polarity, storage offsets, and blank/nonblank marker state. Preserve read-only before/after media hashes and timestamps off-device.
+2. **Electrical pulse/recovery:** use a calibrated isolated pulse generator and scope/logic analyzer to measure actual input levels, pulse widths, bounce, edge timing, relay/LED output transitions, and brownout recovery. Exercise active-high and active-low configurations only where the board and wiring are verified. Do not invent voltage or timing limits; derive acceptance bounds from the exact board/acceptor specifications and measured baseline.
+3. **Persistence fault injection:** independently inject LittleFS open failure, short write, flush/close/readback failure, NVS/EEPROM initialization failure, commit failure, and readback corruption. Then inject simultaneous primary and secondary store failure. Verify immediate physical output deassertion before storage calls, sticky deny after any successful marker, and explicit operator recovery when both stores fail. Never treat a same-chip fallback as an independent witness.
+4. **Power-cut matrix:** plan 150 abrupt power-loss trials for the two ESP board families: 2 board families × 5 checkpoint classes × 15 repetitions. Checkpoints: (a) immediately after ISR edge capture, (b) after RAM deny/output inhibit and before secondary write, (c) during NVS/EEPROM commit, (d) after secondary commit and before LittleFS marker completion, and (e) during LittleFS write/readback. Use an independent power controller and external timestamped logger; after every restoration inspect state before any retry. Any missing marker, unexpected output enable, false ACK, duplicate effect, lost prepaid state, or unexplained state divergence is a failure. This two-board allocation is not a substitute for any additional architectures required by issue #34.
+5. **System soak:** separately run at least 30 real isolated test clients for 24 hours under mixed Wi-Fi/controller/rental load, collecting independent lost/duplicate ACK, event conservation, relay, pulse and recovery telemetry. This remains a system-level acceptance gate, not a firmware host-lab result.
+6. **Independent review:** PHX-QA witnesses the fault matrix and verifies exact firmware SHA and raw evidence; PHX-CORE checks event identity, receipt/disposition, replay and balance conservation; PHX-MASTER reviews the independent witness/anti-rollback evidence; PHX-RELEASE confirms target builds and reproducible provenance. Any unresolved state fails closed.
+
+**Stop conditions:** any relay/coin output remains active during a latched fault; any pulse is silently converted to credit or lost; a corrupt marker is cleared; a reboot restores accepting state after a persisted fault; an ACK or balance effect occurs without durable authenticated disposition; or external evidence is incomplete. Stop the trial, preserve media and logs, and require operator reconciliation.
+
+No physical flash, reset, power cut, real coin, live money, customer device, production migration, signer provisioning, merge, release or deployment was performed in this activation.
