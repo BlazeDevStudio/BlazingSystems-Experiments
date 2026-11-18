@@ -186,7 +186,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign portable executables before NSIS
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -249,7 +249,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign native Setup after metadata verification
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -364,7 +364,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: RELEASE-SIGN verify final signed packages before upload
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNER_CERT_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
@@ -418,7 +418,7 @@ jobs:
     needs: build-windows
     # Job-level if cannot reference env.VERSION. Only the already validated
     # build job may prove a non-frozen future candidate before granting write.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && needs.build-windows.outputs.future_release_eligible == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && needs.build-windows.outputs.future_release_eligible == 'true'
     runs-on: windows-latest
     permissions:
       contents: write
@@ -435,7 +435,7 @@ jobs:
       - name: Publish GitHub Release
         # Never mutate the frozen v0.4.0 release from later development code.
         # A version/tag bump and explicit new candidate are mandatory first.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
