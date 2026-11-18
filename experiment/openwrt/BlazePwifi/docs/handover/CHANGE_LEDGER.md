@@ -227,32 +227,9 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - PR #291 remains open, draft and unmerged. No signing, release creation, tag, publication, flash, deployment or payment migration occurred. **PRODUCTION NO-GO.**
 
 
-## PHX-RELEASE UTC21 — pin observed ESP board cores in the shared build workflow
+## 2026-11-18 UTC21 — PHX-RELEASE pins observed ESP board cores
 
-Task: #172 / #266 / #291 / #327. Scope is limited to the PHX-RELEASE-owned `.github/workflows/blazepwifi-build.yml`; no firmware source, QA-owned tests, CORE, RENTAL, PISONET, HARDWARE, MASTER, or COE destination implementation was changed.
-
-### Provenance and implementation
-
-- The live PHX-HARDWARE #327 exact CI logs [#44394253862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394253862) showed ESP8266 core `3.1.2` and ESP32 core `3.3.13` installed while both board jobs compiled successfully. Those were observed versions, not source pins.
-- Test-first policy guard commit [`dc43e463`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dc43e46305688abc67d73009fca8692fc4cfb94c) produced the intended RED in [run #44400058670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400058670): the ESP8266 install block contained only `arduino-cli core install esp8266:esp8266`, not the required `@3.1.2` pin. ESP32 was likewise unpinned in source.
-- Two earlier guard iterations were not accepted as product evidence: [#44399506691](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44399506691) used a self-referential check that falsely passed and then failed the stale handover gate; [#44399733331](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44399733331) and [#44399951202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44399951202) exposed guard-parser newline/regex defects. The parser was corrected before the accepted RED.
-- Source fix [`89bb876e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/89bb876e751cb14567f367d294a25f399a5f0393) pins `esp8266:esp8266@3.1.2` and `esp32:esp32@3.3.13`, emits `arduino-cli core list` after installation, and keeps a static release-CI regression guard that checks each named install step contains exactly its expected package/version.
-
-### Exact-source CI evidence
-
-- Push [#44400319512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400319512) and PR [#44400332118](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400332118) both ran on source head `89bb876e751cb14567f367d294a25f399a5f0393`.
-- In both runs, `CI-0701 docs-only PR sync proof` / `RELEASE-TOOLCHAIN enforce observed board-core pins` passed. ESP8266 and ESP32 jobs both passed compilation and artifact upload. The logs explicitly show `Platform esp8266:esp8266@3.1.2 installed` and `Platform esp32:esp32@3.3.13 installed`.
-- ESP8266 artifacts: push ID `14470569500`, 2,192,735 bytes, SHA256 `de21d08e9eb5a87caaa932f0feb186d5058df0d5659b0692415cd518372bac37`; PR ID `14471909775`, 2,192,735 bytes, SHA256 `497a6902f14e2fdeae5015cd8234c3f8594f8d6caa355135256b481e0d3a09aa`.
-- ESP32 artifacts: push ID `14472660174`, 14,435,908 bytes, SHA256 `e43519def5d2a041b3c6047d46ac77fcc8b3638e4d84bcad33536276505b22f7`; PR ID `14470559977`, 14,435,910 bytes, SHA256 `8af3f014aff7d79ed9245ae7c597ddd42e8dc7dde2f16cb81fd3b01c9ebf2a94`.
-- All other OpenWrt target jobs and Android completed successfully in both runs. Both overall workflow runs nevertheless completed FAILURE because the validation job stopped at the mandatory handover-freshness gate: these source runs preceded this handover refresh. The remaining validation suite did not execute; downstream simulations, candidate gate, signing, and publication were skipped. This is not a product-test pass or full candidate acceptance.
-- The separate SoftTimer Windows workflow PR run [#44400332007](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400332007) likewise stopped at its shared handover-freshness gate; build-windows and publish-release were skipped. No signing or publication occurred.
-
-### Ownership and remaining limits
-
-- PR #291 remains OPEN / DRAFT / UNMERGED. Its base is Experiments PR #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`; this work reused the existing release child branch `phoenix/release-publisher-isolation-20261115`.
-- MASTER ownership manifest `coordination/phoenix/OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`. It routes this source workflow to COE `.github/workflows/pisowifi-ci.yml` as `reimplementation-review`. That destination workflow was not modified; PHX-MASTER and the COE integration owner must coordinate any adoption.
-- The current #291 `CHANGE_LEDGER.md` remains an additive-only record with its historical provenance discrepancy unresolved (current branch file 228 lines versus the 3,502-line base blob reported by MASTER). This entry does not restore, delete, or rewrite historical entries; PHX-MASTER and PHX-QA still own that reconciliation.
-- Private Drive registry v11 was not available through the current Library search; older registry files are not substituted. No private registry contents were copied or exposed.
-- No real signing, release/tag, merge, hardware flashing, payment migration, customer deployment, or physical acceptance occurred. Production remains NO-GO.
-
-Next exact action: inspect the new docs-head PR-triggered Actions after this handover refresh; verify the handover gate result and record any later QA-owned validation blocker without weakening it. PHX-QA/PHX-MASTER review the release-owned workflow change; PHX-HARDWARE independently revalidates the stack.
+- Release-owned workflow: `.github/workflows/blazepwifi-build.yml` on existing PR #291 branch. ESP8266 core pinned to `3.1.2`; ESP32 core pinned to `3.3.13`; static install-step regression guard added.
+- Test-first RED [#44400058670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400058670); source fix [`89bb876e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/89bb876e751cb14567f367d294a25f399a5f0393).
+- Exact-source push [#44400319512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400319512) and PR [#44400332118](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400332118): board compile/artifact uploads and all other target/Android jobs PASS; `validate` FAILED at the mandatory handover-freshness gate before the docs refresh; downstream simulation/candidate/sign/publish jobs SKIPPED.
+- Artifact digests and exact job evidence are in `PROJECT_HANDOVER.md`. This is an additive entry only; it does not restore or reconcile the historical 3,502-line provenance discrepancy. No production action occurred.
