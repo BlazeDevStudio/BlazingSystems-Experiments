@@ -105,7 +105,13 @@ try {
     throw "Expected exactly three checkout steps, found $($checkoutStepMatches.Count)"
   }
   foreach ($checkoutStep in $checkoutStepMatches) {
-    if ($checkoutStep.Groups['block'].Value -notmatch '(?m)^[ ]{10}persist-credentials:\s*false\s*
+    if ($checkoutStep.Groups['block'].Value -notmatch '(?m)^[ ]{10}persist-credentials: false') {
+      throw 'Every release workflow checkout must set persist-credentials: false'
+    }
+  }
+  Write-Output 'RELEASE-CHECKOUT: all three checkout steps disable persisted Git credentials PASS'
+
+  # The PR build executes project code; it must never carry release-write authority.
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Pull-request/build workflow token must be read-only'
