@@ -98,3 +98,60 @@ The full BlazePwifi workflow [#44373043812](https://github.com/BlazeDevStudio/Bl
 Target jobs **SUCCESS**: ESP8266 135044774217; Ruijie 135044775035; Orange Pi PC 135044774806; Orange Pi Zero3 135044775124; Orange Pi One 135044775012; Orange Pi Zero 135044775459; Orange Pi Zero2 135044775029; Orange Pi Zero2W 135044774965; Orange Pi PC+ 135044774768; Orange Pi PC2 135044775116; Orange Pi One+ 135044774963.
 
 Target jobs **CANCELLED**: ESP32 135044774992; x86_64 135044775179; Android 135044774734. The v0.4 ESP/Ruijie/Orange Pi/x86/Android simulations, production sign handoff, candidate gate and both prerelease/release publishers were cancelled or skipped. Therefore the target matrix is PARTIAL, not complete, and Full CI is FAILED/CANCELLED; no signing or publication evidence exists.
+
+
+## UTC19 — source-backed ESP8266 EEPROM flash-read fail-closed correction
+
+**Candidate:** [PR #327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), still OPEN / DRAFT / UNMERGED; child of #326 at `58c558fb6a237935214621adc3dee65a10fe1a51`.  
+**Current source/test SHA:** `8eeb18edde426cbbff3f8a8042c163a9ce519ee1`.  
+**Current firmware commit:** `36050116444926c33cc05f224da2d3ef0cfc788c`.  
+**Current test/model commit:** `8eeb18edde426cbbff3f8a8042c163a9ce519ee1`.  
+**Focused workflow trigger commit:** `a8d8588e652350836d7c7bec87762df7e3188c10`.
+
+### Exact toolchain/source audit
+
+The full-build logs identify the currently observed board packages:
+
+- ESP8266 job `135044774217` on [run #44373043812](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373043812) installed `esp8266:esp8266@3.1.2`.
+- ESP32 job `135044774992` on the same run installed `esp32:esp32@3.3.13`.
+- The later exact-head build [#44383603449](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44383603449) again installed ESP8266 core 3.1.2 in job `135082278725` and ESP32 core 3.3.13 in job `135082278903`.
+
+The current build workflow installs `esp8266:esp8266` and `esp32:esp32` without version suffixes. These are observed versions, **not a repository-enforced toolchain lock**. PHX-HARDWARE did not edit the shared build workflow; PHX-RELEASE is requested to pin the approved versions or coordinate a controlled version bump.
+
+Source audit:
+
+- [ESP8266 core 3.1.2 EEPROM.cpp](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp) maps the EEPROM sector from `EEPROM_start - 0x40200000`. Its `EEPROM.begin()` calls `ESP.flashRead()` but does not propagate the read result to the sketch. A valid `EEPROM.length()` therefore does not prove the flash read succeeded.
+- [ESP8266 flash_hal.h](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/flash_hal.h) exposes the EEPROM start mapping used by the core.
+- [Arduino-ESP32 3.3.13 release](https://github.com/espressif/arduino-esp32/releases/tag/3.3.13) is based on ESP-IDF v5.5.6+.
+- [ESP-IDF v5.5.6 nvs_api.cpp](https://github.com/espressif/esp-idf/blob/v5.5.6/components/nvs_flash/src/nvs_api.cpp) marks `nvs_commit()` as a no-op for now (while still resolving/validating the handle); [nvs_handle_simple.cpp](https://github.com/espressif/esp-idf/blob/v5.5.6/components/nvs_flash/src/nvs_handle_simple.cpp) sends `set_blob()` directly to `Storage::writeItem()`. The host model was corrected accordingly: `nvs_set_blob` writes the modeled durable image immediately, while an injected commit error is documented as a defensive API-error path, not a second flash-write boundary.
+
+### Proven ESP8266 defect and source correction
+
+The previous boot-critical presence check used `EEPROM.get()` after `EEPROM.begin()`. If the core's internal `ESP.flashRead()` failed, the sketch received no status and could inspect an erased-looking/uninitialized RAM buffer as if the reserved poll-fault area were clean.
+
+The ESP8266 sketch now:
+
+1. Includes the core's `flash_hal.h` for the same `EEPROM_start` mapping used by EEPROM.cpp.
+2. Uses `readPollFaultBackupFlash()` to call status-bearing `ESP.flashRead()` at `EEPROM_start - 0x40200000 + POLL_FAULT_EEPROM_OFFSET`.
+3. Treats a raw flash-read failure as present/corrupt (deny) in `pollFaultBackupPresentOrCorrupt()`.
+4. Uses the same raw read for post-commit byte verification; a readback error sets the existing sticky `pollFaultBackupWriteFailed` latch and returns false.
+
+The ESP32 firmware source was not changed in this slice. Its NVS read-error/type-mismatch/open-failure denial tests remain in the same two-board lab.
+
+### Test-first and exact-head evidence
+
+- **Expected RED:** test-only commit `a477c56f29cde89642ba6d35b278e0bfeefb2028`; [run #44383198882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44383198882), job `135080701591`, failed with exit 33 on the ESP8266 raw-flash-read failure case. ESP32 NVS scenarios passed before the ESP8266 assertion stopped the executable. This is the intended reproduction of the old false-clean path.
+- **Intermediate harness failure:** [run #44383464868](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44383464868), job `135081628544`, failed to compile because the newly extracted helper was emitted after its callers. This was a test-harness declaration-order defect, not a firmware compile result. The helper was moved before its callers in commit `8eeb18edde426cbbff3f8a8042c163a9ce519ee1`.
+- **Final focused exact-head PASS:** [run #44383603474](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44383603474), job `135082100388`, SUCCESS at exact SHA `8eeb18edde426cbbff3f8a8042c163a9ce519ee1`. Logs include `ESP8266_RAW_FLASH_READ_ERROR_DENY_PASS`, `POLL_FAULT_DUAL_STORE_LAB=PASS` on ESP8266 and ESP32, 72/72 source quarantine scenarios, 56/56 pending-attempt cases, 16/16 mount/output cases, both-board pending journal/clear/write-readback and coin-post suites, 11/11 poll-window drain cases per board, and 8/8 pulse-capture cases per board. The job explicitly reports `SIMULATED_ONLY=1` and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`.
+- **Full build still not accepted:** [run #44383603449](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44383603449) has validation job `135082278352` FAILED at inherited `Controller protocol parity` / stale positive poll-signature expectation. ESP8266 compile job `135082278725` SUCCESS (core 3.1.2); ESP32 compile job `135082278903` SUCCESS (core 3.3.13). Other target jobs were still running at this handover update; do not claim a completed full matrix.
+
+### Classification, residual gap, and requests
+
+This correction is **CI VERIFIED / SIMULATED ONLY**. It does not prove actual ESP8266 flash-read fault behavior on silicon, power-cut atomicity, physical coin/relay behavior, or reboot durability if both LittleFS and EEPROM/NVS fail. The dual-store failure remains current-boot denial only; no independent witness exists. The positive poll-signature fixture, Android dependency reproducibility, private Drive v11 registry access, signer/witness, financial v1-to-v2 migration, durable accounting/replay, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain open gates.
+
+- **PHX-RELEASE:** pin the ESP8266/ESP32 Arduino core versions in the shared build workflow (or approve a controlled bump); current logs show 3.1.2 and 3.3.13 but the workflow is unpinned.
+- **PHX-QA:** independently review exact source/test SHA `8eeb18edde426cbbff3f8a8042c163a9ce519ee1`, including the raw flash-read failure and NVS source-model correction.
+- **PHX-MASTER:** keep #327 candidate-only under #326; no stack merge requested.
+- **PHX-HARDWARE:** next activation, revalidate current core/package pins and branch heads, then continue the bounded cold-boot persistence audit without claiming dual-store reboot durability.
+
+No shared financial/API contract, signer, migration, QA-owned test, production image, or release artifact was changed. No flash, reset, live coin, customer money, merge, release or deployment occurred.
