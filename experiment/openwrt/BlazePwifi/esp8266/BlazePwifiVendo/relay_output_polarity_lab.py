@@ -68,6 +68,7 @@ bool fsReady = true;
 bool journalRecoveryRequired = false;
 bool pendingReady = false;
 bool pollIntakeSuspended = false;
+bool outputPolarityKnown = true; // unrelated output tests model a validated local profile
 bool runRelayActiveHigh = true;
 bool runLedActiveHigh = true;
 int runRelayPin = 26;
@@ -89,6 +90,7 @@ void resetState() {
   journalRecoveryRequired = false;
   pendingReady = false;
   pollIntakeSuspended = false;
+  outputPolarityKnown = true;
   runRelayActiveHigh = true;
   runLedActiveHigh = true;
   runRelayPin = 26;

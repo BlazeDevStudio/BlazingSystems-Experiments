@@ -28,6 +28,7 @@ static uint32_t lastEdge=0;
 static uint32_t pulseStart=0,pulseEnd=0;
 static bool pulseEnabled=false;
 static bool fsReady=true,journalRecoveryRequired=false,pendingReady=false;
+static bool outputPolarityKnown=true;
 static bool insertMode=true,lastCoin=false;
 static bool runCoinActiveLow=true,pollIntakeSuspended=false;
 static bool pinConfigSafe=true,controllerEnabled=true,coinEnabled=true;
@@ -65,7 +66,7 @@ bool savePending(){++saveCalls;return saveResult;}
 static void resetState(uint32_t now=0,bool activeLow=true){
   fakeNow=now;runDebounceMs=40;lastEdge=0;
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
-  fsReady=true;journalRecoveryRequired=false;pendingReady=false;
+  fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
   insertMode=true;lastCoin=false;runCoinActiveLow=activeLow;
   pollIntakeSuspended=false;pinConfigSafe=true;controllerEnabled=true;coinEnabled=true;
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;

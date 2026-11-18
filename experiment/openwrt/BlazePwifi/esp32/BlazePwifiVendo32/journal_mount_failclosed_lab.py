@@ -38,6 +38,7 @@ bool fsReady=false;
 bool pendingReady=false;
 bool journalRecoveryRequired=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool outputPolarityKnown=true;
 std::string activeTarget="target-01";
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;

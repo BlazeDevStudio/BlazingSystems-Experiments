@@ -138,6 +138,7 @@ static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false
 static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
 bool insertMode=true, lastCoin=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool outputPolarityKnown=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
@@ -243,7 +244,7 @@ void resetState(){
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
-  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true;
+  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true; outputPolarityKnown=true;
   controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
   setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
   pendingReady=false; fsReady=true; journalRecoveryRequired=false; pendingPostAttempted=false;
