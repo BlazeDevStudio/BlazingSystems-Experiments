@@ -26,7 +26,7 @@ WORKFLOWS = {
         "actions/checkout": 20,
         "arduino/setup-arduino-cli": 2,
         "actions/setup-java": 2,
-        "actions/setup-python": 2,
+        "actions/setup-python": 3,
         "reactivecircus/android-emulator-runner": 1,
         "actions/upload-artifact": 16,
         "actions/download-artifact": 8,
