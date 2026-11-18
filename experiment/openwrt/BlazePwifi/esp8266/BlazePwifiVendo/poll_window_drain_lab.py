@@ -25,7 +25,7 @@ static uint16_t runDebounceMs=40;
 static int pulseStart=-1, pulseEnd=-1;
 static constexpr int LOW=0, HIGH=1;
 static bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
-static bool outputPolarityKnown=true;
+bool outputPolarityKnown=true;
 static uint8_t pendingPulses=0;
 static bool runCoinActiveLow=true, pollIntakeSuspended=false;
 static int runCoinPin=4, runRelayPin=5, runLedPin=2;
