@@ -45,8 +45,11 @@ static unsigned saveCalls=0,nonceCalls=0;
 static bool saveResult=true;
 static constexpr int LOW=0,HIGH=1;
 struct FakeSerial {
-  std::string last;
-  void println(const char *message){ last=message?message:""; }
+  std::string messages;
+  void println(const char *message){
+    if(!messages.empty()) messages+="\\n";
+    messages+=message?message:"";
+  }
 };
 static FakeSerial Serial;
 uint32_t millis(){return fakeNow;}
@@ -99,7 +102,7 @@ static void resetState(uint32_t now=0,bool activeLow=true){
   backupSawFsReady=false;markerSawFsReady=false;
   backupSawRelayOff=false;backupSawLedOff=false;
   markerSawRelayOff=false;markerSawLedOff=false;
-  Serial.last.clear();
+  Serial.messages.clear();
 }
 static bool fail(const char*name,const char*detail){
   std::cerr<<"FAIL "<<name<<" "<<detail<<"\n";
@@ -158,7 +161,8 @@ static bool runSaveFailureCase(const char*name,bool backupOk,bool markerOk){
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
     return fail(name,"failed journal write did not retain the deny latch and output inhibit");
   if(!backupOk && !markerOk &&
-     Serial.last.find("reboot durability is NOT established")==std::string::npos)
+     (Serial.messages.find("both poll-pulse fault stores failed")==std::string::npos ||
+      Serial.messages.find("reboot durability is NOT established")==std::string::npos))
     return fail(name,"dual-store failure was not classified as current-boot-only");
   sampleCoinPulseEdge(false);
   fakeNow=200U;
