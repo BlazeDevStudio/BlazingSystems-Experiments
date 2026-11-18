@@ -678,3 +678,22 @@ New COE drafts #36–#42 preserve a Labs-origin ESP8266 Blaze Pisonet Universal 
 | COE integration owner | #26 `b382d233...` | Five workflows QUEUED, zero jobs; staged Hardware blobs differ from current source | Reconcile per-file blobs, tests, workflow invocation and license/NOTICE before any staging |
 
 #323 is a PHX-HARDWARE source candidate. PHX-MASTER does not own its sketches or tests. The separate `Blaze Production Continuation` retains CORE implementation ownership. No parallel CORE worker or duplicate source edit was started. COE INTERCON #39/#40/#42 remain competing unselected Stage-3 candidates; #41 remains dependent on #39 only.
+
+---
+
+## 3. Live role and ownership refresh — 2026-11-18 UTC06
+
+| Role | Current active review ref | Exact-head status |
+|---|---|---|
+| PHX-CORE | Experiments #252 @ c82705f2... | Scoped CI #42698139210 SUCCESS; CORE source remains owned by the separate continuation |
+| PHX-RENTAL | Experiments #289 @ 68928774... | Runs #43653329235 and #43653329229 SUCCESS |
+| PHX-PISONET | Experiments #255 @ d01fd164... | Run #42462978704 SUCCESS; Windows/native serial acceptance still separate |
+| PHX-HARDWARE | Experiments #323 @ 82b0ed15...; source/test @ 30fb7cd2... | Focused runs #44246998831/#44246999048 SUCCESS; Full #44246998969 fails QA-owned poll-signature fixture; 14/14 target builds pass |
+| PHX-QA | Experiments #290 @ 5c29d159...; #292 @ 75a3f66d... | #290 run #43633486963 SUCCESS; #292 has no current-head run |
+| PHX-RELEASE | Experiments #291 @ a74b8b94... | Run #44199987756 SUCCESS (scoped) |
+
+COE Release #35 @ d73986d2 (source/test aaecb633) has shared/board and case CI PASS, but mandatory sandbox #44251684871 fails closed at unprivileged UID-map setup. COE #26 remains five queued workflows / zero jobs.
+
+### COE INTERCON ownership gap
+
+The COE Hardware/BlazePisonetUniversal INTERCON branch is not represented in OWNERSHIP_ROUTES.json. Current PHX-PISONET ownership is the Windows SoftTimer subtree; current PHX-HARDWARE ownership is the BlazePwifi ESP32/ESP8266 subtree. Do not infer either role owns the new COE INTERCON source. The COE integration owner must nominate an accountable owner before review assignments, migration or merge planning.
