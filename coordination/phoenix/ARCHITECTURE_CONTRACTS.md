@@ -65,9 +65,15 @@ Source: HARDWARE PR #322, source/test SHA `7ba56c1ba92dcffa2555e4cce10d3010c3afa
 
 The current-head Full build [44232877624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624) is not a Full pass: its validation job failed at the inherited QA-owned `Missing poll signature check`; 14/14 target/platform jobs completed SUCCESS; 12 downstream simulation/update/publish/signing jobs SKIPPED after the validation failure. Physical GPIO voltage, relay transient, contacts, electrical pulse behavior and hardware acceptance remain NOT TESTED.
 
-### 2.2 Client-Side Response Verification (Firmware)
-- ESP32 (`BlazePwifiVendo32.ino`) and ESP8266 (`BlazePwifiVendo.ino`) sketches MUST store `lastSentNonce` and verify `response_sig` returned by `/cgi-bin/vendo` for `register` and `poll` actions.
-- Unauthenticated or signature-mismatched HTTP/CGI responses MUST be logged and ignored to prevent LAN spoofing.
+### 2.2 Client-side response trust boundary — current deny-only state (2026-11-18 UTC08)
+
+- `bp_check_vendo_sig()` authenticates the **incoming request tuple**. It is not a response signature and does not authenticate the JSON body returned to the controller.
+- On the current Experiments development producer, `bp_json()` only emits HTTP headers plus the supplied JSON body. The `register|ping`, `poll`, and `coin` response bodies do not include `response_sig`.
+- The current HARDWARE #323 candidate is deliberately fail-closed: both board implementations return `false` from `acceptPollResponse()` and `coinPostDispositionVerified()`. The register-tuple check also remains false when the response has no `response_sig`; remote configuration remains disabled.
+- Do not describe response verification as implemented, and do not require a positive `|poll|` signature expression, until PHX-CORE defines a versioned response envelope and canonical serialization, PHX-HARDWARE implements the approved consumer, and PHX-QA independently verifies positive/negative golden vectors at the same pinned source SHA.
+- Until that gate is met, poll admission and coin POST disposition remain hard-deny. A missing signature is not a reason to weaken firmware or clear pending evidence.
+
+See §6.23 for exact source, candidate, fixture and CI evidence.
 
 ### 2.3 Swallowed Coin Quarantine (LittleFS)
 - If the router returns an error (e.g. `"coin window expired"`, `"controller disabled"`), coins MUST NOT be deleted uncredited.
@@ -164,7 +170,9 @@ All subsystems must be classified under one of the following five operational st
 These are **shared interface/accounting invariants**, not permission for PHX-MASTER to edit firmware or financial source. PHX-CORE owns financial/replay semantics; PHX-HARDWARE owns firmware/journal implementation; PHX-QA independently verifies positive, negative and reboot/failure cases. Do not mark either invariant implemented or accepted until the owners agree on the exact contract and QA verifies the combined exact SHA.
 
 
-### 6.3 Poll producer/consumer compatibility is not established
+### 6.3 Historical poll producer/consumer comparison — 2026-11-16 snapshot; current #323 state in §6.23
+
+This section preserves the earlier #315 comparison as historical evidence. It does not describe the current #323 deny-only candidate. Use §6.23 for the current producer/consumer refs and QA fixture status.
 
 The keyless-deny invariant does not by itself establish that the current server can authorize a provisioned controller. Exact poll-action inspection at this snapshot found:
 
@@ -458,3 +466,46 @@ At current PHX-HARDWARE PR #323 source/test SHA `a3aa967087680887e925791f83a8fbc
 The current Experiments `cgi-bin/vendo` poll branch (blob `2e3a1430d08cc6606429a042df3b5848f53c7267`) emits no `response_sig`. The inherited `tests/v05_firmware_hardening_test.sh` (blob `41211b2c110ab409f6d9d1812ef12fda73b13211`) still requires `response_sig` and literal `|poll|` in both sketches, so the Full workflow fails at `Missing poll signature check`. That fixture does not match the current deny-only contract or current producer. It must be replaced by negative tests proving unsigned/unknown responses cannot enable insertion, retain a target, clear a pending coin or authorize disposition. Do not add a synthetic signature string or enable unauthenticated poll admission to satisfy the old assertion.
 
 A positive poll path remains blocked until PHX-CORE publishes a canonical producer/consumer schema and golden vectors, PHX-QA verifies both sides at pinned SHAs, and the independent signer/anti-rollback gates are satisfied. See [HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md](HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md). **PRODUCTION NO-GO.**
+
+
+## 6.23 Exact poll response producer/consumer reconciliation — 2026-11-18 UTC08
+
+**Decision:** the current Experiments source producer and the current #323 firmware consumer do not implement an authenticated positive poll response. Keep coin admission and coin POST disposition fail-closed. The COE #26 response-signature expression is a separate, unapproved candidate and is not permission to copy or enable it.
+
+### Exact refs and source evidence
+
+| Component | Exact ref / blob | Observed behavior |
+|---|---|---|
+| Experiments development `blazepwifi-v0.5.3-development` | branch HEAD `aad3aade72c1156eecba1fed30907c6d0283b2c5`; `vendo` blob `a1c19180385e618c412b4af21c0e91c1f47da1dd` | `register|ping`, `poll`, and `coin` response bodies contain no `response_sig` |
+| Experiments development `common.sh` | blob `ca4920d3d9572382fb381a325183a18311be5954` | `bp_json()` prints headers and the supplied JSON; it does not add a response signature |
+| Experiments development `controller.sh` | blob `54bdc59949884bd3e734f8c07ddeb1d7c2cf9848` | `bp_controller_json()` emits configuration fields, not an authenticated configuration envelope |
+| Current HARDWARE #323 ESP8266 | source/test SHA `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`; sketch blob `8e79b9eb8856e67d966f4c6385f89fccdc8be7fc` | `acceptPollResponse()` and `coinPostDispositionVerified()` return false; missing register `response_sig` leaves remote configuration disabled |
+| Current HARDWARE #323 ESP32 | same source/test SHA; sketch blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` | Same deny-only poll and coin disposition behavior |
+| COE integration #26 | head `b382d233ff06c8791b1028bed3c617cc7b670d12`; `vendo` blob `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e` | Contains `vendo_poll_sig()` and emits a candidate `response_sig`; its construction is keyed SHA-256 concatenation, not standard HMAC |
+
+The COE candidate's poll expression is ordered as secret, action, controller ID, request nonce, insert flag, target nonce, expiry, secret, then SHA-256. Structural field-order similarity is not cryptographic approval: there is no accepted canonical schema, key/version lifecycle, independently executed shared golden vector, or exact combined-tree QA evidence. Do not transplant this candidate into Experiments or infer that #323 consumes it.
+
+### Exact #323 CI and stale QA fixture
+
+- Current PR/docs head: `4850b16a31a1ccb67f265e5224a2799b25cf2e01`; source/test SHA: `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`; parent #322: `50d93e0de3d682550b6f02fb43484e76ad9c7e08`.
+- Focused quarantine/readback run [44262258247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258247): SUCCESS.
+- Focused relay/output run [44262258937](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258937): SUCCESS.
+- Full build [44262258842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258842): FAILURE at validation job `134658178171`, which reports `Missing poll signature check` in ESP8266. All 14 firmware target jobs and Android completed SUCCESS; downstream import, update, simulations, candidate gate, signing and publishing jobs were SKIPPED.
+- The exact merge-tree QA fixture `v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` requires literal `response_sig` and `|poll|` presence. It does not test the current intentional deny-only behavior. The `controllers.sh` entrypoint blob `f7896647713d6bf8034ff48ed19b6383e4dedea0` invokes this fixture.
+- The focused CI runs are source-extracted simulations, not physical flash, GPIO, coin-acceptor or power-cut acceptance.
+
+### Owner actions — no source takeover
+
+1. **PHX-QA:** replace the positive `|poll|` string-presence assertion with source-linked negative behavior tests for both boards: arbitrary/missing/forged poll bodies must leave `insertMode=false`, clear `activeTarget`, and never enable intake; coin POST disposition must remain false. Keep the test bound to the exact #323 source/test SHA.
+2. **PHX-CORE:** define the canonical versioned response schema, cryptographic construction (do not label concatenated SHA-256 as HMAC), key identity/version, nonce and target binding, freshness/expiry, canonical field order, and positive/negative golden vectors.
+3. **PHX-HARDWARE:** retain deny-only behavior until the approved producer and consumer exist; keep source/test and handover refs synchronized.
+4. **PHX-RELEASE:** keep downstream signing, candidate-gate and publishing jobs closed while validation fails.
+5. **PHX-MASTER:** maintain this contract and migration matrix only; do not edit worker-owned firmware, CGI or QA fixture files.
+
+### Integration and release boundary
+
+COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five workflows QUEUED and zero jobs. Its staged poll producer differs from Experiments development; exact per-file source/destination blob, license/NOTICE, import-completeness, test-identity and exact-head CI review is still required. No file was copied, moved, overwritten or deleted. The ownership manifest remains `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination null.
+
+The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not available through the exposed Library/Drive surface. The AGENTS-linked cloud artifact policy/storage handover could not be retrieved through the GitHub connector or web endpoint; COE root `AGENTS.md` returned 404. No older registry snapshot was substituted and no private registry contents were published.
+
+**Status:** DEVELOPMENT / LAB ONLY; integrated acceptance UNKNOWN; physical acceptance NOT TESTED; **PRODUCTION NO-GO**. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.

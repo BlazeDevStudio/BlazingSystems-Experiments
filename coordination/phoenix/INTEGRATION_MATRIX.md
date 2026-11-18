@@ -897,3 +897,21 @@ The current #323 focused logs report poll-response fail-closed 11/11, strict JSO
 ### Migration hold
 
 COE #26 remains at five queued workflows / zero jobs. No file was copied or moved. `OWNERSHIP_ROUTES.json` remains blob `e4db3243...`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Exact source/destination blobs, licensing, import completeness, test identities and exact-head combined CI remain mandatory before staging.
+
+
+## 2026-11-18 UTC08 — poll producer/consumer and exact-head role refresh
+
+| Role / candidate | Exact current ref | Exact-head evidence | Disposition |
+|---|---|---|---|
+| PHX-MASTER #288 | 9fb0d615c58731e488ea8f876e96d3e81425efb3 at refresh start; base f4e8a891aed8af86d5fd315d28750a0ac3a7372b | OPEN/DRAFT, 73 paths under coordination/phoenix/; no PR-triggered run returned | Coordination-only |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped | CORE implementation remains with separate hourly continuation |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped | Rental-owned scope only |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped | Native COM acceptance UNKNOWN |
+| PHX-HARDWARE #323 | PR/docs 4850b16a31a1ccb67f265e5224a2799b25cf2e01; source/test c13dfb8d9b7ae83c15aa97c94842c339db8b8584; base #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08 | Focused [44262258247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258247) and [44262258937](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258937) SUCCESS; Full [44262258842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258842) FAILURE at QA fixture; 14 firmware target jobs + Android SUCCESS | Deny-only / LAB only; same-chip fallback is not an independent witness |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS, scoped; #292 no current-head run | QA owns stale positive poll-signature fixture correction |
+| PHX-RELEASE #291 | b812c40e6a000cbedfc0789d9e62107b1b6f637a | [44269469055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44269469055) IN_PROGRESS at readback; handover PASS, Windows build running | Signing/publishing remains closed |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12, base COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Five workflows QUEUED, zero jobs | No combined acceptance |
+
+The current Experiments development vendo producer blob a1c19180385e618c412b4af21c0e91c1f47da1dd emits no response signature. COE #26 vendo blob 0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e emits a derived response_sig candidate using keyed SHA-256 concatenation; this is not standard HMAC and has no accepted golden vectors. Current #323 consumer remains hard-deny. See POLL_RESPONSE_PRODUCER_CONSUMER_RECONCILIATION_20261118_UTC08.md.
+
+No source/destination copy or migration occurred. Physical acceptance and production financial authority remain NOT TESTED / NO-GO.

@@ -442,3 +442,14 @@ Current exact-head focused CI #44256737982 and #44256738001 passed. Full #442567
 COE #35 current docs head `68657a5...` / source-test `5fe815f9...` has shared/board and case checks PASS, but mandatory sandbox #44259106331 fails closed at unprivileged bubblewrap UID-map setup after 9/9 host-preflight tests. Its PR description remains stale. COE #26 remains five queued workflows / zero jobs. Stage-3/Stage-4 INTERCON candidates remain unselected.
 
 No migration, merge, release, signing, flashing, real coin/payment operation or physical test occurred. The canonical Drive registry v11/newer corrections and linked AGENTS cloud policy/storage handover remain inaccessible through current connectors. Older registry snapshots were not substituted. **PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC08 — poll contract source/destination provenance hold
+
+The current Experiments development branch has vendo blob a1c19180385e618c412b4af21c0e91c1f47da1dd, which authenticates inbound request tuples but emits no response_sig for register/ping, poll or coin. Its common.sh blob ca4920d3d9572382fb381a325183a18311be5954 implements bp_json() as a plain header/body writer.
+
+COE #26 has a different vendo blob 0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e that adds a poll response_sig candidate through vendo_poll_sig(). The candidate is a keyed SHA-256 concatenation, not standard HMAC; it is not an approved canonical protocol and current Experiments #323 does not accept it. The two producer blobs are not byte-identical and must not be merged or copied as if compatible.
+
+Current #323 ESP8266/ESP32 consumers at source/test SHA c13dfb8d9b7ae83c15aa97c94842c339db8b8584 hard-deny poll and coin disposition. Exact source blobs: 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc (ESP8266) and bd74b11c1496b0943404ff387ee72bb45d4743e5 (ESP32). The legacy QA fixture v05_firmware_hardening_test.sh blob 41211b2c110ab409f6d9d1812ef12fda73b13211 requires a positive |poll| string and causes current Full validation failure. QA owns replacing it with negative deny-behavior tests; Master does not edit that fixture.
+
+No file was copied, moved, overwritten or deleted. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. The canonical Drive registry v11/newer corrections remain inaccessible, so no migration proposal is made. See POLL_RESPONSE_PRODUCER_CONSUMER_RECONCILIATION_20261118_UTC08.md.

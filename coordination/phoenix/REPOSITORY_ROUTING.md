@@ -412,3 +412,12 @@ COE Release #35 current docs head `68657a5fcc21df3883c8f3296c3925d5876ac05b` (so
 COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows and zero jobs. The new INTERCON path has no route in the ownership manifest. Stage-3 #39/#40/#42 formats remain incompatible; #41/#43 remain separate Stage-4 candidates. No source route is inferred and no destination copy/move is authorized.
 
 `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, destination PR #26, PHX-MASTER target null. No file was copied, moved, overwritten, renamed, rebased or deleted. Preserve exact source blobs, license/NOTICE applicability, complete import inventory, test identity and exact-head CI as preconditions for any future owner-authorized staging.
+
+
+## 2026-11-18 UTC08 — poll response producer/consumer migration hold
+
+Source Experiments development vendo blob a1c19180385e618c412b4af21c0e91c1f47da1dd and COE #26 vendo blob 0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e are behaviorally divergent: the source emits no response signature, while the destination contains a derived poll response_sig candidate. The candidate uses keyed SHA-256 concatenation, not standard HMAC, and is not approved by CORE/QA. Current Experiments #323 firmware deliberately denies poll and coin disposition, so the COE expression is not a drop-in-compatible contract.
+
+The #323 source/test sketch blobs are ESP8266 8e79b9eb8856e67d966f4c6385f89fccdc8be7fc and ESP32 bd74b11c1496b0943404ff387ee72bb45d4743e5. The QA-owned positive poll-string fixture fails current Full CI at [run 44262258842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258842), while focused host labs [44262258247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258247) and [44262258937](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44262258937) pass. COE #26 still has five queued workflows and zero jobs.
+
+No copy/move/overwrite is authorized. Preserve the existing exact source/destination blobs, license/NOTICE review, full import inventory, test identities and exact-head CI requirements. Private Drive v11/newer corrections are unavailable; no older snapshot is substituted. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY, PHX-MASTER target null. PRODUCTION NO-GO.

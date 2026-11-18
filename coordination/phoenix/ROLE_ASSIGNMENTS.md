@@ -717,3 +717,18 @@ The COE Hardware/BlazePisonetUniversal INTERCON branch is not represented in OWN
 The live PR #323 description still reports `f98bc39c...` / `67381712...`, not its current `0d6f0c7...` / `a3aa967...`. COE #35's description still reports `d73986d2...` / `aaecb633...`, not its current `68657a5...` / `5fe815f9...`. These are worker-owned descriptions; PHX-MASTER records the freshness gap but does not edit them.
 
 COE INTERCON #39/#40/#42 remain incompatible unselected Stage-3 candidates; #41 remains shadow-only on #39 and #43 remains live timer/relay on #42. The COE INTERCON owner gap is unchanged. No subsystem ownership or CORE continuation was taken over.
+
+
+## 5. Live role refresh — 2026-11-18 UTC08
+
+| Role | Current exact PR / head | Evidence / status | Required next action |
+|---|---|---|---|
+| PHX-MASTER | #288 9fb0d615c58731e488ea8f876e96d3e81425efb3 before this update | OPEN/DRAFT; no Master PR-triggered CI | Maintain contracts, matrix and provenance only |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped SUCCESS | Define canonical signed response schema and golden vectors; separate CORE continuation retains source ownership |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329235/#43653329229 scoped SUCCESS | Continue Rental-owned scope only |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 scoped SUCCESS; native COM UNKNOWN | Continue Windows SoftTimer-owned scope only |
+| PHX-HARDWARE | #323 4850b16a31a1ccb67f265e5224a2799b25cf2e01; source/test c13dfb8d9b7ae83c15aa97c94842c339db8b8584 | Focused #44262258247/#44262258937 PASS; Full #44262258842 fails QA fixture | Preserve deny-only consumer; refresh Hardware-owned handover/PR as needed |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS; #292 no current-head run | Replace positive |poll| presence check with negative behavior tests |
+| PHX-RELEASE | #291 b812c40e6a000cbedfc0789d9e62107b1b6f637a | #44269469055 IN_PROGRESS at readback; handover PASS, build-windows running | Keep write-privileged publishing closed until owner gates |
+
+COE #26 remains five workflows QUEUED / zero jobs. COE root AGENTS.md returned 404. The private Drive v11 registry and newer corrections remain unavailable; no historical snapshot was substituted. Do not assign or edit another role's source/test paths.
