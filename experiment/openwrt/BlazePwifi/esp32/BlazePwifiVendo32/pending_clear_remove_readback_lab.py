@@ -128,7 +128,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
           if (LittleFS.sawOutputsOnAtAccess || pendingPulses != 5 || !pendingReady ||
               pendingNonce != "nonce-1234567890" ||
               pendingTarget != "target-1234567890" || outputsOn) {
-            std::cerr << "FAIL " << scenario << ": pending state/output was cleared\n";
+            std::cerr << "FAIL " << scenario << ": outputs were ON during filesystem access or pending state was cleared\n";
             std::exit(1);
           }
         }
