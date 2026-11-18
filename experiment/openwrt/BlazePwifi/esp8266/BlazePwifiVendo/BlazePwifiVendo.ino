@@ -47,6 +47,7 @@ bool pendingReady=false, fsReady=false;
 int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
+void applyOutputs();
 
 struct PendingRecord {
   uint32_t magic;
@@ -395,8 +396,6 @@ void connectSta(){
     denyRemoteControl();
   }
 }
-
-void applyOutputs();
 
 bool clearPending(){
   // Keep the RAM hold asserted until every possible pending candidate is absent.
