@@ -112,7 +112,6 @@ try {
   Write-Output 'RELEASE-CHECKOUT: all three checkout steps disable persisted Git credentials PASS'
 
   # The PR build executes project code; it must never carry release-write authority.
-  # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
     throw 'Pull-request/build workflow token must be read-only'
   }
