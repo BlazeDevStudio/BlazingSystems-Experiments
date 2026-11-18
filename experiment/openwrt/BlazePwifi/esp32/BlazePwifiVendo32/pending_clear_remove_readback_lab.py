@@ -51,6 +51,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
     cpp = textwrap.dedent(r"""
         #include <cassert>
         #include <cstdint>
+        #include <cstdlib>
         #include <iostream>
         #include <set>
         #include <string>
@@ -124,8 +125,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
           if (pendingPulses != 5 || !pendingReady ||
               pendingNonce != "nonce-1234567890" ||
               pendingTarget != "target-1234567890" || outputsOn) {
-            std::cerr << "FAIL " << scenario << ": pending state/output was cleared
-";
+            std::cerr << "FAIL " << scenario << ": pending state/output was cleared\n";
             std::exit(1);
           }
         }
@@ -136,8 +136,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
               LittleFS.exists("/pending.dat") ||
               LittleFS.exists("/pending.new") ||
               LittleFS.exists("/pending.bak")) {
-            std::cerr << "FAIL " << scenario << ": successful clear left state behind
-";
+            std::cerr << "FAIL " << scenario << ": successful clear left state behind\n";
             std::exit(1);
           }
         }
@@ -206,8 +205,7 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
           if (LittleFS.removeCalls != 0) return 25;
           expectHeld("quarantine append failure");
 
-          std::cout << "PENDING_CLEAR_REMOVE_READBACK=PASS 10/10; SIMULATED ONLY
-";
+          std::cout << "PENDING_CLEAR_REMOVE_READBACK=PASS 10/10; SIMULATED ONLY\n";
           return 0;
         }
     """)
