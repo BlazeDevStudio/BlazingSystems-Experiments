@@ -63,6 +63,9 @@ Preferences prefs;
 bool outputPolarityKnown=false;
 nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
+// A failed commit is ambiguous until a cold boot reads the flash-backed store.
+// Do not count a same-boot NVS cache entry as a durable deny marker.
+bool pollFaultBackupWriteFailed=false;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
@@ -375,21 +378,32 @@ bool pollFaultBackupPresentOrCorrupt(){
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
-  if(!pollFaultBackupReady) return false;
+  if(!pollFaultBackupReady || pollFaultBackupWriteFailed) return false;
   size_t existingLength=0;
   const esp_err_t existing=nvs_get_blob(pollFaultNvsHandle,"poll_fault",nullptr,&existingLength);
   if(existing==ESP_OK) return true; // Any existing value, including malformed data, keeps the deny latch.
-  if(existing!=ESP_ERR_NVS_NOT_FOUND) return false;
+  if(existing!=ESP_ERR_NVS_NOT_FOUND){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
 
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
-  if(nvs_set_blob(pollFaultNvsHandle,"poll_fault",&record,sizeof(record))!=ESP_OK) return false;
-  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK) return false;
+  if(nvs_set_blob(pollFaultNvsHandle,"poll_fault",&record,sizeof(record))!=ESP_OK){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
+  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
 
   PollFaultRecord verify{};
   size_t readLength=sizeof(verify);
   const esp_err_t read=nvs_get_blob(pollFaultNvsHandle,"poll_fault",&verify,&readLength);
-  return read==ESP_OK && readLength==sizeof(verify) &&
-         validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  const bool verified=read==ESP_OK && readLength==sizeof(verify) &&
+                      validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  if(!verified) pollFaultBackupWriteFailed=true;
+  return verified;
 }
 
 void initPollFaultBackupStore(){
