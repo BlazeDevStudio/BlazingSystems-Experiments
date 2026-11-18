@@ -345,7 +345,7 @@ int main(){
         std::cerr<<"DEBOUNCE_FLOOR_FAIL\n"; return 1;
     }
     resetState(); pulseStart=0; pulseEnd=80;
-    if(beginPollWindow() || !pollIntakeSuspended || relayOn || !relayOffObservedWhileSuspended) return 11;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn || relayOffObservedWhileSuspended) return 11;
     resetState(); pendingPulses=1;
     if(beginPollWindow() || pollIntakeSuspended || !relayOn) return 12;
     resetState(); pendingReady=true; applyOutputs();
