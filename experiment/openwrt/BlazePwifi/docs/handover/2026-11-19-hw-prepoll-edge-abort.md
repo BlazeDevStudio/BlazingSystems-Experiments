@@ -155,3 +155,34 @@ This correction is **CI VERIFIED / SIMULATED ONLY**. It does not prove actual ES
 - **PHX-HARDWARE:** next activation, revalidate current core/package pins and branch heads, then continue the bounded cold-boot persistence audit without claiming dual-store reboot durability.
 
 No shared financial/API contract, signer, migration, QA-owned test, production image, or release artifact was changed. No flash, reset, live coin, customer money, merge, release or deployment occurred.
+
+
+## UTC20 — distinguish unreadable EEPROM marker from an existing durable deny marker
+
+**Task:** P0 #177 / #172 — PHX-HARDWARE-owned persistence-status correction. This is limited to the ESP8266 EEPROM-emulation fallback; no shared API, finance, CORE, QA-owned fixture, release workflow or COE destination was changed.
+
+### Defect and test-first reproduction
+
+pollFaultBackupPresentOrCorrupt() intentionally returns true when the direct raw flash read fails, because an unreadable marker must deny boot. The ESP8266 writePollFaultBackup() previously reused that boolean as an existence check and returned true immediately. Therefore a transient ESP.flashRead() failure before a new backup write could be misreported as an already-persisted secondary marker, without calling EEPROM.commit().
+
+- Test-only RED commit: [c4af8772f486b94907708c3984f717af4d123c4c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c4af8772f486b94907708c3984f717af4d123c4c).
+- Exact-source focused run [#44393894786](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44393894786), job 135118520291: **EXPECTED FAILURE**, ESP8266 harness exit 35. The new scenario injected a raw flash-read failure before the writer and rejected the old false-success return. The same test-only SHA's PR run [#44393910940](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44393910940) also failed at the regression as expected.
+
+### Source correction
+
+- Firmware fix and combined source/test SHA: [dfa7f50b6e4e5cecf7e13d1a53a54f966bb5242c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dfa7f50b6e4e5cecf7e13d1a53a54f966bb5242c).
+- writePollFaultBackup() now performs a status-bearing readPollFaultBackupFlash(existing) itself. Read failure sets pollFaultBackupWriteFailed and returns false. Only a successful read containing non-erased bytes is treated as an already-existing deny marker; erased bytes proceed to the new record write/commit/readback path.
+- The boot-time pollFaultBackupPresentOrCorrupt() remains conservative: unavailable/corrupt state still denies. ESP32 firmware was not changed.
+
+### Exact-head CI
+
+- Push quarantine/readback [#44394240119](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394240119), job 135119742396: **SUCCESS** at dfa7f50b...; log includes ESP8266_RAW_FLASH_READ_ERROR_WRITE_DENY_PASS, ESP8266_RAW_FLASH_READ_ERROR_DENY_PASS, and POLL_FAULT_DUAL_STORE_LAB=PASS for both ESP32 and ESP8266.
+- PR quarantine/readback [#44394253673](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394253673), job 135119789915: **SUCCESS** at the same SHA.
+- PR relay/output [#44394253804](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394253804): **SUCCESS**; ESP32 boot-polarity job 135119790666 and source-output job 135119791019 both passed.
+- Full push [#44394238564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394238564), validation job 135119907527: **FAILED** at inherited QA-owned Missing poll signature check. Full PR [#44394253862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44394253862), validation job 135119968436: **FAILED** at the same assertion. Do not add a synthetic positive signature or weaken default-deny. At the last job refresh, several firmware targets had succeeded, while Android/other target jobs were still running; the complete target matrix is not claimed.
+
+### Classification / remaining limit
+
+The raw-read failure is now distinguished from a proven existing marker, and same-boot ambiguous-write retries remain blocked by the earlier RAM latch. This is still source-extracted host/fake-I/O simulation and CI only. It does not establish flash physics, cold-boot durability if both LittleFS and EEPROM/NVS fail, an independent anti-rollback witness, physical relay/acceptor behavior, 150 power cuts, 30-device/24-hour soak or electrical pulse/recovery. The two stores share the same flash chip on these boards; they are not an independent witness.
+
+**Next exact action:** obtain PHX-QA independent review of the combined source/test SHA dfa7f50b...; request PHX-MASTER to refresh the #327 current-head/stack record; keep the stale positive poll-signature fixture with PHX-QA and preserve firmware deny-only behavior. No merge, flash, migration, signer provisioning, release or deployment.
