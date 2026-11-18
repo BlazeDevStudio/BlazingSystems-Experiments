@@ -45,6 +45,31 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: RELEASE-TOOLCHAIN board-core pin regression (expected RED before pinning)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          workflow = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8")
+          expected = (
+              "arduino-cli core install esp8266:esp8266@3.1.2",
+              "arduino-cli core install esp32:esp32@3.3.13",
+          )
+          missing = [command for command in expected if workflow.count(command) != 1]
+          if missing:
+              raise SystemExit("RELEASE-TOOLCHAIN-RED: expected exactly one pinned command: " + "; ".join(missing))
+          unpinned = (
+              r"^\\s*arduino-cli core install esp8266:esp8266\\s*$",
+              r"^\\s*arduino-cli core install esp32:esp32\\s*$",
+          )
+          for pattern in unpinned:
+              if re.search(pattern, workflow, re.MULTILINE):
+                  raise SystemExit("RELEASE-TOOLCHAIN-RED: unpinned board core install remains")
+          print("RELEASE-TOOLCHAIN-PASS: ESP8266 3.1.2 and ESP32 3.3.13 are uniquely pinned")
+          PY
       - name: CI-0701 negative classifier contract (no API, no hardware)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ci_docs_classifier.py
       - name: Verify previous exact Full success before suppressing expensive jobs
