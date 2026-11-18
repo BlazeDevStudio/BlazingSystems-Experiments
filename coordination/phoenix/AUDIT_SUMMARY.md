@@ -340,3 +340,15 @@ Master refreshed the uploaded full-team directive, latest README_FIRST and BLAZE
 **Master-only work:** new exact-head audit plus current role, integration, audit and routing supplements committed under `coordination/phoenix/`. Bounded exact-tree/blob/mode/manifest/intake/workflow/CI assertions 26/26 PASS; these are metadata assertions, not runtime/firmware/physical tests. Master full Python suite NOT RUN; no Master PR CI runs returned.
 
 **Next:** HARDWARE selects a canonical #283/#317/#318 sequence; QA wires/runs #283 labs and corrects #317's fixture without weakening default-deny; RELEASE completes #291 docs-head CI and keeps #31 sandbox blocked pending an authorized no-secret namespace runner; COE owner refreshes intake/migration provenance after owner selection; registry custodian restores v11 access. No source migration, merge, release, flash, signing, secrets or payment operation. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC00 — pending-clear, Hardware stack and COE test parity — current blocker summary
+
+**New source-grounded result:** #317's clearPending preconditions match Master §2.3.1: matching attempt marker, exactly one valid pending candidate, full record match, pending deletion verified first, attempt marker verified last. Its exact-source fake-LittleFS lab passed 17/17 clear cases per board and 16/16 boot cases per board in CI run 44209657736. This is SIMULATED / CI VERIFIED only; coinPostDispositionVerified remains hardcoded false, so no financial disposition path is authorized.
+
+**QA blocker:** #317 Full build 44209812745 fails at the stale “Missing poll signature check” static fixture while 14/14 target builds pass. #283 Full build 44203456152 passes, but its current QA-owned test changes only satisfy string-presence checks; the |poll| token appears in a comment. Independent QA must replace this with source-linked negative behavior tests.
+
+**Integration blocker:** #283/#317/#318 remain divergent; #26 intake is still pinned to historical source 6d4c9b, current Hardware sketch/test blobs differ, source controllers.sh has no target path, and Hardware/root license/NOTICE applicability remains unresolved.
+
+**Release blocker:** COE #31 invalid ULA fd00:db8:blaze::/48 remains in packager; mandatory sandbox 44206767227 fails closed at hosted UID-map setup. COE #26 five workflows remain queued with zero jobs. Registry v11/newer corrections remain unavailable through exposed Library/connector.
+
+**Next:** QA exact-head tests and review; HARDWARE owner stack direction; CORE authenticated poll/receipt contract; RELEASE site ULA and authorized runner; COE per-file provenance/license review; registry custodian restores private v11 access. No merge/migration/release/flash/payment operation. **PRODUCTION NO-GO.**

@@ -729,3 +729,19 @@ License: source BlazePwifi MIT blob `1ee55b94...` equals COE `Pisowifi/LICENSE`,
 Current pairwise compare results: #283/#317 DIVERGED (13 commits unique to #283, 277 unique to #317); #283/#318 DIVERGED (13 unique to #283, 260 unique to #318); #317/#318 DIVERGED (51 unique to #318, 68 unique to #317). Keep drafts separate. No source copy, overwrite, rebase, cherry-pick or merge.
 
 CI: #283 run 44182715006 SUCCESS for validation, ESP boards, target/platform matrix, Android and software simulations; it does not execute the two new labs. #317 focused runs 44193392313/44193392314 PASS; Full 44193392383 fails the stale QA poll-signature assertion while all 14 target builds pass. #318 has no current-head CI. COE #26 five workflows remain queued. No hardware acceptance is inferred.
+
+## 2026-11-18 UTC00 — pending-clear, Hardware stack and COE test parity — exact Hardware / COE integration state
+
+| Artifact | #283 e8c6619 | #317 fce915 | #318 696e28 | COE #26 b382d2 |
+|---|---|---|---|---|
+| ESP32 sketch | d86d9456... | 067c7940... | 7a24b1b6... | 3cc7ec54... |
+| ESP8266 sketch | 710572a1... | 2f6dce59... | ebd1572c... | c8be98f7... |
+| Source controller test | 0f73e902... | f7896647... | divergent branch copy | Pisowifi/tests/controllers.sh absent |
+
+#317 source/test commit ddc7ed1f has exact-source quarantine CI 44209657736: 16/16 boot recovery and 17/17 pending-clear cases per board, plus POST gate, quarantine, poll-drain and pulse-capture simulations. Current PR head fce915 focused runs pass; Full 44209812745 fails the stale QA-owned “Missing poll signature check” assertion; all 14 target builds passed, simulations skipped.
+
+#283 exact current-head Full 44203456152 is green, but it modifies QA-owned tests/controllers.sh and v05_firmware_hardening_test.sh. The v05 fixture only greps response_sig and |poll|; those tokens occur in comments on #283 and do not prove positive signature validation. #283 source calls denyRemoteControl after register/poll. QA must replace static string checks with actual source-linked negative assertions.
+
+COE #26 SOURCE_INTAKE.json 1b9018ff... and Pisowifi/MIGRATION_MAP.md b54fc15d... remain pinned to historical source 6d4c9b..., with 61 rootfs files / 47 byte-identical / 14 derived / zero unrecovered / two unchanged tests. This does not prove current Hardware candidate import. COE Hardware test f921c56c... differs from source controllers.sh; target Pisowifi/tests/controllers.sh is absent. Source BlazePwifi LICENSE and COE Pisowifi/LICENSE are identical blob 1ee55b94..., but no Hardware-specific or root LICENSE/NOTICE exists.
+
+COE #31 current packager still emits invalid fd00:db8:blaze::/48 and mandatory bubblewrap run 44206767227 fails closed at unprivileged UID-map setup. COE #26 still has five queued workflows and zero jobs. No destination files were moved/copied/overwritten/deleted. **PRODUCTION NO-GO.**

@@ -566,3 +566,26 @@ This snapshot supersedes earlier role pins for the candidates listed here. It do
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs; no integrated acceptance. |
 
 Canonical private registry v11/newer corrections remain inaccessible; no older snapshot was substituted. Hardware stack, QA fixture/lab coverage, COE source/test/license parity, #31 sandbox, #26 CI and all physical/financial gates remain open. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC00 — pending-clear, Hardware stack and COE test parity — live role and CI snapshot
+
+This refresh supersedes older role pins for the exact refs below only. It does not transfer source ownership or authorize stack composition, migration, merge or release.
+
+| Role / candidate | Exact current head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-MASTER #288 | f657a177e17b61e54dc507984c551cfc65a9f10a before this update | OPEN/DRAFT; no Master PR-triggered run returned |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped; separate hourly CORE continuation owns source work |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 / 43653329229 SUCCESS, scoped |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS, scoped; native COM acceptance UNKNOWN |
+| PHX-HARDWARE #314 / #315 / #316 | 556adc20... / 84fe6b79... / 888e6941... | #314 full + focused SUCCESS; #315 focused SUCCESS / Full FAILURE; #316 focused SUCCESS / Full FAILURE at QA extractor omission |
+| PHX-HARDWARE #317 | current PR head fce915c1167fc43c6936f3594ae9efce376b711f; source/test ddc7ed1f15865b629f78b87536dec8fb6f513353 | Current-head focused 44209812693 / 44209812920 SUCCESS; Full 44209812745 FAILURE at stale QA poll-token assertion; all 14 target jobs SUCCESS; simulations skipped |
+| PHX-HARDWARE #283 | e8c6619ba97aa7ba1152e4c78b786842f7fa9180 | Full 44203456152 and quarantine 44203456142 SUCCESS; 15/15 target jobs and simulations. Changes QA-owned tests/controllers.sh and v05 test; QA review required |
+| PHX-HARDWARE #318 | 696e28ed4cd53b9189b78095b38aee973d774683 | No current-head CI; mergeable=false; diverged from #317 by 51 ahead / 71 behind |
+| PHX-QA #290 / #292 | 5c29d159... / 75a3f66d... | #290 43633486963 SUCCESS; #292 no current-head run; QA review of #283 test ownership remains pending |
+| PHX-RELEASE #291 | docs head a74b8b94...; source/test 4d36160c... | 44199068618 and 44199987756 SUCCESS; publisher/signing skipped |
+| COE CORE #29 | d0830332dee8a1844a85606150681b41d91fe796 | 43653906675 / 43653906676 SUCCESS, scoped |
+| COE PISONET #28 / #30 / QA #32 | b21b0461... / 4897348d... / 29b6fe08... | 43632393888 / 43653415598 / 43653540607 SUCCESS, scoped |
+| COE RELEASE #31 | 7b6487a72c2f527457afca0dde61740bf5d65035 | 44206767345 / 44206767254 SUCCESS; mandatory sandbox 44206767227 FAILED closed at hosted UID-map denial |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED, zero jobs; no integrated acceptance |
+
+Hardware stack comparisons are now #283 vs #317 DIVERGED (15 ahead / 280 behind), #318 vs #317 DIVERGED (51 ahead / 71 behind), and #318 vs #283 DIVERGED (260 ahead / 15 behind). Keep all drafts separate. **PRODUCTION NO-GO.**

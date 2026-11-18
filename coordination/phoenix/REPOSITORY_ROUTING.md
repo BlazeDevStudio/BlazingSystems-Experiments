@@ -332,3 +332,17 @@ PR #283 `83646f309a84f3f0de9c1af6dac2c7ee08b61c85` is a third open Hardware cand
 - Canonical private Drive registry v11/newer corrections are not accessible through the exposed connector/Library; no older snapshot substituted.
 
 **No destination file was moved, copied, overwritten or deleted. No subsystem source branch was modified. PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC00 — pending-clear, Hardware stack and COE test parity — current routing hold
+
+PHX-MASTER remains limited to coordination/phoenix/, architecture/interface contracts, provenance and integration matrices. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source branches and test ownership.
+
+Current Hardware candidates are #283 e8c6619 (main-based), #317 fce915 (stacked on #315 84fe6b79; source/test ddc7ed1f), and #318 696e28 (nonmergeable divergent child). Pairwise comparisons are DIVERGED: #283/#317 15 ahead / 280 behind; #318/#317 51 ahead / 71 behind; #318/#283 260 ahead / 15 behind. No rebase, cherry-pick, force-push or stack selection was made.
+
+The #317 clearPending source guard matches Master §2.3.1 deletion preconditions, but coinPostDispositionVerified remains false for every response. Helper CI is SIMULATED only and does not authorize financial disposition. QA's static response_sig / |poll| presence checks are not proof of signature acceptance. #283's current green is scoped software CI only; its QA-owned test changes require QA review.
+
+COE #26 remains historical-rootfs staging at SOURCE_INTAKE/MIGRATION_MAP source 6d4c9b..., not a current Hardware import. Current #283/#317/#318 sketches differ from each other and from destination. Source controllers.sh has no target path; destination Hardware test is a different static test. Source MIT license equals Pisowifi/LICENSE, but Hardware/root LICENSE/NOTICE applicability is unresolved. No move/copy/overwrite.
+
+COE #31 still has invalid site ULA fd00:db8:blaze::/48 and hosted user-namespace failure. No privileged or unsandboxed fallback. Private registry v11/newer corrections remain inaccessible; no historical snapshot is substituted.
+
+OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
