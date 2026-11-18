@@ -793,3 +793,26 @@ The role/ownership routing manifest is unchanged: `OWNERSHIP_ROUTES.json` blob `
 | COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; no combined integration acceptance |
 
 Do not interpret the Hardware owner selection as merge approval or canonical production stack. The unchanged OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY and PHX-MASTER target null.
+
+---
+
+<!-- PHX-MASTER-20261118-UTC13-ESP8266-BOOT-POLARITY-AUDIT -->
+
+
+## Live exact owner PR routing — 2026-11-18 UTC13
+
+The table below is a current PR API snapshot, not an ownership transfer. Source ownership remains with the role shown in this file; the separate active CORE continuation retains CORE implementation work.
+
+| Role | Current owner PR / exact head | Exact CI observation at this refresh |
+|---|---|---|
+| PHX-MASTER | #288 `6a73722b7fa990771a94969c4aed11531f184fb4` (this audit advances it) | Docs-only Master CI has no run returned; no source suite is claimed |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped; separate CORE automation retains implementation |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped; native COM acceptance remains unverified |
+| PHX-HARDWARE | #317 `fce915c1167fc43c6936f3594ae9efce376b711f`; #318 `de428b7a3e15854804f09935a36a6afeb67d8cbe`; #320 `b2b41a3d6ce7887b9624137c966f58462895d3fa`; #321 `4c54d6299388617e9ff3d41d5501358ea545c54a`; #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08`; #323 `0975fe4416daa72c097d3fee2b631950eb64908c`; #324 `8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba`; #325 `f66b45ecbae8cdc6e4d78db976903bb41c7a75b0` | Focused results and divergent/stale ancestry are recorded in the UTC13 Hardware audit and Integration Matrix. Full #323/#325 validation still fails at the QA-owned poll-signature fixture. #325 is a separate child of #283, not part of #322 → #323. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS; #292 no runs returned |
+| PHX-RELEASE | #291 `37ee86d2f192fcc6bc6ea3b7a38c86c21b3fdab8`; COE #35 `7e41b9acf41ccca7127d36421541db722175668b` | #291 [44296971291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296971291) SUCCESS with publisher skipped; COE #35 shared/case PASS, mandatory sandbox FAIL |
+| COE integration owner | COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #36 `b4d7434764aab72673de1f496ed9e442f031ddff` | #26 five QUEUED / zero jobs; #36 remains a separate Stage-1 candidate, not an integrated #26 acceptance |
+
+**Current owner actions:** HARDWARE must resolve #318's divergent ancestry and refresh stale PR descriptions; assess ESP8266 boot-time polarity before claiming active-low support; reconcile #324's remaining delta without duplicating its already-covered marker-open assertion; keep #325 separate until its own parent/QA review. QA owns the stale positive poll-signature fixture and independent boot-polarity regressions. RELEASE/infra own the missing bubblewrap runner. No Master source takeover is authorized.
+

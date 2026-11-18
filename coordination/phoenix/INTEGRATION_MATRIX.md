@@ -1034,3 +1034,46 @@ The #323 Full failure is the inherited QA-owned positive Missing poll signature 
 - COE #36 Stage-1 and COE #39–#43 candidate workflows remain scoped host/static/compile successes; COE #45 9d76a134... has case and Pisowifi suite PASS but is a separate CORE candidate, not integrated into #26.
 
 Master exact-head CI for #288 f57456c4... returned no PR-triggered runs. Full Master Python suite NOT RUN.
+
+---
+
+<!-- PHX-MASTER-20261118-UTC13-ESP8266-BOOT-POLARITY-AUDIT -->
+
+
+## Live exact Hardware stack and destination reconciliation — 2026-11-18 UTC13
+
+This snapshot supersedes older Hardware branch/head claims above for current review. All Hardware PRs remain OPEN / DRAFT / UNMERGED; no source ownership or integration authority changed.
+
+| PR | Exact head | Base head | Current relationship / disposition |
+|---|---|---|---|
+| #317 | `fce915c1167fc43c6936f3594ae9efce376b711f` | #315 `84fe6b790139d147f330f13a40b3ae3e89a7042d` | Parent of #320 and #321 |
+| #318 | `de428b7a3e15854804f09935a36a6afeb67d8cbe` | `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3` | Diverged from current #317: compare #318 head → #317 head is 71 commits ahead / 57 behind; stale stack, owner reconciliation required |
+| #320 | `b2b41a3d6ce7887b9624137c966f58462895d3fa` | #317 `fce915c1167fc43c6936f3594ae9efce376b711f` | Parent of #322 |
+| #321 | `4c54d6299388617e9ff3d41d5501358ea545c54a` | #317 `fce915c1167fc43c6936f3594ae9efce376b711f` | Alternate output-preload child; not selected over #322 automatically |
+| #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | #320 `b2b41a3d6ce7887b9624137c966f58462895d3fa` | Output-preload parent for the #323 review candidate |
+| #323 | `0975fe4416daa72c097d3fee2b631950eb64908c` | #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | Current review candidate; source/test SHA `176ad50da2180ee085e2fb63ddb23d17b53dd63d`; final commit changes only its handover |
+| #324 | `8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba` | #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | Divergent sibling; compare #324 → #323 is 41 commits ahead / 8 behind; do not compose automatically |
+| #325 | `f66b45ecbae8cdc6e4d78db976903bb41c7a75b0` | #283 `830c355376380f9b5533d5cda2558beed41a593a` | Separate pending-clear/output-inhibit child of #283, not part of #322 → #323 |
+
+**Important test-coverage correction:** current #323 source/test lab blob `2688ced2b3b605276144c8fda0bbdbd9b96142b7` observes relay/LED state at both `writePollFaultBackup()` and the `/pollpulse.fault` LittleFS open boundary, then rejects either persistence call if an output is still ON. The prior Master request to port #324's direct marker-open regression into #323 is superseded: that specific assertion is already present. #324 remains divergent and may contain other changes; Hardware must reconcile the remaining eight-commit delta rather than merging or closing either branch by assumption.
+
+### Exact-head CI reconciliation
+
+- #317: focused [44209812693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812693) and [44209812920](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812920) PASS; Full [44209812745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44209812745) FAIL.
+- #318: push-triggered exact-head [44313531583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44313531583) PASS at `de428b7a...`; no PR-triggered run was returned by the PR-only workflow-run wrapper. The Actions API confirms this was a push event associated with PR #318. Passing CI does not repair its stale/divergent base.
+- #321: focused [44294008493](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008493) and [44294008398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008398) PASS; Full [44294008523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44294008523) FAIL.
+- #322: focused [44232877611](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877611) and [44232877649](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877649) PASS; Full [44232877624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232877624) FAIL.
+- #323: focused quarantine/readback [44301775875](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775875) and relay-output [44301775918](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775918) PASS; Full [44301775872](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775872) FAILS at the inherited QA-owned `Missing poll signature check` in controller protocol parity. All 13 firmware target jobs and Android passed; downstream simulations, signing and publishing were skipped.
+- #324: focused [44290338468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338468) and [44290338178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338178) PASS; Full [44290338340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44290338340) FAIL.
+- #325: focused [44311211095](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44311211095) PASS at docs/head `f66b45ec...`; Full [44311211166](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44311211166) FAILS at controller protocol parity. ESP32/ESP8266 target builds and other returned target jobs passed; downstream jobs were skipped. Earlier full run [44310755257](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44310755257) was cancelled at an earlier source/test revision and is not final-head evidence.
+
+The #323/#325 Full failures are QA fixture/contract blockers, not permission to add a synthetic positive signature or weaken firmware default-deny. PHX-QA must replace the stale positive poll-signature assertion with negative behavior tests at the exact proposed source SHA.
+
+### COE release and integration status
+
+- COE #35 current head `7e41b9acf41ccca7127d36421541db722175668b`: case-collision [44312869909](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312869909) PASS; shared/hardware [44312868745](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312868745) PASS; mandatory sandbox [44312868726](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312868726) FAILS before preflight because bubblewrap is absent (exit 125). No privileged install or unsandboxed fallback was used; remaining sandbox steps were skipped.
+- COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12` against main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; five workflows are QUEUED and zero jobs were returned. No combined acceptance or migration is established.
+- Other role-specific exact-head runs returned: CORE #252 [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; PISONET #255 [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; RENTAL #289 [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS; QA #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; RELEASE #291 [44296971291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296971291) SUCCESS with privileged publishing skipped; QA #292 has no workflow runs returned. These are scoped results, not combined acceptance.
+
+**PR-description drift:** current PR API heads supersede stale head strings in the bodies of #317, #318, #323, #283 and COE #35. Owners should refresh those descriptions before relying on their embedded SHA/checkpoint text. Master did not edit owner PR descriptions.
+

@@ -510,3 +510,37 @@ No migration or ownership change. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONL
 ### UTC12 branch-protection readback limitation
 
 An explicit GitHub REST read of classic branch protection returned HTTP 403 (Resource not accessible by integration) for Experiments main, blazepwifi-v0.5.3-development and phoenix/master-coordination. The repository rulesets endpoint returned an empty list. Therefore current classic branch-protection state is UNKNOWN for all three branches; do not repeat the prior PHX-RELEASE protected=false report as independently verified. Repository admin must inspect Settings → Branches and provide an authorized readback or grant the integration the required read permission. Master did not change branch protection.
+
+---
+
+<!-- PHX-MASTER-20261118-UTC13-ESP8266-BOOT-POLARITY-AUDIT -->
+
+
+## Live exact refresh — 2026-11-18 UTC13
+
+**Master branch before this refresh:** `phoenix/master-coordination@6a73722b7fa990771a94969c4aed11531f184fb4`. Experiments main remains `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development remains `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+### New source-grounded P0/P1 findings
+
+1. **ESP8266 boot polarity is not established for active-low wiring.** At #323 source/test SHA `176ad50da2180ee085e2fb63ddb23d17b53dd63d`, ESP8266 defaults relay/LED polarity to active-high and only changes those runtime values inside the intentionally dormant remote-config function. Its setup path does not load a persisted/local polarity before the first output configuration. The OFF-preload regression is valid for the injected polarity/order cases but is not proof that the production boot path knows the physical polarity. Treat active-low ESP8266 wiring as unsupported/UNKNOWN until Hardware documents a fixed supported profile or supplies a validated boot-time configuration path and QA evidence.
+2. **#323 already contains the direct marker-open and backup-write output-off assertions** previously requested from #324. The current test observes both persistence boundaries and fails if relay or LED is ON. This supersedes the earlier proposed port; #324 remains a divergent sibling with an eight-commit delta, not an automatically composable patch.
+3. **#318 is a divergent stale stack.** Its current head `de428b7a...` and #317 head `fce915c1...` share merge base `3ed38225...`; compare shows 71 commits ahead / 57 behind. Push CI on #318's exact head passed, but owner must reconcile the branch before any merge consideration.
+4. **#325 is a separate pending-clear/output-inhibit child of #283**, at `f66b45ec...`, not part of the #322 → #323 stack. Its focused workflow passed; Full validation failed at controller protocol parity. Do not combine it into the selected review candidate without Hardware/QA ownership review.
+
+### Exact-head CI / blockers
+
+- #323 focused [44301775875](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775875) and [44301775918](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775918) PASS; Full [44301775872](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44301775872) FAIL at `Missing poll signature check`.
+- #318 push [44313531583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44313531583) PASS at exact head; no PR-triggered run returned.
+- #325 focused [44311211095](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44311211095) PASS; Full [44311211166](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44311211166) FAIL at controller protocol parity.
+- COE #35 mandatory sandbox [44312868726](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312868726) FAILS before preflight: bubblewrap is not installed; shared/case runs [44312868745](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312868745) and [44312869909](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44312869909) PASS.
+- COE #26 has five queued workflows and zero jobs. No combined migration acceptance exists.
+
+### Governance / evidence availability
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`.
+- GitHub branch-protection readback for Experiments main returned 403; repository rulesets returned an empty list. Classic branch protection therefore remains UNKNOWN, not proven enabled or disabled. Repository administrator must inspect Settings → Branches or grant read permission.
+- The canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in the accessible Library search; no Google Drive connector is exposed in this run. Older v3/v4/v7 snapshots are not substitutes. No private contents or IDs were published.
+- COE root `AGENTS.md` returned 404. Experiments root `AGENTS.md` was read and its private-registry/readback rule was retained.
+
+**Disposition:** coordination-only documentation audit. No source files, hardware, migration targets, secrets, financial state, or release workflows were changed. **PRODUCTION NO-GO** remains binding.
+

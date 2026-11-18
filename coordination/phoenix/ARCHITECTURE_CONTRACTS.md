@@ -534,3 +534,20 @@ Exact source/test commit 176ad50da2180ee085e2fb63ddb23d17b53dd63d corrected the 
 Full build 44301775872 fails at the QA-owned Controller protocol parity assertion Missing poll signature check in the ESP8266 sketch. All 13 firmware-target jobs and Android completed successfully; downstream simulations, candidate gate, signing and publishing were skipped. Both acceptPollResponse() and coinPostDispositionVerified() remain deny-only. Do not add a synthetic signature or relax firmware to satisfy the stale positive fixture.
 
 PHX-QA owns replacing the positive string-presence fixture with exact-source negative behavior tests. PHX-HARDWARE owns refreshing the stale #323 PR description (it still cites older docs/source SHAs) and reconciling sibling #324. PHX-CORE owns the canonical response envelope and replay contract. Physical relay, coin, flash, power-cut and soak acceptance remain NOT TESTED.
+
+---
+
+<!-- PHX-MASTER-20261118-UTC13-ESP8266-BOOT-POLARITY-AUDIT -->
+
+
+## 2.1.2 Boot-time relay/LED polarity must be established before first OUTPUT transition (2026-11-18 UTC13)
+
+The OFF-preload ordering above is safe only when the polarity variables already match the physical relay/LED wiring before the first call to `configureRuntimePins()`. The source-exact audit in [HARDWARE_ESP8266_BOOT_POLARITY_SOURCE_AUDIT_20261118_UTC13.md](HARDWARE_ESP8266_BOOT_POLARITY_SOURCE_AUDIT_20261118_UTC13.md) found a board-specific gap:
+
+- At HARDWARE #323 source/test SHA `176ad50da2180ee085e2fb63ddb23d17b53dd63d` (docs-only PR head `0975fe4416daa72c097d3fee2b631950eb64908c`), ESP8266 initializes `runRelayActiveHigh=true` and `runLedActiveHigh=true` at line 46. The only later assignments to those runtime polarity values are inside `applyRemoteConfig()` (lines 587–605), which is explicitly marked intentionally dormant because the returned configuration is not authenticated. The ESP8266 `setup()` reaches `configureRuntimePins()` without a persisted/local polarity load.
+- Therefore the source currently demonstrates the OFF-preload sequence only under the active-high default for ESP8266. It does **not** establish a safe active-low ESP8266 boot profile. If a deployed relay is active-low, the active-high default may drive the wrong physical level; the actual wiring is not inferred here.
+- ESP32 is a separate path: `loadConfig()` reads relay/LED polarity from Preferences and `setup()` loads it before the first `configureRuntimePins()`. This source distinction is not physical acceptance and does not prove behavior for corrupted/missing NVS or every board.
+- The #323 poll-fault host lab observes the relay/LED state at both the secondary backup-write and LittleFS marker-open boundaries. That proves the fault latch deasserts outputs before those persistence calls in the extracted control-flow harness; it does not prove the boot-time polarity source or electrical behavior.
+
+**Required gate:** PHX-HARDWARE must either (a) define and document a verified active-high-only ESP8266 target profile with board/wiring evidence, or (b) implement a persistent, validated local polarity source loaded before the first output configuration. PHX-QA must independently test cold boot with default, missing, corrupt and each supported polarity value, including the first GPIO level before OUTPUT mode. Do not activate remote polarity configuration until the authenticated response-envelope contract and exact-SHA QA vectors are approved. Physical relay voltage and reset-state acceptance remain NOT TESTED; no firmware flash or production admission is authorized.
+
