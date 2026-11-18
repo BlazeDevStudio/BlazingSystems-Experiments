@@ -84,7 +84,7 @@ The new source-extracted mount lab is still not part of the workflow. Local C++ 
 
 The prior #283 boot loader selected the first valid file among /pending.dat, /pending.new and /pending.bak. It did not reject multiple candidates as ambiguous and could remove/rename candidates during recovery. The record reader used unbounded strlen() on fixed-size nonce/target arrays and accepted trailing bytes beyond sizeof(PendingRecord).
 
-The local exact-source host harness reproduced these failures on both boards: 2/13 scenarios passed and 11/13 failed. Cases included multiple valid candidates, valid+corrupt candidates, invalid records without a recovery hold, .new/.bak rename, oversized files and an unterminated nonce read crossing into the target field.
+The local exact-source host harness reproduced these failures on both boards: 2/14 scenarios passed and 12/14 failed. Cases included multiple valid candidates, valid+corrupt candidates, invalid records without a recovery hold, .new/.bak rename, oversized files and an unterminated nonce read crossing into the target field.
 
 #### Firmware correction
 
@@ -109,14 +109,14 @@ Source commits:
 #### Verification
 
 **Local exact-source host harness — SIMULATED**
-- Pre-fix: 2/13 pass, 11/13 fail per board.
-- Post-fix: 13/13 pass ESP32; 13/13 pass ESP8266.
+- Pre-fix: 2/14 pass, 12/14 fail per board.
+- Post-fix: 14/14 pass ESP32; 14/14 pass ESP8266.
 
 **Focused GitHub Actions — CI VERIFIED**
 - [Run #44218225761](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218225761)
 - Exact checkout SHA: 176d518dcfb17d40a77f37f299ff8247ade29a36
 - Job 134513313681: SUCCESS
-- Quarantine append/readback: 13/13 per board.
+- Quarantine append/readback: 14/14 per board.
 - Pending-journal boot fail-closed: 13/13 per board.
 - Both suites explicitly report SIMULATED ONLY.
 
@@ -170,3 +170,14 @@ The full BlazePwifi workflow [#44218225798](https://github.com/BlazeDevStudio/Bl
 - Production APK import/signing, prerelease publication, production-sign handoff and release publication: SKIPPED.
 
 The workflow overall remained IN_PROGRESS because the x86 simulation had not completed. Therefore this is **14/14 target/build CI VERIFIED**, not a complete workflow pass, hardware acceptance, release approval or production readiness. The latest branch head after documentation-only handover updates is 34f7f7682ceb0316e327b90e48d2573fd7a5fb3b; firmware/test source remains the exact tested head 176d518dcfb17d40a77f37f299ff8247ade29a36.
+
+
+## Scenario-count correction — 2026-11-18 UTC01
+
+The new pending-journal lab contains **14** check() scenarios per board, not 13. The original summary literal was off by one even though the executable emitted 14 individual PASS lines. Corrected the summary to 14/14 in [commit 2d7ce7949b678cc007e44b43aef928d09f2a5e71](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2d7ce7949b678cc007e44b43aef928d09f2a5e71).
+
+Correct counts:
+- Pre-fix exact-source RED: 2/14 pass, 12/14 fail on each board.
+- Post-fix exact-source GREEN: 14/14 pass on ESP32 and 14/14 pass on ESP8266.
+- Focused runs #44218225761 (head 176d518) and #44218802677 (head 0a6f2e) each emitted 14 individual scenario PASS lines per board, but printed the stale 13/13 summary. The corrected 14/14 summary is now committed; the next focused run on the post-correction head is required to verify the corrected output.
+- The full-build source/test run #44218225798 verified 14/14 platform/build jobs and full validation, but its x86 simulation remained in progress and Android emulator was cancelled. A separate full build on 2d7ce794 is currently in progress; no overall workflow PASS is claimed.
