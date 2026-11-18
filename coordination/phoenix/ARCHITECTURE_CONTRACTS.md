@@ -67,7 +67,7 @@ The current-head Full build [44232877624](https://github.com/BlazeDevStudio/Blaz
 
 ### 2.2 Client-side response trust boundary — current deny-only state (2026-11-18 UTC08)
 
-- `bp_check_vendo_sig()` authenticates the **incoming request tuple**. It is not a response signature and does not authenticate the JSON body returned to the controller.
+- `bp_check_vendo_sig()` checks the incoming request tuple against a keyed SHA-256 concatenation. This is not standard HMAC, is request-side only, and does not authenticate the JSON body returned to the controller.
 - On the current Experiments development producer, `bp_json()` only emits HTTP headers plus the supplied JSON body. The `register|ping`, `poll`, and `coin` response bodies do not include `response_sig`.
 - The current HARDWARE #323 candidate is deliberately fail-closed: both board implementations return `false` from `acceptPollResponse()` and `coinPostDispositionVerified()`. The register-tuple check also remains false when the response has no `response_sig`; remote configuration remains disabled.
 - Do not describe response verification as implemented, and do not require a positive `|poll|` signature expression, until PHX-CORE defines a versioned response envelope and canonical serialization, PHX-HARDWARE implements the approved consumer, and PHX-QA independently verifies positive/negative golden vectors at the same pinned source SHA.
@@ -477,7 +477,7 @@ A positive poll path remains blocked until PHX-CORE publishes a canonical produc
 | Component | Exact ref / blob | Observed behavior |
 |---|---|---|
 | Experiments development `blazepwifi-v0.5.3-development` | branch HEAD `aad3aade72c1156eecba1fed30907c6d0283b2c5`; `vendo` blob `a1c19180385e618c412b4af21c0e91c1f47da1dd` | `register|ping`, `poll`, and `coin` response bodies contain no `response_sig` |
-| Experiments development `common.sh` | blob `ca4920d3d9572382fb381a325183a18311be5954` | `bp_json()` prints headers and the supplied JSON; it does not add a response signature |
+| Experiments development `common.sh` | blob `ca4920d3d9572382fb381a325183a18311be5954` | `bp_vendo_sig_expected()` / `bp_check_vendo_sig()` check a keyed SHA-256 concatenation (not standard HMAC); `bp_json()` only prints headers and the supplied JSON, with no response-signing wrapper |
 | Experiments development `controller.sh` | blob `54bdc59949884bd3e734f8c07ddeb1d7c2cf9848` | `bp_controller_json()` emits configuration fields, not an authenticated configuration envelope |
 | Current HARDWARE #323 ESP8266 | source/test SHA `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`; sketch blob `8e79b9eb8856e67d966f4c6385f89fccdc8be7fc` | `acceptPollResponse()` and `coinPostDispositionVerified()` return false; missing register `response_sig` leaves remote configuration disabled |
 | Current HARDWARE #323 ESP32 | same source/test SHA; sketch blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` | Same deny-only poll and coin disposition behavior |

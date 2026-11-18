@@ -23,7 +23,7 @@ class PollResponseArchitectureTests(unittest.TestCase):
         section = between("### 2.2 Client-side response trust boundary",
                           "### 2.3 Swallowed Coin Quarantine")
         self.assertIn("request tuple", section)
-        self.assertIn("does not include `response_sig`", section)
+        self.assertIn("do not include `response_sig`", section)
         self.assertIn("hard-deny", section)
         self.assertNotIn("MUST verify `response_sig` returned", section)
 
@@ -35,6 +35,7 @@ class PollResponseArchitectureTests(unittest.TestCase):
 
     def test_live_section_pins_source_and_destination_blobs(self):
         section = DOC[DOC.index("## 6.23 Exact poll response producer/consumer reconciliation"):]
+        self.assertIn("not standard HMAC", section)
         for sha in (
             "a1c19180385e618c412b4af21c0e91c1f47da1dd",
             "0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e",

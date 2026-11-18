@@ -30,7 +30,7 @@ The correct next step is a QA-owned negative regression and a CORE-owned canonic
 - `common.sh`: blob `ca4920d3d9572382fb381a325183a18311be5954`.
 - `controller.sh`: blob `54bdc59949884bd3e734f8c07ddeb1d7c2cf9848`.
 
-`bp_check_vendo_sig()` validates the request signature. `bp_json()` only emits the supplied body. The current `register|ping`, `poll` and `coin` responses do not contain `response_sig`.
+`bp_check_vendo_sig()` checks the request tuple using keyed SHA-256 concatenation (not standard HMAC). `bp_json()` only emits the supplied body. The current `register|ping`, `poll` and `coin` responses do not contain `response_sig`.
 
 ### COE #26 candidate producer
 
