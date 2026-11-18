@@ -2,6 +2,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
+#include <flash_hal.h>
 #include <LittleFS.h>
 #include <string.h>
 #include <bearssl/bearssl_hash.h>
@@ -385,13 +386,21 @@ bool validPollFaultRecord(const PollFaultRecord &record){
 }
 
 
+bool readPollFaultBackupFlash(PollFaultRecord &stored){
+  // Match ESP8266 core EEPROM.cpp's sector mapping, but use the status-bearing
+  // raw read API: EEPROM.begin() logs and ignores a flashRead failure.
+  const uint32_t flashAddress=
+      (uint32_t)EEPROM_start-0x40200000UL+(uint32_t)POLL_FAULT_EEPROM_OFFSET;
+  return ESP.flashRead(flashAddress,reinterpret_cast<uint8_t*>(&stored),sizeof(stored));
+}
+
 bool pollFaultBackupPresentOrCorrupt(){
   // EEPROM emulation is a separate reserved sector from LittleFS on the same flash chip.
   // Any non-erased byte is a permanent deny marker, including malformed/partial records.
   if(!pollFaultBackupReady ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return true;
   PollFaultRecord stored{};
-  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,stored);
+  if(!readPollFaultBackupFlash(stored)) return true;
   const uint8_t *bytes=(const uint8_t*)&stored;
   for(size_t i=0;i<sizeof(stored);++i) if(bytes[i]!=0xFF) return true;
   return false;
@@ -417,7 +426,10 @@ bool writePollFaultBackup(uint32_t pulseEdges){
     return false;
   }
   PollFaultRecord verify{};
-  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,verify);
+  if(!readPollFaultBackupFlash(verify)){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
   const bool verified=validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
   if(!verified) pollFaultBackupWriteFailed=true;
   return verified;
