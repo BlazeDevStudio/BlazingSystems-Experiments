@@ -169,7 +169,7 @@ The full BlazePwifi workflow [#44218225798](https://github.com/BlazeDevStudio/Bl
 - Android emulator simulation 134515022977: CANCELLED.
 - Production APK import/signing, prerelease publication, production-sign handoff and release publication: SKIPPED.
 
-The workflow overall remained IN_PROGRESS because the x86 simulation had not completed. Therefore this is **14/14 target/build CI VERIFIED**, not a complete workflow pass, hardware acceptance, release approval or production readiness. The latest branch head after documentation-only handover updates is 34f7f7682ceb0316e327b90e48d2573fd7a5fb3b; firmware/test source remains the exact tested head 176d518dcfb17d40a77f37f299ff8247ade29a36.
+The workflow overall remained IN_PROGRESS because the x86 simulation had not completed. Therefore this is **14/14 target/build CI VERIFIED**, not a complete workflow pass, hardware acceptance, release approval or production readiness. The PR head before this handover update is 2498295fc0aeb1fdea4846d87afc9865c988c703; the firmware/test source head remains 176d518dcfb17d40a77f37f299ff8247ade29a36, with the pending-journal summary correction in 2d7ce7949b678cc007e44b43aef928d09f2a5e71.
 
 
 ## Scenario-count correction — 2026-11-18 UTC01
@@ -179,5 +179,12 @@ The new pending-journal lab contains **14** check() scenarios per board, not 13.
 Correct counts:
 - Pre-fix exact-source RED: 2/14 pass, 12/14 fail on each board.
 - Post-fix exact-source GREEN: 14/14 pass on ESP32 and 14/14 pass on ESP8266.
-- Focused runs #44218225761 (head 176d518) and #44218802677 (head 0a6f2e) each emitted 14 individual scenario PASS lines per board, but printed the stale 13/13 summary. The corrected 14/14 summary is now committed; the next focused run on the post-correction head is required to verify the corrected output.
+- Focused runs #44218225761 (head 176d518) and #44218802677 (head 0a6f2e) each emitted 14 individual scenario PASS lines per board, but printed the stale 13/13 summary. The corrected 14/14 summary is committed and verified by focused run #44218912183 at exact head 2d7ce7949b678cc007e44b43aef928d09f2a5e71, job 134515593157: SUCCESS; logs show 14/14 on ESP32 and 14/14 on ESP8266.
 - The full-build source/test run #44218225798 verified 14/14 platform/build jobs and full validation, but its x86 simulation remained in progress and Android emulator was cancelled. A separate full build on 2d7ce794 is currently in progress; no overall workflow PASS is claimed.
+
+
+## Corrected summary exact-head rerun — 2026-11-18 UTC01
+
+Focused Actions [#44218912183](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218912183), exact checkout SHA 2d7ce7949b678cc007e44b43aef928d09f2a5e71, job 134515593157: **SUCCESS**. The corrected output explicitly reports PENDING_JOURNAL_BOOT_FAILCLOSED=PASS 14/14 on ESP32 and 14/14 on ESP8266. All 14 scenario names are printed individually for both boards. The companion quarantine append/readback lab also passes 13/13 per board.
+
+The separate full build [#44218906291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218906291) at 2d7ce794 was still in progress at the last poll; no overall result is claimed. The earlier exact source/test full build #44218225798 at 176d518 had 14/14 platform/build jobs and validation PASS, with x86 simulation still in progress and Android emulator cancelled. The current PR remains a draft and no release/physical acceptance is implied.
