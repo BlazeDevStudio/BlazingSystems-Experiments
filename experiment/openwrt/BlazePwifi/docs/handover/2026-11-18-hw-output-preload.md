@@ -45,3 +45,14 @@ No coin admission, poll, POST, receipt, ledger, API, migration, signing, or rele
 ## Acceptance limits
 
 The host lab models Arduino call ordering only. It does not measure GPIO voltage, active-low relay energization, contact bounce, coil suppression, boot strap interactions, board-specific pin behavior, or physical output transients. A scope/logic-analyzer and isolated noncustomer relay fixture are required before HARDWARE ACCEPTED. No flashing, reset, relay actuation, coin or customer hardware was performed.
+
+## Exact-head CI update — 2026-11-18
+
+Current source/test head `7ba56c1ba92dcffa2555e4cce10d3010c3afaf5b` (subsequent changes, if any, are documentation-only).
+
+- Focused output-order workflow [#44232546775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232546775), job `134560838939`: **SUCCESS**. The exact-source lab compiled both board functions, passed active-high and active-low ordering on ESP8266 and ESP32, and rejected the missing-preload mutation on both boards. Log summary: `PHX-HARDWARE: 4/4 output-enable sequence checks PASS`.
+- Companion quarantine/readback workflow [#44232546822](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232546822), job `134560839035`: **SUCCESS**. Existing poll-window and pulse-capture suites also passed (8/8 per board; targeted edge/save/output-inhibit mutations rejected). SIMULATED ONLY.
+- Full build [#44232546807](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232546807): **INCOMPLETE at last poll**. Validation job `134560890322` FAILED at the inherited QA-owned `Missing poll signature check`. ESP8266 and several platform builds passed; ESP32, Android, x86_64 and remaining targets were still running. Production import/signing and update-bundle jobs were skipped. This is not a Full CI pass.
+- The first #322 focused attempt [#44232408796](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44232408796), job `134560390600`, failed because the C++ test harness omitted Arduino interrupt stubs. The corrected harness at `bdddb96aeea4f0ace088233563f780822d1377c8` is included in the successful exact-head run above.
+
+All passing hardware labs remain host-simulated. GPIO voltage, active-low relay transient, contact behavior, electrical pulse/recovery, power cuts and device soak remain NOT TESTED.
