@@ -873,3 +873,10 @@ Next exact action: inspect the new docs-head PR-triggered Actions after this han
 - Expected RED is pending exact-head Windows CI. Next: confirm the regression fails at the missing credential setting, then harden all 20 checkout steps and make the SoftTimer release workflow re-run this guard whenever the shared build workflow changes.
 
 No firmware source, finance, signer, publisher permission, hardware, CORE, RENTAL, PISONET, QA or MASTER implementation was changed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC22 — shared build action/credential hardening source head (blocked CI)
+
+- Exact draft PR #291 source head `c5f96cd3aa95a4b73c3437362208f13549a5015f` contains the existing-owner's narrow checkout/action-pin and credential-persistence correction plus its regression coverage. This handover entry records provenance only; it does not endorse unrun source behavior.
+- Exact Windows run [#44414528967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414528967) and shared-build run [#44414529001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414529001) stopped at the mandatory handover-freshness gate before the source validation/build paths. The Windows publisher and shared production sign/publish jobs were skipped.
+- Refreshing this handover is intentionally additive and should unblock the next exact-head CI observation. PR #291 remains draft and unmerged; independent review, protected admission/signer, durable finance/migration and physical acceptance are still absent. **PRODUCTION NO-GO.**
