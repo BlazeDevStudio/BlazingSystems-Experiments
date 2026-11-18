@@ -280,3 +280,28 @@ All new green evidence is source-extracted host simulation / CI only. PHYSICAL_C
 - PR #323 remains a draft candidate child of #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08; no stack integration is authorized.
 - The canonical private Google Drive registry v11 and newer corrections remain unavailable through the exposed Library/connector surface. No older registry was substituted.
 - **Production remains NO-GO.**
+
+## UTC09 follow-up — reject pseudo-definitions in comments and raw strings
+
+**Exact source/test SHA:** `d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb`  
+**PR:** [#323](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/323), still OPEN / DRAFT / UNMERGED / candidate-only child of #322 at `50d93e0de3d682550b6f02fb43484e76ad9c7e08`.
+
+### Proven regression and correction
+
+The UTC09 self-test now includes fake `struct Record` and `bool selected(...)` definitions inside a block comment and a C++ raw string, plus a forward declaration and line-comment decoy. The previous extractor selected the comment's `struct Record` marker before the real declaration.
+
+- Test-only RED commit: [c0ee6dcf](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c0ee6dcf36cd3e147072e0a2540360af67b61038).
+- Expected RED: [focused run #44278536468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278536468), job `134712809710`, checked out exact SHA `c0ee6dcf...`; failed at `AssertionError: struct extractor stopped inside a literal/comment`. Existing quarantine, pending, mount, poll and pulse labs passed before the new extractor assertion failed.
+- Source fix: [d37d5da9](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb). Added a same-length lexical mask for C/C++ line/block comments, escaped string/character literals and delimited raw strings. `extract_block()` and `extract_function()` now search the masked view while slicing the original source by preserved offsets. Missing/unterminated comments or literals fail closed.
+- Intermediate lexical-mask commit `e254e5fe` was superseded after a source-level escape correction; it is not credited as verified.
+
+### Exact-source CI at d37d5da9
+
+- Quarantine / dual-store / poll-loop [run #44278751521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278751521), job `134713543962`: **SUCCESS**. `POLL_FAULT_EXTRACTOR_SELFTEST=PASS`; ESP32 and ESP8266 dual-store labs pass, including NVS read-error/type-mismatch/open-failure and ambiguous-commit/reboot deny scenarios. Inherited quarantine 36/36 per board, pending marker 28/28 per board, mount 8/8 per board, pending journal 16/16, pending clear 17/17, pending write/readback 22/22, coin POST gate 10/10, poll-window drain 11/11, pulse capture 8/8 and blocking-poll fault 7/7 per board pass.
+- Relay/output [run #44278751557](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278751557), job `134713544612`: **SUCCESS**. Relay polarity 48/48 per board, output-enable sequence 4/4, poll-window 11/11, pulse capture 8/8 and blocking-poll fault 7/7 per board pass. Child-only timing/response guards passed; parent-only suites were explicitly skipped where absent.
+- Full BlazePwifi build [run #44278751553](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278751553): queued/in progress at this handover update; no full-workflow or target-matrix result is claimed here.
+
+All passing hardware labs are source-extracted host simulations / CI evidence only. Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `PHYSICAL_RELAY_POLARITY_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`. No production .ino runtime, QA-owned test path, shared API, CORE ledger, release workflow, COE destination, physical hardware or financial state changed.
+
+**Next exact action:** PHX-QA independently review the extractor and failure vectors at this exact source/test SHA; PHX-MASTER retain #323 as candidate-only until canonical stack review; PHX-CORE publish the approved authenticated poll/receipt contract. Keep all admission and coin disposition deny-only.
+
