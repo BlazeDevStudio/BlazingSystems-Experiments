@@ -356,12 +356,12 @@ def board_polarity_guard_problem(helpers):
     esp32 = helpers["ESP32"][POLARITY_SIGNATURE]
     if "outputPolarityKnown && fsReady" not in esp8266:
         return "ESP8266 local output-polarity admission guard is missing"
-    normalized_esp8266 = " ".join(
-        esp8266.replace("outputPolarityKnown && ", "", 1).split()
-    )
+    if "outputPolarityKnown && fsReady" not in esp32:
+        return "ESP32 local output-polarity admission guard is missing"
+    normalized_esp8266 = " ".join(esp8266.split())
     normalized_esp32 = " ".join(esp32.split())
     if normalized_esp8266 != normalized_esp32:
-        return "coin POST gate differs beyond the ESP8266 local polarity interlock"
+        return "coin POST gate differs between ESP32 and ESP8266 after local polarity guards"
     return None
 
 
@@ -389,20 +389,21 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated):
         raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
 
-    # The new ESP8266-only polarity gate must not be lost during future edits.
-    polarity_mutated = {board: dict(functions) for board, functions in helpers.items()}
-    polarity_mutated["ESP8266"][POLARITY_SIGNATURE] = (
-        polarity_mutated["ESP8266"][POLARITY_SIGNATURE].replace(
-            "outputPolarityKnown && ", "", 1
+    # Both boards must retain the local polarity admission gate.
+    for board in ("ESP8266", "ESP32"):
+        polarity_mutated = {name: dict(functions) for name, functions in helpers.items()}
+        polarity_mutated[board][POLARITY_SIGNATURE] = (
+            polarity_mutated[board][POLARITY_SIGNATURE].replace(
+                "outputPolarityKnown && ", "", 1
+            )
         )
-    )
-    if board_polarity_guard_problem(polarity_mutated) is None:
-        raise SystemExit("PHX-HARDWARE: output-polarity gate removal mutation was not detected")
+        if board_polarity_guard_problem(polarity_mutated) is None:
+            raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
     print("BOARD_QUARANTINE_PARITY_PASS 11/11 shared helpers byte-identical")
-    print("ESP8266_LOCAL_POLARITY_GATE_PASS")
+    print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
-    print("ESP8266_POLARITY_MUTATION_REJECTED removed local gate")
+    print("ESP32_AND_ESP8266_POLARITY_MUTATIONS_REJECTED removed local gate")
 
 
 verify_board_safety_parity()
