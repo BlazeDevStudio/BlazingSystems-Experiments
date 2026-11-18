@@ -265,10 +265,8 @@ static constexpr esp_err_t ESP_FAIL=4;
 static constexpr int NVS_READWRITE=1;
 struct NvsFlash {
   static std::vector<uint8_t> durable;
-  static std::vector<uint8_t> staged;
 };
 std::vector<uint8_t> NvsFlash::durable;
-std::vector<uint8_t> NvsFlash::staged;
 static bool nvsReadError=false, nvsFailSet=false, nvsFailCommit=false;
 static bool nvsFailCommitAfterWrite=false;
 static bool nvsFailOpen=false, nvsTypeMismatch=false, nvsFailReadback=false;
@@ -299,20 +297,20 @@ esp_err_t nvs_get_blob(nvs_handle_t handle,const char*,void* value,size_t* lengt
 esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t length){
   if(handle==0 || nvsFailSet) return ESP_FAIL;
   const uint8_t* bytes=(const uint8_t*)value;
-  NvsFlash::staged.assign(bytes,bytes+length);
+  NvsFlash::durable.assign(bytes,bytes+length);
   return ESP_OK;
 }
 esp_err_t nvs_commit(nvs_handle_t handle){
   ++nvsCommitCalls;
-  if(handle==0 || nvsFailCommit) return ESP_FAIL;
-  NvsFlash::durable=NvsFlash::staged;
-  // Model an ambiguous API result: bytes reached durable media, but commit reports failure.
-  if(nvsFailCommitAfterWrite) return ESP_FAIL;
+  // IDF 5.5.6+: nvs_set_blob writes through Storage::writeItem immediately;
+  // commit() is a no-op for a valid handle. These injected errors are defensive
+  // API-error paths, not a second flash-write boundary.
+  if(handle==0 || nvsFailCommit || nvsFailCommitAfterWrite) return ESP_FAIL;
   if(nvsFailReadback) nvsReadError=true;
   return ESP_OK;
 }
 void resetStorage(){
-  NvsFlash::durable.clear(); NvsFlash::staged.clear();
+  NvsFlash::durable.clear();
   nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
   nvsFailCommitAfterWrite=false; nvsCommitCalls=0; pollFaultBackupWriteFailed=false;
   nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
@@ -329,11 +327,11 @@ void corruptStorage(){
   if(!NvsFlash::durable.empty()) NvsFlash::durable[0]^=0x01;
 }
 """
-        fail_write = "nvsFailCommit=true;"
+        fail_write = "nvsFailSet=true;"
         fail_read = "nvsFailReadback=true;"
         ambiguous_commit_setup = "nvsFailCommitAfterWrite=true;"
         clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailCommitAfterWrite=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
-        no_marker = "NvsFlash::durable.clear(); NvsFlash::staged.clear();"
+        no_marker = "NvsFlash::durable.clear();"
         nvs_read_error = r"""
   resetRuntime();
   nvsReadError=true;
@@ -359,6 +357,10 @@ void corruptStorage(){
 """
     else:
         backend = r"""
+static const uint32_t EEPROM_start=0x40200000UL;
+static bool rawFlashReadFailure=false;
+static uint32_t lastRawFlashReadAddress=UINT32_MAX;
+bool fakeFlashRead(uint32_t address,uint8_t* data,size_t length);
 struct FakeEEPROM {
   static std::vector<uint8_t> flash;
   std::vector<uint8_t> buffer;
@@ -369,7 +371,10 @@ struct FakeEEPROM {
     if(!ready) return false;
     size=n;
     if(flash.size()<n) flash.resize(n,0xFF);
-    buffer.assign(flash.begin(),flash.begin()+n);
+    // ESP8266 core 3.1.2 ignores flashRead's return value in EEPROM.begin().
+    // Fill with erased-looking bytes on failure to model a possible false-clean RAM image.
+    buffer.assign(n,0xFF);
+    (void)fakeFlashRead((uint32_t)(EEPROM_start-0x40200000UL),buffer.data(),n);
     return true;
   }
   void end(){ size=0; buffer.clear(); }
@@ -380,7 +385,7 @@ struct FakeEEPROM {
     flash=buffer;
     // Model a write that reached flash even though the API reports a failed commit.
     if(failCommitAfterWrite) return false;
-    if(failReadAfterCommit) failRead=true;
+    if(failReadAfterCommit){ failRead=true; rawFlashReadFailure=true; }
     return true;
   }
   size_t length() const { return size; }
@@ -393,12 +398,27 @@ struct FakeEEPROM {
   }
 };
 std::vector<uint8_t> FakeEEPROM::flash;
+bool fakeFlashRead(uint32_t address,uint8_t* data,size_t length){
+  lastRawFlashReadAddress=address;
+  const uint32_t base=(uint32_t)(EEPROM_start-0x40200000UL);
+  if(rawFlashReadFailure || address<base) return false;
+  const size_t offset=(size_t)(address-base);
+  if(offset+length>FakeEEPROM::flash.size()) return false;
+  memcpy(data,FakeEEPROM::flash.data()+offset,length);
+  return true;
+}
+struct EspFlashStub {
+  bool flashRead(uint32_t address,uint8_t* data,size_t length){
+    return fakeFlashRead(address,data,length);
+  }
+} ESP;
 FakeEEPROM EEPROM;
 bool pollFaultBackupReady=true;
 bool pollFaultBackupWriteFailed=false;
 unsigned backupCommitCalls(){ return EEPROM.commitCalls; }
 void resetStorage(){
   FakeEEPROM::flash.clear(); EEPROM=FakeEEPROM();
+  rawFlashReadFailure=false; lastRawFlashReadAddress=UINT32_MAX;
   pollFaultBackupWriteFailed=false;
   pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
 }
@@ -415,7 +435,7 @@ void corruptStorage(){
         fail_write = "EEPROM.failCommit=true;"
         fail_read = "EEPROM.failReadAfterCommit=true;"
         ambiguous_commit_setup = "EEPROM.failCommitAfterWrite=true;"
-        clear_fail = "EEPROM.failCommit=false; EEPROM.failCommitAfterWrite=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false;"
+        clear_fail = "EEPROM.failCommit=false; EEPROM.failCommitAfterWrite=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false; rawFlashReadFailure=false;"
         no_marker = "FakeEEPROM::flash.clear(); rebootStorage();"
         nvs_read_error = ""
 
@@ -491,6 +511,8 @@ int main(){
 
   // An NVS lookup error must not make an existing sticky marker appear absent.
   NVS_READ_ERROR_SCENARIO
+
+  RAW_FLASH_READ_ERROR_SCENARIO
 
   // A malformed/partial non-empty backup is a deny marker, never a clean state.
   corruptStorage();
@@ -587,6 +609,20 @@ int main(){
 }
 """
     main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
+    raw_flash_read_error = r"""
+  // EEPROM.begin() ignores a failed flashRead. Its RAM image may look erased;
+  // the fault check must use a status-bearing direct read of the reserved flash bytes.
+  rawFlashReadFailure=true;
+  rebootStorage();
+  lastRawFlashReadAddress=UINT32_MAX;
+  resetRuntime();
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 33;
+  if(lastRawFlashReadAddress != (uint32_t)(EEPROM_start-0x40200000UL)+POLL_FAULT_EEPROM_OFFSET) return 34;
+  rawFlashReadFailure=false;
+  std::cout << "ESP8266_RAW_FLASH_READ_ERROR_DENY_PASS\\n";
+"""
+    main = main.replace("RAW_FLASH_READ_ERROR_SCENARIO", raw_flash_read_error if board == "ESP8266" else "")
     main = main.replace("READ_FAIL_SETUP", fail_read).replace("READ_FAIL_CLEAR", clear_fail)
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
     main = main.replace("AMBIGUOUS_COMMIT_SETUP", ambiguous_commit_setup).replace("AMBIGUOUS_COMMIT_CLEAR", clear_fail)
