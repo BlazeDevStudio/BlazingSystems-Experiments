@@ -522,3 +522,15 @@ The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer correctio
 - #323 current-head focused CI [44278980129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980129) and [44278980263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980263) PASS; Full [44278980291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44278980291) fails at Missing poll signature check. COE #26 has five queued workflows and zero jobs.
 
 The source MIT license and sibling Pisowifi license match does not establish Hardware subtree licensing. The current QA fixture mismatch is not permission to add synthetic signatures or enable positive admission. See [HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md](HARDWARE323_CURRENT_HEAD_AND_COE26_MIGRATION_PROVENANCE_20261118_UTC09.md). **PRODUCTION NO-GO.**
+
+## 6.25 UTC12 — poll-fault output-inhibit ordering (provisional, source-verified)
+
+PHX-HARDWARE selected the #322 → #323 review-candidate stack in control-plane comment 6978026438. This is an owner-reported candidate selection, not a Master merge decision or hardware acceptance.
+
+At #323 PR/docs head 0975fe4416daa72c097d3fee2b631950eb64908c, both board sketches contain the same latch ordering: set journalRecoveryRequired, disable insertMode, clear activeTarget, call applyOutputs(), then attempt the secondary NVS/EEPROM backup and LittleFS marker. If both stores fail, the source explicitly says the current boot remains fail-closed but reboot durability is NOT established. The two stores are not an independent protected witness.
+
+Exact source/test commit 176ad50da2180ee085e2fb63ddb23d17b53dd63d corrected the source-extracted mutation so the deferred-output-inhibit mutation actually matches the source newline. Exact-head focused runs 44301775875 and 44301775918 pass; their logs show POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS and reject defer-fault-output-inhibit on ESP8266 and ESP32. This is host/source-extracted CI only.
+
+Full build 44301775872 fails at the QA-owned Controller protocol parity assertion Missing poll signature check in the ESP8266 sketch. All 13 firmware-target jobs and Android completed successfully; downstream simulations, candidate gate, signing and publishing were skipped. Both acceptPollResponse() and coinPostDispositionVerified() remain deny-only. Do not add a synthetic signature or relax firmware to satisfy the stale positive fixture.
+
+PHX-QA owns replacing the positive string-presence fixture with exact-source negative behavior tests. PHX-HARDWARE owns refreshing the stale #323 PR description (it still cites older docs/source SHAs) and reconciling sibling #324. PHX-CORE owns the canonical response envelope and replay contract. Physical relay, coin, flash, power-cut and soak acceptance remain NOT TESTED.

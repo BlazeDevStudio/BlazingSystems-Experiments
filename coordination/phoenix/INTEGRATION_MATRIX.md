@@ -1004,3 +1004,33 @@ The current Hardware branch topology is not a single linear stack. #321 is based
 - COE #36–#43 remain separate, unmerged INTERCON candidate stacks; their host/static/compile CI is not physical acceptance.
 
 Master branch before this audit was `2dae0d4f...`; Experiments main `f4e8a891...`, development `aad3aade...`, and COE main `a6513ab4...`. Master CI returned no exact-head runs.
+
+## 2026-11-18 UTC12 — Hardware owner selection and exact-head refresh
+
+PHX-HARDWARE's control-plane checkpoint 6978026438 selects #322 → #323 as the review-candidate stack and reports source/test SHA 176ad50da2180ee085e2fb63ddb23d17b53dd63d, current #323 PR/docs head 0975fe4416daa72c097d3fee2b631950eb64908c, and parent #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08. This supersedes the UTC11 statement that #323 lacked the direct pre-persistence output-inhibit regression: the current #323 focused log now shows that regression and rejects the deferred-inhibit mutation on both boards.
+
+| PR | Exact head | Current exact-head CI |
+|---|---|---|
+| #317 | fce915c1167fc43c6936f3594ae9efce376b711f | Focused 44209812693 / 44209812920 PASS; Full 44209812745 FAIL |
+| #318 | 5af39837f5ce42b45e8e707c86fa015a415cc75d | No current-head runs; mergeable=false; base 3ed38225... is older than current #317 |
+| #321 | 4c54d6299388617e9ff3d41d5501358ea545c54a | Focused 44294008493 / 44294008398 PASS; Full 44294008523 FAIL |
+| #322 | 50d93e0de3d682550b6f02fb43484e76ad9c7e08 | Focused 44232877611 / 44232877649 PASS; Full 44232877624 FAIL |
+| #323 | 0975fe4416daa72c097d3fee2b631950eb64908c | Focused 44301775875 / 44301775918 PASS; Full 44301775872 FAIL |
+| #324 | 8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba | Focused 44290338178 / 44290338468 PASS; Full 44290338340 FAIL |
+
+#321 and #322 remain divergent (20 ahead / 5 behind in the #321-to-#322 comparison, merge base #317). #323 and #324 remain sibling candidates on #322; #323 now has the pre-persistence output-inhibit observer/mutation. #324 is 8 commits ahead / 41 behind #323 from the same #322 merge base and changes five paths (workflow, handover, both sketches by two lines each, and the poll-loop lab). Hardware must decide whether #324's remaining delta is still required; Master does not merge, rebase, close or compose either branch.
+
+The #323 Full failure is the inherited QA-owned positive Missing poll signature check. The actual current source is deny-only; all 13 firmware target jobs and Android pass on run 44301775872, but downstream jobs are skipped. Keep the firmware deny-only and request QA's negative fixture replacement.
+
+## 2026-11-18 UTC12 — other role and destination exact-head refresh
+
+- CORE #252 c82705f2... run 42698139210 SUCCESS (scoped; separate CORE automation retains implementation ownership).
+- RENTAL #289 68928774... runs 43653329235 / 43653329229 SUCCESS.
+- PISONET #255 d01fd164... run 42462978704 SUCCESS; native COM acceptance remains unverified.
+- QA #290 5c29d159... run 43633486963 SUCCESS; QA #292 75a3f66d... has no current-head workflow runs.
+- RELEASE #291 37ee86d2... run 44296971291 SUCCESS for handover and Windows build; signing steps and publish-release were skipped.
+- COE #35 ddca6f07... case guard 44303000541 and shared/hardware 44303000556 SUCCESS; mandatory sandbox 44303000651 FAILS closed because bubblewrap is not installed (exit 125); all sandbox tests after the availability check were skipped.
+- COE #26 b382d233... still has five workflows QUEUED and zero jobs.
+- COE #36 Stage-1 and COE #39–#43 candidate workflows remain scoped host/static/compile successes; COE #45 9d76a134... has case and Pisowifi suite PASS but is a separate CORE candidate, not integrated into #26.
+
+Master exact-head CI for #288 f57456c4... returned no PR-triggered runs. Full Master Python suite NOT RUN.

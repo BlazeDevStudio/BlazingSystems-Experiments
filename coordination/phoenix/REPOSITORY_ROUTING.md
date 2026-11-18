@@ -463,3 +463,15 @@ PHX-HARDWARE must select the canonical branch family and explicitly decide wheth
 COE #26 remains at `b382d233...`, five queued workflows / zero jobs. COE #35 current head `ad69c4e9...` has a packaging assertion failure and mandatory sandbox failure. COE #45 is a separate candidate and must not be treated as integrated into #26. Existing COE #36–#43 candidates remain draft-only pending source, license/NOTICE, import completeness, QA and exact-head integration review.
 
 The unchanged `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Private Drive registry v11/newer corrections are unavailable through the current connector surface; no older Library snapshot substitutes for them. No migration is proposed.
+
+## 2026-11-18 UTC12 — no migration; refreshed owner candidate and sandbox hold
+
+PHX-HARDWARE selected #322 → #323 as a review-candidate stack in control-plane comment 6978026438. #323 current PR/docs head is 0975fe4416daa72c097d3fee2b631950eb64908c; source/test SHA is 176ad50da2180ee085e2fb63ddb23d17b53dd63d. Both board sketches now inhibit outputs before secondary NVS/EEPROM and LittleFS persistence; focused exact-head source-extracted CI passes. Full validation still fails at the QA-owned positive poll-signature string assertion. The current #323 PR description still cites older source/docs SHAs and must be refreshed by PHX-HARDWARE, not Master.
+
+#324 remains a sibling draft on #322 and is diverged from #323; #323 now includes the direct pre-persistence output-inhibit regression. Hardware owner must reconcile #324's remaining five-path delta. #321/#322 are also divergent; #318 has no exact-head CI and is nonmergeable. No branch was rebased, merged, closed or composed.
+
+COE #35 current head ddca6f07c04b6d3772b1f4a55826fce0bbf742d6 has passing case/shared validation, but its mandatory sandbox fails closed at the pre-provisioned bubblewrap availability check because bwrap is absent (exit 125); sandbox packaging tests are skipped. Infrastructure must provide an authorized namespace-capable runner with bubblewrap preinstalled, without privileged install or fallback.
+
+COE #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs. #36–#43 remain separate INTERCON candidates; #45 remains a separate CORE candidate. No file was copied, moved, overwritten, renamed, rebased, merged or deleted. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+Private Drive registry v11 and newer corrections remain BLOCKED: no Google Drive connector was exposed and Library search did not return the canonical file. The Cloud Artifact Policy and Storage Recovery Handover were read; the policy requires BLOCKED rather than a simulated transfer. No older registry was substituted and no private contents were published. COE root AGENTS.md returned 404.

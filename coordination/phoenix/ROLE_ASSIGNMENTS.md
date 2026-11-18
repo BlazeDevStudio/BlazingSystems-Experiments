@@ -778,3 +778,18 @@ A separate V1.6 branch `feature/blaze-pisonet-intercon-v1-6-apsta-discovery-2026
 | COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #45 `9d76a134...` | #26 five queued workflows / zero jobs; #45 is separate CORE candidate, not integrated. |
 
 The role/ownership routing manifest is unchanged: `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543f3ec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No new owner or route was assigned. The separate `Blaze Production Continuation` remains the CORE implementation owner; PHX-MASTER did not launch a competing CORE worker.
+
+## Live exact owner update — 2026-11-18 UTC12
+
+| Role | Current exact owner PR/head | Exact-head evidence / next action |
+|---|---|---|
+| PHX-MASTER | #288 f57456c4dc9dcc44e18ed7955b73420244ac02a7 before this UTC12 coordination commit | Coordination/phoenix only; no exact-head Master CI run |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS, scoped; separate active CORE continuation retains source ownership |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 / 43653329229 SUCCESS |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS, scoped; native COM acceptance unknown |
+| PHX-HARDWARE | #322 50d93e0... → #323 0975fe4416daa72c097d3fee2b631950eb64908c selected as review-candidate stack; #321 4c54d629... and #324 8e7f0220... remain separate drafts; #318 5af39837... has no exact-head CI | #323 focused 44301775875 / 44301775918 PASS; Full 44301775872 FAIL at QA fixture; refresh stale #323 PR description and reconcile #324 delta |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 43633486963 PASS; #292 no current-head runs; replace positive poll signature presence check with negative deny-behavior tests |
+| PHX-RELEASE | #291 37ee86d2f192fcc6bc6ea3b7a38c86c21b3fdab8; COE #35 ddca6f07c04b6d3772b1f4a55826fce0bbf742d6 | #291 handover/build SUCCESS, signing/publish skipped; #35 shared/case PASS, mandatory sandbox blocked because bwrap is absent |
+| COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; no combined integration acceptance |
+
+Do not interpret the Hardware owner selection as merge approval or canonical production stack. The unchanged OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY and PHX-MASTER target null.

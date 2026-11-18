@@ -493,3 +493,17 @@ Release refresh: #291 head `18f61977...` workflow [44296238509](https://github.c
 The private Drive registry v11 and newer corrections were not retrievable: no Google Drive connector was exposed and Library search did not return the canonical file. The Cloud Artifact Policy and Storage Recovery Handover were read; both require a BLOCKED report rather than a simulated transfer. COE root `AGENTS.md` returned 404. No older registry was substituted and no private data was published.
 
 No source/destination files moved; no ownership manifest change; no Master Python suite or physical test claimed. Master CI returned no runs. Production remains **NO-GO**.
+
+## 2026-11-18 UTC12 — source-exact Hardware and Release reconciliation
+
+Current source: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development at aad3aade72c1156eecba1fed30907c6d0283b2c5 (293 commits behind main, zero ahead); COE main a6513ab4412b4c014eee2863e45cbe32d06cb243. Master PR #288 was OPEN/DRAFT at f57456c4dc9dcc44e18ed7955b73420244ac02a7 before this documentation commit; base main f4e8a891...; all prior changed paths were under coordination/phoenix/. COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+**Hardware owner decision and exact evidence:** control-plane comment 6978026438 selects #322 → #323 as a review-candidate stack. #323 current head 0975fe4416daa72c097d3fee2b631950eb64908c; source/test SHA 176ad50da2180ee085e2fb63ddb23d17b53dd63d. Both ESP32 and ESP8266 source order applies outputs OFF before NVS/EEPROM and LittleFS persistence. Focused runs 44301775875 and 44301775918 pass; logs show the pre-persistence output-off lab PASS and reject the deferred-inhibit mutation on both boards. Full run 44301775872 fails at the QA-owned Missing poll signature check; 13 firmware target jobs and Android pass, downstream jobs skipped. This is host/source-extracted and compile CI, not hardware acceptance.
+
+#323's current PR body is stale (it cites old source/test and docs heads). Hardware must refresh it and reconcile sibling #324. #324 remains open/draft at 8e7f0220...; compare #323→#324 is diverged, 8 ahead / 41 behind, common base #322, with five changed paths. #321/#322 also diverge from common base #317. #318 is nonmergeable and has no exact-head CI. Master does not modify any Hardware source, tests, handover or workflow.
+
+**Release:** COE #35 ddca6f07... case/shared runs 44303000541 / 44303000556 pass; mandatory sandbox 44303000651 fails closed because bwrap is absent, exit 125; later sandbox steps are skipped. COE #26 has five queued workflows and zero jobs. COE #36–#43 are separate INTERCON candidates; COE #45 is a separate CORE candidate. No combined destination acceptance exists.
+
+**Role status:** CORE #252, RENTAL #289, PISONET #255, QA #290 and RELEASE #291 have their scoped exact-head successes; QA #292 has no current-head run. #291 signing/publish steps are skipped. Master #288 has no exact-head PR workflow run; full Master Python suite NOT RUN.
+
+No migration or ownership change. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY, PHX-MASTER target null. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain absent or unverified. **PRODUCTION NO-GO.**
