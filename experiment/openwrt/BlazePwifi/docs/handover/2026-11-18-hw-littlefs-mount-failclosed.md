@@ -70,3 +70,82 @@ The initial source commit `90a9cf8623b54139dabe6ef5360f0a7da91a9519` was followe
 - Production APK import/signing and production/release handoff stages: SKIPPED.
 
 The new source-extracted mount lab is still not part of the workflow. Local C++ host failure injection passed on both board function bodies and rejected `begin(true)` plus explicit-format mutations, but this remains SIMULATED, not independent QA or physical durability evidence. PHX-QA must wire and run the lab at the exact current PR head.
+
+
+## 2026-11-18 UTC01 — pending journal boot recovery
+
+**Role:** PHX-HARDWARE  
+**Task:** #177 / #266 — preserve pending-event evidence during boot recovery  
+**PR:** [#283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283), OPEN / DRAFT / UNMERGED  
+**Source/test head:** [176d518dcfb17d40a77f37f299ff8247ade29a36](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/176d518dcfb17d40a77f37f299ff8247ade29a36)  
+**Master coordination head observed:** [650c6e5991ed8ba30d82dd98216316b3ae3a3780](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/650c6e5991ed8ba30d82dd98216316b3ae3a3780)
+
+#### Defects reproduced
+
+The prior #283 boot loader selected the first valid file among /pending.dat, /pending.new and /pending.bak. It did not reject multiple candidates as ambiguous and could remove/rename candidates during recovery. The record reader used unbounded strlen() on fixed-size nonce/target arrays and accepted trailing bytes beyond sizeof(PendingRecord).
+
+The local exact-source host harness reproduced these failures on both boards: 2/13 scenarios passed and 11/13 failed. Cases included multiple valid candidates, valid+corrupt candidates, invalid records without a recovery hold, .new/.bak rename, oversized files and an unterminated nonce read crossing into the target field.
+
+#### Firmware correction
+
+Both ESP32 and ESP8266 sketches now:
+
+- require exact file size and exact record read;
+- use bounded memchr() for nonce and target terminators;
+- reject missing/short terminators and non-zero bytes after the first NUL;
+- count all three pending candidate paths before selecting anything;
+- latch fsReady=false and pendingReady=true when multiple candidates or an invalid candidate exist;
+- preserve all candidate files on ambiguity/corruption;
+- load exactly one valid candidate without renaming or deleting it.
+
+Source commits:
+- ESP32: [12252c1d1deaf7b30a056e88e0764081cae8bca6](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/12252c1d1deaf7b30a056e88e0764081cae8bca6)
+- ESP8266: [8109cd12d0c46f61c4934cbab1dd7943d754e217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8109cd12d0c46f61c4934cbab1dd7943d754e217)
+- New source-extracted lab: [449aefbd0986073c0bb63aaa7cb25c51d26caf63](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/449aefbd0986073c0bb63aaa7cb25c51d26caf63)
+- Lab invocation: [760809dd7cab9a10b47a70e5b13a4997d2436343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/760809dd7cab9a10b47a70e5b13a4997d2436343)
+- Fixture correction: [741a84db0c298d497320fe9e4d884ceb3bec7e29](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/741a84db0c298d497320fe9e4d884ceb3bec7e29)
+- Wrapper import correction: [176d518dcfb17d40a77f37f299ff8247ade29a36](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/176d518dcfb17d40a77f37f299ff8247ade29a36)
+
+#### Verification
+
+**Local exact-source host harness — SIMULATED**
+- Pre-fix: 2/13 pass, 11/13 fail per board.
+- Post-fix: 13/13 pass ESP32; 13/13 pass ESP8266.
+
+**Focused GitHub Actions — CI VERIFIED**
+- [Run #44218225761](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218225761)
+- Exact checkout SHA: 176d518dcfb17d40a77f37f299ff8247ade29a36
+- Job 134513313681: SUCCESS
+- Quarantine append/readback: 13/13 per board.
+- Pending-journal boot fail-closed: 13/13 per board.
+- Both suites explicitly report SIMULATED ONLY.
+
+The first focused run [#44218120535](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218120535) failed because the wrapper omitted import sys. The import was added and the exact-head rerun above passed.
+
+**Full BlazePwifi build — IN PROGRESS at handover update**
+- [Run #44218225798](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44218225798)
+- ESP8266 job 134513431137: PASS.
+- ESP32 job 134513431783: PASS.
+- Validation job 134513431834: PASS.
+- 13 of 14 platform/build jobs had completed successfully; Android job 134513431810 remained in progress.
+- Update bundle 134513427909: PASS.
+- Browser, ESP32, ESP8266 and Ruijie simulations: PASS; Orange Pi/x86 simulations still running.
+- Production import/signing: SKIPPED.
+- No overall Full workflow conclusion is claimed.
+
+The validation PASS is not independent QA acceptance: Master notes that #283 already changes QA-owned tests/controllers.sh and v05_firmware_hardening_test.sh, and their static response_sig/|poll| checks do not prove positive authentication. This activation did not modify either QA-owned file. QA must review the PR's existing test changes and independently own any replacement tests.
+
+#### Audit-lead status
+
+The old unconditional-clear finding from comment 6883020442 is superseded in current source: quarantinePending() returns before clearPending() when appendQuarantineRecord() fails. The later no-retry-latch concern remains a future-enable blocker; current #283 has no active quarantinePending() callsite and automatic coin POST/retry/clear remain removed. Do not enable those paths without the CORE-approved authenticated producer/consumer and event-bound receipt/disposition contract.
+
+The response_sig/poll references remain comments/static test tokens, not a working authentication contract. Positive register/poll admission remains disabled.
+
+#### Coordination and release boundary
+
+- PHX-MASTER latest coordination head 650c6e5991ed8ba30d82dd98216316b3ae3a3780 keeps #283/#317/#318 as separate candidates; no canonical stack selection is recorded.
+- COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243; integration PR #26 remains DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12. No source migration or destination write occurred.
+- Private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json remains unavailable through the exposed file-library search. No v5-v7 historical registry was substituted.
+- No physical flash, device reset, coin pulse, relay test, live payment, production migration, signing, merge, release or deployment occurred.
+
+**Next exact action:** PHX-QA reviews and independently runs the new boot-recovery lab and replaces static controller-token tests; PHX-MASTER records the canonical hardware stack selection; PHX-HARDWARE continues only after revalidating all selected heads. Keep #283 OPEN/DRAFT/UNMERGED and PRODUCTION NO-GO.
