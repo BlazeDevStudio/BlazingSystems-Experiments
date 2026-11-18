@@ -72,6 +72,7 @@ public:
     return value;
   }
 };
+void observeFaultMarkerOpen();
 struct FakeLittleFS {
   std::map<std::string,std::string> files;
   bool begin(bool){ return true; }
@@ -80,6 +81,7 @@ struct FakeLittleFS {
   File open(const char *path,const char *mode){
     if(fakeOpenFail) return File();
     const std::string key(path);
+    if(key=="/pollpulse.fault" && mode[0]=='w') observeFaultMarkerOpen();
     if(mode[0]=='w'){ files[key].clear(); return File(&files[key]); }
     auto found=files.find(key);
     return found==files.end()?File():File(&found->second);
@@ -116,6 +118,8 @@ struct String : std::string {
 static uint32_t fakeNow=2000;
 static int pulseStart=-1, pulseEnd=-1;
 static bool relayOn=false, ledOn=false;
+static bool markerOpenSawRelayOn=false, markerOpenSawLedOn=false;
+void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
 static bool injectAfterDrainEdge=false;
@@ -225,7 +229,8 @@ void resetState(){
   fakeNow=2000; pulseStart=-1; pulseEnd=-1;
   coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
-  relayOn=false; ledOn=false; relayLevelHigh=false; ledLevelHigh=false;
+  relayOn=false; ledOn=false; markerOpenSawRelayOn=false; markerOpenSawLedOn=false;
+  relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
@@ -256,6 +261,15 @@ int main(){
      !activeTarget.empty() || pendingPulses!=0 || journalRecoveryRequired ||
      LittleFS.exists("/pollpulse.fault") || lastPoll!=pollEndAt ||
      fakeNow!=pollEndAt+2) return 10;
+
+  // A poll-fault latch must physically request OFF before persistence can block.
+  // Capture relay/LED state at the exact LittleFS marker-open boundary.
+  resetState();
+  relayOn=true; ledOn=true; insertMode=true; activeTarget="target-01";
+  latchPollPulseFault(1);
+  if(markerOpenSawRelayOn || markerOpenSawLedOn || relayOn || ledOn ||
+     !journalRecoveryRequired || insertMode || !activeTarget.empty()) return 23;
+
   // A pulse edge during the 3.5 s synchronous poll must be captured by the
   // production ISR, latched to LittleFS, and never interpreted as a credit.
   resetState(); injectDuringHttp=true; loop();
@@ -448,8 +462,14 @@ for board,path in BOARDS.items():
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
        load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
        latch_fault,init_store,15),
+      ("defer-fault-output-inhibit",loop,output,quiet,accept,configure,isr,write_fault,load_fault,
+       latch_fault.replace("  applyOutputs();"+chr(10)+"  const bool persisted=writePollPulseFaultMarker(pulseEdges);",
+                           "  const bool persisted=writePollPulseFaultMarker(pulseEdges);",1),
+       init_store,23),
     )
     for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
+        if name=="defer-fault-output-inhibit" and mlatch==latch_fault:
+            raise AssertionError(f"{board}: fault-latch ordering mutation did not apply")
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 

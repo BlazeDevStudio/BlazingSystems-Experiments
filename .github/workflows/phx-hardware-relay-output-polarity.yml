@@ -7,6 +7,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/relay_output_polarity_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
@@ -30,6 +31,8 @@ jobs:
       - name: Compile parent poll inhibit drain-window lab and reject timing regressions
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
+      - name: Verify poll-fault latch inhibits outputs before persistence
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
       - name: Compile parent pulse-capture lab and reject edge/persistence regressions
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
