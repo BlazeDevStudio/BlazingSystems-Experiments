@@ -52,23 +52,30 @@ jobs:
           from pathlib import Path
           import re
 
-          workflow = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8")
+          lines = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8").splitlines()
 
           def install_block(step_name):
-              marker = f"      - name: {step_name}\\n"
-              start = workflow.find(marker)
-              if start < 0:
+              marker = f"      - name: {step_name}"
+              try:
+                  start = lines.index(marker)
+              except ValueError:
                   raise SystemExit(f"RELEASE-TOOLCHAIN-RED: missing step {step_name}")
-              end = workflow.find("\\n      - name:", start + len(marker))
-              return workflow[start:] if end < 0 else workflow[start:end]
+              end = next(
+                  (index for index in range(start + 1, len(lines)) if lines[index].startswith("      - name: ")),
+                  len(lines),
+              )
+              return lines[start:end]
 
           cases = (
               ("Install ESP8266 core", "esp8266:esp8266@3.1.2"),
               ("Install ESP32 core", "esp32:esp32@3.3.13"),
           )
           for step_name, expected in cases:
-              block = install_block(step_name)
-              installs = re.findall(r"^\\s*arduino-cli core install\\s+([^\\s]+)\\s*$", block, re.MULTILINE)
+              installs = []
+              for line in install_block(step_name):
+                  match = re.match(r"\\s*arduino-cli core install\\s+(\\S+)\\s*$", line)
+                  if match:
+                      installs.append(match.group(1))
               if installs != [expected]:
                   raise SystemExit(
                       f"RELEASE-TOOLCHAIN-RED: {step_name} must install exactly {expected}; found {installs}"
