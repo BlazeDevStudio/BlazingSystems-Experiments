@@ -51,23 +51,28 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          import sys
 
           workflow = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8")
-          expected = (
-              "arduino-cli core install esp8266:esp8266@3.1.2",
-              "arduino-cli core install esp32:esp32@3.3.13",
+
+          def install_block(step_name):
+              marker = f"      - name: {step_name}\\n"
+              start = workflow.find(marker)
+              if start < 0:
+                  raise SystemExit(f"RELEASE-TOOLCHAIN-RED: missing step {step_name}")
+              end = workflow.find("\\n      - name:", start + len(marker))
+              return workflow[start:] if end < 0 else workflow[start:end]
+
+          cases = (
+              ("Install ESP8266 core", "esp8266:esp8266@3.1.2"),
+              ("Install ESP32 core", "esp32:esp32@3.3.13"),
           )
-          missing = [command for command in expected if workflow.count(command) != 1]
-          if missing:
-              raise SystemExit("RELEASE-TOOLCHAIN-RED: expected exactly one pinned command: " + "; ".join(missing))
-          unpinned = (
-              r"^\\s*arduino-cli core install esp8266:esp8266\\s*$",
-              r"^\\s*arduino-cli core install esp32:esp32\\s*$",
-          )
-          for pattern in unpinned:
-              if re.search(pattern, workflow, re.MULTILINE):
-                  raise SystemExit("RELEASE-TOOLCHAIN-RED: unpinned board core install remains")
+          for step_name, expected in cases:
+              block = install_block(step_name)
+              installs = re.findall(r"^\\s*arduino-cli core install\\s+([^\\s]+)\\s*$", block, re.MULTILINE)
+              if installs != [expected]:
+                  raise SystemExit(
+                      f"RELEASE-TOOLCHAIN-RED: {step_name} must install exactly {expected}; found {installs}"
+                  )
           print("RELEASE-TOOLCHAIN-PASS: ESP8266 3.1.2 and ESP32 3.3.13 are uniquely pinned")
           PY
       - name: CI-0701 negative classifier contract (no API, no hardware)
