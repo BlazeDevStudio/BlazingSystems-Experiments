@@ -54,3 +54,38 @@ These are source-extracted host/fake-I/O simulations and CI only. They do not pr
 - PHX-QA: independently verify the same exact source SHA and mutation rejection; continue replacing the stale positive poll-signature fixture with negative deny-only tests.
 - PHX-CORE: review the unresolved-ingress marker's reconciliation semantics; no ledger/API change is included.
 - PHX-HARDWARE: preserve default-deny and await exact-head focused CI before further edits.
+
+
+## UTC18 — prevent same-boot false durable success after ambiguous backup commit
+
+**Task:** #177 / #172 — PHX-HARDWARE-owned two-store failure/reboot-durability follow-up. This is a narrow correction to the existing NVS/EEPROM fallback, not an independent witness or a solution to simultaneous store failure.
+
+### Source-grounded defect
+
+The backup writer can receive a failed commit while the EEPROM emulation buffer (and potentially a same-boot NVS cache) still reflects the attempted record. A later latch call must not treat that transient in-memory state as proof that the backup is durable. The ESP8266 presence check reads the current EEPROM buffer; after EEPROM.put() and a failed EEPROM.commit(), that buffer can be non-erased even when the flash-backed image remains blank. The previous writer could therefore return true on a later same-boot call without a new commit/readback. The analogous NVS path also must not retry or claim success after an ambiguous write/commit/readback error.
+
+### Test-first and correction
+
+- Test-only RED commit: [85b6830891bbf452eeec6dd5e21771d489a26309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/85b6830891bbf452eeec6dd5e21771d489a26309). Quarantine run [44372671310](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44372671310), job 135043388656, checked out the literal SHA and failed at the new sticky-failure assertion (exit 24) on the first ESP32 harness run. The harness aborts on the first board failure, so this RED is not claimed as a separate ESP8266 RED.
+- ESP8266 source correction: [a59a87ab821e1307156768079a6d766bae62cbd4](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a59a87ab821e1307156768079a6d766bae62cbd4).
+- ESP32 source correction: [422093d63a4b1bcee973e8e482159639f61e11ce](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/422093d63a4b1bcee973e8e482159639f61e11ce).
+- Final test harness and exact-source SHA: e774420c3404141ffe4ec7b9c002c14d3c2286b8.
+
+Both sketches now maintain a current-boot pollFaultBackupWriteFailed latch. Any backend set/commit/reopen/readback failure sets it; subsequent same-boot calls return false without treating a dirty buffer/cache as a durable marker or retrying. A cold boot starts with the RAM flag clear and re-reads the actual persistent marker. This is deliberately conservative: it does not make a failed commit durable, and if both persistent stores fail, reboot durability remains NOT ESTABLISHED.
+
+### Exact-head evidence
+
+- Quarantine/readback [run 44373043845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373043845), job 135044723373: **SUCCESS**, literal checkout e774420c...; both boards report FAILED_COMMIT_RETRY_HELD_UNTIL_REBOOT_PASS, AMBIGUOUS_COMMIT_RETRY_DENY_REBOOT_MARKER_PASS, and POLL_FAULT_DUAL_STORE_LAB=PASS. Existing quarantine, pending-journal, pulse-capture and pre-poll edge suites pass.
+- Relay/output [run 44373043958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373043958), job 135044723760: **SUCCESS**; both boards pass 48/48 relay/output scenarios, commit-failure trace, local polarity and poll-window checks. ESP32 boot-polarity job 135044724239: **SUCCESS**.
+- Full BlazePwifi build [run 44373043812](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373043812), validation job 135044774969: **FAILED** at the inherited QA-owned “Missing poll signature check”. Do not add an unauthenticated positive signature or relax default-deny to satisfy it. Target matrix was still running at this handover update; no complete matrix result is claimed here.
+
+### Classification and limits
+
+Focused source-extracted host tests are SIMULATED / CI VERIFIED only. They do not prove actual EEPROM/NVS flash behavior, ISR timing on silicon, physical relay/acceptor behavior, reboot durability when both stores fail, electrical recovery, 150 power cuts or 30-device/24-hour soak. The secondary store remains same-chip fallback, not an independent anti-rollback witness. No financial ledger, receipt, replay, poll/coin admission, shared API, migration or QA-owned test was changed. No flashing, reset, live coin, customer money, merge, release or deployment occurred.
+
+### Review / next exact action
+
+- PHX-QA: independently review the exact source/test SHA e774420c... and the new failure-injection cases.
+- PHX-MASTER: reconcile #327's child placement under #326 and confirm the stack remains candidate-only.
+- PHX-CORE: review unresolved-ingress reconciliation semantics; this remains a hardware deny marker only.
+- PHX-HARDWARE: next activation, inspect the exact ESP8266 core EEPROM emulation and ESP32 Arduino/IDF NVS versions used by the build, then extend only source-backed reboot tests. Keep the dual-store-failure reboot gap explicit.
