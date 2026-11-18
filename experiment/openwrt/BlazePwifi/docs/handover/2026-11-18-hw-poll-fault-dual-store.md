@@ -200,3 +200,22 @@ It also retains the prior LittleFS-only, secondary-store-only, readback, corrupt
 Focused source-extracted labs and both ESP board builds are **CI VERIFIED**. Host NVS/EEPROM fixtures are SIMULATED, not flash-physics or power-cut evidence. Physical GPIO/relay polarity, real coin ingress, brown-out, 150 power cuts, 30-device/24-hour soak, protected independent witness, durable accounting/replay and v1→v2 migration remain **NOT TESTED / BLOCKED**. Same-chip NVS/EEPROM is not an independent witness. Keep PR #323 DRAFT / UNMERGED / PRODUCTION NO-GO.
 
 **Next exact action:** PHX-QA must repair and independently rerun the legacy poll-signature parity assertion without restoring unauthenticated poll admission, then review the NVS read/open failure vectors at this exact source/test head. PHX-CORE reviews fault identity/disposition/replay; PHX-MASTER decides whether this same-chip fallback is acceptable as a candidate only. No flash, reset, merge, signing, migration, release or deployment.
+
+
+## UTC07 — ambiguous secondary-store commit outcome regression
+
+**Exact source/test commit:** `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`  
+**Base/parent:** PR #322 at `50d93e0de3d682550b6f02fb43484e76ad9c7e08`  
+**PR #323 remains OPEN / DRAFT / UNMERGED / PRODUCTION NO-GO.**
+
+The hardware-owned `poll_fault_dual_store_lab.py` now injects an ambiguous persistence API result on both board fixtures: the simulated NVS/EEPROM commit first copies the marker into the fixture's durable-media image, then reports failure. The LittleFS marker is also forced to fail. The test clears the injected API error, simulates a reboot, and requires `loadPollPulseFaultLatch()` to discover the persisted secondary marker and keep insertion denied.
+
+- ESP32: `nvs_commit()` now has a dedicated fail-after-durable-write injection, distinct from fail-before-write.
+- ESP8266: `FakeEEPROM.commit()` now has the matching fail-after-flash-copy injection, distinct from fail-before-write.
+- Both board paths assert the current boot remains denied and the subsequent simulated reboot remains denied despite the failed commit return.
+- This is a host fixture for ambiguous API completion, **not** a claim that the test emulates real flash programming, brown-out physics, or power-cut atomicity.
+- No production `.ino`, shared API, CORE ledger, QA-owned tests, Release workflow, or COE destination file changed.
+
+**Verification status at checkpoint:** the commit and PR head were read back successfully. No Actions run or combined commit status was returned for exact SHA `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`; this new regression is **NOT RUN / NOT VERIFIED**. Prior source/test SHA `a3aa967087680887e925791f83a8fbc48a1e62b9` has focused run [44256301463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256301463) SUCCESS and relay run [44256302301](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256302301) SUCCESS, but those runs do not verify this new scenario. Prior full run [44256301436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256301436) failed the QA-owned `Missing poll signature check`; target builds passed but downstream simulations/signing/publishing were skipped.
+
+**Next exact action:** obtain a focused quarantine workflow run on exact SHA `c13dfb8d9b7ae83c15aa97c94842c339db8b8584`, inspect both board outputs for `AMBIGUOUS_COMMIT_REBOOT_DENY_PASS`, then request independent QA review. Keep same-chip NVS/EEPROM as candidate-only fallback; it is not an independent witness. Physical acceptance remains NOT TESTED.
