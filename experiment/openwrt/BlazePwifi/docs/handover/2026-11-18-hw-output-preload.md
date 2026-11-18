@@ -1,0 +1,44 @@
+# PHX-HARDWARE handover — preload OFF before relay/LED output enable
+
+**Disposition:** source correction committed; focused exact-head CI pending; SIMULATED ONLY; physical GPIO/relay acceptance NOT TESTED; PRODUCTION NO-GO.
+
+## Lineage
+
+- Parent PR: [#320](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/320)
+- Parent branch: `phoenix/hardware-poll-edge-latch-20261118`
+- Parent HEAD at branch creation: `b2b41a3d6ce7887b9624137c966f58462895d3fa`
+- Child branch: `phoenix/hardware-output-preload-child-20261118`
+- New child PR: pending creation
+- Separate test-first RED candidate #321 remains OPEN/DRAFT and is not rebased, retargeted, merged or force-pushed.
+
+## Defect and correction
+
+Both ESP32 and ESP8266 `configureRuntimePins()` previously enabled relay and LED pins with `pinMode(..., OUTPUT)` before setting their logical OFF level. For active-low wiring, the default LOW output latch could briefly energize the relay during pin-mode transition.
+
+Both sketches now:
+1. Preserve old relay/LED shutdown before runtime pin reassignment.
+2. Assign the new configured pin numbers.
+3. Preload the new relay and LED logical OFF levels with `writeLogical()`.
+4. Only then switch the relay and LED pins to OUTPUT.
+5. Attach the coin interrupt after pin configuration.
+6. Reassert logical OFF after output enable as a confirmation.
+
+No coin admission, poll, POST, receipt, ledger, API, migration, signing, or release behavior changed.
+
+## Test-first evidence
+
+- RED source was the unchanged #320 firmware at #321's test-only head `8efc4308d5c205976838092bbb746ce6f2c56113`.
+- Relay-output workflow [#44226524555](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44226524555), job `134540917601`, failed exactly at `OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode` after the existing polarity lab passed 48/48 for each board.
+- The new lab compiles the exact extracted `writeLogical()` and `configureRuntimePins()` functions for both boards. It checks active-high and active-low ordering and injects a mutation that removes only the new-pin preloads while retaining old-pin shutdown and post-enable OFF confirmation.
+- The mutation injector was tightened to target the exact assignment/preload sequence; this avoids the earlier test-only implementation's overly narrow text window.
+
+## Commits
+
+- ESP8266 source: `e55570b52d66b3a85526d89827f3bddd9c277432`
+- ESP32 source: `279e8ccb8259d066e50f37322a984b822c2ac0cb`
+- Workflow wiring: `c918253fe757b412d367510dba58c9f6181f2f0c`
+- Regression lab: `1f882c979550ebe723d3fbb6a26e3986fd041fc9`
+
+## Acceptance limits
+
+The host lab models Arduino call ordering only. It does not measure GPIO voltage, active-low relay energization, contact bounce, coil suppression, boot strap interactions, board-specific pin behavior, or physical output transients. A scope/logic-analyzer and isolated noncustomer relay fixture are required before HARDWARE ACCEPTED. No flashing, reset, relay actuation, coin or customer hardware was performed.
