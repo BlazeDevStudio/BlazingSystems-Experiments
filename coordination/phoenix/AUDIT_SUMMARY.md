@@ -478,3 +478,18 @@ Master corrected an overbroad prior statement: COE #36 does have a Stage-1 GitHu
 The Labs legacy import is exact for one `.ino` only; README, preview and NOTICE are absent from the destination, and redistribution rights remain unverified. The ownership manifest has no COE Universal/INTERCON route, so no formal implementation owner is assigned; COE integration owner must nominate one. PHX-HARDWARE is a requested domain reviewer, PHX-PISONET an interface stakeholder. No source migration or route change occurred.
 
 Current CI remains mixed: #26 five queued workflows / zero jobs; #35 mandatory sandbox fails closed; #323 focused labs pass but Full validation fails at the QA-owned legacy poll-signature assertion; #36 Stage-1 and V1.6 branch compile/static workflows pass; #41/#43 host/simulation and ESP8266 compile pass but do not establish physical acceptance. Private Drive v11/newer corrections and the linked cloud policy/handover remain inaccessible. Full Master suite NOT RUN because GitHub DNS resolution failed in the container. **PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC11 — Hardware stack overlap and live role refresh
+
+PHX-MASTER re-read live issue #172, cleanup issue #266, Experiments main/development and Master branch refs, PR #288, COE main and integration #26, the routing manifest, role PRs and exact-head CI. Experiments main is `f4e8a891...`, development is `aad3aade...`, Master is `2dae0d4f...` before this audit; COE main is `a6513ab4...`, and COE #26 is `b382d233...`. PR #288 was OPEN/DRAFT with 77 coordination-only paths before this audit and no exact-head Master CI run. The control-plane issue body had a stale Master head `5e11daf8...`; its active index is refreshed.
+
+**New actionable finding:** Hardware work is split across overlapping branch families. #321 is based on #317; #322 is based on #320. They share four changed source/test paths. #323 and #324 are siblings on #322 and share both board sketches plus the poll-loop lab. #323 already deasserts outputs before NVS/EEPROM and LittleFS persistence; #324 adds a stronger direct marker-open regression that is absent from #323's current lab. #318 has a base SHA older than current #317 and no exact-head CI. No branch was rebased, merged or selected by Master.
+
+Exact focused runs for #317/#321/#322/#323/#324 pass, but their Full builds fail at the QA-owned legacy `Missing poll signature check`; #318 has no exact-head run. The firmware remains deny-only. PHX-QA must replace the positive string assertion with negative deny-behavior tests. PHX-HARDWARE must select the canonical stack and explicitly port or reject the marker-open regression.
+
+Release refresh: #291 head `18f61977...` workflow [44296238509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296238509) passed handover/build; signing and publication were skipped. COE #35 head `ad69c4e9...` has a shared test failure (expected exit 125 vs current exit 1) and a sandbox failure; Release owns the fix. COE #26 remains five queued workflows / zero jobs. COE #45 passes two scoped checks but is not part of #26.
+
+The private Drive registry v11 and newer corrections were not retrievable: no Google Drive connector was exposed and Library search did not return the canonical file. The Cloud Artifact Policy and Storage Recovery Handover were read; both require a BLOCKED report rather than a simulated transfer. COE root `AGENTS.md` returned 404. No older registry was substituted and no private data was published.
+
+No source/destination files moved; no ownership manifest change; no Master Python suite or physical test claimed. Master CI returned no runs. Production remains **NO-GO**.
