@@ -19,6 +19,11 @@ assert "pulseStart=300; pulseEnd=380;" in scenario, "HTTP-time pulse must begin 
 assert "fakeNow=pollStartedAt+70;" in scenario, "HTTP-time pulse must be sampled 70 ms into the poll"
 assert "fakeNow=pollStartedAt+3500;" in scenario, "HTTP timeout must model the complete 3500 ms block"
 assert "if(fakeNow-pollStartedAt!=3500) return 27;" in scenario, "fixture must verify the exact timeout duration"
+assert "bool timeWentBackwards=false;" in lab, "fixture must track clock rewinds"
+assert "void setFakeNow(uint32_t value)" in lab, "fixture must update time through a monotonicity-checking helper"
+assert "setFakeNow(pollStartedAt+70);" in scenario, "post-quiet pulse sample must use the checked clock helper"
+assert "setFakeNow(pollStartedAt+3500);" in scenario, "timeout completion must use the checked clock helper"
+assert "POLL_WINDOW_MUTATION_REJECTED clock-rewind" in lab, "missing deliberate clock-rewind mutation rejection"
 ordered = [
     scenario.index("const uint32_t pollStartedAt=fakeNow;"),
     scenario.index("pulseStart=300; pulseEnd=380;"),
