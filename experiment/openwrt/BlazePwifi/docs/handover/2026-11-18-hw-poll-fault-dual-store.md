@@ -164,3 +164,39 @@ This is a proposed owner-authorized noncustomer lab plan, not a test result. It 
 **Stop conditions:** any relay/coin output remains active during a latched fault; any pulse is silently converted to credit or lost; a corrupt marker is cleared; a reboot restores accepting state after a persisted fault; an ACK or balance effect occurs without durable authenticated disposition; or external evidence is incomplete. Stop the trial, preserve media and logs, and require operator reconciliation.
 
 No physical flash, reset, power cut, real coin, live money, customer device, production migration, signer provisioning, merge, release or deployment was performed in this activation.
+
+
+## UTC06 — ESP32 NVS read/open errors remain fail-closed
+
+**Audit finding and correction**
+
+The previous ESP32 backup-presence check used Preferences::isKey("poll_fault"). In the Arduino-ESP32 Preferences implementation, isKey() delegates to getType(), whose PT_INVALID result does not distinguish a genuinely absent key from an unsuccessful NVS lookup. That could classify an NVS read error as a clean missing marker.
+
+The current ESP32 sketch now uses the lower-level NVS API:
+- Only ESP_ERR_NVS_NOT_FOUND is treated as an absent/clean key.
+- ESP_OK, type mismatch, invalid-handle and every other NVS lookup error retain the deny latch.
+- A secondary-store open failure also sets journalRecoveryRequired, clears the active target and disables insertion before LittleFS recovery.
+- Existing NVS values are never overwritten; a non-NOT_FOUND lookup error during a new write returns failure and leaves the separate LittleFS fallback path available.
+
+Current ESP32 source blob: bd74b11c1496b0943404ff387ee72bb45d4743e5. Previous Preferences-based blob: b0dfe6cf4dcea1c7fbad00d5b2c2cda08f26f8ba.
+
+**Exact-source failure-injection coverage**
+
+The hardware-owned dual-store lab now exercises an existing sticky marker under:
+- NVS read error;
+- NVS type mismatch;
+- NVS namespace/open failure.
+
+It also retains the prior LittleFS-only, secondary-store-only, readback, corrupt-marker and both-store-failure scenarios. The both-store-failure result remains explicitly EXPECTED_CURRENT_BOOT_ONLY; it is not counted as reboot durability.
+
+- Test/source head: a3aa967087680887e925791f83a8fbc48a1e62b9
+- Lab blob: 5b1b31885a2f756127f272adf4627a81db4769c3
+- Focused quarantine/dual-store/poll-loop run [44256301463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256301463), job 134638692296: **SUCCESS**. Logs explicitly show ESP32_NVS_READ_ERROR_DENY_PASS, ESP32_NVS_TYPE_MISMATCH_DENY_PASS and ESP32_NVS_OPEN_FAILURE_DENY_PASS; ESP8266 and ESP32 dual-store labs both PASS. Existing quarantine 36/36 per board, mount 8/8 per board, pending-journal 16/16 per board, pending-clear 17/17 per board, poll-window 11/11, pulse-capture 8/8 and blocking-poll fault-marker 7/7 per board also pass.
+- Relay/output/pulse run [44256302301](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256302301), job 134638692980: **SUCCESS**; relay polarity 48/48 per board, output-enable sequence 4/4, poll-window 11/11, pulse capture 8/8 and blocking-poll 7/7 per board.
+- Full BlazePwifi build [44256301436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256301436): validation job 134638691264 **FAILED** at the QA-owned Missing poll signature check in the ESP8266 sketch. Both board build jobs are SUCCESS (134638690917 ESP32; 134638691241 ESP8266), and all 14 firmware target jobs returned SUCCESS. Android job 134638691250 was still in progress at this checkpoint; downstream simulation/signing/publishing/candidate-gate jobs were skipped after validation failed. This is not a green Full build.
+
+**Disposition**
+
+Focused source-extracted labs and both ESP board builds are **CI VERIFIED**. Host NVS/EEPROM fixtures are SIMULATED, not flash-physics or power-cut evidence. Physical GPIO/relay polarity, real coin ingress, brown-out, 150 power cuts, 30-device/24-hour soak, protected independent witness, durable accounting/replay and v1→v2 migration remain **NOT TESTED / BLOCKED**. Same-chip NVS/EEPROM is not an independent witness. Keep PR #323 DRAFT / UNMERGED / PRODUCTION NO-GO.
+
+**Next exact action:** PHX-QA must repair and independently rerun the legacy poll-signature parity assertion without restoring unauthenticated poll admission, then review the NVS read/open failure vectors at this exact source/test head. PHX-CORE reviews fault identity/disposition/replay; PHX-MASTER decides whether this same-chip fallback is acceptable as a candidate only. No flash, reset, merge, signing, migration, release or deployment.
