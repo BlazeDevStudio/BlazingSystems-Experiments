@@ -555,7 +555,7 @@ int main(){
   if(writePollFaultBackup(9)) return 30;
   if(backupCommitCalls()!=ambiguousCommitCalls) return 31;
   rebootStorage();
-  if(!pollFaultBackupBackupPresentOrCorrupt()) return 32;
+  if(!pollFaultBackupPresentOrCorrupt()) return 32;
   std::cout << "AMBIGUOUS_COMMIT_RETRY_DENY_REBOOT_MARKER_PASS board=BOARD_NAME\\n";
 
   // The primary LittleFS marker remains a valid fallback if the secondary
