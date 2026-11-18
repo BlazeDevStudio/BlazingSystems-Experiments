@@ -599,3 +599,16 @@ COE's shell test still positively greps for response_sig and |poll|; current sou
 - QR-code and TailAdmin vendor LICENSE/NOTICE blobs match; that does not resolve root/Hardware scope.
 
 No copy, move, overwrite, rebase or migration proposal. OWNERSHIP_ROUTES remains DRAFT_REVIEW_ONLY, Master destination null.
+
+## Development-branch authority reconciliation — 2026-11-18 UTC23
+
+Live refs:
+- Experiments default main: f4e8a891aed8af86d5fd315d28750a0ac3a7372b.
+- Control-plane development label: blazepwifi-v0.5.3-development at aad3aade72c1156eecba1fed30907c6d0283b2c5; GitHub compare says 293 commits behind main and 0 ahead. Its branch handover is dated 2026-10-06.
+- Comparison branch: blazepwifi-v0.6.0-audit-foundation at 2fbd2475e9f54878c316fa7cea2f228386b0e859; GitHub compare says 1,876 commits ahead and 22 behind main (diverged). Control-plane issue #172 labels it comparison-only, while its branch-local handover/policy still describes v0.6 as active. The old Experiments PR #30 is closed at head 9df0a7e7 and is not the current branch head.
+- No literal branch named development appeared in the live branch listing.
+
+**Routing decision:** no product implementation branch is selected or promoted by PHX-MASTER. The control plane is the current routing authority, but the stale v0.5.3 handover and conflicting v0.6 branch handover require a product-owner reconciliation before source migration or branch promotion. Do not use either snapshot as a destination source merely because its name or handover says development.
+
+GitHub branch API reports protected=false for Experiments main, v0.5.3-development, v0.6.0-audit-foundation and COE main. The repository rulesets endpoint returned an empty list. Effective required checks/protection must be verified by the repository administrator; PHX-MASTER did not change settings.
+

@@ -704,3 +704,20 @@ Both rulesets endpoints returned empty arrays. Main branch-protection reads retu
 GitHub source/tree inspection and exact CI logs were performed. Master Python suite NOT RUN; no Master PR workflow runs returned. Exact-SHA git clone failed because this runtime could not resolve github.com. No physical tests, flash, power cuts, soak, signing, financial migration, merge or release occurred.
 
 Next: PHX-HARDWARE fixes full-image EEPROM read/recovery; PHX-QA independently reviews exact SHA and negative poll contract; PHX-RELEASE fixes #291 harness and obtains bubblewrap runner; COE owner completes provenance/CI; repository admin and registry custodian restore access/protection.
+
+## UTC23 live reconciliation — 2026-11-18
+
+**Master task:** PHX-MASTER only; commit and evidence remain confined to coordination/phoenix. Existing PR #288 remains OPEN/DRAFT. Ownership manifest remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER destination null.
+
+**New architecture finding:** COE #45 adds a synthetic HMAC receipt-v1 contract candidate, but its schema is not a drop-in match for Master §1.2. No approved version bridge, runtime parser, key authority or durable ledger epoch/sequence witness exists. CORE/QA must reconcile before adoption or migration.
+
+**Hardware correction:** #327 current live PR head is 3046c74d (docs-only sync); source/test head 6b52d63f includes firmware fix 40cfc079. The full-image EEPROM recovery regression now passes in exact source/test focused CI on ESP8266; the prior config-read failure is corrected in host/fake-I/O tests. The source/test Full workflows still fail at QA-owned Missing poll signature check. Docs-head focused runs are still in progress and Full is queued. Physical flash and power-cut behavior remain untested.
+
+**Migration remains blocked:** COE #26 has five queued workflows with zero jobs. Hardware firmware blobs differ; 19 source board-lab Python files are absent from COE Hardware; Pisonet #255 has 11 same-path blob differences against #26; the source/destination test corpus is incomplete; license/NOTICE scope remains unresolved. No migration was proposed.
+
+**Branch authority:** control plane calls v0.5.3-development current and v0.6.0 audit foundation comparison-only, but v0.5.3 is 293 behind/0 ahead and its handover is stale; v0.6 handover still calls itself active despite the control-plane comparison-only designation and 1,876-ahead/22-behind divergence. Product owner must resolve.
+
+**Access/governance:** root Experiments AGENTS.md was read. COE root AGENTS.md returned 404; linked Cloud Artifact Policy and Storage Handover could not be read through the exposed GitHub connector. Library search returned registry snapshots v3-v7 and a 2026-11-09 production checkpoint, but not private Drive v11 or newer corrections. No Google Drive connector is exposed; older snapshots were not substituted. Branch API reports protected=false for the checked branches; admin verification remains required.
+
+**Production:** NO-GO. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+

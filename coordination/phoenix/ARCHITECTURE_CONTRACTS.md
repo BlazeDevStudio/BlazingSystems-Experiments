@@ -684,3 +684,37 @@ Live Hardware #327 API head is f9d1fa165ccc94b18aeac7e85ffd83c29899463f; source/
 - Full run 44414150578 has validation job 135190015439 failing at the inherited QA-owned “Missing poll signature check”. All 13 firmware/platform targets and Android completed SUCCESS; simulations, bundle, candidate, signing and publishing were skipped.
 
 Disposition: poll-drain abort is focused CI subtest PASS on both source models; overall focused jobs remain FAIL at the separate full-image EEPROM read lab; Full validation FAIL; independent QA and physical hardware acceptance pending. Same-flash stores are not an independent anti-rollback witness.
+
+## 6.33 COE #45 receipt v1 — contract candidate, not Master adoption (2026-11-18 UTC23)
+
+**Disposition:** CONTRACT CANDIDATE / SYNTHETIC CI VERIFIED / RUNTIME DENY / NOT IN COE #26.
+
+Exact candidate: COE PR #45, OPEN/DRAFT, head 9d76a134c1f6512aa40c20ec4d247306a71a8cce, base d0830332 (a separate candidate base, not COE #26). The contract, golden vectors, verifier and focus runner are under Pisowifi/docs/contracts and Pisowifi/tests. Exact-head run [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) passed and logs include COIN_RECEIPT_V1_GOLDEN_PASS; case-collision run [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) passed. These are synthetic/host contract checks, not a deployed producer, firmware parser, financial ledger, key provisioner or hardware acceptance.
+
+### Contract shape and incompatibility
+
+COE v1 uses canonical ASCII name/value lines with LF, fixed field order and HMAC-SHA256. It binds receipt_id to the event hash and includes event_nonce, target_nonce, account_id_hash, ledger_epoch, ledger_sequence, issued_at, expires_at, disposition/reason, pulse_count, credit_delta_centavos, credit_total_centavos and key_version. It specifies stable retry bytes for an already committed event.
+
+Master §1.2 currently documents a different v2-style receipt example: event_id, protocol_version, target, amount_centavos, seconds_granted, timestamp_utc, nonce, signature and replayed. There is no approved v1-to-v2 mapping, version negotiation, field-equivalence table or consumer migration. In particular, target vs target_nonce, seconds_granted vs credit_delta_centavos, event_id vs receipt_id, and signature vs HMAC are not one-to-one substitutions. The new ledger_epoch/ledger_sequence and account_id_hash fields have no approved Master-v2 mapping. **Do not adopt COE v1 as the Master canonical receipt or copy it into #26 until CORE and QA approve an explicit versioned bridge.**
+
+### Test coverage and remaining proof
+
+The exact verifier checks the known golden vectors, fixed field ordering, event-derived receipt ID, HMAC sensitivity to each field and byte-identical committed retry. Source inspection shows the verifier does not yet enforce uint32/uint64 upper bounds for key_version, ledger_sequence, timestamps and centavo values; it checks account_id_hash syntax but does not derive it from an approved canonical account identity; it has no approved clock-skew policy; and it does not implement or test a production parser/consumer. The three committed vectors do not exercise every allowed disposition/reason or malformed, duplicate, missing, unknown and reordered input. These are QA/CORE follow-ups, not a reason to weaken runtime default-deny.
+
+**Adoption gate:** CORE must publish the versioned field mapping, numeric bounds, account-hash derivation, key-version authority, ledger-epoch authority and replay semantics. QA must add parser-level malformed/boundary/replay vectors. Hardware and Release must remain deny-only until the shared contract and durable authority are independently approved.
+
+## 6.34 Hardware #327 — full-image EEPROM read recovery corrected in source tests (2026-11-18 UTC23)
+
+**Current live PR head:** 3046c74d19ee1040996860a66cbdcb850acdbe14 (docs-only handover sync), child of #326 at 58c558fb6a237935214621adc3dee65a10fe1a51. **Exact source/test head:** 6b52d63f889a9567303f9f2de464c743c1991f0c. **Firmware correction commit:** 40cfc0799a6e65e4a724e8ccbe6baa0f5f51de54.
+
+The source correction adds a status-bearing read of the complete 544-byte ESP8266 EEPROM image, restores that verified image into the EEPROM RAM buffer, and tracks configImageReadVerified. loadCfg refuses to interpret an unreadable image as erased defaults; saveCfg and writePollFaultBackup require a verified image and revalidate after reopening. The reserved poll-fault bytes at offset 512 are preserved by the source-extracted recovery lab.
+
+Exact source/test-head focused evidence:
+- [Quarantine/readback #44423903845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903845) PASS. Logs show full-image first-read recovery with marker preservation, recovered-image cold-boot deny, marker-only recovery without commit, persistent full-read failure without commit, poll-drain abort continuity and pulse capture pass on both board-shaped harnesses.
+- [Relay/output #44423903842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903842) PASS. Both boards report 48/48 relay-polarity cases; output-off preload, poll-drain and pulse-capture checks pass.
+- Source/test-head Full runs [PR #44423903891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903891) and [push #44423897080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423897080) completed FAILURE at the inherited QA-owned Missing poll signature check. All 13 firmware/platform targets plus Android completed successfully; simulation, update bundle, candidate, signing and publishing jobs were skipped.
+
+The live PR head advanced after those source/test runs: docs-head quarantine [#44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) and relay [#44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) were IN_PROGRESS at this audit; Full [#44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) was QUEUED. Therefore the current PR head 3046c is not yet exact-head CI VERIFIED. PR description and the top handover pin still cite older c51271938; the live PR API and the appended UTC23 handover section are newer. HARDWARE must refresh its own PR description and top handover pin.
+
+These are source-extracted host/fake-I/O simulations only. The same flash chip backs LittleFS and EEPROM/NVS; simultaneous store failure still yields current-boot denial only and is not an independent protected witness. No physical flash, GPIO/relay/acceptor test, power cut, native acceptance or 30-device soak is established.
+

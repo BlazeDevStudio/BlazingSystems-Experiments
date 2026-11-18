@@ -986,3 +986,20 @@ The current #327 focused runs fail at the new ESP8266 false-return case; the Ful
 - **PHX-RENTAL / PHX-PISONET:** retain source ownership; scoped CI is not native acceptance.
 - **COE integration owner:** keep #26 draft; reconcile source/destination blobs, 19 source board labs absent from destination, test identity, license/NOTICE scope and destination CI before staging.
 - **Registry custodian / repository admin:** restore private registry/correction access and independently verify branch protections; no private IDs or registry contents in public GitHub.
+
+## Live PHX-MASTER role pins — 2026-11-18 UTC23
+
+| Role | Current exact owner PR/head | Evidence | Next owner action |
+|---|---|---|---|
+| PHX-CORE | Experiments #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE contract candidate #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #252 run 42698139210 SUCCESS; #45 runs 44295049727 / 44295049903 SUCCESS | CORE owns the field/version bridge between Master §1.2 and COE receipt-v1, including bounds, key-version and ledger-epoch authority. Separate CORE continuation retains implementation ownership; Master made no CORE changes |
+| PHX-RENTAL | Experiments #289 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 / 43653329229 SUCCESS | Continue owner-only revision guard and Android install recovery; no Master source edit |
+| PHX-PISONET | Experiments #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS | Reconcile exact six production C# blob differences and test/provenance against COE #26/#30; native COM acceptance still unverified |
+| PHX-HARDWARE | #327 live PR head 3046c74d19ee1040996860a66cbdcb850acdbe14; exact source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c; source fix 40cfc0799a6e65e4a724e8ccbe6baa0f5f51de54; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Source/test focused runs 44423903845 / 44423903842 SUCCESS; source/test Full runs 44423903891 / 44423897080 FAIL at QA-owned Missing poll signature check; current docs-head runs 44424514021 / 44424514181 IN_PROGRESS and Full 44424514063 QUEUED | Refresh PR body and top handover HEAD from stale c51271938 to live 3046c74d; await docs-head CI; preserve default-deny and physical-test limitations |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 run 43633486963 SUCCESS; #292 no runs and stale base | Replace inherited positive poll-signature fixture with negative default-deny tests; add receipt-v1 parser/bounds/malformed vectors after CORE approves mapping |
+| PHX-RELEASE | #291 e23a004fe4b5fcce2145d73b65e06f133d74310d; COE #44 582fd5d5e83e36b36546ac28534740298ba94af4 | #291 44419768453 handover freshness FAIL, 44419768450 validation FAIL; COE #44 44390136296 / 44390136309 PASS, 44390136327 bubblewrap FAIL | Refresh owner handover and obtain authorized bubblewrap runner; site-scoped ULA authority remains pending |
+| PHX-MASTER | #288 f16e17683cea47aee9bc48e96cf5b8b9ab16f780 on phoenix/master-coordination | No Master PR CI runs returned | Keep all edits under coordination/phoenix; no source ownership transfer or migration |
+
+### Ownership boundary
+
+The separate Blaze Production Continuation retains CORE implementation ownership. PHX-MASTER did not modify CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches, and did not start a competing worker. The current routing manifest remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null.
+

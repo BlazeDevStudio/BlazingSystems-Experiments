@@ -1357,3 +1357,54 @@ COE #26 remains non-equivalent to the current Hardware source: source ESP8266 bl
 | COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | 44295049903 + 44295049727 SUCCESS, scoped |
 
 Role-scoped successes are not production acceptance. Separate PHX-HARDWARE and PHX-RELEASE tasks remain separate; user-designated CORE continuation respected; no CORE work performed.
+
+## Live exact-head integration refresh — 2026-11-18 UTC23
+
+### Repository and coordination pins
+
+| Ref | Exact SHA | State / evidence |
+|---|---|---|
+| Experiments default main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Default branch |
+| Experiments PHX-MASTER / PR #288 | f16e17683cea47aee9bc48e96cf5b8b9ab16f780 | OPEN / DRAFT; no PR-triggered CI runs returned |
+| Experiments v0.5.3 development | aad3aade72c1156eecba1fed30907c6d0283b2c5 | 293 behind main, 0 ahead; branch handover last updated 2026-10-06 |
+| Experiments v0.6.0 audit foundation | 2fbd2475e9f54878c316fa7cea2f228386b0e859 | 1,876 ahead / 22 behind main; control plane calls it comparison-only |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243 | Default branch |
+| COE integration PR #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN / DRAFT; five workflows QUEUED with zero jobs |
+
+The literal branch name development was not present in the live branch listing. Control-plane issue #172 names v0.5.3-development as the development line and v0.6.0-audit-foundation as comparison-only; the v0.6 branch handover/policy still calls v0.6 active. Do not promote either snapshot by assumption until the product owner resolves this conflict.
+
+### Current role PRs and exact-head CI
+
+| Role | Current owner PR/head | Exact-head CI | Interpretation |
+|---|---|---|---|
+| CORE | Experiments #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS | Scoped deny-only candidate; CORE remains separately owned |
+| CORE contract candidate | COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727), [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) SUCCESS | Synthetic receipt-v1 contract only; separate base d0830332, not #26 |
+| RENTAL | Experiments #289 68928774d0d7cf65adb26bc6b54199a3159d066c | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS | Scoped instrumentation/build only |
+| PISONET | Experiments #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS | Scoped Windows Release candidate; destination parity not established |
+| HARDWARE | Experiments #327 live PR head 3046c74d19ee1040996860a66cbdcb850acdbe14; source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c | Source/test [44423903845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903845) and [44423903842](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44423903842) SUCCESS; docs-head [44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) / [44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) IN_PROGRESS; docs-head Full [44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) QUEUED | Full validation at source/test head failed only at QA-owned Missing poll signature check; all 13 firmware/platform targets plus Android passed on that head; current docs-head CI is pending |
+| QA | Experiments #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS; #292 no runs | #290 scoped Pisonet QA; #292 base is stale and has no current-head CI |
+| RELEASE | Experiments #291 e23a004fe4b5fcce2145d73b65e06f133d74310d | [44419768453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768453) validation FAIL at mandatory handover freshness; firmware/Android targets pass; [44419768450](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768450) handover/Windows validation FAIL; publisher skipped | Owner must refresh release handover; no publish/sign |
+| COE RELEASE | COE #44 582fd5d5e83e36b36546ac28534740298ba94af4 | [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296), [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) SUCCESS; [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAIL at required bubblewrap availability, exit 125 | ULA site-scope authority remains unresolved; no unsandboxed fallback |
+| COE integration | COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five queued workflows; every job endpoint returned zero jobs | No destination CI execution |
+
+### Exact destination provenance — no move proposed
+
+| Source route / exact source | COE #26 destination | Blob / test comparison |
+|---|---|---|
+| Hardware ESP8266, #327 source/test head 6b52d63f | Hardware/esp8266 | 14 source files vs 1 destination; 1 same-path file differs; 13 source-only. Sketch blob d36e9684f714d4af0ccf01739acb716072d39065 vs c8be98f72596681e36a3ad1f8939bf8046c96887 |
+| Hardware ESP32, #327 source/test head 6b52d63f | Hardware/esp32 | 13 source files vs 1 destination; 1 same-path file differs; 12 source-only. Sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 vs 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 |
+| Hardware source-extracted Python labs | COE Hardware | 19 source lab files vs 0 destination Python labs |
+| Pisonet #255 d01fd164 | Pisonet/SoftTimer in #26 b382d233 | 68 source files vs 47 destination; 27 identical, 11 different, 30 source-only, 9 destination-only. Six production C# blobs differ: AppConfig.cs, AppController.cs, SerialHardware.cs, Storage.cs, TimerEngine.cs, WindowsNativeComPlatform.cs; NativeSerialPinFaultLab Program.cs also differs |
+| Pisonet #255 d01fd164 | Separate COE PR #30 4897348d | 68 source vs 48 destination; 26 identical, 12 different, 30 source-only, 10 destination-only. #30 is not #26 and is not integrated into #26 |
+| Experiments main BlazePwifi/tests | COE #26 Pisowifi/tests | 38 source files vs 19 destination; 1 identical, 3 different, 34 source-only, 15 destination-only |
+
+License/NOTICE readback:
+- Experiments repository-root NOTICE exists (blob f6d92cd2); COE root NOTICE is absent.
+- Experiments BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical (blob 1ee55b94).
+- COE Hardware/LICENSE and Hardware/NOTICE.md are absent.
+- qrcode LICENSE and TailAdmin LICENSE/NOTICE blobs match their source counterparts.
+- Android Launcher and Tabler license files are present in the source tree but no corresponding destination route was found.
+- No Pisonet/SoftTimer-scoped LICENSE or NOTICE exists on either side; legal scope still needs owner review.
+
+No source copy, move, overwrite, merge, rebase or migration proposal was made.
+
