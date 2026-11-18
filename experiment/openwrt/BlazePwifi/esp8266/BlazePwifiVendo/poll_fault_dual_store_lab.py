@@ -102,7 +102,7 @@ struct FakeEEPROM {
   static std::vector<uint8_t> flash;
   std::vector<uint8_t> buffer;
   size_t size=0;
-  bool ready=true, failCommit=false, failRead=false;
+  bool ready=true, failCommit=false, failRead=false, failReadAfterCommit=false;
   bool begin(size_t n) {
     if(!ready) return false;
     size=n;
@@ -111,7 +111,7 @@ struct FakeEEPROM {
     return true;
   }
   void end(){ size=0; buffer.clear(); }
-  bool commit(){ if(failCommit) return false; flash=buffer; return true; }
+  bool commit(){ if(failCommit) return false; flash=buffer; if(failReadAfterCommit) failRead=true; return true; }
   size_t length() const { return size; }
   template<class T> void put(size_t offset,const T& value) {
     memcpy(buffer.data()+offset,&value,sizeof(T));
@@ -138,8 +138,8 @@ void corruptStorage(){
 }
 """
         fail_write = "EEPROM.failCommit=true;"
-        fail_read = "EEPROM.failRead=true;"
-        clear_fail = "EEPROM.failCommit=false; EEPROM.failRead=false;"
+        fail_read = "EEPROM.failReadAfterCommit=true;"
+        clear_fail = "EEPROM.failCommit=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false;"
         no_marker = "FakeEEPROM::flash.clear(); rebootStorage();"
 
     prelude = r"""
