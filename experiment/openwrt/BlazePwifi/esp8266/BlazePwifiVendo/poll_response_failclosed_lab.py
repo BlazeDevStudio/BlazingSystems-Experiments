@@ -351,20 +351,44 @@ int main(){
     if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
        !relayOffObservedWhileSuspended || fakeNow!=19) return 18;
 
+    // A pulse can still be propagating from the acceptor output stage after
+    // relay de-energization. The 100 ms contract maximum plus 20 ms margin
+    // must be observed before the blocking poll may start.
+    resetState(); runDebounceMs=boundedCoinDebounceMs(1); pulseStart=80; pulseEnd=180;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 22;
+    resetState(); runDebounceMs=40; pulseStart=80; pulseEnd=180;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=80 || coinLineIdle()) return 23;
+    // A second pulse 200 ms after inhibit is still inside the 250 ms
+    // inter-coin quiet boundary and must cancel the blocking poll.
+    resetState(); runDebounceMs=40; pulseStart=200; pulseEnd=280;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=200 || coinLineIdle()) return 24;
+
+    // A pulse beginning exactly at the 250 ms quiet boundary must cancel the poll.
+    resetState(); runDebounceMs=40; pulseStart=250; pulseEnd=330;
+    if(beginPollWindow() || pollIntakeSuspended || !relayOn ||
+       !relayOffObservedWhileSuspended || fakeNow!=250 || coinLineIdle()) return 25;
+
     // Model the complete synchronous HTTP timeout after the real loop has
     // entered its poll window. A pulse can appear on the input while the
     // CPU is blocked, but the acceptor output must remain inhibited until
     // the response is checked and the loop releases pollIntakeSuspended.
     resetState();
     if(!beginPollWindow() || !pollIntakeSuspended || relayOn || ledOn) return 19;
+    const uint32_t pollStartedAt=fakeNow;
+    if(pollStartedAt!=250) return 26;
     pulseStart=300; pulseEnd=380;
-    fakeNow=320; // pulse is active after the 250 ms drain during the simulated POST wait
+    if(pulseStart<(int)pollStartedAt) return 24;
+    fakeNow=pollStartedAt+70; // pulse is active after the 250 ms quiet window
     if(coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended) return 20;
-    fakeNow=3750; // 3.5 s synchronous HTTP timeout after the 250 ms drain has elapsed
+    fakeNow=pollStartedAt+3500; // complete synchronous HTTP timeout has elapsed
+    if(fakeNow-pollStartedAt!=3500) return 27;
     if(!coinLineIdle() || relayOn || ledOn || !pollIntakeSuspended ||
        !relayOffObservedWhileSuspended) return 21;
 
-    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 9/9; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
+    std::cout<<"DEBOUNCE_FLOOR_PASS 8/8; POLL_WINDOW_GUARD_PASS 13/13; BLOCKING_POLL_RELAY_INHIBIT_PASS 1/1\n";
     std::cout<<"PHYSICAL_COIN_ACCEPTOR_VERIFIED=0\n";
     return 0;
 }
@@ -407,4 +431,38 @@ for board, path in BOARDS.items():
         if ran.returncode:
             raise RuntimeError(f"{board}: poll-window scenarios failed ({ran.returncode}): {ran.stderr}")
         print(f"{board}: {ran.stdout.strip()}; source ordering PASS")
+
+    # Failure injection: removing the final idle sample must be caught by the
+    # pulse that begins exactly at the 250 ms quiet boundary.
+    quiet = extract(source, "coinLineQuietAfterInhibit")
+    if quiet.count("return coinLineIdle();") != 1:
+        raise RuntimeError(f"{board}: expected one final coinLineIdle() sample to mutate")
+    mutated_quiet = quiet.replace("return coinLineIdle();", "return true;", 1)
+    mutated_functions = "\n".join([
+        extract(source, "boundedCoinDebounceMs"),
+        extract(source, "applyOutputs"),
+        extract(source, "coinLineIdle"),
+        extract(source, "canStartPoll"),
+        mutated_quiet,
+        extract(source, "beginPollWindow"),
+    ])
+    mutated_code = WINDOW_STUBS + mutated_functions + WINDOW_MAIN
+    with tempfile.TemporaryDirectory(prefix="phx-poll-window-mutation-") as folder:
+        cpp = Path(folder) / "poll_window_mutated.cpp"
+        binary = Path(folder) / "poll_window_mutated"
+        cpp.write_text(mutated_code, encoding="utf-8")
+        built = subprocess.run(
+            [ "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+              "-Wno-unused-parameter", str(cpp), "-o", str(binary) ],
+            capture_output=True, text=True, timeout=30
+        )
+        if built.returncode:
+            raise RuntimeError(f"{board}: mutated poll-window compile failed:\n{built.stderr[-3000:]}")
+        mutated = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
+        if mutated.returncode != 25:
+            raise RuntimeError(
+                f"{board}: remove-final-quiet-sample mutation was not rejected at exact-boundary case 25; "
+                f"exit={mutated.returncode}; stdout={mutated.stdout}; stderr={mutated.stderr}"
+            )
+        print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
 
