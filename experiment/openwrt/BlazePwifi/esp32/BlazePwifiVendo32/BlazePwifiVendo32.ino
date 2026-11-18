@@ -33,6 +33,7 @@ uint8_t pendingPulses=0;
 int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
+void applyOutputs();
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
@@ -165,8 +166,6 @@ void loadPending(){
   lastSend=0;
   Serial.println("Recovered unacknowledged coin event from flash; source candidate retained.");
 }
-
-void applyOutputs();
 
 bool clearPending(){
   // Keep the RAM hold asserted until every possible pending candidate is absent.
