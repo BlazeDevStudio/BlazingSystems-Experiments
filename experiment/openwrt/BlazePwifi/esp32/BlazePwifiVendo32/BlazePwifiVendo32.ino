@@ -20,7 +20,20 @@ struct PendingRecord {
   char nonce[17];
   char target[33];
   uint32_t checksum;
+}
+
+struct PollFaultRecord {
+  uint32_t magic;
+  uint16_t version;
+  uint16_t size;
+  uint32_t pulseEdges;
+  uint32_t bootMillis;
+  uint32_t checksum;
 };
+static const uint32_t POLL_FAULT_RECORD_MAGIC=0x50484631;
+static const uint16_t POLL_FAULT_RECORD_VERSION=1;
+static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
+;
 
 volatile uint32_t coinEdgeSequence=0;
 
@@ -45,6 +58,8 @@ uint16_t boundedCoinDebounceMs(long long requested){
 static const uint32_t PENDING_MAGIC=0x42504332;
 Config cfg;
 Preferences prefs;
+Preferences faultPrefs;
+bool pollFaultBackupReady=false;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
@@ -317,6 +332,69 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
+
+uint32_t pollFaultRecordChecksum(const PollFaultRecord &record){
+  const uint8_t *bytes=(const uint8_t*)&record;
+  uint32_t hash=2166136261UL;
+  for(size_t i=0;i<sizeof(PollFaultRecord)-sizeof(record.checksum);++i){
+    hash^=bytes[i];
+    hash*=16777619UL;
+  }
+  return hash;
+}
+
+PollFaultRecord makePollFaultRecord(uint32_t pulseEdges){
+  PollFaultRecord record{};
+  record.magic=POLL_FAULT_RECORD_MAGIC;
+  record.version=POLL_FAULT_RECORD_VERSION;
+  record.size=(uint16_t)sizeof(record);
+  record.pulseEdges=pulseEdges;
+  record.bootMillis=millis();
+  record.checksum=pollFaultRecordChecksum(record);
+  return record;
+}
+
+bool validPollFaultRecord(const PollFaultRecord &record){
+  return record.magic==POLL_FAULT_RECORD_MAGIC &&
+         record.version==POLL_FAULT_RECORD_VERSION &&
+         record.size==sizeof(PollFaultRecord) &&
+         record.checksum==pollFaultRecordChecksum(record);
+}
+
+
+bool pollFaultBackupPresentOrCorrupt(){
+  // Any non-empty record is a permanent deny marker; malformed data also denies.
+  if(!pollFaultBackupReady) return true;
+  const size_t length=faultPrefs.getBytesLength("poll_fault");
+  if(length==0) return false;
+  if(length!=sizeof(PollFaultRecord)) return true;
+  PollFaultRecord stored{};
+  if(faultPrefs.getBytes("poll_fault",&stored,sizeof(stored))!=sizeof(stored)) return true;
+  return !validPollFaultRecord(stored) || stored.magic==POLL_FAULT_RECORD_MAGIC;
+}
+
+bool writePollFaultBackup(uint32_t pulseEdges){
+  if(!pollFaultBackupReady) return false;
+  if(pollFaultBackupPresentOrCorrupt()) return true;
+  const PollFaultRecord record=makePollFaultRecord(pulseEdges);
+  if(faultPrefs.putBytes("poll_fault",&record,sizeof(record))!=sizeof(record)) return false;
+  PollFaultRecord verify{};
+  const size_t read=faultPrefs.getBytes("poll_fault",&verify,sizeof(verify));
+  return read==sizeof(verify) && validPollFaultRecord(verify) &&
+         memcmp(&record,&verify,sizeof(record))==0;
+}
+
+void initPollFaultBackupStore(){
+  // NVS is a separate flash partition from LittleFS, not an independent physical witness.
+  pollFaultBackupReady=faultPrefs.begin("phx_fault",false);
+  if(!pollFaultBackupReady){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    Serial.println("CRITICAL: NVS fault-backup store unavailable; coin admission remains denied.");
+  }
+}
+
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   if(!fsReady) return false;
   if(LittleFS.exists("/pollpulse.fault")) return true;
@@ -342,18 +420,24 @@ bool writePollPulseFaultMarker(uint32_t pulseEdges){
 }
 
 void loadPollPulseFaultLatch(){
-  // Presence alone is a deny latch: partial/corrupt markers are not auto-cleared.
-  if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;
-  journalRecoveryRequired=true;
-  insertMode=false;
-  activeTarget="";
-  Serial.println("CRITICAL: prior coin-line edge during blocking poll found; preserve marker and reconcile offline before enabling intake.");
+  // Either persistent domain is enough to keep the device denied; never auto-clear either.
+  const bool backupHold=pollFaultBackupPresentOrCorrupt();
+  const bool littleFsHold=fsReady && LittleFS.exists("/pollpulse.fault");
+  if(backupHold || littleFsHold){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    Serial.println("CRITICAL: persistent poll-pulse fault found; preserve evidence and reconcile offline before enabling intake.");
+  }
 }
 
 void initPendingStore(){
-  // begin(false) must never silently format unreconciled coin evidence.
   fsReady=LittleFS.begin(false);
   if(!fsReady){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    loadPollPulseFaultLatch();
     Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
     return;
   }
@@ -859,11 +943,16 @@ void latchPollPulseFault(uint32_t pulseEdges){
   journalRecoveryRequired=true;
   insertMode=false;
   activeTarget="";
-  const bool persisted=writePollPulseFaultMarker(pulseEdges);
-  if(persisted){
-    Serial.println("CRITICAL: coin-line edge during blocking poll; readback-verified fault marker written; operator reconciliation required.");
+  const bool backupPersisted=writePollFaultBackup(pulseEdges);
+  const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);
+  if(backupPersisted && littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault recorded in NVS/EEPROM and LittleFS; operator reconciliation required.");
+  } else if(backupPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in secondary NVS/EEPROM; LittleFS marker failed; operator reconciliation required.");
+  } else if(littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in LittleFS; secondary NVS/EEPROM marker failed; operator reconciliation required.");
   } else {
-    Serial.println("CRITICAL: coin-line edge during blocking poll; marker write/readback failed; device remains fail-closed this boot.");
+    Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
   }
   applyOutputs();
 }
@@ -1229,6 +1318,7 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
+  initPollFaultBackupStore();
   initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){

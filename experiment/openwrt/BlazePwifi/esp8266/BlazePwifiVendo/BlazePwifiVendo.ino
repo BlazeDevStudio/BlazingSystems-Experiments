@@ -31,9 +31,11 @@ struct Config {
   uint8_t insertLedPin;
   uint8_t relayPin;
   uint8_t coinActiveLow;
-};
+}
+static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");;
 
 Config cfg;
+bool pollFaultBackupReady=false;
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC=0x42505732;
@@ -57,7 +59,22 @@ struct PendingRecord {
   char nonce[17];
   char target[33];
   uint32_t checksum;
+}
+
+struct PollFaultRecord {
+  uint32_t magic;
+  uint16_t version;
+  uint16_t size;
+  uint32_t pulseEdges;
+  uint32_t bootMillis;
+  uint32_t checksum;
 };
+static const uint32_t POLL_FAULT_RECORD_MAGIC=0x50484631;
+static const uint16_t POLL_FAULT_RECORD_VERSION=1;
+static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
+static const size_t POLL_FAULT_EEPROM_OFFSET=512;
+static const size_t POLL_FAULT_EEPROM_BYTES=544;
+;
 
 volatile uint32_t coinEdgeSequence=0;
 
@@ -309,6 +326,65 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash.");
 }
 
+
+uint32_t pollFaultRecordChecksum(const PollFaultRecord &record){
+  const uint8_t *bytes=(const uint8_t*)&record;
+  uint32_t hash=2166136261UL;
+  for(size_t i=0;i<sizeof(PollFaultRecord)-sizeof(record.checksum);++i){
+    hash^=bytes[i];
+    hash*=16777619UL;
+  }
+  return hash;
+}
+
+PollFaultRecord makePollFaultRecord(uint32_t pulseEdges){
+  PollFaultRecord record{};
+  record.magic=POLL_FAULT_RECORD_MAGIC;
+  record.version=POLL_FAULT_RECORD_VERSION;
+  record.size=(uint16_t)sizeof(record);
+  record.pulseEdges=pulseEdges;
+  record.bootMillis=millis();
+  record.checksum=pollFaultRecordChecksum(record);
+  return record;
+}
+
+bool validPollFaultRecord(const PollFaultRecord &record){
+  return record.magic==POLL_FAULT_RECORD_MAGIC &&
+         record.version==POLL_FAULT_RECORD_VERSION &&
+         record.size==sizeof(PollFaultRecord) &&
+         record.checksum==pollFaultRecordChecksum(record);
+}
+
+
+bool pollFaultBackupPresentOrCorrupt(){
+  // EEPROM emulation is a separate reserved sector from LittleFS on the same flash chip.
+  // Any non-erased byte is a permanent deny marker, including malformed/partial records.
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return true;
+  PollFaultRecord stored{};
+  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,stored);
+  const uint8_t *bytes=(const uint8_t*)&stored;
+  for(size_t i=0;i<sizeof(stored);++i) if(bytes[i]!=0xFF) return true;
+  return false;
+}
+
+bool writePollFaultBackup(uint32_t pulseEdges){
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+  if(pollFaultBackupPresentOrCorrupt()) return true;
+  const PollFaultRecord record=makePollFaultRecord(pulseEdges);
+  EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
+  if(!EEPROM.commit()) return false;
+  // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
+  EEPROM.end();
+  pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+  PollFaultRecord verify{};
+  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,verify);
+  return validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+}
+
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   if(!fsReady) return false;
   if(LittleFS.exists("/pollpulse.fault")) return true;
@@ -334,18 +410,24 @@ bool writePollPulseFaultMarker(uint32_t pulseEdges){
 }
 
 void loadPollPulseFaultLatch(){
-  // Presence alone is a deny latch: partial/corrupt markers are not auto-cleared.
-  if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;
-  journalRecoveryRequired=true;
-  insertMode=false;
-  activeTarget="";
-  Serial.println("CRITICAL: prior coin-line edge during blocking poll found; preserve marker and reconcile offline before enabling intake.");
+  // Either persistent domain is enough to keep the device denied; never auto-clear either.
+  const bool backupHold=pollFaultBackupPresentOrCorrupt();
+  const bool littleFsHold=fsReady && LittleFS.exists("/pollpulse.fault");
+  if(backupHold || littleFsHold){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    Serial.println("CRITICAL: persistent poll-pulse fault found; preserve evidence and reconcile offline before enabling intake.");
+  }
 }
 
 void initPendingStore(){
-  // Never format a failed-to-mount payment journal. It may contain coin evidence.
   fsReady=LittleFS.begin();
   if(!fsReady){
+    journalRecoveryRequired=true;
+    insertMode=false;
+    activeTarget="";
+    loadPollPulseFaultLatch();
     Serial.println("CRITICAL: LittleFS mount failed; preserving journal for recovery. Coin intake disabled.");
     return;
   }
@@ -389,7 +471,7 @@ void defaults(){
   makeSetupPassword();
 }
 
-void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
+void saveCfg(){ if(!pollFaultBackupReady) return; EEPROM.put(0,cfg); EEPROM.commit(); }
 
 bool fixedStringTerminated(const char *value,size_t capacity){
   return memchr(value,'\0',capacity)!=nullptr;
@@ -413,7 +495,12 @@ bool configStringsTerminated(const ConfigV1 &c){
 }
 
 void loadCfg(){
-  EEPROM.begin(sizeof(Config));
+  pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  if(!pollFaultBackupReady){
+    defaults();
+    Serial.println("CRITICAL: EEPROM fault-backup region unavailable; coin admission remains denied.");
+    return;
+  }
   EEPROM.get(0,cfg);
   if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
      strnlen(cfg.apPass,sizeof(cfg.apPass))>=8) return;
@@ -571,11 +658,16 @@ void latchPollPulseFault(uint32_t pulseEdges){
   journalRecoveryRequired=true;
   insertMode=false;
   activeTarget="";
-  const bool persisted=writePollPulseFaultMarker(pulseEdges);
-  if(persisted){
-    Serial.println("CRITICAL: coin-line edge during blocking poll; readback-verified fault marker written; operator reconciliation required.");
+  const bool backupPersisted=writePollFaultBackup(pulseEdges);
+  const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);
+  if(backupPersisted && littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault recorded in NVS/EEPROM and LittleFS; operator reconciliation required.");
+  } else if(backupPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in secondary NVS/EEPROM; LittleFS marker failed; operator reconciliation required.");
+  } else if(littleFsPersisted){
+    Serial.println("CRITICAL: poll-pulse fault persisted in LittleFS; secondary NVS/EEPROM marker failed; operator reconciliation required.");
   } else {
-    Serial.println("CRITICAL: coin-line edge during blocking poll; marker write/readback failed; device remains fail-closed this boot.");
+    Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
   }
   applyOutputs();
 }
