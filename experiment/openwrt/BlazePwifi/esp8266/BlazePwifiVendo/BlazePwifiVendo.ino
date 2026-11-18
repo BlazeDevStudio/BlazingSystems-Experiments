@@ -57,6 +57,9 @@ struct Config {
 
 Config cfg;
 bool pollFaultBackupReady=false;
+// A failed commit is ambiguous until a cold boot reads the flash-backed store.
+// Never treat the still-dirty EEPROM RAM buffer as a durable deny marker.
+bool pollFaultBackupWriteFailed=false;
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC_V2=0x42505732;
@@ -395,21 +398,29 @@ bool pollFaultBackupPresentOrCorrupt(){
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
-  if(!pollFaultBackupReady ||
+  if(!pollFaultBackupReady || pollFaultBackupWriteFailed ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
   if(pollFaultBackupPresentOrCorrupt()) return true;
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
   EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
-  if(!EEPROM.commit()) return false;
+  if(!EEPROM.commit()){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
   // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
   EEPROM.end();
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
   if(!pollFaultBackupReady ||
-     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
   PollFaultRecord verify{};
   EEPROM.get(POLL_FAULT_EEPROM_OFFSET,verify);
-  return validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  const bool verified=validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  if(!verified) pollFaultBackupWriteFailed=true;
+  return verified;
 }
 
 // Legacy /pollpulse.fault path is retained so older firmware keeps denying on any existing marker.
