@@ -195,3 +195,8 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - CI preview artifact: ID `14411163977`, provider-reported size `264802560` bytes, provider-reported SHA256 `7274b9f9eb38afbb7e01ccc321dad3e65d2ef5d77aaee7278e21c479372706b1`. Artifact bytes were not independently downloaded. This is an **unsigned CI preview**, not an approved production binary.
 - Signing steps were SKIPPED and `publish-release` was SKIPPED as required for PR validation. The frozen `0.4.0` candidate did not qualify for a write-token publisher. Earlier #44267185904 attempts failed at the Chocolatey V2 feed with HTTP 504; this later exact docs-head run supersedes that transient feed failure for this validation.
 - No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## 2026-11-18 UTC11 — PHX-RELEASE protected-ref admission guard
+
+Test-first commit `fbaf89e5b99398b6e43be52385e28de7bb8f51ca` adds a regression requiring `github.ref_protected == true` on all five signer/publisher approval conditions in PR #291. Exact-head Windows run [#44295524044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44295524044) stopped at this mandatory handover freshness gate before the new assertion executed; it is not counted as expected RED. Current main branch protection remains an administrator-owned P1 blocker; no signing or publication occurred. PRODUCTION NO-GO.
