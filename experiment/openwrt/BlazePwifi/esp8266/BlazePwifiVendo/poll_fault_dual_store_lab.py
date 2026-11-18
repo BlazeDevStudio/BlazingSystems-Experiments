@@ -48,7 +48,7 @@ def constants(source: str, names):
     return "\n".join(selected)
 
 def harness(board: str, source: str) -> str:
-    record = extract_block(source, "struct PollFaultRecord")
+    record = extract_block(source, "struct PollFaultRecord") + ";"
     helpers = "\n".join(extract_function(source, name) for name in (
         "pollFaultRecordChecksum",
         "makePollFaultRecord",
@@ -86,7 +86,7 @@ struct Preferences {
 std::vector<uint8_t> Preferences::durable;
 Preferences faultPrefs;
 bool pollFaultBackupReady=true;
-void resetStorage(){ Preferences::durable.clear(); faultPrefs.failPut=false; faultPrefs.failRead=false; }
+void resetStorage(){ Preferences::durable.clear(); faultPrefs.failPut=false; faultPrefs.failRead=false; pollFaultBackupReady=true; }
 void rebootStorage(){ faultPrefs=Preferences(); pollFaultBackupReady=true; }
 void corruptStorage(){ if(!Preferences::durable.empty()) Preferences::durable[0]^=0x01; }
 """
@@ -178,7 +178,10 @@ void resetRuntime(){
   fsMarkerWriteResult=false;
 }
 void assertBootDenied(){
-  resetRuntime();
+  journalRecoveryRequired=false;
+  insertMode=true;
+  activeTarget="target";
+  fsReady=true;
   loadPollPulseFaultLatch();
   assert(journalRecoveryRequired);
   assert(!insertMode);

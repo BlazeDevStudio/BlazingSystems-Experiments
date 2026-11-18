@@ -20,7 +20,7 @@ struct PendingRecord {
   char nonce[17];
   char target[33];
   uint32_t checksum;
-}
+};
 
 struct PollFaultRecord {
   uint32_t magic;
@@ -33,7 +33,6 @@ struct PollFaultRecord {
 static const uint32_t POLL_FAULT_RECORD_MAGIC=0x50484631;
 static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
-;
 
 volatile uint32_t coinEdgeSequence=0;
 

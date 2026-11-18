@@ -31,8 +31,8 @@ struct Config {
   uint8_t insertLedPin;
   uint8_t relayPin;
   uint8_t coinActiveLow;
-}
-static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");;
+};
+static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
 
 Config cfg;
 bool pollFaultBackupReady=false;
@@ -59,7 +59,7 @@ struct PendingRecord {
   char nonce[17];
   char target[33];
   uint32_t checksum;
-}
+};
 
 struct PollFaultRecord {
   uint32_t magic;
@@ -74,7 +74,6 @@ static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
 static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
-;
 
 volatile uint32_t coinEdgeSequence=0;
 

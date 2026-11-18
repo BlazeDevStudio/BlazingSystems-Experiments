@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: \${{ github.sha }}
+          ref: ${{ github.sha }}
       - name: Verify literal pushed SHA
-        run: test "$(git rev-parse HEAD)" = "\${{ github.sha }}"
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
       - name: Compile exact firmware persistence helpers and inject storage failures
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_dual_store_lab.py
       - name: Classify evidence without hardware promotion
