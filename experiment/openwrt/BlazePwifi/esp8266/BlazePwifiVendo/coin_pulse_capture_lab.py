@@ -47,7 +47,7 @@ static constexpr int LOW=0,HIGH=1;
 struct FakeSerial {
   std::string messages;
   void println(const char *message){
-    if(!messages.empty()) messages+="\\n";
+    if(!messages.empty()) messages+="\n";
     messages+=message?message:"";
   }
 };
@@ -279,13 +279,13 @@ def main():
         ("missing-target-binding", "void sampleCoinPulseEdge(bool active){",
          "pendingTarget==activeTarget && ", "", "deny-case-6"),
         ("ignored-save-failure", "void sampleCoinPulseEdge(bool active){",
-         "fsReady=false;\\n        pendingReady=true;", "",
+         "fsReady=false;\n        pendingReady=true;", "",
          "failed durable write did not disable filesystem/intake"),
         ("missing-persistent-fault-latch", "void sampleCoinPulseEdge(bool active){",
          "latchPollPulseFault(pendingPulses);", "",
          "fault latch did not attempt both stores"),
         ("missing-latch-output-inhibit", "void latchPollPulseFault(uint32_t pulseEdges){",
-         "  applyOutputs();\\n  const bool backupPersisted",
+         "  applyOutputs();\n  const bool backupPersisted",
          "  const bool backupPersisted",
          "storage attempt occurred before outputs were logically OFF"),
     )
