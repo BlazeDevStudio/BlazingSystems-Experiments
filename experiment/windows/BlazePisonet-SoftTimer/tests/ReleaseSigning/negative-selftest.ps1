@@ -110,16 +110,17 @@ try {
     }
   }
   Write-Output 'RELEASE-CHECKOUT: all three checkout steps disable persisted Git credentials PASS'
-  # The shared BlazePwifi build workflow executes PR-controlled project scripts.
-  # Do not leave the checkout token in .git/config after the action completes.
-  $buildWorkflowPath=Join-Path $PSScriptRoot '../../../../../.github/workflows/blazepwifi-build.yml'
-  $buildWorkflow=Get-Content -LiteralPath $buildWorkflowPath -Raw
+  # Shared BlazePwifi build jobs also execute PR-controlled project code.
+  # Keep default authority read-only and never persist checkout credentials.
+  if ($buildWorkflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
+    throw 'Shared BlazePwifi build workflow must default to contents: read'
+  }
   $buildCheckoutStepMatches = [regex]::Matches(
     $buildWorkflow,
     '(?ms)^[ ]{6}- uses: actions/checkout@(?<ref>[^\s#]+)[^\r\n]*\r?\n(?<block>.*?)(?=^[ ]{6}- |^[ ]{2}[A-Za-z0-9_-]+:|\z)'
   )
-  if ($buildCheckoutStepMatches.Count -lt 1) {
-    throw 'Shared BlazePwifi build workflow has no visible checkout steps'
+  if ($buildCheckoutStepMatches.Count -ne 20) {
+    throw "Expected 20 shared build checkout steps, found $($buildCheckoutStepMatches.Count)"
   }
   $sharedBuildCheckoutPins = @($requiredActionPins | Where-Object { $_.Action -eq 'actions/checkout' })
   if ($sharedBuildCheckoutPins.Count -ne 1) {
@@ -133,7 +134,18 @@ try {
       throw "Every shared BlazePwifi build checkout must use immutable checkout $($sharedBuildCheckoutPins[0].Sha)"
     }
   }
-  Write-Output "RELEASE-CHECKOUT: all $($buildCheckoutStepMatches.Count) shared build checkouts use immutable Node24 pin and disable persisted credentials PASS"
+  $importJobMatch = [regex]::Match(
+    $buildWorkflow,
+    '(?ms)^  production_import_signed_apk:\r?\n(?<block>.*?)(?=^  [A-Za-z0-9_-]+:|\z)'
+  )
+  if (-not $importJobMatch.Success -or
+      -not $importJobMatch.Groups['block'].Value.Contains('GIT_ASKPASS="$RUNNER_TEMP/git-askpass.sh"') -or
+      -not $importJobMatch.Groups['block'].Value.Contains('GIT_TERMINAL_PROMPT=0 git push origin HEAD:blazepwifi-v0.3.0-production') -or
+      -not $importJobMatch.Groups['block'].Value.Contains('printf ''%s\n'' "$GH_TOKEN"') -or
+      -not $importJobMatch.Groups['block'].Value.Contains('chmod 700 "$RUNNER_TEMP/git-askpass.sh"')) {
+    throw 'Production import must use an ephemeral askpass credential, not persisted checkout credentials'
+  }
+  Write-Output 'RELEASE-CHECKOUT: all 20 shared build checkouts use immutable Node24 pin, no persisted credentials, and least-privilege default PASS'
 
   # The PR build executes project code; it must never carry release-write authority.
   if ($workflow -notmatch '(?m)^permissions:\r?\n  contents: read\r?$') {
