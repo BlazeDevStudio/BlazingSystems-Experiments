@@ -210,3 +210,11 @@ Test-first commit `fbaf89e5b99398b6e43be52385e28de7bb8f51ca` produced expected R
 ## 2026-11-18 UTC11 — protected-ref guard exact-head CI
 
 Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [Windows Actions #44296238509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296238509): handover freshness, protected-ref negative self-test, .NET build, PAY-0717/0718/0719/0720 lab checks, NSIS/native Setup, unsigned-Setup denial, install/uninstall, portable ZIP/SHA256SUMS parity and artifact upload all passed. Signing and the write-token publisher job were skipped. Unsigned CI preview artifact ID `14423482708`, size `264815660` bytes, provider digest `239852edb38beb978bca5c2ce8e0f6970722834e801671c0fdb4619ade65c283`; bytes not independently downloaded. Main remains unprotected and rulesets are empty. No release publication or production action. PRODUCTION NO-GO.
+
+
+## 2026-11-18 UTC14 — PHX-RELEASE historical ledger preservation audit — MERGE HOLD
+
+- Evidence-only audit of draft PR #291 at `37ee86d2f192fcc6bc6ea3b7a38c86c21b3fdab8` against its #242 base `734b89d9e7792247e8376335c3f3685500ab3f89` found a material handover-provenance delta: compare metadata reports this file as +143/-3290. Direct blob readback resolves the file-content pagination ambiguity: base blob `dc0c433cba481b546d92866ce198b913004ab56f` has 3,502 lines; current blob `7ca70292d1fe3d5c79ba199261c564c0fac1b441` has 213 lines.
+- This checkpoint does **not** restore, delete, rewrite, or endorse the omitted historical entries. The discrepancy predates this audit and must be reconciled by PHX-MASTER and independent PHX-QA before any merge decision, with original provenance preserved.
+- Exact current Windows CI [#44296971291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296971291) remains scoped success for handover/build; the write-privileged publisher was skipped. That CI result does not validate ledger-history completeness.
+- PR #291 remains OPEN / DRAFT / UNMERGED. No signing, release creation, tag, publication, hardware flash, payment migration, deployment, or customer action occurred. **PRODUCTION NO-GO.**
