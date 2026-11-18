@@ -1003,3 +1003,7 @@ The current #327 focused runs fail at the new ESP8266 false-return case; the Ful
 
 The separate Blaze Production Continuation retains CORE implementation ownership. PHX-MASTER did not modify CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches, and did not start a competing worker. The current routing manifest remains unchanged, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null.
 
+## UTC23 final docs-head CI readback — Hardware #327
+
+Live #327 head 3046c74d19ee1040996860a66cbdcb850acdbe14; source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c. Docs-head focused quarantine [44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) and relay [44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) PASS. Docs-head Full [44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) FAIL at QA-owned Missing poll signature check; all 13 firmware/platform targets plus Android PASS; downstream simulation/signing/publishing skipped. HARDWARE must refresh the stale PR body/top handover pin c51271938 to live 3046c74d. No physical test.
+

@@ -718,3 +718,12 @@ The live PR head advanced after those source/test runs: docs-head quarantine [#4
 
 These are source-extracted host/fake-I/O simulations only. The same flash chip backs LittleFS and EEPROM/NVS; simultaneous store failure still yields current-boot denial only and is not an independent protected witness. No physical flash, GPIO/relay/acceptor test, power cut, native acceptance or 30-device soak is established.
 
+## 6.35 Hardware #327 docs-head final CI readback — 2026-11-18 UTC23
+
+The live #327 PR head remains 3046c74d19ee1040996860a66cbdcb850acdbe14; exact firmware/source-test head remains 6b52d63f889a9567303f9f2de464c743c1991f0c. The docs-head Actions runs have now completed:
+- [Quarantine/readback #44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021): PASS.
+- [Relay/output #44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181): PASS.
+- [Full build #44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063): FAILURE at QA-owned Controller protocol parity / Missing poll signature check. All 13 firmware/platform targets plus Android passed; simulation, update bundle, candidate, signing and publishing jobs were skipped.
+
+This supersedes the in-progress/queued snapshot in §6.34 for the same docs-head. The EEPROM read-recovery correction remains source/test verified; the only Full validation failure is the inherited positive poll-signature fixture. The PR body/top handover still cite c51271938 and must be refreshed by HARDWARE. No physical hardware or power-cut acceptance is established.
+

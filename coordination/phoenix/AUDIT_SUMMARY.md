@@ -721,3 +721,7 @@ Next: PHX-HARDWARE fixes full-image EEPROM read/recovery; PHX-QA independently r
 
 **Production:** NO-GO. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
 
+## UTC23 final Hardware #327 docs-head CI readback
+
+At the final readback, live PR head 3046c74d19ee1040996860a66cbdcb850acdbe14 remains docs-only after source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c. Focused quarantine [44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) and relay [44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) PASS. Full [44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) FAILS at the inherited QA-owned Missing poll signature check; all 14 build jobs (13 firmware/platform plus Android) PASS and downstream simulation, update bundle, signing and publishing are skipped. The earlier in-progress/queued snapshot is superseded. The PR body/top handover still pin c51271938 and remain stale.
+
