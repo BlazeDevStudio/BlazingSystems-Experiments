@@ -882,3 +882,11 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Both runs completed FAILURE only because `validate` stopped at mandatory handover freshness before this docs refresh. Remaining validation tests did not run; simulations, candidate gate, signing and publishing were skipped. No full validation or release acceptance is claimed.
 - MASTER route manifest remains DRAFT_REVIEW_ONLY; COE target `.github/workflows/pisowifi-ci.yml` was not changed. Historical CHANGE_LEDGER provenance discrepancy remains under MASTER/QA review.
 - Next exact action: inspect the docs-head PR-triggered Actions after this refresh, then record any QA-owned validation result without weakening its gate. Production remains NO-GO.
+
+
+## PHX-RELEASE UTC21 — shared build checkout credential regression
+
+- Base #291 head: `4e05350d9a3d65446770e97ced88200eecc27979`; test-only commit: [`851af2c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/851af2c59759e94581fc444a4b2b8b2a2359da23).
+- The release-owned shared build workflow has 20 checkout steps using mutable `@v4` refs without `persist-credentials: false`. The new negative self-test checks every checkout against the existing verified immutable v7.0.1 pin and credential-persistence requirement.
+- Expected RED is pending exact-head Windows PR CI. Source workflow is intentionally unchanged until the regression is observed.
+- Next: record exact RED, then update the shared workflow and path trigger in one reversible source correction. No production operation is authorized.
