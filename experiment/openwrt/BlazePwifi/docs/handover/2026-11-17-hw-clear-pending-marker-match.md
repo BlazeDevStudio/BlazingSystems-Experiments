@@ -114,3 +114,63 @@ Focused evidence is SIMULATED / CI VERIFIED only. Physical LittleFS corruption, 
 - PHX-QA: replace the obsolete positive poll-signature assertion with the approved default-deny expectation and independently rerun Full validation at the final exact head.
 - PHX-MASTER: keep #317/#318/#283 stack selection under coordination; no cross-branch transplant is implied.
 - PHX-HARDWARE: retain this bounded prefix-integrity guard and await exact target-build outcomes; do not enable coin dispatch or clear financial state without the CORE receipt/disposition contract.
+
+
+## Follow-up: authoritative hardware stack selection (2026-11-18 UTC00)
+
+**Disposition:** PHX-HARDWARE recommendation submitted to PHX-MASTER for ACK. This is a stack-selection proposal, not merge, release, or deployment authority. The update is documentation-only; no firmware or QA-owned test source changed.
+
+### Recommended canonical sequence
+
+`#314 → #315 → #317 → NEW child rebuilt from current #317 HEAD`
+
+- **#314 → #315 → #317** is the recommended journal/quarantine/poll-inhibit lineage. #314 is the verified rotation-evidence parent; #315 adds the poll/quarantine fail-closed consolidation; #317 adds the exact pending-attempt marker match, exact-one pending-candidate rule, pending-record-first/attempt-marker-last clear, quarantine prefix+suffix readback, and the poll quiet-window/sample guard.
+- The next child should be created from current #317 firmware source HEAD **`a166f91d6c790aa81ff98794038d76b39bc6562d`** only after PHX-MASTER ACK. It should carry the minimal ISR edge-sequence snapshot/fault-latch delta and its exact-source tests from #318. Suggested branch name: `phoenix/hardware-poll-edge-latch-on-317-20261118`.
+- **Do not merge or cherry-pick the current #318 branch wholesale.** It is diverged from current #317 (51 commits ahead / 68 behind; compare status `diverged`; PR reports `mergeable=false`). Its base is the older #317 ancestor `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3`, not the current #317 head.
+- **#283 remains a parallel audit-only candidate**, not part of the canonical chain. It is main-based, lacks the pending-attempt marker and current poll-window/edge-latch sequence, and contains a QA-owned `tests/controllers.sh` modification that PHX-QA must review. Selectively port unique hardware fixes only after source-level reconciliation and QA review; never transplant the branch wholesale.
+- **#239 → #254 remains a separate Phase-A / ControllerAuthV1Lab track.** #254 is a non-actuating configuration-authentication primitive, not a production signer, receipt authority, or permission to enable coin intake. #316 remains a separate poll-response fail-closed draft, not in the selected chain.
+
+### Exact refs and source/test identities
+
+| PR | Exact base | Current head | Source/test identity |
+|---|---|---|---|
+| #314 | `phoenix/hardware-clear-preflight-20261115` @ `6b8583b7b0b39314bce39666d1cdd0b8f84afe48` | `556adc20ef0cfd355089aff3b979c0169af79bdd` | Full run #43782088731 and quarantine-focused #43782088748 both PASS at exact head |
+| #315 | PR #314 @ `556adc20ef0cfd355089aff3b979c0169af79bdd` | `84fe6b790139d147f330f13a40b3ae3e89a7042d` | Focused quarantine run #44054778537 / job 133941208330 PASS; Full #44054778555 / validation job 133941354361 FAIL at Controller protocol parity |
+| #317 | PR #315 @ `84fe6b790139d147f330f13a40b3ae3e89a7042d` | `a166f91d6c790aa81ff98794038d76b39bc6562d` | Firmware source commit #9aca2ced; source/test follow-ups #4259398 and #e63df63. ESP32 blob `067c79405a6eb81a6c0b292b858191d3a131ed4f`; ESP8266 blob `2f6dce596368d74f51aa6ab6a66b6dde875511c1`; quarantine lab `789310363a1e5267c3cb4503b0273a6e5d633074`; poll-drain lab `c5da3bc6a4e8ad90b0757a656b97e7cb8e4e1d16`; pulse-capture lab `c0d07da8386d73b87a5fddcd68e0c838c0f50a33` |
+| #318 | Older #317 base `3ed38225d02c4d8dde9df5b5f483bfbeb7deccc3` | `696e28ed4cd53b9189b78095b38aee973d774683` | ESP32 blob `7a24b1b643aa90c0056b5f7634d3c67e3ecb5a34`; ESP8266 blob `ebd1572cf82cd1c6ef2c5afbb7b4075533697440`; actual-loop lab `7068f5ec232440f50edc266dabecfb5be2c05c9e`; timeline guard `abb3cf918f9a07c6be870f9b2d819f206aa9752a`; workflow `6f37d08e1b1915b9147b8f0ec5f879bf6e245101` |
+| #283 | main @ `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | `e8c6619ba97aa7ba1152e4c78b786842f7fa9180` | ESP32 blob `d86d94568c0de9a5be6648e8d83c219a9cc58c62`; ESP8266 blob `710572a1aae661cfa7ba3936f2170f921200150e`; append-readback lab `213d965875ef8cab6dd4ef4f0b8b64536a8a1388`; workflow `ba45c235be30c3992d273d6880cd43c2d9541d7c`; QA-owned controllers test blob `0f73e9024b98cfe5c6cc131f70a58cf50375d0fe` |
+| #239 | `phoenix/light-verify-target-bound-relay-20261025` @ `7c156cb0e0dd4a2311de7e79c3ba7044037c0767` | `d83b715b116185107737fef721c2eece8feebf39` | Historical exact-head build #40815737447 and synthetic journal gate #40815737375 PASS |
+| #254 | PR #239 @ `d83b715b116185107737fef721c2eece8feebf39` | `4054fbccd9b2a4ad0e5fe7cfca5a27aa629eed84` | Focused header lab #44019837617 / job 133826430041 PASS; Full #44019837616 / validation job 133826601985 PASS; non-actuating only |
+
+### Exact current-head CI interpretation
+
+- **#314:** Full target matrix and validation passed at `556adc20...` (run #43782088731); focused quarantine job #43782088748 passed.
+- **#315:** Current head `84fe6b7...` has focused quarantine PASS, but Full run #44054778555 fails at QA-owned Controller protocol parity. All 14 target/platform jobs in that run passed; this does not make the overall workflow green.
+- **#317:** Current head `a166f91...` has quarantine byte-readback run #44193392314 / job 134428369654 PASS and relay-output run #44193392313 / job 134428370250 PASS. Full run #44193392383 / validation job 134428525614 FAILS at Controller protocol parity; all 14 target/platform jobs passed. Poll-drain and post-poll pulse-capture labs exist in the branch, but no exact-current-head run for those two labs was observed in the latest action window.
+- **#318:** Current head `696e28e...` poll-window lab #44180343686 / job 134382690530 PASS. Full run #44180343759 / validation job 134382856670 FAILS at Controller protocol parity; all 14 target/platform jobs passed. The focused lab extracts the real loop and simulates a pulse during the synchronous poll; it is not electrical proof.
+- **#283:** Current head `e8c6619...` append-readback lab #44203456142 / job 134463233177 PASS. Full run #44203456152 has validation job 134463365181 PASS, 14 target builds PASS, and candidate gate PASS; production signing and publishing are skipped. This green result is not independent QA acceptance: the PR changes QA-owned `tests/controllers.sh`, and `littlefs_mount_failclosed_lab.py` plus `quarantine_clear_deny_lab.py` are not invoked by the current append-readback workflow.
+
+### Revalidated #283 audit leads
+
+- The previously reported unconditional `clearPending()` after a failed quarantine append is **not present** at current #283 HEAD: `quarantinePending()` returns immediately when `appendQuarantineRecord()` fails, before calling `clearPending()`.
+- A distinct weakness remains in #283: `clearPending()` is still a void helper that clears RAM before checking/removing `/pending.dat`, `/pending.new`, and `/pending.bak`, and it does not verify removal. `quarantinePending()` has no active callsite in either sketch at this head, so this is a dormant helper risk, not an observed loop call.
+- `response_sig` appears only in comments in the two #283 sketches; no active signature expectation is used to admit a poll response. Register/poll response data remains ignored and the branch stays default-deny.
+- #317/#318 retain default-deny poll admission. The current main CGI producer does not publish the proposed `response_sig`; do not satisfy the QA parity failure by enabling unsigned/legacy positive poll admission. PHX-CORE must publish the canonical producer/consumer contract and PHX-QA must approve exact vectors first.
+
+### Role boundary and blockers
+
+- PHX-HARDWARE owns ESP32/ESP8266 firmware and hardware-specific source labs. PHX-QA owns canonical `tests/` and controller-parity assertions. PHX-CORE owns receipt/financial/poll producer contracts. PHX-MASTER owns the final stack selection and integration order.
+- The current private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` is not available through the connected file-library surface. Only historical registry v5/v6/v7 and 2026-10-26 manifest/ledger snapshots were found. No Drive artifact upload, new folder, or new handover file was created; no private Drive IDs were copied into GitHub.
+- The current root AGENTS.md and cloud policy keep Phoenix NO-GO. No positive coin admission, finance, relay, replay, witness, downgrade, signer, or production migration authority is granted.
+- Physical acceptance remains NOT TESTED: 150 controlled power cuts, 30-device/24-hour soak, pulse-width/edge capture on real acceptors, relay/contact waveform, electrical pulse/recovery, and actual LittleFS flash durability.
+- Durable accounting/replay, protected anti-rollback signer/witness, v1→v2 migration, target hardware acceptance, independent QA and release signoff remain BLOCKED/PENDING.
+
+### Exact next actions
+
+1. **PHX-MASTER:** ACK or revise the proposed `#314 → #315 → #317 → new ISR child` sequence. Do not treat the current #318 branch as mergeable.
+2. **PHX-QA:** review #283's QA-owned `tests/controllers.sh` diff; wire the two uninvoked #283 labs if those source changes remain candidates; resolve the canonical Controller protocol parity assertion without weakening default-deny.
+3. **PHX-CORE:** publish the canonical poll producer/consumer and event-bound receipt/disposition contract. Until then, positive poll admission and coin POST remain disabled.
+4. **PHX-HARDWARE:** only after Master ACK, create a new child from current #317 firmware source HEAD and port the minimal #318 ISR edge-snapshot/fault-latch change plus its source-extracted lab. Re-run the exact full matrix and focused labs on that new head.
+5. **Drive owner/authorized connector:** provide current private registry v11 and current manifest/ledger readback before any new artifact/folder or Drive mirror operation.
+
+**Classification:** focused tests are SIMULATED / CI VERIFIED as listed; physical hardware acceptance is NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
