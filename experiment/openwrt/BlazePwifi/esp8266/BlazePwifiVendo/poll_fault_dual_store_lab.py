@@ -70,7 +70,8 @@ def harness(board: str, source: str) -> str:
 struct Preferences {
   static std::vector<uint8_t> durable;
   bool failPut=false, failRead=false;
-  bool isKey(const char*) const { return !durable.empty(); }
+  // Arduino-ESP32 isKey() collapses failed getType() lookups to false.
+  bool isKey(const char*) const { return !failRead && !durable.empty(); }
   size_t getBytesLength(const char*) const { return durable.size(); }
   size_t putBytes(const char*, const void* src, size_t n) {
     if(failPut) return 0;
@@ -213,6 +214,9 @@ int main(){
   rebootStorage();
   assertBootDenied();
 
+  // An NVS lookup error must not make an existing sticky marker appear absent.
+  NVS_READ_ERROR_SCENARIO
+
   // A malformed/partial non-empty backup is a deny marker, never a clean state.
   corruptStorage();
   assert(pollFaultBackupPresentOrCorrupt());
@@ -262,6 +266,16 @@ int main(){
   std::cout << "POLL_FAULT_DUAL_STORE_LAB=PASS board=BOARD_NAME\n";
 }
 """
+    nvs_read_error = r"""
+  resetRuntime();
+  faultPrefs.failRead=true;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 21;
+  faultPrefs.failRead=false;
+"""
+    if board != "ESP32":
+        nvs_read_error = ""
+    main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
     main = main.replace("READ_FAIL_SETUP", fail_read).replace("READ_FAIL_CLEAR", clear_fail)
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
     main = main.replace("NO_MARKER_RESET", no_marker)
