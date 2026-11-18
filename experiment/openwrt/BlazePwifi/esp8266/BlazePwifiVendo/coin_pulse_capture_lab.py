@@ -61,6 +61,20 @@ void writeLogical(int pin,bool on,bool){
 }
 String freshNonce(){++nonceCalls;return "nonce-"+std::to_string(nonceCalls);}
 bool savePending(){++saveCalls;return saveResult;}
+static unsigned faultLatchCalls=0;
+static uint32_t faultLatchEdges=0;
+static bool faultLatchSawFsReady=false;
+static bool faultLatchSawRelayOn=false,faultLatchSawLedOn=false;
+void latchPollPulseFault(uint32_t edges){
+  ++faultLatchCalls;
+  faultLatchEdges=edges;
+  faultLatchSawFsReady=fsReady;
+  faultLatchSawRelayOn=relayOn;
+  faultLatchSawLedOn=ledOn;
+  journalRecoveryRequired=true;
+  insertMode=false;
+  activeTarget.clear();
+}
 @@FUNCTIONS@@
 
 static void resetState(uint32_t now=0,bool activeLow=true){
@@ -72,6 +86,8 @@ static void resetState(uint32_t now=0,bool activeLow=true){
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;
   pendingPulses=0;pendingNonce.clear();pendingTarget.clear();activeTarget="target-01";
   relayOn=true;ledOn=true;saveCalls=0;nonceCalls=0;saveResult=true;
+  faultLatchCalls=0;faultLatchEdges=0;faultLatchSawFsReady=false;
+  faultLatchSawRelayOn=false;faultLatchSawLedOn=false;
 }
 static bool fail(const char*name,const char*detail){
   std::cerr<<"FAIL "<<name<<" "<<detail<<"\n";
@@ -119,12 +135,16 @@ static bool runSaveFailure(){
   sampleCoinPulseEdge(true);
   if(pendingPulses!=1 || saveCalls!=1 || fsReady || !pendingReady)
     return fail("save-failure","failed durable write did not disable filesystem/intake");
+  if(faultLatchCalls!=1 || faultLatchEdges!=1 || !faultLatchSawFsReady ||
+     !faultLatchSawRelayOn || !faultLatchSawLedOn ||
+     !journalRecoveryRequired || insertMode || !activeTarget.empty())
+    return fail("save-failure","failed journal write did not latch persistent coin-ingress fault before storage was marked unavailable");
   if(relayOn || ledOn) return fail("save-failure","outputs remained enabled immediately after failed save");
   sampleCoinPulseEdge(false);
   fakeNow=200U;
   sampleCoinPulseEdge(true);
-  if(saveCalls!=1 || pendingPulses!=1)
-    return fail("save-failure","another pulse was accepted after failed persistence");
+  if(saveCalls!=1 || pendingPulses!=1 || faultLatchCalls!=1)
+    return fail("save-failure","another pulse or fault-latch retry occurred after failed persistence");
   return true;
 }
 static bool runDeniedGates(){
@@ -226,7 +246,9 @@ def main():
         ("missing-target-binding", "pendingTarget==activeTarget && ", "",
          "deny-case-6"),
         ("ignored-save-failure", "fsReady=false;\n        pendingReady=true;", "",
-         "save-failure"),
+         "failed durable write did not disable filesystem/intake"),
+        ("missing-persistent-fault-latch", "latchPollPulseFault(pendingPulses);", "",
+         "failed journal write did not latch persistent coin-ingress fault"),
         ("missing-immediate-output-inhibit", "applyOutputs();\n        Serial.println",
          "Serial.println", "outputs remained enabled immediately"),
     )
