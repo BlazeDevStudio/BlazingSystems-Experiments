@@ -448,3 +448,13 @@ The inspected peer-auth source stores a raw 32-byte shared key in a LittleFS con
 The #43 host end-to-end test models two journal slots in RAM and copies encoded bytes to simulate a rename boundary. It does not certify actual LittleFS metadata atomicity, flash brownouts, watchdog behavior or power-cut recovery. Its 650 ms burst grouping and 60-second timer checkpoint are prototype assumptions; the latter can restore up to approximately 60 seconds of consumed time after a sudden outage. Physical coin acceptance, CS inhibit/hold-up, relay behavior and real flash recovery remain NOT TESTED.
 
 #41 remains shadow-only and must not be represented as live paid-time acceptance. #43 changes live timer/relay behavior but remains DRAFT / NO-GO. No COE INTERCON source route exists in OWNERSHIP_ROUTES.json; no PHX-PISONET or PHX-HARDWARE ownership is inferred for this subtree.
+
+---
+
+## 6.22 Current poll admission is intentionally hard-deny; legacy positive-signature fixture is incompatible — 2026-11-18 UTC07
+
+At current PHX-HARDWARE PR #323 source/test SHA `a3aa967087680887e925791f83a8fbc48a1e62b9` (current PR/docs head `0d6f0c7f4f9d2d07bc43d24e5db63d8bddb11f43`), both ESP sketches keep `acceptPollResponse()` deny-only: ignore the response, force `insertMode=false`, clear `activeTarget`, and return false. Both `coinPostDispositionVerified()` functions also return false. This is the current safe contract, not an incomplete positive verifier.
+
+The current Experiments `cgi-bin/vendo` poll branch (blob `2e3a1430d08cc6606429a042df3b5848f53c7267`) emits no `response_sig`. The inherited `tests/v05_firmware_hardening_test.sh` (blob `41211b2c110ab409f6d9d1812ef12fda73b13211`) still requires `response_sig` and literal `|poll|` in both sketches, so the Full workflow fails at `Missing poll signature check`. That fixture does not match the current deny-only contract or current producer. It must be replaced by negative tests proving unsigned/unknown responses cannot enable insertion, retain a target, clear a pending coin or authorize disposition. Do not add a synthetic signature string or enable unauthenticated poll admission to satisfy the old assertion.
+
+A positive poll path remains blocked until PHX-CORE publishes a canonical producer/consumer schema and golden vectors, PHX-QA verifies both sides at pinned SHAs, and the independent signer/anti-rollback gates are satisfied. See [HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md](HARDWARE323_POLL_DENY_CONTRACT_AND_EXACT_HEAD_RECONCILIATION_20261118_UTC07.md). **PRODUCTION NO-GO.**

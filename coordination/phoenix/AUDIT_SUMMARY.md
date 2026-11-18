@@ -430,3 +430,15 @@ COE INTERCON has three incompatible Stage-3 journal formats (64/76/92 bytes) and
 COE Release #35 has 84-test/board/profile and case CI success, but mandatory sandbox acceptance fails closed at bubblewrap UID-map denial. COE #26 remains five queued workflows / zero jobs. COE Hardware license/NOTICE scope and INTERCON owner assignment remain unresolved.
 
 Canonical private Drive registry v11/newer corrections remain inaccessible; the 2026-11-09 accessible checkpoint is not a substitute. Master Python suite NOT RUN because GitHub DNS resolution failed in the execution container. Bounded source/provenance assertions: 12/12 PASS; these are not the full suite or independent QA.
+
+---
+
+## 2026-11-18 UTC07 — poll-deny fixture and exact-head refresh
+
+HARDWARE #323 advanced to current PR head `0d6f0c7f4f9d2d07bc43d24e5db63d8bddb11f43`, with source/test parent `a3aa967087680887e925791f83a8fbc48a1e62b9` and base #322 `50d93e0...`. Its ESP32 NVS presence check now treats only `ESP_ERR_NVS_NOT_FOUND` as clean; NVS read/type/open errors retain the deny latch. Same-chip NVS/EEPROM fallback is not an independent witness; simultaneous store failure remains current-boot-only.
+
+Current exact-head focused CI #44256737982 and #44256738001 passed. Full #44256738002 failed at inherited QA-owned `Missing poll signature check`; all 14 target/platform build jobs passed, downstream jobs skipped. The legacy test still requires `response_sig` and `|poll|`, while current firmware intentionally returns false from `acceptPollResponse()` and the current CGI poll producer emits no `response_sig`. QA must replace the positive-presence assertion with negative deny-behavior tests; firmware must not be weakened to satisfy grep.
+
+COE #35 current docs head `68657a5...` / source-test `5fe815f9...` has shared/board and case checks PASS, but mandatory sandbox #44259106331 fails closed at unprivileged bubblewrap UID-map setup after 9/9 host-preflight tests. Its PR description remains stale. COE #26 remains five queued workflows / zero jobs. Stage-3/Stage-4 INTERCON candidates remain unselected.
+
+No migration, merge, release, signing, flashing, real coin/payment operation or physical test occurred. The canonical Drive registry v11/newer corrections and linked AGENTS cloud policy/storage handover remain inaccessible through current connectors. Older registry snapshots were not substituted. **PRODUCTION NO-GO.**

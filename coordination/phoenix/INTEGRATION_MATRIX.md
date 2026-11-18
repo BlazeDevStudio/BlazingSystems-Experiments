@@ -872,3 +872,28 @@ No candidate is integrated into COE #26. No file move, copy, overwrite, merge or
 Current role refs: CORE #252 c82705f2 (scoped CI success); RENTAL #289 68928774 (two scoped successes); PISONET #255 d01fd164 (scoped success); QA #290 5c29d159 (scoped success), QA #292 75a3f66d (no current-head run); RELEASE #291 a74b8b94 (scoped success). These isolated results do not validate the combined COE #26 tree.
 
 The #43 Intercon paid-time path has no demonstrated BlazePwifi CORE ledger adapter, no durable unresolved-pulse field, no protected key store and no physical acceptance. #41 is shadow-only. Do not promote either candidate or combine Stage-3 formats without owner selection and independent QA.
+
+---
+
+## 2026-11-18 UTC07 — exact-head poll-deny, release sandbox and integration matrix
+
+| Candidate | Exact current ref | Evidence | Readiness |
+|---|---|---|---|
+| PHX-MASTER #288 | `d60e751f...` before this update; base `f4e8a891...` | 72 paths all in `coordination/phoenix/`; no PR-triggered Master run | DRAFT / coordination only |
+| HARDWARE #323 | PR head `0d6f0c7...`; source/test `a3aa967...`; base #322 `50d93e0d...` | Focused #44256737982/#44256738001 SUCCESS; Full #44256738002 FAILS inherited `Missing poll signature check`; 14/14 target jobs SUCCESS | LAB ONLY / QA fixture blocked |
+| HARDWARE #318 | `696e28ed...` | DIVERGED from #317 51 ahead / 71 behind; no current-head run | SEPARATE / NOT ACCEPTED |
+| COE #26 | `b382d233...` | Five workflows QUEUED, zero jobs | NO COMBINED ACCEPTANCE |
+| COE Release #35 | docs `68657a5...`; source/test `5fe815f9...` | Shared/board #44259106391 and case #44259106288 SUCCESS; mandatory sandbox #44259106331 fails UID-map probe after 9/9 preflight tests | SANDBOX HOST-BLOCKED |
+| COE Stage-3 #39/#40/#42 | `33e87fbd...` / `85f38c6e...` / `a35672fb...` | Host/compile CI passed; 64/76/92-byte records are incompatible | UNSELECTED |
+| COE Stage-4 #41 | `021e2474...`, child of #39 | Shadow-only host simulation + compile CI passed | DRAFT / NO-GO |
+| COE Stage-4 #43 | `8f5eec79...`, child of #42 | Live timer/relay host model + compile CI passed; no CORE adapter, durable unresolved pulse or protected key store demonstrated | DRAFT / NO-GO |
+
+### Poll authorization contract and Full CI failure
+
+At #323's current source/test SHA, both `acceptPollResponse()` functions remain hard-deny and both `coinPostDispositionVerified()` functions return false. The current source poll producer emits no `response_sig`. The inherited QA fixture requires literal `response_sig` and `|poll|` strings, causing Full validation to fail even though all 14 target builds pass. The fix is QA-owned: test deny-only behavior, not restore positive poll admission.
+
+The current #323 focused logs report poll-response fail-closed 11/11, strict JSON 13/13, coin POST ACK root status 4/4 and disposition default-deny 4/4. Logs explicitly mark physical coin acceptor, physical power cut and production financial authorization as 0. These are source-extracted CI simulations, not hardware acceptance.
+
+### Migration hold
+
+COE #26 remains at five queued workflows / zero jobs. No file was copied or moved. `OWNERSHIP_ROUTES.json` remains blob `e4db3243...`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Exact source/destination blobs, licensing, import completeness, test identities and exact-head combined CI remain mandatory before staging.

@@ -400,3 +400,15 @@ COE PRs #39/#40/#42 introduce three incompatible Stage-3 journal formats (64/76/
 OWNERSHIP_ROUTES.json has no route for COE Hardware/BlazePisonetUniversal/INTERCON. Existing PHX-HARDWARE routes cover only BlazePwifi ESP32/ESP8266; PHX-PISONET covers Windows SoftTimer. The COE integration owner must nominate the source owner and define a per-file destination/license/test map before any copy or merge. COE root LICENSE and Hardware/LICENSE were not found; do not assume a sibling Pisowifi license covers this subtree.
 
 No file was copied, moved, renamed, or overwritten. Keep #41 and #43 as separate drafts; compare exact source blobs, journal format, test identities, licensing, owner approval and exact-head CI before any destination staging.
+
+---
+
+## 2026-11-18 UTC07 — no migration; current exact-head source boundary
+
+HARDWARE #323 current PR head `0d6f0c7f4f9d2d07bc43d24e5db63d8bddb11f43` (source/test `a3aa967087680887e925791f83a8fbc48a1e62b9`) remains PHX-HARDWARE-owned. The inherited QA fixture failure does not authorize Master to edit `tests/v05_firmware_hardening_test.sh` or either sketch. QA owns the test correction; HARDWARE owns source/handover freshness; CORE owns the poll schema and golden vectors.
+
+COE Release #35 current docs head `68657a5fcc21df3883c8f3296c3925d5876ac05b` (source/test `5fe815f9e985bf2280b05fb189598826c68a7be6`) remains RELEASE-owned. Its mandatory sandbox still fails closed at UID-map setup. The PR description is stale and must be refreshed by PHX-RELEASE, not Master.
+
+COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows and zero jobs. The new INTERCON path has no route in the ownership manifest. Stage-3 #39/#40/#42 formats remain incompatible; #41/#43 remain separate Stage-4 candidates. No source route is inferred and no destination copy/move is authorized.
+
+`OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, destination PR #26, PHX-MASTER target null. No file was copied, moved, overwritten, renamed, rebased or deleted. Preserve exact source blobs, license/NOTICE applicability, complete import inventory, test identity and exact-head CI as preconditions for any future owner-authorized staging.

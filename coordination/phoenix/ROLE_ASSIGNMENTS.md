@@ -697,3 +697,23 @@ COE Release #35 @ d73986d2 (source/test aaecb633) has shared/board and case CI P
 ### COE INTERCON ownership gap
 
 The COE Hardware/BlazePisonetUniversal INTERCON branch is not represented in OWNERSHIP_ROUTES.json. Current PHX-PISONET ownership is the Windows SoftTimer subtree; current PHX-HARDWARE ownership is the BlazePwifi ESP32/ESP8266 subtree. Do not infer either role owns the new COE INTERCON source. The COE integration owner must nominate an accountable owner before review assignments, migration or merge planning.
+
+---
+
+## 4. Live role and ownership refresh — 2026-11-18 UTC07
+
+| Role | Current exact owner PR/head | Exact-head evidence / status | Required next action |
+|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination@d60e751f...` before this update | OPEN/DRAFT; 72 paths, all under `coordination/phoenix/`; no Master PR-triggered run | Maintain coordination and architecture only |
+| PHX-CORE | #252 `c82705f2...` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped SUCCESS | Separate active CORE continuation retains implementation ownership |
+| PHX-RENTAL | #289 `68928774...` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) / [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) scoped SUCCESS | Continue Rental-owned scope only |
+| PHX-PISONET | #255 `d01fd164...` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) scoped SUCCESS; native COM acceptance unknown | Continue Windows SoftTimer-owned scope only |
+| PHX-HARDWARE | #317 `fce915c1...`; #320 `b2b41a3d...`; #322 `50d93e0d...`; child #323 `0d6f0c7...` (source/test `a3aa967...`) | #323 focused [44256737982](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256737982) / [44256738001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256738001) SUCCESS; Full [44256738002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44256738002) FAILURE at QA fixture; 14/14 target builds pass | Update stale PR body; preserve poll deny; no physical claim |
+| PHX-HARDWARE alternate #318 | `696e28ed...` | DIVERGED from #317 51 ahead / 71 behind; no current-head CI | Keep separate; no silent composition |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) scoped SUCCESS; #292 no current-head run | Replace legacy positive poll-signature assertion with deny-only behavior tests |
+| PHX-RELEASE | #291 `a74b8b94...`; COE #35 `68657a5...` (source/test `5fe815f9...`) | #291 [44199987756](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199987756) scoped SUCCESS; COE #35 shared [44259106391](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44259106391) and case [44259106288](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44259106288) SUCCESS; sandbox [44259106331](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44259106331) FAILED CLOSED at UID-map setup | Refresh stale #35 PR description; obtain authorized namespace-capable runner |
+| COE integration owner | #26 `b382d233...` | Five workflows QUEUED / zero jobs | Reconcile exact source/test/license/CI before any staging |
+
+The live PR #323 description still reports `f98bc39c...` / `67381712...`, not its current `0d6f0c7...` / `a3aa967...`. COE #35's description still reports `d73986d2...` / `aaecb633...`, not its current `68657a5...` / `5fe815f9...`. These are worker-owned descriptions; PHX-MASTER records the freshness gap but does not edit them.
+
+COE INTERCON #39/#40/#42 remain incompatible unselected Stage-3 candidates; #41 remains shadow-only on #39 and #43 remains live timer/relay on #42. The COE INTERCON owner gap is unchanged. No subsystem ownership or CORE continuation was taken over.
