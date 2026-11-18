@@ -75,7 +75,6 @@ static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
 static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
-static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
 
@@ -497,7 +496,8 @@ bool configStringsTerminated(const ConfigV1 &c){
 }
 
 void loadCfg(){
-  pollFaultBackupReady=EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
   if(!pollFaultBackupReady){
     defaults();
     Serial.println("CRITICAL: EEPROM fault-backup region unavailable; coin admission remains denied.");
