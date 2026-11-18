@@ -17,7 +17,7 @@ assert "const uint32_t pollStartedAt=fakeNow;" in scenario, "fixture must captur
 assert "if(pollStartedAt!=250) return 26;" in scenario, "fixture must prove the quiet window ended at 250 ms"
 assert "pulseStart=300; pulseEnd=380;" in scenario, "HTTP-time pulse must begin after 250 ms quiet window"
 assert "setFakeNow(pollStartedAt+70);" in scenario, "HTTP-time pulse must be sampled 70 ms into the poll"
-assert "fakeNow=pollStartedAt+3500;" in scenario, "HTTP timeout must model the complete 3500 ms block"
+assert "setFakeNow(pollStartedAt+3500);" in scenario, "HTTP timeout must model the complete 3500 ms block"
 assert "if(fakeNow-pollStartedAt!=3500) return 27;" in scenario, "fixture must verify the exact timeout duration"
 assert "bool timeWentBackwards=false;" in lab, "fixture must track clock rewinds"
 assert "void setFakeNow(uint32_t value)" in lab, "fixture must update time through a monotonicity-checking helper"
