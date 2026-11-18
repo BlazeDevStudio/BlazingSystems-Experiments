@@ -114,14 +114,32 @@ def main() -> None:
 
     structs = "\n".join(extract_struct(source, name)
                        for name in ("ConfigV1", "ConfigV2", "Config"))
-    functions = "\n".join(
-        extract_functions(source, name)[0]
-        for name in ("fixedStringTerminated", "configChecksum",
-                     "configPolarityFieldsValid", "makeSetupPassword",
-                     "defaults", "saveCfg", "latchConfigPersistenceFailure",
-                     "loadCfg", "writeLogical", "configureRuntimePins",
-                     "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost")
+    function_names = (
+        "fixedStringTerminated", "configChecksum",
+        "configPolarityFieldsValid", "makeSetupPassword",
+        "defaults", "saveCfg", "latchConfigPersistenceFailure",
+        "loadCfg", "writeLogical", "configureRuntimePins",
+        "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost"
     )
+    functions_list = []
+    for name in function_names:
+        extracted = extract_functions(source, name)
+        require(len(extracted) == 1, "expected one extracted function: " + name)
+        function = extracted[0]
+        if name == "saveCfg":
+            anchor = "if(!EEPROM.commit()) return false;"
+            require(anchor in function, "saveCfg commit-failure trace anchor is missing")
+            function = function.replace(
+                anchor,
+                "if(!EEPROM.commit()){ ++saveCfgCommitFailureReturns; return false; }",
+                1,
+            )
+        elif name == "latchConfigPersistenceFailure":
+            anchor = "void latchConfigPersistenceFailure(const char *reason){"
+            require(anchor in function, "failure-latch trace anchor is missing")
+            function = function.replace(anchor, anchor + " ++configFailureLatchCalls;", 1)
+        functions_list.append(function)
+    functions = "\n".join(functions_list)
     string_checks = "\n".join(extract_functions(source, "configStringsTerminated"))
     require(len(extract_functions(source, "configStringsTerminated")) == 3,
             "V1/V2/V3 bounded-string validators are required")
@@ -167,6 +185,7 @@ def main() -> None:
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -202,17 +221,22 @@ struct FakeEEPROM {
   size_t size=0;
   bool failCommit=false;
   bool failRead=false;
+  int beginCalls=0, getCalls=0, putCalls=0, commitCalls=0, endCalls=0;
+  bool failCommitObserved=false;
   void begin(size_t n){
+    ++beginCalls;
     size=n;
     if(flash.size()<n) flash.resize(n,0xFF);
     buffer.assign(flash.begin(),flash.begin()+n);
   }
   bool commit(){
-    if(failCommit) return false;
+    ++commitCalls;
+    if(failCommit){ failCommitObserved=true; return false; }
     flash=buffer;
     return true;
   }
   bool end(){
+    ++endCalls;
     const bool ok=commit();
     size=0;
     buffer.clear();
@@ -220,6 +244,7 @@ struct FakeEEPROM {
   }
   size_t length() const { return size; }
   template<class T> void get(size_t offset,T &value){
+    ++getCalls;
     if(failRead || offset+sizeof(T)>buffer.size()){
       std::memset(&value,0xA5,sizeof(T));
       return;
@@ -227,10 +252,13 @@ struct FakeEEPROM {
     std::memcpy(&value,buffer.data()+offset,sizeof(T));
   }
   template<class T> void put(size_t offset,const T &value){
+    ++putCalls;
     if(offset+sizeof(T)>buffer.size()) return;
     std::memcpy(buffer.data()+offset,&value,sizeof(T));
   }
 } EEPROM;
+int saveCfgCommitFailureReturns=0;
+int configFailureLatchCalls=0;
 
 Config cfg{};
 bool pollFaultBackupReady=false;
@@ -247,6 +275,9 @@ bool pollIntakeSuspended=false;
 uint8_t pendingPulses=0;
 int runCoinPin=4,runRelayPin=5,runLedPin=14;
 String activeTarget;
+void traceRequire(bool condition,const char *message){
+  if(!condition){ std::cerr << "TRACE_FAIL: " << message << std::endl; std::abort(); }
+}
 
 uint32_t configChecksum(const Config &c);
 bool fixedStringTerminated(const char *value,size_t capacity);
@@ -290,6 +321,8 @@ int digitalRead(int){ return HIGH; }
 
 void resetState(){
   EEPROM=FakeEEPROM();
+  saveCfgCommitFailureReturns=0;
+  configFailureLatchCalls=0;
   cfg=Config{};
   pollFaultBackupReady=false;
   outputPolarityKnown=false;
@@ -415,25 +448,42 @@ int main(){
   assertUnknownPolarity();
   assert(cfg.magic==MAGIC && cfg.outputPolarityConfigured==0);
 
+  // Prove the ordinary failed-commit path reaches commit(), returns false,
+  // propagates through saveCfg(), and invokes the production fail-closed latch.
+  resetState();
+  EEPROM.failCommit=true;
+  loadCfg();
+  assertUnknownPolarity();
+  traceRequire(EEPROM.commitCalls==1, "injected commit failure did not reach EEPROM.commit exactly once");
+  traceRequire(EEPROM.failCommitObserved, "fake EEPROM did not observe the injected commit failure");
+  traceRequire(saveCfgCommitFailureReturns==1, "saveCfg did not propagate the failed commit");
+  traceRequire(configFailureLatchCalls==1, "production config failure latch was not invoked after commit failure");
+  traceRequire(journalRecoveryRequired, "commit failure must retain journal recovery deny");
+  std::cout << "ESP8266_COMMIT_FAILURE_TRACE=PASS" << std::endl;
+
+  // Unknown/future schemas and non-erased corrupt records must never be
+  // overwritten by older firmware defaults.
   resetState();
   seedUnknownFutureVersion();
   const auto futureBytesBefore=EEPROM.flash;
   loadCfg();
   assertUnknownPolarity();
-  assert(journalRecoveryRequired);
-  assert(EEPROM.flash==futureBytesBefore);
+  traceRequire(EEPROM.commitCalls==0, "unrecognized EEPROM schema must not call commit");
+  traceRequire(EEPROM.putCalls==0, "unrecognized EEPROM schema must not write defaults");
+  traceRequire(configFailureLatchCalls==1, "unrecognized EEPROM schema must invoke failure latch");
+  traceRequire(journalRecoveryRequired, "unrecognized EEPROM schema must latch recovery");
+  traceRequire(EEPROM.flash==futureBytesBefore, "unrecognized EEPROM schema bytes must remain unchanged");
+  std::cout << "UNKNOWN_EEPROM_SCHEMA_PRESERVED=PASS" << std::endl;
 
-  resetState();
-  EEPROM.failCommit=true;
-  loadCfg();
-  assertUnknownPolarity();
-  assert(journalRecoveryRequired);
-
+  // An unreadable EEPROM image is not equivalent to an erased/blank config.
   resetState();
   EEPROM.failRead=true;
   loadCfg();
   assertUnknownPolarity();
-  assert(journalRecoveryRequired);
+  traceRequire(EEPROM.commitCalls==0, "EEPROM read failure must not trigger default rewrite");
+  traceRequire(EEPROM.putCalls==0, "EEPROM read failure must not write defaults");
+  traceRequire(configFailureLatchCalls==1, "EEPROM read failure must invoke failure latch");
+  traceRequire(journalRecoveryRequired, "EEPROM read failure must retain recovery deny");
 
   resetState();
   outputPolarityKnown=false;
