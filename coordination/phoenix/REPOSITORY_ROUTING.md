@@ -485,3 +485,8 @@ Do not stage or copy the current #323 ESP8266 local boot-polarity test as an acc
 Migration remains blocked on exact source/destination blob comparison, license/NOTICE review, complete import inventory, test identity and exact-head CI, owner assignment, and the private Drive registry/sync-ledger read. No source or destination files were moved, copied, renamed, deleted, overwritten or rebased.
 
 **Governance hold:** Experiments main, development, Master and COE main currently report protected=false / protection.enabled=false, with no repository rulesets returned. Repository administrator must establish and verify branch protection and required checks before release or financial integration.
+
+## 2026-11-18 UTC14 — destination hold refresh
+
+No destination move is authorized. COE #26 remains OPEN / DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12 against COE main a6513ab4412b4c014eee2863e45cbe32d06cb243, with five queued workflows and zero jobs. COE #35 is a Release-owned sandbox/packaging candidate, not a migration destination. Source/test/license provenance and role ownership must be reviewed before any staging proposal. The private Drive v11 registry and newer corrections are unavailable; older Library snapshots are not a substitute. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null.
+

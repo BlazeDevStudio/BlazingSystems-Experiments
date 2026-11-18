@@ -566,3 +566,10 @@ Evidence:
 The private canonical Drive registry v11 and newer corrections remain unavailable: Library search did not return the exact file and no Google Drive connector is exposed. No older registry was substituted and no private contents/IDs were published. The cloud artifact policy and storage handover were reread from BlazeDevStudio/BlazingSystems after the repository move; they require BLOCKED rather than a simulated Drive transfer.
 
 Local Git checkout/test execution remains unavailable because the container cannot resolve github.com. Source/tree inspection and existing GitHub Actions evidence are reported separately; the full Master Python suite was NOT RUN. No migration, source edit, hardware operation, merge, release, signing or production action occurred. **PRODUCTION NO-GO.**
+
+## 2026-11-18 UTC14 — ConfigV3 and exact-head CI reconciliation
+
+The ESP8266 ConfigV3 local polarity gate is now present on Hardware #323. Exact-head focused CI 44329837932 and 44329837962 passed; Full build 44329837987 was pending. The previous remove-edge-interrupt mutation survivor was corrected in the host lab; current logs show the mutation rejected on both boards. This is not physical hardware acceptance.
+
+COE #35 current shared/sandbox runs were still in progress at the latest read; COE #26 has five queued workflows and no jobs. Branch-protection API reads returned 403 and the rulesets list was empty. Canonical private Drive v11 and newer corrections remain inaccessible. The Master suite was not run because local GitHub DNS resolution failed; 12 bounded exact-source assertions passed.
+

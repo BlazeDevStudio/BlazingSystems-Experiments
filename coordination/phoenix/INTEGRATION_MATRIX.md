@@ -1096,3 +1096,12 @@ Other current exact-head role evidence: CORE #252 42698139210 PASS; PISONET #255
 COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243. COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12 with five workflows QUEUED and zero jobs. COE #35 head 7e41b9acf41ccca7127d36421541db722175668b has case/shared PASS but mandatory sandbox run 44312868726 FAILS because bubblewrap is unavailable. No combined migration acceptance exists.
 
 **Governance correction:** live branch API reads show protected=false and protection.enabled=false for Experiments main f4e8a891..., development aad3aade..., Master dd4df401..., and COE main a6513ab4.... Both repository rulesets endpoints returned an empty list. This supersedes the earlier Master statement that branch protection was UNKNOWN. Repository administrators must configure and independently verify required protections/checks before release or protected financial work.
+
+## 2026-11-18 UTC14 — ConfigV3 exact-head and destination refresh
+
+HARDWARE #323 current head 4dc5fd566da6ed3e523e3e15174837f5cfb8b183, parent #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08. Exact-head quarantine/readback 44329837932 and relay/output 44329837962 SUCCESS; Full 44329837987 PENDING. The focused logs show ConfigV3 cold-boot, output preloading, poll-window, poll-loop, coin-pulse, pending-journal and coin-POST deny regressions passing, including rejection of the remove-edge-interrupt-attachment mutation. These remain source-extracted host tests, not physical acceptance.
+
+COE #35 current head at snapshot af5e2618b706bddc5c11f005ab2b10eb039108da; case-collision run 44330483049 SUCCESS; shared run 44330483053 and mandatory sandbox run 44330483002 IN_PROGRESS. The prior head's sandbox run failed closed because bubblewrap was absent (exit 125); do not carry that failure forward as the current run result. COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs.
+
+Experiments #291 head ed3565395bd70c4de696e49a84f0bb454efebc8b run 44328674893 SUCCESS for handover/build; publish-release SKIPPED. CORE #252, RENTAL #289, PISONET #255 and QA #290 scoped runs remain successful; QA #292 has no run returned. Current branch-protection readback is 403; rulesets returned empty. Private Drive v11 remains unavailable and was not replaced by an older snapshot.
+
