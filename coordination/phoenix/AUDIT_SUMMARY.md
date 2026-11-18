@@ -609,3 +609,8 @@ The latest Hardware review candidate #323 has two-board ConfigV3 boot-polarity s
 After the initial destination audit, HARDWARE opened child PR #326 on #323. Current head `28e13fc82a250821e815fd84b5fd61f1769e7106` changes both firmware sketches and two labs to latch a durable coin-ingress fault before marking LittleFS unavailable after a failed pending write. Current focused/Full CI is IN PROGRESS; an earlier head failed its mutation-anchor checks. No latest-head pass or QA acceptance is established.
 
 RELEASE COE #35 current head `462d02fb01e689556efcf5bf1019af951807b130` has a new failing shared-validation regression: a parent-directory symlink swap during staging left `generated-overlay` under the external operator-owned directory. Its mandatory sandbox also fails closed because bubblewrap is absent. Both are release-owned blockers; no Master source takeover.
+
+
+## Latest UTC17 exact-head correction
+
+Hardware child #326 now has focused quarantine and relay/output PASS at `28e13fc82a250821e815fd84b5fd61f1769e7106`, but Full run `44357779219` terminally fails the QA-owned `Missing poll signature check`; all target builds and Android succeeded, downstream gates skipped. COE #35 advanced to `91691a377af5fa4251c0f4695dbf4c4484305f83`; shared 102-test validation, both board compiles and case guard pass, including the previously failing parent-symlink race regression. Mandatory sandbox remains blocked by missing bubblewrap. COE #26 remains five queued workflows / zero jobs. None of these results authorize migration or production.

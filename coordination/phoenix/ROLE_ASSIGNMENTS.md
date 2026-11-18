@@ -886,3 +886,9 @@ This snapshot supersedes older PR/head pins in this role index for current work;
 
 - **HARDWARE:** PR #323 remains the review parent at `988904e8...`; active child #326 is now `28e13fc82a250821e815fd84b5fd61f1769e7106`. Its latest focused and Full CI are still in progress. The earlier #326 head had two mutation-anchor failures; do not transfer its 8/8 scenario count to the current head or call the current head green.
 - **RELEASE:** COE #35 is now `462d02fb01e689556efcf5bf1019af951807b130`; case guard passes, sandbox is blocked by missing bubblewrap, and shared validation fails the injected parent-to-symlink staging test. Release ownership remains unchanged.
+
+
+### Latest UTC17 terminal CI correction
+
+- **HARDWARE #326** current head `28e13fc82a250821e815fd84b5fd61f1769e7106`: focused quarantine and relay/output runs 44357779195 / 44357779192 SUCCESS; Full 44357779219 terminal FAILURE at QA-owned `Missing poll signature check`, while 13 firmware/platform targets and Android succeeded and downstream jobs skipped. Source-extracted host evidence only.
+- **RELEASE COE #35** current head `91691a377af5fa4251c0f4695dbf4c4484305f83`: shared 44358115225 SUCCESS (102 tests, 2 intentional skips, both board compiles pass; symlink-swap regression now passes); case 44358114424 SUCCESS; mandatory sandbox 44358114284 FAILS closed because bubblewrap is absent after 13/13 host preflight tests.

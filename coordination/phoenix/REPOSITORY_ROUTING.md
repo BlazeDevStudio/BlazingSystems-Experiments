@@ -522,3 +522,8 @@ The manifest still maps Experiments `esp32/` and `esp8266/` into COE `Hardware/e
 Hardware #326 is now an active child of #323 with two firmware blobs and two source-extracted labs changed. Its latest focused and Full CI are still running; the earlier head failed mutation-anchor assertions. Keep #326 review-only until terminal exact-head CI and independent QA. This does not change the COE #26 source/destination blob, 17-lab import, or license/NOTICE gaps above.
 
 COE #35 current head `462d02fb01e689556efcf5bf1019af951807b130` fails the injected parent-symlink staging regression and still cannot run mandatory packaging under bubblewrap on the hosted runner. No destination migration or release approval follows from this work.
+
+
+## Latest UTC17 exact-head CI correction — 2026-11-18
+
+Hardware #326 current head `28e13fc82a250821e815fd84b5fd61f1769e7106` has focused labs passing but Full validation fails at `Missing poll signature check`; it is not QA-accepted or hardware-accepted. COE #35 current head `91691a377af5fa4251c0f4695dbf4c4484305f83` has shared 102-test and case-collision CI passing, including the symlink-swap staging regression, but mandatory sandbox remains blocked by missing bubblewrap. COE #26 remains unchanged and migration-blocked.

@@ -132,3 +132,22 @@ COE #35 has advanced from `b398906e...` to current head `462d02fb01e689556efcf5b
 
 This is a release-owned security regression under the test's injected race; PHX-RELEASE must fix and rerun exact-head tests. Master did not modify COE #35 source or tests. No unsandboxed fallback is permitted.
 
+
+
+## Latest UTC17 exact-head terminal reconciliation — 2026-11-18
+
+### Hardware #326 current head
+
+- Current PR #326 head: `28e13fc82a250821e815fd84b5fd61f1769e7106`, child of #323 at `988904e8bcd058b62a9fac4aa6319a9b7c5b2470`.
+- Focused quarantine [44357779195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779195) SUCCESS; focused relay/output [44357779192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779192) SUCCESS. Logs include both-board coin pulse capture 8/8, poll-window 11/11, dual-store, pending journal/clear, poll-blocked edge and output-inhibit regressions. All are source-extracted host simulations.
+- Full build [44357779219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44357779219) is terminal FAILURE: validation job `134990642238` fails at QA-owned `Missing poll signature check`. All 13 firmware/platform targets and Android completed SUCCESS; downstream simulation, update, candidate, signing and publishing jobs were skipped.
+- The previous #326 head `02a4429a...` had a mutation-anchor failure; current #326 focused tests pass, but Full remains blocked and no independent QA/physical acceptance exists.
+
+### COE Release #35 current head
+
+- Current head: `91691a377af5fa4251c0f4695dbf4c4484305f83`.
+- Shared validation [44358115225](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358115225) SUCCESS: 102 tests, two intentional skips; shared/hardware contracts and both ESP firmware compile jobs succeeded. The previously failing `test_stage_overlay_rejects_parent_swapped_to_symlink_during_copy` now passes on this exact head.
+- Case-collision [44358114424](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358114424) SUCCESS.
+- Mandatory sandbox [44358114284](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44358114284) still FAILS CLOSED after 13/13 host-preflight tests because bubblewrap is not installed (exit 125). No sandbox-dependent packaging run is credited; no unsandboxed fallback.
+
+COE #26 remains OPEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. The exact source/destination firmware, 17-lab import, generic test and license/NOTICE provenance gaps in this audit are unchanged. No migration is approved.

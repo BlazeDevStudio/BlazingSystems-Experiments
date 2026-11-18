@@ -1163,3 +1163,10 @@ Evidence: [Hardware focused quarantine](https://github.com/BlazeDevStudio/Blazin
 
 - Hardware #326 is the current child candidate of #323 at `28e13fc82a250821e815fd84b5fd61f1769e7106`. Its focused and Full runs are in progress; previous head `02a4429a...` failed the mutation-anchor guard. Do not promote #326 or infer green status before terminal current-head runs and independent QA.
 - COE #35 current head is `462d02fb01e689556efcf5bf1019af951807b130`. Case-collision passes; mandatory sandbox is blocked by absent bubblewrap; shared validation fails the injected parent-symlink swap regression, which observed an external `generated-overlay` write. Release owner must resolve and rerun.
+
+
+### Latest UTC17 terminal CI correction — 2026-11-18
+
+- Hardware #326 `28e13fc82a250821e815fd84b5fd61f1769e7106`: focused quarantine and relay/output labs PASS; Full `44357779219` terminal FAIL at QA-owned `Missing poll signature check`. All firmware/platform targets and Android succeeded; downstream gates skipped. Host simulations only.
+- COE #35 `91691a377af5fa4251c0f4695dbf4c4484305f83`: shared `44358115225` PASS (102 tests, two intentional skips, both board compiles); the prior symlink-swap test failure is fixed at this head. Case guard PASS; mandatory sandbox still fails closed because bubblewrap is absent.
+- COE #26 remains five queued / zero jobs and is not destination-verified.
