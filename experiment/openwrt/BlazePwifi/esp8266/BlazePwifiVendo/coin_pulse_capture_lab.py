@@ -2,12 +2,13 @@
 """PHX-HARDWARE exact-source coin pulse and failed-journal safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
-coinLineQuietAfterInhibit(), beginPollWindow(), and sampleCoinPulseEdge()
-from both ESP sketches. It verifies pulse capture after poll-drain abort and
-requires a failed savePending() to invoke the sticky dual-store deny latch
-before LittleFS is marked unavailable. Host C++ with fake GPIO/time/storage
-only; the separate dual-store lab verifies persistence helpers independently.
-No physical acceptance is claimed.
+coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(), and
+sampleCoinPulseEdge() from both ESP sketches. Only the two persistence backends
+are fault-injected. The failed-save path checks all four dual-store outcomes,
+the unresolved pulse identity, and logical relay/LED OFF before either store is
+called. The companion dual-store lab separately extracts the real persistence
+helpers. Host C++ uses fake GPIO/time/storage only; no physical acceptance is
+claimed.
 """
 from pathlib import Path
 import subprocess
@@ -43,7 +44,10 @@ static bool relayOn=true,ledOn=true;
 static unsigned saveCalls=0,nonceCalls=0;
 static bool saveResult=true;
 static constexpr int LOW=0,HIGH=1;
-struct FakeSerial { void println(const char*){} };
+struct FakeSerial {
+  std::string last;
+  void println(const char *message){ last=message?message:""; }
+};
 static FakeSerial Serial;
 uint32_t millis(){return fakeNow;}
 void delay(uint32_t ms){fakeNow+=ms;}
@@ -63,19 +67,21 @@ void writeLogical(int pin,bool on,bool){
 }
 String freshNonce(){++nonceCalls;return "nonce-"+std::to_string(nonceCalls);}
 bool savePending(){++saveCalls;return saveResult;}
-static unsigned faultLatchCalls=0;
-static uint32_t faultLatchEdges=0;
-static bool faultLatchSawFsReady=false;
-static bool faultLatchSawRelayOn=false,faultLatchSawLedOn=false;
-void latchPollPulseFault(uint32_t edges){
-  ++faultLatchCalls;
-  faultLatchEdges=edges;
-  faultLatchSawFsReady=fsReady;
-  faultLatchSawRelayOn=relayOn;
-  faultLatchSawLedOn=ledOn;
-  journalRecoveryRequired=true;
-  insertMode=false;
-  activeTarget.clear();
+static unsigned backupCalls=0,markerCalls=0;
+static uint32_t backupEdges=0,markerEdges=0;
+static bool backupResult=true,markerResult=true;
+static bool backupSawFsReady=false,markerSawFsReady=false;
+static bool backupSawRelayOff=false,backupSawLedOff=false;
+static bool markerSawRelayOff=false,markerSawLedOff=false;
+bool writePollFaultBackup(uint32_t edges){
+  ++backupCalls;backupEdges=edges;backupSawFsReady=fsReady;
+  backupSawRelayOff=!relayOn;backupSawLedOff=!ledOn;
+  return backupResult;
+}
+bool writePollPulseFaultMarker(uint32_t edges){
+  ++markerCalls;markerEdges=edges;markerSawFsReady=fsReady;
+  markerSawRelayOff=!relayOn;markerSawLedOff=!ledOn;
+  return markerResult;
 }
 @@FUNCTIONS@@
 
@@ -88,8 +94,12 @@ static void resetState(uint32_t now=0,bool activeLow=true){
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;
   pendingPulses=0;pendingNonce.clear();pendingTarget.clear();activeTarget="target-01";
   relayOn=true;ledOn=true;saveCalls=0;nonceCalls=0;saveResult=true;
-  faultLatchCalls=0;faultLatchEdges=0;faultLatchSawFsReady=false;
-  faultLatchSawRelayOn=false;faultLatchSawLedOn=false;
+  backupCalls=0;markerCalls=0;backupEdges=0;markerEdges=0;
+  backupResult=true;markerResult=true;
+  backupSawFsReady=false;markerSawFsReady=false;
+  backupSawRelayOff=false;backupSawLedOff=false;
+  markerSawRelayOff=false;markerSawLedOff=false;
+  Serial.last.clear();
 }
 static bool fail(const char*name,const char*detail){
   std::cerr<<"FAIL "<<name<<" "<<detail<<"\n";
@@ -131,22 +141,37 @@ static bool runNoPulseControl(){
     return fail("no-pulse-control","poll admission did not retain output inhibit");
   return true;
 }
-static bool runSaveFailure(){
+static bool runSaveFailureCase(const char*name,bool backupOk,bool markerOk){
   resetState(100U);
   saveResult=false;
+  backupResult=backupOk;
+  markerResult=markerOk;
   sampleCoinPulseEdge(true);
   if(pendingPulses!=1 || saveCalls!=1 || fsReady || !pendingReady)
-    return fail("save-failure","failed durable write did not disable filesystem/intake");
-  if(faultLatchCalls!=1 || faultLatchEdges!=1 || !faultLatchSawFsReady ||
-     !faultLatchSawRelayOn || !faultLatchSawLedOn ||
-     !journalRecoveryRequired || insertMode || !activeTarget.empty())
-    return fail("save-failure","failed journal write did not latch persistent coin-ingress fault before storage was marked unavailable");
-  if(relayOn || ledOn) return fail("save-failure","outputs remained enabled immediately after failed save");
+    return fail(name,"failed durable write did not disable filesystem/intake");
+  if(backupCalls!=1 || markerCalls!=1 || backupEdges!=1 || markerEdges!=1)
+    return fail(name,"fault latch did not attempt both stores with the unresolved pulse count");
+  if(!backupSawFsReady || !markerSawFsReady)
+    return fail(name,"fault latch attempted persistence after LittleFS was marked unavailable");
+  if(!backupSawRelayOff || !backupSawLedOff || !markerSawRelayOff || !markerSawLedOff)
+    return fail(name,"storage attempt occurred before outputs were logically OFF");
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
+    return fail(name,"failed journal write did not retain the deny latch and output inhibit");
+  if(!backupOk && !markerOk &&
+     Serial.last.find("reboot durability is NOT established")==std::string::npos)
+    return fail(name,"dual-store failure was not classified as current-boot-only");
   sampleCoinPulseEdge(false);
   fakeNow=200U;
   sampleCoinPulseEdge(true);
-  if(saveCalls!=1 || pendingPulses!=1 || faultLatchCalls!=1)
-    return fail("save-failure","another pulse or fault-latch retry occurred after failed persistence");
+  if(saveCalls!=1 || pendingPulses!=1 || backupCalls!=1 || markerCalls!=1)
+    return fail(name,"another pulse or persistence retry was accepted after failed journal write");
+  return true;
+}
+static bool runSaveFailure(){
+  if(!runSaveFailureCase("both-stores-pass",true,true)) return false;
+  if(!runSaveFailureCase("nvs-only",true,false)) return false;
+  if(!runSaveFailureCase("littlefs-only",false,true)) return false;
+  if(!runSaveFailureCase("both-stores-fail-current-boot-only",false,false)) return false;
   return true;
 }
 static bool runDeniedGates(){
@@ -206,6 +231,7 @@ SIGNATURES = (
     "void applyOutputs(){",
     "bool coinLineQuietAfterInhibit(){",
     "bool beginPollWindow(){",
+    "void latchPollPulseFault(uint32_t pulseEdges){",
     "void sampleCoinPulseEdge(bool active){",
 )
 
@@ -241,18 +267,23 @@ def compile_and_run(functions):
 
 def main():
     mutations = (
-        ("missing-edge-latch", "lastCoin=active;", "",
-         "sustained high level"),
-        ("inclusive-debounce", "millis()-lastEdge>runDebounceMs",
+        ("missing-edge-latch", "void sampleCoinPulseEdge(bool active){",
+         "lastCoin=active;", "", "sustained high level"),
+        ("inclusive-debounce", "void sampleCoinPulseEdge(bool active){",
+         "millis()-lastEdge>runDebounceMs",
          "millis()-lastEdge>=runDebounceMs", "deny-case-9"),
-        ("missing-target-binding", "pendingTarget==activeTarget && ", "",
-         "deny-case-6"),
-        ("ignored-save-failure", "fsReady=false;\n        pendingReady=true;", "",
+        ("missing-target-binding", "void sampleCoinPulseEdge(bool active){",
+         "pendingTarget==activeTarget && ", "", "deny-case-6"),
+        ("ignored-save-failure", "void sampleCoinPulseEdge(bool active){",
+         "fsReady=false;\\n        pendingReady=true;", "",
          "failed durable write did not disable filesystem/intake"),
-        ("missing-persistent-fault-latch", "latchPollPulseFault(pendingPulses);", "",
-         "failed journal write did not latch persistent coin-ingress fault"),
-        ("missing-immediate-output-inhibit", "applyOutputs();\n        Serial.println",
-         "Serial.println", "outputs remained enabled immediately"),
+        ("missing-persistent-fault-latch", "void sampleCoinPulseEdge(bool active){",
+         "latchPollPulseFault(pendingPulses);", "",
+         "fault latch did not attempt both stores"),
+        ("missing-latch-output-inhibit", "void latchPollPulseFault(uint32_t pulseEdges){",
+         "  applyOutputs();\\n  const bool backupPersisted",
+         "  const bool backupPersisted",
+         "storage attempt occurred before outputs were logically OFF"),
     )
     failures = []
     for board, sketch in BOARDS:
@@ -267,8 +298,8 @@ def main():
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
             print(f"{board}_COIN_PULSE_CAPTURE_PASS 8/8")
-            for name, old, new, expected in mutations:
-                index = SIGNATURES.index("void sampleCoinPulseEdge(bool active){")
+            for name, signature, old, new, expected in mutations:
+                index = SIGNATURES.index(signature)
                 if old not in functions[index]:
                     failures.append(f"{board} missing mutation anchor {name}")
                     break
