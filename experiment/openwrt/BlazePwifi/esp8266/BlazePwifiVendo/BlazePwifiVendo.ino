@@ -409,7 +409,15 @@ bool pollFaultBackupPresentOrCorrupt(){
 bool writePollFaultBackup(uint32_t pulseEdges){
   if(!pollFaultBackupReady || pollFaultBackupWriteFailed ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
-  if(pollFaultBackupPresentOrCorrupt()) return true;
+  // Presence-or-corrupt also returns true on raw-read failure. Do not confuse
+  // an unavailable flash read with proof that a durable deny marker already exists.
+  PollFaultRecord existing{};
+  if(!readPollFaultBackupFlash(existing)){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
+  const uint8_t *existingBytes=(const uint8_t*)&existing;
+  for(size_t i=0;i<sizeof(existing);++i) if(existingBytes[i]!=0xFF) return true;
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
   EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
   if(!EEPROM.commit()){
