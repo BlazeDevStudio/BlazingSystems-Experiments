@@ -520,7 +520,7 @@ for board,path in BOARDS.items():
                     board,25,"missing-drain-abort-edge-reconciliation")
     print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
     late_snapshot_loop = loop.replace(
-        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
+        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const bool pollWindowReady=beginPollWindow();\n    // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
         "    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
         1,
     )
