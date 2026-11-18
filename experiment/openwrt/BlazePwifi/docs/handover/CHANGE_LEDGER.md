@@ -233,3 +233,11 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Test-first RED [#44400058670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400058670); source fix [`89bb876e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/89bb876e751cb14567f367d294a25f399a5f0393).
 - Exact-source push [#44400319512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400319512) and PR [#44400332118](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400332118): board compile/artifact uploads and all other target/Android jobs PASS; `validate` FAILED at the mandatory handover-freshness gate before the docs refresh; downstream simulation/candidate/sign/publish jobs SKIPPED.
 - Artifact digests and exact job evidence are in `PROJECT_HANDOVER.md`. This is an additive entry only; it does not restore or reconcile the historical 3,502-line provenance discrepancy. No production action occurred.
+
+
+## 2026-11-18 UTC21 — PHX-RELEASE shared build checkout credential guard (test-first)
+
+- Baseline #291 head `4e05350d9a3d65446770e97ced88200eecc27979`; baseline exact-head build [#44401735492](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44401735492) completed SUCCESS, with production import/sign/publish jobs skipped.
+- Found 20 mutable `actions/checkout@v4` steps in `.github/workflows/blazepwifi-build.yml`, none setting `persist-credentials: false`.
+- Test-only commit [`851af2c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/851af2c59759e94581fc444a4b2b8b2a2359da23) adds an exact-workflow regression to the existing PHX-RELEASE negative self-test. Expected RED is pending; no workflow source fix is included yet.
+- Next: verify expected RED, pin all shared build checkouts to the already verified immutable v7.0.1 commit and disable persisted credentials, then verify exact-head Windows and shared build CI.
