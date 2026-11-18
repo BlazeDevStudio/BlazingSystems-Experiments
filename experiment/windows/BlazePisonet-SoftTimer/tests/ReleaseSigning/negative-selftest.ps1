@@ -160,9 +160,25 @@ try {
   $jobIfEnd=$publisherJob.IndexOf('    runs-on:',[StringComparison]::Ordinal)
   if ($jobIfEnd -lt 0) { throw 'Publisher job conditional or runner declaration missing' }
   $publisherGuard=$publisherJob.Substring(0,$jobIfEnd)
+  # The approval variable is not a substitute for repository branch protection.
+  # GitHub exposes ref_protected only when a branch protection rule or ruleset applies.
+  $releaseApprovalIfLines = @($workflow -split '\r?\n' | Where-Object {
+    $_ -match '^\s*if:.*vars\.SOFTTIMER_RELEASE_APPROVED'
+  })
+  if ($releaseApprovalIfLines.Count -ne 5) {
+    throw "Expected five signing/publisher approval guards, found $($releaseApprovalIfLines.Count)"
+  }
+  foreach ($guard in $releaseApprovalIfLines) {
+    if (-not $guard.Contains('github.ref_protected == true')) {
+      throw "Every signing and publisher path must require a GitHub-protected ref: $guard"
+    }
+  }
+  Write-Output 'RELEASE-ADMISSION: every signing and publisher path requires protected Git ref PASS'
+
   $publisherIfLines=@($publisherGuard -split '\r?\n' | Where-Object { $_ -match '^\s*if:' })
   if ($publisherIfLines.Count -ne 1 -or
       -not $publisherIfLines[0].Contains("needs.build-windows.outputs.future_release_eligible == 'true'") -or
+      -not $publisherIfLines[0].Contains('github.ref_protected == true') -or
       $publisherIfLines[0].Contains('env.VERSION')) {
     throw 'Writable publisher job itself must require validated future-version output, not unsupported env context'
   }
