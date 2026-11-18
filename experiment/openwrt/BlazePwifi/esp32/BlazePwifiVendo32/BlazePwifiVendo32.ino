@@ -166,9 +166,39 @@ void loadPending(){
   Serial.println("Recovered unacknowledged coin event from flash; source candidate retained.");
 }
 
-void clearPending(){
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
-  if(fsReady){ LittleFS.remove("/pending.dat"); LittleFS.remove("/pending.new"); LittleFS.remove("/pending.bak"); }
+void applyOutputs();
+
+bool clearPending(){
+  // Keep the RAM hold asserted until every possible pending candidate is absent.
+  pendingReady=true;
+  if(!fsReady){
+    Serial.println("CRITICAL: pending journal clear refused; LittleFS is unavailable.");
+    applyOutputs();
+    return false;
+  }
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  for(const char *path:paths){
+    if(LittleFS.exists(path) && !LittleFS.remove(path)){
+      Serial.println("CRITICAL: pending journal remove returned failure; preserving the event and denying outputs.");
+      applyOutputs();
+      return false;
+    }
+  }
+  for(const char *path:paths){
+    if(LittleFS.exists(path)){
+      Serial.println("CRITICAL: pending journal candidate remains after removal; preserving the event and denying outputs.");
+      applyOutputs();
+      return false;
+    }
+  }
+
+  pendingPulses=0;
+  pendingReady=false;
+  pendingNonce="";
+  pendingTarget="";
+  lastSend=0;
+  return true;
 }
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
@@ -254,11 +284,16 @@ bool appendQuarantineRecord(const String &reason){
 
 bool quarantinePending(const String &reason){
   if(!appendQuarantineRecord(reason)){
+    pendingReady=true;
     Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");
+    applyOutputs();
     return false;
   }
-  Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
-  clearPending();
+  if(!clearPending()){
+    Serial.println("CRITICAL: quarantine record was committed but pending journal removal was not verified; event remains held for reconciliation.");
+    return false;
+  }
+  Serial.println("QUARANTINE: uncredited coin event recorded and pending journal removal verified: "+reason);
   return true;
 }
 
