@@ -1181,3 +1181,51 @@ Evidence: [Hardware focused quarantine](https://github.com/BlazeDevStudio/Blazin
 - Other current scoped role checks: CORE #252 42698139210 PASS; RENTAL #289 43653329235/43653329229 PASS; PISONET #255 42462978704 PASS; QA #290 43633486963 PASS, #292 no run; Release #291 44353380470 PASS with privileged publisher skipped.
 
 No scoped PASS is combined COE acceptance. Keep the integration gate BLOCKED.
+
+
+
+## Live exact integration refresh — 2026-11-18 UTC18 (2026-11-18T18:52Z)
+
+### Repository and branch pins
+
+| Ref | Exact SHA | Readback |
+|---|---|---|
+| Experiments default `main` | `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | `protected=false` |
+| Experiments `blazepwifi-v0.5.3-development` | `aad3aade72c1156eecba1fed30907c6d0283b2c5` | `protected=false` |
+| Experiments `blazepwifi-v0.6.0-audit-foundation` | `2fbd2475e9f54878c316fa7cea2f228386b0e859` | `protected=false`; comparison/development ref, not main |
+| Experiments Master `phoenix/master-coordination` | `1cc0d1ac45a9696349d369abff878022cad315e2` | `protected=false` |
+| COE default `main` | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | `protected=false` |
+| COE integration PR #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT |
+
+Experiments PR #288 is OPEN / DRAFT on `phoenix/master-coordination`, base `main@f4e8a891...`; pre-update it had 85 changed paths, all under `coordination/phoenix/`. Routing manifest blob remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. Master exact-head workflow query returned no runs. Both repository rulesets endpoints returned empty arrays; branch-object reads show protection disabled on the refs above. Repository administrator must configure and independently verify protection and required checks.
+
+### Role-owned exact heads and bounded CI
+
+| Role | Current candidate | Exact-head evidence / limitation |
+|---|---|---|
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped only; Master did not edit CORE |
+| PHX-RENTAL | Experiments #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS, scoped |
+| PHX-PISONET | Experiments #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS; physical COM acceptance not established |
+| PHX-HARDWARE | #323 `988904e8...` → #326 `58c558fb...` → #327 docs head `0a264680...`, source/test `e774420c...` | Focused quarantine/relay PASS on source/test SHA and docs head; Full [44373742348](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44373742348) FAILS at stale positive poll-signature assertion; Android dependency resolution also fails. SIMULATED/CI only; QA review pending |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS for build/handover only; its workflow does not invoke NativeComInterfaceHandleLab. #292 has no workflow runs and is based on stale Master `b1ca02e...`, not current `1cc0d1ac...` |
+| PHX-RELEASE | Experiments #291 `691ed55dbe39a79a88eac45f6eebff81cee5e628`; COE #35 `1a5be48d2845781b0b07bad39a37f8440cea4d4f` | #291 [44353380470](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44353380470) SUCCESS, privileged publisher skipped. COE #35 shared [44370198378](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198378) and case [44370198334](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198334) SUCCESS; mandatory sandbox [44370198386](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44370198386) FAILS closed because bubblewrap is absent after 13/13 host preflight tests |
+
+COE #26 currently has five queued workflows and zero jobs: [43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632), [43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557). This is NOT combined integration acceptance.
+
+### Hardware #327 source/test review
+
+PR #327 is OPEN / DRAFT / UNMERGED, child of #326 at base `58c558fb...`. Current docs head is `0a264680...`; exact source/test SHA is `e774420c...`. The source-extracted pre-poll ISR edge fence and ambiguous backup-commit same-boot retry hold pass focused CI on both boards. The test-only symbol typo in intermediate `fcb5c1ab...` was corrected at `e774420c...`; do not report that intermediate compile failure as current. Full validation remains failed as recorded in §6.29. QA must review the same source/test SHA; CORE must review unresolved-ingress reconciliation. The RAM-only failure latch does not establish reboot durability when both stores fail.
+
+### COE #26 Hardware destination provenance — current exact tree
+
+At source #327 docs head `0a264680...`, firmware blobs are ESP32 `ada9723c5f07879775284eb128a986ac865394f7` and ESP8266 `dde063b1f578fa66a52221b74643d8862a38957c`. At COE #26 `b382d233...`, destination blobs are ESP32 `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` and ESP8266 `c8be98f72596681e36a3ad1f8939bf8046c96887`; neither is byte-identical.
+
+Source Hardware tree has 18 Python lab files (11 under ESP8266 and 7 under ESP32). COE #26 Hardware tree contains only the two sketches plus one generic shell test `f921c56cecc19cab1989507b9b4ade1f45dac54e`; none of the 18 source labs is present. The destination generic test still requires positive `response_sig` and `|poll|` strings, while current source firmware is deny-only. COE `.github/workflows/pisowifi-ci.yml` blob `cf18705f13168e6848c8eaf80ac150287f07c202` verifies Pisowifi source intake and executes `Pisowifi/tests`; it contains no Hardware workflow/test invocation. Test identity, import completeness, firmware parity and exact-head destination CI remain BLOCKED.
+
+### License / notice correction
+
+The source project MIT license `1ee55b94183417be977ca287cd7391f9a6f7e721` is byte-identical to COE `Pisowifi/LICENSE`. Vendor qrcode LICENSE `150770c0fc2994865ccdbef6662735cc083e780d`, TailAdmin LICENSE `cb92d4176b21b0594e5a6caf94d79340505e3d33`, and TailAdmin NOTICE `f0425bbbe34c1227311098173b1eae0c3e2a807b` are each byte-identical at their corresponding source and Pisowifi destination paths. Correction to the earlier broad wording: the vendor TailAdmin NOTICE **is present and identical**; the source project-root `NOTICE.md` was not found, and COE root `LICENSE` / `NOTICE.md` plus Hardware-scoped LICENSE/NOTICE are absent. Because COE `Hardware/` is a sibling of `Pisowifi/`, the intended scope of `Pisowifi/LICENSE` over Hardware still needs owner/legal confirmation. This is a path-scope question, not a finding of infringement.
+
+No copy, move, overwrite, rename, deletion, rebase or destination proposal was made. Keep the manifest DRAFT_REVIEW_ONLY / Master target null until owner-approved per-file source, license, test, mode, import and exact-SHA CI mapping is complete.
+
+**Production: NO-GO.**

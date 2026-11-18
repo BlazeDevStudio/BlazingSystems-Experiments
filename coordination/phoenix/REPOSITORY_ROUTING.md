@@ -534,3 +534,18 @@ Hardware #326 current head `28e13fc82a250821e815fd84b5fd61f1769e7106` has focuse
 The canonical `OWNERSHIP_ROUTES.json` blob remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null. It was read at Master head `97c895b699533ec4fd552f433c54210f808eb944` and is not modified by this follow-up. COE #26 remains `b382d233...`, five workflows queued / zero jobs. Current Hardware #326 source/test and COE #26 firmware/test/license trees are not equivalent; 17 source Hardware labs remain absent from the destination and license/NOTICE scope remains unresolved. No copy, move, overwrite or destination proposal is authorized.
 
 The canonical private Drive v11 registry and newer corrections remain unavailable through the exposed tools. Do not substitute v7 or publish private registry material. Preserve all source refs and ask the registry custodian for authorized access.
+
+
+
+## 2026-11-18 UTC18 — Hardware #327 / COE #26 exact provenance correction (2026-11-18T18:52Z)
+
+The route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target `null`. No route authorizes a recursive copy or move.
+
+Current Hardware source candidate is #327 docs head `0a26468022d25746fdc38525c0c0979da098f6d4` with source/test SHA `e774420c3404141ffe4ec7b9c002c14d3c2286b8`, stacked on #326 `58c558fb...` and #323 `988904e8...`. COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`. Exact firmware blobs differ: source ESP32 `ada9723c...` vs destination `3cc7ec54...`; source ESP8266 `dde063b1...` vs destination `c8be98f7...`.
+
+Source has 18 Python board labs (11 ESP8266 + 7 ESP32); COE #26 has no corresponding Hardware lab files and only one generic Hardware shell test `f921c56c...`. That test still asserts positive response signature/poll strings; the current source consumer is deny-only. Destination `pisowifi-ci.yml` `cf18705f...` runs Pisowifi intake/tests only and does not invoke Hardware. Five #26 workflows remain queued with zero jobs. No exact-head combined destination acceptance exists.
+
+License-path correction: project MIT LICENSE `1ee55b94...` matches COE `Pisowifi/LICENSE`; qrcode LICENSE `150770c0...`, TailAdmin LICENSE `cb92d417...`, and TailAdmin NOTICE `f0425bb...` also match their corresponding source/destination vendor paths. The vendor NOTICE is present; the source project-root NOTICE was not found. COE root LICENSE/NOTICE and Hardware-scoped LICENSE/NOTICE are absent. Because Hardware is a sibling of Pisowifi in COE, the intended scope of the Pisowifi project license over Hardware is unresolved and requires owner/legal confirmation.
+
+This narrows and corrects the previous UTC17 notice wording; it does not clear the license-scope gate. Keep the destination blocked until per-file owner-approved source/test/license/import mapping and exact-head destination CI are independently reviewed. No copy, move, overwrite, rebase or deletion occurred.
+

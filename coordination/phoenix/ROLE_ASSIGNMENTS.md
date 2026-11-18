@@ -907,3 +907,25 @@ This snapshot supersedes older PR/head pins in this role index for current work;
 | PHX-RELEASE | Experiments #291 `691ed55d...`; COE #31 `59ed44d0...` → child #35 `36036c41...`; COE #44 `1736b379...` | #35 shared/case pass; mandatory sandbox fails closed for missing bubblewrap. #44 is nonmergeable on a stale parent and has an outdated sandbox assertion; Release owns reconciliation. |
 
 No Master source takeover, branch composition or reassignment occurred. COE #26 remains unverified and migration-blocked.
+
+
+
+## Live role-owner reconciliation — 2026-11-18 UTC18 (2026-11-18T18:52Z)
+
+This snapshot supersedes older active-PR pins above for current coordination only. It does not change source ownership.
+
+| Role | Current owner PR / exact head | Bounded evidence | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 `1cc0d1ac45a9696349d369abff878022cad315e2` before this update | 85 paths, all `coordination/phoenix/`; no Master PR-triggered CI | Record #327 source/test review and COE #26 provenance; keep manifest review-only |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped | Review unresolved-ingress reconciliation semantics for #327; preserve separate CORE owner/continuation; Master does not edit CORE |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) / [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) SUCCESS | Continue within Rental-owned Android/server paths only |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS | Complete native COM lab on Windows; scoped build is not physical adapter acceptance |
+| PHX-HARDWARE | #323 `988904e8...` → #326 `58c558fb...` → #327 `0a264680...` (source/test `e774420c...`) | Focused source-extracted labs PASS; Full #44373742348 FAILS stale QA poll-signature fixture and Android dependency resolution | Preserve deny-only behavior; await QA same-SHA review; resolve Full validation; no merge/promotion |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 build/handover PASS but native COM lab not executed; #292 no CI and stale Master base `b1ca02e...` | Replace positive poll-signature fixture with negative deny tests; independently test #327 source/test SHA; rebase/retest #292 against current Master |
+| PHX-RELEASE | #291 `691ed55dbe39a79a88eac45f6eebff81cee5e628`; COE #35 `1a5be48d2845781b0b07bad39a37f8440cea4d4f` | #291 build/handover PASS, publisher skipped; #35 shared/case PASS, sandbox blocked by absent bubblewrap | Provide authorized disposable namespace-capable runner; no privileged install or unsandboxed fallback |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | Reconcile Hardware source blobs, 18 missing labs, positive-signature test, license scope and CI before any move |
+| Repository administrator | Experiments main/dev/Master and COE main | Branch objects `protected=false`; rulesets endpoints empty | Configure and independently read back protection + required checks |
+| Registry custodian | Private Drive canonical v11 + newer corrections | Not accessible through exposed Drive connector/Library; no older substitute used | Restore authorized read access without copying private IDs/content into public GitHub |
+
+Automation deconflict: the accessible automation inventory showed enabled Master, Release and a Hardware continuation; it did not expose an enabled task with the exact title “Blaze Production Continuation.” CORE remains untouched as explicitly directed; no CORE branch or PR was edited and no competing CORE worker was started. This observation does not reassign CORE ownership.
+
