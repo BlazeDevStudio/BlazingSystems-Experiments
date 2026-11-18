@@ -316,7 +316,6 @@ PARITY_SIGNATURES = (
     "bool markPendingPostAttempt(",
     "bool pendingAttemptMarkerMatches()",
     "bool clearPending(",
-    "bool canAttemptCoinPost(){",
     "String quarantineLogField(",
     "bool quarantineLogTokenValid(",
     "bool quarantineLogRecordValid(",
@@ -327,6 +326,9 @@ PARITY_SIGNATURES = (
 )
 
 
+POLARITY_SIGNATURE = "bool canAttemptCoinPost(){"
+
+
 def board_safety_helpers():
     result = {}
     for board, ino in BOARDS:
@@ -335,6 +337,10 @@ def board_safety_helpers():
             signature: extract(source, signature)
             for signature in PARITY_SIGNATURES
         }
+        # This gate is intentionally board-specific until ESP32 has its own
+        # reviewed local polarity profile. Compare its shared admission body
+        # after validating the ESP8266-only interlock separately.
+        result[board][POLARITY_SIGNATURE] = extract(source, POLARITY_SIGNATURE)
     return result
 
 
@@ -345,13 +351,27 @@ def board_parity_mismatches(helpers):
     ]
 
 
+def board_polarity_guard_problem(helpers):
+    esp8266 = helpers["ESP8266"][POLARITY_SIGNATURE]
+    esp32 = helpers["ESP32"][POLARITY_SIGNATURE]
+    if "outputPolarityKnown && fsReady" not in esp8266:
+        return "ESP8266 local output-polarity admission guard is missing"
+    normalized_esp8266 = esp8266.replace("outputPolarityKnown && ", "", 1)
+    if normalized_esp8266 != esp32:
+        return "coin POST gate differs beyond the ESP8266 local polarity interlock"
+    return None
+
+
 def verify_board_safety_parity():
     helpers = board_safety_helpers()
     mismatches = board_parity_mismatches(helpers)
     if mismatches:
         raise SystemExit(
-            "PHX-HARDWARE: ESP board safety-helper drift: " + ", ".join(mismatches)
+            "PHX-HARDWARE: ESP shared safety-helper drift: " + ", ".join(mismatches)
         )
+    polarity_problem = board_polarity_guard_problem(helpers)
+    if polarity_problem:
+        raise SystemExit("PHX-HARDWARE: " + polarity_problem)
 
     # Failure injection: a fail-open append result on one board must be
     # detected before that board can diverge from the reviewed peer.
@@ -366,8 +386,20 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated):
         raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
 
-    print("BOARD_QUARANTINE_PARITY_PASS 12/12 helpers byte-identical")
+    # The new ESP8266-only polarity gate must not be lost during future edits.
+    polarity_mutated = {board: dict(functions) for board, functions in helpers.items()}
+    polarity_mutated["ESP8266"][POLARITY_SIGNATURE] = (
+        polarity_mutated["ESP8266"][POLARITY_SIGNATURE].replace(
+            "outputPolarityKnown && ", "", 1
+        )
+    )
+    if board_polarity_guard_problem(polarity_mutated) is None:
+        raise SystemExit("PHX-HARDWARE: output-polarity gate removal mutation was not detected")
+
+    print("BOARD_QUARANTINE_PARITY_PASS 11/11 shared helpers byte-identical")
+    print("ESP8266_LOCAL_POLARITY_GATE_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
+    print("ESP8266_POLARITY_MUTATION_REJECTED removed local gate")
 
 
 verify_board_safety_parity()

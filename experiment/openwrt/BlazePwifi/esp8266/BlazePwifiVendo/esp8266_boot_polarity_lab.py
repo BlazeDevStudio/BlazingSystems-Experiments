@@ -132,7 +132,7 @@ def main() -> None:
     route_start = portal.index('web.on("/save"')
     route = portal[route_start:]
     guard = route.find("if(!saveCfg())")
-    success = route.find('web.send(200,"text/plain","Wi-Fi verified and settings saved.')
+    success = route.find('web.send(200,"text/plain","Wi-Fi and local output polarity settings verified and saved.')
     restart = route.find("ESP.restart()")
     require(guard >= 0 and success > guard and restart > success,
             "setup route must fail closed before success response/reboot")
