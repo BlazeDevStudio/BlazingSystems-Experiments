@@ -813,3 +813,44 @@ No source/destination file move, copy, overwrite, merge or route change occurred
 | #41 | `021e2474c5bc8df37ab016a586db516fb4f2445f` | #39 `33e87fbd...` | Stage-4 shadow-credit test | #44235451605: signed two-node host simulation + NodeMCU compile SUCCESS | Depends on #39; not portable to #40/#42 without reconciliation |
 
 All PRs remain OPEN/DRAFT/UNMERGED. #39/#40/#42 diverge from one another; #41 is specifically stacked on #39. COE #26 remains at `b382d233...` with five queued workflows and zero jobs. No candidate is integrated into #26 or main. Host/compile CI is not physical flash, brownout, power-cut, radio, relay or coin acceptance. See the detailed exact-blob and job-log audit in [COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md](COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md).
+
+## 2026-11-18 UTC05 — Hardware #323 dual-store candidate and COE #26 parity hold
+
+### Exact Hardware candidate stack
+
+| PR | Exact head | Base | Current exact-head CI | Disposition |
+|---|---|---|---|---|
+| #317 | `fce915c1167fc43c6936f3594ae9efce376b711f` | #315 | #44209812693 quarantine PASS; #44209812920 relay PASS; #44209812745 Full validation FAIL | Current #320 parent; preserve default-deny |
+| #318 | `696e28ed4cd53b9189b78095b38aee973d774683` | #317 branch ancestor `3ed38225...` | No current-head runs | Diverged / nonmergeable; keep separate |
+| #320 | `b2b41a3d6ce7887b9624137c966f58462895d3fa` | exact #317 head | #44225714732 relay PASS; #44225714826 quarantine PASS; #44225714932 Full CANCELLED | Child candidate |
+| #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | exact #320 head | #44232877611 output PASS; #44232877649 quarantine PASS; #44232877624 Full validation FAIL | Child candidate |
+| #323 | `f98bc39c29eeb82b292aa83fa680d05d2e36efd5` | exact #322 head | #44242190343 dual-store/quarantine PASS; #44242190332 output PASS; #44242190324 Full validation FAIL | OPEN/DRAFT; conditional same-chip fallback only |
+
+#323 exact focused logs report dual-store lab PASS on ESP32 and ESP8266 and explicitly report both-store failure as current-boot-only. Its output-order fix calls `applyOutputs()` before NVS/EEPROM and LittleFS writes. This is source-extracted host CI, not physical relay/flash/power-cut acceptance.
+
+The Full run #44242190324 fails at the QA-owned legacy `Missing poll signature check` assertion. All 14 target/platform jobs completed SUCCESS; downstream simulations, signed import, update bundle, candidate gate, signing and publishing were skipped. Do not call this Full CI acceptance and do not weaken firmware default-deny to satisfy a stale string assertion.
+
+### Exact COE #26 Hardware staging comparison
+
+COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, with five workflows QUEUED and zero jobs. Current #323 source blobs do not match the staged destination:
+- ESP32 source `b0dfe6cf...` vs destination `3cc7ec54...`.
+- ESP8266 source `8e79b9eb...` vs destination `c8be98f...`.
+- New source lab `fbfe2c72...` is absent from the COE #26 tree.
+- Experiments focused workflow `2358e4ab...` invokes the dual-store lab; COE `hardware-ci.yml` `fe79adbd...` does not.
+
+The source MIT license blob `1ee55b94...` matches COE `Pisowifi/LICENSE`, but COE #26 has no root or Hardware-specific LICENSE/NOTICE path. Sibling Pisowifi license presence does not by itself resolve Hardware subtree applicability. Keep copy/move blocked pending owner/custodian determination.
+
+### Current supporting role and Release refs
+
+| Role/candidate | Exact head | Exact CI observation |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 SUCCESS, scoped; separate CORE automation owns implementation |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329235 and #43653329229 SUCCESS, scoped |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 SUCCESS, scoped; native COM acceptance unknown |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 #43633486963 SUCCESS; #292 no current-head runs |
+| RELEASE #291 | `a74b8b940fba3aa8651f1a9ee8bbf23cf112726e` | #44199987756 SUCCESS, scoped |
+| COE RELEASE #31 | `59ed44d0b911e176f1a95b9cf5585ef811ffd31b` | #44222517238 shared PASS; #44222517258 case PASS; #44222517263 sandbox FAIL at UID-map setup |
+| COE RELEASE #35 | `4f3e51ddacc85f44574967780cf2272e91e569b4` | #44242759605 shared PASS; #44242759687 case PASS; #44242759579 sandbox FAIL |
+| COE INTERCON #39/#40/#41/#42 | `33e87fbd...` / `85f38c6e...` / `021e2474...` / `a35672fb...` | #44234479271 / #44235077999 / #44235451605 / #44235625165 SUCCESS, host/compile only; three Stage-3 schemas remain unselected |
+
+No candidate is integrated into COE #26. No file move, copy, overwrite, merge or routing-manifest change occurred. **PRODUCTION NO-GO.**

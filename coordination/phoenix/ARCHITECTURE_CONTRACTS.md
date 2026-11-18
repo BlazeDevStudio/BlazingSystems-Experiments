@@ -417,3 +417,18 @@ Bounded Master source assertions on the exact #320/#322 files passed 15/15; thes
 ## 6.19 COE INTERCON journal formats remain unadopted — 2026-11-18 UTC04
 
 COE draft PRs #39, #40 and #42 independently implement the same Stage-3 staging path from #38 but define different on-flash formats: 64-byte (#39), 76-byte (#40) and 92-byte (#42). Their sketch, workflow and journal/test blobs differ; #41 is a Stage-4 child of #39 only. These are review candidates, **not the canonical Phoenix financial receipt/journal contract**. Do not connect any of them to BlazePwifi Vendo, the live Pisonet timer, customer balances or COE #26 until one format is selected by its owner, independently reviewed by QA, and validated on actual hardware. CRC32 detects corruption; it does not authenticate a peer or authorize money. The host fault-injection runs do not prove real LittleFS/power-cut atomicity. See [COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md](COE_INTERCON_STAGE3_PARALLEL_JOURNAL_LINEAGE_AUDIT_20261118_UTC04.md). **PRODUCTION NO-GO.**
+
+## 6.20 Poll-fault secondary stores are same-chip fail-closed fallback only — 2026-11-18 UTC05
+
+At PHX-HARDWARE PR #323 current head `f98bc39c29eeb82b292aa83fa680d05d2e36efd5` (source/test change commit `6738171209a748c3c210ac13ebe69450eb6405f5`), both ESP32 and ESP8266 `latchPollPulseFault()` implementations now set the RAM deny state, disable insertion, clear the active target, and invoke `applyOutputs()` before any potentially blocking NVS/EEPROM or LittleFS persistence. This output-inhibit ordering is a required fail-closed invariant; it does not prove the electrical relay has physically deasserted.
+
+The candidate adds:
+- ESP32: a fixed 20-byte versioned NVS record at namespace `phx_fault`, key `poll_fault`, with write-length and exact readback checks.
+- ESP8266: a 20-byte sticky record at EEPROM-emulation offset 512 in a 544-byte buffer; static assertions keep the existing Config before offset 512, then commit/end/reopen/readback.
+- Any existing or malformed record is a deny hold; no auto-clear is added. FNV-1a is corruption detection, not authentication or anti-rollback.
+
+These are separate regions on the same physical flash chip, **not an independent physical witness**. If either marker persists, boot remains denied. If both stores fail, the source explicitly guarantees only current-boot fail-closed behavior; reboot durability is not established. Do not claim crash-atomic financial state, independent anti-rollback, or production durability from this fallback.
+
+Exact-head source-extracted dual-store lab [44242190343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190343) reports PASS for both boards and `EXPECTED_CURRENT_BOOT_ONLY` for both-store failure. Relay/output lab [44242190332](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190332) passes logical host scenarios. Full build [44242190324](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44242190324) fails the QA-owned legacy `Missing poll signature check` assertion; 14 target/platform builds pass, downstream simulations/signing/publishing are skipped. These are CI/source-extracted results, not real flash or physical acceptance.
+
+Require independent QA reboot vectors for primary/secondary read/write failure, corrupt/partial records and both-store failure. Preserve poll/coin default-deny. Keep #323 draft-only; no COE #26 migration or production authority is granted. See [HARDWARE_POLL_FAULT_DUAL_STORE_AND_COE_STAGING_RECONCILIATION_20261118_UTC05.md](HARDWARE_POLL_FAULT_DUAL_STORE_AND_COE_STAGING_RECONCILIATION_20261118_UTC05.md). **PRODUCTION NO-GO.**

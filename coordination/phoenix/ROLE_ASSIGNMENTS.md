@@ -663,3 +663,18 @@ All CI results above are scoped to their exact refs and jobs; none proves a comb
 ## 2026-11-18 UTC04 — COE INTERCON ownership boundary
 
 New COE drafts #36–#42 preserve a Labs-origin ESP8266 Blaze Pisonet Universal source and develop a separate INTERCON staging tree. This tree is not currently assigned by `OWNERSHIP_ROUTES.json`: PHX-PISONET remains the Windows SoftTimer source owner; PHX-HARDWARE's mapped source is BlazePwifi ESP32/ESP8266; PHX-MASTER owns coordination only. Do not infer ownership from the COE destination folder or PR title, and do not take over the new source branches. The COE INTERCON maintainer must nominate an accountable owner and coordinate with PHX-HARDWARE/PHX-QA before any shared contract or integration change. The routing manifest remains unchanged and review-only.
+
+## 2026-11-18 UTC05 — exact role routing for HARDWARE #323
+
+| Role | Current exact owner PR/head | Evidence / status | Required next action |
+|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination@e95cda0a...` before this update | OPEN/DRAFT; 70 changed paths, all under `coordination/phoenix/`; no Master PR-triggered run | Maintain architecture, integration matrix and migration provenance only |
+| PHX-CORE | #252 `c82705f2...` | #42698139210 scoped SUCCESS; separate hourly CORE automation retains source ownership | Review poll-fault event identity, disposition, replay and reconciliation semantics; no source takeover |
+| PHX-RENTAL | #289 `68928774...` | #43653329235/#43653329229 scoped SUCCESS | Continue Rental-owned scope only |
+| PHX-PISONET | #255 `d01fd164...` | #42462978704 scoped SUCCESS; native COM acceptance unknown | Continue Windows SoftTimer-owned scope only |
+| PHX-HARDWARE | #317 `fce915c1...`; #320 `b2b41a3d...`; #322 `50d93e0d...`; child #323 `f98bc39c...` | #323 focused dual-store #44242190343 and output #44242190332 PASS; Full #44242190324 fails QA fixture | Document board storage layout and retain draft-only same-chip fallback; no physical claim |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 scoped SUCCESS; #292 no current-head runs | Own stale poll-signature fixture correction and independent exact-head reboot/failure vectors; preserve default-deny |
+| PHX-RELEASE | #291 `a74b8b94...`; COE #31 `59ed44d0...`; #35 `4f3e51dd...` | #291 scoped SUCCESS; #31/#35 shared and case checks pass, mandatory sandbox fails | Review Hardware workflow extension; keep signing/publishing closed |
+| COE integration owner | #26 `b382d233...` | Five workflows QUEUED, zero jobs; staged Hardware blobs differ from current source | Reconcile per-file blobs, tests, workflow invocation and license/NOTICE before any staging |
+
+#323 is a PHX-HARDWARE source candidate. PHX-MASTER does not own its sketches or tests. The separate `Blaze Production Continuation` retains CORE implementation ownership. No parallel CORE worker or duplicate source edit was started. COE INTERCON #39/#40/#42 remain competing unselected Stage-3 candidates; #41 remains dependent on #39 only.
