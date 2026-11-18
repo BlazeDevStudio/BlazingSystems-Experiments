@@ -157,8 +157,9 @@ def main() -> None:
             'prefs.getBool("ledhi",true)' not in load_config,
             "missing Preferences keys must not default to active-high")
     require("persistLocalOutputPolarity()" in save_config and
-            "return false" in save_config and "return true" in save_config,
-            "saveConfig must propagate polarity persistence/readback failure")
+            'if(prefs.putUChar("polarityv",0)!=1) return false;' in save_config and
+            "return persistLocalOutputPolarity();" in save_config,
+            "saveConfig must invalidate first and propagate polarity persistence/readback failure")
     require("if(!outputPolarityKnown)" in configure and
             "pinMode(runRelayPin,INPUT)" in configure and
             "pinMode(runLedPin,INPUT)" in configure,
