@@ -5,6 +5,8 @@ on:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/relay_output_polarity_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
@@ -22,6 +24,17 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Compile exact board output functions and reject injected regressions
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/relay_output_polarity_lab.py
+      - name: Compile parent poll inhibit drain-window lab and reject timing regressions
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
+      - name: Compile parent pulse-capture lab and reject edge/persistence regressions
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
+      - name: Report parent poll-intake labs absent on this exact SHA
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py') == '' || hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') == '' }}
+        run: |
+          echo "PARENT_POLL_INTAKE_LABS=NOT_PRESENT_ON_THIS_SHA"
+          echo "NO_PARENT_POLL_INTAKE_CI_CLAIM=1"
       - name: Check monotonic poll-window fixture timeline (child stack only)
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py
