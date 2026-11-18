@@ -859,6 +859,8 @@ void latchPollPulseFault(uint32_t pulseEdges){
   journalRecoveryRequired=true;
   insertMode=false;
   activeTarget="";
+  // Deassert outputs before LittleFS can block on open/write/flush/readback.
+  applyOutputs();
   const bool persisted=writePollPulseFaultMarker(pulseEdges);
   if(persisted){
     Serial.println("CRITICAL: coin-line edge during blocking poll; readback-verified fault marker written; operator reconciliation required.");
