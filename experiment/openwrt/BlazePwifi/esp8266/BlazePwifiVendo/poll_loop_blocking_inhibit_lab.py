@@ -444,7 +444,7 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: pre-poll edge guard must precede HTTP poll")
 
     poll_guard_removed = loop.replace(
-        "      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();\\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
+        "      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
         "      const uint32_t pollEdgeAfterDrain=pollEdgeStart;\\n      if(pollEdgeAfterDrain!=pollEdgeStart){",
         1,
     )
