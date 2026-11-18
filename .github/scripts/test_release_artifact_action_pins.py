@@ -40,7 +40,7 @@ WORKFLOWS = {
 }
 
 ACTION_PATTERN = re.compile(
-    r"^\\s*(?:-\\s*)?uses:\\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\\s#]+)(?:\\s+#.*)?$",
+    r"^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)(?:\s+#.*)?$",
     re.MULTILINE,
 )
 
