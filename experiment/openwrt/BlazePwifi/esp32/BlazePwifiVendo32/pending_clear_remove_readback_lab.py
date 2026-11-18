@@ -205,7 +205,11 @@ def compile_and_run(board: str, clear_fn: str, quarantine_fn: str, temp: Path) -
           if (LittleFS.removeCalls != 0) return 25;
           expectHeld("quarantine append failure");
 
-          std::cout << "PENDING_CLEAR_REMOVE_READBACK=PASS 10/10; SIMULATED ONLY\n";
+          reset();
+          if (!quarantinePending("window expired")) return 26;
+          expectCleared("quarantine append and pending cleanup succeed");
+
+          std::cout << "PENDING_CLEAR_REMOVE_READBACK=PASS 11/11; SIMULATED ONLY\n";
           return 0;
         }
     """)
