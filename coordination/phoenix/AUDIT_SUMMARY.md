@@ -416,3 +416,17 @@ COE #26 remains at `b382d233...` with five queued workflows and zero jobs. Both 
 **P0 owner actions:** PHX-QA independently verifies reboot/failure vectors and repairs the stale fixture; PHX-HARDWARE documents NVS/EEPROM region assumptions and physical test plan; PHX-CORE reviews event/replay semantics; PHX-RELEASE reviews the focused workflow; COE integration owner resolves exact source/test/license parity; registry custodian restores authorized private v11 access.
 
 **Verification:** 12/12 bounded Master static source/tree assertions PASS; these are not unit tests. GitHub Actions exact-head logs inspected: #44242190343 and #44242190332 SUCCESS; #44242190324 FAILURE at validation. Master Python suite NOT RUN; no Master PR-triggered run returned at pre-change head. Physical relay, flash, coin, 150 power cuts and 30-device/24-hour soak NOT TESTED. Private Drive v11/newer corrections remain unavailable; older snapshots were not substituted. **PRODUCTION NO-GO.**
+
+---
+
+## 2026-11-18 UTC06 — live exact refresh and new blockers
+
+Master branch at refresh start: c1500a585b07a5ecb2772bf58bf25c0e9df816e8; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+HARDWARE #323 has exact-head focused poll-blocking / dual-store host labs passing, but Full validation still fails the QA-owned Missing poll signature check fixture. The latest Full run #44246998969 completed all 14 target/platform builds successfully; downstream simulations, update/import/signing/publishing jobs were skipped. Same-chip dual-store fallback remains current-boot-only if both stores fail.
+
+COE INTERCON has three incompatible Stage-3 journal formats (64/76/92 bytes) and two divergent Stage-4 candidates: #41 shadow-only on #39 and #43 live timer/relay on #42. #43 uses a RAM-only unresolved pulse count, a raw LittleFS peer-key config, a RAM-slot host model and no BlazePwifi CORE adapter. Its 650 ms pulse burst and 60-second timer checkpoint require hardware acceptance. Neither Stage-4 candidate is selected or production-ready.
+
+COE Release #35 has 84-test/board/profile and case CI success, but mandatory sandbox acceptance fails closed at bubblewrap UID-map denial. COE #26 remains five queued workflows / zero jobs. COE Hardware license/NOTICE scope and INTERCON owner assignment remain unresolved.
+
+Canonical private Drive registry v11/newer corrections remain inaccessible; the 2026-11-09 accessible checkpoint is not a substitute. Master Python suite NOT RUN because GitHub DNS resolution failed in the execution container. Bounded source/provenance assertions: 12/12 PASS; these are not the full suite or independent QA.
