@@ -2,9 +2,9 @@
 """Execute the actual ESP loop() around the synchronous poll with bounded host I/O stubs.
 
 The production loop, poll-window helpers, output gate and default-deny
-acceptPollResponse() are extracted unchanged from both sketches. Only external
-Wi-Fi/HTTP/GPIO/clock/persistence edges are stubbed. This is SIMULATED
-control-flow evidence, not electrical or physical coin-acceptor proof.
+acceptPollResponse() are extracted unchanged from both sketches. Secondary
+NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
+separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
 import re
@@ -451,7 +451,7 @@ for board,path in BOARDS.items():
       ("remove-fault-marker-write",loop,output,quiet,accept,configure,isr,
        write_fault,load_fault,latch_fault.replace("const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);","const bool littleFsPersisted=false;",1),init_store,12),
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
-       load_fault.replace("if(backupHold || littleFsHold){","if(false){",1),
+       load_fault.replace("if(backupHold || littleFsHold){","if(backupHold && littleFsHold){",1),
        latch_fault,init_store,15),
     )
     for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
