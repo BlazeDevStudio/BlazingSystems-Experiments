@@ -390,3 +390,13 @@ At COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`, destination sketch b
 The source MIT license blob `1ee55b94...` matches COE `Pisowifi/LICENSE`, but the destination tree has no root or Hardware-specific LICENSE/NOTICE. Do not assume the sibling Pisowifi license resolves Hardware subtree applicability. Obtain explicit owner/custodian review.
 
 `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, destination PR #26, PHX-MASTER target `null`. No copy, move, overwrite, rename, rebase, merge or route change is authorized. Revisit only after exact blobs, license/NOTICE applicability, import completeness, test identities, workflow invocation, exact-head CI and owner/independent QA review all reconcile. **PRODUCTION NO-GO.**
+
+---
+
+## COE INTERCON candidate boundary — 2026-11-18 UTC06
+
+COE PRs #39/#40/#42 introduce three incompatible Stage-3 journal formats (64/76/92 bytes). Stage-4 #41 is a shadow-only child of #39; Stage-4 #43 is a live paid-time/timer child of #42. These are newly staged COE Hardware sources, not byte-identical migrations from the Experiments BlazePwifi firmware route.
+
+OWNERSHIP_ROUTES.json has no route for COE Hardware/BlazePisonetUniversal/INTERCON. Existing PHX-HARDWARE routes cover only BlazePwifi ESP32/ESP8266; PHX-PISONET covers Windows SoftTimer. The COE integration owner must nominate the source owner and define a per-file destination/license/test map before any copy or merge. COE root LICENSE and Hardware/LICENSE were not found; do not assume a sibling Pisowifi license covers this subtree.
+
+No file was copied, moved, renamed, or overwritten. Keep #41 and #43 as separate drafts; compare exact source blobs, journal format, test identities, licensing, owner approval and exact-head CI before any destination staging.
