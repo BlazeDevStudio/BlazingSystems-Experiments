@@ -200,3 +200,8 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 ## 2026-11-18 UTC11 — PHX-RELEASE protected-ref admission guard
 
 Test-first commit `fbaf89e5b99398b6e43be52385e28de7bb8f51ca` adds a regression requiring `github.ref_protected == true` on all five signer/publisher approval conditions in PR #291. Exact-head Windows run [#44295524044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44295524044) stopped at this mandatory handover freshness gate before the new assertion executed; it is not counted as expected RED. Current main branch protection remains an administrator-owned P1 blocker; no signing or publication occurred. PRODUCTION NO-GO.
+
+
+## 2026-11-18 UTC11 — protected-ref release admission guard
+
+Test-first commit `fbaf89e5b99398b6e43be52385e28de7bb8f51ca` produced expected RED at [#44295839833](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44295839833): handover and PackageParity passed, the negative self-test rejected the unprotected signer/publisher conditions, and the write-token publisher job was skipped. Workflow correction `15c61b68e9171ec467749a0a4dff1f8ef10e1463` adds `github.ref_protected == true` to all five signing/publisher guards. Immediate run [#44296114933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296114933) stopped at the handover freshness gate before Windows tests. Main remains unprotected; administrator policy and independent QA/MASTER review remain required. No real signing or publication. PRODUCTION NO-GO.
