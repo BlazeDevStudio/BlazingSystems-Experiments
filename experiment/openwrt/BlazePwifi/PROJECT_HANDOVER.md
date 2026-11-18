@@ -786,3 +786,13 @@ At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125
 - This is a hosted package-feed dependency failure, not a checkout-credential regression failure. No unverified alternate installer, checksum bypass, signer or publisher fallback was introduced.
 - Next owner action: release-infrastructure/package owner restores Chocolatey V2 feed availability or supplies an owner-approved immutable NSIS installer mirror with independently verified SHA256 and license provenance; then rerun the exact PR head through Setup, install/uninstall, ZIP/checksum and artifact-upload checks. PHX-QA and PHX-MASTER independent reviews remain required.
 - No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — final exact docs-head Windows CI GREEN
+
+- Exact docs-head [run #44269469055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44269469055) at `b812c40e6a000cbedfc0789d9e62107b1b6f637a`: **SUCCESS**. Handover freshness PASS; `build-windows` PASS; write-privileged `publish-release` JOB SKIPPED.
+- The all-checkout `persist-credentials: false` regression passed. Package-parity installed App/Watchdog byte-length and SHA256 checks passed. Nine synthetic publisher command-path fixtures passed with `gh` mocked; no real GitHub Release command ran. Workflow permissions remained read-only for PR/build, with write scope isolated to the separately gated publisher.
+- Windows validation passed: .NET restore and warnings-as-errors builds; PAY-0717/0718/0719/0720 lab probes; timer self-check; self-contained EXE publish; NSIS 3.13 installation; future-version metadata probe; native Setup build; exact Unicode owner metadata; unsigned Setup rejection; Setup install/uninstall; portable package creation; exact 7/7 ZIP membership; SHA256SUMS and App/Watchdog parity; artifact upload; frozen-v0.4.0 publisher admission denied.
+- CI preview artifact: ID `14411163977`, provider-reported size `264802560` bytes, provider-reported SHA256 `7274b9f9eb38afbb7e01ccc321dad3e65d2ef5d77aaee7278e21c479372706b1`. Artifact bytes were not independently downloaded. This is an **unsigned CI preview**, not an approved production binary.
+- Signing steps were SKIPPED and `publish-release` was SKIPPED as required for PR validation. The frozen `0.4.0` candidate did not qualify for a write-token publisher. Earlier #44267185904 attempts failed at the Chocolatey V2 feed with HTTP 504; this later exact docs-head run supersedes that transient feed failure for this validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
