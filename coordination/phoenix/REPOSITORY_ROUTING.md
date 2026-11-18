@@ -490,3 +490,12 @@ Migration remains blocked on exact source/destination blob comparison, license/N
 
 No destination move is authorized. COE #26 remains OPEN / DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12 against COE main a6513ab4412b4c014eee2863e45cbe32d06cb243, with five queued workflows and zero jobs. COE #35 is a Release-owned sandbox/packaging candidate, not a migration destination. Source/test/license provenance and role ownership must be reviewed before any staging proposal. The private Drive v11 registry and newer corrections are unavailable; older Library snapshots are not a substitute. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null.
 
+
+
+## 2026-11-18 UTC15 — migration hold after ConfigV3/board-parity audit
+
+The current routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null. No route is a copy/move command. COE main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 is `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, five workflows QUEUED and zero jobs.
+
+Current Hardware #323 source candidate `bc0447f013698a2e45c154b0ae69a098b0e75fe5` contains ESP8266 ConfigV3 but its boot-polarity failure-latch lab fails; ESP32 source blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` does not provide equivalent unknown-polarity boot authority. Do not stage these firmware files as a verified parity set. Before any future proposal, compare exact source/destination blobs and modes, complete tests/imports, license/NOTICE scope, and exact-head CI with role-owner and independent QA review.
+
+Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain unavailable through the complete accessible Library listing and no Google Drive connector is exposed. No older registry was substituted; no private IDs/content published. No files were copied, moved, renamed, deleted, overwritten or rebased. **Migration BLOCKED / PRODUCTION NO-GO.**

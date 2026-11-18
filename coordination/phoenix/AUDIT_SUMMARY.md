@@ -573,3 +573,14 @@ The ESP8266 ConfigV3 local polarity gate is now present on Hardware #323. Exact-
 
 COE #35 current shared/sandbox runs were still in progress at the latest read; COE #26 has five queued workflows and no jobs. Branch-protection API reads returned 403 and the rulesets list was empty. Canonical private Drive v11 and newer corrections remain inaccessible. The Master suite was not run because local GitHub DNS resolution failed; 12 bounded exact-source assertions passed.
 
+
+
+## 2026-11-18 UTC15 — ConfigV3 failure-latch / ESP32 parity decision
+
+Current #323 head `bc0447f013698a2e45c154b0ae69a098b0e75fe5` now executes the ESP8266 boot-polarity lab as a separate workflow command. The relay-output lab passes 48/48 simulated scenarios on each board, but the boot lab fails at the injected EEPROM commit-failure assertion `journalRecoveryRequired`. Exact ESP8266 source blob `283dbe329a5445931cc9fe7096561a68b9c8bf62` visibly calls `latchConfigPersistenceFailure()` after failed default-config save; the latch sets `journalRecoveryRequired=true`. Test blob `25fe2f6040f59c4fa74c9d88c821aed9804d3fe2` and run [44330729195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44330729195) show the contradictory observed failure. Root cause is UNKNOWN pending Hardware instrumentation of fake commit, extraction and latch execution.
+
+ESP32 source blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` remains without ConfigV3/unknown-polarity authority: Preferences default relay/LED polarity to active-high, and setup configures outputs before the local setup portal. This is not equivalent to the ESP8266 INPUT-until-known behavior and must be fixed by HARDWARE/verified independently by QA before board parity is claimed.
+
+Full #323 build [44330728928](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44330728928) fails at the inherited QA positive poll-signature assertion; all firmware targets and Android passed, downstream simulations/signing/publishing were skipped. Preserve firmware default-deny. COE #26 remains five queued/zero jobs; COE #35 sandbox [44334235787](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44334235787) fails closed because bubblewrap is absent after 13 host tests pass. No migration or release gate is cleared.
+
+Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, and COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` report `protected=false`; dedicated protection endpoints returned 403 and rulesets are empty. COE root AGENTS.md returned 404. Private Drive registry v11/newer corrections remain unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**

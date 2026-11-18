@@ -1105,3 +1105,21 @@ COE #35 current head at snapshot af5e2618b706bddc5c11f005ab2b10eb039108da; case-
 
 Experiments #291 head ed3565395bd70c4de696e49a84f0bb454efebc8b run 44328674893 SUCCESS for handover/build; publish-release SKIPPED. CORE #252, RENTAL #289, PISONET #255 and QA #290 scoped runs remain successful; QA #292 has no run returned. Current branch-protection readback is 403; rulesets returned empty. Private Drive v11 remains unavailable and was not replaced by an older snapshot.
 
+
+
+## 2026-11-18 UTC15 — ConfigV3 failure-latch and board-parity refresh
+
+| Role / candidate | Exact head | Exact-head CI observation |
+|---|---|---|
+| PHX-MASTER #288 | `304fea5bac2049c5ab458ef064a8dbdc085e6231` before this audit | No PR-triggered run returned |
+| HARDWARE #321 | `4c54d6299388617e9ff3d41d5501358ea545c54a` | Relay 44294008493 + quarantine 44294008398 SUCCESS; Full 44294008523 FAILURE |
+| HARDWARE #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | Relay 44232877611 + quarantine 44232877649 SUCCESS; Full 44232877624 FAILURE |
+| HARDWARE #323 | `bc0447f013698a2e45c154b0ae69a098b0e75fe5` | Quarantine 44330729133 SUCCESS; relay/boot 44330729195 FAILURE at `journalRecoveryRequired`; Full 44330728928 FAILURE at `Missing poll signature check` |
+| HARDWARE #324 | `8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba` | Relay 44290338178 + quarantine 44290338468 SUCCESS; Full 44290338340 FAILURE |
+| HARDWARE #325 | `f66b45ecbae8cdc6e4d78db976903bb41c7a75b0` | Pending-clear/quarantine 44311211095 SUCCESS; Full 44311211166 FAILURE |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED; zero jobs |
+| COE RELEASE #35 | `77cc0af71c04a75462e544b8ec945a8ffe8a3363` | Shared 44334235762 + case 44334235743 SUCCESS; mandatory sandbox 44334235787 FAILURE (bubblewrap absent, exit 125 after 13 host tests passed) |
+
+HARDWARE #323's block-scalar workflow now executes the boot-polarity lab; the remaining assertion is a real CI failure at this SHA. ESP8266 source visibly latches failed default-config persistence, but the source-extracted harness reports the latch missing; Hardware must instrument and reconcile. ESP32 blob `bd74b11c1496b0943404ff387ee72bb45d4743e5` still lacks the ESP8266 ConfigV3 unknown-polarity gate and configures OUTPUT before the setup portal; do not claim cross-board polarity parity.
+
+Other exact role heads: CORE #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` (42698139210 SUCCESS, scoped); RENTAL #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` (43653329235/43653329229 SUCCESS); PISONET #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` (42462978704 SUCCESS); QA #290 `5c29d15994cee1279058f1eca12f2a3180704292` (43633486963 SUCCESS); QA #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` (no PR-triggered run); RELEASE #291 `ed3565395bd70c4de696e49a84f0bb454efebc8b` (44328674893 SUCCESS, privileged publisher skipped). These are scoped results, not combined acceptance.

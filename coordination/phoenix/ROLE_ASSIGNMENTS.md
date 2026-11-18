@@ -827,3 +827,19 @@ The table below is a current PR API snapshot, not an ownership transfer. Source 
 - **PHX-CORE:** #252 remains c82705f2de865c89ab733b10efa84f26f56a5cc4; the separate Blaze Production Continuation owns CORE implementation. No competing worker or source change was started.
 - **COE integration owner:** #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12, five queued workflows / zero jobs. Separate candidate PRs are not combined acceptance.
 - **Repository administrator:** branch API returns protected=false / protection.enabled=false for Experiments main, development, Master, and COE main; rulesets are empty for both repositories. Configure required protections and status checks, then provide readback evidence.
+
+
+## 2026-11-18 UTC15 — exact role-head and owner-action refresh
+
+| Role | Current owned PR head | Current disposition / next owner action |
+|---|---|---|
+| PHX-MASTER | #288 `304fea5bac2049c5ab458ef064a8dbdc085e6231` before this audit | Coordination/phoenix only; audit ESP8266 failure-latch discrepancy and ESP32 polarity parity; no subsystem source edits |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Separate CORE continuation retains implementation; Master did not invoke or compete |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | Scoped CI 43653329235/43653329229 SUCCESS; no Master source work |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Scoped CI 42462978704 SUCCESS; native COM acceptance remains separate |
+| PHX-HARDWARE | #323 `bc0447f013698a2e45c154b0ae69a098b0e75fe5`; #321/#322/#324/#325 remain separate | Resolve boot-lab failed-commit assertion; implement ESP32 unknown-polarity boot gate; preserve deny-only poll/coin paths; no candidate composition by Master |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | Independently test both-board boot polarity at exact Hardware SHA; replace positive poll-signature fixture with negative deny behavior; #292 has no PR-triggered run returned |
+| PHX-RELEASE | #291 `ed3565395bd70c4de696e49a84f0bb454efebc8b`; COE #35 `77cc0af71c04a75462e544b8ec945a8ffe8a3363` | #291 publisher skipped; #35 mandatory bubblewrap sandbox remains host-blocked; infrastructure must supply authorized runner |
+| COE integration owner | COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five queued workflows / zero jobs; no combined acceptance or migration |
+
+Repository admin must configure and independently read back branch protection; registry custodian must restore private Drive v11/newer-correction access. Master owns neither role's implementation paths.
