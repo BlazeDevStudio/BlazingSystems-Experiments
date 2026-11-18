@@ -46,7 +46,7 @@ STUBS = r"""
 #define ICACHE_RAM_ATTR
 #endif
 static constexpr int HIGH=1, LOW=0, WL_CONNECTED=3;
-static constexpr int INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
+static constexpr int INPUT=0, INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
 static bool fakeShortWrite=false, fakeCorruptReadback=false, fakeOpenFail=false;
 class File {
   std::string *data=nullptr;
