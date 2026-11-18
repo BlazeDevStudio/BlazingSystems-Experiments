@@ -99,6 +99,11 @@ void detachInterrupt(int pin){
 }
 void pinMode(int,int){}
 void loadPending(){}
+// This lab isolates the production loop and LittleFS marker path. The exact
+// secondary-store implementation and reboot fallback are covered separately
+// by poll_fault_dual_store_lab.py.
+bool pollFaultBackupPresentOrCorrupt(){ return false; }
+bool writePollFaultBackup(uint32_t){ return false; }
 volatile uint32_t coinEdgeSequence=0;
 struct String : std::string {
   using std::string::string;
@@ -444,12 +449,22 @@ for board,path in BOARDS.items():
       ("no-op-coin-isr",loop,output,quiet,accept,configure,
        isr.replace("coinEdgeSequence++;","coinEdgeSequence+=0;",1),write_fault,load_fault,latch_fault,init_store,12),
       ("remove-fault-marker-write",loop,output,quiet,accept,configure,isr,
-       write_fault,load_fault,latch_fault.replace("const bool persisted=writePollPulseFaultMarker(pulseEdges);","const bool persisted=false;",1),init_store,12),
+       write_fault,load_fault,latch_fault.replace("const bool littleFsPersisted=writePollPulseFaultMarker(pulseEdges);","const bool littleFsPersisted=false;",1),init_store,12),
       ("remove-boot-fault-latch",loop,output,quiet,accept,configure,isr,write_fault,
-       load_fault.replace('if(!fsReady || !LittleFS.exists("/pollpulse.fault")) return;','return;',1),
+       load_fault.replace("if(backupHold || littleFsHold){","if(false){",1),
        latch_fault,init_store,15),
     )
     for name,ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms,expected in extra_mutations:
+        if name=="remove-edge-interrupt-attachment" and mc==configure:
+            raise AssertionError(f"{board}: interrupt-attachment mutation did not apply")
+        if name=="ignore-poll-edge-delta" and ml==loop:
+            raise AssertionError(f"{board}: poll-edge-delta mutation did not apply")
+        if name=="no-op-coin-isr" and mi==isr:
+            raise AssertionError(f"{board}: ISR mutation did not apply")
+        if name=="remove-fault-marker-write" and mlatch==latch_fault:
+            raise AssertionError(f"{board}: fault-marker mutation did not apply")
+        if name=="remove-boot-fault-latch" and mload==load_fault:
+            raise AssertionError(f"{board}: boot-latch mutation did not apply")
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
