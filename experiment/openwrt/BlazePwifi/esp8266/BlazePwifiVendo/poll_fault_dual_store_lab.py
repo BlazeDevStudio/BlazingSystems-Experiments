@@ -123,7 +123,16 @@ def constants(source: str, names):
 
 def test_extractors():
     sample = r'''
-// bool selected(int value) { this is only a comment }
+/*
+bool selected(int value) { return false; }
+struct Record { int fake; };
+*/
+const char *rawMarker = R"fake(
+bool selected(int value) { return false; }
+struct Record { int fake; };
+)fake";
+// bool selected(int value) { this is only a line comment }
+bool selected(int value);
 void caller() { selected(1); }
 struct Record {
   const char *text = "}";
