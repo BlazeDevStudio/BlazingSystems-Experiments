@@ -1,5 +1,12 @@
 name: PHX-HARDWARE Relay Output Polarity LAB
 on:
+  push:
+    branches:
+      - "phoenix/hardware-poll-fault-dual-store-20261118"
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
+      - ".github/workflows/phx-hardware-relay-output-polarity.yml"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
