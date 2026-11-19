@@ -2151,3 +2151,31 @@ This section supersedes older exact-head status pins only for the refs and runs 
 Branch API returns `protected=false` / protection disabled and required-check enforcement off for Experiments main, both inspected development refs, Master, and COE main; both rulesets endpoints are empty. No settings changed. Private v11 registry/newer corrections remain unavailable; no older snapshot was substituted. No Master Actions or full Master suite ran. **Migration BLOCKED / PRODUCTION NO-GO.**
 
 Full source/run evidence: [UTC21 audit](PHX_MASTER_UTC21_COE35_HARDLINK_ADMISSION_SITE_ULA_SANDBOX_AND_ROLE_CI_20261119.md).
+
+
+## PHX-MASTER UTC22 — exact-head COE #48 and role CI refresh — 2026-11-19
+
+### COE candidate matrix
+
+| Candidate | Exact ref | Evidence | Integration disposition |
+|---|---|---|---|
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only main; not a completed Phoenix migration | No promotion |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | 8 queued attempts / 5 unique workflows / 0 jobs | Frozen; no migration |
+| COE #48 Stage 5 | `b72ca86a141329b4b401f5d790cfb04a58423331` on #47 `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597` (+15 / -0) | Stage5 workflow 44629292767 PASS (3/3); case guard 44629291957 PASS; shared CI 44629291962 FAIL on unchanged ESP32 Vendo include `mbedtls/sha256.h` | Separate Hardware LAB candidate; no backend bridge, no relation to #26 import; keep draft |
+| COE #35 | `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b` | Hard-link regression passed, but site ULA profile gate fails and mandatory Bubblewrap sandbox unavailable | BLOCKED |
+| COE #44 | `582fd5d5e83e36b36546ac28534740298ba94af4` | Separate older-base first-boot ULA candidate; not site-wide authority | BLOCKED |
+
+### Experiments role PR matrix
+
+| Role / PR | Exact head | Current exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | `ac7e94ff416a81ddbe535ca9795d99a2092adf31` | [44622826723](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622826723) and [44622826935](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622826935) PASS; [44622826708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622826708) FAIL in controller protocol parity |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no run for exact head |
+| RELEASE #291 | `66f622fe2ba727e7a37e9431aebfeb5d3782e23a` | Windows [44626386129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386129) FAIL in PISONET-owned `negative-selftest.ps1` (`$buildWorkflow` unset); ESP32 [44626386215](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386215) and BlazePwifi [44626386217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386217) PASS |
+
+HARDWARE #327's current Full log shows `v05_firmware_hardening_test.sh` still requires positive `response_sig` and `|poll|` markers. The exact source blob `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` deliberately makes `acceptPollResponse()` return false and clears `insertMode` until CORE publishes the canonical config-auth contract and QA approves golden vectors. QA must update its fixture to assert default-deny; do not re-enable positive poll admission to satisfy the old fixture.
+
+All statuses are scoped to the listed exact refs/runs. No subsystem source was edited by Master.

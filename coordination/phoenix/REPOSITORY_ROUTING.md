@@ -902,3 +902,10 @@ The unchanged route manifest remains `DRAFT_REVIEW_ONLY`, with PHX-MASTER target
 
 Source BlazePwifi LICENSE matches destination Pisowifi LICENSE, but source root NOTICE and destination Hardware LICENSE/NOTICE scope remain unresolved. Destination sketches have key-empty signature bypass, format-on-mount-failure, unauthenticated quarantine clear and pending-evidence clearing after an unverified append. No route promotion, copy, move, overwrite, rebase, cherry-pick, merge or staging is authorized.
 
+
+
+## COE #48 Stage 5 Remote CS routing — 2026-11-19 UTC22
+
+COE #48 head `b72ca86a141329b4b401f5d790cfb04a58423331` is 15 commits ahead of #47 `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597` and changes Hardware ESP8266 staging, its tests and a Stage 5 workflow. It does **not** change `Pisowifi/` backend code and is not part of integration #26. Its `BLZCS1` HMAC protocol is a new device adapter, not the existing `/cgi-bin/vendo` protocol. The added bridge contract is design-only; no customer-credit adapter or durable router-side event ledger exists at this head.
+
+The existing `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target `null`. No route or target path changed. Do not cherry-pick, copy, rebase, move or merge #48 into #26. Before any future proposal, require explicit PHX-HARDWARE and PHX-PISONET owner acknowledgments, CORE's durable credit contract, per-file source/test/license provenance, independent QA, exact destination CI (including ESP32) and physical acceptance. The #48 candidate remains draft/LAB/NO-GO.

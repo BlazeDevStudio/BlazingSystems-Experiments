@@ -1422,3 +1422,20 @@ No ownership route changed. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`;
 | PHX-MASTER / control-plane owner | Resolve the v0.5.3 vs v0.6.0 development designation conflict in issue #172. |
 
 The role CI table is scoped to each listed PR/head; no status transfers to another SHA or to the combined COE #26 tree. No subsystem source files were modified by Master.
+
+
+## PHX-MASTER UTC22 — current owner actions and cross-repo candidate boundary — 2026-11-19
+
+| Owner | Required action | Boundary |
+|---|---|---|
+| PHX-CORE | Publish/approve the durable backend credit transaction and receipt mapping needed by a future Remote CS bridge; retain CORE ownership of financial state | Separate CORE continuation remains active; Master did not touch CORE |
+| PHX-HARDWARE | Review COE #48 Remote CS pulse capture, LittleFS write/readback/rename failure paths, boot quarantine and electrical inhibit/hold-up; add exact-source fault/reboot tests | Hardware source only; no physical test was performed |
+| PHX-PISONET / COE integration | Design and implement a separate adapter mapping BLZCS1 device/session/event to existing vendo target/customer semantics only after the CORE transaction contract is approved | Do not modify #48 from Master; do not copy it into #26 |
+| PHX-QA | Replace #327's obsolete positive poll-signature assertion with default-deny assertions against `acceptPollResponse()`; add independent Stage 5 runtime/journal failure tests and verify exact source/test SHA | QA owns its test branch and review |
+| PHX-RELEASE | Keep #48 LAB-only; repair/rerun #291 after PISONET's `$buildWorkflow` self-test correction; preserve publisher skip/approval gates | No publication, signing or release |
+| Repository administrator | Configure and independently verify branch protection/required checks; main branch API still reports `protected=false` in both repositories | No settings changed by Master |
+| Registry custodian | Restore authorized private v11 registry and newer-correction access | No private registry contents disclosed |
+
+**Current exact PR/CI:** CORE #252 `c82705f2...` PASS; RENTAL #289 `68928774...` PASS; PISONET #255 `d01fd164...` PASS; HARDWARE #327 `ac7e94ff...` focused tests PASS / Full FAIL at controller protocol parity; QA #290 `5c29d159...` PASS / #292 `75a3f66d...` no exact-head run; RELEASE #291 `66f622fe...` Windows FAIL on uninitialized `$buildWorkflow`, ESP32 compatibility and BlazePwifi build PASS. COE #48 has scoped Stage 5 CI 3/3 PASS but shared ESP32 build FAIL. Exact run URLs are in `INTEGRATION_MATRIX.md` and the UTC22 report.
+
+COE #48's PR metadata does not declare a PHX role owner; Master does not silently assign the branch. PHX-HARDWARE and PHX-PISONET must acknowledge their separate scopes before any cross-repo integration proposal. The existing CORE continuation automation was observed active/in progress; no competing CORE work was created.
