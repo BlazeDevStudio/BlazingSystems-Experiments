@@ -55,6 +55,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: RELEASE-ACTIONS enforce immutable external action pins
         run: python3 .github/scripts/test_release_artifact_action_pins.py
+      - name: RELEASE-PROVENANCE manifest and checksum negative controls
+        run: python3 .github/scripts/test_build_provenance.py
       - name: RELEASE-TOOLCHAIN Arduino CLI archive verifier negative controls
         run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
       - name: RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract
