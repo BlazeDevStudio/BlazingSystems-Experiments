@@ -925,3 +925,10 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Exact draft PR #291 source head `63f9952ce783a007546b09daa5ea4847f32fb505` adds the existing release-owner's Arduino CLI archive-verifier guard, test coverage and release handover. This entry records provenance only; the source work was not reached by the blocked workflows.
 - Exact Windows [#44458671016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671016) and shared-build [#44458671105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671105) runs failed at mandatory handover freshness before validation/build. Signing and publisher jobs were skipped.
 - This additive record enables fresh exact-head CI only. PR #291 remains draft/unmerged, with all production gates unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC06 — ESP32 core compatibility source head (CI in progress)
+
+- Exact draft PR #291 source head `7688cb25019b1045dd8f88ad335fe7fe0b5835cf` adds the existing release-owner's ESP32 core compatibility workflow and regression guard. This entry preserves provenance only.
+- Windows [#44474715157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715157) and shared-build [#44474715174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715174) hit mandatory handover freshness before their relevant validation paths; publisher/signing remain skipped. The independent compatibility run [#44474715198](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715198) has its ESP32 4.0.0 leg successful while the 3.3.13 leg remains in progress and is not credited.
+- This additive refresh enables fresh exact-head CI. PR #291 stays draft/unmerged; all production gates remain unresolved. **PRODUCTION NO-GO.**
