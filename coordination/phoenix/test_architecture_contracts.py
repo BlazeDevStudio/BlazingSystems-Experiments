@@ -76,5 +76,17 @@ class PollResponseArchitectureTests(unittest.TestCase):
         self.assertIn("PRODUCTION NO-GO", section)
 
 
+    def test_ula_identity_is_site_scoped_not_per_appliance(self):
+        section = between(
+            "## 6.9 ULA prefix is installation identity, not hardware profile",
+            "## 6.10 ImageBuilder build execution must actually be sandboxed — 2026-11-17 UTC13",
+        )
+        self.assertIn("installation means the LAN/site identity boundary", section)
+        self.assertIn("per-appliance first-boot random generator is therefore a local allocation primitive only", section)
+        self.assertIn("Two appliance instances attached to one site receive the same prefix", section)
+        self.assertIn("Two independent sites receive distinct prefixes", section)
+        self.assertIn("Concurrent first-boot attempts converge on one durable value or fail closed", section)
+
+
 if __name__ == "__main__":
     unittest.main()
