@@ -931,3 +931,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Exact Windows [#44487146268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146268) and shared build [#44487146258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146258) runs failed at mandatory handover freshness before validation/build; signing and publisher paths were skipped.
 - ESP32 compatibility [#44487146336](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146336) completed SUCCESS for both scoped core legs 3.3.13 and 4.0.0. This is not release acceptance.
 - This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC09 — provenance/concurrency refinement source head (CI active)
+
+- Exact draft PR #291 source head `cd545fe527c3b52ad251528706f744e9a5672241` refines existing build-provenance code and adds release workflow concurrency regression coverage. This note preserves provenance only.
+- Windows [#44499994885](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994885) failed at mandatory handover freshness before build validation; publisher and signing paths were skipped. Shared build [#44499994944](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994944) and ESP32 compatibility [#44499994683](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994683) are active and not credited.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
