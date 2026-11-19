@@ -286,6 +286,22 @@ The implementation owner must choose and verify one target-supported mechanism: 
 **Owner routing:** PHX-RELEASE owns packager/first-boot implementation and tests; the COE integration owner owns destination staging; PHX-QA independently verifies valid/invalid inputs and generated UCI; PHX-HARDWARE validates target behavior only after correction and authorization. PHX-MASTER owns this cross-repo contract and gate only. Exact evidence is in [COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md](COE_ULA_PREFIX_CONTRACT_REVALIDATION_20261117_UTC13.md). **PRODUCTION NO-GO.**
 
 
+### 6.9.1 Appliance-local randomness is not a site authority — 2026-11-19 UTC11
+
+For this contract, **installation means the LAN/site identity boundary, not each physical router independently**. A first-boot script that independently samples a fresh 40-bit Global ID on every appliance can create different /48 prefixes for two routers on the same site. That does not satisfy the same-site sharing invariant, even if each local UCI write is syntactically valid and durable.
+
+Before acceptance, the selected authority must allocate one site prefix and make the same canonical value available to every appliance on that LAN/site. It must survive reboot, upgrade, backup and restore. Concurrent first boots must not create competing site identities. Failed allocation, write, commit or readback must leave network services blocked and preserve unrelated UCI state. No appliance may silently replace a valid site prefix with a new random value.
+
+Independent QA must prove:
+1. Two appliance instances attached to one site receive the same prefix.
+2. Two independent sites receive distinct prefixes.
+3. Concurrent first-boot attempts converge on one durable value or fail closed.
+4. Reboot, upgrade, backup and restore preserve the exact prefix.
+5. Failed UCI stage, commit or readback leaves no partial/conflicting identity and preserves unrelated network settings.
+
+A per-appliance first-boot random generator is therefore a local allocation primitive only; it is not evidence of site-level allocation or distribution. This contract does not select the authority design. PHX-CORE and the COE integration owner choose durable authority/distribution; PHX-RELEASE implements it; PHX-QA independently verifies it; PHX-HARDWARE performs target validation only after approval. Until the owner decision and exact-head tests exist, keep COE ULA integration blocked.
+
+
 ## 6.10 ImageBuilder build execution must actually be sandboxed — 2026-11-17 UTC13
 
 ImageBuilder Makefiles and their recipes are executable inputs that can create symlinks and write files. Installing bubblewrap or proving that a trivial 'bwrap ... true' namespace probe succeeds is not containment. The actual Make/ImageBuilder subprocess that processes the candidate workspace must run inside the approved filesystem boundary.
