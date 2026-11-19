@@ -522,8 +522,9 @@ def main():
          "  applyOutputs();\n  const bool backupPersisted",
          "  const bool backupPersisted",
          "storage attempt occurred before outputs were logically OFF"),
+        # Keep sampledSingleEdge referenced so -Werror tests the runtime deny path, not an unused-variable compile error.
         ("missing-isr-edge-reconciliation", "void sampleCoinPulseEdge(bool active){",
-         "if(unseenEdges>0U && !sampledSingleEdge){", "if(false){",
+         "if(unseenEdges>0U && !sampledSingleEdge){", "if(false && !sampledSingleEdge){",
          "late coin POST pulse was not fail-closed"),
         ("multiple-isr-edges-accepted-as-one", "void sampleCoinPulseEdge(bool active){",
          "unseenEdges==1U", "unseenEdges<=3U",
