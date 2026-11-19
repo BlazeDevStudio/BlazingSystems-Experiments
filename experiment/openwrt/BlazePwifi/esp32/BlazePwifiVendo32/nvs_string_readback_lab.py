@@ -61,18 +61,29 @@ struct FakePreferences {
   std::map<std::string,uint8_t> uchars;
   std::string failLengthKey;
   std::string failReadKey;
+  bool failBegin=false;
+  bool started=false;
+  mutable unsigned failedBeginReadCalls=0;
+  unsigned failedBeginWriteCalls=0;
+  unsigned beginCalls=0;
   unsigned writeCount=0;
 
-  bool begin(const char *, bool=false, const char * = nullptr) { return true; }
-  void end() {}
+  bool begin(const char *, bool=false, const char * = nullptr) {
+    ++beginCalls;
+    started=!failBegin;
+    return started;
+  }
+  void end() { started=false; }
 
   bool isKey(const char *key) const {
+    if(!started) { ++failedBeginReadCalls; return false; }
     const std::string k(key);
     return strings.count(k) || ints.count(k) || bools.count(k) ||
            uints.count(k) || uchars.count(k);
   }
 
   String getString(const char *key,const String &fallback) const {
+    if(!started) { ++failedBeginReadCalls; return fallback; }
     const std::string k(key);
     auto it=strings.find(k);
     if(it==strings.end() || failReadKey==k) return fallback;
@@ -80,6 +91,7 @@ struct FakePreferences {
   }
 
   size_t getStringLength(const char *key) const {
+    if(!started) { ++failedBeginReadCalls; return 0; }
     const std::string k(key);
     auto it=strings.find(k);
     if(it==strings.end() || failLengthKey==k) return 0;
@@ -87,6 +99,7 @@ struct FakePreferences {
   }
 
   size_t getString(const char *key,char *value,size_t maxLen) const {
+    if(!started) { ++failedBeginReadCalls; return 0; }
     const std::string k(key);
     auto it=strings.find(k);
     if(it==strings.end() || failReadKey==k) return 0;
@@ -97,26 +110,31 @@ struct FakePreferences {
   }
 
   int getInt(const char *key,int fallback) const {
+    if(!started) { ++failedBeginReadCalls; return fallback; }
     auto it=ints.find(key);
     return it==ints.end()?fallback:it->second;
   }
 
   bool getBool(const char *key,bool fallback) const {
+    if(!started) { ++failedBeginReadCalls; return fallback; }
     auto it=bools.find(key);
     return it==bools.end()?fallback:it->second;
   }
 
   uint32_t getUInt(const char *key,uint32_t fallback) const {
+    if(!started) { ++failedBeginReadCalls; return fallback; }
     auto it=uints.find(key);
     return it==uints.end()?fallback:it->second;
   }
 
   uint8_t getUChar(const char *key,uint8_t fallback) const {
+    if(!started) { ++failedBeginReadCalls; return fallback; }
     auto it=uchars.find(key);
     return it==uchars.end()?fallback:it->second;
   }
 
   size_t putString(const char *key,const String &value) {
+    if(!started) { ++failedBeginWriteCalls; return 0; }
     strings[key]=value;
     ++writeCount;
     return value.size();
@@ -167,6 +185,7 @@ static void seedSentinelValues() {
   prefs.bools["coinlow"]=true;
   prefs.uints["debounce"]=40;
   prefs.uints["groupms"]=400;
+  prefs.started=true; // Direct helper tests model an already-open Preferences namespace.
 }
 
 static void seedValidBootConfig() {
@@ -235,6 +254,21 @@ static bool bootReadFailureKeepsOutputsOff(const char *key,bool lengthFailure) {
          !insertMode && activeTarget.empty() && prefs.writeCount==0;
 }
 
+static bool namespaceOpenFailureAvoidsFurtherNvsIo() {
+  seedValidBootConfig();
+  simulateNvsReboot();
+  resetBootRuntime();
+  prefs.failBegin=true;
+  loadConfig();
+  return prefs.beginCalls==1 && !prefs.started &&
+         prefs.failedBeginReadCalls==0 && prefs.failedBeginWriteCalls==0 &&
+         !outputPolarityKnown && !pinConfigSafe &&
+         !runRelayActiveHigh && !runLedActiveHigh &&
+         !cfg.relayActiveHigh && !cfg.ledActiveHigh &&
+         !insertMode && activeTarget.empty() &&
+         cfg.apPass.size()>=8 && prefs.writeCount==0;
+}
+
 int main() {
   seedSentinelValues();
   const char *failed=nullptr;
@@ -289,6 +323,13 @@ int main() {
     std::cerr<<"VALID_NVS_REBOOT_DID_NOT_RESTORE_LOCAL_POLARITY\n";
     return 48;
   }
+  if(!namespaceOpenFailureAvoidsFurtherNvsIo()) {
+    std::cerr<<"NVS_NAMESPACE_OPEN_FAILURE_NOT_HANDLED read_calls="
+             <<prefs.failedBeginReadCalls<<" write_calls="
+             <<prefs.failedBeginWriteCalls<<"\n";
+    return 52;
+  }
+  std::cout<<"NVS_NAMESPACE_OPEN_FAILURE_EXPLICIT_FAIL_CLOSED_PASS\n";
   const char *bootKeys[]={"ssid","pass","server","key","id"};
   for(const char *key:bootKeys) {
     if(!bootReadFailureKeepsOutputsOff(key,false)) {
