@@ -980,3 +980,11 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - [BlazePwifi build #44538815114](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815114) completed SUCCESS for scoped validation, target builds, update bundle, and simulations; `production_sign_handoff` and both publication jobs were skipped.
 - [Windows release #44538815094](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815094) passed handover validation and then stopped at `RELEASE-SIGN test fail-closed negative controls`; package/publisher follow-ons were skipped. [ESP32 compatibility #44538815283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815283) completed both scoped legs against Hardware source `984ea8ff65a9`.
 - This is terminal CI evidence only. It does not sign, publish, flash, deploy, or establish physical/production acceptance. PR #291 is still draft/unmerged with no independent review; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC15 — supersession audit: provenance generator refinement
+
+- Compatible branch head `97d500445d7a9bb6b3cf4b968b27e8dd9e046967` already contains another release worker's build-provenance generator and regression-test refinement. The implementation was preserved; this entry records independently observed results.
+- Exact [BlazePwifi build #44555775939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775939) completed SUCCESS for scoped validation, target builds, update bundle, and simulations. Production signer and publication jobs were skipped.
+- Exact [Windows release #44555775954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775954) passed handover validation then correctly stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on ran. [ESP32 compatibility #44555775998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775998) completed both scoped historical-source legs (`984ea8ff65a9`).
+- This is evidence only: no artifact has been signed, published, flashed, deployed, or designated production-ready. PR #291 remains draft/unmerged with no independent review; **PRODUCTION NO-GO.**
