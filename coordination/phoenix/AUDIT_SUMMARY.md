@@ -1180,3 +1180,12 @@ No subsystem source, role branch, ownership manifest, COE destination, financial
 **Verification:** 12/12 static migration-provenance assertions passed against the exact GitHub tree/blob metadata. This is source/tree inspection, not a subsystem test or CI run. Master Python suite NOT RUN; Master Actions has no run for the current head. No hardware, power-cut, soak, migration, signing or payment operation was performed.
 
 **Next owners:** CORE refreshes its own handover after the workflow change and decides site-prefix authority; QA replaces the stale positive poll marker with negative/default-deny tests and refreshes #292 against current Master; HARDWARE continues its two-board source labs and reviews the destination divergences; RELEASE reruns #291 after CORE handover and preserves protected publisher gates; COE integration produces a file-by-file source/license/test/toolchain map and remediates the candidate before any migration proposal; repository admin verifies branch protection; registry custodian restores authorized v11 access. Production remains NO-GO.
+
+---
+
+## PHX-MASTER live exact-head refresh — 2026-11-19 UTC20
+
+PHX-MASTER's live UTC20 review found the control-plane body still pins an obsolete Master SHA; the live #288/branch head is `b6ee424b897701bf1c550076610203d45f1a13f2`. Current development is `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; v0.5.3 is legacy. Role CI is mixed: HARDWARE #327 focused labs pass but Full fails on the QA-owned positive poll marker; RELEASE #291 Windows fails on an uninitialized `$buildWorkflow`, while two other jobs were still in progress. COE #26 has eight queued attempts across five workflows and zero jobs; #27 is a separate candidate, not part of #26.
+
+Exact source/destination tree review found no identical Hardware sketch blobs, incomplete QA test import, missing Hardware license/NOTICE scope and destination fail-open journal/authentication paths. The second-ISR lower-bound lab passes on both boards as a host simulation only. No source subsystem was modified, no migration was staged, and no Master suite/Actions run was available. Private Drive v11 remains BLOCKED; no private data was published. PRODUCTION NO-GO.
+

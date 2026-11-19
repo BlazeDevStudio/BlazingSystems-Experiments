@@ -2101,3 +2101,21 @@ ESP8266 destination blob c8be98f... calls LittleFS.format() after mount failure 
 Both destination sketches unconditionally use legacy mbedtls_sha256_starts/update/finish without status checks; current Experiments source has explicit Mbed TLS 3/4 branches with checked status and PSA handling for 4.x. The destination Hardware test blob f921c56cecc19cab1989507b9b4ade1f45dac54e asserts positive response_sig and |poll| markers, which conflicts with the current deny-only source contract.
 
 These are exact-source static findings, not customer incidents or hardware tests. No destination file was changed. No copy, move, overwrite, cherry-pick, rebase, merge or staging is permitted from this report.
+
+---
+
+## PHX-MASTER live exact-head refresh — 2026-11-19 UTC20
+
+**Current refs:** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active development `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master pre-update `b6ee424b897701bf1c550076610203d45f1a13f2`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Role | Exact PR head | Exact-head status |
+|---|---|---|
+| CORE #252 | `c82705f2...` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| RENTAL #289 | `68928774...` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd164...` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | `20c73090...` (source/test `cbc5ae5...`) | Focused [44612105093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105093) and [44612105234](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105234) PASS; Full [44612105221](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105221) FAIL |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no exact-head run |
+| RELEASE #291 | `3bffd9d1...` | Windows [44612586795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586795) FAIL; ESP32 [44612586860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586860) and build [44612586896](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586896) IN PROGRESS at last read |
+
+COE #26 has eight queued runs across five unique workflows, zero jobs; COE #27 is a separate draft with two scoped passes, not integrated into #26. COE #35 fails closed on missing approved site ULA authority and missing Bubblewrap. Master #288 has no exact-head Actions run. PRODUCTION NO-GO.
+

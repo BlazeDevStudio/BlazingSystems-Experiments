@@ -1374,3 +1374,22 @@ This is a live supplement to the historical role table. It does not reassign any
 | Registry custodian | Restore authorized private Drive v11 and newer-correction access. No older registry substitute is accepted. |
 
 CORE remains owned by the separate Blaze Production Continuation. No competing CORE worker or source edit was started.
+
+---
+
+## PHX-MASTER live exact-head refresh — 2026-11-19 UTC20
+
+| Owner | Current exact PR head | Owner action / boundary |
+|---|---|---|
+| PHX-CORE | #252 `c82705f2...` | Own ledger/receipt and handover contracts; review the three CORE handover files carried by RELEASE #291. Master did not touch CORE. |
+| PHX-RENTAL | #289 `68928774...` | Scoped CI passes; retain independent source ownership. |
+| PHX-PISONET | #255 `d01fd164...` | Own `negative-selftest.ps1` under the PISONET subtree; fix uninitialized `$buildWorkflow` and coordinate with RELEASE. |
+| PHX-HARDWARE | #327 docs `20c73090...`, source/test `cbc5ae5...` | Second-ISR lower-bound lab passes on both boards in simulation; Full remains blocked by QA fixture. No physical acceptance. |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | Replace positive poll marker with default-deny tests; refresh #292 against current Master and exact role heads. |
+| PHX-RELEASE | #291 `3bffd9d1...` | Preserve publisher gates; rerun Windows after PISONET fix; do not assume ownership of CORE/PISONET paths. |
+| PHX-INFRA / COE | COE #26 `b382d233...`; #27 `009f70cc...` | Keep both drafts; #26 has eight queued attempts / five workflows / zero jobs. Resolve full provenance, license, tests, site ULA and Bubblewrap. |
+| Repository administrator | N/A | Establish and verify branch protection and required checks; both repositories have empty rulesets. |
+| Registry custodian | N/A | Restore authorized private Drive v11 and newer-correction access. |
+
+CORE remains with its separate owner/continuation. No competing CORE implementation or subsystem source edit was started.
+

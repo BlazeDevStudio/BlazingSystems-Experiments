@@ -893,3 +893,12 @@ Destination Hardware test blob f921c56cecc19cab1989507b9b4ade1f45dac54e requires
 ### Disposition
 
 COE #26 remains OPEN/DRAFT with five queued workflows and zero jobs. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY; Master destination null. Do not copy, move, overwrite, cherry-pick, rebase, merge or stage. COE integration must produce the complete per-file intake map and remediate/justify the above differences; PHX-HARDWARE, PHX-QA and the licensing owner review their scopes before a new migration proposal.
+
+---
+
+## PHX-MASTER live exact-head refresh — 2026-11-19 UTC20
+
+The unchanged route manifest remains `DRAFT_REVIEW_ONLY`, with PHX-MASTER target null. Source Hardware #327 head `20c73090...` versus COE #26 `b382d233...`: ESP32 16 source files / 1 destination / 0 identical / 1 divergent / 15 source-only; ESP8266 20 / 1 / 0 / 1 / 19. QA route: 47 source / 19 destination / 1 identical / 3 divergent / 43 source-only / 15 destination-only. COE #27 `009f70cc...` is a separate draft on main; its Hardware test blob is identical to #26 and it does not import the source lab set.
+
+Source BlazePwifi LICENSE matches destination Pisowifi LICENSE, but source root NOTICE and destination Hardware LICENSE/NOTICE scope remain unresolved. Destination sketches have key-empty signature bypass, format-on-mount-failure, unauthenticated quarantine clear and pending-evidence clearing after an unverified append. No route promotion, copy, move, overwrite, rebase, cherry-pick, merge or staging is authorized.
+
