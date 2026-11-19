@@ -1521,3 +1521,58 @@ Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The control-plane 
 The #327 source sketches, eight source-side Python labs, COE #26 destination sketches, single generic positive-presence shell test, toolchain workflow, README version, and Hardware license/NOTICE scope are not equivalent. No destination staging was modified. The #26 description's 95% readiness and licensing-resolved claims are not accepted as evidence while its five workflows have zero jobs and Hardware license scope remains unresolved.
 
 PRODUCTION NO-GO: protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain mandatory.
+
+
+## Live exact-head integration matrix — 2026-11-19 UTC04
+
+### Repository authority
+
+| Ref | Exact SHA / state |
+|---|---|
+| Experiments main (default) | f4e8a891aed8af86d5fd315d28750a0ac3a7372b |
+| Current development label, v0.6.0 audit foundation | 2fbd2475e9f54878c316fa7cea2f228386b0e859; branch object reports protected=false |
+| Legacy v0.5.3 development | aad3aade72c1156eecba1fed30907c6d0283b2c5 |
+| Literal branch named development | NOT FOUND (404); do not substitute it for the v0.6.0 branch |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243; branch object reports protected=false |
+| Master before this update | d26000d4498739f87bb99ef2037ddcf5020d8a99 |
+| Existing Master PR #288 | OPEN / DRAFT, base main at f4e8a891..., pre-update head d26000d... |
+| COE integration PR #26 | OPEN / DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12 |
+
+OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null.
+
+### Role PRs and exact-head CI
+
+| Role / candidate | Exact current head | Exact-head evidence | Classification / next owner action |
+|---|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped run 42698139210 PASS | Separate CORE continuation owns implementation; define site ULA authority and receipt-v1/v2 bridge |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Scoped runs 43653329235 and 43653329229 PASS | Scoped CI only; no native rental acceptance claim |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Scoped run 42462978704 PASS | Owner retains native COM bench and SoftTimer acceptance |
+| PHX-HARDWARE #327 | Branch/docs head e799b0f042889b97ba7bae2ae2e06c1ec76392d6; firmware source commit 11fae729df415cc26b9e1675b1758cd8e4d22648; source/test lab head 071a711d6598c67124e84ffd995fd48aa7d9f054; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44453718564 job 135323579699 PASS; relay/output #44453718633 PASS; Full #44453718661 validation job 135323581119 FAIL at Missing poll signature. ESP8266/ESP32 and 13 firmware/platform targets plus Android PASS; downstream release gates SKIPPED | Local config lab executes through coin_pulse_capture_lab.py; it is not financial migration. QA must independently review; HARDWARE must refresh stale PR body and provide exact-head Mbed TLS 3.3.13 / unsupported-major evidence |
+| PHX-QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Scoped run 43633486963 PASS | Independent review of #327 and default-deny poll fixture remains required |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head runs returned; base b1ca02e2087f3b1a7169ceab9c34e52646e700df is stale vs current Master | QA owns any base refresh and independent verification |
+| PHX-RELEASE #291 | 63f9952ce783a007546b09daa5ea4847f32fb505 | Windows run #44458671016 fails at shared handover freshness; build-windows and publisher skipped. BlazePwifi run #44458671105 fails Mandatory handover freshness gate; target builds and Android pass, downstream update/signing/candidate/publishing skipped | Release archive-integrity work is reported by RELEASE as verified; coordinate with CORE to refresh canonical PROJECT_HANDOVER.md after workflow changes. Master does not edit the shared handover |
+| COE RELEASE #35 | a270b547fb5ff570bd2bc49c2e96219043d7c9bd | Shared/firmware #44451317780 PASS; case #44451317996 PASS; sandbox #44451317807 FAIL CLOSED because bwrap is absent after 14/14 preflight (exit 125) | Arduino CLI 1.6.0, ESP8266 3.1.2, ESP32 3.3.13 pins verified on #35 only |
+| COE RELEASE #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Shared #44390136309 PASS; case #44390136296 PASS; sandbox #44390136327 FAIL CLOSED | 15 ahead / 21 behind current #35, merge base 1a5be48d2845781b0b07bad39a37f8440cea4d4; RELEASE owns history-preserving reconciliation |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Synthetic receipt-v1 runs #44295049727 and #44295049903 PASS | Candidate only; no approved Master-v2 mapping or financial authority |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows remain QUEUED with zero jobs: #43096752609, #43096752632, #43096752800, #43096752563, #43096752557 | Destination CI has not executed; migration remains BLOCKED |
+
+### Current Hardware migration provenance
+
+| Item | Experiments #327 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | 1b32cb90be11da79ba7ea1155f128aee9e495dd2 / 67,300 bytes | c8be98f72596681e36a3ad1f8939bf8046c96887 / 18,394 bytes | Different blobs and sizes |
+| ESP32 sketch | f54805b17cac45388dfacc5e65eff9b731234316 / 60,326 bytes | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 / 18,505 bytes | Different blobs and sizes |
+| Test identity | Eight source-side Python labs; local config lab is indirectly invoked by coin_pulse_capture_lab.py | One generic Hardware/tests/test_firmware_hardening.sh blob f921c56cecc19cab1989507b9b4ade1f45dac54e / 4,118 bytes | Not equivalent |
+| Poll contract | Source acceptPollResponse() returns false and keeps default-deny | Destination test requires positive response_sig, |register| and |poll| strings | Contract/test conflict |
+| Toolchain | #327 build workflow is not pinned to a stable ESP32 core matrix | #26 hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 uses unversioned core installs; Hardware README blob 99af3e5b46cd8b6f35c6479b204683f60c55ebcb says ESP32 3.3.12 / ESP8266 3.1.2 | Not reproducible; #35 pins do not propagate to #26 |
+| License | BlazePwifi/LICENSE blob 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE same blob; Hardware/LICENSE and Hardware/NOTICE.md return 404 | Pisowifi license identity does not establish Hardware subtree scope |
+
+The COE #26 PR description claims the licensing/privacy conflict is resolved and software readiness is 95%; the exact Hardware subtree license/NOTICE paths are absent and all five workflows have zero jobs. These narrative claims are not accepted as migration evidence.
+
+### Governance and access
+
+Experiments main and v0.6.0 branch objects report protected=false; COE main reports protected=false. Classic protection endpoints return 403 to this integration and repository rulesets return an empty list. Effective required-check enforcement needs repository-administrator verification. Cleanup issue #266 remains OPEN with historical source pins; it is not proof that all seven cleanup tracks completed.
+
+The requested private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not found in the accessible Library. No Google Drive connector is exposed in this runtime. No older registry snapshot was substituted; no private IDs or contents were copied into this public repository.
+
+**Disposition:** no destination staging, copy, move, overwrite, rebase, merge or promotion. Keep OWNERSHIP_ROUTES.json unchanged and PHX-MASTER destination null. PRODUCTION NO-GO.

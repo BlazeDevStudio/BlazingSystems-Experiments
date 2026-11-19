@@ -676,3 +676,31 @@ COE #44 remains based on older #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d
 ### Staging decision
 
 Do not copy, move, overwrite, cherry-pick, rebase, or stage any Hardware files into COE #26. Required before staging: exact path/mode/blob map; complete eight-lab import or reviewed equivalent; replacement negative/default-deny tests; exact pinned toolchain; destination CI with actual jobs; explicit Hardware license/NOTICE scope; reversible rollback proof; and subsystem-owner acceptance. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+
+## PHX-MASTER UTC04 — exact Hardware provenance and local/financial migration boundary (2026-11-19)
+
+Current Experiments Hardware #327 branch/docs head is e799b0f042889b97ba7bae2ae2e06c1ec76392d6, a documentation-only commit recording the Mbed TLS 3/4 evidence. Its firmware source commit is 11fae729df415cc26b9e1675b1758cd8e4d22648 and source/test lab head is 071a711d6598c67124e84ffd995fd48aa7d9f054. The #327 PR body still identifies a3597125 as current head; the latest Hardware control-plane comment identifies e799b0 correctly. HARDWARE owns the PR description correction.
+
+### Exact source/destination blobs at current refs
+
+| Platform | Experiments #327 | COE #26 |
+|---|---|---|
+| ESP8266 | 1b32cb90be11da79ba7ea1155f128aee9e495dd2 / 67,300 bytes | c8be98f72596681e36a3ad1f8939bf8046c96887 / 18,394 bytes |
+| ESP32 | f54805b17cac45388dfacc5e65eff9b731234316 / 60,326 bytes | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 / 18,505 bytes |
+
+Both platform pairs differ. Source acceptPollResponse() returns false and preserves default-deny. The COE #26 shell test blob f921c56cecc19cab1989507b9b4ade1f45dac54e positively requires response_sig, |register| and |poll| strings; this is not behavior/test parity with the source contract.
+
+The source-side Hardware PR contains eight Python labs. config_load_read_failure_lab.py blob 40dfa46e48d8288bf94ad8c5579bf0d7436d4df6 is invoked by coin_pulse_capture_lab.py blob cdc6d85aed5e5a0c85b154afa67c302023ec20b9, which is invoked by the quarantine workflow. Exact run #44453718564 job 135323579699 logs confirm the lab executed. This is local ESP8266 EEPROM configuration v1/v2-to-v3 recovery only; the lab itself emits FINANCIAL_MIGRATION_TESTED=0 and PHYSICAL_POWER_CUT_VERIFIED=0. It is not evidence for the financial ledger v1-to-v2 migration.
+
+### License and build provenance
+
+Source BlazePwifi/LICENSE and COE Pisowifi/LICENSE are the same MIT blob 1ee55b94183417be977ca287cd7391f9a6f7e721. COE Hardware/LICENSE and Hardware/NOTICE.md return 404 at #26. The Pisowifi license does not by itself establish the Hardware subtree's license/NOTICE scope.
+
+COE #26 hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 installs unversioned ESP8266/ESP32 cores; Hardware/README.md blob 99af3e5b46cd8b6f35c6479b204683f60c55ebcb documents ESP32 3.3.12 and ESP8266 3.1.2. The pinned #35 toolchain does not flow into #26. All five #26 workflows remain QUEUED with zero jobs.
+
+### Staging decision
+
+Do not copy, move, overwrite, cherry-pick, rebase, or stage any Hardware files into COE #26. Before a future proposal, require per-file path/mode/blob provenance, complete eight-lab import or reviewed equivalents, default-deny negative tests, explicit Hardware license/NOTICE scope, pinned CLI/core/FQBN/options, exact-head destination CI, reversible rollback evidence and Hardware/QA/Release owner acceptance. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+RELEASE #291 also remains blocked by the shared PROJECT_HANDOVER.md freshness gate after release workflow changes. CORE and RELEASE must coordinate the canonical handover update; Master does not edit CORE-owned handover files.

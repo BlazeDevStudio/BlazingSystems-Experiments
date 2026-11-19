@@ -820,3 +820,35 @@ Experiments AGENTS.md, the latest README_FIRST, uploaded Master prompt, BLAZE-CO
 **Next:** QA fixes default-deny poll fixtures and reviews Mbed TLS branches; HARDWARE refreshes its PR/handover and adds version-branch tests; RELEASE keeps #35 pins, refreshes its PR description, reconciles #44/#35 and supplies the authorized bwrap runner; COE integration owner supplies exact imports/licenses/tests and runnable #26 CI; CORE defines site ULA and receipt bridge; repository admin verifies protection; registry custodian restores private v11 access.
 
 **PRODUCTION NO-GO** remains until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.
+
+
+## UTC04 live audit — 2026-11-19
+
+**Master pre-update:** phoenix/master-coordination at d26000d4498739f87bb99ef2037ddcf5020d8a99; PR #288 OPEN/DRAFT against main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The unchanged routing manifest is e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+### Material verified changes and findings
+
+1. Hardware #327's current docs head is e799b0f042889b97ba7bae2ae2e06c1ec76392d6; firmware source commit 11fae729 and source/test lab head 071a711d. The PR body still names a3597125 as current head and must be refreshed by HARDWARE. The latest role checkpoint comment identifies e799b0 correctly.
+2. The ESP8266 full-image EEPROM read failure lab is executed indirectly: coin_pulse_capture_lab.py invokes config_load_read_failure_lab.py, and the quarantine workflow invokes coin_pulse_capture_lab.py. Exact PR quarantine #44453718564 job 135323579699 logs show the full-image read/recovery, malformed-schema setup-save denial, local v1/v2 migration marker preservation and failed-commit retry cases passing. This is SIMULATED source-extracted local configuration evidence only; the lab explicitly says FINANCIAL_MIGRATION_TESTED=0 and PHYSICAL_POWER_CUT_VERIFIED=0.
+3. Hardware #327 quarantine #44453718564 and relay/output #44453718633 PASS. Full #44453718661 fails at QA-owned Missing poll signature check (job 135323581119); 13 firmware/platform targets and Android PASS, downstream signing/simulation/candidate/publishing jobs SKIPPED. Exact-head Mbed TLS 3.3.13 and unsupported-major tests remain NOT RUN.
+4. COE #26 still has five QUEUED workflows / zero jobs. Its ESP8266/ESP32 sketches differ from #327 source blobs, its one generic shell test is not the eight-lab source corpus, it retains positive response_sig/register/poll assertions against a source that intentionally returns false, hardware core installs are unpinned, and Hardware/LICENSE plus Hardware/NOTICE.md are absent. No migration staging or file movement occurred.
+5. COE #35's pinned Arduino CLI 1.6.0 / ESP8266 3.1.2 / ESP32 3.3.13 workflow passes shared/firmware and case-collision; the mandatory sandbox fails closed because bwrap is unavailable. #44 is 15 ahead / 21 behind #35.
+6. RELEASE #291 head 63f9952 has target builds and Android passing, but its shared validation fails the Mandatory handover freshness gate; the Windows handover gate also fails and build-windows/publisher are skipped. CORE and RELEASE must coordinate the canonical handover refresh; Master did not edit it.
+7. CORE #252, RENTAL #289, PISONET #255, QA #290 and COE #45 retain the scoped CI results listed in the current integration matrix. QA #292 has no exact-head runs and a stale base.
+
+### Verification classification
+
+- Exact GitHub branch, PR, file-blob, workflow-run and job readbacks: completed.
+- Source/tree inspection: completed for Hardware #327 and COE #26.
+- Focused Hardware CI: verified at exact branch head through the linked PR runs; source-extracted/fake-I/O only.
+- Master Python suite: NOT RUN.
+- Master GitHub Actions: no runs returned.
+- Physical EEPROM/flash/relay/coin acceptance, real power cuts, native acceptance and 30-device/24-hour soak: NOT TESTED.
+- Branch protection: main/v0.6/COE main report protected=false; protection endpoints 403; rulesets empty.
+- Private Drive registry v11/newer corrections: BLOCKED; no Google Drive connector and no matching v11 file in accessible Library.
+
+### Next
+
+HARDWARE refreshes its PR body and obtains exact-head Mbed TLS 3.3.13/unsupported-major evidence; QA independently reviews the config-read lab and fixes the positive poll fixture with negative deny-only tests; CORE/RELEASE reconcile handover freshness; COE integration supplies exact imports/licenses/tests/pinned toolchain and runnable #26 CI; repository admin verifies protections; registry custodian restores v11 access.
+
+**PRODUCTION NO-GO** remains mandatory: independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.

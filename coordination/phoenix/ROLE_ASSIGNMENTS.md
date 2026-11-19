@@ -1088,3 +1088,28 @@ Exact-head refresh only; no ownership reassignment and no subsystem source edits
 | COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 on main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Five workflows QUEUED / zero jobs; source/destination Hardware blobs and test identities differ | Complete per-file, license, import, test and pinned-toolchain provenance before staging |
 
 PHX-MASTER did not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches. The separate CORE continuation retains CORE implementation. No competing CORE worker was started.
+
+
+## Live owner routing — 2026-11-19 UTC04
+
+Exact-head refresh only; no ownership reassignment. The seven role boundaries remain active.
+
+| Role | Current candidate / exact head | Next owner action |
+|---|---|---|
+| PHX-MASTER | #288 pre-update head d26000d4498739f87bb99ef2037ddcf5020d8a99; branch phoenix/master-coordination | Coordination/phoenix, architecture contracts, integration matrix and provenance only; retain #26 migration BLOCKED |
+| PHX-CORE | Experiments #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Separate active CORE continuation retains all CORE implementation; define site-scoped ULA authority and receipt-v1/v2 mapping; coordinate canonical PROJECT_HANDOVER.md freshness with RELEASE |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | Owner-only changes; scoped CI does not establish native rental acceptance |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Own native COM bench and Windows SoftTimer acceptance; no Master source edits |
+| PHX-HARDWARE | #327 branch/docs head e799b0f042889b97ba7bae2ae2e06c1ec76392d6; firmware commit 11fae729; source/test head 071a711d | Refresh stale PR description; obtain exact-head ESP32 core 3.3.13 evidence and unsupported Mbed TLS major compile rejection; preserve default-deny; do not claim physical EEPROM/relay durability |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | Independently review #327 source/test SHA 071a711d and config-read lab; replace positive poll-signature presence assertion with negative/default-deny tests; #292 has no runs and stale base |
+| PHX-RELEASE | #291 63f9952ce783a007546b09daa5ea4847f32fb505; COE #35 a270b547; COE #44 582fd5d5 | Preserve #35 toolchain pins; coordinate CORE handover freshness after release workflow changes; keep mandatory sandbox fail-closed until authorized bwrap runner; reconcile #44/#35 without force-push |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 on main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Complete per-file blob/mode, license/NOTICE, eight-lab import, negative-test identity, pinned-toolchain and exact-head CI evidence before any staging |
+
+### Shared blockers
+
+- Repository administrator: verify branch protection and required checks; main/v0.6/COE main branch objects report protected=false, protection API is 403, rulesets read empty.
+- Registry custodian: restore authorized access to private registry v11 and newer corrections; no Drive connector is exposed here.
+- PHX-CORE and PHX-RELEASE: resolve the shared handover freshness gate without Master editing CORE-owned handover files.
+- PHX-QA and PHX-HARDWARE: independently resolve the positive poll-signature fixture conflict without introducing positive unauthenticated poll admission.
+
+No Master source edits, assignments, merges, rebase, release, hardware operation, financial migration, or signer action occurred. The separate CORE continuation retains CORE implementation ownership; no competing CORE worker was started.
