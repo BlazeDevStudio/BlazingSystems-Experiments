@@ -536,6 +536,35 @@ class BuildProvenanceTests(unittest.TestCase):
         finally:
             self.artifact = original_artifact
 
+
+    def test_artifact_inventory_rejects_external_hardlink(self):
+        work = self.openwrt_fixture()
+        outside = self.root / "outside-artifact-payload.bin"
+        outside_bytes = b"operator-owned external content"
+        outside.write_bytes(outside_bytes)
+        linked = self.artifact / "linked-outside.bin"
+        os.link(outside, linked)
+        write_checksums(self.artifact)
+
+        checksum_path = self.artifact / "SHA256SUMS"
+        original_checksums = checksum_path.read_bytes()
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+
+        with self.assertRaisesRegex(
+            provenance.ProvenanceError,
+            "hard-linked artifact file is not admitted",
+        ):
+            provenance.write_provenance(args, env=self.env)
+
+        self.assertEqual(checksum_path.read_bytes(), original_checksums)
+        self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
+        self.assertEqual(outside.read_bytes(), outside_bytes)
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
