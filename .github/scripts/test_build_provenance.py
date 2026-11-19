@@ -400,6 +400,38 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
 
 
+    def test_regular_file_open_rejects_parent_symlink_swap_race(self):
+        parent = self.root / "race-parent"
+        parent.mkdir()
+        target = parent / "payload.bin"
+        target.write_bytes(b"inside-original")
+        moved_parent = self.root / "moved-parent"
+        swapped = False
+        real_open = os.open
+
+        def swap_then_open(path, flags, *args, **kwargs):
+            nonlocal swapped
+            value = os.fspath(path)
+            if not swapped and (
+                value == str(target)
+                or (value == parent.name and kwargs.get("dir_fd") is not None)
+            ):
+                parent.rename(moved_parent)
+                parent.symlink_to(moved_parent, target_is_directory=True)
+                swapped = True
+            return real_open(path, flags, *args, **kwargs)
+
+        try:
+            with patch.object(provenance.os, "open", side_effect=swap_then_open):
+                with self.assertRaises(provenance.ProvenanceError):
+                    provenance._hash_regular(target)
+            self.assertTrue(swapped, "the deterministic parent-directory swap must execute")
+        finally:
+            if parent.is_symlink():
+                parent.unlink()
+            if moved_parent.exists():
+                moved_parent.rename(parent)
+
     def test_payload_change_after_manifest_snapshot_is_rejected_before_checksum_rewrite(self):
         work = self.openwrt_fixture()
         checksum_path = self.artifact / "SHA256SUMS"
