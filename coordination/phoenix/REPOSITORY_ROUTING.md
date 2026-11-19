@@ -728,3 +728,15 @@ Before any future migration proposal, require:
 COE #35 is 108 commits ahead of parent #31. COE #44 is 15 ahead / 25 behind #35 and mergeable=false. RELEASE owns history-preserving reconciliation. INTERCON #39/#40/#42 and #41/#43 remain distinct alternatives; no canonical Stage-3/Stage-4 candidate is selected.
 
 Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, PHX-MASTER destination null. Do not copy, move, overwrite, cherry-pick, rebase or merge any subsystem files.
+
+## PHX-MASTER UTC07 — poll-deny fixture and release-handover routing (2026-11-19)
+
+**No source migration or staging is approved.** Experiments #327 remains the source candidate at 31f5d727... (source/test c3733843...); COE #26 remains the destination candidate at b382d233... on COE main a6513ab4.... Exact ESP8266/ESP32 source blobs 1b32cb90... / c29483f0... differ from destination blobs c8be98f7... / 3cc7ec54.... The source's deny-only poll/disposition behavior and nine source Python labs plus helper are not equivalent to the destination's one generic positive-presence shell test.
+
+**Route QA:** replace the source-side legacy v05_firmware_hardening_test.sh positive |poll| assertion with source-exact negative/default-deny tests. Keep poll_response_failclosed_lab.py in the Full validation path; its current focused quarantine execution passes 11/11 poll-response cases per board. Do not modify the firmware to satisfy the old string check.
+
+**Route RELEASE:** PR #291 remote branch/PR head is 3ef73265.... Issue progress references b8f4e361..., but that commit is not the branch head and changes only .github/PHX_RELEASE_HANDOVER.md. Exact current #291 Windows and BlazePwifi validation fail at the product handover freshness gate. RELEASE must update the authoritative product handover/current state/change ledger after its workflow changes and rerun the current branch; Master does not edit release or CORE handover files.
+
+**COE #26 admission remains closed** until exact path/mode/blob provenance, full source test import or reviewed equivalents, explicit Hardware license/NOTICE scope, pinned CLI/core/FQBN/options on #26 itself, five runnable exact-head workflows, reversible rollback evidence and Hardware/QA/Release owner acceptance. #35's pins and CI do not transfer to #26; #44 remains diverged 15/25 and Release-owned.
+
+Keep OWNERSHIP_ROUTES.json SHA e4db324315a1b3543fec17a148fbf960170fcb29 unchanged, status DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No copy, move, overwrite, cherry-pick, rebase or merge. Private registry v11 and newer corrections remain BLOCKED because no authorized Google Drive connector is available in this runtime; no private contents or identifiers are published.

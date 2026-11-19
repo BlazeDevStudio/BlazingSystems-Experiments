@@ -854,3 +854,31 @@ COE INTERCON candidates remain separate. Stage-3 #39 uses a 64-byte journal, #40
 License evidence remains incomplete: source BlazePwifi/LICENSE and COE Pisowifi/LICENSE are the same MIT blob 1ee55b94183417be977ca287cd7391f9a6f7e721, but COE Hardware/LICENSE and Hardware/NOTICE.md are absent at #26. The source BlazePwifi/NOTICE.md is also absent at the inspected source root. The Pisowifi license does not by itself establish Hardware subtree license/NOTICE scope.
 
 **Migration admission remains closed** until exact per-file path/mode/blob provenance, all required source labs or reviewed equivalents, negative/default-deny tests, pinned CLI/core/FQBN/options, runnable exact-head destination CI, explicit Hardware license/NOTICE scope, reversible rollback evidence and owner acceptance are independently verified. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null. PRODUCTION NO-GO remains binding.
+
+### UTC07 exact-head supersession — 2026-11-19
+
+At current Hardware PR #327 head, branch phoenix/hardware-prepoll-edge-abort-20261119 is 31f5d727f0f61128694b9b0c4b92af8e4b6afa52, based on #326 at 58c558fb6a237935214621adc3dee65a10fe1a51. Hardware identifies c37338439eec23c54a2e4a5f9c9c538d08f182cf as the source/test commit. Current sketch blobs are ESP8266 1b32cb90be11da79ba7ea1155f128aee9e495dd2 (67,300 bytes) and ESP32 c29483f0761ca6e2db0573bd12d6bfa502f12434 (61,807 bytes).
+
+Exact-head CI:
+- Focused quarantine/readback [#44478447580](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447580), job 135404563994: SUCCESS. The source-extracted poll-response lab reports 11/11 fail-closed cases per board, 13/13 strict-root-JSON cases per board, coin POST root-status 4/4 per board, and coin-disposition default-deny 4/4 per board. The same run reports simulated EEPROM/NVS, poll-window, pending-journal and request-digest labs; physical flags remain zero.
+- Relay/output [#44478447647](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447647), jobs 135404564309 and 135404565326: SUCCESS. ESP32 boot-polarity logs show unknown/legacy profile stays INPUT, local polarity readback passes, active-high/active-low OFF preload passes, and remote polarity authority is denied.
+- Full PR [#44478447410](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447410), validation job 135404563869: FAILURE. All 13 firmware/platform targets and Android completed successfully; downstream simulation, update-bundle, signing, candidate and publishing jobs were skipped.
+
+The Full failure is the legacy QA fixture, not a reason to relax firmware. The exact test chain is:
+- controllers.sh blob f7896647713d6bf8034ff48ed19b6383e4dedea0 invokes tests/v05_firmware_hardening_test.sh.
+- That fixture blob 41211b2c110ab409f6d9d1812ef12fda73b13211 still requires positive response_sig, |register| and |poll| source strings; its |poll| assertion is the reported failure.
+- Both current board sketches keep acceptPollResponse() and coinPostDispositionVerified() fail-closed (return false). The focused source-extracted poll_response_failclosed_lab.py blob 69dbddee4133588940f4c5b53817401db531a8a4 already exercises negative/positive-looking response denial.
+
+**Master direction:** PHX-QA must replace only the obsolete positive-presence assertion with source-exact negative/default-deny tests and ensure the source-extracted lab remains in the Full validation path. Do not add a fake |poll| token, enable positive unauthenticated admission, or weaken the firmware to satisfy a string grep. PHX-HARDWARE retains sketch ownership. This remains SIMULATED/CI evidence only; physical relay, coin acceptor, flash and power-cut acceptance are NOT TESTED.
+
+
+## 6.42 Release handover freshness is a build-provenance admission gate — 2026-11-19 UTC07
+
+Release PR #291 is OPEN/DRAFT on branch phoenix/release-publisher-isolation-20261115. The live PR and branch ref both remain 3ef73265abd52bf44273584afc406382c2805b1d (base 734b89d9e7792247e8376335c3f3685500ab3f89). The PHX-RELEASE UTC07 progress comment reports b8f4e3619a8c84b4e81d8bb24ba3da02825fa9e6, but the branch did not move. That commit object changes only .github/PHX_RELEASE_HANDOVER.md; it is not the current PR head and does not prove the reported workflow/script scope is on the branch.
+
+Exact current-head CI:
+- Windows release [#44479756135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756135), handover job 135408844761: FAILURE; build and publisher skipped.
+- BlazePwifi build [#44479756093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756093), validation job 135408938465: FAILURE at tests/handover_gate.sh. The log says source/workflow changes are newer than experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md, identifies .github/workflows/blazepwifi-build.yml, and reports last checkpoint c0b5f3731e1db81faf275bf8f32a757f7d52f3d2. Downstream release/simulation/signing/publishing jobs are skipped.
+- ESP32 core compatibility [#44479756113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756113): SUCCESS.
+
+**Contract:** any release-owned build/workflow/toolchain/provenance change must be followed on the same candidate branch by an updated authoritative product handover, live state and change ledger that identify the exact source/workflow SHAs, pinned CLI/core/FQBN/options, artifact hashes, CI run/job IDs, and explicit unsigned/unreleased state. The handover freshness gate must pass before artifacts are admitted to downstream simulation, signing, publishing or promotion. Green compile jobs do not override a failed handover gate. Do not bypass or disable the gate. PHX-RELEASE owns its branch/workflow and must coordinate with the designated handover owner; PHX-MASTER owns this contract only and does not edit subsystem or release files.

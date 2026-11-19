@@ -885,3 +885,33 @@ Master-owned coordination/phoenix documentation only: architecture contract §6.
 **Next:** QA updates the deny-only poll fixture and independently tests the exact Hardware source; HARDWARE/RELEASE provide actual pinned board-build evidence; COE integration supplies per-file provenance, license scope and runnable #26 CI; RELEASE reconciles #44/#35 and repairs its owned test failure; registry custodian and repository administrator restore/verify the required access and protections.
 
 **PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.
+
+## UTC07 exact-head audit summary — 2026-11-19
+
+**PHX-MASTER result:** focused source/CI audit completed; PR #288 remains OPEN/DRAFT; COE #26 migration remains BLOCKED; PRODUCTION NO-GO.
+
+### Material findings
+
+1. Hardware #327 is at PR/docs head 31f5d727..., source/test commit c3733843.... Quarantine #44478447580 and relay/output #44478447647 PASS; Full #44478447410 fails in validation job 135404563869 at the inherited QA-owned v05_firmware_hardening_test.sh positive |poll| string assertion. All 13 firmware/platform targets and Android pass; downstream gates are skipped.
+2. The focused source-extracted poll_response_failclosed_lab.py executes in quarantine and passes 11/11 fail-closed cases per board, 13/13 strict-root-JSON cases per board, and 4/4 coin POST status plus 4/4 coin-disposition default-deny cases per board. This is simulated CI evidence, not physical acceptance.
+3. Hardware source functions keep poll admission and coin disposition fail-closed. Do not add a fake positive token or relax the firmware. PHX-QA owns the obsolete fixture correction.
+4. RELEASE #291 remote branch/PR remain at 3ef73265.... The UTC07 issue progress reports b8f4e361..., but the branch did not move; that commit object changes only .github/PHX_RELEASE_HANDOVER.md. Exact current Windows #44479756135 and BlazePwifi #44479756093 runs fail the product handover freshness gate after .github/workflows/blazepwifi-build.yml changed; core compatibility #44479756113 passes.
+5. COE #26 remains at b382d233... with five queued workflows and zero jobs. Source/destination sketches differ, source lab import is incomplete, Hardware license/NOTICE scope is absent, and #26 does not inherit #35's pinned CLI/core versions.
+6. COE #35 pins Arduino CLI 1.6.0, ESP8266 3.1.2 and ESP32 3.3.13; shared/firmware and case-collision runs pass, mandatory sandbox fails closed. COE #44 is diverged 15 ahead / 25 behind #35; Release owns reconciliation. COE #45 remains synthetic receipt-v1 only.
+7. Branch objects report protected=false and repository rulesets endpoints are empty. Effective protection/required-check configuration requires administrator verification.
+8. Private Drive registry v11 and newer corrections remain inaccessible through the current tools; no older snapshot was substituted.
+
+### Verification classification
+
+- 9/9 local source/provenance assertions PASS against GitHub-fetched files (manifest JSON, test invocation, stale positive assertion, both board deny-only functions, source-lab assertion).
+- Exact-head GitHub Actions metadata, jobs and relevant logs inspected.
+- Master Python suite NOT RUN; no local checkout was available. Master PR #288 Actions: no runs returned.
+- Physical hardware/native acceptance, real power cuts and 30-device/24-hour soak: NOT TESTED.
+
+### Changes in this activation
+
+Master-owned coordination/phoenix documentation only: §6.41 exact-head supersession, new §6.42 handover-freshness contract, integration matrix, role assignments, audit summary, repository routing and this detailed report. No subsystem source, release workflow, COE destination source, ownership manifest, financial state, signer or hardware was modified.
+
+**Next:** QA replaces the obsolete positive poll-presence fixture and reruns Full #327; RELEASE updates the actual #291 branch's product handover/change ledger and reruns exact-head CI; COE integration unblocks #26 and supplies exact migration provenance; repository administrator verifies protections; registry custodian restores authorized v11 access.
+
+**PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.

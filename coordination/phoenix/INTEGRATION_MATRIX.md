@@ -1644,3 +1644,48 @@ Experiments main, v0.6.0 and COE main branch objects report protected=false; bot
 The canonical private Drive registry v11 and newer corrections remain unavailable through the accessible Library; no Google Drive connector is exposed. Older registry snapshots were not substituted and no private contents or IDs were published. COE root AGENTS.md and the AGENTS-linked cloud policy/storage handover could not be read through the current connector surface.
 
 **Disposition:** no destination staging, copy, move, overwrite, rebase, merge or promotion. Keep OWNERSHIP_ROUTES.json unchanged and PHX-MASTER destination null. PRODUCTION NO-GO.
+
+## Live exact-head integration matrix — 2026-11-19 UTC07
+
+### Repository and branch authority
+
+| Repository/ref | Exact SHA | State |
+|---|---|---|
+| Experiments main (default) | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Default branch |
+| Experiments v0.6.0 audit foundation | 2fbd2475e9f54878c316fa7cea2f228386b0e859 | Development/audit branch; not promoted |
+| Experiments v0.5.3 development | aad3aade72c1156eecba1fed30907c6d0283b2c5 | Legacy development branch; not promoted |
+| Master phoenix/master-coordination (pre-update) | b44df280cd93a4a8893d5e486e9564d56a913489 | PR #288 OPEN/DRAFT |
+| COE main (default) | a6513ab4412b4c014eee2863e45cbe32d06cb243 | Default branch |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN/DRAFT; no jobs executed |
+
+PR #288 base is Experiments main at f4e8a891. Before this UTC07 update it had 97 changed paths, all under coordination/phoenix/. The machine-readable ownership manifest remains OWNERSHIP_ROUTES.json, SHA e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER destination null.
+
+### Current role PRs and exact-head CI
+
+| Owner / candidate | Exact head | Exact CI evidence | Current disposition / next action |
+|---|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS | Separate CORE continuation retains implementation; no competing CORE work |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS | Scoped CI only; native rental/device acceptance NOT TESTED |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS | Native COM/device acceptance NOT TESTED |
+| HARDWARE #327 | 31f5d727f0f61128694b9b0c4b92af8e4b6afa52; source/test c37338439eec23c54a2e4a5f9c9c538d08f182cf | Quarantine [44478447580](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447580) PASS; relay/output [44478447647](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447647) PASS; Full [44478447410](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44478447410) FAIL at legacy positive |poll| fixture | QA owns fixture correction; keep firmware deny-only; physical acceptance NOT TESTED |
+| QA #290 / #292 | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no runs returned | QA to replace obsolete positive poll-presence assertion and independently review exact #327 source/test SHA |
+| RELEASE #291 | 3ef73265abd52bf44273584afc406382c2805b1d | Windows [44479756135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756135) FAIL at handover freshness; BlazePwifi [44479756093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756093) FAIL at same gate; ESP32 core matrix [44479756113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756113) PASS | Issue progress reports b8f4e361, but remote branch/PR remain at 3ef73265; the reported commit changes only .github/PHX_RELEASE_HANDOVER.md. Release must push the complete handover/workflow state and rerun exact-head CI |
+| COE RELEASE #35 | 5047af8b5a8296e06294bbda6bf42a6baea2294d | Shared/firmware [44465377784](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377784) PASS; case [44465377781](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377781) PASS; sandbox [44465377807](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377807) FAIL CLOSED | CLI 1.6.0, ESP8266 3.1.2, ESP32 3.3.13 are pinned on #35 only; bwrap runner still absent |
+| COE RELEASE #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Shared [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) PASS; case [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) PASS; sandbox [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAIL CLOSED | Diverged 15 ahead / 25 behind current #35; Release owns history-preserving reconciliation |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727), [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS | Synthetic receipt-v1 contract only; not Master-v2 adoption or financial authority |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflow runs [43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632), [43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557) QUEUED; each returns zero jobs | No destination test/CI execution; migration remains BLOCKED |
+
+### Hardware source/destination and migration admission
+
+Experiments #327 source blobs remain ESP8266 1b32cb90... / 67,300 bytes and ESP32 c29483f0... / 61,807 bytes. COE #26 destination blobs remain ESP8266 c8be98f7... / 18,394 bytes and ESP32 3cc7ec54... / 18,505 bytes. Neither pair is byte-identical. Source #327 contains nine Python labs plus a shared source-extraction helper; COE #26 has one generic Hardware shell test with positive response-signature/poll-presence assertions. Hardware/LICENSE and Hardware/NOTICE.md remain absent at #26. #26's hardware workflow still does not inherit #35's pinned CLI/core versions. All five #26 workflow runs are queued with zero jobs.
+
+No destination staging, copy, move, overwrite, cherry-pick, rebase, or merge is proposed. Require exact path/mode/blob provenance, reviewed source-test equivalents, explicit Hardware license/NOTICE scope, pinned CLI/core/FQBN/options, runnable exact-head destination CI, reversible rollback evidence and Hardware/QA/Release acceptance.
+
+### Governance and access
+
+- Current branch objects report protected=false; Experiments and COE rulesets endpoints return empty arrays. Effective required checks/protection still require administrator verification.
+- Experiments AGENTS.md was read; COE root AGENTS.md returns 404.
+- Private Drive registry v11 and newer corrections are not accessible through the current connected tools; the available Library search did not locate v11. No older registry was substituted and no private registry contents were copied into GitHub.
+- Physical/native acceptance, real power cuts and 30-device/24-hour soak remain NOT TESTED.
+
+**Disposition: development/CI evidence only; COE #26 migration BLOCKED; PRODUCTION NO-GO.**

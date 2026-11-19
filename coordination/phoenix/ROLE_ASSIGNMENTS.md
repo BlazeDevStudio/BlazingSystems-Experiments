@@ -1134,3 +1134,22 @@ Exact-head refresh only. No ownership reassignment and no subsystem source chang
 | Registry custodian | Private Drive registry | Canonical v11 and newer corrections not accessible through current Library/tool surface | Restore authorized read-only access to v11, artifact manifest and sync ledger |
 
 PHX-MASTER did not take over CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches. The separate CORE continuation remains the sole CORE implementation owner. No worker notification is inferred from a repository document; the control-plane checkpoint is the shared communication event.
+
+## Live owner routing — 2026-11-19 UTC07
+
+Exact-head refresh only. No ownership reassignment and no subsystem source changes.
+
+| Role | Current candidate / exact head | Current evidence | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 branch phoenix/master-coordination, pre-update b44df280cd93a4a8893d5e486e9564d56a913489 | OPEN/DRAFT; no Master CI runs returned | Keep changes in coordination/phoenix; update contracts/matrices/provenance only |
+| PHX-CORE | Experiments #252 c82705f2...; COE #45 9d76a134... | #252 scoped run 42698139210 PASS; #45 synthetic receipt-v1 runs 44295049727/44295049903 PASS | Separate Blaze Production Continuation retains CORE implementation; define site ULA authority and receipt-v1/v2 mapping |
+| PHX-RENTAL | #289 68928774... | Scoped runs 43653329235/43653329229 PASS | Owner-only changes; native rental/device acceptance NOT TESTED |
+| PHX-PISONET | #255 d01fd164... | Scoped run 42462978704 PASS | Own native COM/device acceptance; no Master source edits |
+| PHX-HARDWARE | #327 31f5d727...; source/test c3733843... | Quarantine 44478447580 PASS; relay/output 44478447647 PASS; Full 44478447410 FAIL at QA-owned positive poll fixture | Keep firmware deny-only; refresh handover; no physical acceptance claim |
+| PHX-QA | #290 5c29d159...; #292 75a3f66d... | #290 run 43633486963 PASS; #292 no runs | Replace obsolete positive |poll| presence assertion with source-exact negative/default-deny tests; independently review #327 exact source/test SHA |
+| PHX-RELEASE | #291 3ef73265...; COE #35 5047af8b...; COE #44 582fd5d5... | #291 handover gate fails in 44479756135/44479756093; compatibility run 44479756113 PASS; #35 shared/case PASS, sandbox FAIL CLOSED | Push the reported b8f4 work to the actual branch if intended, update product handover/change ledger after workflow changes, rerun exact-head CI; reconcile #44/#35 without force-push |
+| COE integration owner | #26 b382d233... on main a6513ab4... | Five workflows QUEUED / zero jobs | Provide per-file provenance, explicit Hardware license/NOTICE scope, reviewed test imports, pinned toolchain and runnable destination CI |
+| Repository administrator | Experiments + COE | Branch objects protected=false; rulesets empty | Verify required reviews/checks and protected release admission through administrator-authorized access |
+| Registry custodian | Private Drive registry | v11 and newer corrections inaccessible through current tools | Restore authorized read-only access to v11, artifact manifest and sync ledger |
+
+No Master source takeover, role reassignment, merge, rebase, release, hardware operation, financial migration or signer action occurred. The separate CORE continuation remains the sole CORE implementation owner.
