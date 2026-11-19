@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guard the release-owned exact-source ESP32 3.3.13/4.0.0 compatibility workflow."""
+"""Guard exact-source ESP32 3.3.13/4.0.0 qualification for live PHX-HARDWARE PR #327."""
 from __future__ import annotations
 
 import re
@@ -8,11 +8,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
-HARDWARE_SOURCE_SHA = "0e5514adb0088649eca8bec9df6215faa50b556c"
+HARDWARE_SOURCE_SHA = "984ea8ff65a93b7da6e22fc2e1943acaf56100ca"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "c29483f0761ca6e2db0573bd12d6bfa502f12434"
+HARDWARE_SKETCH_BLOB = "528187f68aaad7d76a690bbf1cbe338165ad3839"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
