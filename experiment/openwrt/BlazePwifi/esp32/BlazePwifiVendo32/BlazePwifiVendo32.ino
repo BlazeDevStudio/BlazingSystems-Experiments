@@ -916,16 +916,51 @@ bool persistLocalOutputPolarity(){
   return true;
 }
 
+bool configFieldsMatchStored(){
+  const String missing="__PHX_NVS_READBACK_MISSING__";
+  return
+    prefs.isKey("ssid") && prefs.getString("ssid",missing)==cfg.ssid &&
+    prefs.isKey("pass") && prefs.getString("pass",missing)==cfg.pass &&
+    prefs.isKey("server") && prefs.getString("server",missing)==cfg.server &&
+    prefs.isKey("key") && prefs.getString("key",missing)==cfg.key &&
+    prefs.isKey("id") && prefs.getString("id",missing)==cfg.id &&
+    prefs.isKey("coinpin") && prefs.getInt("coinpin",-1)==cfg.coinPin &&
+    prefs.isKey("ledpin") && prefs.getInt("ledpin",-1)==cfg.insertLedPin &&
+    prefs.isKey("relaypin") && prefs.getInt("relaypin",-1)==cfg.relayPin &&
+    prefs.isKey("coinlow") && prefs.getBool("coinlow",!cfg.coinActiveLow)==cfg.coinActiveLow &&
+    prefs.isKey("debounce") && prefs.getUInt("debounce",0xFFFFFFFFU)==cfg.coinDebounceMs &&
+    prefs.isKey("groupms") && prefs.getUInt("groupms",0xFFFFFFFFU)==cfg.pulseGroupMs;
+}
+
 bool saveConfig(){
-  // Invalidate local polarity before any other configuration write. A cut
-  // during the save leaves the next boot in the INPUT-only unknown state.
-  if(prefs.putUChar("polarityv",0)!=1) return false;
+  // A local setup save must not leave the old relay energized while storage is
+  // being changed. The polarity-valid marker is invalidated before all fields.
+  insertMode=false;
+  activeTarget="";
+  applyOutputs();
+  if(prefs.putUChar("polarityv",0)!=1){
+    outputPolarityKnown=false;
+    pinConfigSafe=false;
+    return false;
+  }
   prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
   prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
   prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
   prefs.putBool("coinlow",cfg.coinActiveLow);
   prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
-  return persistLocalOutputPolarity();
+  // Do not publish polarityv=1 unless every configuration field survived NVS
+  // readback. A failed or partial save remains INPUT-only after reboot.
+  if(!configFieldsMatchStored()){
+    outputPolarityKnown=false;
+    pinConfigSafe=false;
+    return false;
+  }
+  if(!persistLocalOutputPolarity()){
+    outputPolarityKnown=false;
+    pinConfigSafe=false;
+    return false;
+  }
+  return true;
 }
 
 String jsonString(const String &r,const String &k){
