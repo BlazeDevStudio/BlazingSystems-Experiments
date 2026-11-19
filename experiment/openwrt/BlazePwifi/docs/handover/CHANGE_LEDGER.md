@@ -291,3 +291,11 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Exact Windows [#44482543291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543291) and shared-build [#44482543530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543530) runs failed at mandatory handover freshness before build/validation; signer and publisher jobs were skipped.
 - The independent ESP32 compatibility run [#44482543394](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543394) completed SUCCESS for both declared core legs (3.3.13 and 4.0.0), scoped only. This does not establish release acceptance.
 - This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged and **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — build provenance refinement source head (blocked CI)
+
+- Exact draft PR #291 source head `d498afbf2aa0e60fc1b1d0471328f5e6eb8e597c` refines the existing release-owner build-provenance generator, tests and workflow integration. This entry is provenance only; its source changes were not reached by the blocked workflows.
+- Exact Windows [#44487146268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146268) and shared build [#44487146258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146258) runs failed at mandatory handover freshness before validation/build; signing and publisher paths were skipped.
+- ESP32 compatibility [#44487146336](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146336) completed SUCCESS for both scoped core legs 3.3.13 and 4.0.0. This is not release acceptance.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
