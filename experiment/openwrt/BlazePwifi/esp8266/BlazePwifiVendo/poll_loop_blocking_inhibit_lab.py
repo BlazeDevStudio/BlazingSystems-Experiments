@@ -620,6 +620,19 @@ for board,path in BOARDS.items():
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
+    # Prove the release-window ISR edge is caught by the ordinary sample path
+    # when it arrives after the post-poll snapshot but before the loop's final sample.
+    missing_release_sample = loop.replace(
+        "sampleCoinPulseEdge(active);",
+        "(void)active; // mutation: final post-poll sample omitted",
+        1,
+    )
+    if missing_release_sample == loop:
+        raise AssertionError(f"{board}: final post-poll sample mutation did not apply")
+    compile_and_run(assemble(loop_source=missing_release_sample),board,29,
+                    "skip-poll-release-edge-sample")
+    print(f"{board} MUTATION_REJECTED skip-poll-release-edge-sample")
+
     pre_poll_edge_guard_removed = loop.replace(
         "if(pollEdgeStart!=lastHandledCoinEdgeSequence){",
         "if(false){",
