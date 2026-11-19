@@ -55,6 +55,17 @@ def main() -> int:
     if content.count("persist-credentials: false") != 2:
         return fail("both checkouts must disable persisted credentials")
 
+    success_marker = (
+        "PHX-ESP32-COMPATIBILITY-PASS: core=%s source=%s "
+        "sketch_blob=%s binary_sha256=%s"
+    )
+    if success_marker not in content:
+        return fail("workflow must emit the per-core build provenance marker")
+    if '"${{ matrix.esp32_core }}"' in content:
+        return fail("build marker adds a second dollar before the matrix expression; Bash treats it as a positional parameter")
+    if '"${{ matrix.esp32_core }}"' not in content:
+        return fail("build marker must print the matrix core without shell positional expansion")
+
     pin_guard_path = ROOT / ".github/scripts/test_release_artifact_action_pins.py"
     if not pin_guard_path.is_file():
         return fail("missing immutable-action pin guard")
