@@ -2068,3 +2068,36 @@ This snapshot supersedes older role/CI pins above; every result below is scoped 
 **COE integration:** main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, 205 paths, five queued workflows and zero jobs. PR #35 `d41f3231e0eae6cf0c62d19f430818e30372162e`: shared/hardware run [44586100929](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586100929) ran 117 tests (2 skipped), then all 10 appliance profiles failed closed for missing approved site-scoped RFC4193 /48; ESP compile jobs skipped. Sandbox [44586100962](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586100962) passed 14/14 host preflight tests then failed closed with exit 125 because Bubblewrap is absent. Case collision [44586101050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586101050) PASS. COE #44 remains OPEN/DRAFT at `582fd5d5e83e36b36546ac28534740298ba94af4`; its per-appliance random ULA is not site-wide authority.
 
 **Integration rule:** a queued workflow is NOT RUN; skipped downstream signing/publishing is NOT PASS; a focused host lab is NOT hardware acceptance. No status propagates to a different SHA or the combined COE #26 candidate.
+
+## PHX-MASTER UTC19 exact-head integration refresh — 2026-11-19T19:38Z
+
+| Role / candidate | Exact current head | Current evidence | Disposition |
+|---|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 PASS | Owner branch unchanged; separate CORE continuation retains ownership |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329229 and 43653329235 PASS | No Master source edit |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 PASS | Prior Windows self-test failure is not the current #291 exact-head blocker |
+| HARDWARE #327 | f3be11e3bd7f3f0b9e884165a42cf6b838ef2ef6 | 44595856924 PASS; 44595856978 PASS; 44595857199 FAIL | QA-owned positive poll marker stale; current source remains deny-only |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | 43633486963 PASS | Scoped native COM QA only |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head run | Base b1ca02e2... is not current Master; refresh and rerun |
+| RELEASE #291 | fae5cf41b2cf6e46c450bb5ee79942b63b56d3a4 | 44598882022 ESP32 PASS; 44598882048 handover gate FAIL; 44598882092 Windows handover FAIL | CORE handover update required before downstream builds; publisher skipped |
+
+## COE #26 candidate — no destination acceptance
+
+COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 contains only README.md and Pisonet/README.md. Existing #26 is OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12 with five workflows QUEUED and zero jobs: case collision 43096752609, PISONET 43096752632, Hardware/Shared 43096752800, Rental 43096752563, Pisowifi 43096752557.
+
+Exact source/destination tree comparison:
+- ESP32 source sketch f89bc561b2093328286d7633da794667b2ab06de differs from destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. Source board subtree has 15 files (1 sketch, 9 Python labs, 5 Markdown); destination has 1 sketch.
+- ESP8266 source sketch 284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82 differs from destination c8be98f72596681e36a3ad1f8939bf8046c96887. Source board subtree has 18 files (1 sketch, 15 Python labs, 2 Markdown); destination has 1 sketch.
+- The 24 board-local Python labs and seven board-local documents are absent from the destination Hardware subtrees.
+- QA route source tests: 47 files (38 shell, 8 Python, 1 README). COE Pisowifi/tests: 19 shell files. Exact relative-path comparison: 1 identical blob, 3 divergent same-name blobs (config.sh, integration.sh, security.sh), 43 source-only entries, 15 destination-only entries.
+- Source BlazePwifi/LICENSE and destination Pisowifi/LICENSE are byte-identical at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md, Hardware/LICENSE and Hardware/NOTICE.md are absent. License applicability must be resolved by the licensing owner; the Pisowifi MIT match does not cover Hardware automatically.
+
+## Destination hardware source blockers (static inspection)
+
+ESP32 destination blob 3cc7ec54... calls LittleFS.begin(true) at line 337, which can format on mount failure; its POST /quarantine/clear route removes the log at lines 293–295 without an authentication/reconciliation guard; register starts sigOk=true and only checks a response signature when cfg.key is nonempty (lines 320–331); poll then sets insertMode/activeTarget and applies remote config (lines 366–368); quarantinePending calls clearPending unconditionally after its append attempt (lines 141–152).
+
+ESP8266 destination blob c8be98f... calls LittleFS.format() after mount failure at lines 141–145; its POST /quarantine/clear route removes the log at lines 326–329; register starts sigOk=true and only checks when cfg.key is nonempty at lines 353–364; poll sets insertMode/activeTarget and applies remote config at lines 422–424; quarantinePending calls clearPending unconditionally after its append attempt at lines 377–390.
+
+Both destination sketches unconditionally use legacy mbedtls_sha256_starts/update/finish without status checks; current Experiments source has explicit Mbed TLS 3/4 branches with checked status and PSA handling for 4.x. The destination Hardware test blob f921c56cecc19cab1989507b9b4ade1f45dac54e asserts positive response_sig and |poll| markers, which conflicts with the current deny-only source contract.
+
+These are exact-source static findings, not customer incidents or hardware tests. No destination file was changed. No copy, move, overwrite, cherry-pick, rebase, merge or staging is permitted from this report.

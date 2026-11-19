@@ -1356,3 +1356,21 @@ This is a live supplement to the historical role table. It does not reassign any
 **Hardware stack rule:** #318 and #321 are based on #317; #323 and #324 are sibling children of #322; #326 is based on #323; #327 is based on #326. These are overlapping, independently evolving drafts. No automatic composition, cherry-pick or canonical-stack selection is made by Master.
 
 **Owner boundaries:** QA owns the legacy positive poll-marker fixture and independent negative tests; PISONET owns its Windows self-test; RELEASE owns its consumer workflow; CORE owns finance and the site identity authority decision. The separate CORE continuation retains CORE implementation. No role source branch was edited by PHX-MASTER.
+
+## PHX-MASTER UTC19 owner-routing refresh — 2026-11-19T19:38Z
+
+| Owner | Current action / boundary |
+|---|---|
+| PHX-MASTER | Maintain coordination/phoenix/, exact-head integration matrix and migration provenance only. Do not edit subsystem source, change OWNERSHIP_ROUTES.json, or stage COE files. |
+| PHX-CORE | Refresh CORE-owned BlazePwifi PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md after .github/workflows/blazepwifi-build.yml changed; decide site-scoped ULA authority with COE; confirm V1 pulseEdges is not a financial quantity. |
+| PHX-RENTAL | #289 remains scoped-CI PASS; continue only in Rental-owned source. |
+| PHX-PISONET | #255 remains scoped-CI PASS. Earlier $buildWorkflow failure on #291 run 44581603605 is separate; current #291 head stops earlier at CORE handover freshness, so re-evaluate PISONET test only after the gate is cleared. |
+| PHX-HARDWARE | #327 f3be11e3... focused quarantine/relay PASS; Full fails at QA-owned positive poll marker. Keep deny-only behavior; do not change finance or COE destination files. |
+| PHX-QA | Replace v05_firmware_hardening_test.sh positive |poll| assertion with negative/default-deny assertions; independently verify empty-key, malformed-signature, no-config-apply, no-pending-clear and no-output behavior. Refresh #292 from current Master head and run exact source-linked tests. |
+| PHX-RELEASE | Preserve push/protected-ref/approval publisher guards; current #291 head fae5cf41... is blocked by CORE handover freshness. Rerun after CORE handover refresh; do not bypass the gate. |
+| COE integration owner | Keep #26 blocked. Prepare exact per-file source/destination blob+mode map, license/NOTICE scope, all 24 board-lab imports, 47-to-19 QA test reconciliation, Mbed TLS compatibility, and exact-head executable destination CI. Remediate destination fail-open paths in owner scope before asking Master to review a migration proposal. |
+| PHX-INFRA | Provide an authorized Bubblewrap-capable runner for COE #35/#44 sandbox checks. |
+| Repository administrator | Configure and independently verify main/development/release branch protections and required checks; current branch objects say protected=false and rulesets are empty. |
+| Registry custodian | Restore authorized private Drive v11 and newer-correction access. No older registry substitute is accepted. |
+
+CORE remains owned by the separate Blaze Production Continuation. No competing CORE worker or source edit was started.

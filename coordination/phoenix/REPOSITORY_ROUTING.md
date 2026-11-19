@@ -862,3 +862,34 @@ For the manifest's explicit PisoWifi tests route, current Experiments main has 3
 License comparison: BlazePwifi/LICENSE and Pisowifi/LICENSE match exactly at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md, Hardware/LICENSE and Hardware/NOTICE.md are absent at the inspected destination candidate. The Pisowifi license match is not Hardware license coverage.
 
 **Routing disposition:** keep OWNERSHIP_ROUTES.json at DRAFT_REVIEW_ONLY, PHX-MASTER target null. Do not copy, move, overwrite, cherry-pick, rebase or merge. COE integration owner must produce a Hardware-specific intake manifest with exact source commit/tree, every source/destination blob+mode, derivation notes, license/notice scope, test identity map and exact-head destination CI; PHX-HARDWARE, PHX-QA and licensing owner review their respective scopes before any migration proposal.
+
+## COE #26 exact per-file provenance refresh — 2026-11-19T19:38Z
+
+Source tree: Experiments PR #327 branch phoenix/hardware-prepoll-edge-abort-20261119 at f3be11e3bd7f3f0b9e884165a42cf6b838ef2ef6. Destination tree: COE #26 branch integration/ecosystem-nonproprietary-candidate-20261111 at b382d233ff06c8791b1028bed3c617cc7b670d12. COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 contains only README.md and Pisonet/README.md; #26 is staging, not completed main migration.
+
+### Hardware path comparison
+
+| Source subtree | Source files | Destination files | Exact identity | Missing source files |
+|---|---:|---:|---|---:|
+| ESP32 BlazePwifiVendo32 | 15 (1 sketch, 9 Python labs, 5 Markdown) | 1 sketch | Sketch SHA differs: f89bc561... vs 3cc7ec54... | 14 |
+| ESP8266 BlazePwifiVendo | 18 (1 sketch, 15 Python labs, 2 Markdown) | 1 sketch | Sketch SHA differs: 284f4337... vs c8be98f... | 17 |
+
+All 24 source board-local Python labs and seven board-local documents are absent from Hardware. The one destination Hardware test is a generic shell test, not a source-identical import.
+
+### QA route comparison
+
+Source experiment/openwrt/BlazePwifi/tests/: 47 files (38 .sh, 8 .py, 1 README). Destination Pisowifi/tests/: 19 .sh files. Same-relative-path comparison: 1 identical blob, 3 divergent blobs (config.sh, integration.sh, security.sh), 43 source-only files, 15 destination-only files. This is not complete test migration or test equivalence.
+
+### License/notice
+
+BlazePwifi/LICENSE and Pisowifi/LICENSE match exactly at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments repository root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9. COE root NOTICE.md, Hardware/LICENSE and Hardware/NOTICE.md are absent. Whether the root notice applies to the staged component and how third-party notices should be carried requires licensing-owner review.
+
+### Candidate security discrepancies
+
+At exact destination blobs, ESP32 uses LittleFS.begin(true) (line 337), ESP8266 formats after mount failure (lines 141–145), both expose unauthenticated POST /quarantine/clear deletion, both allow cfg.key empty to bypass response_sig verification because sigOk starts true and verification is conditional on a nonempty key, both call applyRemoteConfig from register/poll responses, and both clear pending evidence unconditionally after an attempted quarantine append. The current source branch instead has fail-closed journal handling and deny-only poll/coin-post disposition. The destination also uses unchecked legacy Mbed TLS SHA calls while current source supports checked Mbed TLS 3/4 branches.
+
+Destination Hardware test blob f921c56cecc19cab1989507b9b4ade1f45dac54e requires positive response_sig and |poll| markers. Current source PR #327 Full validation independently fails on the same stale positive |poll| expectation in QA-owned v05_firmware_hardening_test.sh.
+
+### Disposition
+
+COE #26 remains OPEN/DRAFT with five queued workflows and zero jobs. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY; Master destination null. Do not copy, move, overwrite, cherry-pick, rebase, merge or stage. COE integration must produce the complete per-file intake map and remediate/justify the above differences; PHX-HARDWARE, PHX-QA and the licensing owner review their scopes before a new migration proposal.

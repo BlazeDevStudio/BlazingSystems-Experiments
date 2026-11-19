@@ -64,3 +64,31 @@ Next: QA corrects the poll fixture; PISONET fixes its own Windows self-test; HAR
 ## Validation note
 
 The first isolated assertion attempt failed two documentation-string checks because the test expected a different wording and §6.50 did not yet include the exact #327 source/test SHA. Both were corrected in a follow-up Master commit before the final checkpoint. The focused assertion was rerun against the corrected section; the full repository suite remains NOT RUN.
+
+## UTC19 live update — 2026-11-19T19:38Z
+
+**Role:** PHX-MASTER / coordination-only. This is a same-hour update to the existing UTC19 checkpoint; no second issue comment is created. Existing Master branch remains phoenix/master-coordination; current pre-change HEAD is 2e082bbc583e2c0079b136b10f651b70ef30d751. PR #288 remains OPEN/DRAFT at that head, base main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b, 108 changed paths all under coordination/phoenix/.
+
+### Current exact role updates
+
+- HARDWARE #327 current docs head f3be11e3bd7f3f0b9e884165a42cf6b838ef2ef6, source/test 8282acf3c4e64929bc6021c0f25f45eb942ef2f0. Quarantine [44595856924](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595856924) PASS; relay/output [44595856978](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595856978) PASS; Full [44595857199](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595857199) FAIL in validation / Controller protocol parity at QA-owned v05_firmware_hardening_test.sh line 30: Missing poll signature check. The fixture requires a positive |poll| marker; current source remains deny-only. No firmware or schema change by Master.
+- RELEASE #291 current head fae5cf41b2cf6e46c450bb5ee79942b63b56d3a4; source/test commit de6aa394d1b879c339119f63bca7c52c8177b002. Publisher conditions now require push, exact prior branch ref, protected ref and role-specific approval variable; no approval variable was provisioned and no publisher ran. CI-0701 docs-head push [44598870937](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598870937) and PR [44598882048](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882048) pass the publisher guard. Build validation fails at the CORE-owned handover freshness gate; Windows [44598882092](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882092) fails the same gate before Windows build; publisher skipped. Exact gate blob d175106a9c534ca17a35f9f49082b70ea27e77da lists .github/workflows/blazepwifi-build.yml as newer than the last CORE project-handover checkpoint 12c89d189225cc461efddc84723cbfb3adf6e83c. CORE must refresh its own PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md, then RELEASE reruns. Earlier PISONET $buildWorkflow error run 44581603605 is not the current exact-head blocker.
+- CORE #252 c82705f2... PASS; RENTAL #289 68928774... PASS; PISONET #255 d01fd164... PASS; QA #290 5c29d159... PASS; QA #292 75a3f66d... has no exact-head run and is based on old Master b1ca02e2..., so refresh it before independent verification.
+
+### COE #26 exact provenance correction
+
+Current source #327 tree f3be11e3... vs destination #26 b382d233...: ESP32 sketch source f89bc561... differs from destination 3cc7ec54...; ESP8266 source 284f4337... differs from destination c8be98f.... Source board subtrees contain 24 Python labs (9 ESP32 + 15 ESP8266) and seven Markdown documents not present in destination Hardware; each destination board subtree has only its sketch.
+
+QA source route has 47 files (38 shell, 8 Python, 1 README) vs destination Pisowifi/tests with 19 shell files: 1 identical, 3 divergent same-path blobs, 43 source-only and 15 destination-only. This replaces the earlier broad count shorthand; it is an exact relative-path comparison at the pinned trees.
+
+BlazePwifi/LICENSE and Pisowifi/LICENSE are identical at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md, Hardware/LICENSE and Hardware/NOTICE.md are absent. Licensing scope remains unresolved.
+
+Static inspection of COE destination ESP32 blob 3cc7ec54... and ESP8266 blob c8be98f... confirms: format-on-mount-failure (ESP32 LittleFS.begin(true); ESP8266 LittleFS.format()); unauthenticated POST /quarantine/clear deletion; sigOk initialized true and response_sig checked only when cfg.key is nonempty; remote config applied from register/poll responses; quarantinePending attempts an append but calls clearPending unconditionally; and unchecked legacy Mbed TLS SHA calls. These are source findings, not observed customer incidents. Destination Hardware test still requires positive response_sig and |poll| markers. COE #26 five workflows remain queued with zero jobs.
+
+### Governance, execution and next actions
+
+Both repositories return empty ruleset arrays; main branch-protection reads return 403; branch metadata reports protected=false. Treat publisher protection as absent until repository admin verifies it. Private canonical Drive registry v11 and newer corrections remain unavailable because no Google Drive connector is exposed and Library search did not surface the canonical file; no older snapshot was substituted.
+
+12/12 static migration-provenance assertions passed against exact GitHub tree/blob metadata. This is not subsystem CI. Master Python suite NOT RUN; no Master Actions run exists. No migration, staging, hardware flash, payment operation, signing, physical power cut or soak occurred.
+
+Next: CORE refreshes its handover and decides site ULA authority; QA replaces positive poll marker with negative/default-deny tests and refreshes #292; HARDWARE continues owner-owned regression work; RELEASE reruns after CORE handover and keeps publisher gates fail-closed; COE integration supplies per-file provenance, licensing, test identity and destination CI; INFRA provides Bubblewrap; repository admin verifies branch protection; registry custodian restores v11 access. **PRODUCTION NO-GO.**
