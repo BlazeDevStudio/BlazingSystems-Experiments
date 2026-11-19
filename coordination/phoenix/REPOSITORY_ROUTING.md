@@ -830,3 +830,13 @@ The source tree contains 22 board-local Python *_lab.py files, plus a shared hel
 Source BlazePwifi/LICENSE and destination Pisowifi/LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721. Source BlazePwifi/NOTICE.md is absent; destination Hardware/LICENSE and Hardware/NOTICE.md are absent. The Pisowifi license does not establish Hardware license/NOTICE scope.
 
 COE #35 remains fail-closed with no approved site ULA and #44 remains per-appliance/diverged; neither authorizes a route or prefix. No copy, move, overwrite, staging, cherry-pick, rebase, merge or route promotion is approved. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+## UTC16 live routing and migration hold — 2026-11-19
+
+The unchanged machine-readable route manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, PHX-MASTER target null. This Master update does not change any source/target route.
+
+PR #291 contains cross-owner files: experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1 is within the PISONET route, while BlazePwifi project handover files require CORE review. The release workflow may consume these tests and handovers but cannot silently assume ownership of their content. PISONET must repair its uninitialized $buildWorkflow test variable; CORE must review its handover changes.
+
+COE #26 remains the only integration draft destination, at b382d233ff06c8791b1028bed3c617cc7b670d12, with five queued workflows and zero jobs. Source/destination board blobs differ, the 22 source board-local Python labs are not imported as equivalent destination tests, Hardware license/NOTICE scope is incomplete, and destination toolchain/CI are not verified. The ULA authority is undecided; #35 intentionally fails closed with no approved site prefix, while #44's per-appliance random Global ID is not a site-wide authority.
+
+No copy, move, overwrite, cherry-pick, rebase, merge, staging, or route promotion is authorized. Preserve all source histories and owner branches. Require exact per-file source blob, mode, license, import completeness, test identity, toolchain and executable destination CI evidence before any migration proposal.

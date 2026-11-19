@@ -1987,3 +1987,25 @@ No source/destination file was copied, moved, overwritten, rebased, cherry-picke
 | Destination CI | COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued with zero jobs | Destination test execution NOT ESTABLISHED; migration admission closed. |
 
 No file move, copy, overwrite, cherry-pick, rebase, merge or staging occurred. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER destination null.
+
+## Live exact-head reconciliation — 2026-11-19 UTC16
+
+| Repository / role | Exact current ref | Exact CI evidence | Disposition |
+|---|---|---|---|
+| Experiments main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Branch object readback; protected=false | Source baseline; admin protection verification still required |
+| Experiments development | blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859 | Branch object readback; protected=false | Current comparison/development ref; not promoted to main |
+| PHX-MASTER #288 | phoenix/master-coordination@7ac132361b29de8c0bff86d337a79e3cab989b33 before this documentation commit; base main@f4e8a891... | No Master PR-triggered Actions run returned | OPEN/DRAFT; Master docs only |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | 42698139210 SUCCESS | Scoped CI only; separate CORE continuation retains implementation |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | 43653329235 and 43653329229 SUCCESS | Scoped CI only; no physical device acceptance |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | 42462978704 SUCCESS | Scoped CI only; native COM acceptance not established |
+| PHX-HARDWARE #327 | c4954de95e319f7a2acf4bf4ee0bcae44b4b99b5 | Quarantine 44557974485 PASS; relay/output 44557974378 PASS; Full 44557974541 FAILURE at “Missing poll signature check” | Preserve firmware default-deny; QA owns the stale positive fixture. 13 firmware/platform jobs and Android passed; downstream simulations, update bundle, signing and publishing were skipped |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 run 43633486963 SUCCESS; #292 no current-head run returned | #292 evidence UNKNOWN, not PASS |
+| PHX-RELEASE #291 | PR docs head 9b39a4432f6c87ba005eae0e414a501842f10e62; source/test commit 90165b173179e9b36c73f98e06cfd5e0a06a3fe3 | Docs-head build 44565010341: CI-0701 job 135704442410 PASS (22 provenance tests, 4 workflow-concurrency tests, 8 Arduino archive tests); validate job 135704580242 passed integration x3 and persistence/replay stress x3. ESP32 compatibility 44565010064 passed both core jobs. Windows 44565010212 passed handover then failed in PISONET negative-selftest; publisher skipped | Partial CI only. Hard-link admission is CI-verified; Windows release gate remains blocked |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243 | Branch object readback; protected=false | Destination main remains structure-only |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued: 43096752609, 43096752632, 43096752800, 43096752563, 43096752557; zero jobs returned | Destination acceptance NOT ESTABLISHED; migration blocked |
+| COE RELEASE #35 | 0e3662b9aef4b2a2248e3a064b07d07e9097be1b; source/test 90ce4200b66ce0b55f40feaab42cc7b53fad1f2d | 44543625272: 116 packager/tool tests pass (two skips), then all 10 profiles fail closed without approved site ULA; 44543625541 case-collision PASS; 44543625389 sandbox fails after 14/14 preflight because Bubblewrap is unavailable | Fail-closed behavior verified; no profile release or sandbox execution |
+| COE RELEASE #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Draft remains non-mergeable; per-appliance random ULA | Does not satisfy same-site shared ULA authority |
+
+The RELEASE ESP32 compatibility run verifies source commit 984ea8ff65a93b7da6e22fc2e1943acaf56100ca and sketch blob 528187f68aaad7d76a690bbf1cbe338165ad3839. The current Hardware #327 ESP32 sketch at c4954de... has the same blob SHA. Both ESP32 core 3.3.13 and 4.0.0 compile jobs passed. This is exact single-sketch compatibility evidence, not full Hardware-tree acceptance, firmware flashing, or physical acceptance.
+
+COE #26 migration remains blocked: current source and destination ESP32/ESP8266 sketch blobs differ; source has 22 board-local Python labs while destination Hardware has one generic shell test with stale positive signature/poll assertions; Hardware LICENSE/NOTICE scope is incomplete; five destination workflows are queued with zero jobs. No file was copied, moved, overwritten, rebased, cherry-picked, merged, or staged. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.

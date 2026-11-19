@@ -1304,3 +1304,14 @@ This is a Master-only coordination refresh. No role branch, worker checkpoint, s
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12; five workflows queued, zero jobs. | No migration. Complete exact blob/license/test import and pinned-toolchain provenance; make destination CI executable. |
 
 No role ownership is reassigned. No worker branch is edited. No merge or release.
+
+## UTC16 ownership boundary — release consumers do not own subsystem tests or handovers
+
+The RELEASE pipeline may invoke subsystem-owned tests and consume subsystem handovers, but that does not transfer authorship of those files.
+
+- PHX-PISONET owns the full experiment/windows/BlazePisonet-SoftTimer tree, including tests/ReleaseSigning/negative-selftest.ps1. PR #291 changes that file. Its current blob is 8b69174bf519154e43f7e12e4a9fa2c0e75d350f; line 37 assigns $workflow, while line 115 reads $buildWorkflow without an assignment. Exact Windows run 44565010212 fails at that read. PISONET must make and test the correction in its owned scope; RELEASE then reruns its consumer workflow.
+- PHX-CORE owns BlazePwifi financial/core behavior and its project handover evidence. PR #291 also changes BlazePwifi PROJECT_HANDOVER.md and docs/handover files. CORE must review those content changes; RELEASE may consume the handover freshness gate but does not acquire ownership of the underlying project state.
+- PHX-RELEASE owns Phoenix release workflows, release scripts, packaging, provenance manifests and publisher gates. It must not repair PISONET tests or rewrite CORE handover claims to make a release gate green.
+- PHX-QA independently reviews the hard-link artifact-admission contract and retains ownership of the stale positive poll-signature fixture in Hardware Full validation.
+
+This is a review boundary only. No role, branch, path route, or ownership manifest was reassigned. PR #291 remains OPEN/DRAFT/UNMERGED pending owner review and exact-head reruns.
