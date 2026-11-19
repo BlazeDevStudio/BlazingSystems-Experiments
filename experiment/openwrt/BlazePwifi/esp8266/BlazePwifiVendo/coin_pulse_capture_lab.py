@@ -206,16 +206,33 @@ static bool runDeniedGates(){
   }
   return true;
 }
+static bool runPulseLimitBoundary(){
+  resetState(141U);
+  lastEdge=100U;
+  pendingPulses=19U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  sampleCoinPulseEdge(true);
+  if(pendingPulses!=20U || saveCalls!=1 || nonceCalls!=0 ||
+     pendingNonce!="nonce-existing" || pendingTarget!="target-01")
+    return fail("pulse-limit-20","supported twentieth pulse was not durably queued with its existing identity");
+  if(journalRecoveryRequired || pendingReady || !relayOn || !ledOn ||
+     backupCalls!=0 || markerCalls!=0)
+    return fail("pulse-limit-20","valid twentieth pulse was incorrectly faulted or inhibited");
+  return true;
+}
 static bool runUnrepresentablePulseFault(const char*name,uint8_t existing,
                                          const String&storedTarget){
   resetState(141U);
   lastEdge=100U;
   pendingPulses=existing;
+  pendingNonce="nonce-existing";
   pendingTarget=storedTarget;
   sampleCoinPulseEdge(true);
   const uint32_t unresolvedEdges=(uint32_t)existing+1U;
-  if(saveCalls!=0 || pendingPulses!=existing)
-    return fail(name,"unrepresentable pulse was appended to the bounded pending record");
+  if(saveCalls!=0 || pendingPulses!=existing ||
+     pendingNonce!="nonce-existing" || pendingTarget!=storedTarget || nonceCalls!=0)
+    return fail(name,"unrepresentable pulse mutated or appended to the existing pending identity");
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
      !pendingReady || relayOn || ledOn)
     return fail(name,"overflow/target drift did not latch deny and force outputs OFF");
@@ -257,9 +274,11 @@ int main(){
   ++passed;
   if(!runDeniedGates()) return 8;
   ++passed;
-  if(!runUnrepresentablePulseCases()) return 9;
+  if(!runPulseLimitBoundary()) return 9;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/9 top-level scenarios\n";
+  if(!runUnrepresentablePulseCases()) return 10;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/10 top-level scenarios\n";
   return 0;
 }
 '''
@@ -338,7 +357,7 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 8/8" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 10/10" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
             print(f"{board}_COIN_PULSE_CAPTURE_PASS 8/8")
