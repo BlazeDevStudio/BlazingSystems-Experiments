@@ -796,3 +796,32 @@ No firmware runtime, GPIO/relay behavior, shared API, CORE ledger, financial mig
 
 **Next:** PHX-QA independently reviews both commit-failure outcomes; PHX-MASTER records the no-durable-marker limitation against #43; PHX-CORE/MASTER must retain the independent protected witness gate. No positive poll admission or persistence fallback is authorized by this test.
 
+
+
+## UTC08 follow-up — field-specific ESP32 NVS configuration readback diagnostics
+
+**Task:** hardware-owned, behavior-preserving cleanup on the existing #327 child branch. **PRODUCTION NO-GO.**
+
+**Exact source commits:**
+- Readback diagnostic refactor: `074ed6dc4726c047b9a8d81487b40ac5ca56cea0`
+- Corrected diagnostic line terminator: `c59ebc91ed552f6e026fea0d465ca1227685a4a7`
+- Current ESP32 sketch blob: `754a5738d30500fe12a573b89956fedeb0e279c3`
+- ESP8266 sketch remains unchanged at blob `1b32cb90be11da79ba7ea1155f128aee9e495dd2`.
+
+The ESP32 `configFieldsMatchStored` guard now accepts an optional first-failure output and reports the first mismatched/missing NVS key in the existing check order (SSID, password, server, API-key field, device ID, coin/LED/relay pins, polarity, debounce, pulse-group). The original no-argument wrapper remains. `saveConfig()` emits only the key name, never the stored value; on failure it still revokes `outputPolarityKnown` and `pinConfigSafe`, returns false, and does not reboot or publish a valid polarity marker. No NVS key/schema, config ordering, GPIO, poll, coin admission, finance, or wire contract changed.
+
+### Exact-source Actions — source/test SHA `c59ebc91ed552f6e026fea0d465ca1227685a4a7`
+
+- Quarantine/readback [#44486049670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44486049670), job `135429665429`: **SUCCESS**. Both boards report `POLL_BLOCKED_EDGE_FAULT_PASS 7/7`, `POLL_EDGE_SNAPSHOT_RACE_PASS`, and the existing poll-loop mutation controls reject removal of the intake inhibit, quiet window, ISR edge reconciliation, fault marker and boot latch. ESP8266 config-read lab passes valid-v3 image preservation, malformed v1/v2 and unknown-schema setup-save denial, local v1/v2→v3 config migration marker preservation, and commit-failure retry denial. Poll-response lab passes 11/11 fail-closed cases, 13/13 strict-root JSON cases and 4/4 coin-POST status plus 4/4 disposition default-deny cases per board.
+- Relay/output [#44486049762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44486049762): **SUCCESS**; source-output job `135429667009` and ESP32 boot-polarity job `135429667650` both pass. ESP32 boot-polarity lab reports unknown/legacy profile INPUT, local polarity marker readback PASS, active-high/active-low OFF preload PASS and remote polarity authority DENIED.
+- Full build [#44486049590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44486049590): **COMPLETED FAILURE**. Validation job `135429794092` fails at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 13/13 firmware/platform target jobs and Android job `135429793469` completed SUCCESS. ESP32 job `135429794027` compiled with `esp32:esp32@4.0.0` (1,096,293 bytes program / 52,568 bytes globals; artifact `14510079216`, ZIP SHA-256 `860e4345bbcfef017b8e49e0955eb0037a194678357f205355a45f063f90024e`). ESP8266 job `135429794164` compiled with core 3.1.2 and uploaded artifact `14511225448` (ZIP SHA-256 `994f89fcc471b798493e8fa7449d4fe01c2c29dcc0c4f18326b8087fb5e99e5c`). Downstream simulation, update bundle, candidate, signing and publishing jobs were skipped.
+
+### Coverage boundary and requests
+
+The existing failure-injection labs above do **not** exercise every ESP32 `Preferences.put*` key failure against the new first-failure diagnostic. That per-key NVS write/readback failure matrix belongs to PHX-QA; it remains **NOT TESTED** here. This cleanup is compile- and focused-CI-verified, not independently QA-accepted. The current Full failure is not fixed by relaxing firmware: main register/poll has no approved positive response-signature contract, so keep default-deny.
+
+- PHX-QA: add exact-source failure injection for each NVS config key; assert the reported key is correct, `polarityv` is never promoted after a mismatch, outputs remain inhibited, and no reboot/success response occurs. Replace the obsolete positive poll-signature presence assertion with source-exact negative/default-deny checks.
+- PHX-RELEASE: rerun the pinned ESP32 3.3.13 compatibility leg against the new exact ESP32 sketch blob `754a5738...`; the 4.0.0 compile is covered by Full run #44486049590, but the prior dedicated 3.3.13 matrix used the pre-cleanup sketch blob.
+- PHX-MASTER: review the updated #327 child stack and retain the separate same-chip dual-store durability limitation against witness issue #43.
+
+No physical relay/acceptor, power-cut, electrical pulse/recovery, 150-cut trial, 30-device/24-hour soak, financial migration, signer or independent witness was exercised. `SIMULATED_ONLY=1`; `PHYSICAL_POWER_CUT_VERIFIED=0`; `PRODUCTION_MIGRATION_AUTHORIZED=0`.
