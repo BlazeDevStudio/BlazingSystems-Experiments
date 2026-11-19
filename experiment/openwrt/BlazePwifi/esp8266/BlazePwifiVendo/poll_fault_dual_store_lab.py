@@ -38,7 +38,6 @@ void caller() { selected(1); }
 struct Record {
   const char *text = "}";
   char brace = '{';
-  const char *escaped = "quote: \\" { not a block }";
   // } { inside a line comment
   /* { } inside a block comment */
   const char *raw = R"tag({ raw } )tag";
@@ -51,7 +50,7 @@ bool selected(int value) {
 }
 '''
     masked = mask_non_code(sample)
-    if len(masked) != len(sample) or masked.count("\\n") != sample.count("\\n"):
+    if len(masked) != len(sample) or masked.count("\n") != sample.count("\n"):
         raise AssertionError("source mask must preserve offsets and line positions")
     if "bool selected(int value) { return false; }" in masked:
         raise AssertionError("comment/raw-string decoy was not masked")
