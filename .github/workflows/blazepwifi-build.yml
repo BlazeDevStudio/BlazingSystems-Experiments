@@ -472,6 +472,8 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp8266 experiment/openwrt/BlazePwifi/dist/esp8266
           arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/dist/esp8266/source/BlazePwifiVendo
           (cd experiment/openwrt/BlazePwifi/dist/esp8266 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: Record exact-source ESP8266 artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind esp8266 --target esp8266 --artifact-dir experiment/openwrt/BlazePwifi/dist/esp8266 --core-package esp8266:esp8266 --core-version 3.1.2 --fqbn esp8266:esp8266:nodemcuv2 --sketch experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-esp8266-firmware
@@ -496,6 +498,8 @@ jobs:
         run: |
           cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
           sha256sum -c SHA256SUMS
+      - name: Record exact-source OpenWrt artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind openwrt --target "${{ matrix.target }}" --artifact-dir "experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}" --imagebuilder-workdir /tmp/blazepwifi-imagebuilder
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
@@ -533,6 +537,8 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 experiment/openwrt/BlazePwifi/dist/esp32
           arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/dist/esp32/source/BlazePwifiVendo32
           (cd experiment/openwrt/BlazePwifi/dist/esp32 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: Record exact-source ESP32 artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind esp32 --target esp32 --artifact-dir experiment/openwrt/BlazePwifi/dist/esp32 --core-package esp32:esp32 --core-version 3.3.13 --fqbn esp32:esp32:esp32 --sketch experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-esp32-firmware
@@ -559,6 +565,8 @@ jobs:
         run: |
           cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
           sha256sum -c SHA256SUMS
+      - name: Record exact-source OpenWrt artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind openwrt --target "${{ matrix.target }}" --artifact-dir "experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}" --imagebuilder-workdir /tmp/blazepwifi-imagebuilder
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
