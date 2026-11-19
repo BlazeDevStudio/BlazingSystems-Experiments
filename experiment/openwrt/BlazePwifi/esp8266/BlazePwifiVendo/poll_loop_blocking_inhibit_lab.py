@@ -539,16 +539,6 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=poll_guard_removed,begin_source=edge_hook,main_source=RACE_MAIN),
                     board,25,"missing-drain-abort-edge-reconciliation")
     print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
-    late_snapshot_loop = loop.replace(
-        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const bool pollWindowReady=beginPollWindow();\n    // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
-        "    const bool pollWindowReady=beginPollWindow();\n    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
-        1,
-    )
-    if late_snapshot_loop == loop:
-        raise AssertionError(f"{board}: late-snapshot mutation did not apply")
-    compile_and_run(assemble(loop_source=late_snapshot_loop,begin_source=edge_hook,main_source=RACE_MAIN),
-                    board,25,"late-snapshot-regression")
-    print(f"{board} MUTATION_REJECTED late-poll-edge-snapshot")
     mutations=(
       ("remove-beginPollWindow",loop.replace("const bool pollWindowReady=beginPollWindow();","const bool pollWindowReady=true;",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),

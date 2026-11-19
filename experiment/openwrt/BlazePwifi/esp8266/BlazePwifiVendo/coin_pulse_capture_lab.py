@@ -497,8 +497,8 @@ def main():
     verify_shared_extractor()
     mutations = (
         ("missing-edge-latch", "void sampleCoinPulseEdge(bool active){",
-         "  lastHandledCoinEdgeSequence=observedEdgeSequence;\n  lastCoin=active;\n}",
-         "  lastHandledCoinEdgeSequence=observedEdgeSequence;\\n}", "sustained high level"),
+         "  lastHandledCoinEdgeSequence=observedEdgeSequence;" + "\n" + "  lastCoin=active;" + "\n" + "}",
+         "  lastHandledCoinEdgeSequence=observedEdgeSequence;" + "\n" + "}", "sustained high level"),
         ("inclusive-debounce", "void sampleCoinPulseEdge(bool active){",
          "millis()-lastEdge>runDebounceMs",
          "millis()-lastEdge>=runDebounceMs", "deny-case-9"),
