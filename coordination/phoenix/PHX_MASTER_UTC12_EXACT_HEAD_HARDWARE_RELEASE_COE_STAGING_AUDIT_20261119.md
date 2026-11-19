@@ -114,3 +114,14 @@ Latest docs-head runs:
 - [Full #44522362971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362971) remained IN_PROGRESS at readback. Validation job 135554099687 had already failed at the same missing poll-signature assertion; several platform jobs remained in progress. No terminal docs-head Full result is claimed.
 
 QA owns the obsolete positive-presence fixture. Do not add a positive unauthenticated signature or weaken firmware default-deny behavior. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
+
+## Post-checkpoint RELEASE live-head supersession — 2026-11-19T12:22:25.515Z
+
+A fresh PR API read found that #291 advanced after the earlier UTC12 audit. Current exact head is `96ee6d4dab7739ea20a9fd74b0fb067cfb6cc7c5`, base `734b89d9e7792247e8376335c3f3685500ab3f89`; the single RELEASE UTC12 role lock is [issue #172 comment #7008914192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7008914192).
+
+- Current CI-0701 proof [#44522980589](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980589), job 135556111414, FAILS. Three tests pass; `test_windows_sdk_is_exactly_pinned_and_verified` fails at `assertIsNotNone(block, "missing exact .NET SDK pin step")`. Exact test blob: `26a3259cb90f2cbfc2d701d5f0d082a4fba2ee14`. Its raw regex encodes literal escaped newline/terminator sequences, so it does not match the named YAML step. This is an implementation defect in the test parser, not a valid expected RED against SDK roll-forward.
+- Current workflow blob `d25a907044a8092e28f779e48334c9dd31277832` still writes `rollForward: latestPatch` and checks only `dotnet --version` command exit status. It does not yet require selected SDK exactly 8.0.425.
+- Windows [#44522980494](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980494): handover PASS; build-windows was IN_PROGRESS at readback. The prior exact-head Windows run [#44519155116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519155116) at `af144e2...` failed in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` was uninitialized; no current evidence yet establishes that separate test input is fixed.
+- ESP32 compatibility [#44522980602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980602) was IN_PROGRESS at readback and pins older Hardware source `0e5514adb008`, not current #327.
+
+PHX-RELEASE owns fixing the regex, then making SDK selection fail closed and rerunning. PHX-PISONET separately owns the uninitialized `$buildWorkflow` input. No Master source edits were made to either role. No signing/publishing ran.
