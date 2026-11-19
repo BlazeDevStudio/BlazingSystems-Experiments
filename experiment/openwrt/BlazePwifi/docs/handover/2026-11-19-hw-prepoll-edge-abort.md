@@ -354,3 +354,37 @@ The failure latch now clears `configImageReadVerified` before setting the output
 - Full docs-head build [#44439064420](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439064420), validation job `135275207795`, completed FAILURE at inherited `Missing poll signature check`; all 13/13 firmware/platform targets and Android job `135275207254` completed SUCCESS; downstream simulation/update/signing/candidate/publishing jobs were skipped.
 - PHX-QA request posted in #172/#177/#327 for malformed v1/v2/unknown-schema followed by setup-save failure injection, zero commits, and byte-for-byte config/marker preservation.
 - No QA-owned tests directory, shared API, CORE ledger, EEPROM schema, marker offset, or financial migration was modified.
+
+
+## UTC03 request-digest failure deny — 2026-11-19
+
+**Task:** #172 / #177 / #327. **Scope:** ESP32/ESP8266 request signing only; no shared wire-contract, finance, receipt, migration, GPIO or admission behavior change.
+
+### Test-first evidence
+
+- Hardware-owned source-extracted lab: `esp8266/BlazePwifiVendo/request_digest_failure_lab.py`; compiles the real `signedBody()` and `post()` from both sketches while injecting empty, short and non-hex SHA-256 outputs at the `hexDigest()` boundary.
+- Test-only head `87218da3c0f496eb7a260d303a292de1e3b4f279`: [focused RED run #44450313396](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450313396), job `135312341724`; both ESP8266 and ESP32 failed at the expected guard assertion (exit 11), proving the old code built and dispatched a body with an empty signature.
+- Source corrections: ESP32 `8b9d2153e5347df3d5f1fbea8c09b6d476f38079`; ESP8266 `071a711d6598c67124e84ffd995fd48aa7d9f054`.
+
+### Firmware behavior
+
+- Added `validSha256Hex()` requiring exactly 64 hexadecimal characters.
+- `signedBody()` now returns empty on invalid digest and updates `lastSentNonce` only after digest validation.
+- `post()` now returns before opening an HTTP client when the signed body is empty.
+- Valid 64-character digest request bytes remain unchanged.
+
+### Exact-head evidence
+
+- Latest source/test head: `071a711d6598c67124e84ffd995fd48aa7d9f054`.
+- Focused quarantine/readback [run #44450389343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389343), job `135312580493`: SUCCESS. Both boards print `REQUEST_DIGEST_FAILURE_DENY_PASS`; empty/short/non-hex digests dispatch zero HTTP requests, while valid SHA-256 dispatches one. Existing poll-edge, EEPROM, marker, journal, quarantine and mutation suites also pass.
+- Relay/output polarity [run #44450389393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389393), jobs `135312580868` and `135312581229`: SUCCESS.
+- Full build [run #44450389363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389363): validation job `135312677302` FAILED at inherited QA-owned `Missing poll signature check`. ESP8266 build job `135312677784` SUCCESS; ESP32 and remaining target jobs were still running at this handover update. Do not call this Full CI green.
+- All evidence above is host/source-extracted simulation or CI, not physical flash/relay/coin acceptance.
+
+### Coordination requests
+
+- **PHX-QA:** independently verify both sketches at the exact source/test head; retain the empty/short/non-hex digest injections and assert zero HTTP begin/POST calls. Do not modify the shared response-signature fixture to manufacture a positive poll signature.
+- **PHX-MASTER / PHX-CORE:** confirm the fail-closed request suppression is wire-compatible; no protocol fields or producer/consumer contract changed.
+- **PHX-RELEASE:** read the completed ESP32 target result for the Mbed TLS 4 PSA compatibility path; this branch remains a draft candidate only.
+
+**Disposition:** focused CI VERIFIED; SIMULATED only; physical acceptance NOT TESTED; production NO-go.
