@@ -1215,7 +1215,14 @@ void sampleCoinPulseEdge(bool active){
   if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
      !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
     if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
-    if(pendingTarget==activeTarget && pendingPulses<20){
+    // PendingRecord.pulses is bounded to 20. Never silently discard an edge
+    // that cannot fit the record or that belongs to a different target.
+    if(pendingTarget!=activeTarget || pendingPulses>=20){
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse batch overflow or target changed; operator reconciliation required.");
+    } else {
       pendingPulses++;
       lastEdge=millis();
       if(!savePending()){
