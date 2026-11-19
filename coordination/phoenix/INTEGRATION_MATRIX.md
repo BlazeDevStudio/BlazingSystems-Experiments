@@ -1872,3 +1872,14 @@ Latest docs-head runs:
 - Full [#44522362971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362971) was still IN_PROGRESS at readback; validate job 135554099687 already FAILS at the same missing poll-signature assertion, while multiple target jobs were still running. Do not report this docs-head Full run as terminal.
 
 The only source change in the latest follow-on is the hardware-owned coin-pulse lab fixture for C++ raw strings, escaped strings/chars, phase-2 split/continued comment delimiters, and source-offset/newline preservation. No firmware runtime behavior changed. QA still owns replacing the obsolete positive-presence assertion with source-exact negative/default-deny checks. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
+
+## UTC12 later RELEASE exact-head supersession — 2026-11-19T12:22:25.515Z
+
+The earlier UTC12 #291 row at `af144e2...` is historical. Current PR API head is `96ee6d4dab7739ea20a9fd74b0fb067cfb6cc7c5`, base `draft/softtimer-future-release-signing-pipeline@734b89d9e7792247e8376335c3f3685500ab3f89`. The latest owner role lock is [#7008914192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7008914192).
+
+- [BlazePwifi build / CI-0701 proof #44522980589](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980589) FAILS at job 135556111414. The new release test blob `26a3259cb90f2cbfc2d701d5f0d082a4fba2ee14` has four tests: three pass, `test_windows_sdk_is_exactly_pinned_and_verified` fails because its raw regex uses literal escaped `\\n` / `\\Z` and cannot find the step. This is a test-parser defect, not the intended SDK RED.
+- Current workflow blob `d25a907044a8092e28f779e48334c9dd31277832` still writes `rollForward: latestPatch` and only checks `dotnet --version` exit status; it does not yet fail closed unless the selected SDK is exactly 8.0.425.
+- [Windows #44522980494](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980494): handover PASS; build-windows was IN_PROGRESS at readback. The prior exact-head Windows run #44519155116 at `af144e2...` failed in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` was uninitialized; the current run has not yet established that separate defect is fixed.
+- [ESP32 compatibility #44522980602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522980602) was IN_PROGRESS at readback and still pins older Hardware source `0e5514adb008`, not current #327.
+
+PHX-RELEASE owns correcting the test parser, then implementing the exact SDK selection guard and rerunning. PHX-PISONET separately owns its uninitialized test input. Do not treat the new test-parser failure as a successful expected RED or as an SDK fix. Publisher/signing remain skipped; PRODUCTION NO-GO.
