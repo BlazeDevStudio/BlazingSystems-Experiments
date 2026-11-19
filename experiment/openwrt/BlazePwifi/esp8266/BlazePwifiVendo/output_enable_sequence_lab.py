@@ -37,6 +37,7 @@ def extract(source: str, name: str) -> str:
 
 
 CPP = r'''
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
