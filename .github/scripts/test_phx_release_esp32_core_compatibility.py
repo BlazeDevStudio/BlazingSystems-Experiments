@@ -8,11 +8,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
-HARDWARE_SOURCE_SHA = "984ea8ff65a93b7da6e22fc2e1943acaf56100ca"
+HARDWARE_SOURCE_SHA = "06c1cdaa47f2a33594354b014bd0b7445f894aaa"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "528187f68aaad7d76a690bbf1cbe338165ad3839"
+HARDWARE_SKETCH_BLOB = "a59c986f6fe6e0ecb0069f3829b54df93ed0d96d"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
