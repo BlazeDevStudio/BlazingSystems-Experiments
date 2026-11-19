@@ -9,9 +9,9 @@ import subprocess
 import tempfile
 import sys
 
-from firmware_lab_source import extract_block, extract_function, extract_functions, mask_non_code
+from firmware_lab_source import extract_block, extract_function, extract_functions, find_repo_root, mask_non_code
 
-ROOT = Path.cwd()
+ROOT = find_repo_root(Path(__file__))
 ESP32 = ROOT / "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 ESP8266 = ROOT / "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
 
