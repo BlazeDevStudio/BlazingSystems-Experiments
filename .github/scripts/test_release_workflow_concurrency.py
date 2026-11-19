@@ -13,7 +13,7 @@ WINDOWS_WORKFLOW = ROOT / ".github/workflows/blazepisonet-softtimer-release.yml"
 
 def job_block(content: str, name: str) -> str:
     match = re.search(
-        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\\Z)",
+        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)",
         content,
     )
     if not match:
@@ -48,20 +48,20 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
                 block = job_block(self.content, job)
                 self.assertIn(f"if: github.ref == '{ref}'", block)
                 self.assertIn(f"'{marker}'", block)
-                self.assertIn("permissions:\\n      contents: write", block)
+                self.assertIn("permissions:\n      contents: write", block)
 
     def test_windows_build_is_explicitly_read_only_and_publisher_isolated(self):
         build = job_block(self.windows_content, "build-windows")
         publisher = job_block(self.windows_content, "publish-release")
 
         self.assertIn(
-            "permissions:\\n    contents: read",
+            "permissions:\n    contents: read",
             build,
             "the Windows build job handles candidate binaries and signing inputs "
             "but must never inherit write scope from a future workflow-level change",
         )
         self.assertNotIn("contents: write", build)
-        self.assertIn("permissions:\\n      contents: write", publisher)
+        self.assertIn("permissions:\n      contents: write", publisher)
         self.assertEqual(
             self.windows_content.count("contents: write"),
             1,
