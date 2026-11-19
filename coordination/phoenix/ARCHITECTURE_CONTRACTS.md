@@ -991,3 +991,20 @@ A destination intake manifest proves only the exact source commit, tree, path ro
 5. COE #26 exact head b382d233ff06c8791b1028bed3c617cc7b670d12 has five queued workflows and zero jobs. Until destination workflows execute on a reviewed exact candidate SHA, no destination CI or integrated acceptance is established.
 
 No copy, move, overwrite, rebase, cherry-pick, merge, or migration staging is authorized by this contract. PHX-MASTER owns this evidence boundary; source implementations and destination files remain with their respective owners.
+
+
+## 6.50 Poll-fault pulseEdges is a first-latch lower bound — 2026-11-19 UTC19
+
+**Source-grounded interpretation; no persistence schema change.** Current Hardware #327 sketches at ESP8266 blob `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` and ESP32 blob `f89bc561b2093328286d7633da794667b2ab06de` define a V1 `PollFaultRecord` with `magic`, `version`, `size`, `pulseEdges`, `bootMillis`, and `checksum` (20 bytes). The first call to `latchPollPulseFault()` sets the sticky `journalRecoveryRequired` flag, inhibits outputs, and persists the supplied edge count to the secondary store and LittleFS.
+
+In `sampleCoinPulseEdge()`, the count supplied on the first latch is `pendingPulses + unseenEdges`. Once `journalRecoveryRequired` is true, later ISR deltas are consumed by advancing `lastHandledCoinEdgeSequence` but do not call the latch again and are not added to the already-persisted V1 record. Therefore:
+
+1. **V1 meaning:** `pulseEdges` is the first-fault snapshot, not a live cumulative counter.
+2. **Reconciliation meaning:** it is a lower bound on observed edge activity over the full quarantine/recovery window; later edges may be absent. It is not an exact total.
+3. **Financial boundary:** never use this field to credit time, settle/refund a coin, infer a precise denomination/count, or clear pending evidence. The sticky fault remains deny-only until separately authorized reconciliation.
+4. **Completeness:** V1 has no explicit completeness flag. Consumers must treat every V1 count as potentially incomplete; absence of a flag is not evidence that no later edge occurred.
+5. **Schema boundary:** do not add a field or change record layout in this task. Any future completeness flag requires a new version, dual-store migration/recovery tests, exact-head QA, and explicit HARDWARE/CORE/QA review.
+
+**Regression gap / owner action:** the current dual-store lab `poll_fault_dual_store_lab.py` blob `7d211b5e8e47232d08d2a2c625d3212676aee7a9` does not extract/call `sampleCoinPulseEdge()`. The poll-loop lab blob `440efc0fc76e90d22283f62c6605628a6c79342e` covers a release-window edge and unobserved-edge persistence, but no explicit second-ISR-after-sticky-latch count assertion was found. PHX-HARDWARE should add a two-board host regression proving the persisted first-fault snapshot stays unchanged after later edges and admission/output remain denied; PHX-QA independently reviews it; PHX-CORE confirms the count is never treated as a financial quantity. This section resolves the interpretation for existing V1 records, not owner approval of a future schema.
+
+Evidence is source inspection and hosted simulated labs only. No physical device, flash, financial state, record migration, or production action is authorized. **PRODUCTION NO-GO.**

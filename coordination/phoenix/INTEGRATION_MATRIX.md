@@ -2047,3 +2047,24 @@ COE owner candidate CI (#28/#29/#30/#31/#32/#45) remains separate scoped evidenc
 | COE RELEASE #35 / #44 | #35 d41f3231e0eae6cf0c62d19f430818e30372162e: shared 44586100929 FAILS after packager tests because all 10 profiles lack approved site ULA; ESP compiles skipped. Sandbox 44586100962 fails closed because Bubblewrap is absent; case 44586101050 PASS. #44 582fd5d5e83e36b36546ac28534740298ba94af4: shared/case PASS, sandbox 44390136327 FAILS closed. | #35 keeps the production ULA unset and correctly blocks profiles; #44's per-appliance random identity does not establish site-wide shared authority. |
 
 The COE #26 source-intake scope, current-main firmware blob differences, test identity comparison and license/NOTICE findings are detailed in PHX_MASTER_UTC18_COE26_SOURCE_INTAKE_SCOPE_AND_EXACT_HEAD_CI_AUDIT_20261119.md. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No source copy/move or migration staging occurred. PRODUCTION NO-GO.
+
+
+---
+
+## UTC19 live exact-head snapshot — 2026-11-19T19:01Z
+
+This snapshot supersedes older role/CI pins above; every result below is scoped to the exact listed PR head/run, not the combined target.
+
+| Owner | Current PR head | Exact CI evidence | Current disposition |
+|---|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS | Scoped historical CI only; separate CORE continuation retains ownership |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235), [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS | Scoped CI; no combined integration acceptance |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS | Scoped CI; PISONET-owned release self-test still blocks #291 |
+| PHX-HARDWARE #327 | `214977ae2bfa2522a3096cd10e73ac9d2522fbd4` | Quarantine [44593189254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44593189254) PASS; relay/output [44593189178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44593189178) PASS; Full [44593189179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44593189179) FAIL | Full controller protocol parity stops at QA-owned `Missing poll signature check`; host simulation only |
+| PHX-QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS | Native COM scope only; not poll-fixture evidence |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head run returned | No CI pass claimed |
+| PHX-RELEASE #291 | `a17f270ef5560e4fada4e9ef7ca4ea5ed03fbf28` | BlazePwifi [44581603752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44581603752) PASS; ESP32 [44581603620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44581603620) PASS; Windows [44581603605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44581603605) FAIL | Handover/package parity pass; PISONET-owned `$buildWorkflow` uninitialized in negative self-test; publisher skipped |
+
+**COE integration:** main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, 205 paths, five queued workflows and zero jobs. PR #35 `d41f3231e0eae6cf0c62d19f430818e30372162e`: shared/hardware run [44586100929](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586100929) ran 117 tests (2 skipped), then all 10 appliance profiles failed closed for missing approved site-scoped RFC4193 /48; ESP compile jobs skipped. Sandbox [44586100962](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586100962) passed 14/14 host preflight tests then failed closed with exit 125 because Bubblewrap is absent. Case collision [44586101050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44586101050) PASS. COE #44 remains OPEN/DRAFT at `582fd5d5e83e36b36546ac28534740298ba94af4`; its per-appliance random ULA is not site-wide authority.
+
+**Integration rule:** a queued workflow is NOT RUN; skipped downstream signing/publishing is NOT PASS; a focused host lab is NOT hardware acceptance. No status propagates to a different SHA or the combined COE #26 candidate.

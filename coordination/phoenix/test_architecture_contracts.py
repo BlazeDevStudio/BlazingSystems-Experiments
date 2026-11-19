@@ -88,5 +88,18 @@ class PollResponseArchitectureTests(unittest.TestCase):
         self.assertIn("Concurrent first-boot attempts converge on one durable value or fail closed", section)
 
 
+    def test_poll_fault_edge_count_is_first_latch_lower_bound(self):
+        section = DOC[DOC.index("## 6.50 Poll-fault pulseEdges is a first-latch lower bound"):]
+        for required in (
+            "first-fault snapshot",
+            "lower bound",
+            "not an exact total",
+            "not use this field to credit time",
+            "no explicit completeness flag",
+            "64ec57daf161a0b4517d350f4f08bee55c0cabec",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
 if __name__ == "__main__":
     unittest.main()

@@ -1136,3 +1136,22 @@ Source/tree and CI-log inspection completed. Full Master Python suite NOT RUN; n
 **Governance and missing inputs:** issue #172 and cleanup #266 were re-read; #266 remains OPEN and the broader MASTER cleanup inventory remains incomplete. Root AGENTS.md and README.md were read. The uploaded 00_MASTER_PROJECT_PHOENIX(1).txt was read from Library. README_FIRST(20261114-191926).md and COMMUNICATION_PROTOCOL(20261114-191907).md were located in Library and read; neither is present in the Experiments repository tree. The uploaded 00_MASTER_PROJECT_PHOENIX(1).txt was also read. BLAZE-COMMS/1 requires a fenced JSON envelope with `to` as a string and an updated_utc field; the UTC18 issue checkpoint was corrected in place to match. Canonical private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not surfaced; only older v3-v7 Library snapshots appeared and were not substituted. No Google Drive connector was exposed. No private registry contents or identifiers were published.
 
 **No subsystem source changes, owner-branch edits, route-manifest changes, migration staging, copy/move, merge, signing, release, flash, payment action, physical test, power cut or soak occurred.** Direct Master suite and Master Actions remain NOT RUN. Production remains NO-GO.
+
+
+---
+
+## UTC19 exact-head reconciliation — 2026-11-19T19:01Z
+
+Master branch before this update: `phoenix/master-coordination@2fdb880db21f9037e0612c3630f197522256798e`. Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active development `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Existing Master PR #288 is OPEN/DRAFT; base main SHA unchanged; 107 paths before this update, all under `coordination/phoenix/`.
+
+**New interface clarification:** Hardware #327 requested a Master/CORE/QA decision on late ISR count semantics. Source inspection of both current sketches confirms the persisted V1 `pulseEdges` is a first-fault snapshot; later ISR deltas after the sticky latch are not appended. The value must be treated as a lower bound, never as an exact financial count. No V1 schema change is made. Added Architecture Contract §6.50 and a documentation regression test. Hardware/QA need an explicit second-edge-after-latch test; CORE must confirm no accounting consumer interprets the field as credit.
+
+**Current role CI:** CORE #252 exact-head run 42698139210 PASS; RENTAL #289 runs 43653329235/229 PASS; PISONET #255 run 42462978704 PASS. HARDWARE #327 current head 214977ae... has focused quarantine and relay/output PASS, while Full run 44593189179 fails at the QA-owned positive poll-signature assertion. QA #290 run 43633486963 PASS only for native COM scope; QA #292 has no exact-head run. RELEASE #291 current head a17f270e... has BlazePwifi and ESP32 compatibility PASS; Windows run 44581603605 fails because PISONET-owned `negative-selftest.ps1` reads uninitialized `$buildWorkflow`; publisher skipped.
+
+**COE:** #26 remains OPEN/DRAFT at b382d233..., 205 paths, five workflows QUEUED and zero jobs. #35 current head d41f3231... has 117 packager/tool tests passed (two skips), all 10 profiles fail closed because site ULA authority is unset, and ESP compiles are skipped. Mandatory sandbox has 14/14 preflight tests then fails because Bubblewrap is absent (exit 125); case-collision passes. #44's per-appliance ULA generator is not site authority. No migration is staged.
+
+**Governance:** cleanup #266 remains OPEN and Master cleanup checkbox remains intentionally unchecked because the full duplicate/dead-code inventory is incomplete. Both repositories' rulesets endpoints return empty arrays; classic branch-protection reads return 403, so effective protection is UNKNOWN. Private Drive v11 registry and newer corrections remain unavailable; no Google Drive connector was exposed, and older Library snapshots were not substituted.
+
+**Execution:** no Master workflow run exists for the current Master head; the workflow inventory contains no dedicated coordination/phoenix test workflow. Direct sparse clone failed because this runtime could not resolve github.com; Master Python suite NOT RUN. This is distinct from the exact role CI listed above.
+
+No subsystem source, role branch, ownership manifest, COE destination, financial state, signer, release, hardware, or payment system changed. No migration/copy/move/merge/flash/physical test/power cut/soak occurred. **PRODUCTION NO-GO.**
