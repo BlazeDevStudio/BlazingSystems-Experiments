@@ -80,10 +80,6 @@ uint32_t millis() {
     return fakeNow;
 }
 
-uint32_t snapshotCoinEdgeSequence() {
-    return coinEdgeSequence;
-}
-
 void digitalWrite(int pin, int level) {
     if (pin == runRelayPin) relayLevel = level;
     if (pin == runLedPin) ledLevel = level;
@@ -156,15 +152,15 @@ void resetScenario(bool activeHigh) {
     littleFsWriteAttempts = 0;
 }
 
+"""
+
+
+RUN_SCENARIO = r"""
 int runScenario(bool activeHigh) {
     resetScenario(activeHigh);
-
-    // Positive control: a valid pending batch is eligible before the fault.
     if (!canAttemptCoinPost()) return 10;
 
-    // One already-pending pulse plus one unassignable ISR edge forms the
-    // first-fault snapshot. The real latch must persist that value to both
-    // write-once V1 stores and turn both outputs off.
+    // One pending pulse plus one unassignable ISR edge forms the first-fault snapshot.
     coinEdgeSequence = 1;
     sampleCoinPulseEdge(true);
     const int offLevel = activeHigh ? HIGH : LOW;
@@ -180,8 +176,7 @@ int runScenario(bool activeHigh) {
               << (activeHigh ? "active-high" : "active-low")
               << " snapshot=2" << std::endl;
 
-    // A later ISR edge is observed and consumed while the sticky deny is
-    // already set. V1 remains the first-fault snapshot, not a live counter.
+    // A later ISR edge is consumed under the sticky deny. V1 remains first-fault-only.
     coinEdgeSequence = 2;
     sampleCoinPulseEdge(true);
     if (lastHandledCoinEdgeSequence != 2 ||
@@ -199,7 +194,9 @@ int runScenario(bool activeHigh) {
               << std::endl;
     return 0;
 }
+"""
 
+MAIN = r"""
 int main() {
     int result = runScenario(true);
     if (result != 0) return result;
@@ -264,17 +261,15 @@ def check_board(board: str, sketch_path: Path):
         )
 
     ordered_functions = "\n\n".join(extracted[name] for name in names)
-    board_main = PRELUDE + "\n" + ordered_functions + "\n"
-    board_main += r"""
-int main() {
-    int result = runScenario(true);
-    if (result != 0) return result;
-    result = runScenario(false);
-    if (result != 0) return result;
-    std::cout << "POLL_FAULT_SECOND_ISR_LAB=PASS board=BOARD_NAME" << std::endl;
-    return 0;
-}
-""".replace("BOARD_NAME", board)
+    board_main = (
+        PRELUDE
+        + "\\n"
+        + ordered_functions
+        + "\\n"
+        + RUN_SCENARIO.replace("BOARD_NAME", board)
+        + "\\n"
+        + MAIN.replace("BOARD_NAME", board)
+    )
 
     with tempfile.TemporaryDirectory(prefix="phx-second-isr-" + board.lower() + "-") as temp:
         folder = Path(temp)
@@ -291,17 +286,15 @@ int main() {
             1,
         )
         mutant_functions = ordered_functions.replace(sample, mutant_sample, 1)
-        mutant_program = PRELUDE + "\n" + mutant_functions + "\n"
-        mutant_program += r"""
-int main() {
-    int result = runScenario(true);
-    if (result != 0) return result;
-    result = runScenario(false);
-    if (result != 0) return result;
-    std::cout << "POLL_FAULT_SECOND_ISR_LAB=PASS board=BOARD_NAME" << std::endl;
-    return 0;
-}
-""".replace("BOARD_NAME", board)
+        mutant_program = (
+            PRELUDE
+            + "\\n"
+            + mutant_functions
+            + "\\n"
+            + RUN_SCENARIO.replace("BOARD_NAME", board)
+            + "\\n"
+            + MAIN.replace("BOARD_NAME", board)
+        )
         mutant = compile_and_run(mutant_program, folder, "mutant")
         if mutant.returncode != 12:
             raise AssertionError(
