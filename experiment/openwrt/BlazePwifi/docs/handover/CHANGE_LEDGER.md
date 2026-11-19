@@ -283,3 +283,11 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Exact draft PR #291 source head `7688cb25019b1045dd8f88ad335fe7fe0b5835cf` adds the existing release-owner's ESP32 core compatibility workflow and regression guard. This entry preserves provenance only.
 - Windows [#44474715157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715157) and shared-build [#44474715174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715174) hit mandatory handover freshness before their relevant validation paths; publisher/signing remain skipped. The independent compatibility run [#44474715198](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715198) has its ESP32 4.0.0 leg successful while the 3.3.13 leg remains in progress and is not credited.
 - This additive refresh enables fresh exact-head CI. PR #291 stays draft/unmerged; all production gates remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC07 — build provenance source head (blocked CI)
+
+- Exact draft PR #291 source head `ac9dd772f4413e5e3439884b069615c99a175c49` adds the existing release-owner's build-provenance generator, tests and workflow integration. This record preserves source provenance only; the new build-provenance code has not been reached by the blocked workflows.
+- Exact Windows [#44482543291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543291) and shared-build [#44482543530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543530) runs failed at mandatory handover freshness before build/validation; signer and publisher jobs were skipped.
+- The independent ESP32 compatibility run [#44482543394](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543394) completed SUCCESS for both declared core legs (3.3.13 and 4.0.0), scoped only. This does not establish release acceptance.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged and **PRODUCTION NO-GO.**
