@@ -18,7 +18,7 @@
 - Cleanup #266 remains OPEN; its broader Master duplicate/dead-code inventory remains incomplete.
 - OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29 is unchanged, DRAFT_REVIEW_ONLY, PHX-MASTER destination null.
 
-Issue #172 and #266, root AGENTS.md, root README.md, current Master routing manifest, Master architecture/matrix/role/audit documents, role PRs and exact-head CI were re-read. The uploaded 00_MASTER_PROJECT_PHOENIX(1).txt was read from Library. README_FIRST and COMMUNICATION_PROTOCOL were not found in the repository tree or Library search; BLAZE-COMMS/1 was followed from the uploaded Master directive and issue #172. The private Drive v11 registry and newer corrections were not surfaced; older v3-v7 Library snapshots were not substituted. No Google Drive connector was exposed.
+Issue #172 and #266, root AGENTS.md, root README.md, current Master routing manifest, Master architecture/matrix/role/audit documents, role PRs and exact-head CI were re-read. README_FIRST(20261114-191926).md and COMMUNICATION_PROTOCOL(20261114-191907).md were located in Library and read; neither is present in the Experiments repository tree. The uploaded 00_MASTER_PROJECT_PHOENIX(1).txt was also read. BLAZE-COMMS/1 requires a fenced JSON envelope with to as a string and an updated_utc field; the UTC18 issue checkpoint was corrected in place to match. The private Drive v11 registry and newer corrections were not surfaced; older v3-v7 Library snapshots were not substituted. No Google Drive connector was exposed.
 
 ## 2. New architecture decision — intake manifests are scope-bound
 
