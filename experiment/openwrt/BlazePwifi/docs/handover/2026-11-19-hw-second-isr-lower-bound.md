@@ -106,3 +106,50 @@ The existing append-verification bypass and both local output-polarity gate muta
 The focused quarantine workflow also reran the EEPROM `begin()` read-failure / full-image recovery cases and the drain-abort ISR tests. Those are host simulations with fake flash/GPIO, not physical power-cut or relay evidence.
 
 **Classification:** shared source parity and failure injection **SIMULATED / CI VERIFIED**; actual flash durability, physical ISR/relay behavior, 150 power cuts and 30-device soak **NOT TESTED**; **HARDWARE ACCEPTED: NOT ESTABLISHED; PRODUCTION READY: NO-GO**.
+
+## UTC21 — ESP8266 EEPROM.begin same-size fail-then-recover with marker preservation
+
+**Role:** PHX-HARDWARE  
+**PR:** [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hardware-prepoll-edge-abort-20261119  
+**Parent/base:** #326 at 58c558fb6a237935214621adc3dee65a10fe1a51  
+**Exact source/test commit:** d42cf45d4ca44e1e421b9e410892ba71ed0e3fe3  
+**Lab blob:** 059ed6c693409540bfb1ddd4cf7bc036be71361a
+
+### Master assignment and gap
+
+Master's UTC21 assignment in [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288), coordination commit [9bff8bb8](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9bff8bb8b47783d860be3725c139b58a576c7333), requested fail-first and fail-then-recover coverage of the initial ESP8266 whole-image EEPROM.begin() read, including loadCfg() / defaults() / saveCfg() with a pre-existing poll-fault marker.
+
+The existing lab already covered a newly allocated buffer with one failed begin read followed by successful explicit full-image recovery, plus a same-size stale-buffer path where both the begin read and explicit full-image read fail. It did not combine **same-size buffer reuse + failed first begin read + successful full-image recovery + default save** in one scenario.
+
+### New exact-source regression
+
+config_load_read_failure_lab.py now adds runSameSizeBeginReadFailureRecoveryScenario():
+
+1. Seed an erased Config region plus a valid pre-existing V1 poll-fault marker in the reserved EEPROM range.
+2. Prime the same-size EEPROM RAM allocation, then poison only that RAM buffer.
+3. Inject one failure into the next EEPROM.begin() whole-image read. The ESP8266 core's internal read result is modeled as ignored and the same-size stale buffer remains.
+4. Allow the explicit status-bearing full-image read to succeed and restore the RAM image.
+5. Execute the real extracted loadCfg() path, including defaults() and saveCfg().
+6. Verify the saved Config checksum and full RAM/flash image equality, preserve every marker byte, then prove the marker still denies intake after a cold-boot reload.
+
+A failure-injection mutation that removes the refreshVerifiedEepromImage() guard is rejected by this same-size recovery scenario. Existing fail-both, persistent-failure, malformed-schema, v1/v2 local-config migration, failed-commit, and marker-only raw-read tests remain intact.
+
+**No firmware .ino runtime, EEPROM layout, marker format, migration policy, shared API, financial ledger, or coin-admission behavior changed.** This is hardware-owned host regression coverage only.
+
+### Exact-head CI
+
+At source/test SHA d42cf45d4ca44e1e421b9e410892ba71ed0e3fe3:
+
+- Quarantine/readback [run #44622450711](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622450711), job 135907398192: **SUCCESS**. Log includes ESP8266_EEPROM_SAME_SIZE_BEGIN_FAIL_RECOVER_DEFAULT_SAVE_MARKER_PRESERVED_PASS, MUTATION_REJECTED ESP8266 same-size missing full-image guard mutation, the existing fail-first recovery marker-preservation case, full-read fail-closed cases, and same-boot save denial.
+- Relay/output [run #44622450586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622450586): ESP32 boot-polarity job 135907395801 and source-output-polarity job 135907396076: **SUCCESS**.
+- Full BlazePwifi [run #44622450564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44622450564), validation job 135907396513: **FAILED** at the inherited QA-owned Missing poll signature check in tests/controllers.sh. Firmware/validation was not weakened; remaining target jobs were still running at the last read. No Full PASS is claimed.
+
+### Evidence boundary and next action
+
+- **SIMULATED / CI VERIFIED:** exact-source C++ host model of ESP8266 Arduino core 3.1.2 buffer reuse, fail-first recovery, default Config save, marker byte preservation and deny hold.
+- **NOT TESTED:** real ESP8266 flash read failure, actual flash endurance/atomicity, physical power cuts, relay/pulse behavior.
+- **HARDWARE ACCEPTED:** not established.
+- **PRODUCTION READY:** NO-GO.
+
+**Next:** PHX-QA independently review this exact source/test SHA and replace the stale positive poll-signature assertion without changing firmware default-deny. PHX-MASTER refreshes the canonical #327 head after this handover commit. PHX-HARDWARE preserves the current marker-only raw-read correction.
