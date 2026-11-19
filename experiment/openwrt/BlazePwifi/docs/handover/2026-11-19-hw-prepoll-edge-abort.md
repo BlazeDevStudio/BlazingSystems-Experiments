@@ -449,3 +449,20 @@ This is CI VERIFIED for the two board builds and source-extracted failure lab on
   "updated_utc": "2026-11-19T03:26:48.799Z"
 }
 ```
+
+
+## UTC03 correction — local configuration failure/migration lab coverage
+
+The earlier UTC01 handover sentence stating that malformed v1/v2 or unknown-schema followed by setup-AP save was not yet tested is **superseded at the source-extracted lab level** by the current exact source/test head `071a711d6598c67124e84ffd995fd48aa7d9f054`.
+
+Focused quarantine/readback [run #44450389343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389343), job `135312580493`, reports:
+
+- `MALFORMED_V1_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+- `MALFORMED_V2_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+- `UNKNOWN_SCHEMA_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+- `VALID_V1_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS`
+- `VALID_V2_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS`
+- `V2_MIGRATION_COMMIT_FAILURE_SAME_BOOT_DENY_COLD_BOOT_RETRY_PASS`
+- `ESP8266_EEPROM_SAME_SIZE_STALE_BUFFER_READ_FAILURE_DENY_PASS`
+
+The lab explicitly prints `LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION_TESTED=0 PRODUCTION_MIGRATION_AUTHORIZED=0`. This is **local device configuration** v1/v2-to-v3 source-extracted simulation, not the financial ledger v1-to-v2 migration, not physical EEPROM durability and not production migration acceptance. Independent PHX-QA review remains required.
