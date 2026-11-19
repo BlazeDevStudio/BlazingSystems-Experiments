@@ -1393,3 +1393,13 @@ CORE remains owned by the separate Blaze Production Continuation. No competing C
 
 CORE remains with its separate owner/continuation. No competing CORE implementation or subsystem source edit was started.
 
+---
+
+### Terminal CI status supersession — 2026-11-19 (2026-11-19T21:00:33.875Z)
+
+The prior UTC20 observation that RELEASE #291's BlazePwifi build and ESP32 compatibility jobs were still in progress is superseded by terminal exact-head readback at PR head 3bffd9d14de42abf2c2f6079632e0348127ad025:
+- [44612586860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586860) PHX Release ESP32 core compatibility: **PASS**.
+- [44612586896](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586896) BlazePwifi build: **PASS**.
+- [44612586795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586795) Windows Release: **FAIL** in RELEASE-SIGN negative controls because PISONET-owned negative-selftest.ps1 references uninitialized $buildWorkflow; publisher remains skipped.
+
+No release or signing occurred. This corrects status only; it does not clear the PISONET-owned test failure or the cross-owner review boundary.
