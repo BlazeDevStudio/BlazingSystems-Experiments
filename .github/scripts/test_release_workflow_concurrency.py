@@ -102,5 +102,34 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         )
 
 
+    def test_every_write_privileged_pisowifi_publisher_requires_protected_ref_and_approval(self):
+        cases = (
+            ("production_import_signed_apk", "BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED"),
+            ("publish_prerelease", "BLAZEPWIFI_PRERELEASE_APPROVED"),
+            ("publish_release", "BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED"),
+            ("publish_v060_lab_preview", "BLAZEPWIFI_LAB_PREVIEW_APPROVED"),
+        )
+        expected_jobs = {job for job, _ in cases}
+        actual_write_jobs = {
+            name
+            for name in re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\\n", self.content)
+            if "permissions:\\n      contents: write" in job_block(self.content, name)
+        }
+        self.assertEqual(
+            actual_write_jobs,
+            expected_jobs,
+            "every write-privileged BlazePwifi job must be covered by the approval guard",
+        )
+        for job, approval_variable in cases:
+            with self.subTest(job=job):
+                block = job_block(self.content, job)
+                condition = re.search(r"(?m)^    if: (.+)$", block)
+                self.assertIsNotNone(condition, f"{job} must have an explicit job-level gate")
+                expression = condition.group(1)
+                self.assertIn("github.event_name == 'push'", expression)
+                self.assertIn("github.ref_protected == true", expression)
+                self.assertIn(f"vars.{approval_variable} == 'true'", expression)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
