@@ -348,7 +348,8 @@ int main() {
 '''
 
 
-def build_program(source: str, omit_boot_readback_guard: bool = False) -> str:
+def build_program(source: str, omit_boot_readback_guard: bool = False,
+                  omit_namespace_open_guard: bool = False) -> str:
     bounded = "\n\n".join((
         extract_function(source, "boundedCoinDebounceMs"),
         extract_function(source, "boundedTimingMs"),
@@ -376,6 +377,26 @@ def build_program(source: str, omit_boot_readback_guard: bool = False) -> str:
         if load.count(guard) != 1:
             raise RuntimeError("cannot build boot-readback guard-removal mutation")
         load = load.replace(guard, "  // injected mutation: skip boot-time config readback gate", 1)
+    if omit_namespace_open_guard:
+        guard = """  if(!prefs.begin("blazevendo",false)){
+    // A failed namespace open is not an empty configuration. Do not query or
+    // write through an inactive Preferences handle; retain safe defaults.
+    cfg=Config{};
+    outputPolarityKnown=false;
+    runRelayActiveHigh=false;
+    runLedActiveHigh=false;
+    pinConfigSafe=false;
+    insertMode=false;
+    activeTarget="";
+    char b[17];
+    snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
+    cfg.apPass=String(b);
+    Serial.println("CRITICAL: NVS namespace open failed; config unavailable, outputs remain INPUT.");
+    return;
+  }"""
+        if load.count(guard) != 1:
+            raise RuntimeError("cannot build namespace-open guard-removal mutation")
+        load = load.replace(guard, '  prefs.begin("blazevendo",false);', 1)
     return (CPP.replace("@@BOUNDED@@", bounded)
                .replace("@@HELPER@@", helper)
                .replace("@@MATCH@@", match)
@@ -428,6 +449,12 @@ def main() -> None:
         "ESP32 missing boot readback guard mutation",
         False,
         "NVS_BOOT_STRING_READ_ERROR_TRUSTED_POLARITY key=ssid",
+    )
+    compile_and_run(
+        build_program(source, omit_namespace_open_guard=True),
+        "ESP32 missing namespace-open guard mutation",
+        False,
+        "NVS_NAMESPACE_OPEN_FAILURE_NOT_HANDLED",
     )
 
 if __name__=="__main__":

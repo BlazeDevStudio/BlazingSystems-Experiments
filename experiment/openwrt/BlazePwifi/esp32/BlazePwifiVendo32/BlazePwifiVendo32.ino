@@ -873,7 +873,22 @@ bool loadLocalOutputPolarity(){
 bool configFieldsMatchStored(const char **failedField);
 
 void loadConfig(){
-  prefs.begin("blazevendo",false);
+  if(!prefs.begin("blazevendo",false)){
+    // A failed namespace open is not an empty configuration. Do not query or
+    // write through an inactive Preferences handle; retain safe defaults.
+    cfg=Config{};
+    outputPolarityKnown=false;
+    runRelayActiveHigh=false;
+    runLedActiveHigh=false;
+    pinConfigSafe=false;
+    insertMode=false;
+    activeTarget="";
+    char b[17];
+    snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
+    cfg.apPass=String(b);
+    Serial.println("CRITICAL: NVS namespace open failed; config unavailable, outputs remain INPUT.");
+    return;
+  }
   outputPolarityKnown=false;
   cfg.ssid=prefs.getString("ssid","");
   cfg.pass=prefs.getString("pass","");
