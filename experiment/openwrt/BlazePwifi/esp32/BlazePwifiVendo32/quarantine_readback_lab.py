@@ -312,6 +312,7 @@ def extract(src: str, signature: str) -> str:
 # intentionally byte-identical across ESP32 and ESP8266 so board drift cannot
 # silently weaken one controller while the other remains protected.
 PARITY_SIGNATURES = (
+    # Pending-event and quarantine persistence must remain byte-identical.
     "bool readPendingFile(",
     "bool markPendingPostAttempt(",
     "bool pendingAttemptMarkerMatches()",
@@ -323,6 +324,17 @@ PARITY_SIGNATURES = (
     "bool inspectQuarantineLog(",
     "bool appendQuarantineRecord(",
     "bool quarantinePending(",
+    # The two board consumers must also share one poll/coin response boundary.
+    "bool pollJsonSpace(",
+    "bool pollJsonHex(",
+    "bool pollJsonSkipString(",
+    "bool pollJsonSkipComposite(",
+    "bool pollJsonSkipPrimitive(",
+    "bool pollJsonSkipValue(",
+    "bool pollJsonTopLevelTrue(",
+    "bool validSha256Hex(",
+    "bool coinPostDispositionVerified(",
+    "bool acceptPollResponse(",
 )
 
 
@@ -389,6 +401,43 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated):
         raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
 
+    # A one-board fail-open coin disposition must be rejected before drift ships.
+    disposition_signature = "bool coinPostDispositionVerified("
+    disposition = mutated["ESP8266"][disposition_signature]
+    if disposition.count("return false;") != 1:
+        raise SystemExit("PHX-HARDWARE: coin-disposition fail-open mutation anchor is not unique")
+    mutated_disposition = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_disposition["ESP8266"][disposition_signature] = disposition.replace(
+        "return false;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_disposition):
+        raise SystemExit("PHX-HARDWARE: coin-disposition fail-open mutation was not detected")
+
+    # A one-board permissive root-status parser must also be rejected.
+    parser_signature = "bool pollJsonTopLevelTrue("
+    parser = helpers["ESP8266"][parser_signature]
+    parser_anchor = "return p==n && found==1 && accepted;"
+    if parser.count(parser_anchor) != 1:
+        raise SystemExit("PHX-HARDWARE: poll-parser permissive mutation anchor is not unique")
+    mutated_parser = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_parser["ESP8266"][parser_signature] = parser.replace(
+        parser_anchor, "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_parser):
+        raise SystemExit("PHX-HARDWARE: permissive poll-parser mutation was not detected")
+
+    # acceptPollResponse is deliberately deny-only until CORE/QA approve a contract.
+    admission_signature = "bool acceptPollResponse("
+    admission = helpers["ESP8266"][admission_signature]
+    if admission.count("return false;") != 1:
+        raise SystemExit("PHX-HARDWARE: poll-admission mutation anchor is not unique")
+    mutated_admission = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_admission["ESP8266"][admission_signature] = admission.replace(
+        "return false;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_admission):
+        raise SystemExit("PHX-HARDWARE: positive poll-admission mutation was not detected")
+
     # Both boards must retain the local polarity admission gate.
     for board in ("ESP8266", "ESP32"):
         polarity_mutated = {name: dict(functions) for name, functions in helpers.items()}
@@ -400,9 +449,12 @@ def verify_board_safety_parity():
         if board_polarity_guard_problem(polarity_mutated) is None:
             raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
-    print("BOARD_QUARANTINE_PARITY_PASS 11/11 shared helpers byte-identical")
+    print("BOARD_SHARED_SAFETY_PARITY_PASS 21/21 functions byte-identical")
     print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
+    print("BOARD_PARITY_MUTATION_REJECTED fail-open coin disposition")
+    print("BOARD_PARITY_MUTATION_REJECTED permissive poll status parser")
+    print("BOARD_PARITY_MUTATION_REJECTED positive poll response admission")
     print("ESP32_AND_ESP8266_POLARITY_MUTATIONS_REJECTED removed local gate")
 
 
