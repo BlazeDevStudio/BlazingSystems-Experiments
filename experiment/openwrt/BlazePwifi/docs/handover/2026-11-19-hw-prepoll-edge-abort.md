@@ -1022,3 +1022,29 @@ The poll-fault backup remains same-chip dual-store evidence, not an independent 
   "updated_utc": "2026-11-19T09:56:30Z"
 }
 ```
+
+
+## UTC15 — correct ESP32 NVS pre-commit durability assertion
+
+**Task:** #177 / #172 — PHX-HARDWARE-owned host-lab correctness follow-up.  
+**PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Branch HEAD before this handover:** `a7f7f752ea4df877605097842180669cacfc2e7a`  
+**Exact source/test commit:** `a7f7f752ea4df877605097842180669cacfc2e7a`  
+**Lab blob after correction:** `04d7c3c8ee06f29c584da4e3925193345862d9df`
+
+### Defect and correction
+
+The preceding test-only commit `68d739639a848089b265b16e20751455c4fadbf5` introduced an inverted ESP32 NVS durability assertion. The fake backend deliberately keeps `nvs_set_blob()` data in its pending buffer; `nvs_commit()` snapshots whether the durable store is already non-empty before it applies the pending bytes. The assertion incorrectly failed when that pre-commit durable store was empty, so the intended fail-closed behavior was rejected.
+
+- Expected test failure on the inverted assertion: quarantine PR [#44548033534](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44548033534), job `135643831622`, emitted `ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT` and exited 60. This was a test-assertion defect, **not** a firmware defect.
+- Correction: [commit a7f7f75](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a7f7f752ea4df877605097842180669cacfc2e7a) now fails only if the durable store is already populated before `nvs_commit()`, and emits `ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT_PASS` for the expected pending-only state.
+- Exact-head quarantine PR [#44550142806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44550142806), job `135651341615`: **SUCCESS**. Log contains `ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT_PASS` and `POLL_FAULT_DUAL_STORE_LAB=PASS` for ESP32 and ESP8266.
+- Exact-head quarantine push [#44550124291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44550124291), job `135651275476`: **SUCCESS**.
+- Exact-head relay/output PR [#44550142661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44550142661): both source-output-polarity and ESP32 boot-polarity jobs **SUCCESS**.
+- Full PR [#44550142574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44550142574), validation job `135651342515`: **FAILED** at the inherited QA-owned `Missing poll signature check`. Firmware target jobs completed SUCCESS; Android was still in progress at the last job read. Full push [#44550124731](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44550124731) had the same validation failure; firmware targets and Android completed SUCCESS. Downstream simulations, update bundle, signing, candidate and publishing were skipped. This is not a Full CI pass.
+
+No firmware runtime source, NVS schema, LittleFS format, GPIO/relay policy, poll contract, finance path, shared API or QA-owned file changed. The lab remains source-extracted/fake-storage simulation only: `PHYSICAL_POWER_CUT_VERIFIED=0`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PRODUCTION_FINANCIAL_AUTHORIZED=0`.
+
+### Next exact action
+
+PHX-QA independently reviews the poll-signature negative/default-deny fixture and its source extractor. PHX-HARDWARE keeps the NVS pre-commit model scoped to CI evidence; do not infer physical flash durability or an independent witness from this host backend.
