@@ -649,3 +649,30 @@ Experiments #327 source sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 dif
 COE #35 case #44443780675 passes; sandbox #44443780613 fails closed because bwrap is absent after 14/14 host-preflight tests (exit 125). COE #26 remains five queued workflows / zero jobs. No staging, copy, move, overwrite or migration is proposed.
 
 Experiments main remains f4e8a891aed8af86d5fd315d28750a0ac3a7372b. v0.6.0 is 2fbd2475e9f54878c316fa7cea2f228386b0e859 (1,876 ahead / 22 behind); v0.5.3 is aad3aade72c1156eecba1fed30907c6d0283b2c5 (0 ahead / 293 behind). No product branch is promoted by Master. OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master target null.
+
+
+## UTC03 — exact Hardware source/destination provenance gate (2026-11-19)
+
+COE #26 remains a draft candidate at b382d233ff06c8791b1028bed3c617cc7b670d12; Experiments #327 is at 11fae729df415cc26b9e1675b1758cd8e4d22648. These refs are not interchangeable.
+
+| Item | Experiments #327 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | 1b32cb90be11da79ba7ea1155f128aee9e495dd2, 67,300 bytes | c8be98f72596681e36a3ad1f8939bf8046c96887, 18,394 bytes | Different blob |
+| ESP32 sketch | f54805b17cac45388dfacc5e65eff9b731234316, 60,326 bytes | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422, 18,505 bytes | Different blob |
+| Source test corpus | Eight Python source-extracted labs in #327 | One Hardware/tests/test_firmware_hardening.sh (4,118 bytes) | Incomplete / different test identity |
+| Hardware behavior | acceptPollResponse() returns false; no positive |poll| token | Old positive-presence grep for response_sig, |register| and |poll| | Contract conflict |
+| Toolchain | #327 latest ESP32 compile succeeds on core 4.0.0 after explicit Mbed TLS 3/4 branch | #26 workflow floats core versions; README says ESP32 3.3.12 / ESP8266 3.1.2 | Not reproducible |
+| License | BlazePwifi/LICENSE | Pisowifi/LICENSE | Same blob 1ee55b94183417be977ca287cd7391f9a6f7e721 |
+| Hardware license/notice | Source NOTICE not found at inspected root | Hardware/LICENSE and Hardware/NOTICE.md absent | Scope unresolved |
+
+The #26 description was edited at 2026-11-19T03:44:46Z to state that the licensing/privacy gate is resolved and software readiness is 95%. The exact source/destination file review does not establish Hardware license/NOTICE scope, and the five #26 workflows remain QUEUED with zero jobs. These narrative claims are not migration evidence.
+
+### Toolchain and release lineage
+
+COE #35 current head a270b547fb5ff570bd2bc49c2e96219043d7c9bd has release-owned pins: Arduino CLI 1.6.0, ESP8266 3.1.2, ESP32 3.3.13, immutable setup action b3cda96fddef6af6c56b4c5efb5c47e2357935db and runtime checks. Shared #44451317780 and case #44451317996 pass; sandbox #44451317807 fails closed because bwrap is absent. This pinning is not present in COE #26.
+
+COE #44 remains based on older #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d4 and is 15 ahead / 21 behind current #35. Its packager generates a 40-bit random RFC 4193 ULA ID per installation. It does not establish a site-level distribution authority for multiple appliances. PHX-RELEASE owns history-preserving reconciliation; PHX-CORE owns site identity semantics; PHX-QA owns independent tests.
+
+### Staging decision
+
+Do not copy, move, overwrite, cherry-pick, rebase, or stage any Hardware files into COE #26. Required before staging: exact path/mode/blob map; complete eight-lab import or reviewed equivalent; replacement negative/default-deny tests; exact pinned toolchain; destination CI with actual jobs; explicit Hardware license/NOTICE scope; reversible rollback proof; and subsystem-owner acceptance. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.

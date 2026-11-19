@@ -1070,3 +1070,21 @@ Exact-head refresh only; no reassignment. Seven-role boundaries remain active.
 | COE integration | #26 b382d233...; parent #31 59ed44d0... | Complete blob/license/test identity and unblock all five workflows before staging |
 
 Source #327 sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 (59,117 bytes) differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes). Source CI used ESP32 core 3.3.13; COE #35 used 4.0.0 and failed at mbedtls/sha256.h. Both commands are unpinned. RELEASE owns workflow pinning; HARDWARE owns firmware; QA independently verifies. COE #44 is 15 ahead / 16 behind #35; RELEASE owns history-preserving reconciliation. CORE remains with the separate continuation. OWNERSHIP_ROUTES.json remains unchanged.
+
+
+## Live owner routing — 2026-11-19 UTC03
+
+Exact-head refresh only; no ownership reassignment and no subsystem source edits.
+
+| Role | Current candidate / exact head | Current evidence | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 pre-update 49a508b90d01b1d314484786b5f2fb45962498cf | OPEN/DRAFT; no Master CI runs | Maintain coordination/phoenix only; keep #26 blocked |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #252 scoped CI PASS; #45 synthetic receipt-v1 tests PASS | Separate CORE continuation retains implementation; define site ULA authority and receipt-v1/v2 mapping |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | Scoped runs 43653329235 / 43653329229 PASS | Owner-only changes; no native acceptance claim |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Scoped run 42462978704 PASS | Own native COM acceptance and any PISONET test corrections |
+| PHX-HARDWARE | #327 current branch head 11fae729df415cc26b9e1675b1758cd8e4d22648; parent #326 58c558fb6a237935214621adc3dee65a10fe1a51; previous lab head 071a711d6598c67124e84ffd995fd48aa7d9f054 | Quarantine 44453235563 PASS; relay 44453235544 PASS; Full 44453235564 FAIL at QA poll-signature fixture; ESP32 4.0.0 compile PASS | Refresh stale PR description (still says a359...); add Mbed TLS 3.x / unsupported-major coverage; preserve default-deny |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 scoped PASS; #292 no runs and base b1ca02e2087f3b1a7169ceab9c34e52646e700df is stale vs Master 49a508... | Replace positive poll-presence fixture with negative default-deny assertions; independently review #327 and Mbed TLS branches |
+| PHX-RELEASE | #291 fe940216e9e250b5df48c633b669ef3dd34fb299; COE #35 a270b547fb5ff570bd2bc49c2e96219043d7c9bd; #44 582fd5d5e83e36b36546ac28534740298ba94af4 | #35 exact toolchain pins and shared/case CI PASS; sandbox FAIL CLOSED; #291 Windows fails on unset $buildWorkflow; #44 15 ahead / 21 behind #35 | Refresh #35 PR description; reconcile #44/#35 without force-push; obtain authorized bwrap runner |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 on main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Five workflows QUEUED / zero jobs; source/destination Hardware blobs and test identities differ | Complete per-file, license, import, test and pinned-toolchain provenance before staging |
+
+PHX-MASTER did not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches. The separate CORE continuation retains CORE implementation. No competing CORE worker was started.

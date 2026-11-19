@@ -774,3 +774,36 @@ Experiments #327 run #44439616677 installed esp32:esp32 3.3.13 and compiled. COE
 **Required contract:** pin Arduino CLI, exact ESP32/ESP8266 core versions, FQBN and build options. Source and destination must use the same pinned toolchain, or an independently verified upgrade matrix. Record resolved versions with job evidence; never use an unpinned latest package index as migration equivalence. RELEASE owns workflow pinning; HARDWARE owns firmware compatibility; QA owns independent same-SHA verification. Master edits neither subsystem firmware nor release workflows.
 
 COE #35 mandatory sandbox remains blocked by missing bubblewrap after 14/14 host-preflight tests (exit 125). Site-scoped ULA, independent durability witness and production acceptance remain open. **PRODUCTION NO-GO.**
+
+## 6.38.1 UTC03 correction — COE #35 toolchain pinning verified; #26 remains floating
+
+**Disposition:** the earlier UTC02 ESP32 toolchain-drift finding is corrected for COE #35 only. It is not corrected for the integration candidate #26.
+
+At COE #35 current PR head a270b547fb5ff570bd2bc49c2e96219043d7c9bd, source/test head 3b83a408583091f2b2e8a7cf4ef73833f2eb9e39, the release-owned hardware workflow pins Arduino CLI 1.6.0, ESP8266 core 3.1.2, and ESP32 core 3.3.13, with runtime version checks. The setup action is pinned to immutable commit b3cda96fddef6af6c56b4c5efb5c47e2357935db. The pin guard is tools/test_release_toolchain_pins.py. Current workflow blob: e16e6e0f97092bd63a5dec8b871f98be2149847f; guard blob: 983f12ead5e76e59f5d1dec0b42b3facda66fd32.
+
+Exact-head evidence: shared/firmware run 44451317780 PASS, including both board compile/artifact-upload jobs; case-collision 44451317996 PASS; mandatory sandbox 44451317807 FAIL CLOSED because bwrap is absent (exit 125). No unsandboxed fallback was used. The current PR description still contains older head/status text; the current handover at a270 records the pinned toolchain evidence. PHX-RELEASE owns refreshing its PR description.
+
+COE #26 remains different: its hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 uses arduino/setup-arduino-cli@v2 and unversioned core-install commands for both ESP targets. Its Hardware/README.md blob 99af3e5b46cd8b6f35c6479b204683f60c55ebcb documents ESP32 core 3.3.12 and ESP8266 core 3.1.2. The #35 pin fix is not present in #26, and #26's README/workflow do not agree on an exact ESP32 core. Do not infer toolchain parity across branches.
+
+## 6.39 Hardware migration identity requires exact source, test, license, and toolchain parity
+
+**Disposition:** COE #26 is not an import-complete or behavior-equivalent destination for current Experiments Hardware #327. No staging, copy, move, overwrite, or migration is approved.
+
+Current Experiments #327 branch head is 11fae729df415cc26b9e1675b1758cd8e4d22648, child of #326 at 58c558fb6a237935214621adc3dee65a10fe1a51. The PR description still says a3597125fef3964ab08f05b3300c8de3e47516ae; that description is stale. Commit 11fae729 adds an explicit Mbed TLS major guard: major 4 uses PSA Crypto, major 3 uses the legacy SHA-256 API, and every other major fails compilation. Exact current ESP32 source blob f54805b17cac45388dfacc5e65eff9b731234316 is 60,326 bytes. ESP8266 source blob 1b32cb90be11da79ba7ea1155f128aee9e495dd2 is 67,300 bytes.
+
+The latest #327 exact-head CI is focused quarantine/readback 44453235563 PASS, relay/output 44453235544 PASS, and Full build 44453235564 FAILURE at the QA-owned Controller protocol parity / Missing poll signature check. The ESP32 job 135322011864 compiled successfully with esp32:esp32@4.0.0 and uploaded artifact 14496054232; all target and Android jobs completed successfully. Downstream update bundle, simulation, signing, candidate and publishing jobs were skipped. The 4.0.0 compile verifies the Mbed TLS 4 branch, not the Mbed TLS 3 branch or unsupported-major rejection at runtime. The latest source-extracted lab head remains 071a711d6598c67124e84ffd995fd48aa7d9f054; no dedicated unsupported-major test was added. PHX-HARDWARE owns the source; PHX-QA owns independent negative/default-deny and version-matrix review. Master did not edit the Hardware branch.
+
+Exact current source/destination sketch comparison at #327 head 11fae729 and COE #26 head b382d233:
+
+| Platform | Experiments #327 source blob / bytes | COE #26 destination blob / bytes |
+|---|---|---|
+| ESP8266 | 1b32cb90be11da79ba7ea1155f128aee9e495dd2 / 67,300 | c8be98f72596681e36a3ad1f8939bf8046c96887 / 18,394 |
+| ESP32 | f54805b17cac45388dfacc5e65eff9b731234316 / 60,326 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 / 18,505 |
+
+Neither platform is byte-identical. The current source acceptPollResponse() returns false on both boards and contains no positive |poll| token. COE #26's Hardware/tests/test_firmware_hardening.sh blob f921c56cecc19cab1989507b9b4ade1f45dac54e (4,118 bytes) is one generic shell test that greps for response_sig, |register|, |poll| and quarantine routes, then performs brace balancing. It is not equivalent to the eight source-side Python lab files in #327 (coin pulse capture, config read failure, boot polarity, dual-store fault, poll-loop inhibit, fail-closed response, poll-window drain, request-digest failure). Importing the current source without replacing this positive-presence fixture would produce a test-identity conflict. The destination README also describes positive response-signature verification, while the current Master/HW contract intentionally remains default-deny pending the approved producer and QA vectors.
+
+License evidence: source BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical at blob 1ee55b94183417be977ca287cd7391f9a6f7e721. COE Hardware/LICENSE and Hardware/NOTICE.md are absent; source BlazePwifi/NOTICE.md and COE Pisowifi/NOTICE.md are also absent. The #26 PR description was updated at 2026-11-19T03:44:46Z to claim the licensing/privacy gate is resolved, but the Hardware subtree's explicit license/notice scope is not established by the exact files inspected. That claim is not independently accepted as migration evidence.
+
+COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12. Its five current workflows (case-collision, Windows SoftTimer, Hardware/shared contracts, Rental, Pisowifi) are QUEUED with zero jobs. The PR description also claims 18/18 tests and 95% software readiness; those claims are not destination-CI evidence while all five workflows have no jobs.
+
+**Required admission evidence:** per-file source/destination path, mode and blob SHA; complete import inventory; license and NOTICE scope; exact test identity and negative-path coverage; pinned CLI/core/FQBN/options; exact-head destination CI; reversible rollback evidence; owner approvals. Until all are independently reviewed, keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.

@@ -780,3 +780,43 @@ Current CI: Hardware #327 focused #44439616778/#44439616678 PASS; Full #44439616
 GitHub source/tree/PR/CI and exact logs inspected. Master Python suite NOT RUN; no Master CI runs returned. Physical hardware, flashing, power cuts, native acceptance and 30-device soak NOT TESTED. No migration, merge, rebase, release, signing, secrets or financial operations occurred.
 
 Next: RELEASE pin toolchains and reconcile #44/#35; HARDWARE resolve core compatibility; QA verify pinned builds and negative poll tests; COE integration complete provenance and unblock #26; CORE define site ULA/receipt bridge; repository admin verify protections; registry custodian restore private v11. **PRODUCTION NO-GO.**
+
+
+## UTC03 live audit — 2026-11-19
+
+**Master pre-update:** branch phoenix/master-coordination at 49a508b90d01b1d314484786b5f2fb45962498cf; PR #288 OPEN/DRAFT against main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The routing manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null.
+
+### Material changes since UTC02
+
+1. COE #35 has now pinned Arduino CLI 1.6.0, ESP8266 core 3.1.2 and ESP32 core 3.3.13 with runtime checks. Shared/firmware #44451317780 and case-collision #44451317996 PASS; mandatory sandbox #44451317807 fails closed because bwrap is absent. This supersedes the earlier #35 floating-core compile failure only on #35. COE #26 remains unpinned.
+2. Hardware #327 advanced to 11fae729df415cc26b9e1675b1758cd8e4d22648. The ESP32 sketch now explicitly selects PSA Crypto for Mbed TLS 4, legacy SHA-256 for Mbed TLS 3, and compile-time rejects other majors. Exact-head ESP32 compile succeeded under core 4.0.0. Quarantine/readback and relay/output focused runs pass. Full run #44453235564 fails at the QA-owned Missing poll signature fixture; all target and Android jobs completed successfully, downstream release gates skipped. The PR description still reports older head a3597125 and must be refreshed by HARDWARE.
+3. COE #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12. Its PR description was edited at 03:44:46Z to claim licensing/privacy resolved and 95% software readiness, but its five current workflows are still queued with zero jobs. Exact Hardware source/destination sketch blobs differ, eight source Python labs are not imported, the destination has one generic positive-presence shell test, its hardware workflow floats core versions, and Hardware license/NOTICE scope remains unproven.
+4. COE #44 is 15 commits ahead / 21 behind current #35. Its first-boot ULA generator uses a random 40-bit installation-scoped ID; same-site multi-appliance authority remains unproven.
+5. QA #292 remains stale on base b1ca02e... and has no runs. RELEASE #291 Windows negative-selftest still fails because $buildWorkflow is unset under PowerShell StrictMode.
+
+### Exact Hardware migration provenance
+
+| Platform | Experiments #327 | COE #26 |
+|---|---|---|
+| ESP8266 | 1b32cb90be11da79ba7ea1155f128aee9e495dd2 / 67,300 bytes | c8be98f72596681e36a3ad1f8939bf8046c96887 / 18,394 bytes |
+| ESP32 | f54805b17cac45388dfacc5e65eff9b731234316 / 60,326 bytes | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 / 18,505 bytes |
+
+Source acceptPollResponse() returns false and has no positive |poll| token. The destination shell test greps for response_sig, |register| and |poll|. Source test identity is eight Python labs; destination test identity is one shell script. Source BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical (blob 1ee55b94183417be977ca287cd7391f9a6f7e721), but Hardware/LICENSE and Hardware/NOTICE.md are absent, so Hardware subtree license/notice scope is unresolved. No migration staging or copy was performed.
+
+### Governance and access
+
+Cleanup issue #266 remains OPEN with historical 2026-10-31 source pins. Experiments main, v0.5.3 and v0.6.0 branch objects report protected=false; COE main also reports protected=false. Rulesets reads are empty and classic protection reads are not independently available. The current control-plane development label is v0.6.0 at 2fbd2475... (1,876 ahead / 22 behind main); v0.5.3 is 293 behind / 0 ahead. No branch promotion is authorized.
+
+Experiments AGENTS.md, the latest README_FIRST, uploaded Master prompt, BLAZE-COMMS/1, current Master coordination docs, and the canonical cloud artifact policy/storage handover were read. COE AGENTS.md returns 404. The requested private Drive registry v11 and newer corrections are not available through the connected Library, and no Google Drive connector is exposed. Older snapshots were not substituted; no private contents or IDs were published.
+
+### Verification and limits
+
+- 24/24 local coordination/provenance assertions PASS against the live GitHub metadata and fetched source files.
+- Exact-head GitHub CI inspected as linked in the integration matrix.
+- Full Master Python suite NOT RUN: shallow Git clone failed because the container could not resolve github.com.
+- No Master GitHub Actions runs returned.
+- No physical hardware, native acceptance, real power cuts, or 30-device/24-hour soak were executed.
+
+**Next:** QA fixes default-deny poll fixtures and reviews Mbed TLS branches; HARDWARE refreshes its PR/handover and adds version-branch tests; RELEASE keeps #35 pins, refreshes its PR description, reconciles #44/#35 and supplies the authorized bwrap runner; COE integration owner supplies exact imports/licenses/tests and runnable #26 CI; CORE defines site ULA and receipt bridge; repository admin verifies protection; registry custodian restores private v11 access.
+
+**PRODUCTION NO-GO** remains until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.

@@ -1493,3 +1493,31 @@ Branch-protection reads returned 403 for Experiments main/development and COE ma
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five QUEUED / zero jobs | Destination CI not executed; migration not accepted |
 
 Source #327 sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. Source run #44439616677 resolved ESP32 core 3.3.13 and compiled; COE #35 #44443780617 resolved 4.0.0 and failed at mbedtls/sha256.h. Both workflows are unpinned. RELEASE owns pinning; HARDWARE owns firmware compatibility; QA independently verifies. No source/destination copy or move was performed; #26 remains blocked pending blob/license/import/test/CI evidence.
+
+
+## Live exact-head integration matrix — 2026-11-19 UTC03
+
+| Role / candidate | Current exact head | Current evidence | Owner action / classification |
+|---|---|---|---|
+| PHX-MASTER #288 | 49a508b90d01b1d314484786b5f2fb45962498cf before UTC03 commit | OPEN/DRAFT; no Master CI runs | Coordination/phoenix only |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped run 42698139210 PASS | Separate CORE continuation retains implementation |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Scoped runs 43653329235 and 43653329229 PASS | No physical acceptance implied |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Scoped run 42462978704 PASS | Native COM bench absent |
+| HARDWARE #327 | 11fae729df415cc26b9e1675b1758cd8e4d22648; prior lab head 071a711d6598c67124e84ffd995fd48aa7d9f054 | Quarantine 44453235563 PASS; relay 44453235544 PASS; Full 44453235564 FAIL at Missing poll signature. ESP32 4.0.0 compile PASS. | Current PR description stale (a359...); QA fixture and unsupported-major coverage remain |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Scoped run 43633486963 PASS | Independent review still required |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No runs; base is stale Master SHA b1ca02e2087f3b1a7169ceab9c34e52646e700df | Refresh base only under QA ownership |
+| RELEASE #291 | fe940216e9e250b5df48c633b669ef3dd34fb299 | BlazePwifi run 44440710888 PASS; Windows run 44440710823 FAIL because $buildWorkflow is uninitialized under StrictMode | PISONET owns the negative-selftest file; RELEASE owns its workflows |
+| COE Release #35 | a270b547fb5ff570bd2bc49c2e96219043d7c9bd; source/test 3b83a408583091f2b2e8a7cf4ef73833f2eb9e39 | Shared 44451317780 PASS; case 44451317996 PASS; sandbox 44451317807 FAIL CLOSED, bwrap absent | Toolchain pins verified on #35; PR description stale |
+| COE Release #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Shared 44390136309 PASS; case 44390136296 PASS; sandbox 44390136327 FAIL CLOSED | 15 ahead / 21 behind current #35; per-install ULA does not prove same-site authority |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Synthetic receipt-v1 runs 44295049727 and 44295049903 PASS | Candidate only; no approved Master-v2 mapping |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; PR description updated but source head unchanged | Migration BLOCKED |
+
+### Current branch authority
+
+Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The control-plane current development label is v0.6.0 audit foundation at 2fbd2475e9f54878c316fa7cea2f228386b0e859 (1,876 ahead / 22 behind main). Legacy v0.5.3 remains at aad3aade72c1156eecba1fed30907c6d0283b2c5 (0 ahead / 293 behind). COE main is a6513ab4412b4c014eee2863e45cbe32d06cb243. No product branch promotion is authorized.
+
+### Migration and safety disposition
+
+The #327 source sketches, eight source-side Python labs, COE #26 destination sketches, single generic positive-presence shell test, toolchain workflow, README version, and Hardware license/NOTICE scope are not equivalent. No destination staging was modified. The #26 description's 95% readiness and licensing-resolved claims are not accepted as evidence while its five workflows have zero jobs and Hardware license scope remains unresolved.
+
+PRODUCTION NO-GO: protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain mandatory.
