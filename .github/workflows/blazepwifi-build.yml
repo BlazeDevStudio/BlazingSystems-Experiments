@@ -451,7 +451,7 @@ jobs:
           version_output="$(arduino-cli version)"
           printf '%s\n' "$version_output"
           if ! printf '%s\n' "$version_output" | grep -Eq 'Version: 1\.6\.0([[:space:]]|$)'; then
-            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\\n' "$version_output" >&2
+            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\n' "$version_output" >&2
             exit 1
           fi
           arduino-cli config init --overwrite
@@ -510,7 +510,7 @@ jobs:
           version_output="$(arduino-cli version)"
           printf '%s\n' "$version_output"
           if ! printf '%s\n' "$version_output" | grep -Eq 'Version: 1\.6\.0([[:space:]]|$)'; then
-            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\\n' "$version_output" >&2
+            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\n' "$version_output" >&2
             exit 1
           fi
           arduino-cli config init --overwrite
