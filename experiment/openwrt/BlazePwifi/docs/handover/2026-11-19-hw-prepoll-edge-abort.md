@@ -466,3 +466,30 @@ Focused quarantine/readback [run #44450389343](https://github.com/BlazeDevStudio
 - `ESP8266_EEPROM_SAME_SIZE_STALE_BUFFER_READ_FAILURE_DENY_PASS`
 
 The lab explicitly prints `LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION_TESTED=0 PRODUCTION_MIGRATION_AUTHORIZED=0`. This is **local device configuration** v1/v2-to-v3 source-extracted simulation, not the financial ledger v1-to-v2 migration, not physical EEPROM durability and not production migration acceptance. Independent PHX-QA review remains required.
+
+
+## UTC03 addendum — Mbed TLS supported-major fail-closed guard (2026-11-19)
+
+**Master assignment:** latest PHX-MASTER UTC02 checkpoint #6998343802 requested PHX-HARDWARE to resolve ESP32 Mbed TLS/toolchain compatibility on the hardware branch. The active #327 branch was revalidated at prior head `a3597125fef3964ab08f05b3300c8de3e47516ae`, base `58c558fb6a237935214621adc3dee65a10fe1a51`; PR #327 remains OPEN / DRAFT / UNMERGED.
+
+**One scoped source correction:** commit [`11fae729`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/11fae729df415cc26b9e1675b1758cd8e4d22648), file `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`, blob `f54805b17cac45388dfacc5e65eff9b731234316`.
+
+- Mbed TLS major 4 selects `<psa/crypto.h>` and the PSA SHA-256 path.
+- Mbed TLS major 3 selects `<mbedtls/sha256.h>` and the legacy SHA-256 path.
+- Any other major fails compilation with an explicit `#error`, rather than silently falling through to an unverified API.
+- Existing provider-error checks remain: PSA init/hash status and exact 32-byte digest length; legacy starts/update/finish status.
+- No request-body bytes, digest encoding, protocol/API, persistence schema, financial logic or coin-admission behavior changed.
+
+**Exact current-source CI (SHA `11fae729df415cc26b9e1675b1758cd8e4d22648`):**
+
+- Push Full [#44453227140](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44453227140): ESP32 job `135321984568` SUCCESS on `esp32:esp32@4.0.0` (sketch 1,095,025 bytes; globals 52,568 bytes); ESP8266 job `135321985132` SUCCESS; 13/13 firmware/platform targets SUCCESS; Android job `135321984823` SUCCESS. Validation job `135321984777` FAILED at the inherited QA-owned `Missing poll signature check`. 12 downstream release/simulation/signing/publishing jobs SKIPPED. Overall Full workflow FAILED.
+- PR Full [#44453235564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44453235564): ESP32 job `135322011864` SUCCESS on `esp32:esp32@4.0.0`; ESP8266 `135322011651` SUCCESS; Android `135322011311` SUCCESS; 13/13 firmware/platform targets SUCCESS. Validation job `135322011816` FAILED at the same inherited assertion; downstream gates SKIPPED. Overall Full workflow FAILED.
+- Focused quarantine push [#44453227330](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44453227330), job `135321984757`: SUCCESS. Existing source-extracted persistence, configuration, digest-denial, pulse and poll-inhibit labs pass; logs explicitly mark `SIMULATED_ONLY=1` and physical power-cut acceptance zero.
+- Focused quarantine PR [#44453235563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44453235563), job `135322011247`: SUCCESS.
+- Relay/output PR [#44453235544](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44453235544), job `135322010930`: SUCCESS.
+
+**Mbed TLS 3.x evidence limitation:** earlier Experiments Full [#44439616677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439616677), ESP32 job `135276906877`, installed `esp32:esp32@3.3.13` and compiled successfully on the prior source head. The Mbed TLS 3 branch's SHA implementation was not changed by commit `11fae729`, but an exact-head 3.3.13 rebuild of `11fae729` has NOT YET RUN. The current Experiments build workflow installs an unpinned ESP32 core; PHX-RELEASE owns that workflow and is asked to provide a pinned 3.3.13 + 4.0.0 matrix or exact-head 3.3.13 run. No RELEASE-owned workflow was modified by Hardware.
+
+**Cross-repository audit / request only:** COE #26/#35 destination blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` still has unconditional `<mbedtls/sha256.h>` and unchecked legacy SHA calls. Hardware did not edit or bulk-copy COE source. A scoped COE-INTEGRATION request was posted at [COE PR #26 comment #6999032274](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26#issuecomment-6999032274) to port the reviewed compatibility/error-propagation correction only after per-file provenance/ownership review; PHX-RELEASE is asked to pin and verify supported majors; PHX-QA is asked to independently test provider-error denial and unsupported-major compile rejection.
+
+**Disposition:** current Experiments ESP32 firmware is CI VERIFIED on Mbed TLS 4 / ESP32 core 4.0.0 at exact source SHA `11fae729`; prior Mbed TLS 3 / core 3.3.13 build passed on an earlier source head, but exact-head 3.3.13 remains NOT TESTED. Full validation remains FAILED for the unrelated QA-owned poll-signature assertion. No positive poll authentication is implemented. No hardware flashing, physical relay/pulse acceptance, financial migration, signing, merge, release or deployment occurred. PRODUCTION NO-GO.
