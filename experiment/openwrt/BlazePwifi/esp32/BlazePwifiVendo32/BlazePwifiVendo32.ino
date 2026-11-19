@@ -5,6 +5,7 @@
 #include <nvs.h>
 #include <LittleFS.h>
 #include <string.h>
+#include <stdlib.h>
 #include <mbedtls/version.h>
 #if MBEDTLS_VERSION_MAJOR == 4
 #include <psa/crypto.h>
@@ -916,26 +917,41 @@ bool persistLocalOutputPolarity(){
   return true;
 }
 
+bool nvsStringMatchesStored(const char *key,const String &expected){
+  // Do not use a fallback sentinel: any String can legally equal that value.
+  // The buffer overload returns the exact stored byte count (including NUL),
+  // or zero on an NVS read error. Fail closed on length/read/allocation errors.
+  if(!prefs.isKey(key)) return false;
+  const size_t expectedBytes=expected.length()+1;
+  if(prefs.getStringLength(key)!=expectedBytes) return false;
+  char *stored=static_cast<char*>(malloc(expectedBytes));
+  if(!stored) return false;
+  const size_t readBytes=prefs.getString(key,stored,expectedBytes);
+  const bool matches=readBytes==expectedBytes &&
+                     memcmp(stored,expected.c_str(),expectedBytes)==0;
+  free(stored);
+  return matches;
+}
+
 bool configFieldsMatchStored(const char **failedField){
   if(failedField) *failedField=nullptr;
-  const String missing="__PHX_NVS_READBACK_MISSING__";
-  if(!prefs.isKey("ssid") || prefs.getString("ssid",missing)!=cfg.ssid){
+  if(!nvsStringMatchesStored("ssid",cfg.ssid)){
     if(failedField) *failedField="ssid";
     return false;
   }
-  if(!prefs.isKey("pass") || prefs.getString("pass",missing)!=cfg.pass){
+  if(!nvsStringMatchesStored("pass",cfg.pass)){
     if(failedField) *failedField="pass";
     return false;
   }
-  if(!prefs.isKey("server") || prefs.getString("server",missing)!=cfg.server){
+  if(!nvsStringMatchesStored("server",cfg.server)){
     if(failedField) *failedField="server";
     return false;
   }
-  if(!prefs.isKey("key") || prefs.getString("key",missing)!=cfg.key){
+  if(!nvsStringMatchesStored("key",cfg.key)){
     if(failedField) *failedField="key";
     return false;
   }
-  if(!prefs.isKey("id") || prefs.getString("id",missing)!=cfg.id){
+  if(!nvsStringMatchesStored("id",cfg.id)){
     if(failedField) *failedField="id";
     return false;
   }
