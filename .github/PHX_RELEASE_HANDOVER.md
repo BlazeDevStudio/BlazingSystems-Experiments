@@ -734,3 +734,40 @@ No workflow behavior, publisher configuration, repository variables, secrets, ap
 - **PHX-INFRA:** provide the approved unprivileged Bubblewrap namespace runner.
 
 PR #291 remains OPEN / DRAFT / UNMERGED. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC22 — guard all SoftTimer production signing steps (2026-11-19T22Z)
+
+**Disposition:** release-owned regression coverage added to the existing #291 branch. The SoftTimer workflow itself was not changed; all three existing production sign/verify steps were already guarded. The test now prevents any one of those gates being removed or weakened. PR #291 remains OPEN / DRAFT / UNMERGED; **PRODUCTION NO-GO**.
+
+### Exact source and ownership
+
+- Live control plane #172, cleanup-first #266, owner execution prompt, and MASTER #288 routes were reread. MASTER #288 exact head 9bff8bb8b47783d860be3725c139b58a576c7333; route manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY. PHX-RELEASE owns Phoenix build/signing workflow controls and release tests; this is not a workflow migration.
+- Experiments #242 remains 734b89d9e7792247e8376335c3f3685500ab3f89; #291 branch phoenix/release-publisher-isolation-20261115 is based on #242 and now points to 68ed7543e274a813920e7b8b841bdd48b15fe1c5.
+- SoftTimer release workflow blob inspected at this source: 545c308568da2c434180d231ea9b0d62e83720cd. It has three production sign/verify steps (portable EXEs, native Setup, final signed-package verification). Each currently requires push to refs/heads/main, github.ref_protected == true, env.VERSION != 0.4.0, and vars.SOFTTIMER_RELEASE_APPROVED == true.
+- Only .github/scripts/test_release_workflow_concurrency.py and this PHX-RELEASE handover changed in this task. No PISONET source/test/installer path, CORE handover, QA test path, HARDWARE firmware, or MASTER coordination path was edited.
+
+### Regression coverage and test history
+
+The previous test test_windows_build_is_explicitly_read_only_and_publisher_isolated checked the separate write-privileged publisher job but did not individually protect all three production Authenticode steps.
+
+- Test commit [38be13df](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/38be13dffca7213a818488556cfcf72b93331c14) added a helper and synthetic mutation test. Its first CI run [#44625878212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625878212) FAILED in the new guard: the regex/newline matcher was over-escaped and only found the first signing step. This was a PHX-RELEASE test-harness defect, not a product/workflow failure; no signing or publisher ran.
+- Correction commit [68ed7543](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/68ed7543e274a813920e7b8b841bdd48b15fe1c5) fixed the matcher. The test now asserts the exact three reviewed sign/verify step names and exact guard expression, then mutates one approval predicate in-memory and proves the guard rejects it. It does not execute signing commands or access credentials.
+
+### Exact-source Actions at 68ed7543
+
+- PR BlazePwifi build [#44625985862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625985862), CI-0701 job 135919834672: SUCCESS. Release concurrency/signing guard suite 8/8 PASS; provenance suite 23/23 PASS; Arduino archive verifier 8/8 PASS; action pin checks passed (52 BlazePwifi, 3 ESP32 compatibility, 6 SoftTimer external action invocations); ESP32 workflow contract and observed board-core pin checks passed.
+- The overall PR build #44625985862 was still QUEUED at last read; remaining target jobs had not completed. No Full CI success is claimed.
+- Push build [#44625978005](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625978005) remained IN_PROGRESS at last read. Some targets had passed, while Android, x86_64, Ruijie, several Orange Pi targets, ESP32 and mandatory validation were still running. No terminal conclusion is claimed.
+- Windows release [#44625985860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625985860): shared handover job 135919891611 SUCCESS; build-windows job 135920011848 was IN_PROGRESS after checkout. The new exact-head run had not yet reached the PISONET negative self-test at last read. The prior head's PISONET $buildWorkflow failure remains an owner issue, not modified here.
+- ESP32 compatibility [#44625986102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625986102) was PENDING; no compatibility conclusion is claimed.
+
+### Release gate and remaining blockers
+
+- Experiments main at f4e8a891aed8af86d5fd315d28750a0ac3a7372b currently reports protected=false; repository rulesets endpoint is empty. Therefore the SoftTimer github.ref_protected == true signing condition cannot pass on the current main ref.
+- SOFTTIMER_RELEASE_APPROVED is an administrative approval variable, NOT an independent freshness witness. No independently verifiable freshness-witness job, artifact, signature, or interface is defined in the current SoftTimer release workflow/ownership routes. PHX-RELEASE did not invent a variable or treat manual approval as witness evidence. MASTER/CORE must define the authoritative witness contract before real-key signing can be enabled.
+- MASTER #288 9bff8bb8... remains DRAFT; COE #26 b382d233..., parent #31 59ed44d0..., and active COE #35 7b9706d8... remain draft. #35's site-scoped ULA and Bubblewrap runner blockers remain unchanged.
+- Canonical private Drive registry v11 was not available through the authorized Library search. No older snapshot was substituted; no private contents or identifiers were copied to GitHub.
+
+No merge, real-key signing, tag, publication, hardware flash, payment migration, or customer deployment occurred. Physical 150-power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+**Next owner actions:** PHX-QA independently reviews the signing-step guard; MASTER/CORE define the independent freshness-witness interface and protected signer authority; repository administrator establishes protected main and required checks; PHX-PISONET owns its negative-selftest variable defect; RELEASE rechecks exact-head Windows and full-build runs before any later checkpoint.
