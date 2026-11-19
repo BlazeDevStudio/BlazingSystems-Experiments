@@ -121,6 +121,9 @@ static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 static bool injectDuringDrainAbort=false;
+static bool injectDuringPollRelease=false;
+static bool pollReleaseEdgeInjected=false;
+static bool pollReleaseEdgeSawRelayOff=false;
 static int drainAbortReadCount=0;
 static bool drainAbortInjected=false;
 static bool drainAbortSawRelayOn=false;
@@ -170,6 +173,15 @@ int digitalRead(int) {
   return active?HIGH:LOW;
 }
 void digitalWrite(int pin,int level) {
+  if(injectDuringPollRelease && pollCalls==1 && !pollIntakeSuspended &&
+     !journalRecoveryRequired && !pollReleaseEdgeInjected){
+    pollReleaseEdgeInjected=true;
+    pollReleaseEdgeSawRelayOff=!relayOn;
+    pulseStart=(int)fakeNow;
+    pulseEnd=(int)fakeNow+100;
+    if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+       attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
+  }
   if(pin==runRelayPin) {
     relayLevelHigh=(level==HIGH);
     relayOn=(level==(runRelayActiveHigh?HIGH:LOW));
@@ -257,6 +269,7 @@ void resetState(){
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
+  injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
@@ -377,6 +390,20 @@ int main(){
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
 
+  // An ISR edge can arrive after the pre-release snapshot but during the first
+  // GPIO writes that re-enable the acceptor. It must be reconciled before the
+  // next ordinary sample can turn that in-flight edge into a new pending coin.
+  resetState(); injectDuringPollRelease=true; loop();
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff || pollCalls!=1 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
+     pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 29;
+  const std::string releaseMarker=LittleFS.files["/pollpulse.fault"];
+  if(releaseMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     releaseMarker.find("pulses=1")==std::string::npos) return 30;
+  std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
+
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
   if(!recordedPulseState()) return 31;
@@ -417,7 +444,7 @@ int main(){
      journalRecoveryRequired || LittleFS.exists("/pollpulse.fault")) return 46;
   std::cout<<"COIN_POST_NO_EDGE_CLEAR_CONTROL_PASS\\n";
 
-  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 7/7 fault-marker scenarios; existing poll-loop guards 7/7\n";
+  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 8/8 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
   return 0;
 }
