@@ -167,3 +167,42 @@ The lab uses the production ESP8266 `loadCfg` / EEPROM functions with a determin
 - No firmware sketch, GPIO, relay, financial schema, API, pending-journal format or production behavior changed. All test evidence is host-simulated/CI only. Physical EEPROM behavior, power-cut durability, financial migration, witness, coin acceptance and production remain NOT TESTED / NOT ESTABLISHED.
 
 **Next exact action:** PHX-QA independently review the config-read lab at exact workflow head `ef541fc5a37296f9c39a7b5351e87c54db098f6e`; PHX-MASTER refresh the #327 pin in `coordination/phoenix/ROLE_ASSIGNMENTS.md`: the current #288 snapshot does include #327 but still records the older `e90c51d733635a891e0f1a8cd875586b43998069` head; then PHX-HARDWARE revalidates the branch and reviewer responses before selecting another owned task.
+
+
+## UTC17 — keep ISR-reconciliation mutation compile-clean
+
+**Role:** PHX-HARDWARE  
+**PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Branch:** `phoenix/hardware-prepoll-edge-abort-20261119`  
+**Exact source/test commit:** `ad421e48b2908fab48dc85b40c169450d9c0239c`  
+**Test file blob:** `b3bb627005ca106f51529ff3750253d90f0b20c8`
+
+### Defect reproduced at prior test head
+
+At `3ff2745707ba40760a40e557c608b03aab6c92c3`, the `missing-isr-edge-reconciliation` mutation replaced the production condition with `if(false){`. That removed the only syntactic use of `sampledSingleEdge`, so the host C++ harness stopped at `-Werror=unused-variable` instead of reaching the intended runtime negative assertion. This was a regression in the test mutation, not a firmware runtime defect.
+
+- Quarantine push [#44572189080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44572189080), job `135729991897`: **FAIL** at the ESP8266 mutation compile, `sampledSingleEdge` unused.
+- Relay/output PR [#44572189120](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44572189120), job `135729992527`: **FAIL** at the same host-lab compile error.
+
+### Correction
+
+The mutation now substitutes `if(false && !sampledSingleEdge){`. This keeps the variable referenced for strict compilation while deliberately bypassing ISR-edge reconciliation. The lab must then fail at its expected runtime assertion, `late coin POST pulse was not fail-closed`. A source comment explains why the variable must remain referenced.
+
+Only `coin_pulse_capture_lab.py` changed. No ESP32/ESP8266 runtime sketch, ISR, debounce policy, relay, journal, persistence schema, poll API, coin admission, finance path or shared interface changed.
+
+### Exact-head evidence
+
+On exact source/test SHA `ad421e48b2908fab48dc85b40c169450d9c0239c`:
+
+- Quarantine push [#44573673364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44573673364), job `135735257163`: **SUCCESS**.
+- Quarantine PR [#44573689545](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44573689545), job `135735309681`: **SUCCESS**.
+- Relay/output PR [#44573689526](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44573689526): ESP32 boot-polarity job `135735309850` and source-output-polarity job `135735310432`: **SUCCESS**.
+- Logs show `ESP8266_COIN_PULSE_CAPTURE_PASS 15/15` and `ESP32_COIN_PULSE_CAPTURE_PASS 15/15`; both boards reject `inclusive-debounce` and `missing-isr-edge-reconciliation` mutations. The blocking-poll fault lab passes 7/7 scenarios on both boards. Output/polarity and EEPROM config-read recovery steps also pass.
+- Full push [#44573673614](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44573673614): validation job `135735258677` **FAILED** at the QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 13 firmware/platform target jobs and Android completed **SUCCESS**; simulation, update-bundle, signing, candidate-gate and publishing jobs were skipped. This is not Full CI acceptance.
+- Full PR [#44573689537](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44573689537): validation job `135735311027` failed at the same QA-owned assertion; remaining matrix jobs were still running at this handover update.
+
+All hardware evidence remains **SIMULATED / CI VERIFIED only**. Physical coin acceptor, relay under load, electrical pulse conditioning, power cuts, independent witness, financial migration, durable accounting/replay, and production acceptance remain NOT TESTED / NOT ESTABLISHED. `PRODUCTION NO-GO`.
+
+### Next exact action
+
+PHX-QA owns the stale positive poll-signature fixture and must replace it with source-exact negative/default-deny checks after coordinating the producer/consumer contract with CORE and MASTER. PHX-MASTER should reconcile the #326/#327 stack and refresh #327's exact head in the canonical role assignment. PHX-HARDWARE continues only with an owned, reversible firmware/test task after another live-head check.
