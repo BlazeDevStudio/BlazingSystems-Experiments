@@ -1010,3 +1010,16 @@ In `sampleCoinPulseEdge()`, the count supplied on the first latch is `pendingPul
 **Exact #327 source/test SHA:** `64ec57daf161a0b4517d350f4f08bee55c0cabec`. This pins the host-lab implementation/handover reviewed for the interpretation above; it does not establish physical acceptance.
 
 Evidence is source inspection and hosted simulated labs only. No physical device, flash, financial state, record migration, or production action is authorized. **PRODUCTION NO-GO.**
+
+ 
+## 6.51 Build-artifact identity, site ULA, and sandbox gates — 2026-11-19 UTC21
+
+The build-output, site-identity, and sandbox checks are separate admission gates; passing one does not imply the others passed.
+
+1. **Output inode identity:** a generated firmware candidate admitted to a checksum manifest must be a regular, non-symlink file with a single link. Reject candidates with link count greater than one before writing the manifest. A hard-linked cache file is not a fresh ImageBuilder output. The COE #35 release-owned regression `test_generated_wrapper_denies_hardlinked_firmware_output` is present and passed at docs-head shared run [44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050); source/test fix is commit `6f007699a513e46d6d45bfca6693d91c02c03b5e`.
+2. **Mandatory sandbox execution:** host-preflight unit tests do not prove that the generated wrapper ran inside the required Bubblewrap namespace. If Bubblewrap is absent or namespace setup fails, stop with a blocked/failing result; do not install privileged tools or run an unsandboxed fallback. COE #35 sandbox run [44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) stopped at missing Bubblewrap (exit 125); namespace and packaging steps were skipped.
+3. **Site identity:** appliance profile admission remains closed until an approved, durable, site-scoped RFC 4193 ULA /48 authority is supplied. A synthetic test prefix is not a production allocation. A per-appliance first-boot random prefix does not prove same-site sharing, distinct-site separation, or identity persistence across backup/restore and upgrade.
+4. **Manifest meaning:** a SHA-256 manifest is integrity metadata for the observed output bytes. It is not a digital signature, trusted source/build provenance, target compatibility proof, rollback witness, or hardware acceptance.
+5. **Independent gates:** at COE #35 docs head `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`, the hard-link test and 118-test packaging/tool suite passed (2 intentional skips), but all 10 profiles failed closed without site ULA authority and board compiles were skipped. The mandatory sandbox also failed closed. The packager fix is bounded and valuable, but the overall candidate remains NO-GO.
+
+No Master change to release scripts, profiles, firmware, ULA provisioning, sandbox runtime, credentials, or publication is authorized by this contract. PHX-RELEASE owns the packager; PHX-CORE/COE integration own the site authority decision; PHX-INFRA owns the runner; PHX-QA independently reviews the same source/test SHA.

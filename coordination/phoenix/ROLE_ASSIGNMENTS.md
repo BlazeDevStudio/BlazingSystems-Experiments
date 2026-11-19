@@ -1403,3 +1403,22 @@ The prior UTC20 observation that RELEASE #291's BlazePwifi build and ESP32 compa
 - [44612586795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586795) Windows Release: **FAIL** in RELEASE-SIGN negative controls because PISONET-owned negative-selftest.ps1 references uninitialized $buildWorkflow; publisher remains skipped.
 
 No release or signing occurred. This corrects status only; it does not clear the PISONET-owned test failure or the cross-owner review boundary.
+
+ 
+## PHX-MASTER UTC21 — owner routing refresh (2026-11-19)
+
+No ownership route changed. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; PHX-MASTER remains coordination-only with destination `null`.
+
+| Owner | Current action required |
+|---|---|
+| PHX-CORE / COE integration authority | Define the durable site-scoped ULA source and persistence/restore contract; do not use synthetic test prefix. CORE implementation remains with the separate CORE continuation. |
+| PHX-RELEASE | Keep #35 hard-link denial; retain mandatory Bubblewrap gate; no unsandboxed fallback. |
+| PHX-INFRA | Provide an authorized disposable, no-secret Bubblewrap-capable runner with working unprivileged user namespaces. |
+| PHX-QA | Independently review #35 hard-link regression at source/test SHA `6f007699...`; replace #327's stale positive poll-marker fixture with negative/default-deny tests; refresh stale #292 base and run exact head. |
+| PHX-PISONET | Fix its owned `negative-selftest.ps1` reference to uninitialized `$buildWorkflow`; RELEASE reruns its consumer after the fix. |
+| COE integration owner | Keep #26 blocked until per-file source/test/license/toolchain provenance and executable exact-destination CI are complete. |
+| Repository administrators | Enable and verify branch protection and required checks for source and destination branches. |
+| Registry custodian | Restore authorized access to private registry v11 and newer corrections. |
+| PHX-MASTER / control-plane owner | Resolve the v0.5.3 vs v0.6.0 development designation conflict in issue #172. |
+
+The role CI table is scoped to each listed PR/head; no status transfers to another SHA or to the combined COE #26 tree. No subsystem source files were modified by Master.

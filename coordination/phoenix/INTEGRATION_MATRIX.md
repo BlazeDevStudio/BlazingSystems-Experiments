@@ -2129,3 +2129,25 @@ The prior UTC20 observation that RELEASE #291's BlazePwifi build and ESP32 compa
 - [44612586795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586795) Windows Release: **FAIL** in RELEASE-SIGN negative controls because PISONET-owned negative-selftest.ps1 references uninitialized $buildWorkflow; publisher remains skipped.
 
 No release or signing occurred. This corrects status only; it does not clear the PISONET-owned test failure or the cross-owner review boundary.
+
+ 
+## PHX-MASTER UTC21 live exact-head reconciliation — 2026-11-19T21:36Z
+
+This section supersedes older exact-head status pins only for the refs and runs listed here. It does not promote a branch, role, candidate, or production state.
+
+**Exact refs:** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.6.0 audit-foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master pre-change `e0e499b4fd8f1e6ae3b15c7a22e3fa12559daf10`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Issue #172 contains contradictory development-role labels for v0.5.3 and v0.6.0; both SHAs are verified, but canonical designation remains unresolved.
+
+| Role / PR | Exact head | CI |
+|---|---|---|
+| CORE #252 | `c82705f2...` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| RENTAL #289 | `68928774...` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd164...` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | `20c73090...` | Focused [44612105093](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105093) and [44612105234](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105234) PASS; Full [44612105221](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612105221) FAIL at QA-owned positive poll marker |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no exact-head run |
+| RELEASE #291 | `3bffd9d1...` | Windows [44612586795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586795) FAIL at PISONET-owned uninitialized `$buildWorkflow`; ESP32 [44612586860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586860) and BlazePwifi [44612586896](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44612586896) PASS |
+
+**COE #35:** source/test SHA `6f007699...` adds a hard-link output denial before checksum-manifest creation. Exact docs-head shared CI [44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050) confirms the new regression and 118 packaging tests PASS / 2 intentional skips; overall workflow FAILS because all 10 profiles lack an approved site-scoped RFC4193 /48, so board compilation is skipped. Sandbox [44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) fails closed because Bubblewrap is absent (exit 125); case collision [44617783021](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617783021) PASS. COE #44 remains a separate older-base first-boot ULA candidate and does not establish site-wide identity. COE #26 remains five queued workflows / zero jobs; #27 is separate and has only two scoped passes.
+
+Branch API returns `protected=false` / protection disabled and required-check enforcement off for Experiments main, both inspected development refs, Master, and COE main; both rulesets endpoints are empty. No settings changed. Private v11 registry/newer corrections remain unavailable; no older snapshot was substituted. No Master Actions or full Master suite ran. **Migration BLOCKED / PRODUCTION NO-GO.**
+
+Full source/run evidence: [UTC21 audit](PHX_MASTER_UTC21_COE35_HARDLINK_ADMISSION_SITE_ULA_SANDBOX_AND_ROLE_CI_20261119.md).
