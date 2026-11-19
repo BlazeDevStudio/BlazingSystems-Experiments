@@ -105,7 +105,6 @@ static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
 static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,
               "Config v3 overlaps the reserved poll-fault EEPROM record");
-static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
