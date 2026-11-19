@@ -368,7 +368,7 @@ def main():
          "if(pendingTarget!=activeTarget || pendingPulses>=20){\n        // overflow fault latch removed",
          "overflow/target drift did not latch deny"),
         ("ignored-save-failure", "void sampleCoinPulseEdge(bool active){",
-         "fsReady=false;\n        pendingReady=true;", "",
+         "fsReady=false;\n          pendingReady=true;", "",
          "failed durable write did not disable filesystem/intake"),
         ("missing-persistent-fault-latch", "void sampleCoinPulseEdge(bool active){",
          "latchPollPulseFault(pendingPulses);", "",
