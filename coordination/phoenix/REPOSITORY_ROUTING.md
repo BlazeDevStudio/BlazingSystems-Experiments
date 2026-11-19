@@ -773,3 +773,12 @@ Route the interface decision to the existing PHX-CORE owner and COE integration 
 Current #291 docs head is `44a2020c52af6beeaa5e6aedf089f8b03a416ed1`, source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Source/test #44503860587 and docs-head #44504554013/#44504561884 succeeded; signing/publishing skipped. Windows docs-head #44504561855 fails in PISONET-owned self-test; #291 ESP32 compatibility pins older Hardware source `0e5514adb008`, not current #327.
 
 COE #31 sandbox fails on unprivileged UID-map permission denial despite bwrap 0.9.0; #35 fails because bwrap is missing. No privileged/unsandboxed fallback. No migration, copy, move, overwrite or route promotion.
+
+
+## UTC11 ULA and destination-staging guard — 2026-11-19
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: `DRAFT_REVIEW_ONLY`, Experiments source `main@f4e8a891...`, COE destination PR #26 `b382d233...`, and PHX-MASTER target `null`. It is a review map, not a copy/move instruction.
+
+COE RELEASE #44 is a release-owned first-boot ULA implementation candidate, not a new migration route. Its current head `582fd5d5e83e36b36546ac28534740298ba94af4` is based on `1a5be48...`; current COE #35 is `5047af8...`. The exact compare is diverged 15 ahead / 25 behind. Its per-appliance random first-boot ULA does not establish one shared prefix for multiple appliances at the same site. Keep #44 and #26 draft; PHX-RELEASE owns history-preserving reconciliation, CORE/COE owner selects site authority, and QA independently verifies.
+
+No source or destination file was copied, moved, overwritten, rebased, cherry-picked, merged or staged. No route promotion is proposed.
