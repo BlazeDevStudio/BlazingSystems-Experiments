@@ -1271,3 +1271,17 @@ COE #44 remains OPEN/DRAFT at `582fd5d5e83e36b36546ac28534740298ba94af4`, `merge
 COE #36 `b4d7434764aab72673de1f496ed9e442f031ddff` and #43 `8f5eec790dc2a3e25c219a6f51651113cd1c90cd` are separate Universal/INTERCON candidate branches. Their paths include `Hardware/esp8266/BlazePisonetUniversal/` and `Shared/contracts/pisonet-intercon/`; they are not the Windows SoftTimer route and are not listed in `OWNERSHIP_ROUTES.json`. Keep them out of the Phoenix SoftTimer route pending registry and explicit owner scope decision.
 
 Ownership remains unchanged. This snapshot supersedes earlier role-head rows only for the exact refs above.
+
+
+## UTC14 exact-head supersession — 2026-11-19T14:39:41Z — owner actions and non-overlap
+
+- **PHX-MASTER:** coordination/phoenix, interface contracts, exact-head matrix and migration provenance only. Do not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches. The separate active CORE continuation retains CORE implementation ownership.
+- **PHX-CORE + COE integration owner:** select the durable site-prefix authority and the approved input/supply contract. It must guarantee same-site sharing, different-site separation, and persistence across reboot, upgrade, backup and restore. Do not treat COE #44's per-installation random ULA as satisfying this contract.
+- **PHX-RELEASE:** keep COE #35 fail-closed while `APPROVED_SITE_ULA_PREFIX` is unset. Do not substitute a hard-coded, random per-appliance or test-only prefix. After the CORE/COE decision and Master interface review, wire only the approved input and rerun exact-head tests. Provide an authorized Bubblewrap-capable runner; current #35 sandbox remains blocked.
+- **PHX-QA:** independently verify #35's strict ULA validator and profile fail-closed behavior; add same-site/different-site and persistence/restore vectors once the authority is selected. Replace #327's stale positive poll-signature fixture with source-exact negative/default-deny assertions; do not weaken firmware. #292 has no current-head CI.
+- **PHX-PISONET:** repair the uninitialized `$buildWorkflow` input in its owned `negative-selftest.ps1` and rerun the current RELEASE #291 head; Master does not edit that test.
+- **PHX-HARDWARE:** preserve the current poll/disposition default-deny behavior; focused CI is not physical acceptance. No Master firmware changes.
+- **COE integration owner:** complete exact per-file blob/mode/license/test mapping and make all five #26 destination workflows executable before any migration proposal. #35 and #44 are separate Release candidates, not permission to stage into #26.
+- **PHX-INFRA / repository administrator / registry custodian:** supply a disposable Bubblewrap-capable runner, verify branch protections/required checks, and restore authorized canonical registry v11/newer-correction access respectively.
+
+All role PRs remain drafts or review candidates. No worker ownership was transferred by this checkpoint.
