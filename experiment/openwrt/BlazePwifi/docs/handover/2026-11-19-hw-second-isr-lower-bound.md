@@ -78,3 +78,31 @@ This follow-on extends Architecture Contract §6.50 without changing the V1 reco
 - Full BlazePwifi run [#44606573296](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44606573296): validation job `135851732835` **FAILED** at the QA-owned `Missing poll signature check` in `tests/controllers.sh`. At last read the overall run was still in progress; several target jobs had passed while ESP32/x86/Android jobs were still running. No Full validation PASS is claimed.
 
 This is host-executed source regression / CI evidence only, not physical persistence or coin acceptance.
+
+
+## UTC20 follow-on — ESP32/ESP8266 poll-response safety parity
+
+**Exact source/test commit:** `cbc5ae5b5dac865ca3afff6cc2ec9b0b17daec9c`  
+**Current branch head at this checkpoint:** `cbc5ae5b5dac865ca3afff6cc2ec9b0b17daec9c`  
+**Parent/base:** PR #326 at `58c558fb6a237935214621adc3dee65a10fe1a51`.
+
+The hardware-owned `quarantine_readback_lab.py` now compares **21 shared safety functions** byte-for-byte across the ESP32 and ESP8266 sketches. The parity set includes the bounded root-status JSON parser, SHA-256 hex validation, coin-disposition verifier and poll-response consumer, in addition to pending/quarantine persistence helpers. No runtime sketch or protocol behavior changed.
+
+Three additional fail-open mutations are rejected before board drift can ship:
+- `coinPostDispositionVerified()`: replace the current deny return with `true`.
+- `pollJsonTopLevelTrue()`: replace strict root-object acceptance with unconditional `true`.
+- `acceptPollResponse()`: replace the current default-deny return with `true`.
+
+The existing append-verification bypass and both local output-polarity gate mutations remain rejected.
+
+### Exact-head Actions evidence
+
+- Quarantine/readback PR [#44611776852](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44611776852), job `135869984443`: **SUCCESS** on exact source/test SHA `cbc5ae5...`. Log markers include `BOARD_SHARED_SAFETY_PARITY_PASS 21/21`, all three new mutation rejections, `SOURCE_QUARANTINE_PASS 36/36` on each board, and the existing poll-response/default-deny, pending-attempt, EEPROM, poll-fault and output-polarity labs.
+- Quarantine/readback push [#44611765872](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44611765872), job `135869945337`: **SUCCESS**.
+- Relay/output PR [#44611776793](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44611776793), jobs `135869984141` and `135869984703`: **SUCCESS**.
+- Full BlazePwifi PR [#44611776879](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44611776879), validation job `135869986256`: **FAILED** at the inherited QA-owned `Missing poll signature check` in the ESP8266 controller sketch. The current poll consumer intentionally denies admission until CORE publishes the canonical response contract and QA approves vectors. No fake `response_sig` or `|poll|` marker was added. At the last job read, ESP8266 build passed; remaining target jobs were still in progress. No Full PASS is claimed.
+- Full push [#44611765884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44611765884), validation job `135869947091`: same QA-owned failure; target jobs were still in progress at last read.
+
+The focused quarantine workflow also reran the EEPROM `begin()` read-failure / full-image recovery cases and the drain-abort ISR tests. Those are host simulations with fake flash/GPIO, not physical power-cut or relay evidence.
+
+**Classification:** shared source parity and failure injection **SIMULATED / CI VERIFIED**; actual flash durability, physical ISR/relay behavior, 150 power cuts and 30-device soak **NOT TESTED**; **HARDWARE ACCEPTED: NOT ESTABLISHED; PRODUCTION READY: NO-GO**.
