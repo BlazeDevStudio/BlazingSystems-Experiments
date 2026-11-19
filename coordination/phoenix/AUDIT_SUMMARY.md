@@ -1012,3 +1012,9 @@ Master re-read the live control-plane issue #172, cleanup issue #266, current Ex
 - Direct `git ls-remote` failed on DNS resolution for github.com. Full Master Python suite NOT RUN; Master Actions none returned. No physical tests, financial migration, signing, flash, secret provisioning, payment operation, merge, or release.
 
 Next owner actions: PHX-PISONET fixes the uninitialized test variable and asks RELEASE to rerun #291; PHX-QA replaces the stale positive poll fixture and verifies #327; CORE/COE decide site-scoped ULA authority; COE integration completes exact provenance/license/test/CI evidence; repository admin verifies protections; registry custodian restores authorized Drive access. **PRODUCTION NO-GO.**
+
+## UTC12 post-checkpoint Hardware supersession — 2026-11-19T12:20:02.270Z
+
+The latest live #327 PR API and owner checkpoint supersede the earlier UTC12 head `f3581ac5...`: current docs head is `e90c51d733635a891e0f1a8cd875586b43998069`, source/test head `7db41068f9471565471982030f4c119880908291`, base #326 `58c558fb6a237935214621adc3dee65a10fe1a51`. Exact source/test quarantine #44521451085 and relay #44521450941 pass; Full #44521450962 fails at the QA-owned positive poll-signature assertion after 13 target jobs and Android pass. Latest docs-head quarantine #44522362978 and relay #44522363113 pass; docs-head Full #44522362971 remains in progress, with validate job 135554099687 already failed at the same assertion and several target jobs still running. The follow-on adds only a shared-extractor raw-string/phase-2 coin-lab fixture; no firmware runtime change. No positive signature was added. Physical acceptance remains NOT TESTED.
+
+The release #291, COE #26/#35/#44, ownership manifest, and private-registry access states remain as recorded in the preceding UTC12 section. No source/destination migration or route promotion occurred.
