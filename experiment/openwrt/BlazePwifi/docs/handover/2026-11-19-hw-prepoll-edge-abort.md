@@ -723,3 +723,27 @@ Both matrix jobs verified the exact source/blob, pinned Arduino CLI 1.6.0, verif
 Both jobs then failed in the same shell step after compilation. The final printf uses an extra escaped dollar before the GitHub matrix expression; GitHub renders it as "$4.0.0" or "$3.3.13", and Bash with set -u fails on the unset positional parameter ($4 / $3). The binary was found and sha256sum was invoked, but the printf failed before the binary hash was emitted; no artifact upload occurred. These are **compile-command-success observations inside failed workflow jobs**, not end-to-end compatibility-job PASS results.
 
 PHX-HARDWARE posted a scoped audit request to [PR #291 comment #7001879641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291#issuecomment-7001879641), suggesting removal of the extra leading dollar or use of an environment variable. PHX-HARDWARE did not edit RELEASE-owned workflow/script files. RELEASE must correct and rerun both matrix jobs to produce a successful job and retained binary hashes.
+
+
+## UTC07 follow-up — C++ phase-2 comment-token splices (2026-11-19)
+
+**Task:** PR #327 / P0 #177, PHX-HARDWARE-owned host-lab source extractor reliability. This correction affects only test infrastructure; no ESP32/ESP8266 sketch, GPIO/output behavior, poll contract, wire format, NVS/EEPROM schema, financial path, QA-owned test, or Release-owned workflow changed.
+
+### Proven defect and test-first reproduction
+
+firmware_lab_source.py::mask_non_code() recognized // and /* only when the two delimiter characters were physically adjacent. C++ translation phase 2 removes backslash-newline pairs before phase-3 comment recognition, so a splice can form a comment opener or terminator. The old extractor could expose a fake function inside a line-spliced comment, or report a valid block comment as unterminated.
+
+- Corrected fixture commit: 5224a1b98add4fdf86e3fd038002c60f5b6b7f48.
+- Expected RED: push quarantine [#44476732076](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476732076), job 135398979315, failed at AssertionError: line-spliced // opener exposed a fake function.
+- Fix commit: c37338439eec23c54a2e4a5f9c9c538d08f182cf.
+- The helper now recognizes comment delimiters across LF, CRLF, and CR line splices while preserving original source offsets and newline positions; block-comment openers and terminators use the same physical-offset-aware delimiter check.
+
+### Exact-source CI
+
+- Push quarantine [#44476885288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476885288), job 135399482572: SUCCESS.
+- PR quarantine [#44476892512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476892512), job 135399504538: SUCCESS. Logs include POLL_FAULT_EXTRACTOR_SELFTEST=PASS and POLL_FAULT_DUAL_STORE_LAB=PASS for ESP32 and ESP8266.
+- PR relay/output [#44476892390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476892390), jobs 135399504402 and 135399504589: SUCCESS.
+- Full PR [#44476892346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476892346), validation job 135399615620: FAILURE at the inherited QA-owned Missing poll signature check in tests/controllers.sh. Other target jobs were still running at the last read; no Full pass is claimed. Full push [#44476885339](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476885339) was still in progress at that read.
+
+This establishes CI VERIFIED test-infrastructure correctness only. It does not establish physical flash, pulse, relay, EEPROM/NVS durability, financial migration, power-cut or hardware acceptance. Keep all coin/poll admission deny-only.
+
