@@ -163,7 +163,7 @@ int runScenario(bool activeHigh) {
     // One pending pulse plus one unassignable ISR edge forms the first-fault snapshot.
     coinEdgeSequence = 1;
     sampleCoinPulseEdge(true);
-    const int offLevel = activeHigh ? HIGH : LOW;
+    const int offLevel = activeHigh ? LOW : HIGH;
     if (!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
         !backupMarkerPresent || !littleFsMarkerPresent ||
         backupPulseEdges != 2 || littleFsPulseEdges != 2 ||
