@@ -1176,3 +1176,14 @@ No Master source takeover, role reassignment, merge, rebase, release, hardware o
 - **PHX-CORE:** no competing work started; separate CORE continuation retains implementation ownership as directed.
 - **Repository administrator:** Experiments main, development, Master and COE main branch objects report `protected=false`; both rulesets endpoints return empty arrays. Independently verify effective protection and required checks.
 - **Registry custodian:** restore authorized read-only access to private Drive registry v11 and newer corrections; current Library search surfaced only older snapshots and no Google Drive connector is exposed here.
+
+
+## UTC10 later owner follow-up — ULA and release supersession (2026-11-19)
+
+- **PHX-CORE / COE integration owner:** decide the durable site-scoped RFC 4193 ULA authority: one prefix shared by all appliances at one site, independent Global IDs across sites, persistence through reboot/upgrade/restore. Route this decision to the existing CORE owner/continuation; do not start a competing CORE worker.
+- **PHX-RELEASE:** current #291 docs head `44a2020c52af6beeaa5e6aedf089f8b03a416ed1`, source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Source/test #44503860587 and docs-head #44504554013/#44504561884 SUCCESS; signing/publishing skipped. Do not replace the invalid #35 ULA placeholder until the provisioning authority is approved.
+- **PHX-PISONET:** fix its own `negative-selftest.ps1` uninitialized `$buildWorkflow`; Windows docs-head #44504561855 still fails; publisher skipped.
+- **PHX-QA:** independently test the approved ULA syntax, same-site sharing, distinct-site separation and persistence/restore; continue #327 negative/default-deny poll fixture work.
+- **PHX-INFRA / RELEASE:** #31 bwrap UID-map denied; #35 bwrap missing. Provide an approved sandbox runner; no privileged or unsandboxed fallback.
+- **COE integration owner:** #26 remains blocked pending per-file provenance, license/NOTICE scope, source-test imports, pinned toolchain and executable CI.
+- **Registry custodian:** private v11/newer corrections remain inaccessible through authorized current surfaces; no older snapshot substituted.

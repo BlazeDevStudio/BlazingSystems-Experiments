@@ -762,3 +762,14 @@ The source Hardware subtrees contain 21 board-local Python labs (9 ESP32, 12 ESP
 Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`; destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent, and source `BlazePwifi/NOTICE.md` is absent. The shared Pisowifi license is not a complete per-file Hardware migration record. Require explicit scope review and per-file path/mode/blob/license/test mapping before any staging proposal.
 
 No file copy, move, overwrite, route promotion, rebase, merge, or migration staging occurred. Five #26 workflows remain queued with zero jobs.
+
+
+## UTC10 ULA and Release provenance route — 2026-11-19
+
+COE #35 packager blob `f1d9c8ef1da7e1d3df11f45dfe36f14f5f11a650` emits invalid `fd00:db8:blaze::/48`; test blob `e3f625673bd90bb28e107a88aff9ed4d824a2bb7` lacks ULA validation. Do not patch the Release-owned packager from Master or substitute another hard-coded prefix.
+
+Route the interface decision to the existing PHX-CORE owner and COE integration owner: define one durable site-scoped RFC 4193 prefix authority, shared across appliances at one site and independent across sites, with backup/restore semantics. PHX-RELEASE implements validation/generation only after that decision; PHX-QA supplies independent tests.
+
+Current #291 docs head is `44a2020c52af6beeaa5e6aedf089f8b03a416ed1`, source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Source/test #44503860587 and docs-head #44504554013/#44504561884 succeeded; signing/publishing skipped. Windows docs-head #44504561855 fails in PISONET-owned self-test; #291 ESP32 compatibility pins older Hardware source `0e5514adb008`, not current #327.
+
+COE #31 sandbox fails on unprivileged UID-map permission denial despite bwrap 0.9.0; #35 fails because bwrap is missing. No privileged/unsandboxed fallback. No migration, copy, move, overwrite or route promotion.

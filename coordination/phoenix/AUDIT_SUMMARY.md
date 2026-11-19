@@ -957,3 +957,12 @@ This activation updates Master-owned architecture, integration matrix, role assi
 **Next:** QA corrects the #327 fixture with negative/default-deny tests; RELEASE fixes the uninitialized `$buildWorkflow` test input and continues its provenance regression; COE integration supplies per-file provenance and runnable #26 CI; repository admin verifies branch protection; registry custodian restores authorized v11 access.
 
 **PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates are independently verified.
+
+
+## UTC10 supersession — current RELEASE head and ULA blocker (2026-11-19)
+
+The final PHX-RELEASE checkpoint #7006125314 and live readback supersede the earlier UTC10 release snapshot. PR #291 is OPEN/DRAFT at docs head `44a2020c52af6beeaa5e6aedf089f8b03a416ed1`, exact source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Source/test #44503860587 and docs-head #44504554013/#44504561884 completed SUCCESS; production sign/publish remain skipped. Windows #44504561855 still fails in PISONET-owned `negative-selftest.ps1` on uninitialized `$buildWorkflow`; publisher skipped. ESP32 matrix #44504553980 passes both cores but pins older Hardware source `0e5514adb008`, not current #327.
+
+New P0: COE #35 head `5047af8b5a8296e06294bbda6bf42a6baea2294d` emits invalid `fd00:db8:blaze::/48` from packager blob `f1d9c8ef1da7e1d3df11f45dfe36f14f5f11a650`; Python IPv6 parsing rejects the non-hex `blaze` group. Test blob `e3f625673bd90bb28e107a88aff9ed4d824a2bb7` has no ULA validation. Master added a site-scoped RFC 4193 contract but did not select a prefix or authority. CORE/COE owner decision precedes Release implementation.
+
+COE #31 sandbox fails because unprivileged UID-map setup is denied despite bwrap 0.9.0; #35 fails because bwrap is absent after 14/14 preflight tests. COE #26 remains five queued workflows / zero jobs. No migration. Production remains NO-GO.

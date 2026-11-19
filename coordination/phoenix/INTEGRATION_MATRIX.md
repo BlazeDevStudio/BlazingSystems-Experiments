@@ -1746,3 +1746,19 @@ Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE
 Current #291 Windows job fails in `tests/ReleaseSigning/negative-selftest.ps1` because `$buildWorkflow` is read under PowerShell StrictMode but has no assignment anywhere in the file (blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`). Run #44503871056 records the uninitialized-variable error; publisher skipped. Run #44503871218 subsequently ended CANCELLED at `2026-11-19T10:19:37Z`, not a full pass. ESP32 compatibility #44503871277 passed both configured core versions. RELEASE's UTC10 role lock #7006125314 is already working on a provenance-snapshot consistency regression; Master does not edit release-owned files.
 
 Master Actions returned no runs. The full Master Python suite was NOT RUN because no repository checkout was available. Source/tree inspection and remote CI inspection are not substitutes for the Master suite or physical acceptance. **PRODUCTION NO-GO.**
+
+
+## UTC10 later exact refresh — RELEASE and ULA (2026-11-19)
+
+| Candidate | Current ref | Exact evidence | Disposition |
+|---|---|---|---|
+| RELEASE #291 | docs head `44a2020c52af6beeaa5e6aedf089f8b03a416ed1`; source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf` | Source/test #44503860587 terminal SUCCESS; docs-head #44504554013/#44504561884 SUCCESS; Windows #44504561855 FAIL in PISONET-owned self-test; publisher skipped | OPEN/DRAFT; unsigned |
+| #291 ESP32 matrix | #44504553980 | Both 3.3.13/4.0.0 pass, but pins old Hardware source `0e5514adb008`, not #327 head | Not current-Hardware acceptance |
+| COE #35 | `5047af8b5a8296e06294bbda6bf42a6baea2294d` | Invalid `fd00:db8:blaze::/48`; no ULA test; sandbox #44465377807 fails because bwrap missing | BLOCKED |
+| COE #31 | `59ed44d0b911e176f1a95b9cf5585ef811ffd31b` | Sandbox #44222517263 finds bwrap 0.9.0 but unprivileged UID-map probe returns Permission denied | BLOCKED |
+
+Run #44503860587 is terminal SUCCESS: provenance 19/19, validation 133/133, ESP32/ESP8266/Android, 11 OpenWrt targets, update bundle and nine v0.4 simulations pass. Artifact ZIP/checksum readback passed for ESP8266, ESP32 and Ruijie; artifacts remain unsigned CI previews, and sign/publish steps were skipped. Current #291 docs head is a handover-only successor to the exact source/test head.
+
+The Windows docs-head failure is PISONET-owned `negative-selftest.ps1` reading an uninitialized `$buildWorkflow`; no Release or Master patch is authorized in that path. The #291 compatibility matrix passes but pins older Hardware source, not current #327.
+
+COE #35's invalid ULA is a new architecture/configuration P0. No replacement prefix is selected; CORE/COE owner decision is required before Release implementation. #31 UID-map denial and #35 missing-bwrap are distinct sandbox failures. #26 remains five queued workflows / zero jobs. No migration.

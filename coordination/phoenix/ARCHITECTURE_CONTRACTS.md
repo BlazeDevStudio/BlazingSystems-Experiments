@@ -906,3 +906,18 @@ At Experiments HARDWARE PR #327 head `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f`,
 Exact-head Full run [#44501072563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072563) fails in validation job `135480829727` at legacy `Missing poll signature check`. All 13 firmware/platform targets and Android completed; downstream simulations, update bundle, candidate, signing and publishing were skipped. Focused quarantine [#44501072485](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072485) and relay/output [#44501072498](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072498) passed. Quarantine logs include both-board poll-fault and EEPROM/config labs, but explicitly report `SIMULATED_ONLY=1`, `FINANCIAL_MIGRATION_TESTED=0`, and `PHYSICAL_POWER_CUT_VERIFIED=0`.
 
 Do not add fake `response_sig` or `|poll|` markers and do not enable poll admission to make the old assertion green. PHX-QA owns source-exact negative/default-deny cases at the same source/test SHA. PHX-CORE owns the future canonical response envelope and golden vectors; PHX-HARDWARE retains firmware ownership. This is not financial disposition or hardware acceptance.
+
+
+## 6.45 Site-scoped RFC 4193 ULA provisioning contract — decision required (2026-11-19 UTC10)
+
+COE Release #35 at `5047af8b5a8296e06294bbda6bf42a6baea2294d` emits `option ula_prefix 'fd00:db8:blaze::/48'` from packager blob `f1d9c8ef1da7e1d3df11f45dfe36f14f5f11a650`. Independent Python `ipaddress.IPv6Network(..., strict=False)` rejects it: `AddressValueError: Only hex digits permitted in 'blaze'`. The accompanying test blob `e3f625673bd90bb28e107a88aff9ed4d824a2bb7` checks bridge/VLAN output and formatting but contains no ULA/IPv6-prefix validity assertion.
+
+**Normative interface constraints:**
+1. A site ULA must be a valid RFC 4193 prefix in `fd00::/8`, with a 40-bit Global ID and `/48` length. Reject malformed/non-hex, non-`/48`, documentation placeholders, multicast, link-local, global-unicast and unspecified values.
+2. It is site-scoped: all appliances at one site share the same prefix; distinct sites use independently provisioned/generated Global IDs with collision-aware handling. A random prefix per appliance is not a site identity.
+3. Persist the prefix across reboot, upgrade, migration, backup and restore. Do not regenerate it during ordinary boot/restore or derive it from a device MAC/product name.
+4. The provisioning authority is undecided. PHX-CORE and the COE integration owner must choose owner-provisioned site prefix or a first-boot site authority that creates/distributes one durable identity. PHX-MASTER does not invent a prefix, secret or site credential.
+5. Until that decision exists, packagers fail closed when no approved site prefix is supplied. Never emit `fd00:db8:blaze::/48`, another hard-coded vendor literal, or a per-appliance fallback.
+6. QA independently tests syntax, /48, same-site sharing, distinct-site separation, persistence/restore and authority-unavailable denial.
+
+PHX-CORE/COE own the provisioning decision; PHX-RELEASE implements after approval; PHX-QA owns independent vectors. This contract does not change networking code or authorize hardware acceptance.
