@@ -991,3 +991,8 @@ COE #44 exact packager blob `f2c2467f37137c38856abcad1b101436e50d3970` generates
 Experiments main, development and COE main branch objects report `protected=false`; both rulesets endpoints return empty arrays. The canonical private Drive registry v11 and newer corrections were not found in the Library, and no Google Drive connector is exposed. Older registry snapshots were not substituted. Experiments AGENTS.md was read; its linked cloud policy/storage handover could not be retrieved, and COE root AGENTS.md returns 404.
 
 No Master Actions run was returned. Direct `git ls-remote` failed because this runtime could not resolve `github.com`; the full Master Python suite is NOT RUN. No migration, merge, release, signing, flash, secret provisioning, payment operation, financial migration or physical test occurred. **PRODUCTION NO-GO.**
+
+
+## UTC11 Hardware destination provenance refresh — 2026-11-19
+
+Exact #327-to-#26 comparison confirms both firmware sketches are different Git blobs and materially different sizes: ESP32 source 64,308 bytes vs destination 18,505; ESP8266 source 68,127 vs destination 18,394. Source test inventory is 46 scripts plus 22 board-local Python labs and one shared helper; COE #26 Hardware contains one generic shell test that still expects positive response-signature/register/poll markers. Current firmware remains default-deny. Pisowifi license blobs match, but Hardware LICENSE/NOTICE and source NOTICE are absent. The five destination workflows remain queued with zero jobs. Migration remains BLOCKED; no files were staged or moved.
