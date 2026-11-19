@@ -331,3 +331,12 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - [BlazePwifi build #44523786634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786634) failed at mandatory handover freshness. Target compilation jobs completed, but validation-dependent simulations and every signing/publication path were skipped.
 - [Windows release #44523786593](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786593) likewise failed at shared handover freshness before any build/publish job. [ESP32 compatibility #44523786487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786487) completed its two scoped historical-source legs (`0e5514adb008`) only.
 - This checkpoint establishes a fresh handover baseline; it neither signs nor publishes an artifact and does not represent production acceptance. PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — supersession audit: freshness baseline restored, signer negative remains closed
+
+- Compatible branch head `10b2de74f108cb6ae70d34a83b3599cf5038b687` already contains another release worker's handover and ESP32 compatibility workflow refinement. This record is an independent evidence checkpoint, not a duplicate implementation.
+- Exact [BlazePwifi build #44532306202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306202) completed SUCCESS for its scoped CI jobs, including mandatory handover freshness, validation, target builds, update bundle, and simulations. `production_sign_handoff`, prerelease, and release publication jobs were skipped.
+- Exact [Windows release #44532306579](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306579) passed shared handover freshness, then correctly failed `RELEASE-SIGN test fail-closed negative controls`; all publisher and package-build follow-ons were skipped. No signing occurred.
+- Exact [ESP32 compatibility #44532306237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306237) completed both scoped core legs against source `984ea8ff65a9`; this is compatibility evidence only, not flash or physical acceptance.
+- PR #291 remains draft/unmerged with no independent review. No CI preview is production-ready. **PRODUCTION NO-GO** remains until all independent MASTER, QA, protected-signer, durable finance/migration, and physical acceptance gates are satisfied.
