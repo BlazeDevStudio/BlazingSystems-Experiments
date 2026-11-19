@@ -1224,3 +1224,9 @@ This is a read-only ownership refresh; no role branch or subsystem ownership is 
 | **Registry custodian** | Private Drive v11/newer corrections are not available through the current Library or connector surface | Restore authorized read-only Drive access. Do not substitute older registry snapshots or claim a transfer. |
 
 No worker ownership, role branch, or route is changed by this Master refresh.
+
+## UTC12 Hardware live-head supersession — 2026-11-19T12:20:02.270Z
+
+- **PHX-HARDWARE #327:** latest PR/docs HEAD `e90c51d733635a891e0f1a8cd875586b43998069`; exact source/test HEAD `7db41068f9471565471982030f4c119880908291`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51`. Owner checkpoint [#7008092747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7008092747). Exact source/test quarantine #44521451085 and relay #44521450941 PASS; Full #44521450962 FAILS at QA-owned `Missing poll signature check` after 13 target jobs + Android pass. Latest docs-head quarantine #44522362978 and relay #44522363113 PASS; docs-head Full #44522362971 remains IN_PROGRESS with validate job 135554099687 already failed at the same assertion. The latest follow-on only extends the coin-pulse lab's shared lexical-extractor regression; no firmware runtime behavior changed.
+- **PHX-QA:** replace the positive-presence poll fixture with source-exact negative/default-deny tests; independently rerun the current #327 head. Do not add positive unauthenticated signature markers.
+- **PHX-HARDWARE:** preserve the current default-deny firmware and update its exact-head handover/CI when the docs-head Full workflow reaches terminal state.
