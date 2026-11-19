@@ -64,6 +64,14 @@ def _run(command: list[str], *, cwd: Path = ROOT) -> str:
     return completed.stdout.strip()
 
 
+def _require_single_link(metadata: os.stat_result, display_path: str) -> None:
+    """Reject artifact files that alias an inode outside their own tree entry."""
+    if getattr(metadata, "st_nlink", None) != 1:
+        raise ProvenanceError(
+            f"hard-linked artifact file is not admitted: {display_path}"
+        )
+
+
 def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
     return (
         left.st_dev == right.st_dev
@@ -71,6 +79,7 @@ def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
         and left.st_size == right.st_size
         and left.st_mtime_ns == right.st_mtime_ns
         and left.st_ctime_ns == right.st_ctime_ns
+        and left.st_nlink == right.st_nlink
     )
 
 
@@ -309,6 +318,7 @@ def _hash_regular_at(parent_fd: int, name: str, display_path: str) -> tuple[str,
         before = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
         if not stat.S_ISREG(before.st_mode):
             raise ProvenanceError(f"expected a regular non-symlink file: {display_path}")
+        _require_single_link(before, display_path)
         fd = os.open(
             name,
             os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0),
@@ -321,6 +331,7 @@ def _hash_regular_at(parent_fd: int, name: str, display_path: str) -> tuple[str,
     total = 0
     try:
         opened = os.fstat(fd)
+        _require_single_link(opened, display_path)
         if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
             raise ProvenanceError(f"file identity changed while opening: {display_path}")
         while True:
@@ -331,6 +342,8 @@ def _hash_regular_at(parent_fd: int, name: str, display_path: str) -> tuple[str,
             total += len(block)
         after = os.fstat(fd)
         path_after = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        _require_single_link(after, display_path)
+        _require_single_link(path_after, display_path)
     except OSError as exc:
         raise ProvenanceError(f"cannot hash {display_path}: {exc}") from exc
     finally:
@@ -354,6 +367,7 @@ def _read_regular_at(parent_fd: int, name: str, display_path: str) -> bytes:
         before = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
         if not stat.S_ISREG(before.st_mode):
             raise ProvenanceError(f"expected a regular non-symlink file: {display_path}")
+        _require_single_link(before, display_path)
         fd = os.open(
             name,
             os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0),
@@ -366,6 +380,7 @@ def _read_regular_at(parent_fd: int, name: str, display_path: str) -> bytes:
     total = 0
     try:
         opened = os.fstat(fd)
+        _require_single_link(opened, display_path)
         if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
             raise ProvenanceError(f"file identity changed while opening: {display_path}")
         while True:
@@ -376,6 +391,8 @@ def _read_regular_at(parent_fd: int, name: str, display_path: str) -> bytes:
             total += len(block)
         after = os.fstat(fd)
         path_after = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        _require_single_link(after, display_path)
+        _require_single_link(path_after, display_path)
     except OSError as exc:
         raise ProvenanceError(f"cannot read {display_path}: {exc}") from exc
     finally:
