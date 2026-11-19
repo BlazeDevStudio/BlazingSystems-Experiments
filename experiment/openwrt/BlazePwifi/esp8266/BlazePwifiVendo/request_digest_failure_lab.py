@@ -7,9 +7,10 @@ provider output. The real signedBody() and post() functions are compiled from bo
 ESP sketches. A failed digest must not create an HTTP session or dispatch a request.
 """
 from pathlib import Path
-import re
 import subprocess
 import tempfile
+
+from firmware_lab_source import extract_function
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -17,25 +18,6 @@ BOARDS = {
     "ESP32": ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
 
-
-def extract_function(source: str, name: str, required: bool = True) -> str:
-    match = re.search(r"\b(?:bool|String)\s+" + re.escape(name) + r"\s*\(", source)
-    if not match:
-        if required:
-            raise RuntimeError(f"missing production function: {name}")
-        return ""
-    brace = source.find("{", match.end())
-    if brace < 0:
-        raise RuntimeError(f"missing function body: {name}")
-    depth = 0
-    for pos in range(brace, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():pos + 1]
-    raise RuntimeError(f"unbalanced production function: {name}")
 
 
 STUBS = r"""

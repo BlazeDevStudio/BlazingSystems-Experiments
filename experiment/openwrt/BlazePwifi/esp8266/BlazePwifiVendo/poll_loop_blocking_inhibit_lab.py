@@ -7,30 +7,16 @@ NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
 separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
-import re
 import subprocess
 import tempfile
+
+from firmware_lab_source import extract_function
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
     "ESP8266": ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
     "ESP32": ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
-
-def extract(source, name):
-    pattern = r"\b(?:void|bool|uint16_t|uint32_t)\s+(?:(?:IRAM_ATTR|ICACHE_RAM_ATTR)\s+)?" + re.escape(name) + r"\s*\([^)]*\)\s*\{"
-    match = re.search(pattern, source)
-    if not match:
-        raise AssertionError(f"missing production function: {name}")
-    depth = 0
-    for pos in range(match.end() - 1, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():pos + 1]
-    raise AssertionError(f"unbalanced production function: {name}")
 
 STUBS = r"""
 #include <cstdint>
@@ -454,22 +440,22 @@ for board,path in BOARDS.items():
     )
     if edge_decl < 0 or edge_isr < 0 or edge_decl > edge_isr:
         raise AssertionError(f"{board}: coinEdgeSequence must be declared before coinEdgeISR")
-    loop=extract(source,"loop")
-    write=extract(source,"writeLogical")
-    output=extract(source,"applyOutputs")
-    idle=extract(source,"coinLineIdle")
-    can_start=extract(source,"canStartPoll")
-    quiet=extract(source,"coinLineQuietAfterInhibit")
-    begin=extract(source,"beginPollWindow")
-    accept=extract(source,"acceptPollResponse")
-    isr=extract(source,"coinEdgeISR")
-    snapshot=extract(source,"snapshotCoinEdgeSequence")
-    configure=extract(source,"configureRuntimePins")
-    write_fault=extract(source,"writePollPulseFaultMarker")
-    load_fault=extract(source,"loadPollPulseFaultLatch")
-    latch_fault=extract(source,"latchPollPulseFault")
-    init_store=extract(source,"initPendingStore")
-    sample=extract(source,"sampleCoinPulseEdge")
+    loop=extract_function(source, "loop")
+    write=extract_function(source, "writeLogical")
+    output=extract_function(source, "applyOutputs")
+    idle=extract_function(source, "coinLineIdle")
+    can_start=extract_function(source, "canStartPoll")
+    quiet=extract_function(source, "coinLineQuietAfterInhibit")
+    begin=extract_function(source, "beginPollWindow")
+    accept=extract_function(source, "acceptPollResponse")
+    isr=extract_function(source, "coinEdgeISR")
+    snapshot=extract_function(source, "snapshotCoinEdgeSequence")
+    configure=extract_function(source, "configureRuntimePins")
+    write_fault=extract_function(source, "writePollPulseFaultMarker")
+    load_fault=extract_function(source, "loadPollPulseFaultLatch")
+    latch_fault=extract_function(source, "latchPollPulseFault")
+    init_store=extract_function(source, "initPendingStore")
+    sample=extract_function(source, "sampleCoinPulseEdge")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,

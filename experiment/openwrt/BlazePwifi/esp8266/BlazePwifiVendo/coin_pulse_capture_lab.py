@@ -15,6 +15,8 @@ import subprocess
 import sys
 import tempfile
 
+from firmware_lab_source import extract_function
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -320,20 +322,15 @@ SIGNATURES = (
     "void sampleCoinPulseEdge(bool active){",
 )
 
-def extract(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing production function: {signature}")
-    brace = source.find("{", start)
-    depth = 0
-    for pos in range(brace, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:pos + 1]
-    raise RuntimeError(f"unbalanced production function: {signature}")
+FUNCTION_NAMES = (
+    "coinLineIdle",
+    "canStartPoll",
+    "applyOutputs",
+    "coinLineQuietAfterInhibit",
+    "beginPollWindow",
+    "latchPollPulseFault",
+    "sampleCoinPulseEdge",
+)
 
 def compile_and_run(functions):
     program = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
@@ -350,7 +347,8 @@ def compile_and_run(functions):
             raise RuntimeError(compiled.stderr)
         return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
 
-def verify_extractor_ignores_brace_decoys():
+
+def verify_shared_extractor():
     probe = (
         "bool sample() {\\n"
         '  const char *brace = "}";\\n'
@@ -360,14 +358,15 @@ def verify_extractor_ignores_brace_decoys():
         "}\\n"
         "bool after() { return false; }\\n"
     )
-    expected = probe.split("\\nbool after", 1)[0].rstrip("\\n")
-    actual = extract(probe, "bool sample()")
+    expected = probe.split("\\nbool after", 1)[0]
+    actual = extract_function(probe, "sample")
     if actual != expected:
-        raise RuntimeError("source extractor truncated at a brace inside a C++ literal/comment")
-    print("SOURCE_EXTRACTOR_BRACE_DECOY_PASS")
+        raise RuntimeError("shared extractor truncated at a C++ comment/literal brace")
+    print("SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS")
+
 
 def main():
-    verify_extractor_ignores_brace_decoys()
+    verify_shared_extractor()
     mutations = (
         ("missing-edge-latch", "void sampleCoinPulseEdge(bool active){",
          "lastCoin=active;", "", "sustained high level"),
@@ -399,7 +398,7 @@ def main():
     for board, sketch in BOARDS:
         try:
             source = sketch.read_text(encoding="utf-8")
-            functions = [extract(source, signature) for signature in SIGNATURES]
+            functions = [extract_function(source, name) for name in FUNCTION_NAMES]
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")

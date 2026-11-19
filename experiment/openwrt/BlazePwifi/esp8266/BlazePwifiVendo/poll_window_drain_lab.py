@@ -10,6 +10,8 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+from firmware_lab_source import extract_function
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -101,21 +103,6 @@ int main(){
 }
 '''
 
-def extract(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing production function: {signature}")
-    brace = source.find("{", start)
-    depth = 0
-    for pos in range(brace, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:pos + 1]
-    raise RuntimeError(f"unbalanced production function: {signature}")
-
 def compile_and_run(functions):
     source = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
     with tempfile.TemporaryDirectory(prefix="phx-poll-drain-") as temp:
@@ -132,18 +119,18 @@ def compile_and_run(functions):
         return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
 
 def main():
-    signatures = (
-        "bool coinLineIdle(){",
-        "bool canStartPoll(){",
-        "void applyOutputs(){",
-        "bool coinLineQuietAfterInhibit(){",
-        "bool beginPollWindow(){",
+    function_names = (
+        "coinLineIdle",
+        "canStartPoll",
+        "applyOutputs",
+        "coinLineQuietAfterInhibit",
+        "beginPollWindow",
     )
     failures = []
     for board, sketch in BOARDS:
         try:
             source = sketch.read_text(encoding="utf-8")
-            functions = [extract(source, signature) for signature in signatures]
+            functions = [extract_function(source, name) for name in function_names]
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source RED: {result.stderr or result.stdout}")
@@ -153,7 +140,7 @@ def main():
                 continue
             print(f"{board}_POLL_WINDOW_DRAIN_PASS 11/11")
 
-            quiet_index = signatures.index("bool coinLineQuietAfterInhibit(){")
+            quiet_index = function_names.index("coinLineQuietAfterInhibit")
             mutated = list(functions)
             needle = "pulseTrainQuietMs=250UL"
             if needle not in mutated[quiet_index]:
