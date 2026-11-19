@@ -68,8 +68,8 @@ bool selected(int value) {
     # C++ translation phase 2 removes backslash-newline before // comment
     # recognition. A continued comment must not expose a fake function body.
     continued_comment = (
-        "// continued comment " + "\\\\" + "\\n"
-        + "bool selected(int value) { return false; }\\n"
+        "// continued comment " + "\\" + "\n"
+        + "bool selected(int value) { return false; }\n"
     )
     continued_masked = mask_non_code(continued_comment)
     if len(continued_masked) != len(continued_comment):
