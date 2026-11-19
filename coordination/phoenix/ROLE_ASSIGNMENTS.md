@@ -1315,3 +1315,19 @@ The RELEASE pipeline may invoke subsystem-owned tests and consume subsystem hand
 - PHX-QA independently reviews the hard-link artifact-admission contract and retains ownership of the stale positive poll-signature fixture in Hardware Full validation.
 
 This is a review boundary only. No role, branch, path route, or ownership manifest was reassigned. PR #291 remains OPEN/DRAFT/UNMERGED pending owner review and exact-head reruns.
+
+
+## UTC17 live exact-head reconciliation — 2026-11-19T17:42Z
+
+This is a current-state addendum, not an ownership transfer. Exact current PR/API heads and CI are in [the UTC17 Master audit](PHX_MASTER_UTC17_LIVE_HEAD_HARDWARE_POLL_RELEASE_WINDOWS_AND_COE26_PROVENANCE_20261119.md).
+
+| Role | Current source PR | Exact current PR/API head | Status at UTC17 read |
+|---|---:|---|---|
+| PHX-CORE | #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped CI success; separate CORE continuation retains implementation. |
+| PHX-RENTAL | #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Scoped CI success. |
+| PHX-PISONET | #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Scoped CI success; native COM acceptance not established. |
+| PHX-HARDWARE | #327 | `43a8d511fc1fb6f238f5e7ea24036659fb2ab71a` (source/test `ad421e48b2908fab48dc85b40c169450d9c0239c`) | Quarantine PASS; relay in progress; shared validation blocked by QA-owned poll marker assertion. |
+| PHX-QA | #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 scoped PASS; #292 no current-head run returned. |
+| PHX-RELEASE | #291 | `110f89985703e5685b193e4398492d3a16b26cdd` (source/test `36056d08b4ff7de6f692c5c83b55c1e335cda070`) | Shared build 27 PASS / 5 SKIPPED; Windows fails in PISONET-owned `negative-selftest.ps1`; publisher skipped. |
+
+**Ownership reminders:** PHX-QA owns `experiment/openwrt/BlazePwifi/tests/`; PHX-PISONET owns `experiment/windows/BlazePisonet-SoftTimer/`; PHX-CORE owns BlazePwifi financial/handover source. PR #291 contains a PISONET-owned test edit and CORE-owned handover edits; both owners must review their paths. RELEASE does not acquire their ownership. No source branch was changed by PHX-MASTER.

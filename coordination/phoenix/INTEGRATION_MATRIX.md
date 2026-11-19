@@ -2009,3 +2009,21 @@ No file move, copy, overwrite, cherry-pick, rebase, merge or staging occurred. O
 The RELEASE ESP32 compatibility run verifies source commit 984ea8ff65a93b7da6e22fc2e1943acaf56100ca and sketch blob 528187f68aaad7d76a690bbf1cbe338165ad3839. The current Hardware #327 ESP32 sketch at c4954de... has the same blob SHA. Both ESP32 core 3.3.13 and 4.0.0 compile jobs passed. This is exact single-sketch compatibility evidence, not full Hardware-tree acceptance, firmware flashing, or physical acceptance.
 
 COE #26 migration remains blocked: current source and destination ESP32/ESP8266 sketch blobs differ; source has 22 board-local Python labs while destination Hardware has one generic shell test with stale positive signature/poll assertions; Hardware LICENSE/NOTICE scope is incomplete; five destination workflows are queued with zero jobs. No file was copied, moved, overwritten, rebased, cherry-picked, merged, or staged. OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+
+## UTC17 live exact-head matrix — 2026-11-19T17:42Z
+
+| Integration area | Exact live candidate | CI evidence | Gate |
+|---|---|---|---|
+| Master coordination | #288 `b1a38cea83a9bfe877acd795730079d65ed3bf25` | No Master Actions run returned | OPEN/DRAFT; full Master suite not run. |
+| CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | 42698139210 SUCCESS | Scoped only; money/hardware gates remain open. |
+| RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | 43653329235 and 43653329229 SUCCESS | Scoped only; physical acceptance absent. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | 42462978704 SUCCESS | Scoped only; native COM acceptance absent. |
+| HARDWARE | #327 API `43a8d511...`; source/test `ad421e48...` | Quarantine 44580223038 PASS; relay 44580223257 IN_PROGRESS; shared validation 44580223115 FAIL at QA-owned `Missing poll signature check` | No Full acceptance; firmware remains deny-only; physical NOT TESTED. |
+| QA | #290 / #292 | 43633486963 PASS; #292 no current-head run | Independent poll-deny fixture correction still required. |
+| RELEASE | #291 API `110f899...`; source/test `36056d08...` | Full shared build 44576439303: 27 SUCCESS / 5 SKIPPED; Windows 44578334600 FAIL at uninitialized `$buildWorkflow`; publisher skipped | PISONET and CORE owner review required. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued; zero jobs | Migration BLOCKED. |
+
+COE #26 board blobs were re-read at exact source/test and destination refs. ESP32 source blob `f89bc561b2093328286d7633da794667b2ab06de` (66,899 bytes) differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (18,505 bytes); ESP8266 source `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` (70,585 bytes) differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887` (18,394 bytes). Source has 24 board-directory Python files (including helpers/RED fixture); destination Hardware has one generic shell test. Source LICENSE matches `Pisowifi/LICENSE`, but source NOTICE and Hardware LICENSE/NOTICE are absent. No import or migration is proposed.
+
+COE owner candidate CI (#28/#29/#30/#31/#32/#45) remains separate scoped evidence; it does not substitute for the five queued #26 integration workflows. COE #35 profile packaging remains fail-closed without approved site ULA; its mandatory Bubblewrap sandbox failed. COE #44 is not a site-wide identity authority.

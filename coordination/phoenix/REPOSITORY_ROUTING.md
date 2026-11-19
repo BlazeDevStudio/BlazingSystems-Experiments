@@ -840,3 +840,12 @@ PR #291 contains cross-owner files: experiment/windows/BlazePisonet-SoftTimer/te
 COE #26 remains the only integration draft destination, at b382d233ff06c8791b1028bed3c617cc7b670d12, with five queued workflows and zero jobs. Source/destination board blobs differ, the 22 source board-local Python labs are not imported as equivalent destination tests, Hardware license/NOTICE scope is incomplete, and destination toolchain/CI are not verified. The ULA authority is undecided; #35 intentionally fails closed with no approved site prefix, while #44's per-appliance random Global ID is not a site-wide authority.
 
 No copy, move, overwrite, cherry-pick, rebase, merge, staging, or route promotion is authorized. Preserve all source histories and owner branches. Require exact per-file source blob, mode, license, import completeness, test identity, toolchain and executable destination CI evidence before any migration proposal.
+
+
+## UTC17 destination recheck — 2026-11-19T17:42Z
+
+The source remains Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` with Hardware owner source/test candidate #327 at `ad421e48b2908fab48dc85b40c169450d9c0239c`. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; the only integration candidate reviewed here is existing draft #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12` (205 changed paths, five queued workflows, zero jobs).
+
+A fresh exact-blob check found ESP32 source `f89bc561b2093328286d7633da794667b2ab06de` versus destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, and ESP8266 source `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` versus destination `c8be98f72596681e36a3ad1f8939bf8046c96887`. Both pairs differ materially in bytes and size. Source contains 24 board-directory Python files (helpers/RED fixture included); COE Hardware contains one generic shell test with positive poll marker expectations that conflict with current source deny-only poll behavior.
+
+The source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source NOTICE, Hardware LICENSE and Hardware NOTICE are absent. This is not a complete Hardware license review. No copy, move, overwrite, rebase, cherry-pick, merge, staging or route promotion is authorized. The private v11 registry and newer corrections remain required before any artifact or migration write.

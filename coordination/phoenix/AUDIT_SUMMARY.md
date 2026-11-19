@@ -1108,3 +1108,14 @@ Governance: Experiments main, development and Master branch objects report prote
 Execution classification: source/tree and exact-head Actions/log inspection completed. The Master Python suite was NOT RUN; no Master Actions run was returned. Direct Git clone remains blocked by runtime DNS resolution for github.com. No physical hardware test, power cut, financial migration, signing, flash, or soak was performed.
 
 Next owners: PISONET fixes and tests its own $buildWorkflow variable; CORE reviews its handover changes in #291; QA replaces the positive poll fixture with negative/default-deny checks and independently reviews hard-link admission; RELEASE reruns exact-head Windows after owner correction; CORE/COE chooses site ULA authority; COE integration completes per-file provenance and destination CI; repository administrator verifies protection; registry custodian restores authorized v11 access. PRODUCTION NO-GO.
+
+
+## UTC17 live audit — 2026-11-19T17:42Z
+
+See [PHX-MASTER UTC17 exact-head and provenance report](PHX_MASTER_UTC17_LIVE_HEAD_HARDWARE_POLL_RELEASE_WINDOWS_AND_COE26_PROVENANCE_20261119.md). The audit re-read issue #172, cleanup #266, Experiments main/development refs, PR #288, role PRs/CI, COE main, #26, #28–#32, #35, #44 and #45, Experiments AGENTS.md, and the current Master routing manifest.
+
+**New source-grounded corrections:** (1) Hardware's current `acceptPollResponse()` explicitly returns false, clears active target and leaves insert mode disabled; `coinPostDispositionVerified()` returns false until the event-bound receipt contract is approved. The inherited QA positive `|poll|` marker assertion is stale and must be replaced by negative/default-deny behavior tests. (2) RELEASE #291's current Windows run fails because its PISONET-owned `negative-selftest.ps1` reads `$buildWorkflow` without assignment; PISONET must review/fix, then RELEASE reruns. (3) COE #26 source/destination ESP32/ESP8266 blobs differ and the source's 24 board-directory Python files are not represented by the single destination Hardware shell test; Hardware license/NOTICE scope remains incomplete.
+
+Current #288 remains OPEN/DRAFT at `b1a38cea83a9bfe877acd795730079d65ed3bf25` before this UTC17 update; 105 paths all under coordination/phoenix. Ownership manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No subsystem source, owner branch, route manifest, migration staging, binary, secret, device, payment system or production setting was modified.
+
+Source/tree and CI-log inspection completed. Full Master Python suite NOT RUN; no Master Actions run returned. COE #26's five workflows remain queued with zero jobs. Private Drive v11 and newer corrections remain inaccessible; no older registry was substituted. PRODUCTION NO-GO.
