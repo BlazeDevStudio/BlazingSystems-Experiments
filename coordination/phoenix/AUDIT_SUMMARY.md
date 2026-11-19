@@ -966,3 +966,28 @@ The final PHX-RELEASE checkpoint #7006125314 and live readback supersede the ear
 New P0: COE #35 head `5047af8b5a8296e06294bbda6bf42a6baea2294d` emits invalid `fd00:db8:blaze::/48` from packager blob `f1d9c8ef1da7e1d3df11f45dfe36f14f5f11a650`; Python IPv6 parsing rejects the non-hex `blaze` group. Test blob `e3f625673bd90bb28e107a88aff9ed4d824a2bb7` has no ULA validation. Master added a site-scoped RFC 4193 contract but did not select a prefix or authority. CORE/COE owner decision precedes Release implementation.
 
 COE #31 sandbox fails because unprivileged UID-map setup is denied despite bwrap 0.9.0; #35 fails because bwrap is absent after 14/14 preflight tests. COE #26 remains five queued workflows / zero jobs. No migration. Production remains NO-GO.
+
+
+## UTC11 live exact-head supersession — 2026-11-19
+
+The current Experiments refs are `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`, and comparison-only `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12). Existing Master PR #288 remains OPEN/DRAFT; UTC11 changes stay under `coordination/phoenix/`.
+
+### New architecture clarification
+
+Master §6.9.1 now states that ULA installation identity means a LAN/site, not each physical appliance. A per-appliance first-boot random Global ID can produce conflicting /48 prefixes on one site and is only a local allocation primitive. The contract requires a single durable site authority, same-site sharing, distinct-site separation, concurrent first-boot convergence/fail-closed behavior, and persistence through reboot/upgrade/backup/restore. A focused regression assertion was added to `test_architecture_contracts.py`.
+
+COE #44 exact packager blob `f2c2467f37137c38856abcad1b101436e50d3970` generates a random 40-bit ID independently on each appliance. Its tests cover local first-boot, scoped rollback and UCI section-type validation, but not same-site multi-appliance sharing or distribution. #44 is also diverged from current #35 by 15 commits ahead / 25 behind. No authority was selected and no COE file was changed.
+
+### Current role CI and blockers
+
+- HARDWARE #327 `82fef49d945aeb64da76e89ef12126784a4c64b2`: focused quarantine #44510401511 and relay/output #44510401561 PASS; Full #44510401548 FAILS at QA-owned `Missing poll signature check`. Thirteen firmware/platform targets and Android pass; downstream signing/simulation/publishing skipped.
+- RELEASE #291 `6ce1ee152d49de330ed0f31c3786799284545474`: Windows #44516920755 fails at shared handover freshness; BlazePwifi #44516920733 and ESP32 #44516920957 are queued. The older UTC11 role-lock head `19998bc7...` and PR description are stale.
+- COE #44 `582fd5d5...`: 109 packaging tests, 18 hardening checks, 10/10 profiles, both ESP compile/upload and case-collision pass; sandbox #44390136327 fails closed because Bubblewrap is absent after 14/14 host preflight.
+- COE #35 `5047af8...`: shared/case pass; sandbox #44465377807 fails closed because Bubblewrap is absent.
+- COE #26 remains five queued workflows with zero jobs. CORE #252, RENTAL #289, PISONET #255 and QA #290 retain scoped green evidence only; QA #292 has no current-head run.
+
+### Verification and limits
+
+Experiments main, development and COE main branch objects report `protected=false`; both rulesets endpoints return empty arrays. The canonical private Drive registry v11 and newer corrections were not found in the Library, and no Google Drive connector is exposed. Older registry snapshots were not substituted. Experiments AGENTS.md was read; its linked cloud policy/storage handover could not be retrieved, and COE root AGENTS.md returns 404.
+
+No Master Actions run was returned. Direct `git ls-remote` failed because this runtime could not resolve `github.com`; the full Master Python suite is NOT RUN. No migration, merge, release, signing, flash, secret provisioning, payment operation, financial migration or physical test occurred. **PRODUCTION NO-GO.**
