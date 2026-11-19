@@ -780,3 +780,47 @@ This section supersedes the earlier "not yet reached" observation for the exact 
 - BlazePwifi PR run [#44625985862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625985862) and push run [#44625978005](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625978005) remained nonterminal at last read. Their CI-0701 guard job passed on the exact source/test head; remaining full target/validation jobs had not completed. No Full CI success is claimed.
 - ESP32 compatibility PR run [#44625986102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625986102) remained in progress on the older pinned HARDWARE source 984ea8ff65a93b7da6e22fc2e1943acaf56100ca; it is not current hardware acceptance.
 - The handover-only docs head is now 6f109f376c8e610231cdc2439dd24cb74fba4c57. Its push BlazePwifi run [#44626285917](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626285917) was pending and ESP32 compatibility push [#44626285919](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626285919) was in progress at last read. These are not yet terminal evidence.
+
+
+## PHX-RELEASE UTC23 — refresh ESP32 compatibility to live HARDWARE #327 (2026-11-19T23Z)
+
+**Disposition at handover update:** SOURCE PIN CORRECTED / STATIC RELEASE GUARD PASS / EXACT HARDWARE MATRIX RUNNING / PR OPEN-DRAFT-UNMERGED / PRODUCTION NO-GO.
+
+### Exact source identity and ownership
+
+- Experiments PR #291 branch `phoenix/release-publisher-isolation-20261115`, base PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 source/test head after the two code commits: `ba5fc403270429bc9068b599dd22dfda216a1a5f`; handover-only successor will follow this record.
+- Live PHX-HARDWARE PR #327 head at the final pre-write refresh: `06c1cdaa47f2a33594354b014bd0b7445f894aaa`.
+- ESP32 sketch path: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`; exact blob at #327 head: `a59c986f6fe6e0ecb0069f3829b54df93ed0d96d`.
+- Previous release matrix pinned older source `984ea8ff65a93b7da6e22fc2e1943acaf56100ca` and sketch blob `528187f68aaad7d76a690bbf1cbe338165ad3839`. Its earlier green runs are historical-source compile evidence only, not current #327 qualification.
+- MASTER PR #288 head `a7f41020706934a9240bf763350322afd705095e`; `coordination/phoenix/OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`. PHX-RELEASE owns this release compatibility workflow/test/handover; no workflow migration or shared interface change is authorized by this task.
+
+### Test-first correction
+
+- Test commit [`517887ab`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/517887abdfeef89e89941e34cb75b49da77cb016) updates the static test's expected HARDWARE #327 source SHA and ESP32 sketch blob.
+- Expected RED: [push #44635924628](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44635924628), CI-0701 job `135954284574`, failed specifically at `RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract`: the workflow still lacked the new exact source SHA/blob. The action-pin, concurrency, provenance and Arduino archive verifier steps passed. This is the intended stale-pin reproduction, not a compiler failure.
+- The test-only commit also triggered old-workflow matrix runs [PR #44635924603](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44635924603) and [push #44635929876](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44635929876); both completed SUCCESS against the old `984ea8ff` source pin. They are explicitly **not** current #327 source evidence.
+- Workflow correction [`ba5fc403`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ba5fc403270429bc9068b599dd22dfda216a1a5f) updates the job label, checkout ref, independent `EXPECTED_SOURCE_SHA`, and `EXPECTED_SKETCH_BLOB` to the exact current #327 head/blob. The matrix remains read-only, uses immutable actions, disables persisted checkout credentials, pins Arduino CLI 1.6.0 and verifies its archive bytes; it does not upload, flash, sign or publish.
+
+### Exact-source Actions after the correction
+
+- CI-0701 in [BlazePwifi PR run #44636008556](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636008556), job `135954580887`: **SUCCESS**. The exact compatibility workflow contract and release action-pin, concurrency, provenance and Arduino CLI archive-verifier guards passed.
+- Current-source compatibility [PR run #44636008662](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636008662) and [push run #44635999237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44635999237): both legs checked out #327 `06c1cdaa...`, verified ESP32 sketch blob `a59c986f...`, and passed the pinned Arduino CLI archive-verifier step. At this handover update both runs were still in progress at **Install and verify exact ESP32 core**; compile steps had not started. No current-source compile PASS or binary SHA is claimed. The next activation must reconcile these exact runs and record terminal outcomes.
+- The broader BlazePwifi run #44636008556 was still in progress at this update: CI-0701, ESP32, ESP8266, Ruijie and multiple Orange Pi jobs had passed; mandatory validation and Android remained in progress. No overall run conclusion is claimed.
+- Windows [run #44636008405](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636008405): handover PASS; build failed in PISONET-owned `tests/ReleaseSigning/negative-selftest.ps1` because `$buildWorkflow` is uninitialized under StrictMode; publisher skipped. PHX-RELEASE did not modify the PISONET subtree.
+- Current HARDWARE #327 Full run [#44632263889](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263889) failed at QA-owned `Controller protocol parity`; ESP32, ESP8266, Android and returned target jobs passed. This is not a Full validation pass and the release compile matrix does not replace QA review or hardware acceptance.
+
+### Cross-repository and provenance status
+
+- COE integration #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`; parent release packager #31 remains OPEN/DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; active child #35 remains OPEN/DRAFT at `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`. The existing site-scoped ULA authority and Bubblewrap runner blockers remain; no cross-repository migration was attempted.
+- The authorized Library listing scanned 1,422 entries and returned older registry snapshots v3–v6, but no canonical `BLAZE_PROJECT_REGISTRY_v11_20261027.json`. A separate checkpoint snapshot references the v11 title, but is not the canonical registry and was not substituted. No private Drive contents or identifiers were copied to GitHub.
+
+### Next owner actions
+
+1. PHX-QA independently reviews the exact-current-source 3.3.13/4.0.0 compile results once both matrix runs terminate.
+2. PHX-HARDWARE/MASTER notify RELEASE if #327 advances; refresh the pin before any subsequent matrix claim.
+3. PHX-QA repairs the current #327 default-deny controller fixture; do not relax firmware poll admission.
+4. PHX-PISONET initializes `$buildWorkflow` in its own negative self-test; RELEASE reruns Windows after that owner correction.
+5. PHX-MASTER retains the #291 reimplementation-review route and reconciles mixed-owner paths before any merge.
+
+No merge, signer use, tag, publication, hardware flash, financial migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
