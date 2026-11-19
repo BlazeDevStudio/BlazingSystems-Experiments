@@ -350,7 +350,24 @@ def compile_and_run(functions):
             raise RuntimeError(compiled.stderr)
         return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
 
+def verify_extractor_ignores_brace_decoys():
+    probe = (
+        "bool sample() {\\n"
+        '  const char *brace = "}";\\n'
+        "  // }\\n"
+        "  /* { */\\n"
+        "  return brace[0] == '}';\\n"
+        "}\\n"
+        "bool after() { return false; }\\n"
+    )
+    expected = probe.split("\\nbool after", 1)[0].rstrip("\\n")
+    actual = extract(probe, "bool sample()")
+    if actual != expected:
+        raise RuntimeError("source extractor truncated at a brace inside a C++ literal/comment")
+    print("SOURCE_EXTRACTOR_BRACE_DECOY_PASS")
+
 def main():
+    verify_extractor_ignores_brace_decoys()
     mutations = (
         ("missing-edge-latch", "void sampleCoinPulseEdge(bool active){",
          "lastCoin=active;", "", "sustained high level"),
