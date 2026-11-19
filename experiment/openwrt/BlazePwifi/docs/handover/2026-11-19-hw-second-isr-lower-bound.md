@@ -70,4 +70,11 @@ No coin, money, customer state, physical device, firmware flash, reset, migratio
 
 This follow-on extends Architecture Contract §6.50 without changing the V1 record or firmware runtime. The two-board source-extracted lab now checks that the first and later ISR fault paths retain the existing `pendingPulses`, `pendingNonce`, and `pendingTarget` while the fault remains sticky, admission remains denied, and outputs remain off. A deliberately injected mutation that clears both pending identity fields before the first latch must be rejected on both boards.
 
-**Status at source commit:** CI pending; exact-source workflow evidence will be added after the GitHub Actions result is read back. This is a host-executed source regression only, not physical persistence or coin acceptance.
+**Exact source/test commit:** `fc4c9055be9680f9b7a7b7765c9435a63ff4a8ac`.
+
+- Focused quarantine/readback run [#44606573102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44606573102), job `135851731368`: **SUCCESS** on the literal `fc4c905` checkout.
+- The exact log reports pending identity preserved on ESP8266 and ESP32 under active-high and active-low output polarity; both boards report `POLL_FAULT_SECOND_ISR_LAB=PASS`.
+- Failure injection rejects `PENDING_IDENTITY_CLEAR` and the existing `SECOND_ISR_REPEATED_LATCH` mutation on both boards.
+- Full BlazePwifi run [#44606573296](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44606573296): validation job `135851732835` **FAILED** at the QA-owned `Missing poll signature check` in `tests/controllers.sh`. At last read the overall run was still in progress; several target jobs had passed while ESP32/x86/Android jobs were still running. No Full validation PASS is claimed.
+
+This is host-executed source regression / CI evidence only, not physical persistence or coin acceptance.
