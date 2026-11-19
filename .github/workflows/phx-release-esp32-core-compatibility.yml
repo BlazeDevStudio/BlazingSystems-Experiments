@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   build:
-    name: "ESP32 core ${{ matrix.esp32_core }} / source 0e5514adb008"
+    name: "ESP32 core ${{ matrix.esp32_core }} / source 984ea8ff65a9"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -37,9 +37,9 @@ jobs:
       matrix:
         esp32_core: ["3.3.13", "4.0.0"]
     env:
-      EXPECTED_SOURCE_SHA: "0e5514adb0088649eca8bec9df6215faa50b556c"
+      EXPECTED_SOURCE_SHA: "984ea8ff65a93b7da6e22fc2e1943acaf56100ca"
       EXPECTED_SKETCH_PATH: "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
-      EXPECTED_SKETCH_BLOB: "c29483f0761ca6e2db0573bd12d6bfa502f12434"
+      EXPECTED_SKETCH_BLOB: "528187f68aaad7d76a690bbf1cbe338165ad3839"
     steps:
       - name: Checkout release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,7 +50,7 @@ jobs:
       - name: Checkout exact PHX-HARDWARE source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 0e5514adb0088649eca8bec9df6215faa50b556c
+          ref: 984ea8ff65a93b7da6e22fc2e1943acaf56100ca
           path: hardware-source
           persist-credentials: false
           fetch-depth: 1
