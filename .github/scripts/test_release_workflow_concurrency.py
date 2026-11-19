@@ -21,6 +21,41 @@ def job_block(content: str, name: str) -> str:
     return match.group(1)
 
 
+def workflow_default_permissions(content: str) -> dict[str, str]:
+    """Read only the top-level workflow permissions, not job overrides."""
+    lines = content.splitlines()
+    try:
+        start = lines.index("permissions:")
+    except ValueError:
+        return {}
+
+    end = next(
+        (
+            index
+            for index in range(start + 1, len(lines))
+            if lines[index] and not lines[index][0].isspace()
+        ),
+        len(lines),
+    )
+    permissions = {}
+    for line in lines[start + 1 : end]:
+        if line.startswith("  ") and not line.startswith("    ") and line.strip():
+            key, separator, value = line.strip().partition(":")
+            if separator:
+                permissions[key] = value.strip()
+    return permissions
+
+
+def require_read_only_workflow_default(content: str) -> None:
+    """Reject workflow-wide write scope that would be inherited by jobs."""
+    actual = workflow_default_permissions(content)
+    if actual != {"contents": "read"}:
+        raise AssertionError(
+            "workflow-level permissions must be exactly contents: read; "
+            f"found {actual!r}"
+        )
+
+
 class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -129,6 +164,20 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
                 self.assertIn("github.event_name == 'push'", expression)
                 self.assertIn("github.ref_protected == true", expression)
                 self.assertIn(f"vars.{approval_variable} == 'true'", expression)
+
+
+    def test_blazepwifi_workflow_default_token_scope_is_read_only(self):
+        require_read_only_workflow_default(self.content)
+
+    def test_workflow_default_permission_guard_rejects_inherited_write_mutation(self):
+        unsafe = self.content.replace(
+            "permissions:\n  contents: read",
+            "permissions:\n  contents: write",
+            1,
+        )
+        self.assertNotEqual(unsafe, self.content)
+        with self.assertRaisesRegex(AssertionError, "workflow-level permissions"):
+            require_read_only_workflow_default(unsafe)
 
 
 if __name__ == "__main__":
