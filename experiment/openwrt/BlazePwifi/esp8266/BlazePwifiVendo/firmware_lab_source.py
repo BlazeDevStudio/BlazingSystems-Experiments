@@ -6,6 +6,7 @@ masked source can safely slice the original source. Comments, ordinary
 literals, and C++ raw strings are ignored when locating blocks and functions.
 """
 import re
+from pathlib import Path
 
 
 _FUNCTION_MODIFIERS = r"(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)"
@@ -195,3 +196,26 @@ def extract_function(source: str, name: str, required: bool = True) -> str:
             raise RuntimeError(f"missing function definition: {name}")
         return ""
     return found[0][1]
+
+def find_repo_root(start: Path) -> Path:
+    """Find the repository root from a file/directory path, independent of CWD.
+
+    Both board sketches are required sentinels so a moved/partial lab checkout
+    fails with an explicit diagnostic instead of silently using another folder.
+    """
+    location = Path(start).expanduser().resolve()
+    if not location.is_dir():
+        location = location.parent
+
+    required_sketches = (
+        Path("experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
+        Path("experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
+    )
+    for candidate in (location, *location.parents):
+        if all((candidate / relative).is_file() for relative in required_sketches):
+            return candidate
+
+    raise RuntimeError(
+        f"could not locate BlazePwifi repository root from {Path(start).resolve()}"
+    )
+
