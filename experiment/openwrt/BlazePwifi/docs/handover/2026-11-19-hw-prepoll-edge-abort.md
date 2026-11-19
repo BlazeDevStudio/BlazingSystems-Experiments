@@ -900,3 +900,37 @@ The NVS lab now imports that shared helper, extracts `nvsStringMatchesStored` an
 The NVS, poll, EEPROM and coin-ingress labs are source-extracted host/fake-I/O simulations. Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`. No .ino runtime, NVS schema, wire contract, GPIO, relay, coin, finance, QA-owned test, Release workflow, COE destination, physical device, migration, signer, merge or release was changed.
 
 **Next exact action:** read the terminal Full result for the new docs-head commit, then request PHX-QA independent review of the NVS per-key write/readback matrix and retain the existing poll-signature default-deny blocker.
+
+
+## UTC09 terminal validation and cross-role source-pin recheck (2026-11-19)
+
+### Full workflow terminal result for docs head `00640ac6ce38f64e4c675ed70a0984de8b0408e7`
+
+[Full PR run #44495219491](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44495219491) completed **FAILURE**:
+
+- Validation job `135461824134`: failed at the QA-owned `Missing poll signature check` in `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino`.
+- ESP32 job `135461824624`: **SUCCESS**, installed `esp32:esp32@4.0.0` and compiled the current candidate.
+- ESP8266 job `135461824659`: **SUCCESS**, installed `esp8266:esp8266@3.1.2` and compiled the current candidate.
+- All 13 firmware/platform target jobs and Android job `135461824562`: **SUCCESS**.
+- Update bundle, simulations, signer handoff, candidate gate and publishing jobs: **SKIPPED** after validation failure.
+
+This is a compile result, not Full workflow success, physical acceptance, signed release or production authorization.
+
+### PHX-RELEASE #291 compatibility matrix — exact-source pin is stale
+
+Read live [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), current head `3aacebcaa9d19f17b7b0d788cabb567d4ea5f196`, and its release-owned compatibility workflow. The matrix run [#44495882960](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44495882960) succeeded for both ESP32 cores:
+
+- Core 3.3.13 job `135463310542`: **SUCCESS**.
+- Core 4.0.0 job `135463310774`: **SUCCESS**.
+
+However, the workflow pins **older** PHX-HARDWARE source `0e5514adb0088649eca8bec9df6215faa50b556c`, sketch blob `c29483f0761ca6e2db0573bd12d6bfa502f12434`. The current #327 source/test commit is `48b31e9762aa68426ba1193b85b80a1f3731562e`, ESP32 sketch blob `79bdae3da167289540b7197d32d6e854f1c444c4`. Therefore #291 proves the old source on 3.3.13/4.0.0, **not the current NVS/Mbed-TLS-corrected sketch**. Existing hardware audit comment [#7001879641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291#issuecomment-7001879641) is being updated with this exact-source gap. PHX-RELEASE must refresh the source SHA/blob and rerun both cores; PHX-HARDWARE did not edit release-owned files.
+
+### COE #26 integration audit — empty-key signature bypass
+
+Read COE candidate head `b382d233ff06c8791b1028bed3c617cc7b670d12` and exact hardware/server blobs. Both candidate hardware sketches default the stored key to empty and gate signature verification only under a nonempty-key condition while initializing `sigOk=true`. If the key is empty, the check is skipped and an `ok:true` register/poll response can pass the local gate; the poll path can set `insertMode` and `activeTarget`. The candidate server emits `response_sig`, but that does not protect a client that skips verification. Exact source evidence and deny-only request were added to existing COE PR #26 comment [#6999032274](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26#issuecomment-6999032274). No COE destination code was changed.
+
+COE #26 ESP32/ESP8266 candidate blobs are `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` / `c8be98f72596681e36a3ad1f8939bf8046c96887`; paired candidate server blob is `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`. They are not byte-identical to Experiments #327. The five COE candidate workflows remain QUEUED with zero jobs. COE-INTEGRATION/CORE/QA own reconciliation and contract approval.
+
+### Remaining hardware boundary
+
+PR #327 remains OPEN / DRAFT / UNMERGED. Focused quarantine and relay/output tests pass at the source/test head and docs head. Full validation remains failed at the QA-owned poll assertion. NVS/coin/relay labs are simulated/fake-I/O; physical NVS, pulse, power-cut and electrical acceptance remain NOT TESTED. No finance, migration, signer, COE source, QA-owned test, Release workflow, merge or deployment was performed.
