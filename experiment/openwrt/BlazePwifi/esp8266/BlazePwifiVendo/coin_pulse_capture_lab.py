@@ -375,27 +375,29 @@ def verify_shared_extractor():
         raise RuntimeError("shared extractor failed post-return IRAM_ATTR function")
 
     # Exercise C++ raw strings, escaped ordinary strings, and phase-2 line
-    # splicing in both comment openers and closers. Braces in any of these
-    # non-code regions must not terminate the extracted production function.
+    # splicing in both comment openers and closers. Braces in these non-code
+    # regions must not terminate the extracted production function.
     lexical_probe = (
-        "bool lexical() {\\n"
-        '  const char *raw = u8R"tag( } // /* { )tag";\\n'
-        '  const char *escaped = "quote: \\" }";\\n'
-        "  const char brace = '}';\\n"
-        "  /" + "\\\\" + "\\n" + "/ split line-comment opener { }\\n"
-        "  // continued line-comment \\\\" + "\\n" + "  { }\\n"
-        "  /* split block-comment closer *" + "\\\\" + "\\n" + "/\\n"
-        "  return raw[0] == ' ' && escaped[0] == 'q' && brace == '}';\\n"
-        "}\\n"
-        "bool afterLexical() { return false; }\\n"
+        "bool lexical() {\n"
+        '  const char *raw = u8R"tag( } // /* { )tag";\n'
+        '  const char *escaped = "quote: \\" }";\n'
+        "  const char brace = '}';\n"
+        "  /" + "\\" + "\n" + "/ split line-comment opener { }\n"
+        "  // continued line-comment \\" + "\n" + "  { }\n"
+        "  /* split block-comment closer *" + "\\" + "\n" + "/\n"
+        "  return raw[0] == ' ' && escaped[0] == 'q' && brace == '}';\n"
+        "}\n"
+        "bool afterLexical() { return false; }\n"
     )
-    expected_lexical = lexical_probe.split("\\nbool afterLexical", 1)[0]
+    expected_lexical = lexical_probe.split("\nbool afterLexical", 1)[0]
     actual_lexical = extract_function(lexical_probe, "lexical")
     if actual_lexical != expected_lexical:
         raise RuntimeError("shared extractor mishandled raw strings or phase-2 comment splicing")
     masked_lexical = mask_non_code(lexical_probe)
-    if len(masked_lexical) != len(lexical_probe) or masked_lexical.count("\\n") != lexical_probe.count("\\n"):
+    if len(masked_lexical) != len(lexical_probe) or masked_lexical.count("\n") != lexical_probe.count("\n"):
         raise RuntimeError("shared extractor mask changed source offsets or newline positions")
+    if "\\" + "\n" not in lexical_probe or lexical_probe.count("\n") < 8:
+        raise RuntimeError("phase-2 fixture did not contain physical backslash-newline pairs")
 
     # Prove this fixture would catch the former raw-brace counting strategy.
     start = lexical_probe.index("bool lexical()")
