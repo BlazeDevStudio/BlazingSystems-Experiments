@@ -937,3 +937,13 @@ COE Release #35 at `5047af8b5a8296e06294bbda6bf42a6baea2294d` emits `option ula_
 6. QA independently tests syntax, /48, same-site sharing, distinct-site separation, persistence/restore and authority-unavailable denial.
 
 PHX-CORE/COE own the provisioning decision; PHX-RELEASE implements after approval; PHX-QA owns independent vectors. This contract does not change networking code or authorize hardware acceptance.
+
+
+
+### UTC14 exact-head supersession — 2026-11-19T14:39:41Z — site ULA implementation evidence
+
+The §6.45 decision remains **site-scoped**, not per-appliance: appliances at one site must share one durable RFC 4193 /48; independent sites must not share the same Global ID; the selected identity must survive reboot, upgrade, backup and restore. The current COE RELEASE #35 source/test head is `90ce4200b66ce0b55f40feaab42cc7b53fad1f2d`, with final documentation head `0e3662b9aef4b2a2248e3a064b07d07e9097be1b`. Its packager now sets `APPROVED_SITE_ULA_PREFIX = None` and strictly validates an explicitly supplied RFC 4193 /48 before writing UCI. The tests patch `fd12:3456:789a::/48` only as a **synthetic test fixture**; it is not a production allocation or approved site prefix.
+
+Exact final-head PR run [44543625272](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44543625272) ran 116 packager/tool tests successfully (two intentional skips), then correctly failed `validate_all_profiles`: all 10 profiles reject the absent approved site prefix. Firmware compile jobs were skipped. This is a **fail-closed gate**, not a successful profile build or release. The mandatory sandbox [44543625389](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44543625389) passed 14/14 host preflight tests but failed because Bubblewrap is not installed (exit 125); sandbox packaging tests were skipped.
+
+COE RELEASE #44 at `582fd5d5e83e36b36546ac28534740298ba94af4` generates a random 40-bit Global ID per appliance installation and persists it locally. That does not prove same-site appliances share one /48 and therefore does not satisfy §6.45. Exact compare from #35 head to #44 is 15 commits ahead / 29 behind; GitHub reports the candidate non-mergeable. Do not select, merge or reconcile #44 as the site authority. PHX-CORE and the COE integration owner must define the site-prefix authority and supply contract; PHX-RELEASE may consume only that approved input; PHX-QA must independently test same-site sharing, different-site separation and persistence/restore.
