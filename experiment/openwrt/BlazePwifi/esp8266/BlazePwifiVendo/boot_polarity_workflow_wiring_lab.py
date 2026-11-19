@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression guard: the quarantine workflow must execute the ESP8266 cold-boot polarity lab."""
+"""Regression guard: the quarantine workflow must execute the ESP8266 cold-boot and config-read failure labs."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,6 +13,10 @@ SELF_COMMAND = (
 BOOT_POLARITY_COMMAND = (
     "python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
     "esp8266_boot_polarity_lab.py"
+)
+CONFIG_READ_FAILURE_COMMAND = (
+    "python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
+    "config_load_read_failure_lab.py"
 )
 
 
@@ -29,6 +33,7 @@ def main() -> None:
     for command, label in (
         (SELF_COMMAND, "workflow-wiring guard"),
         (BOOT_POLARITY_COMMAND, "ESP8266 boot-polarity lab"),
+        (CONFIG_READ_FAILURE_COMMAND, "ESP8266 config-read failure lab"),
     ):
         matches = [line for line in lines if command in line]
         require(len(matches) == 1, f"{label} must be invoked exactly once")
@@ -46,6 +51,7 @@ def main() -> None:
         require(marker in workflow, f"production-readiness boundary marker missing: {marker}")
 
     print("ESP8266_BOOT_POLARITY_WORKFLOW_WIRING=PASS")
+    print("ESP8266_CONFIG_READ_FAILURE_WORKFLOW_WIRING=PASS")
 
 
 if __name__ == "__main__":
