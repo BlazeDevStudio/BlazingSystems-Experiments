@@ -88,6 +88,10 @@ def fake_run(command, **kwargs):
         )
     if args == ["zstd", "--version"]:
         return SimpleNamespace(returncode=0, stdout="*** Zstandard CLI v1.5.6 ***\n", stderr="")
+    if args == ["curl", "--version"]:
+        return SimpleNamespace(returncode=0, stdout="curl 8.14.1 test-build\n", stderr="")
+    if args == ["make", "--version"]:
+        return SimpleNamespace(returncode=0, stdout="GNU Make 4.3\n", stderr="")
     raise AssertionError(f"Unexpected subprocess command: {args}")
 
 
