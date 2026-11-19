@@ -36,6 +36,7 @@ def verify_shared_extractor() -> None:
 
 CPP = r'''
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -45,9 +46,9 @@ CPP = r'''
 using String = std::string;
 
 struct Config {
-  String ssid, pass, server, key, id;
+  String ssid, pass, server, key, id, apPass;
   int coinPin=27, insertLedPin=2, relayPin=26;
-  bool coinActiveLow=true;
+  bool coinActiveLow=true, relayActiveHigh=false, ledActiveHigh=false;
   uint16_t coinDebounceMs=40, pulseGroupMs=400;
 };
 Config cfg;
@@ -57,12 +58,18 @@ struct FakePreferences {
   std::map<std::string,int> ints;
   std::map<std::string,bool> bools;
   std::map<std::string,uint32_t> uints;
+  std::map<std::string,uint8_t> uchars;
   std::string failLengthKey;
   std::string failReadKey;
+  unsigned writeCount=0;
+
+  bool begin(const char *, bool=false, const char * = nullptr) { return true; }
+  void end() {}
 
   bool isKey(const char *key) const {
     const std::string k(key);
-    return strings.count(k) || ints.count(k) || bools.count(k) || uints.count(k);
+    return strings.count(k) || ints.count(k) || bools.count(k) ||
+           uints.count(k) || uchars.count(k);
   }
 
   String getString(const char *key,const String &fallback) const {
@@ -103,11 +110,37 @@ struct FakePreferences {
     auto it=uints.find(key);
     return it==uints.end()?fallback:it->second;
   }
+
+  uint8_t getUChar(const char *key,uint8_t fallback) const {
+    auto it=uchars.find(key);
+    return it==uchars.end()?fallback:it->second;
+  }
+
+  size_t putString(const char *key,const String &value) {
+    strings[key]=value;
+    ++writeCount;
+    return value.size();
+  }
 };
 FakePreferences prefs;
 
+bool outputPolarityKnown=false;
+bool runRelayActiveHigh=false;
+bool runLedActiveHigh=false;
+bool pinConfigSafe=false;
+bool insertMode=false;
+String activeTarget;
+struct SerialStub {
+  void println(const char *) const {}
+  template<class... Args> void printf(const char *,Args...) const {}
+} Serial;
+uint32_t esp_random(){ return 0x12345678U; }
+
+@@BOUNDED@@
 @@HELPER@@
 @@MATCH@@
+@@POLARITY@@
+@@LOAD@@
 
 static void seedSentinelValues() {
   const String sentinel="__PHX_NVS_READBACK_MISSING__";
@@ -134,6 +167,72 @@ static void seedSentinelValues() {
   prefs.bools["coinlow"]=true;
   prefs.uints["debounce"]=40;
   prefs.uints["groupms"]=400;
+}
+
+static void seedValidBootConfig() {
+  prefs=FakePreferences{};
+  cfg=Config{};
+  prefs.strings["ssid"]="ssid-boot";
+  prefs.strings["pass"]="pass-boot";
+  prefs.strings["server"]="192.0.2.99";
+  prefs.strings["key"]="key-boot";
+  prefs.strings["id"]="vendo-boot";
+  prefs.strings["appass"]="local-admin-pass-123";
+  prefs.ints["coinpin"]=27;
+  prefs.ints["ledpin"]=2;
+  prefs.ints["relaypin"]=26;
+  prefs.bools["coinlow"]=true;
+  prefs.uints["debounce"]=40;
+  prefs.uints["groupms"]=400;
+  prefs.uchars["polarityv"]=1;
+  prefs.uchars["relayhi"]=0;
+  prefs.uchars["ledhi"]=1;
+}
+
+static void simulateNvsReboot() {
+  const FakePreferences persisted=prefs;
+  prefs=FakePreferences{};
+  prefs.strings=persisted.strings;
+  prefs.ints=persisted.ints;
+  prefs.bools=persisted.bools;
+  prefs.uints=persisted.uints;
+  prefs.uchars=persisted.uchars;
+}
+
+static void resetBootRuntime() {
+  cfg=Config{};
+  outputPolarityKnown=false;
+  runRelayActiveHigh=false;
+  runLedActiveHigh=false;
+  pinConfigSafe=false;
+  insertMode=true;
+  activeTarget="stale-before-boot";
+}
+
+static bool validNvsRebootRestoresPolarity() {
+  seedValidBootConfig();
+  simulateNvsReboot();
+  resetBootRuntime();
+  loadConfig();
+  return outputPolarityKnown && pinConfigSafe &&
+         !runRelayActiveHigh && runLedActiveHigh &&
+         cfg.ssid=="ssid-boot" && cfg.pass=="pass-boot" &&
+         cfg.server=="192.0.2.99" && cfg.key=="key-boot" &&
+         cfg.id=="vendo-boot" && !insertMode && activeTarget.empty() &&
+         prefs.writeCount==0;
+}
+
+static bool bootReadFailureKeepsOutputsOff(const char *key,bool lengthFailure) {
+  seedValidBootConfig();
+  simulateNvsReboot();
+  resetBootRuntime();
+  if(lengthFailure) prefs.failLengthKey=key;
+  else prefs.failReadKey=key;
+  loadConfig();
+  return !outputPolarityKnown && !pinConfigSafe &&
+         !runRelayActiveHigh && !runLedActiveHigh &&
+         !cfg.relayActiveHigh && !cfg.ledActiveHigh &&
+         !insertMode && activeTarget.empty() && prefs.writeCount==0;
 }
 
 int main() {
@@ -186,18 +285,48 @@ int main() {
     return 47;
   }
 
+  if(!validNvsRebootRestoresPolarity()) {
+    std::cerr<<"VALID_NVS_REBOOT_DID_NOT_RESTORE_LOCAL_POLARITY\n";
+    return 48;
+  }
+  const char *bootKeys[]={"ssid","pass","server","key","id"};
+  for(const char *key:bootKeys) {
+    if(!bootReadFailureKeepsOutputsOff(key,false)) {
+      std::cerr<<"NVS_BOOT_STRING_READ_ERROR_TRUSTED_POLARITY key="<<key<<"\n";
+      return 50;
+    }
+    if(!bootReadFailureKeepsOutputsOff(key,true)) {
+      std::cerr<<"NVS_BOOT_STRING_LENGTH_ERROR_TRUSTED_POLARITY key="<<key<<"\n";
+      return 51;
+    }
+  }
+  std::cout<<"ESP32_NVS_REBOOT_READ_FAILURE_FAIL_CLOSED_PASS 5/5 string reads and 5/5 length reads\n";
   std::cout<<"NVS_STRING_READBACK_EXPLICIT_STATUS_PASS 5/5 read failures, 5/5 length failures, empty and mismatch controls\n";
   return 0;
 }
 '''
 
 
+def build_program(source: str) -> str:
+    bounded = "\n\n".join((
+        extract_function(source, "boundedCoinDebounceMs"),
+        extract_function(source, "boundedTimingMs"),
+    ))
+    helper = extract_function(source, "nvsStringMatchesStored", required=False)
+    match = extract_function(source, "configFieldsMatchStored")
+    polarity = extract_function(source, "loadLocalOutputPolarity")
+    load = extract_function(source, "loadConfig")
+    return (CPP.replace("@@BOUNDED@@", bounded)
+               .replace("@@HELPER@@", helper)
+               .replace("@@MATCH@@", match)
+               .replace("@@POLARITY@@", polarity)
+               .replace("@@LOAD@@", load))
+
+
 def main() -> None:
     source = SKETCH.read_text(encoding="utf-8")
     verify_shared_extractor()
-    helper = extract_function(source, "nvsStringMatchesStored", required=False)
-    match = extract_function(source, "configFieldsMatchStored")
-    program = CPP.replace("@@HELPER@@", helper).replace("@@MATCH@@", match)
+    program = build_program(source)
 
     with tempfile.TemporaryDirectory(prefix="phx-nvs-string-readback-") as temp:
         cpp = Path(temp) / "nvs_string_readback.cpp"
