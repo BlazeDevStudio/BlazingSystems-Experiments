@@ -53,6 +53,21 @@ def main() -> int:
     if content.count("persist-credentials: false") != 2:
         return fail("both checkouts must disable persisted credentials")
 
+    pin_guard_path = ROOT / ".github/scripts/test_release_artifact_action_pins.py"
+    if not pin_guard_path.is_file():
+        return fail("missing immutable-action pin guard")
+    pin_guard = pin_guard_path.read_text(encoding="utf-8")
+    workflow_marker = '".github/workflows/phx-release-esp32-core-compatibility.yml": {'
+    start = pin_guard.find(workflow_marker)
+    if start < 0:
+        return fail("immutable-action pin guard does not include the compatibility workflow")
+    end = pin_guard.find("    },", start)
+    if end < 0:
+        return fail("compatibility workflow action-pin entry is malformed")
+    pin_entry = pin_guard[start:end]
+    if '"actions/checkout": 2' not in pin_entry or '"arduino/setup-arduino-cli": 1' not in pin_entry:
+        return fail("compatibility workflow action-pin counts are not 2 checkout + 1 Arduino setup")
+
     action_refs = re.findall(
         r"(?m)^\s*-\s*uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)",
         content,
