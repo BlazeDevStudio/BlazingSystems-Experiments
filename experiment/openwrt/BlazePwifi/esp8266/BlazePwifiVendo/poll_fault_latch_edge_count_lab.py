@@ -263,11 +263,11 @@ def check_board(board: str, sketch_path: Path):
     ordered_functions = "\n\n".join(extracted[name] for name in names)
     board_main = (
         PRELUDE
-        + "\\n"
+        + "\n"
         + ordered_functions
-        + "\\n"
+        + "\n"
         + RUN_SCENARIO.replace("BOARD_NAME", board)
-        + "\\n"
+        + "\n"
         + MAIN.replace("BOARD_NAME", board)
     )
 
@@ -288,11 +288,11 @@ def check_board(board: str, sketch_path: Path):
         mutant_functions = ordered_functions.replace(sample, mutant_sample, 1)
         mutant_program = (
             PRELUDE
-            + "\\n"
+            + "\n"
             + mutant_functions
-            + "\\n"
+            + "\n"
             + RUN_SCENARIO.replace("BOARD_NAME", board)
-            + "\\n"
+            + "\n"
             + MAIN.replace("BOARD_NAME", board)
         )
         mutant = compile_and_run(mutant_program, folder, "mutant")
