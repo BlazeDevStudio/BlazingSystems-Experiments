@@ -815,3 +815,18 @@ COE #44 at `582fd5d5e83e36b36546ac28534740298ba94af4` is 15 commits ahead / 29 b
 COE #26 remains the only current integration draft destination, at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five queued workflows and zero jobs. Current #327-to-#26 sketch blobs differ on both boards; source has 22 board-local Python labs while destination has one generic Hardware shell test with stale positive signature/poll assertions. Pisowifi LICENSE matches the source MIT text, but Hardware LICENSE/NOTICE scope is absent. The Universal/INTERCON #36/#43 paths remain outside the SoftTimer route.
 
 Keep `OWNERSHIP_ROUTES.json` unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. No copy, move, overwrite, rebase, cherry-pick, merge, staging or route promotion is authorized.
+
+
+## UTC15 exact destination provenance — 2026-11-19
+
+Source ref is Experiments HARDWARE PR #327 API head c4954de95e319f7a2acf4bf4ee0bcae44b4b99b5 (source/test 05ddd64f0d982c32d0297010596bfa9bd46bb472). Destination is COE integration PR #26 head b382d233ff06c8791b1028bed3c617cc7b670d12. Both are OPEN/DRAFT review candidates only.
+
+Exact sketch blob comparison:
+- ESP32 source 528187f68aaad7d76a690bbf1cbe338165ad3839, 64,308 bytes; destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422, 18,505 bytes.
+- ESP8266 source 5c473693a7ca1e865167217d00af90fc7645b44c, 68,018 bytes; destination c8be98f72596681e36a3ad1f8939bf8046c96887, 18,394 bytes.
+
+The source tree contains 22 board-local Python *_lab.py files, plus a shared helper and a RED fixture. Destination Hardware contains only Hardware/tests/test_firmware_hardening.sh, blob f921c56cecc19cab1989507b9b4ade1f45dac54e. That test still greps for positive response_sig, |register| and |poll| markers; current source poll/disposition consumers return false. Destination .github/workflows/hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 installs unversioned ESP8266/ESP32 cores. Five #26 workflows remain queued with zero jobs.
+
+Source BlazePwifi/LICENSE and destination Pisowifi/LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721. Source BlazePwifi/NOTICE.md is absent; destination Hardware/LICENSE and Hardware/NOTICE.md are absent. The Pisowifi license does not establish Hardware license/NOTICE scope.
+
+COE #35 remains fail-closed with no approved site ULA and #44 remains per-appliance/diverged; neither authorizes a route or prefix. No copy, move, overwrite, staging, cherry-pick, rebase, merge or route promotion is approved. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
