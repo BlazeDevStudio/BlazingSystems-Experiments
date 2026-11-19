@@ -1212,26 +1212,35 @@ bool beginPollWindow(){
 }
  
 void sampleCoinPulseEdge(bool active){
-  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
-     !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
-    if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
-    // PendingRecord.pulses is bounded to 20. Never silently discard an edge
-    // that cannot fit the record or that belongs to a different target.
-    if(pendingTarget!=activeTarget || pendingPulses>=20){
+  if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
+     millis()-lastEdge>runDebounceMs){
+    // A pulse after the pending batch is closed cannot be appended or safely
+    // assigned to a new event. Preserve the old identity and quarantine it.
+    if(pendingReady){
       latchPollPulseFault((uint32_t)pendingPulses+1U);
       pendingReady=true;
       applyOutputs();
-      Serial.println("CRITICAL: coin pulse batch overflow or target changed; operator reconciliation required.");
-    } else {
-      pendingPulses++;
-      lastEdge=millis();
-      if(!savePending()){
-        // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
-        latchPollPulseFault(pendingPulses);
-        fsReady=false;
+      Serial.println("CRITICAL: coin pulse arrived after pending batch closed; operator reconciliation required.");
+    } else if(insertMode && activeTarget.length()){
+      if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
+      // PendingRecord.pulses is bounded to 20. Never silently discard an edge
+      // that cannot fit the record or that belongs to a different target.
+      if(pendingTarget!=activeTarget || pendingPulses>=20){
+        latchPollPulseFault((uint32_t)pendingPulses+1U);
         pendingReady=true;
         applyOutputs();
-        Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
+        Serial.println("CRITICAL: coin pulse batch overflow or target changed; operator reconciliation required.");
+      } else {
+        pendingPulses++;
+        lastEdge=millis();
+        if(!savePending()){
+          // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
+          latchPollPulseFault(pendingPulses);
+          fsReady=false;
+          pendingReady=true;
+          applyOutputs();
+          Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
+        }
       }
     }
   }
