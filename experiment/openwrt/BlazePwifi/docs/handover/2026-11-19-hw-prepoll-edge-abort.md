@@ -1154,3 +1154,32 @@ A failure-injection mutation that omits the final post-poll sample is rejected o
 - PHX-MASTER owns `coordination/phoenix/`; its current `ROLE_ASSIGNMENTS.md` still omits the #326/#327 child stack. Refresh exact #327 head and integration order in Master-owned files.
 - Current PHX-HARDWARE registry limitation: exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found in the available Library search, and no Google Drive connector was exposed. Older registry snapshots were not substituted.
 - All lab evidence remains **SIMULATED / CI VERIFIED only**. Physical coin acceptor/relay, electrical pulse conditioning, 150 power cuts, 30-device 24-hour soak, independent witness, financial v1-to-v2 migration, durable accounting/replay and independent release signoff remain NOT TESTED / NOT ESTABLISHED. **PRODUCTION NO-GO**.
+
+## UTC18 — firmware host-lab repository-root discovery
+
+**Task:** make the ESP32/ESP8266 dual-store poll-fault lab independent of the caller's current working directory. This is hardware-owned test tooling cleanup only; no firmware runtime behavior, API, journal schema, financial path, workflow ownership, or physical device changed.
+
+### Test-first / implementation
+
+- RED test commit: `d3b64cda67a908903e8b90cdd00d4708942f8a37`.
+- Expected RED [quarantine push #44592491676](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44592491676), job `135801902899`: **FAILED AS EXPECTED**. The child probe ran from `/tmp/phx-lab-root-cwd-qpvnyl31`, selected that temporary directory as `ROOT`, and printed `LAB_ROOT_EXTERNAL_CWD_FAIL`; the parent failed with the explicit external-CWD assertion.
+- Shared helper commit: `b12f8ada20c523b194762e237a6ee714e183ac98` adds `find_repo_root(start)` to `firmware_lab_source.py`. It walks from the script/file path and requires both board sketch sentinels; it never consults process CWD.
+- Lab wiring / exact source-test commit: `64ec57daf161a0b4517d350f4f08bee55c0cabec` changes `poll_fault_dual_store_lab.py` to use the shared resolver. The external-CWD probe is retained as a regression.
+
+### GREEN evidence
+
+- Focused quarantine [#44592750197](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44592750197), job `135802826334`: **SUCCESS**. Log includes `POLL_FAULT_LAB_EXTERNAL_CWD_PASS`; dual-store ESP32/ESP8266 commit/readback failure injections, the poll-loop ISR release-window scenarios, EEPROM config-read recovery and existing quarantine tests all passed.
+- Relay/output [#44592750205](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44592750205): ESP32 boot-polarity job `135802826950` and source-output-polarity job `135802827444`: **SUCCESS**.
+- Full build [#44592750402](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44592750402): validation job `135802921883` **FAILED** at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. At handover time, several target jobs were still running; no Full target-matrix acceptance is claimed. Downstream simulation/update/signing/publishing remained skipped.
+
+### Additional audit lead — no schema change made
+
+In both sketches, `sampleCoinPulseEdge()` deliberately avoids calling `latchPollPulseFault()` again once `journalRecoveryRequired` is already true. A later ISR delta after the first sticky latch therefore is not added to the existing marker's `pulseEdges` count. The device remains deny-only, but whether that count is a first-fault snapshot, a lower bound, or must carry an explicit incomplete-count flag is not defined by the current contract. **Request PHX-MASTER / PHX-CORE / PHX-QA to define the operator-reconciliation semantics before any persistence-format change.** No new record version or positive admission was introduced.
+
+### Exact refs / disposition
+
+- PR #327 remains OPEN / DRAFT / UNMERGED; branch `phoenix/hardware-prepoll-edge-abort-20261119`.
+- Parent/base #326: `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Exact source/test SHA: `64ec57daf161a0b4517d350f4f08bee55c0cabec`.
+- Physical coin acceptor/relay, electrical pulse conditioning, 150 power cuts, 30-device 24-hour soak, independent witness, financial v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ESTABLISHED. **PRODUCTION NO-GO**.
+
