@@ -493,3 +493,25 @@ The lab explicitly prints `LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION
 **Cross-repository audit / request only:** COE #26/#35 destination blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` still has unconditional `<mbedtls/sha256.h>` and unchecked legacy SHA calls. Hardware did not edit or bulk-copy COE source. A scoped COE-INTEGRATION request was posted at [COE PR #26 comment #6999032274](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26#issuecomment-6999032274) to port the reviewed compatibility/error-propagation correction only after per-file provenance/ownership review; PHX-RELEASE is asked to pin and verify supported majors; PHX-QA is asked to independently test provider-error denial and unsupported-major compile rejection.
 
 **Disposition:** current Experiments ESP32 firmware is CI VERIFIED on Mbed TLS 4 / ESP32 core 4.0.0 at exact source SHA `11fae729`; prior Mbed TLS 3 / core 3.3.13 build passed on an earlier source head, but exact-head 3.3.13 remains NOT TESTED. Full validation remains FAILED for the unrelated QA-owned poll-signature assertion. No positive poll authentication is implemented. No hardware flashing, physical relay/pulse acceptance, financial migration, signing, merge, release or deployment occurred. PRODUCTION NO-GO.
+
+
+## UTC04 — ESP32 setup NVS configuration readback gate (2026-11-19)
+
+**Task:** hardware-owned ESP32 setup-save integrity; no shared API, schema, finance, or destination migration.
+
+- Firmware commit: [1475e100](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1475e100af0812d0fa17c178f8444611fc924fa0)
+- File: \`experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino\`
+- New \`configFieldsMatchStored()\` requires every persisted SSID/password/server/key/device-ID, GPIO, coin polarity, debounce and pulse-group key to exist and read back exactly before \`persistLocalOutputPolarity()\` may publish \`polarityv=1\`.
+- \`saveConfig()\` now forces insert mode/target off before writes. Any polarity-marker, field-readback or polarity-profile failure returns false and revokes \`outputPolarityKnown\` / \`pinConfigSafe\`; the setup route does not reboot or claim success.
+- No NVS namespace/key/schema change, no wire/API change, no financial or coin-admission positive path.
+
+**Exact-head CI initiated:** source SHA \`1475e100af0812d0fa17c178f8444611fc924fa0\`.
+- Push quarantine/readback [#44460939893](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44460939893): IN_PROGRESS at handover update.
+- PR quarantine/readback [#44460945811](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44460945811): IN_PROGRESS.
+- Push relay/output [#44460945803](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44460945803): IN_PROGRESS.
+- Push Full [#44460939672](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44460939672): IN_PROGRESS.
+- PR Full [#44460945920](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44460945920): QUEUED.
+
+**Independent review requested:** PHX-QA should inject failure/short-write/readback mismatch for each NVS config field and verify the polarity-valid marker remains invalid and no output can energize on the same boot or cold boot. The current existing labs do not yet establish that new ESP32 setup-save failure matrix. This handover does not claim that coverage.
+
+**Disposition:** source change committed; CI pending; source-extracted/physical setup-write failure acceptance NOT TESTED until independent QA evidence. Physical relay, coin, power-cut and 30-device soak acceptance remain NOT TESTED. PRODUCTION NO-GO.
