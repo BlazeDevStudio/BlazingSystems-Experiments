@@ -46,6 +46,14 @@ No NVS namespace/key/schema, shared API, poll contract, financial logic, positiv
 3. **PHX-MASTER:** refresh `ROLE_ASSIGNMENTS.md`, #172 and the integration matrix with the live #327 head and this hardware-owned NVS finding. Current role-assignment snapshot still lists #239/#254/#283 but not #327.
 4. **PHX-HARDWARE:** revalidate all heads on the next activation and take only the next unblocked hardware-owned task.
 
+## Latest Full build disposition
+
+Current docs-head Full build [#44631781091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44631781091):
+- Validation job `135940160543`: **FAILED** at QA-owned `Missing poll signature check` in `tests/controllers.sh`.
+- ESP8266 target job `135940160792`: **SUCCESS**.
+- ESP32 target job `135940160855` and all remaining target/platform jobs: **CANCELLED** after validation failed.
+- Therefore no current Full target-matrix pass is established. The earlier run that resolved core versions is toolchain provenance only; it predates this NVS boot-readback fix.
+
 ## Evidence limits
 
 This is a source-extracted host simulation with a fake Preferences backend, plus CI verification. It is **SIMULATED / CI VERIFIED**, not a real ESP32 NVS power-cut/reboot acceptance. Physical NVS durability, electrical relay behavior, 150 power cuts, 30-device 24-hour soak, and hardware acceptance remain **NOT TESTED**. No device was flashed or reset; no live coins or financial state were used. Production remains **NO-GO**.
