@@ -650,3 +650,19 @@ The Full failure is a validation/test-contract failure, not an ESP32 or ESP8266 
 **Still NOT TESTED:** real exact-head ESP32 core 3.3.13 build; actual Mbed TLS 3.3.13 library/API compatibility; physical coin/relay timing; 150 power cuts; 30-device 24-hour soak; electrical pulse/recovery; protected signer/witness; financial v1-to-v2 migration and durable accounting/replay.
 
 **Disposition:** 13/13 firmware/platform targets + Android are CI VERIFIED on the current source; focused Mbed TLS selector lab is SIMULATED / CI VERIFIED; Full validation remains FAILED; HARDWARE ACCEPTED and PRODUCTION READY are NOT established. PR #327 stays OPEN / DRAFT / UNMERGED / PRODUCTION NO-GO.
+
+
+## UTC05 terminal current-head reconciliation — f00e66d (supersedes in-progress note)
+
+**Exact tested docs head:** f00e66d2869ca14c655baf2d921c31e458a49838. **Source/test commit:** 0e5514adb0088649eca8bec9df6215faa50b556c.
+
+Both current-head Full workflows are now terminal **FAILURE** only at the inherited QA-owned poll-signature validation assertion:
+
+- Push Full [#44468386658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44468386658), validation job 135371588199: **FAILURE**, exact message "Missing poll signature check" in ESP8266. All 13 firmware/platform target jobs and Android completed SUCCESS. ESP32 core 4.0.0 job 135371587958; ESP8266 core 3.1.2 job 135371588177. Downstream simulations, candidate gate, signing and publishing skipped.
+- PR Full [#44468394103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44468394103), validation job 135371611487: same **FAILURE**. All 13 firmware/platform target jobs and Android completed SUCCESS. ESP32 core 4.0.0 job 135371611233; ESP8266 core 3.1.2 job 135371611473. Downstream simulations, candidate gate, signing and publishing skipped.
+
+Current-head focused CI:
+- Quarantine/readback PR [#44468394101](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44468394101), job 135371610358: **SUCCESS**, including Mbed TLS selector/digest tests, unsupported major 2/5 compile rejection, valid-v3 EEPROM preservation, poll-edge failure deny and request-digest failure deny.
+- Relay/output PR [#44468394117](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44468394117), jobs 135371610544 and 135371610891: **SUCCESS**.
+
+This is not a Full CI pass: validation failed and all downstream production/simulation/signing/publishing jobs were skipped. Exact-head ESP32 core 3.3.13 remains NOT TESTED; current ESP32 build uses core 4.0.0. The Mbed TLS 3 branch lab uses stub APIs only. Keep poll admission fail-closed and do not satisfy the legacy assertion by accepting unauthenticated signatures. PR #327 remains OPEN / DRAFT / UNMERGED / PRODUCTION NO-GO.
