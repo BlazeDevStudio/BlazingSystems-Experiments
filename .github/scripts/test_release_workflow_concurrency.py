@@ -91,7 +91,12 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
             "the selected SDK must be observed, not inferred from setup-dotnet input",
         )
         self.assertIn(
-            "if ($LASTEXITCODE -ne 0 -or $sdkVersion -ne '8.0.425')",
+            "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+            sdk_step,
+            "a failed dotnet invocation must stop the workflow",
+        )
+        self.assertIn(
+            "if ($sdkVersion -ne '8.0.425')",
             sdk_step,
             "unexpected SDK roll-forward must fail closed before restore/build",
         )
