@@ -20,20 +20,19 @@ SKETCH = ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 
 def verify_shared_extractor() -> None:
     probe = (
-        'bool sample() {\\n'
+        "bool sample() {\\n"
         '  const char *brace = "}";\\n'
-        '  // }\\n'
-        '  /* { */\\n'
-        '  return brace[0] == \' }\';\\n'
-        '}\\n'
-        'bool after() { return false; }\\n'
+        "  // }\\n"
+        "  /* { */\\n"
+        "  return brace[0] == '}';\\n"
+        "}\\n"
+        "bool after() { return false; }\\n"
     )
     expected = probe.split("\\nbool after", 1)[0]
     actual = extract_function(probe, "sample")
     if actual != expected:
         raise RuntimeError("shared extractor did not preserve the complete function around brace decoys")
     print("SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS")
-
 
 CPP = r'''
 #include <cstdint>
