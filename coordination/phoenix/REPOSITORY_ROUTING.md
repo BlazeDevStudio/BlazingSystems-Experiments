@@ -804,3 +804,14 @@ COE #36 (base #26, head `b4d7434764aab72673de1f496ed9e442f031ddff`) and COE #43 
 
 ### No staging decision
 COE #26 still has five queued workflows with zero jobs. Current Hardware source/destination blobs differ on both boards, 22 source board-local labs are not imported as equivalent destination tests, and Hardware license/NOTICE files are absent. No copy, move, overwrite, cherry-pick, rebase, merge, staging, or route promotion is authorized.
+
+
+## UTC14 exact-head supersession — 2026-11-19T14:39:41Z — ULA release candidate and destination staging decision
+
+COE RELEASE #35 is a packager/validation candidate, not a source-migration route. Its final docs head is `0e3662b9aef4b2a2248e3a064b07d07e9097be1b`, with source/test head `90ce4200b66ce0b55f40feaab42cc7b53fad1f2d`. The packager refuses to generate network UCI until an approved site-scoped RFC 4193 /48 is supplied. Its synthetic unit-test prefix is not a deployment value. The exact-head shared workflow passes 116 packager tests (two intentional skips), then fails closed for all 10 appliance profiles because no approved prefix exists. The sandbox fails closed because Bubblewrap is missing.
+
+COE #44 at `582fd5d5e83e36b36546ac28534740298ba94af4` is 15 commits ahead / 29 behind #35 and GitHub marks it non-mergeable. It generates a random /48 for each appliance installation and persists it locally. That is not a same-site shared prefix authority; do not select or merge it as the §6.45 implementation. RELEASE owns branch history; CORE/COE integration owns the authority decision; QA owns independent same-site/different-site/persistence tests.
+
+COE #26 remains the only current integration draft destination, at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five queued workflows and zero jobs. Current #327-to-#26 sketch blobs differ on both boards; source has 22 board-local Python labs while destination has one generic Hardware shell test with stale positive signature/poll assertions. Pisowifi LICENSE matches the source MIT text, but Hardware LICENSE/NOTICE scope is absent. The Universal/INTERCON #36/#43 paths remain outside the SoftTimer route.
+
+Keep `OWNERSHIP_ROUTES.json` unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. No copy, move, overwrite, rebase, cherry-pick, merge, staging or route promotion is authorized.
