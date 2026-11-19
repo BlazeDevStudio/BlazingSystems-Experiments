@@ -770,3 +770,29 @@ The documentation-only handover successor was also revalidated at exact PR head 
 
 This exact documentation-head verification supersedes the earlier partial/in-progress notes. It remains CI evidence for host-test infrastructure and firmware compilation only, not physical hardware acceptance.
 
+## UTC07 NVS commit durability-model correction — 2026-11-19
+
+**Disposition:** hardware-owned host-lab correction; focused CI VERIFIED; Full validation remains blocked; production NO-GO.
+
+### Proven test-model defect
+
+The ESP32 fake NVS backend previously copied nvs_set_blob() bytes directly into its durable vector and described nvs_commit() as a no-op. It modeled only the possible "bytes reached flash despite an error return" outcome. It could not represent a successful set followed by a commit failure before durable persistence.
+
+ESP-IDF 5.5.6 documents that nvs_set_blob() changes are not guaranteed durable until nvs_commit() succeeds: https://docs.espressif.com/projects/esp-idf/en/v5.5.6/esp32/api-reference/storage/nvs_flash.html
+
+### Test-first RED / GREEN
+
+- RED commit a30df047a61c455a2d546a2a2531c6935f350594 added the missing commit-before-persistence failure scenario. Quarantine run #44482734420, job 135418637684, failed as intended at COMMIT_FAILURE_BEFORE_PERSISTENCE_WAS_MISTAKEN_FOR_DURABILITY board=ESP32 (exit 42). This proved the prior fake model incorrectly treated the failed commit as durable.
+- GREEN commit da7202768383739a0a43419a2a303b5b64685b9f separates NVS pending data from durable data. nvs_set_blob() stages bytes; successful nvs_commit() moves them to the durable image; fail-before-persistence leaves only pending bytes, which are discarded on reboot; fail-after-persistence still models the ambiguous case where bytes reached flash but the API reports failure.
+- Focused quarantine #44483015984, job 135419578031: SUCCESS. Exact logs show COMMIT_FAILURE_BEFORE_PERSISTENCE_REBOOT_LIMITATION=REPRODUCED and POLL_FAULT_DUAL_STORE_LAB=PASS for both ESP32 and ESP8266.
+- Relay/output #44483016050: source-output job 135419578620 SUCCESS; ESP32 boot-polarity job 135419578876 SUCCESS.
+- Full build #44483016111: validation job 135419703002 FAILED at the QA-owned Missing poll signature check in tests/controllers.sh. Firmware/platform targets and Android were still running at the last read; no Full workflow pass is claimed.
+
+### Safety interpretation
+
+The new lab explicitly reproduces the no-durable-marker outcome when LittleFS marker writing and NVS/EEPROM commit both fail. The current boot remains inhibited, but a reboot cannot recover a marker that neither persistence path durably stored. This is a known durability limitation, not a passing production guarantee. NVS and LittleFS/EEPROM remain regions on the same physical flash device, not an independent anti-rollback witness.
+
+No firmware runtime, GPIO/relay behavior, shared API, CORE ledger, financial migration, QA-owned test, RELEASE workflow, COE destination, physical device or customer data changed. The lab is simulated host/fake-I/O evidence only.
+
+**Next:** PHX-QA independently reviews both commit-failure outcomes; PHX-MASTER records the no-durable-marker limitation against #43; PHX-CORE/MASTER must retain the independent protected witness gate. No positive poll admission or persistence fallback is authorized by this test.
+
