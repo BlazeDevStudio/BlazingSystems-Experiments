@@ -640,7 +640,7 @@ def run_esp32_precommit_persistence_mutation(path: Path):
     needle = "NvsFlash::pending.assign(bytes,bytes+length);\n  return ESP_OK;"
     replacement = (
         "NvsFlash::pending.assign(bytes,bytes+length);\n"
-        "  NvsFlash::durable.assign(bytes,bytes+length);\\n"
+        "  NvsFlash::durable.assign(bytes,bytes+length);\n"
         "  return ESP_OK;"
     )
     if program.count(needle) != 1:
