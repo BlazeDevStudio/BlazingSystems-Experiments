@@ -422,9 +422,14 @@ class BuildProvenanceTests(unittest.TestCase):
             return real_open(path, flags, *args, **kwargs)
 
         try:
-            with patch.object(provenance.os, "open", side_effect=swap_then_open):
-                with self.assertRaises(provenance.ProvenanceError):
-                    provenance._hash_regular(target)
+            with patch.object(provenance.os, "open", side_effect=swap_then_open) as patched_open:
+                with patch.object(
+                    provenance.os,
+                    "supports_dir_fd",
+                    {patched_open, provenance.os.stat},
+                ):
+                    with self.assertRaises(provenance.ProvenanceError):
+                        provenance._hash_regular(target)
             self.assertTrue(swapped, "the deterministic parent-directory swap must execute")
         finally:
             if parent.is_symlink():
