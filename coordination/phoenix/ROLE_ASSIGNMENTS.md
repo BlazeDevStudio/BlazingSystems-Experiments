@@ -1187,3 +1187,21 @@ No Master source takeover, role reassignment, merge, rebase, release, hardware o
 - **PHX-INFRA / RELEASE:** #31 bwrap UID-map denied; #35 bwrap missing. Provide an approved sandbox runner; no privileged or unsandboxed fallback.
 - **COE integration owner:** #26 remains blocked pending per-file provenance, license/NOTICE scope, source-test imports, pinned toolchain and executable CI.
 - **Registry custodian:** private v11/newer corrections remain inaccessible through authorized current surfaces; no older snapshot substituted.
+
+
+## UTC11 live owner routing refresh — 2026-11-19
+
+| Role | Current evidence / exact ref | Next owner action |
+|---|---|---|
+| **PHX-MASTER** | Existing PR #288, starting head `9a7a8f855913e6a74cdead136631a1b317a62eb1`; coordination-only scope | Clarify §6.9 site identity, update exact-head matrix and provenance; do not alter subsystem source or route manifest |
+| **PHX-CORE** | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`, scoped CI #42698139210 SUCCESS | Existing CORE continuation and COE owner decide the durable site-prefix authority/distribution semantics; no competing CORE worker |
+| **PHX-RENTAL** | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`, two scoped CI runs SUCCESS | Preserve owner scope; no new Master action |
+| **PHX-PISONET** | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`, scoped CI #42462978704 SUCCESS | Continue native COM/serial evidence in own branch; do not edit Release handover or tests |
+| **PHX-HARDWARE** | #327 current head `82fef49d945aeb64da76e89ef12126784a4c64b2`, child of #326 `58c558fb6a237935214621adc3dee65a10fe1a51) | Keep poll/coin disposition default-deny; refresh PR description to current head. Focused labs pass; Full remains failed at QA-owned poll fixture |
+| **PHX-QA** | #290 `5c29d15994cee1279058f1eca12f2a3180704292` scoped PASS; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` has no current-head run | Own negative/default-deny poll fixture and independent ULA multi-appliance tests; refresh #292 base/evidence before claiming current verification |
+| **PHX-RELEASE** | #291 current head `6ce1ee152d49de330ed0f31c3786799284545474); current Windows handover gate fails | Update #291 PR/handover/checkpoint to exact head and resolve freshness in Release-owned files; reconcile COE #44 onto current #35 before any promotion |
+| **PHX-INFRA** | COE #35/#44 sandbox exits 125 because Bubblewrap is missing; #31 previously failed unprivileged UID-map setup | Supply an authorized disposable Bubblewrap-capable runner; no privileged or unsandboxed fallback |
+| **COE integration owner** | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, five queued workflows / zero jobs | Complete exact per-file blob/mode/license/test/toolchain provenance and make destination CI executable before staging |
+| **Registry custodian** | Canonical private Drive v11 and newer corrections not retrievable through the current Library/connector surface | Restore authorized read-only access; do not substitute older registry snapshots |
+
+No worker ownership is reassigned. The separate CORE continuation retains CORE implementation.
