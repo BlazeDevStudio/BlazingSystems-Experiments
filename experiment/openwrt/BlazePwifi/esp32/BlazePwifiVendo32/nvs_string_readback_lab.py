@@ -307,7 +307,7 @@ int main() {
 '''
 
 
-def build_program(source: str) -> str:
+def build_program(source: str, omit_boot_readback_guard: bool = False) -> str:
     bounded = "\n\n".join((
         extract_function(source, "boundedCoinDebounceMs"),
         extract_function(source, "boundedTimingMs"),
@@ -316,6 +316,25 @@ def build_program(source: str) -> str:
     match = extract_function(source, "configFieldsMatchStored")
     polarity = extract_function(source, "loadLocalOutputPolarity")
     load = extract_function(source, "loadConfig")
+    if omit_boot_readback_guard:
+        guard = """  if(outputPolarityKnown){
+    const char *failedField=nullptr;
+    if(!configFieldsMatchStored(&failedField)){
+      cfg.relayActiveHigh=false;
+      cfg.ledActiveHigh=false;
+      runRelayActiveHigh=false;
+      runLedActiveHigh=false;
+      outputPolarityKnown=false;
+      pinConfigSafe=false;
+      insertMode=false;
+      activeTarget="";
+      Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain INPUT.\\n",
+                    failedField?failedField:"unknown");
+    }
+  }"""
+        if load.count(guard) != 1:
+            raise RuntimeError("cannot build boot-readback guard-removal mutation")
+        load = load.replace(guard, "  // injected mutation: skip boot-time config readback gate", 1)
     return (CPP.replace("@@BOUNDED@@", bounded)
                .replace("@@HELPER@@", helper)
                .replace("@@MATCH@@", match)
@@ -323,11 +342,8 @@ def build_program(source: str) -> str:
                .replace("@@LOAD@@", load))
 
 
-def main() -> None:
-    source = SKETCH.read_text(encoding="utf-8")
-    verify_shared_extractor()
-    program = build_program(source)
-
+def compile_and_run(program: str, label: str, expect_success: bool,
+                    expected_failure: str = "") -> None:
     with tempfile.TemporaryDirectory(prefix="phx-nvs-string-readback-") as temp:
         cpp = Path(temp) / "nvs_string_readback.cpp"
         binary = Path(temp) / "nvs_string_readback"
@@ -335,18 +351,43 @@ def main() -> None:
         compiled = subprocess.run(
             ["g++","-std=c++17","-Wall","-Wextra","-Werror","-pedantic","-O2",
              str(cpp),"-o",str(binary)],
-            capture_output=True,text=True,check=False,
+            capture_output=True,text=True,check=False,timeout=30,
         )
         if compiled.returncode:
-            raise RuntimeError(compiled.stderr)
-        result = subprocess.run([str(binary)],capture_output=True,text=True,check=False)
-        if result.stdout:
-            print(result.stdout,end="")
-        if result.stderr:
-            print(result.stderr,end="")
-        if result.returncode:
-            raise SystemExit(result.returncode)
+            raise RuntimeError(label+" compile failed:\n"+compiled.stderr[-5000:])
+        result = subprocess.run(
+            [str(binary)],capture_output=True,text=True,check=False,timeout=10,
+        )
+        output = result.stdout + result.stderr
+        if expect_success:
+            if result.returncode:
+                print(output, end="")
+                raise RuntimeError(label+" expected exit 0, got "+str(result.returncode))
+            print(result.stdout, end="")
+            return
+        if result.returncode == 0:
+            raise RuntimeError(label+" mutation unexpectedly survived")
+        if expected_failure and expected_failure not in output:
+            print(output, end="")
+            raise RuntimeError(label+" failed for an unexpected reason")
+        print("MUTATION_REJECTED "+label+" exit="+str(result.returncode))
+        print(output, end="")
 
+
+def main() -> None:
+    source = SKETCH.read_text(encoding="utf-8")
+    verify_shared_extractor()
+    compile_and_run(
+        build_program(source),
+        "ESP32 NVS boot readback regression",
+        True,
+    )
+    compile_and_run(
+        build_program(source, omit_boot_readback_guard=True),
+        "ESP32 missing boot readback guard mutation",
+        False,
+        "NVS_BOOT_STRING_READ_ERROR_TRUSTED_POLARITY key=ssid",
+    )
 
 if __name__=="__main__":
     main()
