@@ -34,15 +34,18 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         )
         self.assertNotIn("cancel-in-progress: true", self.content)
 
-    def test_both_publishers_remain_explicitly_branch_gated_and_write_scoped(self):
+    def test_every_write_privileged_release_job_remains_branch_gated(self):
         cases = (
-            ("publish_prerelease", "refs/heads/blazepwifi-v0.3.0-design"),
-            ("publish_release", "refs/heads/blazepwifi-v0.3.0-production"),
+            ("production_import_signed_apk", "refs/heads/blazepwifi-v0.3.0-production", "[import-sign]"),
+            ("publish_prerelease", "refs/heads/blazepwifi-v0.3.0-design", "[release]"),
+            ("publish_release", "refs/heads/blazepwifi-v0.3.0-production", "[release]"),
+            ("publish_v060_lab_preview", "refs/heads/blazepwifi-v0.6.0-audit-foundation", "[v060-lab-release]"),
         )
-        for job, ref in cases:
+        for job, ref, marker in cases:
             with self.subTest(job=job):
                 block = job_block(self.content, job)
                 self.assertIn(f"if: github.ref == '{ref}'", block)
+                self.assertIn(f"'{marker}'", block)
                 self.assertIn("permissions:\n      contents: write", block)
 
 
