@@ -1153,3 +1153,14 @@ Exact-head refresh only. No ownership reassignment and no subsystem source chang
 | Registry custodian | Private Drive registry | v11 and newer corrections inaccessible through current tools | Restore authorized read-only access to v11, artifact manifest and sync ledger |
 
 No Master source takeover, role reassignment, merge, rebase, release, hardware operation, financial migration or signer action occurred. The separate CORE continuation remains the sole CORE implementation owner.
+
+
+## UTC08 exact owner follow-up — 2026-11-19
+
+- **PHX-MASTER:** owns this coordination audit and the exact-head integration matrix only. Current branch/PR #288 head 75319bb34a44cfa442f46d462664154b2926bb34; no subsystem source changes.
+- **PHX-QA:** replace the obsolete positive poll-signature presence assertion in the current #327 Full path with source-exact negative/default-deny tests. Preserve the fail-closed source lab; do not weaken firmware. QA #292 has no current-head run.
+- **PHX-HARDWARE:** current #327 head c62af73ec5b45cd87f4c8f3295ede18f307fb359 has focused quarantine and relay/output PASS, Full FAIL at the QA-owned fixture. Hardware retains firmware and handover ownership.
+- **PHX-RELEASE:** #291 live head is d498afbf2aa0e60fc1b1d0471328f5e6eb8e597c; b8f4e361 is an ancestor 12 commits behind, not current head. Current Windows and BlazePwifi exact-head workflows fail the handover freshness gate. Refresh product handovers on the release-owned branch and rerun; no bypass.
+- **COE integration owner:** #26 remains five queued workflows / zero jobs. Complete per-file blob/mode/license/test/toolchain provenance before staging; Hardware source/destination blobs and test identities differ.
+- **PHX-CORE:** separate active CORE continuation retains source ownership; no competing CORE implementation task started.
+- **Repository administrator / registry custodian:** verify protections/required checks and restore authorized private registry v11/newer-correction access, respectively.

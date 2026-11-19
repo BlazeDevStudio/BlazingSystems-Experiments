@@ -882,3 +882,16 @@ Exact current-head CI:
 - ESP32 core compatibility [#44479756113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44479756113): SUCCESS.
 
 **Contract:** any release-owned build/workflow/toolchain/provenance change must be followed on the same candidate branch by an updated authoritative product handover, live state and change ledger that identify the exact source/workflow SHAs, pinned CLI/core/FQBN/options, artifact hashes, CI run/job IDs, and explicit unsigned/unreleased state. The handover freshness gate must pass before artifacts are admitted to downstream simulation, signing, publishing or promotion. Green compile jobs do not override a failed handover gate. Do not bypass or disable the gate. PHX-RELEASE owns its branch/workflow and must coordinate with the designated handover owner; PHX-MASTER owns this contract only and does not edit subsystem or release files.
+
+
+## 6.43 Exact-head release provenance and current poll-deny validation — 2026-11-19 UTC08
+
+**Disposition: release handover and COE migration remain blocked; current poll and coin-disposition consumers remain deny-only.** A BLAZE-COMMS checkpoint is a status statement, not a substitute for the live PR head. Reviewers must compare the named checkpoint SHA with the current PR head and record ancestry before treating its tests as exact-head evidence.
+
+At live Experiments PR #291, the current head is d498afbf2aa0e60fc1b1d0471328f5e6eb8e597c. The UTC08 RELEASE checkpoint #7003579497 names b8f4e3619a8c84b4e81d8bb24ba3da02825fa9e6 as current head, but GitHub compare shows the current PR head is 12 commits ahead / 0 behind that SHA. The current d498af exact-head Windows and BlazePwifi workflows fail the mandatory handover freshness gate; board compilation and the separate ESP32 compatibility workflow passing do not override it. RELEASE must refresh canonical product handovers and re-run the exact live PR head. No bypass is permitted.
+
+At Hardware PR #327 head c62af73ec5b45cd87f4c8f3295ede18f307fb359, quarantine/readback and relay/output focused workflows pass, while Full validation fails at the inherited positive “Missing poll signature check” assertion. The source-extracted poll-response lab deliberately denies current positive-looking responses. QA must replace the obsolete positive-presence fixture with negative/default-deny source-exact tests; Hardware retains firmware ownership. Do not add a fake signature token or enable unauthenticated admission.
+
+COE #26 remains a separate draft staging candidate. Its ESP32/ESP8266 blobs differ from current #327 source, its Hardware test still requires positive signature/poll strings, its Hardware license/NOTICE scope is absent, and all five destination workflows remain queued with zero jobs. The source and destination LICENSE blobs match only for the Pisowifi/BlazePwifi scope; this does not establish Hardware subtree license scope. No migration is authorized.
+
+Master CI was not run because the execution runtime could not resolve github.com; no Master test pass is claimed. This section records source/tree and exact-head Actions inspection only. PRODUCTION NO-GO remains binding.

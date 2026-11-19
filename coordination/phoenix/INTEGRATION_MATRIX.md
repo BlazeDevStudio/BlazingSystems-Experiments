@@ -1689,3 +1689,25 @@ No destination staging, copy, move, overwrite, cherry-pick, rebase, or merge is 
 - Physical/native acceptance, real power cuts and 30-device/24-hour soak remain NOT TESTED.
 
 **Disposition: development/CI evidence only; COE #26 migration BLOCKED; PRODUCTION NO-GO.**
+
+
+## Live exact refresh — 2026-11-19 UTC08
+
+| Component | Exact head | Current evidence | Disposition |
+|---|---|---|---|
+| Experiments main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Default branch | Current base |
+| Experiments development | blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859 | Current development ref in control plane | Do not substitute legacy v0.5.3 branch |
+| PHX-MASTER #288 | 75319bb34a44cfa442f46d462664154b2926bb34 | OPEN/DRAFT, 98 paths, all Master-owned; no exact-head Actions run | DRAFT REVIEW ONLY |
+| HARDWARE #327 | c62af73ec5b45cd87f4c8f3295ede18f307fb359 | Quarantine #44486759401 PASS; relay/output #44486759408 PASS; Full #44486759380 FAIL at QA poll-signature fixture | Focused CI only; Full FAIL; physical NOT TESTED |
+| RELEASE #291 | d498afbf2aa0e60fc1b1d0471328f5e6eb8e597c | Windows #44487146268 and BlazePwifi #44487146258 fail handover freshness; ESP32 compatibility #44487146336 PASS | BLOCKED; no publisher |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs | MIGRATION BLOCKED |
+| COE Release #35 | 5047af8b5a8296e06294bbda6bf42a6baea2294d | Shared #44465377784 PASS; case #44465377781 PASS; sandbox #44465377807 FAIL closed (bwrap missing after 14/14 preflight) | Sandbox BLOCKED |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS, scoped | CORE owner retains implementation |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329235 / #43653329229 PASS | Scoped CI only |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS | Native COM acceptance NOT TESTED |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS; #292 no current-head run | #327 fixture correction remains QA-owned |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #44295049727 / #44295049903 PASS | Synthetic receipt-v1 only |
+
+Hardware #327 current source sketch blobs differ from COE #26 destination: ESP32 754a5738d30500fe12a573b89956fedeb0e279c3 (62,883 bytes) vs 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes); ESP8266 1b32cb90be11da79ba7ea1155f128aee9e495dd2 (67,304 bytes) vs c8be98f72596681e36a3ad1f8939bf8046c96887 (18,394 bytes). Source has 22 board-local Python labs; destination Hardware has one generic shell test with positive signature/poll assumptions. BlazePwifi/LICENSE and Pisowifi/LICENSE match blob 1ee55b94183417be977ca287cd7391f9a6f7e721, but Hardware/LICENSE and Hardware/NOTICE.md are absent. No migration.
+
+Master test suite NOT RUN (GitHub clone failed DNS); Master Actions no runs returned. Cleanup #266 remains OPEN. Private Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted. **PRODUCTION NO-GO.**

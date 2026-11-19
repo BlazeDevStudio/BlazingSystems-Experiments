@@ -740,3 +740,12 @@ Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29
 **COE #26 admission remains closed** until exact path/mode/blob provenance, full source test import or reviewed equivalents, explicit Hardware license/NOTICE scope, pinned CLI/core/FQBN/options on #26 itself, five runnable exact-head workflows, reversible rollback evidence and Hardware/QA/Release owner acceptance. #35's pins and CI do not transfer to #26; #44 remains diverged 15/25 and Release-owned.
 
 Keep OWNERSHIP_ROUTES.json SHA e4db324315a1b3543fec17a148fbf960170fcb29 unchanged, status DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No copy, move, overwrite, cherry-pick, rebase or merge. Private registry v11 and newer corrections remain BLOCKED because no authorized Google Drive connector is available in this runtime; no private contents or identifiers are published.
+
+
+## UTC08 destination staging recheck — 2026-11-19
+
+The current routing manifest remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29. It is DRAFT_REVIEW_ONLY and PHX-MASTER has no runtime destination. COE #26 remains the only integration draft candidate, not an approved copy plan.
+
+At exact source #327 head c62af73ec5b45cd87f4c8f3295ede18f307fb359 and destination #26 head b382d233ff06c8791b1028bed3c617cc7b670d12, both board sketch blobs differ in SHA and size. The source has 22 board-local Python lab files; destination Hardware contains one generic shell test whose positive response_sig/register/poll assertions conflict with the current deny-only source. The source BlazePwifi/LICENSE and destination Pisowifi/LICENSE match, but Hardware/LICENSE and Hardware/NOTICE.md are absent. Five destination workflows remain queued with zero jobs. Do not copy, move, overwrite, retarget, or infer completion from the representative routing table.
+
+Release #291 is also not a destination admission signal: its live head d498af has 12 commits beyond the b8f4 SHA named in the UTC08 role checkpoint, and exact-head handover gates fail. No migration staging was changed.

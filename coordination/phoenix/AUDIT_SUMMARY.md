@@ -915,3 +915,12 @@ Master-owned coordination/phoenix documentation only: §6.41 exact-head superses
 **Next:** QA replaces the obsolete positive poll-presence fixture and reruns Full #327; RELEASE updates the actual #291 branch's product handover/change ledger and reruns exact-head CI; COE integration unblocks #26 and supplies exact migration provenance; repository administrator verifies protections; registry custodian restores authorized v11 access.
 
 **PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.
+
+
+## UTC08 audit — 2026-11-19
+
+Master-only exact-head reconciliation is recorded in PHX_MASTER_UTC08_RELEASE_HEAD_FRESHNESS_POLL_DENY_AND_COE26_STAGING_AUDIT_20261119.md. Current Master branch/PR #288 head is 75319bb34a44cfa442f46d462664154b2926bb34; PR #288 remains OPEN/DRAFT with 98 changed paths, all under coordination/phoenix/. Routing manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 is unchanged and remains DRAFT_REVIEW_ONLY with PHX-MASTER target null.
+
+P0 findings: (1) Hardware #327 focused CI passes but Full fails at the inherited positive poll-signature fixture while current source is deny-only; QA owns the fixture. (2) RELEASE #291's UTC08 checkpoint names ancestor b8f4, while live PR head is d498 (12 commits ahead); exact-head Windows and BlazePwifi workflows fail handover freshness. (3) COE #26 firmware blobs differ from #327 source, has one generic positive-presence Hardware test vs 22 board-local Python labs, lacks Hardware/LICENSE and Hardware/NOTICE.md, and has five queued workflows with zero jobs. (4) COE #35 sandbox remains blocked by missing bubblewrap after 14/14 preflight tests.
+
+No subsystem source path, ownership route, destination file, private registry record or product branch was modified. Master Python suite NOT RUN because the runtime could not resolve github.com; no Master Actions run returned. Cleanup #266 remains OPEN. PRODUCTION NO-GO.
