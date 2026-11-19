@@ -59,3 +59,52 @@ Current docs-head Full build [#44631781091](https://github.com/BlazeDevStudio/Bl
 This is a source-extracted host simulation with a fake Preferences backend, plus CI verification. It is **SIMULATED / CI VERIFIED**, not a real ESP32 NVS power-cut/reboot acceptance. Physical NVS durability, electrical relay behavior, 150 power cuts, 30-device 24-hour soak, and hardware acceptance remain **NOT TESTED**. No device was flashed or reset; no live coins or financial state were used. Production remains **NO-GO**.
 
 Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the connected Library/Drive tools during this activation; no substitute registry or private provenance data was copied into GitHub.
+
+
+## UTC23 — Explicit ESP32 Preferences namespace-open failure
+
+**Date:** 2026-11-19 UTC23  
+**Role:** PHX-HARDWARE  
+**PR:** [#327 OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Source/test SHA:** `9ef753a38226fcdf56b0903680a5110348027110`  
+**Test-first RED SHA:** `b9c343447c00d32307d2436878f189bd353dadbf`
+
+### Source finding
+
+The pinned ESP32 Arduino core 4.0.0 [Preferences.cpp](https://github.com/espressif/arduino-esp32/blob/4.0.0/libraries/Preferences/src/Preferences.cpp) returns `false` from `Preferences::begin()` when NVS namespace open fails and leaves the handle not started. In that state, typed/string reads return defaults and writes return zero.
+
+Before this change, `loadConfig()` ignored the return value and continued issuing reads, then attempted to write a generated `appass` through the inactive handle. The device's polarity gate already kept relay/LED pins inhibited, but the boot path did not explicitly stop after the failed namespace open.
+
+### Test-first evidence
+
+- RED commit: [`b9c34344`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b9c343447c00d32307d2436878f189bd353dadbf).
+- Push run [#44640050032](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44640050032), job `135968479328`: expected **FAIL** at `NVS_NAMESPACE_OPEN_FAILURE_NOT_HANDLED read_calls=13 write_calls=1`. This proves the old path performed 13 post-failure reads and one write attempt.
+
+### Firmware correction
+
+In `BlazePwifiVendo32.ino`, `loadConfig()` now checks `prefs.begin("blazevendo",false)`. On failure it:
+- resets the configuration to safe defaults;
+- clears output-polarity trust and pin-config safety;
+- clears insert mode and active target;
+- generates an ephemeral setup-AP password without attempting persistence;
+- logs a critical namespace-open failure and returns before any further Preferences access.
+
+No NVS namespace/key/schema, GPIO mapping, relay behavior on successful boot, poll/coin protocol, financial logic, shared API or Release-owned workflow changed.
+
+### Regression and exact-head evidence
+
+The fake Preferences backend now models `begin()` failure and the inactive-handle behavior. The lab asserts zero subsequent NVS reads/writes, safe output state and an ephemeral setup-AP password. It also removes the new guard deliberately.
+
+- Exact source/test push [#44640230847](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44640230847), job `135969107058`: **SUCCESS**. Log includes `NVS_NAMESPACE_OPEN_FAILURE_EXPLICIT_FAIL_CLOSED_PASS` and `MUTATION_REJECTED ESP32 missing namespace-open guard mutation exit=52`.
+- Relay/output PR run [#44640237308](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44640237308), jobs `135969131425` and `135969131902`: **SUCCESS**.
+- Full build push [#44640230839](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44640230839), validation job `135969235458`: **FAILED** at the inherited QA-owned `Missing poll signature check` in ESP8266 controller validation. No positive poll authentication was invented and no firmware admission gate was weakened. Other target jobs were still running at the last status read; this is not a full target-matrix pass.
+
+### Coordination and boundaries
+
+- PHX-MASTER PR #288 is now at `52cb1a68f256c3f50969e5b23ccc1f57a3bf2782`. Its UTC23 report and integration matrix reconcile #327 at the current head. The canonical `ROLE_ASSIGNMENTS.md` Hardware active-PR list still names #239/#254/#283, so its task list needs a further narrow refresh.
+- COE #48 remains **UNASSIGNED / AUDIT-ONLY** with no `OWNERSHIP_ROUTES.json` entry. No COE #48 source was changed.
+- PHX-QA owns the stale positive poll-signature fixture. PHX-RELEASE owns Arduino core version pinning/attestation. No QA, CORE, MASTER, COE or Release-owned paths were modified.
+
+### Evidence limits
+
+This is source-extracted host simulation plus GitHub Actions. It is **SIMULATED / CI VERIFIED**, not physical NVS, relay, coin-slot or power-cut acceptance. No device was flashed/reset; no live coins, customer data, finance state, production migration, signer or release operation was used. 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Production remains **NO-GO**.
