@@ -339,7 +339,7 @@ This is source-extracted host/fake-I/O evidence only. It is **SIMULATED / CI VER
 **Task:** #177 / #172 — PHX-HARDWARE-owned ESP8266 local configuration safety correction.
 **Source commit:** `5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b`
 **Branch head at source commit:** 5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b
-**Disposition:** source change committed; exact-head CI pending; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+**Disposition:** source committed; focused CI VERIFIED; Full build validation FAILED at inherited QA-owned poll-signature assertion; physical acceptance NOT TESTED; PRODUCTION NO-GO.
 
 ### Defect and correction
 
@@ -350,5 +350,7 @@ The failure latch now clears `configImageReadVerified` before setting the output
 ### Verification request / limits
 
 - PHX-QA: independently add failure-injection vectors for malformed v1, malformed v2, unknown non-erased schema, and a later setup-save attempt; assert zero EEPROM commits and byte-for-byte preservation of the config region and existing poll-fault marker. Include commit-failure/reboot vectors where the fake model can distinguish definite failure from ambiguous persistence.
-- Existing source-extracted EEPROM read-failure lab and focused quarantine workflow will be rerun at the exact candidate SHA. They do not yet prove this newly identified malformed-config/setup-save sequence.
+- Exact source SHA `5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b`: quarantine/readback push [#44439012673](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439012673), job `135274929637`, PASS; quarantine/readback PR [#44439018675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439018675), job `135274948740`, PASS; relay/output PR [#44439018914](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439018914), jobs `135274949955` and `135274950911`, PASS. The existing EEPROM lab passes raw-read, same-size stale-buffer, and marker-preservation cases, but does not prove malformed-config followed by setup-save.
+- Full docs-head build [#44439064420](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44439064420), validation job `135275207795`, completed FAILURE at inherited `Missing poll signature check`; all 13/13 firmware/platform targets and Android job `135275207254` completed SUCCESS; downstream simulation/update/signing/candidate/publishing jobs were skipped.
+- PHX-QA request posted in #172/#177/#327 for malformed v1/v2/unknown-schema followed by setup-save failure injection, zero commits, and byte-for-byte config/marker preservation.
 - No QA-owned tests directory, shared API, CORE ledger, EEPROM schema, marker offset, or financial migration was modified.
