@@ -1121,7 +1121,7 @@ No attempt was made to satisfy the positive signature assertion with a synthetic
 
 ## UTC17 follow-on — poll-release ISR edge fail-closed regression
 
-**Exact branch/test HEAD at this update:** `d9d034ef8589c1afbf2c499a688c305778c6ce4e`  
+**Exact source/test SHA:** `d9d034ef8589c1afbf2c499a688c305778c6ce4e`  
 **PR:** [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED.
 
 ### What changed
@@ -1145,7 +1145,7 @@ A failure-injection mutation that omits the final post-poll sample is rejected o
 - Quarantine PR [#44580927637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927637), job `135761031483`: **SUCCESS** on exact SHA.
 - Relay/output PR [#44580927946](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927946): source-output-polarity job `135761030295` and ESP32 boot-polarity job `135761030969`: **SUCCESS**.
 - Full push [#44580913878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580913878): validation job `135760981428` **FAILED** at inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 13 firmware/platform targets and Android completed **SUCCESS** (14 successful jobs total). Downstream simulations, update bundle, candidate gate, signing and publishers were skipped.
-- Full PR [#44580927747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927747): validation job `135761030861` **FAILED** at the same assertion; at this handover update, the 13 firmware/platform target jobs had succeeded and Android was still running. This is not Full validation acceptance.
+- Full PR [#44580927747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927747): validation job `135761030861` **FAILED** at the same assertion; all 13 firmware/platform target jobs completed **SUCCESS**, Android was **CANCELLED**, and downstream simulation/update/signing/publishing jobs were skipped or cancelled. This is not Full validation acceptance.
 
 ### Cross-role / release boundaries
 
