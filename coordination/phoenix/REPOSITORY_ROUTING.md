@@ -789,3 +789,18 @@ No source or destination file was copied, moved, overwritten, rebased, cherry-pi
 Current #327 source and #26 destination sketch blobs differ on both boards: ESP32 `528187f68aaad7d76a690bbf1cbe338165ad3839` (64,308 bytes) versus `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (18,505 bytes); ESP8266 `aa021588b610f928f7af4f5fefb3f32114e6b5ae` (68,127 bytes) versus `c8be98f72596681e36a3ad1f8939bf8046c96887` (18,394 bytes). Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at `1ee55b94183417be977ca287cd7391f9a6f7e721`, but source `BlazePwifi/NOTICE.md`, destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
 
 The source has 46 scripts in `experiment/openwrt/BlazePwifi/tests/` plus 22 board-local Python labs and one shared extraction helper. COE #26 Hardware has one shell test, blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`; it and the legacy source hardening script still require positive `response_sig`, `|register|` and `|poll|` markers, which conflict with current #327 default-deny behavior. No test import equivalence is established. Five #26 workflows remain queued with zero jobs. No staging/copy/move is authorized.
+
+## Live exact-head reconciliation — 2026-11-19 UTC13
+
+### Pisonet route boundary and separate INTERCON candidates
+The unchanged machine-readable route manifest maps `experiment/windows/BlazePisonet-SoftTimer/` to `Pisonet/SoftTimer/` as selective review only. It does not map `Hardware/esp8266/BlazePisonetUniversal/` or `Shared/contracts/pisonet-intercon/`.
+
+COE #36 (base #26, head `b4d7434764aab72673de1f496ed9e442f031ddff`) and COE #43 (base `a35672fb60228fb8f84801405d032293f0266023`, head `8f5eec790dc2a3e25c219a6f51651113cd1c90cd`) are Universal/INTERCON candidate workspaces. Their Stage 1 / Stage 4 CI passes are scoped to those drafts; they do not authorize migration into `Pisonet/SoftTimer` or COE #26. Require private registry v11, explicit product identity and owner route before any route addition.
+
+### Current source and destination refs
+- Experiments main `f4e8a891...`; current development reference `blazepwifi-v0.6.0-audit-foundation@2fbd2475...`; legacy `blazepwifi-v0.5.3-development@aad3aade...` remains present but is not the current development reference.
+- COE main `a6513ab4...`; integration PR #26 `b382d233...`, OPEN/DRAFT.
+- Master PR #288 `d52d346e...`, OPEN/DRAFT. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, Master target null.
+
+### No staging decision
+COE #26 still has five queued workflows with zero jobs. Current Hardware source/destination blobs differ on both boards, 22 source board-local labs are not imported as equivalent destination tests, and Hardware license/NOTICE files are absent. No copy, move, overwrite, cherry-pick, rebase, merge, staging, or route promotion is authorized.

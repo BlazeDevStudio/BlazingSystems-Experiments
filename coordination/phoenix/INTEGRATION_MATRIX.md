@@ -1912,3 +1912,33 @@ The previous #291 head `c851519...` is superseded by current PR API head `189eca
 The current 16-file #291 diff includes CORE-owned `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md`, plus PISONET-owned `negative-selftest.ps1` and `PublisherMockCli.ps1`. Head/base blobs differ. Current PISONET test blob remains `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`; it assigns `$workflow` at line 37 but reads unassigned `$buildWorkflow` at lines 115/119/138. File history shows the release-side fix `cfe15c1...` was reverted by `b5f060b...` after scope review. CORE and PISONET must review/own their respective paths before merge consideration; Master/RELEASE must not take over those paths.
 
 The current #327 docs-head Full [#44522362971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362971) is terminal FAIL at QA-owned `Missing poll signature check`; all 13 target jobs and Android pass, downstream gates skip. No positive unauthenticated signature was added. PRODUCTION NO-GO.
+
+## Live exact-head reconciliation — 2026-11-19 UTC13
+
+**Live state, not a readiness upgrade:**
+
+| Gate / candidate | Current evidence | Status |
+|---|---|---|
+| Experiments main / development | `main@f4e8a891...`; `blazepwifi-v0.6.0-audit-foundation@2fbd2475...`; old v0.5.3 branch `aad3aade...` still exists | Source refs confirmed; v0.6.0 is current development reference |
+| Master #288 | `d52d346e...`, OPEN/DRAFT, 103 paths all under coordination/phoenix; no Master CI | DRAFT REVIEW ONLY |
+| Hardware #327 | `bba3ba4...`; quarantine and relay pass; Full fails at stale QA positive poll-signature assertion | CI PARTIAL / NO HARDWARE ACCEPTANCE |
+| Release #291 | `10b2de74...`; ESP32 compatibility and BlazePwifi build pass; Windows self-test fails at uninitialized `$buildWorkflow`; publisher skipped | CI PARTIAL / NO SIGNING |
+| COE #26 | `b382d233...`; five candidate workflows queued with zero jobs | MIGRATION BLOCKED |
+| COE #35 | `5047af8...`; shared/case pass; mandatory Bubblewrap sandbox fails closed, exit 125 | RELEASE BLOCKED |
+| COE #44 | `582fd5d...`; per-appliance ULA; mergeable false; 15 ahead / 25 behind #35; sandbox fails closed | SITE AUTHORITY / HISTORY BLOCKED |
+| COE #45 | `9d76a134...`; synthetic receipt-v1 vectors and shell suite pass | CONTRACT LAB ONLY |
+| COE #36 / #43 | Universal/INTERCON Stage 1 and Stage 4 branches, not mapped by current Phoenix SoftTimer route | ROUTING HOLD |
+
+### Exact Hardware-to-COE #26 provenance
+- Current #327 ESP32 source blob `528187f68aaad7d76a690bbf1cbe338165ad3839`; COE #26 destination blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` — different.
+- Current #327 ESP8266 source blob `aa021588b610f928f7af4f5fefb3f32114e6b5ae`; COE #26 destination blob `c8be98f72596681e36a3ad1f8939bf8046c96887` — different.
+- Source contains 22 board-local Python labs; COE #26 Hardware contains four files (README, two sketches, one shell hardening test). Source poll lab blob `69dbddee4133588940f4c5b53817401db531a8a4`; destination test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`.
+- Destination test requires positive `response_sig`, `|register|`, and `|poll|` strings. Current source-extracted lab asserts `acceptPollResponse()` and `coinPostDispositionVerified()` deny; these test identities are not equivalent.
+- Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at `1ee55b94183417be977ca287cd7391f9a6f7e721`, but this does not license Hardware. Source `BlazePwifi/NOTICE.md`, destination `Hardware/LICENSE`, and destination `Hardware/NOTICE.md` return 404.
+- Five #26 workflows remain QUEUED with zero jobs. No exact-head destination test execution is established.
+
+### ULA site authority
+Architecture Contract §6.9.1 already requires one durable site-scoped /48 shared by appliances at the same site. COE #44 generates an installation-local random 40-bit Global ID and validates local UCI section shape; its tests do not prove multi-appliance same-site sharing, distinct-site allocation, concurrent first boot, or restore behavior. No architecture contract was weakened or replaced.
+
+### Governance correction
+Repository rulesets endpoints return empty arrays, but classic branch-protection reads return HTTP 403 `Resource not accessible by integration`. Effective protection is therefore UNKNOWN, not proven `protected=false`; repository administrators must verify required checks and protections directly.

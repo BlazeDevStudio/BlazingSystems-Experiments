@@ -1038,3 +1038,21 @@ Current #291 API head is `189ecaca6b35d52c25bd0fdaa5639828bf105731`. The SDK tes
 The current #291 16-file diff includes CORE-owned `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md` and PISONET-owned `negative-selftest.ps1` / `PublisherMockCli.ps1`. The PISONET negative test blob `8b69174...` still reads unassigned `$buildWorkflow`; history shows the earlier fix `cfe15c1...` was reverted by `b5f060b...` after scope review. CORE and PISONET must review and own their paths; Master did not edit them.
 
 Hardware #327 docs-head Full #44522362971 is terminal FAIL at QA's positive poll assertion; 13 target jobs and Android pass, downstream signing/publishing skip. QA owns the fixture. No physical acceptance. PRODUCTION NO-GO.
+
+## Live exact-head reconciliation — 2026-11-19 UTC13
+
+Live reconciliation completed against current GitHub refs and Actions runs. Experiments main is `f4e8a891...`; current development reference is `blazepwifi-v0.6.0-audit-foundation@2fbd2475...`; Master branch is `d52d346e...`. COE main is `a6513ab4...`; #26 remains `b382d233...`.
+
+- Master #288 remains OPEN/DRAFT. This run updates only `coordination/phoenix/`; ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, Master destination null.
+- Hardware #327 current API head `bba3ba4...`: exact focused quarantine and relay pass; Full validation fails at QA-owned `Missing poll signature check`. Firmware/platform targets and Android pass; downstream gates skip.
+- Release #291 current API head `10b2de74...`: ESP32 core 3.3.13/4.0.0 compatibility pass against current ESP32 sketch blob; BlazePwifi build/validation pass; Windows fails in PISONET-owned `negative-selftest.ps1` at uninitialized `$buildWorkflow`; publisher skipped. Existing PR diff includes CORE and PISONET paths requiring owner review.
+- COE #26 remains five queued workflows/zero jobs. Current source and destination board sketches differ; 22 source board-local labs are not imported as equivalent destination tests. Pisowifi license match does not resolve missing Hardware license/NOTICE scope.
+- COE #44 remains diverged and per-appliance ULA is not site authority; #35/#44 sandbox gates fail closed because Bubblewrap is missing. #45 receipt-v1 vectors are synthetic only.
+- COE #36/#43 Universal/INTERCON candidates are not represented by the current SoftTimer ownership route. No route promotion.
+- Rulesets are empty, but classic branch protection read is denied (403); effective protections UNKNOWN. Private Drive registry v11/newer corrections remain inaccessible; no Google Drive connector is exposed and no private data was copied.
+
+Direct `git clone` failed because the runtime cannot resolve `github.com`; the Master Python suite is NOT RUN. Local manifest/path assertions and GitHub source/tree inspection are not substitutes for the full suite. No Master Actions run was returned.
+
+Next owners: PHX-PISONET fixes its `$buildWorkflow` input; PHX-QA replaces the stale positive poll fixture and independently reviews #327; PHX-CORE/COE integration decide the durable site ULA authority; PHX-RELEASE refreshes stale PR description and reconciles its cross-owner diff; COE integration owner completes per-file provenance/license/test import and unblocks #26 CI; repository admin verifies branch protection; registry custodian restores authorized v11 access.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
