@@ -648,6 +648,10 @@ bool saveCfg(){
 }
 
 void latchConfigPersistenceFailure(const char *reason){
+  // A rejected or ambiguous config image must remain non-writable for this boot.
+  // In particular, the local setup AP must not turn malformed legacy/unknown
+  // bytes into defaults by calling saveCfg() after this failure latch.
+  configImageReadVerified=false;
   outputPolarityKnown=false;
   runRelayActiveHigh=false;
   runLedActiveHigh=false;
