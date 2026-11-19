@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift, post-finalization edge and failed-journal safety lab.
+"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift, post-finalization and ISR-unobserved edge safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
 coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(), and
@@ -28,6 +28,9 @@ CPP = r'''#include <cstdint>
 #include <string>
 using String=std::string;
 static uint32_t fakeNow=0;
+static volatile uint32_t coinEdgeSequence=0;
+static uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){return coinEdgeSequence;}
 static uint16_t runDebounceMs=40;
 static uint32_t lastEdge=0;
 static uint32_t pulseStart=0,pulseEnd=0;
@@ -92,6 +95,7 @@ bool writePollPulseFaultMarker(uint32_t edges){
 
 static void resetState(uint32_t now=0,bool activeLow=true){
   fakeNow=now;runDebounceMs=40;lastEdge=0;
+  coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
   fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
   insertMode=true;lastCoin=false;runCoinActiveLow=activeLow;
@@ -282,6 +286,66 @@ static bool runLatePulseAfterReady(){
     return fail("late-pulse-after-ready","fault persistence began before output inhibition");
   return true;
 }
+static bool runMissedPulseAfterBlockingPost(){
+  resetState(500U);
+  lastEdge=400U;
+  insertMode=false;
+  activeTarget.clear();
+  pendingReady=true;
+  pendingPulses=4U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  relayOn=false;ledOn=false;
+  ++coinEdgeSequence; // ISR fires while coin POST blocks; pulse ends before the next GPIO sample.
+  sampleCoinPulseEdge(false);
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     !pendingReady || relayOn || ledOn)
+    return fail("late-coin-post-edge","late coin POST pulse was not fail-closed");
+  if(pendingPulses!=4U || pendingNonce!="nonce-existing" ||
+     pendingTarget!="target-01" || saveCalls!=0 || nonceCalls!=0)
+    return fail("late-coin-post-edge","finalized pending identity was mutated");
+  if(backupCalls!=1 || markerCalls!=1 || backupEdges!=5U || markerEdges!=5U)
+    return fail("late-coin-post-edge","late edge was not persisted with the existing pending count");
+  if(lastHandledCoinEdgeSequence!=1U)
+    return fail("late-coin-post-edge","ISR sequence was not acknowledged after latching");
+  return true;
+}
+static bool runMissedPulseDuringBlockingWork(){
+  resetState(500U);
+  lastEdge=400U;
+  ++coinEdgeSequence; // Pulse starts and ends while a synchronous handler owns the loop.
+  sampleCoinPulseEdge(false);
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
+    return fail("missed-blocking-pulse","missed blocking pulse was not fail-closed");
+  if(pendingPulses!=0U || backupCalls!=1 || markerCalls!=1 ||
+     backupEdges!=1U || markerEdges!=1U)
+    return fail("missed-blocking-pulse","unobserved pulse was not durably marked as unresolved");
+  return true;
+}
+static bool runMultipleUnobservedEdges(){
+  resetState(500U);
+  lastEdge=400U;
+  coinEdgeSequence=3U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
+    return fail("multiple-unobserved-edges","multiple ISR edges were not quarantined");
+  if(pendingPulses!=0U || saveCalls!=0 || backupCalls!=1 || markerCalls!=1 ||
+     backupEdges!=3U || markerEdges!=3U)
+    return fail("multiple-unobserved-edges","edge multiplicity was collapsed into a single pending pulse");
+  return true;
+}
+static bool runSingleObservedEdge(){
+  resetState(100U);
+  coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(journalRecoveryRequired || pendingPulses!=1U || saveCalls!=1 ||
+     lastHandledCoinEdgeSequence!=1U)
+    return fail("single-observed-edge","one sampled ISR edge was not attributed exactly once");
+  sampleCoinPulseEdge(true);
+  if(journalRecoveryRequired || pendingPulses!=1U || saveCalls!=1)
+    return fail("single-observed-edge","sustained active level duplicated an already handled ISR edge");
+  return true;
+}
 int main(){
   int passed=0;
   if(!runDrainCapture("delayed-100ms-active-low",0U,100U,130U,0U,40U,true)) return 1;
@@ -307,7 +371,15 @@ int main(){
   ++passed;
   if(!runLatePulseAfterReady()) return 11;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/11 top-level scenarios\n";
+  if(!runMissedPulseAfterBlockingPost()) return 12;
+  ++passed;
+  if(!runMissedPulseDuringBlockingWork()) return 13;
+  ++passed;
+  if(!runMultipleUnobservedEdges()) return 14;
+  ++passed;
+  if(!runSingleObservedEdge()) return 15;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/15 top-level scenarios\n";
   return 0;
 }
 '''
@@ -449,6 +521,12 @@ def main():
          "  applyOutputs();\n  const bool backupPersisted",
          "  const bool backupPersisted",
          "storage attempt occurred before outputs were logically OFF"),
+        ("missing-isr-edge-reconciliation", "void sampleCoinPulseEdge(bool active){",
+         "if(unseenEdges>0U && !sampledSingleEdge){", "if(false){",
+         "late coin POST pulse was not fail-closed"),
+        ("multiple-isr-edges-accepted-as-one", "void sampleCoinPulseEdge(bool active){",
+         "unseenEdges==1U", "unseenEdges<=3U",
+         "multiple ISR edges were not quarantined"),
     )
     failures = []
     for board, sketch in BOARDS:
@@ -459,10 +537,10 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 11/11" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 15/15" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_COIN_PULSE_CAPTURE_PASS 11/11")
+            print(f"{board}_COIN_PULSE_CAPTURE_PASS 15/15")
             for name, signature, old, new, expected in mutations:
                 index = SIGNATURES.index(signature)
                 if old not in functions[index]:
