@@ -987,7 +987,7 @@ bool saveConfig(){
   // readback. A failed or partial save remains INPUT-only after reboot.
   const char *failedField=nullptr;
   if(!configFieldsMatchStored(&failedField)){
-    Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain inhibited.\\n",
+    Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain inhibited.\n",
                   failedField?failedField:"unknown");
     outputPolarityKnown=false;
     pinConfigSafe=false;
