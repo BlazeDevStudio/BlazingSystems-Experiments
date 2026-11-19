@@ -24,6 +24,8 @@ SOURCE_SHA = "a" * 40
 BLOB_SHA = "b" * 40
 ENV = {
     "GITHUB_SHA": SOURCE_SHA,
+    "PHX_SOURCE_HEAD_SHA": SOURCE_SHA,
+    "PHX_SOURCE_BASE_SHA": "",
     "GITHUB_REPOSITORY": "BlazeDevStudio/BlazingSystems-Experiments",
     "GITHUB_REF": "refs/heads/phoenix/release-publisher-isolation-20261115",
     "GITHUB_WORKFLOW": "BlazePwifi build",
@@ -276,6 +278,88 @@ class BuildProvenanceTests(unittest.TestCase):
             ):
                 provenance._source_context(self.env, ["tracked.py"])
 
+
+
+    def test_pull_request_manifest_records_exact_head_and_base(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt", target="ruijie", artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        env = dict(
+            self.env,
+            GITHUB_REF="refs/pull/291/merge",
+            GITHUB_HEAD_REF="phoenix/release-publisher-isolation-20261115",
+            GITHUB_BASE_REF="blazepwifi-v0.6.0-audit-foundation",
+            PHX_SOURCE_HEAD_SHA="d" * 40,
+            PHX_SOURCE_BASE_SHA="e" * 40,
+        )
+        result = provenance.write_provenance(args, env=env)
+        self.assertEqual(result["source"]["commit"], SOURCE_SHA)
+        self.assertEqual(result["source"]["source_head_sha"], "d" * 40)
+        self.assertEqual(result["source"]["source_base_sha"], "e" * 40)
+
+    def test_push_manifest_uses_exact_commit_as_source_head(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt", target="ruijie", artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        result = provenance.write_provenance(
+            args,
+            env=dict(self.env, PHX_SOURCE_HEAD_SHA=SOURCE_SHA, PHX_SOURCE_BASE_SHA=""),
+        )
+        self.assertEqual(result["source"]["source_head_sha"], SOURCE_SHA)
+        self.assertIsNone(result["source"]["source_base_sha"])
+
+    def test_malformed_pull_request_head_sha_is_rejected(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt", target="ruijie", artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        env = dict(
+            self.env,
+            GITHUB_REF="refs/pull/291/merge",
+            GITHUB_HEAD_REF="feature",
+            GITHUB_BASE_REF="main",
+            PHX_SOURCE_HEAD_SHA="not-a-commit",
+            PHX_SOURCE_BASE_SHA="e" * 40,
+        )
+        with self.assertRaisesRegex(provenance.ProvenanceError, "PHX_SOURCE_HEAD_SHA"):
+            provenance.write_provenance(args, env=env)
+
+    def test_pull_request_base_ref_requires_valid_base_sha(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt", target="ruijie", artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        for base_sha in ("", "not-a-commit"):
+            with self.subTest(base_sha=base_sha):
+                env = dict(
+                    self.env,
+                    GITHUB_REF="refs/pull/291/merge",
+                    GITHUB_HEAD_REF="feature",
+                    GITHUB_BASE_REF="main",
+                    PHX_SOURCE_HEAD_SHA="d" * 40,
+                    PHX_SOURCE_BASE_SHA=base_sha,
+                )
+                with self.assertRaisesRegex(provenance.ProvenanceError, "PHX_SOURCE_BASE_SHA"):
+                    provenance.write_provenance(args, env=env)
+
+    def test_workflow_exports_pull_request_head_and_base_shas(self):
+        workflow = (provenance.ROOT / ".github/workflows/blazepwifi-build.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "PHX_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}",
+            workflow,
+        )
+        self.assertIn(
+            "PHX_SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}",
+            workflow,
+        )
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
