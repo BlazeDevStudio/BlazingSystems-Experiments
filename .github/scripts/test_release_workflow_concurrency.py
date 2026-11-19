@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guard release-capable OpenWrt runs against unsafe concurrency cancellation."""
+"""Guard release-capable workflows against unsafe concurrency and token scope."""
 from __future__ import annotations
 
 import re
@@ -8,11 +8,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/blazepwifi-build.yml"
+WINDOWS_WORKFLOW = ROOT / ".github/workflows/blazepisonet-softtimer-release.yml"
 
 
 def job_block(content: str, name: str) -> str:
     match = re.search(
-        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [A-Za-z0-9_]+:\n|\Z)",
+        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\\Z)",
         content,
     )
     if not match:
@@ -24,6 +25,7 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.content = WORKFLOW.read_text(encoding="utf-8")
+        cls.windows_content = WINDOWS_WORKFLOW.read_text(encoding="utf-8")
 
     def test_running_push_or_dispatch_release_is_not_cancelled(self):
         self.assertIn(
@@ -46,7 +48,31 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
                 block = job_block(self.content, job)
                 self.assertIn(f"if: github.ref == '{ref}'", block)
                 self.assertIn(f"'{marker}'", block)
-                self.assertIn("permissions:\n      contents: write", block)
+                self.assertIn("permissions:\\n      contents: write", block)
+
+    def test_windows_build_is_explicitly_read_only_and_publisher_isolated(self):
+        build = job_block(self.windows_content, "build-windows")
+        publisher = job_block(self.windows_content, "publish-release")
+
+        self.assertIn(
+            "permissions:\\n    contents: read",
+            build,
+            "the Windows build job handles candidate binaries and signing inputs "
+            "but must never inherit write scope from a future workflow-level change",
+        )
+        self.assertNotIn("contents: write", build)
+        self.assertIn("permissions:\\n      contents: write", publisher)
+        self.assertEqual(
+            self.windows_content.count("contents: write"),
+            1,
+            "only the separately gated publisher may receive repository write permission",
+        )
+        self.assertIn(
+            "if: github.event_name == 'push' && github.ref == 'refs/heads/main' "
+            "&& github.ref_protected == true && vars.SOFTTIMER_RELEASE_APPROVED == 'true' "
+            "&& needs.build-windows.outputs.future_release_eligible == 'true'",
+            publisher,
+        )
 
 
 if __name__ == "__main__":
