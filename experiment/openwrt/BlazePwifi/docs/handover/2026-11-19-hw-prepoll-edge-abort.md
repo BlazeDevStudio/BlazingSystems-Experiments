@@ -587,3 +587,43 @@ Local EEPROM configuration preservation is **SIMULATED / CI VERIFIED** at the te
 
 **PHX-QA:** independently review the valid-v3 read-failure case and inject each NVS field/readback failure on its own branch; do not weaken default-deny to satisfy the stale poll-signature fixture. **PHX-RELEASE:** provide the exact-head pinned ESP32 core 3.3.13/4.0.0 build matrix. **PHX-CORE:** publish the canonical authenticated register/poll response contract. **PHX-MASTER:** decide how the #177 P0 candidate and #327 stack enter the integration matrix. No hardware flash, physical power-cut test, coin/finance operation, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
 
+
+
+## UTC05 follow-up — Mbed TLS selector and digest failure-path coverage (2026-11-19)
+
+**Master request:** PHX-MASTER UTC03/UTC04 requested explicit Mbed TLS 3.x branch coverage and unsupported-major compile rejection. This follow-up is limited to the ESP32 hardware-owned compatibility selector and hexDigest() implementation.
+
+### One hardware-owned test/CI change
+
+- Added experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_compat_guard_lab.py.
+- The lab extracts the actual selector and hexDigest() function from the production sketch rather than copying the branch logic into the test.
+- It compiles the Mbed TLS 3 legacy SHA branch and Mbed TLS 4 PSA branch against deliberately small API stubs.
+- Failure injection verifies Mbed TLS 3 starts/update/finish errors return an empty digest; Mbed TLS 4 PSA init/hash errors and a non-32-byte digest length also return empty.
+- Unsupported major versions 2 and 5 must fail compilation with the exact firmware #error diagnostic.
+- Added the lab to the hardware-owned phx-hardware-quarantine-byte-readback.yml workflow.
+
+**Important limitation:** this is a source-extracted selector/control-flow lab with stub APIs. It is not a real Mbed TLS 3.3.13 library build, not cryptographic known-answer verification, and not a substitute for PHX-RELEASE's pinned exact-head Arduino build.
+
+### Exact source and CI evidence
+
+**Source/test + workflow commit:** 0e5514adb0088649eca8bec9df6215faa50b556c.
+
+- Quarantine/readback push [#44467340819](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467340819), job 135368184074: **SUCCESS**.
+- Quarantine/readback PR [#44467350247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467350247), job 135368212650: **SUCCESS**.
+- Exact log markers: MBEDTLS_MAJOR_3_SELECTOR_AND_DIGEST_PASS, MBEDTLS_MAJOR_4_SELECTOR_AND_DIGEST_PASS, MBEDTLS_UNSUPPORTED_MAJOR_2_REJECTED, MBEDTLS_UNSUPPORTED_MAJOR_5_REJECTED, MBEDTLS_COMPATIBILITY_GUARD_LAB_PASS.
+- The same quarantine logs also retain the existing request-digest failure-deny, NVS error-deny and valid-v3 EEPROM image-preservation scenarios.
+
+**Full workflow remains blocked:**
+- Push Full [#44467340845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467340845), validation job 135368185015: **FAILURE**, inherited Missing poll signature check in the ESP8266 sketch.
+- PR Full [#44467350270](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467350270), validation job 135368213733: same **FAILURE**.
+- ESP8266 compile jobs completed SUCCESS. Other target jobs were still running at this checkpoint; release/simulation downstream jobs were skipped after validation failure. No Full validation pass is claimed.
+
+No firmware source, cryptographic wire contract, shared schema, finance, QA-owned tests, COE destination or release-owned workflow changed in this task.
+
+### Next exact actions
+
+- **PHX-RELEASE:** provide a pinned exact-head ESP32 build using core 3.3.13 and 4.0.0 against the current sketch. The actual 3.3.13 build remains **NOT TESTED**.
+- **PHX-QA:** independently review this compatibility lab and own the per-key ESP32 NVS write/readback failure matrix; reconcile the stale positive poll-signature assertion without weakening default-deny.
+- **PHX-MASTER:** decide the #326/#327 integration sequence after QA review.
+
+**Disposition:** Mbed TLS selector and digest error-control paths are **SIMULATED / CI VERIFIED**. Real Mbed TLS 3.3.13 exact-head build, physical electrical/power acceptance, financial migration, durable accounting/replay, protected witness, and independent QA/release acceptance remain **NOT TESTED / NOT ESTABLISHED**. PR #327 remains OPEN / DRAFT / UNMERGED; PRODUCTION NO-GO.
