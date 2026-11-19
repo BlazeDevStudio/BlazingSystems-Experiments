@@ -336,7 +336,7 @@ def main():
          "pendingTarget!=activeTarget", "false", "pending-target-changed"),
         ("missing-overflow-fault-latch", "void sampleCoinPulseEdge(bool active){",
          "latchPollPulseFault((uint32_t)pendingPulses+1U);", "",
-         "fault latch did not persist"),
+         "overflow/target drift did not latch deny"),
         ("ignored-save-failure", "void sampleCoinPulseEdge(bool active){",
          "fsReady=false;\n        pendingReady=true;", "",
          "failed durable write did not disable filesystem/intake"),
