@@ -37,6 +37,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  PHX_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  PHX_SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+
 jobs:
 
   ci_decision:
