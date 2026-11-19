@@ -445,8 +445,8 @@ class BuildProvenanceTests(unittest.TestCase):
         original_payload_digest = checksum(payload_path)
         original_write = provenance._write_new_json
 
-        def write_manifest_then_mutate(path, manifest):
-            original_write(path, manifest)
+        def write_manifest_then_mutate(path, manifest, *, directory_fd):
+            original_write(path, manifest, directory_fd=directory_fd)
             payload_path.write_bytes(b"mutated-after-manifest-snapshot")
 
         args = provenance.build_args(
