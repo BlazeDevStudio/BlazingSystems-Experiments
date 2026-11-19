@@ -64,6 +64,19 @@ bool selected(int value) {
         raise AssertionError("function extractor did not select the definition")
     if len(functions) != 1 or functions[0][1] != function:
         raise AssertionError("function list must contain the single real definition")
+
+    # C++ translation phase 2 removes backslash-newline before // comment
+    # recognition. A continued comment must not expose a fake function body.
+    continued_comment = (
+        "// continued comment " + "\\\\" + "\\n"
+        + "bool selected(int value) { return false; }\\n"
+    )
+    continued_masked = mask_non_code(continued_comment)
+    if len(continued_masked) != len(continued_comment):
+        raise AssertionError("continued-comment mask must preserve source offsets")
+    if extract_functions(continued_comment, "selected"):
+        raise AssertionError("backslash-newline // comment exposed a fake function")
+
     if not function.endswith("}"):
         raise AssertionError("function extractor returned an incomplete body")
 
