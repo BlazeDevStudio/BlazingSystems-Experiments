@@ -61,7 +61,7 @@ def main() -> int:
     )
     if success_marker not in content:
         return fail("workflow must emit the per-core build provenance marker")
-    if '"${{ matrix.esp32_core }}"' in content:
+    if '"$${{ matrix.esp32_core }}"' in content:
         return fail("build marker adds a second dollar before the matrix expression; Bash treats it as a positional parameter")
     if '"${{ matrix.esp32_core }}"' not in content:
         return fail("build marker must print the matrix core without shell positional expansion")
