@@ -108,6 +108,7 @@ static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
 // network or logging calls are permitted from interrupt context.
@@ -865,6 +866,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+  lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();
     return;
   }
 
@@ -874,6 +876,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   pinMode(runRelayPin,OUTPUT);
   pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+  lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
 }
@@ -984,6 +987,17 @@ void latchPollPulseFault(uint32_t pulseEdges){
   }
 }
 
+bool reconcileUnobservedCoinEdges(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  if(unhandledEdges==0U) return true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  if(pendingPulses>0) pendingReady=true;
+  latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
+  Serial.println("CRITICAL: unobserved coin ISR edge(s) crossed a blocking operation; operator reconciliation required.");
+  return false;
+}
+
 
 
 // Observe a full debounce-width quiet interval after disabling intake.
@@ -1013,6 +1027,23 @@ bool beginPollWindow(){
 }
  
 void sampleCoinPulseEdge(bool active){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unseenEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool sampledSingleEdge=unseenEdges==1U && active && !lastCoin &&
+      fsReady && !journalRecoveryRequired && !pendingReady &&
+      insertMode && activeTarget.length()>0 &&
+      millis()-lastEdge>runDebounceMs;
+  if(unseenEdges>0U && !sampledSingleEdge){
+    if(pendingPulses>0) pendingReady=true;
+    if(!journalRecoveryRequired){
+      latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);
+      Serial.println("CRITICAL: ISR coin edge could not be sampled and assigned to a pending event; operator reconciliation required.");
+    }
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=active;
+    applyOutputs();
+    return;
+  }
   if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
      millis()-lastEdge>runDebounceMs){
     // A pulse after the pending batch is closed cannot be appended or safely
@@ -1023,10 +1054,7 @@ void sampleCoinPulseEdge(bool active){
       applyOutputs();
       Serial.println("CRITICAL: coin pulse arrived after pending batch closed; operator reconciliation required.");
     } else if(insertMode && activeTarget.length()){
-      if(pendingPulses==0){
-        pendingNonce=freshNonce();
-        pendingTarget=activeTarget;
-      }
+      if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
       // PendingRecord.pulses is bounded to 20. Never silently discard an edge
       // that cannot fit the record or that belongs to a different target.
       if(pendingTarget!=activeTarget || pendingPulses>=20){
@@ -1043,11 +1071,12 @@ void sampleCoinPulseEdge(bool active){
           fsReady=false;
           pendingReady=true;
           applyOutputs();
-          Serial.println("CRITICAL: failed to persist coin journal; sticky dual-store fault latch attempted; relay disabled.");
+          Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
         }
       }
     }
   }
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
   lastCoin=active;
 }
 
@@ -1747,31 +1776,45 @@ void loop(){
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
-    const bool pollWindowReady=beginPollWindow();
-    // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.
-    const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
-    if(pollEdgeAfterDrain!=pollEdgeStart){
-      latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
+    if(pollEdgeStart!=lastHandledCoinEdgeSequence){
+      const uint32_t unhandledEdges=pollEdgeStart-lastHandledCoinEdgeSequence;
+      lastHandledCoinEdgeSequence=pollEdgeStart;
+      if(pendingPulses>0) pendingReady=true;
+      latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
       pollIntakeSuspended=false;
       applyOutputs();
       lastPoll=millis();
-    } else if(pollWindowReady){
-      wifiFailures=0;
-      String r=post("poll");
-      // Keep intake inhibited until this response has been accepted or denied.
-      acceptPollResponse(r);
-      pollIntakeSuspended=false;
-      const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
-      if(pollEdgeEnd!=pollEdgeStart){
-        latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
+    } else {
+      const bool pollWindowReady=beginPollWindow();
+      // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.
+      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
+      if(pollEdgeAfterDrain!=pollEdgeStart){
+        lastHandledCoinEdgeSequence=pollEdgeAfterDrain;
+        if(pendingPulses>0) pendingReady=true;
+        latchPollPulseFault((uint32_t)pendingPulses+(pollEdgeAfterDrain-pollEdgeStart));
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollWindowReady){
+        wifiFailures=0;
+        String r=post("poll");
+        // Keep intake inhibited until this response has been accepted or denied.
+        acceptPollResponse(r);
+        pollIntakeSuspended=false;
+        const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+        lastHandledCoinEdgeSequence=pollEdgeEnd;
+        if(pollEdgeEnd!=pollEdgeStart){
+          if(pendingPulses>0) pendingReady=true;
+          latchPollPulseFault((uint32_t)pendingPulses+(pollEdgeEnd-pollEdgeStart));
+        }
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollIntakeSuspended){
+        // Drain aborted without an ISR delta; release only after sequence reconciliation.
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
       }
-      applyOutputs();
-      lastPoll=millis();
-    } else if(pollIntakeSuspended){
-      // Drain aborted without an ISR delta; release only after sequence reconciliation.
-      pollIntakeSuspended=false;
-      applyOutputs();
-      lastPoll=millis();
     }
   }
   bool raw=digitalRead(runCoinPin);
@@ -1788,26 +1831,34 @@ void loop(){
     if(!markPendingPostAttempt()){
       journalRecoveryRequired=true;
       applyOutputs();
+      if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    } else if(!reconcileUnobservedCoinEdges()){
+      applyOutputs();
     } else {
       String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
       lastSend=millis();
-      if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
+      if(!reconcileUnobservedCoinEdges()){
+        applyOutputs();
+      } else if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
         journalRecoveryRequired=true;
         Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
         applyOutputs();
       } else if(pollJsonTopLevelTrue(r,"ok")){
-        clearPending();
+        if(reconcileUnobservedCoinEdges()) clearPending();
+        if(!reconcileUnobservedCoinEdges()) applyOutputs();
         applyOutputs();
       } else if(r.indexOf("coin window expired")>=0 ||
                 r.indexOf("coin target mismatch")>=0 ||
                 r.indexOf("no active coin window")>=0 ||
                 r.indexOf("another vendo selected")>=0){
         quarantinePending(r);
+        if(!reconcileUnobservedCoinEdges()) applyOutputs();
         applyOutputs();
       } else {
         // An authenticated but malformed/unknown disposition remains ambiguous.
         journalRecoveryRequired=true;
         Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
+        if(!reconcileUnobservedCoinEdges()) applyOutputs();
         applyOutputs();
       }
     }

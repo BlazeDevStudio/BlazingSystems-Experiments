@@ -331,6 +331,9 @@ void detachInterrupt(int);
 void coinEdgeISR();
 void attachInterrupt(int,void(*)(),int);
 int digitalRead(int);
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 
 """ + string_checks + "\n" + functions + r"""
 
@@ -352,6 +355,8 @@ int digitalRead(int){ return HIGH; }
 
 void resetState(){
   EEPROM=FakeEEPROM();
+  coinEdgeSequence=0;
+  lastHandledCoinEdgeSequence=0;
   saveCfgCommitFailureReturns=0;
   configFailureLatchCalls=0;
   cfg=Config{};

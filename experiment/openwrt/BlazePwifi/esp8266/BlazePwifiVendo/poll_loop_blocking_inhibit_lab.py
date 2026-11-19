@@ -94,6 +94,7 @@ bool pollFaultBackupPresentOrCorrupt(){ return false; }
 void observeBackupWrite();
 bool writePollFaultBackup(uint32_t){ observeBackupWrite(); return false; }
 volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
 struct String : std::string {
   using std::string::string;
   using std::string::operator=;
@@ -116,6 +117,8 @@ void observeBackupWrite(){ backupWriteSawRelayOn=relayOn; backupWriteSawLedOn=le
 void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
+static bool allowCoinPost=false, injectDuringCoinPost=false;
+static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 static bool injectDuringDrainAbort=false;
 static int drainAbortReadCount=0;
@@ -197,11 +200,11 @@ struct FakeSerial {
 SUPPORT = r"""
 String freshNonce(){ return String("nonce12345678"); }
 bool savePending(){ ++saveCalls; return true; }
-bool canAttemptCoinPost(){ return false; }
-bool markPendingPostAttempt(){ return false; }
-bool coinPostDispositionVerified(const String&,const String&,const String&,uint8_t){ return false; }
-bool pollJsonTopLevelTrue(const String&,const char*){ return false; }
-bool clearPending(){ return false; }
+bool canAttemptCoinPost(){ return allowCoinPost && outputPolarityKnown && fsReady && !journalRecoveryRequired && !pendingPostAttempted && pendingReady && pendingPulses>0; }
+bool markPendingPostAttempt(){ if(!allowCoinPost) return false; pendingPostAttempted=true; return true; }
+bool coinPostDispositionVerified(const String&,const String&,const String&,uint8_t){ return allowCoinPost; }
+bool pollJsonTopLevelTrue(const String&,const char*){ return allowCoinPost; }
+bool clearPending(){ ++clearCalls; pendingPulses=0; pendingReady=false; pendingPostAttempted=false; pendingTarget.clear(); pendingNonce.clear(); return true; }
 bool quarantinePending(const String&){ return false; }
 void startSetupAp(){}
 String post(const String &action,const String &pulses=String("0"),
@@ -236,6 +239,12 @@ String post(const String &action,const String &pulses=String("0"),
     // acceptPollResponse() must still deny it until CORE/QA approve the contract.
     return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");
   }
+  if(action=="coin"){
+    ++coinPostCalls;
+    if(injectDuringCoinPost){ coinEdgeSequence++; injectDuringCoinPost=false; }
+    fakeNow+=3500UL;
+    return String("{\"ok\":true}");
+  }
   return String("");
 }
 """
@@ -243,11 +252,12 @@ String post(const String &action,const String &pulses=String("0"),
 MAIN = r"""
 void resetState(){
   fakeNow=2000; pulseStart=-1; pulseEnd=-1;
-  coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
+  coinEdgeSequence=0; lastHandledCoinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
+  allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
   pollCalls=0; saveCalls=0;
@@ -384,6 +394,29 @@ int main(){
   resetState(); fsReady=false; applyOutputs(); loop();
   if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 43;
 
+  // An ISR edge already present before poll admission must abort before HTTP.
+  resetState(); coinEdgeSequence=1U; loop();
+  if(pollCalls!=0 || !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || pollIntakeSuspended || lastPoll!=2000U || fakeNow!=2002U) return 44;
+  std::cout<<"POLL_UNOBSERVED_PRE_POLL_EDGE_ABORT_PASS\\n";
+
+  // A coin pulse captured by the ISR while the synchronous coin POST blocks
+  // must be persisted before a success disposition can clear the pending record.
+  resetState(); allowCoinPost=true; pendingReady=true; pendingPulses=4U;
+  pendingNonce="nonce-existing"; pendingTarget="target-01";
+  insertMode=false; activeTarget=""; injectDuringCoinPost=true; loop();
+  if(coinPostCalls!=1 || clearCalls!=0 || pendingPulses!=4U || !pendingReady ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 45;
+  std::cout<<"COIN_POST_BLOCKED_ISR_EDGE_RETAINED_PASS\\n";
+
+  // With no intervening ISR edge, the existing authenticated success path may clear.
+  resetState(); allowCoinPost=true; pendingReady=true; pendingPulses=4U;
+  pendingNonce="nonce-existing"; pendingTarget="target-01";
+  insertMode=false; activeTarget=""; loop();
+  if(coinPostCalls!=1 || clearCalls!=1 || pendingPulses!=0U || pendingReady ||
+     journalRecoveryRequired || LittleFS.exists("/pollpulse.fault")) return 46;
+  std::cout<<"COIN_POST_NO_EDGE_CLEAR_CONTROL_PASS\\n";
+
   std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 7/7 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
   return 0;
@@ -456,15 +489,16 @@ for board,path in BOARDS.items():
     latch_fault=extract_function(source, "latchPollPulseFault")
     init_store=extract_function(source, "initPendingStore")
     sample=extract_function(source, "sampleCoinPulseEdge")
+    reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
-                 begin_source=begin,sample_source=sample,main_source=MAIN):
+                 begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
                 quiet_source+begin_source+configure_source+accept_source+write_fault_source+
-                load_fault_source+latch_fault_source+init_store_source+SUPPORT+sample_source+loop_source+main_source)
+                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+sample_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     edge_hook = begin.replace(
@@ -569,4 +603,25 @@ for board,path in BOARDS.items():
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
-print("PHX-HARDWARE: poll-fault output inhibition before secondary-store and LittleFS persistence passed on ESP8266 and ESP32; no hardware evidence")
+    pre_poll_edge_guard_removed = loop.replace(
+        "if(pollEdgeStart!=lastHandledCoinEdgeSequence){",
+        "if(false){",
+        1,
+    )
+    if pre_poll_edge_guard_removed == loop:
+        raise AssertionError(f"{board}: pre-poll unobserved-edge guard mutation did not apply")
+    compile_and_run(assemble(loop_source=pre_poll_edge_guard_removed),board,44,
+                    "ignore-unobserved-edge-before-poll")
+    print(f"{board} MUTATION_REJECTED ignore-unobserved-edge-before-poll")
+    missing_coin_post_latch = reconcile.replace(
+        "latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);",
+        "// mutation: unresolved edge persistence omitted",
+        1,
+    )
+    if missing_coin_post_latch == reconcile:
+        raise AssertionError(f"{board}: coin-post persistence mutation did not apply")
+    compile_and_run(assemble(reconcile_source=missing_coin_post_latch),board,45,
+                    "missing-coin-post-edge-persistence")
+    print(f"{board} MUTATION_REJECTED missing-coin-post-edge-persistence")
+
+print("PHX-HARDWARE: poll-fault and coin-POST ISR reconciliation passed on ESP8266 and ESP32; no hardware evidence")
