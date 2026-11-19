@@ -44,7 +44,7 @@ ARDUINO_CLI_STEP_NAMES = ("Install ESP8266 core", "Install ESP32 core")
 
 
 def _workflow_step(content: str, name: str) -> str:
-    marker = f"      - name: {name}\\n"
+    marker = f"      - name: {name}\n"
     start = content.find(marker)
     if start < 0:
         return ""
@@ -57,7 +57,7 @@ def _workflow_step(content: str, name: str) -> str:
 def check_arduino_cli_toolchain(content: str) -> list[str]:
     errors: list[str] = []
     action_marker = re.compile(
-        r"(?m)^      - uses: arduino/setup-arduino-cli@[0-9a-f]{40}[^\\n]*\\n"
+        r"(?m)^      - uses: arduino/setup-arduino-cli@[0-9a-f]{40}[^\n]*\n"
     )
     matches = list(action_marker.finditer(content))
     if len(matches) != len(ARDUINO_CLI_STEP_NAMES):
@@ -68,7 +68,7 @@ def check_arduino_cli_toolchain(content: str) -> list[str]:
         remainder = content[match.end():]
         next_step = re.search(r"(?m)^      - (?:name|uses):", remainder)
         block = remainder[:next_step.start()] if next_step else remainder
-        versions = re.findall(r"(?m)^          version:\\s*[\"']?([^\"'#\\s]+)", block)
+        versions = re.findall(r"(?m)^          version:\s*[\"']?([^\"'#\s]+)", block)
         if versions != [ARDUINO_CLI_VERSION]:
             errors.append(
                 f"Arduino CLI setup action {index} must pin version {ARDUINO_CLI_VERSION}; found {versions}"
