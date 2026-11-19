@@ -25,8 +25,21 @@ def mask_non_code(source: str) -> str:
         if source.startswith("//", index):
             start = index
             index += 2
-            while index < len(source) and source[index] not in "\r\n":
-                index += 1
+            while index < len(source):
+                if source[index] not in "\r\n":
+                    index += 1
+                    continue
+
+                # C++ translation phase 2 removes backslash-newline before
+                # comment recognition, so the // comment continues.
+                newline_end = index + 1
+                if (source[index] == "\r" and newline_end < len(source)
+                        and source[newline_end] == "\n"):
+                    newline_end += 1
+                if source[index - 1] == "\\":
+                    index = newline_end
+                    continue
+                break
             blank(start, index)
             continue
 
