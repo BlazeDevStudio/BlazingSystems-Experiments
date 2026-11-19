@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift and failed-journal safety lab.
+"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift, post-finalization edge and failed-journal safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
 coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(), and
@@ -191,7 +191,7 @@ static bool runDeniedGates(){
       case 0:insertMode=false;break;
       case 1:fsReady=false;break;
       case 2:journalRecoveryRequired=true;break;
-      case 3:pendingReady=true;break;
+      case 3:pendingReady=true;active=false;break; // idle after finalization remains a no-op
       case 4:activeTarget.clear();break;
       case 7:lastCoin=true;break;
       case 8:active=false;break;
@@ -255,6 +255,29 @@ static bool runUnrepresentablePulseCases(){
   if(!runUnrepresentablePulseFault("pending-target-changed",1U,"other-target")) return false;
   return true;
 }
+static bool runLatePulseAfterReady(){
+  resetState(141U);
+  lastEdge=100U;
+  pendingReady=true;
+  pendingPulses=4U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  applyOutputs();
+  if(relayOn || ledOn)
+    return fail("late-pulse-after-ready","pending-ready state did not keep outputs OFF");
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     !pendingReady || relayOn || ledOn)
+    return fail("late-pulse-after-ready","late edge after finalization did not latch unresolved batch and keep outputs OFF");
+  if(pendingPulses!=4U || pendingNonce!="nonce-existing" || pendingTarget!="target-01" ||
+     saveCalls!=0 || nonceCalls!=0)
+    return fail("late-pulse-after-ready","late edge mutated or replaced the already-finalized pending identity");
+  if(backupCalls!=1 || markerCalls!=1 || backupEdges!=5U || markerEdges!=5U)
+    return fail("late-pulse-after-ready","late edge was not persisted as one additional unresolved pulse");
+  if(!backupSawRelayOff || !backupSawLedOff || !markerSawRelayOff || !markerSawLedOff)
+    return fail("late-pulse-after-ready","fault persistence began before output inhibition");
+  return true;
+}
 int main(){
   int passed=0;
   if(!runDrainCapture("delayed-100ms-active-low",0U,100U,130U,0U,40U,true)) return 1;
@@ -278,7 +301,9 @@ int main(){
   ++passed;
   if(!runUnrepresentablePulseCases()) return 10;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/10 top-level scenarios\n";
+  if(!runLatePulseAfterReady()) return 11;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/11 top-level scenarios\n";
   return 0;
 }
 '''
@@ -334,6 +359,8 @@ def main():
          "pendingPulses>=20", "pendingPulses>20", "pulse-overflow-21"),
         ("missing-target-drift-guard", "void sampleCoinPulseEdge(bool active){",
          "pendingTarget!=activeTarget", "false", "pending-target-changed"),
+        ("missing-pending-ready-late-edge-latch", "void sampleCoinPulseEdge(bool active){",
+         "if(pendingReady){", "if(false){", "late edge after finalization did not latch unresolved batch"),
         ("missing-overflow-fault-latch", "void sampleCoinPulseEdge(bool active){",
          "latchPollPulseFault((uint32_t)pendingPulses+1U);", "",
          "overflow/target drift did not latch deny"),
@@ -357,10 +384,10 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 10/10" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 11/11" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_COIN_PULSE_CAPTURE_PASS 10/10")
+            print(f"{board}_COIN_PULSE_CAPTURE_PASS 11/11")
             for name, signature, old, new, expected in mutations:
                 index = SIGNATURES.index(signature)
                 if old not in functions[index]:
