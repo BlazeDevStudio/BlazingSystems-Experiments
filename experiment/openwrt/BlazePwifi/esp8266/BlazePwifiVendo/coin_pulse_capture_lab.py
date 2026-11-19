@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PHX-HARDWARE exact-source coin pulse and failed-journal safety lab.
+"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift and failed-journal safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
 coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(), and
@@ -200,7 +200,7 @@ static bool runDeniedGates(){
     sampleCoinPulseEdge(active);
     if(saveCalls!=0 || pendingPulses!=0){
       std::cerr<<"FAIL deny-case-"<<scenario<<" saves="<<saveCalls
-               <<" pulses="<<(unsigned)pendingPulses<<"\\n";
+               <<" pulses="<<(unsigned)pendingPulses<<"\n";
       return false;
     }
   }
