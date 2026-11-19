@@ -112,8 +112,8 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         expected_jobs = {job for job, _ in cases}
         actual_write_jobs = {
             name
-            for name in re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\\n", self.content)
-            if "permissions:\\n      contents: write" in job_block(self.content, name)
+            for name in re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\n", self.content)
+            if "permissions:\n      contents: write" in job_block(self.content, name)
         }
         self.assertEqual(
             actual_write_jobs,
