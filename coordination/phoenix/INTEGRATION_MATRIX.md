@@ -1791,3 +1791,20 @@ At COE #44 packager blob `f2c2467f37137c38856abcad1b101436e50d3970`, `generate_u
 ### Governance and execution classification
 
 Experiments `main`, development and COE `main` branch objects report `protected=false`; both repository rulesets endpoints return empty arrays. Effective branch protection and required checks still require administrator verification. Master PR #288 has no PR-triggered Actions run. The full Master Python suite was NOT RUN: direct `git ls-remote` could not resolve `github.com` in the execution runtime. Source/tree inspection and role CI are not substitutes for the Master suite or physical acceptance. **PRODUCTION NO-GO.**
+
+
+### Exact #26 Hardware source/test/license provenance refresh — 2026-11-19
+
+At Experiments #327 head `82fef49d945aeb64da76e89ef12126784a4c64b2` versus COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`:
+
+| Item | Experiments source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP32 sketch | blob `528187f68aaad7d76a690bbf1cbe338165ad3839`, 64,308 bytes | blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, 18,505 bytes | Different blobs |
+| ESP8266 sketch | blob `aa021588b610f928f7af4f5fefb3f32114e6b5ae`, 68,127 bytes | blob `c8be98f72596681e36a3ad1f8939bf8046c96887`, 18,394 bytes | Different blobs |
+| Source `BlazePwifi/LICENSE` / destination `Pisowifi/LICENSE` | `1ee55b94183417be977ca287cd7391f9a6f7e721` | Same blob | Pisowifi license match only |
+| Hardware license/notice | Source `BlazePwifi/NOTICE.md` absent | `Hardware/LICENSE` and `Hardware/NOTICE.md` absent | Hardware scope unresolved |
+| Test inventory | `tests/`: 46 scripts (8 Python, 38 shell); board-local: 22 Python labs (9 ESP32, 13 ESP8266) plus one shared extraction helper | `Hardware/tests/test_firmware_hardening.sh`: one 4,118-byte shell file, blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Import completeness NOT established |
+
+Source `tests/v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` and destination shell test both retain positive-presence checks for `response_sig`, `|register|` and `|poll|`. The current #327 poll/disposition consumer intentionally remains default-deny, so those assertions are not a valid acceptance contract. The destination test is not equivalent to the source board-local labs and does not independently verify current #327 behavior.
+
+No Hardware source file, destination file, license or test was copied or changed. #26 still has five queued workflows with zero jobs. Keep migration BLOCKED pending owner-reviewed licensing, exact per-file provenance, source-equivalent negative tests, and runnable exact-head destination CI.
