@@ -56,6 +56,47 @@ def require_read_only_workflow_default(content: str) -> None:
         )
 
 
+def require_softtimer_signing_steps_are_protected(content: str) -> None:
+    """Require every production Authenticode step to retain its full release gate."""
+    expected_names = (
+        "RELEASE-SIGN sign portable executables before NSIS",
+        "RELEASE-SIGN sign native Setup after metadata verification",
+        "RELEASE-SIGN verify final signed packages before upload",
+    )
+    actual_names = tuple(
+        re.findall(
+            r"(?m)^      - name: (RELEASE-SIGN (?:sign|verify)[^\\n]*)$",
+            content,
+        )
+    )
+    if actual_names != expected_names:
+        raise AssertionError(
+            "the SoftTimer workflow must expose exactly the three reviewed production "
+            f"sign/verify steps in order; found {actual_names!r}"
+        )
+
+    expected_condition = (
+        "github.event_name == 'push' && github.ref == 'refs/heads/main' "
+        "&& github.ref_protected == true && env.VERSION != '0.4.0' "
+        "&& vars.SOFTTIMER_RELEASE_APPROVED == 'true'"
+    )
+    for name in expected_names:
+        marker = f"      - name: {name}\\n"
+        start = content.find(marker)
+        if start < 0:
+            raise AssertionError(f"missing SoftTimer signing step: {name}")
+        end = content.find("\\n      - name:", start + len(marker))
+        if end < 0:
+            end = len(content)
+        block = content[start:end]
+        condition = re.search(r"(?m)^        if: (.+)$", block)
+        if condition is None or condition.group(1) != expected_condition:
+            raise AssertionError(
+                f"{name} must require the explicit protected-main release gate "
+                "(push, protected main, non-0.4.0 version and SOFTTIMER_RELEASE_APPROVED)"
+            )
+
+
 class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -178,6 +219,23 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         self.assertNotEqual(unsafe, self.content)
         with self.assertRaisesRegex(AssertionError, "workflow-level permissions"):
             require_read_only_workflow_default(unsafe)
+
+
+    def test_every_softtimer_production_signing_step_requires_protected_main_and_release_approval(self):
+        require_softtimer_signing_steps_are_protected(self.windows_content)
+
+        # Prove the guard catches a one-step approval-gate regression without
+        # changing or executing any signing command or accessing credentials.
+        unsafe = self.windows_content.replace(
+            "&& vars.SOFTTIMER_RELEASE_APPROVED == 'true'",
+            "&& vars.SOFTTIMER_RELEASE_APPROVED != 'true'",
+            1,
+        )
+        self.assertNotEqual(unsafe, self.windows_content)
+        with self.assertRaisesRegex(AssertionError, "explicit protected-main release gate"):
+            require_softtimer_signing_steps_are_protected(unsafe)
+
+
 
 
 if __name__ == "__main__":
