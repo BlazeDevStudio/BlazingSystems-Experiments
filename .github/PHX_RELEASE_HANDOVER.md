@@ -482,8 +482,8 @@ At task start, live PR #327 API head was `984ea8ff65a93b7da6e22fc2e1943acaf56100
 
 ### Exact-source CI status at handover update
 
-- [Compatibility matrix #44531465685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531465685), exact release source/test HEAD `6961921`: both jobs are **IN PROGRESS**. For both ESP32 core 3.3.13 and 4.0.0, checkout of the exact pinned Hardware commit, sketch-blob assertion, Arduino CLI archive-byte verifier, and exact core installation have **PASSED**; the actual sketch compile step is still running. No compile PASS is claimed yet.
-- [BlazePwifi build #44531465762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531465762): CI-0701 release guard **SUCCESS**; ESP32 and ESP8266 build/artifact jobs **SUCCESS**; full `validate` was still **IN PROGRESS** at this read. No overall run conclusion is claimed.
+- [Compatibility matrix #44531465685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531465685), exact release source/test HEAD `69619210865259918ed74e081427ba960539af7a`: **COMPLETED SUCCESS**. Both jobs verified Hardware commit `984ea8ff65a93b7da6e22fc2e1943acaf56100ca`, ESP32 sketch blob `528187f68aaad7d76a690bbf1cbe338165ad3839`, Arduino CLI archive size `20,111,675` and SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`, and installed CLI binary SHA-256 `5897b56f5eac106e60c902d6444f2923e918885aaeb119fc4b44ff9db5003ba8`. Core 3.3.13 compile **PASS**: program `1,042,228` bytes (79%), globals `49,952` bytes (15%), binary SHA-256 `1bcd57524d9059ed4c45f12d3b6e836d016b416386cd1ea250de6bf079645926`. Core 4.0.0 compile **PASS**: program `1,096,177` bytes (83%), globals `52,568` bytes (16%), binary SHA-256 `70b01ba160d3586e500589fb54e259161fe56ff07f0599862c97caa4992fade4`. These are hosted CI compile outputs only, not physical hardware acceptance.
+- [BlazePwifi build #44531465762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531465762): CI-0701 release guard, full `validate`, ESP32 and ESP8266 jobs **SUCCESS**. The overall run was later **CANCELLED** by the documentation-only successor; job summary: 16 SUCCESS, 10 CANCELLED, 4 SKIPPED. Do not call the overall run successful.
 - [Windows release #44531465730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531465730): shared handover **SUCCESS**; .NET 8 SDK pin step **SUCCESS**; Windows job **FAILURE** in the PISONET-owned `tests/ReleaseSigning/negative-selftest.ps1` because `$buildWorkflow` is unset; publisher **SKIPPED**. PHX-RELEASE did not edit PISONET files.
 - Earlier docs-head Windows run [#44527914604](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44527914604) independently logged `RELEASE-DOTNET-SDK-PASS: 8.0.425`; the current Windows failure is not the SDK pin.
 
@@ -499,7 +499,7 @@ At task start, live PR #327 API head was `984ea8ff65a93b7da6e22fc2e1943acaf56100
 
 ### Next owner actions
 
-1. **PHX-RELEASE:** record terminal status of #44531465685 at the next activation; if either exact-core compile fails, preserve the log and correct only the release-owned compatibility workflow/test.
+1. **PHX-RELEASE:** at the next activation inspect documentation-head runs queued after this handover commit; do not duplicate the completed exact-source matrix unless the pinned hardware source/sketch blob changes.
 2. **PHX-PISONET:** fix the uninitialized `$buildWorkflow` in its own negative self-test; RELEASE must not edit it.
 3. **PHX-QA:** independently review the current #327 deny-only poll fixture and the exact-source compatibility evidence.
 4. **PHX-HARDWARE:** reconcile its latest #327 workflow/lab state; do not treat focused lab PASS as Full validation.
