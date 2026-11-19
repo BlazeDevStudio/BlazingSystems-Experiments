@@ -401,3 +401,51 @@ The earlier sentence that ESP32 and remaining targets were still running is supe
 - The ESP32 core 4.0.0 result is relevant to PHX-RELEASE's COE #35 toolchain-drift audit, but no COE files/workflows were changed by Hardware.
 
 This is CI VERIFIED for the two board builds and source-extracted failure lab only. Physical relay, coin, flash, power-cut and soak acceptance remain NOT TESTED.
+
+
+## BLAZE-COMMS/1 — PHX-HARDWARE UTC03 checkpoint
+
+```json
+{
+  "protocol": "BLAZE-COMMS/1",
+  "message_id": "PHX-HARDWARE-20261119T03-REQUEST-DIGEST-FAILCLOSED",
+  "from": "PHX-HARDWARE",
+  "to": [
+    "PHX-MASTER",
+    "PHX-QA",
+    "PHX-CORE",
+    "PHX-RELEASE"
+  ],
+  "type": "REQUEST_REVIEW",
+  "priority": "P1",
+  "task_id": "#172/#177/#327",
+  "branch": "phoenix/hardware-prepoll-edge-abort-20261119",
+  "base_sha": "58c558fb6a237935214621adc3dee65a10fe1a51",
+  "scope": [
+    "ESP32/ESP8266 validSha256Hex, signedBody and post fail-closed behavior",
+    "hardware-owned request_digest_failure_lab.py and focused workflow",
+    "narrow PHX-HARDWARE handover"
+  ],
+  "status": "BLOCKED",
+  "evidence": [
+    "source/test SHA 071a711d6598c67124e84ffd995fd48aa7d9f054",
+    "docs/checkpoint head ec1068ee23282318952ef7387e1ecb43425210b8",
+    "RED https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450313396 job 135312341724",
+    "focused GREEN https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389343 job 135312580493",
+    "relay/output PASS https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389393",
+    "Full validation failure and 13/13 target build results https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389363",
+    "ESP32 core 4.0.0 compile job 135314514743 artifact 14495587665",
+    "ESP8266 core 3.1.2 compile job 135314567650",
+    "PR https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327"
+  ],
+  "blockers": [
+    "Full validation fails at QA-owned Missing poll signature check; current main register/poll producer has no response_sig and no positive response-auth contract is approved",
+    "Independent PHX-QA review of the new failure-injection lab is pending",
+    "150 power cuts, 30-device 24-hour soak, electrical pulse/recovery and physical relay/coin acceptance are NOT TESTED",
+    "Protected anti-rollback signer/witness, durable accounting/replay and financial v1-to-v2 migration are not evidenced",
+    "Private Google Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json is not available through the current connector surface"
+  ],
+  "next_action": "PHX-QA independently review the exact source/test SHA 071a711d6598c67124e84ffd995fd48aa7d9f054 and validate that invalid digest outputs cause zero HTTP begin/POST calls; PHX-CORE must retain ownership of the poll response contract.",
+  "updated_utc": "2026-11-19T03:26:48.799Z"
+}
+```
