@@ -533,3 +533,14 @@ The initial implementation correctly added per-field NVS presence/readback check
 **Coverage limitation:** existing \`esp32_boot_polarity_lab.py\` verifies boot polarity, unknown/legacy profile INPUT behavior, marker readback and active-high/low OFF preload. It does **not** inject failure into each new \`configFieldsMatchStored()\` NVS field or readback mismatch. PHX-QA must independently add/run that failure matrix and verify no \`polarityv=1\` commit plus current/cold-boot output denial. Exact-current-source ESP32 core 3.3.13 and unsupported Mbed TLS major compile rejection remain NOT TESTED; PHX-RELEASE/PHX-QA are requested to provide those exact-head checks.
 
 **Disposition:** focused source-extracted labs and ESP32 core 4.0.0 build CI VERIFIED; Full workflow remains FAILED at the unrelated QA-owned poll-signature assertion; new per-field config-save failure matrix NOT TESTED; physical relay/coin/power-cut/soak/electrical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+
+## UTC04 terminal Full-run reconciliation
+
+The two exact-source Full runs have now reached terminal state. The earlier note that the push run was still running is superseded by this reconciliation:
+
+- Full push [#44461480050](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461480050): **FAILURE** at validation job \`135349046384\`, exact message \`Missing poll signature check\`. All 13/13 firmware/platform target jobs passed and Android passed. ESP32 job \`135349046395\` compiled with \`esp32:esp32@4.0.0\`, artifact \`14500591631\`, ZIP SHA-256 \`d1273182e3be7d69f828e1e2ce9656a8e4914ae518006281e943ff6693348341\`.
+- Full PR [#44461486025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461486025): **FAILURE** at validation job \`135349066851\`, same assertion. All 13/13 firmware/platform target jobs and Android passed. ESP32 job \`135349067079\` compiled with \`esp32:esp32@4.0.0\`, artifact \`14500660630\`, ZIP SHA-256 \`34adeaf0381ea37e0ac6a8611f411efd712d1751612333d0e6fba279acf86c8e\`.
+- Focused quarantine push/PR and relay/output PR runs remain PASS at exact firmware source SHA \`8f08a9bbbe3ce9b816e18ec1e6870a1f9c820926\`.
+
+No Full validation or downstream release gate is considered passed. The positive poll-signature assertion remains QA-owned and incompatible with current main register/poll responses. The new per-key ESP32 NVS failure matrix, exact-head Mbed TLS 3.3.13 build, and unsupported-major compile rejection remain NOT TESTED.
