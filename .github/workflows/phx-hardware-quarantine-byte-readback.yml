@@ -40,6 +40,8 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/boot_polarity_workflow_wiring_lab.py
       - name: Verify pulse capture after poll-drain abort (both board sketches)
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
+      - name: Verify ESP8266 cold-boot output polarity remains deny until locally configured
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py
       - name: Assert real money and hardware are not certified
         run: |
           echo "SIMULATED_ONLY=1"
