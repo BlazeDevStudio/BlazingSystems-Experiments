@@ -964,3 +964,11 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Exact current docs-head [BlazePwifi build #44504561884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561884) and [ESP32 core compatibility #44504561996](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561996) completed SUCCESS; the compatibility legs are pinned to Hardware source `0e5514adb008`, not current Hardware #327.
 - [Windows release #44504561855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561855) reached the intended fail-closed negative signing control, so publisher/build-package steps were skipped. This is not production acceptance.
 - PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO** remains until MASTER, independent QA, protected signer, durable finance/migration, and physical acceptance gates are independently satisfied.
+
+
+## PHX-RELEASE UTC11 — supersession audit: exact-head freshness gate blocked
+
+- Compatible branch head `1ec8dde1b188be310b5daf38d21c26ed812b0361` already contains another release worker's provenance, concurrency, and Windows handover-workflow refinements; this record verifies the outcome without duplicating implementation.
+- Exact [BlazePwifi build #44517814515](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814515) failed only at the mandatory handover freshness gate. The independent firmware/Android/ESP target jobs shown by that run completed, while validation-dependent simulations, release publication, signing handoff, and preview publication were skipped.
+- Exact [Windows release #44517814407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814407) likewise failed at shared BlazePwifi/SoftTimer handover freshness; build and publish jobs were skipped. [ESP32 compatibility #44517814450](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814450) completed both scoped core legs against historical Hardware source `0e5514adb008`, not current Hardware #327.
+- This additive checkpoint supplies a fresh exact-head documentation baseline; no signed, publishable, or deployable artifact is asserted. PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO.**
