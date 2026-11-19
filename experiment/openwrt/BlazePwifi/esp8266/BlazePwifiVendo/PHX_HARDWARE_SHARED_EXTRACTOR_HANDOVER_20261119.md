@@ -1,13 +1,13 @@
 # PHX-HARDWARE handover — shared lexical source extraction
 
-**Date:** 2026-11-19 UTC11  
+**Date:** 2026-11-19 UTC12  
 **Role:** PHX-HARDWARE  
 **Repository:** BlazeDevStudio/BlazingSystems-Experiments  
 **Candidate:** [PR #327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED  
 **Branch:** phoenix/hardware-prepoll-edge-abort-20261119  
 **Parent/base:** PR #326 at 58c558fb6a237935214621adc3dee65a10fe1a51  
-**Exact source/test commit:** 19166d46be2f8a61db69901d7c62d63106644c04  
-**Disposition:** focused source-extracted CI VERIFIED; Full validation FAILED at inherited QA-owned poll-signature assertion; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+**Latest exact source/test commit:** 7db41068f9471565471982030f4c119880908291  
+**Disposition:** shared extractor and raw-string/phase-2 regression focused CI VERIFIED on ESP32/ESP8266; Full validation FAILED at inherited QA-owned poll-signature assertion; 13/13 firmware/platform targets plus Android compiled; physical acceptance NOT TESTED; PRODUCTION NO-GO.
 
 ## Task and rationale
 
@@ -74,4 +74,33 @@ No Codex, physical flashing, device reset, live money, production migration, sig
 
 1. PHX-QA: independently review exact source/test SHA 19166d46be2f8a61db69901d7c62d63106644c04 and correct the QA-owned poll-signature assertion without adding a positive unauthenticated response.
 2. PHX-MASTER: reconcile the #326/#327 stack and refresh the stale live hardware PR table and old organization links.
-3. PHX-HARDWARE: on the next activation, reload all branch heads and review responses before selecting the next owned task.
+3. PHX-HARDWARE: on the next activation, reload all branch heads and review responses; coordinate with MASTER before applying the shared extractor to any remaining parallel #283 labs.
+
+
+## UTC12 follow-on — raw strings and phase-2 comment-splice coverage
+
+The shared lexical helper already handled C++ raw strings and translation-phase-2 backslash-newline comment delimiters, but the first consolidation fixture only covered ordinary strings/comments and ISR attribute ordering. This follow-on adds explicit source-extraction assertions without changing firmware runtime behavior.
+
+- Source/test commit: [7db41068f9471565471982030f4c119880908291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7db41068f9471565471982030f4c119880908291).
+- Changed file: \`experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py\` only.
+- The fixture covers a \`u8R"tag(... )tag"\` raw string containing braces/comment tokens, an escaped ordinary string, a character literal, a split \`//\` opener, a continued line comment, and a split \`*/\` terminator. It also checks the mask preserves source length/newline positions and proves a naive raw-brace counter truncates this fixture.
+- Initial fixture-construction commit [876c5bacc421b6c2d728b662c95b26d32bf71dde](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/876c5bacc421b6c2d728b662c95b26d32bf71dde) encoded literal backslash-n sequences instead of physical newlines. Focused quarantine [#44521252075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521252075), job 135550141073, and relay/output [#44521251887](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521251887), job 135550140995, failed at the new fixture with \`unbalanced C/C++ block\`. This was a test-fixture construction error, not a firmware or helper regression.
+- Corrected in [7db41068](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7db41068f9471565471982030f4c119880908291), using actual backslash-newline pairs in the Python-built C++ probe.
+
+### Exact-source CI at 7db41068
+
+Focused quarantine/readback:
+- Push [#44521440358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440358), job 135550773174: SUCCESS.
+- PR [#44521451085](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521451085), job 135550810376: SUCCESS.
+- Logs include \`SHARED_EXTRACTOR_RAW_STRING_PHASE2_PASS\`, \`SHARED_EXTRACTOR_ISR_ATTRIBUTE_ORDER_PASS\`, \`ESP8266_COIN_PULSE_CAPTURE_PASS 11/11\`, \`ESP32_COIN_PULSE_CAPTURE_PASS 11/11\`, \`POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS\`, and both boards' poll-window, persistence and mutation checks.
+
+Relay/output:
+- PR [#44521450941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450941): ESP32 boot-polarity job 135550809272 SUCCESS; source-output/poll-inhibit job 135550809709 SUCCESS.
+
+Full build:
+- Push [#44521440354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440354), validation job 135550925556: FAILURE.
+- PR [#44521450962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450962), validation job 135550963831: FAILURE.
+- Both exact-head Full runs completed all 13 firmware/platform target jobs and Android successfully. Validation fails in the inherited QA-owned \`tests/controllers.sh\` assertion: \`Missing poll signature check\`. Update bundle, simulations, signing handoff, candidate gate and publishing were skipped. No positive unauthenticated response signature was added.
+
+No firmware sketch, API, journal schema, financial path, GPIO, relay policy, release workflow or production state changed in this follow-on.
+
