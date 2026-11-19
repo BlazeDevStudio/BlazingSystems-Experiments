@@ -82,7 +82,7 @@ def main() -> int:
         return fail("compatibility workflow action-pin counts are not 2 checkout + 1 Arduino setup")
 
     action_refs = re.findall(
-        r"(?m)^\s*-\s*uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)",
+        r"(?m)^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)",
         content,
     )
     expected = {
