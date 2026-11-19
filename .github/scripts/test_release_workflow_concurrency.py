@@ -76,12 +76,13 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
 
 
     def test_windows_sdk_is_exactly_pinned_and_verified(self):
-        block = re.search(
-            r"(?ms)^      - name: Pin \.NET 8 SDK\\n(.*?)(?=^      - name:|\\Z)",
-            self.windows_content,
-        )
-        self.assertIsNotNone(block, "missing exact .NET SDK pin step")
-        sdk_step = block.group(1)
+        marker = "      - name: Pin .NET 8 SDK\\n"
+        start = self.windows_content.find(marker)
+        self.assertNotEqual(start, -1, "missing exact .NET SDK pin step")
+        end = self.windows_content.find("\\n      - name: ", start + len(marker))
+        if end < 0:
+            end = len(self.windows_content)
+        sdk_step = self.windows_content[start:end]
         self.assertIn('"version": "8.0.425"', sdk_step)
         self.assertIn('"rollForward": "disable"', sdk_step)
         self.assertIn(
