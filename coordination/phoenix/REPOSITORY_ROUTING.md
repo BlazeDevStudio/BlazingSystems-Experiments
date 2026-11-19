@@ -636,3 +636,16 @@ COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, with fiv
 ### Branch-source authority
 
 Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b; named v0.5.3 development is aad3aade72c1156eecba1fed30907c6d0283b2c5 (293 behind/0 ahead); v0.6.0 audit foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859 (1,876 ahead/22 behind). The current #172 body has conflicting development labels. No branch promotion or migration source selection is authorized by this report.
+
+
+## PHX-MASTER UTC02 — COE #35 toolchain drift and current #44 ancestry (2026-11-19)
+
+COE #26 is b382d233ff06c8791b1028bed3c617cc7b670d12 on main a6513ab4412b4c014eee2863e45cbe32d06cb243. Release #31 is 59ed44d0b911e176f1a95b9cf5585ef811ffd31b. Current #35 is 4843580ec9d901fda523bbf4c29f69e3745c698a, based on #31. ULA #44 is 582fd5d5e83e36b36546ac28534740298ba94af4, based on older #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d4. CORE #45 is 9d76a134c1f6512aa40c20ec4d247306a71a8cce, separate candidate.
+
+Compare #35 → #44: DIVERGED; #44 is 15 ahead / 16 behind current #35, merge base 1a5be48d2845781b0b07bad39a37f8440cea4d4. Earlier 15/13 count is stale. RELEASE owns history-preserving reconciliation; Master did not alter either branch.
+
+Experiments #327 source sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. Source CI #44439616677 resolved ESP32 core 3.3.13 and compiled; COE #35 #44443780617 resolved 4.0.0 and failed because mbedtls/sha256.h was not found. Both workflows are unpinned. RELEASE pins; HARDWARE owns compatibility; QA verifies. Do not claim compatibility from unpinned source CI.
+
+COE #35 case #44443780675 passes; sandbox #44443780613 fails closed because bwrap is absent after 14/14 host-preflight tests (exit 125). COE #26 remains five queued workflows / zero jobs. No staging, copy, move, overwrite or migration is proposed.
+
+Experiments main remains f4e8a891aed8af86d5fd315d28750a0ac3a7372b. v0.6.0 is 2fbd2475e9f54878c316fa7cea2f228386b0e859 (1,876 ahead / 22 behind); v0.5.3 is aad3aade72c1156eecba1fed30907c6d0283b2c5 (0 ahead / 293 behind). No product branch is promoted by Master. OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master target null.

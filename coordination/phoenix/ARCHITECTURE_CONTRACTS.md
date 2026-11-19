@@ -761,3 +761,16 @@ The CI artifacts are nonproduction build archives. PR and push artifact ZIP dige
 COE #44 remains OPEN/DRAFT at 582fd5d5e83e36b36546ac28534740298ba94af4, based on the earlier #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d4. Current #35 is at 3455e0ce56bed780a727a6297db14a8e1d345f99. GitHub compare reports #44 is 15 commits ahead and 13 commits behind current #35. These are divergent sibling stacks; #44 does not contain the current #35 overlay-accounting source/test and terminal handover commits. PHX-MASTER did not merge, rebase, cherry-pick, or alter either release branch. PHX-RELEASE must reconcile the stack without force-push before treating the candidates as one release lineage.
 
 The #44 first-boot script generates a random 40-bit RFC 4193 ULA global ID per installation, commits the prefix to UCI, validates persisted readback, and scopes rollback to its own option/section. Its shared CI #44390136309 and case-collision #44390136296 pass; mandatory sandbox #44390136327 remains blocked by missing bubblewrap. A random prefix per installation does not establish the Master §6.9 same-site rule that multiple appliances at one site share a site identity. Site-level assignment authority and same-site/different-site, reboot, upgrade, and restore tests remain open. No ULA contract adoption or migration is approved.
+
+
+## 6.38 Board toolchain versions are part of firmware and migration identity — 2026-11-19 UTC02
+
+**Disposition:** exact-head CI exposes unpinned ESP32 core drift; COE destination compile is blocked; PHX-MASTER changed no firmware or workflow source.
+
+Experiments #327 source sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 (59,117 bytes) differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes). Both contain mbedtls/sha256.h; source also includes nvs.h and string.h, absent from destination.
+
+Experiments #327 run #44439616677 installed esp32:esp32 3.3.13 and compiled. COE #35 run #44443780617 installed 4.0.0 and failed because mbedtls/sha256.h was not found; ESP32 artifact upload was skipped. Both workflows use unpinned arduino-cli core install esp32:esp32 commands. A green unpinned source run is not a reproducible destination-compatibility claim.
+
+**Required contract:** pin Arduino CLI, exact ESP32/ESP8266 core versions, FQBN and build options. Source and destination must use the same pinned toolchain, or an independently verified upgrade matrix. Record resolved versions with job evidence; never use an unpinned latest package index as migration equivalence. RELEASE owns workflow pinning; HARDWARE owns firmware compatibility; QA owns independent same-SHA verification. Master edits neither subsystem firmware nor release workflows.
+
+COE #35 mandatory sandbox remains blocked by missing bubblewrap after 14/14 host-preflight tests (exit 125). Site-scoped ULA, independent durability witness and production acceptance remain open. **PRODUCTION NO-GO.**

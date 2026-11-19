@@ -765,3 +765,18 @@ Master re-read issue #172, cleanup gate #266, Experiments/COE refs, PR #288, `OW
 **Next exact actions:** PHX-RELEASE reconcile #44 with current #35 head 3455e0ce using history-preserving operations and obtain the authorized bubblewrap runner; PHX-QA add post-open overlay race and malformed-config/setup-save tests, independently review #327, and replace positive poll-signature presence with negative default-deny tests; PHX-CORE define site-level ULA authority and receipt-v1/v2 mapping; COE integration owner unblock #26 workflows and complete provenance; repository admin verify branch protections; registry custodian restore authorized private v11 access.
 
 **PRODUCTION NO-GO:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## UTC02 exact-head audit — 2026-11-19
+
+**New P0:** COE #35 ESP32 destination compile is blocked by toolchain drift. Source #327 run #44439616677 installed ESP32 core 3.3.13 and compiled; COE #35 run #44443780617 installed 4.0.0 and failed at mbedtls/sha256.h. Both workflows are unpinned. Source blob ef498761e46d37134730dd41de1cc322d5d443e8 differs from destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. RELEASE pins; HARDWARE owns compatibility; QA verifies.
+
+#35 is 4843580ec9d901fda523bbf4c29f69e3745c698a, child of #31 59ed44d0b911e176f1a95b9cf5585ef811ffd31b. #44 is 15 ahead / 16 behind #35 and based on an older commit. RELEASE reconciles without force-push. #44 random-per-install ULA does not prove same-site authority.
+
+Current CI: Hardware #327 focused #44439616778/#44439616678 PASS; Full #44439616677 FAIL at QA positive poll-signature fixture. Release #291 Windows #44440710823 FAIL at uninitialized $buildWorkflow; BlazePwifi #44440710888 PASS. COE #35 shared #44443780617 validation/ESP8266 PASS, ESP32 FAIL; case #44443780675 PASS; sandbox #44443780613 fails closed, bwrap absent after 14/14 preflight. COE #26 five workflows QUEUED / zero jobs.
+
+#266 remains OPEN with historical checklist pins. Branch objects report protected=false; rulesets are empty and classic branch-protection reads return 403. Private Drive v11/newer corrections not found in accessible Library; no Drive connector, no older registry substitution, no private content published.
+
+GitHub source/tree/PR/CI and exact logs inspected. Master Python suite NOT RUN; no Master CI runs returned. Physical hardware, flashing, power cuts, native acceptance and 30-device soak NOT TESTED. No migration, merge, rebase, release, signing, secrets or financial operations occurred.
+
+Next: RELEASE pin toolchains and reconcile #44/#35; HARDWARE resolve core compatibility; QA verify pinned builds and negative poll tests; COE integration complete provenance and unblock #26; CORE define site ULA/receipt bridge; repository admin verify protections; registry custodian restore private v11. **PRODUCTION NO-GO.**

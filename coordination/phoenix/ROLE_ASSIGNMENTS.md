@@ -1052,3 +1052,21 @@ This is a role/status refresh, not a reassignment. The full seven-role boundary 
 ## Coordination access and ownership
 
 Experiments AGENTS.md, the latest Library README_FIRST, BLAZE-COMMS/1 and the Master prompt were read. The canonical cloud policy and storage handover were read from the renamed BlazeDevStudio/BlazingSystems repository. No connected Google Drive action is exposed; the private registry v11/newer corrections remain BLOCKED. COE AGENTS.md returns 404. No private Drive IDs or registry contents are published.
+
+
+## Live owner routing — 2026-11-19 UTC02
+
+Exact-head refresh only; no reassignment. Seven-role boundaries remain active.
+
+| Role | Current owner candidate | Next action |
+|---|---|---|
+| PHX-MASTER | #288; pre-update HEAD 0a777c3c13231a172683c47bd60ce4af2ad9f9fa | Coordination/phoenix only; keep #26 blocked |
+| PHX-CORE | #252 c82705f2...; COE #45 9d76a134... | Separate CORE continuation retains implementation; define site ULA authority and receipt bridge |
+| PHX-RENTAL | #289 68928774... | Owner-only work; scoped CI is not physical acceptance |
+| PHX-PISONET | #255 d01fd164... | Preserve source ownership; no migration without exact provenance |
+| PHX-HARDWARE | #327 094564122f19c9e97157bb615bf9bae409f822a7 | Preserve default-deny; assess ESP32 core compatibility; Full still fails at QA positive poll fixture |
+| PHX-QA | #290 5c29d159...; #292 75a3f66d... | Independently review #327, replace positive poll fixture with negative tests, verify pinned builds |
+| PHX-RELEASE | #291 fe940216...; COE #35 4843580...; #44 582fd5d5... | Pin board toolchains; resolve ESP32 4.0.0 failure; reconcile #44/#35; obtain bwrap runner |
+| COE integration | #26 b382d233...; parent #31 59ed44d0... | Complete blob/license/test identity and unblock all five workflows before staging |
+
+Source #327 sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 (59,117 bytes) differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes). Source CI used ESP32 core 3.3.13; COE #35 used 4.0.0 and failed at mbedtls/sha256.h. Both commands are unpinned. RELEASE owns workflow pinning; HARDWARE owns firmware; QA independently verifies. COE #44 is 15 ahead / 16 behind #35; RELEASE owns history-preserving reconciliation. CORE remains with the separate continuation. OWNERSHIP_ROUTES.json remains unchanged.

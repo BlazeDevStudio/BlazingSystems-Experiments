@@ -1475,3 +1475,21 @@ Issue #172 contains conflicting development labels: several current-source secti
 No per-file destination migration staging was reviewed or changed in this activation. #26 still lacks exact source/destination blob, license scope, test identity, import completeness and executable destination CI evidence. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null. No copy, move, overwrite, rebase, merge or promotion is proposed.
 
 Branch-protection reads returned 403 for Experiments main/development and COE main; repository rulesets returned empty arrays. Effective protection remains UNKNOWN pending administrator verification. Private Drive registry v11 and newer corrections remain unavailable; no older snapshot was substituted.
+
+
+## Live exact-head integration matrix — 2026-11-19 UTC02
+
+| Role / candidate | Exact head | Exact-head CI | Classification / owner action |
+|---|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS | Scoped; separate CORE continuation owns implementation |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329235 / #43653329229 PASS | Scoped; physical acceptance absent |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS | Scoped; native COM bench absent |
+| HARDWARE #327 | 094564122f19c9e97157bb615bf9bae409f822a7 | Quarantine #44439616778 PASS; relay #44439616678 PASS; Full #44439616677 FAIL at QA Missing poll signature | Focused verified; Full blocked by QA fixture; source ESP32 used 3.3.13 |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS; #292 no runs | #292 NOT VERIFIED |
+| RELEASE #291 | fe940216e9e250b5df48c633b669ef3dd34fb299 | BlazePwifi #44440710888 PASS; Windows #44440710823 FAIL at uninitialized $buildWorkflow | Owner fix; publisher skipped |
+| COE Release #35 | 4843580ec9d901fda523bbf4c29f69e3745c698a | Shared #44443780617 validation/ESP8266 PASS, ESP32 FAIL; case #44443780675 PASS; sandbox #44443780613 FAIL closed | Pin toolchain; resolve mbedTLS; sandbox blocked |
+| COE Release #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Shared #44390136309 PASS; case #44390136296 PASS; sandbox #44390136327 FAIL closed | 15 ahead / 16 behind #35; site ULA authority absent |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #44295049727 / #44295049903 PASS | Receipt-v1 candidate; no Master-v2 bridge |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five QUEUED / zero jobs | Destination CI not executed; migration not accepted |
+
+Source #327 sketch blob ef498761e46d37134730dd41de1cc322d5d443e8 differs from COE #35 destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. Source run #44439616677 resolved ESP32 core 3.3.13 and compiled; COE #35 #44443780617 resolved 4.0.0 and failed at mbedtls/sha256.h. Both workflows are unpinned. RELEASE owns pinning; HARDWARE owns firmware compatibility; QA independently verifies. No source/destination copy or move was performed; #26 remains blocked pending blob/license/import/test/CI evidence.
