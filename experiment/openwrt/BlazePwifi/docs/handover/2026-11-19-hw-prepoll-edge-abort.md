@@ -1117,3 +1117,40 @@ The exact-source Full PR [#44557545635](https://github.com/BlazeDevStudio/Blazin
 - The separate focused quarantine PR [#44557545656](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545656) job `135677596346` and relay/output PR [#44557545748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545748) jobs `135677595650` / `135677596137` remain **SUCCESS** on source/test SHA `05ddd64...`.
 
 No attempt was made to satisfy the positive signature assertion with a synthetic or unauthenticated signature. QA owns that fixture and must coordinate the canonical producer/consumer contract with CORE/Master.
+
+
+## UTC17 follow-on — poll-release ISR edge fail-closed regression
+
+**Exact branch/test HEAD at this update:** `d9d034ef8589c1afbf2c499a688c305778c6ce4e`  
+**PR:** [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED.
+
+### What changed
+
+The hardware-owned `poll_loop_blocking_inhibit_lab.py` now injects a coin ISR edge during the first GPIO write of poll-output release: after the post-poll `pollEdgeEnd` snapshot, while the relay is still off, and before the loop's ordinary final `sampleCoinPulseEdge(active)`.
+
+The scenario asserts that both board sketches:
+- record `/pollpulse.fault` with `pulses=1`;
+- leave relay and LED off;
+- clear insert/target admission;
+- do not create a pending coin or allow the edge to become a credited event;
+- retain the current deny-only poll response behavior.
+
+A failure-injection mutation that omits the final post-poll sample is rejected on both ESP8266 and ESP32. This is a test-harness improvement; **no runtime firmware sketch or API changed**. The audit did not establish a runtime defect in the current branch because `acceptPollResponse()` remains default-deny and clears the candidate insert/target state. The test protects that current fail-closed path; it does not authorize or test positive poll admission.
+
+### Test-first / exact-source evidence
+
+- Initial scenario commit: `43a8d511fc1fb6f238f5e7ea24036659fb2ab71a`.
+- Mutation-hardening commit / current exact test SHA: `d9d034ef8589c1afbf2c499a688c305778c6ce4e`.
+- Quarantine push [#44580913901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580913901), job `135760979691`: **SUCCESS** on exact SHA. Logs include `POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS` and `MUTATION_REJECTED skip-poll-release-edge-sample` for both boards; `POLL_BLOCKED_EDGE_FAULT_PASS 8/8` on both.
+- Quarantine PR [#44580927637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927637), job `135761031483`: **SUCCESS** on exact SHA.
+- Relay/output PR [#44580927946](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927946): source-output-polarity job `135761030295` and ESP32 boot-polarity job `135761030969`: **SUCCESS**.
+- Full push [#44580913878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580913878): validation job `135760981428` **FAILED** at inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 13 firmware/platform targets and Android completed **SUCCESS** (14 successful jobs total). Downstream simulations, update bundle, candidate gate, signing and publishers were skipped.
+- Full PR [#44580927747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44580927747): validation job `135761030861` **FAILED** at the same assertion; at this handover update, the 13 firmware/platform target jobs had succeeded and Android was still running. This is not Full validation acceptance.
+
+### Cross-role / release boundaries
+
+- PHX-QA owns the stale positive poll-signature assertion. Do not manufacture `response_sig` or weaken default-deny to satisfy it.
+- PHX-CORE must publish the approved register/poll and event-bound coin receipt contract before positive admission/disposition can be implemented.
+- PHX-MASTER owns `coordination/phoenix/`; its current `ROLE_ASSIGNMENTS.md` still omits the #326/#327 child stack. Refresh exact #327 head and integration order in Master-owned files.
+- Current PHX-HARDWARE registry limitation: exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found in the available Library search, and no Google Drive connector was exposed. Older registry snapshots were not substituted.
+- All lab evidence remains **SIMULATED / CI VERIFIED only**. Physical coin acceptor/relay, electrical pulse conditioning, 150 power cuts, 30-device 24-hour soak, independent witness, financial v1-to-v2 migration, durable accounting/replay and independent release signoff remain NOT TESTED / NOT ESTABLISHED. **PRODUCTION NO-GO**.
