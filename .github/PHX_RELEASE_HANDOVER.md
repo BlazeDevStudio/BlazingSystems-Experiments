@@ -771,3 +771,12 @@ The previous test test_windows_build_is_explicitly_read_only_and_publisher_isola
 No merge, real-key signing, tag, publication, hardware flash, payment migration, or customer deployment occurred. Physical 150-power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
 
 **Next owner actions:** PHX-QA independently reviews the signing-step guard; MASTER/CORE define the independent freshness-witness interface and protected signer authority; repository administrator establishes protected main and required checks; PHX-PISONET owns its negative-selftest variable defect; RELEASE rechecks exact-head Windows and full-build runs before any later checkpoint.
+
+### UTC22 terminal CI status refresh — 2026-11-19T22:12Z
+
+This section supersedes the earlier "not yet reached" observation for the exact source/test head 68ed7543e274a813920e7b8b841bdd48b15fe1c5.
+
+- Windows PR run [#44625985860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625985860) completed **FAILURE**. Shared handover job 135919891611 passed. Windows build job 135920011848 passed checkout, .NET SDK 8.0.425 verification and package-parity self-test, then failed in the PISONET-owned negative-selftest.ps1 because $buildWorkflow is uninitialized. Windows publisher job 135920807292 was **SKIPPED**. PHX-RELEASE did not modify the PISONET test.
+- BlazePwifi PR run [#44625985862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625985862) and push run [#44625978005](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625978005) remained nonterminal at last read. Their CI-0701 guard job passed on the exact source/test head; remaining full target/validation jobs had not completed. No Full CI success is claimed.
+- ESP32 compatibility PR run [#44625986102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44625986102) remained in progress on the older pinned HARDWARE source 984ea8ff65a93b7da6e22fc2e1943acaf56100ca; it is not current hardware acceptance.
+- The handover-only docs head is now 6f109f376c8e610231cdc2439dd24cb74fba4c57. Its push BlazePwifi run [#44626285917](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626285917) was pending and ESP32 compatibility push [#44626285919](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626285919) was in progress at last read. These are not yet terminal evidence.
