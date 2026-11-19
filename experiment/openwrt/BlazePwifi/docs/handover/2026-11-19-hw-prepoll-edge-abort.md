@@ -515,3 +515,21 @@ The lab explicitly prints `LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION
 **Independent review requested:** PHX-QA should inject failure/short-write/readback mismatch for each NVS config field and verify the polarity-valid marker remains invalid and no output can energize on the same boot or cold boot. The current existing labs do not yet establish that new ESP32 setup-save failure matrix. This handover does not claim that coverage.
 
 **Disposition:** source change committed; CI pending; source-extracted/physical setup-write failure acceptance NOT TESTED until independent QA evidence. Physical relay, coin, power-cut and 30-device soak acceptance remain NOT TESTED. PRODUCTION NO-GO.
+
+
+## UTC04 follow-up — ESP32 NVS config readback and exact-head CI
+
+**Firmware source commits:** initial readback gate \`1475e100af0812d0fa17c178f8444611fc924fa0\`; source-shape compatibility correction \`8f08a9bbbe3ce9b816e18ec1e6870a1f9c820926\`. Current ESP32 sketch blob: \`c29483f0761ca6e2db0573bd12d6bfa502f12434\`.
+
+The initial implementation correctly added per-field NVS presence/readback checks, but exact PR relay lab #44460945803 failed its existing source-contract assertion because \`saveConfig()\` no longer retained the canonical first-invalidation guard and direct \`return persistLocalOutputPolarity();\` form. This was a real test failure, not hidden. Commit \`8f08a9b\` restored the explicit guard/direct return while retaining the new all-field readback gate and revoking runtime output/pin safety before polarity persistence. No QA test was modified.
+
+**Exact source SHA \`8f08a9bbbe3ce9b816e18ec1e6870a1f9c820926\`:**
+- Quarantine/readback push [#44461480031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461480031), job \`135349045121\`: PASS.
+- Quarantine/readback PR [#44461486014](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461486014), job \`135349065899\`: PASS.
+- Relay/output PR [#44461486038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461486038): PASS; source-output job \`135349066774\` PASS; ESP32 boot-polarity job \`135349066332\` PASS (\`ESP32_BOOT_POLARITY_GATE=PASS\`, \`UNKNOWN_AND_LEGACY_PROFILE_REMAINS_INPUT=PASS\`, \`LOCAL_POLARITY_MARKER_READBACK=PASS\`, \`ACTIVE_HIGH_AND_ACTIVE_LOW_OFF_PRELOAD=PASS\`).
+- Full PR [#44461486025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461486025): overall FAILURE at validation job \`135349066851\`, exact message \`Missing poll signature check\` (QA-owned stale positive-presence fixture). All 13/13 firmware/platform target jobs and Android passed; ESP32 job \`135349067079\` compiled on \`esp32:esp32@4.0.0\` (sketch 1,096,577 bytes / 83%; globals 52,568 bytes / 16%; artifact \`14500660630\`, ZIP SHA-256 \`34adeaf0381ea37e0ac6a8611f411efd712d1751612333d0e6fba279acf86c8e\`). Downstream simulations, signing, candidate and publishing were skipped.
+- Full push [#44461480050](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44461480050): at this handover, all 13/13 firmware/platform target jobs passed, including ESP32 and ESP8266; Android was still running, so the push run was not yet terminal.
+
+**Coverage limitation:** existing \`esp32_boot_polarity_lab.py\` verifies boot polarity, unknown/legacy profile INPUT behavior, marker readback and active-high/low OFF preload. It does **not** inject failure into each new \`configFieldsMatchStored()\` NVS field or readback mismatch. PHX-QA must independently add/run that failure matrix and verify no \`polarityv=1\` commit plus current/cold-boot output denial. Exact-current-source ESP32 core 3.3.13 and unsupported Mbed TLS major compile rejection remain NOT TESTED; PHX-RELEASE/PHX-QA are requested to provide those exact-head checks.
+
+**Disposition:** focused source-extracted labs and ESP32 core 4.0.0 build CI VERIFIED; Full workflow remains FAILED at the unrelated QA-owned poll-signature assertion; new per-field config-save failure matrix NOT TESTED; physical relay/coin/power-cut/soak/electrical acceptance NOT TESTED; PRODUCTION NO-GO.
