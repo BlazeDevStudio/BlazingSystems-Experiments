@@ -1711,3 +1711,38 @@ No destination staging, copy, move, overwrite, cherry-pick, rebase, or merge is 
 Hardware #327 current source sketch blobs differ from COE #26 destination: ESP32 754a5738d30500fe12a573b89956fedeb0e279c3 (62,883 bytes) vs 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes); ESP8266 1b32cb90be11da79ba7ea1155f128aee9e495dd2 (67,304 bytes) vs c8be98f72596681e36a3ad1f8939bf8046c96887 (18,394 bytes). Source has 22 board-local Python labs; destination Hardware has one generic shell test with positive signature/poll assumptions. BlazePwifi/LICENSE and Pisowifi/LICENSE match blob 1ee55b94183417be977ca287cd7391f9a6f7e721, but Hardware/LICENSE and Hardware/NOTICE.md are absent. No migration.
 
 Master test suite NOT RUN (GitHub clone failed DNS); Master Actions no runs returned. Cleanup #266 remains OPEN. Private Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted. **PRODUCTION NO-GO.**
+
+
+## Live exact refresh — 2026-11-19 UTC10
+
+| Component | Exact live ref | Exact-head evidence | Disposition |
+|---|---|---|---|
+| Experiments main | `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | Default branch | Current source base |
+| Experiments development | `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` | Current development branch | Do not substitute legacy v0.5.3 |
+| Legacy development | `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` | Still exists | Historical comparison only |
+| PHX-MASTER #288 | `phoenix/master-coordination@1decd7715c4bac46673f673c49f27bfeca160a4e` | OPEN/DRAFT, 99 changed paths, all under `coordination/phoenix/`; no Master Actions run | DRAFT REVIEW ONLY |
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Default branch | Structure-only main |
+| COE integration #26 | `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN/DRAFT, 205 changed files; five workflows QUEUED / zero jobs | MIGRATION BLOCKED |
+| HARDWARE #327 | `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f` | Quarantine #44501072485 PASS; relay/output #44501072498 PASS; Full #44501072563 FAIL at job 135480829727 / Missing poll signature check | Focused CI only; Full FAIL; physical NOT TESTED |
+| RELEASE #291 | `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf` | Windows #44503871056 FAIL at job 135490397157; BlazePwifi #44503871218 CANCELLED; ESP32 matrix #44503871277 PASS on 3.3.13 and 4.0.0 | BLOCKED; publisher skipped |
+| COE RELEASE #35 | `5047af8b5a8296e06294bbda6bf42a6baea2294d` | Shared #44465377784 PASS; case #44465377781 PASS; sandbox #44465377807 FAIL closed (bwrap missing, exit 125 after 14/14 preflight) | Sandbox BLOCKED |
+| COE RELEASE #31 | `59ed44d0b911e176f1a95b9cf5585ef811ffd31b` | Shared #44222517238 PASS; case #44222517258 PASS; sandbox #44222517263 FAIL | BLOCKED |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS | Scoped CI only; CORE owner retains implementation |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329235 and #43653329229 PASS | Scoped CI only |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS | Native COM acceptance NOT TESTED |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 #43633486963 PASS; #292 no current-head run | QA fixture work outstanding |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #44295049727 and #44295049903 PASS | Synthetic receipt-v1 only |
+
+### Current Hardware source and COE destination identity
+
+At Experiments #327 head `47eceaf2...`, ESP32 sketch blob `1e720d3b2fc76e348ff77e347e0d472d38559d04` differs from COE #26 `Hardware/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino` blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. ESP8266 source blob `75f62c359bbb69f4f580b7ee0c3875396b12cc7f` differs from COE #26 `Hardware/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino` blob `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+The source Hardware route contains **21 board-local Python lab files** (9 ESP32, 12 ESP8266); destination Hardware contains four blobs total: README, two sketches, and one generic shell test. Test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` still asserts positive `response_sig`, `|register|`, and `|poll|` strings, while current source poll/disposition functions return false. Destination test identity is not equivalent to the source labs.
+
+Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent; source `BlazePwifi/NOTICE.md` is also absent. The matching Pisowifi license alone does not establish the target Hardware subtree's explicit license/NOTICE scope. No migration or staging edit is authorized.
+
+### RELEASE #291 current-head correction
+
+Current #291 Windows job fails in `tests/ReleaseSigning/negative-selftest.ps1` because `$buildWorkflow` is read under PowerShell StrictMode but has no assignment anywhere in the file (blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`). Run #44503871056 records the uninitialized-variable error; publisher skipped. Run #44503871218 subsequently ended CANCELLED at `2026-11-19T10:19:37Z`, not a full pass. ESP32 compatibility #44503871277 passed both configured core versions. RELEASE's UTC10 role lock #7006125314 is already working on a provenance-snapshot consistency regression; Master does not edit release-owned files.
+
+Master Actions returned no runs. The full Master Python suite was NOT RUN because no repository checkout was available. Source/tree inspection and remote CI inspection are not substitutes for the Master suite or physical acceptance. **PRODUCTION NO-GO.**

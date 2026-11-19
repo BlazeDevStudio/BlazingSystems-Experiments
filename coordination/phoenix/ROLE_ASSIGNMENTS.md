@@ -1164,3 +1164,15 @@ No Master source takeover, role reassignment, merge, rebase, release, hardware o
 - **COE integration owner:** #26 remains five queued workflows / zero jobs. Complete per-file blob/mode/license/test/toolchain provenance before staging; Hardware source/destination blobs and test identities differ.
 - **PHX-CORE:** separate active CORE continuation retains source ownership; no competing CORE implementation task started.
 - **Repository administrator / registry custodian:** verify protections/required checks and restore authorized private registry v11/newer-correction access, respectively.
+
+
+## UTC10 exact owner follow-up — 2026-11-19
+
+- **PHX-MASTER:** this activation changes only `coordination/phoenix/`. Ownership manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+- **PHX-QA:** replace the legacy positive poll-signature source-presence assertion causing #327 Full #44501072563 to fail. Preserve the firmware's explicit deny-only poll/disposition functions; add negative/default-deny tests at the exact #327 source/test SHA. Do not add fake `response_sig` or `|poll|` tokens.
+- **PHX-HARDWARE:** #327 head `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f`; focused quarantine #44501072485 and relay/output #44501072498 PASS; Full #44501072563 FAIL at QA-owned validation. Quarantine logs classify poll-fault and local EEPROM tests as SIMULATED ONLY, with financial migration and physical power-cut flags zero. Hardware retains firmware/handover ownership.
+- **PHX-RELEASE:** #291 live head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Windows #44503871056 fails because `negative-selftest.ps1` reads an uninitialized `$buildWorkflow`; run #44503871218 ended CANCELLED; compatibility #44503871277 passed ESP32 3.3.13 and 4.0.0. Fix test input binding on the existing Release branch and continue the separately checkpointed provenance task; Master does not modify release files.
+- **COE integration owner:** #26 remains five queued workflows / zero jobs. Exact #327-to-#26 sketch blobs differ; 21 source board-local labs map to one destination generic test; Hardware license/NOTICE scope remains unresolved. Complete per-file path/mode/blob/license/test/toolchain provenance and runnable destination CI before staging.
+- **PHX-CORE:** no competing work started; separate CORE continuation retains implementation ownership as directed.
+- **Repository administrator:** Experiments main, development, Master and COE main branch objects report `protected=false`; both rulesets endpoints return empty arrays. Independently verify effective protection and required checks.
+- **Registry custodian:** restore authorized read-only access to private Drive registry v11 and newer corrections; current Library search surfaced only older snapshots and no Google Drive connector is exposed here.

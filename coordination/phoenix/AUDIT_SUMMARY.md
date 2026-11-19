@@ -924,3 +924,36 @@ Master-only exact-head reconciliation is recorded in PHX_MASTER_UTC08_RELEASE_HE
 P0 findings: (1) Hardware #327 focused CI passes but Full fails at the inherited positive poll-signature fixture while current source is deny-only; QA owns the fixture. (2) RELEASE #291's UTC08 checkpoint names ancestor b8f4, while live PR head is d498 (12 commits ahead); exact-head Windows and BlazePwifi workflows fail handover freshness. (3) COE #26 firmware blobs differ from #327 source, has one generic positive-presence Hardware test vs 22 board-local Python labs, lacks Hardware/LICENSE and Hardware/NOTICE.md, and has five queued workflows with zero jobs. (4) COE #35 sandbox remains blocked by missing bubblewrap after 14/14 preflight tests.
 
 No subsystem source path, ownership route, destination file, private registry record or product branch was modified. Master Python suite NOT RUN because the runtime could not resolve github.com; no Master Actions run returned. Cleanup #266 remains OPEN. PRODUCTION NO-GO.
+
+
+## UTC10 exact-head reconciliation — 2026-11-19
+
+**Current Master ref before this documentation update:** `phoenix/master-coordination@1decd7715c4bac46673f673c49f27bfeca160a4e`. PR #288 OPEN/DRAFT, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 99 paths, all under `coordination/phoenix/`. No Master Actions runs returned. `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+### P0 findings
+
+1. **HARDWARE #327:** live head `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f`. Focused quarantine #44501072485 and relay/output #44501072498 PASS. Full #44501072563 fails validation job `135480829727` at legacy `Missing poll signature check`. All 13 firmware/platform targets and Android passed; downstream jobs skipped. Current ESP8266 source explicitly denies poll admission and coin disposition. Quarantine log reports SIMULATED ONLY, `FINANCIAL_MIGRATION_TESTED=0`, and `PHYSICAL_POWER_CUT_VERIFIED=0`.
+2. **RELEASE #291:** live head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf`. Windows #44503871056 fails because `negative-selftest.ps1` reads an uninitialized `$buildWorkflow`; publisher skipped. BlazePwifi run #44503871218 ended CANCELLED, not a full pass. ESP32 compatibility #44503871277 passes both 3.3.13 and 4.0.0. RELEASE owns correction.
+3. **COE #26 migration:** exact source/destination ESP32 and ESP8266 blobs differ; 21 source board-local Python labs are not represented by the single generic Hardware shell test; the destination test requires positive signature/poll markers that conflict with current deny-only source; Hardware license/NOTICE scope is not established; five destination workflows remain queued with zero jobs. No copy/move/staging edit.
+4. **COE #35 sandbox:** shared/case checks pass, but mandatory sandbox #44465377807 fails closed because bubblewrap is absent after 14/14 preflight tests. No unsandboxed fallback.
+
+### Other current role evidence
+
+CORE #252 #42698139210 PASS (scoped); RENTAL #289 #43653329235/#43653329229 PASS (scoped); PISONET #255 #42462978704 PASS (scoped); QA #290 #43633486963 PASS; QA #292 has no current-head run; COE CORE #45 #44295049727/#44295049903 pass synthetic receipt-v1 only. These do not establish full integration or production acceptance.
+
+### Verification classification
+
+- GitHub source/tree/PR inspection: COMPLETED.
+- Exact-head role CI metadata, jobs and relevant logs: INSPECTED.
+- Local Master documentation assertions: executed before commit.
+- Master Python suite: NOT RUN; no local repository checkout.
+- Master Actions: no runs returned.
+- Physical/native acceptance, real power cuts, financial migration and 30-device/24-hour soak: NOT TESTED.
+
+### Changes and boundaries
+
+This activation updates Master-owned architecture, integration matrix, role assignments, audit summary, repository routing and this report only. No subsystem source, release workflow, COE destination file, ownership manifest, private registry record, financial state, signer or hardware was modified. No merge, rebase, release, flash, secret provisioning, real-payment operation or financial migration occurred.
+
+**Next:** QA corrects the #327 fixture with negative/default-deny tests; RELEASE fixes the uninitialized `$buildWorkflow` test input and continues its provenance regression; COE integration supplies per-file provenance and runnable #26 CI; repository admin verifies branch protection; registry custodian restores authorized v11 access.
+
+**PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates are independently verified.

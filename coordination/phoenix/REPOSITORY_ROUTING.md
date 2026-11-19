@@ -749,3 +749,16 @@ The current routing manifest remains unchanged at blob e4db324315a1b3543fec17a14
 At exact source #327 head c62af73ec5b45cd87f4c8f3295ede18f307fb359 and destination #26 head b382d233ff06c8791b1028bed3c617cc7b670d12, both board sketch blobs differ in SHA and size. The source has 22 board-local Python lab files; destination Hardware contains one generic shell test whose positive response_sig/register/poll assertions conflict with the current deny-only source. The source BlazePwifi/LICENSE and destination Pisowifi/LICENSE match, but Hardware/LICENSE and Hardware/NOTICE.md are absent. Five destination workflows remain queued with zero jobs. Do not copy, move, overwrite, retarget, or infer completion from the representative routing table.
 
 Release #291 is also not a destination admission signal: its live head d498af has 12 commits beyond the b8f4 SHA named in the UTC08 role checkpoint, and exact-head handover gates fail. No migration staging was changed.
+
+
+## UTC10 exact Hardware destination recheck — 2026-11-19
+
+The manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination null. COE #26 remains a draft candidate, not a copy plan.
+
+At source PR #327 head `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f`, the source ESP32 sketch blob is `1e720d3b2fc76e348ff77e347e0d472d38559d04` and ESP8266 is `75f62c359bbb69f4f580b7ee0c3875396b12cc7f`. At COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`, destination ESP32 is `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` and ESP8266 is `c8be98f72596681e36a3ad1f8939bf8046c96887`. Neither pair is byte-identical.
+
+The source Hardware subtrees contain 21 board-local Python labs (9 ESP32, 12 ESP8266). COE #26 Hardware contains four blobs: README, two sketches and `Hardware/tests/test_firmware_hardening.sh`. That one test still requires positive `response_sig`, `|register|` and `|poll|` source markers; current #327 poll/disposition functions both return false. Test identity/import completeness is BLOCKED.
+
+Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`; destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent, and source `BlazePwifi/NOTICE.md` is absent. The shared Pisowifi license is not a complete per-file Hardware migration record. Require explicit scope review and per-file path/mode/blob/license/test mapping before any staging proposal.
+
+No file copy, move, overwrite, route promotion, rebase, merge, or migration staging occurred. Five #26 workflows remain queued with zero jobs.

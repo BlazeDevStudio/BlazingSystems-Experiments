@@ -895,3 +895,14 @@ At Hardware PR #327 head c62af73ec5b45cd87f4c8f3295ede18f307fb359, quarantine/re
 COE #26 remains a separate draft staging candidate. Its ESP32/ESP8266 blobs differ from current #327 source, its Hardware test still requires positive signature/poll strings, its Hardware license/NOTICE scope is absent, and all five destination workflows remain queued with zero jobs. The source and destination LICENSE blobs match only for the Pisowifi/BlazePwifi scope; this does not establish Hardware subtree license scope. No migration is authorized.
 
 Master CI was not run because the execution runtime could not resolve github.com; no Master test pass is claimed. This section records source/tree and exact-head Actions inspection only. PRODUCTION NO-GO remains binding.
+
+
+## 6.44 Exact-head poll consumer remains deny-only — 2026-11-19 UTC10
+
+**Disposition: retain firmware default-deny; repair the legacy positive fixture in QA-owned validation, not in firmware.**
+
+At Experiments HARDWARE PR #327 head `47eceaf2ccd3cfdc3403df6b1964610bd32ed24f`, ESP8266 sketch blob `75f62c359bbb69f4f580b7ee0c3875396b12cc7f` has `acceptPollResponse()` explicitly clear `insertMode` and `activeTarget`, then return `false`; `coinPostDispositionVerified()` also returns `false`. The source says the current `response_sig` expression is only a derived candidate pending CORE's canonical producer and QA-approved vectors. The source-extracted poll lab is blob `69dbddee4133588940f4c5b53817401db531a8a4`.
+
+Exact-head Full run [#44501072563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072563) fails in validation job `135480829727` at legacy `Missing poll signature check`. All 13 firmware/platform targets and Android completed; downstream simulations, update bundle, candidate, signing and publishing were skipped. Focused quarantine [#44501072485](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072485) and relay/output [#44501072498](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44501072498) passed. Quarantine logs include both-board poll-fault and EEPROM/config labs, but explicitly report `SIMULATED_ONLY=1`, `FINANCIAL_MIGRATION_TESTED=0`, and `PHYSICAL_POWER_CUT_VERIFIED=0`.
+
+Do not add fake `response_sig` or `|poll|` markers and do not enable poll admission to make the old assertion green. PHX-QA owns source-exact negative/default-deny cases at the same source/test SHA. PHX-CORE owns the future canonical response envelope and golden vectors; PHX-HARDWARE retains firmware ownership. This is not financial disposition or hardware acceptance.
