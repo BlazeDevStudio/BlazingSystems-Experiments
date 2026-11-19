@@ -165,6 +165,8 @@ int runScenario(bool activeHigh) {
     sampleCoinPulseEdge(true);
     const int offLevel = activeHigh ? LOW : HIGH;
     if (!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+        pendingPulses != 1 || pendingNonce != "nonce12345678" ||
+        pendingTarget != "target-01" ||
         !backupMarkerPresent || !littleFsMarkerPresent ||
         backupPulseEdges != 2 || littleFsPulseEdges != 2 ||
         backupWriteAttempts != 1 || littleFsWriteAttempts != 1 ||
@@ -174,7 +176,7 @@ int runScenario(bool activeHigh) {
     }
     std::cout << "POLL_FAULT_FIRST_LATCH_PASS board=BOARD_NAME polarity="
               << (activeHigh ? "active-high" : "active-low")
-              << " snapshot=2" << std::endl;
+              << " snapshot=2 pending_pulses=1 pending_identity=preserved" << std::endl;
 
     // A later ISR edge is consumed under the sticky deny. V1 remains first-fault-only.
     coinEdgeSequence = 2;
@@ -183,6 +185,8 @@ int runScenario(bool activeHigh) {
         backupWriteAttempts != 1 || littleFsWriteAttempts != 1 ||
         backupPulseEdges != 2 || littleFsPulseEdges != 2 ||
         !journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+        pendingPulses != 1 || pendingNonce != "nonce12345678" ||
+        pendingTarget != "target-01" ||
         relayLevel != offLevel || ledLevel != offLevel ||
         canAttemptCoinPost()) {
         return 12;
@@ -190,7 +194,7 @@ int runScenario(bool activeHigh) {
     std::cout << "POLL_FAULT_SECOND_ISR_LOWER_BOUND_REPRODUCED board=BOARD_NAME polarity="
               << (activeHigh ? "active-high" : "active-low")
               << " first_fault_snapshot=2 later_edges=1 known_minimum=3"
-              << " marker_unchanged=1 admission_denied=1 outputs_off=1"
+              << " marker_unchanged=1 admission_denied=1 outputs_off=1 pending_identity=preserved"
               << std::endl;
     return 0;
 }
@@ -305,6 +309,36 @@ def check_board(board: str, sketch_path: Path):
                 + str(mutant.returncode)
             )
         print("MUTATION_REJECTED SECOND_ISR_REPEATED_LATCH board=" + board)
+        identity_clear_call = "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);"
+        if sample.count(identity_clear_call) != 1:
+            raise AssertionError(board + ": expected one first-fault latch call for identity mutation")
+        identity_clear_sample = sample.replace(
+            identity_clear_call,
+            'pendingTarget="";\n      pendingNonce="";\n      ' + identity_clear_call,
+            1,
+        )
+        identity_clear_functions = ordered_functions.replace(sample, identity_clear_sample, 1)
+        identity_clear_program = (
+            PRELUDE
+            + "\n"
+            + identity_clear_functions
+            + "\n"
+            + RUN_SCENARIO.replace("BOARD_NAME", board)
+            + "\n"
+            + MAIN.replace("BOARD_NAME", board)
+        )
+        identity_clear_mutant = compile_and_run(
+            identity_clear_program, folder, "identity_clear_mutant"
+        )
+        if identity_clear_mutant.returncode != 11:
+            raise AssertionError(
+                board + " pending-identity-clear mutation was not rejected at the expected assertion:\n"
+                + identity_clear_mutant.stdout
+                + identity_clear_mutant.stderr
+                + "exit="
+                + str(identity_clear_mutant.returncode)
+            )
+        print("MUTATION_REJECTED PENDING_IDENTITY_CLEAR board=" + board)
         print(
             "SOURCE_FUNCTION_SHA256 board="
             + board

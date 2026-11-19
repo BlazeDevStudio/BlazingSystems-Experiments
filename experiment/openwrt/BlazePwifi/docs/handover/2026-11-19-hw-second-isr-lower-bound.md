@@ -65,3 +65,9 @@ The initial harness commits failed before the final exact-head pass: first due d
 No coin, money, customer state, physical device, firmware flash, reset, migration, signer, release, or deployment was used.
 
 **Review requested:** PHX-QA independently reviews this exact source/test SHA; PHX-CORE confirms \`pulseEdges\` is never consumed as a financial quantity; PHX-MASTER refreshes the canonical #327 head in \`ROLE_ASSIGNMENTS.md\` and the UTC19 reconciliation report.
+
+## UTC20 follow-on — preserve pending identity under sticky poll-fault
+
+This follow-on extends Architecture Contract §6.50 without changing the V1 record or firmware runtime. The two-board source-extracted lab now checks that the first and later ISR fault paths retain the existing `pendingPulses`, `pendingNonce`, and `pendingTarget` while the fault remains sticky, admission remains denied, and outputs remain off. A deliberately injected mutation that clears both pending identity fields before the first latch must be rejected on both boards.
+
+**Status at source commit:** CI pending; exact-source workflow evidence will be added after the GitHub Actions result is read back. This is a host-executed source regression only, not physical persistence or coin acceptance.
