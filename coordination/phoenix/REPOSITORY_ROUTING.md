@@ -612,3 +612,27 @@ Live refs:
 
 GitHub branch API reports protected=false for Experiments main, v0.5.3-development, v0.6.0-audit-foundation and COE main. The repository rulesets endpoint returned an empty list. Effective required checks/protection must be verified by the repository administrator; PHX-MASTER did not change settings.
 
+
+
+## PHX-MASTER UTC01 — release stack ancestry and destination hold (2026-11-19)
+
+The existing routing manifest is unchanged: blob e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, PHX-MASTER target null. This refresh is coordination-only.
+
+### COE Release stack
+
+- Parent #31: 59ed44d0b911e176f1a95b9cf5585ef811ffd31b, based on COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+- Release #35 current head: 3455e0ce56bed780a727a6297db14a8e1d345f99; source/test head 5e25e4ceab7c0615bcdad8309d50739e6b255f46.
+- ULA child #44 current head: 582fd5d5e83e36b36546ac28534740298ba94af4; base is earlier #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d4.
+- Compare current #35 head to #44 head: #44 is 15 commits ahead and 13 commits behind. The branches are divergent siblings, not one verified integrated release stack.
+
+The #35 overlay-accounting fix is present in the current #35 source/test lineage but is not inherited by #44's current base. #44 contains the ULA provisioner and related tests. PHX-RELEASE must reconcile the branch ancestry using normal history-preserving operations; PHX-MASTER did not rebase, merge, cherry-pick, force-push or change either branch.
+
+### Site identity and migration decision
+
+#44 generates a random ULA prefix per installation and verifies UCI persistence. This does not establish the Master same-site shared-prefix requirement. CORE must provide site-level assignment authority; QA must test same-site and different-site appliances plus reboot/upgrade/restore; HARDWARE must verify target behavior. No replacement prefix is invented.
+
+COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, with five queued workflows and zero jobs. No new destination staging was reviewed in this activation, so no copy/move/overwrite proposal is made. Exact source blobs, license scope, test identity, import completeness and destination CI remain mandatory before any route is accepted.
+
+### Branch-source authority
+
+Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b; named v0.5.3 development is aad3aade72c1156eecba1fed30907c6d0283b2c5 (293 behind/0 ahead); v0.6.0 audit foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859 (1,876 ahead/22 behind). The current #172 body has conflicting development labels. No branch promotion or migration source selection is authorized by this report.

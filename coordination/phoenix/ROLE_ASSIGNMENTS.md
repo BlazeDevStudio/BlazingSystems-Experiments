@@ -1025,3 +1025,30 @@ The table below is an exact-head snapshot, not a reassignment. Existing director
 COE child candidates are not new ownership grants: #44 ULA site scope remains incomplete; #45 receipt-v1 is not yet mapped to Master v2; #35 mandatory sandbox is blocked by runner capability; #26 remains an unaccepted integration destination with five queued workflows and zero jobs.
 
 **No role source branch was modified or reassigned in this Master activation.**
+
+
+## Live owner routing — 2026-11-19 UTC01
+
+This is a role/status refresh, not a reassignment. The full seven-role boundary remains active.
+
+| Role | Current exact owner candidate | Required next action |
+|---|---|---|
+| PHX-MASTER | #288 on phoenix/master-coordination; current pre-update head acebbb23276d592b3a735e9bc29b59049a27995e | Own only coordination/phoenix, architecture contracts, integration matrix, routing/provenance and global gates. Keep #26 blocked; do not alter subsystem source |
+| PHX-CORE | Experiments #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE receipt candidate #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Retain financial authority, receipt-v1/v2 mapping and site-identity authority. No Master CORE source work |
+| PHX-RENTAL | Experiments #289 68928774d0d7cf65adb26bc6b54199a3159d066c | Continue owner-only revision/recovery work; scoped CI is not physical acceptance |
+| PHX-PISONET | Experiments #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Preserve source ownership; coordinate the #291 StrictMode test failure with RELEASE without Master editing the test path |
+| PHX-HARDWARE | #327 docs/head 094564122f19c9e97157bb615bf9bae409f822a7; firmware correction 5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b; parent #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Preserve default-deny. QA must add malformed legacy/unknown config followed by setup-AP save tests; Full validation still fails at positive poll-signature assertion |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | Independently review #327 and #35 exact source/test SHAs; add post-open overlay-entry replacement tests and malformed-config/setup-save tests; replace positive poll-signature check with negative default-deny assertions |
+| PHX-RELEASE | Experiments #291 26e138acf2fbbb8890103fa1cfe2469e8efdd6ba; COE #35 3455e0ce56bed780a727a6297db14a8e1d345f99; COE #44 582fd5d5e83e36b36546ac28534740298ba94af4 | Reconcile #44 with current #35 without force-push; obtain an authorized bwrap-capable runner; do not claim same-site ULA until CORE authority and QA evidence exist |
+
+### Master review notes
+
+- COE #35's descriptor-pinned overlay walk is a meaningful source/test correction, but current race fixtures do not exercise replacement after the O_PATH descriptor is opened. QA should add that exact mismatch-path coverage.
+- COE #44 is 15 commits ahead / 13 behind current #35. Release owns stack reconciliation; Master will not merge or rebase it.
+- #327's new config failure latch revokes same-boot write authority after persistence failure. QA's malformed v1/v2/unknown schema followed by local setup-save case is requested but not yet present.
+- The #291 Windows validation fails at an uninitialized $buildWorkflow variable in negative-selftest.ps1. The publisher is skipped; the failing owner path remains outside Master scope.
+- The separate CORE continuation retains CORE implementation ownership. No CORE branch, source, handover or financial state was edited by PHX-MASTER.
+
+## Coordination access and ownership
+
+Experiments AGENTS.md, the latest Library README_FIRST, BLAZE-COMMS/1 and the Master prompt were read. The canonical cloud policy and storage handover were read from the renamed BlazeDevStudio/BlazingSystems repository. No connected Google Drive action is exposed; the private registry v11/newer corrections remain BLOCKED. COE AGENTS.md returns 404. No private Drive IDs or registry contents are published.

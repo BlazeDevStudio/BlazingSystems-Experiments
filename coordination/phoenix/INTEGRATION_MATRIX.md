@@ -1435,3 +1435,43 @@ This section supersedes older PR/head/status pins above for the listed candidate
 **Current refs:** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; named current development `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `phoenix/master-coordination@3c1ecc3242a84414ce93931e66a0bc4c1bcc588e`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 as above. The older `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` still exists; no branch promotion or source selection was made.
 
 Master PR #288 remains OPEN / DRAFT, base main at `f4e8a891...`. All 91 existing changed paths are under `coordination/phoenix/`. `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER target `null`.
+
+
+## Live exact-head reconciliation — 2026-11-19 UTC01
+
+This snapshot supersedes older role/head/CI pins below for the listed candidates only. It does not transfer source ownership or authorize integration.
+
+### Repository refs and branch authority
+
+| Ref | Exact SHA | Current interpretation |
+|---|---|---|
+| Experiments main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Default branch |
+| blazepwifi-v0.5.3-development | aad3aade72c1156eecba1fed30907c6d0283b2c5 | 293 behind / 0 ahead of main |
+| blazepwifi-v0.6.0-audit-foundation | 2fbd2475e9f54878c316fa7cea2f228386b0e859 | 1,876 ahead / 22 behind main; diverged |
+| PHX-MASTER before this commit | acebbb23276d592b3a735e9bc29b59049a27995e | Existing #288 head |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243 | Default branch |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN/DRAFT; five workflows queued, zero jobs |
+
+Issue #172 contains conflicting development labels: several current-source sections call v0.5.3 the development branch and v0.6 comparison-only, while a later exact-ref paragraph calls v0.6 current development. No branch promotion or source selection is made until the product owner resolves the contradiction.
+
+### Current role and candidate evidence
+
+| Role / candidate | Exact current head | Returned exact-head CI | Classification / next owner action |
+|---|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS | Scoped evidence only; CORE implementation remains separately owned |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329235 and #43653329229 PASS | Physical Device Owner acceptance absent |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS | Native COM bench absent |
+| PHX-HARDWARE #327 | 094564122f19c9e97157bb615bf9bae409f822a7; firmware fix 5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b | Quarantine #44439616778 PASS; relay/output #44439616678 PASS; Full PR #44439616677 FAIL at Controller protocol parity / Missing poll signature check; Full push #44439610252 FAIL at same validation; all 13 firmware/platform targets plus Android PASS; downstream jobs skipped | Focused CI verified; Full validation blocked; QA must add malformed v1/v2/unknown-schema then setup-AP save tests and replace positive signature-presence fixture with negative default-deny tests |
+| PHX-QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | #43633486963 PASS | Scoped QA CI only |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head runs returned | NOT VERIFIED; independent review still required |
+| PHX-RELEASE #291 | 26e138acf2fbbb8890103fa1cfe2469e8efdd6ba | BlazePwifi build #44432976878 PASS; Windows #44432976880 FAIL in negative-selftest.ps1 because $buildWorkflow is uninitialized under StrictMode | Publisher skipped; coordinate with the owner of the failing test path |
+| COE Release #35 | 3455e0ce56bed780a727a6297db14a8e1d345f99; source/test 5e25e4ceab7c0615bcdad8309d50739e6b255f46; base #31 59ed44d0b911e176f1a95b9cf5585ef811ffd31b | Shared #44438686744 PASS (107 tests, two intentional sandbox-only skips, 10/10 profiles, board compiles); case #44438686678 PASS; mandatory sandbox #44438687009 FAIL closed (bwrap absent, exit 125) | Source/test verified in hosted CI; actual mandatory sandbox blocked; QA post-open race regression requested |
+| COE Release #44 | 582fd5d5e83e36b36546ac28534740298ba94af4; base 1a5be48d2845781b0b07bad39a37f8440cea4d4 | Shared #44390136309 PASS; case #44390136296 PASS; sandbox #44390136327 FAIL closed | 15 ahead / 13 behind current #35; same-site ULA authority unresolved |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #44295049727 and #44295049903 PASS | Synthetic receipt-v1 candidate; no approved Master-v2 bridge |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows remain QUEUED with zero jobs | Destination CI NOT EXECUTED; no migration acceptance |
+
+### Migration and governance disposition
+
+No per-file destination migration staging was reviewed or changed in this activation. #26 still lacks exact source/destination blob, license scope, test identity, import completeness and executable destination CI evidence. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER destination null. No copy, move, overwrite, rebase, merge or promotion is proposed.
+
+Branch-protection reads returned 403 for Experiments main/development and COE main; repository rulesets returned empty arrays. Effective protection remains UNKNOWN pending administrator verification. Private Drive registry v11 and newer corrections remain unavailable; no older snapshot was substituted.

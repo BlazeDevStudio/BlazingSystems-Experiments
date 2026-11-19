@@ -737,3 +737,27 @@ The live #327 PR head remains 3046c74d19ee1040996860a66cbdcb850acdbe14; exact fi
 
 This supersedes the in-progress/queued snapshot in §6.34 for the same docs-head. The EEPROM read-recovery correction remains source/test verified; the only Full validation failure is the inherited positive poll-signature fixture. The PR body/top handover still cite c51271938 and must be refreshed by HARDWARE. No physical hardware or power-cut acceptance is established.
 
+
+
+## 6.36 Release ImageBuilder overlay-size accounting — descriptor-pinned no-follow contract (2026-11-19 UTC01)
+
+**Disposition:** SOURCE/TEST FIX VERIFIED IN HOST CI / MANDATORY IMAGEBUILDER SANDBOX BLOCKED / INDEPENDENT QA REVIEW REQUIRED / NOT A RELEASE APPROVAL.
+
+COE Release PR #35 current docs head is 3455e0ce56bed780a727a6297db14a8e1d345f99; exact packaging source/test head is 5e25e4ceab7c0615bcdad8309d50739e6b255f46. The source replaces path-based overlay walking with Linux/POSIX descriptor-pinned traversal: open entries with O_PATH|O_NOFOLLOW, fstat the opened object, compare its device/inode to a no-follow stat relative to the pinned parent directory, open child directories with O_DIRECTORY|O_NOFOLLOW, and fail closed on identity changes or missing platform primitives. Symlinks are excluded from the byte budget; regular staged files are counted from the opened object rather than a re-resolved path.
+
+Test-first evidence:
+- RED #44435063672 reproduced regular-file-to-symlink replacement at the open boundary.
+- RED #44436345907 reproduced symlink-to-regular replacement and the old undercount.
+- Exact source/test shared run #44436769990 passed; docs-head shared run #44438686744 passed 107 packaging tests with two intentional sandbox-only skips, all ten appliance profiles, shared-contract checks, and ESP32/ESP8266 compile/upload.
+- Docs-head case-collision #44438686678 passed.
+- Mandatory sandbox #44438687009 failed closed after 13/13 host-preflight tests because bubblewrap is absent (exit 125). No unsandboxed fallback or actual sandbox packaging acceptance is claimed.
+
+**QA follow-up discovered by Master source/test inspection:** both race fixtures replace the directory entry inside the patched os.open wrapper before delegating to the real open. They cover both entry types at the open boundary, but do not exercise replacement after the O_PATH descriptor has been acquired and before the subsequent dir_fd no-follow stat. The implementation compares inode identity and raises ValueError on that later mismatch, but this branch lacks a deterministic regression. PHX-QA should add both post-open replacement directions and assert fail-closed behavior with unchanged external sentinel bytes. This is a test-coverage gap, not a confirmed source defect.
+
+The CI artifacts are nonproduction build archives. PR and push artifact ZIP digests differ; no byte-reproducible firmware claim, signed release, real ImageBuilder sandbox run, target flash, or hardware acceptance follows from these checks.
+
+## 6.37 COE Release #44 site ULA and #35 stack ancestry — no adoption (2026-11-19 UTC01)
+
+COE #44 remains OPEN/DRAFT at 582fd5d5e83e36b36546ac28534740298ba94af4, based on the earlier #35 commit 1a5be48d2845781b0b07bad39a37f8440cea4d4. Current #35 is at 3455e0ce56bed780a727a6297db14a8e1d345f99. GitHub compare reports #44 is 15 commits ahead and 13 commits behind current #35. These are divergent sibling stacks; #44 does not contain the current #35 overlay-accounting source/test and terminal handover commits. PHX-MASTER did not merge, rebase, cherry-pick, or alter either release branch. PHX-RELEASE must reconcile the stack without force-push before treating the candidates as one release lineage.
+
+The #44 first-boot script generates a random 40-bit RFC 4193 ULA global ID per installation, commits the prefix to UCI, validates persisted readback, and scopes rollback to its own option/section. Its shared CI #44390136309 and case-collision #44390136296 pass; mandatory sandbox #44390136327 remains blocked by missing bubblewrap. A random prefix per installation does not establish the Master §6.9 same-site rule that multiple appliances at one site share a site identity. Site-level assignment authority and same-site/different-site, reboot, upgrade, and restore tests remain open. No ULA contract adoption or migration is approved.
