@@ -9,8 +9,11 @@ uses deterministic poison bytes to model that untrusted RAM state.
 Core source:
 https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp
 
-This lab proves that loadCfg/saveCfg never commit an unverified image and
-that a pre-existing poll-fault marker survives recovery and cold boot.
+The lab covers full-image read failures, same-boot setup-save denial after
+malformed v1/v2 or unknown records, successful local v1/v2-to-v3 migration
+with poll-fault marker preservation, and a failed migration commit followed
+by cold-boot recovery. These are fake-flash host simulations, not physical
+power-cut acceptance or the separate financial ledger migration.
 """
 from pathlib import Path
 import re
@@ -132,7 +135,7 @@ def extract_constants(source: str, names):
             selected.append(line)
     return "\n".join(selected)
 
-def source_functions(source: str) -> str:
+def source_functions(source: str, omit_failure_invalidation: bool = False) -> str:
     names = [
         "makeSetupPassword",
         "configChecksum",
@@ -162,10 +165,20 @@ def source_functions(source: str) -> str:
             continue
         if not found:
             raise RuntimeError(f"missing production function: {name}")
-        pieces.extend(item[1] for item in found)
+        function = found[0][1]
+        if name == "latchConfigPersistenceFailure" and omit_failure_invalidation:
+            anchor = "  configImageReadVerified=false;"
+            if anchor not in function:
+                raise RuntimeError("mutation anchor missing from failure latch")
+            function = function.replace(
+                anchor,
+                "  // injected mutation: verified-image authority was not revoked",
+                1,
+            )
+        pieces.append(function)
     return "\n\n".join(pieces)
 
-def harness(source: str) -> str:
+def harness(source: str, omit_failure_invalidation: bool = False) -> str:
     structs = "\n\n".join([
         extract_block(source, "struct ConfigV1") + ";",
         extract_block(source, "struct ConfigV2") + ";",
@@ -301,7 +314,7 @@ bool journalRecoveryRequired=false;
 bool fsReady=true;
 std::string activeTarget="target";
 """
-    functions = source_functions(source)
+    functions = source_functions(source, omit_failure_invalidation)
     main = r"""
 std::array<uint8_t,32> seedPreexistingMarker(){
   FakeEEPROM::flash.assign(POLL_FAULT_EEPROM_BYTES,0xFF);
@@ -344,6 +357,52 @@ bool coldBootAndCheckMarker(){
   loadCfg();
   loadPollPulseFaultLatch();
   return journalRecoveryRequired && !insertMode && activeTarget.empty();
+}
+bool rejectedConfigCannotBeSaved(const std::vector<uint8_t>& original,
+                                 const std::array<uint8_t,32>& marker){
+  resetEepromObject();
+  resetRuntime();
+  rawReadFailFirstCount=0;
+  rawReadPersistentFailure=false;
+  loadCfg();
+  if(configImageReadVerified || !journalRecoveryRequired || insertMode ||
+     !activeTarget.empty() || flashWriteCount!=0 || FakeEEPROM::flash!=original)
+    return false;
+  // This is the same saveCfg() entrypoint used by the local setup AP route.
+  if(saveCfg()) return false;
+  if(flashWriteCount!=0 || FakeEEPROM::flash!=original || !markerUnchanged(marker))
+    return false;
+  if(!coldBootAndCheckMarker()) return false;
+  return FakeEEPROM::flash==original && markerUnchanged(marker);
+}
+ConfigV1 makeValidV1(){
+  ConfigV1 value{};
+  value.magic=MAGIC_V1;
+  strlcpy(value.ssid,"legacy-v1-ssid",sizeof(value.ssid));
+  strlcpy(value.pass,"legacy-v1-pass",sizeof(value.pass));
+  strlcpy(value.server,"192.0.2.10",sizeof(value.server));
+  strlcpy(value.key,"legacy-v1-key",sizeof(value.key));
+  strlcpy(value.id,"legacy-v1-id",sizeof(value.id));
+  value.coinPin=4;
+  value.insertLedPin=14;
+  value.relayPin=5;
+  value.coinActiveLow=1;
+  return value;
+}
+ConfigV2 makeValidV2(){
+  ConfigV2 value{};
+  value.magic=MAGIC_V2;
+  strlcpy(value.ssid,"legacy-v2-ssid",sizeof(value.ssid));
+  strlcpy(value.pass,"legacy-v2-pass",sizeof(value.pass));
+  strlcpy(value.server,"192.0.2.20",sizeof(value.server));
+  strlcpy(value.key,"legacy-v2-key",sizeof(value.key));
+  strlcpy(value.id,"legacy-v2-id",sizeof(value.id));
+  strlcpy(value.apPass,"legacy-ap-pass",sizeof(value.apPass));
+  value.coinPin=4;
+  value.insertLedPin=14;
+  value.relayPin=5;
+  value.coinActiveLow=1;
+  return value;
 }
 int main(){
   // RED target: EEPROM.begin's first 544-byte read fails, then a direct full
@@ -414,8 +473,92 @@ int main(){
      !activeTarget.empty() || flashWriteCount!=0 || !markerUnchanged(marker)) return 43;
   if(!coldBootAndCheckMarker() || !markerUnchanged(marker)) return 44;
   std::cout<<"ESP8266_EEPROM_SAME_SIZE_STALE_BUFFER_READ_FAILURE_DENY_PASS\\n";
+  // A malformed v1 record must remain byte-for-byte intact even if the
+  // setup AP's saveCfg() entrypoint is called after the boot failure latch.
+  auto rejectedMarker=seedPreexistingMarker();
+  ConfigV1 malformedV1=makeValidV1();
+  memset(malformedV1.ssid,'V',sizeof(malformedV1.ssid));
+  memcpy(FakeEEPROM::flash.data(),&malformedV1,sizeof(malformedV1));
+  auto rejectedImage=FakeEEPROM::flash;
+  if(!rejectedConfigCannotBeSaved(rejectedImage,rejectedMarker)) return 45;
+  std::cout<<"MALFORMED_V1_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS\\n";
+
+  // v2's AP password and all fixed strings are bounded before migration.
+  rejectedMarker=seedPreexistingMarker();
+  ConfigV2 malformedV2=makeValidV2();
+  memset(malformedV2.apPass,'P',sizeof(malformedV2.apPass));
+  memcpy(FakeEEPROM::flash.data(),&malformedV2,sizeof(malformedV2));
+  rejectedImage=FakeEEPROM::flash;
+  if(!rejectedConfigCannotBeSaved(rejectedImage,rejectedMarker)) return 46;
+  std::cout<<"MALFORMED_V2_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS\\n";
+
+  // Unknown non-erased schemas are not defaults and cannot be overwritten by
+  // a later local setup save in the same boot.
+  rejectedMarker=seedPreexistingMarker();
+  const uint32_t unknownMagic=0xDEADBEEFUL;
+  memcpy(FakeEEPROM::flash.data(),&unknownMagic,sizeof(unknownMagic));
+  rejectedImage=FakeEEPROM::flash;
+  if(!rejectedConfigCannotBeSaved(rejectedImage,rejectedMarker)) return 47;
+  std::cout<<"UNKNOWN_SCHEMA_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS\\n";
+
+  // Valid local v1 migration is allowed only after a verified full-image read;
+  // the reserved poll-fault record must survive the v3 commit and cold boot.
+  auto migrationMarker=seedPreexistingMarker();
+  ConfigV1 validV1=makeValidV1();
+  memcpy(FakeEEPROM::flash.data(),&validV1,sizeof(validV1));
+  auto preMigrationImage=FakeEEPROM::flash;
+  resetEepromObject();
+  resetRuntime();
+  loadCfg();
+  if(!configImageReadVerified || cfg.magic!=MAGIC ||
+     strcmp(cfg.ssid,"legacy-v1-ssid")!=0 ||
+     cfg.outputPolarityConfigured!=0 || outputPolarityKnown ||
+     flashWriteCount!=1 || FakeEEPROM::flash==preMigrationImage ||
+     !markerUnchanged(migrationMarker)) return 48;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 49;
+  if(!coldBootAndCheckMarker() || !markerUnchanged(migrationMarker)) return 50;
+  std::cout<<"VALID_V1_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS\\n";
+
+  // Valid local v2 migration has the same reserved-marker preservation rule.
+  migrationMarker=seedPreexistingMarker();
+  ConfigV2 validV2=makeValidV2();
+  memcpy(FakeEEPROM::flash.data(),&validV2,sizeof(validV2));
+  preMigrationImage=FakeEEPROM::flash;
+  resetEepromObject();
+  resetRuntime();
+  loadCfg();
+  if(!configImageReadVerified || cfg.magic!=MAGIC ||
+     strcmp(cfg.ssid,"legacy-v2-ssid")!=0 ||
+     strcmp(cfg.apPass,"legacy-ap-pass")!=0 ||
+     cfg.outputPolarityConfigured!=0 || outputPolarityKnown ||
+     flashWriteCount!=1 || FakeEEPROM::flash==preMigrationImage ||
+     !markerUnchanged(migrationMarker)) return 51;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return 52;
+  if(!coldBootAndCheckMarker() || !markerUnchanged(migrationMarker)) return 53;
+  std::cout<<"VALID_V2_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS\\n";
+
+  // A failed v2 migration commit must revoke write authority for this boot.
+  // The next cold boot may retry the still-present legacy image from flash.
+  migrationMarker=seedPreexistingMarker();
+  validV2=makeValidV2();
+  memcpy(FakeEEPROM::flash.data(),&validV2,sizeof(validV2));
+  preMigrationImage=FakeEEPROM::flash;
+  resetEepromObject();
+  resetRuntime();
+  fakeCommitFailure=true;
+  loadCfg();
+  if(configImageReadVerified || !journalRecoveryRequired ||
+     flashWriteCount!=0 || FakeEEPROM::flash!=preMigrationImage) return 54;
+  if(saveCfg()) return 55;
+  if(flashWriteCount!=0 || FakeEEPROM::flash!=preMigrationImage ||
+     !markerUnchanged(migrationMarker)) return 56;
+  if(!coldBootAndCheckMarker() || !markerUnchanged(migrationMarker)) return 57;
+  std::cout<<"V2_MIGRATION_COMMIT_FAILURE_SAME_BOOT_DENY_COLD_BOOT_RETRY_PASS\\n";
   std::cout<<"EEPROM_CORE_3_1_2_BUFFER_SEMANTICS=MODELED\\n";
-  std::cout<<"SIMULATED_ONLY=1 PHYSICAL_POWER_CUT_VERIFIED=0 CONFIG_MIGRATION_AUTHORIZED=0\n";
+  std::cout<<"LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION_TESTED=0 PRODUCTION_MIGRATION_AUTHORIZED=0\n";
+  std::cout<<"SIMULATED_ONLY=1 PHYSICAL_POWER_CUT_VERIFIED=0\n";
   return 0;
 }
 """
@@ -430,24 +573,40 @@ int main(){
 
 def main():
     source=SOURCE.read_text(encoding="utf-8")
-    program=harness(source)
-    with tempfile.TemporaryDirectory(prefix="phx-eeprom-config-read-") as folder:
-        cpp=Path(folder)/"config_read.cpp"
-        exe=Path(folder)/"config_read"
-        cpp.write_text(program,encoding="utf-8")
-        built=subprocess.run(
-            ["g++","-std=c++17","-Wall","-Wextra","-Werror",
-             "-Wno-unused-parameter",str(cpp),"-o",str(exe)],
-            capture_output=True,text=True,timeout=30
-        )
-        if built.returncode:
-            raise RuntimeError("ESP8266 config read lab compile failed:\n"+built.stderr[-5000:])
-        ran=subprocess.run([str(exe)],capture_output=True,text=True,timeout=10)
-        if ran.returncode:
-            print(ran.stdout,end="")
-            print(ran.stderr,end="")
-            raise RuntimeError(f"ESP8266 config read lab expected exit 0, got {ran.returncode}")
-        print(ran.stdout,end="")
+
+    def compile_and_run(program: str, label: str, expect_success: bool) -> int:
+        with tempfile.TemporaryDirectory(prefix="phx-eeprom-config-read-") as folder:
+            cpp=Path(folder)/"config_read.cpp"
+            exe=Path(folder)/"config_read"
+            cpp.write_text(program,encoding="utf-8")
+            built=subprocess.run(
+                ["g++","-std=c++17","-Wall","-Wextra","-Werror",
+                 "-Wno-unused-parameter",str(cpp),"-o",str(exe)],
+                capture_output=True,text=True,timeout=30
+            )
+            if built.returncode:
+                raise RuntimeError(label+" compile failed:\\n"+built.stderr[-5000:])
+            ran=subprocess.run([str(exe)],capture_output=True,text=True,timeout=10)
+            if expect_success:
+                if ran.returncode:
+                    print(ran.stdout,end="")
+                    print(ran.stderr,end="")
+                    raise RuntimeError(label+" expected exit 0, got "+str(ran.returncode))
+                print(ran.stdout,end="")
+            else:
+                if ran.returncode==0:
+                    raise RuntimeError(label+" mutation unexpectedly survived")
+                print("MUTATION_REJECTED missing-config-image-invalidation exit="+str(ran.returncode))
+            return ran.returncode
+
+    compile_and_run(harness(source), "ESP8266 config read/migration lab", True)
+    # Prove the new malformed-record/setup-save assertions detect removal of
+    # the production failure-latch write-authority revocation.
+    compile_and_run(
+        harness(source, omit_failure_invalidation=True),
+        "ESP8266 missing-config-image-invalidation mutation",
+        False,
+    )
 
 if __name__ == "__main__":
     main()
