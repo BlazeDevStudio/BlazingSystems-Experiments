@@ -399,6 +399,48 @@ class BuildProvenanceTests(unittest.TestCase):
             provenance.write_provenance(args, env=self.env)
         self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
 
+
+    def test_payload_change_after_manifest_snapshot_is_rejected_before_checksum_rewrite(self):
+        work = self.openwrt_fixture()
+        checksum_path = self.artifact / "SHA256SUMS"
+        original_checksums = checksum_path.read_bytes()
+        payload_path = self.artifact / "ruijie-sysupgrade.bin"
+        original_payload_digest = checksum(payload_path)
+        original_write = provenance._write_new_json
+
+        def write_manifest_then_mutate(path, manifest):
+            original_write(path, manifest)
+            payload_path.write_bytes(b"mutated-after-manifest-snapshot")
+
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        with patch.object(
+            provenance, "_write_new_json", side_effect=write_manifest_then_mutate
+        ):
+            with self.assertRaisesRegex(
+                provenance.ProvenanceError,
+                "artifact payload changed during provenance admission",
+            ):
+                provenance.write_provenance(args, env=self.env)
+
+        self.assertEqual(
+            checksum_path.read_bytes(),
+            original_checksums,
+            "failed admission must not rewrite SHA256SUMS to bless changed payload bytes",
+        )
+        manifest = __import__("json").loads(
+            (self.artifact / "BUILD-PROVENANCE.json").read_text(encoding="utf-8")
+        )
+        recorded = next(
+            entry for entry in manifest["files"]
+            if entry["path"] == "ruijie-sysupgrade.bin"
+        )
+        self.assertEqual(recorded["sha256"], original_payload_digest)
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
