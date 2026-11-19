@@ -632,3 +632,59 @@ This UTC17 task changed only `.github/scripts/test_build_provenance.py`, `.githu
 - PHX-RELEASE: refresh the stale COE #35 release-packager handover in a separate scoped activation after re-reading its current head and handover ownership.
 
 No merge, tag, signing, publication, hardware flash, payment migration or customer deployment occurred. Hosted CI/QEMU simulations are not physical hardware acceptance. The protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC19 — protect every write-privileged BlazePwifi publisher (2026-11-19T19Z)
+
+**Disposition:** Four write-privileged BlazePwifi import/publisher jobs now fail closed unless the event is a push to the exact approved ref, GitHub reports that ref as protected, and a role-specific repository approval variable is exactly true. Existing PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Live control plane and ownership
+
+- Issue #172 and cleanup-first #266 were reread. MASTER PR #288 advanced to 2e082bbc583e2c0079b136b10f651b70ef30d751; its ownership-routes manifest remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY. PHX-RELEASE's BlazePwifi workflow route remains reimplementation-review, not migration permission.
+- Experiments PR #242 remains OPEN/DRAFT at 734b89d9e7792247e8376335c3f3685500ab3f89. PR #291 branch phoenix/release-publisher-isolation-20261115 is based on #242; exact source/test head for this task is de6aa394d1b879c339119f63bca7c52c8177b002.
+- COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12; #31 remains 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; child #35 is d41f3231e0eae6cf0c62d19f430818e30372162e; child #44 is 582fd5d5e83e36b36546ac28534740298ba94af4. #35's site-ULA gate and mandatory Bubblewrap infrastructure blocker remain; #44's per-appliance random ULA does not establish a shared site-scoped prefix. No COE file or cross-repository route was changed in this task.
+
+### Defect and bounded correction
+
+The four jobs in .github/workflows/blazepwifi-build.yml that receive contents: write were previously gated by a ref name and commit-message marker, but not by an explicit push-event check, github.ref_protected, or a separate role-specific approval variable. This left the write boundary dependent on branch-name matching alone.
+
+The workflow now requires all of the following before any of those four jobs can start:
+
+| Job | Additional approval variable |
+|---|---|
+| production_import_signed_apk | BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED |
+| publish_prerelease | BLAZEPWIFI_PRERELEASE_APPROVED |
+| publish_release | BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED |
+| publish_v060_lab_preview | BLAZEPWIFI_LAB_PREVIEW_APPROVED |
+
+Each job also requires github.event_name == 'push', its pre-existing exact ref, github.ref_protected == true, and its existing commit-message marker. The separate Windows publisher retains its existing protected-ref and SOFTTIMER_RELEASE_APPROVED gate.
+
+No repository variable was created or changed by PHX-RELEASE. The new variables are explicit future administrative gates; setting one is not evidence of an independent freshness witness, QA/MASTER approval, signer custody, financial migration or physical acceptance. The variables must remain unset/false until the appropriate owners authorize their lane.
+
+### Live branch-protection evidence
+
+The public branch API was read for main, blazepwifi-v0.3.0-production, blazepwifi-v0.3.0-design, and blazepwifi-v0.6.0-audit-foundation. All four report protected=false; required-status-check enforcement is off. The repository rulesets endpoint returned an empty list. The classic branch-protection detail endpoint returned 403 to the connected GitHub integration, so its internal configuration could not be inspected. The branch metadata is sufficient to establish that github.ref_protected is currently false for each of these refs. The new publisher conditions therefore fail closed today even if an approval variable were already true.
+
+### Test-first history and correction notes
+
+- Initial test-only commit 582b5449c64b51f419cf1ae7c18987ef2f83f6a0 introduced a static guard for all four write-privileged jobs. Its first newline matcher was malformed; it was corrected before relying on any RED result.
+- Corrected test-only commit 8267e7047b234d246bebf1506403a5e62a68d183 produced the expected RED in [#44597624463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44597624463): CI-0701 failed in RELEASE-CONCURRENCY with four subcases, one for each write-privileged job, because the old conditions lacked the required push/protected-ref/approval predicates. The four publisher jobs were skipped in PR validation.
+- Workflow correction 8538a4075d123ebb296a477aa4fcf399b0010931 added the push, protected-ref and role-specific approval gates to all four jobs.
+- The first post-fix run [#44597802331](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44597802331) exposed a stale assertion in the existing test that required if: github.ref to be the first predicate. Test correction de6aa394d1b879c339119f63bca7c52c8177b002 now checks the exact ref independently of the preceding safety predicates. This is a test-harness compatibility correction, not a workflow bypass.
+
+### Exact-source Actions at de6aa394
+
+- Push run [#44597947750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44597947750): overall **FAILURE**, not Full CI success. CI-0701 / RELEASE-CONCURRENCY **PASS**; ESP32 **PASS**; ESP8266 **PASS**; Android **PASS**; all 11 OpenWrt target jobs **PASS**. Mandatory validate **FAILED** at the CORE-owned handover freshness gate: source/workflow changes were newer than experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md; last recorded checkpoint was 12c89d189225cc461efddc84723cbfb3adf6e83c. The workflow archived exact-SHA handover evidence despite the failure. Update bundle and v0.4 simulations were skipped after validation failed. All signing and publisher jobs were skipped.
+- PR run [#44597961905](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44597961905): CI-0701 / RELEASE-CONCURRENCY **PASS**; validate **FAILED** at the same CORE-owned handover freshness gate; ESP32 and Android **PASS**; ESP8266 **FAILED** because the runner's pinned Arduino CLI archive download returned a transient connection reset (Errno 104), not a source/compiler error. Most target jobs had passed; one target was still in progress at this handover update. No overall PR-run success is claimed.
+- Windows PR run [#44597961801](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44597961801): handover freshness **FAILED** at the same CORE-owned gate; Windows build and publisher **SKIPPED**. This run did not reach PISONET's negative self-test. The earlier #291 Windows run [#44581603605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44581603605) separately failed in PISONET-owned negative-selftest.ps1 because $buildWorkflow is uninitialized; PHX-RELEASE did not edit that test.
+- On the exact-source push run, production_import_signed_apk, publish_prerelease, publish_release, production_sign_handoff, and publish_v060_lab_preview were all **SKIPPED**. No publisher, signer, tag or release was invoked.
+
+### Private provenance and next owner actions
+
+- Exact Library search for BLAZE_PROJECT_REGISTRY_v11_20261027.json returned older v3/v4/v5/v6/v7 entries but not canonical v11. No older snapshot was substituted; no private file contents or identifiers were copied into GitHub.
+- **Repository administrator:** configure and verify protected release admission for main and the three release refs, including required checks/reviews and a protected approval path. The current branch metadata reports all four unprotected.
+- **PHX-MASTER / PHX-QA:** independently review the four publisher predicates and the role-specific approval-variable contract. MASTER keeps the reimplementation route review-only until an explicit decision.
+- **PHX-CORE:** refresh its own BlazePwifi PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md after this workflow change; PHX-RELEASE did not edit those CORE-owned records or bypass the freshness gate.
+- **PHX-PISONET:** initialize $buildWorkflow in its own negative self-test; RELEASE can rerun the Windows workflow after PISONET and CORE resolve their respective blockers.
+- **PHX-INFRA / COE integration / CORE / MASTER:** retain the existing Bubblewrap and site-ULA authority blockers on COE #31/#35/#44; no prefix or sandbox fallback was invented.
+
+No merge, real-key signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
