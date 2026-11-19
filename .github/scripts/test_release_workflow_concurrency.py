@@ -55,7 +55,7 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         publisher = job_block(self.windows_content, "publish-release")
 
         self.assertIn(
-            "permissions:\n    contents: read",
+            "permissions:\n      contents: read",
             build,
             "the Windows build job handles candidate binaries and signing inputs "
             "but must never inherit write scope from a future workflow-level change",
