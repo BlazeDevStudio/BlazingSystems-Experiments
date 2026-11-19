@@ -74,6 +74,8 @@ def fake_run(command, **kwargs):
         return SimpleNamespace(returncode=0, stdout=SOURCE_SHA + "\n", stderr="")
     if args[:2] == ["git", "rev-parse"] and len(args) == 3 and args[2].startswith("HEAD:"):
         return SimpleNamespace(returncode=0, stdout=BLOB_SHA + "\n", stderr="")
+    if args[:3] == ["git", "diff", "--quiet"]:
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
     if args == ["arduino-cli", "version"]:
         return SimpleNamespace(returncode=0, stdout="arduino-cli Version: 1.6.0 Commit: test\n", stderr="")
     if args == ["arduino-cli", "core", "list"]:
@@ -253,6 +255,26 @@ class BuildProvenanceTests(unittest.TestCase):
         )
         with self.assertRaises(provenance.ProvenanceError):
             provenance.write_provenance(args, env=self.env)
+
+
+    def test_source_worktree_must_match_exact_head_blob(self):
+        source = self.root / "tracked.py"
+        source.write_text("modified worktree source\\n", encoding="utf-8")
+
+        def dirty_run(command, **kwargs):
+            args = [str(part) for part in command]
+            if args == ["git", "diff", "--quiet", "HEAD", "--", "tracked.py"]:
+                return SimpleNamespace(returncode=1, stdout="", stderr="tracked.py")
+            return fake_run(command, **kwargs)
+
+        with patch.object(provenance, "ROOT", self.root), patch.object(
+            provenance.subprocess, "run", side_effect=dirty_run
+        ):
+            with self.assertRaisesRegex(
+                provenance.ProvenanceError,
+                "source path differs from exact HEAD",
+            ):
+                provenance._source_context(self.env, ["tracked.py"])
 
 
 if __name__ == "__main__":
