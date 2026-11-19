@@ -565,6 +565,12 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
         self.assertEqual(outside.read_bytes(), outside_bytes)
 
+    def test_no_unused_path_reopening_inventory_wrappers_remain(self):
+        """Keep one descriptor-pinned inventory API instead of dead path wrappers."""
+        self.assertFalse(hasattr(provenance, "_inventory"))
+        self.assertFalse(hasattr(provenance, "_verify_checksum_manifest"))
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
