@@ -901,3 +901,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Exact draft PR #291 head `26e138acf2fbbb8890103fa1cfe2469e8efdd6ba`: shared build [#44432976878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44432976878) completed SUCCESS. The validated scope includes handover freshness, shared build validation, ESP8266/ESP32 and Android jobs; production import/sign/publish jobs were skipped.
 - Parallel Windows run [#44432976880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44432976880) passed handover but failed at `RELEASE-SIGN test fail-closed negative controls`; its publisher job was skipped. That expected negative result is not a release or package acceptance.
 - PR #291 remains open/draft/unmerged with no independent reviews. Protected release admission/signer, durable finance/migration and physical acceptance remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — Arduino archive-verifier source head (blocked CI)
+
+- Exact draft PR #291 source head `63f9952ce783a007546b09daa5ea4847f32fb505` adds the existing release-owner's Arduino CLI archive-verifier guard, test coverage and release handover. This entry records provenance only; the source work was not reached by the blocked workflows.
+- Exact Windows [#44458671016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671016) and shared-build [#44458671105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671105) runs failed at mandatory handover freshness before validation/build. Signing and publisher jobs were skipped.
+- This additive record enables fresh exact-head CI only. PR #291 remains draft/unmerged, with all production gates unresolved. **PRODUCTION NO-GO.**
