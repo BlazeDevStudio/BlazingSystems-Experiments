@@ -688,3 +688,49 @@ The public branch API was read for main, blazepwifi-v0.3.0-production, blazepwif
 - **PHX-INFRA / COE integration / CORE / MASTER:** retain the existing Bubblewrap and site-ULA authority blockers on COE #31/#35/#44; no prefix or sandbox fallback was invented.
 
 No merge, real-key signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+
+## PHX-RELEASE UTC20 — workflow-wide token inheritance guard
+
+**PR #291 branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base:** PR #242 branch `draft/softtimer-future-release-signing-pipeline-20261029@734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Source/test commit:** `c668996b396c7427e3f97d81308067fe7ffce7b7`  
+**Scope:** `.github/scripts/test_release_workflow_concurrency.py` only.
+
+The current BlazePwifi workflow already has workflow-level `permissions: contents: read`, while four publisher jobs have explicit job-level write grants and their existing push/ref-protection/role-approval/marker gates. The prior concurrency test counted explicit job-level writes but did not assert the workflow-wide default. A future top-level `contents: write` plus per-job overrides could therefore weaken the default boundary without being detected by that assertion.
+
+Added two release-owned guard tests:
+- `test_blazepwifi_workflow_default_token_scope_is_read_only` requires the complete workflow-level permission map to be exactly `{"contents":"read"}`.
+- `test_workflow_default_permission_guard_rejects_inherited_write_mutation` changes that default to `contents: write` in a synthetic in-memory workflow and proves the guard rejects it.
+
+No workflow behavior, publisher configuration, repository variables, secrets, application code or product paths changed. This is guard coverage, not a runtime defect fix; the current workflow default was already read-only, so no product RED was expected.
+
+### Exact-source Actions
+
+- CI-0701 job [135855484128](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44607642181) **SUCCESS** at exact source/test SHA `c668996b396c7427e3f97d81308067fe7ffce7b7`: RELEASE-CONCURRENCY **7/7 PASS**, provenance **23/23 PASS**, Arduino CLI archive verifier **8/8 PASS**.
+- PR build [#44607642181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44607642181): at last read, **24 jobs success, 4 skipped, 2 in progress, 0 failed**. Remaining jobs were the x86 QEMU audit and Android-emulator simulation. The overall run was still in progress; no terminal SUCCESS is claimed.
+- Push build [#44607627688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44607627688): at last read, **24 success, 4 skipped, 2 in progress, 0 failed**; Android-emulator and x86 QEMU simulations remained in progress. No terminal conclusion is claimed.
+- ESP32 compatibility [#44607642013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44607642013) **SUCCESS**, both ESP32 core 3.3.13 and 4.0.0 legs. This workflow still pins HARDWARE source `984ea8ff65a93b7da6e22fc2e1943acaf56100ca`, while live HARDWARE PR #327 head is `fc4c9055be9680f9b7a7b7765c9435a63ff4a8ac`. The passing run is therefore for the older pinned source, not current #327 acceptance. PHX-MASTER / PHX-HARDWARE must nominate the candidate source SHA before RELEASE updates the compatibility pin.
+- Windows [#44607642048](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44607642048) **FAILURE** in PISONET-owned `negative-selftest.ps1`: `$buildWorkflow` was unset. .NET SDK 8.0.425, package parity, release concurrency, immutable action pins and checkout-credential checks passed; Windows publisher was **SKIPPED**. RELEASE did not edit PISONET paths.
+
+### Live gates and cross-repository state
+
+- Main and release refs `main`, `blazepwifi-v0.3.0-production`, `blazepwifi-v0.3.0-design`, and `blazepwifi-v0.6.0-audit-foundation` all report `protected=false`; repository rulesets list is empty. Publisher jobs remain fail-closed.
+- MASTER PR #288 head `b6ee424b897701bf1c550076610203d45f1a13f2`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, and RELEASE workflow routing remains `reimplementation-review` to COE #26.
+- PR #291 currently has 16 changed paths, including three CORE-owned handover paths and two PISONET-owned test paths. Those are pre-existing branch contents, not changed in this activation. This activation changed only the RELEASE-owned test file and handover. MASTER and the respective owners must reconcile/split those foreign paths before any merge; no review has been submitted.
+- COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`: five workflows remain queued, zero jobs executed.
+- COE #31 head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared firmware/hardware checks and case-collision guard passed; mandatory ImageBuilder sandbox failed closed, exit 125, because `bwrap: setting up uid map: Permission denied`.
+- COE #35 head `d41f3231e0eae6cf0c62d19f430818e30372162e`: 117 packager tests pass (two intentional skips), all ten profiles reject missing approved site-scoped RFC 4193 ULA authority, sandbox fails closed, case-collision guard passes. No prefix was invented.
+- Canonical private Drive registry v11 was not found through the authorized Library surface; older v3-v7 snapshots were not substituted and no private contents were copied.
+
+### Next owner actions
+
+- **Repository administrator:** establish and verify branch protection, required checks/reviews and the protected release approval path.
+- **PHX-MASTER / PHX-QA:** review the workflow-default permission guard and resolve the mixed-ownership PR #291 path set.
+- **PHX-MASTER / PHX-HARDWARE:** nominate the exact current Hardware candidate SHA for the release compatibility matrix.
+- **PHX-PISONET:** initialize `$buildWorkflow` in its own negative self-test.
+- **PHX-CORE / COE integration:** resolve site-scoped ULA provisioning authority.
+- **PHX-INFRA:** provide the approved unprivileged Bubblewrap namespace runner.
+
+PR #291 remains OPEN / DRAFT / UNMERGED. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
