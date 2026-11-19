@@ -11,6 +11,38 @@ import re
 _FUNCTION_MODIFIERS = r"(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)"
 
 
+def _skip_line_splices(source: str, index: int) -> int:
+    """Skip C++ phase-2 backslash-newline pairs starting at index."""
+    while index < len(source) and source[index] == "\\":
+        if index + 1 < len(source) and source[index + 1] == "\n":
+            index += 2
+        elif index + 1 < len(source) and source[index + 1] == "\r":
+            if index + 2 < len(source) and source[index + 2] == "\n":
+                index += 3
+            else:
+                index += 2
+        else:
+            break
+    return index
+
+
+def _comment_delimiter_end(
+    source: str, index: int, first: str, second: str
+):
+    """Return the physical end of a two-character comment token.
+
+    C++ phase 2 removes backslash-newline pairs before phase-3 comment
+    recognition, so the delimiter characters may not be adjacent in the
+    physical source. The returned offset still addresses the original text.
+    """
+    if index >= len(source) or source[index] != first:
+        return None
+    second_index = _skip_line_splices(source, index + 1)
+    if second_index < len(source) and source[second_index] == second:
+        return second_index + 1
+    return None
+
+
 def mask_non_code(source: str) -> str:
     """Blank comments and literals while preserving offsets and line breaks."""
     masked = list(source)
@@ -22,33 +54,41 @@ def mask_non_code(source: str) -> str:
 
     index = 0
     while index < len(source):
-        if source.startswith("//", index):
+        line_comment_end = _comment_delimiter_end(source, index, "/", "/")
+        if line_comment_end is not None:
             start = index
-            index += 2
+            index = line_comment_end
             while index < len(source):
                 if source[index] not in "\r\n":
                     index += 1
                     continue
 
-                # C++ translation phase 2 removes backslash-newline before
-                # comment recognition, so the // comment continues.
+                # A backslash-newline inside // continues the comment.
                 newline_end = index + 1
                 if (source[index] == "\r" and newline_end < len(source)
                         and source[newline_end] == "\n"):
                     newline_end += 1
-                if source[index - 1] == "\\":
+                if index > start and source[index - 1] == "\\":
                     index = newline_end
                     continue
                 break
             blank(start, index)
             continue
 
-        if source.startswith("/*", index):
+        block_comment_end = _comment_delimiter_end(source, index, "/", "*")
+        if block_comment_end is not None:
             start = index
-            end = source.find("*/", index + 2)
-            if end < 0:
+            cursor = block_comment_end
+            end = None
+            while cursor < len(source):
+                candidate_end = _comment_delimiter_end(source, cursor, "*", "/")
+                if candidate_end is not None:
+                    end = candidate_end
+                    break
+                cursor += 1
+            if end is None:
                 raise RuntimeError("unterminated C/C++ block comment")
-            index = end + 2
+            index = end
             blank(start, index)
             continue
 
@@ -87,7 +127,6 @@ def mask_non_code(source: str) -> str:
         index += 1
 
     return "".join(masked)
-
 
 def _matching_brace_masked(masked: str, opening: int) -> int:
     """Return the closing brace for an opening brace in masked source."""
