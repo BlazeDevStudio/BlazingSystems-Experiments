@@ -258,6 +258,8 @@ static bool runUnrepresentablePulseCases(){
 static bool runLatePulseAfterReady(){
   resetState(141U);
   lastEdge=100U;
+  insertMode=false;
+  activeTarget.clear();
   pendingReady=true;
   pendingPulses=4U;
   pendingNonce="nonce-existing";
