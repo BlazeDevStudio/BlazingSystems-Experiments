@@ -1007,3 +1007,21 @@ The separate Blaze Production Continuation retains CORE implementation ownership
 
 Live #327 head 3046c74d19ee1040996860a66cbdcb850acdbe14; source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c. Docs-head focused quarantine [44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) and relay [44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) PASS. Docs-head Full [44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) FAIL at QA-owned Missing poll signature check; all 13 firmware/platform targets plus Android PASS; downstream simulation/signing/publishing skipped. HARDWARE must refresh the stale PR body/top handover pin c51271938 to live 3046c74d. No physical test.
 
+
+
+## Live role PR and CI pins — 2026-11-19 UTC00
+
+The table below is an exact-head snapshot, not a reassignment. Existing directory boundaries remain authoritative; PHX-MASTER owns only `coordination/phoenix/` and contracts.
+
+| Role | Current draft | Exact head | Current returned evidence / owner action |
+|---|---|---|---|
+| PHX-CORE | Experiments #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped CI #42698139210 success; CORE remains under its separate continuation and was not edited here |
+| PHX-RENTAL | Experiments #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329235 and #43653329229 success; physical Device Owner acceptance remains absent |
+| PHX-PISONET | Experiments #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 success; native COM bench remains unverified |
+| PHX-HARDWARE | Experiments #327 | `3046c74d19ee1040996860a66cbdcb850acdbe14` | Focused #44424514021/#44424514181 pass; Full #44424514063 fails on QA-owned positive poll-signature fixture; physical hardware not tested |
+| PHX-QA | Experiments #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No current-head run returned; replace positive poll-presence check with negative default-deny tests and independently review #327 |
+| PHX-RELEASE | Experiments #291 | `fc2e55e447c6627afc89f38a9412bb5c517de991` | Arduino CLI 1.6.0 is pinned; shared build #44427424398 and Windows handover #44427424289 fail at CORE-owned handover freshness; do not edit CORE handovers |
+
+COE child candidates are not new ownership grants: #44 ULA site scope remains incomplete; #45 receipt-v1 is not yet mapped to Master v2; #35 mandatory sandbox is blocked by runner capability; #26 remains an unaccepted integration destination with five queued workflows and zero jobs.
+
+**No role source branch was modified or reassigned in this Master activation.**

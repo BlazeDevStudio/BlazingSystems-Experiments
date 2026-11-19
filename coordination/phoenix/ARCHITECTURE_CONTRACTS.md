@@ -630,33 +630,43 @@ Full build on the latest docs head [44373742348](https://github.com/BlazeDevStud
 **Owner routing:** HARDWARE owns #327 source and labs; QA owns the stale poll-signature fixture and independent same-SHA review; CORE owns unresolved-ingress/ledger reconciliation semantics; RELEASE/INFRA own Android dependency and runner/build-environment triage. MASTER records the contract and integration gate only. No source ownership or release authority transfers here. **PRODUCTION NO-GO.**
 
 
-## 6.30 First-boot ULA generation must preserve site scope across appliances — 2026-11-18 UTC19
+## 6.30 First-boot ULA generation must preserve site scope across appliances — 2026-11-19 UTC00 refresh
 
 Section 6.9 remains normative: an RFC 4193 `fd00::/8` /48 is durable site identity, unique between independent sites and shared by devices on the same LAN/site. It must survive reboot, upgrade and restore; it is not a static hardware-profile property.
 
-COE Release child PR #44 at `0ad58f0388dc8e4e9309e64098b439bf368a3558` now generates a random 40-bit ID on first boot and persists the resulting ULA in `network.globals.ula_prefix`. This removes the earlier invalid, globally baked placeholder and is a meaningful per-install improvement. However, per-install random generation alone does not prove that multiple independently installed appliances on one site receive the same /48. Without a site-scoped authority/assignment or an explicit one-installation-per-site constraint, two appliances at the same site can diverge.
+COE Release PR #44 is OPEN / DRAFT at `582fd5d5e83e36b36546ac28534740298ba94af4`, based on #35 at `1a5be48d2845781b0b07bad39a37f8440cea4d4f`. Its first-boot script creates a random 40-bit ULA global ID, validates the resulting /48, persists `network.globals.ula_prefix`, checks the named UCI section type, and scopes rollback to the ULA option/newly-created globals section.
 
-**Acceptance before contract completion:** define the site assignment authority; verify two appliances on one site share the same prefix, independent sites receive distinct prefixes, and reboot/upgrade/restore preserve identity. Missing, malformed, unavailable or conflicting authority must fail closed before network services consume the prefix. No global static fallback is permitted.
+**Exact-head evidence:**
+- Shared Hardware/Contracts [run #44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309), job 135105225016: 109 packager tests ran, 2 sandbox-only skips; 10/10 appliance profiles passed. The ULA first-boot, commit-failure rollback and wrong-`network.globals`-type tests executed and passed.
+- Case-collision [run #44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296): PASS.
+- Mandatory ImageBuilder sandbox [run #44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327): FAILED CLOSED because `bwrap` is absent; 14/14 host-preflight tests passed before the availability gate. No unsandboxed fallback or packaging pass is claimed from this run.
 
-**Owner routing:** PHX-RELEASE owns first-boot implementation; COE integration owner owns destination staging; PHX-CORE/COE owners define provisioning authority; PHX-QA independently verifies exact-source behavior; PHX-HARDWARE validates target behavior only after authorization. PHX-MASTER owns the contract and integration gate only. PR #44 remains OPEN / DRAFT; no merge or production approval. **PRODUCTION NO-GO.**
+**Remaining contract gap:** random generation per installation does not prove that two independently installed appliances at the same site receive the same /48. The current implementation contains no site-level assignment authority or shared site identity input. Two first boots can therefore produce different prefixes on one site.
 
+**Acceptance before contract completion:** PHX-CORE/COE owners must define a site-scoped assignment authority or explicitly propose a one-installation-per-site constraint for owner review. QA must verify two appliances on one site share the same prefix, independent sites receive distinct prefixes, and reboot/upgrade/restore preserve identity. Missing, malformed, unavailable or conflicting authority must fail closed before network services consume the prefix. No static/global fallback is permitted.
 
-## 6.31 ESP8266 EEPROM full-image read failure is not an erased Config state — UTC21 P0 review
+PHX-RELEASE owns first-boot implementation; COE integration owns destination staging; PHX-CORE/COE define provisioning authority; PHX-QA independently verifies exact-source behavior; PHX-HARDWARE validates target behavior only after authorization. PHX-MASTER owns the contract and gate, not implementation. Keep #44/#26 draft. **PRODUCTION NO-GO.**
 
-**Status:** P0 owner review required; source-level hazard, not confirmed field data loss.
+## 6.31 ESP8266 EEPROM full-image read failure is not an erased Config state — source correction verified, physical durability open — 2026-11-19 UTC00
 
-At the prior review head `c51271938c15e13998d1c99f1d311ca777bb1cc2`; the latest PR #327 head is `b346eba3ebee228abcff03456deb7889f2d39144` and retains the same ESP8266 sketch blob `4d73c5dc451c29f2ffd64a5cb2d230cc84a78ed5`, ESP8266 reserves EEPROM bytes 512–543 of a 544-byte image for the poll-fault record. The new marker-only `readPollFaultBackupFlash()` is correctly status-bearing and its address calculation matches ESP8266 Arduino core 3.1.2 EEPROM sector mapping.
+**Prior source hazard: corrected in the current Hardware candidate; independent QA and physical acceptance remain open.**
 
-However, `loadCfg()` still calls `EEPROM.begin(544)`, checks only `EEPROM.length()`, then reads Config from the EEPROM RAM buffer. If `configRecordErased(current)` sees an all-0xFF-looking Config prefix, it runs defaults and calls `saveCfg()`. That function writes the Config prefix and commits the full EEPROM image.
+Hardware PR #327 is OPEN / DRAFT at docs head `3046c74d19ee1040996860a66cbdcb850acdbe14`; exact source/test head is `6b52d63f889a9567303f9f2de464c743c1991f0c`. Source correction commit is `40cfc0799a6e65e4a724e8ccbe6baa0f5f51de54`.
 
-ESP8266 core 3.1.2 EEPROM.cpp allocates the RAM buffer, calls `ESP.flashRead()`, logs a read failure without returning status, and later commits by erasing the sector and writing the configured buffer. A failed initial whole-image read can therefore leave an untrusted RAM image. If that image appears erased, the Config default path can commit before `initPendingStore()` performs the later marker-only raw read, potentially overwriting a pre-existing poll-fault marker in bytes 512–543.
+The ESP8266 sketch now performs a status-bearing raw `ESP.flashRead` of the full 544-byte EEPROM image using the core 3.1.2 EEPROM sector mapping. It reconciles the EEPROM emulation RAM buffer from that verified image before `EEPROM.get()` can supply Config. `configImageReadVerified` gates subsequent configuration and poll-fault writes. If the full-image read or RAM restoration fails, `loadCfg()` latches the persistence failure and returns before defaults, schema migration or commit; output polarity remains unknown and coin admission stays denied.
 
-The current #327 dual-store lab models an erased-looking failed-read buffer but does not execute `loadCfg()`, `configRecordErased()` or the default `saveCfg()` path. Its marker-only read/write denial tests do not close this full-image path.
+The source-extracted `config_load_read_failure_lab.py` at blob `9da02102020e97360320cfa7bc1f39a184b20011` executes the production `loadCfg/saveCfg` functions against a fault-injected EEPROM model that reproduces ESP8266 core 3.1.2 `EEPROM.begin()` ignoring the `flashRead` return value. It verifies:
+- transient initial `EEPROM.begin()` read failure followed by a successful full-image read preserves the pre-existing poll-fault marker;
+- recovered image survives the modeled cold-boot deny check;
+- a subsequent full-read failure with marker-only recovery does not commit an unverified Config image;
+- persistent full-image read failure prevents save/marker writes and preserves the existing marker.
 
-**Required contract:** never treat a failed/unverified EEPROM image as erased; never commit from an unverified RAM image; preserve both Config and the poll-fault record when the initial full-image read fails. Add source-extracted transient and persistent read-failure regressions with a pre-existing marker and a cold-boot assertion. PHX-HARDWARE owns the correction on #327; PHX-QA independently reviews the exact corrected SHA. PHX-RELEASE should pin or assert ESP8266 core 3.1.2. Master does not modify firmware.
+**Exact-head CI at PR/docs head `3046c74d...`:**
+- Quarantine/readback [run #44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021), job 135225761344: PASS; logs include all four EEPROM recovery markers above, plus dual-store and pending-journal source-extracted cases.
+- Relay/output [run #44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181): PASS; includes the same EEPROM recovery markers.
+- Full [run #44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063): FAILED only at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 13 firmware/platform target jobs plus Android succeeded; downstream simulations, update bundle, candidate gate, signing and publishing were skipped.
 
-References: [#327 ESP8266 source](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/b346eba3ebee228abcff03456deb7889f2d39144/experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino), [core 3.1.2 EEPROM begin](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp#L46-L73), [core 3.1.2 EEPROM commit](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp#L126-L143). Physical behavior remains NOT TESTED.
-
+This corrects the previous full-image-read hazard in source-extracted host tests; it is **not** physical flash or power-cut evidence. LittleFS and EEPROM remain on the same flash device and do not constitute an independent witness. Physical reboot/power-cut behavior, 150 real power cuts, 30-device/24-hour soak, independent anti-rollback witness and production durable-accounting proof remain open. HARDWARE owns #327 source; QA owns the positive-signature fixture correction and independent same-SHA review; RELEASE owns toolchain pinning. MASTER does not modify firmware. **PRODUCTION NO-GO.**
 
 ## 6.32 ISR edge reconciliation must cover both poll-window outcomes — 2026-11-18 UTC21
 

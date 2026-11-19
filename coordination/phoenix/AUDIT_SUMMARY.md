@@ -725,3 +725,20 @@ Next: PHX-HARDWARE fixes full-image EEPROM read/recovery; PHX-QA independently r
 
 At the final readback, live PR head 3046c74d19ee1040996860a66cbdcb850acdbe14 remains docs-only after source/test head 6b52d63f889a9567303f9f2de464c743c1991f0c. Focused quarantine [44424514021](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514021) and relay [44424514181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514181) PASS. Full [44424514063](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44424514063) FAILS at the inherited QA-owned Missing poll signature check; all 14 build jobs (13 firmware/platform plus Android) PASS and downstream simulation, update bundle, signing and publishing are skipped. The earlier in-progress/queued snapshot is superseded. The PR body/top handover still pin c51271938 and remain stale.
 
+
+
+---
+
+## Live exact-head audit — 2026-11-19 UTC00
+
+Master re-read issue #172, cleanup gate #266, Experiments/COE refs, PR #288, `OWNERSHIP_ROUTES.json`, current role PRs and their returned CI, and the latest coordination handovers. Current refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; named development `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master before this update `3c1ecc3242a84414ce93931e66a0bc4c1bcc588e`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**Newly reconciled:**
+- Hardware #327 full-image EEPROM read recovery is now present in source and source-extracted tests. Both focused exact-head workflows pass; Full still fails at QA's stale positive poll-signature assertion. This closes the previous source-level read-failure finding, not physical durability.
+- COE #44 ULA generation, rollback and wrong-section-type tests execute in its shared CI (109 tests, 2 sandbox-only skips; 10/10 profiles pass). The same-site identity contract is still incomplete because the implementation generates a random prefix independently per installation and contains no site-scoped assignment authority.
+- Release #291 pins Arduino CLI 1.6.0 and verifies the runtime version, but its current combined build and Windows handover workflows fail at the CORE-owned handover freshness gate. Release correctly left CORE handovers untouched.
+- COE #26 still has five queued workflows and zero jobs. No new source/destination blob, license, import-completeness or test-identity comparison was executed in this activation; no migration is proposed.
+
+**Governance / access:** branch-protection reads returned 403 for Experiments main, named development and Master; rulesets returned an empty array. Effective protection is UNKNOWN, not verified disabled. COE root AGENTS.md returned 404. The AGENTS-linked cloud policy and storage handover paths were not readable through the connected GitHub surface. No Google Drive connector was exposed; canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not available in the Library. No older registry snapshot was substituted and no private registry data was disclosed.
+
+**Production blockers remain:** protected independent signer/anti-rollback witness; crash-atomic durable financial state; reversible v1→v2 migration tests; independent QA; native acceptance; 150 real power cuts; 30-device/24-hour soak; owner-authorized release gates. **PRODUCTION NO-GO.**
