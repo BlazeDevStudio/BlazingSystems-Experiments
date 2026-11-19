@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from firmware_lab_source import extract_function
+from firmware_lab_source import extract_function, mask_non_code
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
@@ -373,7 +373,48 @@ def verify_shared_extractor():
         raise RuntimeError("shared extractor failed post-return ICACHE_RAM_ATTR function")
     if extract_function(attribute_probe, "next") != "void IRAM_ATTR next() { return; }":
         raise RuntimeError("shared extractor failed post-return IRAM_ATTR function")
+
+    # Exercise C++ raw strings, escaped ordinary strings, and phase-2 line
+    # splicing in both comment openers and closers. Braces in any of these
+    # non-code regions must not terminate the extracted production function.
+    lexical_probe = (
+        "bool lexical() {\\n"
+        '  const char *raw = u8R"tag( } // /* { )tag";\\n'
+        '  const char *escaped = "quote: \\" }";\\n'
+        "  const char brace = '}';\\n"
+        "  /" + "\\\\" + "\\n" + "/ split line-comment opener { }\\n"
+        "  // continued line-comment \\\\" + "\\n" + "  { }\\n"
+        "  /* split block-comment closer *" + "\\\\" + "\\n" + "/\\n"
+        "  return raw[0] == ' ' && escaped[0] == 'q' && brace == '}';\\n"
+        "}\\n"
+        "bool afterLexical() { return false; }\\n"
+    )
+    expected_lexical = lexical_probe.split("\\nbool afterLexical", 1)[0]
+    actual_lexical = extract_function(lexical_probe, "lexical")
+    if actual_lexical != expected_lexical:
+        raise RuntimeError("shared extractor mishandled raw strings or phase-2 comment splicing")
+    masked_lexical = mask_non_code(lexical_probe)
+    if len(masked_lexical) != len(lexical_probe) or masked_lexical.count("\\n") != lexical_probe.count("\\n"):
+        raise RuntimeError("shared extractor mask changed source offsets or newline positions")
+
+    # Prove this fixture would catch the former raw-brace counting strategy.
+    start = lexical_probe.index("bool lexical()")
+    opening = lexical_probe.index("{", start)
+    depth = 0
+    legacy_end = None
+    for position in range(opening, len(lexical_probe)):
+        if lexical_probe[position] == "{":
+            depth += 1
+        elif lexical_probe[position] == "}":
+            depth -= 1
+            if depth == 0:
+                legacy_end = position + 1
+                break
+    if legacy_end is None or lexical_probe[start:legacy_end] == expected_lexical:
+        raise RuntimeError("raw-string fixture does not reject the legacy brace counter")
+
     print("SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS")
+    print("SHARED_EXTRACTOR_RAW_STRING_PHASE2_PASS")
     print("SHARED_EXTRACTOR_ISR_ATTRIBUTE_ORDER_PASS")
 
 
