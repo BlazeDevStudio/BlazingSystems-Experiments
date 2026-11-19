@@ -356,3 +356,11 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Exact [BlazePwifi build #44555775939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775939) completed SUCCESS for scoped validation, target builds, update bundle, and simulations. Production signer and publication jobs were skipped.
 - Exact [Windows release #44555775954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775954) passed handover validation then correctly stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on ran. [ESP32 compatibility #44555775998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775998) completed both scoped historical-source legs (`984ea8ff65a9`).
 - This is evidence only: no artifact has been signed, published, flashed, deployed, or designated production-ready. PR #291 remains draft/unmerged with no independent review; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — supersession audit: incremental provenance refinement
+
+- Compatible branch head `9b39a4432f6c87ba005eae0e414a501842f10e62` already contains incremental build-provenance generator/test changes from another release worker. This checkpoint intentionally preserves that implementation and records independent evidence only.
+- Exact [BlazePwifi build #44565010341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010341) completed SUCCESS for scoped validation, builds, update bundle, and simulations; signer handoff and all publication jobs were skipped.
+- Exact [Windows release #44565010212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010212) passed handover validation and then stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on executed. [ESP32 compatibility #44565010064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010064) completed scoped compatibility against historical Hardware source `984ea8ff65a9` only.
+- No signing, publishing, flashing, deployment, secret handling, or production designation occurred. PR #291 remains draft/unmerged and independently unreviewed; **PRODUCTION NO-GO.**
