@@ -666,3 +666,36 @@ Current-head focused CI:
 - Relay/output PR [#44468394117](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44468394117), jobs 135371610544 and 135371610891: **SUCCESS**.
 
 This is not a Full CI pass: validation failed and all downstream production/simulation/signing/publishing jobs were skipped. Exact-head ESP32 core 3.3.13 remains NOT TESTED; current ESP32 build uses core 4.0.0. The Mbed TLS 3 branch lab uses stub APIs only. Keep poll admission fail-closed and do not satisfy the legacy assertion by accepting unauthenticated signatures. PR #327 remains OPEN / DRAFT / UNMERGED / PRODUCTION NO-GO.
+
+## UTC06 follow-up — C++ line-spliced comment extraction (2026-11-19)
+
+**Task:** #177 / PR #327, PHX-HARDWARE-owned test-extractor reliability. This is a host-test parser correction only; no production sketch, poll contract, wire format, NVS/EEPROM schema, financial path or output behavior changed.
+
+### Proven defect
+
+The shared firmware_lab_source.py mask_non_code() stopped // comments at the first CR/LF. C++ translation phase 2 removes a backslash-newline pair before comment recognition, so a fake function definition on the continued line remained visible to extract_functions(). A source-extracted lab could therefore select comment text as if it were production code.
+
+### Test-first evidence and correction
+
+- Intermediate fixture commit c99768e3403a2350948d7f92321ecdb60392e947 had an incorrectly escaped fixture and is **not** used as RED evidence; it was superseded.
+- Correct LF fixture commit 0a9ea0cebbff4bdffc5d8b2a84ba49c7916eeee8 produced expected RED: push [#44472972445](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44472972445), job 135386651744, failed exactly with AssertionError: backslash-newline // comment exposed a fake function.
+- Fix commit a73af2552a2d7c0f89bbda485fe2c0db00bd04f6 now continues a // comment across LF or CRLF only when the line ending is immediately preceded by a backslash. It preserves source length and newline offsets.
+- CRLF fixture commit 1a6da55e537375ec44e7637d5a83d26318b3f604 covers both LF and CRLF continuation and asserts CRLF positions remain unchanged.
+
+### Exact-head CI
+
+Exact source/test SHA: 1a6da55e537375ec44e7637d5a83d26318b3f604.
+
+- Push quarantine/readback [#44473082805](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473082805), job 135387009446: **SUCCESS**. Logs: POLL_FAULT_EXTRACTOR_SELFTEST=PASS, POLL_FAULT_DUAL_STORE_LAB=PASS board=ESP32, POLL_FAULT_DUAL_STORE_LAB=PASS board=ESP8266; existing poll/pulse failure mutations rejected. SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_ACCEPTANCE=0.
+- PR quarantine/readback [#44473090673](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473090673), job 135387034342: **SUCCESS** on the same SHA.
+- PR relay/output [#44473090588](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473090588), jobs 135387034206 and 135387034447: **SUCCESS** on the same SHA.
+- Full push [#44473082040](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473082040): validation job 135387053332 **FAILED** at the inherited QA-owned Missing poll signature check. ESP8266 job 135387053241 passed; ESP32 job 135387053174 and the remaining target matrix were still running at the last observation.
+- Full PR [#44473090543](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473090543): validation job 135387085146 **FAILED** at the same assertion. ESP32 job 135387085564 and ESP8266 job 135387085736 passed; Android and some other target jobs were still running at the last observation. No Full workflow pass is claimed.
+
+### Coordination / boundaries
+
+- Latest PHX-RELEASE UTC06 assignment is #172 comment [#7001624265](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7001624265): RELEASE owns the pinned exact-source ESP32 core 3.3.13/4.0.0 workflow on PR #291. PHX-HARDWARE did not edit .github/workflows/.
+- PHX-QA retains ownership of the per-key ESP32 NVS failure matrix and positive poll-signature fixture reconciliation. Do not change the deny-only poll behavior to satisfy the stale assertion.
+- The exact private Drive registry v11 remains unavailable through the exposed Library/connector surfaces; no older registry was substituted.
+
+**Disposition:** shared source extractor LF/CRLF line-splice behavior is **CI VERIFIED** as test infrastructure. Firmware hardware acceptance remains **NOT TESTED**; Full validation remains failed; PR #327 remains OPEN / DRAFT / UNMERGED; production remains **NO-GO**.
