@@ -1331,3 +1331,28 @@ This is a current-state addendum, not an ownership transfer. Exact current PR/AP
 | PHX-RELEASE | #291 | `110f89985703e5685b193e4398492d3a16b26cdd` (source/test `36056d08b4ff7de6f692c5c83b55c1e335cda070`) | Shared build 27 PASS / 5 SKIPPED; Windows fails in PISONET-owned `negative-selftest.ps1`; publisher skipped. |
 
 **Ownership reminders:** PHX-QA owns `experiment/openwrt/BlazePwifi/tests/`; PHX-PISONET owns `experiment/windows/BlazePisonet-SoftTimer/`; PHX-CORE owns BlazePwifi financial/handover source. PR #291 contains a PISONET-owned test edit and CORE-owned handover edits; both owners must review their paths. RELEASE does not acquire their ownership. No source branch was changed by PHX-MASTER.
+
+
+## UTC18 live role and ownership reconciliation — 2026-11-19T18:33Z
+
+This is a live supplement to the historical role table. It does not reassign any source path or imply that parallel drafts are one accepted stack.
+
+| Role / candidate | Exact current PR head | Exact-head CI and next owner action |
+|---|---|---|
+| PHX-MASTER #288 | phoenix/master-coordination@3b910343ea25ac93ecb417c3ea29cb2d09c84f00 before UTC18 update; OPEN/DRAFT, base main@f4e8a891... | 106 existing changed paths, all Master-owned. This run adds only coordination/phoenix documentation; no source branch or route manifest changes. |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped run 42698139210 PASS. Separate CORE automation retains implementation; CORE/COE must define site-wide ULA authority and event-bound receipt authority. |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Runs 43653329235 and 43653329229 PASS. No Master source action. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Run 42462978704 PASS. RELEASE consumer #291 still fails inside the PISONET-owned tests/ReleaseSigning/negative-selftest.ps1: line 37 assigns $workflow; line 115 reads $buildWorkflow without assignment. PISONET fixes its test; RELEASE reruns its consumer. |
+| PHX-HARDWARE #317 | fce915c1167fc43c6936f3594ae9efce376b711f | Focused quarantine/relay PASS; Full 44209812745 FAIL at QA-owned Missing poll signature check. |
+| PHX-HARDWARE #318 | de428b7a3e15854804f09935a36a6afeb67d8cbe | No exact-head PR-triggered run returned. Its base is #317; do not claim CI verification. |
+| PHX-HARDWARE #321 | 4c54d6299388617e9ff3d41d5501358ea545c54a | Focused runs PASS; Full 44294008523 FAIL at the same QA fixture. Child of #317. |
+| PHX-HARDWARE #322 / #323 / #324 | #322 50d93e0de3d682550b6f02fb43484e76ad9c7e08; #323 988904e8bcd058b62a9fac4aa6319a9b7c5b2470; #324 8e7f02201cb9295f15672dc21f8a75fc4e5cd0ba | Focused labs PASS on each; Full runs 44232877624, 44347846832 and 44290338340 FAIL at the QA positive poll-marker fixture. #323 and #324 are sibling children of #322. |
+| PHX-HARDWARE #326 / #327 | #326 58c558fb6a237935214621adc3dee65a10fe1a51; #327 fa9381c72787ca728e77180023c3143f4225147a | #327 focused 44581897191/44581897200 PASS; Full 44581897225 FAIL at the QA fixture. #327 is a child of #326, which is a child of #323. This is a separate branch lineage from #317/#321 and #322/#324. Hardware must nominate one canonical candidate stack; QA independently verifies it. |
+| PHX-QA #290 / #292 | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 run 43633486963 PASS but does not execute NativeComInterfaceHandleLab. #292 has no current-head run and is based on stale Master b1ca02e...; QA must validate against current Master or a reviewed synthetic merge. |
+| PHX-RELEASE #291 | a17f270ef5560e4fada4e9ef7ca4ea5ed03fbf28 | BlazePwifi 44581603752 and ESP32 compatibility 44581603620 PASS; Windows 44581603605 fails on the PISONET-owned uninitialized $buildWorkflow; publisher skipped. Keep draft; no signing or release. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five queued workflows, zero jobs. Destination acceptance NOT ESTABLISHED. |
+| COE RELEASE #35 / #44 | #35 d41f3231e0eae6cf0c62d19f430818e30372162e; #44 582fd5d5e83e36b36546ac28534740298ba94af4 | #35 blocks all 10 profiles without approved site ULA and fails mandatory Bubblewrap sandbox; #44 shared/case pass but sandbox fails and per-appliance identity is not site authority. |
+
+**Hardware stack rule:** #318 and #321 are based on #317; #323 and #324 are sibling children of #322; #326 is based on #323; #327 is based on #326. These are overlapping, independently evolving drafts. No automatic composition, cherry-pick or canonical-stack selection is made by Master.
+
+**Owner boundaries:** QA owns the legacy positive poll-marker fixture and independent negative tests; PISONET owns its Windows self-test; RELEASE owns its consumer workflow; CORE owns finance and the site identity authority decision. The separate CORE continuation retains CORE implementation. No role source branch was edited by PHX-MASTER.

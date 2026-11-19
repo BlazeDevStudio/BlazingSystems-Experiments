@@ -849,3 +849,16 @@ The source remains Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` w
 A fresh exact-blob check found ESP32 source `f89bc561b2093328286d7633da794667b2ab06de` versus destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, and ESP8266 source `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` versus destination `c8be98f72596681e36a3ad1f8939bf8046c96887`. Both pairs differ materially in bytes and size. Source contains 24 board-directory Python files (helpers/RED fixture included); COE Hardware contains one generic shell test with positive poll marker expectations that conflict with current source deny-only poll behavior.
 
 The source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source NOTICE, Hardware LICENSE and Hardware NOTICE are absent. This is not a complete Hardware license review. No copy, move, overwrite, rebase, cherry-pick, merge, staging or route promotion is authorized. The private v11 registry and newer corrections remain required before any artifact or migration write.
+
+
+## UTC18 — COE intake manifest scope and firmware/test provenance hold — 2026-11-19
+
+The current COE #26 Pisowifi/SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f is a schema-v8 intake record for historical source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00, project root experiment/openwrt/BlazePwifi, and destination root Pisowifi/. Its 61-file/47-identical/14-derived/zero-unrecovered summary applies to the declared OpenWrt rootfs scope; its two unchanged original tests do not prove import of the current 38-entry source test tree or any Hardware firmware/test tree.
+
+Current-main source and COE #26 Hardware firmware blobs are non-identical on both boards. ESP32 source main 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 vs destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422; ESP8266 source main bfb94920eb0a189ca01d52e5443954fa133f5423 vs destination c8be98f72596681e36a3ad1f8939bf8046c96887. The same destination blobs also differ from the source sketches at the intake's historical commit (29f1125d... and 12c4bb82...). These are derived candidates, not byte-identical copies.
+
+For the manifest's explicit PisoWifi tests route, current Experiments main has 38 files and COE #26 Pisowifi/tests has 19. Four basenames overlap; only portal.sh is byte-identical. COE Hardware/tests contains one generic shell test. Exact per-file source/destination test identity and execution remain incomplete.
+
+License comparison: BlazePwifi/LICENSE and Pisowifi/LICENSE match exactly at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md, Hardware/LICENSE and Hardware/NOTICE.md are absent at the inspected destination candidate. The Pisowifi license match is not Hardware license coverage.
+
+**Routing disposition:** keep OWNERSHIP_ROUTES.json at DRAFT_REVIEW_ONLY, PHX-MASTER target null. Do not copy, move, overwrite, cherry-pick, rebase or merge. COE integration owner must produce a Hardware-specific intake manifest with exact source commit/tree, every source/destination blob+mode, derivation notes, license/notice scope, test identity map and exact-head destination CI; PHX-HARDWARE, PHX-QA and licensing owner review their respective scopes before any migration proposal.
