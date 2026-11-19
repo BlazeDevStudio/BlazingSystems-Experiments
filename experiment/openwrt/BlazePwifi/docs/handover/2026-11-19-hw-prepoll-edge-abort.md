@@ -699,3 +699,13 @@ Exact source/test SHA: 1a6da55e537375ec44e7637d5a83d26318b3f604.
 - The exact private Drive registry v11 remains unavailable through the exposed Library/connector surfaces; no older registry was substituted.
 
 **Disposition:** shared source extractor LF/CRLF line-splice behavior is **CI VERIFIED** as test infrastructure. Firmware hardware acceptance remains **NOT TESTED**; Full validation remains failed; PR #327 remains OPEN / DRAFT / UNMERGED; production remains **NO-GO**.
+
+## UTC06 terminal Full-build correction — exact source/test SHA 1a6da55
+
+This supersedes the earlier in-progress target-matrix note above.
+
+- Full push [#44473082040](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473082040): **COMPLETED FAILURE** only at validation job 135387053332, exact message "Missing poll signature check" in the ESP8266 sketch. All 13 firmware/platform target jobs passed, including ESP32 job 135387053174 and ESP8266 job 135387053241; Android job 135387053462 passed. Simulation, update bundle, candidate, signing and publishing jobs were skipped.
+- Full PR [#44473090543](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473090543): **COMPLETED FAILURE** at validation job 135387085146 with the same exact assertion. All 13 firmware/platform target jobs passed, including ESP32 job 135387085564 and ESP8266 job 135387085736; Android job 135387085620 passed. All downstream simulation/candidate/signing/publishing jobs were skipped.
+- These are Full workflow failures, not Full CI passes. The poll-signature assertion remains QA-owned and conflicts with current deny-only register/poll behavior. No unauthenticated positive signature was added.
+
+The exact source/test SHA 1a6da55 is focused-CI verified for the line-spliced-comment fix; the latest documentation successor is 78c3d6f83c81401e7700b32f4478bd3b21c03dd3. Production remains NO-GO.
