@@ -634,8 +634,36 @@ def run(board: str, path: Path):
             raise
         print(result.stdout, end="")
 
+def run_esp32_precommit_persistence_mutation(path: Path):
+    source = path.read_text(encoding="utf-8")
+    program = harness("ESP32", source)
+    needle = "NvsFlash::pending.assign(bytes,bytes+length);\\n  return ESP_OK;"
+    replacement = (
+        "NvsFlash::pending.assign(bytes,bytes+length);\\n"
+        "  NvsFlash::durable.assign(bytes,bytes+length);\\n"
+        "  return ESP_OK;"
+    )
+    if program.count(needle) != 1:
+        raise AssertionError("ESP32 NVS pre-commit mutation anchor must occur exactly once")
+    mutated = program.replace(needle, replacement, 1)
+    with tempfile.TemporaryDirectory(prefix="phx-nvs-precommit-mutation-") as tmp:
+        cpp = Path(tmp) / "lab.cpp"
+        exe = Path(tmp) / "lab"
+        cpp.write_text(mutated, encoding="utf-8")
+        subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
+            check=True,
+        )
+        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    if result.returncode != 60 or "ESP32_NVS_SET_BLOB_DURABLE_BEFORE_COMMIT" not in result.stderr:
+        print(result.stdout, end="")
+        print(result.stderr, file=sys.stderr, end="")
+        raise AssertionError("premature ESP32 NVS durability mutation was not rejected")
+    print("MUTATION_REJECTED ESP32_NVS_SET_BLOB_PREMATURE_DURABILITY exit=60")
+
+
 if __name__ == "__main__":
     test_extractors()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
-    run("ESP8266", ESP8266)
+    run_esp32_precommit_persistence_mutation(ESP32)\n    run("ESP8266", ESP8266)
