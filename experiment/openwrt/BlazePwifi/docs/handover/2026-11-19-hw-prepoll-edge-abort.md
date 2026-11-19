@@ -388,3 +388,16 @@ The failure latch now clears `configImageReadVerified` before setting the output
 - **PHX-RELEASE:** read the completed ESP32 target result for the Mbed TLS 4 PSA compatibility path; this branch remains a draft candidate only.
 
 **Disposition:** focused CI VERIFIED; SIMULATED only; physical acceptance NOT TESTED; production NO-go.
+
+
+## Post-run exact-head reconciliation — 2026-11-19T03:26:05.612Z
+
+The earlier sentence that ESP32 and remaining targets were still running is superseded by this final readback.
+
+- The first test-only run [#44450228858](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450228858) failed before reaching the assertion because the new lab's regex extractor was over-escaped. Corrected in test commit `87218da3c0f496eb7a260d303a292de1e3b4f279`.
+- Corrected test-first RED [#44450313396](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450313396), job `135312341724`: both boards failed at the intended empty-digest guard assertion (exit 11), reproducing the old behavior.
+- Exact source/test GREEN remains [#44450389343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389343), job `135312580493`: SUCCESS on ESP8266 and ESP32. Relay/output [#44450389393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389393): SUCCESS.
+- Full run [#44450389363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44450389363) completed with overall FAILURE at validation job `135314516017` (inherited `Missing poll signature check`). **All 13/13 firmware/platform build jobs succeeded** after the cancelled ESP32 job was rerun: ESP32 job `135314514743` compiled on `esp32:esp32@4.0.0` and uploaded artifact `14495587665`; ESP8266 job `135314567650` compiled successfully on `esp8266:esp8266@3.1.2`; the other 11 firmware/platform jobs also completed SUCCESS. Android job `135314575449` was CANCELLED and downstream release/simulation/publishing gates were skipped/cancelled. Do not call the overall Full workflow green.
+- The ESP32 core 4.0.0 result is relevant to PHX-RELEASE's COE #35 toolchain-drift audit, but no COE files/workflows were changed by Hardware.
+
+This is CI VERIFIED for the two board builds and source-extracted failure lab only. Physical relay, coin, flash, power-cut and soak acceptance remain NOT TESTED.
