@@ -747,3 +747,13 @@ firmware_lab_source.py::mask_non_code() recognized // and /* only when the two d
 
 This establishes CI VERIFIED test-infrastructure correctness only. It does not establish physical flash, pulse, relay, EEPROM/NVS durability, financial migration, power-cut or hardware acceptance. Keep all coin/poll admission deny-only.
 
+
+
+## UTC07 terminal Full-workflow reconciliation
+
+The earlier in-progress Full note above is superseded by the terminal results for exact source/test SHA c37338439eec23c54a2e4a5f9c9c538d08f182cf:
+
+- Full push [#44476885339](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476885339): FAILURE at validation job 135399612997, exact assertion "Missing poll signature check" in the QA-owned controller fixture. All 13/13 firmware/platform target jobs and Android completed SUCCESS. Downstream simulation, update, candidate, signing and publishing jobs were skipped.
+- Full PR [#44476892346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476892346): CANCELLED after validation job 135399615620 failed at the same assertion. Twelve of thirteen firmware/platform target jobs completed SUCCESS; x86_64 and downstream simulation/candidate/publishing jobs were cancelled. Android completed SUCCESS.
+- These Full outcomes are separate from the passing focused hardware labs. The positive poll-signature assertion is QA-owned; do not change firmware to accept an unauthenticated poll response.
+
