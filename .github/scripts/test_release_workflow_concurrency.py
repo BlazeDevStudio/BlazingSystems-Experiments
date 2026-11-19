@@ -65,7 +65,7 @@ def require_softtimer_signing_steps_are_protected(content: str) -> None:
     )
     actual_names = tuple(
         re.findall(
-            r"(?m)^      - name: (RELEASE-SIGN (?:sign|verify)[^\\n]*)$",
+            r"(?m)^      - name: (RELEASE-SIGN (?:sign|verify)[^\n]*)$",
             content,
         )
     )
@@ -81,11 +81,11 @@ def require_softtimer_signing_steps_are_protected(content: str) -> None:
         "&& vars.SOFTTIMER_RELEASE_APPROVED == 'true'"
     )
     for name in expected_names:
-        marker = f"      - name: {name}\\n"
+        marker = f"      - name: {name}\n"
         start = content.find(marker)
         if start < 0:
             raise AssertionError(f"missing SoftTimer signing step: {name}")
-        end = content.find("\\n      - name:", start + len(marker))
+        end = content.find("\n      - name:", start + len(marker))
         if end < 0:
             end = len(content)
         block = content[start:end]
