@@ -585,3 +585,50 @@ The descriptor-relative artifact inventory admitted a regular file even when its
 - PHX-INFRA: provide an approved disposable Bubblewrap-capable runner; PHX-CORE/MASTER and COE integration owner: resolve site ULA provisioning authority before profile packaging resumes.
 
 No merge, real-key signing, tag, publication, hardware flash, payment migration or customer deployment occurred. CI remains synthetic evidence only; physical 150-power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC17 — remove unused provenance inventory wrappers
+
+**Disposition:** Behavior-neutral release-source cleanup committed on the existing PR #291 branch. Exact source/test SHA `36056d08b4ff7de6f692c5c83b55c1e335cda070`; exact-source BlazePwifi workflow [#44576439303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44576439303) completed **SUCCESS** with 27 jobs SUCCESS and 5 intentionally skipped. PR #291 remains OPEN / DRAFT / UNMERGED.
+
+### Scope and change
+
+The provenance writer had two unreferenced wrappers, `_inventory(root)` and `_verify_checksum_manifest(root, files)`, which reopened the artifact root by pathname and duplicated the descriptor-relative entry points. Repository-local reference inspection found no call sites beyond the definitions. Removed only those two wrappers; `_inventory_at` and `_verify_checksum_manifest_at` remain the descriptor-relative implementation used by `write_provenance`.
+
+No runtime packaging behavior, manifest schema, checksum format, firmware source, shared interface, signer policy, publisher permission or production authorization changed.
+
+### Test-first evidence
+
+- Test-only commit [`c5df946a9dfa2f9dc04b18f60be46d5bb64b3db9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c5df946a9dfa2f9dc04b18f60be46d5bb64b3db9) added `test_no_unused_path_reopening_inventory_wrappers_remain`.
+- Expected RED [#44576256907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44576256907): 23 tests ran; 22 existing tests passed and the new test failed exactly because `_inventory` still existed (`AssertionError: True is not false`). Other release guards passed before the provenance test stopped the job.
+- Source cleanup commit [`36056d08b4ff7de6f692c5c83b55c1e335cda070`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/36056d08b4ff7de6f692c5c83b55c1e335cda070) removed exactly the two unused functions.
+- Exact-source CI-0701 in [#44576439303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44576439303) passed: provenance 23/23, release concurrency 4/4, Arduino archive verifier 8/8, immutable action pin guard, exact ESP32 compatibility workflow contract, and CI-0701 fail-closed classifier contract.
+- Full exact-source workflow #44576439303 completed **32 jobs: 27 SUCCESS / 5 SKIPPED / 0 FAILED**. Mandatory handover freshness, handover fail-closed regression, full validation, Android build, ESP32 and ESP8266 builds, all OpenWrt target builds, update bundle, nine v0.4 simulations and v0.4 candidate gate completed successfully.
+- The five skipped jobs were `production_import_signed_apk`, `publish_prerelease`, `publish_release`, `production_sign_handoff`, and `publish_v060_lab_preview`. No signing or publication ran.
+- The x86_64 BIOS/UEFI QEMU audit passed. Its simulation artifact was uploaded as ID `14558250689`, provider-reported SHA-256 `4f85e9532aca589cc91d69d55387e0e996f6da264056277a36528248f77c0633`. This is a hosted simulation artifact, not an independently downloaded production binary or physical acceptance evidence.
+
+### Separate Windows release result
+
+[Windows run #44576453544](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44576453544): shared handover gate PASS; exact .NET SDK `8.0.425` PASS; package parity PASS; PISONET-owned `tests/ReleaseSigning/negative-selftest.ps1` failed because `$buildWorkflow` is uninitialized. Windows build and publisher were skipped. PHX-RELEASE did not edit the PISONET-owned test or source.
+
+### Live ownership and cross-repository state
+
+- MASTER PR #288: head `b1a38cea83a9bfe877acd795730079d65ed3bf25`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; release workflow route remains `reimplementation-review`. No migration or ownership promotion.
+- Experiments PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`; PR #291 source/test head `36056d08b4ff7de6f692c5c83b55c1e335cda070`; base remains #242.
+- COE #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`; eight existing workflows remain QUEUED with zero executed jobs.
+- COE #31: `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; hardware/shared and case-collision jobs passed, mandatory Bubblewrap namespace setup failed at unprivileged UID-map creation. No privileged or unsandboxed fallback.
+- COE #35: `0e3662b9aef4b2a2248e3a064b07d07e9097be1b`; 116 packager tests passed, but all ten appliance profiles correctly fail closed pending approved site-scoped RFC 4193 ULA authority. Its sandbox run failed because Bubblewrap is absent (exit 125); case-collision passed; firmware compilation was skipped after profile validation failed.
+- COE #35's current `tools/RELEASE_PACKAGER_HANDOVER.md` blob `399ed14e9dd516a25fcebfdb41a29e526dc11d0b` still ends at its UTC05 section despite the later #35 head and ULA gate. This handover needs a separate release-owned refresh; no COE file was changed in this UTC17 task.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the authorized Library search. No older registry snapshot was substituted and no private contents were copied.
+
+### Ownership and next actions
+
+This UTC17 task changed only `.github/scripts/test_build_provenance.py`, `.github/scripts/write_build_provenance.py`, and this PHX-RELEASE handover. PR #291 already contained inherited CORE handover/ledger changes from earlier branch history; those CORE files were not modified by this task.
+
+- PHX-QA: independently review the one-entry-point cleanup and exact-source provenance suite.
+- PHX-PISONET: initialize `$buildWorkflow` in its own negative self-test; RELEASE does not edit it.
+- PHX-CORE / PHX-MASTER: approve site-scoped ULA provisioning authority before COE profile packaging can pass.
+- PHX-INFRA: provide an approved unprivileged Bubblewrap-capable disposable runner.
+- PHX-RELEASE: refresh the stale COE #35 release-packager handover in a separate scoped activation after re-reading its current head and handover ownership.
+
+No merge, tag, signing, publication, hardware flash, payment migration or customer deployment occurred. Hosted CI/QEMU simulations are not physical hardware acceptance. The protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
