@@ -75,5 +75,26 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         )
 
 
+    def test_windows_sdk_is_exactly_pinned_and_verified(self):
+        block = re.search(
+            r"(?ms)^      - name: Pin \.NET 8 SDK\\n(.*?)(?=^      - name:|\\Z)",
+            self.windows_content,
+        )
+        self.assertIsNotNone(block, "missing exact .NET SDK pin step")
+        sdk_step = block.group(1)
+        self.assertIn('"version": "8.0.425"', sdk_step)
+        self.assertIn('"rollForward": "disable"', sdk_step)
+        self.assertIn(
+            "$sdkVersion = (dotnet --version).Trim()",
+            sdk_step,
+            "the selected SDK must be observed, not inferred from setup-dotnet input",
+        )
+        self.assertIn(
+            "if ($LASTEXITCODE -ne 0 -or $sdkVersion -ne '8.0.425')",
+            sdk_step,
+            "unexpected SDK roll-forward must fail closed before restore/build",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
