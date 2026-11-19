@@ -144,12 +144,29 @@ def _hash_regular(path: Path) -> tuple[str, int]:
 
 
 def _require_directory(path: Path, label: str) -> Path:
+    candidate = Path(path)
+    if ".." in candidate.parts:
+        raise ProvenanceError(f"{label} contains parent-directory traversal: {path}")
+
+    absolute = candidate if candidate.is_absolute() else Path.cwd() / candidate
+    current = Path(absolute.anchor)
+    components = absolute.parts[1:]
     try:
-        metadata = path.lstat()
+        for component in components:
+            if component in ("", ".", ".."):
+                raise ProvenanceError(f"{label} contains an unsafe path component: {component!r}")
+            current = current / component
+            metadata = current.lstat()
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise ProvenanceError(
+                    f"{label} path component must be a real directory, not a symlink: {current}"
+                )
+        if not components:
+            metadata = current.lstat()
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise ProvenanceError(f"{label} must be a real directory: {current}")
     except OSError as exc:
-        raise ProvenanceError(f"{label} is unavailable: {path}: {exc}") from exc
-    if not stat.S_ISDIR(metadata.st_mode):
-        raise ProvenanceError(f"{label} must be a real directory, not a symlink: {path}")
+        raise ProvenanceError(f"{label} is unavailable: {current}: {exc}") from exc
     return path
 
 
