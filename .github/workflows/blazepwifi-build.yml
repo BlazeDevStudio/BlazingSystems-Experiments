@@ -448,6 +448,8 @@ jobs:
       - uses: arduino/setup-arduino-cli@b3cda96fddef6af6c56b4c5efb5c47e2357935db # current @v2 resolution, signed Node24 commit
         with:
           version: "1.6.0"
+      - name: Verify Arduino CLI binary against upstream release digest
+        run: python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"
       - name: Install ESP8266 core
         run: |
           version_output="$(arduino-cli version)"
@@ -507,6 +509,8 @@ jobs:
       - uses: arduino/setup-arduino-cli@b3cda96fddef6af6c56b4c5efb5c47e2357935db # current @v2 resolution, signed Node24 commit
         with:
           version: "1.6.0"
+      - name: Verify Arduino CLI binary against upstream release digest
+        run: python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"
       - name: Install ESP32 core
         run: |
           version_output="$(arduino-cli version)"

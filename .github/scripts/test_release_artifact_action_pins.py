@@ -95,6 +95,40 @@ ACTION_PATTERN = re.compile(
 )
 
 
+def check_arduino_cli_archive_verification(content: str) -> list[str]:
+    errors: list[str] = []
+    verifier_step = "      - name: Verify Arduino CLI binary against upstream release digest"
+    verifier_command = (
+        'run: python3 .github/scripts/verify_arduino_cli_archive.py '
+        '--binary "$(command -v arduino-cli)"'
+    )
+    if content.count(verifier_step) != 2:
+        errors.append("BlazePwifi workflow must verify the installed Arduino CLI against the release archive in both ESP jobs")
+    if content.count(verifier_command) != 2:
+        errors.append("both ESP jobs must invoke the checksum verifier with the installed arduino-cli path")
+
+    test_step = "      - name: RELEASE-TOOLCHAIN Arduino CLI archive verifier negative controls"
+    if content.count(test_step) != 1:
+        errors.append("CI-0701 must run the Arduino CLI archive verifier negative-control suite exactly once")
+
+    helper_path = ROOT / ".github/scripts/verify_arduino_cli_archive.py"
+    if not helper_path.is_file():
+        errors.append("missing release-owned Arduino CLI archive verifier")
+    else:
+        helper = helper_path.read_text(encoding="utf-8")
+        expected = (
+            "https://github.com/arduino/arduino-cli/releases/download/v1.6.0/",
+            "arduino-cli_1.6.0_Linux_64bit.tar.gz",
+            "20111675",
+            "321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250",
+            "installed Arduino CLI binary differs",
+        )
+        for value in expected:
+            if value not in helper:
+                errors.append(f"Arduino CLI archive verifier is missing pinned/required value: {value}")
+    return errors
+
+
 def main() -> int:
     errors: list[str] = []
     for relative_path, expected_counts in WORKFLOWS.items():
@@ -117,6 +151,7 @@ def main() -> int:
 
         if relative_path == ".github/workflows/blazepwifi-build.yml":
             workflow_errors.extend(check_arduino_cli_toolchain(content))
+            workflow_errors.extend(check_arduino_cli_archive_verification(content))
 
         for action, expected_count in expected_counts.items():
             refs = found.get(action, [])
