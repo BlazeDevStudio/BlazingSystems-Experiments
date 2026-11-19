@@ -757,3 +757,16 @@ The earlier in-progress Full note above is superseded by the terminal results fo
 - Full PR [#44476892346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44476892346): CANCELLED after validation job 135399615620 failed at the same assertion. Twelve of thirteen firmware/platform target jobs completed SUCCESS; x86_64 and downstream simulation/candidate/publishing jobs were cancelled. Android completed SUCCESS.
 - These Full outcomes are separate from the passing focused hardware labs. The positive poll-signature assertion is QA-owned; do not change firmware to accept an unauthenticated poll response.
 
+
+
+## UTC07 terminal verification on documentation head 705d20b
+
+The documentation-only handover successor was also revalidated at exact PR head 705d20b67cd1eb2b6bd5a7969e4ab7df01237337. The firmware lab source/test remains c37338439eec23c54a2e4a5f9c9c538d08f182cf.
+
+- Quarantine PR [#44477810677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44477810677), job 135402489862: SUCCESS.
+- Relay/output PR [#44477810173](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44477810173), jobs 135402489680 and 135402490014: SUCCESS.
+- Full PR [#44477810675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44477810675), validation job 135402490107: FAILURE at the QA-owned Missing poll signature check. All 13 firmware/platform target jobs and Android completed SUCCESS; downstream simulation, signing and publishing were skipped.
+- Full push [#44477802363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44477802363), validation job 135402506764: FAILURE at the same assertion. All 13 firmware/platform target jobs and Android completed SUCCESS; downstream simulation, signing and publishing were skipped.
+
+This exact documentation-head verification supersedes the earlier partial/in-progress notes. It remains CI evidence for host-test infrastructure and firmware compilation only, not physical hardware acceptance.
+
