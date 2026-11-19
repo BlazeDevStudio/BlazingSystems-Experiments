@@ -165,17 +165,19 @@ def source_functions(source: str, omit_failure_invalidation: bool = False) -> st
             continue
         if not found:
             raise RuntimeError(f"missing production function: {name}")
-        function = found[0][1]
-        if name == "latchConfigPersistenceFailure" and omit_failure_invalidation:
-            anchor = "  configImageReadVerified=false;"
-            if anchor not in function:
-                raise RuntimeError("mutation anchor missing from failure latch")
-            function = function.replace(
-                anchor,
-                "  // injected mutation: verified-image authority was not revoked",
-                1,
-            )
-        pieces.append(function)
+        for index, item in enumerate(found):
+            function = item[1]
+            if (name == "latchConfigPersistenceFailure" and
+                    index == 0 and omit_failure_invalidation):
+                anchor = "  configImageReadVerified=false;"
+                if anchor not in function:
+                    raise RuntimeError("mutation anchor missing from failure latch")
+                function = function.replace(
+                    anchor,
+                    "  // injected mutation: verified-image authority was not revoked",
+                    1,
+                )
+            pieces.append(function)
     return "\n\n".join(pieces)
 
 def harness(source: str, omit_failure_invalidation: bool = False) -> str:
