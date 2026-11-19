@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Execute the real ESP8266 config loader against a fault-injected EEPROM model.
 
-The model mirrors ESP8266 Arduino core 3.1.2: EEPROM.begin() ignores the
-flashRead result and leaves an erased-looking RAM buffer on read failure.
-This lab proves that loadCfg/saveCfg never commit that unverified image and
+The model follows ESP8266 Arduino core 3.1.2 EEPROM.cpp: begin() allocates
+indeterminate RAM for a new buffer, reuses a same-size buffer, and only logs
+a failed flashRead without clearing or reporting it to the caller. The lab
+uses deterministic poison bytes to model that untrusted RAM state.
+
+Core source:
+https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp
+
+This lab proves that loadCfg/saveCfg never commit an unverified image and
 that a pre-existing poll-fault marker survives recovery and cold boot.
 """
 from pathlib import Path
@@ -196,11 +202,17 @@ struct FakeEEPROM {
   size_t size=0;
   bool dirty=false;
   void begin(size_t requested){
-    size=requested;
+    if(requested==0) return;
+    if(requested>4096) requested=4096;
+    requested=(requested+3)&(~(size_t)3);
     if(flash.size()<requested) flash.resize(requested,0xFF);
-    buffer.assign(requested,0xFF);
-    // ESP8266 core 3.1.2 ignores the bool result from ESP.flashRead().
-    (void)fakeFlashRead((uint32_t)(EEPROM_start-0x40200000UL),buffer.data(),requested);
+    // Core 3.1.2 keeps an existing same-size allocation. A new uint8_t[]
+    // buffer is indeterminate; 0xA5 is deterministic poison for this lab.
+    if(buffer.empty() || requested!=size) buffer.assign(requested,0xA5);
+    size=requested;
+    // Match EEPROMClass's sector calculation and ignored flashRead result.
+    const uint32_t sector=(uint32_t)(EEPROM_start-0x40200000UL)/4096UL;
+    (void)fakeFlashRead(sector*4096UL,buffer.data(),size);
     dirty=false;
   }
   bool commit(){
@@ -384,6 +396,25 @@ int main(){
   if(!coldBootAndCheckMarker()) return 40;
   if(!markerUnchanged(marker)) return 40;
   std::cout<<"ESP8266_EEPROM_FULL_READ_PERSISTENT_FAILURE_NO_COMMIT_PASS\n";
+  // Core 3.1.2 reuses an existing same-size allocation. When begin()'s
+  // internal flashRead fails, stale RAM remains; the full-image status read
+  // must fail closed rather than interpreting those bytes as configuration.
+  marker=seedPreexistingMarker();
+  resetEepromObject();
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  if(EEPROM.buffer.size()!=POLL_FAULT_EEPROM_BYTES) return 41;
+  std::fill(EEPROM.buffer.begin(),EEPROM.buffer.end(),0xA5);
+  resetRuntime();
+  rawReadFailFirstCount=2; // failed begin() read, then failed full-image read
+  rawReadPersistentFailure=false;
+  loadCfg();
+  if(!std::all_of(EEPROM.buffer.begin(),EEPROM.buffer.end(),
+                  [](uint8_t value){ return value==0xA5; })) return 42;
+  if(configImageReadVerified || !journalRecoveryRequired || insertMode ||
+     !activeTarget.empty() || flashWriteCount!=0 || !markerUnchanged(marker)) return 43;
+  if(!coldBootAndCheckMarker() || !markerUnchanged(marker)) return 44;
+  std::cout<<"ESP8266_EEPROM_SAME_SIZE_STALE_BUFFER_READ_FAILURE_DENY_PASS\\n";
+  std::cout<<"EEPROM_CORE_3_1_2_BUFFER_SEMANTICS=MODELED\\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_POWER_CUT_VERIFIED=0 CONFIG_MIGRATION_AUTHORIZED=0\n";
   return 0;
 }
