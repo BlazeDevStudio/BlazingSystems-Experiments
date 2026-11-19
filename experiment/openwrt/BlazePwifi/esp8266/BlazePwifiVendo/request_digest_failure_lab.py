@@ -19,7 +19,7 @@ BOARDS = {
 
 
 def extract_function(source: str, name: str, required: bool = True) -> str:
-    match = re.search(r"\\b(?:bool|String)\\s+" + re.escape(name) + r"\\s*\\(", source)
+    match = re.search(r"\b(?:bool|String)\s+" + re.escape(name) + r"\s*\(", source)
     if not match:
         if required:
             raise RuntimeError(f"missing production function: {name}")
