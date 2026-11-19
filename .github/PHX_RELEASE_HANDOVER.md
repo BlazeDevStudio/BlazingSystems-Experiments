@@ -506,3 +506,49 @@ At task start, live PR #327 API head was `984ea8ff65a93b7da6e22fc2e1943acaf56100
 5. **PHX-INFRA:** provide an approved disposable Bubblewrap runner with unprivileged UID namespaces for COE #31.
 
 No merge, real-key signing, release tag, publication, hardware flashing, financial migration, customer deployment or production approval occurred. Physical 150-power-cut acceptance and 30-device/24-hour soak remain **NOT TESTED**. **PRODUCTION NO-GO.**
+
+
+## UTC15 exact-source provenance directory race hardening — 2026-11-19T15:31:29.609Z
+
+### Release-owned defect and correction
+The artifact admission path validated the artifact directory by pathname, then later created `BUILD-PROVENANCE.json` and rewrote `SHA256SUMS` with pathname-based temporary files and replacement. A parent-directory swap to a symlink after admission could redirect the provenance write outside the originally admitted artifact directory.
+
+A deterministic test now reproduces that race by replacing the artifact parent after source metadata collection. Before the fix, the test observed an unexpected `BUILD-PROVENANCE.json` in the external directory.
+
+The corrected implementation:
+- Opens every artifact-root path component with `O_DIRECTORY | O_NOFOLLOW` and retains the admitted directory descriptor.
+- Inventories nested directories and hashes/reads regular files relative to pinned directory descriptors; symlinks and special entries fail closed.
+- Rechecks that the public artifact path still resolves to the same device/inode as the admitted directory.
+- Creates the provenance sidecar relative to the pinned descriptor and publishes it with descriptor-relative atomic create-if-absent linking.
+- Rewrites `SHA256SUMS` with descriptor-relative temporary creation and `os.replace`, then fsyncs the pinned directory.
+- Refuses admission when required descriptor-relative/no-follow operations are unavailable.
+
+No manifest schema, source identity fields, artifact classification, signer, firmware source, or production authorization was changed.
+
+### Test-first and implementation commits
+- Regression test: [`eeeccda8310487163f9b9c616c4c8b9fa6e24a4c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/eeeccda8310487163f9b9c616c4c8b9fa6e24a4c).
+- Expected RED: [Actions #44553821583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44553821583), job `135664363343`. Existing 20 provenance tests passed; the new test failed because the external directory received `BUILD-PROVENANCE.json`.
+- Source correction: [`9631bdc9e17c029f806eccf7c5f6a3482baa3bd6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9631bdc9e17c029f806eccf7c5f6a3482baa3bd6).
+- Existing payload-mutation test adapter updated for descriptor-relative writer: [`60325634e8359e22c7708403632244d3e876ef0b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/60325634e8359e22c7708403632244d3e876ef0b).
+- Exact source/test HEAD: `60325634e8359e22c7708403632244d3e876ef0b`.
+
+### Exact-source GitHub Actions
+- [BlazePwifi build #44554209399](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44554209399): **SUCCESS**. CI-0701 job `135665772770` passed; provenance 21/21; release workflow concurrency 4/4; Arduino archive verifier 8/8; full `validate` passed; all 14 OpenWrt target jobs passed; ESP32 and ESP8266 builds passed; Android build passed; update bundle passed; all nine v0.4 simulations passed. Production signing and release publishers were skipped.
+- [ESP32 compatibility #44554209602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44554209602): **SUCCESS** for both ESP32 core 3.3.13 and 4.0.0, pinned to HARDWARE commit `984ea8ff65a93b7da6e22fc2e1943acaf56100ca` and sketch blob `528187f68aaad7d76a690bbf1cbe338165ad3839`. This is hosted compilation, not physical-board acceptance.
+- [Windows release #44554209402](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44554209402): **FAILURE** in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is uninitialized. Exact .NET SDK assertion passed (`8.0.425`); package parity self-test passed; Windows publisher skipped. PHX-RELEASE did not modify PISONET.
+- No full CI conclusion is inferred from a job-only pass; the listed run conclusions above are from the live run records.
+
+### Live ownership and provenance reconciliation
+- Experiments PR #242 remains OPEN/DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; PR #291 remains OPEN/DRAFT on the existing release branch. Source/test HEAD is `60325634e8359e22c7708403632244d3e876ef0b`; this handover commit becomes the documentation head.
+- MASTER PR #288 is OPEN/DRAFT at `7f3ccbc3278c8f86b745bb4c8aecc3b8623da58b`. Routing remains `DRAFT_REVIEW_ONLY`; release workflow route remains `reimplementation-review`. No migration, route promotion, or destination write occurred.
+- COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five PR workflows queued and zero jobs. COE #31 remains OPEN/DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 remains at `0e3662b9aef4b2a2248e3a064b07d07e9097be1b`. The child packager still correctly rejects all ten profiles pending the approved site ULA authority; the Bubblewrap runner remains unavailable/blocked. No networking prefix was invented.
+- The canonical private Drive registry v11 itself was not retrieved. A private Library checkpoint references its name and prior canonical status as metadata only; that checkpoint is not a substitute for the registry and no private contents were copied into GitHub.
+
+### Next owner actions
+1. PHX-QA: independently review the descriptor-relative inventory/read/write changes and race regression.
+2. PHX-CORE / PHX-MASTER: maintain the existing freshness/ownership route; do not require PHX-RELEASE to edit CORE-owned records.
+3. PHX-PISONET: repair `$buildWorkflow` initialization in its negative self-test.
+4. PHX-INFRA: provide an authorized Bubblewrap-capable disposable runner for COE #31/#35.
+5. PHX-CORE / COE integration owner: approve the site-scoped ULA provisioning authority before PHX-RELEASE resumes profile packaging.
+
+No merge, real-key signing, tag, publication, hardware flash, financial migration, or customer deployment occurred. Physical 150-power-cut acceptance and 30-device/24-hour soak remain **NOT TESTED**. **PRODUCTION NO-GO.**
