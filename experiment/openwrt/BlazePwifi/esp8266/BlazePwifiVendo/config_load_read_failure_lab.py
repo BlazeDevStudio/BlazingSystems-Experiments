@@ -32,6 +32,48 @@ def extract_constants(source: str, names):
             selected.append(line)
     return "\n".join(selected)
 
+def verify_eeprom_layout_guards(source: str) -> None:
+    required = (
+        ("Config must stay before the reserved poll-fault region",
+         "static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET"),
+        ("Poll-fault record must fit inside the reserved EEPROM image",
+         "static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES"),
+        ("Poll-fault record binary size must remain explicit",
+         "static_assert(sizeof(PollFaultRecord)==20"),
+        ("EEPROM reserved-region offset must have one definition",
+         "static const size_t POLL_FAULT_EEPROM_OFFSET="),
+        ("EEPROM image length must have one definition",
+         "static const size_t POLL_FAULT_EEPROM_BYTES="),
+    )
+    for label, token in required:
+        count = source.count(token)
+        if count != 1:
+            raise RuntimeError(f"{label}: expected exactly one source guard/definition, found {count}")
+    print("ESP8266_EEPROM_LAYOUT_GUARDS_UNIQUE_PASS")
+
+
+def verify_eeprom_layout_guard_mutations(source: str) -> None:
+    guard_lines = [
+        line for line in source.splitlines()
+        if "static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET" in line
+    ]
+    if len(guard_lines) != 1:
+        raise RuntimeError("cannot build duplicate/missing guard mutations from a non-canonical source")
+    guard = guard_lines[0]
+    duplicate = source.replace(guard, guard + "\n" + guard, 1)
+    missing = source.replace(guard + "\n", "", 1)
+    for label, mutated in (
+        ("duplicate Config/EEPROM overlap assertion", duplicate),
+        ("missing Config/EEPROM overlap assertion", missing),
+    ):
+        try:
+            verify_eeprom_layout_guards(mutated)
+        except RuntimeError:
+            print("MUTATION_REJECTED " + label)
+        else:
+            raise RuntimeError("EEPROM layout guard mutation survived: " + label)
+
+
 def source_functions(source: str, omit_failure_invalidation: bool = False,
                      omit_full_image_read_guard: bool = False) -> str:
     names = [
@@ -553,6 +595,8 @@ int main(){
 
 def main():
     source=SOURCE.read_text(encoding="utf-8")
+    verify_eeprom_layout_guards(source)
+    verify_eeprom_layout_guard_mutations(source)
 
     def compile_and_run(program: str, label: str, expect_success: bool) -> int:
         with tempfile.TemporaryDirectory(prefix="phx-eeprom-config-read-") as folder:
