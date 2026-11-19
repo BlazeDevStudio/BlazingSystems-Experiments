@@ -10,7 +10,8 @@ Core source:
 https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp
 
 The lab covers full-image read failures for erased and valid non-erased v3
-images, same-boot setup-save denial after malformed v1/v2 or unknown records,
+images, same-size stale-buffer reuse when EEPROM.begin() fails before a successful
+full-image recovery, same-boot setup-save denial after malformed v1/v2 or unknown records,
 successful local v1/v2-to-v3 migration with poll-fault marker preservation,
 and failed migration commit followed by cold-boot recovery. These are
 fake-flash host simulations, not physical power-cut acceptance or the
@@ -134,7 +135,8 @@ def source_functions(source: str, omit_failure_invalidation: bool = False,
 
 def harness(source: str, omit_failure_invalidation: bool = False,
             omit_full_image_read_guard: bool = False,
-            valid_v3_only: bool = False) -> str:
+            valid_v3_only: bool = False,
+            same_size_recover_only: bool = False) -> str:
     structs = "\n\n".join([
         extract_block(source, "struct ConfigV1") + ";",
         extract_block(source, "struct ConfigV2") + ";",
@@ -164,6 +166,7 @@ static bool rawReadPersistentFailure=false;
 static unsigned flashWriteCount=0;
 static bool fakeCommitFailure=false;
 static bool runValidV3Only=false;
+static bool runSameSizeRecoverOnly=false;
 
 bool fakeFlashRead(uint32_t address,uint8_t* destination,size_t length);
 struct FakeEEPROM {
@@ -417,10 +420,51 @@ bool runValidV3ImageReadFailureScenario(){
      !markerUnchanged(marker) || FakeEEPROM::flash!=original) return false;
   return true;
 }
+bool runSameSizeBeginReadFailureRecoveryScenario(){
+  const auto marker=seedPreexistingMarker();
+  resetEepromObject();
+  resetRuntime();
+
+  // Prime a same-size EEPROM RAM allocation, then poison only RAM. The next
+  // loadCfg() begin() must reuse that allocation; its internal flashRead is
+  // deliberately failed once, while the explicit full-image read recovers.
+  EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
+  if(EEPROM.buffer.size()!=POLL_FAULT_EEPROM_BYTES) return false;
+  std::fill(EEPROM.buffer.begin(),EEPROM.buffer.end(),0xA5);
+  rawReadFailFirstCount=1;
+  rawReadPersistentFailure=false;
+
+  loadCfg();
+  if(rawReadFailFirstCount!=0 ||
+     !configImageReadVerified ||
+     cfg.magic!=MAGIC ||
+     cfg.outputPolarityConfigured!=0 ||
+     flashWriteCount!=1 ||
+     !markerUnchanged(marker)) return false;
+
+  Config stored{};
+  memcpy(&stored,FakeEEPROM::flash.data(),sizeof(stored));
+  if(stored.magic!=MAGIC ||
+     stored.checksum!=configChecksum(stored) ||
+     stored.outputPolarityConfigured!=0 ||
+     memcmp(EEPROM.buffer.data(),FakeEEPROM::flash.data(),
+            POLL_FAULT_EEPROM_BYTES)!=0) return false;
+
+  if(!pollFaultBackupPresentOrCorrupt()) return false;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty()) return false;
+  if(!coldBootAndCheckMarker() || !markerUnchanged(marker)) return false;
+  return true;
+}
 int main(){
   if(!runValidV3ImageReadFailureScenario()) return 58;
   std::cout<<"VALID_V3_IMAGE_READ_FAILURE_PRESERVE_COLD_BOOT_PASS\n";
   if(runValidV3Only) return 0;
+  if(runSameSizeRecoverOnly){
+    if(!runSameSizeBeginReadFailureRecoveryScenario()) return 61;
+    std::cout<<"ESP8266_EEPROM_SAME_SIZE_BEGIN_FAIL_RECOVER_DEFAULT_SAVE_MARKER_PRESERVED_PASS\n";
+    return 0;
+  }
   // RED target: EEPROM.begin's first 544-byte read fails, then a direct full
   // image read can recover. Default Config save must preserve the valid marker.
   auto marker=seedPreexistingMarker();
@@ -591,6 +635,11 @@ int main(){
         if anchor not in program:
             raise RuntimeError("valid-v3-only selector anchor missing")
         program = program.replace(anchor, "static bool runValidV3Only=true;", 1)
+    if same_size_recover_only:
+        anchor = "static bool runSameSizeRecoverOnly=false;"
+        if anchor not in program:
+            raise RuntimeError("same-size recovery selector anchor missing")
+        program = program.replace(anchor, "static bool runSameSizeRecoverOnly=true;", 1)
     return program
 
 def main():
@@ -623,8 +672,22 @@ def main():
                 print("MUTATION_REJECTED "+label+" exit="+str(ran.returncode))
             return ran.returncode
 
-    # Test-first RED: bypass the production full-image read guard. A valid,
-    # non-erased v3 image must not be mistaken for defaults when both reads fail.
+    # Exercise the same-size buffer-reuse path: EEPROM.begin() first reuses
+    # stale RAM and its internal flashRead fails, then the explicit full-image
+    # read recovers. loadCfg()->defaults()->saveCfg() must preserve the marker.
+    compile_and_run(
+        harness(source, same_size_recover_only=True),
+        "ESP8266 same-size EEPROM.begin fail-then-recover",
+        True,
+    )
+    # Failure injection: bypass the full-image restore/verification guard.
+    compile_and_run(
+        harness(source, omit_full_image_read_guard=True, same_size_recover_only=True),
+        "ESP8266 same-size missing full-image guard mutation",
+        False,
+    )
+    # Existing test-first RED: a valid non-erased v3 image must not be mistaken
+    # for defaults when both the begin() read and explicit full-image read fail.
     compile_and_run(
         harness(source, omit_full_image_read_guard=True, valid_v3_only=True),
         "ESP8266 missing full-image guard mutation",
