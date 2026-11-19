@@ -825,3 +825,50 @@ The existing failure-injection labs above do **not** exercise every ESP32 `Prefe
 - PHX-MASTER: review the updated #327 child stack and retain the separate same-chip dual-store durability limitation against witness issue #43.
 
 No physical relay/acceptor, power-cut, electrical pulse/recovery, 150-cut trial, 30-device/24-hour soak, financial migration, signer or independent witness was exercised. `SIMULATED_ONLY=1`; `PHYSICAL_POWER_CUT_VERIFIED=0`; `PRODUCTION_MIGRATION_AUTHORIZED=0`.
+
+
+## UTC08 follow-up — explicit-status ESP32 NVS string readback (2026-11-19)
+
+**Task:** close a source-proven fail-open edge in the new ESP32 configFieldsMatchStored() diagnostic. **PRODUCTION NO-GO.**
+
+### Defect and test-first reproduction
+
+The previous readback implementation supplied the literal fallback "__PHX_NVS_READBACK_MISSING__" to Preferences.getString(). The Arduino Preferences String-returning overload returns that fallback when nvs_get_str() fails. Because configuration strings are user-controlled, any field may legally equal the fallback. If that field's readback failed while prefs.isKey() still reported the key present, the fallback could compare equal to the intended value and allow the readback guard to continue.
+
+The exact-source failure-injection lab deliberately seeded all five string fields (ssid, pass, server, key, id) with the old fallback and injected read failures one key at a time.
+
+- Test-first lab commit b15561ff4dfe8cd03a9215acd9027e57db0428de.
+- Workflow wiring commit 3a076a4ad5e3b98227354757d19af1d322e9319f.
+- Expected RED [#44491276794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491276794), job 135447222683: **FAIL as expected**, log SENTINEL_COLLISION_FAIL_OPEN key=ssid, exit 42. Existing preceding hardware labs passed before the new regression stopped the job.
+
+### Firmware correction
+
+- Source commit 48b31e9762aa68426ba1193b85b80a1f3731562e.
+- ESP32 sketch blob 79bdae3da167289540b7197d32d6e854f1c444c4.
+- Added nvsStringMatchesStored() and removed the fallback sentinel.
+- The helper checks isKey, exact NUL-inclusive getStringLength, the buffer-overload getString(key, buffer, maxLen) return count, byte-for-byte contents, and allocation success. Any missing key, length/read error, mismatch or allocation failure returns false. The existing caller still reports only the failed key name, never the stored value, and retains output inhibition/no-reboot behavior.
+
+**Upstream API verification:** both Arduino-ESP32 3.3.13 and 4.0.0 expose getStringLength() and the buffer-returning getString() overload. In both source versions, the length/read methods return zero on error and the stored string byte count including NUL on success:
+- [Preferences.h 3.3.13](https://github.com/espressif/arduino-esp32/blob/3.3.13/libraries/Preferences/src/Preferences.h)
+- [Preferences.cpp 3.3.13](https://github.com/espressif/arduino-esp32/blob/3.3.13/libraries/Preferences/src/Preferences.cpp)
+- [Preferences.h 4.0.0](https://github.com/espressif/arduino-esp32/blob/4.0.0/libraries/Preferences/src/Preferences.h)
+- [Preferences.cpp 4.0.0](https://github.com/espressif/arduino-esp32/blob/4.0.0/libraries/Preferences/src/Preferences.cpp)
+
+No NVS key/schema, config serialization, GPIO, relay, coin, poll, register/poll wire contract or financial behavior changed.
+
+### Exact-source Actions
+
+- Quarantine/readback push [#44491449904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491449904), job 135447807843: **SUCCESS**. New lab log: NVS_STRING_READBACK_EXPLICIT_STATUS_PASS 5/5 read failures, 5/5 length failures, empty and mismatch controls. Existing source-extracted journal, poll, pulse, EEPROM and Mbed TLS labs also passed; logs explicitly retain SIMULATED_ONLY=1 and physical acceptance flags 0.
+- Quarantine/readback PR [#44491461601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491461601), job 135447848735: **SUCCESS**.
+- Relay/output PR [#44491461501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491461501), jobs 135447847957 and 135447848320: **SUCCESS**.
+- Full push [#44491449848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491449848): **COMPLETED FAILURE** at validation job 135447953870, Missing poll signature check; ESP32, ESP8266, all 13 firmware/platform target jobs and Android completed successfully. Downstream simulation, update, signing and publication jobs were skipped.
+- Full PR [#44491461660](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44491461660): validation job 135448008623 has the same failure. At the last observation, ESP32 target job 135448008646 was still in progress; this PR Full run is not counted as completed.
+
+### Ownership and remaining checks
+
+- PHX-QA: independently review the new sentinel-collision lab and still-outstanding per-key Preferences write/readback failure matrix; replace the obsolete positive poll-signature presence assertion with source-exact negative/default-deny tests. No QA-owned files were edited.
+- PHX-RELEASE: run the pinned ESP32 core 3.3.13/4.0.0 matrix against the new exact sketch blob 79bdae3d...; do not reuse the earlier pre-fix source pin.
+- PHX-MASTER: review the new hardware-owned fail-closed correction in the existing #327 child stack.
+- Current PR #327 remains OPEN / DRAFT / UNMERGED; base is PR #326 head 58c558fb6a237935214621adc3dee65a10fe1a51.
+
+No physical NVS, relay, acceptor, coin, power cut, migration, signer, customer money, release or deployment was exercised. This is source-extracted failure-injection and CI evidence only; hardware acceptance remains NOT TESTED.
