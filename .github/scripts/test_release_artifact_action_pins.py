@@ -39,6 +39,56 @@ WORKFLOWS = {
     },
 }
 
+ARDUINO_CLI_VERSION = "1.6.0"
+ARDUINO_CLI_STEP_NAMES = ("Install ESP8266 core", "Install ESP32 core")
+
+
+def _workflow_step(content: str, name: str) -> str:
+    marker = f"      - name: {name}\\n"
+    start = content.find(marker)
+    if start < 0:
+        return ""
+    body_start = start + len(marker)
+    next_step = re.search(r"(?m)^      - (?:name|uses):", content[body_start:])
+    end = body_start + next_step.start() if next_step else len(content)
+    return content[body_start:end]
+
+
+def check_arduino_cli_toolchain(content: str) -> list[str]:
+    errors: list[str] = []
+    action_marker = re.compile(
+        r"(?m)^      - uses: arduino/setup-arduino-cli@[0-9a-f]{40}[^\\n]*\\n"
+    )
+    matches = list(action_marker.finditer(content))
+    if len(matches) != len(ARDUINO_CLI_STEP_NAMES):
+        errors.append(
+            f"expected {len(ARDUINO_CLI_STEP_NAMES)} Arduino CLI setup actions, found {len(matches)}"
+        )
+    for index, match in enumerate(matches, start=1):
+        remainder = content[match.end():]
+        next_step = re.search(r"(?m)^      - (?:name|uses):", remainder)
+        block = remainder[:next_step.start()] if next_step else remainder
+        versions = re.findall(r"(?m)^          version:\\s*[\"']?([^\"'#\\s]+)", block)
+        if versions != [ARDUINO_CLI_VERSION]:
+            errors.append(
+                f"Arduino CLI setup action {index} must pin version {ARDUINO_CLI_VERSION}; found {versions}"
+            )
+
+    for name in ARDUINO_CLI_STEP_NAMES:
+        block = _workflow_step(content, name)
+        if not block:
+            errors.append(f"missing Arduino CLI core step: {name}")
+            continue
+        if (
+            "arduino-cli version" not in block
+            or f"RELEASE-TOOLCHAIN-RED: expected Arduino CLI {ARDUINO_CLI_VERSION}" not in block
+        ):
+            errors.append(
+                f"{name} must verify the installed Arduino CLI binary is exactly {ARDUINO_CLI_VERSION}"
+            )
+    return errors
+
+
 ACTION_PATTERN = re.compile(
     r"^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)(?:\s+#.*)?$",
     re.MULTILINE,
@@ -64,6 +114,9 @@ def main() -> int:
             workflow_errors.append(
                 f"{relative_path}: unexpected external actions: {', '.join(unexpected)}"
             )
+
+        if relative_path == ".github/workflows/blazepwifi-build.yml":
+            workflow_errors.extend(check_arduino_cli_toolchain(content))
 
         for action, expected_count in expected_counts.items():
             refs = found.get(action, [])
