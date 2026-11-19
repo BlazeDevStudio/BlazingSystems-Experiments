@@ -192,6 +192,7 @@ nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
 bool pollFaultBackupWriteFailed=false;
 static unsigned nvsCommitCalls=0;
+static bool nvsSetWasDurableBeforeCommit=false;
 unsigned backupCommitCalls(){ return nvsCommitCalls; }
 void initPollFaultBackupStore();
 esp_err_t nvs_open(const char*,int,nvs_handle_t* handle){
@@ -221,6 +222,7 @@ esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t 
 }
 esp_err_t nvs_commit(nvs_handle_t handle){
   ++nvsCommitCalls;
+  nvsSetWasDurableBeforeCommit=!NvsFlash::durable.empty();
   // ESP-IDF documents nvs_set_blob as pending until nvs_commit. Model both
   // ambiguous failure outcomes: no durable write, or bytes reaching flash
   // even though the commit call reports failure.
@@ -239,6 +241,7 @@ void resetStorage(){
   nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
   nvsFailCommitAfterWrite=false; nvsCommitCalls=0; pollFaultBackupWriteFailed=false;
   nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
+  nvsSetWasDurableBeforeCommit=false;
   pollFaultNvsHandle=0; pollFaultBackupReady=false;
   initPollFaultBackupStore();
 }
@@ -434,6 +437,7 @@ int main(){
 
   // LittleFS open/write failure must fall back to the secondary store.
   latchPollPulseFault(3);
+  NVS_WRITE_BEFORE_COMMIT_ASSERT
   assert(journalRecoveryRequired && !insertMode);
   assert(outputsInhibited);
   assert(!persistenceBeforeOutputInhibit);
@@ -562,11 +566,14 @@ int main(){
 }
 """
     if board == "ESP32":
+        nvs_write_before_commit_assert = "if(!nvsSetWasDurableBeforeCommit){ std::cerr<<\"ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT\\n\"; return 60; } std::cout<<\"ESP32_NVS_SET_BLOB_DURABLE_BEFORE_COMMIT_PASS\\n\";"
         commit_fail_before_persistence_setup = "nvsFailCommit=true;"
         commit_fail_before_persistence_clear = "nvsFailCommit=false;"
     else:
+        nvs_write_before_commit_assert = ""
         commit_fail_before_persistence_setup = "EEPROM.failCommit=true;"
         commit_fail_before_persistence_clear = "EEPROM.failCommit=false;"
+    main = main.replace("NVS_WRITE_BEFORE_COMMIT_ASSERT", nvs_write_before_commit_assert)
     main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP", commit_fail_before_persistence_setup)
     main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR", commit_fail_before_persistence_clear)
     main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
