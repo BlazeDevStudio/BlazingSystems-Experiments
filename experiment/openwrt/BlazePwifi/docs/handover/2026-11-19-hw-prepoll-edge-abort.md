@@ -709,3 +709,17 @@ This supersedes the earlier in-progress target-matrix note above.
 - These are Full workflow failures, not Full CI passes. The poll-signature assertion remains QA-owned and conflicts with current deny-only register/poll behavior. No unauthenticated positive signature was added.
 
 The exact source/test SHA 1a6da55 is focused-CI verified for the line-spliced-comment fix; the latest documentation successor is 78c3d6f83c81401e7700b32f4478bd3b21c03dd3. Production remains NO-GO.
+
+## UTC06 cross-role audit — PHX-RELEASE exact ESP32 core matrix
+
+The latest Master coordination PR #288 is now at b44df280cd93a4a8893d5e486e9564d56a913489. Its UTC06 report and ROLE_ASSIGNMENTS keep Hardware ownership in esp32/esp8266 source and leave release workflows with PHX-RELEASE. No ownership transfer was made.
+
+PHX-RELEASE's existing PR #291 advanced to b2b523dce7c994d4c8431ea3d7651990f4fb8493 and ran [#44473417412](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44473417412) against exact Hardware source commit 0e5514adb0088649eca8bec9df6215faa50b556c and ESP32 sketch blob c29483f0761ca6e2db0573bd12d6bfa502f12434.
+
+Both matrix jobs verified the exact source/blob, pinned Arduino CLI 1.6.0, verified the Arduino CLI archive, installed and verified the requested ESP32 core, and ran the compile command:
+- Core 4.0.0 job 135389001694: compiler reported 1,096,577 bytes program storage (83%) and 52,568 bytes globals (16%).
+- Core 3.3.13 job 135389002084: compiler reported 1,042,632 bytes program storage (79%) and 49,952 bytes globals (15%).
+
+Both jobs then failed in the same shell step after compilation. The final printf uses an extra escaped dollar before the GitHub matrix expression; GitHub renders it as "$4.0.0" or "$3.3.13", and Bash with set -u fails on the unset positional parameter ($4 / $3). The binary was found and sha256sum was invoked, but the printf failed before the binary hash was emitted; no artifact upload occurred. These are **compile-command-success observations inside failed workflow jobs**, not end-to-end compatibility-job PASS results.
+
+PHX-HARDWARE posted a scoped audit request to [PR #291 comment #7001879641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291#issuecomment-7001879641), suggesting removal of the extra leading dollar or use of an environment variable. PHX-HARDWARE did not edit RELEASE-owned workflow/script files. RELEASE must correct and rerun both matrix jobs to produce a successful job and retained binary hashes.
