@@ -1646,7 +1646,7 @@ void loop(){
       if(pollEdgeAfterDrain!=pollEdgeStart){
         lastHandledCoinEdgeSequence=pollEdgeAfterDrain;
         if(pendingPulses>0) pendingReady=true;
-        latchPollPulseFault((uint32_t)pendingPulses+(pollEdgeAfterDrain-pollEdgeStart));
+        latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
         pollIntakeSuspended=false;
         applyOutputs();
         lastPoll=millis();
@@ -1660,7 +1660,7 @@ void loop(){
         lastHandledCoinEdgeSequence=pollEdgeEnd;
         if(pollEdgeEnd!=pollEdgeStart){
           if(pendingPulses>0) pendingReady=true;
-          latchPollPulseFault((uint32_t)pendingPulses+(pollEdgeEnd-pollEdgeStart));
+          latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
         }
         applyOutputs();
         lastPoll=millis();

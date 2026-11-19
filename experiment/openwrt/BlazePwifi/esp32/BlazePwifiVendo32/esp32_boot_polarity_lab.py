@@ -274,6 +274,9 @@ void digitalWrite(int pin,int level) {
 }
 int digitalPinToInterrupt(int pin) { return pin; }
 void detachInterrupt(int) {}
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 void coinEdgeISR() {}
 void attachInterrupt(int,void(*)(),int) {}
 bool coinLineIdle() { return true; }
@@ -283,6 +286,8 @@ struct SerialStub { void println(const char *) {} } Serial;
 
 void resetState() {
   prefs=Preferences();
+  coinEdgeSequence=0;
+  lastHandledCoinEdgeSequence=0;
   cfg=Config{};
   outputPolarityKnown=false;
   pinConfigSafe=false;

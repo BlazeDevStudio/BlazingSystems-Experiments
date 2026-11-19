@@ -51,6 +51,9 @@ int digitalPinToInterrupt(int pin){ return pin; }
 void detachInterrupt(int) {}
 void attachInterrupt(int,void (*)(void),int) {}
 void coinEdgeISR() {}
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 
 int runCoinPin=4, runRelayPin=5, runLedPin=14;
 bool runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=false;
