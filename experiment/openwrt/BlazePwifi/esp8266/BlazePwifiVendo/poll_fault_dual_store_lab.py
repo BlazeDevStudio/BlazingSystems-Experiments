@@ -55,7 +55,7 @@ def test_repo_root_requires_both_board_sentinels():
         probe = root / probe_rel
         probe.parent.mkdir(parents=True, exist_ok=True)
         (root / esp32_rel).parent.mkdir(parents=True, exist_ok=True)
-        (root / esp32_rel).write_text("// ESP32 sentinel\\n", encoding="utf-8")
+        (root / esp32_rel).write_text("ESP32 sentinel", encoding="utf-8")
 
         try:
             find_repo_root(probe)
@@ -65,7 +65,7 @@ def test_repo_root_requires_both_board_sentinels():
             raise AssertionError("a checkout missing the ESP8266 sketch must not be accepted as the repository root")
 
         (root / esp8266_rel).parent.mkdir(parents=True, exist_ok=True)
-        (root / esp8266_rel).write_text("// ESP8266 sentinel\\n", encoding="utf-8")
+        (root / esp8266_rel).write_text("ESP8266 sentinel", encoding="utf-8")
         if find_repo_root(probe) != root.resolve():
             raise AssertionError("repository root discovery must walk upward from a nested file path")
 
@@ -85,21 +85,22 @@ def test_repo_root_requires_both_board_sentinels():
         (mutant_dir / "firmware_lab_source.py").write_text(single_board_mutant, encoding="utf-8")
         probe_script = mutant_dir / "probe.py"
         probe_script.write_text(
-            "from pathlib import Path\\n"
-            "import sys\\n"
-            "from firmware_lab_source import find_repo_root\\n"
-            "try:\\n"
-            "    find_repo_root(Path(sys.argv[1]))\\n"
-            "except RuntimeError:\\n"
-            "    print('ROOT_REJECTED')\\n"
-            "    raise SystemExit(0)\\n"
-            "print('ROOT_ACCEPTED')\\n"
-            "raise SystemExit(1)\\n",
+            """from pathlib import Path
+import sys
+from firmware_lab_source import find_repo_root
+try:
+    find_repo_root(Path(sys.argv[1]))
+except RuntimeError:
+    print("ROOT_REJECTED")
+    raise SystemExit(0)
+print("ROOT_ACCEPTED")
+raise SystemExit(1)
+""",
             encoding="utf-8",
         )
         partial_root = mutant_dir / "partial-checkout"
         (partial_root / esp32_rel).parent.mkdir(parents=True, exist_ok=True)
-        (partial_root / esp32_rel).write_text("// ESP32 sentinel\\n", encoding="utf-8")
+        (partial_root / esp32_rel).write_text("ESP32 sentinel", encoding="utf-8")
         result = subprocess.run(
             [sys.executable, str(probe_script), str(partial_root / probe_rel)],
             cwd=mutant_dir,
