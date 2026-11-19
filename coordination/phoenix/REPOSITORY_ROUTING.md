@@ -704,3 +704,27 @@ COE #26 hardware-ci.yml blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793 installs u
 Do not copy, move, overwrite, cherry-pick, rebase, or stage any Hardware files into COE #26. Before a future proposal, require per-file path/mode/blob provenance, complete eight-lab import or reviewed equivalents, default-deny negative tests, explicit Hardware license/NOTICE scope, pinned CLI/core/FQBN/options, exact-head destination CI, reversible rollback evidence and Hardware/QA/Release owner acceptance. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
 
 RELEASE #291 also remains blocked by the shared PROJECT_HANDOVER.md freshness gate after release workflow changes. CORE and RELEASE must coordinate the canonical handover update; Master does not edit CORE-owned handover files.
+
+
+## PHX-MASTER UTC06 — exact Hardware staging and release-stack gate (2026-11-19)
+
+Current source candidate: Experiments #327 at ba4c0cb0c5eae4be5e014c0df6f5abe20a67b0bf; source/test commit 0e5514adb0088649eca8bec9df6215faa50b556c. Current destination candidate: COE #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+**No destination staging is approved.** The ESP32 source blob c29483f0761ca6e2db0573bd12d6bfa502f12434 (61,807 bytes) differs from destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 (18,505 bytes); ESP8266 source 1b32cb90be11da79ba7ea1155f128aee9e495dd2 (67,300 bytes) differs from destination c8be98f72596681e36a3ad1f8939bf8046c96887 (18,394 bytes). The source now has explicit Mbed TLS 3/4 selection and unsupported-major rejection; the destination has no major guard and retains a positive poll-signature consumer.
+
+The #327 source/test inventory contains nine Python lab files in the current PR diff. COE #26 has one generic Hardware shell test with positive response-signature assertions, and its five workflows have zero jobs. The destination hardware workflow uses unversioned board-core installs; the README's ESP32 3.3.12 statement is not enforced. COE #35 pins are separate and are not inherited by #26.
+
+Source and destination MIT license texts match at blob 1ee55b94183417be977ca287cd7391f9a6f7e721, but COE Hardware/LICENSE and Hardware/NOTICE.md are absent. Do not infer Hardware redistribution scope from Pisowifi/LICENSE.
+
+Before any future migration proposal, require:
+1. Exact per-file source path, destination path, mode, blob SHA and size.
+2. Complete source test import inventory with owner-reviewed equivalents; preserve the negative/default-deny poll contract.
+3. Explicit Hardware license/NOTICE scope from the responsible custodian.
+4. Pinned Arduino CLI, ESP32/ESP8266 core, FQBN and build options on the actual #26 destination branch.
+5. Runnable exact-head destination CI with all five workflows executing, not queued.
+6. Reversible rollback/migration evidence and independent QA at the identical proposed SHA.
+7. Hardware, QA and Release owner acceptance; no inference from #35, #39–#43 or other sibling branches.
+
+COE #35 is 108 commits ahead of parent #31. COE #44 is 15 ahead / 25 behind #35 and mergeable=false. RELEASE owns history-preserving reconciliation. INTERCON #39/#40/#42 and #41/#43 remain distinct alternatives; no canonical Stage-3/Stage-4 candidate is selected.
+
+Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, PHX-MASTER destination null. Do not copy, move, overwrite, cherry-pick, rebase or merge any subsystem files.

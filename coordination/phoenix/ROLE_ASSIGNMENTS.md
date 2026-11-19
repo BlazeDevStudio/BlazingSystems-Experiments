@@ -1113,3 +1113,24 @@ Exact-head refresh only; no ownership reassignment. The seven role boundaries re
 - PHX-QA and PHX-HARDWARE: independently resolve the positive poll-signature fixture conflict without introducing positive unauthenticated poll admission.
 
 No Master source edits, assignments, merges, rebase, release, hardware operation, financial migration, or signer action occurred. The separate CORE continuation retains CORE implementation ownership; no competing CORE worker was started.
+
+
+## Live owner routing — 2026-11-19 UTC06
+
+Exact-head refresh only. No ownership reassignment and no subsystem source changes.
+
+| Role | Current candidate / exact head | Current evidence | Next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 phoenix/master-coordination, pre-update 8d98f7c61e01bbde9fbafb79e22b6fa01f09acd2 | OPEN/DRAFT; no Master CI runs | Keep work in coordination/phoenix; maintain #26 migration NO-GO |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #252 scoped run 42698139210 PASS; #45 synthetic receipt-v1 runs 44295049727/44295049903 PASS | Separate Blaze Production Continuation retains CORE implementation; define site ULA authority and receipt-v1/v2 mapping |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | Scoped runs 43653329235/43653329229 PASS | Preserve owner scope; native rental/device-owner acceptance remains NOT TESTED |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Scoped run 42462978704 PASS | Native COM/device acceptance remains NOT TESTED; coordinate with RELEASE on the release-test path without transferring ownership |
+| PHX-HARDWARE | #327 ba4c0cb0c5eae4be5e014c0df6f5abe20a67b0bf; source/test 0e5514adb0088649eca8bec9df6215faa50b556c | Quarantine 44468941707 PASS; relay/output 44468941718 PASS; Full 44468941728 FAIL at positive poll-signature fixture | Keep deny-only firmware; supply actual ESP32 core 3.3.13 build; do not modify QA tests |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 run 43633486963 PASS; #292 no exact-head runs and stale base | Replace positive poll-presence fixture with negative/default-deny behavior tests; independently test Mbed TLS 3/4 and per-key NVS failure cases |
+| PHX-RELEASE | #291 a8710d5d47dde40ac3273743ca39eaa4cace84b0; COE #35 5047af8b5a8296e06294bbda6bf42a6baea2294d; COE #44 582fd5d5e83e36b36546ac28534740298ba94af4 | #291 Windows 44461380937 fails at uninitialized $buildWorkflow; BlazePwifi 44461381052 PASS. #35 shared/case PASS, sandbox FAIL CLOSED. #44 diverged 15/25 from #35 | Repair release-owned tests/workflows with PISONET coordination; pin #26 separately; reconcile #44/#35 without force-push and obtain authorized bubblewrap runner |
+| COE integration owner | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; Hardware source/destination blobs and test identities differ | Provide exact per-file provenance, explicit Hardware license/NOTICE scope, reviewed test imports and runnable destination CI |
+| COE INTERCON owner | #39/#40/#42 Stage-3 and #41/#43 Stage-4 candidates | Exact-head host/simulation and compile jobs pass; journal formats/behaviors differ | Nominate one canonical schema and one Stage-4 behavior only after QA and physical durability evidence |
+| Repository administrator | Experiments + COE | Branch objects report protected=false; rulesets empty; classic protection reads 403 | Verify required reviews/checks and protected release admission through an administrator-authorized session |
+| Registry custodian | Private Drive registry | Canonical v11 and newer corrections not accessible through current Library/tool surface | Restore authorized read-only access to v11, artifact manifest and sync ledger |
+
+PHX-MASTER did not take over CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches. The separate CORE continuation remains the sole CORE implementation owner. No worker notification is inferred from a repository document; the control-plane checkpoint is the shared communication event.

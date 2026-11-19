@@ -1576,3 +1576,71 @@ Experiments main and v0.6.0 branch objects report protected=false; COE main repo
 The requested private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not found in the accessible Library. No Google Drive connector is exposed in this runtime. No older registry snapshot was substituted; no private IDs or contents were copied into this public repository.
 
 **Disposition:** no destination staging, copy, move, overwrite, rebase, merge or promotion. Keep OWNERSHIP_ROUTES.json unchanged and PHX-MASTER destination null. PRODUCTION NO-GO.
+
+
+## Live exact-head integration matrix — 2026-11-19 UTC06
+
+This snapshot supersedes earlier live-status rows for the exact refs below only. It does not promote branches, select a migration candidate or transfer ownership.
+
+### Repository and branch authority
+
+| Ref | Exact head | Observation |
+|---|---|---|
+| Experiments default main | f4e8a891aed8af86d5fd315d28750a0ac3a7372b | Default branch; branch object reports protected=false |
+| Current development candidate | blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859 | 1,876 ahead / 22 behind main; development label is a named branch, not a literal development branch |
+| Legacy v0.5.3 branch | blazepwifi-v0.5.3-development @ aad3aade72c1156eecba1fed30907c6d0283b2c5 | 293 behind / 0 ahead main |
+| Literal development branch | NOT FOUND (404) | Do not substitute or promote a guessed branch |
+| PHX-MASTER branch / PR #288 | phoenix/master-coordination @ 8d98f7c61e01bbde9fbafb79e22b6fa01f09acd2 | OPEN / DRAFT, base main f4e8a891; pre-update 96 changed paths, all coordination/phoenix |
+| COE main | a6513ab4412b4c014eee2863e45cbe32d06cb243 | Default branch; branch object reports protected=false |
+| COE integration PR #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN / DRAFT; five workflows QUEUED, zero jobs |
+
+### Role PRs and exact-head CI
+
+| Role / candidate | Exact current head | Exact-head evidence | Owner next action |
+|---|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Run 42698139210 SUCCESS, scoped | Separate Blaze Production Continuation retains CORE ownership; define site ULA authority and receipt-v1/v2 mapping |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Runs 43653329235 and 43653329229 SUCCESS, scoped | Native rental/device-owner acceptance remains NOT TESTED |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Run 42462978704 SUCCESS, scoped | Native COM/device acceptance remains NOT TESTED |
+| PHX-HARDWARE #327 | ba4c0cb0c5eae4be5e014c0df6f5abe20a67b0bf; source/test commit 0e5514adb0088649eca8bec9df6215faa50b556c; parent #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44468941707 PASS; relay/output #44468941718 PASS; Full #44468941728 FAIL at QA-owned positive poll-signature assertion. ESP32/ESP8266 and 13 firmware/platform targets plus Android pass; downstream signing/publishing skipped | HARDWARE keeps default-deny and provides exact core 3.3.13 build; QA fixes the legacy positive fixture and independently tests NVS failures |
+| PHX-QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Run 43633486963 SUCCESS, scoped | Review current #327 source/test SHA and deny-only behavior |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head runs returned; base b1ca02e2087f3b1a7169ceab9c34e52646e700df is stale | QA owns any base refresh and independent verification |
+| PHX-RELEASE #291 | a8710d5d47dde40ac3273743ca39eaa4cace84b0 | Windows run #44461380937 FAILS at negative-selftest.ps1 because $buildWorkflow is uninitialized; BlazePwifi run #44461381052 SUCCESS; publisher/signing skipped | RELEASE and PISONET coordinate the release-test ownership/fix in their authorized paths |
+| COE RELEASE #31 | 59ed44d0b911e176f1a95b9cf5585ef811ffd31b | Shared #44222517238 and case #44222517258 PASS; sandbox #44222517263 FAILS CLOSED | Keep sandbox blocked; no unsandboxed fallback |
+| COE RELEASE #35 | 5047af8b5a8296e06294bbda6bf42a6baea2294d | Shared/firmware #44465377784 and case #44465377781 PASS; sandbox #44465377807 FAILS CLOSED because bwrap is absent after 14/14 preflight tests | Pins are proven on #35 only; RELEASE must separately propagate and verify on #26 |
+| COE RELEASE #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Shared #44390136309 and case #44390136296 PASS; sandbox #44390136327 FAILS CLOSED; compare to #35 is 15 ahead / 25 behind, mergeable=false | RELEASE owns history-preserving reconciliation |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Synthetic receipt-v1 runs #44295049727 and #44295049903 PASS | Candidate only; no Master-v2 mapping or financial authority |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs: #43096752609, #43096752632, #43096752800, #43096752563, #43096752557 | No destination acceptance; migration BLOCKED |
+
+### Hardware source/destination identity at exact refs
+
+| Item | Experiments #327 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | 1b32cb90be11da79ba7ea1155f128aee9e495dd2 / 67,300 bytes | c8be98f72596681e36a3ad1f8939bf8046c96887 / 18,394 bytes | Different blobs and sizes |
+| ESP32 sketch | c29483f0761ca6e2db0573bd12d6bfa502f12434 / 61,807 bytes | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 / 18,505 bytes | Different blobs and sizes |
+| Mbed TLS | Explicit major 3/4 selector; unsupported majors compile-rejected; deny-only poll consumer | No major guard; legacy header; positive response_sig/|poll| consumer | Contract and compatibility conflict |
+| Test inventory | Nine Python lab files in #327 changed-path inventory; legacy source shell fixture still has positive |poll| assertion | One generic Hardware shell test with positive signature assertions | Not equivalent |
+| Toolchain | #327 run resolved ESP32 4.0.0 and ESP8266 3.1.2; source workflow remains floating | #26 workflow installs unversioned cores; README states ESP32 3.3.12 / ESP8266 3.1.2 | Not reproducible |
+| License | BlazePwifi/LICENSE | Pisowifi/LICENSE same blob 1ee55b94183417be977ca287cd7391f9a6f7e721 | MIT text matches |
+| Hardware license/notice | No source NOTICE found at inspected root | Hardware/LICENSE and Hardware/NOTICE.md absent | Hardware subtree scope unresolved |
+
+COE #35 pins Arduino CLI 1.6.0, ESP8266 3.1.2 and ESP32 3.3.13, but #35 is a separate 108-commit child of #31. Its pins are not present in #26. Do not infer that a #35 pass proves #26 compatibility.
+
+### INTERCON candidates remain alternatives
+
+| Candidate | Exact head | Shape | Exact CI | Disposition |
+|---|---|---|---|---|
+| Stage-3 #39 | 33e87fbd7f287955d85509cbb05ff5ca20a26a4b | 64-byte journal | #44234479271, #44234479266, #44234479329 PASS | Alternative A |
+| Stage-3 #40 | 85f38c6e2ba879fca9f26f708c1cbeb1736dd01c | 76-byte journal | #44235077999, #44235077989, #44235078142 PASS | Alternative B |
+| Stage-3 #42 | a35672fb60228fb8f84801405d032293f0266023 | 92-byte journal | #44235625165, #44235625122, #44235625147 PASS | Alternative C |
+| Stage-4 #41 | 021e2474c5bc8df37ab016a586db516fb4f2445f | Shadow-credit only; depends on #39 | #44235451605, #44235451492, #44235451542 PASS | Not equivalent to live actuation |
+| Stage-4 #43 | 8f5eec790dc2a3e25c219a6f51651113cd1c90cd | Live timer/relay behavior; depends on #42 | #44246962253, #44246962346, #44246962243 PASS | Separate behavior; no adoption |
+
+All INTERCON evidence above is host/simulation and compile scope, not physical flash durability, real power-cut recovery or 30-device acceptance. No canonical Stage-3 or Stage-4 candidate is selected.
+
+### Governance and access
+
+Experiments main, v0.6.0 and COE main branch objects report protected=false; both repositories' rulesets endpoints return empty arrays. Classic branch-protection reads return 403 to this integration. Effective protection and required-check enforcement require repository-administrator verification. Cleanup issue #266 remains OPEN with historical checklist pins.
+
+The canonical private Drive registry v11 and newer corrections remain unavailable through the accessible Library; no Google Drive connector is exposed. Older registry snapshots were not substituted and no private contents or IDs were published. COE root AGENTS.md and the AGENTS-linked cloud policy/storage handover could not be read through the current connector surface.
+
+**Disposition:** no destination staging, copy, move, overwrite, rebase, merge or promotion. Keep OWNERSHIP_ROUTES.json unchanged and PHX-MASTER destination null. PRODUCTION NO-GO.

@@ -852,3 +852,36 @@ Experiments AGENTS.md, the latest README_FIRST, uploaded Master prompt, BLAZE-CO
 HARDWARE refreshes its PR body and obtains exact-head Mbed TLS 3.3.13/unsupported-major evidence; QA independently reviews the config-read lab and fixes the positive poll fixture with negative deny-only tests; CORE/RELEASE reconcile handover freshness; COE integration supplies exact imports/licenses/tests/pinned toolchain and runnable #26 CI; repository admin verifies protections; registry custodian restores v11 access.
 
 **PRODUCTION NO-GO** remains mandatory: independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
+
+
+## UTC06 exact-head audit summary — 2026-11-19
+
+**PHX-MASTER result:** source-grounded migration audit completed; COE #26 remains BLOCKED; PR #288 remains OPEN / DRAFT; PRODUCTION NO-GO.
+
+### Material findings
+
+1. Hardware #327 current head ba4c0cb0c5eae4be5e014c0df6f5abe20a67b0bf has focused quarantine/readback and relay/output PASS, but Full run 44468941728 fails at the inherited QA-owned positive |poll| signature assertion. All 13 firmware/platform targets and Android passed; downstream simulation/signing/publishing jobs were skipped.
+2. The Mbed TLS 3/4 selector and unsupported-major 2/5 rejection pass in a stub-only host lab. The lab explicitly requires an actual ESP32 core 3.3.13 build; current Full CI resolved ESP32 core 4.0.0. Do not equate stub API checks with a board build.
+3. Current source poll and coin-disposition consumers return false. The legacy source test and COE #26 destination test still require positive response_sig/register/poll strings. Do not weaken firmware or insert a fake signature token.
+4. COE #26 ESP32/ESP8266 sketches differ materially from #327 source blobs; its Hardware workflow floats board core installs and its README documents ESP32 3.3.12. Five destination workflows are queued with zero jobs.
+5. COE #35's CLI/core pins are verified only on #35, not #26. #35 is 108 commits ahead of #31; #44 is diverged 15 ahead / 25 behind #35 and is not mergeable.
+6. COE INTERCON Stage-3 candidates use 64/76/92-byte journal formats; Stage-4 #41 is shadow-only and #43 includes live timer/relay behavior. Green host/simulation/compile CI does not select a canonical format or prove physical durability.
+7. Source BlazePwifi/LICENSE and COE Pisowifi/LICENSE match, but COE Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware license/notice scope remains unresolved.
+8. RELEASE #291 current Windows run fails at an uninitialized $buildWorkflow variable in negative-selftest.ps1; the BlazePwifi build passes and publisher/signing remain skipped.
+9. Private registry v11/newer corrections, COE AGENTS.md and AGENTS-linked cloud policy/storage handover remain inaccessible through current connectors.
+
+### Verification
+
+- 17/17 bounded source assertions PASS against exact GitHub-fetched source, destination, test, workflow and README blobs. These are static source/provenance assertions, not the Master Python suite.
+- Exact-head GitHub Actions metadata and relevant job logs inspected.
+- Full Master Python suite NOT RUN; no local checkout was available in this activation.
+- Master PR #288 Actions: no runs returned.
+- Physical hardware, native acceptance, real power cuts and 30-device/24-hour soak: NOT TESTED.
+
+### Changes in this activation
+
+Master-owned coordination/phoenix documentation only: architecture contract §6.41, integration matrix, role assignments, audit summary, repository routing and a new detailed UTC06 report. No subsystem source, COE destination source, ownership manifest, financial state, signer, workflow or hardware was modified.
+
+**Next:** QA updates the deny-only poll fixture and independently tests the exact Hardware source; HARDWARE/RELEASE provide actual pinned board-build evidence; COE integration supplies per-file provenance, license scope and runnable #26 CI; RELEASE reconciles #44/#35 and repairs its owned test failure; registry custodian and repository administrator restore/verify the required access and protections.
+
+**PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are independently verified.
