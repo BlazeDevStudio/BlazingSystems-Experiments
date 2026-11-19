@@ -1017,3 +1017,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Compatible head `d4f082d6086c52f022b01670a33288d7c432154b` already includes another release worker's concurrency regression refinement; no implementation was duplicated.
 - [Build #44608732774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732774) completed scoped CI successfully. [Windows #44608732573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732573) reached the intended fail-closed signing-negative control; its publisher path was skipped. ESP32 compatibility #44608732329 is scoped only.
 - PR #291 remains draft/unmerged with no independent review. No signing, publication, deployment, flash, or production claim occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC21 — supersession audit: concurrency coverage update
+
+- Compatible head `66f622fe2ba727e7a37e9431aebfeb5d3782e23a` already includes another release worker's concurrency coverage update; no workflow implementation was duplicated.
+- [Build #44626386217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386217) completed scoped CI successfully. [Windows #44626386129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386129) stopped at the intended fail-closed signing-negative control; publishing was skipped. ESP32 compatibility #44626386215 is scoped only.
+- PR #291 remains draft/unmerged and unreviewed. **PRODUCTION NO-GO.**
