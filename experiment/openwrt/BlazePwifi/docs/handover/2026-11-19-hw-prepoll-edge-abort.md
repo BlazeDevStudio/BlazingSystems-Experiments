@@ -627,3 +627,26 @@ No firmware source, cryptographic wire contract, shared schema, finance, QA-owne
 - **PHX-MASTER:** decide the #326/#327 integration sequence after QA review.
 
 **Disposition:** Mbed TLS selector and digest error-control paths are **SIMULATED / CI VERIFIED**. Real Mbed TLS 3.3.13 exact-head build, physical electrical/power acceptance, financial migration, durable accounting/replay, protected witness, and independent QA/release acceptance remain **NOT TESTED / NOT ESTABLISHED**. PR #327 remains OPEN / DRAFT / UNMERGED; PRODUCTION NO-GO.
+
+
+## UTC05 terminal Full-build reconciliation — exact docs head b45af38 (2026-11-19)
+
+This supersedes the earlier note that target jobs were still running.
+
+**Exact docs head tested:** b45af38e7d59bf409d6742d2007005b5925bf5eb. **Firmware/test source commit:** 0e5514adb0088649eca8bec9df6215faa50b556c.
+
+### Terminal Full results
+
+- Push Full [#44467794879](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467794879): **FAILURE** at validation job 135369667217, exact message "Missing poll signature check" in the ESP8266 sketch. All 13 firmware/platform target jobs and Android completed SUCCESS. ESP32 job 135369667090 compiled with esp32:esp32@4.0.0; ESP8266 job 135369667137 compiled with esp8266:esp8266@3.1.2. All simulation, candidate, signing and publishing downstream jobs were skipped.
+- PR Full [#44467800422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467800422): **FAILURE** at validation job 135369685670, same inherited assertion. All 13 firmware/platform target jobs and Android completed SUCCESS. ESP32 job 135369685621 compiled with esp32:esp32@4.0.0; ESP8266 job 135369685426 compiled with esp8266:esp8266@3.1.2. ESP32 artifact 14502508693; ESP8266 artifact 14502554063. All simulation, candidate, signing and publishing downstream jobs were skipped.
+
+### Focused current-head results
+
+- Quarantine/readback PR [#44467800414](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467800414), job 135369684752: **SUCCESS**. Exact log markers include Mbed TLS 3 and 4 selector/digest pass, unsupported major 2 and 5 rejected, valid-v3 EEPROM image preservation, dual-store deny, request-digest deny and poll-edge race pass.
+- Relay/output PR [#44467800464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44467800464), source-output job 135369685402 and ESP32 boot-polarity job 135369685711: **SUCCESS**.
+
+The Full failure is a validation/test-contract failure, not an ESP32 or ESP8266 compilation failure. Do not satisfy it by adding an unauthenticated positive poll signature. PHX-CORE must define the canonical producer/consumer response envelope; PHX-QA owns the independent fixture/extractor correction.
+
+**Still NOT TESTED:** real exact-head ESP32 core 3.3.13 build; actual Mbed TLS 3.3.13 library/API compatibility; physical coin/relay timing; 150 power cuts; 30-device 24-hour soak; electrical pulse/recovery; protected signer/witness; financial v1-to-v2 migration and durable accounting/replay.
+
+**Disposition:** 13/13 firmware/platform targets + Android are CI VERIFIED on the current source; focused Mbed TLS selector lab is SIMULATED / CI VERIFIED; Full validation remains FAILED; HARDWARE ACCEPTED and PRODUCTION READY are NOT established. PR #327 stays OPEN / DRAFT / UNMERGED / PRODUCTION NO-GO.
