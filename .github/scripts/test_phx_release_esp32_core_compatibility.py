@@ -40,6 +40,7 @@ def main() -> int:
         "cancel-in-progress: false",
         "workflow_dispatch:",
         "pull_request:",
+        '"draft/softtimer-future-release-signing-pipeline-20261029"',
     )
     missing = [value for value in required if value not in content]
     if missing:
