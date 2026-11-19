@@ -1030,3 +1030,11 @@ Current PHX-RELEASE #291 API head is `96ee6d4dab7739ea20a9fd74b0fb067cfb6cc7c5`,
 - #291's 16-file diff includes CORE-owned `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md` and PISONET-owned `negative-selftest.ps1` / `PublisherMockCli.ps1`. The PISONET test fix `cfe15c1...` was reverted by `b5f060b...` after scope review; current test blob `8b69174...` retains the uninitialized `$buildWorkflow` read. These inherited cross-owner paths require CORE/PISONET review and must not be modified by Master.
 
 Next: PHX-RELEASE aligns the SDK test with the split fail-closed workflow guards; PHX-CORE refreshes its own handover after the workflow change; PHX-PISONET owns the test-input correction/review; PHX-QA replaces the positive poll fixture. No merge or release. PRODUCTION NO-GO.
+
+## UTC12 latest RELEASE head and cross-owner blockers — 2026-11-19T12:27:50.846Z
+
+Current #291 API head is `189ecaca6b35d52c25bd0fdaa5639828bf105731`. The SDK test parser now passes in CI-0701 job 135559051571; workflow blob `545c308...` sets `rollForward: disable` and fails closed unless the selected SDK is exactly 8.0.425. Current Windows [#44523786593](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786593) and BlazePwifi validate [#44523786634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786634) fail at the CORE-owned handover freshness gate; build/publisher are skipped. ESP32 compatibility [#44523786487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786487) was pending. The RELEASE UTC12 role lock #7008914192 is stale at `af144e2...` and should be refreshed in place.
+
+The current #291 16-file diff includes CORE-owned `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md` and PISONET-owned `negative-selftest.ps1` / `PublisherMockCli.ps1`. The PISONET negative test blob `8b69174...` still reads unassigned `$buildWorkflow`; history shows the earlier fix `cfe15c1...` was reverted by `b5f060b...` after scope review. CORE and PISONET must review and own their paths; Master did not edit them.
+
+Hardware #327 docs-head Full #44522362971 is terminal FAIL at QA's positive poll assertion; 13 target jobs and Android pass, downstream signing/publishing skip. QA owns the fixture. No physical acceptance. PRODUCTION NO-GO.
