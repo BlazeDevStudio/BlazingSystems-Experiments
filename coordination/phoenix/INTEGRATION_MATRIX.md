@@ -1808,3 +1808,45 @@ At Experiments #327 head `82fef49d945aeb64da76e89ef12126784a4c64b2` versus COE #
 Source `tests/v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` and destination shell test both retain positive-presence checks for `response_sig`, `|register|` and `|poll|`. The current #327 poll/disposition consumer intentionally remains default-deny, so those assertions are not a valid acceptance contract. The destination test is not equivalent to the source board-local labs and does not independently verify current #327 behavior.
 
 No Hardware source file, destination file, license or test was copied or changed. #26 still has five queued workflows with zero jobs. Keep migration BLOCKED pending owner-reviewed licensing, exact per-file provenance, source-equivalent negative tests, and runnable exact-head destination CI.
+
+## UTC12 live exact-head supersession — 2026-11-19
+
+This section supersedes the UTC11 head/status snapshot for the candidates below only. It is an evidence refresh, not a merge, release, route-promotion, or migration authorization.
+
+| Role / candidate | Exact live head and base | Exact-head CI | Current disposition |
+|---|---|---|---|
+| PHX-HARDWARE #327 | `f3581ac5af77032129160b55acf956564c02a094`, child of #326 at `58c558fb6a237935214621adc3dee65a10fe1a51` | [Quarantine #44519297267](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519297267) PASS; [relay/output #44519297280](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519297280) PASS; [Full #44519297266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519297266) FAIL at validate job 135543472255, `Missing poll signature check` | Thirteen firmware/platform targets and Android pass; downstream signing/simulation/publishing skipped. QA owns the obsolete positive-presence fixture. Current firmware remains default-deny. |
+| PHX-RELEASE #291 | `af144e2c44c2a66959dd0ce088694c08ab415639`, base `draft/softtimer-future-release-signing-pipeline@734b89d9e7792247e8376335c3f3685500ab3f89` | [Windows #44519155116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519155116): handover PASS, build-windows FAIL, publisher SKIPPED; [ESP32 compatibility #44519155180](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519155180) PASS; [BlazePwifi #44519155396](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44519155396) PASS | Windows failure is in PISONET-owned `negative-selftest.ps1`: it assigns `$workflow` but reads `$buildWorkflow` without assigning it. PISONET fixes its test; RELEASE reruns exact-head CI. No publisher execution. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS | Scoped CI only. Separate CORE continuation retains implementation ownership. |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS; [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS | Scoped CI only; no physical device-owner acceptance. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS | Scoped CI only; this does not cover the separate failing test file consumed by #291. |
+| PHX-QA #290 / #292 | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has zero current-head runs | #290 is scoped evidence only. QA still owns the #327 default-deny fixture correction; #292 is not verified at its current head. |
+| COE RELEASE #44 | `582fd5d5e83e36b36546ac28534740298ba94af4`, source/test commit `81cb1747342b0335d586184c5ba58cb138d6201a`, base `1a5be48d2845781b0b07bad39a37f8440cea4d4f` | [shared #44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) PASS; [case #44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) PASS; [sandbox #44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAIL CLOSED (Bubblewrap absent after 14/14 host preflight) | Per-appliance random ULA is not the site-scoped authority required by §6.9.1. No same-site multi-appliance distribution evidence. #44 remains diverged 15 ahead / 25 behind current #35. |
+| COE RELEASE #35 | `5047af8b5a8296e06294bbda6bf42a6baea2294d` | [shared #44465377784](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377784) PASS; [case #44465377781](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377781) PASS; [sandbox #44465377807](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44465377807) FAIL CLOSED (Bubblewrap absent) | No privileged or unsandboxed fallback. Site-authority decision remains upstream. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`, base COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Five workflows QUEUED with zero jobs | Migration remains BLOCKED; no files staged, copied, moved, overwritten, or route-promoted. |
+
+### UTC12 Hardware lab/source clarification
+
+At #327 head, the shared lexical helper is blob `e640b5dc880bba0b198619daec2025bea4fd333c`. The coin-pulse lab (`68bc00891b799f49d73ba512538d416c543362fd`), poll-window lab (`a1cc1f5ffcf06d23655ef83598ee1fe54dfff7df`), poll-loop lab (`253cf37ae6f7cdbfda67c9b7d87174b6970166e5`), and dual-store poll-fault lab (`907ca1e4133cce3edb25f57670a1e2385d6737c8`) import the shared extractor. Exact-head focused logs show shared-extractor literal/attribute checks, 11/11 coin-pulse capture on both boards, 11/11 poll-window drain, poll-loop inhibit PASS, request-digest fail-closed PASS, poll-response fail-closed 11/11, strict root JSON 13/13, and coin disposition default-deny 4/4.
+
+The same logs explicitly report `LOCAL_CONFIG_MIGRATION_LAB_ONLY=1`, `FINANCIAL_MIGRATION_TESTED=0`, `PRODUCTION_MIGRATION_AUTHORIZED=0`, and `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`. These are lab/CI results, not financial migration or physical acceptance.
+
+### UTC12 COE #26 exact-source staging recheck
+
+| Item | Experiments #327 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP32 sketch | `528187f68aaad7d76a690bbf1cbe338165ad3839` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| ESP8266 sketch | `aa021588b610f928f7af4f5fefb3f32114e6b5ae` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| Pisowifi license | `1ee55b94183417be977ca287cd7391f9a6f7e721` | `1ee55b94183417be977ca287cd7391f9a6f7e721` | Exact match for Pisowifi only |
+| Hardware licensing | Source `BlazePwifi/NOTICE.md` absent | `Hardware/LICENSE` and `Hardware/NOTICE.md` absent | Hardware license/notice scope unresolved |
+| Firmware hardening test | `41211b2c110ab409f6d9d1812ef12fda73b13211` | `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different test identities |
+
+Both source and destination hardening tests still assert positive presence of `response_sig`, `|register|`, and `|poll|`; the current #327 firmware consumer is intentionally default-deny. The destination's single shell test is not equivalent to the source board-local lab suite. Five #26 workflows remain queued with zero jobs. Do not stage a migration until per-file provenance, license/NOTICE scope, source-equivalent negative tests, and runnable exact-head destination CI are independently reviewed.
+
+### Governance / execution boundary
+
+Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`, and COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` are current. COE has no `development` branch at the checked ref. Experiments main/development and COE main report `protected=false`; both rulesets endpoints return empty arrays. Master branch protection was not independently confirmed.
+
+Experiments AGENTS.md blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f`, Cloud Artifact Policy blob `5e503925750c4e511314e4b7624579d82f60aae2`, and Cloud Storage Handover blob `a15f14cb3baf46424b820e1a921462794422f06b` were read. COE root AGENTS.md returns 404. The private Drive registry v11 and newer corrections remain BLOCKED: Library search/list did not surface them and no Google Drive connector is exposed. No older registry was substituted and no Drive transfer occurred.
+
+No Master Actions run was returned. Direct `git ls-remote` failed because this runtime could not resolve `github.com`; the full Master Python suite is NOT RUN. The Master changes in this run are coordination documentation only. No merge, release, signing, secret provisioning, flash, payment operation, financial migration, or physical test occurred. **PRODUCTION NO-GO.**
