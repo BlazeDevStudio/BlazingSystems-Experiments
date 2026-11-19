@@ -437,6 +437,11 @@ int main(){
 
   // LittleFS open/write failure must fall back to the secondary store.
   latchPollPulseFault(3);
+  if(backupCommitCalls()!=1){
+    std::cerr<<"POLL_FAULT_BACKUP_COMMIT_CALL_COUNT_FAIL board=BOARD_NAME actual="<<backupCommitCalls()<<std::endl;
+    return 61;
+  }
+  std::cout<<"POLL_FAULT_BACKUP_COMMIT_CALL_COUNT_PASS board=BOARD_NAME calls=1"<<std::endl;
   NVS_WRITE_BEFORE_COMMIT_ASSERT
   assert(journalRecoveryRequired && !insertMode);
   assert(outputsInhibited);
@@ -634,6 +639,39 @@ def run(board: str, path: Path):
             raise
         print(result.stdout, end="")
 
+def run_esp32_missing_commit_mutation(path: Path):
+    source = path.read_text(encoding="utf-8")
+    needle = (
+        "  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK){\\n"
+        "    pollFaultBackupWriteFailed=true;\\n"
+        "    return false;\\n"
+        "  }\\n"
+    )
+    if source.count(needle) != 1:
+        raise AssertionError("ESP32 NVS commit call mutation anchor must occur exactly once")
+    mutated_source = source.replace(
+        needle,
+        "  // MUTATION: deliberately omit nvs_commit; readback must not count as durable.\\n",
+        1,
+    )
+    program = harness("ESP32", mutated_source)
+    with tempfile.TemporaryDirectory(prefix="phx-nvs-commit-omission-") as tmp:
+        cpp = Path(tmp) / "lab.cpp"
+        exe = Path(tmp) / "lab"
+        cpp.write_text(program, encoding="utf-8")
+        subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
+            check=True,
+        )
+        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    expected = "POLL_FAULT_BACKUP_COMMIT_CALL_COUNT_FAIL board=ESP32 actual=0"
+    if result.returncode != 61 or expected not in result.stderr:
+        print(result.stdout, end="")
+        print(result.stderr, file=sys.stderr, end="")
+        raise AssertionError("omitted ESP32 nvs_commit was not rejected by the commit-count guard")
+    print("MUTATION_REJECTED ESP32_NVS_COMMIT_OMITTED exit=61")
+
+
 def run_esp32_precommit_persistence_mutation(path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness("ESP32", source)
@@ -667,4 +705,5 @@ if __name__ == "__main__":
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
     run_esp32_precommit_persistence_mutation(ESP32)
+    run_esp32_missing_commit_mutation(ESP32)
     run("ESP8266", ESP8266)
