@@ -102,3 +102,15 @@ No physical flashing, live coin, customer money, production migration, signer pr
   "updated_utc": "2026-11-19T10:50:00Z"
 }
 ```
+
+
+## Terminal exact-docs-head follow-up — 2026-11-19
+
+After the initial handover, the exact documentation head `52e83607d63636c278ce0046aa960518ba460202` received another focused and Full run:
+
+- Quarantine PR [#44509690520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44509690520), job `135510365796`: **SUCCESS**.
+- Relay/output PR [#44509690554](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44509690554): ESP32 boot-polarity job `135510365768` **SUCCESS**; source-output job `135510366092` **SUCCESS**.
+- Full push [#44509678104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44509678104): all **13/13 firmware/platform target jobs PASS**, including ESP32 job `135510465764` (ESP32 core 4.0.0), ESP8266 job `135510465797` (ESP8266 core 3.1.2), and all 11 OpenWrt targets. Android job `135510465291` also **PASS**. The overall workflow is nevertheless **FAILURE** because validation job `135510465721` fails at the inherited QA-owned `Missing poll signature check`; production import, simulation, signing and publishing stages were skipped. This is not Full validation success.
+- Full PR [#44509690528](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44509690528) attempt 1 was cancelled after the same validation failure; ESP8266 passed, while other matrix jobs were cancelled. A specific rerun of the cancelled ESP32 job was accepted as attempt 2; job `135511904051` was still running at the last observation. The exact-head push Full run above independently supplies both board compile evidence and the complete 13-target matrix.
+
+No firmware source changed after exact source/test SHA `ebe77f24c5872ebbd0a0851af973f86daf9fa62c`; the later commits are handover-only. All evidence remains CI-only, not physical acceptance.
