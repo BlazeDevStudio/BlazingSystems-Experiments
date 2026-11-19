@@ -1056,3 +1056,18 @@ Direct `git clone` failed because the runtime cannot resolve `github.com`; the M
 Next owners: PHX-PISONET fixes its `$buildWorkflow` input; PHX-QA replaces the stale positive poll fixture and independently reviews #327; PHX-CORE/COE integration decide the durable site ULA authority; PHX-RELEASE refreshes stale PR description and reconciles its cross-owner diff; COE integration owner completes per-file provenance/license/test import and unblocks #26 CI; repository admin verifies branch protection; registry custodian restores authorized v11 access.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## UTC14 exact-head supersession — 2026-11-19T14:39:41Z — Master exact-head disposition
+
+**Master:** `phoenix/master-coordination@37fd3ed542e9b4924d5a0a0c7ece976c9c23f227`; existing PR #288 OPEN/DRAFT, base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. Current development is `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**New P0 interface clarification:** COE #35 now has a strict ULA /48 validator and intentionally no production prefix configured. Its exact-head PR CI passes 116 packager tests (two intentional skips) but fails all 10 profile validations closed because the site-prefix authority/input is unresolved. Its mandatory sandbox fails closed because Bubblewrap is absent. COE #44 creates a random prefix per appliance installation, not a shared site prefix; it is 15 ahead / 29 behind #35 and non-mergeable. Neither branch establishes the approved site authority.
+
+**Current role failures:** Hardware #327 focused quarantine/relay pass, Full validation fails at the QA-owned positive poll-signature assertion; RELEASE #291 ESP32 compatibility and BlazePwifi pass, Windows fails at PISONET-owned uninitialized `$buildWorkflow`, publisher skipped; QA #292 has no current-head run. CORE #252, RENTAL #289, PISONET #255 and QA #290 have scoped passes only, not production acceptance.
+
+**Destination remains blocked:** COE #26 has five queued workflows / zero jobs. Both source board sketches differ from destination blobs; 22 source board-local labs are not represented by the destination's one generic Hardware shell test, which still asserts positive signature/poll strings. The Pisowifi MIT license match does not establish Hardware license/NOTICE scope; Hardware/LICENSE and Hardware/NOTICE.md are absent. No staging, copy, move, overwrite, rebase, cherry-pick, merge or route promotion.
+
+**Governance:** Experiments AGENTS.md requires private registry/manifest/ledger review before archive work. Canonical private registry v11 and newer corrections remain unavailable through the exposed Library/connector surface; no older v7/v6 snapshot was substituted and no private contents were published. COE root AGENTS.md returns 404. Effective branch protection remains UNKNOWN because classic reads return 403 and rulesets are empty.
+
+**Execution classification:** GitHub source/tree inspection and exact-head CI log inspection completed. Master Python suite NOT RUN; no Master PR-triggered Actions run returned. This checkpoint does not claim hardware, financial, native, signer or production acceptance. **PRODUCTION NO-GO.**
