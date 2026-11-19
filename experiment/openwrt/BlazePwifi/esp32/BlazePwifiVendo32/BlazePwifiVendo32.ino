@@ -916,20 +916,58 @@ bool persistLocalOutputPolarity(){
   return true;
 }
 
-bool configFieldsMatchStored(){
+bool configFieldsMatchStored(const char **failedField){
+  if(failedField) *failedField=nullptr;
   const String missing="__PHX_NVS_READBACK_MISSING__";
-  return
-    prefs.isKey("ssid") && prefs.getString("ssid",missing)==cfg.ssid &&
-    prefs.isKey("pass") && prefs.getString("pass",missing)==cfg.pass &&
-    prefs.isKey("server") && prefs.getString("server",missing)==cfg.server &&
-    prefs.isKey("key") && prefs.getString("key",missing)==cfg.key &&
-    prefs.isKey("id") && prefs.getString("id",missing)==cfg.id &&
-    prefs.isKey("coinpin") && prefs.getInt("coinpin",-1)==cfg.coinPin &&
-    prefs.isKey("ledpin") && prefs.getInt("ledpin",-1)==cfg.insertLedPin &&
-    prefs.isKey("relaypin") && prefs.getInt("relaypin",-1)==cfg.relayPin &&
-    prefs.isKey("coinlow") && prefs.getBool("coinlow",!cfg.coinActiveLow)==cfg.coinActiveLow &&
-    prefs.isKey("debounce") && prefs.getUInt("debounce",0xFFFFFFFFU)==cfg.coinDebounceMs &&
-    prefs.isKey("groupms") && prefs.getUInt("groupms",0xFFFFFFFFU)==cfg.pulseGroupMs;
+  if(!prefs.isKey("ssid") || prefs.getString("ssid",missing)!=cfg.ssid){
+    if(failedField) *failedField="ssid";
+    return false;
+  }
+  if(!prefs.isKey("pass") || prefs.getString("pass",missing)!=cfg.pass){
+    if(failedField) *failedField="pass";
+    return false;
+  }
+  if(!prefs.isKey("server") || prefs.getString("server",missing)!=cfg.server){
+    if(failedField) *failedField="server";
+    return false;
+  }
+  if(!prefs.isKey("key") || prefs.getString("key",missing)!=cfg.key){
+    if(failedField) *failedField="key";
+    return false;
+  }
+  if(!prefs.isKey("id") || prefs.getString("id",missing)!=cfg.id){
+    if(failedField) *failedField="id";
+    return false;
+  }
+  if(!prefs.isKey("coinpin") || prefs.getInt("coinpin",-1)!=cfg.coinPin){
+    if(failedField) *failedField="coinpin";
+    return false;
+  }
+  if(!prefs.isKey("ledpin") || prefs.getInt("ledpin",-1)!=cfg.insertLedPin){
+    if(failedField) *failedField="ledpin";
+    return false;
+  }
+  if(!prefs.isKey("relaypin") || prefs.getInt("relaypin",-1)!=cfg.relayPin){
+    if(failedField) *failedField="relaypin";
+    return false;
+  }
+  if(!prefs.isKey("coinlow") || prefs.getBool("coinlow",!cfg.coinActiveLow)!=cfg.coinActiveLow){
+    if(failedField) *failedField="coinlow";
+    return false;
+  }
+  if(!prefs.isKey("debounce") || prefs.getUInt("debounce",0xFFFFFFFFU)!=cfg.coinDebounceMs){
+    if(failedField) *failedField="debounce";
+    return false;
+  }
+  if(!prefs.isKey("groupms") || prefs.getUInt("groupms",0xFFFFFFFFU)!=cfg.pulseGroupMs){
+    if(failedField) *failedField="groupms";
+    return false;
+  }
+  return true;
+}
+
+bool configFieldsMatchStored(){
+  return configFieldsMatchStored(nullptr);
 }
 
 bool saveConfig(){
@@ -947,7 +985,10 @@ bool saveConfig(){
   prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
   // Do not publish polarityv=1 unless every configuration field survived NVS
   // readback. A failed or partial save remains INPUT-only after reboot.
-  if(!configFieldsMatchStored()){
+  const char *failedField=nullptr;
+  if(!configFieldsMatchStored(&failedField)){
+    Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain inhibited.\\n",
+                  failedField?failedField:"unknown");
     outputPolarityKnown=false;
     pinConfigSafe=false;
     return false;
