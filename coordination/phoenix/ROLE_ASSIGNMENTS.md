@@ -1439,3 +1439,27 @@ The role CI table is scoped to each listed PR/head; no status transfers to anoth
 **Current exact PR/CI:** CORE #252 `c82705f2...` PASS; RENTAL #289 `68928774...` PASS; PISONET #255 `d01fd164...` PASS; HARDWARE #327 `ac7e94ff...` focused tests PASS / Full FAIL at controller protocol parity; QA #290 `5c29d159...` PASS / #292 `75a3f66d...` no exact-head run; RELEASE #291 `66f622fe...` Windows FAIL on uninitialized `$buildWorkflow`, ESP32 compatibility and BlazePwifi build PASS. COE #48 has scoped Stage 5 CI 3/3 PASS but shared ESP32 build FAIL. Exact run URLs are in `INTEGRATION_MATRIX.md` and the UTC22 report.
 
 COE #48's PR metadata does not declare a PHX role owner; Master does not silently assign the branch. PHX-HARDWARE and PHX-PISONET must acknowledge their separate scopes before any cross-repo integration proposal. The existing CORE continuation automation was observed active/in progress; no competing CORE work was created.
+
+
+## PHX-MASTER UTC23 — live exact-head ownership correction — 2026-11-19
+
+**Current coordination ref before this update:** `phoenix/master-coordination@a7f41020706934a9240bf763350322afd705095e`; existing PR #288 remains OPEN / DRAFT against `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+
+### Current owner PR index
+
+| Role | Current exact PR / head | Current exact-head CI / owner action |
+|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped. CORE financial/source ownership remains with its separate continuation; Master did not edit CORE. |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS, scoped. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS, scoped. Also owns the failing `$buildWorkflow` reference in #291's negative self-test. |
+| PHX-HARDWARE | #327 docs/head `06c1cdaa47f2a33594354b014bd0b7445f894aaa`; source/test `291f5206599f033d7e21cd3b031e7dd771afe748`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51` | Focused relay/quarantine runs [44632263871](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263871) / [44632263905](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263905) PASS; Full [44632263889](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263889) fails at QA-owned positive poll-signature fixture. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no exact-head run. QA owns the default-deny poll fixture correction. |
+| PHX-RELEASE | #291 `e04a059c9c336413184e342aaa5e4fbb9cac7750` | ESP32 [44636720463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720463) and BlazePwifi [44636720621](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720621) PASS; Windows [44636720536](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720536) fails in PISONET-owned `negative-selftest.ps1`; publisher skipped. |
+
+### COE #48 owner boundary
+
+COE #48 head `b72ca86a141329b4b401f5d790cfb04a58423331`, based on #47 `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597`, remains OPEN / DRAFT / UNMERGED. It has no explicit PHX role owner acknowledgement and no entry in `OWNERSHIP_ROUTES.json`. Record it as **UNASSIGNED / AUDIT-ONLY**. PHX-HARDWARE may review electrical/firmware risk and PHX-PISONET may review adapter/interface design only after each explicitly acknowledges that separate scope. Do not edit #48 from Master or route it into #26.
+
+### Cleanup and release state
+
+Issue #266 remains OPEN. The Master cleanup checkbox stays unchecked because the full duplicate/dead-code inventory is incomplete; no mass move/deletion was performed. COE #26 remains five queued unique workflows / zero jobs. The private v11 registry/newer corrections remain unavailable. Production remains NO-GO.

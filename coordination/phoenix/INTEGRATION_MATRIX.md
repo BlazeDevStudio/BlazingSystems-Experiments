@@ -2179,3 +2179,30 @@ Full source/run evidence: [UTC21 audit](PHX_MASTER_UTC21_COE35_HARDLINK_ADMISSIO
 HARDWARE #327's current Full log shows `v05_firmware_hardening_test.sh` still requires positive `response_sig` and `|poll|` markers. The exact source blob `284f4337bc9e2aa4d78c61f0d7e4c4163ffb0a82` deliberately makes `acceptPollResponse()` return false and clears `insertMode` until CORE publishes the canonical config-auth contract and QA approves golden vectors. QA must update its fixture to assert default-deny; do not re-enable positive poll admission to satisfy the old fixture.
 
 All statuses are scoped to the listed exact refs/runs. No subsystem source was edited by Master.
+
+
+## PHX-MASTER UTC23 — exact role CI and destination refresh — 2026-11-19
+
+### Experiments role PRs
+
+| Role / PR | Exact current head | Exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | docs/head `06c1cdaa47f2a33594354b014bd0b7445f894aaa`; source/test `291f5206599f033d7e21cd3b031e7dd771afe748` | Focused [44632263871](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263871) and [44632263905](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263905) PASS; Full [44632263889](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44632263889) FAIL at QA-owned `Missing poll signature check` |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no exact-head run |
+| RELEASE #291 | `e04a059c9c336413184e342aaa5e4fbb9cac7750` | [44636720463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720463) ESP32 PASS; [44636720621](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720621) BlazePwifi PASS; [44636720536](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720536) Windows FAIL because PISONET-owned `$buildWorkflow` is unset; publisher skipped |
+
+### COE candidates and destination queue
+
+| Candidate | Exact head | Exact CI / disposition |
+|---|---|---|
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only destination baseline |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five unique workflows QUEUED; run-job API returns zero jobs; frozen, no migration |
+| COE #47 Stage 4.2 | `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597` | Stage 4.2 workflow [44620464547](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464547) and case guard [44620464517](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464517) PASS; shared [44620464623](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464623) FAIL |
+| COE #48 Stage 5 | `b72ca86a141329b4b401f5d790cfb04a58423331` | Stage 5 [44629292767](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44629292767) 3/3 PASS; case [44629291957](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44629291957) PASS; shared [44629291962](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44629291962) FAIL on ESP32 `mbedtls/sha256.h` under core 4.0.0. Unassigned/audit-only; not #26 |
+| COE #35 | `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b` | Case [44617783021](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617783021) PASS; shared [44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050) FAIL; sandbox [44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) FAIL |
+| COE #44 | `582fd5d5e83e36b36546ac28534740298ba94af4` | Shared [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) and case [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) PASS; sandbox [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAIL; not site-wide authority |
+
+All results are scoped to the listed exact refs. Green scoped jobs do not establish a combined COE #26 build, source parity, physical acceptance or production readiness. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No files were copied, moved, rebased, cherry-picked or staged.
