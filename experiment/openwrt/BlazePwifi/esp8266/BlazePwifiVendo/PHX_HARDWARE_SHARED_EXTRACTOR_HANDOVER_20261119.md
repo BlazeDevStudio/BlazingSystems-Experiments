@@ -104,3 +104,29 @@ Full build:
 
 No firmware sketch, API, journal schema, financial path, GPIO, relay policy, release workflow or production state changed in this follow-on.
 
+
+
+## UTC13 follow-on — execute ESP8266 cold-boot polarity lab in quarantine CI
+
+The source-exact `esp8266_boot_polarity_lab.py` already existed on this hardware branch, but the quarantine workflow did not invoke it. The lab therefore could pass when run manually while the standard hardware quarantine check silently omitted the ESP8266 boot-polarity/migration gate. This activation added a workflow-wiring regression guard and made the workflow execute the existing lab.
+
+No firmware sketch, runtime GPIO behavior, config layout, wire/API contract, finance path, journal schema, or production state changed. The ESP8266 lab continues to classify itself as host-only: it does not establish physical relay polarity or power-cut safety.
+
+### Test-first and correction
+
+- Guard file commit [eb9520b](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/eb9520bfb6bc7eb1402c3b0ea84d2c4ce46f3db7): added `boot_polarity_workflow_wiring_lab.py`. It requires the guard and boot-polarity lab to be invoked exactly once, preserves fail-fast execution, and checks the SIMULATED / physical-not-certified / financial-not-authorized markers.
+- Expected RED commit [984ea8f](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/984ea8ff65a93b7da6e22fc2e1943acaf56100ca): wired the guard before adding the boot-polarity invocation. PR run [#44530905721](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44530905721), job `135583633175`, failed exactly at `ESP8266 boot-polarity lab must be invoked exactly once`. Earlier quarantine labs completed successfully; fail-fast correctly skipped later steps.
+- Fix commit [dc26466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dc264660942612d577e9eef4e2f6536bb4671bd1): added a dedicated workflow step to run `esp8266_boot_polarity_lab.py` on the exact checked-out PR head.
+
+### Exact-head GREEN evidence
+
+- Quarantine PR [#44531136592](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531136592), job `135584442602`: **SUCCESS**. Logs confirm `ESP8266_BOOT_POLARITY_WORKFLOW_WIRING=PASS`, `ESP8266_BOOT_POLARITY_LAB=PASS`, `ESP8266_BOOT_POLARITY_CONFIG_V3=PASS`, `V1_V2_MIGRATION_REMAINS_UNCONFIGURED=PASS`, `UNKNOWN_POLARITY_OUTPUTS_REMAIN_INPUT=PASS`, and `ACTIVE_HIGH_AND_ACTIVE_LOW_OFF_PRELOAD=PASS`. The workflow also emitted `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `PHYSICAL_RELAY_POLARITY_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
+- Relay/output PR [#44531136572](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531136572): **SUCCESS**. ESP32 boot-polarity job `135584442131` and source-output-polarity job `135584442633` both passed.
+- Full BlazePwifi PR [#44531136753](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44531136753): **COMPLETED FAILURE** at validation job `135584596753`, exact inherited QA-owned assertion `Missing poll signature check` in `tests/controllers.sh`. All 13 firmware/platform target jobs and Android completed **SUCCESS**. Simulation, update bundle, signing handoff, candidate gate and publishing remained skipped. This is not Full CI acceptance.
+
+### Exact refs and disposition
+
+- PR #327 remains OPEN / DRAFT / UNMERGED; current test/workflow source SHA `dc264660942612d577e9eef4e2f6536bb4671bd1`; parent #326/base `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Existing ESP8266 and ESP32 firmware source blobs were unchanged in this follow-on: `aa021588b610f928f7af4f5fefb3f32114e6b5ae` and `528187f68aaad7d76a690bbf1cbe338165ad3839`.
+- PHX-QA owns the stale poll-signature assertion and independent review. No positive unauthenticated signature was added.
+- Physical relay polarity, electrical pulse/recovery, 150 power cuts, 30-device/24-hour soak, protected witness, financial migration, durable accounting/replay, and independent release acceptance remain NOT TESTED / NOT ESTABLISHED. PRODUCTION NO-GO.
