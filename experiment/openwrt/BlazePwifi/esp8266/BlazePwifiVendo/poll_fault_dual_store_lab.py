@@ -90,20 +90,20 @@ bool selected(int value) {
     # C++ translation phase 2 runs before comment-token recognition. A splice
     # can form the delimiter itself, not only continue an already-open comment.
     spliced_line_comment = (
-        "/" + "\\\\" + "\\n" + "/" + "\\\\" + "\\r\\n"
-        + "bool selected(int value) { return false; }\\r\\n"
+        "/" + "\\" + "\n" + "/" + "\\" + "\r\n"
+        + "bool selected(int value) { return false; }\r\n"
     )
     line_masked = mask_non_code(spliced_line_comment)
     if len(line_masked) != len(spliced_line_comment):
         raise AssertionError("spliced // opener must preserve source offsets")
-    if line_masked.count("\\r\\n") != spliced_line_comment.count("\\r\\n"):
+    if line_masked.count("\r\n") != spliced_line_comment.count("\r\n"):
         raise AssertionError("spliced // opener must preserve CRLF positions")
     if extract_functions(spliced_line_comment, "selected"):
         raise AssertionError("line-spliced // opener exposed a fake function")
 
     spliced_block_comment = (
-        "/" + "\\\\" + "\\n" + "*\\n"
-        + "bool selected(int value) { return false; }\\n*/\\n"
+        "/" + "\\" + "\n" + "*\n"
+        + "bool selected(int value) { return false; }\n*/\n"
     )
     block_masked = mask_non_code(spliced_block_comment)
     if len(block_masked) != len(spliced_block_comment):
@@ -112,13 +112,13 @@ bool selected(int value) {
         raise AssertionError("line-spliced /* opener exposed a fake function")
 
     spliced_block_terminator = (
-        "/* hidden " + "*" + "\\\\" + "\\r\\n" + "/\\r\\n"
-        + "bool selected(int value) { return true; }\\r\\n"
+        "/* hidden " + "*" + "\\" + "\r\n" + "/\r\n"
+        + "bool selected(int value) { return true; }\r\n"
     )
     terminator_masked = mask_non_code(spliced_block_terminator)
     if len(terminator_masked) != len(spliced_block_terminator):
         raise AssertionError("spliced */ terminator must preserve source offsets")
-    if terminator_masked.count("\\r\\n") != spliced_block_terminator.count("\\r\\n"):
+    if terminator_masked.count("\r\n") != spliced_block_terminator.count("\r\n"):
         raise AssertionError("spliced */ terminator must preserve CRLF positions")
     terminated_functions = extract_functions(spliced_block_terminator, "selected")
     if len(terminated_functions) != 1 or "return true;" not in terminated_functions[0][1]:
