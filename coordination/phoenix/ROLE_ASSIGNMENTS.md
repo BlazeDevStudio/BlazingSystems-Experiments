@@ -1205,3 +1205,22 @@ No Master source takeover, role reassignment, merge, rebase, release, hardware o
 | **Registry custodian** | Canonical private Drive v11 and newer corrections not retrievable through the current Library/connector surface | Restore authorized read-only access; do not substitute older registry snapshots |
 
 No worker ownership is reassigned. The separate CORE continuation retains CORE implementation.
+
+## UTC12 live role routing — 2026-11-19
+
+This is a read-only ownership refresh; no role branch or subsystem ownership is reassigned.
+
+| Role | Live evidence | Owner action |
+|---|---|---|
+| **PHX-MASTER** | Start HEAD `edfbcc3ef13f9afce37eb7d7bc453179329966b5`; existing PR #288 OPEN/DRAFT; only `coordination/phoenix/` changed in this cycle | Maintain exact-head matrix and migration provenance. Keep `OWNERSHIP_ROUTES.json` unchanged and PHX-MASTER destination `null`. |
+| **PHX-CORE** | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; scoped CI [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS | Existing separate CORE continuation retains implementation. CORE/COE owner must decide durable site-scoped ULA authority; no competing CORE worker. |
+| **PHX-RENTAL** | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`; scoped CI [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) and [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) PASS | Preserve owner scope; no new Master action. |
+| **PHX-PISONET** | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; scoped CI [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS. Separate #291 consumer failure reads PISONET test blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`. | Fix the owned `negative-selftest.ps1` variable mismatch: line 37 assigns `$workflow`; line 115 first reads unassigned `$buildWorkflow`. Rerun the PISONET self-test and notify RELEASE. |
+| **PHX-HARDWARE** | #327 API head `f3581ac5af77032129160b55acf956564c02a094`; focused quarantine/relay PASS; Full validation FAIL at `Missing poll signature check` | Keep firmware default-deny and preserve shared extractor. Refresh the role checkpoint from the older UTC11 lock head; QA owns the obsolete positive fixture. |
+| **PHX-QA** | #290 `5c29d15994cee1279058f1eca12f2a3180704292`, scoped CI [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` has no current-head runs | Replace the positive poll-presence assertions with source-exact negative/default-deny tests; independently verify #327 at its exact head. Do not mark #292 verified without current-head evidence. |
+| **PHX-RELEASE** | #291 API head `af144e2c44c2a66959dd0ce088694c08ab415639`; Windows build fails in PISONET-owned self-test; ESP32 and BlazePwifi jobs pass; publisher skipped | Keep signing/publishing skipped. Rerun #291 after PISONET fixes its test. Do not bypass the failing check. |
+| **COE integration / RELEASE** | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; five queued workflows, zero jobs. #35 and #44 sandbox gates fail closed. | Complete exact per-file blob/mode/license/test/toolchain provenance and runnable destination CI. #44 is not site-scoped ULA authority and remains diverged from #35. |
+| **PHX-INFRA** | COE #35/#44 sandbox runners fail closed because Bubblewrap is absent; #31 previously failed unprivileged UID-map setup | Provide an authorized disposable Bubblewrap-capable runner; no privileged or unsandboxed fallback. |
+| **Registry custodian** | Private Drive v11/newer corrections are not available through the current Library or connector surface | Restore authorized read-only Drive access. Do not substitute older registry snapshots or claim a transfer. |
+
+No worker ownership, role branch, or route is changed by this Master refresh.
