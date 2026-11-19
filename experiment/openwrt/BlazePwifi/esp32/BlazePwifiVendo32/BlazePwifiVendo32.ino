@@ -870,6 +870,8 @@ bool loadLocalOutputPolarity(){
   return true;
 }
 
+bool configFieldsMatchStored(const char **failedField);
+
 void loadConfig(){
   prefs.begin("blazevendo",false);
   outputPolarityKnown=false;
@@ -889,6 +891,26 @@ void loadConfig(){
   if(cfg.apPass.length()<8){
     char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
     cfg.apPass=String(b); prefs.putString("appass",cfg.apPass);
+  }
+
+  // A valid local polarity marker is necessary but not sufficient. Preferences
+  // returns caller-supplied defaults when an NVS string read fails; verify the
+  // just-loaded configuration through the status-bearing readback helper
+  // before trusting the persisted polarity on this boot.
+  if(outputPolarityKnown){
+    const char *failedField=nullptr;
+    if(!configFieldsMatchStored(&failedField)){
+      cfg.relayActiveHigh=false;
+      cfg.ledActiveHigh=false;
+      runRelayActiveHigh=false;
+      runLedActiveHigh=false;
+      outputPolarityKnown=false;
+      pinConfigSafe=false;
+      insertMode=false;
+      activeTarget="";
+      Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain INPUT.\n",
+                    failedField?failedField:"unknown");
+    }
   }
 }
 
