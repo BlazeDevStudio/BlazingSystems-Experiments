@@ -1105,3 +1105,15 @@ The existing config-read lab now checks that each layout definition/assertion oc
 This is a behavior-preserving cleanup and host/CI regression only. Logs retain `SIMULATED_ONLY=1` and `PHYSICAL_POWER_CUT_VERIFIED=0`. Local EEPROM config V1/V2-to-V3 tests are not the financial ledger v1-to-v2 migration. The same-chip persistence limitation and independent witness gap remain.
 
 PHX-QA should independently review the new source-layout guard and existing negative/default-deny labs. PHX-MASTER should refresh the canonical role table to include the active #326/#327 hardware stack and current #327 head. Before any further runtime change to poll/pulse durability, PHX-HARDWARE requests Master/CORE/QA review of the proposed fail-closed poll-in-flight recovery semantics; no shared API or financial contract is changed here.
+
+
+### UTC15 terminal Full-run reconciliation
+
+The exact-source Full PR [#44557545635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545635) is now terminal **CANCELLED** after validation job `135677813786` failed at the inherited QA-owned `Missing poll signature check`.
+
+- Firmware target jobs completed **SUCCESS**: ESP8266 `135677814330`; Orange Pi PC Plus `135677814504`.
+- Firmware target jobs **CANCELLED**: ESP32 `135677814597`, x86_64 `135677814552`, Orange Pi One `135677814759`, One Plus `135677814783`, Zero2 `135677814934`, Zero3 `135677814938`, Zero2W `135677814419`, PC2 `135677815084`, PC `135677815174`, Ruijie `135677815237`, Zero `135677815304`; Android `135677814220` also CANCELLED.
+- Downstream browser/ESP/x86/Ruijie/Orange Pi simulations, signed handoff, candidate gate and publishers were skipped or cancelled. This is not a Full target matrix or Full CI pass.
+- The separate focused quarantine PR [#44557545656](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545656) job `135677596346` and relay/output PR [#44557545748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545748) jobs `135677595650` / `135677596137` remain **SUCCESS** on source/test SHA `05ddd64...`.
+
+No attempt was made to satisfy the positive signature assertion with a synthetic or unauthenticated signature. QA owns that fixture and must coordinate the canonical producer/consumer contract with CORE/Master.
