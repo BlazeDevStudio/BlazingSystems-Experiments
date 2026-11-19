@@ -1077,3 +1077,31 @@ The dual-store lab already modeled NVS pending versus durable storage and reboot
 - No firmware runtime source, NVS schema, EEPROM layout, LittleFS format, GPIO/relay policy, poll contract, finance path, shared API or QA-owned file changed. Host tests remain SIMULATED only; no physical NVS/EEPROM flash, power cut, coin acceptor or relay was exercised.
 
 The same-chip dual-store limitation remains: ESP32 NVS and LittleFS, and ESP8266 EEPROM emulation and LittleFS, share one physical flash device. This guard proves that a successful API readback is not substituted for the required commit call; it does not establish an independent anti-rollback witness or reboot durability if both stores fail.
+
+
+## UTC15 — deduplicate ESP8266 EEPROM layout assertion
+
+**PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Exact source/test commit:** `05ddd64f0d982c32d0297010596bfa9bd46bb472`  
+**Test-first commit:** `e42a115108c599c4b1d64bb475d039c400fd843c`
+
+### Cleanup
+
+The ESP8266 sketch contained two equivalent compile-time assertions that `sizeof(Config)` must remain before the reserved poll-fault EEPROM region. Removed the shorter duplicate; retained the descriptive assertion and the separate record-size and reserved-image bounds. No runtime firmware behavior, EEPROM offsets, record schema, persistence semantics, GPIO, relay, coin or finance behavior changed.
+
+The existing config-read lab now checks that each layout definition/assertion occurs exactly once and performs source mutations that duplicate or remove the Config/EEPROM overlap assertion. This keeps the layout contract visible to maintainers and prevents redundant guards from accumulating.
+
+### Exact-source RED/GREEN and CI
+
+- Expected RED: [quarantine PR run #44557366459](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557366459), job `135676962162`, failed at the new source guard with `expected exactly one ... found 2`. The preceding quarantine labs passed.
+- GREEN push: [#44557529361](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557529361), job `135677535956`, SUCCESS on exact source/test SHA `05ddd64...`.
+- GREEN PR: [#44557545656](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545656), job `135677596346`, SUCCESS on the same SHA.
+- Relay/output PR: [#44557545748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545748), jobs `135677595650` and `135677596137`, SUCCESS.
+- Logs explicitly show `ESP8266_EEPROM_LAYOUT_GUARDS_UNIQUE_PASS`, rejection of both duplicate and missing-guard mutations, the existing EEPROM config-read and local V1/V2-to-V3 recovery checks, and ESP32/ESP8266 poll-fault dual-store host labs passing.
+- Full PR [#44557545635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44557545635), validation job `135677813786`, FAILED at the inherited QA-owned `Missing poll signature check`. Other target/emulator jobs were still running when this handover was written; no Full acceptance is claimed.
+
+### Limits / next action
+
+This is a behavior-preserving cleanup and host/CI regression only. Logs retain `SIMULATED_ONLY=1` and `PHYSICAL_POWER_CUT_VERIFIED=0`. Local EEPROM config V1/V2-to-V3 tests are not the financial ledger v1-to-v2 migration. The same-chip persistence limitation and independent witness gap remain.
+
+PHX-QA should independently review the new source-layout guard and existing negative/default-deny labs. PHX-MASTER should refresh the canonical role table to include the active #326/#327 hardware stack and current #327 head. Before any further runtime change to poll/pulse durability, PHX-HARDWARE requests Master/CORE/QA review of the proposed fail-closed poll-in-flight recovery semantics; no shared API or financial contract is changed here.
