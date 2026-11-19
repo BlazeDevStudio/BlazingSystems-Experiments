@@ -254,6 +254,12 @@ def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, A
         relative = _normalize_checksum_path(source_path)
         source_file = ROOT / relative
         _hash_regular(source_file)
+        try:
+            _run(["git", "diff", "--quiet", "HEAD", "--", relative])
+        except ProvenanceError as exc:
+            raise ProvenanceError(
+                f"source path differs from exact HEAD worktree content: {relative}"
+            ) from exc
         blob = _run(["git", "rev-parse", f"HEAD:{relative}"])
         if not GIT_SHA.fullmatch(blob):
             raise ProvenanceError(f"invalid Git blob identity for {relative}")
