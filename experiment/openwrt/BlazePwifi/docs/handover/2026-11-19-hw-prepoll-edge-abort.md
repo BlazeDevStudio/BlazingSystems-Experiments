@@ -332,3 +332,23 @@ This is source-extracted host/fake-I/O evidence only. It is **SIMULATED / CI VER
 - **PHX-HARDWARE:** next audit the local v1/v2 EEPROM configuration migration paths against a verified non-erased image, including malformed-record no-write behavior and reserved-marker preservation; do not alter the financial v1-to-v2 migration or shared ledger contract.
 
 **Disposition:** PR #327 remains OPEN / DRAFT / UNMERGED. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## UTC01 — keep malformed/untrusted configuration non-writable after boot failure
+
+**Task:** #177 / #172 — PHX-HARDWARE-owned ESP8266 local configuration safety correction.
+**Source commit:** `5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b`
+**Branch head at source commit:** 5ad572f28fab4d5a018cdd4eb9ee395dd16ef69b
+**Disposition:** source change committed; exact-head CI pending; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+### Defect and correction
+
+`loadCfg()` intentionally refuses malformed v1/v2 records, invalid v3 records, and unknown non-erased schemas. However, `latchConfigPersistenceFailure()` previously left `configImageReadVerified` true after some parse/schema failures. `setupPortal()` starts the local WPA2 setup AP, whose `/save` handler can later call `saveCfg()`. Since `saveCfg()` uses the verified-image flag as its write gate, a subsequent local setup save could overwrite the exact malformed/unknown bytes that the boot path had just promised to preserve.
+
+The failure latch now clears `configImageReadVerified` before setting the output/coin deny state. This preserves the existing EEPROM layout and marker bytes, prevents `saveCfg()` and `writePollFaultBackup()` from using that image after a configuration failure, and leaves the device deny-only until a separately reviewed recovery path exists. It does not add a remote override or change v1/v2 migration formats.
+
+### Verification request / limits
+
+- PHX-QA: independently add failure-injection vectors for malformed v1, malformed v2, unknown non-erased schema, and a later setup-save attempt; assert zero EEPROM commits and byte-for-byte preservation of the config region and existing poll-fault marker. Include commit-failure/reboot vectors where the fake model can distinguish definite failure from ambiguous persistence.
+- Existing source-extracted EEPROM read-failure lab and focused quarantine workflow will be rerun at the exact candidate SHA. They do not yet prove this newly identified malformed-config/setup-save sequence.
+- No QA-owned tests directory, shared API, CORE ledger, EEPROM schema, marker offset, or financial migration was modified.
