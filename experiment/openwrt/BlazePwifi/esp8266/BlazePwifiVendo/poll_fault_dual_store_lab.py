@@ -566,7 +566,7 @@ int main(){
 }
 """
     if board == "ESP32":
-        nvs_write_before_commit_assert = "if(!nvsSetWasDurableBeforeCommit){ std::cerr<<\"ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT\\n\"; return 60; } std::cout<<\"ESP32_NVS_SET_BLOB_DURABLE_BEFORE_COMMIT_PASS\\n\";"
+        nvs_write_before_commit_assert = "if(nvsSetWasDurableBeforeCommit){ std::cerr<<\"ESP32_NVS_SET_BLOB_DURABLE_BEFORE_COMMIT\\n\"; return 60; } std::cout<<\"ESP32_NVS_SET_BLOB_NOT_DURABLE_BEFORE_COMMIT_PASS\\n\";"
         commit_fail_before_persistence_setup = "nvsFailCommit=true;"
         commit_fail_before_persistence_clear = "nvsFailCommit=false;"
     else:
