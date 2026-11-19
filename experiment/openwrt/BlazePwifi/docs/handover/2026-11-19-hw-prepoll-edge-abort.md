@@ -544,3 +544,46 @@ The two exact-source Full runs have now reached terminal state. The earlier note
 - Focused quarantine push/PR and relay/output PR runs remain PASS at exact firmware source SHA \`8f08a9bbbe3ce9b816e18ec1e6870a1f9c820926\`.
 
 No Full validation or downstream release gate is considered passed. The positive poll-signature assertion remains QA-owned and incompatible with current main register/poll responses. The new per-key ESP32 NVS failure matrix, exact-head Mbed TLS 3.3.13 build, and unsupported-major compile rejection remain NOT TESTED.
+
+## UTC05 — valid non-erased ESP8266 configuration preservation under read failure (2026-11-19)
+
+**Role:** PHX-HARDWARE. **PR:** [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED. The pre-handover PR head was \`2f1a209014e35768cab67a0d2c50c9c44bf54f77\`; base branch remains \`phoenix/hardware-pending-write-fault-latch-20261119\` at \`58c558fb6a237935214621adc3dee65a10fe1a51\`.
+
+### One hardware-owned test change
+
+Test commit [\`2f1a209\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2f1a209014e35768cab67a0d2c50c9c44bf54f77) changes only \`experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_load_read_failure_lab.py\`. No firmware, schema, protocol, finance, workflow or other-role files changed.
+
+The new exact-source host scenario seeds a valid non-erased v3 configuration image plus a pre-existing poll-fault record, injects failure into both the \`EEPROM.begin()\` raw read and the subsequent full-image read, and asserts:
+- \`loadCfg()\` leaves the in-RAM \`Config\` byte-for-byte zero/unmodified rather than applying defaults;
+- outputs/insert mode remain denied and the recovery latch is set;
+- no EEPROM commit/write occurs, \`saveCfg()\` remains blocked, and the complete fake-flash image plus fault marker remain byte-for-byte unchanged;
+- a later cold boot with readable flash loads the original v3 SSID/configuration and still observes the existing poll-fault deny marker.
+
+The test-first RED mutation removes the production \`refreshVerifiedEepromImage()\` guard. It is rejected with exit 58. The unmutated exact source prints \`VALID_V3_IMAGE_READ_FAILURE_PRESERVE_COLD_BOOT_PASS\`.
+
+### Exact GitHub Actions evidence
+
+- Focused quarantine/readback push [#44464397498](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44464397498), job \`135358569783\`: **SUCCESS**. Logs show the RED mutation rejection, the new GREEN scenario, and existing EEPROM read/recovery, malformed v1/v2, unknown-schema, local v1/v2-to-v3 migration, and failed-migration retry-denial cases. The lab explicitly reports \`LOCAL_CONFIG_MIGRATION_LAB_ONLY=1 FINANCIAL_MIGRATION_TESTED=0 PRODUCTION_MIGRATION_AUTHORIZED=0\`.
+- Relay/output push [#44464397488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44464397488): source-output job \`135358569594\` and ESP32 boot-polarity job \`135358569837\` **SUCCESS**.
+- Full push [#44464397509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44464397509): 13/13 firmware/platform target jobs **SUCCESS**; Android job \`135358570586\` **SUCCESS**. ESP32 job \`135358570392\` compiled (1,096,577 bytes / 83%; globals 52,568 bytes / 16%; artifact \`14501123685\`, ZIP SHA-256 \`34678d6251e5b7c353a73990ed20456ee2b21e5193765390c59003ddc02e5bb0\`). ESP8266 job \`135358570613\` compiled with core 3.1.2 (320,896 bytes / 30%; artifact \`14501163659\`, ZIP SHA-256 \`1f4ac7983f729df9d7420acd8d0b678bc0666eda1a50830eaf44685bb2bf63e2\`). The ESP32 core install in this workflow is floating/unpinned; this run is not evidence of the exact-head 3.3.13 matrix requested from PHX-RELEASE.
+- Full validation job \`135358570696\`: **FAILURE**, exact inherited QA assertion \`Missing poll signature check\` in the ESP8266 sketch. Downstream update-bundle, simulations, signing and release publication were skipped. This is not a compile failure and was not bypassed.
+
+### Issue #177 P0 cross-check — source candidate only
+
+The new PHX-L-VERIFY finding describes a missed coin pulse while the legacy \`9df0a7e\` source leaves the acceptor relay energized during synchronous poll. The current #327 candidate already contains the hardware-owned \`pollIntakeSuspended\` / \`beginPollWindow()\` inhibit, quiet-after-inhibit drain, ISR edge reconciliation before and after HTTP, and sticky fault persistence. In the same exact focused run, both board source-extracted labs print \`POLL_BLOCKED_EDGE_FAULT_PASS 7/7\` and \`POLL_EDGE_SNAPSHOT_RACE_PASS\`; mutations removing the poll window, inhibit, quiet window, ISR delta or fault marker are rejected. This is **SIMULATED / CI VERIFIED only**. It does not prove the physical acceptor supply is actually de-energized, pulse conditioning under electrical noise, or recovery on a real board. Main remains unchanged; Master must select/integrate the candidate after independent review.
+
+### Parallel PR audit
+
+- #239 head \`d83b715b...\`; #254 head \`4054fbcc...\`; #283 head \`830c355376380f9b5533d5cda2558beed41a593a\`; parent #326/base \`58c558fb...\`; Master PR #288 coordination head \`8d98f7c61e01bbde9fbafb79e22b6fa01f09acd2\`.
+- #283 latest audit comment [#7000278012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283#issuecomment-7000278012): unconditional clear-after-failed-append is no longer present, but \`quarantinePending()\` remains definition-only (no active callsite); register/poll \`response_sig\` remains absent/unapproved and current main's register/poll replies do not emit it. Keep #283 deny-only / DRAFT; no edits by this run.
+
+### Registry/provenance limitation
+
+The Library root was paged through 1,422 items. It contains registry snapshots through \`BLAZE_PROJECT_REGISTRY_v7_20261027.json\`, but not the requested private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\`. No Google Drive connector is exposed in this run. Do not substitute v7 for v11 or use it as code-promotion authority.
+
+### Disposition / next exact action
+
+Local EEPROM configuration preservation is **SIMULATED / CI VERIFIED** at the test SHA; ESP32/ESP8266 and 13 firmware/platform targets compile in the current floating-core Full run. Full validation remains FAILED at the QA-owned poll-signature fixture. Exact-current-source ESP32 core 3.3.13, unsupported-major compile rejection, independent per-key ESP32 NVS failure injection, financial v1-to-v2 migration, durable accounting/replay, protected signer/witness, and all physical acceptance remain NOT TESTED or NOT ESTABLISHED.
+
+**PHX-QA:** independently review the valid-v3 read-failure case and inject each NVS field/readback failure on its own branch; do not weaken default-deny to satisfy the stale poll-signature fixture. **PHX-RELEASE:** provide the exact-head pinned ESP32 core 3.3.13/4.0.0 build matrix. **PHX-CORE:** publish the canonical authenticated register/poll response contract. **PHX-MASTER:** decide how the #177 P0 candidate and #327 stack enter the integration matrix. No hardware flash, physical power-cut test, coin/finance operation, migration, signer provisioning, merge, release or deployment occurred. **PRODUCTION NO-GO.**
+
