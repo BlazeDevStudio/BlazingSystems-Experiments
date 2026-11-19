@@ -249,6 +249,21 @@ def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, A
     missing = [name for name in required if not env.get(name)]
     if missing:
         raise ProvenanceError(f"missing GitHub build context: {', '.join(missing)}")
+    source_head_sha = env.get("PHX_SOURCE_HEAD_SHA", "")
+    source_base_sha = env.get("PHX_SOURCE_BASE_SHA", "")
+    base_ref = env.get("GITHUB_BASE_REF", "")
+    if not GIT_SHA.fullmatch(source_head_sha):
+        raise ProvenanceError("PHX_SOURCE_HEAD_SHA must be an exact 40-character commit SHA")
+    if base_ref:
+        if not GIT_SHA.fullmatch(source_base_sha):
+            raise ProvenanceError(
+                "PHX_SOURCE_BASE_SHA must be an exact 40-character commit SHA for pull requests"
+            )
+    elif source_base_sha:
+        raise ProvenanceError("PHX_SOURCE_BASE_SHA must be empty outside pull-request events")
+    elif source_head_sha != commit:
+        raise ProvenanceError("non-PR PHX_SOURCE_HEAD_SHA must equal GITHUB_SHA")
+
     paths = []
     for source_path in source_paths:
         relative = _normalize_checksum_path(source_path)
@@ -267,6 +282,8 @@ def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, A
     return {
         "repository": env["GITHUB_REPOSITORY"],
         "commit": commit,
+        "source_head_sha": source_head_sha,
+        "source_base_sha": source_base_sha or None,
         "ref": env["GITHUB_REF"],
         "pull_request_head": env.get("GITHUB_HEAD_REF") or None,
         "pull_request_base": env.get("GITHUB_BASE_REF") or None,
