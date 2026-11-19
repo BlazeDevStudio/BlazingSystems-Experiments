@@ -181,8 +181,10 @@ static constexpr esp_err_t ESP_FAIL=4;
 static constexpr int NVS_READWRITE=1;
 struct NvsFlash {
   static std::vector<uint8_t> durable;
+  static std::vector<uint8_t> pending;
 };
 std::vector<uint8_t> NvsFlash::durable;
+std::vector<uint8_t> NvsFlash::pending;
 static bool nvsReadError=false, nvsFailSet=false, nvsFailCommit=false;
 static bool nvsFailCommitAfterWrite=false;
 static bool nvsFailOpen=false, nvsTypeMismatch=false, nvsFailReadback=false;
@@ -200,33 +202,40 @@ esp_err_t nvs_open(const char*,int,nvs_handle_t* handle){
 esp_err_t nvs_get_blob(nvs_handle_t handle,const char*,void* value,size_t* length){
   if(handle==0 || !length || nvsReadError) return ESP_FAIL;
   if(nvsTypeMismatch) return ESP_ERR_NVS_TYPE_MISMATCH;
-  if(NvsFlash::durable.empty()) return ESP_ERR_NVS_NOT_FOUND;
-  if(!value){ *length=NvsFlash::durable.size(); return ESP_OK; }
-  if(*length<NvsFlash::durable.size()){
-    *length=NvsFlash::durable.size();
+  const std::vector<uint8_t>& visible=NvsFlash::pending.empty()?NvsFlash::durable:NvsFlash::pending;
+  if(visible.empty()) return ESP_ERR_NVS_NOT_FOUND;
+  if(!value){ *length=visible.size(); return ESP_OK; }
+  if(*length<visible.size()){
+    *length=visible.size();
     return ESP_ERR_NVS_INVALID_LENGTH;
   }
-  memcpy(value,NvsFlash::durable.data(),NvsFlash::durable.size());
-  *length=NvsFlash::durable.size();
+  memcpy(value,visible.data(),visible.size());
+  *length=visible.size();
   return ESP_OK;
 }
 esp_err_t nvs_set_blob(nvs_handle_t handle,const char*,const void* value,size_t length){
   if(handle==0 || nvsFailSet) return ESP_FAIL;
   const uint8_t* bytes=(const uint8_t*)value;
-  NvsFlash::durable.assign(bytes,bytes+length);
+  NvsFlash::pending.assign(bytes,bytes+length);
   return ESP_OK;
 }
 esp_err_t nvs_commit(nvs_handle_t handle){
   ++nvsCommitCalls;
-  // IDF 5.5.6+: nvs_set_blob writes through Storage::writeItem immediately;
-  // commit() is a no-op for a valid handle. These injected errors are defensive
-  // API-error paths, not a second flash-write boundary.
-  if(handle==0 || nvsFailCommit || nvsFailCommitAfterWrite) return ESP_FAIL;
+  // ESP-IDF documents nvs_set_blob as pending until nvs_commit. Model both
+  // ambiguous failure outcomes: no durable write, or bytes reaching flash
+  // even though the commit call reports failure.
+  if(handle==0 || nvsFailCommit) return ESP_FAIL;
+  if(!NvsFlash::pending.empty()){
+    NvsFlash::durable=NvsFlash::pending;
+    NvsFlash::pending.clear();
+  }
+  if(nvsFailCommitAfterWrite) return ESP_FAIL;
   if(nvsFailReadback) nvsReadError=true;
   return ESP_OK;
 }
 void resetStorage(){
   NvsFlash::durable.clear();
+  NvsFlash::pending.clear();
   nvsReadError=false; nvsFailSet=false; nvsFailCommit=false;
   nvsFailCommitAfterWrite=false; nvsCommitCalls=0; pollFaultBackupWriteFailed=false;
   nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;
@@ -235,6 +244,8 @@ void resetStorage(){
 }
 void rebootStorage(){
   pollFaultBackupWriteFailed=false;
+  // Pending handle-local data is volatile and must not survive a simulated reboot.
+  NvsFlash::pending.clear();
   nvsReadError=false; nvsFailReadback=false;
   pollFaultNvsHandle=0; pollFaultBackupReady=false;
   initPollFaultBackupStore();
@@ -247,7 +258,7 @@ void corruptStorage(){
         fail_read = "nvsFailReadback=true;"
         ambiguous_commit_setup = "nvsFailCommitAfterWrite=true;"
         clear_fail = "nvsReadError=false; nvsFailSet=false; nvsFailCommit=false; nvsFailCommitAfterWrite=false; nvsFailOpen=false; nvsTypeMismatch=false; nvsFailReadback=false;"
-        no_marker = "NvsFlash::durable.clear();"
+        no_marker = "NvsFlash::durable.clear(); NvsFlash::pending.clear();"
         nvs_read_error = r"""
   resetRuntime();
   nvsReadError=true;
