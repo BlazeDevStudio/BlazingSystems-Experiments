@@ -938,3 +938,12 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Exact draft PR #291 source head `cd545fe527c3b52ad251528706f744e9a5672241` refines existing build-provenance code and adds release workflow concurrency regression coverage. This note preserves provenance only.
 - Windows [#44499994885](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994885) failed at mandatory handover freshness before build validation; publisher and signing paths were skipped. Shared build [#44499994944](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994944) and ESP32 compatibility [#44499994683](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994683) are active and not credited.
 - This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC10 — supersession audit: provenance source reached terminal CI
+
+- Supersedes the earlier `cd545fe527c3b52ad251528706f744e9a5672241` active-CI record: compatible branch source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf` was already implemented by another release worker; this entry independently records the outcome without duplicating its code changes.
+- Exact source/test [BlazePwifi build #44503860587](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44503860587) completed SUCCESS: provenance 19/19, validation 133/133, firmware targets and nine simulations passed. Its signing and publisher paths were skipped; any artifacts remain unsigned CI previews only.
+- Exact current docs-head [BlazePwifi build #44504561884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561884) and [ESP32 core compatibility #44504561996](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561996) completed SUCCESS; the compatibility legs are pinned to Hardware source `0e5514adb008`, not current Hardware #327.
+- [Windows release #44504561855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561855) reached the intended fail-closed negative signing control, so publisher/build-package steps were skipped. This is not production acceptance.
+- PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO** remains until MASTER, independent QA, protected signer, durable finance/migration, and physical acceptance gates are independently satisfied.
