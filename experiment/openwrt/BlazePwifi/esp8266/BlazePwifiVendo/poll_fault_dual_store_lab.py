@@ -642,16 +642,16 @@ def run(board: str, path: Path):
 def run_esp32_missing_commit_mutation(path: Path):
     source = path.read_text(encoding="utf-8")
     needle = (
-        "  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK){\\n"
-        "    pollFaultBackupWriteFailed=true;\\n"
-        "    return false;\\n"
-        "  }\\n"
+        "  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK){\n"
+        "    pollFaultBackupWriteFailed=true;\n"
+        "    return false;\n"
+        "  }\n"
     )
     if source.count(needle) != 1:
         raise AssertionError("ESP32 NVS commit call mutation anchor must occur exactly once")
     mutated_source = source.replace(
         needle,
-        "  // MUTATION: deliberately omit nvs_commit; readback must not count as durable.\\n",
+        "  // MUTATION: deliberately omit nvs_commit; readback must not count as durable.\n",
         1,
     )
     program = harness("ESP32", mutated_source)
