@@ -506,24 +506,6 @@ def _verify_checksum_manifest_at(
             raise ProvenanceError(f"SHA256SUMS digest mismatch: {name}")
 
 
-def _inventory(root: Path) -> dict[str, dict[str, Any]]:
-    absolute, directory_fd = _open_directory(root, "artifact directory")
-    try:
-        return _inventory_at(directory_fd)
-    finally:
-        os.close(directory_fd)
-
-
-def _verify_checksum_manifest(
-    root: Path, files: dict[str, dict[str, Any]]
-) -> None:
-    absolute, directory_fd = _open_directory(root, "artifact directory")
-    try:
-        _verify_checksum_manifest_at(directory_fd, files)
-    finally:
-        os.close(directory_fd)
-
-
 def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, Any]:
     commit = env.get("GITHUB_SHA", "")
     if not GIT_SHA.fullmatch(commit):
