@@ -89,3 +89,28 @@ Direct `git ls-remote` failed because the runtime could not resolve `github.com`
 6. Registry custodian restores authorized read-only access to private v11 and newer corrections.
 
 **No subsystem source changes. No migration. No merge/release/signing/flash/payment operation. PRODUCTION NO-GO.**
+
+## Post-checkpoint live Hardware supersession — 2026-11-19T12:20:02.270Z
+
+A fresh PR API read after the initial UTC12 write found that Hardware #327 advanced again. The initial #327 head `f3581ac5...` and its #4451929 runs above are now historical. Current refs:
+
+- PR/docs HEAD: `e90c51d733635a891e0f1a8cd875586b43998069`.
+- Source/test HEAD: `7db41068f9471565471982030f4c119880908291`.
+- Base #326: `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Owner issue checkpoint: [#7008092747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7008092747).
+- PR evidence update: [#7008860355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327#issuecomment-7008860355).
+
+The source/test commit adds only the coin-pulse lab fixture for C++ raw strings, escaped strings/chars, phase-2 split/continued comment delimiters, source-offset/newline preservation, and proof that the previous naive brace counter truncates the probe. No firmware runtime behavior changed.
+
+Exact source/test-head runs:
+- [Quarantine push #44521440358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440358) PASS.
+- [Quarantine PR #44521451085](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521451085) PASS; log includes `SHARED_EXTRACTOR_RAW_STRING_PHASE2_PASS`, ESP8266/ESP32 coin-pulse labs 11/11 and mutation checks.
+- [Relay/output PR #44521450941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450941) PASS.
+- [Full PR #44521450962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450962) and [Full push #44521440354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440354): all 13 firmware/platform targets and Android PASS; overall Full FAIL at QA-owned `tests/controllers.sh` assertion `Missing poll signature check`; downstream update/simulation/signing/publishing skipped.
+
+Latest docs-head runs:
+- [Quarantine #44522362978](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362978) PASS.
+- [Relay/output #44522363113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522363113) PASS.
+- [Full #44522362971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362971) remained IN_PROGRESS at readback. Validation job 135554099687 had already failed at the same missing poll-signature assertion; several platform jobs remained in progress. No terminal docs-head Full result is claimed.
+
+QA owns the obsolete positive-presence fixture. Do not add a positive unauthenticated signature or weaken firmware default-deny behavior. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
