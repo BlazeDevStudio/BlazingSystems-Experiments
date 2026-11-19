@@ -10,7 +10,7 @@ on:
       - ".github/PHX_RELEASE_HANDOVER.md"
   pull_request:
     branches:
-      - main
+      - "draft/softtimer-future-release-signing-pipeline-20261029"
     paths:
       - ".github/workflows/phx-release-esp32-core-compatibility.yml"
       - ".github/scripts/test_phx_release_esp32_core_compatibility.py"
