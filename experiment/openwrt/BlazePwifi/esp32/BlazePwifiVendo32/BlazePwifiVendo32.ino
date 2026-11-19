@@ -5,7 +5,12 @@
 #include <nvs.h>
 #include <LittleFS.h>
 #include <string.h>
+#include <mbedtls/version.h>
+#if MBEDTLS_VERSION_MAJOR >= 4
+#include <psa/crypto.h>
+#else
 #include <mbedtls/sha256.h>
+#endif
 #include <esp_system.h>
 
 struct Config {
@@ -80,12 +85,29 @@ String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
+#if MBEDTLS_VERSION_MAJOR >= 4
+  // Mbed TLS 4 removes the legacy SHA module API; keep the same SHA-256
+  // digest bytes through the supported PSA one-shot hash interface.
+  if(psa_crypto_init()!=PSA_SUCCESS) return String();
+  size_t digestLength=0;
+  psa_status_t status=psa_hash_compute(
+    PSA_ALG_SHA_256,
+    (const uint8_t*)s.c_str(),
+    s.length(),
+    out,
+    sizeof(out),
+    &digestLength
+  );
+  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();
+#else
   mbedtls_sha256_context c;
   mbedtls_sha256_init(&c);
-  mbedtls_sha256_starts(&c,0);
-  mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
-  mbedtls_sha256_finish(&c,out);
+  int status=mbedtls_sha256_starts(&c,0);
+  if(status==0) status=mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
+  if(status==0) status=mbedtls_sha256_finish(&c,out);
   mbedtls_sha256_free(&c);
+  if(status!=0) return String();
+#endif
   for(int i=0;i<32;i++) sprintf(buf+i*2,"%02x",out[i]);
   buf[64]=0; return String(buf);
 }
