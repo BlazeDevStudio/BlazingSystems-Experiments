@@ -45,6 +45,74 @@ def test_external_cwd_invocation():
     print("POLL_FAULT_LAB_EXTERNAL_CWD_PASS")
 
 
+def test_repo_root_requires_both_board_sentinels():
+    esp32_rel = Path("experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino")
+    esp8266_rel = Path("experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino")
+    probe_rel = Path("tests/root_probe.py")
+
+    with tempfile.TemporaryDirectory(prefix="phx-root-sentinel-") as temp:
+        root = Path(temp)
+        probe = root / probe_rel
+        probe.parent.mkdir(parents=True, exist_ok=True)
+        (root / esp32_rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / esp32_rel).write_text("// ESP32 sentinel\\n", encoding="utf-8")
+
+        try:
+            find_repo_root(probe)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("a checkout missing the ESP8266 sketch must not be accepted as the repository root")
+
+        (root / esp8266_rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / esp8266_rel).write_text("// ESP8266 sentinel\\n", encoding="utf-8")
+        if find_repo_root(probe) != root.resolve():
+            raise AssertionError("repository root discovery must walk upward from a nested file path")
+
+    helper_path = Path(__file__).with_name("firmware_lab_source.py")
+    helper_source = helper_path.read_text(encoding="utf-8")
+    guard = "if all((candidate / relative).is_file() for relative in required_sketches):"
+    if helper_source.count(guard) != 1:
+        raise AssertionError("both-board root-sentinel guard mutation anchor must occur exactly once")
+    single_board_mutant = helper_source.replace(
+        guard,
+        "if (candidate / required_sketches[0]).is_file():",
+        1,
+    )
+
+    with tempfile.TemporaryDirectory(prefix="phx-root-sentinel-mutation-") as temp:
+        mutant_dir = Path(temp)
+        (mutant_dir / "firmware_lab_source.py").write_text(single_board_mutant, encoding="utf-8")
+        probe_script = mutant_dir / "probe.py"
+        probe_script.write_text(
+            "from pathlib import Path\\n"
+            "import sys\\n"
+            "from firmware_lab_source import find_repo_root\\n"
+            "try:\\n"
+            "    find_repo_root(Path(sys.argv[1]))\\n"
+            "except RuntimeError:\\n"
+            "    print('ROOT_REJECTED')\\n"
+            "    raise SystemExit(0)\\n"
+            "print('ROOT_ACCEPTED')\\n"
+            "raise SystemExit(1)\\n",
+            encoding="utf-8",
+        )
+        partial_root = mutant_dir / "partial-checkout"
+        (partial_root / esp32_rel).parent.mkdir(parents=True, exist_ok=True)
+        (partial_root / esp32_rel).write_text("// ESP32 sentinel\\n", encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, str(probe_script), str(partial_root / probe_rel)],
+            cwd=mutant_dir,
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode != 1 or result.stdout.strip() != "ROOT_ACCEPTED":
+            print(result.stdout, end="")
+            print(result.stderr, file=sys.stderr, end="")
+            raise AssertionError("single-board-only root discovery mutation was not exercised")
+    print("MUTATION_REJECTED ROOT_DISCOVERY_SINGLE_BOARD_SENTINEL")
+
+
 def test_extractors():
     sample = r'''
 /*
@@ -725,6 +793,7 @@ def run_esp32_precommit_persistence_mutation(path: Path):
 
 if __name__ == "__main__":
     test_external_cwd_invocation()
+    test_repo_root_requires_both_board_sentinels()
     test_extractors()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
