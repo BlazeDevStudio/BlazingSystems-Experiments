@@ -350,25 +350,25 @@ def compile_and_run(functions):
 
 def verify_shared_extractor():
     probe = (
-        "bool sample() {\\n"
-        '  const char *brace = "}";\\n'
-        "  // }\\n"
-        "  /* { */\\n"
-        "  return brace[0] == '}';\\n"
-        "}\\n"
-        "bool after() { return false; }\\n"
+        "bool sample() {\n"
+        '  const char *brace = "}";\n'
+        "  // }\n"
+        "  /* { */\n"
+        "  return brace[0] == '}';\n"
+        "}\n"
+        "bool after() { return false; }\n"
     )
-    expected = probe.split("\\nbool after", 1)[0]
+    expected = probe.split("\nbool after", 1)[0]
     actual = extract_function(probe, "sample")
     if actual != expected:
         raise RuntimeError("shared extractor truncated at a C++ comment/literal brace")
     attribute_probe = (
-        "void ICACHE_RAM_ATTR marked() {\\n"
-        "  /* } */\\n"
-        "}\\n"
-        "void IRAM_ATTR next() { return; }\\n"
+        "void ICACHE_RAM_ATTR marked() {\n"
+        "  /* } */\n"
+        "}\n"
+        "void IRAM_ATTR next() { return; }\n"
     )
-    expected_marked = attribute_probe.split("\\nvoid IRAM_ATTR next", 1)[0]
+    expected_marked = attribute_probe.split("\nvoid IRAM_ATTR next", 1)[0]
     if extract_function(attribute_probe, "marked") != expected_marked:
         raise RuntimeError("shared extractor failed post-return ICACHE_RAM_ATTR function")
     if extract_function(attribute_probe, "next") != "void IRAM_ATTR next() { return; }":
