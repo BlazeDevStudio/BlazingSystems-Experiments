@@ -378,3 +378,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `fae5cf41b2cf6e46c450bb5ee79942b63b56d3a4` already contains release concurrency/workflow refinements. This entry preserves the implementation and records exact-head evidence.
 - [Build #44598882048](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882048) failed at mandatory handover freshness; [Windows #44598882092](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882092) likewise failed shared freshness. No signing or publisher step ran. ESP32 compatibility #44598882022 remains scoped only.
 - PR #291 is draft/unmerged with no independent review. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC20 — supersession audit: concurrency regression refinement
+
+- Compatible head `d4f082d6086c52f022b01670a33288d7c432154b` already includes another release worker's concurrency regression refinement; no implementation was duplicated.
+- [Build #44608732774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732774) completed scoped CI successfully. [Windows #44608732573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732573) reached the intended fail-closed signing-negative control; its publisher path was skipped. ESP32 compatibility #44608732329 is scoped only.
+- PR #291 remains draft/unmerged with no independent review. No signing, publication, deployment, flash, or production claim occurred. **PRODUCTION NO-GO.**
