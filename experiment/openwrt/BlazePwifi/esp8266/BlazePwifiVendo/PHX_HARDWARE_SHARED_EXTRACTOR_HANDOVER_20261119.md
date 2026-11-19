@@ -130,3 +130,40 @@ No firmware sketch, runtime GPIO behavior, config layout, wire/API contract, fin
 - Existing ESP8266 and ESP32 firmware source blobs were unchanged in this follow-on: `aa021588b610f928f7af4f5fefb3f32114e6b5ae` and `528187f68aaad7d76a690bbf1cbe338165ad3839`.
 - PHX-QA owns the stale poll-signature assertion and independent review. No positive unauthenticated signature was added.
 - Physical relay polarity, electrical pulse/recovery, 150 power cuts, 30-device/24-hour soak, protected witness, financial migration, durable accounting/replay, and independent release acceptance remain NOT TESTED / NOT ESTABLISHED. PRODUCTION NO-GO.
+
+
+## UTC13 follow-on — wire ESP8266 config-read failure lab into quarantine CI
+
+### Audit finding
+
+The exact PR #327 tree at `ebc387a0e6d0770d93829c0961b0d85d53198563` contained the hardware-owned `config_load_read_failure_lab.py`, but a scan of all 32 workflow YAML blobs in that exact tree found **zero invocations** of the lab. The three PHX-HARDWARE workflows and the main BlazePwifi build workflow did not run it. The source-extracted lab therefore existed but its EEPROM full-image read-failure and local config-recovery assertions were not part of CI.
+
+The lab uses the production ESP8266 `loadCfg` / EEPROM functions with a deterministic fake-flash model of ESP8266 Arduino core 3.1.2. It covers full-image read failure, malformed V1/V2 and unknown config records, setup-save denial, local V1/V2-to-V3 config migration, poll-fault marker preservation, and failed migration commit followed by cold-boot retry. **This is local firmware-config migration only; it is not the financial v1-to-v2 ledger migration.**
+
+### Test-first and correction
+
+- Guard commit [054651f](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/054651f8754e9404569d0a2eba9e5c9f1ad127e6) extended `boot_polarity_workflow_wiring_lab.py` to require the config-read failure command exactly once and not commented out.
+- Expected RED: quarantine push [#44534284422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44534284422), job `135595482328`, completed **FAILURE** exactly at `ESP8266 config-read failure lab must be invoked exactly once`. The preceding quarantine, pending-write, coin POST, poll-window, digest, mbedTLS and NVS labs passed before the fail-fast guard stopped the job.
+- Workflow fix commit [ef541fc](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ef541fc5a37296f9c39a7b5351e87c54db098f6e) added a separate, named step: `Verify ESP8266 EEPROM config-read failure and local config migration recovery`.
+- Exact-head GREEN: quarantine push [#44534458661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44534458661), job `135596083262`, exact checked-out SHA `ef541fc5a37296f9c39a7b5351e87c54db098f6e`: **SUCCESS**. The wiring guard emitted `ESP8266_CONFIG_READ_FAILURE_WORKFLOW_WIRING=PASS`; the dedicated lab step completed SUCCESS and emitted:
+  - `VALID_V3_IMAGE_READ_FAILURE_PRESERVE_COLD_BOOT_PASS`
+  - `ESP8266_EEPROM_BEGIN_READ_FAIL_THEN_FULL_READ_RECOVER_MARKER_PRESERVED_PASS`
+  - `ESP8266_EEPROM_RECOVERED_IMAGE_COLD_BOOT_DENY_PASS`
+  - `ESP8266_EEPROM_FULL_READ_FAIL_MARKER_ONLY_RECOVERY_NO_COMMIT_PASS`
+  - `ESP8266_EEPROM_FULL_READ_PERSISTENT_FAILURE_NO_COMMIT_PASS`
+  - `MALFORMED_V1_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+  - `MALFORMED_V2_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+  - `UNKNOWN_SCHEMA_SETUP_SAVE_DENY_IMAGE_PRESERVED_PASS`
+  - `VALID_V1_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS`
+  - `VALID_V2_TO_V3_LOCAL_MIGRATION_MARKER_PRESERVED_PASS`
+  - `V2_MIGRATION_COMMIT_FAILURE_SAME_BOOT_DENY_COLD_BOOT_RETRY_PASS`
+- The same exact-head run also passed the pulse-capture and ESP8266 boot-polarity steps. Final markers explicitly state `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
+
+### Full-build boundary and current refs
+
+- Full BlazePwifi push [#44534284363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44534284363) was on the preceding test-only commit `054651f8754e9404569d0a2eba9e5c9f1ad127e6`. Validation job `135595483156` failed at the inherited QA-owned `tests/controllers.sh` assertion `Missing poll signature check`; all 13 firmware/platform target jobs and Android completed SUCCESS. Downstream simulation, update bundle, signing, candidate gate and publishing jobs were skipped. This is not a Full CI pass and is not an exact Full run on the later workflow-only head.
+- Current PR #327: `phoenix/hardware-prepoll-edge-abort-20261119@` + `ef541fc5a37296f9c39a7b5351e87c54db098f6e`; parent #326/base `58c558fb6a237935214621adc3dee65a10fe1a51`. PR remains OPEN / DRAFT / UNMERGED.
+- Workflow blob: `8b34f4905a1c8ce639ef47c9a1981291d20474b8`; wiring guard blob: `a0fd9c217e7b58242b6195c42ad531c418cf5849`; config lab blob: `a669da02e66220cdf68245aeadf47b74bda25e51`.
+- No firmware sketch, GPIO, relay, financial schema, API, pending-journal format or production behavior changed. All test evidence is host-simulated/CI only. Physical EEPROM behavior, power-cut durability, financial migration, witness, coin acceptance and production remain NOT TESTED / NOT ESTABLISHED.
+
+**Next exact action:** PHX-QA independently review the config-read lab at exact workflow head `ef541fc5a37296f9c39a7b5351e87c54db098f6e`; PHX-MASTER refresh `coordination/phoenix/ROLE_ASSIGNMENTS.md` because its current #288 snapshot lists #239/#254/#283 but omits active hardware child PR #327; then PHX-HARDWARE revalidates the branch and reviewer responses before selecting another owned task.
