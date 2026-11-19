@@ -394,7 +394,7 @@ The only `contents: write` grant remains in `publish-release`, whose job conditi
 - Release concurrency/token-scope tests: **3/3 PASS**, including explicit Windows build read-only permission, single publisher write grant, and protected-main/approval/output gate.
 - Build provenance tests: **20/20 PASS**.
 - Arduino CLI archive verifier tests: **8/8 PASS**.
-- The overall push workflow was still **IN_PROGRESS** at the last read; no terminal overall SUCCESS is claimed.
+- The exact-source push run later completed with overall **FAILURE** because the mandatory `validate` job failed at the CORE-owned handover freshness gate. CI-0701, Android, ESP32, ESP8266 and all **14 platform/firmware target jobs** completed **SUCCESS**; update bundle, all v0.4 simulations/candidate validation, production import, signing handoff and publishers were **SKIPPED** after the gate. No terminal overall SUCCESS is claimed. Windows docs-head run [#44517414407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517414407) also failed at the same freshness gate; Windows build and publisher were skipped.
 
 Full `validate` job `135535252602` **FAILED** at the mandatory handover freshness gate:
 
