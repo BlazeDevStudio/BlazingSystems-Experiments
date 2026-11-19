@@ -1058,3 +1058,22 @@ No firmware runtime source, NVS schema, LittleFS format, GPIO/relay policy, poll
 ### Next exact action
 
 PHX-QA independently reviews the poll-signature negative/default-deny fixture and its source extractor. PHX-HARDWARE keeps the NVS pre-commit model scoped to CI evidence; do not infer physical flash durability or an independent witness from this host backend.
+
+
+### Additional UTC15 follow-up — require an actual NVS commit call
+
+**Task:** #177 / #172 — PHX-HARDWARE-owned persistence-lab integrity guard.  
+**PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Exact source/test commit:** `3bd0fa50a39c18e2d0f3f42da2e94cda8fad8b54`  
+**Lab blob:** `2562cdb84135b3e9dab6e531567c6b1619eeeed3`
+
+The dual-store lab already modeled NVS pending versus durable storage and reboot loss, but the first successful latch case did not assert the exact number of `nvs_commit()` calls. Added a one-commit assertion for both ESP32 NVS and ESP8266 EEPROM, plus an ESP32 source mutation that removes the production `nvs_commit()` call. The mutation must be rejected with exit 61 even though the fake same-handle readback can still see pending data.
+
+- Intermediate fixture [commit e52c01e](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e52c01e3b3ca1f53fe7f9b0f63fd6fac5669fcab) had an over-escaped newline in the mutation anchor; quarantine [#44554957782](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44554957782), job `135668414020`, failed at the anchor-count guard after baseline labs passed. This was a fixture-construction failure, not a firmware failure.
+- Corrected fixture: [commit 3bd0fa5](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3bd0fa50a39c18e2d0f3f42da2e94cda8fad8b54).
+- Exact-source quarantine PR [#44555100182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555100182), job `135668928249`: **SUCCESS**. Logs contain `POLL_FAULT_BACKUP_COMMIT_CALL_COUNT_PASS` for ESP32 and ESP8266, `MUTATION_REJECTED ESP32_NVS_SET_BLOB_PREMATURE_DURABILITY exit=60`, `MUTATION_REJECTED ESP32_NVS_COMMIT_OMITTED exit=61`, and `POLL_FAULT_DUAL_STORE_LAB=PASS` for both boards.
+- Exact-head relay/output PR [#44555100184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555100184): source-output-polarity job `135668928721` and ESP32 boot-polarity job `135668929122`: **SUCCESS**.
+- Full PR [#44555100228](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555100228): validation job `135669098419` **FAILED** at the inherited QA-owned `Missing poll signature check`. At this handover read, firmware target jobs passed: 4/13 (esp32, firmware (orangepi_zero3), firmware (ruijie), esp8266); pending: 3 (firmware (x86_64), firmware (orangepi_one), firmware (orangepi_pc)); failed: none; Android remains in_progress. Production import, simulations and update bundle were skipped. This is not a Full CI pass.
+- No firmware runtime source, NVS schema, EEPROM layout, LittleFS format, GPIO/relay policy, poll contract, finance path, shared API or QA-owned file changed. Host tests remain SIMULATED only; no physical NVS/EEPROM flash, power cut, coin acceptor or relay was exercised.
+
+The same-chip dual-store limitation remains: ESP32 NVS and LittleFS, and ESP8266 EEPROM emulation and LittleFS, share one physical flash device. This guard proves that a successful API readback is not substituted for the required commit call; it does not establish an independent anti-rollback witness or reboot durability if both stores fail.
