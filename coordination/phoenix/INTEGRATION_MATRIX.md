@@ -1850,3 +1850,25 @@ Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `blazep
 Experiments AGENTS.md blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f`, Cloud Artifact Policy blob `5e503925750c4e511314e4b7624579d82f60aae2`, and Cloud Storage Handover blob `a15f14cb3baf46424b820e1a921462794422f06b` were read. COE root AGENTS.md returns 404. The private Drive registry v11 and newer corrections remain BLOCKED: Library search/list did not surface them and no Google Drive connector is exposed. No older registry was substituted and no Drive transfer occurred.
 
 No Master Actions run was returned. Direct `git ls-remote` failed because this runtime could not resolve `github.com`; the full Master Python suite is NOT RUN. The Master changes in this run are coordination documentation only. No merge, release, signing, secret provisioning, flash, payment operation, financial migration, or physical test occurred. **PRODUCTION NO-GO.**
+
+## UTC12 later Hardware exact-head supersession — 2026-11-19T12:20:02.270Z
+
+The earlier UTC12 Hardware row is historical. The latest live PR API and owner checkpoint now supersede its #327 head:
+
+- PR #327 latest docs HEAD: `e90c51d733635a891e0f1a8cd875586b43998069`.
+- Exact source/test HEAD: `7db41068f9471565471982030f4c119880908291`.
+- Parent #326/base: `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Latest owner checkpoint: [#7008092747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7008092747); latest PR evidence update: [#7008860355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327#issuecomment-7008860355).
+
+Exact source/test-head CI:
+- Quarantine push [#44521440358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440358) PASS.
+- Quarantine PR [#44521451085](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521451085) PASS, including `SHARED_EXTRACTOR_RAW_STRING_PHASE2_PASS`.
+- Relay/output PR [#44521450941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450941) PASS.
+- Full push [#44521440354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521440354) and PR [#44521450962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44521450962): 13 firmware/platform targets and Android PASS; overall Full FAIL at QA-owned `tests/controllers.sh` assertion `Missing poll signature check`; downstream update/simulation/signing/publishing skipped.
+
+Latest docs-head runs:
+- Quarantine [#44522362978](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362978) PASS.
+- Relay/output [#44522363113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522363113) PASS.
+- Full [#44522362971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44522362971) was still IN_PROGRESS at readback; validate job 135554099687 already FAILS at the same missing poll-signature assertion, while multiple target jobs were still running. Do not report this docs-head Full run as terminal.
+
+The only source change in the latest follow-on is the hardware-owned coin-pulse lab fixture for C++ raw strings, escaped strings/chars, phase-2 split/continued comment delimiters, and source-offset/newline preservation. No firmware runtime behavior changed. QA still owns replacing the obsolete positive-presence assertion with source-exact negative/default-deny checks. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
