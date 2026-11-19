@@ -996,3 +996,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Exact [BlazePwifi build #44565010341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010341) completed SUCCESS for scoped validation, builds, update bundle, and simulations; signer handoff and all publication jobs were skipped.
 - Exact [Windows release #44565010212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010212) passed handover validation and then stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on executed. [ESP32 compatibility #44565010064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010064) completed scoped compatibility against historical Hardware source `984ea8ff65a9` only.
 - No signing, publishing, flashing, deployment, secret handling, or production designation occurred. PR #291 remains draft/unmerged and independently unreviewed; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC17 — supersession audit: provenance cleanup
+
+- Compatible head `110f89985703e5685b193e4398492d3a16b26cdd` already contains another release worker's provenance cleanup; no implementation was duplicated.
+- [Build #44578334060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334060) completed scoped CI successfully; signer handoff and publication jobs were skipped. [Windows #44578334600](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334600) stopped at the intended fail-closed signing-negative control; publisher skipped. [ESP32 #44578334052](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334052) is scoped compatibility only.
+- PR #291 remains draft/unmerged and unreviewed. No production claim or release action occurred. **PRODUCTION NO-GO.**
