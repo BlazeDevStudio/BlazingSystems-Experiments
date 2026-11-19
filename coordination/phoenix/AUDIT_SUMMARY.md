@@ -1155,3 +1155,6 @@ Master branch before this update: `phoenix/master-coordination@2fdb880db21f9037e
 **Execution:** no Master workflow run exists for the current Master head; the workflow inventory contains no dedicated coordination/phoenix test workflow. Direct sparse clone failed because this runtime could not resolve github.com; Master Python suite NOT RUN. This is distinct from the exact role CI listed above.
 
 No subsystem source, role branch, ownership manifest, COE destination, financial state, signer, release, hardware, or payment system changed. No migration/copy/move/merge/flash/physical test/power cut/soak occurred. **PRODUCTION NO-GO.**
+
+
+**UTC19 focused assertion correction:** the first isolated contract harness exposed two assertion-fixture mismatches (expected wording did not match the contract, and the source/test SHA was not yet printed in §6.50). The contract now pins the exact #327 source/test SHA and the regression assertion matches the published wording. Final focused result is recorded in the UTC19 checkpoint; the full Master suite remains NOT RUN.

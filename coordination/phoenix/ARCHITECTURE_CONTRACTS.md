@@ -1007,4 +1007,6 @@ In `sampleCoinPulseEdge()`, the count supplied on the first latch is `pendingPul
 
 **Regression gap / owner action:** the current dual-store lab `poll_fault_dual_store_lab.py` blob `7d211b5e8e47232d08d2a2c625d3212676aee7a9` does not extract/call `sampleCoinPulseEdge()`. The poll-loop lab blob `440efc0fc76e90d22283f62c6605628a6c79342e` covers a release-window edge and unobserved-edge persistence, but no explicit second-ISR-after-sticky-latch count assertion was found. PHX-HARDWARE should add a two-board host regression proving the persisted first-fault snapshot stays unchanged after later edges and admission/output remain denied; PHX-QA independently reviews it; PHX-CORE confirms the count is never treated as a financial quantity. This section resolves the interpretation for existing V1 records, not owner approval of a future schema.
 
+**Exact #327 source/test SHA:** `64ec57daf161a0b4517d350f4f08bee55c0cabec`. This pins the host-lab implementation/handover reviewed for the interpretation above; it does not establish physical acceptance.
+
 Evidence is source inspection and hosted simulated labs only. No physical device, flash, financial state, record migration, or production action is authorized. **PRODUCTION NO-GO.**

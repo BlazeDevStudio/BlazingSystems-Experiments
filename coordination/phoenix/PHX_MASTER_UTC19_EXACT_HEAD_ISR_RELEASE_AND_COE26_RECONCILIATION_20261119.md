@@ -59,3 +59,8 @@ No file copy, move, overwrite, cherry-pick, rebase, merge or staging occurred. L
 No subsystem source, owner branch, manifest, financial state, signer, release, router, payment system or hardware was modified. No physical tests, power cuts or soak were performed. Production remains **NO-GO** pending independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
 
 Next: QA corrects the poll fixture; PISONET fixes its own Windows self-test; HARDWARE adds the post-latch edge-count test; CORE/QA review the V1 count interpretation; CORE and COE integration decide site-prefix authority; COE integration executes the five #26 workflows on a reviewed exact candidate; RELEASE/infra provides a Bubblewrap-capable runner; repository admin verifies branch protection; registry custodian restores authorized v11 access.
+
+
+## Validation note
+
+The first isolated assertion attempt failed two documentation-string checks because the test expected a different wording and §6.50 did not yet include the exact #327 source/test SHA. Both were corrected in a follow-up Master commit before the final checkpoint. The focused assertion was rerun against the corrected section; the full repository suite remains NOT RUN.

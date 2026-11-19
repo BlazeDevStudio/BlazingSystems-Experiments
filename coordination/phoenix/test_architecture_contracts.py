@@ -94,7 +94,7 @@ class PollResponseArchitectureTests(unittest.TestCase):
             "first-fault snapshot",
             "lower bound",
             "not an exact total",
-            "not use this field to credit time",
+            "never use this field to credit time",
             "no explicit completeness flag",
             "64ec57daf161a0b4517d350f4f08bee55c0cabec",
         ):
