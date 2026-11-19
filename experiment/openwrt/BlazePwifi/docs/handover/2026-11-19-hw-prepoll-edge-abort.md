@@ -872,3 +872,31 @@ No NVS key/schema, config serialization, GPIO, relay, coin, poll, register/poll 
 - Current PR #327 remains OPEN / DRAFT / UNMERGED; base is PR #326 head 58c558fb6a237935214621adc3dee65a10fe1a51.
 
 No physical NVS, relay, acceptor, coin, power cut, migration, signer, customer money, release or deployment was exercised. This is source-extracted failure-injection and CI evidence only; hardware acceptance remains NOT TESTED.
+
+
+## UTC09 — reuse the shared C/C++ source extractor in the ESP32 NVS lab (2026-11-19)
+
+**Scope:** hardware-owned test-harness cleanup only; no firmware runtime or test-owner boundary change.  
+**Candidate:** [PR #327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327), OPEN / DRAFT / UNMERGED.  
+**Base:** PR #326 head `58c558fb6a237935214621adc3dee65a10fe1a51`.  
+**Source/test head:** `b2a9e0c525caefd8ab18e9ef4c46266960d033cf`.
+
+### Cleanup
+
+`nvs_string_readback_lab.py` previously carried a local brace-counting extractor that did not mask C/C++ comments or literals. The same branch already contains the board-agnostic `firmware_lab_source.extract_function()`, which masks comments, escaped literals, raw strings and line splices while preserving original offsets/newlines.
+
+The NVS lab now imports that shared helper, extracts `nvsStringMatchesStored` and `configFieldsMatchStored` by actual function definition, and no longer maintains a second parser. A small self-test places brace decoys in a string, line comment, block comment and character literal, with a following function as a boundary sentinel.
+
+### Test and correction history
+
+- Initial refactor commit `27e12e775a24251d94fb9ddbd1f48fdd4f2bd976` exposed an implementation error in the new probe: it encoded literal backslash-n sequences instead of newline escapes. Quarantine run [#44494664424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44494664424), job `135458696960`, failed at `verify_shared_extractor()` with `unbalanced C/C++ block`. This was a harness-probe defect, not an expected source RED; no firmware source was changed by that commit.
+- Corrected test commit: `b2a9e0c525caefd8ab18e9ef4c46266960d033cf`.
+- Exact-head quarantine [#44494823962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44494823962), job `135459210785`: **SUCCESS**. Logs include `SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS` and `NVS_STRING_READBACK_EXPLICIT_STATUS_PASS` (5/5 read failures, 5/5 length failures, empty and mismatch controls). Existing EEPROM, poll-edge, pending-write, pulse-capture, digest-failure and Mbed TLS selector labs also passed.
+- Exact-head relay/output [#44494824222](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44494824222): ESP32 boot-polarity job `135459212530` and source-output-polarity job `135459212984` **SUCCESS**.
+- Full build [#44494824116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44494824116) was PENDING at this handover update; no Full result is claimed.
+
+### Boundaries
+
+The NVS, poll, EEPROM and coin-ingress labs are source-extracted host/fake-I/O simulations. Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`. No .ino runtime, NVS schema, wire contract, GPIO, relay, coin, finance, QA-owned test, Release workflow, COE destination, physical device, migration, signer, merge or release was changed.
+
+**Next exact action:** read the terminal Full result for the new docs-head commit, then request PHX-QA independent review of the NVS per-key write/readback matrix and retain the existing poll-signature default-deny blocker.
