@@ -39,6 +39,7 @@ def main() -> int:
         "contents: read",
         "cancel-in-progress: false",
         "workflow_dispatch:",
+        "pull_request:",
     )
     missing = [value for value in required if value not in content]
     if missing:
