@@ -362,7 +362,20 @@ def verify_shared_extractor():
     actual = extract_function(probe, "sample")
     if actual != expected:
         raise RuntimeError("shared extractor truncated at a C++ comment/literal brace")
+    attribute_probe = (
+        "void ICACHE_RAM_ATTR marked() {\\n"
+        "  /* } */\\n"
+        "}\\n"
+        "void IRAM_ATTR next() { return; }\\n"
+    )
+    expected_marked = attribute_probe.split("\\nvoid IRAM_ATTR next", 1)[0]
+    if extract_function(attribute_probe, "marked") != expected_marked:
+        raise RuntimeError("shared extractor failed post-return ICACHE_RAM_ATTR function")
+    if extract_function(attribute_probe, "next") != "void IRAM_ATTR next() { return; }":
+        raise RuntimeError("shared extractor failed post-return IRAM_ATTR function")
     print("SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS")
+    print("SHARED_EXTRACTOR_ISR_ATTRIBUTE_ORDER_PASS")
+
 
 
 def main():

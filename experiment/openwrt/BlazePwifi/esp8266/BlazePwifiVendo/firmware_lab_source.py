@@ -170,7 +170,8 @@ def extract_functions(source: str, name: str):
     masked = mask_non_code(source)
     signature = re.compile(
         rf"(?m)^[ \t]*(?:(?:{_FUNCTION_MODIFIERS})\s+)*"
-        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
+        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+"
+        rf"(?:(?:{_FUNCTION_MODIFIERS})\s+)*{re.escape(name)}"
         r"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
     )
     found = []
