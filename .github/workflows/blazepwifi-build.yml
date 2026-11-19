@@ -988,7 +988,7 @@ jobs:
 
 
   production_import_signed_apk:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[import-sign]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[import-sign]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -1038,7 +1038,7 @@ jobs:
           GIT_ASKPASS="$RUNNER_TEMP/git-askpass.sh" GIT_TERMINAL_PROMPT=0 git push origin HEAD:blazepwifi-v0.3.0-production
 
   publish_prerelease:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && contains(github.event.head_commit.message, '[release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && github.ref_protected == true && vars.BLAZEPWIFI_PRERELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[release]')
     needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
     runs-on: ubuntu-latest
     permissions:
@@ -1091,7 +1091,7 @@ jobs:
 
 
   publish_release:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[release]')
     needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
     runs-on: ubuntu-latest
     permissions:
@@ -1175,7 +1175,7 @@ jobs:
 
   # Executable lab-only release, never a production v0.6.0.
   publish_v060_lab_preview:
-    if: github.ref == 'refs/heads/blazepwifi-v0.6.0-audit-foundation' && contains(github.event.head_commit.message, '[v060-lab-release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.6.0-audit-foundation' && github.ref_protected == true && vars.BLAZEPWIFI_LAB_PREVIEW_APPROVED == 'true' && contains(github.event.head_commit.message, '[v060-lab-release]')
     needs: [v04_candidate_gate, firmware_optional]
     runs-on: ubuntu-latest
     timeout-minutes: 30
