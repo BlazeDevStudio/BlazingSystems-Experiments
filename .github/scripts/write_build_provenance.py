@@ -74,29 +74,80 @@ def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
     )
 
 
-def _open_regular(path: Path) -> tuple[int, os.stat_result]:
-    try:
-        before = path.lstat()
-    except OSError as exc:
-        raise ProvenanceError(f"cannot stat {path}: {exc}") from exc
-    if not stat.S_ISREG(before.st_mode):
-        raise ProvenanceError(f"expected a regular non-symlink file: {path}")
+def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
+    """Open a regular file without following symlinks in any path component.
+
+    Parent directory descriptors pin the traversal. O_NOFOLLOW on the final
+    file alone is insufficient because it still follows symlinked parents.
+    """
+    candidate = Path(path)
+    if ".." in candidate.parts:
+        raise ProvenanceError(f"parent-directory traversal is not allowed: {path}")
+
+    absolute = Path(os.path.abspath(candidate))
+    parts = absolute.parts
+    if not absolute.anchor or len(parts) < 2:
+        raise ProvenanceError(f"expected a file path below a directory: {path}")
+
     nofollow = getattr(os, "O_NOFOLLOW", None)
-    if nofollow is None:
-        raise ProvenanceError("O_NOFOLLOW is unavailable; refusing artifact admission")
+    directory = getattr(os, "O_DIRECTORY", None)
+    dir_fd_support = getattr(os, "supports_dir_fd", set())
+    if (
+        nofollow is None
+        or directory is None
+        or os.open not in dir_fd_support
+        or os.stat not in dir_fd_support
+    ):
+        raise ProvenanceError(
+            "descriptor-relative O_NOFOLLOW file access is unavailable; refusing artifact admission"
+        )
+
+    cloexec = getattr(os, "O_CLOEXEC", 0)
+    directory_flags = os.O_RDONLY | directory | nofollow | cloexec
+    file_flags = os.O_RDONLY | nofollow | cloexec
+    parent_fd = -1
+    fd = -1
     try:
-        fd = os.open(path, os.O_RDONLY | nofollow)
+        parent_fd = os.open(absolute.anchor, directory_flags)
+        for component in parts[1:-1]:
+            next_fd = os.open(component, directory_flags, dir_fd=parent_fd)
+            metadata = os.fstat(next_fd)
+            if not stat.S_ISDIR(metadata.st_mode):
+                os.close(next_fd)
+                raise ProvenanceError(
+                    f"expected a real directory path component: {component}"
+                )
+            os.close(parent_fd)
+            parent_fd = next_fd
+
+        leaf = parts[-1]
+        before = os.stat(leaf, dir_fd=parent_fd, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode):
+            raise ProvenanceError(f"expected a regular non-symlink file: {path}")
+
+        fd = os.open(leaf, file_flags, dir_fd=parent_fd)
         opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
+            os.close(fd)
+            fd = -1
+            raise ProvenanceError(f"file identity changed while opening: {path}")
+        return fd, opened, parent_fd, leaf
     except OSError as exc:
+        if fd >= 0:
+            os.close(fd)
+        if parent_fd >= 0:
+            os.close(parent_fd)
         raise ProvenanceError(f"cannot safely open {path}: {exc}") from exc
-    if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
-        os.close(fd)
-        raise ProvenanceError(f"file identity changed while opening: {path}")
-    return fd, opened
+    except Exception:
+        if fd >= 0:
+            os.close(fd)
+        if parent_fd >= 0:
+            os.close(parent_fd)
+        raise
 
 
 def _read_regular(path: Path) -> bytes:
-    fd, before = _open_regular(path)
+    fd, before, parent_fd, leaf = _open_regular(path)
     chunks: list[bytes] = []
     total = 0
     try:
@@ -107,11 +158,12 @@ def _read_regular(path: Path) -> bytes:
             chunks.append(block)
             total += len(block)
         after = os.fstat(fd)
-        path_after = path.lstat()
+        path_after = os.stat(leaf, dir_fd=parent_fd, follow_symlinks=False)
     except OSError as exc:
         raise ProvenanceError(f"cannot read {path}: {exc}") from exc
     finally:
         os.close(fd)
+        os.close(parent_fd)
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while reading: {path}")
     if total != after.st_size:
@@ -120,7 +172,7 @@ def _read_regular(path: Path) -> bytes:
 
 
 def _hash_regular(path: Path) -> tuple[str, int]:
-    fd, before = _open_regular(path)
+    fd, before, parent_fd, leaf = _open_regular(path)
     digest = hashlib.sha256()
     total = 0
     try:
@@ -131,11 +183,12 @@ def _hash_regular(path: Path) -> tuple[str, int]:
             digest.update(block)
             total += len(block)
         after = os.fstat(fd)
-        path_after = path.lstat()
+        path_after = os.stat(leaf, dir_fd=parent_fd, follow_symlinks=False)
     except OSError as exc:
         raise ProvenanceError(f"cannot hash {path}: {exc}") from exc
     finally:
         os.close(fd)
+        os.close(parent_fd)
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while hashing: {path}")
     if total != after.st_size:
