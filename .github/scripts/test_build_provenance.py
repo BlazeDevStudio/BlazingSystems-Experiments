@@ -478,6 +478,64 @@ class BuildProvenanceTests(unittest.TestCase):
         )
         self.assertEqual(recorded["sha256"], original_payload_digest)
 
+
+    def test_artifact_parent_swap_after_validation_cannot_redirect_manifest_write(self):
+        original_artifact = self.artifact
+        parent = self.root / "artifact-parent"
+        parent.mkdir()
+        self.artifact = parent / "artifact"
+        self.artifact.mkdir()
+        work = self.openwrt_fixture()
+
+        moved_parent = self.root / "artifact-parent-original"
+        external_parent = self.root / "artifact-parent-external"
+        external_parent.mkdir()
+        external_artifact = external_parent / "artifact"
+        external_artifact.mkdir()
+        original_checksums = (self.artifact / "SHA256SUMS").read_bytes()
+        original_source_context = provenance._source_context
+        swapped = {"value": False}
+
+        def source_context_then_swap(environment, source_paths):
+            result = original_source_context(environment, source_paths)
+            parent.rename(moved_parent)
+            parent.symlink_to(external_parent, target_is_directory=True)
+            swapped["value"] = True
+            return result
+
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        try:
+            with patch.object(
+                provenance, "_source_context", side_effect=source_context_then_swap
+            ):
+                with self.assertRaises(provenance.ProvenanceError):
+                    provenance.write_provenance(args, env=self.env)
+
+            self.assertTrue(swapped["value"], "the deterministic parent swap must execute")
+            self.assertFalse(
+                (external_artifact / "BUILD-PROVENANCE.json").exists(),
+                "a replaced artifact parent must never redirect provenance output",
+            )
+            self.assertFalse(
+                (external_artifact / "SHA256SUMS").exists(),
+                "a replaced artifact parent must never redirect checksum output",
+            )
+            self.assertFalse(
+                (moved_parent / "artifact" / "BUILD-PROVENANCE.json").exists(),
+                "a changed artifact path must fail before publishing provenance",
+            )
+            self.assertEqual(
+                (moved_parent / "artifact" / "SHA256SUMS").read_bytes(),
+                original_checksums,
+            )
+        finally:
+            self.artifact = original_artifact
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
