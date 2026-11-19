@@ -6,10 +6,12 @@
 #include <LittleFS.h>
 #include <string.h>
 #include <mbedtls/version.h>
-#if MBEDTLS_VERSION_MAJOR >= 4
+#if MBEDTLS_VERSION_MAJOR == 4
 #include <psa/crypto.h>
-#else
+#elif MBEDTLS_VERSION_MAJOR == 3
 #include <mbedtls/sha256.h>
+#else
+#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"
 #endif
 #include <esp_system.h>
 
@@ -85,7 +87,7 @@ String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
-#if MBEDTLS_VERSION_MAJOR >= 4
+#if MBEDTLS_VERSION_MAJOR == 4
   // Mbed TLS 4 removes the legacy SHA module API; keep the same SHA-256
   // digest bytes through the supported PSA one-shot hash interface.
   if(psa_crypto_init()!=PSA_SUCCESS) return String();
@@ -99,7 +101,7 @@ String hexDigest(const String &s){
     &digestLength
   );
   if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();
-#else
+#elif MBEDTLS_VERSION_MAJOR == 3
   mbedtls_sha256_context c;
   mbedtls_sha256_init(&c);
   int status=mbedtls_sha256_starts(&c,0);
