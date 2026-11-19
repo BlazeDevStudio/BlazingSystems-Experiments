@@ -8,28 +8,31 @@ old fallback sentinel. No credentials, board, GPIO, relay, or real NVS used.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266" / "BlazePwifiVendo"))
+from firmware_lab_source import extract_function  # noqa: E402
+
 SKETCH = ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 
 
-def extract(source: str, signature: str, required: bool = True) -> str:
-    start = source.find(signature)
-    if start < 0:
-        if required:
-            raise RuntimeError(f"missing production function: {signature}")
-        return ""
-    brace = source.find("{", start)
-    depth = 0
-    for pos in range(brace, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:pos + 1]
-    raise RuntimeError(f"unbalanced production function: {signature}")
+def verify_shared_extractor() -> None:
+    probe = (
+        'bool sample() {\\n'
+        '  const char *brace = "}";\\n'
+        '  // }\\n'
+        '  /* { */\\n'
+        '  return brace[0] == \' }\';\\n'
+        '}\\n'
+        'bool after() { return false; }\\n'
+    )
+    expected = probe.split("\\nbool after", 1)[0]
+    actual = extract_function(probe, "sample")
+    if actual != expected:
+        raise RuntimeError("shared extractor did not preserve the complete function around brace decoys")
+    print("SHARED_EXTRACTOR_COMMENT_LITERAL_BRACE_PASS")
 
 
 CPP = r'''
@@ -192,8 +195,9 @@ int main() {
 
 def main() -> None:
     source = SKETCH.read_text(encoding="utf-8")
-    helper = extract(source, "bool nvsStringMatchesStored(", required=False)
-    match = extract(source, "bool configFieldsMatchStored(const char **failedField){")
+    verify_shared_extractor()
+    helper = extract_function(source, "nvsStringMatchesStored", required=False)
+    match = extract_function(source, "configFieldsMatchStored")
     program = CPP.replace("@@HELPER@@", helper).replace("@@MATCH@@", match)
 
     with tempfile.TemporaryDirectory(prefix="phx-nvs-string-readback-") as temp:
