@@ -1183,3 +1183,33 @@ In both sketches, `sampleCoinPulseEdge()` deliberately avoids calling `latchPoll
 - Exact source/test SHA: `64ec57daf161a0b4517d350f4f08bee55c0cabec`.
 - Physical coin acceptor/relay, electrical pulse conditioning, 150 power cuts, 30-device 24-hour soak, independent witness, financial v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ESTABLISHED. **PRODUCTION NO-GO**.
 
+
+
+## UTC19 — dual-store lab root-sentinel negative-path coverage (2026-11-19)
+
+**Exact source/test SHA:** `8282acf3c4e64929bc6021c0f25f45eb942ef2f0`  
+**Current branch head at this checkpoint:** `8282acf3c4e64929bc6021c0f25f45eb942ef2f0`  
+**PR:** #327 OPEN / DRAFT / UNMERGED.
+
+### Change
+
+The hardware-owned `poll_fault_dual_store_lab.py` now verifies the shared `firmware_lab_source.find_repo_root()` contract in both directions:
+
+1. A partial checkout containing only the ESP32 sketch sentinel is rejected.
+2. A complete two-board checkout is found when invoked from a nested file path.
+3. A temporary mutated copy of the helper that checks only the ESP32 sentinel is rejected by the failure-injection probe (`MUTATION_REJECTED ROOT_DISCOVERY_SINGLE_BOARD_SENTINEL`).
+
+The helper and firmware sketches were not modified. This is test-only hardening; no runtime firmware, API, persistence schema, finance, relay or coin-admission behavior changed.
+
+### Exact CI
+
+- Quarantine PR [#44595500763](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595500763), job `135812556301`: **SUCCESS**. Logs contain `POLL_FAULT_LAB_EXTERNAL_CWD_PASS`, `MUTATION_REJECTED ROOT_DISCOVERY_SINGLE_BOARD_SENTINEL`, and `POLL_FAULT_EXTRACTOR_SELFTEST=PASS`; existing ESP32/ESP8266 persistence, EEPROM-read-recovery, poll-edge and output-polarity labs also passed.
+- Relay/output PR [#44595500399](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595500399): ESP32 boot-polarity job `135812550052` **SUCCESS**; source-output job `135812550468` **SUCCESS**.
+- First test-harness commit [`2c0edc9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2c0edc9de0cf19290288ad6c251697e252415cfe) failed quarantine [#44595360527](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595360527), job `135812064262`, because the generated child probe contained literal backslash-n text instead of line breaks. The probe was corrected in [`8282acf`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8282acf3c4e64929bc6021c0f25f45eb942ef2f0); this was a test-harness construction error, not a firmware defect.
+- Full push [#44595489578](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44595489578), validation job `135812711446`: **FAILURE** at QA-owned `Missing poll signature check` in `tests/controllers.sh`. Downstream simulations/accounting/replay/update/signing were skipped. Target jobs were still running at the last observation; do not claim a complete target matrix from this run.
+
+### Cross-role decision still required
+
+The previous UTC18 audit remains unresolved: once `journalRecoveryRequired` is already latched, later ISR deltas are not added to the existing persistent `pulseEdges` record. This can make the stored count a lower bound rather than a complete count. MASTER/CORE/QA must decide whether to define the field as a lower bound or authorize an explicit completeness marker/schema change. No firmware or persistence-format change was made pending that decision.
+
+**Evidence classification:** SIMULATED / CI VERIFIED only. Physical coin acceptor, relay, flash power-loss behavior and hardware acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
