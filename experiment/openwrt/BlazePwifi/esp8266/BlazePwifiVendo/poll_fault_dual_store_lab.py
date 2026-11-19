@@ -526,9 +526,38 @@ int main(){
   loadPollPulseFaultLatch();
   assert(!journalRecoveryRequired);
   std::cout << "DUAL_STORE_FAILURE_LIMITATION=EXPECTED_CURRENT_BOOT_ONLY\n";
+  // A successful nvs_set_blob/EEPROM.put is not a durability receipt:
+  // the documented NVS contract requires a successful nvs_commit, and a failed
+  // commit may leave no durable marker after reboot when LittleFS also fails.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  fsMarkerWriteResult=false;
+  COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP
+  latchPollPulseFault(12);
+  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
+     !pollFaultBackupWriteFailed) return 41;
+  COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR
+  rebootStorage();
+  resetRuntime();
+  loadPollPulseFaultLatch();
+  if(journalRecoveryRequired){
+    std::cerr<<"COMMIT_FAILURE_BEFORE_PERSISTENCE_WAS_MISTAKEN_FOR_DURABILITY board=BOARD_NAME"<<std::endl;
+    return 42;
+  }
+  std::cout<<"COMMIT_FAILURE_BEFORE_PERSISTENCE_REBOOT_LIMITATION=REPRODUCED board=BOARD_NAME"<<std::endl;
+
   std::cout << "POLL_FAULT_DUAL_STORE_LAB=PASS board=BOARD_NAME\n";
 }
 """
+    if board == "ESP32":
+        commit_fail_before_persistence_setup = "nvsFailCommit=true;"
+        commit_fail_before_persistence_clear = "nvsFailCommit=false;"
+    else:
+        commit_fail_before_persistence_setup = "EEPROM.failCommit=true;"
+        commit_fail_before_persistence_clear = "EEPROM.failCommit=false;"
+    main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP", commit_fail_before_persistence_setup)
+    main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR", commit_fail_before_persistence_clear)
     main = main.replace("NVS_READ_ERROR_SCENARIO", nvs_read_error)
     raw_flash_read_error = r"""
   // EEPROM.begin() ignores a failed flashRead. Its RAM image may look erased;
