@@ -15,12 +15,35 @@ ROOT = Path.cwd()
 ESP32 = ROOT / "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 ESP8266 = ROOT / "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
 
+if "--root-probe" in sys.argv:
+    if ESP32.is_file() and ESP8266.is_file():
+        print("LAB_ROOT_EXTERNAL_CWD_PASS")
+        raise SystemExit(0)
+    print(f"LAB_ROOT_EXTERNAL_CWD_FAIL root={ROOT}", file=sys.stderr)
+    raise SystemExit(1)
+
 def constants(source: str, names):
     selected = []
     for line in source.splitlines():
         if line.lstrip().startswith("static const ") and any(name in line for name in names):
             selected.append(line)
     return "\n".join(selected)
+
+def test_external_cwd_invocation():
+    script = Path(__file__).resolve()
+    with tempfile.TemporaryDirectory(prefix="phx-lab-root-cwd-") as outside_repo:
+        result = subprocess.run(
+            [sys.executable, str(script), "--root-probe"],
+            cwd=outside_repo,
+            text=True,
+            capture_output=True,
+        )
+    if result.returncode != 0 or "LAB_ROOT_EXTERNAL_CWD_PASS" not in result.stdout:
+        print(result.stdout, end="")
+        print(result.stderr, file=sys.stderr, end="")
+        raise AssertionError("dual-store lab must locate both board sketches independently of the caller's working directory")
+    print("POLL_FAULT_LAB_EXTERNAL_CWD_PASS")
+
 
 def test_extractors():
     sample = r'''
@@ -701,6 +724,7 @@ def run_esp32_precommit_persistence_mutation(path: Path):
 
 
 if __name__ == "__main__":
+    test_external_cwd_invocation()
     test_extractors()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
