@@ -782,3 +782,10 @@ The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db3243
 COE RELEASE #44 is a release-owned first-boot ULA implementation candidate, not a new migration route. Its current head `582fd5d5e83e36b36546ac28534740298ba94af4` is based on `1a5be48...`; current COE #35 is `5047af8...`. The exact compare is diverged 15 ahead / 25 behind. Its per-appliance random first-boot ULA does not establish one shared prefix for multiple appliances at the same site. Keep #44 and #26 draft; PHX-RELEASE owns history-preserving reconciliation, CORE/COE owner selects site authority, and QA independently verifies.
 
 No source or destination file was copied, moved, overwritten, rebased, cherry-picked, merged or staged. No route promotion is proposed.
+
+
+### UTC11 exact Hardware provenance — COE #26 remains review-only
+
+Current #327 source and #26 destination sketch blobs differ on both boards: ESP32 `528187f68aaad7d76a690bbf1cbe338165ad3839` (64,308 bytes) versus `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (18,505 bytes); ESP8266 `aa021588b610f928f7af4f5fefb3f32114e6b5ae` (68,127 bytes) versus `c8be98f72596681e36a3ad1f8939bf8046c96887` (18,394 bytes). Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at `1ee55b94183417be977ca287cd7391f9a6f7e721`, but source `BlazePwifi/NOTICE.md`, destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
+
+The source has 46 scripts in `experiment/openwrt/BlazePwifi/tests/` plus 22 board-local Python labs and one shared extraction helper. COE #26 Hardware has one shell test, blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`; it and the legacy source hardening script still require positive `response_sig`, `|register|` and `|poll|` markers, which conflict with current #327 default-deny behavior. No test import equivalence is established. Five #26 workflows remain queued with zero jobs. No staging/copy/move is authorized.
