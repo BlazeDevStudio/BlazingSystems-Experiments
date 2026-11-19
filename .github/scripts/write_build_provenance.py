@@ -9,7 +9,7 @@ import os
 import re
 import stat
 import subprocess
-import tempfile
+import secrets
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -196,30 +196,71 @@ def _hash_regular(path: Path) -> tuple[str, int]:
     return digest.hexdigest(), total
 
 
-def _require_directory(path: Path, label: str) -> Path:
+def _open_directory(path: Path, label: str) -> tuple[Path, int]:
+    """Open a directory through pinned no-follow descriptors for every component."""
     candidate = Path(path)
     if ".." in candidate.parts:
         raise ProvenanceError(f"{label} contains parent-directory traversal: {path}")
 
-    absolute = candidate if candidate.is_absolute() else Path.cwd() / candidate
-    current = Path(absolute.anchor)
-    components = absolute.parts[1:]
+    absolute = Path(os.path.abspath(candidate))
+    if not absolute.anchor:
+        raise ProvenanceError(f"{label} must be an absolute directory path: {path}")
+
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    directory = getattr(os, "O_DIRECTORY", None)
+    if (
+        nofollow is None
+        or directory is None
+        or os.open not in getattr(os, "supports_dir_fd", set())
+    ):
+        raise ProvenanceError(
+            "descriptor-relative O_NOFOLLOW directory access is unavailable; refusing artifact admission"
+        )
+
+    flags = os.O_RDONLY | directory | nofollow | getattr(os, "O_CLOEXEC", 0)
+    current_fd = -1
     try:
-        for component in components:
-            if component in ("", ".", ".."):
-                raise ProvenanceError(f"{label} contains an unsafe path component: {component!r}")
-            current = current / component
-            metadata = current.lstat()
+        current_fd = os.open(absolute.anchor, flags)
+        for component in absolute.parts[1:]:
+            next_fd = os.open(component, flags, dir_fd=current_fd)
+            metadata = os.fstat(next_fd)
             if not stat.S_ISDIR(metadata.st_mode):
+                os.close(next_fd)
                 raise ProvenanceError(
-                    f"{label} path component must be a real directory, not a symlink: {current}"
+                    f"{label} path component must be a real directory: {component}"
                 )
-        if not components:
-            metadata = current.lstat()
-            if not stat.S_ISDIR(metadata.st_mode):
-                raise ProvenanceError(f"{label} must be a real directory: {current}")
+            os.close(current_fd)
+            current_fd = next_fd
+        return absolute, current_fd
     except OSError as exc:
-        raise ProvenanceError(f"{label} is unavailable: {current}: {exc}") from exc
+        if current_fd >= 0:
+            os.close(current_fd)
+        raise ProvenanceError(
+            f"{label} is unavailable or contains a symlink: {path}: {exc}"
+        ) from exc
+    except Exception:
+        if current_fd >= 0:
+            os.close(current_fd)
+        raise
+
+
+def _verify_directory_identity(path: Path, pinned_fd: int, label: str) -> None:
+    """Fail if the admitted path no longer names the pinned directory inode."""
+    current_path, current_fd = _open_directory(path, label)
+    try:
+        pinned = os.fstat(pinned_fd)
+        current = os.fstat(current_fd)
+        if (pinned.st_dev, pinned.st_ino) != (current.st_dev, current.st_ino):
+            raise ProvenanceError(
+                f"{label} changed during provenance admission: {current_path}"
+            )
+    finally:
+        os.close(current_fd)
+
+
+def _require_directory(path: Path, label: str) -> Path:
+    absolute, directory_fd = _open_directory(path, label)
+    os.close(directory_fd)
     return path
 
 
@@ -257,36 +298,186 @@ def _parse_checksum_text(raw: bytes, label: str) -> dict[str, str]:
     return entries
 
 
-def _inventory(root: Path) -> dict[str, dict[str, Any]]:
+def _hash_regular_at(parent_fd: int, name: str, display_path: str) -> tuple[str, int]:
+    """Hash one regular file relative to a pinned parent directory descriptor."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None or os.open not in getattr(os, "supports_dir_fd", set()):
+        raise ProvenanceError(
+            "descriptor-relative O_NOFOLLOW file access is unavailable; refusing artifact admission"
+        )
+    try:
+        before = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode):
+            raise ProvenanceError(f"expected a regular non-symlink file: {display_path}")
+        fd = os.open(
+            name,
+            os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0),
+            dir_fd=parent_fd,
+        )
+    except OSError as exc:
+        raise ProvenanceError(f"cannot safely open {display_path}: {exc}") from exc
+
+    digest = hashlib.sha256()
+    total = 0
+    try:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
+            raise ProvenanceError(f"file identity changed while opening: {display_path}")
+        while True:
+            block = os.read(fd, 1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
+            total += len(block)
+        after = os.fstat(fd)
+        path_after = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    except OSError as exc:
+        raise ProvenanceError(f"cannot hash {display_path}: {exc}") from exc
+    finally:
+        os.close(fd)
+
+    if not _same_file_state(before, after) or not _same_file_state(after, path_after):
+        raise ProvenanceError(f"file changed while hashing: {display_path}")
+    if total != after.st_size:
+        raise ProvenanceError(f"short or changing hash read: {display_path}")
+    return digest.hexdigest(), total
+
+
+def _read_regular_at(parent_fd: int, name: str, display_path: str) -> bytes:
+    """Read one regular file relative to a pinned parent directory descriptor."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None or os.open not in getattr(os, "supports_dir_fd", set()):
+        raise ProvenanceError(
+            "descriptor-relative O_NOFOLLOW file access is unavailable; refusing artifact admission"
+        )
+    try:
+        before = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode):
+            raise ProvenanceError(f"expected a regular non-symlink file: {display_path}")
+        fd = os.open(
+            name,
+            os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0),
+            dir_fd=parent_fd,
+        )
+    except OSError as exc:
+        raise ProvenanceError(f"cannot safely open {display_path}: {exc}") from exc
+
+    chunks: list[bytes] = []
+    total = 0
+    try:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
+            raise ProvenanceError(f"file identity changed while opening: {display_path}")
+        while True:
+            block = os.read(fd, 1024 * 1024)
+            if not block:
+                break
+            chunks.append(block)
+            total += len(block)
+        after = os.fstat(fd)
+        path_after = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    except OSError as exc:
+        raise ProvenanceError(f"cannot read {display_path}: {exc}") from exc
+    finally:
+        os.close(fd)
+
+    if not _same_file_state(before, after) or not _same_file_state(after, path_after):
+        raise ProvenanceError(f"file changed while reading: {display_path}")
+    if total != after.st_size:
+        raise ProvenanceError(f"short or changing read: {display_path}")
+    return b"".join(chunks)
+
+
+def _inventory_at(root_fd: int) -> dict[str, dict[str, Any]]:
+    """Inventory an artifact tree without resolving paths outside the pinned root."""
     files: dict[str, dict[str, Any]] = {}
-    for current, dirnames, filenames in os.walk(root, topdown=True, followlinks=False):
-        base = Path(current)
-        dirnames.sort()
-        filenames.sort()
-        for dirname in dirnames:
-            directory = base / dirname
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if (
+        directory_flag is None
+        or nofollow is None
+        or os.open not in getattr(os, "supports_dir_fd", set())
+        or os.stat not in getattr(os, "supports_dir_fd", set())
+    ):
+        raise ProvenanceError(
+            "descriptor-relative directory inventory is unavailable; refusing artifact admission"
+        )
+    directory_flags = (
+        os.O_RDONLY | directory_flag | nofollow | getattr(os, "O_CLOEXEC", 0)
+    )
+
+    def walk(directory_fd: int, prefix: str) -> None:
+        before_directory = os.fstat(directory_fd)
+        try:
+            names = sorted(os.listdir(directory_fd))
+        except OSError as exc:
+            raise ProvenanceError(f"cannot list pinned artifact directory: {exc}") from exc
+
+        for name in names:
+            if name in ("", ".", "..") or "/" in name or "\x00" in name:
+                raise ProvenanceError(f"unsafe artifact entry name: {name!r}")
+            relative = f"{prefix}/{name}" if prefix else name
             try:
-                metadata = directory.lstat()
+                metadata = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
             except OSError as exc:
-                raise ProvenanceError(f"cannot inspect artifact directory {directory}: {exc}") from exc
-            if not stat.S_ISDIR(metadata.st_mode):
-                raise ProvenanceError(f"symlink or non-directory inside artifact tree: {directory}")
-        for filename in filenames:
-            path = base / filename
-            relative = path.relative_to(root).as_posix()
-            if relative == "SHA256SUMS":
-                continue
-            _normalize_checksum_path(relative)
-            digest, size = _hash_regular(path)
-            files[relative] = {"path": relative, "size_bytes": size, "sha256": digest}
+                raise ProvenanceError(f"cannot inspect artifact entry {relative}: {exc}") from exc
+
+            if stat.S_ISDIR(metadata.st_mode):
+                try:
+                    child_fd = os.open(name, directory_flags, dir_fd=directory_fd)
+                except OSError as exc:
+                    raise ProvenanceError(
+                        f"cannot safely open artifact directory {relative}: {exc}"
+                    ) from exc
+                try:
+                    opened = os.fstat(child_fd)
+                    if (
+                        not stat.S_ISDIR(opened.st_mode)
+                        or (metadata.st_dev, metadata.st_ino) != (opened.st_dev, opened.st_ino)
+                    ):
+                        raise ProvenanceError(
+                            f"artifact directory changed while opening: {relative}"
+                        )
+                    walk(child_fd, relative)
+                    after = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+                    if not _same_file_state(metadata, after):
+                        raise ProvenanceError(
+                            f"artifact directory changed while inventorying: {relative}"
+                        )
+                finally:
+                    os.close(child_fd)
+            elif stat.S_ISREG(metadata.st_mode):
+                if relative == "SHA256SUMS":
+                    continue
+                _normalize_checksum_path(relative)
+                digest, size = _hash_regular_at(directory_fd, name, relative)
+                files[relative] = {
+                    "path": relative,
+                    "size_bytes": size,
+                    "sha256": digest,
+                }
+            else:
+                raise ProvenanceError(
+                    f"symlink or non-regular entry inside artifact tree: {relative}"
+                )
+
+        after_directory = os.fstat(directory_fd)
+        if not _same_file_state(before_directory, after_directory):
+            raise ProvenanceError("artifact directory changed during inventory")
+
+    walk(root_fd, "")
     if not files:
         raise ProvenanceError("artifact directory contains no payload files")
     return dict(sorted(files.items()))
 
 
-def _verify_checksum_manifest(root: Path, files: dict[str, dict[str, Any]]) -> None:
-    checksum_path = root / "SHA256SUMS"
-    entries = _parse_checksum_text(_read_regular(checksum_path), "SHA256SUMS")
+def _verify_checksum_manifest_at(
+    root_fd: int, files: dict[str, dict[str, Any]]
+) -> None:
+    entries = _parse_checksum_text(
+        _read_regular_at(root_fd, "SHA256SUMS", "SHA256SUMS"),
+        "SHA256SUMS",
+    )
     if set(entries) != set(files):
         missing = sorted(set(files) - set(entries))
         extra = sorted(set(entries) - set(files))
@@ -296,6 +487,24 @@ def _verify_checksum_manifest(root: Path, files: dict[str, dict[str, Any]]) -> N
     for name, record in files.items():
         if entries[name] != record["sha256"]:
             raise ProvenanceError(f"SHA256SUMS digest mismatch: {name}")
+
+
+def _inventory(root: Path) -> dict[str, dict[str, Any]]:
+    absolute, directory_fd = _open_directory(root, "artifact directory")
+    try:
+        return _inventory_at(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
+def _verify_checksum_manifest(
+    root: Path, files: dict[str, dict[str, Any]]
+) -> None:
+    absolute, directory_fd = _open_directory(root, "artifact directory")
+    try:
+        _verify_checksum_manifest_at(directory_fd, files)
+    finally:
+        os.close(directory_fd)
 
 
 def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, Any]:
@@ -502,57 +711,96 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
     return toolchain, source_paths
 
 
-def _fsync_directory(path: Path) -> None:
-    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
-    fd = os.open(path, flags)
+def _create_temp_file_at(directory_fd: int, prefix: str) -> tuple[int, str]:
+    """Create a private temporary file relative to the pinned artifact directory."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None or os.open not in getattr(os, "supports_dir_fd", set()):
+        raise ProvenanceError(
+            "descriptor-relative temporary-file creation is unavailable; refusing artifact admission"
+        )
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | nofollow
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    for _ in range(32):
+        name = prefix + secrets.token_hex(12)
+        try:
+            return os.open(name, flags, 0o600, dir_fd=directory_fd), name
+        except FileExistsError:
+            continue
+    raise ProvenanceError("could not allocate a unique artifact sidecar temporary file")
+
+
+def _write_new_json(
+    path: Path, payload: dict[str, Any], *, directory_fd: int
+) -> None:
     try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-
-
-def _write_new_json(path: Path, payload: dict[str, Any]) -> None:
-    if os.path.lexists(path):
+        os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        pass
+    else:
         raise ProvenanceError(f"refusing to overwrite existing provenance file: {path}")
+
     data = (json.dumps(payload, sort_keys=True, indent=2) + "\n").encode("utf-8")
-    fd, temporary = tempfile.mkstemp(prefix=".BUILD-PROVENANCE.", dir=path.parent)
-    temp_path = Path(temporary)
+    fd, temporary_name = _create_temp_file_at(directory_fd, ".BUILD-PROVENANCE.")
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        # A hard link is an atomic create-if-absent operation on this filesystem.
-        os.link(temp_path, path, follow_symlinks=False)
-        temp_path.unlink()
-        _fsync_directory(path.parent)
+        # A descriptor-relative hard link is an atomic create-if-absent operation.
+        os.link(
+            temporary_name,
+            path.name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+            follow_symlinks=False,
+        )
+        os.unlink(temporary_name, dir_fd=directory_fd)
+        os.fsync(directory_fd)
     except Exception:
         try:
-            temp_path.unlink()
+            os.unlink(temporary_name, dir_fd=directory_fd)
         except FileNotFoundError:
             pass
         raise
 
 
-def _write_checksums(path: Path, root: Path, files: dict[str, dict[str, Any]]) -> None:
-    if os.path.lexists(path):
-        metadata = path.lstat()
-        if not stat.S_ISREG(metadata.st_mode):
-            raise ProvenanceError("SHA256SUMS must remain a regular non-symlink file")
+def _write_checksums(
+    path: Path,
+    root: Path,
+    files: dict[str, dict[str, Any]],
+    *,
+    directory_fd: int,
+) -> None:
+    try:
+        metadata = os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        metadata = None
+    if metadata is not None and not stat.S_ISREG(metadata.st_mode):
+        raise ProvenanceError("SHA256SUMS must remain a regular non-symlink file")
+
     rows = [f"{record['sha256']}  {name}" for name, record in sorted(files.items())]
     data = ("\n".join(rows) + "\n").encode("utf-8")
-    fd, temporary = tempfile.mkstemp(prefix=".SHA256SUMS.", dir=root)
-    temp_path = Path(temporary)
+    fd, temporary_name = _create_temp_file_at(directory_fd, ".SHA256SUMS.")
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp_path, path)
-        _fsync_directory(root)
+        os.replace(
+            temporary_name,
+            path.name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+        )
+        os.fsync(directory_fd)
     except Exception:
         try:
-            temp_path.unlink()
+            os.unlink(temporary_name, dir_fd=directory_fd)
         except FileNotFoundError:
             pass
         raise
@@ -560,81 +808,108 @@ def _write_checksums(path: Path, root: Path, files: dict[str, dict[str, Any]]) -
 
 def write_provenance(args: argparse.Namespace, env: dict[str, str] | None = None) -> dict[str, Any]:
     environment = dict(os.environ if env is None else env)
-    root = _require_directory(Path(args.artifact_dir), "artifact directory")
-    provenance_path = root / "BUILD-PROVENANCE.json"
-    if os.path.lexists(provenance_path):
-        raise ProvenanceError("BUILD-PROVENANCE.json already exists; refusing to overwrite it")
-    checksum_path = root / "SHA256SUMS"
-    if not os.path.lexists(checksum_path):
-        raise ProvenanceError("existing SHA256SUMS is required before provenance admission")
+    root, root_fd = _open_directory(Path(args.artifact_dir), "artifact directory")
+    try:
+        _verify_directory_identity(root, root_fd, "artifact directory")
+        provenance_path = root / "BUILD-PROVENANCE.json"
+        try:
+            os.stat(provenance_path.name, dir_fd=root_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise ProvenanceError(
+                "BUILD-PROVENANCE.json already exists; refusing to overwrite it"
+            )
 
-    initial_files = _inventory(root)
-    _verify_checksum_manifest(root, initial_files)
+        checksum_path = root / "SHA256SUMS"
+        try:
+            os.stat(checksum_path.name, dir_fd=root_fd, follow_symlinks=False)
+        except FileNotFoundError as exc:
+            raise ProvenanceError(
+                "existing SHA256SUMS is required before provenance admission"
+            ) from exc
 
-    if args.kind == "openwrt":
-        toolchain, source_paths = _openwrt_toolchain(args)
-        artifact_kind = "openwrt-imagebuilder-preview"
-    elif args.kind in ("esp8266", "esp32"):
-        toolchain, source_paths = _arduino_toolchain(args)
-        artifact_kind = "arduino-firmware-preview"
-    else:
-        raise ProvenanceError(f"unsupported artifact kind: {args.kind}")
+        initial_files = _inventory_at(root_fd)
+        _verify_checksum_manifest_at(root_fd, initial_files)
+        _verify_directory_identity(root, root_fd, "artifact directory")
 
-    source = _source_context(environment, source_paths)
-    manifest: dict[str, Any] = {
-        "schema": SCHEMA,
-        "artifact": {
-            "kind": artifact_kind,
-            "target": args.target,
-            "classification": "CI_PREVIEW_ONLY",
-        },
-        "source": source,
-        "runner": {
-            "os": environment["RUNNER_OS"],
-            "arch": environment["RUNNER_ARCH"],
-        },
-        "toolchain": toolchain,
-        "release_state": {
-            "production_authorized": False,
-            "signing": "NOT_PERFORMED",
-            "hardware_acceptance": "NOT_TESTED",
-            "financial_migration": "NOT_PERFORMED",
-        },
-        "files": list(initial_files.values()),
-        "checksum_manifest": {
-            "path": "SHA256SUMS",
-            "covers_provenance": True,
-            "entries": len(initial_files) + 1,
-        },
-    }
+        if args.kind == "openwrt":
+            toolchain, source_paths = _openwrt_toolchain(args)
+            artifact_kind = "openwrt-imagebuilder-preview"
+        elif args.kind in ("esp8266", "esp32"):
+            toolchain, source_paths = _arduino_toolchain(args)
+            artifact_kind = "arduino-firmware-preview"
+        else:
+            raise ProvenanceError(f"unsupported artifact kind: {args.kind}")
 
-    _write_new_json(provenance_path, manifest)
-    final_files = _inventory(root)
-    final_payload_files = {
-        name: record
-        for name, record in final_files.items()
-        if name != "BUILD-PROVENANCE.json"
-    }
-    if final_payload_files != initial_files:
-        raise ProvenanceError(
-            "artifact payload changed during provenance admission"
+        source = _source_context(environment, source_paths)
+        manifest: dict[str, Any] = {
+            "schema": SCHEMA,
+            "artifact": {
+                "kind": artifact_kind,
+                "target": args.target,
+                "classification": "CI_PREVIEW_ONLY",
+            },
+            "source": source,
+            "runner": {
+                "os": environment["RUNNER_OS"],
+                "arch": environment["RUNNER_ARCH"],
+            },
+            "toolchain": toolchain,
+            "release_state": {
+                "production_authorized": False,
+                "signing": "NOT_PERFORMED",
+                "hardware_acceptance": "NOT_TESTED",
+                "financial_migration": "NOT_PERFORMED",
+            },
+            "files": list(initial_files.values()),
+            "checksum_manifest": {
+                "path": "SHA256SUMS",
+                "covers_provenance": True,
+                "entries": len(initial_files) + 1,
+            },
+        }
+
+        # The directory path may have been replaced while source/toolchain
+        # metadata was collected. Never let a path-based write follow that swap.
+        _verify_directory_identity(root, root_fd, "artifact directory")
+        _write_new_json(provenance_path, manifest, directory_fd=root_fd)
+
+        final_files = _inventory_at(root_fd)
+        final_payload_files = {
+            name: record
+            for name, record in final_files.items()
+            if name != "BUILD-PROVENANCE.json"
+        }
+        if final_payload_files != initial_files:
+            raise ProvenanceError(
+                "artifact payload changed during provenance admission"
+            )
+        _verify_directory_identity(root, root_fd, "artifact directory")
+
+        _write_checksums(
+            checksum_path,
+            root,
+            final_files,
+            directory_fd=root_fd,
         )
-
-    _write_checksums(checksum_path, root, final_files)
-    verified_files = _inventory(root)
-    if verified_files != final_files:
-        raise ProvenanceError(
-            "artifact tree changed while writing checksum manifest"
+        verified_files = _inventory_at(root_fd)
+        if verified_files != final_files:
+            raise ProvenanceError(
+                "artifact tree changed while writing checksum manifest"
+            )
+        _verify_checksum_manifest_at(root_fd, verified_files)
+        checksum_sha, _ = _hash_regular_at(root_fd, "SHA256SUMS", "SHA256SUMS")
+        _verify_directory_identity(root, root_fd, "artifact directory")
+        print(
+            "RELEASE-PROVENANCE-PASS: "
+            f"target={args.target} source={source['commit']} "
+            f"payload_files={len(initial_files)} checksum_entries={len(final_files)} "
+            f"SHA256SUMS={checksum_sha}"
         )
-    _verify_checksum_manifest(root, verified_files)
-    checksum_sha, _ = _hash_regular(checksum_path)
-    print(
-        "RELEASE-PROVENANCE-PASS: "
-        f"target={args.target} source={source['commit']} "
-        f"payload_files={len(initial_files)} checksum_entries={len(final_files)} "
-        f"SHA256SUMS={checksum_sha}"
-    )
-    return manifest
+        return manifest
+    finally:
+        os.close(root_fd)
 
 
 def parse_args() -> argparse.Namespace:
