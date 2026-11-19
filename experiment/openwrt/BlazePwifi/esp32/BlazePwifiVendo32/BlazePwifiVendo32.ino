@@ -933,16 +933,13 @@ bool configFieldsMatchStored(){
 }
 
 bool saveConfig(){
-  // A local setup save must not leave the old relay energized while storage is
-  // being changed. The polarity-valid marker is invalidated before all fields.
+  // Deassert outputs before changing NVS; setup stays inhibited until reboot.
   insertMode=false;
   activeTarget="";
   applyOutputs();
-  if(prefs.putUChar("polarityv",0)!=1){
-    outputPolarityKnown=false;
-    pinConfigSafe=false;
-    return false;
-  }
+  // Invalidate local polarity before any other configuration write. A cut
+  // during the save leaves the next boot in the INPUT-only unknown state.
+  if(prefs.putUChar("polarityv",0)!=1) return false;
   prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
   prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
   prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
@@ -955,12 +952,10 @@ bool saveConfig(){
     pinConfigSafe=false;
     return false;
   }
-  if(!persistLocalOutputPolarity()){
-    outputPolarityKnown=false;
-    pinConfigSafe=false;
-    return false;
-  }
-  return true;
+  // A failed polarity write/readback must leave this boot INPUT-only too.
+  outputPolarityKnown=false;
+  pinConfigSafe=false;
+  return persistLocalOutputPolarity();
 }
 
 String jsonString(const String &r,const String &k){
