@@ -77,6 +77,16 @@ bool selected(int value) {
     if extract_functions(continued_comment, "selected"):
         raise AssertionError("backslash-newline // comment exposed a fake function")
 
+    continued_crlf = (
+        "// continued CRLF comment " + "\\" + "\r\n"
+        + "bool selected(int value) { return false; }\r\n"
+    )
+    continued_crlf_masked = mask_non_code(continued_crlf)
+    if continued_crlf_masked.count("\r\n") != continued_crlf.count("\r\n"):
+        raise AssertionError("continued CRLF comment must preserve newline positions")
+    if extract_functions(continued_crlf, "selected"):
+        raise AssertionError("backslash-CRLF // comment exposed a fake function")
+
     if not function.endswith("}"):
         raise AssertionError("function extractor returned an incomplete body")
 
