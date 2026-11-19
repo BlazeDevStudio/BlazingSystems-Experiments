@@ -288,3 +288,47 @@ These are CI/host simulations, not flash-physics evidence. Logs explicitly retai
 4. Protected anti-rollback signer/witness, financial v1-to-v2 migration, durable accounting/replay, 150 real power cuts, 30-device/24-hour soak, electrical pulse/recovery and independent QA/release signoff remain outstanding.
 
 No physical flashing, live coin/money operation, production migration, signer provisioning, merge, release or deployment occurred.
+
+
+## UTC00 follow-up — exact ESP8266 EEPROM core buffer semantics (2026-11-19T00:50Z)
+
+**Task:** P0 #177 / PR #327.  
+**Role:** PHX-HARDWARE.  
+**Docs/source-test starting HEAD:** `32cd2d2373623295ceba6fc10fd1f8a7d831af23`.  
+**Test-only commit:** `32cd2d2373623295ceba6fc10fd1f8a7d831af23`.  
+**Firmware runtime changes:** none in this follow-up.
+
+### Official core audit and test-model correction
+
+The official ESP8266 Arduino core 3.1.2 `EEPROM.cpp` was read directly:
+[EEPROM.cpp at tag 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp).
+
+The implementation:
+- rounds the requested EEPROM size to four-byte alignment and caps it at one flash sector;
+- allocates `new uint8_t[size]` only when no buffer exists or the size changes;
+- reuses an existing same-size RAM buffer;
+- calls `ESP.flashRead()` but only emits a debug message on failure; `begin()` returns no status and does not clear the buffer;
+- resets `_dirty` after the attempted read.
+
+The prior fake EEPROM model incorrectly reset its buffer to `0xFF` on every `begin()`, which did not model a same-size stale buffer after a failed read. It also described the failed-read buffer as necessarily erased-looking.
+
+Test-only commit `32cd2d2373623295ceba6fc10fd1f8a7d831af23` corrects the model:
+- deterministic `0xA5` poison represents indeterminate bytes in a newly allocated buffer;
+- same-size `begin()` preserves the existing RAM allocation;
+- size alignment, sector addressing and failed-read behavior follow the 3.1.2 implementation;
+- a new source-extracted scenario seeds a pre-existing poll-fault marker, fills the same-size RAM buffer with stale poison, fails both the `begin()` flash read and the status-bearing full-image read, and asserts the stale bytes remain untrusted, no EEPROM write occurs, coin admission remains denied, the active target is cleared, and the marker survives a later cold boot.
+
+### Exact-head CI
+
+- Focused quarantine/readback [run #44431866549](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44431866549), job `135250957540`: **SUCCESS**. Logs include `ESP8266_EEPROM_SAME_SIZE_STALE_BUFFER_READ_FAILURE_DENY_PASS`, `EEPROM_CORE_3_1_2_BUFFER_SEMANTICS=MODELED`, all four prior full-image recovery cases, both-board poll-edge/pulse regressions, and explicit simulated-only / physical-power-cut-not-tested markers.
+- Full BlazePwifi build [run #44431866576](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44431866576): **FAILURE** at validation job `135250958459`, `tests/controllers.sh` / `Missing poll signature check`. All 13 firmware/platform target jobs and Android completed **SUCCESS**. Downstream simulations, update bundle, signing, candidate gate and publishing were skipped.
+
+This is source-extracted host/fake-I/O evidence only. It is **SIMULATED / CI VERIFIED**, not physical flash or hardware acceptance. No production configuration or financial migration was run.
+
+### Next exact action
+
+- **PHX-QA:** replace the inherited positive poll-signature presence assertion with negative/default-deny behavior tests and independently review the exact source/test SHA `32cd2d2373623295ceba6fc10fd1f8a7d831af23`.
+- **PHX-MASTER:** refresh the #327 exact-head row and stack comparison.
+- **PHX-HARDWARE:** next audit the local v1/v2 EEPROM configuration migration paths against a verified non-erased image, including malformed-record no-write behavior and reserved-marker preservation; do not alter the financial v1-to-v2 migration or shared ledger contract.
+
+**Disposition:** PR #327 remains OPEN / DRAFT / UNMERGED. Physical acceptance remains NOT TESTED; production remains NO-GO.
