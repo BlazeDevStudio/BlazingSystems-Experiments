@@ -64,12 +64,16 @@ jobs:
           {
             "sdk": {
               "version": "8.0.425",
-              "rollForward": "latestPatch"
+              "rollForward": "disable"
             }
           }
           '@ | Set-Content -Encoding utf8 global.json
-          dotnet --version
+          $sdkVersion = (dotnet --version).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($sdkVersion -ne '8.0.425') {
+            throw "Pinned .NET SDK mismatch: expected 8.0.425, selected $sdkVersion"
+          }
+          Write-Output "RELEASE-DOTNET-SDK-PASS: $sdkVersion"
 
 
       - name: RELEASE-PARITY reject altered installed and archive members in isolated fixtures
