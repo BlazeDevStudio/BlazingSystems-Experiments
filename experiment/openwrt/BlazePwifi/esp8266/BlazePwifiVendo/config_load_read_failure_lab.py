@@ -17,117 +17,13 @@ fake-flash host simulations, not physical power-cut acceptance or the
 separate financial ledger migration.
 """
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 
+from firmware_lab_source import extract_block, extract_functions
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
-
-def mask_non_code(source: str) -> str:
-    masked = list(source)
-    def blank(start: int, end: int) -> None:
-        for p in range(start, end):
-            if source[p] not in "\r\n":
-                masked[p] = " "
-    i = 0
-    while i < len(source):
-        if source.startswith("//", i):
-            start = i
-            i += 2
-            while i < len(source) and source[i] not in "\r\n":
-                i += 1
-            blank(start, i)
-            continue
-        if source.startswith("/*", i):
-            start = i
-            end = source.find("*/", i + 2)
-            if end < 0:
-                raise RuntimeError("unterminated C/C++ comment")
-            i = end + 2
-            blank(start, i)
-            continue
-        if source.startswith('R"', i):
-            delimiter_start = i + 2
-            paren = source.find("(", delimiter_start)
-            if paren != -1 and paren - delimiter_start <= 16:
-                delimiter = source[delimiter_start:paren]
-                if not any(ch.isspace() or ch in "\\()" for ch in delimiter):
-                    terminator = ")" + delimiter + '"'
-                    end = source.find(terminator, paren + 1)
-                    if end < 0:
-                        raise RuntimeError("unterminated C/C++ raw string")
-                    end += len(terminator)
-                    blank(i, end)
-                    i = end
-                    continue
-        if source[i] in ('"', "'"):
-            quote = source[i]
-            start = i
-            i += 1
-            while i < len(source):
-                if source[i] == "\\":
-                    i += 2
-                    continue
-                if source[i] == quote:
-                    i += 1
-                    break
-                i += 1
-            else:
-                raise RuntimeError("unterminated C/C++ literal")
-            blank(start, i)
-            continue
-        i += 1
-    return "".join(masked)
-
-def matching_brace(source: str, opening: int) -> int:
-    masked = mask_non_code(source)
-    depth = 0
-    for i in range(opening, len(source)):
-        if masked[i] == "{":
-            depth += 1
-        elif masked[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return i
-    raise RuntimeError("unbalanced C/C++ block")
-
-def extract_block(source: str, marker: str) -> str:
-    masked = mask_non_code(source)
-    start = masked.find(marker)
-    if start < 0:
-        raise RuntimeError(f"missing source block: {marker}")
-    opening = masked.find("{", start)
-    if opening < 0:
-        raise RuntimeError(f"missing source block opener: {marker}")
-    return source[start:matching_brace(source, opening) + 1]
-
-def extract_functions(source: str, name: str):
-    masked = mask_non_code(source)
-    signature = re.compile(
-        rf"(?m)^[ \t]*(?:(?:static|inline|constexpr)\s+)*"
-        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
-        r"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
-    )
-    found = []
-    pos = 0
-    while True:
-        match = signature.search(masked, pos)
-        if not match:
-            break
-        opening = match.end() - 1
-        end = matching_brace(source, opening)
-        found.append((match.start(), source[match.start():end + 1]))
-        pos = end + 1
-    return found
-
-def extract_function(source: str, name: str, optional=False) -> str:
-    found = extract_functions(source, name)
-    if not found:
-        if optional:
-            return ""
-        raise RuntimeError(f"missing production function: {name}")
-    return found[0][1]
 
 def extract_constants(source: str, names):
     selected = []

@@ -5,182 +5,15 @@ This host lab models the NVS and EEPROM APIs. It does not emulate flash physics,
 power-loss timing, wear, or an independent physical witness.
 """
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 import sys
 
+from firmware_lab_source import extract_block, extract_function, extract_functions, mask_non_code
+
 ROOT = Path.cwd()
 ESP32 = ROOT / "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 ESP8266 = ROOT / "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
-
-def _matching_brace(source: str, opening: int) -> int:
-    """Return the matching C/C++ closing brace, ignoring comments and literals."""
-    if opening < 0 or opening >= len(source) or source[opening] != "{":
-        raise ValueError("opening index must point to '{'")
-
-    depth = 0
-    state = "code"
-    raw_terminator = ""
-    index = opening
-
-    while index < len(source):
-        char = source[index]
-
-        if state == "code":
-            if source.startswith("//", index):
-                state = "line_comment"
-                index += 2
-                continue
-            if source.startswith("/*", index):
-                state = "block_comment"
-                index += 2
-                continue
-            if source.startswith('R"', index):
-                delimiter_start = index + 2
-                paren = source.find("(", delimiter_start)
-                if paren != -1 and paren - delimiter_start <= 16:
-                    delimiter = source[delimiter_start:paren]
-                    if not any(ch.isspace() or ch in "\\()"
-                               for ch in delimiter):
-                        raw_terminator = ")" + delimiter + '"'
-                        state = "raw_string"
-                        index = paren + 1
-                        continue
-            if char == '"':
-                state = "string"
-            elif char == "'":
-                state = "char"
-            elif char == "{":
-                depth += 1
-            elif char == "}":
-                depth -= 1
-                if depth == 0:
-                    return index
-
-        elif state == "line_comment":
-            if char == "\n":
-                state = "code"
-
-        elif state == "block_comment":
-            if source.startswith("*/", index):
-                state = "code"
-                index += 2
-                continue
-
-        elif state in ("string", "char"):
-            if char == "\\":
-                index += 2
-                continue
-            if ((state == "string" and char == '"') or
-                    (state == "char" and char == "'")):
-                state = "code"
-
-        elif state == "raw_string":
-            if source.startswith(raw_terminator, index):
-                state = "code"
-                index += len(raw_terminator)
-                continue
-
-        index += 1
-
-    raise RuntimeError("unclosed C/C++ block")
-
-
-def _mask_non_code(source: str) -> str:
-    """Blank comments and literals while preserving offsets and line breaks."""
-    masked = list(source)
-
-    def blank(start: int, end: int) -> None:
-        for position in range(start, end):
-            if source[position] not in "\r\n":
-                masked[position] = " "
-
-    index = 0
-    while index < len(source):
-        if source.startswith("//", index):
-            start = index
-            index += 2
-            while index < len(source) and source[index] not in "\r\n":
-                index += 1
-            blank(start, index)
-            continue
-
-        if source.startswith("/*", index):
-            start = index
-            end = source.find("*/", index + 2)
-            if end < 0:
-                raise RuntimeError("unterminated C/C++ block comment")
-            index = end + 2
-            blank(start, index)
-            continue
-
-        if source.startswith('R"', index):
-            delimiter_start = index + 2
-            paren = source.find("(", delimiter_start)
-            if paren != -1 and paren - delimiter_start <= 16:
-                delimiter = source[delimiter_start:paren]
-                if not any(ch.isspace() or ch in "\\()" for ch in delimiter):
-                    terminator = ")" + delimiter + '"'
-                    end = source.find(terminator, paren + 1)
-                    if end < 0:
-                        raise RuntimeError("unterminated C/C++ raw string")
-                    end += len(terminator)
-                    blank(index, end)
-                    index = end
-                    continue
-
-        if source[index] in ('"', "'"):
-            quote = source[index]
-            start = index
-            index += 1
-            while index < len(source):
-                if source[index] == "\\":
-                    index += 2
-                    continue
-                if source[index] == quote:
-                    index += 1
-                    break
-                index += 1
-            else:
-                raise RuntimeError("unterminated C/C++ string or character literal")
-            blank(start, index)
-            continue
-
-        index += 1
-
-    return "".join(masked)
-
-
-def extract_block(source: str, marker: str) -> str:
-    # Search a same-length lexical mask so comment/string decoys cannot win.
-    masked = _mask_non_code(source)
-    start = masked.find(marker)
-    if start < 0:
-        raise RuntimeError(f"missing block marker: {marker}")
-    brace = masked.find("{", start)
-    if brace < 0:
-        raise RuntimeError(f"missing block opener: {marker}")
-    end = _matching_brace(source, brace)
-    return source[start:end + 1]
-
-
-def extract_function(source: str, name: str) -> str:
-    # Match a real definition, not a call, comment/string decoy, or declaration.
-    # The signature set used by this lab has simple, single-line parameters.
-    masked = _mask_non_code(source)
-    signature = re.compile(
-        rf"(?m)^[ \t]*(?:(?:static|inline|constexpr|IRAM_ATTR|ICACHE_RAM_ATTR)\s+)*"
-        rf"(?:[A-Za-z_][\w:<>*&]*[ \t]+)+{re.escape(name)}"
-        r"\s*\([^;{}]*\)\s*(?:const\s*)?\{"
-    )
-    match = signature.search(masked)
-    if not match:
-        raise RuntimeError(f"missing function definition: {name}")
-    opening = match.end() - 1
-    end = _matching_brace(source, opening)
-    return source[match.start():end + 1]
-
 
 def constants(source: str, names):
     selected = []
@@ -205,6 +38,7 @@ void caller() { selected(1); }
 struct Record {
   const char *text = "}";
   char brace = '{';
+  const char *escaped = "quote: \\" { not a block }";
   // } { inside a line comment
   /* { } inside a block comment */
   const char *raw = R"tag({ raw } )tag";
@@ -216,14 +50,30 @@ bool selected(int value) {
   return false;
 }
 '''
+    masked = mask_non_code(sample)
+    if len(masked) != len(sample) or masked.count("\\n") != sample.count("\\n"):
+        raise AssertionError("source mask must preserve offsets and line positions")
+    if "bool selected(int value) { return false; }" in masked:
+        raise AssertionError("comment/raw-string decoy was not masked")
+
     record = extract_block(sample, "struct Record")
     function = extract_function(sample, "selected")
+    functions = extract_functions(sample, "selected")
     if "int nested[2] = {1, 2};" not in record:
         raise AssertionError("struct extractor stopped inside a literal/comment")
     if not function.startswith("bool selected") or "if (value) { return true; }" not in function:
         raise AssertionError("function extractor did not select the definition")
+    if len(functions) != 1 or functions[0][1] != function:
+        raise AssertionError("function list must contain the single real definition")
     if not function.endswith("}"):
         raise AssertionError("function extractor returned an incomplete body")
+
+    attributed = "void ICACHE_RAM_ATTR edgeHandler() { if (true) { ++count; } }"
+    if "edgeHandler" not in extract_function(attributed, "edgeHandler"):
+        raise AssertionError("attribute-qualified function definition was not found")
+
+    if extract_function("bool declared(int value);", "declared", required=False):
+        raise AssertionError("declaration must not be returned as a definition")
 
     try:
         extract_block('struct Broken { const char *value = "}" ;', "struct Broken")
@@ -231,6 +81,8 @@ bool selected(int value) {
         pass
     else:
         raise AssertionError("unterminated block must fail closed")
+
+    print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS")
 
 
 def harness(board: str, source: str) -> str:
