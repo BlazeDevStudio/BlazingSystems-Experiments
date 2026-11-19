@@ -637,9 +637,9 @@ def run(board: str, path: Path):
 def run_esp32_precommit_persistence_mutation(path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness("ESP32", source)
-    needle = "NvsFlash::pending.assign(bytes,bytes+length);\\n  return ESP_OK;"
+    needle = "NvsFlash::pending.assign(bytes,bytes+length);\n  return ESP_OK;"
     replacement = (
-        "NvsFlash::pending.assign(bytes,bytes+length);\\n"
+        "NvsFlash::pending.assign(bytes,bytes+length);\n"
         "  NvsFlash::durable.assign(bytes,bytes+length);\\n"
         "  return ESP_OK;"
     )
@@ -666,4 +666,5 @@ if __name__ == "__main__":
     test_extractors()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
-    run_esp32_precommit_persistence_mutation(ESP32)\n    run("ESP8266", ESP8266)
+    run_esp32_precommit_persistence_mutation(ESP32)
+    run("ESP8266", ESP8266)
