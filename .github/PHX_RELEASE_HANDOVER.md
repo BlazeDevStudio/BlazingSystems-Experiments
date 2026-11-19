@@ -552,3 +552,36 @@ No manifest schema, source identity fields, artifact classification, signer, fir
 5. PHX-CORE / COE integration owner: approve the site-scoped ULA provisioning authority before PHX-RELEASE resumes profile packaging.
 
 No merge, real-key signing, tag, publication, hardware flash, financial migration, or customer deployment occurred. Physical 150-power-cut acceptance and 30-device/24-hour soak remain **NOT TESTED**. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — reject hard-linked artifact payloads (2026-11-19T16:18Z)
+
+### Verified release-provenance defect
+
+The descriptor-relative artifact inventory admitted a regular file even when its inode had multiple hard links. A payload path inside the artifact directory could therefore alias an inode also named outside that tree. The provenance writer hashed and manifested that entry as an ordinary payload; an external alias could expose content not independently owned by the admitted artifact tree or mutate the same inode during later handling.
+
+### Test-first history and correction
+
+- Regression commit [`bac542e3df75cb325f819f6e57535b47e52666ae`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/bac542e3df75cb325f819f6e57535b47e52666ae) adds an external-hardlink fixture, regenerates the existing checksum manifest, and requires admission to fail without changing SHA256SUMS, creating BUILD-PROVENANCE.json, or modifying the external file.
+- Expected RED: [PR run #44564359785](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44564359785), CI-0701 job `135701938049`. The prior 21 provenance tests passed; the new test failed exactly with `AssertionError: ProvenanceError not raised`. This reproduced the admission gap on the pre-fix writer.
+- Source correction [`90165b173179e9b36c73f98e06cfd5e0a06a3fe3`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/90165b173179e9b36c73f98e06cfd5e0a06a3fe3) adds a single-link requirement to descriptor-relative artifact reads/hashes and includes `st_nlink` in file/directory identity comparisons. The check is applied before and after opening/reading so a link-count change during inventory is rejected as well. Hard-linked artifact files are not admitted.
+- Exact source/test SHA: `90165b173179e9b36c73f98e06cfd5e0a06a3fe3`.
+
+### Exact-source GitHub Actions at handover update
+
+- BlazePwifi PR run [#44564586389](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44564586389): CI-0701 job `135702737165` **SUCCESS**; the provenance suite reports **22 tests PASS**, including the new external-hardlink rejection. Immutable action pins, release concurrency, Arduino CLI archive verifier, ESP32 compatibility workflow contract, board-core pins and CI-0701 classifier steps also **PASS**. ESP8266 job `135702877914` **SUCCESS**. At this handover update, `validate`, Android, ESP32 and several OpenWrt target jobs were still **IN_PROGRESS/QUEUED**; no overall run-level SUCCESS is claimed.
+- ESP32 compatibility PR run [#44564586180](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44564586180): both core jobs were **QUEUED** at this read; no compile result is claimed.
+- Windows PR run [#44564585852](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44564585852): handover job **SUCCESS**; `build-windows` was **IN_PROGRESS**; publisher was not executed. No Windows result is inferred.
+- Test-only RED run [#44564359785](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44564359785) is intentionally failing evidence, not a source-head failure.
+
+### Ownership, provenance and next actions
+
+- This UTC16 change touched only `.github/scripts/test_build_provenance.py`, `.github/scripts/write_build_provenance.py`, and this PHX-RELEASE handover. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER source/handovers were edited by this task.
+- Experiments #242 remains OPEN/DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 remains OPEN/DRAFT on `phoenix/release-publisher-isolation-20261115`, based on #242. MASTER #288 remains OPEN/DRAFT at `7ac132361b29de8c0bff86d337a79e3cab989b33`; ownership routes remain `DRAFT_REVIEW_ONLY`, and the release workflow route remains `reimplementation-review`.
+- COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #31 remains OPEN/DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child packager #35 remains OPEN/DRAFT at `0e3662b9aef4b2a2248e3a064b07d07e9097be1b`. The ULA guard continues to reject all ten profiles until CORE/MASTER approve the site-scoped RFC 4193 authority; the mandatory Bubblewrap sandbox remains blocked by runner capability.
+- The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found after paginating 1,422 Library entries (8 pages); no older registry was substituted and no private contents were copied.
+- PHX-QA: independently review single-link admission and the descriptor-relative race behavior at the exact source/test SHA.
+- PHX-PISONET: repair its own `$buildWorkflow` negative-self-test variable; RELEASE does not edit that test.
+- PHX-INFRA: provide an approved disposable Bubblewrap-capable runner; PHX-CORE/MASTER and COE integration owner: resolve site ULA provisioning authority before profile packaging resumes.
+
+No merge, real-key signing, tag, publication, hardware flash, payment migration or customer deployment occurred. CI remains synthetic evidence only; physical 150-power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
