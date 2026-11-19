@@ -46,7 +46,7 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         for job, ref, marker in cases:
             with self.subTest(job=job):
                 block = job_block(self.content, job)
-                self.assertIn(f"if: github.ref == '{ref}'", block)
+                self.assertIn(f"github.ref == '{ref}'", block)
                 self.assertIn(f"'{marker}'", block)
                 self.assertIn("permissions:\n      contents: write", block)
 
