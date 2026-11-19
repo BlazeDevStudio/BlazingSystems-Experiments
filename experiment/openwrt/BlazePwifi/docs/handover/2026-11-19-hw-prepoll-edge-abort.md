@@ -934,3 +934,91 @@ COE #26 ESP32/ESP8266 candidate blobs are `3cc7ec54b476943dc04a8d1af5e2df5fe054e
 ### Remaining hardware boundary
 
 PR #327 remains OPEN / DRAFT / UNMERGED. Focused quarantine and relay/output tests pass at the source/test head and docs head. Full validation remains failed at the QA-owned poll assertion. NVS/coin/relay labs are simulated/fake-I/O; physical NVS, pulse, power-cut and electrical acceptance remain NOT TESTED. No finance, migration, signer, COE source, QA-owned test, Release workflow, merge or deployment was performed.
+
+
+## UTC09 continuation — bounded coin-pulse overflow and target-drift fail-closed correction (2026-11-19)
+
+**Role:** PHX-HARDWARE  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**Branch:** `phoenix/hardware-prepoll-edge-abort-20261119`  
+**Parent:** PR #326, base `58c558fb6a237935214621adc3dee65a10fe1a51`  
+**PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
+**Source/test head before this handover:** `7ed129275d45c6523a8ec25aa2ae2176d396450b`
+
+### Proven defect
+
+Both ESP sketches previously accepted a pulse only when `pendingTarget==activeTarget && pendingPulses<20`. If the pending record already held 20 pulses, or if its target no longer matched the active target, the next physical rising edge was silently ignored. The pending-record readers/writers reject counts above 20, so the 21st edge could not be represented and must not be treated as an ordinary no-op.
+
+### Firmware correction
+
+Updated only the PHX-HARDWARE-owned board sketches:
+
+- ESP32 source commit [`c260aea`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c260aea666c49c975a493fa1d16d021e029737e7), blob `1e720d3b2fc76e348ff77e347e0d472d38559d04`.
+- ESP8266 source commit [`860c496`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/860c496683331700248cd29be3dc0ab63ebdab9b), blob `75f62c359bbb69f4f580b7ee0c3875396b12cc7f`.
+
+When an active edge cannot be appended because the batch is already at 20 or its target identity differs, `sampleCoinPulseEdge()` now calls the existing `latchPollPulseFault(pendingPulses+1)`, marks the pending event unresolved, and reapplies outputs OFF. It does not increment or rewrite the bounded pending record, mint a new nonce, post the partial batch, or clear the pending journal. The existing pending nonce/target are retained for operator reconciliation. The valid 20th pulse remains accepted; the unrepresentable 21st pulse fails closed.
+
+No wire/API contract, EEPROM/NVS schema, financial accounting path, server CGI, shared CORE file, or release workflow was changed.
+
+### Test-first and exact-source evidence
+
+- Test-first RED commit [`28fa0f9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/28fa0f94f34ae2f86b9f7268234f979959761c0f): old source failed at `pulse-overflow-21` on both boards, proving the previous silent-drop behavior.
+- Final source/test head before this handover: `7ed129275d45c6523a8ec25aa2ae2176d396450b`.
+- Focused quarantine push [#44500314957](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500314957), job `135478049410`: **PASS**.
+- Focused quarantine PR [#44500323767](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500323767), job `135478074872`: **PASS**.
+- Focused relay/output PR [#44500323856](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500323856), jobs `135478074653` and `135478075066`: **PASS**.
+- Coin pulse source-extracted lab: **10/10 per board**. Mutation injection rejected removal of the overflow guard, target-drift guard, overflow fault latch, edge latch, debounce strictness, persistence latch, and output inhibit.
+- Poll-loop blocking/inhibit lab: PASS. ESP8266 config-read lab: PASS, including full-image read failure, malformed v1/v2 and unknown-schema setup-save denial, and local v1/v2-to-v3 marker preservation. These are source-extracted simulations, not physical acceptance.
+- Full push [#44500314998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500314998), exact head `7ed129275d45c6523a8ec25aa2ae2176d396450b`: overall **FAIL** because validation job `135478194042` reports the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. ESP32 core 4.0.0 job `135478194349` PASS; ESP8266 core 3.1.2 job `135478194799` PASS; all 13 firmware/platform targets and Android job `135478194471` PASS. Production import, simulations, signing, bundle and publishing jobs were skipped.
+- The focused lab logs explicitly report `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`.
+
+### Live integration and ownership recheck
+
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; canonical organization `BlazeDevStudio`.
+- Parent #326 head/base: `58c558fb6a237935214621adc3dee65a10fe1a51`.
+- Parallel drafts remain open/unmerged: #239 `d83b715b...`, #254 `4054fbcc...`, #283 `830c3553...`; no parallel PR was edited.
+- Master #288 remains draft at `1decd7715c4bac46673f673c49f27bfeca160a4e`.
+- Release #291 API head is now `9b26671efe6138bb4dfe14c10db520902dff6cb8`; the latest UTC09 Release checkpoint still names `c99f508`, so that checkpoint is stale and needs Release/Master reconciliation. The earlier 3.3.13/4.0.0 compatibility run is on an older source head; exact-current-source ESP32 core 3.3.13 remains NOT TESTED.
+- COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE PR #26 remains draft at `b382d233ff06c8791b1028bed3c617cc7b670d12`. No firmware was copied or migrated into COE.
+- Issues #172, #266, #177, #34, #31, #32 and #43 remain open. The cleanup-first, safety, finance and witness gates are not complete.
+- The requested private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found by exact-name authorized Library search, and no Google Drive connector was exposed. No older registry snapshot was substituted.
+
+### Remaining blockers / next actions
+
+1. **PHX-QA:** independently review the 20/21 boundary, target-drift behavior, pending identity preservation, and negative/default-deny poll fixture. Replace the stale positive poll-signature presence assertion only under QA ownership.
+2. **PHX-CORE:** confirm the unresolved-edge count semantics and that the existing pending record plus fault marker is sufficient for the operator reconciliation contract; no shared API change is proposed.
+3. **PHX-RELEASE:** provide a pinned exact-source ESP32 core 3.3.13 build in addition to the verified 4.0.0 build; refresh #291 handover after its current head `9b26671`.
+4. **PHX-MASTER:** review #327 as a child of #326 and reconcile the latest role/PR heads. Keep both PRs draft and unmerged.
+
+The poll-fault backup remains same-chip dual-store evidence, not an independent freshness witness. If both stores fail, reboot durability is not established even though the current boot denies outputs. No physical 150-power-cut test, 30-device 24-hour soak, electrical pulse/recovery acceptance, protected anti-rollback signer, durable financial migration, or independent QA/release signoff is evidenced.
+
+**Disposition: CI VERIFIED for the focused source-extracted correction; Full validation remains FAIL; HARDWARE ACCEPTED not established; PRODUCTION NO-GO.**  
+```json
+{
+  "protocol": "BLAZE-COMMS/1",
+  "message_id": "PHX-HARDWARE-20261119T09-PULSE-BATCH-OVERFLOW-DENY",
+  "from": "PHX-HARDWARE",
+  "to": ["PHX-MASTER", "PHX-CORE", "PHX-QA", "PHX-RELEASE"],
+  "type": "REQUEST_REVIEW",
+  "priority": "P0",
+  "task_id": "#172/#177/#266/#327",
+  "branch": "phoenix/hardware-prepoll-edge-abort-20261119",
+  "base_sha": "58c558fb6a237935214621adc3dee65a10fe1a51",
+  "status": "IN_PROGRESS",
+  "evidence": [
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500314957",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500323767",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500323856",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44500314998"
+  ],
+  "blockers": [
+    "QA-owned positive poll-signature fixture fails Full validation.",
+    "Exact-current-source ESP32 core 3.3.13 build not tested.",
+    "Independent witness, financial migration/replay and physical acceptance absent.",
+    "Private registry v11 unavailable through exposed connector surface."
+  ],
+  "next_action": "QA independently verifies the bounded pulse deny path and poll fixture; CORE confirms event reconciliation semantics; RELEASE pins core 3.3.13; MASTER reviews the #326/#327 stack. Do not merge or enable coin admission.",
+  "updated_utc": "2026-11-19T09:56:30Z"
+}
+```
