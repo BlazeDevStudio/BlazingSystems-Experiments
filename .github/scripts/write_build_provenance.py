@@ -557,8 +557,23 @@ def write_provenance(args: argparse.Namespace, env: dict[str, str] | None = None
 
     _write_new_json(provenance_path, manifest)
     final_files = _inventory(root)
+    final_payload_files = {
+        name: record
+        for name, record in final_files.items()
+        if name != "BUILD-PROVENANCE.json"
+    }
+    if final_payload_files != initial_files:
+        raise ProvenanceError(
+            "artifact payload changed during provenance admission"
+        )
+
     _write_checksums(checksum_path, root, final_files)
-    _verify_checksum_manifest(root, final_files)
+    verified_files = _inventory(root)
+    if verified_files != final_files:
+        raise ProvenanceError(
+            "artifact tree changed while writing checksum manifest"
+        )
+    _verify_checksum_manifest(root, verified_files)
     checksum_sha, _ = _hash_regular(checksum_path)
     print(
         "RELEASE-PROVENANCE-PASS: "
