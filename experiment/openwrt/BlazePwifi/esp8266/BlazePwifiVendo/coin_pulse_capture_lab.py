@@ -183,6 +183,7 @@ static bool runSaveFailure(){
 }
 static bool runDeniedGates(){
   for(int scenario=0;scenario<10;++scenario){
+    if(scenario==5 || scenario==6) continue; // explicit fault cases below
     resetState(141U);
     lastEdge=100U;
     bool active=true;
@@ -192,20 +193,49 @@ static bool runDeniedGates(){
       case 2:journalRecoveryRequired=true;break;
       case 3:pendingReady=true;break;
       case 4:activeTarget.clear();break;
-      case 5:pendingPulses=20;break;
-      case 6:pendingPulses=1;pendingTarget="other-target";break;
       case 7:lastCoin=true;break;
       case 8:active=false;break;
       case 9:fakeNow=140U;break; // exactly the configured debounce boundary
     }
-    const uint8_t expected=scenario==5?20U:(scenario==6?1U:0U);
     sampleCoinPulseEdge(active);
-    if(saveCalls!=0 || pendingPulses!=expected){
+    if(saveCalls!=0 || pendingPulses!=0){
       std::cerr<<"FAIL deny-case-"<<scenario<<" saves="<<saveCalls
-               <<" pulses="<<(unsigned)pendingPulses<<"\n";
+               <<" pulses="<<(unsigned)pendingPulses<<"\\n";
       return false;
     }
   }
+  return true;
+}
+static bool runUnrepresentablePulseFault(const char*name,uint8_t existing,
+                                         const String&storedTarget){
+  resetState(141U);
+  lastEdge=100U;
+  pendingPulses=existing;
+  pendingTarget=storedTarget;
+  sampleCoinPulseEdge(true);
+  const uint32_t unresolvedEdges=(uint32_t)existing+1U;
+  if(saveCalls!=0 || pendingPulses!=existing)
+    return fail(name,"unrepresentable pulse was appended to the bounded pending record");
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     !pendingReady || relayOn || ledOn)
+    return fail(name,"overflow/target drift did not latch deny and force outputs OFF");
+  if(backupCalls!=1 || markerCalls!=1 ||
+     backupEdges!=unresolvedEdges || markerEdges!=unresolvedEdges)
+    return fail(name,"fault latch did not persist the complete unresolved edge count");
+  if(!backupSawRelayOff || !backupSawLedOff ||
+     !markerSawRelayOff || !markerSawLedOff)
+    return fail(name,"fault persistence began before output inhibition");
+  sampleCoinPulseEdge(false);
+  fakeNow=200U;
+  sampleCoinPulseEdge(true);
+  if(saveCalls!=0 || pendingPulses!=existing ||
+     backupCalls!=1 || markerCalls!=1)
+    return fail(name,"later pulse retried or mutated the unresolved batch");
+  return true;
+}
+static bool runUnrepresentablePulseCases(){
+  if(!runUnrepresentablePulseFault("pulse-overflow-21",20U,"target-01")) return false;
+  if(!runUnrepresentablePulseFault("pending-target-changed",1U,"other-target")) return false;
   return true;
 }
 int main(){
@@ -227,7 +257,9 @@ int main(){
   ++passed;
   if(!runDeniedGates()) return 8;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/8 top-level scenarios\n";
+  if(!runUnrepresentablePulseCases()) return 9;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/9 top-level scenarios\n";
   return 0;
 }
 '''
@@ -279,8 +311,13 @@ def main():
         ("inclusive-debounce", "void sampleCoinPulseEdge(bool active){",
          "millis()-lastEdge>runDebounceMs",
          "millis()-lastEdge>=runDebounceMs", "deny-case-9"),
-        ("missing-target-binding", "void sampleCoinPulseEdge(bool active){",
-         "pendingTarget==activeTarget && ", "", "deny-case-6"),
+        ("missing-pulse-overflow-guard", "void sampleCoinPulseEdge(bool active){",
+         "pendingPulses>=20", "pendingPulses>20", "pulse-overflow-21"),
+        ("missing-target-drift-guard", "void sampleCoinPulseEdge(bool active){",
+         "pendingTarget!=activeTarget", "false", "pending-target-changed"),
+        ("missing-overflow-fault-latch", "void sampleCoinPulseEdge(bool active){",
+         "latchPollPulseFault((uint32_t)pendingPulses+1U);", "",
+         "fault latch did not persist"),
         ("ignored-save-failure", "void sampleCoinPulseEdge(bool active){",
          "fsReady=false;\n        pendingReady=true;", "",
          "failed durable write did not disable filesystem/intake"),
