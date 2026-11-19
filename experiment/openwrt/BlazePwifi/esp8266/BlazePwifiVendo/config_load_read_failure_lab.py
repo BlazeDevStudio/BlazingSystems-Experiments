@@ -9,11 +9,12 @@ uses deterministic poison bytes to model that untrusted RAM state.
 Core source:
 https://github.com/esp8266/Arduino/blob/3.1.2/libraries/EEPROM/EEPROM.cpp
 
-The lab covers full-image read failures, same-boot setup-save denial after
-malformed v1/v2 or unknown records, successful local v1/v2-to-v3 migration
-with poll-fault marker preservation, and a failed migration commit followed
-by cold-boot recovery. These are fake-flash host simulations, not physical
-power-cut acceptance or the separate financial ledger migration.
+The lab covers full-image read failures for erased and valid non-erased v3
+images, same-boot setup-save denial after malformed v1/v2 or unknown records,
+successful local v1/v2-to-v3 migration with poll-fault marker preservation,
+and failed migration commit followed by cold-boot recovery. These are
+fake-flash host simulations, not physical power-cut acceptance or the
+separate financial ledger migration.
 """
 from pathlib import Path
 import re
@@ -135,7 +136,8 @@ def extract_constants(source: str, names):
             selected.append(line)
     return "\n".join(selected)
 
-def source_functions(source: str, omit_failure_invalidation: bool = False) -> str:
+def source_functions(source: str, omit_failure_invalidation: bool = False,
+                     omit_full_image_read_guard: bool = False) -> str:
     names = [
         "makeSetupPassword",
         "configChecksum",
@@ -177,10 +179,24 @@ def source_functions(source: str, omit_failure_invalidation: bool = False) -> st
                     "  // injected mutation: verified-image authority was not revoked",
                     1,
                 )
+            if (name == "loadCfg" and index == 0 and omit_full_image_read_guard):
+                anchor = """  if(!refreshVerifiedEepromImage()){
+    latchConfigPersistenceFailure("CRITICAL: full EEPROM image read/restore failed; preserve configuration and poll-fault bytes; outputs disabled.");
+    return;
+  }"""
+                if anchor not in function:
+                    raise RuntimeError("mutation anchor missing from loadCfg full-image guard")
+                function = function.replace(
+                    anchor,
+                    "  // injected mutation: skip status-bearing full-image verification",
+                    1,
+                )
             pieces.append(function)
     return "\n\n".join(pieces)
 
-def harness(source: str, omit_failure_invalidation: bool = False) -> str:
+def harness(source: str, omit_failure_invalidation: bool = False,
+            omit_full_image_read_guard: bool = False,
+            valid_v3_only: bool = False) -> str:
     structs = "\n\n".join([
         extract_block(source, "struct ConfigV1") + ";",
         extract_block(source, "struct ConfigV2") + ";",
@@ -209,6 +225,7 @@ static unsigned rawReadFailFirstCount=0;
 static bool rawReadPersistentFailure=false;
 static unsigned flashWriteCount=0;
 static bool fakeCommitFailure=false;
+static bool runValidV3Only=false;
 
 bool fakeFlashRead(uint32_t address,uint8_t* destination,size_t length);
 struct FakeEEPROM {
@@ -316,7 +333,8 @@ bool journalRecoveryRequired=false;
 bool fsReady=true;
 std::string activeTarget="target";
 """
-    functions = source_functions(source, omit_failure_invalidation)
+    functions = source_functions(source, omit_failure_invalidation,
+                                 omit_full_image_read_guard)
     main = r"""
 std::array<uint8_t,32> seedPreexistingMarker(){
   FakeEEPROM::flash.assign(POLL_FAULT_EEPROM_BYTES,0xFF);
@@ -406,7 +424,65 @@ ConfigV2 makeValidV2(){
   value.coinActiveLow=1;
   return value;
 }
+Config makeValidV3(){
+  Config value{};
+  value.magic=MAGIC;
+  strlcpy(value.ssid,"verified-v3-ssid",sizeof(value.ssid));
+  strlcpy(value.pass,"verified-v3-pass",sizeof(value.pass));
+  strlcpy(value.server,"192.0.2.44",sizeof(value.server));
+  strlcpy(value.key,"verified-v3-key",sizeof(value.key));
+  strlcpy(value.id,"verified-v3-id",sizeof(value.id));
+  strlcpy(value.apPass,"verified-setup-pass",sizeof(value.apPass));
+  value.coinPin=4;
+  value.insertLedPin=14;
+  value.relayPin=5;
+  value.coinActiveLow=1;
+  value.relayActiveHigh=0;
+  value.ledActiveHigh=1;
+  value.outputPolarityConfigured=1;
+  value.checksum=configChecksum(value);
+  return value;
+}
+bool runValidV3ImageReadFailureScenario(){
+  const auto marker=seedPreexistingMarker();
+  const Config validV3=makeValidV3();
+  memcpy(FakeEEPROM::flash.data(),&validV3,sizeof(validV3));
+  const auto original=FakeEEPROM::flash;
+
+  resetEepromObject();
+  resetRuntime();
+  rawReadFailFirstCount=2; // EEPROM.begin() read and full-image read both fail.
+  rawReadPersistentFailure=false;
+  loadCfg();
+  Config emptyConfig{};
+  if(configImageReadVerified || memcmp(&cfg,&emptyConfig,sizeof(Config))!=0 ||
+     !journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     flashWriteCount!=0 || FakeEEPROM::flash!=original ||
+     !markerUnchanged(marker)) return false;
+  // The setup-AP save entrypoint must remain blocked after the read failure.
+  if(saveCfg()) return false;
+  if(flashWriteCount!=0 || FakeEEPROM::flash!=original ||
+     !markerUnchanged(marker)) return false;
+
+  // A later cold boot with readable flash must recover the original v3 image,
+  // not defaults, while the pre-existing fault marker still denies outputs.
+  resetEepromObject();
+  resetRuntime();
+  rawReadFailFirstCount=0;
+  rawReadPersistentFailure=false;
+  loadCfg();
+  if(!configImageReadVerified || cfg.magic!=MAGIC ||
+     strcmp(cfg.ssid,"verified-v3-ssid")!=0 || !outputPolarityKnown ||
+     flashWriteCount!=0) return false;
+  loadPollPulseFaultLatch();
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     !markerUnchanged(marker) || FakeEEPROM::flash!=original) return false;
+  return true;
+}
 int main(){
+  if(!runValidV3ImageReadFailureScenario()) return 58;
+  std::cout<<"VALID_V3_IMAGE_READ_FAILURE_PRESERVE_COLD_BOOT_PASS\n";
+  if(runValidV3Only) return 0;
   // RED target: EEPROM.begin's first 544-byte read fails, then a direct full
   // image read can recover. Default Config save must preserve the valid marker.
   auto marker=seedPreexistingMarker();
@@ -564,7 +640,7 @@ int main(){
   return 0;
 }
 """
-    return "\n".join([
+    program = "\n".join([
         prelude,
         structs,
         "Config cfg{};",
@@ -572,6 +648,12 @@ int main(){
         functions,
         main,
     ])
+    if valid_v3_only:
+        anchor = "static bool runValidV3Only=false;"
+        if anchor not in program:
+            raise RuntimeError("valid-v3-only selector anchor missing")
+        program = program.replace(anchor, "static bool runValidV3Only=true;", 1)
+    return program
 
 def main():
     source=SOURCE.read_text(encoding="utf-8")
@@ -598,12 +680,19 @@ def main():
             else:
                 if ran.returncode==0:
                     raise RuntimeError(label+" mutation unexpectedly survived")
-                print("MUTATION_REJECTED missing-config-image-invalidation exit="+str(ran.returncode))
+                print("MUTATION_REJECTED "+label+" exit="+str(ran.returncode))
             return ran.returncode
 
+    # Test-first RED: bypass the production full-image read guard. A valid,
+    # non-erased v3 image must not be mistaken for defaults when both reads fail.
+    compile_and_run(
+        harness(source, omit_full_image_read_guard=True, valid_v3_only=True),
+        "ESP8266 missing full-image guard mutation",
+        False,
+    )
     compile_and_run(harness(source), "ESP8266 config read/migration lab", True)
-    # Prove the new malformed-record/setup-save assertions detect removal of
-    # the production failure-latch write-authority revocation.
+    # Prove the malformed-record/setup-save assertions detect removal of the
+    # production failure-latch write-authority revocation.
     compile_and_run(
         harness(source, omit_failure_invalidation=True),
         "ESP8266 missing-config-image-invalidation mutation",
