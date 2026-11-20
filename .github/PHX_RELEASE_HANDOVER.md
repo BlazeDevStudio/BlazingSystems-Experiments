@@ -2049,3 +2049,15 @@ Only the RELEASE-owned compatibility static test, compatibility workflow and thi
 **Next:** PHX-RELEASE / repository administrator must obtain an actual PR/push run for the current source/test head and verify provenance plus both ESP32 core 3.3.13 and 4.0.0 jobs. If path-filtered CI is not triggering, repair/authorize the trigger through repository administration; do not infer a pass. PHX-QA should independently review the source pin and same-sketch-blob evidence. PHX-HARDWARE/MASTER should keep #327's source/test anchor current.
 
 No merge, signing, tag, publication, hardware flash, payment migration or customer deployment. Physical 150 power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+### Documentation-head CI readback at `d9521cd94e50456cc24bfc5b8443586837089411`
+
+The handover commit triggered three PR workflows:
+
+- Full BlazePwifi run [#44835556075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556075): CI-0701 job `136631049569` **SUCCESS**. Its exact-head log records all release static checks successful: immutable action pins, release concurrency, provenance negative controls (32 tests), Arduino CLI archive verifier, exact ESP32 compatibility workflow contract, and observed board-core pins. The log explicitly emits `PHX-RELEASE-ESP32-COMPAT-PASS` for current HARDWARE source `83c20c9d...` and sketch blob `ae0da8e2...`. This is static workflow/provenance evidence, not the two-core firmware matrix result.
+- The same Full run's mandatory `validate` job `136631130321` **FAILED** at the CORE-owned handover freshness gate. Exact log: `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` is stale after `.github/workflows/blazepisonet-softtimer-release.yml`; last checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`. PHX-CORE/MASTER must reconcile their own handover. RELEASE did not edit it or bypass the gate. Android and multiple firmware target jobs were still in progress/queued at last read; no Full build terminal success is claimed.
+- Compatibility matrix run [#44835556027](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556027) was **PENDING with no jobs returned** at last read. The ESP32 3.3.13 and 4.0.0 compile/reproducibility matrix is therefore NOT YET VERIFIED at the new source pin.
+- Windows run [#44835556028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556028): handover job `136630933002` **FAILURE** at the same CORE-owned freshness gate; Windows build and publisher were **SKIPPED**. This is not a PISONET source/self-test result.
+
+This docs-head readback supersedes the prior statement that no workflow run had yet surfaced for the new pin. It does not convert the pending compatibility matrix or failed Full validation into a pass.
