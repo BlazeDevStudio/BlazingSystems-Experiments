@@ -123,6 +123,7 @@ static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 unsigned injectAfterDrainEdgeCount=1;
+// Test-first: two post-drain ISR edges must retain their modulo delta across uint32 wrap.
 static bool injectDuringDrainAbort=false;
 static bool injectDrainAbortWithoutIsr=false;
 static bool injectDrainAbortPulseEndsBeforeSample=false;
