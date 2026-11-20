@@ -36,3 +36,12 @@ No application intake, GPIO, relay, coin admission, response format, CORE contra
 - PHX-CORE / PHX-MASTER still own the canonical authenticated response, protected witness and coin receipt contracts.
 
 **Classification:** focused CI VERIFIED for the host Mbed TLS 2.28.8 build; local failure injection SIMULATED; target Mbed TLS 4 intentionally NOT TESTED beyond compile-time guard; HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO. No merge, flash, deployment, live money or release action.
+
+
+## Addendum — exact Full result and #327 stack divergence (2026-11-20 UTC04)
+
+The docs successor at `82e436dd77c5c62e838fd5dc2bbb789458f60201` cleared the handover freshness gate. Exact Full [run #44673076995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673076995) completed **FAILURE**: validation job `136078545528` PASS; ESP8266 job `136078545345` PASS; ESP32 job `136078545445` FAIL because Arduino ESP32 core 4.0.0 lacks `mbedtls/sha256.h` included by inherited `BlazePwifiVendo32.ino:6`. Other platform jobs and v0.4 simulations passed; ESP32 simulation, signing and publishing were skipped. This is not Full CI acceptance.
+
+The failure is outside the lab-only `ControllerAuthV1Lab.h` change. Separate candidate #327 at `bcd7757663ae6c1227b4fed65ad8a9674a35bd31` already contains an ESP32 Mbed TLS 4 PSA Crypto selector; its exact Full run #44671436863 has ESP32 job `136073095730` PASS, while validation job `136073095789` fails at the QA-owned positive poll-signature fixture. #327 is present in Master architecture evidence but absent from the current active PR list in `ROLE_ASSIGNMENTS.md`. No cross-stack cherry-pick or rebase was performed.
+
+**Owner action:** PHX-MASTER must reconcile the canonical Hardware stack and assignment list; PHX-RELEASE owns toolchain pinning; PHX-HARDWARE owns any approved application PSA port; PHX-QA owns the default-deny fixture/version matrix; PHX-CORE owns shared authenticated response/receipt contracts. The current #254 helper remains lab-only and rejects Mbed TLS 4; it is not a PSA implementation.
