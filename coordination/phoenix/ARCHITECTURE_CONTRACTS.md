@@ -1048,3 +1048,20 @@ COE Stage 5 PR #48 defines a new BLZCS1 HMAC-SHA256 controller/ESP protocol; it 
 **Mandatory bridge invariants before any paid use:** durably map (ESP identity, session) to (Vendo ID, original target nonce, customer account, expiry); bind each physical event to one stable backend nonce; treat timeouts as unknown and retry the identical tuple; verify the backend's signed durable receipt before exact event/session/pulse ACKN; retain pending/unknown state across router and ESP reboot; block new coin acceptance until reconciliation. Never infer customer identity from IP alone or regenerate credit after expiry without operator reconciliation.
 
 The Stage 5 two-slot CRC32 journal and HMAC transport are not an independent protected anti-rollback witness, and HMAC does not encrypt the LAN transport. Host/native/ESP8266 CI does not establish LittleFS crash atomicity, physical pulse losslessness, 150 power cuts, or device soak. The existing backend's paid-state-uncertain and default-deny gates remain authoritative. No positive admission, migration, or production release is authorized by Stage 5 CI.
+### 6.54 Remote CS v1 target-kind and expiry authority — 2026-11-20 UTC01
+
+**Contract:** a physical ESP coin event may be ACKed only after the correct backend customer/target has durably committed the exact event once and returned a signed receipt. Before any paid backend mutation, the backend must prove that the active target is authorized for the adapter's declared product kind. A client-side check performed after the backend response is not a pre-credit safety gate.
+
+**Observed Stage 5.1 gap (COE #49 `aeb8ff11...`):**
+- `RouterV1.poll()` verifies a signed v1 response over `insert`, `target_nonce` and `expires`, but the response contains no target `kind` and no signed server time.
+- `RouterV1.coin()` calls the v1 `coin` endpoint before rejecting a response with `rental:true`.
+- The #26 backend's `coin` branch reads the target `kind`; for rental it calls `bp_rental_apply_coin`, updates rental progress and returns `rental:true` only afterward. Therefore an unsupported rental target can cause a backend rental-time mutation before the sidecar refuses the response and withholds ESP ACK. The existing mock test does not exercise the backend mutation.
+- The adapter's documented hotspot-only assumption is not cryptographically or server-side enforced by the current poll response. Require a signed target-kind claim and server-side rejection before any rental/paid write, or a separately enforced hotspot-only controller identity that the backend checks before the coin branch. Do not rely on UI/operator configuration alone.
+
+**Expiry authority:** the sidecar uses local `time.time()` to calculate the remaining ESP lease from router expiry. Since the signed poll response has no server-time anchor, a slow/rolled-back sidecar clock can over-open the ESP relative to the router's actual expiry; a late backend rejection can strand a physical pulse. Require a signed time anchor and monotonic lease calculation, or an equivalent server-enforced expiry gate before actuation.
+
+**Required independent tests:** real backend-path tests for hotspot and rental targets proving the rejected rental case causes no ledger/time/progress mutation; valid and invalid signed target-kind; same-event retry after response loss; lost ESP ACK; reboot reconciliation; expiry and clock skew; plus journal readback/fault tests. Existing #49 CI's 16 SQLite/mock tests and ESP8266 compile are LAB/CI evidence only, not native router, physical coin or power-cut acceptance.
+
+**Standing boundaries:** local SQLite FULL sync is not a protected anti-rollback witness; ESP CRC32 journal is not a protected signing witness; the physical pulse-to-first-durable-write loss window remains. COE #49 is a sidecar, not an installable OpenWrt service. Keep default dry-run; never enable paid-lab mode on an occupied/customer machine. No migration to #26 is approved. **PRODUCTION NO-GO.**
+
+See [PHX-MASTER UTC01 COE #49 audit](PHX_MASTER_UTC01_20261120_COE49_STAGE51_TARGET_KIND_AND_CLOCK_AUDIT.md).
