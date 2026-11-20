@@ -22,8 +22,8 @@ from inspect_esp32_elf_sections import (
 
 _NM_POSIX_ROW = re.compile(
     r"^(?P<name>\S+)\s+(?P<type>[A-Za-z?])\s+"
-    r"(?P<value>(?:0[xX])?[0-9a-fA-F]+)\s+"
-    r"(?P<size>(?:0[xX])?[0-9a-fA-F]+|\?)$"
+    r"(?P<value>(?:0[xX])?[0-9a-fA-F]+)"
+    r"(?:\s+(?P<size>(?:0[xX])?[0-9a-fA-F]+|\?))?$"
 )
 _ADDRESS_SPEC = re.compile(
     r"(?P<label>[A-Za-z][A-Za-z0-9_.-]*)=(?P<address>0[xX][0-9a-fA-F]+)"
@@ -50,7 +50,7 @@ def parse_nm_symbols(output: str) -> list[dict[str, Any]]:
 
         value = _hex_value(match.group("value"))
         raw_size = match.group("size")
-        size = None if raw_size == "?" else _hex_value(raw_size)
+        size = None if raw_size in (None, "?") else _hex_value(raw_size)
         if value > 0xFFFFFFFF or (size is not None and size > 0xFFFFFFFF):
             raise ValueError(f"nm symbol exceeds 32-bit address space at line {line_number}")
         if size is not None and value + size > 0x100000000:
