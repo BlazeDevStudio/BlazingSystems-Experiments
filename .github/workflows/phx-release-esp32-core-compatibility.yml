@@ -98,7 +98,7 @@ jobs:
           first_output_dir="$output_root/first"
           second_output_dir="$output_root/second"
           sketch_dir="hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
-          mkdir -p "$output_root" "$first_output_dir" "$second_output_dir"
+          mkdir -p "$output_root" "$build_dir" "$first_output_dir" "$second_output_dir"
 
           arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$first_output_dir" "$sketch_dir"
           python3 .github/scripts/verify_esp32_application_image.py --output-dir "$first_output_dir" --sketch-name "BlazePwifiVendo32"
