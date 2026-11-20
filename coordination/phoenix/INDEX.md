@@ -62,3 +62,13 @@ No route promotion, source migration, merge, release, signing, secret provisioni
 - Release #291: BlazePwifi full CI #44673292595 PASS with production signing/publishing skipped; ESP32 reproducibility #44673292516 FAIL on both cores; Windows #44673293276 FAIL.
 - COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows / zero jobs.
 - No source migration, ownership transfer, route promotion, merge, release or hardware acceptance.
+
+## Latest exact-head reconciliation — 2026-11-20 UTC05
+
+- [UTC05 Release reproducibility and COE #26 audit](PHX_MASTER_UTC05_20261120_RELEASE_REPRODUCIBILITY_AND_COE26_EXACT_HEAD_AUDIT.md).
+- Master branch at audit start: \`phoenix/master-coordination@2a2f6bf0926676250aed007c1a001605173bb6c0\`; PR #288 was OPEN/DRAFT against main \`f4e8a891aed8af86d5fd315d28750a0ac3a7372b\`, with 119 changed paths, all under \`coordination/phoenix/\`.
+- Active v0.6 audit-foundation ref: \`2fbd2475e9f54878c316fa7cea2f228386b0e859\`; legacy v0.5.3 ref: \`aad3aade72c1156eecba1fed30907c6d0283b2c5\`.
+- RELEASE #291 docs head \`8d0c975816569849118c95637078cc29509ef3a0\`: strict reproducibility [#44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) fails on both ESP32 cores; Windows [#44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650) fails in PISONET-owned \`$buildWorkflow\`; BlazePwifi [#44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) was still in progress at readback.
+- HARDWARE #327 docs head \`b6304208d65548a9cfe371504badf03ae3e15dcf\`: focused quarantine/relay runs pass; Full [#44675789227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789227) fails at QA-owned \`Missing poll signature check\`.
+- COE #26 remains frozen at \`b382d233ff06c8791b1028bed3c617cc7b670d12\`, five queued workflows / zero jobs. COE #49 remains separate audit-only; COE #35 remains blocked by missing site ULA authority and unavailable Bubblewrap.
+- Private v11 registry/newer corrections remain BLOCKED; no older snapshot was substituted. Issue #266 remains OPEN and the Master cleanup checkbox remains unchecked.

@@ -2395,3 +2395,41 @@ COE #49 remains separate from #26 and changes no Pisowifi backend path. The exis
 7. Registry custodian: restore authorized access to v11 and newer private corrections.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unproven.
+
+## PHX-MASTER UTC05 — live exact-head role / destination matrix (2026-11-20)
+
+This section supersedes the UTC04 current-state rows above. All CI states below are exact-run readbacks, not claims about a merged tree.
+
+| Role / candidate | Exact PR head / source anchor | Exact-head CI | Disposition |
+|---|---|---|---|
+| CORE #252 | \`c82705f2de865c89ab733b10efa84f26f56a5cc4\` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS | Scoped DENY-only; no independent freshness witness or production financial acceptance. |
+| RENTAL #289 | \`68928774d0d7cf65adb26bc6b54199a3159d066c\` | [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS | Scoped; not a real PackageInstaller failure or device acceptance. |
+| PISONET #255 | \`d01fd1642c105b3b0f6cd3343d1c9b67291f6e09\` | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS | Scoped Windows CI; physical USB-RS232 acceptance absent. |
+| HARDWARE #327 | docs \`b6304208d65548a9cfe371504badf03ae3e15dcf\`; source/test \`2f89326d5b555ffdb2bfaba0a404483d665aa614\`; base #326 \`58c558fb6a237935214621adc3dee65a10fe1a51\` | Quarantine [#44675789220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789220) PASS; relay [#44675789222](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789222) PASS; Full [#44675789227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789227) FAIL at QA-owned Missing poll signature check | Keep firmware deny-only; downstream Full jobs skipped. |
+| HARDWARE #254 | \`bea6f44e66f5d692859449253facebf01b217891\` | Focused [#44674147661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44674147661) PASS; Full [#44674147778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44674147778) FAIL at ESP32 compile (\`mbedtls/sha256.h\` missing) | Separate candidate; no silent stack into #327. |
+| QA #290 / #292 | \`5c29d15994cee1279058f1eca12f2a3180704292\` / \`75a3f66d9563e38a0a48b9cf487b0b057a91ea96\` | #290 [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS without NativeComInterfaceHandleLab; #292 no exact-head run | Native lab and #292 exact-head evidence still missing. |
+| RELEASE #291 | docs \`8d0c975816569849118c95637078cc29509ef3a0\`; source/test \`a7ad93d4a55292a3e281a6fe2d9ba46543a23070\`; Hardware source \`369007bcbc684a0923a586e991f3aa0667cda105\`; sketch blob \`1458f32881d3b340f1101dd0215618b54c1b688b\` | Compatibility [#44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) FAIL both cores; Windows [#44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650) FAIL; BlazePwifi [#44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) IN PROGRESS at readback | Reproducibility fail-closed; exact byte ranges in UTC05 report; publisher skipped. |
+
+### RELEASE #291 differing image bytes
+
+- Core 3.3.13: 68 differing bytes, ranges 176–207, 9668, 9670–9671, 1044063–1044095. Segment-0 data offsets 9636 and 9638–9639 at load address 0x3f400020; ELF descriptor SHA and checksum/appended SHA also differ.
+- Core 4.0.0: 65 differing bytes, ranges 176–207, 9716, 1098143–1098156, 1098158–1098175. Segment-0 data offset 9684 at load address 0x3f400020; ELF descriptor SHA and checksum/appended SHA also differ.
+- Both builds compile, but neither produces byte-identical images. Root cause is not yet established. RELEASE must preserve both ELF outputs and use pinned Xtensa section mapping; do not normalize bytes.
+
+### CoinOperatedEcosystem destination
+
+| Candidate | Exact head / runs | Disposition |
+|---|---|---|
+| COE main / #26 | main \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\`, 205 paths | Five workflows queued / zero jobs: [case guard](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [Windows](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632), [Hardware/Shared](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [Rental](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [Pisowifi](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557). Frozen; no destination acceptance. |
+| COE #49 / #48 | #49 \`aeb8ff11b2f5db9a5f86280ab62ab988245f3919\` on #48 \`8286548e395366f2332830025fed00ceebdfb24a\` | Stage 5.1 [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) 5/5 PASS; case guard [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; shared Hardware [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL at missing \`mbedtls/sha256.h\` under ESP32 core 4.0.0. Hardware declined implementation ownership; no route exists. |
+| COE #35 | \`7b9706d898fb5f36c6ed96504aefd04dc59bdc1b\` | Case guard [#44617783021](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617783021) PASS; mandatory sandbox [#44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) FAIL because Bubblewrap is absent; shared/profile [#44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050) FAIL because all 10 profiles lack approved site-scoped RFC 4193 ULA /48 authority. | Separate release candidate; not #26 acceptance. |
+
+### Governance and execution
+
+- \`OWNERSHIP_ROUTES.json\` remains blob \`e4db324315a1b3543fec17a148fbf960170fcb29\`, \`DRAFT_REVIEW_ONLY\`, PHX-MASTER target null.
+- Issue #266 remains OPEN; Master cleanup checkbox remains unchecked; no mass moves/deletions.
+- Private v11 registry and newer corrections were not found in the current Library search; no Google Drive connector is exposed; older snapshots were not substituted.
+- Full Master Python suite and Master Actions NOT RUN. The in-memory 14-assertion source/metadata readback is not the repository test suite.
+- No subsystem source, route, payment, signer, release, hardware or destination staging changed. No merge, migration, flash, payment operation or physical test occurred.
+
+**PRODUCTION NO-GO.**
