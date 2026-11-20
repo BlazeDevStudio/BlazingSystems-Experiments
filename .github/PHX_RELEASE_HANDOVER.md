@@ -1238,3 +1238,34 @@ The 32-byte app_elf_sha256 field and final checksum+appended-SHA footer change a
 At the next activation, preserve or print the first and second .elf outputs before the second clean build overwrites the build directory, then compare ELF files and use the pinned Xtensa objdump -h section table to map the non-descriptor segment offsets to exact ELF sections. Keep the current byte comparator fail-closed. Do not apply timestamp, linker or hash-normalization workarounds until the changing section/field is identified.
 
 No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — POSIX nm size-less row parser correction (2026-11-20T08Z)
+
+**PR #291:** OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`. Base `734b89d9e7792247e8376335c3f3685500ab3f89`.
+
+### Exact defect and test-first correction
+- Current source/test head at activation start: `df189b079a89f52b6152e613f5f5a32817c05f04`.
+- The exact-head compatibility run [#44697909618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697909618) failed both ESP32 core legs at the release-owned ELF-symbol inspector test; compilation and reproducibility comparison were skipped.
+- The existing size-less POSIX nm regression fixture had an over-escaped newline. Test-only commit [`1cf6bbcc`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1cf6bbccd89f0e5b3a1c41dc2763d8938897dc19) corrected the fixture to a real newline. Expected RED was reproduced in [#44701544520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44701544520): both cores fail at the intended parser case with `ValueError: malformed POSIX nm row`; 9/10 symbol tests pass, and the size-less row is the one error.
+- Implementation commit [`a7ed8ff0`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a7ed8ff01c5b7d2a6621cbe31eb45063fef4bf88) makes the POSIX nm size column optional and maps both an absent size and the explicit `?` size marker to `None`. It preserves strict rejection of malformed rows and 32-bit overflow.
+
+### Exact-source Actions at source/test HEAD `a7ed8ff01c5b7d2a6621cbe31eb45063fef4bf88`
+- Compatibility [#44701833387](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44701833387): both exact HARDWARE source legs installed the requested core, passed section-inspector tests and passed all 10 ELF-symbol tests. Both then **FAILED CLOSED** at the unchanged byte-for-byte application-image comparison. This is not a parser failure.
+  - ESP32 4.0.0 / esp-x32 2512: `.flash.rodata`, 9,480 nm symbols; observed drift addresses map to the section but have no containing sized symbol (`NEAREST_ONLY`). Nearest symbols are absolute linker boundary symbols around `0x3f400150`.
+  - ESP32 3.3.13 / esp-x32 2610: `.flash.rodata`, 9,148 nm symbols; observed addresses have no containing sized symbol (`NEAREST_ONLY`), nearest `_flash_rodata_start` at `0x3f400120`.
+  - The reproducibility comparator still reports `OTHER_IMAGE_CONTENT_DIFF`; core 4.0.0 differs at 176–207, 9716–9717 and footer 1098143–1098175 (67 bytes). Core 3.3.13 differs at 176–207, 9668, 9670–9671 and footer 1044063–1044095 (68 bytes). No root cause is established; comparator remains fail-closed.
+- Full BlazePwifi [#44701833382](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44701833382): **COMPLETED SUCCESS**, 26 successful jobs, 0 failed, 4 production import/sign/publish jobs skipped. All target jobs, validation, ESP32/ESP8266 builds, Android, update bundle and simulations passed. Hosted CI/simulation only.
+- Windows [#44701833371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44701833371): handover PASS; package-parity self-test PASS; build-windows **FAIL** at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset; publisher SKIPPED. No PISONET file was changed by PHX-RELEASE.
+
+### Current ownership / provenance
+- MASTER PR #288: `737f42b40cc25c718aa1f1964165f53a50988bd0`; current `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, PHX-RELEASE route `reimplementation-review`. No migration or route promotion.
+- Experiments #242 remains OPEN/DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 remains OPEN/DRAFT at this handover predecessor.
+- COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. COE #31 remains OPEN/DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; hardware/shared and case-collision jobs pass, while Bubblewrap namespace preflight fails closed with UID-map Permission denied (exit 125).
+- Private Drive registry v11 was not surfaced by exact-name Library search; older v3–v7 and October registry snapshots were not substituted. No private contents or identifiers were copied to GitHub.
+- PR #291 has no submitted independent review. Its changed-file set includes pre-existing PISONET paths; this activation changed only the two RELEASE-owned ELF-symbol files and this RELEASE-owned handover.
+
+### Next action
+Preserve both exact-build ELF files separately and inspect the pinned Xtensa `.flash.rodata` section bytes around the observed file offsets against the section's actual file offset, linker map and read-only symbol table. The current nm output supplies only nearest linker-boundary symbols, not containing symbols. Do not infer ownership from a nearest predecessor, modify compiler/linker flags, normalize hashes, or weaken byte equality until the changed bytes are attributed. PHX-QA should independently review the parser and diagnostics; PHX-MASTER retains migration/release gate authority.
+
+No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment. **PRODUCTION NO-GO.**
