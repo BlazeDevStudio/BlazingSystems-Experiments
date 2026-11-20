@@ -236,6 +236,48 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
             require_softtimer_signing_steps_are_protected(unsafe)
 
 
+def require_softtimer_tag_ref_absence_before_publish(content: str) -> None:
+    """Require an absent Git tag ref, not merely an absent Release object."""
+    publisher = job_block(content, "publish-release")
+    required = (
+        '$tagLookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$releaseTag" 2>&1 | Out-String',
+        "$tagLookupExit = $LASTEXITCODE",
+        "if ($tagLookupExit -eq 0) {",
+        "$tagHttpStatuses = @([regex]::Matches($tagLookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\\s|$)'))",
+        "if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '404') {",
+        "gh release create $releaseTag",
+    )
+    positions = tuple(publisher.find(fragment) for fragment in required)
+    if any(position < 0 for position in positions):
+        raise AssertionError(
+            "SoftTimer publisher must prove the Git tag ref is absent with one unambiguous "
+            "HTTP 404 before creating a release"
+        )
+    if positions != tuple(sorted(positions)):
+        raise AssertionError(
+            "SoftTimer Git-tag absence check must complete before gh release create"
+        )
+
+
+class SoftTimerTagAdmissionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.windows_content = WINDOWS_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_publisher_requires_absent_git_tag_ref_before_release_creation(self):
+        require_softtimer_tag_ref_absence_before_publish(self.windows_content)
+
+    def test_publisher_rejects_ambiguous_or_non_404_tag_lookup(self):
+        unsafe = self.windows_content.replace(
+            "if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '404') {",
+            "if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '200') {",
+            1,
+        )
+        self.assertNotEqual(unsafe, self.windows_content)
+        with self.assertRaisesRegex(AssertionError, "one unambiguous HTTP 404"):
+            require_softtimer_tag_ref_absence_before_publish(unsafe)
+
+
 
 
 if __name__ == "__main__":
