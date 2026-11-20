@@ -573,7 +573,7 @@ class BuildProvenanceTests(unittest.TestCase):
 
     def test_checksum_manifest_rejects_noncanonical_path_aliases(self):
         digest = "a" * 64
-        canonical = f"{digest}  ./nested/payload.bin\\n".encode("utf-8")
+        canonical = f"{digest}  ./nested/payload.bin\n".encode("utf-8")
         self.assertEqual(
             provenance._parse_checksum_text(canonical, "SHA256SUMS"),
             {"nested/payload.bin": digest},
@@ -586,7 +586,7 @@ class BuildProvenanceTests(unittest.TestCase):
             "././nested/payload.bin",
         ):
             with self.subTest(name=name):
-                raw = f"{digest}  {name}\\n".encode("utf-8")
+                raw = f"{digest}  {name}\n".encode("utf-8")
                 with self.assertRaisesRegex(
                     provenance.ProvenanceError,
                     "unsafe checksum path",
