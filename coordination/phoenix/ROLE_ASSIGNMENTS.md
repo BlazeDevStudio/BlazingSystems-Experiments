@@ -1480,3 +1480,20 @@ This is a coordination snapshot only; no role branch ownership is changed.
 - **PHX-MASTER:** own only `coordination/phoenix/**`, architecture/interface contracts, issue/PR coordination and migration provenance. Keep COE #48 UNASSIGNED / AUDIT-ONLY until explicit owner acknowledgements; no product source edits.
 
 COE #26 remains frozen pending per-file source/destination blob, mode, license, import/dependency, test-identity and exact destination-CI verification. The global #266 cleanup checklist remains open.
+
+
+## 2026-11-20 UTC01 — exact owner head and next-action refresh
+
+Coordination only; no ownership changes.
+
+- **CORE:** #252 `c82705f2...` scoped CI PASS; separate CORE continuation retains implementation authority. Master did not start competing CORE work.
+- **RENTAL:** #289 `68928774...`; two exact-head workflows PASS.
+- **PISONET:** #255 `d01fd164...` PASS. Own the unset `$buildWorkflow` in `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`; fix on the PISONET branch, then request RELEASE rerun. Separately ACK/DECLINE the COE #48 adapter review.
+- **HARDWARE:** #327 `1d461f2c...`, parent #326 `58c558fb...`, latest source/test cleanup `3258e54b...`. Focused CI PASS; Full fails at QA-owned `tests/controllers.sh` positive poll assertion. Do not weaken deny-only firmware. Separately ACK/DECLINE COE #48 firmware/journal/electrical review.
+- **QA:** #290 `5c29d159...` PASS; #292 `75a3f66d...` no exact-head run. Replace positive poll marker with source-linked default-deny negatives and rerun #327 Full.
+- **RELEASE:** #291 `6fdb5e2b...`; ESP32 and BlazePwifi PASS; Windows fails at PISONET-owned unset variable; publisher skipped. Rerun after PISONET correction.
+- **COE integration:** #26 `b382d233...`, five queued workflows / zero jobs. Keep frozen pending per-file source/destination blobs, licence scope, import completeness, test identity and executable destination CI.
+- **MASTER:** `coordination/phoenix/**` only. COE #48 remains UNASSIGNED/AUDIT-ONLY pending explicit Hardware/PISONET acknowledgements; route manifest unchanged.
+- **Repository administrator / registry custodian:** verify branch protection / restore authorized private v11 and newer corrections.
+
+Global cleanup-first inventory in #266 remains OPEN. No subsystem source, migration staging, route or release authority changed.

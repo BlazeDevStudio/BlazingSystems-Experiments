@@ -2226,3 +2226,21 @@ All results are scoped to the listed exact refs. Green scoped jobs do not establ
 | COE CORE receipt vectors #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Case [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) and shell [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) PASS; no dedicated exact-head receipt-vector workflow returned |
 
 COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; all five unique workflows are queued with zero jobs. #35 shared/sandbox remain failed; #44 sandbox remains failed and does not establish site-wide ULA authority. Green scoped jobs do not establish combined destination CI, source parity, physical acceptance or production readiness.
+
+
+## 2026-11-20 UTC01 — current exact-head CI matrix (supersedes UTC00)
+
+| Role / candidate | Exact PR head | CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | `1d461f2c5fad1ea411ab89bab8d1a1f4e73dce1c` | Quarantine [44648324666](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324666) PASS; relay [44648324424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324424) PASS; Full [44648324417](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324417) FAIL at QA-owned positive poll marker |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head run |
+| RELEASE #291 | `6fdb5e2bee3fb7509856da984af25a35f1ea3976` | ESP32 [44649912631](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44649912631) PASS; BlazePwifi [44649912673](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44649912673) PASS; Windows [44649912632](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44649912632) FAIL in PISONET-owned negative self-test; publisher skipped |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows [43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632), [43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557) QUEUED; zero jobs each |
+| COE #48 | `8286548e395366f2332830025fed00ceebdfb24a` | Stage 5 [44643670696](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670696) PASS; case [44643670679](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670679) PASS; shared [44643670685](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670685) FAIL |
+| COE #35 | `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b` | Case [44617783021](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617783021) PASS; sandbox [44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) FAIL; shared [44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050) FAIL |
+
+COE #26 remains frozen. COE #48 is separate and UNASSIGNED/AUDIT-ONLY; BLZCS1 is incompatible with #26 `/cgi-bin/vendo` and no durable-credit adapter exists. Scoped CI does not establish migration or production acceptance. **PRODUCTION NO-GO.**
