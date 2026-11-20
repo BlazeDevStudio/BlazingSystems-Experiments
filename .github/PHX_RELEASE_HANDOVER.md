@@ -1651,3 +1651,61 @@ The normalizer now rejects those eight line-boundary characters in addition to t
 - Canonical private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` was not surfaced by exact-name Library search. The November 9 checkpoint and v6/v7 snapshots are historical provenance only; none was substituted and no private contents were copied to GitHub.
 
 Next: obtain an authorized exact-head Actions run (or owner-provided CI result) for source/test SHA \`60ee0d25...\`, then have PHX-QA independently review. Keep #291 draft. No merge, signing, tag, publication, hardware flash, payment migration or customer deployment. **PRODUCTION NO-GO.**
+
+## 2026-11-20 UTC16 — observed Arduino compiler provenance and isolated release tests
+
+**Scope:** RELEASE-owned build provenance only. No product firmware, CORE, RENTAL, PISONET, HARDWARE, QA or MASTER source was modified.
+
+### Defect and implementation
+
+The exact-head CI preview artifacts previously emitted \`toolchain.compiler_version: null\` even though ESP8266/ESP32 builds had succeeded. The release provenance writer now obtains expanded Arduino build properties for the exact FQBN and local library search path, resolves the selected C and C++ compiler executables, invokes each with \`--version\`, and fails closed if \`compiler.path\`, \`compiler.c.cmd\`, \`compiler.cpp.cmd\`, an executable or a version string is missing.
+
+The manifest now records:
+- \`compiler_version\` (observed C++ compiler first line)
+- \`compiler_c_version\`
+- \`compiler_c_binary\` and \`compiler_cpp_binary\`
+- \`compiler_version_source\`
+
+Absolute runner paths are not serialized. The build's installed Arduino CLI version, pinned board-core version, FQBN and sketch remain recorded.
+
+### Source/test/workflow commits
+
+- Test-first assertions: [fa65373e](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fa65373e0410db281fff1fcb66883e75c3188239)
+- Test fixture newline correction: [bc0d9884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/bc0d9884a646d941d3f19b678af8da9d8ba14dfd)
+- Compiler discovery and manifest fields: [f6dd4782](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f6dd4782bc06fa509230dd1175a70bcbb2e247b5)
+- Pass the exact build library directories into provenance collection: [1267309e](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1267309e2ead4d8b8c0afb85745ab51de94aca2b)
+- Add isolated provenance job and its action-pin count: [501c3602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/501c360299eaf4cda48453a8ad2cd8aa3129c34c), [f016732e](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f016732e13f25ceaae8c97d83cfac1c6401f3106)
+- Update the compatibility guard for the third read-only checkout: [93bbf19e](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/93bbf19e610051977045d04e5acd54881c34c31c)
+
+The isolated \`provenance\` job in \`.github/workflows/phx-release-esp32-core-compatibility.yml\` runs the provenance, Arduino CLI archive-verifier and immutable-action-pin regression suites independently of the product handover gate. It has read-only contents permission, a pinned checkout action and no publisher/signing permissions.
+
+### Exact-source CI evidence
+
+At exact PR head \`93bbf19e610051977045d04e5acd54881c34c31c\`, [Full run #44773037406](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773037406) reported:
+- CI-0701: PASS; the release provenance suite ran **27 tests**, all PASS.
+- Arduino CLI archive verifier: **8 tests**, all PASS.
+- ESP32 compatibility workflow static contract: PASS after updating the expected checkout count to three.
+- CI-0701 classified the source/test/workflow change as \`RUN_FULL\`, not docs-only.
+- The main \`validate\` job failed closed at the CORE-owned product freshness gate before product validation: \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\` is older than the current source/workflow changes; last checkpoint \`a978cb4835c4de9d6b1e58f0db4c4887acae8b0c\`. RELEASE did not edit that CORE-owned file.
+- ESP8266, ESP32 and OpenWrt target jobs were still running at the last inspection; no terminal result is claimed here.
+- Windows run #44773037473 failed at the same CORE handover freshness gate; PISONET build and publisher were skipped.
+
+The preceding exact-source build run [#44772444197](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44772444197) completed both ESP board jobs successfully and produced preview artifacts:
+- ESP8266 artifact [#14647828087](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44772444197/artifacts/14647828087): installed core \`esp8266:esp8266@3.1.2\`; C and C++ compiler \`xtensa-lx106-elf-gcc/g++ (GCC) 10.3.0\`; all **10** SHA256SUMS entries matched the archived files.
+- ESP32 artifact [#14648362103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44772444197/artifacts/14648362103): installed core \`esp32:esp32@3.3.13\`; C and C++ compiler \`xtensa-esp-elf-gcc/g++ (crosstool-NG esp-14.4.0_20261030) 14.4.0\`; all **24** SHA256SUMS entries matched the archived files.
+
+These are hosted CI preview artifacts and checksum readbacks, not approved production binaries or hardware evidence. The later compatibility workflow run [#44773037343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773037343) was pending behind an earlier compatibility matrix run at last inspection; its new isolated provenance job has no terminal result yet.
+
+### Current ownership and blockers
+
+- Experiments PR #291 remains OPEN / DRAFT / UNMERGED at \`93bbf19e610051977045d04e5acd54881c34c31c\`, based on #242 \`734b89d9e7792247e8376335c3f3685500ab3f89\`. Independent submitted reviews: none.
+- The accumulated PR diff still includes inherited CORE product handover paths and PISONET Windows test paths. Those paths were not modified in this task and must be reconciled by MASTER/owners before integration.
+- MASTER #288 is \`cf134056e7a2bef95c6a2b0727cad81e46e4de8a\`; ownership manifest remains \`DRAFT_REVIEW_ONLY\`, release workflow route remains \`reimplementation-review\`.
+- COE #26 remains \`b382d233ff06c8791b1028bed3c617cc7b670d12\` with five queued workflows and zero jobs. COE #31 remains \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`; its mandatory Bubblewrap sandbox failed closed at unprivileged UID-map setup (\`Permission denied\`, exit 125), while shared Hardware/Contracts CI and case-collision checks passed.
+- The complete 1,422-entry Library metadata listing did not surface canonical \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\`; v5/v6/v7 are not substitutes. No private registry contents were copied.
+- The earlier PISONET-owned negative self-test error (\`$buildWorkflow\` unset) remains outside RELEASE ownership; no PISONET file was changed.
+
+**Next owner actions:** CORE must refresh its product handover and rerun the exact-head Full validation; PHX-MASTER must reconcile inherited CORE/PISONET paths and review the release route; PHX-QA must independently review compiler provenance and checksum admission; PHX-INFRA must provide a namespace-capable sandbox runner for COE #31.
+
+**PRODUCTION NO-GO.** No merge, signing, tagging, publication, hardware flashing, financial migration or customer deployment occurred. Physical 150-power-cut and 30-device/24-hour acceptance remain untested.
+
