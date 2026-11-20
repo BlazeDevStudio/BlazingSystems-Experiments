@@ -138,8 +138,13 @@ class BuildProvenanceTests(unittest.TestCase):
         work.mkdir()
         archive = work / "openwrt-imagebuilder-25.12.5-ramips-mt7621.Linux-x86_64.tar.zst"
         archive.write_bytes(b"synthetic-imagebuilder-archive")
+        toolchain_name = (
+            "openwrt-toolchain-25.12.5-ramips-mt7621_gcc-14.3.0_musl.Linux-x86_64.tar.zst"
+        )
         (work / "sha256sums").write_text(
-            f"{checksum(archive)}  {archive.name}\n", encoding="utf-8"
+            f"{checksum(archive)}  {archive.name}\n"
+            f"{'d' * 64}  {toolchain_name}\n",
+            encoding="utf-8",
         )
         return work
 
@@ -169,6 +174,76 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse(result["release_state"]["production_authorized"])
         self.assertTrue((self.artifact / "BUILD-PROVENANCE.json").is_file())
         self.assertIn("BUILD-PROVENANCE.json", (self.artifact / "SHA256SUMS").read_text())
+
+    def test_openwrt_manifest_records_upstream_toolchain_reference_without_claiming_compilation(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        result = provenance.write_provenance(args, env=self.env)
+        reference = result["toolchain"]["upstream_toolchain"]
+        self.assertEqual(
+            reference["archive"],
+            "openwrt-toolchain-25.12.5-ramips-mt7621_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+        )
+        self.assertEqual(reference["sha256"], "d" * 64)
+        self.assertEqual(reference["gcc_version"], "14.3.0")
+        self.assertEqual(reference["libc_abi"], "musl")
+        self.assertEqual(
+            reference["checksum_catalog_sha256"],
+            checksum(work / "sha256sums"),
+        )
+        self.assertFalse(reference["archive_downloaded"])
+        self.assertFalse(reference["compiler_invoked"])
+        self.assertIsNone(result["toolchain"]["compiler_version"])
+        self.assertIn("does not invoke", result["toolchain"]["compiler_version_note"])
+
+    def test_openwrt_toolchain_reference_parses_target_slug_and_eabi_abi(self):
+        archive = (
+            "openwrt-toolchain-25.12.5-sunxi-cortexa7_gcc-14.3.0_musl_eabi.Linux-x86_64.tar.zst"
+        )
+        reference = provenance._openwrt_toolchain_reference(
+            {archive: "e" * 64},
+            version="25.12.5",
+            openwrt_target="sunxi/cortexa7",
+            checksum_catalog_sha256="f" * 64,
+        )
+        self.assertEqual(reference["gcc_version"], "14.3.0")
+        self.assertEqual(reference["libc_abi"], "musl_eabi")
+        self.assertEqual(reference["archive"], archive)
+
+    def test_openwrt_toolchain_reference_rejects_missing_ambiguous_and_invalid_entries(self):
+        with self.assertRaisesRegex(provenance.ProvenanceError, "exactly one"):
+            provenance._openwrt_toolchain_reference(
+                {},
+                version="25.12.5",
+                openwrt_target="ramips/mt7621",
+                checksum_catalog_sha256="f" * 64,
+            )
+        ambiguous = {
+            "openwrt-toolchain-25.12.5-ramips-mt7621_gcc-14.3.0_musl.Linux-x86_64.tar.zst": "a" * 64,
+            "openwrt-toolchain-25.12.5-ramips-mt7621_gcc-14.2.0_musl.Linux-x86_64.tar.zst": "b" * 64,
+        }
+        with self.assertRaisesRegex(provenance.ProvenanceError, "exactly one"):
+            provenance._openwrt_toolchain_reference(
+                ambiguous,
+                version="25.12.5",
+                openwrt_target="ramips/mt7621",
+                checksum_catalog_sha256="f" * 64,
+            )
+        malformed = {
+            "openwrt-toolchain-25.12.5-ramips-mt7621_gcc-14.3.0_musl.Linux-x86_64.tar.zst": "not-a-digest"
+        }
+        with self.assertRaisesRegex(provenance.ProvenanceError, "SHA-256"):
+            provenance._openwrt_toolchain_reference(
+                malformed,
+                version="25.12.5",
+                openwrt_target="ramips/mt7621",
+                checksum_catalog_sha256="f" * 64,
+            )
 
     def test_arduino_manifest_records_observed_cli_core_and_sketch(self):
         self.arduino_fixture()
