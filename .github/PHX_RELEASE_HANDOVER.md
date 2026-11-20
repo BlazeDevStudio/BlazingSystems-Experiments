@@ -963,3 +963,68 @@ The pinned ESP32 sketch source contains no `__DATE__`, `__TIME__` or `__TIMESTAM
 - Canonical private Drive registry v11 was not retrievable through the authorized Library surface in this activation. A prior checkpoint metadata reference is not the registry itself; no older v3–v7 snapshot was substituted and no private identifiers or contents were copied.
 
 PR #291 remains OPEN / DRAFT / UNMERGED. No merge, signing, release tag, publication, hardware flash, financial migration or customer deployment occurred. Independent protected signer/freshness witness, durable accounting/migration, QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC02 — current HARDWARE pin and clean double-build reproducibility gate (2026-11-20T02Z)
+
+**Disposition:** release-owned compatibility source pin refreshed to the live PHX-HARDWARE #327 candidate; two independent clean builds are now compared byte-for-byte for each ESP32 core. The exact-source test contract passes. Both core matrix jobs correctly **FAIL CLOSED** because the two application images differ despite equal sizes. This reproduces a real build-reproducibility defect; it does not fix or explain it. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Exact source identity and ownership
+
+- Experiments PR #291 branch phoenix/release-publisher-isolation-20261115; base PR #242 734b89d9e7792247e8376335c3f3685500ab3f89.
+- Exact source/test head at this checkpoint: c3ec59999f5b1e4aa16405ecb122f140a2c019f3.
+- Release compatibility workflow now checks out current HARDWARE PR #327 head a2b7903b4009fd7182247e11a7d2954a79cb9bbd and independently verifies ESP32 sketch blob 1a4b8fba8df210201ae77f23bfef55674abfb59e.
+- HARDWARE #327 is OPEN / DRAFT / UNMERGED, seven commits ahead of the previous Release pin. Its latest Full run [#44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) passed ESP32 and ESP8266 target jobs but failed its validation job at QA-owned Missing poll signature check; this is not a Full CI pass.
+- No HARDWARE source, QA fixture, CORE, PISONET, MASTER or shared interface file was changed by RELEASE.
+
+### Test-first and implementation history
+
+- Test-only commit [a86943e5](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a86943e541460cabeb4a4b968f561db6c490e47b) moved the expected source/blob to the live #327 candidate and added the double-build contract and negative controls. Expected RED [#44659060375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659060375), CI-0701 job 136032459214: failed because the workflow still carried the old HARDWARE SHA/blob; 23 provenance and 8 Arduino archive tests passed.
+- Helper [ada348f9](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ada348f97619adcf7cd071f5523590cadd477997) added a no-follow, regular-file-only byte comparator. It rejects symlinks, hard links, wrong filenames, same-inode inputs and empty images; on mismatch it records both lengths, both SHA-256 values and the first differing byte offsets/values.
+- Workflow [7644a359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7644a3591c381bf349f63af5d480b48b0cce7ba1) refreshed the exact HARDWARE checkout/blob and performs two arduino-cli compile --clean invocations with the same FQBN, core, source directory and build path, preserving separate output directories for comparison. [b6d4dc5f](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b6d4dc5f2815e86f18838f589ced7ab27ed4fdbf) explicitly creates the build workspace.
+- Test-harness corrections: [3582c0e7](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3582c0e72d72c6c18b5776fbb916d0a32bb3c0f4) expects the two --clean application-verifier invocations; [c3ec5999](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c3ec59999f5b1e4aa16405ecb122f140a2c019f3) counts each output directory once in the compile command and once in its image verifier.
+- Intermediate CI-0701 failures are retained as test-harness failures, not product failures: [#44659213363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659213363) rejected the old compile-command assertion after --clean was introduced; [#44659321100](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659321100) rejected the initial output-dir occurrence count. Both assertions were corrected above.
+
+### Exact-source CI-0701
+
+[Current-head BlazePwifi run #44659445870](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659445870), job 136033761990: **SUCCESS**.
+
+- Release concurrency: 8/8 PASS.
+- Provenance: 23/23 PASS.
+- Arduino CLI archive verifier: 8/8 PASS.
+- Application-image positive/negative controls: PASS.
+- Reproducibility helper positive/negative controls: PASS.
+- Exact-source compatibility workflow contract: PASS.
+- Board-core pin guard: PASS.
+
+Markers in the exact job log include PHX-ESP32-APP-IMAGE-TESTS-PASS, PHX-ESP32-REPRODUCIBILITY-TESTS-PASS and PHX-RELEASE-ESP32-COMPAT-PASS.
+
+### Controlled double-build result — reproducibility FAILED CLOSED
+
+First exact-source matrix run [#44659321097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659321097), workflow commit b6d4dc5f:
+
+| Core | Each image size | First SHA-256 | Second SHA-256 | Result |
+|---|---:|---|---|---|
+| ESP32 3.3.13 | 1,043,904 bytes | 84b0a343c91554b377999242463e5dde37106a76bec6022771c017c78244a323 | 23a4660f1a8922db19b9e358e9c3aac300dee8677573f02c45b37d16fa199e9e | FAIL |
+| ESP32 4.0.0 | 1,097,936 bytes | e7aef0be304477ee907a8617b951b88bfc3b8b1c85ccd490672c7a934de2f838 | 91aa9934f1e2a47e1463b0665e642276a787eb8cf14a5f02a275efd5a8229140 | FAIL |
+
+Both jobs verified the exact HARDWARE commit and sketch blob, verified the pinned Arduino CLI archive, installed the requested core, completed both compile commands, and passed the per-build application-image filename/size/SHA checks. The final comparator rejected both pairs because the bytes differed. Sizes were equal within each core.
+
+- Core 3.3.13 job 136033495338: first differing byte at offset 176; first 16 differing byte pairs were logged.
+- Core 4.0.0 job 136033494905: first differing byte at offset 176; first 16 differing byte pairs were logged.
+- The current #291 head's follow-on matrix [#44659445469](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659445469) is IN PROGRESS at this handover; it is not yet counted as a terminal result.
+- The current full BlazePwifi run #44659445870 is also IN PROGRESS beyond CI-0701. Its ESP32 and ESP8266 target jobs have passed; validation and remaining platform jobs have not yet reached terminal status.
+
+The current HARDWARE ESP32 sketch was checked for __DATE__, __TIME__ and __TIMESTAMP__; none of those tokens occurs in the sketch. The differing field's cause is **not established**. The offset may be in generated image metadata, but no attribution is made. No SOURCE_DATE_EPOCH, timestamp override, linker patch or other unverified normalization was applied. The two binary files remained present in their separate runner output directories until comparison; they were not uploaded or published.
+
+**Do not use either digest as a stable release manifest/checksum value. Do not call the build reproducible.** Next RELEASE task: capture the two binaries or an expanded bounded byte/section diff around offset 176, identify the exact differing field and its producer, then add a test before any deterministic-build correction. Keep the current source pin until #327 advances; refresh exact commit/blob before future claims.
+
+### Other exact-head failures and owner routing
+
+- Windows run [#44659445453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44659445453): handover PASS; PISONET-owned negative-selftest.ps1 failed because $buildWorkflow is uninitialized; publisher skipped. RELEASE changed no PISONET file.
+- MASTER #288 current head at this checkpoint: b6dd2dc3a81bd51ce82f60efaf06b5b7d236d23c. OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY; RELEASE route is .github/workflows/blazepwifi-build.yml → COE .github/workflows/pisowifi-ci.yml, reimplementation-review.
+- Experiments #242 remains 734b89d9e7792247e8376335c3f3685500ab3f89; #291 is c3ec59999f5b1e4aa16405ecb122f140a2c019f3, OPEN / DRAFT / UNMERGED, with zero independent submitted reviews.
+- COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12; #31 remains 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; child #35 remains a draft. COE's approved site-scoped ULA authority and Bubblewrap-capable unprivileged runner remain unresolved; #26 integration staging remains frozen.
+- Canonical private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by authorized Library search; only older v3–v7 snapshots appeared. No older registry was substituted and no private contents/identifiers were copied.
+
+No merge, signer use, tag, publication, hardware flash, payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
