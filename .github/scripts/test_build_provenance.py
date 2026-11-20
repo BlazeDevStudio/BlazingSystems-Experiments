@@ -604,3 +604,17 @@ if __name__ == "__main__":
         print(f"RELEASE-PROVENANCE-PASS: {result.testsRun} tests")
         raise SystemExit(0)
     raise SystemExit(1)
+
+    def test_checksum_manifest_rejects_line_boundary_characters(self):
+        digest = "b" * 64
+        separators = ("\\v", "\\f", "\\x1c", "\\x1d", "\\x1e", "\\x85", "\\u2028", "\\u2029")
+        for separator in separators:
+            with self.subTest(separator=repr(separator)):
+                with self.assertRaisesRegex(
+                    provenance.ProvenanceError,
+                    "unsafe checksum path",
+                ):
+                    provenance._normalize_checksum_path(
+                        f"nested{separator}payload.bin"
+                    )
+
