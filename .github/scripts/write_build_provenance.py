@@ -278,8 +278,15 @@ def _normalize_checksum_path(name: str) -> str:
         name = name[2:]
     if not name or "\\" in name or "\n" in name or "\r" in name or "\x00" in name:
         raise ProvenanceError(f"unsafe checksum path: {name!r}")
+    # Validate raw separators before PurePosixPath can normalize aliases.
+    # A single leading "./" is retained for sha256sum compatibility above;
+    # interior dot segments, repeated separators and trailing separators are
+    # not canonical artifact paths and must not collapse to another name.
+    components = name.split("/")
+    if name.startswith("/") or any(part in ("", ".", "..") for part in components):
+        raise ProvenanceError(f"unsafe checksum path: {name!r}")
     path = PurePosixPath(name)
-    if path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
+    if path.is_absolute():
         raise ProvenanceError(f"unsafe checksum path: {name!r}")
     return path.as_posix()
 
