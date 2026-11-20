@@ -584,6 +584,9 @@ class BuildProvenanceTests(unittest.TestCase):
             "nested//payload.bin",
             "nested/",
             "././nested/payload.bin",
+            "C:/Windows/System32/kernel32.dll",
+            "C:relative/payload.bin",
+            "z:/payload.bin",
         ):
             with self.subTest(name=name):
                 raw = f"{digest}  {name}\n".encode("utf-8")
