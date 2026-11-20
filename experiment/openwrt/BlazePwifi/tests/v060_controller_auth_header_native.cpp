@@ -16,6 +16,11 @@ static std::string mac(const std::string &body) {
   hex[64]=0; return hex;
 }
 int main() {
+  // Parser-backed spans can be exactly 64 bytes without a trailing NUL.
+  // The current C-string-only helper reads byte 65; ASan must expose that.
+  char raw_digest[64];
+  memset(raw_digest, 'a', sizeof(raw_digest));
+  assert(hex64(raw_digest));
   const char key[]="synthetic-controller-v1-key";
   const std::string policy="{\"enabled\":0,\"coin_enabled\":0,\"config_revision\":7}";
   const char *digest=""; // use vetted SHA256 to derive the literal policy digest.
