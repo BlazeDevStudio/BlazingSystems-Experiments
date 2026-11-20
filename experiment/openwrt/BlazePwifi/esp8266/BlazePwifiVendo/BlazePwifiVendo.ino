@@ -965,9 +965,26 @@ bool canStartPoll(){
 void applyOutputs(){
   if(!outputPolarityKnown) return;
   bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
-                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
+                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended &&
+                 snapshotCoinEdgeSequence()==lastHandledCoinEdgeSequence;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
+
+  // The first GPIO write can be interrupted after the admission snapshot.
+  // Recheck before the relay write so an unresolved edge cannot power the acceptor.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    return;
+  }
+
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+
+  // An edge may also interrupt the relay write itself. Deassert immediately;
+  // the next loop sample persists the unresolved ingress fault.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+  }
 }
 
 void latchPollPulseFault(uint32_t pulseEdges){
