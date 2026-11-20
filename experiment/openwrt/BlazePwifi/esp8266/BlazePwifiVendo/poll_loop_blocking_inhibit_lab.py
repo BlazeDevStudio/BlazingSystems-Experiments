@@ -684,9 +684,9 @@ for board,path in BOARDS.items():
     journal_fault_guard_removed = output.replace("!journalRecoveryRequired && ", "", 1)
     if journal_fault_guard_removed == output:
         raise AssertionError(f"{board}: journal-recovery output guard mutation did not apply")
-    compile_and_run(assemble(output_source=journal_fault_guard_removed),board,47,
+    compile_and_run(assemble(output_source=journal_fault_guard_removed),board,48,
                     "ignore-journal-recovery-output-deny")
-    print(f"{board} MUTATION_REJECTED ignore-journal-recovery-output-deny expected_exit=47")
+    print(f"{board} MUTATION_REJECTED ignore-journal-recovery-output-deny expected_exit=48")
 
     for name,mut_loop,mut_output,mut_quiet,mut_accept in mutations:
         if name=="remove-beginPollWindow" and mut_loop==loop:
