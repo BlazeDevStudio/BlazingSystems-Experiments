@@ -93,6 +93,34 @@ def check_arduino_cli_toolchain(content: str) -> list[str]:
     return errors
 
 
+ARDUINO_CORE_EXPECTATIONS = (
+    ("Install ESP8266 core", "esp8266:esp8266", "3.1.2"),
+    ("Install ESP32 core", "esp32:esp32", "3.3.13"),
+)
+
+
+def check_arduino_core_version_assertions(content: str) -> list[str]:
+    """Require runtime proof that each installed board core matches provenance."""
+    errors: list[str] = []
+    for step_name, package, version in ARDUINO_CORE_EXPECTATIONS:
+        block = _workflow_step(content, step_name)
+        if not block:
+            errors.append(f"missing Arduino core installation step: {step_name}")
+            continue
+
+        required = (
+            ('core_list="$(arduino-cli core list)"', "capture the installed core list"),
+            (f'''awk '$1 == "{package}" {{print $2}}' ''', "select the installed package version"),
+            (f'if [ "$installed_core_versions" != "{version}" ]; then', "compare the resolved version"),
+            (f"RELEASE-TOOLCHAIN-RED: expected {package}@{version}", "fail closed on version mismatch"),
+            (f"RELEASE-TOOLCHAIN-CORE-PASS: {package}@{version}", "emit the verified core identity"),
+        )
+        for snippet, description in required:
+            if snippet not in block:
+                errors.append(f"{step_name} must {description} for {package}@{version}")
+    return errors
+
+
 ACTION_PATTERN = re.compile(
     r"^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)(?:\s+#.*)?$",
     re.MULTILINE,
@@ -155,6 +183,7 @@ def main() -> int:
 
         if relative_path == ".github/workflows/blazepwifi-build.yml":
             workflow_errors.extend(check_arduino_cli_toolchain(content))
+            workflow_errors.extend(check_arduino_core_version_assertions(content))
             workflow_errors.extend(check_arduino_cli_archive_verification(content))
 
         for action, expected_count in expected_counts.items():
