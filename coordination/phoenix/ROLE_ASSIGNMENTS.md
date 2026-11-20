@@ -1913,3 +1913,12 @@ Master did not edit any subsystem source branch. COE #26 remains FROZEN; the rou
 | PHX-RELEASE #291 | Docs 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3; base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Compatibility #44809606421 IN_PROGRESS (provenance job 136542675863 PASS; both ESP32 core jobs in progress); Full #44809606527 queued/in progress; Windows #44809606428 FAIL at PISONET-owned $buildWorkflow | RELEASE owns the three new compatibility test/workflow/handover paths; PISONET owns negative-selftest.ps1; CORE owns three inherited handover paths. No ownership transfer. |
 
 The new test/workflow pin is exact: HARDWARE #327 source/test 1a631567eb0c14c12a114f592685f44cc414466f and ESP32 sketch blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7. The previous compatibility PASS #44799798721 was at the old 76eca091 pin and is historical only. Do not claim new-pin compatibility or Full success until exact-head runs are terminal.
+
+
+### PHX-MASTER UTC20 RELEASE #291 new-pin compatibility terminal refresh — 2026-11-20T20:19Z
+
+| Role / PR | Exact current head | Exact CI disposition | Ownership / next action |
+|---|---|---|---|
+| PHX-RELEASE #291 | Docs 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3: provenance + ESP32 3.3.13 + 4.0.0 at source 1a631567eb0c; Full #44809606527 IN_PROGRESS (validation, target and Android jobs pass; simulations continue; production jobs skipped); Windows #44809606428 FAIL at PISONET $buildWorkflow | RELEASE owns pin/workflow; PISONET owns Windows self-test; CORE reviews three inherited paths. No cross-owner edit by Master. |
+
+The new exact-pin compatibility PASS supersedes the prior “not observed” note and historical old-pin PASS. Full remains nonterminal; do not claim a Full pass until all simulations and required jobs finish. Production signing/publishing remain skipped.
