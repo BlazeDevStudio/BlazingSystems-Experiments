@@ -922,3 +922,44 @@ No merge, signer use, tag, publication, hardware flash, payment migration or cus
 4. **PHX-INFRA / COE integration / MASTER:** resolve the Bubblewrap namespace capability and keep COE #26 frozen until MASTER explicitly reopens it and provenance plus destination CI are accepted.
 
 No merge, signing, release tag, publication, hardware flash, financial migration or customer deployment occurred. Independent protected signer/freshness witness, durable accounting and migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+
+## UTC01 terminal docs-head verification and reproducibility warning — 2026-11-20T01Z
+
+**PR #291 docs head before this handover note:** `a27a1fc50b7448503cd0970a11106fbc67605ac5`  
+**Exact source/test head:** `6a7e5c585bdbf86b1443e670b47af10e8391ef55`  
+**HARDWARE checkout used by the matrix:** `9ef753a38226fcdf56b0903680a5110348027110`  
+**ESP32 sketch blob:** `33081c5094ffdd19d935fc888d52ae01ff23325b`
+
+### Terminal documentation-head Actions
+
+- Compatibility run [#44654506216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506216): **COMPLETED SUCCESS**, both exact-core jobs passed.
+  - ESP32 core 3.3.13, job `136017305629`: selected `BlazePwifiVendo32.ino.bin`, 1,043,872 bytes, SHA-256 `58057db3c2a07553a4c2e84bba9f0427344aa7af801330f5f581d2b228bf6e7b`.
+  - ESP32 core 4.0.0, job `136017306039`: selected `BlazePwifiVendo32.ino.bin`, 1,097,872 bytes, SHA-256 `a3a9ede7289936d728ba8ff2fb8512d952e6c405097e72c1e85b16adebb63f04`.
+  - Both logs contain the exact application filename, byte count and SHA-256 marker. These are ephemeral CI build outputs, not published or signed artifacts.
+- BlazePwifi docs-head run [#44654506263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506263): **COMPLETED SUCCESS**, 26 successful jobs and 4 intentionally skipped. CI-0701 job `136017305816` passed the 8 Arduino archive-verifier tests, the application-image positive/negative controls and the exact compatibility contract; validation job `136017377986` passed. The four skipped jobs were production APK import, production signing handoff, release publishing and prerelease publishing.
+- Windows run [#44654506207](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506207): handover PASS; PISONET-owned `negative-selftest.ps1` FAILED because `$buildWorkflow` is uninitialized; `publish-release` was SKIPPED. No PISONET file was changed.
+
+### Reproducibility is not established
+
+The source/test-head compatibility run [#44653465461](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653465461) and the docs-head run [#44654506216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506216) used the same pinned HARDWARE commit, same ESP32 sketch blob and same core versions. A Git comparison confirms the only commit between source/test head `6a7e5c5` and docs head `a27a1fc` changed this handover file only.
+
+The application image sizes are identical between those runs, but the SHA-256 values differ:
+
+| Core | Source/test-head SHA-256 | Docs-head SHA-256 |
+|---|---|---|
+| 3.3.13 | `9fba7a8126505359ff5fe3f424f43e509b3e57152b83a183a138110c6bf96c2e` | `58057db3c2a07553a4c2e84bba9f0427344aa7af801330f5f581d2b228bf6e7b` |
+| 4.0.0 | `9cdfbd5191cf4ce30325ba0497f66c136ae391c00271c22bd492a608fa1dec94` | `a3a9ede7289936d728ba8ff2fb8512d952e6c405097e72c1e85b16adebb63f04` |
+
+The pinned ESP32 sketch source contains no `__DATE__`, `__TIME__` or `__TIMESTAMP__` tokens. The cause of the byte-level drift is **not established**; it may be a generated framework/toolchain/build-environment input, but no cause is asserted. The workflow currently retains only log hashes, not the binary bytes needed for a diff. Do not call this a reproducible build and do not reuse one run's digest as a stable release digest.
+
+**Next release-owned action:** perform a controlled same-commit, same-toolchain double build and compare the exact application-image bytes; preserve both outputs long enough to identify the differing regions. Only then choose a deterministic-build correction. Do not modify HARDWARE source or add an unverified timestamp override.
+
+### Live source and governance limits
+
+- Current HARDWARE PR #327 head is `1d461f2c5fad1ea411ab89bab8d1a1f4e73dce1c`. Compared with the pinned `9ef753a...`, it is four commits ahead; the changed paths are two handover documents and two ESP8266 lab files. No ESP32 sketch path changed, so the pinned ESP32 subtree/blob remains the same; the workflow still does not checkout the latest overall #327 commit.
+- MASTER #288 remains OPEN/DRAFT at `1bd30098d961b6dd2f0e971423ae8e4d36407f9b`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, and the BlazePwifi workflow route is `reimplementation-review`, not a blind copy.
+- COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED with zero jobs. COE #31 sandbox remains blocked by unprivileged Bubblewrap UID-map denial (exit 125); child #35 profile validation remains blocked because approved site-scoped RFC 4193 ULA authority is undefined.
+- Canonical private Drive registry v11 was not retrievable through the authorized Library surface in this activation. A prior checkpoint metadata reference is not the registry itself; no older v3–v7 snapshot was substituted and no private identifiers or contents were copied.
+
+PR #291 remains OPEN / DRAFT / UNMERGED. No merge, signing, release tag, publication, hardware flash, financial migration or customer deployment occurred. Independent protected signer/freshness witness, durable accounting/migration, QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
