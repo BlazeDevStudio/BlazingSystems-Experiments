@@ -332,6 +332,11 @@ struct String : std::string {
   size_t length() const { return size(); }
 };
 bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
+// This window-only fixture does not deliver ISR edges; the dedicated poll-loop
+// lab owns edge injection. Keep applyOutputs()'s sequence guard idle here.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool outputPolarityKnown=true;
 bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
@@ -360,6 +365,7 @@ void writeLogical(int pin,bool on,bool) {
 WINDOW_MAIN = r"""
 void resetState(){
     fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
+    coinEdgeSequence=0; lastHandledCoinEdgeSequence=0;
     pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; pinConfigSafe=true; controllerEnabled=true; coinEnabled=true;
     relayEnabled=true; ledEnabled=true; insertMode=true; runRelayActiveHigh=true;
     runLedActiveHigh=true; runCoinActiveLow=true; runCoinPin=4; runRelayPin=26; runLedPin=2;
