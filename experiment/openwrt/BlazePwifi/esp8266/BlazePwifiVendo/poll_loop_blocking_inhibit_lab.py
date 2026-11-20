@@ -632,6 +632,24 @@ RACE_MAIN = MAIN.replace(
     "  if(wrappedPrePollMarker.find(\"COIN_INGRESS_UNRESOLVED\")==std::string::npos ||\n"
     "     wrappedPrePollMarker.find(\"pulses=2\")==std::string::npos) return 55;\n"
     "  std::cout<<\"POLL_POST_DRAIN_MULTI_EDGE_ROLLOVER_DENY_PASS\\\\n\";\n\n"
+    "  // Repeat the same boundary with active-high wiring and its RISING ISR.\n"
+    "  resetState(); runCoinActiveLow=false;\n"
+    "  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);\n"
+    "  coinEdgeSequence=0xFFFFFFFEUL;\n"
+    "  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;\n"
+    "  injectAfterDrainEdgeCount=2;\n"
+    "  injectAfterDrainEdge=true;\n"
+    "  loop();\n"
+    "  if(attachedMode!=RISING || pollCalls!=0 || pollStartAt!=0 ||\n"
+    "     !journalRecoveryRequired || !LittleFS.exists(\"/pollpulse.fault\") ||\n"
+    "     relayOn || ledOn || insertMode || !activeTarget.empty() ||\n"
+    "     pollIntakeSuspended || pendingPulses!=0U ||\n"
+    "     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||\n"
+    "     lastPoll+2!=fakeNow) return 56;\n"
+    "  const std::string activeHighMarker=LittleFS.files[\"/pollpulse.fault\"];\n"
+    "  if(activeHighMarker.find(\"COIN_INGRESS_UNRESOLVED\")==std::string::npos ||\n"
+    "     activeHighMarker.find(\"pulses=2\")==std::string::npos) return 56;\n"
+    "  std::cout<<\"POLL_POST_DRAIN_ACTIVE_HIGH_MULTI_EDGE_ROLLOVER_DENY_PASS\\\\n\";\n\n"
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
     1,
 )
@@ -903,7 +921,7 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED journal-fault-idle-line-shortcut")
     edge_hook = begin.replace(
         "return coinLineQuietAfterInhibit();",
-        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ for(unsigned edge=0; edge<injectAfterDrainEdgeCount; ++edge) coinEdgeSequence++; injectAfterDrainEdge=false; } return true; } return false;",
+        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ for(unsigned edge=0; edge<injectAfterDrainEdgeCount; ++edge){ if(interruptAttached && attachedIsr && attachedPin==runCoinPin && attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr(); } injectAfterDrainEdge=false; } return true; } return false;",
         1,
     )
     if edge_hook == begin:
@@ -923,6 +941,19 @@ for board,path in BOARDS.items():
         board,55,"single-edge-post-drain-count"
     )
     print(f"{board} MUTATION_REJECTED single-edge-post-drain-count expected_exit=55")
+
+    # Active-high wiring must attach RISING; the post-drain hook now invokes the actual extracted ISR.
+    active_high_wrong_edge = configure.replace(
+        "runCoinActiveLow?FALLING:RISING",
+        "runCoinActiveLow?RISING:FALLING",
+    )
+    if active_high_wrong_edge == configure:
+        raise AssertionError(f"{board}: active-high ISR polarity mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=active_high_wrong_edge,begin_source=edge_hook,main_source=RACE_MAIN),
+        board,56,"active-high-post-drain-edge-polarity"
+    )
+    print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
     release_on_abort = drain_abort.replace(
         "if(!coinLineIdle()) return;",
         "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",
