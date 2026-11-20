@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -148,9 +149,44 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
         alias.symlink_to(real_directory, target_is_directory=True)
         expect_rejected("symlinked output directory", alias)
 
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-parent-symlink-") as temporary:
+        root = Path(temporary)
+        real_parent = root / "real-parent"
+        real_parent.mkdir()
+        directory = real_parent / "output"
+        directory.mkdir()
+        (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"application")
+        alias_parent = root / "alias-parent"
+        alias_parent.symlink_to(real_parent, target_is_directory=True)
+        expect_rejected("symlinked output path ancestor", alias_parent / "output")
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-directory-swap-") as temporary:
+        root = Path(temporary)
+        parent = root / "parent"
+        parent.mkdir()
+        directory = parent / "output"
+        directory.mkdir()
+        (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"original-application")
+        moved = parent / "moved-output"
+        original_listdir = os.listdir
+        swap_state = {"done": False}
+
+        def replace_output_before_listing(directory_fd):
+            if not swap_state["done"]:
+                directory.rename(moved)
+                directory.mkdir()
+                (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"replacement-application")
+                swap_state["done"] = True
+            return original_listdir(directory_fd)
+
+        with patch.object(os, "listdir", side_effect=replace_output_before_listing):
+            expect_rejected("output directory replaced during inspection", directory)
+        if not swap_state["done"]:
+            errors.append("output-directory replacement injection was not reached")
+
     if errors:
         return errors
-    print("PHX-ESP32-APP-IMAGE-TESTS-PASS: exact candidate, filename, size, SHA-256, missing, wrong-name, ambiguous, empty, symlink and hard-link controls")
+    print("PHX-ESP32-APP-IMAGE-TESTS-PASS: exact candidate, filename, size, SHA-256, missing, wrong-name, ambiguous, empty, symlink, hard-link, parent-symlink and directory-swap controls")
     return errors
 
 
