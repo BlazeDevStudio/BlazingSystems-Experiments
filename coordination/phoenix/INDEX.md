@@ -124,3 +124,12 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 head b883662...: Windows FAIL at PISONET-owned $buildWorkflow; compatibility FAIL at missing verify_esp32_source_date_epoch import; Full CANCELLED.
 - COE #26 remains frozen at b382d233..., five queued workflows / zero jobs. Exact #327/#26 tree comparison confirms differing firmware blobs, 25 source Python labs vs zero destination Hardware Python files, three source workflows vs one generic workflow, and incomplete notice scope.
 - Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. Master Python suite NOT RUN because local Git clone failed DNS. **PRODUCTION NO-GO.**
+
+## Latest live revalidation — 2026-11-20 UTC11 11:40Z
+
+- [PHX-MASTER UTC11 live terminal CI and COE provenance revalidation](PHX_MASTER_UTC11_20261120_LIVE_TERMINAL_CI_AND_COE26_PROVENANCE_1140Z.md).
+- Audit-start #288 head: 3d75d241263576c3913a6388a26d9d761324a957; PR #288 remains OPEN/DRAFT against main f4e8a891...
+- Current #327 Full validation still fails at QA-owned Missing poll signature check; focused quarantine/relay pass.
+- RELEASE #291 compatibility now passes both pinned ESP32 core legs; Windows fails at PISONET-owned $buildWorkflow; Full is CANCELLED with production sign/publish skipped.
+- COE #26 remains frozen at b382d233..., five workflows queued / zero jobs. Exact source/destination blobs, lab imports, workflow parity and notice scope remain unaccepted.
+- Private v11 registry/newer corrections remain unavailable; no older snapshot substituted. Master suite NOT RUN. **PRODUCTION NO-GO.**
