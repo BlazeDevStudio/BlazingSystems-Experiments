@@ -1079,3 +1079,25 @@ See [PHX-MASTER UTC01 COE #49 audit](PHX_MASTER_UTC01_20261120_COE49_STAGE51_TAR
 5. **Ownership remains unchanged.** CORE owns router accounting/receipt authority; PISONET owns the router-side adapter/API boundary; HARDWARE owns ESP intake/lease/ACK behavior; QA owns independent regressions. These are review boundaries, not assignments or owner acknowledgements. Obtain explicit scope ACK/DECLINE before any source edit or route proposal.
 
 The current Experiments `main` Vendo producer is not the signed target-kind/server-time producer required above. COE #26's candidate signatures are on a separate draft base and are not a deployed or approved producer. COE #49 remains **UNASSIGNED / AUDIT-ONLY / NO ROUTE TO #26**. This section states a review gate, not an adopted wire schema or production authorization.
+
+
+
+## 6.53 Exact-head QA poll-fixture and RELEASE handover-freshness gates — 2026-11-20 UTC12
+
+### 6.53.1 Poll response admission remains deny-only
+
+Current HARDWARE #327 source/test head is e759f70325523fe6429170e8b4396e335f574c8b. Its focused quarantine and relay/output runs pass, but Full run 44732030246 fails in Controller protocol parity with the legacy message Missing poll signature check. The merge-tree test identities are v05_firmware_hardening_test.sh blob 41211b2c110ab409f6d9d1812ef12fda73b13211 and controllers.sh blob f7896647713d6bf8034ff48ed19b6383e4dedea0.
+
+The v0.5 fixture requires response_sig and literal |poll| presence. The current firmware explicitly documents that register/poll admission signatures do not authenticate the returned configuration object and keeps that positive path dormant. This matches the deny-only contract in §§6.23 and 6.24. PHX-QA owns replacing the positive marker test with source-linked negative assertions for both boards; PHX-HARDWARE owns firmware. Never add a synthetic signature marker or enable keyless/unauthenticated poll admission to satisfy the legacy fixture. Focused host labs are simulated CI only.
+
+### 6.53.2 RELEASE handover freshness is an admission gate, not a compile failure
+
+Current RELEASE #291 head is d497ee71f1d84d9fd0ca22dd1127a53d62515642. Compatibility run 44736348774 passes both pinned ESP32 core legs. Windows run 44736348781 and Full run 44736348760 fail at the shared handover freshness gate.
+
+At the exact head, handover_gate.sh blob d175106a9c534ca17a35f9f49082b70ea27e77da reports that .github/workflows/blazepwifi-build.yml is newer than the PROJECT_HANDOVER.md checkpoint and names last checkpoint commit 0f2e67b3794b2469523b51ced2ba4ec4a334e84b. The gate checks PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md against subsequent meaningful source/workflow changes. The correct response is an owner-reviewed live handover update after the latest change, followed by rerunning Windows and Full. Do not bypass the gate. PISONET owns the two SoftTimer test paths in the #291 diff; this contract does not transfer them to RELEASE or Master.
+
+### 6.53.3 COE destination remains unaccepted
+
+At current #327 source and COE #26 destination heads, the two board sketch blobs differ; 25 source board-local Python labs have no destination Hardware Python identities; three source PHX-HARDWARE workflows do not have exact destination equivalents; and root NOTICE / Hardware license-notice scope is incomplete. The sibling Pisowifi MIT license blob match is not a Hardware subtree license decision. COE #26 remains frozen with five queued workflows and zero jobs. No migration is approved.
+
+This section records an exact-head review gate only. It is not physical acceptance, financial authorization, release approval or permission to migrate.

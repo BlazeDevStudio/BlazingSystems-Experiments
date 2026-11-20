@@ -2574,3 +2574,20 @@ Current role CI supersession:
 - Separate COE candidates #28/#29/#30/#31/#32/#35/#44/#45/#48/#49 remain separate; see the UTC11 11:40Z audit report for exact heads and CI.
 
 OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+
+
+## PHX-MASTER UTC12 exact-head integration and provenance supersession — 2026-11-20T12:39:46Z
+
+| Gate | Exact evidence | Result |
+|---|---|---|
+| HARDWARE #327 focused | #44732030243 quarantine; #44732030253 relay/output | PASS / simulated host CI only |
+| HARDWARE #327 Full | #44732030246, Controller protocol parity | FAIL: inherited v0.5 fixture requires positive response_sig and |poll| |
+| RELEASE #291 compatibility | #44736348774, both ESP32 core legs | PASS / compatibility only |
+| RELEASE #291 Windows | #44736348781 | FAIL: mandatory handover freshness gate |
+| RELEASE #291 Full | #44736348760 | FAIL: mandatory handover freshness gate; downstream simulation/sign/publish skipped |
+| COE #26 | five workflow IDs 43096752609, 43096752632, 43096752800, 43096752563, 43096752557 | QUEUED / zero jobs |
+
+The current #327 source tree at e759f703... is complete (2,436 entries); COE #26 at b382d233... is complete (286 entries). ESP8266 source/destination blobs 3ff575f5... / c8be98f7... differ; ESP32 blobs 849a2c63... / 3cc7ec54... differ. Source contains 25 board-local Python labs/helpers, destination contains zero Hardware Python labs and one generic shell test. Source has three PHX-HARDWARE workflows; destination has one generic hardware-ci.yml. Source root NOTICE blob f6d92cd2... is absent from COE; source BlazePwifi LICENSE and destination Pisowifi/LICENSE share blob 1ee55b94..., but Hardware license/notice scope remains unresolved.
+
+No exact test identity, full workflow parity, complete import, or destination acceptance is established. No file move/copy/staging/overwrite, cherry-pick, rebase, or route promotion is authorized.

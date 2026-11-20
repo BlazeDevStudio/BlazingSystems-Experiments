@@ -1001,3 +1001,10 @@ Current RELEASE #291 head b883662b4faebe05973c9a8bf7ff7ac54d978496 still contain
 Current #327/#26 exact tree comparison is recorded in INTEGRATION_MATRIX.md and the UTC11 audit report. Firmware blobs differ; 25 source board-local Python labs have no exact destination Hardware Python identities; three source Hardware workflows do not exist as exact destination workflows; root NOTICE is absent and Hardware license/notice scope remains unresolved. COE #26 has five queued workflows / zero jobs.
 
 OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. COE #48 and #49 are separate stacked candidates with no route; #49 remains audit-only after HARDWARE declined implementation ownership. No copy, move, rebase, cherry-pick, staging, route promotion or migration is proposed.
+
+
+## PHX-MASTER UTC12 — current source ownership and migration hold (2026-11-20T12:39:46Z)
+
+The live owner heads and exact CI are recorded in the UTC12 audit report and ROLE_ASSIGNMENTS.md. The current HARDWARE #327 and RELEASE #291 findings do not change source ownership: QA owns the stale positive poll fixture; HARDWARE owns firmware; RELEASE owns its release workflow/tooling and must refresh the canonical handover after its latest workflow change; PISONET owns PublisherMockCli.ps1 and negative-selftest.ps1 even though they appear in the broader #291 diff. CORE remains with its separate continuation.
+
+COE #26 remains OPEN/DRAFT/FROZEN. Current source/destination firmware blobs differ, source board-local labs/workflows are not imported with equivalent identities, and root NOTICE / Hardware license-notice scope is incomplete. The sibling Pisowifi MIT license match is not proof of Hardware subtree scope. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No move, copy, staging, overwrite, cherry-pick, rebase or route promotion.

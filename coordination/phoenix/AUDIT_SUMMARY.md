@@ -1396,3 +1396,15 @@ Current exact-head correction: HARDWARE #327 focused quarantine/relay runs pass,
 COE #26 remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs. Fresh exact #327/#26 tree comparison confirms differing board sketches, 25 source Python labs vs zero destination Hardware Python files, three source Hardware workflows vs one generic destination workflow, and incomplete root NOTICE / Hardware license-notice scope. No migration.
 
 Private Drive v11 and newer corrections remain inaccessible; no older snapshot was substituted. Full Master suite NOT RUN because local Git DNS resolution failed. Effective organization-level branch protection remains unverified. Issue #266 remains OPEN and Master cleanup remains incomplete. **PRODUCTION NO-GO.**
+
+
+
+## PHX-MASTER UTC12 live readiness supersession — 2026-11-20T12:39:46Z
+
+Master re-read issue #172, cleanup #266, Experiments main and both development refs, PR #288 and its ownership manifest, current role PRs/CI, COE main and PR #26. PR #288 remains OPEN/DRAFT at 7f804b678ed81fa633edc87c60ae08433fbbcc89 with 126 existing changed paths, all under coordination/phoenix/. The Master branch and PR head match; base remains main f4e8a891....
+
+The most important live correction is that RELEASE #291 has recovered its two-core compatibility matrix but now fails the shared handover freshness gate on Windows and Full. HARDWARE #327 focused labs pass, while Full remains blocked by the QA-owned legacy positive poll fixture. These failures are not authority to bypass the gates or weaken firmware.
+
+COE #26 remains frozen. Fresh complete-tree comparison shows 2,436 source entries versus 286 destination entries, differing ESP8266/ESP32 sketch blobs, 25 source board-local Python labs versus zero destination Hardware Python files, three source Hardware workflows versus one generic destination workflow, and incomplete NOTICE/Hardware license scope. No migration staging was performed.
+
+The private v11 registry and newer corrections remain unavailable; no older snapshot was substituted. Effective branch protection remains unverified (branch metadata protected=false, rulesets empty, classic protection read 403). Issue #266 remains OPEN and Master cleanup remains incomplete. Full Master Python suite NOT RUN due GitHub DNS failure. **PRODUCTION NO-GO.**

@@ -1723,3 +1723,25 @@ This revalidation supersedes the earlier UTC11 #291 status only. Current owner h
 - COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows queued / zero jobs.
 
 See PHX_MASTER_UTC11_20261120_LIVE_TERMINAL_CI_AND_COE26_PROVENANCE_1140Z.md for run URLs, exact source/destination blobs, test import identities and owner actions.
+
+
+
+## PHX-MASTER UTC12 live owner/CI supersession — 2026-11-20T12:39:46Z
+
+Current exact role PR heads and run results supersede earlier UTC11 rows:
+
+| Role | PR/head | Exact-head result | Owner action |
+|---|---|---|---|
+| CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped PASS | Separate CORE continuation retains ownership; Master did not start competing work |
+| RENTAL | #240 a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #287 a4fffd01c8fb1818c32a53522e0590c1dc8a77cd; #289 68928774d0d7cf65adb26bc6b54199a3159d066c | #240/#289 two scoped PASS each; #287 #43754089203 PASS | Rental retains source ownership |
+| PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 scoped PASS | PISONET owns its SoftTimer paths |
+| HARDWARE | #254 84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9 | focused #44683629378 PASS; Full #44683629491 FAIL | Hardware retains firmware ownership |
+| HARDWARE | #327 e759f70325523fe6429170e8b4396e335f574c8b | quarantine #44732030243 PASS; relay #44732030253 PASS; Full #44732030246 FAIL | Keep firmware deny-only; QA owns legacy positive poll fixture |
+| QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 scoped PASS; #292 no exact-head run | QA owns independent regression and native acceptance |
+| RELEASE | #291 d497ee71f1d84d9fd0ca22dd1127a53d62515642 | compatibility #44736348774 PASS; Windows #44736348781 FAIL; Full #44736348760 FAIL at handover freshness | Release refreshes canonical handover after its workflow change; PISONET reviews its two owned paths |
+
+PR #291's current 26-path diff still includes PISONET-owned PublisherMockCli.ps1 and negative-selftest.ps1. This is a path-ownership hold, not a transfer. The current Windows/Full blocker is the mandatory handover freshness gate; do not mislabel it as a compiler or ELF reproducibility failure.
+
+PR #327's current Full failure is the legacy positive poll-signature fixture. QA must replace it with negative/default-deny tests; HARDWARE must not add a synthetic positive signature path.
+
+COE #26 remains five queued workflows / zero jobs and frozen. COE candidates #28/#29/#30/#31/#32/#35/#45/#48/#49 remain separate; none is promoted into #26 or the route manifest.

@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T04:39:26Z  
+**Updated:** 2026-11-20T12:39:46Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -133,3 +133,15 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 compatibility now passes both pinned ESP32 core legs; Windows fails at PISONET-owned $buildWorkflow; Full is CANCELLED with production sign/publish skipped.
 - COE #26 remains frozen at b382d233..., five workflows queued / zero jobs. Exact source/destination blobs, lab imports, workflow parity and notice scope remain unaccepted.
 - Private v11 registry/newer corrections remain unavailable; no older snapshot substituted. Master suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+
+## PHX-MASTER UTC12 live exact-head supersession — 2026-11-20T12:39:46Z
+
+- [UTC12 exact-head QA poll-contract, RELEASE handover-freshness and COE #26 provenance audit](PHX_MASTER_UTC12_20261120_EXACT_HEAD_HANDOVER_GATE_AND_COE26_PROVENANCE.md).
+- Master #288 starts at 7f804b678ed81fa633edc87c60ae08433fbbcc89, OPEN/DRAFT against main f4e8a891...; the existing 126 paths are all coordination/phoenix/.
+- HARDWARE #327 @ e759f703...: focused quarantine and relay PASS; Full fails at Controller protocol parity because the inherited QA fixture still requires response_sig and literal |poll| despite the approved deny-only contract.
+- RELEASE #291 @ d497ee71...: both ESP32 compatibility legs PASS; Windows and Full fail at the mandatory handover freshness gate because .github/workflows/blazepwifi-build.yml is newer than the committed PROJECT_HANDOVER.md checkpoint.
+- COE #26 remains frozen at b382d233..., five queued workflows / zero jobs. Complete trees: 2,436 source entries and 286 destination entries; firmware blobs differ, 25 source Python labs have no destination Hardware Python identity, three source Hardware workflows have only one generic destination workflow, and root NOTICE / Hardware license-notice scope is incomplete.
+- Ownership manifest remains e4db324..., DRAFT_REVIEW_ONLY, PHX-MASTER target null. No source migration or subsystem edit.
+- Private v11 registry/newer corrections remain unavailable; no older snapshot substituted. Full Master Python suite NOT RUN because GitHub DNS failed. **PRODUCTION NO-GO.**
