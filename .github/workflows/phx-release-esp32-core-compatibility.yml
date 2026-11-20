@@ -22,12 +22,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: phx-release-esp32-core-compatibility-\u0024{{ github.ref }}
+  group: phx-release-esp32-core-compatibility-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
-    name: "ESP32 core \u0024{{ matrix.esp32_core }} / source 9ef753a38226"
+    name: "ESP32 core ${{ matrix.esp32_core }} / source 9ef753a38226"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -60,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           actual_source_sha="$(git -C hardware-source rev-parse HEAD)"
-          actual_sketch_blob="$(git -C hardware-source rev-parse "HEAD:\u0024{EXPECTED_SKETCH_PATH}")"
+          actual_sketch_blob="$(git -C hardware-source rev-parse "HEAD:${EXPECTED_SKETCH_PATH}")"
           test "$actual_source_sha" = "$EXPECTED_SOURCE_SHA"
           test "$actual_sketch_blob" = "$EXPECTED_SKETCH_BLOB"
           printf 'PHX-HARDWARE-SOURCE-PASS: commit=%s sketch_blob=%s\n' "$actual_source_sha" "$actual_sketch_blob"
@@ -80,16 +80,16 @@ jobs:
           arduino-cli config init --overwrite
           arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
           arduino-cli core update-index
-          arduino-cli core install "esp32:esp32@\u0024{{ matrix.esp32_core }}"
+          arduino-cli core install "esp32:esp32@${{ matrix.esp32_core }}"
           installed_core="$(arduino-cli core list | awk '$1 == "esp32:esp32" {print $2}')"
-          test "$installed_core" = "\u0024{{ matrix.esp32_core }}"
+          test "$installed_core" = "${{ matrix.esp32_core }}"
           arduino-cli core list
 
       - name: Compile exact PHX-HARDWARE sketch
         shell: bash
         run: |
           set -euo pipefail
-          output_dir="$RUNNER_TEMP/phx-esp32-\u0024{{ matrix.esp32_core }}"
+          output_dir="$RUNNER_TEMP/phx-esp32-${{ matrix.esp32_core }}"
           mkdir -p "$output_dir"
           arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir "$output_dir" "hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
           python3 .github/scripts/verify_esp32_application_image.py --output-dir "$output_dir" --sketch-name "BlazePwifiVendo32"
