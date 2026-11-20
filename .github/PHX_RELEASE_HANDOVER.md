@@ -1709,3 +1709,22 @@ These are hosted CI preview artifacts and checksum readbacks, not approved produ
 
 **PRODUCTION NO-GO.** No merge, signing, tagging, publication, hardware flashing, financial migration or customer deployment occurred. Physical 150-power-cut and 30-device/24-hour acceptance remain untested.
 
+### UTC16 follow-up — exact provenance workflow and docs-head status
+
+The source/test head is \`93bbf19e610051977045d04e5acd54881c34c31c\`; the current PR documentation head before this follow-up is \`c0e0feefc52c9ea9ebe7d974d7b39d2273f9a6e0\`. The new isolated provenance job did not remain pending: [compatibility run #44773037343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773037343), job **#136416265318**, completed SUCCESS at the source/test head.
+
+Exact job evidence:
+- \`test_build_provenance.py\`: **27/27 PASS**, including observed compiler C/C++ version fields, missing-\`compiler.cpp.cmd\` fail-closed behavior, and reuse of the exact local library search paths.
+- \`test_arduino_cli_archive_verifier.py\`: **8/8 PASS**.
+- \`test_release_artifact_action_pins.py\`: PASS; 52 BlazePwifi, 4 compatibility-workflow and 6 SoftTimer external action invocations pinned to reviewed immutable commits.
+- The compatibility workflow's two exact HARDWARE source matrix jobs (ESP32 3.3.13 and 4.0.0) were still in progress at this inspection. The earlier matrix run [#44772443932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44772443932) completed both core jobs SUCCESS.
+
+[Full run #44773037406](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773037406) at source/test head \`93bbf19e\`:
+- CI-0701 PASS and classified the change as RUN_FULL.
+- ESP8266 build PASS; nine OpenWrt firmware targets PASS.
+- Main validate FAILED at the CORE-owned \`PROJECT_HANDOVER.md\` freshness gate; ESP32, Android, Ruijie, x86_64 and downstream simulations/publish jobs were cancelled or skipped after the gate. Do not report this as a full build success.
+- The docs-head Full run [#44773325211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773325211) had CI-0701 PASS; ESP32/ESP8266 and other build jobs were still running, with validate queued.
+- Docs-head compatibility run [#44773325027](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773325027) was pending behind the earlier matrix run.
+- Windows docs-head run [#44773324800](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773324800) failed at the same CORE product handover freshness gate; Windows build and publisher were skipped.
+
+No CORE/PISONET handover or implementation was edited to bypass these gates. The source/test task is verified by the dedicated release-owned workflow; overall product Full remains failed until CORE refreshes its own handover.
