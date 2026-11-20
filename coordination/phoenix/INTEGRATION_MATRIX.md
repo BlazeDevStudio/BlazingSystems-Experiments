@@ -2814,3 +2814,16 @@ Current PR #291 docs head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workf
 The updated compatibility test and workflow pin HARDWARE #327 source/test 1a631567eb0c14c12a114f592685f44cc414466f and ESP32 sketch blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7. Previous compatibility PASS #44799798721 is historical at the old source label 76eca0915943. No new-pin pass is claimed until both core jobs complete.
 
 The 26-path accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET. The three new commits change only RELEASE-owned test/workflow/handover paths. CORE and PISONET retain their inherited file review and fix ownership.
+
+
+## PHX-MASTER UTC20 RELEASE #291 new-pin compatibility terminal refresh — 2026-11-20T20:19Z
+
+Current #291 docs head remains 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow fix 5188d1a1cfb5f96462a5ec24941fe35530944f68; test guard 5c5001d43e173463024c3c790bead406fa8c90c3.
+
+| Workflow | Run | Current terminal state |
+|---|---:|---|
+| ESP32 compatibility | #44809606421 | SUCCESS, 3/3 jobs: provenance + ESP32 core 3.3.13 + 4.0.0, all pinned to source 1a631567eb0c / sketch blob ae0da8e2 |
+| BlazePwifi Full | #44809606527 | IN_PROGRESS; validation, firmware target and Android jobs pass; update bundle and ESP simulations pass; browser/Android/x86/board simulations continue; production sign/publish skipped |
+| Windows SoftTimer | #44809606428 | FAILURE at PISONET-owned $buildWorkflow; publisher skipped |
+
+The new-pin compatibility result supersedes the earlier “not observed” note and the historical compatibility PASS at 76eca0915943. Full has no terminal result yet. The 26-path diff remains 21 RELEASE / 3 CORE / 2 PISONET; all cross-owner review obligations remain.
