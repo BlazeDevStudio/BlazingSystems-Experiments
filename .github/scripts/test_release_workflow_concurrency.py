@@ -268,25 +268,29 @@ class SoftTimerTagAdmissionTests(unittest.TestCase):
         require_softtimer_tag_ref_absence_before_publish(self.windows_content)
 
     def test_publisher_rejects_ambiguous_or_non_404_tag_lookup(self):
-        unsafe_guard = """          $tagLookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$releaseTag" 2>&1 | Out-String
-          $tagLookupExit = $LASTEXITCODE
-          if ($tagLookupExit -eq 0) {
-            throw "Git tag already exists"
-          }
-          $tagHttpStatuses = @([regex]::Matches($tagLookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\\s|$)'))
-          if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '200') {
-            throw "tag lookup did not return the required status"
-          }
-          gh release create $releaseTag"""
-        unsafe = self.windows_content.replace(
-            "          gh release create $releaseTag",
-            unsafe_guard,
+        status_predicate = (
+            "if ($tagHttpStatuses.Count -ne 1 -or "
+            "$tagHttpStatuses[0].Groups[1].Value -ne '404') {"
+        )
+        self.assertIn(status_predicate, self.windows_content)
+
+        unsafe_status = self.windows_content.replace(
+            status_predicate,
+            status_predicate.replace("-ne '404'", "-ne '200'"),
             1,
         )
-        self.assertNotEqual(unsafe, self.windows_content)
+        self.assertNotEqual(unsafe_status, self.windows_content)
         with self.assertRaisesRegex(AssertionError, "one unambiguous HTTP 404"):
-            require_softtimer_tag_ref_absence_before_publish(unsafe)
+            require_softtimer_tag_ref_absence_before_publish(unsafe_status)
 
+        unsafe_ambiguous = self.windows_content.replace(
+            status_predicate,
+            status_predicate.replace("Count -ne 1", "Count -lt 1"),
+            1,
+        )
+        self.assertNotEqual(unsafe_ambiguous, self.windows_content)
+        with self.assertRaisesRegex(AssertionError, "one unambiguous HTTP 404"):
+            require_softtimer_tag_ref_absence_before_publish(unsafe_ambiguous)
 
 
 
