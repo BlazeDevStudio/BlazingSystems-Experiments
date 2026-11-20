@@ -2562,3 +2562,15 @@ COE #26 remains OPEN/DRAFT, five workflows QUEUED / zero jobs, and FROZEN. COE #
 - CORE #252, RENTAL #289 and PISONET #255 scoped runs remain PASS; QA #290 is scoped PASS, while #292 has no exact-head run.
 
 No migration acceptance is established.
+
+## PHX-MASTER UTC11 11:40Z terminal CI and destination provenance supersession — 2026-11-20
+
+Experiments HARDWARE #327 @ 89442ce681df965b16c80f73055236a0d842fe0c has a complete recursive tree of 2,435 entries; COE integration #26 @ b382d233ff06c8791b1028bed3c617cc7b670d12 has 286. Exact board sketch blobs differ (ESP8266 3ff575f5... vs c8be98f7...; ESP32 849a2c63... vs 3cc7ec54...). Source has 25 board-local Python labs/helpers and three scoped PHX-HARDWARE workflows; destination has zero Hardware Python files, one generic shell test, and one generic hardware-ci.yml. Source BlazePwifi LICENSE and destination Pisowifi/LICENSE share blob 1ee55b94...; source root NOTICE f6d92cd2... is absent, and Hardware/LICENSE / Hardware/NOTICE.md are absent. Test identity, workflow parity and notice scope are not established.
+
+Current role CI supersession:
+- #327: quarantine #44722725391 PASS; relay/output #44722725315 PASS; Full #44722725399 FAIL at QA-owned Missing poll signature check.
+- #291: compatibility #44728953554 PASS for both pinned ESP32 core legs; Windows #44728953500 FAIL in PISONET-owned negative-selftest.ps1 ($buildWorkflow unset); Full #44728953513 CANCELLED, with some simulations cancelled and production signing/publishing skipped.
+- #26: five workflows QUEUED / zero jobs. No migration, staging, copy, move, cherry-pick, rebase or route promotion.
+- Separate COE candidates #28/#29/#30/#31/#32/#35/#44/#45/#48/#49 remain separate; see the UTC11 11:40Z audit report for exact heads and CI.
+
+OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
