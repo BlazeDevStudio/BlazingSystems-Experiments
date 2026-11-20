@@ -1771,3 +1771,30 @@ The helper now applies `PROVENANCE_COMMAND_TIMEOUT_SECONDS = 120` to each invoca
 **Next action:** refresh the remaining Full-run simulations to terminal state; keep the 120-second bound and 29-test regression; request independent PHX-QA review and PHX-MASTER ownership review. Do not repeat the completed timeout test.
 
 No merge, real-key signing, tag, publication, hardware flashing, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
+### UTC17 docs-head terminal-state refresh — 2026-11-20T17:35Z
+
+This is a handover-only continuation of the existing UTC17 role lock and checkpoint; no second role lock or new source task was opened.
+
+- Exact branch comparison: phoenix/release-publisher-isolation-20261115 is identical to docs commit 623ddf609ebc1a894407489bffdc040090a6de97 (0 ahead / 0 behind).
+- Source/test head remains 6d0b6cd2c7bd700a755b87b3a33bf06808eef26a; no source/test file changed after that head.
+- PR #291 remains OPEN / DRAFT / UNMERGED, based on #242 734b89d9e7792247e8376335c3f3685500ab3f89.
+
+#### Documentation-head GitHub Actions terminal results
+
+- BlazePwifi Full PR #44783642738: COMPLETED SUCCESS — 30 jobs total, 26 SUCCESS, 0 FAILURE, 4 SKIPPED. CI-0701 docs-only PR sync proof, mandatory validation, ESP8266, ESP32, Android, x86_64, Ruijie, all reported Orange Pi targets, update bundle and all v0.4 simulations passed. The four skipped jobs were production APK import, prerelease publication, production signing handoff and release publication. Hosted CI only.
+- ESP32 compatibility PR #44783642560: COMPLETED SUCCESS — 3/3 jobs passed: release provenance regression suite, ESP32 core 3.3.13 and ESP32 core 4.0.0. These jobs used the workflow's recorded HARDWARE source pin label dc02efea6590; this is exact pinned-source CI evidence, not a claim that it matches every later HARDWARE head or physical hardware.
+- Windows SoftTimer PR #44783643231: COMPLETED FAILURE — handover PASS; build-windows FAIL; publisher SKIPPED. Package parity, concurrency and immutable action-pin checks passed before the PISONET-owned negative-selftest.ps1 failed with: The variable '$buildWorkflow' cannot be retrieved because it has not been set. This file remains PISONET-owned; RELEASE did not change it. No publisher ran.
+- Push Full run #44783628594: the connected job-list read returned no jobs, so no push-run conclusion is asserted here. Push compatibility #44783628636: 3/3 jobs passed.
+
+#### Ownership and integration state
+
+- PR #291's accumulated comparison from #242 reports 26 changed paths. It still includes inherited CORE product handover paths and PISONET workflow/test paths; no such paths were changed by the UTC17 source task. Independent submitted PR #291 reviews remain zero. MASTER/owners must reconcile those inherited paths before integration.
+- MASTER #288 branch phoenix/master-coordination is exactly at cf134056e7a2bef95c6a2b0727cad81e46e4de8a (0 ahead / 0 behind). OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY; PHX-RELEASE route is reimplementation-review. No migration/copy/merge occurred.
+- COE #26 remains OPEN / DRAFT / FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12; five workflows remain queued with zero jobs. Source/destination Hardware firmware, test identity and license/NOTICE provenance gaps remain unresolved.
+- COE release-packager #31 remains OPEN / DRAFT at parent head 59ed44d0b911e176f1a95b9cf5585ef811ffd31b. Its mandatory Bubblewrap sandbox still fails closed at the hosted runner unprivileged UID-map preflight (permission denied, exit 125); shared validation/case-collision successes are scoped only and do not establish sandbox acceptance.
+- Canonical private BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by exact-name/variant Library search. v3–v7 and production-checkpoint snapshots are not substitutes; no private contents or identifiers were copied to GitHub.
+
+Next actions: PHX-PISONET fixes its own $buildWorkflow negative self-test; PHX-MASTER resolves #291 inherited CORE/PISONET path ownership; PHX-QA submits independent exact-SHA review; PHX-INFRA provides an approved namespace-capable COE sandbox runner; REGISTRY-CUSTODIAN restores authorized v11 provenance access. Refresh the new handover-head Actions triggered by this documentation update before claiming their terminal state.
+
+No merge, real-key signing, tag, publication, hardware flash, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. PRODUCTION NO-GO.
