@@ -1341,3 +1341,46 @@ This is a documentation-only reconciliation; no source/test or workflow implemen
 - Push-triggered compatibility docs-head [#44711898736](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711898736) remains IN PROGRESS; push full-build docs-head [#44711898823](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711898823) remains PENDING. These are automatic push/PR event duplicates, not additional implementation work.
 - Source/test-head PR compatibility [#44710956522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956522) and push compatibility [#44710949354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710949354) both completed FAILURE at the strict application-image comparator after all diagnostic tests passed.
 - Source/test-head full build [#44710956565](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956565) was CANCELLED by the successor docs-only push: 24 successful jobs, 2 simulation jobs cancelled, 4 production jobs skipped, zero failed jobs. It is not an overall SUCCESS.
+
+
+## PHX-RELEASE UTC11 — deterministic ESP32 compile-time metadata and wiring regression guard
+
+**Date:** 2026-11-20 UTC11  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base:** `734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Source/test HEAD:** `0d4a3c9213a253d64f54de296af306386f915d82`
+
+### Owned change
+
+The existing exact-source ESP32 compatibility workflow already applied a deterministic `SOURCE_DATE_EPOCH` derived from the pinned HARDWARE commit. This activation added a release-owned static regression guard in `.github/scripts/test_phx_release_esp32_core_compatibility.py` so that the working configuration cannot silently regress.
+
+- Commit [`0d4a3c92`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0d4a3c9213a253d64f54de296af306386f915d82): requires the compiler capability probe before compilation; derives the epoch from `git -C hardware-source show -s --format=%ct HEAD`; requires `SOURCE_DATE_EPOCH`, `LC_ALL=C`, and `TZ=UTC` before both clean builds; verifies both source-date-epoch scripts remain in push and pull-request path filters.
+- The guard runs three synthetic negative mutations and requires rejection: missing epoch export, wall-clock epoch, and export moved after the first clean build.
+- No firmware source, workflow behavior, package payload, signer, publisher permission, or other role-owned source was changed in this activation.
+
+### Exact-source CI
+
+- Compatibility [run #44728953554](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44728953554): **SUCCESS**. Both ESP32 core jobs passed, including the new wiring guard.
+- Core 4.0.0 job `136263448366`: `PHX-ESP32-SOURCE-DATE-EPOCH-WIRING-PASS`; compiler probe PASS; `PHX-ESP32-ELF-SECTION-COMPARE-IDENTICAL`; `PHX-ESP32-REPRODUCIBILITY-PASS`. Image size 1,098,464 bytes; repeated-build SHA-256 `edbe9ed6b3539ee9b6339fb6df3db7095d95a51531e7621ddd6a7e7299555f4d`.
+- Core 3.3.13 job `136263462181`: same PASS states. Image size 1,044,352 bytes; repeated-build SHA-256 `8e5198060ebb4b7a0fdbb85561933d00ff3fa5472e2e3d85a7f5a0eba7a26b36`.
+- Both builds used `SOURCE_DATE_EPOCH=1795166700`, derived from exact HARDWARE source commit `dc02efea6590045155bf50f16fdd2d3924f6b415`. The pinned core metadata source is `cores/esp32/chip-debug-report.cpp` blob `c462e8a8bab21910c6e499d7450c3e8903196836` (line 215), with `main.cpp` blob `fee28f101a5ce8ba686bba518f1f964ff5a485f9` calling the report at lines 55 and 58. The helper confirmed the compiler honors the pinned epoch for both core versions.
+- The previously differing `.flash.rodata` and final application images are now identical between the two clean builds for each core. This is hosted-CI reproducibility evidence, not approval of production binaries.
+
+### Current surrounding state and ownership
+
+- HARDWARE #327 live head: `89442ce681df965b16c80f73055236a0d842fe0c`. The release pin remains `dc02efea...` with sketch blob `849a2c63...`; comparison from the pinned source commit to the current #327 head shows only two host-lab paths and three handover paths changed, not the pinned ESP32 sketch. The #327 Full workflow still fails at the QA-owned stale positive `Missing poll signature check`; focused Hardware jobs pass. No physical hardware acceptance is inferred.
+- BlazePwifi full build [run #44728953513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44728953513): at the last read, all firmware/platform targets and validation had passed; four simulation jobs remained in progress. Production import/sign/publish jobs were skipped. This run is not recorded as terminal success.
+- Windows [run #44728953500](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44728953500): failed in the PISONET-owned SoftTimer negative self-test; publisher skipped. The PISONET owner retains the `$buildWorkflow` correction. No PISONET path was edited.
+- MASTER #288 head `3d75d241263576c3913a6388a26d9d761324a957`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY` (blob `e4db324315a1b3543f3ec17a148fbf960170fcb29`). Release workflow migration remains `reimplementation-review`; no cross-repository copy or migration was performed.
+- COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five workflows queued and zero jobs executed. COE #31 remains parent `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 is at `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`. Child #35 case-collision passes; mandatory Bubblewrap sandbox fails closed and shared Hardware/Contracts CI fails. Site-scoped ULA authority and an approved namespace-capable runner remain absent.
+- The accumulated #291 diff still contains PISONET-owned SoftTimer test paths and separate BlazePwifi handover/ledger paths outside this activation's scope. This activation changed only the release-owned compatibility test. PISONET and MASTER must resolve those existing PR paths before integration; no rehome or ownership transfer was attempted.
+- No independent submitted reviews on #291 were present at this read.
+
+### Provenance and evidence limits
+
+The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced by a complete recursive Library listing. A November 9 checkpoint referencing v11 and older v5–v7 snapshots appeared, but none was substituted for canonical v11. No private contents were copied into GitHub.
+
+**Disposition:** The deterministic two-core reproducibility gate is now PASS at exact source/test HEAD. This is not a release approval. No merge, real-key signing, release tag, publication, hardware flash, payment migration, or customer deployment occurred. **PRODUCTION NO-GO.**
+
+**Next:** PHX-QA reviews the exact-source reproducibility evidence and existing stale Hardware positive fixture; PHX-PISONET fixes its own negative self-test; PHX-MASTER resolves ownership contamination and migration review. PHX-RELEASE refreshes the in-progress full-build run before any further release-source change.
