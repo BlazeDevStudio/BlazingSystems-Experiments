@@ -318,6 +318,16 @@ bool releaseRecordedPulseAfterIdle(){
          relayOn && ledOn && pendingPulses==1U && !journalRecoveryRequired;
 }
 int main(){
+  // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
+  resetState();
+  journalRecoveryRequired=true;
+  lastCoin=true;
+  relayOn=true;
+  ledOn=true;
+  const bool idleFaultAccepted=quarantineCoinIngressTransition();
+  if(idleFaultAccepted || !journalRecoveryRequired || relayOn || ledOn || lastCoin) return 48;
+  std::cout<<"POLL_INGRESS_PRIOR_JOURNAL_FAULT_IDLE_LINE_DENY_PASS\\n";
+
   // A normal blocked poll remains inhibited and default-deny when no edge occurs.
   resetState(); loop();
   if(pollCalls!=1 || pollStartAt!=2250 || pollStartRelayOn ||
@@ -616,6 +626,16 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    idle_fault_shortcut = quarantine.replace(
+        "  if(journalRecoveryRequired){",
+        "  if(lineIdle && unhandledEdges==0U) return true;\\n  if(journalRecoveryRequired){",
+        1,
+    )
+    if idle_fault_shortcut == quarantine:
+        raise AssertionError(f"{board}: journal-fault idle-line mutation anchor missing")
+    compile_and_run(assemble(quarantine_source=idle_fault_shortcut),board,48,
+                    "journal-fault-idle-line-shortcut")
+    print(f"{board} MUTATION_REJECTED journal-fault-idle-line-shortcut")
     edge_hook = begin.replace(
         "return coinLineQuietAfterInhibit();",
         "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; } return false;",
