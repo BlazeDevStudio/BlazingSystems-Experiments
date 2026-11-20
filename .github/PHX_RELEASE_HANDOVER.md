@@ -1862,3 +1862,43 @@ These are synthetic/hosted-CI preview artifacts. The upstream toolchain archives
 5. REGISTRY-CUSTODIAN: restore authorized access to canonical v11 provenance.
 
 No merge, real-key signing, tag, publication, hardware flashing, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC18 — ESP32 compatibility pin refreshed to current HARDWARE #327 source
+
+This is a narrow RELEASE-owned source/test/workflow correction on existing draft PR #291. It supersedes the earlier compatibility workflow pin `dc02efea6590045155bf50f16fdd2d3924f6b415`, which no longer represented the current HARDWARE #327 sketch.
+
+### Exact source provenance
+
+- PHX-HARDWARE PR #327 docs head: `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`.
+- PHX-HARDWARE source/test head: `d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1`; the one commit from source/test head to docs head adds only a handover.
+- Exact ESP32 sketch path: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`.
+- Current sketch blob at both source/test and docs heads: `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`.
+- Previous pinned sketch blob: `849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e`.
+- Git compare from old pin to current source/test head: 48 commits ahead, 0 behind. The current sketch is a different blob; the old compatibility matrix did not qualify the current #327 sketch.
+
+### Test-first and implementation
+
+- Test-first commit: [4885e45a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4885e45a8fbc67d84be8595f79a0e45c8bdd4e8b). Updated the compatibility guard's expected #327 source SHA and sketch blob and required the workflow job label to identify the same source.
+- Expected RED: [run #44794836500](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44794836500). The provenance suite passed; both ESP32 core jobs failed at the intended stale-workflow contract assertion, listing the new source SHA, new sketch blob and source label as missing. The corresponding Full run [#44794836314](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44794836314) failed at the same validation assertion; downstream product jobs were skipped. This was the expected regression, not a firmware compile failure.
+- Workflow correction: [a01bb0e2](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a01bb0e28e885e9f7e47306566b9528e570d08cd). Updated only `.github/workflows/phx-release-esp32-core-compatibility.yml`: exact checkout ref, expected source SHA, expected sketch blob and visible job source label now match #327's source/test head.
+- Exact-source compatibility: [run #44795266322](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44795266322) **SUCCESS, 3/3 jobs**. Provenance suite and both core builds passed. Both core jobs verified the exact source commit and sketch blob, Arduino CLI archive, SOURCE_DATE_EPOCH, ELF sections/symbols and two clean builds.
+  - ESP32 core 3.3.13: application image 1,044,432 bytes; two builds identical; SHA-256 `a3ca16a6aaa99ea2f6f133bd3f400d3d422662fc03dd3efbd3e0065407be37ad`.
+  - ESP32 core 4.0.0: application image 1,098,528 bytes; two builds identical; SHA-256 `e93cd72921743d36d1e04390df98e5fb71e564050dc320b00190d8d3188bb48c`.
+  - No workflow artifacts were uploaded by this compatibility run; the hashes above are CI log evidence, not downloadable or production binaries.
+
+### Adjacent workflow status at handover update
+
+- Full BlazePwifi run [#44795266441](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44795266441): CI-0701 and mandatory validation PASS; ESP8266, ESP32, Android and all 11 OpenWrt firmware target jobs PASS. v0.4 simulations/update-bundle jobs were still queued at this handover update; overall run is not represented as terminal success. Production APK import, signing handoff and publication jobs were skipped.
+- Windows run [#44795266274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44795266274): handover PASS; build-windows FAILED in inherited PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset; publisher skipped. RELEASE did not modify PISONET files.
+
+### Ownership and release boundaries
+
+- This UTC18 change modifies only RELEASE-owned `.github/scripts/test_phx_release_esp32_core_compatibility.py`, `.github/workflows/phx-release-esp32-core-compatibility.yml`, and this RELEASE handover. No HARDWARE sketch, CORE/RENTAL/PISONET source, QA tests, MASTER coordination file, shared interface or network configuration was changed.
+- PR #291 remains OPEN / DRAFT / UNMERGED. Its accumulated 26-path diff still includes inherited CORE and PISONET paths; no ownership transfer or independent submitted review is implied.
+- MASTER #288 remains OPEN / DRAFT at `3f4596adbebcccfc225de05ca46483fa231b32dc`; ownership routes remain `DRAFT_REVIEW_ONLY`, and the release workflow route remains `reimplementation-review`. No cross-repository migration was performed.
+- COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows / zero jobs. COE #31 remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; mandatory Bubblewrap sandbox acceptance remains blocked by hosted unprivileged UID-map permission denial, exit 125. No unsandboxed fallback was introduced.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced through the authorized Library search. Older registry snapshots were not substituted; no private contents or identifiers were copied to GitHub.
+- Branch-protection detail reads returned 403 to this integration; the rulesets collection was empty. Effective protected-branch enforcement is therefore not established by this read.
+
+PHX-QA: independently review the source-pin test and exact-source compatibility run. PHX-MASTER: confirm the #327 source/test pin is the intended release qualification reference and continue resolving inherited #291 ownership paths. PHX-HARDWARE retains ownership of firmware source. No merge, signing, release tag, publication, hardware flash, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
