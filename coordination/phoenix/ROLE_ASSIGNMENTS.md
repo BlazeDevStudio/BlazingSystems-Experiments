@@ -1956,3 +1956,23 @@ Full is a terminal non-production CI pass only. Production import/sign/publish j
 The QA branch still targets a historical pre-fix Master base. The current Master verifier accepts one exact registered role or `ALL` and rejects unknown, ambiguous, whitespace, case-variant and non-string recipients. QA evidence's prior 4/4 result used an earlier verifier blob `903df403...`; it is not a current-head CI result.
 
 **Next owner action:** PHX-QA rebases/replays the unchanged recipient regression on the current Master candidate, runs exact-head PR CI, and updates its evidence. PHX-MASTER does not edit QA-owned paths or merge the draft. The separate Blaze Production Continuation retains CORE ownership; no competing CORE work was started.
+
+
+## PHX-MASTER UTC21 live role-head and owner reconciliation — 2026-11-20T21:34Z
+
+| Role / PR | Exact head | Current evidence | Owner action |
+|---|---|---|---|
+| PHX-MASTER #288 | audit-start `dff949b079d465f0f45b8dda2a2ac7efffd7b2d5`; base main `f4e8a891...` | OPEN / DRAFT / UNMERGED; 137 existing coordination-only paths; no PR-triggered run or submitted review | Master maintains coordination/phoenix only. |
+| PHX-HARDWARE #327 | docs `e03dfda4e90706e9105fe2902ed984633ea5e915`; source/test `96e725e9c4709e3d4b6cbb4728144017544d5722`; base #326 `58c558fb...` | Quarantine #44815590633 PASS; Relay #44815590758 PASS; Full #44815590675 FAIL at QA-owned positive poll-signature assertion; 14/14 target/platform + Android jobs pass | QA replaces stale positive fixture with negative/default-deny tests; Hardware retains firmware. |
+| PHX-RELEASE #291 | `4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf` | Compatibility #44809606421 PASS 3/3; Full #44809606527 PASS 26/26 with four production jobs skipped; Windows #44809606428 FAIL at PISONET-owned `$buildWorkflow` | PISONET fixes its own self-test; CORE reviews three inherited paths; Release retains workflow. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 #44782114393 PASS; shared build #44782114390 FAIL | CORE owns handover freshness; Hardware/Release coordinate firmware baseline; Rental owns six Android paths only. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Existing scoped evidence only; no new exact-head run claimed | Separate Blaze Production Continuation retains CORE ownership. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Historical exact-source Windows prototype run #40911340730 only | PISONET owns source and physical serial adapter acceptance. |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96`; historical base `b1ca02e...` | No PR-triggered CI; prior 4/4 source-extracted test was bounded local evidence, not current-head hosted CI | QA rebases/replays unchanged regression against current Master and runs exact-head CI. |
+| PHX-RELEASE COE child #35 | `580855b6a45a6d3cf506a6aa9320bc4782efc246`; base release PR #31 `59ed44d0...` | OPEN / DRAFT; nine Release/tool paths; no submitted review; packaging/tool suite 120 PASS / 2 skips; site ULA and Bubblewrap gates remain blocked | Release owns implementation; QA/Master review remains outstanding; no artifact publication. |
+
+COE #35's source commits are test-first failed-sort regression `9655317f...`, atomic hard-link publication `28df88c...`, and runner cleanup-classifier regression `5f1c9a5...`. Master inspected the diffs but did not modify Release-owned paths.
+
+The current #327 source/test candidate is not the manifest's pinned source ref: `OWNERSHIP_ROUTES.json` remains `source_ref=f4e8a891...`, `destination_candidate_sha=b382d233...`, `DRAFT_REVIEW_ONLY`, Master target null. This route map does not authorize copying from #327 or any other branch.
+
+No cross-role source edit, reassignment, merge, route promotion or migration was performed by Master.
