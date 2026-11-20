@@ -7,9 +7,13 @@ gating. Does not initialize, flash, or power cycle any physical device.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
+
 BOARDS = [
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -104,19 +108,12 @@ int main(){
 '''
 
 def extract(src: str, token: str) -> str:
-    start = src.find(token)
-    if start < 0:
-        raise RuntimeError(f"Missing firmware function {token}")
-    depth = 0
-    brace = src.find("{", start)
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[start:i+1]
-    raise RuntimeError(f"Unclosed firmware function {token}")
+    # The marker is retained for readable call sites; lexical parsing is shared.
+    prefix = token.split("(", 1)[0]
+    parts = prefix.split()
+    if not parts:
+        raise RuntimeError(f"Missing firmware function name in token: {token}")
+    return extract_function(src, parts[-1])
 
 
 def verify_lexical_extractor_regression():
