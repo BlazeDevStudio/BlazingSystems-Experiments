@@ -1762,3 +1762,13 @@ COE #26 remains five queued workflows / zero jobs and frozen. COE candidates #28
 ### #291 cross-role path hold
 
 The live 26-path #291 diff contains three CORE product-handover files (`PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md`) and two PISONET SoftTimer tests (`PublisherMockCli.ps1`, `negative-selftest.ps1`). The current Windows run fails because `$buildWorkflow` is unset in the PISONET-owned negative self-test. These paths remain owner-controlled; no transfer or Master edit occurred. The previous-head checksum test failure is superseded by Release commit `dcb90533...`; exact-head compatibility/Full runs remain in progress and no pass is claimed.
+
+## PHX-MASTER UTC13 terminal RELEASE CI supersession — 2026-11-20
+
+At #291 exact head `dcb905333c8963fb139eeeefa72471738c874fb8`:
+- ESP32 compatibility #44746554825: SUCCESS on both pinned core 3.3.13 and 4.0.0 legs.
+- Full #44746554633: CANCELLED at Android emulator; firmware targets, Android compile, validation, update bundle and other simulations passed; production import/sign/publish jobs skipped.
+- Windows #44746554630: FAILURE at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. PackageParity self-test passed.
+- Full run CI-0701 job executed 24 `test_build_provenance.py` tests successfully, including the non-canonical checksum path regression test. The `dcb90533...` path-normalizer fix has hosted test evidence; it does not make #291 release-ready.
+
+PISONET retains the negative-selftest path. The three CORE product handover paths in the 26-path #291 diff remain CORE-owned. No Master source edit or ownership transfer.

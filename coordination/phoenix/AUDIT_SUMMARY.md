@@ -1423,3 +1423,7 @@ Master PR #288 starts this audit at `52b7c023ea414e2df504e943425a9d0957c8c2d9`, 
 - Master Python suite NOT RUN; no exact-head PR #288 workflow run. Remote subsystem CI readbacks are not physical or production acceptance. Issue #266 remains OPEN and Master cleanup remains incomplete.
 
 **Next:** QA repairs the deny-only poll fixture; PISONET owns its SoftTimer self-test; RELEASE completes exact-head runs and keeps non-Release paths owner-approved; COE #26 remains frozen; registry custodian and repository administrator provide missing storage/governance evidence. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC13 terminal RELEASE CI correction — 2026-11-20
+
+The terminal #291 exact-head readback supersedes the earlier in-progress labels: compatibility #44746554825 SUCCESS on both ESP32 core legs; Full #44746554633 CANCELLED at Android emulator after firmware/Android compile/validation/update bundle/other simulations passed; Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1` (`$buildWorkflow` unset). The Full CI-0701 job ran 24 build-provenance tests successfully, including the checksum path-alias regression. Production signed-APK import, signing handoff and publishing were skipped. #291 remains OPEN/DRAFT and not release-ready.

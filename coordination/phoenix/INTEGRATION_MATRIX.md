@@ -2615,3 +2615,7 @@ COE #26 remains five workflows QUEUED / zero jobs. No copy, move, overwrite, reb
 - RELEASE #291 current head `dcb90533...`: Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1`; compatibility #44746554825 and Full #44746554633 remain IN_PROGRESS.
 - CORE #252, RENTAL #289 and PISONET #255 retain scoped PASS only. QA #290 is scoped PASS without native COM lab invocation; #292 has no exact-head run.
 - COE #26 has five queued workflows and zero jobs; no combined destination acceptance.
+
+## PHX-MASTER UTC13 terminal RELEASE CI update — 2026-11-20
+
+At #291 head `dcb905333c8963fb139eeeefa72471738c874fb8`, compatibility #44746554825 passed both pinned ESP32 core legs. Full #44746554633 was cancelled at Android emulator after firmware, Android compile, validation, update bundle and other simulation jobs passed; production import/sign/publish remained skipped. Windows #44746554630 failed in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. The Full run's CI-0701 job executed all 24 build-provenance tests successfully, including the checksum path-alias regression. This is scoped hosted test evidence, not release acceptance.

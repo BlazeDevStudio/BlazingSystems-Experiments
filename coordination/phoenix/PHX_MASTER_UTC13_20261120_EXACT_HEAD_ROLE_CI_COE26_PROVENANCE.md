@@ -91,3 +91,15 @@ License/notice review:
 7. **PHX-MASTER:** run the complete coordination suite when an authenticated checkout is available; continue Master-only matrix and provenance work.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No merge, release, flash, real-payment action, secret provisioning, physical test or financial migration was performed.
+
+## PHX-MASTER UTC13 terminal RELEASE run supersession — 2026-11-20
+
+The previous `IN_PROGRESS` labels above are superseded by terminal exact-head run readback at #291 head `dcb905333c8963fb139eeeefa72471738c874fb8`:
+
+| Run | Terminal result | Exact evidence |
+|---|---|---|
+| [ESP32 compatibility #44746554825](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746554825) | **SUCCESS** | Both pinned ESP32 core jobs completed successfully: core 4.0.0 and core 3.3.13. |
+| [BlazePwifi Full #44746554633](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746554633) | **CANCELLED** | Firmware targets, Android compile, validation, update bundle and the non-Android simulations passed. The Android emulator job was cancelled. Production signed-APK import, production sign handoff and release/prerelease publication were skipped. |
+| [Windows #44746554630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746554630) | **FAILURE** | PackageParity self-test passed; PISONET-owned `negative-selftest.ps1` still fails because `$buildWorkflow` is unset. |
+
+The Full run's CI-0701 job executed `.github/scripts/test_build_provenance.py`: **24 tests passed**, including `test_checksum_manifest_rejects_noncanonical_path_aliases`. The Release change in `dcb90533...` is therefore covered by this hosted test run. This does not clear the Windows failure, Android-emulator cancellation, or skipped production signing/publication gates. No release authorization is inferred.

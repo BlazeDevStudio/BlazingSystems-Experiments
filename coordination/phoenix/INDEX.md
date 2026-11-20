@@ -155,3 +155,9 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 `dcb90533...`: Windows FAIL at PISONET-owned `negative-selftest.ps1`; compatibility and Full remain IN_PROGRESS. The accumulated #291 diff includes three CORE and two PISONET paths requiring those owners' review.
 - COE #26 remains frozen with five queued workflows / zero jobs. Fresh exact trees: 2,438 source entries vs 286 destination; board sketches differ; 24 source Python lab/helper files have zero destination Hardware Python identities; three source workflows are not represented by the one generic destination workflow; root NOTICE / Hardware license scope unresolved.
 - Private v11 registry/newer corrections inaccessible; no older snapshot substituted. Effective branch protection unverified. Master suite NOT RUN. **PRODUCTION NO-GO.**
+
+## UTC13 terminal RELEASE CI follow-up — 2026-11-20
+
+- #291 head `dcb90533...`: ESP32 compatibility #44746554825 PASS on both cores; Full #44746554633 CANCELLED at Android emulator after non-production build/simulation jobs passed; Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1` (`$buildWorkflow` unset).
+- The Full CI-0701 job passed 24 build-provenance tests, including the checksum path-alias regression. Production import/sign/publish remained skipped.
+- #291 remains OPEN/DRAFT; PISONET and CORE retain their cross-role paths. No release or migration authorization.

@@ -1017,3 +1017,7 @@ Current RELEASE #291 head is `dcb905333c8963fb139eeeefa72471738c874fb8`. Its 26-
 COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. Exact #327/#26 tree comparison confirms different ESP32/ESP8266 blobs, 24 source board-local Python lab/helper files with zero destination Hardware Python identities, three source Hardware workflows versus one generic destination workflow, and incomplete root NOTICE / Hardware license-notice scope.
 
 `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration is proposed.
+
+## PHX-MASTER UTC13 terminal RELEASE CI and owner-path correction
+
+#291 at `dcb905333c8963fb139eeeefa72471738c874fb8`: compatibility #44746554825 PASS on both ESP32 cores; Full #44746554633 CANCELLED at Android emulator with production import/sign/publish skipped; Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. The Full CI-0701 job passed all 24 build-provenance tests, including the new checksum path-alias regression. PISONET still owns the failing test path; CORE still owns the three product handover paths in #291. No ownership transfer or Master source change.
