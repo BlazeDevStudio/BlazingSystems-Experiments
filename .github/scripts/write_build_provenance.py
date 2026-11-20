@@ -10,6 +10,7 @@ import re
 import stat
 import subprocess
 import secrets
+import shlex
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -33,6 +34,7 @@ def build_args(
     core_version: str | None = None,
     fqbn: str | None = None,
     sketch: str | None = None,
+    libraries: Path | None = None,
 ) -> argparse.Namespace:
     """Small argument factory used by the isolated regression suite."""
     return argparse.Namespace(
@@ -44,6 +46,7 @@ def build_args(
         core_version=core_version,
         fqbn=fqbn,
         sketch=sketch,
+        libraries=Path(libraries) if libraries else None,
     )
 
 
@@ -719,9 +722,96 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         raise ProvenanceError(
             f"expected exactly {args.core_package}@{args.core_version}; observed {installed}"
         )
+
     sketch = _normalize_checksum_path(args.sketch)
     sketch_path = ROOT / sketch
     _hash_regular(sketch_path)
+
+    # Capture the compiler selected by the exact FQBN, core and local library
+    # search path used by the preceding build. --show-properties is read-only:
+    # it resolves platform.txt properties without compiling or uploading.
+    properties_command = [
+        "arduino-cli",
+        "compile",
+        "--show-properties=expanded",
+        "--fqbn",
+        args.fqbn,
+    ]
+    libraries = getattr(args, "libraries", None)
+    if libraries:
+        properties_command.extend(["--libraries", str(libraries)])
+    properties_command.append(sketch)
+    properties_output = _run(properties_command)
+
+    required_properties = ("compiler.path", "compiler.c.cmd", "compiler.cpp.cmd")
+    properties: dict[str, str] = {}
+    for line in properties_output.splitlines():
+        key, separator, value = line.partition("=")
+        if not separator or key not in required_properties:
+            continue
+        if key in properties:
+            raise ProvenanceError(f"Arduino compiler property is duplicated: {key}")
+        properties[key] = value.strip()
+    missing_properties = [
+        key for key in required_properties if not properties.get(key)
+    ]
+    if missing_properties:
+        raise ProvenanceError(
+            "Arduino compiler properties missing or empty: "
+            + ", ".join(missing_properties)
+        )
+
+    compiler_dir = Path(properties["compiler.path"])
+    if not compiler_dir.is_absolute():
+        raise ProvenanceError("Arduino compiler.path must be an expanded absolute path")
+    try:
+        compiler_dir = compiler_dir.resolve(strict=True)
+    except OSError as exc:
+        raise ProvenanceError(
+            f"Arduino compiler.path does not resolve: {properties['compiler.path']}"
+        ) from exc
+    if not compiler_dir.is_dir():
+        raise ProvenanceError("Arduino compiler.path is not a directory")
+
+    def observed_compiler(property_name: str) -> tuple[str, str]:
+        raw_command = properties[property_name]
+        try:
+            command_parts = shlex.split(raw_command)
+        except ValueError as exc:
+            raise ProvenanceError(
+                f"Arduino {property_name} is not a valid executable token"
+            ) from exc
+        if len(command_parts) != 1:
+            raise ProvenanceError(
+                f"Arduino {property_name} must resolve to exactly one executable"
+            )
+        executable = Path(command_parts[0])
+        if not executable.is_absolute():
+            executable = compiler_dir / executable
+        try:
+            executable = executable.resolve(strict=True)
+        except OSError as exc:
+            raise ProvenanceError(
+                f"Arduino compiler executable is missing for {property_name}: {executable}"
+            ) from exc
+        if not executable.is_file() or not os.access(executable, os.X_OK):
+            raise ProvenanceError(
+                f"Arduino compiler executable is not a runnable regular file: {executable}"
+            )
+        version_output = _run([str(executable), "--version"])
+        version = next(
+            (line.strip() for line in version_output.splitlines() if line.strip()),
+            "",
+        )
+        if not version:
+            raise ProvenanceError(
+                f"Arduino compiler returned no version for {property_name}: {executable.name}"
+            )
+        return executable.name, version
+
+    compiler_c_binary, compiler_c_version = observed_compiler("compiler.c.cmd")
+    compiler_cpp_binary, compiler_cpp_version = observed_compiler("compiler.cpp.cmd")
+
     toolchain = {
         "name": "Arduino CLI",
         "arduino_cli_version": match.group(1),
@@ -729,8 +819,11 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         "board_core": f"{args.core_package}@{args.core_version}",
         "fqbn": args.fqbn,
         "sketch": sketch,
-        "compiler_version": None,
-        "compiler_version_note": "board package compiler subversion is not separately emitted by this workflow",
+        "compiler_version": compiler_cpp_version,
+        "compiler_c_version": compiler_c_version,
+        "compiler_c_binary": compiler_c_binary,
+        "compiler_cpp_binary": compiler_cpp_binary,
+        "compiler_version_source": "arduino-cli compile --show-properties=expanded and compiler --version",
     }
     source_paths = [
         sketch,
@@ -950,6 +1043,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--core-version")
     parser.add_argument("--fqbn")
     parser.add_argument("--sketch")
+    parser.add_argument("--libraries", type=Path)
     return parser.parse_args()
 
 
