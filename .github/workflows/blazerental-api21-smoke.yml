@@ -1,0 +1,103 @@
+name: PHX BlazeRental API21 Android 5 emulator smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/blazerental-api21-smoke.yml'
+      - '.github/scripts/run-blazerental-api21-smoke.sh'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/verify_apk_contract.py'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build.gradle'
+  push:
+    branches: ['phoenix/rental-apk-contract-audit-20261121']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-rental-api21-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api21-smoke:
+    name: Android 5.0 x86 debug install and Activity launch (no policy)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 55
+    env:
+      TARGET: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+      GRADLE_VERSION: 4.4.1
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Pin legacy SDK 27 and build-tools 27.0.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          yes | "$sdkmanager" --licenses >/dev/null || true
+          "$sdkmanager" "platforms;android-27" "build-tools;27.0.3"
+          mkdir -p /tmp/blazerental-sdk27/platforms /tmp/blazerental-sdk27/build-tools
+          cp -a "$ANDROID_SDK_ROOT/platforms/android-27" /tmp/blazerental-sdk27/platforms/
+          cp -a "$ANDROID_SDK_ROOT/build-tools/27.0.3" /tmp/blazerental-sdk27/build-tools/
+          test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
+          ln -s "$ANDROID_SDK_ROOT/platform-tools" /tmp/blazerental-sdk27/platform-tools
+          printf 'sdk.dir=/tmp/blazerental-sdk27\n' > "$TARGET/local.properties"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Compile actual AOSP debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rental-api21-evidence
+          git rev-parse HEAD | tee rental-api21-evidence/source-head.txt
+          curl -fsSL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -o /tmp/blazerental-gradle.zip
+          unzip -q /tmp/blazerental-gradle.zip -d /opt
+          (
+            cd "$TARGET"
+            ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
+              "/opt/gradle-$GRADLE_VERSION/bin/gradle" --no-daemon --stacktrace assembleAospDebug
+          ) 2>&1 | tee rental-api21-evidence/compile.log
+      - name: Verify KVM support
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+          test -r /dev/kvm -a -w /dev/kvm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Boot API21 emulator, verify APK, install and launch
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 21
+          arch: x86
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
+          emulator-boot-timeout: 300
+          script: ANDROID_HOME=/tmp/blazerental-sdk27 bash .github/scripts/run-blazerental-api21-smoke.sh
+      - name: Preserve failure diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p rental-api21-evidence
+          timeout 8s adb devices -l > rental-api21-evidence/adb-devices.txt 2>&1 || true
+          timeout 8s adb logcat -d -t 1000 > rental-api21-evidence/logcat-postrun.txt 2>&1 || true
+      - name: Upload debug APK and diagnostics (NOT production)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHX-Rental-API21-SMOKE-${{ github.sha }}
+          path: |
+            rental-api21-evidence/
+            experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build/outputs/apk/aosp/debug/*.apk
+          if-no-files-found: error
