@@ -497,3 +497,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `5e36576b8b2cb71a207725a1662890fc2b124494` already includes another release worker's provenance and image-verification refinement. No implementation was duplicated.
 - Both exact-core legs in [ESP32 #44747503779](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503779) completed successfully for hardware source `dc02efea6590`; this is scoped CI evidence only and is not compatibility, signing, hardware, or production acceptance. At audit time [Build #44747503919](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503919) remained in progress. [Windows #44747504010](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747504010) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC14 — supersession audit: provenance manifest hardening
+
+- Compatible head `fbe1ca6183aa37fadf125b0e8c07a884e80789be` already includes another release worker's provenance-manifest hardening. No implementation was duplicated.
+- [Build #44753364967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364967) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44753364998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364998) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44753364863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364863) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
