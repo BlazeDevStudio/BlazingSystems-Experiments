@@ -2866,3 +2866,46 @@ Current exact-head blockers remain:
 - COE #26 remains FROZEN with five queued workflows / zero jobs and unresolved exact firmware/test blob, board-local Python import, root NOTICE and Hardware license/notice gaps.
 
 No readiness tier is promoted. Production remains NO-GO.
+
+
+## PHX-MASTER UTC21 exact-head CI and COE #26 staging gate — 2026-11-20T21:34Z
+
+### Release child #35 — distinct from integration candidate #26
+
+COE #35 is OPEN / DRAFT at `580855b6a45a6d3cf506a6aa9320bc4782efc246`, based on release parent #31 at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Its nine changed paths are release tooling/workflow/test paths. Source changes make checksum-manifest publication atomic after successful sort using a same-directory no-overwrite hard link; a failed sort leaves no final manifest. A runner test prevents an ordinary RELEASE-BLOCKED diagnostic from being misclassified as process-group cleanup failure.
+
+| Exact-head run | Result |
+|---|---|
+| [COE #35 Hardware/Shared #44820473859](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473859) | 120 packaging/tool tests PASS / 2 skips; all 10 appliance profiles fail closed because approved site-scoped RFC 4193 ULA /48 authority is absent |
+| [COE #35 sandbox #44820473769](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473769) | 14 host preflight tests PASS; Bubblewrap unavailable; namespace and sandboxed packaging skipped |
+| [COE #35 case collision #44820473809](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473809) | PASS |
+
+No real ImageBuilder build or firmware artifact was produced. No review is submitted. #35 does not validate COE #26.
+
+### COE #26 — frozen exact-source comparison
+
+The machine-readable route manifest is still pinned to source main `f4e8a891...` and destination #26 `b382d233...`. The active Hardware candidate source/test SHA `96e725e9...` differs from the manifest source ref and must not be silently substituted.
+
+Complete recursive trees at #327 source/test `96e725e9...` and COE #26 `b382d233...`:
+
+| Item | Source | Destination |
+|---|---:|---:|
+| Tree entries | 2,445 | 286 |
+| Board-local ESP32/ESP8266 Python labs/helpers | 25 | 0 |
+| Routed tests | 47 | 19 |
+| Routed test blobs | 1 identical / 3 different / 43 missing | — |
+| Scoped Hardware workflows | 3 | 1 generic |
+
+ESP32 sketch blob `ae0da8e2...` differs from destination `3cc7ec54...`; ESP8266 `a1f12edc...` differs from `c8be98f7...`. The destination Hardware test `f921c56c...` still asserts positive `response_sig`, `|register|`, and `|poll|` markers that conflict with the current deny-only poll contract.
+
+The source and destination Pisowifi MIT LICENSE blobs match exactly at `1ee55b94...`. Source root NOTICE `f6d92cd2...` is absent at the destination. No Hardware-specific LICENSE/NOTICE was found in either tree; third-party notice scope remains unresolved.
+
+COE #26 remains OPEN / DRAFT / FROZEN with five workflows QUEUED / zero jobs and no submitted reviews. No file copy, move, staging, overwrite, cherry-pick, rebase or route promotion occurred.
+
+### Other current role gates
+
+- HARDWARE #327 focused quarantine/relay PASS; Full fails at QA-owned positive poll-signature fixture. See [#44815590675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44815590675).
+- RELEASE #291 compatibility 3/3 and Full 26/26 PASS with four production jobs skipped; Windows fails at PISONET-owned `$buildWorkflow`. See [#44809606421](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44809606421), [#44809606527](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44809606527), [#44809606428](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44809606428).
+- RENTAL #328 APK/API21/API23 PASS; shared build FAIL. See [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390).
+
+No readiness tier is promoted. Production remains NO-GO.
