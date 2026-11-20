@@ -1839,7 +1839,10 @@ void loop(){
         applyOutputs();
         lastPoll=millis();
       } else if(pollIntakeSuspended){
-        // Drain aborted without an ISR delta; release only after sequence reconciliation.
+        // GPIO saw an active coin line, but the ISR sequence did not advance.
+        // Treat the pulse as unresolved ingress; never re-enable the acceptor
+        // after a drain abort whose edge cannot be tied to a durable event.
+        latchPollPulseFault(1U);
         pollIntakeSuspended=false;
         applyOutputs();
         lastPoll=millis();
