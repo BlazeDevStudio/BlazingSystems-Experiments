@@ -378,6 +378,23 @@ int main(){
   initPendingStore(); applyOutputs();
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn) return 15;
 
+  // The ISR edge counter is uint32_t: an edge during the blocked poll must
+  // remain visible when the sequence wraps from UINT32_MAX to zero.
+  resetState();
+  coinEdgeSequence=0xFFFFFFFFUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFFUL;
+  injectDuringHttp=true;
+  loop();
+  if(pollCalls!=1 || pollStartAt!=2250 || pollEndAt-pollStartAt!=3500 ||
+     !pollPulseObservedDuringHttp || !pollPulseRelayOff || !pollPulseSuspended ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pendingPulses!=0U || lastPoll!=pollEndAt || fakeNow!=pollEndAt+2) return 50;
+  const std::string rolloverMarker=LittleFS.files["/pollpulse.fault"];
+  if(rolloverMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     rolloverMarker.find("pulses=1")==std::string::npos) return 50;
+  std::cout<<"POLL_BLOCKED_ISR_SEQUENCE_ROLLOVER_DENY_PASS\\n";
+
   // Active-high input polarity must attach the opposite edge and fail closed too.
   resetState(); runCoinActiveLow=false;
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
@@ -673,6 +690,16 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=unsafe_timing_loop,main_source=TIMING_MAIN),
                     board,47,"issue-177-missing-prepoll-inhibit")
     print(f"{board} MUTATION_REJECTED issue-177-missing-prepoll-inhibit expected_exit=47")
+    non_wrap_safe_loop=loop.replace(
+        "latchPollPulseFault(pollEdgeEnd-pollEdgeStart);",
+        "latchPollPulseFault(pollEdgeEnd>pollEdgeStart ? pollEdgeEnd-pollEdgeStart : 0U);",
+        1,
+    )
+    if non_wrap_safe_loop==loop:
+        raise AssertionError(f"{board}: poll-edge wrap mutation anchor missing")
+    compile_and_run(assemble(loop_source=non_wrap_safe_loop),board,50,
+                    "non-wrap-safe-poll-edge-delta")
+    print(f"{board} MUTATION_REJECTED non-wrap-safe-poll-edge-delta expected_exit=50")
     idle_fault_shortcut = quarantine.replace(
         "  if(journalRecoveryRequired){",
         "  if(lineIdle && unhandledEdges==0U) return true;\n  if(journalRecoveryRequired){",
