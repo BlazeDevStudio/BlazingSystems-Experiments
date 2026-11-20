@@ -879,8 +879,8 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
   writeLogical(runRelayPin,false,runRelayActiveHigh);
-  quarantineCoinIngressTransition();
   writeLogical(runLedPin,false,runLedActiveHigh);
+  quarantineCoinIngressTransition();
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
