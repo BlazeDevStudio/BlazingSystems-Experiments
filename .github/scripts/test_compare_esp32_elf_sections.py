@@ -73,6 +73,89 @@ class ElfSectionByteComparisonTests(unittest.TestCase):
             ],
         )
 
+
+    def test_reports_time_candidates_without_neighboring_text(self) -> None:
+        first_payload = b"label=build;time=29:39:32;secret=ABCD"
+        second_payload = b"label=build;time=30:02:20;secret=WXYZ"
+        first_elf = bytearray(0x100)
+        second_elf = bytearray(0x100)
+        first_elf[0x20:0x20 + len(first_payload)] = first_payload
+        second_elf[0x60:0x60 + len(second_payload)] = second_payload
+        first_sections = [{
+            "name": ".flash.rodata", "size": len(first_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x20,
+        }]
+        second_sections = [{
+            "name": ".flash.rodata", "size": len(second_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x60,
+        }]
+
+        result = compare_section_bytes(
+            bytes(first_elf), bytes(second_elf),
+            first_sections, second_sections, ".flash.rodata",
+        )
+        contexts = result["difference_context"]
+        first_candidates = {
+            value for item in contexts for value in item["first_time_candidates"]
+        }
+        second_candidates = {
+            value for item in contexts for value in item["second_time_candidates"]
+        }
+        self.assertIn("29:39:32", first_candidates)
+        self.assertIn("30:02:20", second_candidates)
+        self.assertNotIn("ABCD", repr(result))
+        self.assertNotIn("WXYZ", repr(result))
+        self.assertTrue(all(item["window_bytes"] <= 64 for item in contexts))
+
+    def test_time_candidate_scan_does_not_expose_plain_numeric_tokens(self) -> None:
+        first_payload = b"build=1234567890"
+        second_payload = b"build=2234567890"
+        first_elf = bytearray(0x80)
+        second_elf = bytearray(0x80)
+        first_elf[0x20:0x20 + len(first_payload)] = first_payload
+        second_elf[0x40:0x40 + len(second_payload)] = second_payload
+        first_sections = [{
+            "name": ".flash.rodata", "size": len(first_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x20,
+        }]
+        second_sections = [{
+            "name": ".flash.rodata", "size": len(second_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x40,
+        }]
+
+        result = compare_section_bytes(
+            bytes(first_elf), bytes(second_elf),
+            first_sections, second_sections, ".flash.rodata",
+        )
+        self.assertTrue(result["difference_context"])
+        self.assertTrue(all(not item["first_time_candidates"] for item in result["difference_context"]))
+        self.assertTrue(all(not item["second_time_candidates"] for item in result["difference_context"]))
+
+    def test_difference_context_is_bounded_for_large_drift(self) -> None:
+        first_payload = b"A" * 96
+        second_payload = b"B" * 96
+        first_elf = bytearray(0x100)
+        second_elf = bytearray(0x100)
+        first_elf[0x20:0x20 + len(first_payload)] = first_payload
+        second_elf[0x60:0x60 + len(second_payload)] = second_payload
+        first_sections = [{
+            "name": ".flash.rodata", "size": len(first_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x20,
+        }]
+        second_sections = [{
+            "name": ".flash.rodata", "size": len(second_payload),
+            "vma": 0x3F400120, "lma": 0x3F400120, "file_offset": 0x60,
+        }]
+
+        result = compare_section_bytes(
+            bytes(first_elf), bytes(second_elf),
+            first_sections, second_sections, ".flash.rodata",
+        )
+        self.assertEqual(len(result["difference_context"]), 1)
+        context = result["difference_context"][0]
+        self.assertLessEqual(context["window_bytes"], 64)
+        self.assertTrue(context["window_truncated"])
+
     def test_reports_app_descriptor_section_separately(self) -> None:
         self.second_elf[0x34] = ord("x")
         result = compare_section_bytes(
