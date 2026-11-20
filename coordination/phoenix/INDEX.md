@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T22:34:16Z
+**Updated:** 2026-11-20T23:38:20Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -292,3 +292,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Master audit-start head `6c1edfe001695bad55e701295799422f17f0fea1`; main `f4e8a891...`; active v0.6 development `2fbd2475...`; COE main `a6513ab...`.
 - #327 focused quarantine/relay PASS; Full FAIL at QA-owned poll-signature fixture. #291 compatibility PASS 3/3, Full/Windows FAIL at CORE handover freshness. #328 shared build fails at CORE freshness and inherited ESP32 Mbed TLS header.
 - COE #26 remains frozen at `b382d233...`, five queued workflows / zero jobs; manifest remains DRAFT_REVIEW_ONLY and Master target null. Private v11/newer corrections and full Master suite remain blocked.
+
+
+## Latest exact-head reconciliation — 2026-11-20 UTC23
+
+- [PHX_MASTER_UTC23_20261120_RELEASE_COMPAT_SOURCE_PIN_AND_COE26_EXACT_BLOB_AUDIT.md](PHX_MASTER_UTC23_20261120_RELEASE_COMPAT_SOURCE_PIN_AND_COE26_EXACT_BLOB_AUDIT.md) — exact Release #291 Hardware source pin and two-core reproducibility, current #327/#328 terminal CI, and COE #26 file-level migration provenance.
+- Release #291 compatibility #44835998901 PASS 3/3 on exact Hardware source `83c20c9...` / ESP32 sketch blob `ae0da8e...`; Full #44835998849 and Windows #44835998862 remain blocked at handover freshness.
+- HARDWARE #327 focused quarantine/relay PASS; Full #44831844300 fails at QA-owned positive poll-signature assertion. RENTAL #328 Android identity/API21/API23 PASS; shared build #44782114390 fails at handover freshness and inherited Mbed TLS 4 header.
+- COE #26 remains frozen; exact ESP32, ESP8266 and hardening-test blobs differ; Pisowifi LICENSE matches; root NOTICE.md is absent at destination; five workflows queued / zero jobs. Manifest remains DRAFT_REVIEW_ONLY, Master target null.
+- Private v11/newer corrections remain inaccessible; no Drive operations or migration occurred. Full Master Python suite NOT RUN. **PRODUCTION NO-GO.**

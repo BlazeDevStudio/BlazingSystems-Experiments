@@ -1177,3 +1177,19 @@ The communication protocol defines `to` as one exact registered ROLE-ID or liter
 The current UTC20 checkpoint was corrected from a recipient array to `"to": "ALL"`. The bounded four-case local test used the exact QA test and example Git blobs with the current verifier's extracted `validate_envelope()` function; it is not the full Master suite or hosted CI.
 
 This contract grants no worker ownership, migration permission, merge authority, signing authority, hardware acceptance, or production approval.
+
+
+## 6.61 Release compatibility evidence must identify the compiled source, not only the PR tree — 2026-11-20 UTC23
+
+A release PR can check out its own branch for release tooling and a separate pinned source ref for a firmware compatibility build. Those are distinct source identities and must never be conflated.
+
+1. **Record both identities.** Every cross-branch qualification must record the PR event/docs head, the exact external source/test commit, the exact firmware file Git blob, the target board, compiler/core/toolchain version, workflow run and job IDs.
+2. **Verify before compiling.** The workflow must compare `git rev-parse HEAD` and `git rev-parse HEAD:<path>` in the external source checkout against the declared source commit and expected blob before invoking the compiler.
+3. **Scope the PASS.** A successful matrix qualifies only the pinned source/blob and explicit toolchain versions in the successful jobs. It does not certify a different inherited file in the consumer PR tree, the entire product tree, a release package, hardware acceptance, or production readiness.
+4. **Expose inherited divergence.** If the consumer PR tree carries a different inherited sketch blob, report that blob alongside the external pinned source. Never describe the external-source compile as proof that the consumer's local inherited sketch was compiled.
+5. **Separate terminal gates.** A successful compatibility matrix or provenance suite does not override a failed Full/Windows handover, skipped signing/publishing, missing independent QA, or physical acceptance. A scoped PASS must not be promoted to a terminal Full PASS.
+6. **Preserve ownership.** HARDWARE owns firmware/source changes; RELEASE owns compatibility workflows and release tooling; QA owns independent source-linked negative tests; the canonical product handover remains with its designated source owner. PHX-MASTER records the dependency and does not edit worker source paths.
+
+**Exact example — RELEASE #291 / HARDWARE #327:** PR #291 docs head `88d8e326e0b19bed8a157fb88aa0a3a9524d90a9` runs a compatibility workflow whose external checkout is HARDWARE #327 source/test `83c20c9d59bcdf6c24e2112f3396b90847b5bde0` and ESP32 sketch blob `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`. Run [#44835998901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835998901) completed 3/3: ESP32 core 3.3.13 and 4.0.0 reproducibility jobs plus the 32-test provenance suite. The Release branch's own inherited ESP32 sketch is a different blob, `29f1125d52ff474a0d028ad41f7af201be1f0f9d`; the compatibility workflow does not compile that local blob. Release #291 Full and Windows still fail at handover freshness, so this scoped qualification is not a release approval.
+
+This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, or production approval.
