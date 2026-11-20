@@ -1728,3 +1728,46 @@ Exact job evidence:
 - Windows docs-head run [#44773324800](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773324800) failed at the same CORE product handover freshness gate; Windows build and publisher were skipped.
 
 No CORE/PISONET handover or implementation was edited to bypass these gates. The source/test task is verified by the dedicated release-owned workflow; overall product Full remains failed until CORE refreshes its own handover.
+
+
+## PHX-RELEASE UTC17 — bound provenance helper commands
+
+**Task:** prevent a hung metadata/compiler probe from holding artifact provenance admission indefinitely.  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**PR:** #291 OPEN / DRAFT / UNMERGED; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`.  
+**Starting docs head:** `2fb31dab46eb864f691b93191d2f0f1419df833e`.  
+**Exact source/test head:** `6d0b6cd2c7bd700a755b87b3a33bf06808eef26a`.
+
+### Finding and scoped correction
+
+The release provenance helper's shared `_run()` used `subprocess.run()` without a timeout. It is used for Git identity checks, Arduino CLI metadata/property probes, selected compiler `--version` commands and host-tool version probes. A stuck or unresponsive tool could therefore hold the provenance step indefinitely.
+
+The helper now applies `PROVENANCE_COMMAND_TIMEOUT_SECONDS = 120` to each invocation and converts `subprocess.TimeoutExpired` into a bounded `ProvenanceError`. Existing nonzero-exit handling is unchanged. Commands remain argv lists (no shell), stdout/stderr capture is unchanged, and timeout diagnostics do not include captured tool output.
+
+### Test-first history
+
+- Regression tests added in [`4238043517259eea62974f716549201db7255aca`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4238043517259eea62974f716549201db7255aca).
+- The first test run [#44781440277](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44781440277) exposed the missing timeout behavior and also a test-fixture escaping mistake (literal backslash-n). The fixture was corrected in [`998019d2fc5069e154849e408fa6fdb554cfb674`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/998019d2fc5069e154849e408fa6fdb554cfb674).
+- Corrected exact-source RED [#44781732301](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44781732301): **29 tests ran; exactly two intended failures** — the subprocess call lacked the required 120-second timeout, and `TimeoutExpired` escaped instead of becoming `ProvenanceError`.
+- Implementation [`6d0b6cd2c7bd700a755b87b3a33bf06808eef26a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6d0b6cd2c7bd700a755b87b3a33bf06808eef26a).
+- Compare from starting docs head to source/test head: 3 commits ahead, 0 behind; only `.github/scripts/test_build_provenance.py` and `.github/scripts/write_build_provenance.py` changed. Both are RELEASE-owned.
+
+### Exact-source verification
+
+- Push Full [#44781844761](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44781844761), CI-0701 job `136446285794`: SUCCESS. Provenance tests **29/29 PASS**, Arduino CLI archive verifier **8/8 PASS**, release workflow concurrency tests **8/8 PASS**, immutable action-pin guard PASS (52 BlazePwifi, 4 compatibility, 6 SoftTimer external action invocations).
+- In the same Full run, mandatory product validation job `136446385493` PASS; ESP8266, ESP32, Android, x86_64, Ruijie and all reported Orange Pi target jobs PASS; update bundle PASS. Several v0.4 simulations remained IN_PROGRESS/QUEUED at the last inspection, and the workflow-level status had not reached a terminal conclusion. **Do not report the overall Full run as terminal SUCCESS.** Production import/signing/publishing jobs were SKIPPED.
+- Dedicated ESP32 compatibility [#44781844754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44781844754): COMPLETED SUCCESS; core 3.3.13 PASS, core 4.0.0 PASS, release artifact provenance regression job PASS. Exact HARDWARE source pin remains `dc02efea6590`; this is hosted CI compatibility evidence, not hardware acceptance.
+- Windows run [#44781857534](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44781857534): handover PASS; PISONET-owned `negative-selftest.ps1` FAILS because `$buildWorkflow` is unset; publisher SKIPPED. PHX-PISONET owns that test; no PISONET path was modified.
+
+### Live ownership and blockers
+
+- MASTER #288 current head `cf134056e7a2bef95c6a2b0727cad81e46e4de8a`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER destination null, and the release workflow route remains `reimplementation-review`. No migration/copy/merge performed.
+- PR #291 still has 26 accumulated changed paths, including inherited CORE handover and PISONET test/workflow paths. This UTC17 change touched only the two RELEASE-owned files above. Independent submitted PR #291 reviews: none. MASTER must resolve ownership contamination before integration.
+- COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows are QUEUED with zero jobs.
+- COE release-packager #31 remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Mandatory Bubblewrap preflight fails closed because the hosted runner denies the unprivileged UID map (`bwrap: setting up uid map: Permission denied`, exit 125); shared firmware/contracts and case-collision jobs pass. No unsandboxed fallback was introduced.
+- The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced through the current Library search. Older v6/v7 files were not substituted; no private registry content or identifiers were copied to GitHub.
+
+**Next action:** refresh the remaining Full-run simulations to terminal state; keep the 120-second bound and 29-test regression; request independent PHX-QA review and PHX-MASTER ownership review. Do not repeat the completed timeout test.
+
+No merge, real-key signing, tag, publication, hardware flashing, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
