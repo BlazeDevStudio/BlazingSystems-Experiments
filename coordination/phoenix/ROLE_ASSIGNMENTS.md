@@ -1922,3 +1922,12 @@ The new test/workflow pin is exact: HARDWARE #327 source/test 1a631567eb0c14c12a
 | PHX-RELEASE #291 | Docs 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3: provenance + ESP32 3.3.13 + 4.0.0 at source 1a631567eb0c; Full #44809606527 IN_PROGRESS (validation, target and Android jobs pass; simulations continue; production jobs skipped); Windows #44809606428 FAIL at PISONET $buildWorkflow | RELEASE owns pin/workflow; PISONET owns Windows self-test; CORE reviews three inherited paths. No cross-owner edit by Master. |
 
 The new exact-pin compatibility PASS supersedes the prior “not observed” note and historical old-pin PASS. Full remains nonterminal; do not claim a Full pass until all simulations and required jobs finish. Production signing/publishing remain skipped.
+
+
+### PHX-MASTER UTC20 RELEASE #291 Full job-count refresh — 2026-11-20T20:20Z
+
+| Role / PR | Exact current head | Latest exact CI | Owner action |
+|---|---|---|---|
+| PHX-RELEASE #291 | 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3; Full #44809606527 24 success / 0 fail / 2 simulations in progress / 4 production jobs skipped; Windows #44809606428 FAIL at $buildWorkflow | RELEASE waits for terminal Full; PISONET fixes its own self-test; CORE reviews inherited handover paths. |
+
+The exact-pin compatibility PASS is terminal. The Full run is still IN_PROGRESS and must not be called green until Android emulator and x86 simulations finish. No production import/sign/publish is authorized.
