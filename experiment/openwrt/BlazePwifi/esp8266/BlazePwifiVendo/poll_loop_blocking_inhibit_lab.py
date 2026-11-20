@@ -485,9 +485,8 @@ int main(){
   // GPIO writes that re-enable the acceptor. It must be reconciled before the
   // next ordinary sample can turn that in-flight edge into a new pending coin.
   resetState(); injectDuringPollRelease=true; loop();
-  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
-     pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
-     pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff || pollCalls!=1 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
      relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
      pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
      markerOpenSawRelayOn || markerOpenSawLedOn) return 29;
@@ -495,17 +494,6 @@ int main(){
   if(releaseMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      releaseMarker.find("pulses=1")==std::string::npos) return 30;
   std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
-
-  // If the edge lands inside the relay GPIO write itself, outputs must be
-  // deasserted before fault persistence begins, not only by the later sample.
-  resetState(); injectDuringPollReleaseAtRelayWrite=true; loop();
-  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
-     !pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
-     pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
-     relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
-     pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 52;
-  std::cout<<"POLL_RELEASE_RELAY_WRITE_EDGE_DEASSERTED_BEFORE_LATCH_PASS\\n";
 
   // GPIO sees a pulse during drain without an ISR delta. Capture and persist
   // it while the poll inhibit stays asserted; release only after the line is idle.
@@ -655,6 +643,40 @@ TIMING_MAIN = MAIN.replace(
 )
 
 
+RELEASE_EDGE_MAIN = r"""
+int main(){
+  // Isolate the output gate with a previously valid positive local state.
+  // The poll response itself remains default-deny in the production sketch.
+  resetState();
+  pollIntakeSuspended=true;
+  applyOutputs();
+  pollIntakeSuspended=false;
+  pollCalls=1;
+  injectDuringPollRelease=true;
+  applyOutputs();
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
+     pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
+     relayOn || ledOn || journalRecoveryRequired ||
+     coinEdgeSequence==lastHandledCoinEdgeSequence) return 52;
+  std::cout<<"POLL_RELEASE_LED_WRITE_ISR_EDGE_BLOCKS_RELAY_PASS\\n";
+
+  resetState();
+  pollIntakeSuspended=true;
+  applyOutputs();
+  pollIntakeSuspended=false;
+  pollCalls=1;
+  injectDuringPollReleaseAtRelayWrite=true;
+  applyOutputs();
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
+     !pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
+     relayOn || ledOn || journalRecoveryRequired ||
+     coinEdgeSequence==lastHandledCoinEdgeSequence) return 53;
+  std::cout<<"POLL_RELEASE_RELAY_WRITE_ISR_EDGE_DEASSERTED_PASS\\n";
+  return 0;
+}
+"""
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
         cpp=Path(folder)/"poll_loop.cpp"
@@ -719,6 +741,8 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
+                                "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
                                  "issue-177-original-1501-1600-1680-timing")
     if "PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS" not in timing_output:
