@@ -420,3 +420,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `734ac932839428c6822397e61b4aa7eaab0c6984` already includes another release worker's reproducible ESP32 application-image verifier. This entry records independent exact-head evidence; no implementation was duplicated.
 - [BlazePwifi build #44660004702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004702) completed scoped CI successfully. Both [ESP32 compatibility #44660004710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004710) legs failed at `Compile twice and compare exact PHX-HARDWARE application image` for exact Hardware source `a2b7903b4009`; this is a useful reproducibility gate failure, not acceptance.
 - [Windows #44660004663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004663) remains fail-closed at signing-negative controls; publisher skipped. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC03 — supersession audit: ESP32 reproducibility diagnostics
+
+- Compatible head `29a41a47b0b64a2caf568fc257c6e5ce3b370805` already includes another release worker's reproducibility diagnostics refinement. No implementation was duplicated.
+- [Build #44667921035](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667921035) completed scoped CI successfully. Both [ESP32 #44667920801](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667920801) legs remain fail-closed at `Compile twice and compare exact PHX-HARDWARE application image` for Hardware source `a2b7903b4009`; therefore they do not constitute compatibility acceptance. Windows #44667920737 remains fail-closed at signing controls.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
