@@ -511,3 +511,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `9b18cb93aeaae23e184b888788f14a8f15752cdd` already includes another release worker's provenance-record robustness refinement. No implementation was duplicated.
 - [Build #44761157724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157724) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44761157699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157699) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44761157744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157744) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — supersession audit: provenance-contract expansion
+
+- Compatible head `6d0a6b6f6054054ef7a250b0b1876da96f207257` already includes another release worker's provenance-contract expansion. No implementation was duplicated.
+- [ESP32 #44773516988](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516988) completed both exact-core legs and the release-artifact provenance regression suite successfully for source `dc02efea6590`; this is scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Build #44773516927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516927) and [Windows #44773516826](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516826) fail closed at mandatory handover freshness after the source-only update; this entry supplies the required canonical handover evidence. Publisher paths remained skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
