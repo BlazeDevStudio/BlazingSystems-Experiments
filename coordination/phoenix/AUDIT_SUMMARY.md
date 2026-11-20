@@ -1297,3 +1297,15 @@ Per repository `AGENTS.md`, the Library's root `BLAZE_PROJECT_REGISTRY.json` and
 ### Terminal PHX-RELEASE UTC04 refresh — 2026-11-20T04:21Z
 
 The release owner advanced #291 to docs head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46` and pinned the compatibility workflow to Hardware source `369007bcbc684a0923a586e991f3aa0667cda105`. The exact-source matrix then terminated FAIL on both ESP32 cores in both PR and push runs, with 68–72 differing bytes across 4–5 ranges; exact run/job evidence is in the UTC04 audit report. Windows remains blocked by PISONET's uninitialized `$buildWorkflow`; publisher skipped. The BlazePwifi PR build's compile/validation targets pass but v0.4 simulations are still running, so no Full PASS is claimed. Keep the reproducibility guard fail-closed.
+
+
+## PHX-MASTER UTC04:39 live terminal CI and stack correction
+
+- The canonical Hardware child is #327 at docs head b6304208d65548a9cfe371504badf03ae3e15dcf, source/test 2f89326d5b555ffdb2bfaba0a404483d665aa614, based on #326 58c558fb6a237935214621adc3dee65a10fe1a51. Focused quarantine/relay runs #44675789220 and #44675789222 pass; Full #44675789227 fails at QA-owned Missing poll signature check after all firmware target jobs pass. No downstream signing/publishing ran.
+- Hardware stack ancestry is not fully clean: current #323 head 1761bf38 is 31 commits behind its previously recorded parent snapshot 988904e8; #326 head 58c558fb contains that snapshot and is 11 commits beyond it. #327 is a clean descendant of #326 by 215 commits. PHX-HARDWARE must confirm the intended parent history; Master did not rebase or merge.
+- RELEASE #291 now has a terminal BlazePwifi full CI SUCCESS at #44673292595 (26 successful jobs, no failed jobs; production sign/publish skipped), but compatibility #44673292516 fails on both ESP32 cores and Windows #44673293276 fails at PISONET-owned unset $buildWorkflow. Release remains blocked.
+- Parallel Hardware #254 Full CI #44674147778 fails because ESP32 core 4.0.0 lacks mbedtls/sha256.h; focused header test #44674147661 passes. COE #49 shared Hardware CI #44646341922 fails on the same include.
+- COE #26 remains five queued workflows / zero jobs and frozen. COE #49 remains audit-only; Hardware declined implementation ownership. No migration or source move was proposed.
+- Private registry v11/newer corrections remain blocked by unavailable Google Drive access. Issue #266 remains OPEN and the Master cleanup checkbox remains unchecked.
+
+**Next:** PHX-HARDWARE confirms the parent-head movement; QA fixes the default-deny fixture; PISONET fixes its negative self-test; RELEASE diagnoses non-reproducible image ranges; CORE reviews the signed target-kind/server-time contract. PRODUCTION NO-GO remains in force.
