@@ -1076,3 +1076,10 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Compatible head `29a41a47b0b64a2caf568fc257c6e5ce3b370805` already includes another release worker's reproducibility diagnostics refinement. No implementation was duplicated.
 - [Build #44667921035](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667921035) completed scoped CI successfully. Both [ESP32 #44667920801](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667920801) legs remain fail-closed at `Compile twice and compare exact PHX-HARDWARE application image` for Hardware source `a2b7903b4009`; therefore they do not constitute compatibility acceptance. Windows #44667920737 remains fail-closed at signing controls.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — supersession audit: exact-core matrix refinement
+
+- Compatible head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46` already contains another release worker's exact-core matrix refinement. No implementation was duplicated.
+- [Build #44673292595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292595) completed scoped CI successfully, including the handover freshness and release-toolchain contracts. [ESP32 #44673292516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292516) remains fail-closed; it is not compatibility acceptance. [Windows #44673293276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673293276) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
