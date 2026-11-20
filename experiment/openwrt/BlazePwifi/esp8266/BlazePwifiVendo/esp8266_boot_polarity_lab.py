@@ -131,6 +131,10 @@ def main() -> None:
         extracted = extract_functions(source, name)
         require(len(extracted) == 1, "expected one extracted function: " + name)
         function = extracted[0]
+        if name == "configureRuntimePins":
+            # Output-polarity and EEPROM harnesses isolate pin sequencing;
+            # exact ingress behavior is compiled in coin_pulse_capture_lab.py.
+            functions_list.append("bool quarantineCoinIngressTransition(){ return true; }")
         if name == "saveCfg":
             anchor = """if(!EEPROM.commit()){
     pollFaultBackupReady=false;
@@ -187,6 +191,8 @@ def main() -> None:
             "pinMode(runRelayPin,INPUT)" in configure[0] and
             "pinMode(runLedPin,INPUT)" in configure[0],
             "unknown polarity must leave relay/LED pins as inputs")
+    require("quarantineCoinIngressTransition();" in configure[0],
+            "pin attachment must quarantine active or unobserved coin ingress")
     require("outputPolarityKnown" in can_poll[0] and
             "outputPolarityKnown" in can_post[0],
             "poll and coin POST admission must remain disabled until polarity is known")
