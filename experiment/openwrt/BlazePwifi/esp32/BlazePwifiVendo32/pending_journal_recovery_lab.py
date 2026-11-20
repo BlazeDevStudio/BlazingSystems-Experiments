@@ -87,6 +87,11 @@ const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
+// This journal-recovery fixture exercises stored-record decisions, not ISR
+// delivery. The separate poll-loop lab covers asynchronous edge transitions.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool ledEnabled=true,relayEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;
@@ -124,6 +129,7 @@ int main(){
   for(int scenario=0;scenario<16;++scenario){
     LittleFS=FakeLittleFS{};
     fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     pendingPulses=0;pendingNonce.clear();pendingTarget.clear();lastSend=42;
     relayOn=false;ledOn=false;
     auto r=validRecord();
@@ -182,6 +188,7 @@ int main(){
   for(int scenario=0;scenario<17;++scenario){
     LittleFS=FakeLittleFS{};
     fsReady=true;pendingReady=true;journalRecoveryRequired=false;pendingPostAttempted=true;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";lastSend=42;
     auto r=validRecord();r.pulses=4;r.checksum=pendingChecksum(r);
     LittleFS.files["/pending.attempt"]=bytes(r);
