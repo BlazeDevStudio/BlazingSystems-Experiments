@@ -528,7 +528,7 @@ def check_elf_symbol_inspector(workflow_content: str) -> list[str]:
 
     required_workflow_values = (
         'local nm_path="$compiler_path/xtensa-esp32-elf-nm"',
-        'if [ ! -x "$nm_path" ]',
+        '[ ! -x "$nm_path" ]',
         '"$nm_path" --version',
         "--format=posix --print-size --numeric-sort --defined-only",
         'python3 .github/scripts/inspect_esp32_elf_symbols.py',
