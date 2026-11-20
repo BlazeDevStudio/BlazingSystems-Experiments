@@ -1136,3 +1136,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Compatible head `fbe1ca6183aa37fadf125b0e8c07a884e80789be` already includes another release worker's provenance-manifest hardening. No implementation was duplicated.
 - [Build #44753364967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364967) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44753364998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364998) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44753364863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364863) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC15 — supersession audit: provenance record robustness
+
+- Compatible head `9b18cb93aeaae23e184b888788f14a8f15752cdd` already includes another release worker's provenance-record robustness refinement. No implementation was duplicated.
+- [Build #44761157724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157724) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44761157699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157699) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44761157744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157744) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
