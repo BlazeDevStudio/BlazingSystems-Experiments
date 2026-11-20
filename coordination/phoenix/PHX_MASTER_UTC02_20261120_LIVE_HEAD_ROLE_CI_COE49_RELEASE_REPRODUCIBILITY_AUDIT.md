@@ -93,3 +93,15 @@ The accessible Library contains older registry snapshots, including v7, but exac
 | Physical hardware, payment, power-cut or device-soak tests | NOT RUN |
 
 **Initial Master branch head before this audit:** `b6dd2dc3a81bd51ce82f60efaf06b5b7d236d23c`. The final report commit and final remote branch head are recorded by the same-hour PR/issue checkpoint.
+
+## 9. Commit and remote-readback record
+
+Audit started from `b6dd2dc3a81bd51ce82f60efaf06b5b7d236d23c`. The following Master-only commits were returned in order:
+
+- Report creation: `711c2c1ca26030dcae1540d1f43982fd006c7c59`.
+- Audit summary: `29fa22cce381c701479f0a4e19f43cf8a3a88d89`.
+- Integration matrix: `7bb96842727b505b92ad3d960bb27f1d7f609e08`.
+- Role assignments: `f2a4e9b7e2219ef5e4b48d0c47c661b6e871f0c2`.
+- Repository routing: `c88bbc71e63eb82e7b3c1d85950e4c3f68c891bc`.
+
+Immediately before this final report update, PR #288 remote head readback was `c88bbc71e63eb82e7b3c1d85950e4c3f68c891bc`. The final report update is the last commit in this run; the exact final branch/PR head is confirmed by the follow-up PR readback and BLAZE-COMMS/1 checkpoint.
