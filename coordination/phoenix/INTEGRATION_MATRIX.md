@@ -2773,3 +2773,29 @@ OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_RE
 ## PHX-MASTER UTC19 current HARDWARE #327 docs-head/CI supersession — 2026-11-20T19:52Z
 
 HARDWARE #327 docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39 / source-test 1a631567eb0c14c12a114f592685f44cc414466f. Exact current-head quarantine #44805905655 and relay #44805905517 PASS. Full #44805905622 fails validation at the inherited QA-owned Missing poll signature check; 14/14 target/Android builds pass and downstream gates are skipped. Previous head run #44805083043 was cancelled after the docs-head update. Current source/destination COE findings remain unchanged; #26 remains frozen.
+
+
+## PHX-MASTER UTC20 exact source-pin, role CI and COE #26 supersession — 2026-11-20T20:02Z
+
+### Cross-role build provenance
+
+- RENTAL #328 head 0e0da62acd47c6a1ce287f8a30fc700d603fa070 inherits ESP32 blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d from #289. It is not in the six changed paths.
+- Current HARDWARE #327 source/test head 1a631567eb0c14c12a114f592685f44cc414466f / docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39 carries ESP32 blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7, with Mbed TLS 3/4 selection.
+- #328 shared build #44782114390 fails the CORE-owned mandatory handover freshness gate and ESP32 compile due missing mbedtls/sha256.h under core 4.0.0. Its APK identity and API21/API23 emulator smoke pass, but do not override the shared-build failure.
+- #291 compatibility #44799798721 passes both core legs and provenance suite using the same ae0da8e2 sketch blob; its source label is 76eca0915943, so this is sketch-blob compatibility evidence, not validation of the later #327 host-lab tree.
+
+### Exact current role CI
+
+| PR | Current head(s) | Runs / outcome |
+|---|---|---|
+| HARDWARE #327 | docs 4d651e91; source/test 1a631567 | #44805905655 quarantine PASS; #44805905517 relay PASS; #44805905622 Full FAIL at QA positive poll marker |
+| RELEASE #291 | docs bcb71b4c; source/test 05d7b1ef | #44799798801 Full PASS (production jobs skipped); #44799798721 compatibility PASS 3/3; #44799798699 Windows FAIL at PISONET $buildWorkflow |
+| RENTAL #328 | 0e0da62a | #44782114384 APK PASS; #44782114393 API21/API23 PASS; #44782114390 shared build FAIL |
+| CORE #252 | c82705f2 | #42698139210 scoped PASS; CORE remains with separate continuation |
+| RENTAL #240/#287/#289 | a7d113fb / a4fffd01 / 68928774 | Existing scoped runs PASS |
+| PISONET #255 | d01fd164 | #42462978704 scoped PASS |
+| QA #290/#292 | 5c29d159 / 75a3f66d | #290 #43633486963 scoped PASS; #292 no PR-triggered run |
+
+### COE #26 current destination gate
+
+At source #327 docs head 4d651e91, the complete recursive tree has 2,445 entries; COE #26 at b382d233 has 286. Source has 25 board-local Python labs/helpers and three scoped Hardware workflows; destination has zero Hardware Python identities and one generic workflow. ESP32, ESP8266 and hardening-test blobs differ. Pisowifi LICENSE matches, but root NOTICE and Hardware license/notice scope remain incomplete. Five destination workflows are QUEUED / zero jobs. Keep #26 FROZEN; no migration or staging.
