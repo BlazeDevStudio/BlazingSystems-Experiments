@@ -545,6 +545,123 @@ def check_elf_symbol_inspector(workflow_content: str) -> list[str]:
     return errors
 
 
+
+def _source_date_epoch_wiring_errors(workflow_content: str) -> list[str]:
+    """Require a pinned-commit epoch and stable locale/timezone before both clean builds."""
+    errors: list[str] = []
+    verify_marker = "name: Verify pinned ESP32 compile-time date/time source and SOURCE_DATE_EPOCH"
+    compile_marker = "name: Compile twice and compare exact PHX-HARDWARE application image"
+    if workflow_content.count(verify_marker) != 1:
+        errors.append("compatibility workflow must contain exactly one pinned source-date-epoch verification step")
+    if workflow_content.count(compile_marker) != 1:
+        errors.append("compatibility workflow must contain exactly one two-build reproducibility step")
+    if errors:
+        return errors
+
+    verify_start = workflow_content.index(verify_marker)
+    compile_start = workflow_content.index(compile_marker)
+    if verify_start >= compile_start:
+        errors.append("compiler SOURCE_DATE_EPOCH capability verification must precede firmware compilation")
+        return errors
+
+    verify_block = workflow_content[verify_start:compile_start]
+    compile_block = workflow_content[compile_start:]
+    commit_epoch = 'source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"'
+    if verify_block.count(commit_epoch) != 1:
+        errors.append("compiler capability verification must derive its epoch from the exact checked-out hardware commit")
+    if compile_block.count(commit_epoch) != 1:
+        errors.append("both firmware builds must derive their epoch from the exact checked-out hardware commit")
+    if 'if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]' not in verify_block:
+        errors.append("compiler capability verification must reject a non-decimal commit timestamp")
+    if 'if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]' not in compile_block:
+        errors.append("firmware build must reject a non-decimal commit timestamp")
+    if "python3 .github/scripts/test_verify_esp32_source_date_epoch.py" not in verify_block:
+        errors.append("workflow must execute the synthetic SOURCE_DATE_EPOCH verifier tests")
+    verifier_invocation = (
+        'python3 .github/scripts/verify_esp32_source_date_epoch.py '
+        '--compiler "$compiler_binary" --core-root "$core_root" '
+        '--core-version "${{ matrix.esp32_core }}" --source-date-epoch "$source_date_epoch"'
+    )
+    if verifier_invocation not in verify_block:
+        errors.append("workflow must verify SOURCE_DATE_EPOCH with the pinned Xtensa compiler and exact core source")
+
+    epoch_export = 'export SOURCE_DATE_EPOCH="$source_date_epoch"'
+    locale_export = "export LC_ALL=C"
+    timezone_export = "export TZ=UTC"
+    for value, label in (
+        (epoch_export, "pinned SOURCE_DATE_EPOCH"),
+        (locale_export, "C locale"),
+        (timezone_export, "UTC timezone"),
+    ):
+        if compile_block.count(value) != 1:
+            errors.append(f"two-build step must set {label} exactly once")
+    compile_command = "arduino-cli compile --clean --fqbn esp32:esp32:esp32"
+    if compile_block.count(compile_command) != 2:
+        errors.append("two-build step must compile exactly twice with the pinned clean-build command")
+    else:
+        first_compile = compile_block.find(compile_command)
+        second_compile = compile_block.find(compile_command, first_compile + len(compile_command))
+        ordered = [
+            compile_block.find(commit_epoch),
+            compile_block.find(epoch_export),
+            compile_block.find(locale_export),
+            compile_block.find(timezone_export),
+        ]
+        if any(position < 0 or position >= first_compile for position in ordered):
+            errors.append("commit epoch, SOURCE_DATE_EPOCH, LC_ALL and TZ must all be set before the first clean build")
+        if not (first_compile < second_compile):
+            errors.append("the two clean builds must remain in source order")
+    if "date +%s" in verify_block or "date +%s" in compile_block:
+        errors.append("wall-clock time must not replace the pinned source commit timestamp")
+
+    if workflow_content.count('".github/scripts/verify_esp32_source_date_epoch.py"') < 2:
+        errors.append("source-date-epoch verifier must be included in both push and pull-request path filters")
+    if workflow_content.count('".github/scripts/test_verify_esp32_source_date_epoch.py"') < 2:
+        errors.append("source-date-epoch tests must be included in both push and pull-request path filters")
+    return errors
+
+
+def check_source_date_epoch_wiring(workflow_content: str) -> list[str]:
+    """Check the real workflow and prove the guard rejects three unsafe mutations."""
+    errors = _source_date_epoch_wiring_errors(workflow_content)
+    if errors:
+        return errors
+
+    epoch_export = 'export SOURCE_DATE_EPOCH="$source_date_epoch"'
+    missing_export = workflow_content.replace(epoch_export, "# PHX synthetic mutation: epoch export removed", 1)
+    if not _source_date_epoch_wiring_errors(missing_export):
+        errors.append("SOURCE_DATE_EPOCH guard accepted a workflow with the build epoch export removed")
+
+    commit_epoch = 'source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"'
+    wall_clock = workflow_content.replace(commit_epoch, 'source_date_epoch="$(date +%s)"')
+    if not _source_date_epoch_wiring_errors(wall_clock):
+        errors.append("SOURCE_DATE_EPOCH guard accepted a wall-clock epoch instead of the pinned commit timestamp")
+
+    compile_marker = "name: Compile twice and compare exact PHX-HARDWARE application image"
+    compile_start = workflow_content.index(compile_marker)
+    compile_block = workflow_content[compile_start:]
+    export_line = '          export SOURCE_DATE_EPOCH="$source_date_epoch"\n'
+    first_compile = compile_block.find("arduino-cli compile --clean --fqbn esp32:esp32:esp32")
+    export_position = compile_block.find(export_line)
+    if first_compile < 0 or export_position < 0:
+        errors.append("SOURCE_DATE_EPOCH ordering mutation fixture could not locate the expected build statements")
+    else:
+        without_export = compile_block.replace(export_line, "", 1)
+        first_compile_after_removal = without_export.find("arduino-cli compile --clean --fqbn esp32:esp32:esp32")
+        first_line_end = without_export.find("\n", first_compile_after_removal)
+        late_export = (
+            without_export[:first_line_end + 1]
+            + export_line
+            + without_export[first_line_end + 1:]
+        )
+        mutated_late = workflow_content[:compile_start] + late_export
+        if not _source_date_epoch_wiring_errors(mutated_late):
+            errors.append("SOURCE_DATE_EPOCH guard accepted an export moved after the first clean build")
+
+    if not errors:
+        print("PHX-ESP32-SOURCE-DATE-EPOCH-WIRING-PASS: pinned commit epoch, compiler probe, C/UTC environment and both clean builds; 3 unsafe mutations rejected")
+    return errors
+
 def main() -> int:
     if not WORKFLOW.is_file():
         return fail("missing exact-source ESP32 core compatibility workflow")
@@ -588,6 +705,12 @@ def main() -> int:
     if reproducibility_errors:
         for error in reproducibility_errors:
             print(f"PHX-RELEASE-ESP32-REPRODUCIBILITY-RED: {error}", file=sys.stderr)
+        return 1
+
+    epoch_wiring_errors = check_source_date_epoch_wiring(content)
+    if epoch_wiring_errors:
+        for error in epoch_wiring_errors:
+            print(f"PHX-RELEASE-ESP32-SOURCE-DATE-EPOCH-RED: {error}", file=sys.stderr)
         return 1
 
     symbol_errors = check_elf_symbol_inspector(content)
