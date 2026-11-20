@@ -81,6 +81,10 @@ PHX-QA owns the stale positive poll-signature assertion. PHX-CORE must publish t
 - PHX-MASTER: the current canonical `coordination/phoenix/ROLE_ASSIGNMENTS.md` still references an older #327 head; refresh the active entry to the latest docs head after this handover commit, preserving #323 → #326 → #327 ancestry.
 - Private Google Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json`: not present in the accessible Library listing/search and no Google Drive connector was exposed; no older registry was substituted.
 
+## Post-handover Master coordination update — 2026-11-20 UTC19
+
+Master PR #288 advanced to `2afdd65775b68e67931c537564858f96c78b7354`. Its current `coordination/phoenix/ROLE_ASSIGNMENTS.md` blob `b5d4ec221db844d300817a92ba159233d7ae2f13` now records the active PHX-HARDWARE #327 source/test SHA `1a631567eb0c14c12a114f592685f44cc414466f`. The prior stale source/test pin is therefore resolved. Hardware did not modify Master-owned files. The latest Hardware docs/PR head at this addendum is the commit that appends this section.
+
 ## Next action
 
-Keep PR #327 OPEN / DRAFT / UNMERGED. PHX-MASTER refreshes the canonical active-head assignment; PHX-QA and PHX-CORE resolve the shared poll contract; PHX-HARDWARE revalidates live heads on the next activation and selects one new owned, reversible hardware task. Keep signing, finance, witness, migration, flash, and release gates closed.
+Keep PR #327 OPEN / DRAFT / UNMERGED. PHX-QA and PHX-CORE resolve the shared poll contract; PHX-HARDWARE revalidates live heads on the next activation and selects one new owned, reversible hardware task. Keep signing, finance, witness, migration, flash, and release gates closed.
