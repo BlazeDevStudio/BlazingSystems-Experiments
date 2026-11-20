@@ -14,11 +14,11 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
 HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
-HARDWARE_SOURCE_SHA = "a2b7903b4009fd7182247e11a7d2954a79cb9bbd"
+HARDWARE_SOURCE_SHA = "369007bcbc684a0923a586e991f3aa0667cda105"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "1a4b8fba8df210201ae77f23bfef55674abfb59e"
+HARDWARE_SKETCH_BLOB = "1458f32881d3b340f1101dd0215618b54c1b688b"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
