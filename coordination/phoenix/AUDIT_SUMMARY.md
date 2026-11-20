@@ -1494,3 +1494,15 @@ Next: QA repairs the deny-only fixture; Hardware completes current #327 runs; CO
 ## PHX-MASTER UTC19 post-checkpoint HARDWARE head correction — 2026-11-20T19:52Z
 
 Current #327 docs head advanced to 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test remains 1a631567eb0c14c12a114f592685f44cc414466f. Focused quarantine and relay pass; exact-head Full fails at QA's Missing poll signature check. All 14 target/Android build jobs pass; downstream simulations/update/sign/publish are skipped. The previous 1a631567 build run was cancelled after the docs-head update. QA owns the fixture; no firmware change by Master.
+
+
+## PHX-MASTER UTC20 live status — 2026-11-20T20:02Z
+
+- Master PR #288 was re-read at be7a4e8e6fbacfd26e60fb6fc09a0322a2f84c8b, OPEN/DRAFT/UNMERGED. The route manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master target null.
+- New integration blocker: RENTAL #328 inherits the older ESP32 sketch blob 29f1125d from #289; current HARDWARE #327 source is ae0da8e2 with Mbed TLS 3/4 guards. #328's API21/API23 and APK identity pass, but shared build fails at CORE handover freshness and Mbed TLS 4 compilation.
+- HARDWARE #327 focused quarantine/relay PASS; Full fails at QA's inherited positive poll-signature fixture. RELEASE #291 Full/compatibility PASS with production jobs skipped; Windows fails in PISONET-owned negative-selftest.ps1. Cross-owner review remains mandatory.
+- COE #26 remains FROZEN: 25 source board-local Python labs vs zero destination, three source workflows vs one generic destination workflow, differing firmware/test blobs, incomplete NOTICE/Hardware license scope, five workflows queued / zero jobs.
+- Cleanup #266 remains OPEN, 0/7 complete. Private v11 registry/newer corrections are not available through the exposed connector/Library. Full Master Python suite NOT RUN because local GitHub DNS resolution failed.
+- No subsystem source, route manifest, COE destination, financial state, signer, release artifact or hardware changed. No merge, migration, flash or production operation.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
