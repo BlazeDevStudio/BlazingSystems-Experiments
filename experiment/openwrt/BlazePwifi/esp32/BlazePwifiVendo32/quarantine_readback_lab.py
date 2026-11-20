@@ -9,6 +9,8 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
 BOARDS = (
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -293,19 +295,10 @@ int main(){
 '''
 
 def extract(src: str, signature: str) -> str:
-    pos = src.find(signature)
-    if pos < 0:
-        raise RuntimeError(f"Missing real function: {signature}")
-    brace = src.find("{", pos)
-    depth = 0
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[pos:i + 1]
-    raise RuntimeError(f"Unbalanced source: {signature}")
+    # The caller stores a C++ signature prefix; delegate lexical parsing to the
+    # shared helper so braces in comments and literals cannot truncate a body.
+    name = signature.split("(", 1)[0].split()[-1]
+    return extract_function(src, name)
 
 def verify_lexical_extractor():
     fixture = (
