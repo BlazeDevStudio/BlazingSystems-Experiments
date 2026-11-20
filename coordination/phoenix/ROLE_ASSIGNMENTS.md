@@ -1510,3 +1510,9 @@ Global cleanup-first inventory in #266 remains OPEN. No subsystem source, migrat
 - COE #49 `aeb8ff11...` is **UNASSIGNED / AUDIT-ONLY**, a separate child of COE #48, not #26.
 
 PHX-MASTER owns coordination/phoenix, interface contracts and migration provenance only.
+
+
+### Terminal CI status — 2026-11-20T02:01Z
+
+- HARDWARE #327 remains at `a2b7903b4009fd7182247e11a7d2954a79cb9bbd`. Quarantine [44657641425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641425) and relay [44657641548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641548) PASS. Full BlazePwifi [44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) FAILS at QA-owned `Missing poll signature check`; firmware targets compile. QA must repair its fixture, not ask Hardware to restore positive poll admission.
+- RELEASE #291 remains at `7d51c438469fdfd0412377cc1da17c2a83efb26c`. Windows [44656994686](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994686) FAILS because PISONET-owned `$buildWorkflow` is unset; ESP32 [44656994754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994754) and BlazePwifi [44656994849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994849) PASS. Publisher skipped.

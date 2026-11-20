@@ -105,3 +105,12 @@ No source blob, licence, test, workflow or file was copied, moved, rebased, cher
 - No hardware, physical coin, payment, migration, signer, flash, power-cut or soak operation was performed.
 
 **Disposition:** COE #49 is a useful LAB adapter candidate but has unsafe target-kind ordering and incomplete expiry authority. COE #26 remains migration-blocked. **PRODUCTION NO-GO.**
+
+
+### Terminal CI status supersession — 2026-11-20T02:01Z
+
+The exact-head runs have now completed. This supersedes the earlier “in progress / queued at capture” status above:
+- HARDWARE #327 `a2b7903b4009fd7182247e11a7d2954a79cb9bbd`: quarantine [44657641425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641425) PASS; relay [44657641548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641548) PASS; BlazePwifi build [44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) FAIL in validate job `136027838672` at QA-owned `Missing poll signature check` in the ESP8266 sketch. All ESP8266/ESP32/other firmware compile targets in that workflow completed successfully; validation failed before later release/production jobs, which were skipped. Keep firmware default-deny; QA owns the stale positive marker correction.
+- RELEASE #291 `7d51c438469fdfd0412377cc1da17c2a83efb26c`: Windows [44656994686](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994686) FAIL at PISONET-owned `$buildWorkflow` unset; ESP32 [44656994754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994754) PASS; BlazePwifi [44656994849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994849) PASS. Publisher remains skipped.
+
+No role-owned source was edited by Master.
