@@ -9,7 +9,7 @@
 - Sanitizer workflow: `6cf18b913a72090df728f7030ef07c41aae95c1e`
 - Test-first RED: `26fae74219c505e5c9119ca4ca33de0eac039183`
 - Implementation: `45f5c27db23e423acaf94d2522634536d734b4d2`
-- Status at checkpoint: exact-head focused CI IN PROGRESS; Full builds PENDING; HARDWARE NOT TESTED; PRODUCTION NO-GO
+- Status at checkpoint: exact-head focused CI PASS; Full validation FAILED handover freshness before canonical-doc successor; HARDWARE NOT TESTED; PRODUCTION NO-GO
 
 ## Finding
 
@@ -28,7 +28,7 @@ The previous `hex64(const char *)` bounded scan still read `p[64]`. A parser-own
 
 - RED [run 44682886902](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44682886902), job 136110238848: expected ASan/UBSan failure at old `hex64` byte-65 read.
 - Implementation commit: [45f5c27](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/45f5c27db23e423acaf94d2522634536d734b4d2).
-- Focused [run 44683172568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172568) and Full [run 44683172700](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172700) / [44683165768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683165768) were not terminal at checkpoint.
+- Full [run 44683292995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683292995) reached validation job 136112096462 and failed the mandatory handover freshness gate because the canonical handovers were committed before this narrow handover. ESP8266 build passed; ESP32, Android and platform jobs were still running at the last read. This is not Full PASS. Canonical handovers are being refreshed after this narrow handover so the next exact-head run can re-evaluate the gate.
 
 ## Limits
 
