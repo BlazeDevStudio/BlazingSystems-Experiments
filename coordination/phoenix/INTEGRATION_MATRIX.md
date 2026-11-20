@@ -2275,3 +2275,21 @@ The exact-head runs have now completed. This supersedes the earlier “in progre
 - RELEASE #291 `7d51c438469fdfd0412377cc1da17c2a83efb26c`: Windows [44656994686](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994686) FAIL at PISONET-owned `$buildWorkflow` unset; ESP32 [44656994754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994754) PASS; BlazePwifi [44656994849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994849) PASS. Publisher remains skipped.
 
 No role-owned source was edited by Master.
+
+
+## Live exact-head CI reconciliation — 2026-11-20 UTC02
+
+| Owner | PR / exact head | Exact-head evidence |
+|---|---|---|
+| CORE | #252 `c82705f2...` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS; software-only/scoped |
+| RENTAL | #289 `68928774...` | [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) SUCCESS |
+| PISONET | #255 `d01fd164...` | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS; scoped Windows CI |
+| HARDWARE | #327 `a2b7903b...` | [#44657641425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641425) quarantine PASS; [#44657641548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641548) relay PASS; [#44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) Full FAIL: `Missing poll signature check` |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS; #292 no PR-triggered run |
+| RELEASE | #291 `734ac932...` | [#44660004663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004663) Windows FAIL (`$buildWorkflow` unset); [#44660004710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004710) ESP32 reproducibility FAIL on core 3.3.13 and 4.0.0; [#44660004702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004702) BlazePwifi build PASS |
+
+### Destination candidates
+
+COE #26 `b382d233...` remains OPEN/DRAFT with five queued workflows and zero jobs; no combined destination acceptance. COE #49 `aeb8ff11...` is a separate Stage 5.1 audit-only branch, not a #26 source or route. Stage 5.1 and case guard pass, while shared ESP32 core 4.0.0 compile fails at missing `mbedtls/sha256.h` [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922).
+
+These are per-PR exact-head observations, not a green integrated tree. No migration, native acceptance, hardware acceptance or production readiness is implied.
