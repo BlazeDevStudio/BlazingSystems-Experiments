@@ -1596,3 +1596,19 @@ A manifest consumed by Windows tooling could reinterpret these names as drive-ab
 5. COE integration/PHX-INFRA provide an authorized bubblewrap-capable unprivileged user-namespace runner; CORE/MASTER must establish site-scoped ULA authority before the COE packager can progress.
 
 No merge, signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+### UTC14 CI terminal-state correction — source/test and documentation heads
+
+This addendum supersedes the earlier UTC14 observation that Full run #44752661476 was still in progress.
+
+- Source/test commit `0db99526477dd81f94d3f446165f90fc90defdbe`, push run [#44752661476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661476):
+  - CI-0701 job `136344233077`: COMPLETED SUCCESS; exact provenance suite **24/24 PASS**, including all three new drive-prefix negative cases; toolchain pin guard PASS.
+  - Overall Full run: **CANCELLED** after the subsequent handover-only commit `67da5dfc88dc481e39c69cb836f73d6860330aaa` superseded it. This is not an overall Full SUCCESS.
+  - Completed target jobs before cancellation: ESP8266, x86_64, Orange Pi PC, Orange Pi Zero3, optional Orange Pi Zero, optional Orange Pi Zero2W, optional Orange Pi One Plus, optional Orange Pi PC2, optional Orange Pi PC Plus, optional Orange Pi Zero2 — all SUCCESS.
+  - Validation, Android, ESP32, Orange Pi One, Ruijie, update bundle, simulations, signer handoff and publishers were cancelled; production import was skipped.
+- ESP32 compatibility run [#44752661483](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661483): both core jobs remained IN_PROGRESS at the last source-head inspection; no terminal result claimed.
+- Windows source-head run [#44752661501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661501): handover PASS; build-windows FAIL at PISONET-owned `$buildWorkflow` negative self-test; publisher SKIPPED.
+- Handover-head runs triggered by commit `67da5dfc88dc481e39c69cb836f73d6860330aaa`: Full [#44753134011](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753134011) has CI-0701 SUCCESS and validation/targets still IN_PROGRESS; compatibility [#44753133883](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753133883) pending; Windows [#44753134031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753134031) running. These are not terminal passes.
+
+The SHA256SUMS drive-prefix defect is fixed at the source/test head and its exact provenance suite is green. Full-build and ESP32 compatibility acceptance remain pending until terminal documentation-head results. Do not duplicate the completed test or source correction.
