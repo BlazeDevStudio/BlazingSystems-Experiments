@@ -1028,3 +1028,90 @@ The current HARDWARE ESP32 sketch was checked for __DATE__, __TIME__ and __TIMES
 - Canonical private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by authorized Library search; only older v3–v7 snapshots appeared. No older registry was substituted and no private contents/identifiers were copied.
 
 No merge, signer use, tag, publication, hardware flash, payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+
+---
+
+## PHX-RELEASE UTC03 — ESP32 app-descriptor-aware reproducibility diagnostics
+
+**Current PR #291 source/test head:** 773e3acbbb0f76cca01d8204485019d4026de792  
+**Branch:** phoenix/release-publisher-isolation-20261115  
+**Base:** #242 734b89d9e7792247e8376335c3f3685500ab3f89  
+**State:** OPEN / DRAFT / UNMERGED. No submitted independent PR reviews.
+
+### Scope and commits
+
+Only two release-owned source files changed for this task:
+- .github/scripts/verify_esp32_reproducible_build.py
+- .github/scripts/test_phx_release_esp32_core_compatibility.py
+
+Test-first and correction history:
+- [5acd4071](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5acd407145c03866671fe43ba77fe5c0a559f6e5) added synthetic ESP32 app-descriptor controls; expected RED on build [#44666735775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44666735775), CI-0701 job 136057732007, because the old helper had no descriptor classification/range output.
+- [89acdf45](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/89acdf453a65160ce9e70eed028952e2ce6486f2) first added descriptor-aware parsing and complete contiguous diff ranges. Its CI-0701 attempt exposed a reversed segment-header read size/offset; this was a helper implementation defect, not a product failure.
+- [fd931364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fd9313648d663aa3ceed4d1dd1eb70c8928f3a23) corrected the segment-header read to 8 bytes at image offset 24.
+- [773e3acb](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/773e3acbbb0f76cca01d8204485019d4026de792) isolated the invalid-app-descriptor-magic regression so only the magic field changes in that control.
+
+The helper now validates the ESP image header, first segment length and ESP_APP_DESC_MAGIC_WORD; reports total differing bytes, all bounded contiguous ranges, first differing bytes and both embedded app_elf_sha256 values; and classifies only a verified field-only difference as ESP_APP_DESC_APP_ELF_SHA256_ONLY. It still rejects every non-identical image. It does not normalize, zero, ignore or bless any changed field. No raw firmware/ELF binaries were uploaded or published.
+
+### ESP-IDF field provenance
+
+The field location is now source-grounded, not inferred from the first differing byte:
+- esp_image_header_t is 24 bytes and the first segment header is 8 bytes; the application descriptor therefore begins at image offset 32.
+- ESP_APP_DESC_MAGIC_WORD is 0xABCD5432.
+- esp_app_desc_t places app_elf_sha256[32] 144 bytes into the descriptor, so its image offset is 176.
+- Espressif documents this field as the SHA-256 of the application ELF.
+
+Checked official Espressif headers for [ESP-IDF v5.1](https://github.com/espressif/esp-idf/blob/v5.1/components/esp_app_format/include/esp_app_desc.h), [v5.5.2](https://github.com/espressif/esp-idf/blob/v5.5.2/components/esp_app_format/include/esp_app_desc.h) and [v6.0](https://github.com/espressif/esp-idf/blob/v6.0/components/esp_app_format/include/esp_app_desc.h), plus the [ESP-IDF App Version documentation](https://docs.espressif.com/projects/esp-idf/en/v5.1/esp32/api-reference/system/misc_system_api.html#app-version). The field layout is consistent across these versions.
+
+### Exact-source CI-0701
+
+Both exact-head build jobs passed the release-owned guard suite at 773e3ac:
+- Push [#44667029029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667029029), CI-0701 job 136058699974: SUCCESS.
+- PR [#44667034403](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034403), CI-0701 job 136058717961: SUCCESS.
+
+Both logs report:
+- Shared workflow action-pin guard: 52 invocations PASS.
+- ESP32 compatibility workflow action-pin guard: 3 invocations PASS.
+- SoftTimer workflow action-pin guard: 6 invocations PASS.
+- Provenance negative controls: 23/23 PASS.
+- Application-image positive/negative controls: PASS.
+- Reproducibility helper controls (including ELF-SHA-only, other-content and invalid-magic classifications): PASS.
+- Exact ESP32 source/blob and 3.3.13/4.0.0 workflow contract: PASS.
+
+### Actual exact-source matrix — still non-reproducible
+
+PR [#44667034127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034127) and push [#44667029116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667029116) both completed FAILURE at the byte-for-byte reproducibility gate for both ESP32 core versions. The current HARDWARE sketch source is exact a2b7903b4009fd7182247e11a7d2954a79cb9bbd; sketch blob 1a4b8fba8df210201ae77f23bfef55674abfb59e.
+
+PR-run diagnostics:
+| Core / job | Image size | First SHA-256 | Second SHA-256 | Different bytes / ranges |
+|---|---:|---|---|---|
+| 4.0.0 / 136058898186 | 1,097,936 | b6a41e1833c1d0389d081008e19231424fee6ee3262b6fcd862243b57394275e | 374463ab53e0002352bb4451a5b2df51b0cc421e3efd67a549f22d33151588bd | 67; 176-207, 9716-9717, 1097903-1097935 |
+| 3.3.13 / 136058898493 | 1,043,904 | 0ecb1f2212f9494be0e84804ba9375b960654ae0cf851dd4c125a2df72675f47 | 97f88c4ba5e6f8d455482db168ffe49b58c2d31d4673abf66450fca5537b4235 | 67; 176-207, 9670-9671, 1043871-1043903 |
+
+Both are classified OTHER_IMAGE_CONTENT_DIFF, not ELF-SHA-only. The embedded ELF hashes differ, but there are also 2-byte in-image differences and a trailing 33-byte difference range. The cause of the small in-image ranges and trailer is not established; no timestamp override, linker change, metadata normalization or binary substitution was attempted.
+
+The independent push run reproduced the failure with different SHA pairs:
+- Core 4.0.0 job 136058907154: 67 differing bytes; ranges 176-207, 9714-9714, 9716-9717, 1097903-1097919, 1097921-1097935.
+- Core 3.3.13 job 136058907560: 68 differing bytes; ranges 176-207, 9668-9668, 9670-9671, 1043871-1043903.
+
+The app descriptor parser therefore explains the stable offset-176 field, but the actual firmware mismatch is broader. Neither core image is accepted as reproducible; none of these digests may be used as release SHA256SUMS entries.
+
+### Broader build and unrelated owner failures
+
+- Push full build [#44667029029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667029029): CI-0701 PASS; validate job 136058773377 SUCCESS (all 131 steps); all 14 firmware/platform target jobs SUCCESS; Android SUCCESS; update bundle SUCCESS; most v0.4 simulations SUCCESS. x86 simulation and Android-emulator simulation were still IN_PROGRESS at last read. Production sign handoff, release publisher and prerelease publisher SKIPPED. Overall run remains IN_PROGRESS; no terminal overall success claimed.
+- PR full build [#44667034403](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034403): CI-0701 PASS; validate job 136058788582 SUCCESS; all target jobs and Android SUCCESS; update bundle and most simulations SUCCESS. x86 and Android-emulator simulations were still IN_PROGRESS at last read. Production sign/publish jobs SKIPPED. Overall run remains IN_PROGRESS.
+- Windows [#44667034154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034154): PISONET-owned negative-selftest.ps1 still fails because $buildWorkflow is unset; publish-release SKIPPED. No PISONET file changed.
+
+### Ownership, provenance and next action
+
+- Current #291 head 773e3acbbb0f76cca01d8204485019d4026de792, base #242 734b89d9e7792247e8376335c3f3685500ab3f89; PR OPEN/DRAFT/UNMERGED.
+- MASTER #288 current head 965d786ec0b0f00e04ccef27182228f1f2f869f0; coordination/phoenix/OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29 keeps the route DRAFT_REVIEW_ONLY and PHX-RELEASE → COE #26 as reimplementation-review. No migration was performed.
+- #242 head 734b89d9; #327 head a54ea8a6 is four commits ahead of source/test commit a2b7903b, but those commits touch only the HARDWARE workflow and handover, not the ESP32 sketch; the tested source/blob pin remains valid.
+- COE #26 head b382d233; COE #31 head 59ed44d0. ULA authority and Bubblewrap-capable unprivileged runner remain external packaging blockers.
+- Repository rulesets API returned []; the connected GitHub integration could not read classic branch protection for the slash-containing branch. Effective branch protection is UNKNOWN, not assumed.
+- Canonical private Drive registry v11 was not surfaced by the authorized Library search; older v3–v7 snapshots were not substituted or copied.
+- No independent PR reviews are recorded on #291 or MASTER #288.
+
+**Next PHX-RELEASE action:** inspect the small in-image ranges (9716-9717 on core 4.0.0; 9670-9671 on core 3.3.13) and the trailing 33-byte image region without publishing raw binaries; correlate them with the actual ESP image/ELF section map before changing any build flags. Preserve the fail-closed comparator until a source-grounded deterministic correction passes both cores.
+
+No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval and physical 150 power-cut / 30-device 24-hour soak remain unproven. **PRODUCTION NO-GO.**
