@@ -1388,3 +1388,11 @@ RELEASE #291 current head b883662b4faebe05973c9a8bf7ff7ac54d978496: Windows [447
 COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows / zero jobs. Exact #327/#26 trees show different ESP8266/ESP32 firmware blobs, 25 source Python lab/helper files vs zero destination Hardware Python files, three source workflows vs one generic destination workflow, and incomplete Hardware NOTICE/license scope. The sibling Pisowifi MIT license blob matches, but does not establish Hardware subtree notice scope. No migration or staging.
 
 The ownership manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Private v11 registry/newer corrections remain inaccessible; no older snapshot was substituted. Issue #266 remains OPEN; Master cleanup remains incomplete. The Master Python suite was NOT RUN because local Git clone failed DNS. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC11 11:40Z live readiness supersession — 2026-11-20
+
+Current exact-head correction: HARDWARE #327 focused quarantine/relay runs pass, but Full validation fails at QA-owned Missing poll signature check. RELEASE #291's two-core exact-source compatibility run now passes; its Windows self-test still fails in PISONET-owned negative-selftest.ps1 because $buildWorkflow is uninitialized, and its non-production Full workflow was cancelled with production signing/publishing skipped. The current #291 diff includes two PISONET-owned paths; PISONET must own/approve their correction.
+
+COE #26 remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs. Fresh exact #327/#26 tree comparison confirms differing board sketches, 25 source Python labs vs zero destination Hardware Python files, three source Hardware workflows vs one generic destination workflow, and incomplete root NOTICE / Hardware license-notice scope. No migration.
+
+Private Drive v11 and newer corrections remain inaccessible; no older snapshot was substituted. Full Master suite NOT RUN because local Git DNS resolution failed. Effective organization-level branch protection remains unverified. Issue #266 remains OPEN and Master cleanup remains incomplete. **PRODUCTION NO-GO.**
