@@ -276,7 +276,12 @@ def _require_directory(path: Path, label: str) -> Path:
 def _normalize_checksum_path(name: str) -> str:
     if name.startswith("./"):
         name = name[2:]
-    if not name or "\\" in name or "\n" in name or "\r" in name or "\x00" in name:
+    # str.splitlines() treats these characters as record boundaries even though
+    # POSIX permits them in filenames. Reject them before emitting SHA256SUMS so
+    # one artifact path cannot be reinterpreted as multiple manifest records.
+    line_boundaries = ("\\v", "\\f", "\\x1c", "\\x1d", "\\x1e", "\\x85", "\\u2028", "\\u2029")
+    forbidden = ("\\\\", "\\n", "\\r", "\\x00", *line_boundaries)
+    if not name or any(character in name for character in forbidden):
         raise ProvenanceError(f"unsafe checksum path: {name!r}")
     # A POSIX-relative path can still be drive-qualified when consumed on
     # Windows. Reject both drive-absolute (C:/x) and drive-relative (C:x)
