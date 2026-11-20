@@ -472,6 +472,22 @@ int main(){
      missedSampleMarker.find("pulses=1")==std::string::npos) return 41;
   std::cout<<"POLL_ABORT_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
 
+  // A prior persistent journal fault must dominate stale positive controller
+  // state when the temporary active-line drain hold is cleared.
+  resetState();
+  journalRecoveryRequired=true;
+  pollIntakeSuspended=true;
+  pollDrainAbortedOnActiveLine=true;
+  insertMode=true;
+  activeTarget="stale-target";
+  relayOn=true;
+  ledOn=true;
+  handlePollDrainAbortAfterSample();
+  if(!journalRecoveryRequired || pollIntakeSuspended ||
+     pollDrainAbortedOnActiveLine || !insertMode ||
+     activeTarget!="stale-target" || relayOn || ledOn) return 47;
+  std::cout<<"POLL_ABORT_PRIOR_JOURNAL_FAULT_REMAINS_DENY_PASS\\n";
+
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
   if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 31;
@@ -644,6 +660,13 @@ for board,path in BOARDS.items():
       ("keep-insert-enabled-after-poll",loop,output,quiet,accept.replace("insertMode=false;","insertMode=true;",1)),
       ("retain-stale-target-after-poll",loop,output,quiet,accept.replace('activeTarget="";','activeTarget="stale-target";',1)),
     )
+    journal_fault_guard_removed = output.replace("!journalRecoveryRequired && ", "", 1)
+    if journal_fault_guard_removed == output:
+        raise AssertionError(f"{board}: journal-recovery output guard mutation did not apply")
+    compile_and_run(assemble(output_source=journal_fault_guard_removed),board,47,
+                    "ignore-journal-recovery-output-deny")
+    print(f"{board} MUTATION_REJECTED ignore-journal-recovery-output-deny expected_exit=47")
+
     for name,mut_loop,mut_output,mut_quiet,mut_accept in mutations:
         if name=="remove-beginPollWindow" and mut_loop==loop:
             raise AssertionError(f"{board}: poll-window call mutation did not apply")
