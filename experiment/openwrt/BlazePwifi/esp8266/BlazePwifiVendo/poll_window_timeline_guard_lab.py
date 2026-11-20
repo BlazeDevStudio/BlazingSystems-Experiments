@@ -11,7 +11,7 @@ assert marker in lab, "missing synchronous-poll scenario"
 scenario = lab.split(marker, 1)[1].split('std::cout<<"DEBOUNCE_FLOOR_PASS', 1)[0]
 assert "pulseStart=250; pulseEnd=330;" in lab, "missing pulse at exact 250 ms quiet boundary"
 assert "POLL_WINDOW_GUARD_PASS 13/13" in lab, "poll-window scenario count must include exact-boundary case"
-assert "mutated_quiet = quiet.replace(\"return coinLineIdle();\", \"return true;\", 1)" in lab, "missing final-idle-sample mutation injection"
+assert "mutated_quiet = quiet.replace(\"const bool idle=coinLineIdle();\", \"const bool idle=true;\", 1)" in lab, "missing final-idle-sample mutation injection"
 assert "MUTATION_REJECTED remove-final-quiet-sample" in lab, "missing exact-boundary mutation rejection evidence"
 assert "const uint32_t pollStartedAt=fakeNow;" in scenario, "fixture must capture the post-quiet poll start"
 assert "if(pollStartedAt!=250) return 26;" in scenario, "fixture must prove the quiet window ended at 250 ms"
