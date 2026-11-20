@@ -1982,3 +1982,36 @@ Only RELEASE-owned workflow/test files were changed. No HARDWARE sketch, CORE, R
 Next: inspect exact-head compatibility PR/push runs at the updated source pin; require both ESP32 3.3.13 and 4.0.0 jobs plus provenance to pass before calling the pin verified. PHX-QA should independently review the current source identity and two-core reproducibility evidence; PHX-HARDWARE/MASTER should keep #327 source/test and ownership references current.
 
 No signing, release tagging, publication, hardware flash, payment migration or customer deployment. Physical 150 power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC22 — repair the SoftTimer tag-admission negative mutation
+
+**Checkpoint:** 2026-11-20T22:25Z onward. PR #291 remains OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+
+### Defect and correction
+
+At source head `e79d338ac634a29629351a1a9c1bd1f24e1cd962`, exact-head CI run [#44828246476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44828246476) failed in `test_publisher_rejects_ambiguous_or_non_404_tag_lookup`. Nine other tests passed. The negative mutation inserted a second unsafe tag guard immediately before `gh release create`, leaving the original safe HTTP-404 guard intact. The static admission helper correctly found the original guard, so the test failed to prove it could reject a weakened original predicate.
+
+The release-owned regression now mutates the existing tag-status predicate in place and independently checks both:
+- a non-404 response being accepted; and
+- an ambiguous multi-status response count being accepted.
+
+Implementation/test commit: [4c0dcc732c9123f61cbb17c6899006757d5d8a09](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4c0dcc732c9123f61cbb17c6899006757d5d8a09). Only `.github/scripts/test_release_workflow_concurrency.py` changed in the source/test commit. The production publisher workflow, PISONET tests and signer inputs were not changed by this correction.
+
+### Exact-source CI at `4c0dcc732c9123f61cbb17c6899006757d5d8a09`
+
+- Full BlazePwifi run [#44829320259](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829320259): CI-0701 completed **SUCCESS**; the RELEASE-CONCURRENCY test step passed; the test module reported **10 tests / OK**. The overall workflow had not reached a terminal conclusion at handover time: mandatory `validate` failed at the CORE-owned shared handover freshness gate, while other target builds were still queued/running. Update-bundle and some downstream jobs were skipped after validation failed.
+- ESP32 compatibility [#44829320241](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829320241): release provenance regression job PASS; ESP32 3.3.13 and 4.0.0 compile/reproducibility jobs were still IN_PROGRESS at handover time. No terminal matrix success is claimed.
+- Windows SoftTimer [#44829320103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829320103): handover freshness job FAILED at the shared CORE-owned freshness gate; Windows build and publisher SKIPPED. This is not a PISONET negative-self-test result.
+
+The preceding failed mutation test is retained as failure evidence; it is not relabelled as an expected RED. The corrected exact-source regression is green in CI-0701.
+
+### Ownership and next actions
+
+- PHX-CORE / PHX-MASTER: refresh the CORE-owned BlazePwifi handover records and rerun exact-head validation; RELEASE did not edit or bypass those records.
+- PHX-QA: independently review the corrected negative mutation and tag-admission static contract.
+- PHX-PISONET: retain ownership of its Windows source/tests; no PISONET file was edited in this UTC22 task.
+- PHX-INFRA / repository administrator: preserve the protected-branch and sandbox prerequisites; no write-privileged publisher was executed.
+
+PR #291 still has inherited cross-role paths requiring MASTER reconciliation. COE #26 remains frozen; COE #31/#35 sandbox and site-ULA gates remain separate external blockers. Canonical private Drive registry v11 was not available through the authorized Library surface; no older snapshot was substituted and no private content was copied.
+
+No merge, real-key signing, tag creation, publication, hardware flashing, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
