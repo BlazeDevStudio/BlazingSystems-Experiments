@@ -110,3 +110,8 @@ Immediately before this final report update, PR #288 remote head readback was `c
 ## 10. Additional AGENTS storage-control readback
 
 Repository `AGENTS.md` requires checking the private project registry, artifact manifest and sync ledger before storage changes. The Library exposes an older root `BLAZE_PROJECT_REGISTRY.json` and `BLAZE_SYNC_LEDGER.json`, both dated `2026-10-26`, plus versioned registry snapshots v3–v7. These are stale historical snapshots, not the requested canonical v11 or newer corrections. `BLAZE_ARTIFACT_MANIFEST.json` was not located. No Drive connector is exposed, no upload or storage mutation was attempted, and no private IDs or registry contents were copied into GitHub. Canonical v11/newer-correction verification remains BLOCKED.
+
+
+## 11. Finalized commit sequence
+
+After the initial report/coordination refresh, the AGENTS storage-control clarification was appended in report commit `50ebf0d7b20da49c9c43d227d21c2e3b569475a7` and summary commit `8d6239acf97b3b9b22dfdb75a3beae9e5fd801a1`. This final report update closes the documentation sequence. The final exact Master branch and PR #288 head is recorded in the refreshed UTC02 issue/PR checkpoint.
