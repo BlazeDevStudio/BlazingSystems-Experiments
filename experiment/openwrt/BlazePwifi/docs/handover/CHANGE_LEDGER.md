@@ -476,3 +476,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `c3728216ac3431fd05c03ca45b3d4f4c1d075850` already includes another release worker's current-source ELF comparison diagnostics. No implementation was duplicated.
 - [Build #44722116304](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722116304) completed scoped CI successfully. Both exact-core legs in [ESP32 #44722115957](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115957) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for newer hardware source `dc02efea6590`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44722115932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115932) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC11 — supersession audit: source-date reproducibility controls
+
+- Compatible head `dcc8fb4075cd520679370bff14d9270dc2abb293` already includes another release worker's source-date reproducibility controls. No implementation was duplicated.
+- Both exact-core legs in [ESP32 #44729973423](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973423) completed successfully for hardware source `dc02efea6590`; this is scoped CI evidence only and is not compatibility, signing, hardware, or production acceptance. At audit time [Build #44729973486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973486) remained in progress. [Windows #44729973431](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973431) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
