@@ -7,6 +7,7 @@ on:
       - ".github/workflows/phx-release-esp32-core-compatibility.yml"
       - ".github/scripts/test_phx_release_esp32_core_compatibility.py"
       - ".github/scripts/verify_esp32_application_image.py"
+      - ".github/scripts/verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
       - ".github/PHX_RELEASE_HANDOVER.md"
   pull_request:
@@ -16,6 +17,7 @@ on:
       - ".github/workflows/phx-release-esp32-core-compatibility.yml"
       - ".github/scripts/test_phx_release_esp32_core_compatibility.py"
       - ".github/scripts/verify_esp32_application_image.py"
+      - ".github/scripts/verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
       - ".github/PHX_RELEASE_HANDOVER.md"
   workflow_dispatch:
@@ -29,7 +31,7 @@ concurrency:
 
 jobs:
   build:
-    name: "ESP32 core ${{ matrix.esp32_core }} / source 9ef753a38226"
+    name: "ESP32 core ${{ matrix.esp32_core }} / source a2b7903b4009"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -39,9 +41,9 @@ jobs:
       matrix:
         esp32_core: ["3.3.13", "4.0.0"]
     env:
-      EXPECTED_SOURCE_SHA: "9ef753a38226fcdf56b0903680a5110348027110"
+      EXPECTED_SOURCE_SHA: "a2b7903b4009fd7182247e11a7d2954a79cb9bbd"
       EXPECTED_SKETCH_PATH: "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
-      EXPECTED_SKETCH_BLOB: "33081c5094ffdd19d935fc888d52ae01ff23325b"
+      EXPECTED_SKETCH_BLOB: "1a4b8fba8df210201ae77f23bfef55674abfb59e"
     steps:
       - name: Checkout release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,7 +54,7 @@ jobs:
       - name: Checkout exact PHX-HARDWARE source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 9ef753a38226fcdf56b0903680a5110348027110
+          ref: a2b7903b4009fd7182247e11a7d2954a79cb9bbd
           path: hardware-source
           persist-credentials: false
           fetch-depth: 1
@@ -87,11 +89,21 @@ jobs:
           test "$installed_core" = "${{ matrix.esp32_core }}"
           arduino-cli core list
 
-      - name: Compile exact PHX-HARDWARE sketch
+      - name: Compile twice and compare exact PHX-HARDWARE application image
         shell: bash
         run: |
           set -euo pipefail
-          output_dir="$RUNNER_TEMP/phx-esp32-${{ matrix.esp32_core }}"
-          mkdir -p "$output_dir"
-          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir "$output_dir" "hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
-          python3 .github/scripts/verify_esp32_application_image.py --output-dir "$output_dir" --sketch-name "BlazePwifiVendo32"
+          output_root="$RUNNER_TEMP/phx-esp32-${{ matrix.esp32_core }}"
+          build_dir="$output_root/build"
+          first_output_dir="$output_root/first"
+          second_output_dir="$output_root/second"
+          sketch_dir="hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
+          mkdir -p "$output_root" "$first_output_dir" "$second_output_dir"
+
+          arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$first_output_dir" "$sketch_dir"
+          python3 .github/scripts/verify_esp32_application_image.py --output-dir "$first_output_dir" --sketch-name "BlazePwifiVendo32"
+
+          arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$second_output_dir" "$sketch_dir"
+          python3 .github/scripts/verify_esp32_application_image.py --output-dir "$second_output_dir" --sketch-name "BlazePwifiVendo32"
+
+          python3 .github/scripts/verify_esp32_reproducible_build.py --first "$first_output_dir/BlazePwifiVendo32.ino.bin" --second "$second_output_dir/BlazePwifiVendo32.ino.bin" --sketch-name "BlazePwifiVendo32"
