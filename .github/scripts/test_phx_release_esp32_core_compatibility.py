@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
 HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
+SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
+SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 HARDWARE_SOURCE_SHA = "369007bcbc684a0923a586e991f3aa0667cda105"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
@@ -502,6 +504,47 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
     )
     return errors
 
+def check_elf_symbol_inspector(workflow_content: str) -> list[str]:
+    errors: list[str] = []
+    if not SYMBOL_HELPER.is_file():
+        errors.append("missing release-owned ESP32 ELF symbol inspector")
+    if not SYMBOL_TEST.is_file():
+        errors.append("missing release-owned ESP32 ELF symbol regression suite")
+
+    for relative_path in (
+        ".github/scripts/inspect_esp32_elf_symbols.py",
+        ".github/scripts/test_inspect_esp32_elf_symbols.py",
+    ):
+        if workflow_content.count(f'"{relative_path}"') != 2:
+            errors.append(f"{relative_path} must appear in both compatibility workflow path filters")
+
+    test_step = "      - name: Test release-owned ESP32 ELF symbol inspector"
+    if workflow_content.count(test_step) != 1:
+        errors.append("compatibility workflow must run the ELF symbol inspector test step exactly once")
+    if workflow_content.count("python3 .github/scripts/test_inspect_esp32_elf_symbols.py") != 1:
+        errors.append("compatibility workflow must invoke the ELF symbol regression suite exactly once")
+    if workflow_content.count("python3 .github/scripts/test_phx_release_esp32_core_compatibility.py") != 1:
+        errors.append("compatibility workflow must run its exact-source static contract guard exactly once")
+
+    required_workflow_values = (
+        'local nm_path="$compiler_path/xtensa-esp32-elf-nm"',
+        'if [ ! -x "$nm_path" ]',
+        '"$nm_path" --version',
+        "--format=posix --print-size --numeric-sort --defined-only",
+        'python3 .github/scripts/inspect_esp32_elf_symbols.py',
+        '--section ".flash.rodata"',
+        '--nm-output "$first_output_dir/elf-symbols.txt"',
+        '--nm-output "$second_output_dir/elf-symbols.txt"',
+    )
+    for value in required_workflow_values:
+        if value not in workflow_content:
+            errors.append(f"compatibility workflow is missing exact ELF symbol provenance step: {value}")
+    if workflow_content.count("python3 .github/scripts/inspect_esp32_elf_symbols.py") != 2:
+        errors.append("both preserved ELF files must be mapped to symbols exactly once")
+
+    return errors
+
+
 def main() -> int:
     if not WORKFLOW.is_file():
         return fail("missing exact-source ESP32 core compatibility workflow")
@@ -545,6 +588,12 @@ def main() -> int:
     if reproducibility_errors:
         for error in reproducibility_errors:
             print(f"PHX-RELEASE-ESP32-REPRODUCIBILITY-RED: {error}", file=sys.stderr)
+        return 1
+
+    symbol_errors = check_elf_symbol_inspector(content)
+    if symbol_errors:
+        for error in symbol_errors:
+            print(f"PHX-RELEASE-ESP32-ELF-SYMBOL-RED: {error}", file=sys.stderr)
         return 1
 
     pin_guard_path = ROOT / ".github/scripts/test_release_artifact_action_pins.py"
