@@ -3,7 +3,6 @@
 
 Compiles the production poll-status parser, acceptPollResponse(), and applyOutputs() functions from both board sketches. This is simulated control-flow evidence only.
 """
-import re
 import subprocess
 import sys
 import tempfile
