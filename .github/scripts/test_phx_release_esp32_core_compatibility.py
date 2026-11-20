@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Guard exact-source ESP32 3.3.13/4.0.0 qualification for live PHX-HARDWARE PR #327."""
+"""Guard exact-source ESP32 3.3.13/4.0.0 qualification and app-image identity."""
 from __future__ import annotations
 
+import hashlib
+import importlib.util
+import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
+HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 HARDWARE_SOURCE_SHA = "9ef753a38226fcdf56b0903680a5110348027110"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
@@ -20,6 +25,123 @@ ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 def fail(message: str) -> int:
     print(f"PHX-RELEASE-ESP32-COMPAT-RED: {message}", file=sys.stderr)
     return 1
+
+
+def check_application_image_verifier(workflow_content: str) -> list[str]:
+    errors: list[str] = []
+    invocation = (
+        'python3 .github/scripts/verify_esp32_application_image.py '
+        '--output-dir "$output_dir" --sketch-name "BlazePwifiVendo32"'
+    )
+    if workflow_content.count(invocation) != 1:
+        errors.append("compatibility workflow must invoke the exact ESP32 application-image verifier exactly once")
+    unsafe_selector = (
+        'binary="$(find "$output_dir" -maxdepth 1 -type f -name \'*.bin\' -print -quit)"'
+    )
+    if unsafe_selector in workflow_content:
+        errors.append("compatibility workflow still hashes the first arbitrary .bin instead of the sketch application image")
+    if not HELPER.is_file():
+        errors.append("missing release-owned ESP32 application-image verifier")
+        return errors
+
+    spec = importlib.util.spec_from_file_location("verify_esp32_application_image", HELPER)
+    if spec is None or spec.loader is None:
+        errors.append("cannot load ESP32 application-image verifier")
+        return errors
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        errors.append(f"ESP32 application-image verifier cannot be imported: {exc}")
+        return errors
+
+    helper_content = HELPER.read_text(encoding="utf-8")
+    marker = "PHX-ESP32-APP-IMAGE-PASS: filename=%s size_bytes=%s sha256=%s"
+    if marker not in helper_content:
+        errors.append("application-image verifier must emit filename, byte length and SHA-256")
+
+    def expect_rejected(label: str, directory: Path, sketch_name: str = "BlazePwifiVendo32") -> None:
+        try:
+            module.inspect_application_image(directory, sketch_name)
+        except (OSError, ValueError):
+            return
+        errors.append(f"application-image verifier accepted invalid case: {label}")
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-positive-") as temporary:
+        directory = Path(temporary)
+        payload = b"synthetic-esp32-application-image-v1"
+        (directory / "bootloader.bin").write_bytes(b"bootloader")
+        (directory / "partitions.bin").write_bytes(b"partition-table")
+        (directory / "boot_app0.bin").write_bytes(b"boot-app")
+        (directory / "BlazePwifiVendo32.ino.bin").write_bytes(payload)
+        try:
+            filename, size, digest = module.inspect_application_image(directory, "BlazePwifiVendo32")
+            if filename != "BlazePwifiVendo32.ino.bin":
+                errors.append(f"application-image verifier selected unexpected file: {filename}")
+            if size != len(payload):
+                errors.append(f"application-image verifier reported wrong byte length: {size}")
+            if digest != hashlib.sha256(payload).hexdigest():
+                errors.append("application-image verifier reported a digest that does not match the sketch application bytes")
+        except Exception as exc:
+            errors.append(f"application-image verifier rejected the valid synthetic image: {exc}")
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-missing-") as temporary:
+        directory = Path(temporary)
+        (directory / "bootloader.bin").write_bytes(b"bootloader")
+        (directory / "partitions.bin").write_bytes(b"partition-table")
+        expect_rejected("missing application image", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-wrong-name-") as temporary:
+        directory = Path(temporary)
+        (directory / "OtherSketch.ino.bin").write_bytes(b"wrong-sketch")
+        expect_rejected("wrong sketch application filename", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-ambiguous-") as temporary:
+        directory = Path(temporary)
+        (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"expected")
+        (directory / "OtherSketch.ino.bin").write_bytes(b"second-app")
+        expect_rejected("multiple sketch application candidates", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-empty-") as temporary:
+        directory = Path(temporary)
+        (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"")
+        expect_rejected("empty application image", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-symlink-") as temporary:
+        root = Path(temporary)
+        directory = root / "output"
+        directory.mkdir()
+        cached = root / "cached.ino.bin"
+        cached.write_bytes(b"cached-payload")
+        (directory / "BlazePwifiVendo32.ino.bin").symlink_to(cached)
+        expect_rejected("symlinked application image", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-hardlink-") as temporary:
+        root = Path(temporary)
+        directory = root / "output"
+        directory.mkdir()
+        cached = root / "cached-payload.bin"
+        cached.write_bytes(b"cached-payload")
+        try:
+            os.link(cached, directory / "BlazePwifiVendo32.ino.bin")
+        except (OSError, NotImplementedError) as exc:
+            errors.append(f"test environment cannot create hard-link negative control: {exc}")
+        else:
+            expect_rejected("hard-linked application image", directory)
+
+    with tempfile.TemporaryDirectory(prefix="phx-app-image-output-link-") as temporary:
+        root = Path(temporary)
+        real_directory = root / "real-output"
+        real_directory.mkdir()
+        (real_directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"application")
+        alias = root / "output-link"
+        alias.symlink_to(real_directory, target_is_directory=True)
+        expect_rejected("symlinked output directory", alias)
+
+    if errors:
+        return errors
+    print("PHX-ESP32-APP-IMAGE-TESTS-PASS: exact candidate, filename, size, SHA-256, missing, wrong-name, ambiguous, empty, symlink and hard-link controls")
+    return errors
 
 
 def main() -> int:
@@ -55,16 +177,11 @@ def main() -> int:
     if content.count("persist-credentials: false") != 2:
         return fail("both checkouts must disable persisted credentials")
 
-    success_marker = (
-        "PHX-ESP32-COMPATIBILITY-PASS: core=%s source=%s "
-        "sketch_blob=%s binary_sha256=%s"
-    )
-    if success_marker not in content:
-        return fail("workflow must emit the per-core build provenance marker")
-    if '"$${{ matrix.esp32_core }}"' in content:
-        return fail("build marker adds a second dollar before the matrix expression; Bash treats it as a positional parameter")
-    if '"${{ matrix.esp32_core }}"' not in content:
-        return fail("build marker must print the matrix core without shell positional expansion")
+    application_errors = check_application_image_verifier(content)
+    if application_errors:
+        for error in application_errors:
+            print(f"PHX-RELEASE-ESP32-APP-IMAGE-RED: {error}", file=sys.stderr)
+        return 1
 
     pin_guard_path = ROOT / ".github/scripts/test_release_artifact_action_pins.py"
     if not pin_guard_path.is_file():
@@ -105,7 +222,7 @@ def main() -> int:
         "gh release",
         "esptool",
         "espflash",
-        "${{ secrets.",
+        "\u0024{{ secrets.",
     )
     present = [value for value in forbidden if value in content]
     if present:
