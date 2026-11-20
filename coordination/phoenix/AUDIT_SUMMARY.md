@@ -1524,3 +1524,10 @@ The exact current #291 compatibility run #44809606421 is now terminal SUCCESS, 3
 Full #44809606527 remains IN_PROGRESS. Validation, firmware target and Android jobs pass; update bundle and ESP simulations pass; browser, Android emulator, x86 and board simulations continue. Production sign/publish jobs are skipped. Windows #44809606428 remains FAILED at PISONET-owned $buildWorkflow; publisher skipped.
 
 RELEASE #291 remains OPEN/DRAFT with 26 paths (21 RELEASE / 3 CORE / 2 PISONET). No ownership transfer. Master records evidence only; no merge or release. Production remains NO-GO.
+
+
+## PHX-MASTER UTC20 RELEASE #291 Full job-count refresh — 2026-11-20T20:20Z
+
+Exact current #291 compatibility #44809606421 is terminal SUCCESS 3/3 on the current Hardware source pin. Full #44809606527 remains IN_PROGRESS with 24 successful jobs, zero failures, two simulations in progress (Android emulator and x86), and four production import/sign/publish jobs skipped. It is not a terminal Full pass. Windows #44809606428 remains failed at PISONET-owned $buildWorkflow; publisher skipped.
+
+RELEASE, CORE and PISONET retain their respective path ownership and review obligations. Master records status only. Production remains NO-GO.
