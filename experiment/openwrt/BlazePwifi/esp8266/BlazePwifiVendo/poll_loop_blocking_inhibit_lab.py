@@ -607,9 +607,9 @@ for board,path in BOARDS.items():
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
-                 load_fault_source=load_fault,latch_fault_source=latch_fault,quarantine_source=quarantine,init_store_source=init_store,
+                 load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
-                 handle_source=handle,drain_abort_source=drain_abort):
+                 handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
                 quiet_source+begin_source+write_fault_source+
