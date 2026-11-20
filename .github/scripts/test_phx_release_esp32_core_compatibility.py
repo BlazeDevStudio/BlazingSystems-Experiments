@@ -168,25 +168,24 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
         directory.mkdir()
         (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"original-application")
         moved = parent / "moved-output"
-        original_stat = module.os.stat
+        original_verify = module._verify_output_directory_identity
         swap_state = {"done": False}
 
-        def replace_output_before_path_check(path_value, *args, **kwargs):
-            if (
-                path_value == directory.name
-                and kwargs.get("dir_fd") is not None
-                and not swap_state["done"]
-            ):
-                directory.rename(moved)
-                directory.mkdir()
-                (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"replacement-application")
-                swap_state["done"] = True
-            return original_stat(path_value, *args, **kwargs)
+        def replace_output_before_final_identity_check(directory_path, parent_fd, root_fd, before):
+            directory.rename(moved)
+            directory.mkdir()
+            (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"replacement-application")
+            swap_state["done"] = True
+            return original_verify(directory_path, parent_fd, root_fd, before)
 
-        with patch.object(module.os, "stat", side_effect=replace_output_before_path_check):
-            expect_rejected("output directory replaced after descriptor open", directory)
+        with patch.object(
+            module,
+            "_verify_output_directory_identity",
+            side_effect=replace_output_before_final_identity_check,
+        ):
+            expect_rejected("output directory replaced before final identity verification", directory)
         if not swap_state["done"]:
-            errors.append("output-directory replacement injection did not run after the directory descriptor was opened")
+            errors.append("output-directory replacement injection did not reach the final descriptor identity check")
 
     if errors:
         return errors
