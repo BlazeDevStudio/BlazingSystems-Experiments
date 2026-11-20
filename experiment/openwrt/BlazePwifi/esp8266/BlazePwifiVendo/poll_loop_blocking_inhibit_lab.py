@@ -584,9 +584,9 @@ TIMING_MAIN = MAIN.replace(
      relayOn || ledOn || insertMode || !activeTarget.empty() ||
      pendingPulses!=0U || pollIntakeSuspended ||
      pollDrainAbortedOnActiveLine) return 47;
-  const std::string marker=LittleFS.files["/pollpulse.fault"];
-  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=1")==std::string::npos) return 49;
+  const std::string timingMarker=LittleFS.files["/pollpulse.fault"];
+  if(timingMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     timingMarker.find("pulses=1")==std::string::npos) return 49;
   std::cout<<"PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS\\n";
   return 0;
 """,
