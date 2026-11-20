@@ -714,6 +714,84 @@ def compile_and_run(code, board, expected=0, label="normal"):
             )
         return ran.stdout.strip()
 
+POLL_SAFETY_PARITY = (
+    "coinEdgeISR",
+    "snapshotCoinEdgeSequence",
+    "boundedCoinDebounceMs",
+    "canStartPoll",
+    "applyOutputs",
+    "beginPollWindow",
+    "sampleCoinPulseEdge",
+    "latchPollPulseFault",
+    "quarantineCoinIngressTransition",
+    "handlePollDrainAbortAfterSample",
+    "reconcileUnobservedCoinEdges",
+)
+
+
+def poll_safety_helpers():
+    helpers = {}
+    for board, path in BOARDS.items():
+        source = path.read_text(encoding="utf-8")
+        helpers[board] = {}
+        for name in POLL_SAFETY_PARITY:
+            body = extract_function(source, name)
+            if not body:
+                raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
+            # Ignore formatting-only changes; comments and executable tokens remain
+            # part of the comparison so safety intent cannot drift silently.
+            helpers[board][name] = " ".join(body.split())
+    return helpers
+
+
+def poll_safety_parity_mismatches(helpers):
+    reference = helpers["ESP8266"]
+    candidate = helpers["ESP32"]
+    return [
+        name for name in POLL_SAFETY_PARITY
+        if not reference.get(name) or reference.get(name) != candidate.get(name)
+    ]
+
+
+def verify_poll_safety_board_parity():
+    helpers = poll_safety_helpers()
+    mismatches = poll_safety_parity_mismatches(helpers)
+    if mismatches:
+        raise SystemExit(
+            "POLL_SAFETY_BOARD_PARITY_FAIL: " + ", ".join(mismatches)
+        )
+    print(
+        f"POLL_SAFETY_BOARD_PARITY_PASS {len(POLL_SAFETY_PARITY)}/"
+        f"{len(POLL_SAFETY_PARITY)} normalized helpers"
+    )
+
+    # Failure-inject a fail-open ESP32 drift in the persistent-fault output
+    # gate and prove the parity guard detects it before either board is built.
+    mutated = {
+        board: dict(board_helpers)
+        for board, board_helpers in helpers.items()
+    }
+    marker = "!journalRecoveryRequired"
+    apply_outputs = mutated["ESP32"]["applyOutputs"]
+    if marker not in apply_outputs:
+        raise AssertionError("ESP32 applyOutputs parity mutation anchor missing")
+    mutated["ESP32"]["applyOutputs"] = apply_outputs.replace(
+        marker, "journalRecoveryRequired", 1
+    )
+    if not poll_safety_parity_mismatches(mutated):
+        raise SystemExit(
+            "POLL_SAFETY_BOARD_PARITY_MUTATION_SURVIVED: "
+            "ESP32 applyOutputs lost journal-fault deny guard"
+        )
+    print(
+        "POLL_SAFETY_BOARD_PARITY_MUTATION_REJECTED "
+        "ESP32_applyOutputs_journal_fault_guard"
+    )
+
+
+verify_poll_safety_board_parity()
+
+
 for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     edge_decl=source.find("volatile uint32_t coinEdgeSequence")
