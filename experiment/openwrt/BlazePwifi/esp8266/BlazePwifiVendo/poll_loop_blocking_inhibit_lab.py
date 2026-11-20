@@ -122,6 +122,7 @@ static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 static bool injectDuringDrainAbort=false;
 static bool injectDrainAbortWithoutIsr=false;
+static bool injectDrainAbortPulseEndsBeforeSample=false;
 static bool injectDuringPollRelease=false;
 static bool pollReleaseEdgeInjected=false;
 static bool pollReleaseEdgeSawRelayOff=false;
@@ -137,7 +138,7 @@ static bool pollStartRelayOn=true, pollStartSuspended=false;
 static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false;
 static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
 bool insertMode=true, lastCoin=false;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool setupApOn=false;
@@ -174,7 +175,7 @@ int digitalRead(int) {
     if(drainAbortReadCount==2 && !drainAbortInjected){
       drainAbortInjected=true;
       pulseStart=(int)fakeNow;
-      pulseEnd=(int)fakeNow+100;
+      pulseEnd=(int)fakeNow+(injectDrainAbortPulseEndsBeforeSample?0:100);
       drainAbortSawRelayOn=relayOn;
       return runCoinActiveLow?LOW:HIGH;
     }
@@ -284,7 +285,7 @@ void resetState(){
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
-  injectDrainAbortWithoutIsr=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
+  injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
@@ -293,7 +294,7 @@ void resetState(){
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
-  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true; outputPolarityKnown=true;
+  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; pinConfigSafe=true; outputPolarityKnown=true;
   controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
   setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
   pendingReady=false; fsReady=true; journalRecoveryRequired=false; pendingPostAttempted=false;
@@ -307,7 +308,14 @@ void resetState(){
 bool recordedPulseState(){
   return pollCalls==0 && pendingPulses==1 && !pendingReady &&
          pendingTarget=="target-01" && pendingNonce=="nonce12345678" &&
-         lastCoin && relayOn && !pollIntakeSuspended && saveCalls==1;
+         lastCoin && !relayOn && !ledOn && pollIntakeSuspended &&
+         pollDrainAbortedOnActiveLine && saveCalls==1;
+}
+bool releaseRecordedPulseAfterIdle(){
+  fakeNow=(uint32_t)pulseEnd;
+  loop();
+  return !pollIntakeSuspended && !pollDrainAbortedOnActiveLine &&
+         relayOn && ledOn && pendingPulses==1U && !journalRecoveryRequired;
 }
 int main(){
   // A normal blocked poll remains inhibited and default-deny when no edge occurs.
@@ -406,34 +414,49 @@ int main(){
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
 
-  // GPIO observed an active pulse during drain but the ISR sequence did not
-  // advance. Treat this as unresolved ingress and persist a deny marker.
+  // GPIO sees a pulse during drain without an ISR delta. Capture and persist
+  // it while the poll inhibit stays asserted; release only after the line is idle.
   resetState(); injectDrainAbortWithoutIsr=true; loop();
   if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
-     relayOn || ledOn || insertMode || !activeTarget.empty() ||
-     pollIntakeSuspended || pendingPulses!=0U || saveCalls!=0 ||
-     backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 34;
-  const std::string noIsrMarker=LittleFS.files["/pollpulse.fault"];
-  if(noIsrMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     noIsrMarker.find("pulses=1")==std::string::npos) return 38;
-  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_FAIL_CLOSED_PASS\\n";
+     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine ||
+     relayOn || ledOn || journalRecoveryRequired || pendingPulses!=1U ||
+     pendingReady || pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
+     saveCalls!=1 || !lastCoin) return 34;
+  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_CAPTURED_HELD_PASS\\n";
+  fakeNow=(uint32_t)pulseEnd; loop();
+  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn ||
+     pendingPulses!=1U || saveCalls!=1 || journalRecoveryRequired) return 35;
+  std::cout<<"POLL_ABORT_ACTIVE_LINE_RELEASES_AFTER_IDLE_PASS\\n";
 
-  // Repeat the missing-ISR case for active-high input wiring.
+  // Active-high wiring follows the same capture/hold/release ordering.
   resetState(); runCoinActiveLow=false;
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   injectDrainAbortWithoutIsr=true; loop();
   if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine ||
+     relayOn || ledOn || journalRecoveryRequired || pendingPulses!=1U ||
+     pendingReady || pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
+     saveCalls!=1 || !lastCoin) return 36;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_CAPTURED_HELD_PASS\\n";
+  fakeNow=(uint32_t)pulseEnd; loop();
+  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn ||
+     pendingPulses!=1U || saveCalls!=1 || journalRecoveryRequired) return 37;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_RELEASES_AFTER_IDLE_PASS\\n";
+
+  // If the observed pulse disappears before the normal sample, the ingress
+  // cannot be assigned to a durable pending event and must latch a fault.
+  resetState(); injectDrainAbortWithoutIsr=true;
+  injectDrainAbortPulseEndsBeforeSample=true; loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
      !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
      relayOn || ledOn || insertMode || !activeTarget.empty() ||
-     pollIntakeSuspended || pendingPulses!=0U || saveCalls!=0 ||
-     backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 36;
-  const std::string noIsrActiveHighMarker=LittleFS.files["/pollpulse.fault"];
-  if(noIsrActiveHighMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     noIsrActiveHighMarker.find("pulses=1")==std::string::npos) return 39;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_FAIL_CLOSED_PASS\\n";
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine || pendingPulses!=0U ||
+     saveCalls!=0 || backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 40;
+  const std::string missedSampleMarker=LittleFS.files["/pollpulse.fault"];
+  if(missedSampleMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     missedSampleMarker.find("pulses=1")==std::string::npos) return 41;
+  std::cout<<"POLL_ABORT_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
 
   // An ISR edge can arrive after the pre-release snapshot but during the first
   // GPIO writes that re-enable the acceptor. It must be reconciled before the
@@ -451,12 +474,12 @@ int main(){
 
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
-  if(!recordedPulseState()) return 31;
+  if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 31;
   resetState(); runCoinActiveLow=false; configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   pulseStart=2200; pulseEnd=2280; loop();
-  if(!recordedPulseState()) return 32;
+  if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 32;
   resetState(); pulseStart=2250; pulseEnd=2330; loop();
-  if(!recordedPulseState()) return 33;
+  if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 33;
 
   // Existing pending/recovery/FS guards remain fail-closed.
   resetState(); pendingReady=true; pendingPulses=1; applyOutputs(); loop();
