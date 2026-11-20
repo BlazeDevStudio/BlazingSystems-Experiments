@@ -290,9 +290,9 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
     compile_prefix = 'arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir"'
     if workflow_content.count(compile_prefix) != 2:
         errors.append("compatibility workflow must perform exactly two clean builds with the same build path")
-    if workflow_content.count('--output-dir "$first_output_dir"') != 1:
+    if workflow_content.count('--output-dir "$first_output_dir"') != 2:
         errors.append("compatibility workflow must preserve the first build in its own output directory")
-    if workflow_content.count('--output-dir "$second_output_dir"') != 1:
+    if workflow_content.count('--output-dir "$second_output_dir"') != 2:
         errors.append("compatibility workflow must preserve the second build in its own output directory")
     if workflow_content.count('"$sketch_dir"') != 2:
         errors.append("both reproducibility builds must compile the same exact sketch directory")
