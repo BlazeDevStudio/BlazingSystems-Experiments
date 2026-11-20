@@ -312,7 +312,7 @@ struct String : std::string {
 };
 bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
 bool outputPolarityKnown=true;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
 bool insertMode=true, runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=true;
 int pendingPulses=0, runCoinPin=4, runRelayPin=26, runLedPin=2;
@@ -339,7 +339,7 @@ void writeLogical(int pin,bool on,bool) {
 WINDOW_MAIN = r"""
 void resetState(){
     fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
-    pollIntakeSuspended=false; pinConfigSafe=true; controllerEnabled=true; coinEnabled=true;
+    pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; pinConfigSafe=true; controllerEnabled=true; coinEnabled=true;
     relayEnabled=true; ledEnabled=true; insertMode=true; runRelayActiveHigh=true;
     runLedActiveHigh=true; runCoinActiveLow=true; runCoinPin=4; runRelayPin=26; runLedPin=2;
     runDebounceMs=40; activeTarget="target-01"; relayOn=false; ledOn=false;
