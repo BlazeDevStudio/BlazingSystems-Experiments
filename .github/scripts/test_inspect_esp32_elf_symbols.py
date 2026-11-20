@@ -116,6 +116,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
         self.assertIsNone(result["nearest_preceding"][0]["size"])
         self.assertEqual(result["nearest_preceding"][0]["distance"], 0)
 
+    def test_accepts_posix_nm_row_without_size_field(self) -> None:
+        symbols = parse_nm_symbols("zero_addr a 0\\n")
+        self.assertEqual(len(symbols), 1)
+        self.assertEqual(symbols[0]["name"], "zero_addr")
+        self.assertEqual(symbols[0]["value"], 0)
+        self.assertIsNone(symbols[0]["size"])
+
     def test_rejects_malformed_and_out_of_range_symbol_rows(self) -> None:
         for output in (
             "not a POSIX nm row\n",
@@ -144,6 +151,6 @@ if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(ElfSymbolParserTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if result.wasSuccessful():
-        print("PHX-ESP32-ELF-SYMBOL-TESTS-PASS: 9 synthetic nm/section/address attribution cases")
+        print("PHX-ESP32-ELF-SYMBOL-TESTS-PASS: 10 synthetic nm/section/address attribution cases")
         raise SystemExit(0)
     raise SystemExit(1)
