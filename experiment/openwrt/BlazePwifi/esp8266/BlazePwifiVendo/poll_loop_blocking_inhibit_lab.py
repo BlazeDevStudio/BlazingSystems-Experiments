@@ -117,6 +117,7 @@ void observeBackupWrite(){ backupWriteSawRelayOn=relayOn; backupWriteSawLedOn=le
 void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
+static unsigned injectDuringHttpEdgeCount=1;
 static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
 static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
@@ -257,7 +258,9 @@ String post(const String &action,const String &pulses=String("0"),
       fakeNow+=50UL;
       pollPulseObservedDuringHttp=!coinLineIdle();
       if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
-         attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
+         attachedMode==(runCoinActiveLow?FALLING:RISING)) {
+        for(unsigned edge=0; edge<injectDuringHttpEdgeCount; ++edge) attachedIsr();
+      }
       pollPulseRelayOff=!relayOn;
       pollPulseSuspended=pollIntakeSuspended;
       fakeNow+=80UL;
@@ -291,7 +294,7 @@ void resetState(){
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
-  injectDuringHttp=false; injectTimedPollPulse=false; timedPulseIsrInjected=false;
+  injectDuringHttp=false; injectDuringHttpEdgeCount=1; injectTimedPollPulse=false; timedPulseIsrInjected=false;
   injectAfterDrainEdge=false; injectDuringDrainAbort=false;
   injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
@@ -394,6 +397,23 @@ int main(){
   if(rolloverMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      rolloverMarker.find("pulses=1")==std::string::npos) return 50;
   std::cout<<"POLL_BLOCKED_ISR_SEQUENCE_ROLLOVER_DENY_PASS\\n";
+
+  // Two ISR edges crossing UINT32_MAX must retain the exact modulo delta, not collapse to one.
+  resetState();
+  coinEdgeSequence=0xFFFFFFFEUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  injectDuringHttpEdgeCount=2;
+  injectDuringHttp=true;
+  loop();
+  if(pollCalls!=1 || pollStartAt!=2250 || pollEndAt-pollStartAt!=3500 ||
+     !pollPulseObservedDuringHttp || !pollPulseRelayOff || !pollPulseSuspended ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pendingPulses!=0U || lastPoll!=pollEndAt || fakeNow!=pollEndAt+2) return 51;
+  const std::string multiEdgeRolloverMarker=LittleFS.files["/pollpulse.fault"];
+  if(multiEdgeRolloverMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     multiEdgeRolloverMarker.find("pulses=2")==std::string::npos) return 51;
+  std::cout<<"POLL_BLOCKED_ISR_MULTI_EDGE_ROLLOVER_DENY_PASS\\n";
 
   // Active-high input polarity must attach the opposite edge and fail closed too.
   resetState(); runCoinActiveLow=false;
@@ -700,6 +720,16 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=non_wrap_safe_loop),board,50,
                     "non-wrap-safe-poll-edge-delta")
     print(f"{board} MUTATION_REJECTED non-wrap-safe-poll-edge-delta expected_exit=50")
+    single_edge_loop=loop.replace(
+        "latchPollPulseFault(pollEdgeEnd-pollEdgeStart);",
+        "latchPollPulseFault(1U);",
+        1,
+    )
+    if single_edge_loop==loop:
+        raise AssertionError(f"{board}: exact poll-edge count mutation anchor missing")
+    compile_and_run(assemble(loop_source=single_edge_loop),board,51,
+                    "single-edge-poll-delta")
+    print(f"{board} MUTATION_REJECTED single-edge-poll-delta expected_exit=51")
     idle_fault_shortcut = quarantine.replace(
         "  if(journalRecoveryRequired){",
         "  if(lineIdle && unhandledEdges==0U) return true;\n  if(journalRecoveryRequired){",
