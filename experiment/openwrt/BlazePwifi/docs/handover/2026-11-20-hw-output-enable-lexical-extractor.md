@@ -52,3 +52,15 @@ No production `.ino`, pin assignment, runtime state machine, persistence schema,
 ## Next exact action
 
 PHX-QA should replace the stale positive poll-signature assertion with source-exact default-deny validation and rerun Full. PHX-MASTER should refresh the canonical #327 head and preserve the #326 parent ancestry. PHX-HARDWARE should continue the next bounded ESP32/ESP8266 task only after revalidating all active heads.
+
+
+## Parallel #283 audit revalidation — no edit to that stack
+
+Current PR metadata head revalidated at `830c355376380f9b5533d5cda2558beed41a593a`; PR #283 remains OPEN / DRAFT / UNMERGED. The original findings were re-read from source and comment [#6883020442](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283#issuecomment-6883020442):
+
+- **Failed LittleFS append / clearPending:** the old unconditional-clear path is no longer present in either sketch. `quarantinePending()` returns false when `appendQuarantineRecord()` fails; `clearPending()` is reached only after the append helper reports success. The append helper checks bounded record length, prefix fingerprint/size, append-open, exact write length, flush/close, and post-close byte readback.
+- **Still not an active lifecycle:** `quarantinePending()` occurs exactly once per sketch (definition only); no active callsite was found. The guarded path is therefore dormant, and no physical torn-write/power-loss acceptance exists. Do not count this as end-to-end preservation acceptance.
+- **register/poll response signature:** current main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` at `experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo` emits `ok/server_time/controller` for register and `ok/insert/target_nonce/expires/controller` for poll. It does **not** emit `response_sig` for either action; the signature is used by the separate `member_snapshot` action. The #283 sketches correctly comment that register/poll are discovery-only and ignore those fields. Do not add an ad-hoc positive signature or treat root `ok:true` as authorization.
+- QA's Full validation still fails at the inherited positive poll-signature assertion (`Missing poll signature check`). PHX-QA owns replacement with source-exact default-deny validation; PHX-CORE owns any future versioned producer/consumer contract and golden vectors.
+
+This was an audit-only revalidation. No #283 source, #239/#254 stack, main producer, shared API or financial code was changed.
