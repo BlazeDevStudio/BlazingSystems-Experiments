@@ -756,3 +756,11 @@ The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANG
 
 **Classification:** test-first RED is CI-observed; implementation is awaiting exact-head focused CI. This remains LAB ONLY / NOT HARDWARE ACCEPTED / PRODUCTION NO-GO. No physical hardware, coin acceptor, live money, flashing, migration, signing, merge, or deployment was performed.
 <!-- PHX-HW-LENGTH-AWARE-SPANS-20261120:END -->
+
+### UTC05 exact-head follow-up — canonical handover freshness successor
+
+- Narrow handover successor: `b541db182c2bba9d7b8cec17147e4d9cf0050577`.
+- Focused exact-source [run 44683293103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683293103), job `136111544480`: **SUCCESS** at source/docs anchor `9657280284ef8490f8c87408e2825fb071fc5da3`; ASan/UBSan enabled; all 5 synthetic header cases and Phase A deny guard passed.
+- Full [run 44683292995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683292995), validation job `136112096462`: **FAILED** the mandatory handover freshness gate because the canonical handovers had been committed before the narrow handover file. ESP8266 target job `136112096417` passed; other target/Android jobs were still running at the last read. This is not Full PASS and not a source/test failure.
+- The three canonical handovers are now updated **after** the narrow handover to make the next exact-head freshness evaluation meaningful. No firmware source or runtime behavior changed in this documentation successor.
+- Status: focused header **CI VERIFIED**; Full build **NOT VERIFIED**; hardware **NOT TESTED**; production **NO-GO**.
