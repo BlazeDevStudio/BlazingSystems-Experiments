@@ -460,9 +460,9 @@ for board, path in BOARDS.items():
     # Failure injection: removing the final idle sample must be caught by the
     # pulse that begins exactly at the 250 ms quiet boundary.
     quiet = extract(source, "coinLineQuietAfterInhibit")
-    if quiet.count("return coinLineIdle();") != 1:
-        raise RuntimeError(f"{board}: expected one final coinLineIdle() sample to mutate")
-    mutated_quiet = quiet.replace("return coinLineIdle();", "return true;", 1)
+    if quiet.count("const bool idle=coinLineIdle();") != 1:
+        raise RuntimeError(f"{board}: expected one final idle sample to mutate")
+    mutated_quiet = quiet.replace("const bool idle=coinLineIdle();", "const bool idle=true;", 1)
     mutated_functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
         extract(source, "applyOutputs"),
