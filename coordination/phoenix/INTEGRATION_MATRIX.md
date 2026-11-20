@@ -2517,3 +2517,22 @@ Source tree `08735c3b...` contains 25 board-local Python labs; destination tree 
 - #327 Full fails at QA-owned `Missing poll signature check`; firmware remains default-deny.
 
 **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC09 exact current source/destination tree comparison — 2026-11-20
+
+Experiments HARDWARE #327 head 8246afb3d65c5af631dba35d45ef68e114269287 has tree 3ddffcb9e4542a3cc73aa3e4efe382ff954a390b. COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12 has tree 8a7d4cf81d7227118b876c1138dd2da12345fefa. Both recursive trees were complete and not truncated.
+
+| Item | Exact #327 source | Exact #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | 3ff575f5cd879c021407849578854b74a2d460bd | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different |
+| ESP32 sketch | cc2dc4dada46f8447321168f12aae90cdd46fd5e | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different |
+| Board-local Python labs | 24 | 0 under Hardware/ | No exact import identity |
+| Hardware workflows | 3 scoped PHX workflows | 1 generic hardware-ci.yml | Not equivalent |
+| Project MIT license | source BlazePwifi/LICENSE blob 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE same blob | Sibling match only |
+| Root NOTICE | source blob f6d92cd21465312be5993631fe26977219be0fb9 | absent | Missing destination notice |
+| Hardware LICENSE / NOTICE | no separate source Hardware license file | Hardware/LICENSE and Hardware/NOTICE.md absent | Scope unresolved |
+
+The 24 source Python lab/helper files have no destination Hardware Python identities; COE #26 contains one generic shell test. The three source workflows are phx-hardware-poll-edge-latch.yml, phx-hardware-quarantine-byte-readback.yml and phx-hardware-relay-output-polarity.yml; none is present as an exact destination workflow. No migration or staging.
+
+COE #35 head 7b9706d... remains blocked by absent bubblewrap and missing approved site ULA /48. COE #49 head aeb8ff11... passes Stage 5.1/case checks but fails ESP32 shared compilation on missing mbedtls/sha256.h; PHX-HARDWARE declined implementation ownership. Neither #35 nor #49 has a route in OWNERSHIP_ROUTES.json. COE #26 remains frozen with five queued workflows / zero jobs.

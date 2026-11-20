@@ -104,3 +104,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - HARDWARE #327 current head `d9072ce...`: focused quarantine/relay PASS; Full validation fails at QA-owned `Missing poll signature check`.
 - COE #26 remains frozen at `b382d233...`, five workflows queued / zero jobs. Current exact tree review confirms 25 source board-specific Python labs vs zero destination Hardware Python tests, one generic shell test, three source Hardware workflows absent from destination, firmware blobs different, and Hardware license/notice scope unresolved.
 - Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. Full Master suite NOT RUN because local Git DNS failed. **PRODUCTION NO-GO.**
+
+
+## Latest live exact-head supersession — 2026-11-20 UTC09
+
+- [UTC09 live role-head, terminal CI and COE #26 exact-source reconciliation](PHX_MASTER_UTC09_20261120_ROLE_HEAD_CI_AND_COE26_EXACT_SOURCE_RECONCILIATION.md).
+- Audit start: PR #288 head 129aa462322fb0bff2aedec524f42bb829fd7f4b; base main f4e8a891...; OPEN/DRAFT. Current Master changes remain coordination-only.
+- HARDWARE #327 current head 8246afb3... now has quarantine and relay/output focused failures, in addition to Full validation's QA-owned poll-signature failure.
+- RELEASE #291 current head f1126706... passes non-production Full build/simulation but fails strict two-core reproducibility and the PISONET-owned negative self-test.
+- COE #26 remains frozen at b382d233..., five workflows queued / zero jobs. A fresh exact #327/#26 recursive-tree comparison found different firmware blobs, 24 source board-local Python lab files versus zero destination Hardware Python files, three source workflows versus one generic destination workflow, and incomplete destination notice scope.
+- Private v11 registry/newer corrections remain inaccessible; no older registry substituted. Master suite NOT RUN because local Git DNS failed. **PRODUCTION NO-GO.**

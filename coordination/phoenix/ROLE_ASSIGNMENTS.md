@@ -1680,3 +1680,17 @@ This terminal status supersedes the UTC07 in-progress labels. The previous compl
 **Ownership collision:** the overall #291 diff includes `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1` (base blob `8aba7adf...`, #291 head blob `8b69174b...`). This path is PISONET-owned; PISONET must own/approve its fix. Master did not edit it.
 
 COE #26 remains frozen. No role source ownership, branch or route was changed. See the UTC08:40Z audit report for full exact evidence and next actions.
+
+
+## PHX-MASTER UTC09 live role-head and CI supersession — 2026-11-20
+
+| Role | Exact current PR head | Exact-head CI / disposition |
+|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS, scoped; separate CORE continuation owns implementation. |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329229 / #43653329235 PASS, scoped; no physical Device Owner acceptance. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS, scoped; native COM bench unverified. |
+| PHX-HARDWARE #327 | 8246afb3d65c5af631dba35d45ef68e114269287; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | #44707526434 quarantine FAIL (NVS namespace-open not handled; prior-journal fault accepted as safe ingress; missing transition-edge-ack mutation not rejected); #44707526640 relay/output FAIL; #44707526487 Full FAIL at QA-owned Missing poll signature check. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no exact-head run. |
+| PHX-RELEASE #291 | f1126706a79a03e69e1374b12e86caae3260be6a | #44706677338 non-production Full PASS; #44706677394 strict image reproducibility FAIL (72 differing bytes core 3.3.13; 69 core 4.0.0); #44706677279 Windows FAIL at PISONET-owned unset $buildWorkflow. |
+ 
+HARDWARE #327's new focused failures are current exact-head results and supersede prior UTC07/UTC08 PASS labels. Firmware remains default-deny; QA owns the positive poll-signature fixture. RELEASE's POSIX nm parser passes on the current compatibility run; the remaining failure is the actual two-build image comparison. PISONET owns its negative-selftest path inside #291. No cross-role source changes by Master.

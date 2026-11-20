@@ -1368,3 +1368,12 @@ The latest exact-head audit is [PHX_MASTER_UTC08_20261120_0840Z_RELEASE_REPRODUC
 - Private v11 registry/newer corrections remain inaccessible; Master suite NOT RUN due local Git DNS failure. Branch protection effective rules remain UNKNOWN.
 
 **Next:** QA repairs the negative poll fixture; PISONET owns the Windows test fix; RELEASE investigates the remaining ELF/image bytes; COE integration owner completes per-file destination provenance; registry custodian restores v11 access. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC09 live exact-head and migration gate supersession — 2026-11-20
+
+Master audit start #288 head 129aa462322fb0bff2aedec524f42bb829fd7f4b; current role heads are recorded in ROLE_ASSIGNMENTS.md and the UTC09 audit report. New exact-head CI changes: HARDWARE #327 focused quarantine/relay failures now expose NVS namespace-open, prior-journal-fault and transition-edge-ack regressions; Full validation still fails at QA's Missing poll signature check. RELEASE #291's parser now passes, but both ESP32 core clean-build comparisons fail on actual image bytes and Windows fails in PISONET-owned negative-selftest.ps1. COE #35 and #49 remain independently blocked; #26 remains five queued workflows / zero jobs.
+
+Fresh exact recursive-tree comparison at current #327 head versus COE #26 found 24 source board-local Python lab/helper files versus zero destination Hardware Python files, three scoped source workflows versus one generic destination workflow, differing ESP8266/ESP32 firmware blobs, and incomplete destination NOTICE / Hardware license scope. The sibling Pisowifi MIT license blob matches the source project license, but does not independently establish Hardware subtree notice scope. No migration, staging or route change.
+
+The route manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master target null. The private v11 registry and newer corrections remain inaccessible; no older snapshot was substituted. Full Master suite NOT RUN because local Git DNS failed. Local manifest readback assertions 8/8 PASS, not a repository suite. Issue #266 remains OPEN and Master cleanup remains incomplete. **PRODUCTION NO-GO.**
