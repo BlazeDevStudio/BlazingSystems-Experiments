@@ -8,28 +8,16 @@ Host simulation only; physical flash power-cut durability is NOT tested.
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_block, extract_function
 BOARDS = (
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
 )
-
-def extract(src: str, signature: str) -> str:
-    start = src.find(signature)
-    if start < 0:
-        raise RuntimeError(f"Missing production source: {signature}")
-    brace = src.find("{", start)
-    depth = 0
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[start:i + 1]
-    raise RuntimeError(f"Unbalanced production source: {signature}")
 
 CPP = r'''
 #include <algorithm>
@@ -270,8 +258,8 @@ int main(){
 
 for board,path in BOARDS:
     src=path.read_text(encoding="utf-8")
-    loop=extract(src,"void loop(){")
-    gate=extract(src,"bool canAttemptCoinPost(){")
+    loop=extract_function(src,"loop")
+    gate=extract_function(src,"canAttemptCoinPost")
     if "!pendingPostAttempted" not in gate:
         raise SystemExit(f"{board}: previous attempt is not denied by POST gate")
     if loop.count('post("coin"')!=1 or loop.find("markPendingPostAttempt()")<0 or loop.find("markPendingPostAttempt()")>loop.find('post("coin"'):
@@ -279,7 +267,7 @@ for board,path in BOARDS:
     coin_post=loop.find('String r=post("coin"')
     if coin_post < 0 or "handleCoinPostResponse(r);" not in loop[coin_post:]:
         raise SystemExit(f"{board}: coin POST does not delegate to disposition helper")
-    handler=extract(src,"void handleCoinPostResponse(const String &response){")
+    handler=extract_function(src,"handleCoinPostResponse")
     auth_guard=handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
     clear_pending=handler.find("clearPending();")
     quarantine=handler.find("quarantinePending(response);")
@@ -288,15 +276,15 @@ for board,path in BOARDS:
     magic=re.search(r"(?:static\s+)?const uint32_t PENDING_MAGIC\s*=\s*(0x[0-9A-Fa-f]+)",src)
     if not magic: raise SystemExit(f"{board}: missing pending magic")
     values={
-      "@@STRUCT@@":extract(src,"struct PendingRecord {")+";",
+      "@@STRUCT@@":extract_block(src,"struct PendingRecord {")+";",
       "@@MAGIC@@":magic.group(1),
-      "@@CHECKSUM@@":extract(src,"uint32_t pendingChecksum("),
-      "@@READ@@":extract(src,"bool readPendingFile("),
-      "@@SAME@@":extract(src,"bool samePendingRecord("),
-      "@@LOAD@@":extract(src,"void loadPending(){"),
-      "@@MARK@@":extract(src,"bool markPendingPostAttempt(){"),
-      "@@ATTEMPT_MATCH@@":extract(src,"bool pendingAttemptMarkerMatches(){"),
-      "@@CLEAR@@":extract(src,"bool clearPending(){"),
+      "@@CHECKSUM@@":extract_function(src,"pendingChecksum"),
+      "@@READ@@":extract_function(src,"readPendingFile"),
+      "@@SAME@@":extract_function(src,"samePendingRecord"),
+      "@@LOAD@@":extract_function(src,"loadPending"),
+      "@@MARK@@":extract_function(src,"markPendingPostAttempt"),
+      "@@ATTEMPT_MATCH@@":extract_function(src,"pendingAttemptMarkerMatches"),
+      "@@CLEAR@@":extract_function(src,"clearPending"),
       "@@GATE@@":gate,
     }
     cpp=CPP
