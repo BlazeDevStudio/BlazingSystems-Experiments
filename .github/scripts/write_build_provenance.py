@@ -278,6 +278,11 @@ def _normalize_checksum_path(name: str) -> str:
         name = name[2:]
     if not name or "\\" in name or "\n" in name or "\r" in name or "\x00" in name:
         raise ProvenanceError(f"unsafe checksum path: {name!r}")
+    # A POSIX-relative path can still be drive-qualified when consumed on
+    # Windows. Reject both drive-absolute (C:/x) and drive-relative (C:x)
+    # spellings so SHA256SUMS remains portable and cannot escape its root.
+    if re.match(r"^[A-Za-z]:", name):
+        raise ProvenanceError(f"unsafe checksum path: {name!r}")
     # Validate raw separators before PurePosixPath can normalize aliases.
     # A single leading "./" is retained for sha256sum compatibility above;
     # interior dot segments, repeated separators and trailing separators are
