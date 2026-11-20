@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -263,3 +263,14 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Full #44809606527: terminal SUCCESS, 26 success / 0 failed / 0 cancelled / 4 production import/sign/publish jobs skipped.
 - Windows #44809606428: FAILURE at PISONET-owned $buildWorkflow; publisher skipped.
 - The terminal Full PASS is non-production CI only. PR #291 remains DRAFT and cross-owner review is outstanding; PRODUCTION NO-GO.
+
+
+## Latest live exact-head revalidation — 2026-11-20 UTC20:36
+
+- [UTC20 QA #292 recipient-contract, role CI and COE #26 audit](PHX_MASTER_UTC20_20261120_LIVE_EXACT_HEAD_QA292_ROLE_CI_COE26_REVALIDATION_2036Z.md).
+- Audit started from Master `phoenix/master-coordination@1d0534f839b905ec173557dbbd084e1bb033847d`; PR #288 was OPEN/DRAFT against main `f4e8a891...`, with 136 changed paths all under `coordination/phoenix/`.
+- Architecture contract §6.60 records exact BLAZE-COMMS recipient semantics and one-message-per-role/hour checkpoint idempotency. Existing UTC20 issue checkpoint #7049796367 was corrected in place from a recipient array to `"to": "ALL"`; no duplicate checkpoint was created.
+- QA #292 remains based on historical Master base `b1ca02e...`, no PR-triggered run; bounded current-source recipient regression 4/4 PASS using exact QA test/fixture blobs and the current verifier's extracted function. Full Master suite NOT RUN.
+- HARDWARE #327 Full fails at QA's positive poll fixture; RENTAL #328 shared build fails at CORE handover freshness and inherited Mbed TLS 4 header; RELEASE #291 Full/compatibility pass with production jobs skipped, Windows fails at PISONET-owned `$buildWorkflow`.
+- COE #26 remains FROZEN with five queued workflows / zero jobs and unresolved source/test/license/NOTICE/import parity. Private v11 registry/newer corrections and effective branch protection remain unverified.
+- No subsystem source or COE destination changes, ownership transfer, migration, merge, release, flash, signing, secret provisioning, real-payment operation or physical acceptance. **PRODUCTION NO-GO.**
