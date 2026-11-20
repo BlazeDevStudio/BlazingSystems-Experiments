@@ -135,35 +135,34 @@ jobs:
           preserve_elf "$second_output_dir"
 
           run_elf_mapping() {
-            local build_properties
-            build_properties="$(arduino-cli compile --show-properties --fqbn esp32:esp32:esp32 "$sketch_dir")" || return 1
-            local compiler_path
-            local compiler_command
-            local objdump_name
-            compiler_path="$(printf '%s\n' "$build_properties" | sed -n 's/^compiler.path=//p' | tail -n 1)"
-            compiler_command="$(printf '%s\n' "$build_properties" | sed -n 's/^compiler.c.cmd=//p' | tail -n 1)"
-            compiler_command="${compiler_command%% *}"
-            if [ -z "$compiler_path" ] || [ -z "$compiler_command" ]; then
-              printf 'PHX-ESP32-ELF-MAP-RED: Arduino build properties omitted compiler.path or compiler.c.cmd\n' >&2
+            local toolchain_root="$HOME/.arduino15/packages/esp32/tools/esp-x32"
+            local -a toolchain_versions=()
+            mapfile -t toolchain_versions < <(
+              find "$toolchain_root" -mindepth 1 -maxdepth 1 -type d -print | sort
+            )
+            if [ "${#toolchain_versions[@]}" -ne 1 ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: expected one installed esp-x32 package version, found %s\n' "${#toolchain_versions[@]}" >&2
               return 1
             fi
 
-            case "$(basename "$compiler_command")" in
-              xtensa-esp-elf-gcc) objdump_name="xtensa-esp-elf-objdump" ;;
-              xtensa-esp32-elf-gcc) objdump_name="xtensa-esp32-elf-objdump" ;;
+            local toolchain_version="${toolchain_versions[0]##*/}"
+            case "${{ matrix.esp32_core }}:$toolchain_version" in
+              "3.3.13:2610"|"4.0.0:2512") ;;
               *)
-                printf 'PHX-ESP32-ELF-MAP-RED: unsupported Xtensa compiler command %s\n' "$compiler_command" >&2
+                printf 'PHX-ESP32-ELF-MAP-RED: unexpected core/toolchain pair core=%s esp-x32=%s\n' "${{ matrix.esp32_core }}" "$toolchain_version" >&2
                 return 1
                 ;;
             esac
 
-            compiler_path="${compiler_path%/}"
-            local compiler_binary="$compiler_path/$(basename "$compiler_command")"
-            local objdump_path="$compiler_path/$objdump_name"
+            local compiler_path="${toolchain_versions[0]}/bin"
+            local compiler_binary="$compiler_path/xtensa-esp32-elf-gcc"
+            local objdump_path="$compiler_path/xtensa-esp32-elf-objdump"
             if [ ! -x "$compiler_binary" ] || [ ! -x "$objdump_path" ]; then
-              printf 'PHX-ESP32-ELF-MAP-RED: toolchain sibling missing compiler=%s objdump=%s\n' "$compiler_binary" "$objdump_path" >&2
+              printf 'PHX-ESP32-ELF-MAP-RED: pinned esp-x32 compiler/objdump missing compiler=%s objdump=%s\n' "$compiler_binary" "$objdump_path" >&2
               return 1
             fi
+            printf 'PHX-ESP32-TOOLCHAIN: core=%s esp-x32=%s compiler=%s objdump=%s\n' "${{ matrix.esp32_core }}" "$toolchain_version" "$compiler_binary" "$objdump_path"
+            "$objdump_path" --version | sed -n '1p'
             local first_elf="$first_output_dir/BlazePwifiVendo32.ino.elf"
             local second_elf="$second_output_dir/BlazePwifiVendo32.ino.elf"
             "$objdump_path" -h "$first_elf" > "$first_output_dir/elf-sections.txt" || return 1
@@ -175,12 +174,15 @@ jobs:
             )
             if [ "${{ matrix.esp32_core }}" = "3.3.13" ]; then
               addresses+=(
+                --address segment0_diff_9665=0x3f4025c1
+                --address segment0_diff_9667=0x3f4025c3
                 --address segment0_diff_9668=0x3f4025c4
                 --address segment0_diff_9670=0x3f4025c6
                 --address segment0_diff_9671=0x3f4025c7
               )
             else
               addresses+=(
+                --address segment0_diff_9714=0x3f4025f2
                 --address segment0_diff_9716=0x3f4025f4
                 --address segment0_diff_9717=0x3f4025f5
               )
