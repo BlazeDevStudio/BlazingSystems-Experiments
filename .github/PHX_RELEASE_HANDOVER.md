@@ -2015,3 +2015,37 @@ The preceding failed mutation test is retained as failure evidence; it is not re
 PR #291 still has inherited cross-role paths requiring MASTER reconciliation. COE #26 remains frozen; COE #31/#35 sandbox and site-ULA gates remain separate external blockers. Canonical private Drive registry v11 was not available through the authorized Library surface; no older snapshot was substituted and no private content was copied.
 
 No merge, real-key signing, tag creation, publication, hardware flashing, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC23 — refresh ESP32 compatibility to current HARDWARE #327 source/test anchor
+
+**Checkpoint:** 2026-11-20T23Z. PR #291 remains OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+
+### Finding and source identity
+
+The compatibility workflow and its static contract still pinned HARDWARE #327 to `1a631567eb0c14c12a114f592685f44cc414466f`. The live #327 PR had advanced. Current HARDWARE #327 source/test anchor is `83c20c9d59bcdf6c24e2112f3396b90847b5bde0`; current documentation head is `1dbbdff7f6d40e011ae5ff9043c9e8669d02d9cd`. The current source/test anchor commit changes only the ESP8266 poll-loop host lab. The latest #327 docs head adds only its Hardware handover record.
+
+The ESP32 sketch path `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino` has the same exact Git blob at the #327 source/test anchor and current docs head: `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`. No HARDWARE file was modified.
+
+### Release-owned correction
+
+- Test/static contract update: [`87e1daff`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/87e1daff6d252bf640867e872aa7c1cb5c4984dd) updates `.github/scripts/test_phx_release_esp32_core_compatibility.py` to require the current #327 source/test anchor.
+- Workflow pin update: [`afe5ae79`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/afe5ae799cb3545a11aafbf465a0587b144e943a) updates the exact checkout and expected source SHA in `.github/workflows/phx-release-esp32-core-compatibility.yml`.
+- Workflow label correction: [`87fb52cb`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/87fb52cb06d10765aa4f60eb66a47ece88c7ce43) updates the displayed source prefix to `83c20c9d59bc`.
+
+At source/test HEAD `87fb52cb06d10765aa4f60eb66a47ece88c7ce43`, GitHub-readback static cross-file checks confirm: the test expects the new full source SHA; the workflow contains exactly two new full-SHA references; no old full SHA remains; the label matches the new 12-character prefix; the exact checkout ref matches; the expected ESP32 sketch blob is unchanged; and the workflow retains read-only permissions and `persist-credentials: false`.
+
+### CI status — do not overclaim
+
+- Prior compatibility run [#44829497810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497810) completed **3/3 PASS** at the previous pin `1a631567...`; it is historical baseline only, not evidence for the new pin.
+- Prior Full run [#44829497792](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497792): CI-0701 PASS; mandatory validation FAIL at the CORE-owned handover freshness gate; ESP32, ESP8266, x86_64, Orange Pi, Ruijie and Android jobs PASS; production/signing/publishing and downstream simulation jobs SKIPPED.
+- Prior Windows run [#44829497735](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497735): handover freshness FAIL; Windows build and publisher SKIPPED.
+- For new source/test commits `87e1daff`, `afe5ae79`, and `87fb52cb`, the connected workflow-run lookup returned no runs and combined commit-status lookup returned no checks. No expected RED, new-pin GREEN, or exact-head Actions success is claimed. The absence may reflect workflow triggering/connector visibility; it is not a pass.
+
+### Ownership, rollback and next action
+
+Only the RELEASE-owned compatibility static test, compatibility workflow and this RELEASE handover changed. The existing PR #291 accumulated diff still contains inherited CORE/PISONET paths requiring MASTER reconciliation; no such paths were touched. The compatibility workflow remains read-only and build-only. Rollback is limited to reverting the three RELEASE commits above on this draft branch; do not rewrite or reset shared refs.
+
+**Next:** PHX-RELEASE / repository administrator must obtain an actual PR/push run for the current source/test head and verify provenance plus both ESP32 core 3.3.13 and 4.0.0 jobs. If path-filtered CI is not triggering, repair/authorize the trigger through repository administration; do not infer a pass. PHX-QA should independently review the source pin and same-sketch-blob evidence. PHX-HARDWARE/MASTER should keep #327's source/test anchor current.
+
+No merge, signing, tag, publication, hardware flash, payment migration or customer deployment. Physical 150 power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
