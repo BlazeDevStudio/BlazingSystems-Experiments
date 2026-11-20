@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T20:20:54Z  
+**Updated:** 2026-11-20T20:22:04Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -254,3 +254,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Exact-head compatibility #44809606421 remains SUCCESS 3/3 on current Hardware source pin 1a631567eb0c / sketch blob ae0da8e2.
 - Full #44809606527 now has 24 SUCCESS, 0 FAILURE, 2 IN_PROGRESS (Android emulator and x86 simulations), and 4 production import/sign/publish jobs SKIPPED. It is not terminal and is not a Full PASS.
 - Windows #44809606428 remains FAILURE at PISONET-owned $buildWorkflow; publisher skipped.
+
+
+## UTC20 terminal RELEASE Full / production skips refresh — 2026-11-20T20:22Z
+
+- [RELEASE #291 terminal Full PASS with production jobs skipped](PHX_MASTER_UTC20_20261120_RELEASE291_FULL_TERMINAL_PASS_PRODUCTION_SKIPS.md).
+- Exact #291 compatibility #44809606421: SUCCESS 3/3 on current Hardware source pin 1a631567eb0c / ESP32 blob ae0da8e2.
+- Full #44809606527: terminal SUCCESS, 26 success / 0 failed / 0 cancelled / 4 production import/sign/publish jobs skipped.
+- Windows #44809606428: FAILURE at PISONET-owned $buildWorkflow; publisher skipped.
+- The terminal Full PASS is non-production CI only. PR #291 remains DRAFT and cross-owner review is outstanding; PRODUCTION NO-GO.
