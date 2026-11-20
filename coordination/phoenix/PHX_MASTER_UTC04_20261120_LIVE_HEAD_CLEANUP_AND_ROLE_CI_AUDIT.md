@@ -89,3 +89,16 @@ The requested private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corre
 ## 8. Release disposition
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unproven. No merge, release, signing, flash, payment operation, secret provisioning, or physical acceptance was performed.
+
+
+
+### Terminal PHX-RELEASE UTC04 exact-head readback — 2026-11-20T04:21Z
+
+This supersedes the earlier `55b078...` PENDING/QUEUED capture above. The live PR #291 docs head is now `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46`; its latest commit is a handover-only change. The release-owned workflow/test correction is `55b0782107f37dae28e2a27ddbae32008920f2b4`, pinning the compatibility matrix to Hardware source commit `369007bcbc684a0923a586e991f3aa0667cda105` and ESP32 sketch blob `1458f32881d3b340f1101dd0215618b54c1b688b`.
+
+- Compatibility PR run [#44673292516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292516): both core legs now terminal FAIL. Core 4.0.0 job `136079360910` reports 72 differing bytes in 5 ranges `176-207, 9713-9714, 9716-9717, 836436-836438, 1098143-1098175`; core 3.3.13 job `136079361287` reports 69 differing bytes in 4 ranges `176-207, 9667-9668, 9670-9671, 1044063-1044095`.
+- Compatibility push run [#44673286735](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673286735): both core legs terminal FAIL; core 4.0.0 job `136079251744` reports 69 differing bytes in 4 ranges `176-207, 9713-9714, 9716-9717, 1098143-1098175`; core 3.3.13 job `136079252038` reports 68 differing bytes in 4 ranges `176-207, 9667-9668, 9671, 1044063-1044095`.
+- Windows [#44673293276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673293276): handover and package parity pass; PISONET-owned `negative-selftest.ps1` fails because `$buildWorkflow` is uninitialized; publisher skipped.
+- BlazePwifi PR [#44673292595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292595): CI-0701, target builds and validation pass, but several v0.4 simulation jobs remain in progress at this read; not a terminal Full PASS. Push [#44673286800](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673286800) also has simulations still in progress.
+
+The new source pin is now exact, but the strict reproducibility guard still detects non-deterministic image content on both cores. Preserve the fail-closed comparator; do not normalize image bytes, patch linker outputs, or publish raw binaries. PISONET still owns the Windows self-test. RELEASE owns only its compatibility workflow and handover. No Master or subsystem source change occurred in this refresh.

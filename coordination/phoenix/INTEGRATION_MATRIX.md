@@ -2329,3 +2329,10 @@ The #49 adapter's rental rejection occurs after a backend `coin` request; the cu
 - Branch API reported `protected=false` on inspected refs; repository rulesets endpoints returned empty arrays. Effective organization-level rulesets were not established.
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. No #48/#49 route exists.
 - Private registry v11 and newer corrections were not found in the available Library search; historical root / v3–v7 snapshots were not substituted. No Google Drive connector was exposed.
+
+### Terminal PHX-RELEASE UTC04 exact-head supersession — 2026-11-20T04:21Z
+
+| PR / source | Exact current head | Terminal / in-progress evidence |
+|---|---|---|
+| RELEASE #291 | docs head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46`; workflow source `55b0782107f37dae28e2a27ddbae32008920f2b4`; Hardware source pin `369007bcbc684a0923a586e991f3aa0667cda105` | Compatibility PR #44673292516 and push #44673286735 both FAIL on both cores; Windows #44673293276 FAIL (`$buildWorkflow` unset); BlazePwifi PR #44673292595 has several simulations in progress, not terminal. |
+| HARDWARE #327 | docs head `bcd7757663ae6c1227b4fed65ad8a9674a35bd31`; firmware source `369007bcbc684a0923a586e991f3aa0667cda105`; ESP32 sketch blob `1458f32881d3b340f1101dd0215618b54c1b688b` | Release-owned exact-source matrix confirms pin/blob identity but both cores remain non-reproducible. Hardware Full still fails the QA-owned poll-signature fixture at #44671436863. |

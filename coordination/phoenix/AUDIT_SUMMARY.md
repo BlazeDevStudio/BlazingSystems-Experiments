@@ -1293,3 +1293,7 @@ Per repository `AGENTS.md`, the Library's root `BLAZE_PROJECT_REGISTRY.json` and
 - Full Master Python suite and Master GitHub Actions were NOT RUN. Container Git access failed DNS resolution; the local in-memory manifest/document checks below are not a substitute for the repository suite.
 
 **Next:** QA repairs the default-deny fixture and adds real backend no-mutation tests; PISONET repairs the `$buildWorkflow` self-test and answers the #49 review-scope request; RELEASE completes the new #291 exact-head runs and diagnoses reproducibility; CORE reviews the target-kind/server-time contract; repository administrator verifies protected admission; registry custodian restores v11 access.
+
+### Terminal PHX-RELEASE UTC04 refresh — 2026-11-20T04:21Z
+
+The release owner advanced #291 to docs head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46` and pinned the compatibility workflow to Hardware source `369007bcbc684a0923a586e991f3aa0667cda105`. The exact-source matrix then terminated FAIL on both ESP32 cores in both PR and push runs, with 68–72 differing bytes across 4–5 ranges; exact run/job evidence is in the UTC04 audit report. Windows remains blocked by PISONET's uninitialized `$buildWorkflow`; publisher skipped. The BlazePwifi PR build's compile/validation targets pass but v0.4 simulations are still running, so no Full PASS is claimed. Keep the reproducibility guard fail-closed.
