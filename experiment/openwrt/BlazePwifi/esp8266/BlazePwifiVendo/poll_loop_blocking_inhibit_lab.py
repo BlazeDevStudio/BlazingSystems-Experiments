@@ -572,23 +572,24 @@ RACE_MAIN = MAIN.replace(
 
 TIMING_MAIN = MAIN.replace(
     "int main(){",
-    "int main(){\\n"
-    "  resetState();\\n"
-    "  fakeNow=1501U;\\n"
-    "  pulseStart=1600;\\n"
-    "  pulseEnd=1680;\\n"
-    "  injectTimedPollPulse=true;\\n"
-    "  loop();\\n"
-    "  if(!timedPulseIsrInjected || pollCalls!=0 || pollStartAt!=0 ||\\n"
-    "     !journalRecoveryRequired || !LittleFS.exists(\\\"/pollpulse.fault\\\") ||\\n"
-    "     relayOn || ledOn || insertMode || !activeTarget.empty() ||\\n"
-    "     pendingPulses!=0U || pollIntakeSuspended ||\\n"
-    "     pollDrainAbortedOnActiveLine) return 47;\\n"
-    "  const std::string marker=LittleFS.files[\\\"/pollpulse.fault\\\"];\\n"
-    "  if(marker.find(\\\"COIN_INGRESS_UNRESOLVED\\\")==std::string::npos ||\\n"
-    "     marker.find(\\\"pulses=1\\\")==std::string::npos) return 49;\\n"
-    "  std::cout<<\\\"PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS\\\\n\\\";\\n"
-    "  return 0;\\n",
+    """int main(){
+  resetState();
+  fakeNow=1501U;
+  pulseStart=1600;
+  pulseEnd=1680;
+  injectTimedPollPulse=true;
+  loop();
+  if(!timedPulseIsrInjected || pollCalls!=0 || pollStartAt!=0 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pendingPulses!=0U || pollIntakeSuspended ||
+     pollDrainAbortedOnActiveLine) return 47;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 49;
+  std::cout<<"PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS\\n";
+  return 0;
+""",
     1,
 )
 
