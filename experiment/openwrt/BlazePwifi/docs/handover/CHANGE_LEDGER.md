@@ -490,3 +490,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `d497ee71f1d84d9fd0ca22dd1127a53d62515642` already includes another release worker's release-artifact action-pin coverage. No implementation was duplicated.
 - [ESP32 #44736348774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348774) completed both exact-core legs successfully for source `dc02efea6590`; this is scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Build #44736348760](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348760) and [Windows #44736348781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348781) fail closed at mandatory handover freshness after the source-only update; this entry supplies the required canonical handover evidence. Publisher paths remained skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — supersession audit: provenance image-verification refinement
+
+- Compatible head `5e36576b8b2cb71a207725a1662890fc2b124494` already includes another release worker's provenance and image-verification refinement. No implementation was duplicated.
+- Both exact-core legs in [ESP32 #44747503779](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503779) completed successfully for hardware source `dc02efea6590`; this is scoped CI evidence only and is not compatibility, signing, hardware, or production acceptance. At audit time [Build #44747503919](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503919) remained in progress. [Windows #44747504010](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747504010) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
