@@ -1269,3 +1269,63 @@ No merge, real-key signing, release tag, publication, hardware flash, payment mi
 Preserve both exact-build ELF files separately and inspect the pinned Xtensa `.flash.rodata` section bytes around the observed file offsets against the section's actual file offset, linker map and read-only symbol table. The current nm output supplies only nearest linker-boundary symbols, not containing symbols. Do not infer ownership from a nearest predecessor, modify compiler/linker flags, normalize hashes, or weaken byte equality until the changed bytes are attributed. PHX-QA should independently review the parser and diagnostics; PHX-MASTER retains migration/release gate authority.
 
 No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment. **PRODUCTION NO-GO.**
+
+
+---
+
+## PHX-RELEASE UTC09 — exact ELF section-byte comparison added (2026-11-20T09Z)
+
+**PR #291:** OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base:** `734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Source/test HEAD:** `c468f1a6d5a9d365c1088998f6ddc650ae104ca2`  
+**Hardware firmware source:** `369007bcbc684a0923a586e991f3aa0667cda105`  
+**Exact ESP32 sketch blob:** `1458f32881d3b340f1101dd0215618b54c1b688b`
+
+### One release-owned task
+
+Added a bounded exact-section byte comparator for the two preserved ELF outputs. It parses each build's pinned `objdump -h` section table independently and uses each ELF's own file offset; it does not assume section offsets are identical between ELF files.
+
+- Test-first commit: [`f655c784`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f655c784116a028d301d6275a3dc992d842dafc5).
+- Expected RED: [compatibility run #44710641754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710641754), both core jobs failed at the new synthetic tests because the initial comparator reused the first ELF's section file offset for the second ELF. Logs show the two intended offset-independence regressions failed; four other validation cases passed.
+- Corrected helper/workflow/test commit: [`c468f1a6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c468f1a6d5a9d365c1088998f6ddc650ae104ca2).
+- New files: `.github/scripts/compare_esp32_elf_sections.py` and `.github/scripts/test_compare_esp32_elf_sections.py`.
+- Existing read-only compatibility workflow now compares `.flash.appdesc` and `.flash.rodata` from the separately preserved first/second ELF files. Section differences are diagnostic output only; the exact application-image comparator remains the authoritative fail-closed gate.
+- Seven synthetic tests cover identical content at different ELF offsets, exact differing ranges, app-descriptor comparison, missing/duplicate sections, layout mismatch and truncated section bounds.
+
+### Exact-source Actions at source/test HEAD `c468f1a6d5a9d365c1088998f6ddc650ae104ca2`
+
+- PR compatibility [#44710956522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956522): **COMPLETED FAILURE** on both cores at the strict application-image comparator. Exact HARDWARE source/blob, Arduino CLI archive, installed core, section tests, symbol tests and all seven new section-comparison tests passed.
+- Both new section-comparison tests report `.flash.appdesc` **IDENTICAL** between the two ELF builds. The final binary's embedded `app_elf_sha256` and appended checksum/SHA are downstream image-generation values, not differences in the ELF app-descriptor section itself.
+- ESP32 core 3.3.13 / esp-x32 2610:
+  - `.flash.rodata`: 131,668 bytes; SHA-256 `97d292cda41c983dd080de78ed88cf777c4376032047cece087cd2ba7e274133` vs `ce0cd3e785acb8601ac34d8a98d0674678f89e4e6b72c80f5d40c50a3e3d7b6b`.
+  - Four differing bytes at section offsets 9379–9380 and 9382–9383; ELF file offsets 13763–13764 and 13766–13767. Observed byte pairs are ASCII digits `29` / `30` and `51` / `26`.
+  - Final application image: 1,044,096 bytes each; 69 differing bytes, ranges 176–207, 9667–9668, 9670–9671 and 1044063–1044095.
+- ESP32 core 4.0.0 / esp-x32 2512:
+  - `.flash.rodata`: 140,536 bytes; SHA-256 `e0389f2c3eee8cb8d67d17c6f0da7381da3b767087018bb62471d2d6b63db25a` vs `e1e0d7189cf3a1c5c3b1d17afc2b0415f374917f24dffe5d8b41a96b2e524032`.
+  - Three differing bytes at section offsets 9426 and 9428–9429; ELF file offsets 13810 and 13812–13813. The differing bytes are also ASCII digits.
+  - Final application image: 1,098,176 bytes each; 68 differing bytes, ranges 176–207, 9714, 9716–9717 and 1098143–1098175.
+- The `.flash.rodata` differences are consistent with a time-like string changing between the two compile invocations, but the surrounding bytes and exact producer have not yet been captured. This is a hypothesis, not an established root cause. The earlier source scan covered the sketch only; it did not prove that all included framework/library inputs are free of `__TIME__`, `__DATE__` or generated timestamps.
+- Push-triggered duplicate compatibility run [#44710949354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710949354) was automatically queued for the same source/test commit; it is not a separate implementation or acceptance claim.
+
+### Other exact-head CI
+
+- Full BlazePwifi [#44710956565](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956565): CI-0701 and validation **PASS**; ESP8266, ESP32, Android, all observed target builds and update bundle **PASS**. At this handover update, browser, x86, ESP8266 and Ruijie simulation jobs were still running. Production signing/import/publish jobs were **SKIPPED**; overall run not yet terminal and is not claimed as SUCCESS.
+- Windows [#44710956654](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956654): handover and package-parity PASS; PISONET-owned `negative-selftest.ps1` **FAIL** because `$buildWorkflow` is unset; publisher **SKIPPED**. No PISONET source was changed.
+
+### Current ownership / cross-repository blockers
+
+- MASTER #288 current head: `129aa462322fb0bff2aedec524f42bb829fd7f4b`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; PHX-RELEASE build workflow route remains `reimplementation-review`. No migration or shared-interface change.
+- Experiments #242 remains OPEN/DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`, based on `blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00`. #291 remains OPEN/DRAFT on that #242 head.
+- COE #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five PR workflows remain queued with zero jobs executed.
+- COE #31 is now extended by release-owned child PR #35 at `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`. Its latest source/docs CI reports 118 packaging tests PASS / 2 intentional skips, but 10/10 profile admission fails closed because approved site-scoped RFC 4193 ULA authority is unset; mandatory Bubblewrap sandbox also fails closed because the hosted runner lacks usable Bubblewrap/UID-map setup (exit 125). No firmware artifact or hardware acceptance.
+- COE #44 ULA installation-first-boot draft is at `582fd5d5e83e36b36546ac28534740298ba94af4`; synthetic UCI section-type tests passed, but site-level ULA authority remains unresolved and the mandatory sandbox is unavailable. It does not authorize integration.
+- COE #31/#35/#44 remain draft-only; no cross-repository files were copied or modified.
+- Private Drive registry v11 was not surfaced by the authorized exact-name Library search. Older registry snapshots were not substituted and no private contents were copied to GitHub.
+- PR #291's existing changed-file set includes pre-existing PISONET-owned paths; this UTC09 task changed only RELEASE-owned scripts/workflow and this RELEASE handover. No PISONET, CORE, RENTAL, HARDWARE, QA or MASTER implementation was modified.
+
+### Next release-owned action
+
+Capture a bounded ASCII/hex context window around the `.flash.rodata` offsets above from each preserved ELF, then identify the exact string and producer. Search the complete pinned source/framework/library inputs and generated build files for compile-time or generated time values. Do not add timestamp overrides, `SOURCE_DATE_EPOCH`, linker changes, hash normalization or comparator exceptions until the producer is identified and a source-linked regression exists.
+
+No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
