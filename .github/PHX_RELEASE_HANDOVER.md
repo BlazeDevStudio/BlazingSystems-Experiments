@@ -1329,3 +1329,15 @@ Added a bounded exact-section byte comparator for the two preserved ELF outputs.
 Capture a bounded ASCII/hex context window around the `.flash.rodata` offsets above from each preserved ELF, then identify the exact string and producer. Search the complete pinned source/framework/library inputs and generated build files for compile-time or generated time values. Do not add timestamp overrides, `SOURCE_DATE_EPOCH`, linker changes, hash normalization or comparator exceptions until the producer is identified and a source-linked regression exists.
 
 No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+### UTC09 docs-head CI follow-up — 2026-11-20T09:35Z
+
+This is a documentation-only reconciliation; no source/test or workflow implementation changed after `c468f1a6d5a9d365c1088998f6ddc650ae104ca2`.
+
+- Windows docs-head [#44711905542](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711905542) completed **FAILURE**: handover PASS; PISONET-owned `negative-selftest.ps1` fails because `$buildWorkflow` is unset; publisher SKIPPED. This does not belong to PHX-RELEASE.
+- Compatibility docs-head [#44711905559](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711905559): both exact-core jobs are still IN PROGRESS. No terminal result is claimed.
+- Full-build docs-head [#44711905643](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711905643): CI-0701 PASS; ESP8266 and observed target jobs are passing; validation, ESP32, Android and several target jobs remain in progress. Production signing/import/publish jobs are skipped. No overall result is claimed.
+- Push-triggered compatibility docs-head [#44711898736](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711898736) remains IN PROGRESS; push full-build docs-head [#44711898823](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44711898823) remains PENDING. These are automatic push/PR event duplicates, not additional implementation work.
+- Source/test-head PR compatibility [#44710956522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956522) and push compatibility [#44710949354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710949354) both completed FAILURE at the strict application-image comparator after all diagnostic tests passed.
+- Source/test-head full build [#44710956565](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710956565) was CANCELLED by the successor docs-only push: 24 successful jobs, 2 simulation jobs cancelled, 4 production jobs skipped, zero failed jobs. It is not an overall SUCCESS.
