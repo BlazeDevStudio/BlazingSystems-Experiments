@@ -43,7 +43,7 @@ At source/test head `dc02efea6590045155bf50f16fdd2d3924f6b415`:
   - `ignore-journal-recovery-output-deny` mutation rejected on both boards (expected exit 48).
   - `COIN_PULSE_CAPTURE_PASS 16/16` on each board.
   - `missing-transition-edge-ack` and `missing-pending-event-ready` mutations rejected on each board.
-  - The workflow retains explicit `SIMULATED_ONLY=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0` and `PHYSICAL_POWER_CUT_VERIFIED=0) markers.
+  - The workflow retains explicit `SIMULATED_ONLY=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0` and `PHYSICAL_POWER_CUT_VERIFIED=0` markers.
 - Relay/output polarity [run #44710536744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710536744), job `136200783513`: **SUCCESS**.
 - ESP32 boot-polarity job `136200783940` in the same run: **SUCCESS**.
 - Full BlazePwifi build [run #44710536750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44710536750): **QUEUED at handover time; no Full PASS claimed**.
