@@ -67,13 +67,18 @@
 
 ### 2.5 PHX-HARDWARE (Hardware & Firmware)
 - **Mission:** ESP32/ESP8266 coin controller firmware, pulse conditioning/debounce, client-side signature verification, LittleFS quarantine.
-- **Active Tasks:**
-  - [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) — Coin pulse missed during 3.5s synchronous ESP Vendo poll.
-- **Active PRs:**
-  - [PR #239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239) — Phase A fail-closed ESP coin admission pending provisioning.
-  - [PR #254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254) — ESP32 CORE config authentication primitive.
-  - [PR #283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283) — HW client-side response verification, full RNG nonce, setup HTML escaping & LittleFS quarantine.
-- **Assigned Scope Boundaries:** Owns firmware `.ino`, pin assignments, and electrical protocols. MUST NOT declare hardware accepted based solely on host C++ simulations.
+- **Active Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) — preserve coin-line edges during synchronous poll; maintain fail-closed admission and durable unresolved-event evidence.
+- **Current candidate stack (OPEN / DRAFT / UNMERGED; no merge authorized):**
+  - **#322** — current docs head 50d93e0de3d682550b6f02fb43484e76ad9c7e08; child of #320 at b2b41a3d6ce7887b9624137c966f58462895d3fa; source/test anchor 7ba56c1ba92dcffa2555e4cce10d3010c3afaf5b.
+  - **#323** — current docs head 1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17; child of #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08; source/test anchor d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb.
+  - **#326** — current docs head 58c558fb6a237935214621adc3dee65a10fe1a51; current focused source/test anchor 28e13fc82a250821e815fd84b5fd61f1769e7106; PR body records a #323 parent snapshot 988904e8bcd058b62a9fac4aa6319a9b7c5b2470.
+  - **#327 (active child)** — current docs/PR head b6304208d65548a9cfe371504badf03ae3e15dcf; exact poll-loop workflow/source/test commit 2f89326d5b555ffdb2bfaba0a404483d665aa614; base #326 at 58c558fb6a237935214621adc3dee65a10fe1a51.
+- **Master stack ancestry finding:** current #323 head 1761bf38 is an ancestor of #326 head 58c558fb; comparison is 42 commits ahead / 0 behind. The #326 body records prior parent snapshot 988904e8; that snapshot is 31 commits ahead of current #323 and #326 is 11 commits ahead of that snapshot. Treat this as parent-branch head movement requiring PHX-HARDWARE confirmation; Master will not rebase, force-push, merge, or silently select a replacement parent.
+- **Parallel open drafts, not the #322–#327 child chain:** #239 at d83b715b116185107737fef721c2eece8feebf39; #254 at bea6f44e66f5d692859449253facebf01b217891 (focused header run passes, Full build fails on missing mbedtls/sha256.h under ESP32 core 4.0.0); #283 at 830c355376380f9b5533d5cda2558beed41a593a. Do not cherry-pick or treat these as merged prerequisites.
+- **Current CI:** #327 focused quarantine #44675789220 and relay/output #44675789222 PASS; Full #44675789227 FAILS at QA-owned Missing poll signature check. All firmware target jobs completed successfully; downstream simulations/signing/publishing were skipped.
+- **Owner boundaries:** PHX-HARDWARE owns firmware and hardware labs; PHX-QA owns the stale positive poll-signature fixture; PHX-RELEASE owns Arduino core compatibility/reproducibility workflow; PHX-PISONET owns its Windows negative-selftest variable fix. No Master source edits or reassignment.
+- **COE #49:** Hardware explicitly ACKed audit-only and DECLINED implementation ownership in comment #7028198239. No route or source ownership transfer exists.
+- **Assigned Scope Boundaries:** Owns firmware .ino files, pin assignments, and electrical protocols. MUST NOT declare hardware accepted based solely on host C++ simulations.
 
 ### 2.6 PHX-QA (Independent QA & Security)
 - **Mission:** Challenge claims, build negative tests, run reproducible regression suites, verify failure-injection across all subsystems.
@@ -1549,3 +1554,16 @@ The #327 PR body header and #291 earlier handover pins are historical text, not 
 ### Terminal PHX-RELEASE UTC04 supersession — 2026-11-20T04:21Z
 
 Current #291 PR/docs head is `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46`; source/workflow correction is `55b0782107f37dae28e2a27ddbae32008920f2b4`, pinning Hardware source `369007bcbc684a0923a586e991f3aa0667cda105` and ESP32 sketch blob `1458f32881d3b340f1101dd0215618b54c1b688b`. Current compatibility PR #44673292516 and push #44673286735 both FAIL on both cores with 68–72 differing bytes; see the exact range breakdown in the UTC04 report. Windows #44673293276 still fails at PISONET-owned `$buildWorkflow`; publisher skipped. BlazePwifi PR #44673292595 has compile/validation success but v0.4 simulations remain in progress; do not count it as terminal Full PASS. The release role's earlier IN_PROGRESS checkpoint is superseded by this terminal job readback. No PISONET or Hardware source was edited by Master.
+
+### PHX-MASTER UTC04:39 live role-head correction — 2026-11-20
+
+| Role | Current PR / exact head | Exact-head evidence and boundary |
+|---|---|---|
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS; scoped DENY-only evidence. Separate hourly CORE owner retains all CORE source authority. |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329229 and #43653329235 PASS; scoped native/status-auth evidence. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS; scoped Windows CI. PISONET owns the $buildWorkflow negative-selftest correction. |
+| PHX-HARDWARE | #327 b6304208d65548a9cfe371504badf03ae3e15dcf; source/test 2f89326d5b555ffdb2bfaba0a404483d665aa614; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Focused #44675789220 / #44675789222 PASS; Full #44675789227 FAIL at QA-owned Missing poll signature check. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS but does not invoke NativeComInterfaceHandleLab; #292 has no exact-head run. |
+| PHX-RELEASE | #291 docs head c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46; workflow/source 55b0782107f37dae28e2a27ddbae32008920f2b4 | BlazePwifi #44673292595 PASS (26 successful jobs; production sign/publish skipped); compatibility #44673292516 FAIL on both ESP32 cores; Windows #44673293276 FAIL at PISONET-owned $buildWorkflow. |
+
+COE #26 remains the only manifest-pinned destination candidate and is frozen. COE #49 remains separate audit-only. OWNERSHIP_ROUTES.json is unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
