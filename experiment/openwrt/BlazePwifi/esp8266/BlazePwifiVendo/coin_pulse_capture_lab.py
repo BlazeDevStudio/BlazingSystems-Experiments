@@ -14,7 +14,6 @@ claimed.
 """
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 
 from firmware_lab_source import extract_function, mask_non_code
@@ -648,11 +647,7 @@ def main():
     print("PHYSICAL_RELAY_ACCEPTANCE=0")
     print("PHYSICAL_POWER_CUT_ACCEPTANCE=0")
 
+# The quarantine workflow owns poll_loop_blocking_inhibit_lab.py as a separate step.
+# Keep this entry point limited to the coin-pulse capture suite.
 if __name__ == "__main__":
     main()
-    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=START", flush=True)
-    poll_loop_lab = Path(__file__).with_name("poll_loop_blocking_inhibit_lab.py")
-    if not poll_loop_lab.is_file():
-        raise RuntimeError(f"missing companion lab: {poll_loop_lab}")
-    subprocess.run([sys.executable, str(poll_loop_lab)], check=True)
-    print("POLL_LOOP_BLOCKING_INHIBIT_LAB=PASS", flush=True)
