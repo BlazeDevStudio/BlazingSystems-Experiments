@@ -1940,3 +1940,19 @@ The exact-pin compatibility PASS is terminal. The Full run is still IN_PROGRESS 
 | PHX-RELEASE #291 | 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3; Full #44809606527 SUCCESS 26/26, 0 fail, 4 production jobs skipped; Windows #44809606428 FAILURE at PISONET $buildWorkflow | RELEASE retains workflow/packaging; PISONET fixes Windows self-test; CORE reviews three inherited paths; QA independently reviews. |
 
 Full is a terminal non-production CI pass only. Production import/sign/publish jobs were skipped; no production approval or release authority follows.
+
+
+### PHX-MASTER UTC20 — QA #292 recipient-contract exact-head reconciliation (2026-11-20T20:36Z)
+
+| Item | Exact identity / result |
+|---|---|
+| QA PR #292 | OPEN / DRAFT; head `75a3f66d9563e38a0a48b9cf487b0b057a91ea96`; historical base `b1ca02e2087f3b1a7169ceab9c34e52646e700df` |
+| QA regression | `tests/phoenix_coordination/test_recipient_contract.py` blob `14e101056c3e5caaeea942d7bcb50b3734846db7` |
+| Current Master verifier | `coordination/phoenix/verify_coordination.py` blob `3a6d0ca34cad54cd113abbda17d90898603547b3` |
+| Current Master tests | `test_verify_coordination.py` blob `e8671fa33e602ed4b4d352bba637ab9827cb4650` |
+| Current-head hosted CI | No PR-triggered run returned for #292 |
+| Bounded local retest | 4/4 PASS using exact QA test + exact example fixture Git blobs and the current verifier's extracted `validate_envelope()` function; not full module/repository CI |
+
+The QA branch still targets a historical pre-fix Master base. The current Master verifier accepts one exact registered role or `ALL` and rejects unknown, ambiguous, whitespace, case-variant and non-string recipients. QA evidence's prior 4/4 result used an earlier verifier blob `903df403...`; it is not a current-head CI result.
+
+**Next owner action:** PHX-QA rebases/replays the unchanged recipient regression on the current Master candidate, runs exact-head PR CI, and updates its evidence. PHX-MASTER does not edit QA-owned paths or merge the draft. The separate Blaze Production Continuation retains CORE ownership; no competing CORE work was started.
