@@ -168,21 +168,26 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
         directory.mkdir()
         (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"original-application")
         moved = parent / "moved-output"
-        original_listdir = os.listdir
+        original_open = module.os.open
         swap_state = {"done": False}
 
-        def replace_output_before_listing(directory_fd):
-            if not swap_state["done"]:
+        def replace_output_after_open(path_value, flags, *args, **kwargs):
+            descriptor = original_open(path_value, flags, *args, **kwargs)
+            if (
+                path_value == directory.name
+                and kwargs.get("dir_fd") is not None
+                and not swap_state["done"]
+            ):
                 directory.rename(moved)
                 directory.mkdir()
                 (directory / "BlazePwifiVendo32.ino.bin").write_bytes(b"replacement-application")
                 swap_state["done"] = True
-            return original_listdir(directory_fd)
+            return descriptor
 
-        with patch.object(os, "listdir", side_effect=replace_output_before_listing):
-            expect_rejected("output directory replaced during inspection", directory)
+        with patch.object(module.os, "open", side_effect=replace_output_after_open):
+            expect_rejected("output directory replaced after descriptor open", directory)
         if not swap_state["done"]:
-            errors.append("output-directory replacement injection was not reached")
+            errors.append("output-directory replacement injection did not run after the directory descriptor was opened")
 
     if errors:
         return errors
