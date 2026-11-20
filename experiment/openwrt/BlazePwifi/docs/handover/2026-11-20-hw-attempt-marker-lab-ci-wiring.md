@@ -26,7 +26,7 @@ It runs immediately after the pending-journal recovery lab in `.github/workflows
 
 - Quarantine/readback PR run [#44663186737](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44663186737), job `136046085508`: **COMPLETED SUCCESS** at exact commit `326e864794ce826f474d2fab9da6e9af9003e1dd`. The job verified literal checkout SHA. The quarantine-source step passed, and its log contains `PENDING_ATTEMPT_MARKER_PASS 28/28` for ESP32 and ESP8266 plus `PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS; actual flash NOT TESTED`.
 - The same quarantine job also completed the pending-journal recovery, source-quarantine, dual-store, poll-window, config-read, pulse-capture and boot-polarity labs successfully.
-- Relay/output polarity PR run [#44663186747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44663186747): **COMPLETED SUCCESS**.
+- Relay/output polarity PR run [#44663186747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44663186747): **COMPLETED SUCCESS**, jobs `136046085504` and `136046085725`.
 - Full BlazePwifi PR run [#44663186728](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44663186728): **TERMINAL CANCELLED** after validation job `136046085997` **FAILED** at QA-owned `Controller protocol parity`; exact log: `Missing poll signature check` in the ESP8266 controller sketch. All 13 firmware/platform target jobs, including ESP32 and ESP8266, completed successfully; Android was cancelled. Downstream simulations, update bundle, production sign handoff, candidate gate and publishers were cancelled or skipped. This is not Full validation acceptance.
 
 ## Scope and evidence limits
