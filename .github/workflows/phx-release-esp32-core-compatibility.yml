@@ -17,6 +17,11 @@ on:
       - ".github/scripts/verify_esp32_application_image.py"
       - ".github/scripts/verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
+      - ".github/scripts/write_build_provenance.py"
+      - ".github/scripts/test_build_provenance.py"
+      - ".github/scripts/verify_arduino_cli_archive.py"
+      - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/workflows/blazepwifi-build.yml"
       - ".github/PHX_RELEASE_HANDOVER.md"
   pull_request:
     branches:
@@ -35,6 +40,11 @@ on:
       - ".github/scripts/verify_esp32_application_image.py"
       - ".github/scripts/verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
+      - ".github/scripts/write_build_provenance.py"
+      - ".github/scripts/test_build_provenance.py"
+      - ".github/scripts/verify_arduino_cli_archive.py"
+      - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/workflows/blazepwifi-build.yml"
       - ".github/PHX_RELEASE_HANDOVER.md"
   workflow_dispatch:
 
@@ -46,6 +56,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  provenance:
+    name: Release artifact provenance regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Test release artifact provenance admission
+        run: python3 .github/scripts/test_build_provenance.py
+      - name: Test Arduino CLI archive verifier
+        run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
+      - name: Verify immutable release action pins
+        run: python3 .github/scripts/test_release_artifact_action_pins.py
+
   build:
     name: "ESP32 core ${{ matrix.esp32_core }} / source dc02efea6590"
     runs-on: ubuntu-latest
