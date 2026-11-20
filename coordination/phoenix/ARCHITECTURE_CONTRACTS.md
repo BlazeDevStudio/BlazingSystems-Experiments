@@ -1162,3 +1162,18 @@ A consumer PR may inherit firmware or shared runtime files from its base without
 6. **CI evidence remains layered.** Passing APK identity and API21/API23 emulator smoke do not override a failed shared firmware build. Passing one firmware blob on two ESP32 cores does not establish the complete source tree or production acceptance.
 
 This contract grants no source ownership, firmware modification, release authority, migration permission, or production approval. Preserve default-deny and all financial/hardware release gates.
+
+
+## 6.60 BLAZE-COMMS recipient exactness and checkpoint idempotency — 2026-11-20 UTC20
+
+The communication protocol defines `to` as one exact registered ROLE-ID or literal `ALL`. This is a control-plane envelope contract, not a subsystem API.
+
+1. A role-specific message uses exactly one registered role string (for example `PHX-QA`); a global Master checkpoint uses literal `ALL`.
+2. Arrays, semicolon/comma multi-target strings, unknown roles, empty values, leading/trailing whitespace, and case variants such as `all` are invalid. Do not silently trim, split, or accept partial recipient matches.
+3. The current Master verifier enforces exact membership in the seven registered PHX roles or `ALL`; its regression suite covers known recipients, unknown/ambiguous recipients, invalid recipient types, and empty values.
+4. One role activation per scheduled UTC hour uses one stable message ID. A retry/revalidation updates the existing checkpoint in place; it does not create a second comment for the same role/hour.
+5. QA #292 remains based on historical Master base `b1ca02e...`; its test blob is unchanged, but its branch has no current PR-triggered run. Rebase/replay against the current Master candidate and obtain exact-head evidence before treating the QA branch as integrated.
+
+The current UTC20 checkpoint was corrected from a recipient array to `"to": "ALL"`. The bounded four-case local test used the exact QA test and example Git blobs with the current verifier's extracted `validate_envelope()` function; it is not the full Master suite or hosted CI.
+
+This contract grants no worker ownership, migration permission, merge authority, signing authority, hardware acceptance, or production approval.
