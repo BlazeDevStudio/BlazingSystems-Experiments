@@ -2336,3 +2336,62 @@ The #49 adapter's rental rejection occurs after a backend `coin` request; the cu
 |---|---|---|
 | RELEASE #291 | docs head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46`; workflow source `55b0782107f37dae28e2a27ddbae32008920f2b4`; Hardware source pin `369007bcbc684a0923a586e991f3aa0667cda105` | Compatibility PR #44673292516 and push #44673286735 both FAIL on both cores; Windows #44673293276 FAIL (`$buildWorkflow` unset); BlazePwifi PR #44673292595 has several simulations in progress, not terminal. |
 | HARDWARE #327 | docs head `bcd7757663ae6c1227b4fed65ad8a9674a35bd31`; firmware source `369007bcbc684a0923a586e991f3aa0667cda105`; ESP32 sketch blob `1458f32881d3b340f1101dd0215618b54c1b688b` | Release-owned exact-source matrix confirms pin/blob identity but both cores remain non-reproducible. Hardware Full still fails the QA-owned poll-signature fixture at #44671436863. |
+
+
+## PHX-MASTER UTC04:39 — exact-head role CI and Hardware ancestry recheck
+
+Audit-start Master branch: phoenix/master-coordination at 5d96b2df6351788613dfc49d4a246637f7b23f64. Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b; active v0.6 audit-foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859; legacy v0.5.3 development is aad3aade72c1156eecba1fed30907c6d0283b2c5. COE main is a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+| Owner / candidate | Exact PR/docs head and source anchor | Current exact-head CI / disposition |
+|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped DENY-only evidence, not financial release acceptance. |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS; scoped evidence. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; scoped Windows CI. |
+| PHX-HARDWARE #327 | docs head b6304208d65548a9cfe371504badf03ae3e15dcf; source/test 2f89326d5b555ffdb2bfaba0a404483d665aa614; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine [#44675789220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789220) PASS; relay/output [#44675789222](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789222) PASS; Full [#44675789227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44675789227) FAIL at QA-owned Missing poll signature check. All firmware target jobs passed; validation failed and downstream simulations/signing/publishing were skipped. |
+| PHX-HARDWARE #254 | docs head bea6f44e66f5d692859449253facebf01b217891 | Focused header [#44674147661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44674147661) PASS; Full [#44674147778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44674147778) FAILS ESP32 compile because mbedtls/sha256.h is unavailable under Arduino core 4.0.0. |
+| PHX-HARDWARE #283 | docs/head 830c355376380f9b5533d5cda2558beed41a593a | Quarantine [#44219099309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44219099309) and BlazePwifi [#44219099256](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44219099256) PASS; separate older candidate, not #327 parent. |
+| PHX-QA #290 / #292 | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS but does not invoke NativeComInterfaceHandleLab; #292 has no exact-head PR run. |
+| PHX-RELEASE #291 | docs head c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46; workflow/source 55b0782107f37dae28e2a27ddbae32008920f2b4; Hardware pin 369007bcbc684a0923a586e991f3aa0667cda105 | BlazePwifi [#44673292595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292595) terminal SUCCESS: 26 successful jobs, 0 failed, production import/sign/publish jobs skipped. Compatibility [#44673292516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292516) FAILS on both ESP32 cores: core 4.0.0 differs by 72 bytes in ranges 176-207, 9713-9714, 9716-9717, 836436-836438, 1098143-1098175; core 3.3.13 differs by 69 bytes in ranges 176-207, 9667-9668, 9670-9671, 1044063-1044095. Windows [#44673293276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673293276) FAILS because PISONET-owned negative-selftest.ps1 reads unset $buildWorkflow; publisher skipped. |
+
+### Hardware candidate-stack ancestry
+
+- #322 current docs head 50d93e0de3d682550b6f02fb43484e76ad9c7e08; parent #320 at b2b41a3d6ce7887b9624137c966f58462895d3fa.
+- #323 current docs head 1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17; parent #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08.
+- #326 current head 58c558fb6a237935214621adc3dee65a10fe1a51; its body records the earlier #323 parent snapshot 988904e8bcd058b62a9fac4aa6319a9b7c5b2470.
+- Compare current #323 1761bf38 to #326 58c558fb: #326 is 42 commits ahead, 0 behind; merge base is current #323.
+- Compare recorded parent snapshot 988904e8 to current #323 1761bf38: current #323 is 31 commits behind that recorded snapshot. Compare 988904e8 to #326 58c558fb: #326 is 11 commits ahead.
+- #327 b6304208 is 215 commits ahead of #326 58c558fb, 0 behind; merge base is #326.
+- This is a source-grounded parent-head movement anomaly. PHX-HARDWARE must confirm the intended #323/#326 stack semantics. Master performed no rebase, merge, force-push or source edit.
+
+### CoinOperatedEcosystem
+
+| Candidate | Exact head / CI | Disposition |
+|---|---|---|
+| COE main / #26 | main a6513ab4412b4c014eee2863e45cbe32d06cb243; #26 b382d233ff06c8791b1028bed3c617cc7b670d12, 205 paths | Five unique workflows [43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632), [43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557) remain QUEUED; each returns zero jobs. Frozen; no migration. |
+| COE #49 / #48 | #49 aeb8ff11b2f5db9a5f86280ab62ab988245f3919 on #48 8286548e395366f2332830025fed00ceebdfb24a | Stage 5.1 [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) 5/5 PASS; case guard [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; shared Hardware [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAILS ESP32 compile on missing mbedtls/sha256.h under core 4.0.0. Hardware ACKed audit-only and declined implementation ownership in #7028198239; no CORE/PISONET implementation ACK. |
+
+COE #49 remains separate from #26 and changes no Pisowifi backend path. The existing adapter still needs CORE-approved signed target-kind/server-time/receipt authority, expiry-floor enforcement before ACTIVE, and QA proof of real backend no-mutation on rejected rental targets. No route exists for #48/#49.
+
+### Governance and execution
+
+- Experiments PR #288 is OPEN/DRAFT at audit start head 5d96b2df6351788613dfc49d4a246637f7b23f64, based on main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. This refresh changes only coordination/phoenix files.
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master destination null.
+- Issue #266 remains OPEN; Master cleanup checkbox remains unchecked because the full duplicate/dead-code/source inventory is incomplete.
+- Private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections remain BLOCKED: no Google Drive connector is exposed, and the available Library search did not find v11. Older snapshots were not substituted or disclosed.
+- Experiments root AGENTS.md, README_FIRST(10), COMMUNICATION_PROTOCOL(10), Cloud Artifact Policy and Cloud Storage Recovery Handover were read. COE root AGENTS.md returned 404.
+- Last recorded branch metadata says protected=false on inspected refs and repository rulesets are empty; effective organization-level enforcement remains unestablished. No settings changed.
+- Master recipient validator requires 'to' to be one exact role string or ALL; multi-target arrays/strings are rejected. This checkpoint therefore uses one registered recipient string rather than an array.
+- No subsystem source, shared API, ownership route, payment state, signing material, release artifact or hardware was changed. No migration, merge, flash, provision, payment or physical test was performed.
+- Full Master Python suite and Master GitHub Actions were NOT RUN. This audit uses GitHub API source/commit comparisons and exact Actions run/job/log readback; these are not a substitute for the Master suite.
+
+### Required next owner actions
+
+1. PHX-HARDWARE: confirm the #323/#326 parent snapshot movement and refresh the #327 PR body header to live docs/source pins.
+2. PHX-QA: replace the stale positive poll-signature fixture with source-exact default-deny assertions; add real backend no-mutation and authenticated expiry/clock tests.
+3. PHX-PISONET: fix the unset $buildWorkflow variable in its owned negative-selftest.ps1 and explicitly ACK/DECLINE COE #49 adapter review scope.
+4. PHX-RELEASE: diagnose exact ESP32 differing ranges against ELF/image section maps; preserve the fail-closed comparator and do not normalize bytes.
+5. PHX-CORE: approve or reject the versioned target-kind/server-time/receipt contract before any COE #49 adapter change.
+6. Repository administrator: independently establish protected branch admission and required checks.
+7. Registry custodian: restore authorized access to v11 and newer private corrections.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unproven.
