@@ -977,3 +977,7 @@ Source: Experiments HARDWARE PR #327 docs head d9072ce36e87a4bb1b9f1f5f888478a3c
 The source tree has 25 board-specific Python files (16 ESP8266, 9 ESP32); destination Hardware/tests/ has one generic shell test (blob f921c56cecc19cab1989507b9b4ade1f45dac54e). Source has three scoped Hardware workflows (poll-edge latch, quarantine byte readback, relay/output polarity); destination has one generic hardware-ci.yml (blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793). The latest source/test commit changes one lab file; firmware sketch blobs are unchanged from the earlier UTC07 snapshot. Test equivalence, import completeness and workflow parity are not established.
 
 The route manifest is unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY; Hardware routes are selective-review, PHX-MASTER destination is null. COE #26 has five queued workflows and zero jobs. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration is proposed.
+
+## PHX-MASTER UTC08 terminal CI and license-scope clarification — 2026-11-20
+
+The exact COE #26 tree contains `Pisowifi/LICENSE` at the same MIT blob SHA as source `experiment/openwrt/BlazePwifi/LICENSE` (`1ee55b94183417be977ca287cd7391f9a6f7e721`). It does **not** contain `Hardware/LICENSE`, `Hardware/NOTICE.md`, or root `NOTICE.md`; source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent. The sibling `Pisowifi/LICENSE` is not assumed to establish explicit Hardware subtree license/notice scope. This is a review clarification only; no file was copied or moved.

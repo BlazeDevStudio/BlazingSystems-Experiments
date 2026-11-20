@@ -1650,3 +1650,17 @@ See [UTC07 exact-head and provenance audit](PHX_MASTER_UTC07_20261120_HW327_STAC
 | #327 | docs d9072ce...; source/test 726981b... | #326 58c558fb... |
 
 The current #327 source/test commit changes only pending_attempt_marker_lab.py; the current docs commit changes only its handover. Firmware sketch blobs are unchanged from the prior UTC07 provenance readback.
+
+## PHX-MASTER UTC08 terminal CI supersession — 2026-11-20
+
+| Role / candidate | Exact live head | Terminal exact-head evidence | Owner action |
+|---|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS, scoped | Separate CORE automation retains implementation ownership. |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329229 and #43653329235 PASS, scoped | Physical Device Owner acceptance remains absent. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS, scoped | PISONET owns the #291 `$buildWorkflow` negative-selftest correction. |
+| PHX-HARDWARE #327 | docs `d9072ce36e87a4bb1b9f1f5f888478a3c35fe236`; source/test `726981b49fb415fd10b764cbb8c386a00fcdbcf1`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51` | Quarantine #44697742089 PASS; relay #44697742266 PASS; Full #44697742114 FAIL at QA-owned `Missing poll signature check` | QA corrects the fixture; firmware stays default-deny. |
+| PHX-HARDWARE #254 | `84c442a46ee2ee48ab733b10ff0f54edbc09ba9` | Focused #44683629378 PASS; Full #44683629491 FAIL on missing `mbedtls/sha256.h` | Separate non-actuating candidate; no cross-role fix. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no exact-head run | Native COM acceptance remains unverified. |
+| PHX-RELEASE #291 | docs `df189b079a89f52b6152e613f5f5a32817c05f04`; test `e6e9a7f42ac2a551509a1e70e95fc5be449830b5`; workflow `e359d9e5a28adea6b6604ccdf038a555ab4bdf2a` | Compatibility #44697909618 FAIL on POSIX nm parser; Full #44697909628 PASS with production jobs skipped; Windows #44697909649 FAIL on PISONET-owned unset `$buildWorkflow` | RELEASE fixes parser; PISONET fixes its own self-test; publisher stays skipped. |
+
+This terminal status supersedes the UTC07 in-progress labels. The previous completed two-core comparison #44692255708 still had unresolved `.flash.rodata` differences; the current parser failure does not clear that gate.

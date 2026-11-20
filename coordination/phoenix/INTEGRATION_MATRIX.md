@@ -2486,3 +2486,11 @@ Exact paths/blob identities and next-owner actions are in the [UTC07 provenance 
 ### Current COE destination
 
 COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243. Integration #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, 205 changed paths, five queued workflows and zero jobs. No destination acceptance or migration.
+
+## PHX-MASTER UTC08 terminal status supersession — 2026-11-20
+
+The UTC07 role matrix is superseded by terminal exact-head runs. HARDWARE #327 focused quarantine/relay PASS but Full validation FAILs at QA-owned `Missing poll signature check`; firmware remains default-deny. RELEASE #291 Full non-production build/simulation PASSes with production import/sign/publish skipped; the current ESP32 compatibility run FAILs on the POSIX `nm` parser regression; Windows fails in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. The previous completed two-core comparison still had unresolved `.flash.rodata` differences.
+
+COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Current source/destination Hardware sketch blobs differ; 25 source board-specific Python lab/helper files and three scoped workflows do not have equivalent destination test/workflow identities. The source MIT license blob is also present at destination `Pisowifi/LICENSE`, but explicit Hardware license/notice scope remains unresolved. No migration is staged.
+
+Master suite NOT RUN: local clone failed DNS and no Master-specific workflow was returned. Private Drive v11 registry remains inaccessible; no older snapshot was substituted. Issue #266 remains OPEN and the Master cleanup checkbox remains unchecked. **PRODUCTION NO-GO.**

@@ -1343,3 +1343,15 @@ Latest live owner heads and CI are recorded in ROLE_ASSIGNMENTS.md and INTEGRATI
 COE #26 remains frozen: five queued workflows / zero jobs, source/destination firmware blobs differ, Hardware LICENSE/NOTICE are absent at the destination, 25 source board-specific Python lab files have no exact destination test identities (only one generic shell test is present), and three source Hardware workflows are not exact destination imports. OWNERSHIP_ROUTES.json remains e4db324..., DRAFT_REVIEW_ONLY, Master target null. No migration is proposed or staged.
 
 The canonical private Drive registry v11 and newer corrections remain BLOCKED: the complete Library inventory exposed only v3–v7 registry snapshots, no Google Drive connector is available, and no older snapshot was substituted. Branch API reported main protected=false; ruleset listing was empty and effective organization-level enforcement remains unverified. Full Master Python suite and Master Actions NOT RUN; source/tree/API inspection is not test execution. No subsystem source or route changed. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC08 exact-head integration disposition — 2026-11-20
+
+| Candidate | Exact head | CI / provenance disposition |
+|---|---|---|
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only; not a source acceptance target. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN/DRAFT; five workflows queued / zero jobs; frozen. |
+| COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 and case checks pass; shared ESP32 CI fails; unassigned/audit-only. |
+
+Exact Hardware source/test tree `726981b49fb415fd10b764cbb8c386a00fcdbcf1` versus COE #26 tree `b382d233ff06c8791b1028bed3c617cc7b670d12`: ESP8266 and ESP32 sketch blobs differ; source has 25 board-specific Python lab/helper files and three scoped workflows, while destination has one generic shell test and one generic hardware workflow. The same MIT license blob exists at source `BlazePwifi/LICENSE` and destination sibling `Pisowifi/LICENSE`; no explicit `Hardware/LICENSE` or root/Hardware `NOTICE.md` was found. Test equivalence and Hardware notice scope remain unproven. No route or migration is approved.
+
+`OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, Master destination null.

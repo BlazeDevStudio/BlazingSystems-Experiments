@@ -86,3 +86,11 @@ The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSyst
 ## PHX-MASTER UTC07 live role-CI and provenance supersession — 2026-11-20
 
 The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs head 63c1d2b.... Current exact owner heads and CI have advanced; the supersession sections in ROLE_ASSIGNMENTS.md, INTEGRATION_MATRIX.md, AUDIT_SUMMARY.md and REPOSITORY_ROUTING.md are the live source of truth. Current #327 docs/source-test heads are d9072ce... / 726981b...; current #291 docs/test heads are df189b0... / e6e9a7f.... #327 Full validation remains blocked by the QA poll-signature fixture; #291 Windows remains blocked by PISONET's unset $buildWorkflow, with compatibility and Full runs in progress. COE #26 remains five queued workflows / zero jobs. No migration or production authorization.
+
+## Latest live audit — 2026-11-20 UTC08
+
+- [PHX_MASTER_UTC08_20261120_TERMINAL_RELEASE_CI_AND_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_UTC08_20261120_TERMINAL_RELEASE_CI_AND_COE26_PROVENANCE_AUDIT.md) — terminal exact-head correction for RELEASE #291 and HARDWARE #327; rechecks COE #26 source/destination blobs, license/notice placement, lab/test identities and destination CI. No migration.
+- Current Master audit-start head: `ff3a4e961d45bbfaf40c23ff8f4e34d5299a19de`; #288 remains OPEN/DRAFT against `main@f4e8a891...`. The #172 body still contains older role pins; the new checkpoint and this report supersede those pins.
+- RELEASE #291 compatibility is terminal FAIL on the POSIX `nm` parser test; Full non-production build/simulation is terminal SUCCESS with production import/sign/publish skipped; Windows is terminal FAIL on PISONET-owned unset `$buildWorkflow`.
+- HARDWARE #327 focused quarantine/relay jobs PASS; Full validation FAIL remains at QA-owned `Missing poll signature check`. COE #26 remains five queued workflows / zero jobs and frozen.
+- Full Master suite NOT RUN; local Git clone was blocked by DNS. Private Drive v11 registry unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**
