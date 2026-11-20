@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T20:16:04Z  
+**Updated:** 2026-11-20T20:19:08Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -237,3 +237,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Prior compatibility PASS #44799798721 is historical at the old source pin, not proof of the new pin. No exact-head compatibility or Full PASS is claimed yet.
 - The accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET paths. No ownership transfer or source edit by Master.
 - PR #288 remains at e45ed9f555817b7ab24e699d7e5ba9788bc31fea; all Master changes remain under coordination/phoenix/. COE #26 remains frozen; PRODUCTION NO-GO.
+
+
+## UTC20 terminal compatibility / Full-in-progress refresh — 2026-11-20T20:19Z
+
+- [RELEASE #291 new-pin compatibility PASS / Full still running](PHX_MASTER_UTC20_20261120_RELEASE291_NEW_PIN_COMPATIBILITY_PASS_FULL_IN_PROGRESS.md).
+- Current #291 head remains 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf. Exact compatibility #44809606421 now completed SUCCESS, 3/3 jobs: provenance plus ESP32 core 3.3.13 and 4.0.0 at source 1a631567eb0c / sketch blob ae0da8e2.
+- Full #44809606527 remains IN_PROGRESS: validation, firmware target and Android jobs pass; update bundle and ESP simulations pass; browser/Android/x86/board simulations still running; production signing/publishing skipped.
+- Windows #44809606428 FAILS at PISONET-owned $buildWorkflow; publisher skipped.
+- The prior “no exact-head run observed” note is superseded by the terminal compatibility result. No terminal Full pass or production approval is claimed.
