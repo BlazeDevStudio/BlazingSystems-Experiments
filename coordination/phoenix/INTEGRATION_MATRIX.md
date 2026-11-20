@@ -2494,3 +2494,26 @@ The UTC07 role matrix is superseded by terminal exact-head runs. HARDWARE #327 f
 COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Current source/destination Hardware sketch blobs differ; 25 source board-specific Python lab/helper files and three scoped workflows do not have equivalent destination test/workflow identities. The source MIT license blob is also present at destination `Pisowifi/LICENSE`, but explicit Hardware license/notice scope remains unresolved. No migration is staged.
 
 Master suite NOT RUN: local clone failed DNS and no Master-specific workflow was returned. Private Drive v11 registry remains inaccessible; no older snapshot was substituted. Issue #266 remains OPEN and the Master cleanup checkbox remains unchecked. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC08:40Z exact-head CI and destination supersession — 2026-11-20
+
+| Candidate | Exact head | Exact evidence | Disposition |
+|---|---|---|---|
+| Master #288 | `737f42b40cc25c718aa1f1964165f53a50988bd0` at audit start | No Master status records; local suite not run | Coordination-only OPEN/DRAFT. |
+| HARDWARE #327 | docs `d9072ce...`; source/test `726981b...` | #44697742089 / #44697742266 PASS; #44697742114 FAIL at QA poll-signature fixture | Simulated/CI only; default-deny preserved. |
+| RELEASE #291 | `e653889...`; source/test `a7ed8ff...` | #44702796235 26 PASS / 4 production skips; #44702796127 both-core reproducibility FAIL; #44702796072 PISONET self-test FAIL | No signing or publishing; strict comparator unchanged. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued / zero jobs | FROZEN; no destination acceptance. |
+| COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 + case PASS; shared Hardware CI FAIL | Separate unassigned/audit-only candidate. |
+
+### COE #26 exact import matrix correction
+
+Source tree `08735c3b...` contains 25 board-local Python labs; destination tree `8a7d4cf8...` contains zero Hardware Python files and one generic shell test. The three source `phx-hardware-*.yml` workflows are absent at destination; destination has only generic `hardware-ci.yml`. ESP8266/ESP32 sketch blobs differ. The same MIT blob exists at source `BlazePwifi/LICENSE` and destination sibling `Pisowifi/LICENSE`; source root NOTICE is absent from COE #26, and Hardware/LICENSE / Hardware/NOTICE.md are absent. Exact hashes and paths are in the UTC08:40Z audit report. No migration or staging.
+
+### Release and owner-scope blockers
+
+- #291 compatibility fails at the real two-build comparator: 67 differing bytes on core 3.3.13 and 68 on core 4.0.0, including `app_desc.app_elf_sha256`, unknown `.flash.rodata` bytes, and derived footer hashes.
+- #291 Windows fails because PISONET-owned `negative-selftest.ps1` reads `$buildWorkflow` uninitialized. PISONET owns this file; RELEASE must not silently absorb the PISONET fix.
+- #327 Full fails at QA-owned `Missing poll signature check`; firmware remains default-deny.
+
+**PRODUCTION NO-GO.**

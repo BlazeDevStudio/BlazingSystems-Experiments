@@ -94,3 +94,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 compatibility is terminal FAIL on the POSIX `nm` parser test; Full non-production build/simulation is terminal SUCCESS with production import/sign/publish skipped; Windows is terminal FAIL on PISONET-owned unset `$buildWorkflow`.
 - HARDWARE #327 focused quarantine/relay jobs PASS; Full validation FAIL remains at QA-owned `Missing poll signature check`. COE #26 remains five queued workflows / zero jobs and frozen.
 - Full Master suite NOT RUN; local Git clone was blocked by DNS. Private Drive v11 registry unavailable; no older snapshot substituted. **PRODUCTION NO-GO.**
+
+
+## Latest live exact-head supersession — 2026-11-20 UTC08:40Z
+
+- [UTC08:40 exact-head release, PISONET scope and COE #26 provenance audit](PHX_MASTER_UTC08_20261120_0840Z_RELEASE_REPRODUCIBILITY_PISONET_SCOPE_AND_COE26_IMPORT_MATRIX.md).
+- Master audit started from #288 head `737f42b40cc25c718aa1f1964165f53a50988bd0`; PR #288 remains OPEN/DRAFT against main `f4e8a891...`. The resulting commit is coordination-only; the route manifest remains `e4db324...`, DRAFT_REVIEW_ONLY, Master target null.
+- RELEASE #291 current head `e6538892...`: Full non-production build 26 PASS / 4 production jobs SKIPPED; strict ESP32 compatibility fails on 67/68 differing bytes; Windows fails at PISONET-owned `$buildWorkflow` self-test.
+- HARDWARE #327 current head `d9072ce...`: focused quarantine/relay PASS; Full validation fails at QA-owned `Missing poll signature check`.
+- COE #26 remains frozen at `b382d233...`, five workflows queued / zero jobs. Current exact tree review confirms 25 source board-specific Python labs vs zero destination Hardware Python tests, one generic shell test, three source Hardware workflows absent from destination, firmware blobs different, and Hardware license/notice scope unresolved.
+- Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. Full Master suite NOT RUN because local Git DNS failed. **PRODUCTION NO-GO.**

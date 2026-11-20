@@ -981,3 +981,14 @@ The route manifest is unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRA
 ## PHX-MASTER UTC08 terminal CI and license-scope clarification — 2026-11-20
 
 The exact COE #26 tree contains `Pisowifi/LICENSE` at the same MIT blob SHA as source `experiment/openwrt/BlazePwifi/LICENSE` (`1ee55b94183417be977ca287cd7391f9a6f7e721`). It does **not** contain `Hardware/LICENSE`, `Hardware/NOTICE.md`, or root `NOTICE.md`; source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent. The sibling `Pisowifi/LICENSE` is not assumed to establish explicit Hardware subtree license/notice scope. This is a review clarification only; no file was copied or moved.
+
+
+## PHX-MASTER UTC08:40Z — exact destination and cross-role scope hold (2026-11-20)
+
+COE #26 remains the only manifest-pinned integration candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, five queued workflows / zero jobs. `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+At exact #327 source / #26 destination trees, ESP8266 and ESP32 sketch blobs differ; 25 source board-local Python labs have no destination Python identities (destination has one generic shell test); three source Hardware workflows are absent from destination (destination has generic `hardware-ci.yml`); and explicit Hardware license/notice placement remains unresolved. No copy, move, rebase, cherry-pick, staging or route promotion is authorized by this audit.
+
+Separate cross-role scope hold: #291's 22-path diff includes PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`. The current failure is an unset `$buildWorkflow` at line 115. PISONET must own/approve the correction; Master will not modify it. RELEASE retains its workflow/ELF tooling scope.
+
+COE #49 remains separate and audit-only; no route exists for it. The private v11 registry/newer corrections remain inaccessible. No migration proposed.

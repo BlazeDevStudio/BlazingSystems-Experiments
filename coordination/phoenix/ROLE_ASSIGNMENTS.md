@@ -1664,3 +1664,19 @@ The current #327 source/test commit changes only pending_attempt_marker_lab.py; 
 | PHX-RELEASE #291 | docs `df189b079a89f52b6152e613f5f5a32817c05f04`; test `e6e9a7f42ac2a551509a1e70e95fc5be449830b5`; workflow `e359d9e5a28adea6b6604ccdf038a555ab4bdf2a` | Compatibility #44697909618 FAIL on POSIX nm parser; Full #44697909628 PASS with production jobs skipped; Windows #44697909649 FAIL on PISONET-owned unset `$buildWorkflow` | RELEASE fixes parser; PISONET fixes its own self-test; publisher stays skipped. |
 
 This terminal status supersedes the UTC07 in-progress labels. The previous completed two-core comparison #44692255708 still had unresolved `.flash.rodata` differences; the current parser failure does not clear that gate.
+
+
+## PHX-MASTER UTC08:40Z live owner-head and CI supersession — 2026-11-20
+
+| Role | Exact owner PR head | Exact-head CI / disposition |
+|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS, scoped; separate CORE continuation retains implementation. |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329229 / #43653329235 PASS, scoped; no physical Device Owner acceptance. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS, scoped; native COM bench unverified. |
+| PHX-HARDWARE #327 | docs `d9072ce36e87a4bb1b9f1f5f888478a3c35fe236`; source/test `726981b49fb415fd10b764cbb8c386a00fcdbcf1`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51` | #44697742089 quarantine PASS; #44697742266 relay PASS; #44697742114 Full FAIL at QA-owned Missing poll signature check. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no exact-head run. |
+| PHX-RELEASE #291 | `e6538892ea91aa864f78f88524dcc3f576b7e17a`; source/test `a7ed8ff01c5b7d2a6621cbe31eb45063fef4bf88` | #44702796235 Full 26 PASS / 4 production skips; #44702796127 strict two-core reproducibility FAIL; #44702796072 Windows FAIL at PISONET-owned `$buildWorkflow`. |
+
+**Ownership collision:** the overall #291 diff includes `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1` (base blob `8aba7adf...`, #291 head blob `8b69174b...`). This path is PISONET-owned; PISONET must own/approve its fix. Master did not edit it.
+
+COE #26 remains frozen. No role source ownership, branch or route was changed. See the UTC08:40Z audit report for full exact evidence and next actions.

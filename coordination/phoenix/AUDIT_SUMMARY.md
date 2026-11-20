@@ -1355,3 +1355,16 @@ The canonical private Drive registry v11 and newer corrections remain BLOCKED: t
 Exact Hardware source/test tree `726981b49fb415fd10b764cbb8c386a00fcdbcf1` versus COE #26 tree `b382d233ff06c8791b1028bed3c617cc7b670d12`: ESP8266 and ESP32 sketch blobs differ; source has 25 board-specific Python lab/helper files and three scoped workflows, while destination has one generic shell test and one generic hardware workflow. The same MIT license blob exists at source `BlazePwifi/LICENSE` and destination sibling `Pisowifi/LICENSE`; no explicit `Hardware/LICENSE` or root/Hardware `NOTICE.md` was found. Test equivalence and Hardware notice scope remain unproven. No route or migration is approved.
 
 `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, Master destination null.
+
+
+## PHX-MASTER UTC08:40Z — current blocker supersession (2026-11-20)
+
+The latest exact-head audit is [PHX_MASTER_UTC08_20261120_0840Z_RELEASE_REPRODUCIBILITY_PISONET_SCOPE_AND_COE26_IMPORT_MATRIX.md](PHX_MASTER_UTC08_20261120_0840Z_RELEASE_REPRODUCIBILITY_PISONET_SCOPE_AND_COE26_IMPORT_MATRIX.md).
+
+- #327: quarantine/relay focused CI PASS; Full validation FAIL at QA-owned poll-signature assertion. Do not weaken firmware default-deny.
+- #291: non-production Full build/simulation 26 PASS / 4 production skips; compatibility fails both cores at strict reproducibility (67/68 differing bytes); Windows fails in PISONET-owned `negative-selftest.ps1`.
+- #291 diff has a cross-role PISONET path; PISONET owns the correction. Master did not edit it.
+- COE #26: five queued workflows / zero jobs; exact current source/destination tree review shows 25 source board-specific Python labs vs zero destination Hardware Python labs, three source workflows absent from destination, differing sketch blobs, and unresolved Hardware license/notice scope. No migration.
+- Private v11 registry/newer corrections remain inaccessible; Master suite NOT RUN due local Git DNS failure. Branch protection effective rules remain UNKNOWN.
+
+**Next:** QA repairs the negative poll fixture; PISONET owns the Windows test fix; RELEASE investigates the remaining ELF/image bytes; COE integration owner completes per-file destination provenance; registry custodian restores v11 access. **PRODUCTION NO-GO.**
