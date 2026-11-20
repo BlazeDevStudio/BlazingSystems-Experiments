@@ -10,6 +10,8 @@ on:
       - ".github/scripts/test_inspect_esp32_elf_sections.py"
       - ".github/scripts/compare_esp32_elf_sections.py"
       - ".github/scripts/test_compare_esp32_elf_sections.py"
+      - ".github/scripts/verify_esp32_source_date_epoch.py"
+      - ".github/scripts/test_verify_esp32_source_date_epoch.py"
       - ".github/scripts/inspect_esp32_elf_symbols.py"
       - ".github/scripts/test_inspect_esp32_elf_symbols.py"
       - ".github/scripts/verify_esp32_application_image.py"
@@ -26,6 +28,8 @@ on:
       - ".github/scripts/test_inspect_esp32_elf_sections.py"
       - ".github/scripts/compare_esp32_elf_sections.py"
       - ".github/scripts/test_compare_esp32_elf_sections.py"
+      - ".github/scripts/verify_esp32_source_date_epoch.py"
+      - ".github/scripts/test_verify_esp32_source_date_epoch.py"
       - ".github/scripts/inspect_esp32_elf_symbols.py"
       - ".github/scripts/test_inspect_esp32_elf_symbols.py"
       - ".github/scripts/verify_esp32_application_image.py"
@@ -105,6 +109,7 @@ jobs:
         run: |
           python3 .github/scripts/test_inspect_esp32_elf_sections.py
           python3 .github/scripts/test_compare_esp32_elf_sections.py
+          python3 .github/scripts/test_verify_esp32_source_date_epoch.py
 
       - name: Test release-owned ESP32 ELF symbol inspector
         run: |
