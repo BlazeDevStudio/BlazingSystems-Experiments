@@ -698,6 +698,26 @@ class BuildProvenanceTests(unittest.TestCase):
 
 
 
+    def test_run_passes_bounded_timeout(self):
+        completed = SimpleNamespace(returncode=0, stdout="tool 1.0\\n", stderr="")
+        with patch.object(
+            provenance.subprocess, "run", return_value=completed
+        ) as runner:
+            self.assertEqual(provenance._run(["tool", "--version"]), "tool 1.0")
+        self.assertEqual(runner.call_args.kwargs.get("timeout"), 120)
+
+    def test_run_timeout_is_reported_as_provenance_error(self):
+        timeout = provenance.subprocess.TimeoutExpired(
+            ["tool", "--version"], timeout=120
+        )
+        with patch.object(provenance.subprocess, "run", side_effect=timeout):
+            with self.assertRaisesRegex(
+                provenance.ProvenanceError,
+                "command timed out after 120s",
+            ):
+                provenance._run(["tool", "--version"])
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
