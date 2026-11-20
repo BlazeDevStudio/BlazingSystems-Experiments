@@ -28,6 +28,28 @@ def extract(source, name):
                 return source[match.start():pos + 1]
     raise AssertionError(f"unbalanced production function: {name}")
 
+
+def verify_lexical_extractor():
+    fixture = r'''
+void lexicalFixture() {
+  const char *ordinary = "}";
+  const char *raw = R"PHX({ raw brace })PHX";
+  /* } in a block comment */
+  if (ordinary[0] == '}') { return; }
+}
+'''
+    extracted = extract(fixture, "lexicalFixture")
+    if "if (ordinary[0] == '}') { return; }" not in extracted:
+        raise AssertionError(
+            "source extractor truncated a C++ literal/comment fixture"
+        )
+    if extracted.count("return;") != 1 or not extracted.rstrip().endswith("}"):
+        raise AssertionError("source extractor returned an incomplete function")
+    print("POLL_RESPONSE_LEXICAL_EXTRACTOR_PASS")
+
+
+verify_lexical_extractor()
+
 STUBS = r"""
 #include <cctype>
 #include <cstdint>
