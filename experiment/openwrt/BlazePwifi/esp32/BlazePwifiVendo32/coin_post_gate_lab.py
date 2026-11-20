@@ -7,28 +7,16 @@ NO real backend, money or hardware.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
 BOARDS = [
     ("ESP32", ROOT/"esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT/"esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
 ]
-
-def extract(source: str, signature: str) -> str:
-    pos=source.find(signature)
-    if pos<0:
-        raise RuntimeError(f"Missing firmware signature {signature}")
-    brace=source.find("{",pos)
-    depth=0
-    for end in range(brace,len(source)):
-        if source[end]=="{":
-            depth+=1
-        elif source[end]=="}":
-            depth-=1
-            if depth==0:
-                return source[pos:end+1]
-    raise RuntimeError(f"Unterminated {signature}")
 
 TEMPLATE=r'''
 #include <cstdint>
@@ -77,15 +65,15 @@ int main(){
 '''
 for board,path in BOARDS:
     source=path.read_text(encoding="utf-8")
-    func=extract(source,"bool canAttemptCoinPost(){")
+    func=extract_function(source,"canAttemptCoinPost")
     if "fsReady" not in func or "!journalRecoveryRequired" not in func or "pendingReady" not in func or "pendingPulses>0" not in func:
         raise SystemExit(f"{board}: missing required pending dispatch condition")
-    loop=extract(source,"void loop(){")
+    loop=extract_function(source,"loop")
     if "if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED" not in loop:
         raise SystemExit(f"{board}: coin post bypasses journal guard")
     if 'post("coin"' not in loop:
         raise SystemExit(f"{board}: unexpected coin post call site")
-    pulse_capture=extract(source,"void sampleCoinPulseEdge(bool active){")
+    pulse_capture=extract_function(source,"sampleCoinPulseEdge")
     if "if(!savePending())" not in pulse_capture or "fsReady=false;" not in pulse_capture or "pendingReady=true;" not in pulse_capture:
         raise SystemExit(f"{board}: failed journal write handling missing from pulse-capture helper")
     if "sampleCoinPulseEdge(active)" not in loop:
@@ -174,7 +162,7 @@ GUARD = '''  if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget
 '''
 for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
-    helper = extract(source, "void handleCoinPostResponse(const String &response){")
+    helper = extract_function(source, "handleCoinPostResponse")
     if helper.count(GUARD) != 1:
         raise SystemExit(f"{board}: event-bound authentication guard changed unexpectedly")
 
