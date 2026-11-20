@@ -204,7 +204,7 @@ def main() -> None:
     # helper is compiled and failure-injected by coin_pulse_capture_lab.py.
     functions = functions.replace(
         configure,
-        "bool quarantineCoinIngressTransition(){ return true; }\\n" + configure,
+        "bool quarantineCoinIngressTransition(){ return true; }\n" + configure,
         1,
     )
 
