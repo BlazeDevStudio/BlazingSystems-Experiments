@@ -81,7 +81,7 @@ def _read_at(descriptor: int, size: int, offset: int) -> bytes:
 def _read_esp_app_elf_sha256(descriptor: int) -> str | None:
     """Return the ESP32 app descriptor's embedded ELF SHA only for a valid image."""
     image_header = _read_at(descriptor, 2, 0)
-    segment_header = _read_at(descriptor, ESP_IMAGE_HEADER_SIZE, ESP_IMAGE_SEGMENT_HEADER_SIZE)
+    segment_header = _read_at(descriptor, ESP_IMAGE_SEGMENT_HEADER_SIZE, ESP_IMAGE_HEADER_SIZE)
     app_magic = _read_at(descriptor, 4, ESP_APP_DESC_OFFSET)
     app_elf_sha = _read_at(
         descriptor,
