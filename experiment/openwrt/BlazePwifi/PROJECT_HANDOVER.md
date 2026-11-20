@@ -1066,3 +1066,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Compatible head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46` already contains another release worker's exact-core matrix refinement. No implementation was duplicated.
 - [Build #44673292595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292595) completed scoped CI successfully, including the handover freshness and release-toolchain contracts. [ESP32 #44673292516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292516) remains fail-closed; it is not compatibility acceptance. [Windows #44673293276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673293276) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC05 — supersession audit: reproducibility diagnostic expansion
+
+- Compatible head `8d0c975816569849118c95637078cc29509ef3a0` already includes another release worker's reproducibility diagnostic expansion. No implementation was duplicated.
+- [Build #44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) completed scoped CI successfully. Both exact-core legs in [ESP32 #44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
