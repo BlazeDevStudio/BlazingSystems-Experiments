@@ -117,7 +117,7 @@ Idx Name          Size      VMA       LMA       File off  Algn
         self.assertEqual(result["nearest_preceding"][0]["distance"], 0)
 
     def test_accepts_posix_nm_row_without_size_field(self) -> None:
-        symbols = parse_nm_symbols("zero_addr a 0\\n")
+        symbols = parse_nm_symbols("zero_addr a 0\n")
         self.assertEqual(len(symbols), 1)
         self.assertEqual(symbols[0]["name"], "zero_addr")
         self.assertEqual(symbols[0]["value"], 0)
