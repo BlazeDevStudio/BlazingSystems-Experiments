@@ -1148,3 +1148,17 @@ The exact current source candidate is Experiments HARDWARE #327 at 1a631567eb0c1
 Current COE #26 destination source inspection identifies keyless signature bypass, unauthenticated remote-config application, format-on-mount-failure, quarantine append without verified commit before pending clear, and unauthenticated quarantine deletion. These are static source findings, not an observed physical/customer incident. Destination remains FROZEN until exact blob provenance, complete lab import/equivalence, license/NOTICE scope, pinned toolchain, destination CI and independent Hardware/QA/Release owner acceptance are verified.
 
 No source file was modified by this contract update; no firmware, payment, migration or release authority is granted.
+
+
+## 6.59 Cross-role firmware baseline and exact-build provenance — 2026-11-20 UTC20
+
+A consumer PR may inherit firmware or shared runtime files from its base without changing those paths. Integration review must therefore distinguish the consumer's changed-file scope from its inherited source baseline.
+
+1. **Pin the actual artifact source.** A firmware compatibility result must record the exact source commit, firmware file Git blob, board target, toolchain/core version, workflow run and job. A branch label or a passing build on a different source commit is insufficient.
+2. **Scope the claim to the tested blob.** If a workflow tests an unchanged sketch blob from an earlier commit, it proves that blob under the tested toolchain. It does not prove the later host-lab tree, workflow wiring, or other source changes at a newer commit.
+3. **Do not repair inherited firmware in a consumer PR.** The firmware owner controls firmware changes; the consumer role owns only its declared changed paths. A stale inherited firmware baseline requires owner-coordinated base/source selection or an explicitly qualified compatibility result, not an unauthorized edit by the consumer.
+4. **Keep handover authority separate.** Canonical PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md remain CORE-owned. RELEASE owns toolchain and release-workflow qualification. Master records the dependency and routes the action; it does not edit those source paths.
+5. **Exact #328 example.** RENTAL #328 at 0e0da62 inherits ESP32 sketch blob 29f1125d from #289, with an unconditional mbedtls/sha256.h include. Current HARDWARE #327 source blob ae0da8e2 selects PSA crypto for Mbed TLS 4 and mbedtls/sha256.h for Mbed TLS 3. The #328 core-4.0.0 compile fails because the inherited header is absent; its six changed files do not include the sketch. This is a cross-role baseline blocker, not a Rental-owned firmware defect.
+6. **CI evidence remains layered.** Passing APK identity and API21/API23 emulator smoke do not override a failed shared firmware build. Passing one firmware blob on two ESP32 cores does not establish the complete source tree or production acceptance.
+
+This contract grants no source ownership, firmware modification, release authority, migration permission, or production approval. Preserve default-deny and all financial/hardware release gates.
