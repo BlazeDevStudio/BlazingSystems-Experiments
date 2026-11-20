@@ -309,6 +309,94 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
     if workflow_content.count('".github/scripts/verify_esp32_reproducible_build.py"') != 2:
         errors.append("reproducibility helper must be included in both workflow path filters")
 
+
+    helper_source = REPRODUCIBLE_HELPER.read_text(encoding="utf-8")
+    for marker in (
+        "ESP_APP_DESC_MAGIC_WORD",
+        "ESP_APP_DESC_APP_ELF_SHA256_OFFSET",
+        "difference_ranges=",
+        "classification=",
+    ):
+        if marker not in helper_source:
+            errors.append(f"reproducibility verifier is missing ESP32 image diagnostic marker: {marker}")
+
+    def synthetic_esp32_image(elf_sha: bytes, app_magic: int = 0xABCD5432) -> bytes:
+        if len(elf_sha) != 32:
+            raise ValueError("synthetic ELF SHA must be exactly 32 bytes")
+        image = bytearray(32 + 256)
+        image[0] = 0xE9
+        image[1] = 1
+        image[24:28] = (0x3F400020).to_bytes(4, "little")
+        image[28:32] = (256).to_bytes(4, "little")
+        image[32:36] = app_magic.to_bytes(4, "little")
+        image[176:208] = elf_sha
+        return bytes(image)
+
+    def expect_classification(
+        label: str,
+        first_payload: bytes,
+        second_payload: bytes,
+        expected_classification: str,
+        required_fragments: tuple[str, ...] = (),
+    ) -> None:
+        with tempfile.TemporaryDirectory(prefix="phx-reproducible-esp-desc-") as temporary:
+            root = Path(temporary)
+            first = root / "first" / expected_name
+            second = root / "second" / expected_name
+            first.parent.mkdir()
+            second.parent.mkdir()
+            first.write_bytes(first_payload)
+            second.write_bytes(second_payload)
+            try:
+                module.compare_application_images(first, second, "BlazePwifiVendo32")
+            except ValueError as exc:
+                message = str(exc)
+                if f"classification={expected_classification}" not in message:
+                    errors.append(
+                        f"{label}: expected classification {expected_classification}; got {message}"
+                    )
+                for fragment in required_fragments:
+                    if fragment not in message:
+                        errors.append(f"{label}: diagnostic omitted {fragment}")
+            except Exception as exc:
+                errors.append(f"{label}: unexpected diagnostic exception: {exc}")
+            else:
+                errors.append(f"{label}: reproducibility verifier accepted different images")
+
+    elf_sha_a = bytes(range(32))
+    elf_sha_b = bytes(reversed(range(32)))
+    expect_classification(
+        "only ESP app ELF SHA field differs",
+        synthetic_esp32_image(elf_sha_a),
+        synthetic_esp32_image(elf_sha_b),
+        "ESP_APP_DESC_APP_ELF_SHA256_ONLY",
+        (
+            "difference_ranges=['176-207']",
+            "differing_bytes=32",
+            f"app_elf_sha256_first={elf_sha_a.hex()}",
+            f"app_elf_sha256_second={elf_sha_b.hex()}",
+        ),
+    )
+
+    image_a = bytearray(synthetic_esp32_image(elf_sha_a))
+    image_b = bytearray(image_a)
+    image_b[240] ^= 0x01
+    expect_classification(
+        "non-descriptor application content differs",
+        bytes(image_a),
+        bytes(image_b),
+        "OTHER_IMAGE_CONTENT_DIFF",
+        ("difference_ranges=['240-240']", "differing_bytes=1"),
+    )
+
+    expect_classification(
+        "invalid ESP app descriptor magic is not classified as ELF-SHA-only",
+        synthetic_esp32_image(elf_sha_a),
+        synthetic_esp32_image(elf_sha_b, app_magic=0x12345678),
+        "UNCLASSIFIED_IMAGE_DIFF",
+        ("difference_ranges=['32-35']",),
+    )
+
     if errors:
         return errors
     print(
