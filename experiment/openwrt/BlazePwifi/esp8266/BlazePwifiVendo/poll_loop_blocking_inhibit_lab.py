@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Execute the actual ESP loop() around the synchronous poll with bounded host I/O stubs.
 
-The production loop, poll-window helpers, output gate and default-deny
-acceptPollResponse() are extracted unchanged from both sketches. Secondary
+The production loop, poll-window helpers, output gate, coin POST disposition
+helper and default-deny acceptPollResponse() are extracted unchanged from both sketches. Secondary
 NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
 separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
@@ -517,15 +517,17 @@ for board,path in BOARDS.items():
     init_store=extract_function(source, "initPendingStore")
     sample=extract_function(source, "sampleCoinPulseEdge")
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
+    handle=extract_function(source, "handleCoinPostResponse")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
-                 begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile):
+                 begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
+                 handle_source=handle):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
                 quiet_source+begin_source+configure_source+accept_source+write_fault_source+
-                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+sample_source+loop_source+main_source)
+                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     edge_hook = begin.replace(

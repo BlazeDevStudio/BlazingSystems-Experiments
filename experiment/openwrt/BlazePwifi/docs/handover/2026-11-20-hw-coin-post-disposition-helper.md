@@ -30,3 +30,13 @@ No HTTP wire format, CORE/finance API, persistent schema, GPIO, relay polarity, 
 ## Next action
 
 PHX-QA independently repairs the stale positive poll-signature fixture in `tests/controllers.sh` and reruns Full validation at the exact current #327 head. PHX-CORE must publish the canonical event-bound receipt/disposition bytes and golden vectors before any positive coin disposition is enabled. PHX-MASTER must keep #327 in the canonical hardware stack and retain the unassigned COE #48 audit-only boundary.
+
+
+## First exact-head CI result and harness correction
+
+The first push/PR workflow run at commit `2418166ee37c08d5ba668f3f247aa494c0abeb91` exposed two test-harness integration gaps, not a production firmware runtime failure:
+
+- Quarantine PR run [#44656950647](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656950647), job `136025405268`, passed the existing ESP8266 poll parser/default-deny cases but then the poll-response lab's extraction wrapper rejected a typed signature string; that wrapper expects a bare function name.
+- The same job's actual-loop harness, `poll_loop_blocking_inhibit_lab.py`, compiles the extracted production `loop()` and needed the newly extracted `handleCoinPostResponse()` definition included after its fake backend stubs.
+
+This follow-up corrects both harness integrations and re-runs the exact-source workflow. The failed run is retained as failure evidence; it is not relabeled PASS. The separate relay/output job result is being reconciled independently. No production money, hardware or release gate is claimed.

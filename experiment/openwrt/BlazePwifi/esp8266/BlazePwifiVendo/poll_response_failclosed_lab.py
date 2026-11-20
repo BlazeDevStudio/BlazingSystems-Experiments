@@ -278,7 +278,7 @@ for board,path in BOARDS.items():
                 print(board, "COIN_POST_DISPOSITION RED: loop retains inline journal disposition bypass")
                 failed.append(board)
             else:
-                handler = extract(source, "void handleCoinPostResponse(const String &response){")
+                handler = extract(source, "handleCoinPostResponse")
                 auth_guard = handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
                 coin_success = handler.find('if(pollJsonTopLevelTrue(response,"ok"))')
                 clear_pending = handler.find("clearPending();")
