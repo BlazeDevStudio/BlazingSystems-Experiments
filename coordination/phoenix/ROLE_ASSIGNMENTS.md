@@ -1712,3 +1712,14 @@ The #291 current exact-head result supersedes earlier #291 labels: the compatibi
 ## PHX-MASTER UTC11 ownership hold
 
 The current #291 changed-file list includes experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/PublisherMockCli.ps1 and negative-selftest.ps1. These remain PISONET-owned paths. PHX-MASTER did not edit them, assign them to RELEASE, or create a competing worker.
+
+## PHX-MASTER UTC11 11:40Z live exact-head supersession — 2026-11-20
+
+This revalidation supersedes the earlier UTC11 #291 status only. Current owner heads and exact CI:
+- HARDWARE #327: 89442ce681df965b16c80f73055236a0d842fe0c; quarantine #44722725391 and relay/output #44722725315 PASS; Full #44722725399 FAIL at QA-owned Missing poll signature check.
+- RELEASE #291: 0d4a3c9213a253d64f54de296af306386f915d82; compatibility #44728953554 PASS on both pinned ESP32 core legs; Windows #44728953500 FAIL in PISONET-owned negative-selftest.ps1 because $buildWorkflow is unset; Full #44728953513 CANCELLED with production signing/publishing skipped.
+- #291 changed-file scope still includes PISONET-owned PublisherMockCli.ps1 and negative-selftest.ps1. PISONET owns their correction; RELEASE owns its workflow/tests. No Master source change or ownership transfer.
+- CORE #252, RENTAL #240/#287/#289 and PISONET #255 retain only their scoped PASS results. QA #290 remains scoped PASS without NativeComInterfaceHandleLab; QA #292 has no exact-head run.
+- COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows queued / zero jobs.
+
+See PHX_MASTER_UTC11_20261120_LIVE_TERMINAL_CI_AND_COE26_PROVENANCE_1140Z.md for run URLs, exact source/destination blobs, test import identities and owner actions.
