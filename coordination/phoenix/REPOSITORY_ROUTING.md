@@ -962,3 +962,18 @@ Exact COE #26 destination blobs:
 Both firmware files differ. Source MIT LICENSE blob \`1ee55b94...\` is present under BlazePwifi; no Hardware LICENSE/NOTICE is present in COE #26. The source has 25 board-specific Python lab files and three scoped PHX-HARDWARE workflows; the destination has one generic shell test and one generic Hardware CI workflow. The destination's five workflows remain queued with zero jobs.
 
 No migration is proposed. Any later proposal must compare every selected source/destination blob and mode at exact SHAs, carry license/notice obligations, prove imported test identity and workflow behavior, verify dependencies and rollback, obtain source-owner and independent QA approval, and pass destination CI. COE #48/#49 are outside the manifest and remain unassigned/audit-only.
+
+## PHX-MASTER UTC07 live role-CI and provenance supersession — 2026-11-20 (exact current source/destination recheck)
+
+Source: Experiments HARDWARE PR #327 docs head d9072ce36e87a4bb1b9f1f5f888478a3c35fe236, source/test anchor 726981b49fb415fd10b764cbb8c386a00fcdbcf1 (base #326 58c558fb6a237935214621adc3dee65a10fe1a51). Destination: COE integration PR #26 b382d233ff06c8791b1028bed3c617cc7b670d12, against COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+| Item | Source #327 exact blob | Destination #26 exact blob | Result |
+|---|---|---|---|
+| ESP8266 sketch | b956bc031df32ef69350dec368eaa91073b5a638 | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different |
+| ESP32 sketch | 1458f32881d3b340f1101dd0215618b54c1b688b | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different |
+| Updated source lab pending_attempt_marker_lab.py | 1a6be62160a7bdb1e70fdf63a34ee2233e4e3fa4 | No exact destination identity | Source-only |
+| Source Hardware license / notice | BlazePwifi LICENSE 1ee55b94183417be977ca287cd7391f9a6f7e721; root NOTICE f6d92cd21465312be5993631fe26977219be0fb9 | No Hardware/LICENSE, Hardware/NOTICE.md, root LICENSE or root NOTICE | License/notice scope incomplete |
+
+The source tree has 25 board-specific Python files (16 ESP8266, 9 ESP32); destination Hardware/tests/ has one generic shell test (blob f921c56cecc19cab1989507b9b4ade1f45dac54e). Source has three scoped Hardware workflows (poll-edge latch, quarantine byte readback, relay/output polarity); destination has one generic hardware-ci.yml (blob fe79adbdb3745a22c5ef6d1f0c87c868b7785793). The latest source/test commit changes one lab file; firmware sketch blobs are unchanged from the earlier UTC07 snapshot. Test equivalence, import completeness and workflow parity are not established.
+
+The route manifest is unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY; Hardware routes are selective-review, PHX-MASTER destination is null. COE #26 has five queued workflows and zero jobs. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration is proposed.

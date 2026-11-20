@@ -2469,3 +2469,20 @@ The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSyst
 Current #327 source ESP8266/ESP32 blobs \`b956bc03...\` / \`1458f328...\` differ from #26 destination blobs \`c8be98f7...\` / \`3cc7ec54...\`. Source \`BlazePwifi/LICENSE\` is MIT (blob \`1ee55b94...\`); destination \`Hardware/\` has no LICENSE/NOTICE. Source board folders contain 25 Python lab files (16 ESP8266 + 9 ESP32); destination \`Hardware/tests/\` contains one shell test, not those exact lab identities. Source has three separate PHX-HARDWARE workflows; destination has one generic hardware workflow. #26 has no completed destination jobs. **No import or move proposed.**
 
 Exact paths/blob identities and next-owner actions are in the [UTC07 provenance report](PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md). All production gates remain CLOSED / NO-GO.
+
+## PHX-MASTER UTC07 live role-CI and provenance supersession — 2026-11-20 (current exact-head matrix)
+
+| Role / candidate | Exact current PR head | Exact-head CI | Disposition |
+|---|---|---|---|
+| PHX-MASTER #288 | f5ae3a1f31d42d681d7e8730aedbbca2bc6353ce at refresh start | No Master-specific run surfaced; full Master suite NOT RUN | Coordination-only draft; all pre-refresh paths under coordination/phoenix/. |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS | Scoped DENY-only evidence; separate CORE owner. |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329229 / #43653329235 PASS | Scoped only; no device acceptance. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS | Scoped Windows CI; native COM bench unverified. |
+| HARDWARE #327 | docs d9072ce36e87a4bb1b9f1f5f888478a3c35fe236; source/test 726981b49fb415fd10b764cbb8c386a00fcdbcf1; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | #44697742089 quarantine PASS; #44697742266 relay PASS; #44697742114 Full IN_PROGRESS with validation FAIL at Missing poll signature check | QA fixture remains blocker; do not weaken firmware default-deny. |
+| HARDWARE #254 | 84c442a46ee2ee48ab733b10ff0f54edbc09ba9 | #44683629378 focused PASS; #44683629491 Full FAIL | Separate candidate; missing mbedTLS header and handover freshness remain. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no exact-head run | Native acceptance absent. |
+| RELEASE #291 | docs df189b079a89f52b6152e613f5f5a32817c05f04; test e6e9a7f42ac2a551509a1e70e95fc5be449830b5; workflow e359d9e5a28adea6b6604ccdf038a555ab4bdf2a | #44697909618 compatibility IN_PROGRESS; #44697909628 Full IN_PROGRESS; #44697909649 Windows FAIL at unset $buildWorkflow; prior #44696502510 parser test RED | Release parser and PISONET negative-selftest blockers remain; publisher skipped. |
+
+### Current COE destination
+
+COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243. Integration #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12, 205 changed paths, five queued workflows and zero jobs. No destination acceptance or migration.

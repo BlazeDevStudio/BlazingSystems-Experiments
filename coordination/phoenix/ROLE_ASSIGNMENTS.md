@@ -1626,3 +1626,27 @@ COE #26 remains OPEN/DRAFT with five queued workflows and zero jobs. #48 \`82865
 See [UTC07 exact-head and provenance audit](PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md) for source/destination blobs, license gap, 25 source lab identities vs one destination shell test, exact workflows and CI.
 
 **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC07 live role-CI and provenance supersession — 2026-11-20 (current owner-head/CI table)
+
+| Role | Current owner PR / exact head | Current exact-head evidence | Owner boundary / next action |
+|---|---|---|---|
+| PHX-MASTER | #288 phoenix/master-coordination at f5ae3a1f31d42d681d7e8730aedbbca2bc6353ce at refresh start; 121 changed paths, all under coordination/phoenix/ | No Master-specific CI surfaced; full Master suite NOT RUN | Coordination, architecture contracts, provenance and matrices only. |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS, scoped | Separate CORE continuation owns source; review target-kind/server-time/receipt contract when requested. |
+| PHX-RENTAL | #289 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329229 and #43653329235 PASS, scoped | No physical Device Owner acceptance. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS, scoped | PISONET owns the $buildWorkflow negative-selftest correction in #291. |
+| PHX-HARDWARE | #327 docs d9072ce36e87a4bb1b9f1f5f888478a3c35fe236; source/test 726981b49fb415fd10b764cbb8c386a00fcdbcf1; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44697742089 PASS; relay #44697742266 PASS; Full #44697742114 IN_PROGRESS with validation FAIL at QA-owned Missing poll signature check | Keep firmware default-deny; QA corrects its fixture. Do not weaken firmware assertions. |
+| PHX-HARDWARE (parallel) | #254 84c442a46ee2ee48ab733b10ff0f54edbc09ba9 | Focused sanitizer #44683629378 PASS; Full #44683629491 FAIL | Separate non-actuating candidate; Full blocker includes handover freshness and missing ESP32 core-4 mbedTLS header. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no exact-head run | Own poll-signature fixture and independent native/backend acceptance. |
+| PHX-RELEASE | #291 docs df189b079a89f52b6152e613f5f5a32817c05f04; test e6e9a7f42ac2a551509a1e70e95fc5be449830b5; workflow e359d9e5a28adea6b6604ccdf038a555ab4bdf2a | Compatibility #44697909618 IN_PROGRESS; Full #44697909628 IN_PROGRESS; Windows #44697909649 FAIL at PISONET-owned unset $buildWorkflow; publisher skipped. Prior test-first #44696502510 RED on 3-field POSIX nm row parser. | RELEASE owns parser/ELF workflow; PISONET owns its negative self-test; keep comparator fail-closed and publisher skipped. |
+
+### Current Hardware chain
+
+| PR | Exact current head | Exact base |
+|---|---|---|
+| #322 | 50d93e0de3d682550b6f02fb43484e76ad9c7e08 | #320 b2b41a3d6ce7887b9624137c966f58462895d3fa |
+| #323 | 988904e8bcd058b62a9fac4aa6319a9b7c5b2470 | #322 50d93e0d... |
+| #326 | 58c558fb6a237935214621adc3dee65a10fe1a51 | #323 988904e8... |
+| #327 | docs d9072ce...; source/test 726981b... | #326 58c558fb... |
+
+The current #327 source/test commit changes only pending_attempt_marker_lab.py; the current docs commit changes only its handover. Firmware sketch blobs are unchanged from the prior UTC07 provenance readback.

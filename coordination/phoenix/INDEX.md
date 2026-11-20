@@ -82,3 +82,7 @@ The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSyst
 ## Latest live audit — 2026-11-20 UTC07
 
 - [PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md](PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md) — corrects #323/#326 ancestry, reconciles #327 exact-head CI and role PRs, and records exact Hardware source-vs-COE #26 blobs, license/NOTICE gap, test-import completeness and destination CI. No migration or source ownership change.
+
+## PHX-MASTER UTC07 live role-CI and provenance supersession — 2026-11-20
+
+The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs head 63c1d2b.... Current exact owner heads and CI have advanced; the supersession sections in ROLE_ASSIGNMENTS.md, INTEGRATION_MATRIX.md, AUDIT_SUMMARY.md and REPOSITORY_ROUTING.md are the live source of truth. Current #327 docs/source-test heads are d9072ce... / 726981b...; current #291 docs/test heads are df189b0... / e6e9a7f.... #327 Full validation remains blocked by the QA poll-signature fixture; #291 Windows remains blocked by PISONET's unset $buildWorkflow, with compatibility and Full runs in progress. COE #26 remains five queued workflows / zero jobs. No migration or production authorization.
