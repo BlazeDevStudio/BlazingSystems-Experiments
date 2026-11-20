@@ -36,6 +36,29 @@ def extract(source: str, name: str) -> str:
     raise RuntimeError(f"unbalanced production function: {name}")
 
 
+def verify_extractor_ignores_non_code_braces() -> None:
+    """A brace in a C++ literal/comment must not truncate a production function."""
+    fixture = r"""
+void target() {
+  const char *quoted = "}";
+  const char *raw = R"tag({ raw })tag";
+  // }
+  /* } */
+  const char *after = "still inside";
+}
+void following() {}
+"""
+    extracted = extract(fixture, "target")
+    if 'const char *after = "still inside";' not in extracted:
+        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: non-code brace truncated target()")
+    if "void following()" in extracted:
+        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: extractor crossed into following()")
+    print("OUTPUT_EXTRACTOR_LEXICAL_FIXTURE_PASS")
+
+
+verify_extractor_ignores_non_code_braces()
+
+
 CPP = r'''
 #include <cstdint>
 #include <iostream>
