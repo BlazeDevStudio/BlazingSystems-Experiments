@@ -397,6 +397,103 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
         ("difference_ranges=['32-35']",),
     )
 
+
+    def synthetic_segmented_image(elf_sha: bytes) -> bytes:
+        if len(elf_sha) != 32:
+            raise ValueError("synthetic ELF SHA must be exactly 32 bytes")
+        first_segment_size = 10000
+        second_segment_size = 64
+        first_data_start = 32
+        second_header_start = first_data_start + first_segment_size
+        second_data_start = second_header_start + 8
+        segments_end = second_data_start + second_segment_size
+        checksum_offset = ((segments_end // 16) + 1) * 16 - 1
+        image = bytearray(checksum_offset + 1 + 32)
+        image[0] = 0xE9
+        image[1] = 2
+        image[23] = 1
+        image[24:28] = (0x3F400020).to_bytes(4, "little")
+        image[28:32] = first_segment_size.to_bytes(4, "little")
+        image[first_data_start:second_header_start] = b"\xA5" * first_segment_size
+        image[second_header_start:second_header_start + 4] = (0x3F800000).to_bytes(4, "little")
+        image[second_header_start + 4:second_data_start] = second_segment_size.to_bytes(4, "little")
+        image[second_data_start:segments_end] = b"\x5A" * second_segment_size
+        image[32:36] = (0xABCD5432).to_bytes(4, "little")
+        image[176:208] = elf_sha
+        image[checksum_offset] = 0xEF
+        image[checksum_offset + 1:checksum_offset + 33] = bytes(range(32))
+        return bytes(image)
+
+    def expect_layout_diff(
+        label: str,
+        first_payload: bytes,
+        second_payload: bytes,
+        required_fragments: tuple[str, ...],
+    ) -> None:
+        with tempfile.TemporaryDirectory(prefix="phx-reproducible-layout-") as temporary:
+            root = Path(temporary)
+            first = root / "first" / expected_name
+            second = root / "second" / expected_name
+            first.parent.mkdir()
+            second.parent.mkdir()
+            first.write_bytes(first_payload)
+            second.write_bytes(second_payload)
+            try:
+                module.compare_application_images(first, second, "BlazePwifiVendo32")
+            except ValueError as exc:
+                message = str(exc)
+                for fragment in required_fragments:
+                    if fragment not in message:
+                        errors.append(f"{label}: diagnostic omitted {fragment}: {message}")
+            except Exception as exc:
+                errors.append(f"{label}: unexpected diagnostic exception: {exc}")
+            else:
+                errors.append(f"{label}: reproducibility verifier accepted different images")
+
+    segmented = synthetic_segmented_image(elf_sha_a)
+    segment_mutation = bytearray(segmented)
+    for changed_offset in (9714, 9716, 9717):
+        segment_mutation[changed_offset] ^= 0x01
+    expect_layout_diff(
+        "actual drift offsets map to the ESP image segment",
+        segmented,
+        bytes(segment_mutation),
+        (
+            "difference_ranges=['9714-9714', '9716-9717']",
+            "difference_regions_first=",
+            "segment[0]_data",
+            "load_addr=0x3f400020",
+            "checksum_offset=10111",
+        ),
+    )
+
+    second_segment_mutation = bytearray(segmented)
+    second_segment_mutation[10043] ^= 0x01
+    expect_layout_diff(
+        "second segment data is mapped independently",
+        segmented,
+        bytes(second_segment_mutation),
+        ("segment[1]_data", "load_addr=0x3f800000"),
+    )
+
+    checksum_mutation = bytearray(segmented)
+    checksum_mutation[10111] ^= 0x01
+    expect_layout_diff(
+        "ESP image checksum byte is classified separately",
+        segmented,
+        bytes(checksum_mutation),
+        ("10111-10111:image_checksum",),
+    )
+
+    appended_hash_mutation = bytearray(segmented)
+    appended_hash_mutation[10112] ^= 0x01
+    expect_layout_diff(
+        "appended ESP image SHA is classified separately",
+        segmented,
+        bytes(appended_hash_mutation),
+        ("10112-10112:appended_sha256",),
+    )
+
     if errors:
         return errors
     print(
