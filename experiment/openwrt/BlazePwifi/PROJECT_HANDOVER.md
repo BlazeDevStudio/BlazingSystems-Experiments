@@ -1087,3 +1087,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Compatible head `e6e9a7f42ac2a551509a1e70e95fc5be449830b5` already contains another release worker's ELF-symbol diagnostic refinement. No implementation was duplicated.
 - [Build #44696502456](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502456) completed scoped CI successfully. Both exact-core legs in [ESP32 #44696502510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502510) fail closed at `Test release-owned ESP32 ELF symbol inspector` for source `369007bcbc68`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44696502324](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502324) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — supersession audit: ELF-symbol correction exposes reproducibility gate
+
+- Compatible head `e6538892ea91aa864f78f88524dcc3f576b7e17a` already includes another release worker's ELF-symbol diagnostic correction. No implementation was duplicated.
+- [Build #44702796235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796235) completed scoped CI successfully. Both exact-core legs in [ESP32 #44702796127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796127) now reach and fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this remains diagnostic failure evidence, not compatibility acceptance. [Windows #44702796072](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796072) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
