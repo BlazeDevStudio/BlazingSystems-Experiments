@@ -3,19 +3,20 @@
 # Final exact-head CI is re-triggered after the handover index synchronization and result recording.
 """Source-exact GPIO polarity lab for the ESP32 and ESP8266 output gate.
 
-Compiles the production writeLogical() and applyOutputs() bodies from both
-sketches. It verifies active-high and active-low OFF levels, every admission
-inhibit, and independent LED/relay enable switches. Two mutation builds prove
-the lab rejects an inverted GPIO mapping and a removed poll-inhibit gate.
+Uses the shared lexical-aware C/C++ extractor to compile the production
+writeLogical() and applyOutputs() bodies from both sketches. It verifies
+active-high and active-low OFF levels, every admission inhibit, and independent
+LED/relay enable switches. Mutation builds reject parser and output-gate regressions.
 
 Host simulation only: it does not measure relay contacts, board pins, driver
 polarity, wiring, or coin-acceptor behavior.
 """
-import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from firmware_lab_source import extract_function
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -25,19 +26,9 @@ BOARDS = {
 
 
 def extract(source, name):
-    match = re.search(
-        r"\bvoid\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source
-    )
-    if not match:
-        raise RuntimeError("missing production function: " + name)
-    depth = 0
-    for pos in range(match.end() - 1, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():pos + 1]
+    return extract_function(source, name)
+
+
 def verify_lexical_extractor_regression():
     cases = (
         ("ordinary string", '  const char *value = "}";'),
