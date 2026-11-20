@@ -1,4 +1,4 @@
-name: PHX BlazeRental API21 Android 5 emulator smoke
+name: PHX BlazeRental API21 and API23 emulator smoke
 
 on:
   pull_request:
@@ -20,13 +20,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  api21-smoke:
-    name: Android 5.0 x86 debug install and Activity launch (no policy)
+  legacy-android-smoke:
+    name: Android API${{ matrix.api }} x86 debug APK install and launch
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [21, 23]
     timeout-minutes: 55
     env:
       TARGET: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
       GRADLE_VERSION: 4.4.1
+      EXPECTED_API: ${{ matrix.api }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -54,15 +59,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p rental-api21-evidence
-          git rev-parse HEAD | tee rental-api21-evidence/source-head.txt
+          mkdir -p rental-api${{ matrix.api }}-evidence
+          git rev-parse HEAD | tee rental-api${{ matrix.api }}-evidence/source-head.txt
           curl -fsSL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -o /tmp/blazerental-gradle.zip
           unzip -q /tmp/blazerental-gradle.zip -d /opt
           (
             cd "$TARGET"
             ANDROID_HOME=/tmp/blazerental-sdk27 ANDROID_SDK_ROOT=/tmp/blazerental-sdk27 \
               "/opt/gradle-$GRADLE_VERSION/bin/gradle" --no-daemon --stacktrace assembleAospDebug
-          ) 2>&1 | tee rental-api21-evidence/compile.log
+          ) 2>&1 | tee rental-api${{ matrix.api }}-evidence/compile.log
       - name: Verify KVM support
         shell: bash
         run: |
@@ -77,7 +82,7 @@ jobs:
       - name: Boot API21 emulator, verify APK, install and launch
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
-          api-level: 21
+          api-level: ${{ matrix.api }}
           arch: x86
           target: default
           profile: pixel_2
@@ -89,15 +94,15 @@ jobs:
         if: always()
         shell: bash
         run: |
-          mkdir -p rental-api21-evidence
-          timeout 8s adb devices -l > rental-api21-evidence/adb-devices.txt 2>&1 || true
-          timeout 8s adb logcat -d -t 1000 > rental-api21-evidence/logcat-postrun.txt 2>&1 || true
+          mkdir -p rental-api${{ matrix.api }}-evidence
+          timeout 8s adb devices -l > rental-api${{ matrix.api }}-evidence/adb-devices.txt 2>&1 || true
+          timeout 8s adb logcat -d -t 1000 > rental-api${{ matrix.api }}-evidence/logcat-postrun.txt 2>&1 || true
       - name: Upload debug APK and diagnostics (NOT production)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PHX-Rental-API21-SMOKE-${{ github.sha }}
+          name: PHX-Rental-API${{ matrix.api }}-SMOKE-${{ github.sha }}
           path: |
-            rental-api21-evidence/
+            rental-api${{ matrix.api }}-evidence/
             experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build/outputs/apk/aosp/debug/*.apk
           if-no-files-found: error
