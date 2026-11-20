@@ -1118,3 +1118,10 @@ Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTE
 - Compatible head `2f06930fe8744fb7196094deecf5fda65b72fd07` already includes another release worker's ELF-section comparison diagnostics. No implementation was duplicated.
 - [Build #44712211371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211371) completed scoped CI successfully. Both exact-core legs in [ESP32 #44712211209](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211209) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this remains diagnostic failure evidence, not compatibility acceptance. [Windows #44712211221](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211221) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC10 — supersession audit: current-source ELF comparison diagnostics
+
+- Compatible head `c3728216ac3431fd05c03ca45b3d4f4c1d075850` already includes another release worker's current-source ELF comparison diagnostics. No implementation was duplicated.
+- [Build #44722116304](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722116304) completed scoped CI successfully. Both exact-core legs in [ESP32 #44722115957](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115957) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for newer hardware source `dc02efea6590`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44722115932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115932) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
