@@ -30,12 +30,14 @@ def fail(message: str) -> int:
 
 def check_application_image_verifier(workflow_content: str) -> list[str]:
     errors: list[str] = []
-    invocation = (
+    invocations = (
         'python3 .github/scripts/verify_esp32_application_image.py '
-        '--output-dir "$output_dir" --sketch-name "BlazePwifiVendo32"'
+        '--output-dir "$first_output_dir" --sketch-name "BlazePwifiVendo32"',
+        'python3 .github/scripts/verify_esp32_application_image.py '
+        '--output-dir "$second_output_dir" --sketch-name "BlazePwifiVendo32"',
     )
-    if workflow_content.count(invocation) != 1:
-        errors.append("compatibility workflow must invoke the exact ESP32 application-image verifier exactly once")
+    if any(workflow_content.count(invocation) != 1 for invocation in invocations):
+        errors.append("compatibility workflow must verify each clean-build application image exactly once")
     unsafe_selector = (
         'binary="$(find "$output_dir" -maxdepth 1 -type f -name \'*.bin\' -print -quit)"'
     )
@@ -326,7 +328,7 @@ def main() -> int:
         HARDWARE_SKETCH_BLOB,
         'esp32_core: ["3.3.13", "4.0.0"]',
         'arduino-cli core install "esp32:esp32@\u0024{{ matrix.esp32_core }}"',
-        "arduino-cli compile --fqbn esp32:esp32:esp32",
+        "arduino-cli compile --clean --fqbn esp32:esp32:esp32",
         "hardware-source/",
         "persist-credentials: false",
         "contents: read",
