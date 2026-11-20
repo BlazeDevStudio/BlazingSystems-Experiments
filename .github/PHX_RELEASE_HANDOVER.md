@@ -1424,3 +1424,75 @@ The BlazePwifi build already pinned ESP8266 esp8266:esp8266@3.1.2 and ESP32 esp3
 3. PHX-RELEASE retains the new runtime core-version admission guard and requests independent QA/Master review. Do not duplicate the completed core pin/runtime assertion or two-core reproducibility work.
 
 No merge, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — race-safe ESP32 application-image admission
+
+**Date:** 2026-11-20 UTC13  
+**PR:** #291 — OPEN / DRAFT / UNMERGED  
+**Branch:** \`phoenix/release-publisher-isolation-20261115\`  
+**Base #242:** \`734b89d9e7792247e8376335c3f3685500ab3f89\`  
+**Exact source/test HEAD:** \`55abc784617ea83fc01a44c55e4f6d473a95764a\`
+
+### Defect and correction
+
+The release-owned \`.github/scripts/verify_esp32_application_image.py\` previously validated the final output directory with path-based operations. A symlinked ancestor component could still resolve to a real final directory, and the directory path was not pinned/rechecked while the image was being hashed.
+
+The verifier now:
+- rejects \`..\` path components and requires descriptor-relative, no-follow directory operations;
+- walks every absolute path component using \`O_DIRECTORY | O_NOFOLLOW\` and \`dir_fd\`;
+- pins the output directory and parent descriptors;
+- enumerates and opens the application candidate relative to the pinned directory;
+- rejects symlinked or hard-linked/non-regular image files;
+- compares file identity before/open/after hashing; and
+- verifies the output directory still resolves to the pinned device/inode and has not changed before returning the digest.
+
+Only two RELEASE-owned files changed for this task:
+- \`.github/scripts/verify_esp32_application_image.py\`
+- \`.github/scripts/test_phx_release_esp32_core_compatibility.py\`
+
+No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER, firmware, or product handover path was modified.
+
+### Test-first history and failed attempts retained
+
+- Test-only commit [\`5721524c\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5721524c3ba8adc2acb411f7c8f9bf2a783e63ce) introduced parent-symlink and directory-replacement regressions. [Push run #44742907835](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44742907835) failed at the new negative assertions: the old verifier accepted the symlinked ancestor and replacement case. The first race-injection mechanism was not yet proven; later test-only refinements replaced it with a deterministic final-identity-check injection.
+- Initial implementation [\`34d04287\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/34d04287f7ad01368b1e7f23bc77af2c4561e7ab) failed [#44743160562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743160562) because the image-file open referenced a no-follow flag outside its helper scope. Narrow correction [\`74b87d49\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/74b87d494c063e30e190a7fe161cd71fd11229d5) uses the already-verified \`os.O_NOFOLLOW\` flag.
+- Intermediate race-test injection attempts were not triggered and correctly failed closed: [#44743348602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743348602), [#44743575415](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743575415), and [#44743715182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743715182). The test was refined to replace the real directory immediately before the final descriptor-identity check.
+- Final test commit [\`55abc784\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/55abc784617ea83fc01a44c55e4f6d473a95764a) produced the final source/test HEAD. The CI marker confirms both parent-symlink and directory-swap controls now pass.
+
+### Exact-source GitHub Actions
+
+**Release compatibility — terminal PASS on both events**
+- Push [#44743856372](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743856372): SUCCESS; ESP32 core 3.3.13 and 4.0.0 jobs both PASS.
+- PR [#44743865929](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743865929): SUCCESS; ESP32 core 3.3.13 and 4.0.0 jobs both PASS.
+- Both use exact HARDWARE source commit \`dc02efea6590045155bf50f16fdd2d3924f6b415\`, sketch blob \`849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e\`, and \`SOURCE_DATE_EPOCH=1795166700\`. Current HARDWARE #327 head \`85c54fea5136da182b173c4d89900b22cf61d2b5\` still has the same sketch blob; the pin was not changed.
+- Core 3.3.13: two clean images, 1,044,352 bytes each, SHA-256 \`8e5198060ebb4b7a0fdbb85561933d00ff3fa5472e2e3d85a7f5a0eba7a26b36\`; section comparator reports identical.
+- Core 4.0.0: two clean images, 1,098,464 bytes each, SHA-256 \`edbe9ed6b3539ee9b6339fb6df3db7095d95a51531e7621ddd6a7e7299555f4d\`; section comparator reports identical.
+- Both jobs passed exact source/sketch verification, Arduino CLI archive verification, epoch/compiler checks, ELF section/symbol inspection, the new application-image parent-symlink/directory-swap tests, and strict two-build comparison.
+
+**Full BlazePwifi build — still IN PROGRESS at this handover update**
+- Push [#44743856415](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743856415): CI-0701 job 136313996893 PASS; validate job 136314102831 PASS; ESP32, ESP8266, Android, all firmware target jobs, and update bundle PASS. Most simulations PASS. x86 QEMU simulation and Android emulator were still running. Production import/sign/publish jobs SKIPPED. Overall run has no terminal conclusion yet.
+- PR [#44743866052](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743866052): CI-0701 job 136314032055 PASS; validate job 136314136188 PASS; ESP32/ESP8266, all firmware target jobs, Android build and update bundle PASS. Remaining x86/OrangePi PC/Android-emulator simulation jobs were still running. Production import/sign/publish jobs SKIPPED. Overall run has no terminal conclusion yet.
+- These in-progress simulation jobs are not counted as passing or failing, and no overall Full SUCCESS is claimed.
+
+**Out-of-scope Windows result**
+- [Windows run #44743865923](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44743865923): handover PASS; package parity and its synthetic self-test PASS; PISONET-owned \`negative-selftest.ps1\` fails because \`$buildWorkflow\` is unset; publisher SKIPPED. PHX-PISONET owns the correction. No PISONET file was changed.
+
+### Live governance and provenance
+
+- MASTER #288: head \`52b7c023ea414e2df504e943425a9d0957c8c2d9\`; \`OWNERSHIP_ROUTES.json\` remains \`DRAFT_REVIEW_ONLY\`. PHX-RELEASE workflow route remains \`reimplementation-review\`; no migration/copy/merge was performed.
+- Experiments #242: head/base \`734b89d9e7792247e8376335c3f3685500ab3f89\` / \`6d4c9b487af4d768c4d7627654d119417fcc6e00\`.
+- Experiments #291: current source/test head \`55abc784617ea83fc01a44c55e4f6d473a95764a\`; OPEN / DRAFT / UNMERGED. Its accumulated diff still contains pre-existing non-RELEASE paths; those were not touched or rehomed.
+- COE integration #26: head \`b382d233ff06c8791b1028bed3c617cc7b670d12\`; eight PR/push workflow runs remain QUEUED with zero executed jobs.
+- COE #31 parent: \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`; child #35: \`7b9706d898fb5f36c6ed96504aefd04dc59bdc1b\`. Child case-collision guard PASS; mandatory Bubblewrap sandbox FAILS CLOSED; Hardware/shared-contract CI FAILS. No sandbox success or ULA authority is inferred.
+- Canonical private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` was not present in the complete recursive Library listing (1,222 entries). Only the prior checkpoint metadata pointer surfaced. No older registry was substituted and no private contents were copied into GitHub.
+- No independent PR #291 review was present at the live review read.
+
+### Next owner actions
+
+1. PHX-QA independently reviews the new descriptor/path admission tests and exact-source compatibility evidence.
+2. PHX-PISONET fixes its own \`$buildWorkflow\` negative-self-test variable.
+3. PHX-MASTER resolves the accumulated #291 cross-owner path contamination and confirms the review-only migration route.
+4. PHX-RELEASE refreshes the two in-progress full-build runs before deciding whether any additional release-source change is needed; do not repeat the completed path-safety or two-core reproducibility tests.
+
+**Production remains NO-GO.** No merge, signing, release tag, publication, hardware flash, payment migration, or customer deployment occurred.
