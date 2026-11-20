@@ -843,6 +843,8 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
          coinPin!=ledPin && relayPin!=ledPin;
 }
 
+bool quarantineCoinIngressTransition();
+
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   // Never drive either output while local polarity or GPIO validation is unknown.
   if(!outputPolarityKnown || !pinConfigSafe){
@@ -866,7 +868,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-  lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();
+    quarantineCoinIngressTransition();
     return;
   }
 
@@ -876,8 +878,8 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   pinMode(runRelayPin,OUTPUT);
   pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-  lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();
   writeLogical(runRelayPin,false,runRelayActiveHigh);
+  quarantineCoinIngressTransition();
   writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
@@ -985,6 +987,28 @@ void latchPollPulseFault(uint32_t pulseEdges){
   } else {
     Serial.println("CRITICAL: both poll-pulse fault stores failed; current boot remains fail-closed but reboot durability is NOT established.");
   }
+}
+
+bool quarantineCoinIngressTransition(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool lineIdle=coinLineIdle();
+  if(lineIdle && unhandledEdges==0U) return true;
+  if(journalRecoveryRequired){
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=!lineIdle;
+    if(pendingPulses>0U) pendingReady=true;
+    applyOutputs();
+    return false;
+  }
+  if(pendingPulses>0U) pendingReady=true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  lastCoin=!lineIdle;
+  const uint32_t unresolvedEdges=(uint32_t)pendingPulses+
+      (unhandledEdges>0U?unhandledEdges:1U);
+  latchPollPulseFault(unresolvedEdges);
+  Serial.println("CRITICAL: coin ingress was active or an ISR edge crossed pin configuration; operator reconciliation required.");
+  return false;
 }
 
 bool reconcileUnobservedCoinEdges(){
