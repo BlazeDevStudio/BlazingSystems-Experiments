@@ -3513,3 +3513,10 @@ This UTC04 activation updated the hardware maintainer guide and added a narrow v
 The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md` after the guide and narrow handover so the same gate can be re-run without bypass. Exact-head Full validation remains pending until the next run completes.
 
 **Classification:** the non-actuating header cleanup and its 5/5 native synthetic tests are **CI VERIFIED** at `16de37a`; this is not application integration or hardware acceptance. No protected key/witness, physical coin/relay, electrical pulse, 150 power-cut, 30-device soak, production signing, release or deployment evidence is created by these host/CI checks. Phase A remains DENY.
+
+## 2026-11-20 UTC04 — PHX-HARDWARE ControllerAuthV1Lab Mbed TLS compatibility fence
+- Source commit `66aa3f13f4cc0c5a89fafa76328a900969ff3563` on DRAFT #254: bounded `hex64` scan to 65 bytes and explicit Mbed TLS 2.x/3.x allowlist before legacy SHA-256 headers; Mbed TLS 4 requires a separate PSA adapter. The helper remains non-actuating and unwired.
+- Focused exact-head PR run `44672761914`, job `136077345950`: SUCCESS; real header compile against Ubuntu `libmbedtls-dev 2.28.8`, 5/5 synthetic deny cases PASS. Local ASan bounded-scan cases 4/4 PASS; synthetic Mbed TLS 4 compile-time rejection PASS (SIMULATED).
+- Full run `44672762223`, validate job `136077426038`: FAILED at mandatory handover freshness gate because source/workflow changes post-dated `PROJECT_HANDOVER.md`; exact log records last checkpoint `4054fbccd9b2a4ad0e5fe7cfca5a27aa629eed84`. Re-run after this docs-only successor; no Full PASS claimed.
+- No .ino, GPIO, relay, coin, CORE API, finance, keys, QA tests or Release workflow changed. No hardware acceptance, signer/witness, migration, money, flash, signing or release. Production NO-GO.
+- Narrow handover: `docs/handover/2026-11-20-hw-controller-auth-mbedtls-major-guard.md`.
