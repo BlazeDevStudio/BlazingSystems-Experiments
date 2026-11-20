@@ -2853,3 +2853,16 @@ At exact PR #291 head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf:
 | Windows #44809606428 | FAILURE at PISONET-owned $buildWorkflow; publisher skipped |
 
 The Full result is hosted non-production build/simulation evidence. It does not satisfy protected signing, release publication, physical acceptance or owner-authorized production gates. The accumulated 26-path diff remains 21 RELEASE / 3 CORE / 2 PISONET.
+
+
+## PHX-MASTER UTC20 recipient-contract integration gate — 2026-11-20T20:36Z
+
+QA #292 is not an exact-current-head integration pass. Its OPEN/DRAFT branch head `75a3f66d...` targets historical Master base `b1ca02e...`; its unchanged test blob is `14e10105...`, and no PR-triggered workflow run exists. Current Master verifier blob `3a6d0ca...` enforces one exact registered role or `ALL`; current Master regression blob `e8671fa...` covers unknown/ambiguous and invalid recipient values. A bounded source-extracted local run of the four QA cases passed 4/4 with exact test/fixture blobs, but the full module, full Master suite and hosted QA PR CI remain NOT VERIFIED. QA must rebase/replay and produce exact-head CI before the QA branch can be treated as integrated.
+
+Current exact-head blockers remain:
+- HARDWARE #327 Full validation fails at the inherited positive poll-signature assertion; focused quarantine/relay workflows pass.
+- RENTAL #328 Android/API21/API23 checks pass, but shared validation fails CORE-owned handover freshness and ESP32 core 4.0.0 compilation fails on inherited `mbedtls/sha256.h`.
+- RELEASE #291 compatibility 3/3 and non-production Full 26/26 pass with four production jobs skipped; Windows fails in PISONET-owned `$buildWorkflow` self-test. CORE/PISONET inherited paths still require owner review.
+- COE #26 remains FROZEN with five queued workflows / zero jobs and unresolved exact firmware/test blob, board-local Python import, root NOTICE and Hardware license/notice gaps.
+
+No readiness tier is promoted. Production remains NO-GO.
