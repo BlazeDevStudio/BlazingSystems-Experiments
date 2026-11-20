@@ -5,7 +5,6 @@
 // No protected reboot freshness, signer custody, or monetary authority.
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <mbedtls/version.h>
 
 // This lab uses the legacy SHA-256 API. Fail with a clear diagnostic before
@@ -21,14 +20,14 @@
 
 namespace phx_controller_auth_v1 {
 
-inline bool hex64(const char *p) {
-  if (!p) return false;
-  size_t length=0;
-  // Bound malformed input to 65 bytes (64 hex characters plus terminator).
-  while(length<65 && p[length]!='\0') ++length;
-  if(length!=64) return false;
-  for (size_t i=0;i<64;i++)
-    if (!((p[i]>='0'&&p[i]<='9')||(p[i]>='a'&&p[i]<='f'))) return false;
+// Validate an exact parser-owned byte span. No terminator scan is performed;
+// the caller must supply at least length readable bytes.
+inline bool hex64(const char *p, size_t length) {
+  if (!p || length != 64) return false;
+  for (size_t i = 0; i < length; ++i) {
+    const char c = p[i];
+    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return false;
+  }
   return true;
 }
 inline bool equal_fixed(const unsigned char *a,const unsigned char *b,size_t n) {
@@ -46,8 +45,9 @@ inline void encode_sha256_hex(const unsigned char digest[32], char out[65]) {
   }
   out[64] = '\0';
 }
-inline bool matches_policy_digest(const char *raw_policy,size_t len,const char *digest) {
-  if (!raw_policy || !hex64(digest)) return false;
+inline bool matches_policy_digest(const char *raw_policy,size_t len,
+                                  const char *digest,size_t digest_len) {
+  if (!raw_policy || !hex64(digest,digest_len)) return false;
   unsigned char hash[32]; char hex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   bool ok=mbedtls_sha256_starts_ret(&ctx,0)==0 &&
@@ -64,13 +64,14 @@ inline bool matches_policy_digest(const char *raw_policy,size_t len,const char *
 // against accepted local policy and all signed insert/window fields.
 // This verifies the exact CORE canonical message only; never grants authority.
 inline bool verify_mac(const char *key,size_t key_len,
-                       const char *canonical,const char *signature) {
-  if(!key || !key_len || !canonical || !hex64(signature)) return false;
+                       const char *canonical,size_t canonical_len,
+                       const char *signature,size_t signature_len) {
+  if(!key || !key_len || !canonical || !hex64(signature,signature_len)) return false;
   unsigned char out[32]; char hex[65];
   const mbedtls_md_info_t *md=mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if(!md || mbedtls_md_hmac(md,reinterpret_cast<const unsigned char*>(key),
               key_len,reinterpret_cast<const unsigned char*>(canonical),
-              strlen(canonical),out)!=0) return false;
+              canonical_len,out)!=0) return false;
   encode_sha256_hex(out, hex);
   return equal_fixed(reinterpret_cast<const unsigned char*>(hex),
                      reinterpret_cast<const unsigned char*>(signature),64);

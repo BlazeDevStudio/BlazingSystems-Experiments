@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 using namespace phx_controller_auth_v1;
 static std::string mac(const std::string &body) {
   const char key[]="synthetic-controller-v1-key";
@@ -16,15 +17,28 @@ static std::string mac(const std::string &body) {
   hex[64]=0; return hex;
 }
 int main() {
-  // Parser-backed spans can be exactly 64 bytes without a trailing NUL.
-  // The current C-string-only helper reads byte 65; ASan must expose that.
+  // Exact byte spans need no trailing NUL and must never be scanned past.
   char raw_digest[64];
   memset(raw_digest, 'a', sizeof(raw_digest));
-  assert(hex64(raw_digest));
+  assert(hex64(raw_digest, sizeof(raw_digest)));
+  assert(!hex64(raw_digest, sizeof(raw_digest) - 1));
+  char oversized_digest[65];
+  memset(oversized_digest, 'a', sizeof(oversized_digest));
+  assert(!hex64(oversized_digest, sizeof(oversized_digest)));
+  char uppercase_digest[64];
+  memset(uppercase_digest, 'A', sizeof(uppercase_digest));
+  assert(!hex64(uppercase_digest, sizeof(uppercase_digest)));
+  assert(!hex64(nullptr, 64));
+
+  unsigned char sample[32];
+  for (size_t i = 0; i < sizeof(sample); ++i) sample[i] = (unsigned char)i;
+  char rendered[65];
+  encode_sha256_hex(sample, rendered);
+  assert(strcmp(rendered, "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f") == 0);
+  std::puts("PHX-HW-CFG length-aware hex span and lowercase renderer PASS");
+
   const char key[]="synthetic-controller-v1-key";
   const std::string policy="{\"enabled\":0,\"coin_enabled\":0,\"config_revision\":7}";
-  const char *digest=""; // use vetted SHA256 to derive the literal policy digest.
-  (void)digest;
   unsigned char hash[32]; char hashhex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   assert(mbedtls_sha256_starts_ret(&ctx,0)==0);
@@ -33,27 +47,40 @@ int main() {
   mbedtls_sha256_free(&ctx);
   for(size_t i=0;i<32;i++) snprintf(hashhex+i*2,3,"%02x",hash[i]);
   hashhex[64]=0;
-  assert(matches_policy_digest(policy.data(),policy.size(),hashhex));
-  assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex));
+  assert(matches_policy_digest(policy.data(),policy.size(),hashhex,64));
+  assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,63));
+  assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex,64));
+
   const std::string prefix="blazepwifi-controller-response-v1|poll|";
   const std::string suffix=std::string("|7|")+hashhex+"|0||0|DENY";
   const std::string good=prefix+"vendo-01|0011223344556677"+suffix;
   const std::string signature=mac(good);
-  assert(verify_mac(key,strlen(key),good.c_str(),signature.c_str()));
+  const std::vector<char> raw_canonical(good.begin(),good.end());
+  const std::vector<char> raw_signature(signature.begin(),signature.end());
+  assert(verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                    raw_signature.data(),raw_signature.size()));
   assert(!may_admit_coin_even_if_mac_valid());
   assert(!may_energize_relay_even_if_mac_valid());
   std::puts("PHX-HW-CFG case 1 signed response, admission DENIED PASS");
-  std::string badsig=signature; badsig[0]=badsig[0]=='0'?'1':'0';
-  assert(!verify_mac(key,strlen(key),good.c_str(),badsig.c_str()));
+
+  std::vector<char> badsig(raw_signature);
+  badsig[0]=badsig[0]=='0'?'1':'0';
+  assert(!verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     badsig.data(),badsig.size()));
   std::puts("PHX-HW-CFG case 2 tampered signature DENIED PASS");
   const std::string wrong_device=prefix+"vendo-02|0011223344556677"+suffix;
-  assert(!verify_mac(key,strlen(key),wrong_device.c_str(),signature.c_str()));
+  assert(!verify_mac(key,strlen(key),wrong_device.data(),wrong_device.size(),
+                     raw_signature.data(),raw_signature.size()));
   std::puts("PHX-HW-CFG case 3 wrong device DENIED PASS");
   const std::string wrong_nonce=prefix+"vendo-01|8899aabbccddeeff"+suffix;
-  assert(!verify_mac(key,strlen(key),wrong_nonce.c_str(),signature.c_str()));
+  assert(!verify_mac(key,strlen(key),wrong_nonce.data(),wrong_nonce.size(),
+                     raw_signature.data(),raw_signature.size()));
   std::puts("PHX-HW-CFG case 4 wrong nonce DENIED PASS");
-  assert(!verify_mac(key,strlen(key),good.c_str(),"invalid"));
-  assert(!verify_mac("",0,good.c_str(),signature.c_str()));
+  const char invalid_signature[]="invalid";
+  assert(!verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     invalid_signature,sizeof(invalid_signature)-1));
+  assert(!verify_mac("",0,raw_canonical.data(),raw_canonical.size(),
+                     raw_signature.data(),raw_signature.size()));
   std::puts("PHX-HW-CFG case 5 invalid signature/empty key DENIED PASS");
   std::puts("PHX-HW-CFG 5/5 header-executed synthetic checks PASS; protected witness UNPROVEN");
 }

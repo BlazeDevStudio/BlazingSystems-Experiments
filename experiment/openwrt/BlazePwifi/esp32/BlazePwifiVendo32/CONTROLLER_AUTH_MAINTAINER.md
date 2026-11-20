@@ -8,11 +8,11 @@
 
 ## Code reading order
 
-1. `hex64` rejects missing, non-lowercase or non-64-character digest strings after scanning at most 65 bytes; callers must still pass a readable C-string buffer.
+1. `hex64(p, length)` validates an exact 64-byte lowercase-hex span without scanning for a terminator. The caller must provide at least `length` readable bytes from its strict parser.
 2. `equal_fixed` compares exactly the requested byte length without a value-dependent early return.
 3. `encode_sha256_hex` renders exactly 32 bytes in canonical lowercase hexadecimal, shared by both SHA256 and HMAC validation so decoding/debugging is not maintained twice.
-4. `matches_policy_digest` verifies **the original serialized policy bytes**, including whitespace and field order; callers must not reserialize JSON before hashing.
-5. `verify_mac` accepts an already-canonicalized message and checks HMAC-SHA256 against the supplied lowercase signature. It does **not** parse, authenticate or bind the fields itself.
+4. `matches_policy_digest` verifies **the original serialized policy bytes**, including whitespace and field order; it receives both the digest pointer and exact digest length. Callers must not reserialize JSON before hashing.
+5. `verify_mac` accepts an already-canonicalized message pointer plus exact byte length, and a signature pointer plus exact length. It does not call `strlen`, parse, authenticate or bind the fields itself.
 6. `may_admit_coin_even_if_mac_valid` and `may_energize_relay_even_if_mac_valid` must remain `false`.
 
 ## Before integrating into a live controller
@@ -46,3 +46,9 @@ The non-actuating helper cleanup from source commit `3692ddf889470da8a002e9a16bf
 - The earlier full run [#43632185933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632185933) at source-only SHA `3692ddf` failed the mandatory handover freshness gate. That failure remains historical; the docs-only successor and the new exact-head Full run are the successful correction.
 
 **Classification:** this isolated helper and its synthetic native test are **CI VERIFIED** at `16de37a`. They remain LAB ONLY and are not wired into application coin admission. Production signing, publish/release jobs were skipped; no key was provisioned, no GPIO/relay/coin path changed, and no physical hardware acceptance is claimed. Phase A remains DENY.
+
+## Length-aware parser span hardening — 2026-11-20
+
+The native lab exposed an out-of-bounds read when `hex64(const char *)` inspected byte 65 of a parser-owned 64-byte non-NUL-terminated digest span. The helper now requires explicit lengths for digest and signature spans and for canonical HMAC input. It validates exactly 64 digest/signature bytes and hashes/HMACs exactly the supplied byte counts; no terminator scan or `strlen` is used on parser-owned spans. The focused workflow compiles with AddressSanitizer and UndefinedBehaviorSanitizer so the regression remains visible.
+
+This is a lab-only helper API change. It does not change CORE's producer contract, wire format, application intake, coin admission, GPIO or relay behavior. Both admission helpers remain hard-coded false.
