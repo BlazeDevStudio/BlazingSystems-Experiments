@@ -1065,3 +1065,17 @@ The Stage 5 two-slot CRC32 journal and HMAC transport are not an independent pro
 **Standing boundaries:** local SQLite FULL sync is not a protected anti-rollback witness; ESP CRC32 journal is not a protected signing witness; the physical pulse-to-first-durable-write loss window remains. COE #49 is a sidecar, not an installable OpenWrt service. Keep default dry-run; never enable paid-lab mode on an occupied/customer machine. No migration to #26 is approved. **PRODUCTION NO-GO.**
 
 See [PHX-MASTER UTC01 COE #49 audit](PHX_MASTER_UTC01_20261120_COE49_STAGE51_TARGET_KIND_AND_CLOCK_AUDIT.md).
+
+
+
+## PHX-MASTER 2026-11-20 UTC04 — Remote-head, cleanup and integration reconciliation
+
+**Candidate-only interface gate for COE #49; no route or source ownership change.** The exact current #49 head remains `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`, stacked on #48 `8286548e395366f2332830025fed00ceebdfb24a`. Hardware's only explicit response is audit-only ACK / implementation ownership declined (COE #49 comment [7028198239](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/49#issuecomment-7028198239)); no explicit CORE or PISONET scope ACK was found in the #49 thread.
+
+1. **Target kind is pre-mutation authority.** A hotspot-only adapter must receive a server-authenticated target-kind claim, or the backend must independently enforce an adapter/controller identity bound to hotspot-only targets before entering the coin mutation branch. A response such as `rental:true` returned *after* `bp_rental_apply_coin` is not a rejection gate; the adapter cannot undo a rental mutation by withholding ESP ACK.
+2. **Time and expiry require an authenticated anchor.** A signed `expires` value without signed server time does not establish remaining lease duration for a sidecar using local wall clock. Bind the time anchor to the router/controller/session/target/sequence and calculate local remaining lease with a monotonic clock. Re-evaluate the close-before-expiry safety floor on every poll, including the existing-session ACTIVE path.
+3. **ESP ACK follows durable authoritative receipt.** Do not emit ACKN until the exact paid receipt is authenticated, bound to the same event/nonce/target/customer, and durably committed by the existing router accounting authority. Local SQLite state or an ESP CRC journal is not an independent protected financial witness.
+4. **Tests must exercise the real mutation path.** A mocked `rental:true` response is insufficient. QA must prove that a rental target causes no ledger, rental-progress or time mutation; cover valid/invalid signed kind, wrong identity/nonce, duplicate/replay, response loss, lost ESP ACK, reboot reconciliation, expiry-floor, and clock rollback/skew.
+5. **Ownership remains unchanged.** CORE owns router accounting/receipt authority; PISONET owns the router-side adapter/API boundary; HARDWARE owns ESP intake/lease/ACK behavior; QA owns independent regressions. These are review boundaries, not assignments or owner acknowledgements. Obtain explicit scope ACK/DECLINE before any source edit or route proposal.
+
+The current Experiments `main` Vendo producer is not the signed target-kind/server-time producer required above. COE #26's candidate signatures are on a separate draft base and are not a deployed or approved producer. COE #49 remains **UNASSIGNED / AUDIT-ONLY / NO ROUTE TO #26**. This section states a review gate, not an adopted wire schema or production authorization.

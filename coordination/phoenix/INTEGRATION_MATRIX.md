@@ -2293,3 +2293,39 @@ No role-owned source was edited by Master.
 COE #26 `b382d233...` remains OPEN/DRAFT with five queued workflows and zero jobs; no combined destination acceptance. COE #49 `aeb8ff11...` is a separate Stage 5.1 audit-only branch, not a #26 source or route. Stage 5.1 and case guard pass, while shared ESP32 core 4.0.0 compile fails at missing `mbedtls/sha256.h` [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922).
 
 These are per-PR exact-head observations, not a green integrated tree. No migration, native acceptance, hardware acceptance or production readiness is implied.
+
+
+
+## PHX-MASTER 2026-11-20 UTC04 — Remote-head, cleanup and integration reconciliation
+
+### Experiments — exact owner PR heads and current evidence
+
+| Role / PR | Exact head | CI disposition at this read |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Last available exact-head run #42698139210 PASS; scoped / older. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329229 and #43653329235 PASS; scoped / older. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS; scoped Windows evidence / older. |
+| HARDWARE #327 | `bcd7757663ae6c1227b4fed65ad8a9674a35bd31` (source/test `242e5a2b...`) | Focused quarantine #44671025193 PASS; relay #44671032112 PASS; Full #44671436863 FAIL at `Missing poll signature check`. Merge-run validation is not a Full PASS. |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 run #43633486963 PASS; #292 no exact-head PR run. |
+| RELEASE #291 | `55b0782107f37dae28e2a27ddbae32008920f2b4` | New-head compatibility #44673130966 PENDING; BlazePwifi #44673131079 and Windows #44673130939 QUEUED. Predecessor `d0ac4dba...` terminal failures remain unresolved pending these reruns. |
+
+### CoinOperatedEcosystem — separate candidates, not a migration approval
+
+| Candidate | Exact head / base | Exact CI and disposition |
+|---|---|---|
+| main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only main baseline. |
+| #26 integration | `b382d233ff06c8791b1028bed3c617cc7b670d12` on main | 205 changed paths; five workflows queued and zero jobs; frozen. |
+| #35 release sandbox | `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b` | Case guard #44617783021 PASS; sandbox #44617781877 FAIL (Bubblewrap unavailable); shared Hardware #44617782050 FAIL (10/10 profile admission). No approved site-scoped ULA authority. |
+| #44 ULA child | `582fd5d5e83e36b36546ac28534740298ba94af4` on #35 | Case guard #44390136296 PASS; sandbox #44390136327 FAIL (Bubblewrap unavailable); shared Hardware #44390136309 PASS. Per-appliance randomness is not site authority. |
+| #48 Stage 5 Remote CS | `8286548e395366f2332830025fed00ceebdfb24a` on #47 `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597` | Separate Hardware staging candidate; no exact-head PR run returned; no route to #26. |
+| #49 Stage 5.1 bridge | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` on #48 | Stage 5.1 #44646341873 PASS (5 jobs); case guard #44646341992 PASS; shared Hardware #44646341922 FAIL (ESP32 core 4.0.0 missing `mbedtls/sha256.h`). Hardware ACK is audit-only / ownership declined; no CORE or PISONET scope ACK. |
+| #45 receipt candidate | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Scoped Pisonet and case guards #44295049727 / #44295049903 PASS; candidate only, not adopted into #26. |
+
+The #49 adapter's rental rejection occurs after a backend `coin` request; the current backend can mutate rental progress before returning `rental:true`. Its signed poll lacks target-kind and authenticated server time; local wall clock and an existing-session ACTIVE fast path do not prove router TTL. See Architecture Contracts §6.54–§6.55. Do not copy, move, rebase, cherry-pick or stage #48/#49 into #26.
+
+### Source/destination and governance
+
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 development: `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit-foundation: `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master branch at audit start: `965d786ec0b0f00e04ccef27182228f1f2f869f0`; COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Branch API reported `protected=false` on inspected refs; repository rulesets endpoints returned empty arrays. Effective organization-level rulesets were not established.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. No #48/#49 route exists.
+- Private registry v11 and newer corrections were not found in the available Library search; historical root / v3–v7 snapshots were not substituted. No Google Drive connector was exposed.
