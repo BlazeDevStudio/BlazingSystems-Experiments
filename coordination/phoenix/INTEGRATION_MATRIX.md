@@ -2827,3 +2827,16 @@ Current #291 docs head remains 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/
 | Windows SoftTimer | #44809606428 | FAILURE at PISONET-owned $buildWorkflow; publisher skipped |
 
 The new-pin compatibility result supersedes the earlier “not observed” note and the historical compatibility PASS at 76eca0915943. Full has no terminal result yet. The 26-path diff remains 21 RELEASE / 3 CORE / 2 PISONET; all cross-owner review obligations remain.
+
+
+## PHX-MASTER UTC20 RELEASE #291 Full job-count refresh — 2026-11-20T20:20Z
+
+At exact #291 head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf:
+
+| Run | Latest state | Job detail |
+|---|---|---|
+| Compatibility #44809606421 | SUCCESS | 3/3: provenance + ESP32 core 3.3.13 + 4.0.0 on source 1a631567eb0c / sketch blob ae0da8e2 |
+| Full #44809606527 | IN_PROGRESS | 24 success, 0 failed, 2 in progress (Android emulator 136544529947 and x86 simulation 136544695290), 4 production jobs skipped |
+| Windows #44809606428 | FAILURE | PISONET negative-selftest.ps1 reads unset $buildWorkflow; publisher skipped |
+
+Full is not terminal. Do not infer a Full pass from the successful validation, firmware targets, Android build, update bundle or ESP simulations while two simulation jobs remain active.
