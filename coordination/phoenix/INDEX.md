@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T20:19:08Z  
+**Updated:** 2026-11-20T20:20:54Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -246,3 +246,11 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Full #44809606527 remains IN_PROGRESS: validation, firmware target and Android jobs pass; update bundle and ESP simulations pass; browser/Android/x86/board simulations still running; production signing/publishing skipped.
 - Windows #44809606428 FAILS at PISONET-owned $buildWorkflow; publisher skipped.
 - The prior “no exact-head run observed” note is superseded by the terminal compatibility result. No terminal Full pass or production approval is claimed.
+
+
+## UTC20 RELEASE Full job-count refresh — 2026-11-20T20:20Z
+
+- [RELEASE #291 Full job-count refresh](PHX_MASTER_UTC20_20261120_RELEASE291_FULL_JOB_COUNT_REFRESH.md).
+- Exact-head compatibility #44809606421 remains SUCCESS 3/3 on current Hardware source pin 1a631567eb0c / sketch blob ae0da8e2.
+- Full #44809606527 now has 24 SUCCESS, 0 FAILURE, 2 IN_PROGRESS (Android emulator and x86 simulations), and 4 production import/sign/publish jobs SKIPPED. It is not terminal and is not a Full PASS.
+- Windows #44809606428 remains FAILURE at PISONET-owned $buildWorkflow; publisher skipped.
