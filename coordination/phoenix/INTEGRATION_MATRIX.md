@@ -2799,3 +2799,18 @@ HARDWARE #327 docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39 / source-test 1
 ### COE #26 current destination gate
 
 At source #327 docs head 4d651e91, the complete recursive tree has 2,445 entries; COE #26 at b382d233 has 286. Source has 25 board-local Python labs/helpers and three scoped Hardware workflows; destination has zero Hardware Python identities and one generic workflow. ESP32, ESP8266 and hardening-test blobs differ. Pisowifi LICENSE matches, but root NOTICE and Hardware license/notice scope remain incomplete. Five destination workflows are QUEUED / zero jobs. Keep #26 FROZEN; no migration or staging.
+
+
+## PHX-MASTER UTC20 RELEASE #291 post-pin CI supersession — 2026-11-20T20:16Z
+
+Current PR #291 docs head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow fix 5188d1a1cfb5f96462a5ec24941fe35530944f68; test/static guard 5c5001d43e173463024c3c790bead406fa8c90c3.
+
+| Workflow | Run | Exact state |
+|---|---:|---|
+| ESP32 compatibility | #44809606421 | IN_PROGRESS; provenance job 136542675863 PASS; ESP32 3.3.13 job 136542676483 and 4.0.0 job 136542676949 IN_PROGRESS |
+| BlazePwifi Full | #44809606527 | QUEUED at run-list read; validation and multiple firmware/Android jobs started; no terminal result |
+| Windows SoftTimer | #44809606428 | FAIL; build-windows job 136542584711 reports unset $buildWorkflow; publisher skipped |
+
+The updated compatibility test and workflow pin HARDWARE #327 source/test 1a631567eb0c14c12a114f592685f44cc414466f and ESP32 sketch blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7. Previous compatibility PASS #44799798721 is historical at the old source label 76eca0915943. No new-pin pass is claimed until both core jobs complete.
+
+The 26-path accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET. The three new commits change only RELEASE-owned test/workflow/handover paths. CORE and PISONET retain their inherited file review and fix ownership.
