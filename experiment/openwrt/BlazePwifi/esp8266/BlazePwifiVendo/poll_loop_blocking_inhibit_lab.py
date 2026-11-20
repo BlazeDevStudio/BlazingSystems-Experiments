@@ -406,32 +406,34 @@ int main(){
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
 
-  // GPIO can observe an active pulse even when no ISR edge was recorded.
-  // The temporary poll inhibit must remain asserted until the input returns idle.
+  // GPIO observed an active pulse during drain but the ISR sequence did not
+  // advance. Treat this as unresolved ingress and persist a deny marker.
   resetState(); injectDrainAbortWithoutIsr=true; loop();
   if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !pollIntakeSuspended || relayOn || ledOn || journalRecoveryRequired ||
-     pendingPulses!=1U || pendingReady || pendingTarget!="target-01" ||
-     pendingNonce!="nonce12345678" || saveCalls!=1 || !lastCoin) return 34;
-  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_STAYS_INHIBITED_PASS\\n";
-  fakeNow=(uint32_t)pulseEnd; loop();
-  if(pollIntakeSuspended || !relayOn || !ledOn || pendingPulses!=1U ||
-     saveCalls!=1 || journalRecoveryRequired) return 35;
-  std::cout<<"POLL_ABORT_ACTIVE_LINE_RELEASES_ONLY_AFTER_IDLE_PASS\\n";
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pendingPulses!=0U || saveCalls!=0 ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 34;
+  const std::string noIsrMarker=LittleFS.files["/pollpulse.fault"];
+  if(noIsrMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     noIsrMarker.find("pulses=1")==std::string::npos) return 38;
+  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_FAIL_CLOSED_PASS\\n";
 
   // Repeat the missing-ISR case for active-high input wiring.
   resetState(); runCoinActiveLow=false;
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   injectDrainAbortWithoutIsr=true; loop();
   if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !pollIntakeSuspended || relayOn || ledOn || journalRecoveryRequired ||
-     pendingPulses!=1U || pendingReady || pendingTarget!="target-01" ||
-     pendingNonce!="nonce12345678" || saveCalls!=1 || !lastCoin) return 36;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_STAYS_INHIBITED_PASS\\n";
-  fakeNow=(uint32_t)pulseEnd; loop();
-  if(pollIntakeSuspended || !relayOn || !ledOn || pendingPulses!=1U ||
-     saveCalls!=1 || journalRecoveryRequired) return 37;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_RELEASES_ONLY_AFTER_IDLE_PASS\\n";
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pendingPulses!=0U || saveCalls!=0 ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 36;
+  const std::string noIsrActiveHighMarker=LittleFS.files["/pollpulse.fault"];
+  if(noIsrActiveHighMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     noIsrActiveHighMarker.find("pulses=1")==std::string::npos) return 39;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_FAIL_CLOSED_PASS\\n";
 
   // An ISR edge can arrive after the pre-release snapshot but during the first
   // GPIO writes that re-enable the acceptor. It must be reconciled before the
