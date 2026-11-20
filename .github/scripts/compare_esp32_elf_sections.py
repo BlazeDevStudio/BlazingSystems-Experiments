@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -101,6 +102,53 @@ def _difference_ranges(
     return ranges[:64], total_ranges, first_differences
 
 
+
+_TIME_CANDIDATE = re.compile(
+    rb"(?<![0-9])[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?(?![0-9])"
+)
+_CONTEXT_RADIUS = 16
+_MAX_CONTEXT_BYTES = 64
+_MAX_TIME_CANDIDATES = 4
+
+
+def _time_candidates(window: bytes) -> list[str]:
+    """Return only short clock-shaped tokens; never emit surrounding firmware text."""
+    found = [
+        match.group(0).decode("ascii")
+        for match in _TIME_CANDIDATE.finditer(window)
+    ]
+    return list(dict.fromkeys(found))[:_MAX_TIME_CANDIDATES]
+
+
+def _difference_context(
+    first: bytes,
+    second: bytes,
+    ranges: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose bounded clock-shaped candidates without printing arbitrary section bytes."""
+    contexts: list[dict[str, Any]] = []
+    for difference in ranges:
+        start = difference["start"]
+        end = difference["end"]
+        window_start = max(0, start - _CONTEXT_RADIUS)
+        window_end = min(len(first), max(end + 1, start + 1) + _CONTEXT_RADIUS)
+        if window_end - window_start > _MAX_CONTEXT_BYTES:
+            window_end = window_start + _MAX_CONTEXT_BYTES
+        contexts.append(
+            {
+                "start": start,
+                "end": end,
+                "window_start": window_start,
+                "window_end": window_end,
+                "window_bytes": window_end - window_start,
+                "window_truncated": window_end < end + 1,
+                "first_time_candidates": _time_candidates(first[window_start:window_end]),
+                "second_time_candidates": _time_candidates(second[window_start:window_end]),
+            }
+        )
+    return contexts
+
+
 def compare_section_bytes(
     first_elf: bytes | bytearray | memoryview,
     second_elf: bytes | bytearray | memoryview,
@@ -142,6 +190,7 @@ def compare_section_bytes(
     )
     # The bounded range list may be truncated; count all differing bytes directly.
     differing_count = sum(left != right for left, right in zip(first_bytes, second_bytes))
+    difference_context = _difference_context(first_bytes, second_bytes, ranges)
     return {
         "section": section_name,
         "size": len(first_bytes),
@@ -157,6 +206,7 @@ def compare_section_bytes(
         "difference_ranges": ranges,
         "difference_ranges_truncated": range_count > len(ranges),
         "first_differences": first_differences,
+        "difference_context": difference_context,
     }
 
 
