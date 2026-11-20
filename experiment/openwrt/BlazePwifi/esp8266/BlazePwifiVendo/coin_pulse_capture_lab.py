@@ -555,6 +555,8 @@ def verify_configure_runtime_pins_preserves_edge_baseline(source):
     body = extract_function(source, "configureRuntimePins")
     if "lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();" in body:
         raise RuntimeError("configureRuntimePins discards unhandled ISR edge baseline after attaching the coin ISR")
+    if body.count("quarantineCoinIngressTransition();") != 2:
+        raise RuntimeError("configureRuntimePins must quarantine ingress on both pin-attachment branches")
 
 
 def main():
