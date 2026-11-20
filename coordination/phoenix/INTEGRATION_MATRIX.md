@@ -2438,3 +2438,34 @@ This section supersedes the UTC04 current-state rows above. All CI states below 
 ### Terminal BlazePwifi full-build supersession — 2026-11-20T05:37Z
 
 The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) completed after the initial readback: **26 successful jobs, 0 failed, 4 skipped**. Validation, Android, all firmware/platform targets, update bundle and all six v0.4 simulation jobs passed. The four skipped jobs are production signed-APK import, production sign handoff, release publication and prerelease publication. This is a terminal successful hosted build/simulation result only; it does not clear the still-failing two-core reproducibility run [#44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) or Windows self-test [#44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650). No signing or publishing occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC07 live exact-head matrix — 2026-11-20
+
+| Role / candidate | Exact current head | Exact-head CI | Readiness / boundary |
+|---|---|---|---|
+| PHX-MASTER #288 | \`230bdecf1b404eece414802f544eabbc352e6991\` at audit start | No Master-specific run surfaced; full Master suite NOT RUN | Coordination-only draft |
+| CORE #252 | \`c82705f2de865c89ab733b10efa84f26f56a5cc4\` | #42698139210 SUCCESS | Scoped software evidence; separate CORE owner |
+| RENTAL #289 | \`68928774d0d7cf65adb26bc6b54199a3159d066c\` | #43653329229 / #43653329235 SUCCESS | Scoped; no physical Device Owner acceptance |
+| PISONET #255 | \`d01fd1642c105b3b0f6cd3343d1c9b67291f6e09\` | #42462978704 SUCCESS | Scoped; native COM bench not accepted |
+| HARDWARE #327 | \`63c1d2b38855646acc1e04b3f7952c778692460a\` (source/test \`354dddc...\`) | #44690922470 quarantine PASS; #44690922558 relay PASS; #44690922491 Full FAIL at stale positive poll-signature assertion | SIMULATED / CI VERIFIED only; QA fixture owner |
+| HARDWARE #254 | \`84c442a46ee2ee48ab733b10efa84f26f56a5cc4\` | #44683629378 focused sanitizer PASS; #44683629491 Full FAIL (handover freshness + missing mbedTLS header) | Non-actuating helper only |
+| HARDWARE #283 | \`830c355376380f9b5533d5cda2558beed41a593a\` | #44219099309 / #44219099256 PASS | No approved poll signature contract; not #327 prerequisite |
+| QA #290 / #292 | \`5c29d159...\` / \`75a3f66d...\` | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 no run | Independent native acceptance still absent |
+| RELEASE #291 | \`7fbd4ea256b250aa7305a9a72948655f71e649d6\` | #44692255873 Full PASS (26/0/4 skipped); #44692255708 compatibility FAIL; #44692256309 Windows FAIL | Signing/publishing skipped; reproducibility and owner test failures open |
+
+### COE destination candidates
+
+| Candidate | Exact head | CI / destination disposition |
+|---|---|---|
+| COE main | \`a6513ab4412b4c014eee2863e45cbe32d06cb243\` | Structure-only |
+| COE #26 | \`b382d233ff06c8791b1028bed3c617cc7b670d12\` | 205 paths; five workflows queued / zero jobs; FROZEN |
+| COE #35 | \`7b9706d898fb5f36c6ed96504aefd04dc59bdc1b\` | Case guard PASS; Bubblewrap sandbox FAIL; all 10 profiles fail absent approved site ULA /48 |
+| COE #48 | \`8286548e395366f2332830025fed00ceebdfb24a\` | Stage 5 + case PASS; shared ESP32 compile FAIL on missing mbedTLS header; unassigned |
+| COE #49 | \`aeb8ff11b2f5db9a5f86280ab62ab988245f3919\` | 16/16 host mock tests and ESP8266 compile pass; shared ESP32 compile FAIL; unassigned/audit-only |
+
+### COE #26 hardware provenance gate
+
+Current #327 source ESP8266/ESP32 blobs \`b956bc03...\` / \`1458f328...\` differ from #26 destination blobs \`c8be98f7...\` / \`3cc7ec54...\`. Source \`BlazePwifi/LICENSE\` is MIT (blob \`1ee55b94...\`); destination \`Hardware/\` has no LICENSE/NOTICE. Source board folders contain 25 Python lab files (16 ESP8266 + 9 ESP32); destination \`Hardware/tests/\` contains one shell test, not those exact lab identities. Source has three separate PHX-HARDWARE workflows; destination has one generic hardware workflow. #26 has no completed destination jobs. **No import or move proposed.**
+
+Exact paths/blob identities and next-owner actions are in the [UTC07 provenance report](PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md). All production gates remain CLOSED / NO-GO.

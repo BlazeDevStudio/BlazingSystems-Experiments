@@ -1324,3 +1324,14 @@ Issue #266 remains OPEN and the Master cleanup checkbox remains unchecked. Canon
 ### Terminal BlazePwifi full-build supersession — 2026-11-20T05:37Z
 
 The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) completed after the initial readback: **26 successful jobs, 0 failed, 4 skipped**. Validation, Android, all firmware/platform targets, update bundle and all six v0.4 simulation jobs passed. The four skipped jobs are production signed-APK import, production sign handoff, release publication and prerelease publication. This is a terminal successful hosted build/simulation result only; it does not clear the still-failing two-core reproducibility run [#44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) or Windows self-test [#44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650). No signing or publishing occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC07 — exact Hardware ancestry and COE #26 provenance (2026-11-20)
+
+Master corrected the stale Hardware ancestry entry: live #323 \`988904e8...\` equals #326 base; the current draft chain is #322 \`50d93e0d...\` → #323 \`988904e8...\` → #326 \`58c558fb...\` → #327 \`63c1d2b3...\`. #327 focused quarantine/relay CI passes, but Full remains failed at QA-owned \`Missing poll signature check\`; firmware remains default-deny.
+
+COE #26 remains frozen at \`b382d233...\` against main \`a6513ab...\`, five queued workflows / zero jobs. Exact current #327 ESP8266 and ESP32 blobs differ from #26 Hardware destination blobs. Source MIT LICENSE is present, destination Hardware LICENSE/NOTICE are absent, 25 source board-specific Python lab files are not present as exact destination test identities (only one generic shell test is staged), and the source's three scoped Hardware workflows are not exact imports in the destination. No move/copy is proposed.
+
+COE #48/#49 remain separate unassigned Stage 5 candidates; Hardware declined implementation ownership. #49's mock/ESP8266 evidence does not clear the shared ESP32 missing-mbedTLS failure or establish backend integration. RELEASE #291 has a successful hosted Full build but both-core byte reproducibility and PISONET Windows negative-selftest failures remain.
+
+**Next:** QA repairs the stale poll-signature fixture; CORE publishes the authenticated target-kind/server-time/receipt contract; RELEASE diagnoses exact ELF/image differences and leaves the comparator fail-closed; COE integration owner completes exact per-file license/test/destination review; registry custodian restores authorized private v11 access. Master suite NOT RUN because local Git DNS resolution failed and no Master-specific workflow was surfaced. Issue #266 remains OPEN; Master cleanup checkbox remains intentionally unchecked. **PRODUCTION NO-GO.**

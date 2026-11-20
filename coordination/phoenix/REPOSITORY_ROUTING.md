@@ -945,3 +945,20 @@ COE integration PR #26 remains the only manifest-pinned destination candidate (`
 COE #49 (`aeb8ff11b2f5db9a5f86280ab62ab988245f3919`) is a separate Stage 5.1 adapter candidate stacked on #48, not on #26 and not on COE main. PHX-HARDWARE's review is explicitly audit-only; it declined implementation ownership. Do not copy, cherry-pick, rebase or fold #49 into #26 based on shared product naming.
 
 Before any future migration proposal, compare every selected source/destination blob and file mode at exact SHAs, license/provenance, imports and dependency closure, test identity/fixtures, behavior and rollback, then obtain owner and independent QA review plus completed destination CI. Current #26 queued workflows provide no destination acceptance; the private v11 registry and newer corrections remain BLOCKED. No move is proposed by this refresh.
+
+
+## PHX-MASTER UTC07 — Hardware #327 → COE #26 migration gate (2026-11-20)
+
+The route manifest remains \`e4db324315a1b3543fec17a148fbf960170fcb29\`, source \`main@f4e8a891...\`, destination #26 \`b382d233...\`, \`DRAFT_REVIEW_ONLY\`; Hardware paths are \`selective-review\`, PHX-MASTER target is null. This manifest does not pin current Hardware #327 head \`63c1d2b...\`.
+
+Exact current #327 source blobs:
+- ESP8266 \`b956bc031df32ef69350dec368eaa91073b5a638\`
+- ESP32 \`1458f32881d3b340f1101dd0215618b54c1b688b\`
+
+Exact COE #26 destination blobs:
+- ESP8266 \`c8be98f72596681e36a3ad1f8939bf8046c96887\`
+- ESP32 \`3cc7ec54b476943dc04a8d1af5e2df5fe054e422\`
+
+Both firmware files differ. Source MIT LICENSE blob \`1ee55b94...\` is present under BlazePwifi; no Hardware LICENSE/NOTICE is present in COE #26. The source has 25 board-specific Python lab files and three scoped PHX-HARDWARE workflows; the destination has one generic shell test and one generic Hardware CI workflow. The destination's five workflows remain queued with zero jobs.
+
+No migration is proposed. Any later proposal must compare every selected source/destination blob and mode at exact SHAs, carry license/notice obligations, prove imported test identity and workflow behavior, verify dependencies and rollback, obtain source-owner and independent QA approval, and pass destination CI. COE #48/#49 are outside the manifest and remain unassigned/audit-only.

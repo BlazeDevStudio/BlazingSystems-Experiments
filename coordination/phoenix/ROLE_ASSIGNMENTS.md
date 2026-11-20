@@ -1588,3 +1588,41 @@ CORE source remains with the separate CORE continuation. No role was reassigned 
 ### Terminal BlazePwifi full-build supersession — 2026-11-20T05:37Z
 
 The exact docs-head [#44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) completed after the initial readback: **26 successful jobs, 0 failed, 4 skipped**. Validation, Android, all firmware/platform targets, update bundle and all six v0.4 simulation jobs passed. The four skipped jobs are production signed-APK import, production sign handoff, release publication and prerelease publication. This is a terminal successful hosted build/simulation result only; it does not clear the still-failing two-core reproducibility run [#44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) or Windows self-test [#44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650). No signing or publishing occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC07 live exact refresh — 2026-11-20 (supersedes older current-head pins)
+
+This readback supersedes stale #327/#323/#326 references above. It is a coordination correction only; no source ownership or merge authority changes.
+
+**Current refs:** Experiments main \`f4e8a891aed8af86d5fd315d28750a0ac3a7372b\`; development \`blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5\`; v0.6 audit foundation \`2fbd2475e9f54878c316fa7cea2f228386b0e859\` remains comparison-only; COE main \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; PR #288 start head \`230bdecf1b404eece414802f544eabbc352e6991\`; COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\`.
+
+### Current Hardware child chain
+
+| PR | Current head | Exact base |
+|---|---|---|
+| #322 | \`50d93e0de3d682550b6f02fb43484e76ad9c7e08\` | #320 \`b2b41a3d6ce7887b9624137c966f58462895d3fa\` |
+| #323 | \`988904e8bcd058b62a9fac4aa6319a9b7c5b2470\` | #322 \`50d93e0d...\` |
+| #326 | \`58c558fb6a237935214621adc3dee65a10fe1a51\` | #323 \`988904e8...\` |
+| #327 | \`63c1d2b38855646acc1e04b3f7952c778692460a\` | #326 \`58c558fb...\` |
+
+The previous #323 \`1761bf38...\` parent-drift note is stale: live #323 head now equals #326 base. #327 latest source/test commit is \`354dddcdbfb93235f10fc99171d15ce63bc01451\`. At current #327 docs head, quarantine #44690922470 and relay #44690922558 PASS; Full #44690922491 FAILS at QA-owned \`Missing poll signature check\`. All 13 firmware/platform targets and Android passed; downstream signing/publishing skipped. Firmware remains default-deny.
+
+Parallel Hardware drafts: #239 \`d83b715b...\`; #254 \`84c442a4...\` (focused sanitizer PASS; Full #44683629491 fails handover freshness and missing ESP32 core-4 mbedTLS header); #283 \`830c3553...\` (quarantine/build scoped PASS, but \`quarantinePending()\` is definition-only and no approved poll/register signature producer exists). These are not members of the #322–#327 chain.
+
+### Current role CI
+
+| Role | PR / exact head | Current evidence |
+|---|---|---|
+| CORE | #252 \`c82705f2...\` | #42698139210 PASS, scoped; separate CORE continuation retains source ownership |
+| RENTAL | #289 \`68928774...\` | #43653329229 / #43653329235 PASS, scoped |
+| PISONET | #255 \`d01fd164...\` | #42462978704 PASS, scoped; native COM acceptance unverified |
+| QA | #290 \`5c29d159...\`; #292 \`75a3f66d...\` | #290 #43633486963 PASS but does not run NativeComInterfaceHandleLab; #292 no exact-head run |
+| RELEASE | #291 \`7fbd4ea...\` | Full #44692255873 PASS with four production jobs skipped; compatibility #44692255708 FAILS both ESP32 cores; Windows #44692256309 FAILS on PISONET-owned unset \`$buildWorkflow\` |
+
+### COE ownership boundary
+
+COE #26 remains OPEN/DRAFT with five queued workflows and zero jobs. #48 \`8286548e...\` and #49 \`aeb8ff11...\` are separate, unassigned Stage 5 candidates; no route exists, and PHX-HARDWARE declined implementation ownership. Do not fold them into #26 or assign them to a PHX role by implication.
+
+See [UTC07 exact-head and provenance audit](PHX_MASTER_UTC07_20261120_HW327_STACK_COE26_SOURCE_PROVENANCE_AND_ROLE_CI_AUDIT.md) for source/destination blobs, license gap, 25 source lab identities vs one destination shell test, exact workflows and CI.
+
+**PRODUCTION NO-GO.**
