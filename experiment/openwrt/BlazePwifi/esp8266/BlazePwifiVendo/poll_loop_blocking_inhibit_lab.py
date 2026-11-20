@@ -638,55 +638,35 @@ RACE_MAIN = MAIN.replace(
 )
 
 
-ACTIVE_HIGH_RACE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
-int main(){
+def post_drain_rollover_main(active_low: bool) -> str:
+    """Build the same rollover regression for either physical input polarity."""
+    polarity = "true" if active_low else "false"
+    interrupt_mode = "FALLING" if active_low else "RISING"
+    scenario = "ACTIVE_LOW" if active_low else "ACTIVE_HIGH"
+    failure_code = 59 if active_low else 56
+    return MAIN[:MAIN.index("int main(){")] + rf"""
+int main(){{
   resetState();
-  runCoinActiveLow=false;
+  runCoinActiveLow={polarity};
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   coinEdgeSequence=0xFFFFFFFEUL;
   lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
   injectAfterDrainEdgeCount=2;
   injectAfterDrainEdge=true;
   loop();
-  if(attachedMode!=RISING || pollCalls!=0 || pollStartAt!=0 ||
+  if(attachedMode!={interrupt_mode} || pollCalls!=0 || pollStartAt!=0 ||
      !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
      relayOn || ledOn || insertMode || !activeTarget.empty() ||
      pollIntakeSuspended || pendingPulses!=0U ||
      coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
-     lastPoll+2!=fakeNow) return 56;
+     lastPoll+2!=fakeNow) return {failure_code};
   const std::string marker=LittleFS.files["/pollpulse.fault"];
   if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=2")==std::string::npos) return 56;
-  std::cout<<"POLL_POST_DRAIN_ACTIVE_HIGH_MULTI_EDGE_ROLLOVER_DENY_PASS\\n";
+     marker.find("pulses=2")==std::string::npos) return {failure_code};
+  std::cout<<"POLL_POST_DRAIN_{scenario}_MULTI_EDGE_ROLLOVER_DENY_PASS\\n";
   return 0;
-}
+}}
 """
-
-
-ACTIVE_LOW_RACE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
-int main(){
-  resetState();
-  runCoinActiveLow=true;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  coinEdgeSequence=0xFFFFFFFEUL;
-  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
-  injectAfterDrainEdgeCount=2;
-  injectAfterDrainEdge=true;
-  loop();
-  if(attachedMode!=FALLING || pollCalls!=0 || pollStartAt!=0 ||
-     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
-     relayOn || ledOn || insertMode || !activeTarget.empty() ||
-     pollIntakeSuspended || pendingPulses!=0U ||
-     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
-     lastPoll+2!=fakeNow) return 59;
-  const std::string marker=LittleFS.files["/pollpulse.fault"];
-  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=2")==std::string::npos) return 59;
-  std::cout<<"POLL_POST_DRAIN_ACTIVE_LOW_MULTI_EDGE_ROLLOVER_DENY_PASS\\n";
-  return 0;
-}
-"""
-
 
 
 ACTIVE_HIGH_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
@@ -1026,7 +1006,7 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED single-edge-post-drain-count expected_exit=55")
 
     # The dedicated active-high scenario uses the real RISING ISR on both boards.
-    compile_and_run(assemble(begin_source=edge_hook,main_source=ACTIVE_HIGH_RACE_MAIN),
+    compile_and_run(assemble(begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=False)),
                     board,0,"active-high-post-drain-multi-edge-rollover")
     print(f"{board} POLL_POST_DRAIN_ACTIVE_HIGH_MULTI_EDGE_ROLLOVER_PASS")
     active_high_wrong_edge = configure.replace(
@@ -1036,13 +1016,13 @@ for board,path in BOARDS.items():
     if active_high_wrong_edge == configure:
         raise AssertionError(f"{board}: active-high ISR polarity mutation anchor missing")
     compile_and_run(
-        assemble(configure_source=active_high_wrong_edge,begin_source=edge_hook,main_source=ACTIVE_HIGH_RACE_MAIN),
+        assemble(configure_source=active_high_wrong_edge,begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=False)),
         board,56,"active-high-post-drain-edge-polarity"
     )
     print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
 
     # The active-low counterpart uses the real FALLING ISR across the same wrap race.
-    compile_and_run(assemble(begin_source=edge_hook,main_source=ACTIVE_LOW_RACE_MAIN),
+    compile_and_run(assemble(begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=True)),
                     board,0,"active-low-post-drain-multi-edge-rollover")
     print(f"{board} POLL_POST_DRAIN_ACTIVE_LOW_MULTI_EDGE_ROLLOVER_PASS")
     active_low_wrong_edge = configure.replace(
@@ -1052,7 +1032,7 @@ for board,path in BOARDS.items():
     if active_low_wrong_edge == configure:
         raise AssertionError(f"{board}: active-low ISR polarity mutation anchor missing")
     compile_and_run(
-        assemble(configure_source=active_low_wrong_edge,begin_source=edge_hook,main_source=ACTIVE_LOW_RACE_MAIN),
+        assemble(configure_source=active_low_wrong_edge,begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=True)),
         board,59,"active-low-post-drain-edge-polarity"
     )
     print(f"{board} MUTATION_REJECTED active-low-post-drain-edge-polarity expected_exit=59")
