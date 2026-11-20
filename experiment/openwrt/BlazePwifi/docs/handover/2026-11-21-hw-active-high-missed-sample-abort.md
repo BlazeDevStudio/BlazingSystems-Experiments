@@ -6,12 +6,12 @@
 **Branch:** `phoenix/hardware-prepoll-edge-abort-20261119`  
 **PR:** [#327 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327)  
 **Base:** #326 at `58c558fb6a237935214621adc3dee65a10fe1a51`  
-**Source/test commit:** `b29de082fd847c5873aa99b1e05bbde28428a8c4`  
+**Source/test commit:** `d68c141592689fcca40051d16cddfc0ecb3a5f58`  
 **Scope:** Hardware-owned host regression only; no production firmware or shared API changed.
 
 ## Gap
 
-The poll-drain suite already exercised the active-low case where the input briefly becomes active during the quiet-drain read, then returns idle before the ordinary `loop()` sample. That case must not disappear silently: because no pending pulse can be durably attributed, firmware must latch an unresolved-ingress fault and keep outputs denied.
+The poll-drain suite already exercised the active-low case where the input briefly becomes active during the quiet-drain read, then returns idle before the ordinary `loop()` sample. Because no pending pulse can be durably attributed, firmware must latch an unresolved-ingress fault and keep outputs denied.
 
 The active-high path had coverage for a pulse that remained visible through the ordinary sample, and for an ISR edge during drain, but not this exact no-ISR / ended-before-sample combination.
 
@@ -25,19 +25,40 @@ The active-high path had coverage for a pulse that remained visible through the 
 - Relay and LED must be OFF before either persistence writer is entered and remain OFF.
 - The test executes against both ESP8266 and ESP32 source extraction.
 
-A fail-open mutation makes the active-high line appear idle regardless of the raw pin. The test must reject that mutation at expected exit 57 on both board builds.
+A fail-open mutation makes the active-high line appear idle regardless of the raw pin. The test rejects that mutation at expected exit 57 on both board builds.
 
-The assembler now accepts an explicit extracted `idle_source` so the mutation exercises the production helper rather than changing the test stub.
+The assembler accepts an explicit extracted `idle_source` for the mutation. Its optional parameter was placed last to preserve all existing positional mutation calls.
+
+## Exact CI evidence
+
+At source/test SHA `d68c141592689fcca40051d16cddfc0ecb3a5f58`:
+
+- Quarantine PR [run #44823079264](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44823079264), job `136588658066`: **SUCCESS**.
+- Relay/output PR [run #44823079237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44823079237):
+  - job `136588658414`: **SUCCESS**;
+  - ESP32 boot-polarity job `136588658917`: **SUCCESS**.
+- Both focused logs contain `POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_PASS` and `MUTATION_REJECTED active-high-pulse-misread-as-idle expected_exit=57` for ESP8266 and ESP32.
+- Both focused workflows explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0` and `PHYSICAL_POWER_CUT_VERIFIED=0`.
+
+### Corrected first attempt
+
+The first source/test commit `b29de082fd847c5873aa99b1e05bbde28428a8c4` passed the new active-high case on ESP8266, then exposed a lab-harness regression: adding `idle_source` as the third positional argument shifted existing mutation calls, causing compile errors before the rest of the suite. The failed focused jobs were quarantine run [#44822883874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44822883874), job `136587998148`, and relay run [#44822884668](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44822884668), job `136587994759`. The correction moved `idle_source` to the final optional parameter in source/test commit `d68c1415...`; the exact-head focused jobs above then passed.
+
+### Full validation
+
+Full build [run #44823079422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44823079422), validation job `136588797410`: **FAILURE** at the inherited QA-owned controller assertion:
+
+`Missing poll signature check`
+
+The current main register/poll producer does not emit the approved controller `response_sig`. Other target/Android jobs were still running when this handover was updated; no overall Full-matrix pass is claimed. Do not weaken default-deny or invent a signature to satisfy the stale assertion.
 
 ## Evidence boundary
 
 This is a source-extracted host simulation. It is not a physical coin-slot, electrical pulse, relay, LittleFS power-loss, 150-power-cut or 30-device soak test.
 
-- Source/test commit: `b29de082fd847c5873aa99b1e05bbde28428a8c4`
-- Exact-head GitHub Actions: pending observation at handover creation; record only returned terminal job IDs in the PR/checkpoint.
 - No production `.ino`, CORE contract, financial ledger, witness, QA-owned fixture, release workflow or COE migration was changed.
 - No flash, reset, customer device, live money, migration, merge, signing, tag or deployment was performed.
 
 ## Next action
 
-Verify the focused quarantine workflow at the exact source/test SHA and latest documentation head. PHX-QA may independently review the new negative mutation; PHX-MASTER should refresh the canonical #327 head and #323 → #326 → #327 pins. Keep Full validation, physical acceptance and production gates separate.
+PHX-QA should replace the stale positive poll-signature assertion with source-exact negative/default-deny tests until CORE publishes the authenticated response contract. PHX-MASTER should reconcile exact #323 → #326 → #327 heads in the canonical assignment and integration matrix. Keep Full validation, physical acceptance and production gates separate.
