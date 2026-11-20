@@ -719,6 +719,10 @@ def main() -> int:
         "cancel-in-progress: false",
         "workflow_dispatch:",
         "pull_request:",
+        "Release artifact provenance regression suite",
+        "python3 .github/scripts/test_build_provenance.py",
+        "python3 .github/scripts/test_arduino_cli_archive_verifier.py",
+        "python3 .github/scripts/test_release_artifact_action_pins.py",
         '"draft/softtimer-future-release-signing-pipeline-20261029"',
     )
     missing = [value for value in required if value not in content]
@@ -731,8 +735,8 @@ def main() -> int:
         return fail("workflow must independently assert the pinned hardware source HEAD")
     if content.count(f'EXPECTED_SKETCH_BLOB: "{HARDWARE_SKETCH_BLOB}"') != 1:
         return fail("workflow must independently assert the exact sketch Git blob")
-    if content.count("persist-credentials: false") != 2:
-        return fail("both checkouts must disable persisted credentials")
+    if content.count("persist-credentials: false") != 3:
+        return fail("all three release-tooling/hardware checkouts must disable persisted credentials")
 
     application_errors = check_application_image_verifier(content)
     if application_errors:
@@ -770,15 +774,15 @@ def main() -> int:
     if end < 0:
         return fail("compatibility workflow action-pin entry is malformed")
     pin_entry = pin_guard[start:end]
-    if '"actions/checkout": 2' not in pin_entry or '"arduino/setup-arduino-cli": 1' not in pin_entry:
-        return fail("compatibility workflow action-pin counts are not 2 checkout + 1 Arduino setup")
+    if '"actions/checkout": 3' not in pin_entry or '"arduino/setup-arduino-cli": 1' not in pin_entry:
+        return fail("compatibility workflow action-pin counts are not 3 checkout + 1 Arduino setup")
 
     action_refs = re.findall(
         r"(?m)^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)",
         content,
     )
     expected = {
-        "actions/checkout": (CHECKOUT_SHA, 2),
+        "actions/checkout": (CHECKOUT_SHA, 3),
         "arduino/setup-arduino-cli": (ARDUINO_SETUP_SHA, 1),
     }
     found: dict[str, list[str]] = {}
