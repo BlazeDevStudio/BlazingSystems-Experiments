@@ -1538,3 +1538,15 @@ RELEASE, CORE and PISONET retain their respective path ownership and review obli
 At exact PR #291 head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf, compatibility #44809606421 is SUCCESS 3/3 and Full #44809606527 is terminal SUCCESS with 26 successful jobs, zero failures/cancellations, and four production import/sign/publish jobs skipped. Windows #44809606428 remains failed at PISONET-owned $buildWorkflow; publisher skipped.
 
 The terminal Full result is hosted non-production CI only. PR #291 remains draft; 21 RELEASE / 3 CORE / 2 PISONET paths still require their owners' review. No merge, signing or release. Production remains NO-GO.
+
+
+## PHX-MASTER UTC20 live exact-head revalidation — 2026-11-20T20:36Z
+
+- Master PR #288 began at `1d0534f...`, OPEN/DRAFT/UNMERGED, 136 changed paths all under `coordination/phoenix/`; ownership manifest unchanged and Master destination null.
+- QA #292 targets historical Master base `b1ca02e...`, has no PR-triggered CI, and its four-case test was locally re-run 4/4 against the current verifier's extracted `validate_envelope()` function with exact QA-test and example-fixture Git blobs. This is bounded source-extracted testing, not full module or Master-suite execution.
+- HARDWARE #327 focused quarantine/relay CI passes; Full validation fails at QA's positive poll-signature fixture. RENTAL #328 Android checks pass but shared validation fails CORE handover freshness and ESP32 core 4.0.0 fails on inherited `mbedtls/sha256.h`. RELEASE #291 compatibility 3/3 and Full 26/26 pass with four production jobs skipped; Windows fails at PISONET-owned `$buildWorkflow`.
+- COE #26 remains frozen: complete trees 2,445 vs 286; 25 board-local Python labs vs 0; three scoped Hardware workflows vs one generic; firmware/test blobs differ; root NOTICE and Hardware license/notice scope incomplete; five workflows queued / zero jobs.
+- Private v11 registry/newer corrections and effective branch protection remain unverified. No Drive connector was available; no older registry was substituted. Full Master suite NOT RUN after local GitHub DNS failure.
+- No subsystem source, manifest, destination, financial state, signer, hardware, or release artifact changed. No migration, merge, flash, signing, real-payment operation or physical test.
+
+**PRODUCTION NO-GO** remains unchanged.
