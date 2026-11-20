@@ -32,7 +32,7 @@ WORKFLOWS = {
         "actions/download-artifact": 8,
     },
     ".github/workflows/phx-release-esp32-core-compatibility.yml": {
-        "actions/checkout": 2,
+        "actions/checkout": 3,
         "arduino/setup-arduino-cli": 1,
     },
     ".github/workflows/blazepisonet-softtimer-release.yml": {
