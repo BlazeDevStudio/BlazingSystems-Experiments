@@ -121,6 +121,7 @@ static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 static bool injectDuringDrainAbort=false;
+static bool injectDrainAbortWithoutIsr=false;
 static bool injectDuringPollRelease=false;
 static bool pollReleaseEdgeInjected=false;
 static bool pollReleaseEdgeSawRelayOff=false;
@@ -129,6 +130,7 @@ static bool drainAbortInjected=false;
 static bool drainAbortSawRelayOn=false;
 static bool drainAbortSampleSawRelayOn=false;
 static bool drainAbortReenabledBeforeLatch=false;
+static bool drainAbortActiveLineReenabled=false;
 static int pollCalls=0, saveCalls=0;
 static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
@@ -167,6 +169,16 @@ int digitalRead(int) {
     }
     if(drainAbortReadCount==3) drainAbortSampleSawRelayOn=relayOn;
   }
+  if(injectDrainAbortWithoutIsr){
+    ++drainAbortReadCount;
+    if(drainAbortReadCount==2 && !drainAbortInjected){
+      drainAbortInjected=true;
+      pulseStart=(int)fakeNow;
+      pulseEnd=(int)fakeNow+100;
+      drainAbortSawRelayOn=relayOn;
+      return runCoinActiveLow?LOW:HIGH;
+    }
+  }
   const bool active=pulseStart>=0 &&
     fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
   if(runCoinActiveLow) return active?LOW:HIGH;
@@ -194,6 +206,9 @@ void digitalWrite(int pin,int level) {
   // recovery latch is set proves that the poll inhibit was released too early.
   if(injectDuringDrainAbort && drainAbortInjected && !journalRecoveryRequired &&
      (relayOn || ledOn)) drainAbortReenabledBeforeLatch=true;
+  if(injectDrainAbortWithoutIsr && drainAbortInjected && !journalRecoveryRequired &&
+     !pollIntakeSuspended && (relayOn || ledOn) && pulseStart>=0 &&
+     fakeNow<(uint32_t)pulseEnd) drainAbortActiveLineReenabled=true;
 }
 uint32_t millis(){ return fakeNow; }
 void delay(int ms){ fakeNow+=(uint32_t)ms; }
@@ -269,10 +284,11 @@ void resetState(){
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
-  injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
+  injectDrainAbortWithoutIsr=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
+  drainAbortActiveLineReenabled=false;
   pollCalls=0; saveCalls=0;
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
@@ -389,6 +405,33 @@ int main(){
      backupWriteSawRelayOn || backupWriteSawLedOn ||
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
+
+  // GPIO can observe an active pulse even when no ISR edge was recorded.
+  // The temporary poll inhibit must remain asserted until the input returns idle.
+  resetState(); injectDrainAbortWithoutIsr=true; loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !pollIntakeSuspended || relayOn || ledOn || journalRecoveryRequired ||
+     pendingPulses!=1U || pendingReady || pendingTarget!="target-01" ||
+     pendingNonce!="nonce12345678" || saveCalls!=1 || !lastCoin) return 34;
+  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_STAYS_INHIBITED_PASS\\n";
+  fakeNow=(uint32_t)pulseEnd; loop();
+  if(pollIntakeSuspended || !relayOn || !ledOn || pendingPulses!=1U ||
+     saveCalls!=1 || journalRecoveryRequired) return 35;
+  std::cout<<"POLL_ABORT_ACTIVE_LINE_RELEASES_ONLY_AFTER_IDLE_PASS\\n";
+
+  // Repeat the missing-ISR case for active-high input wiring.
+  resetState(); runCoinActiveLow=false;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  injectDrainAbortWithoutIsr=true; loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !pollIntakeSuspended || relayOn || ledOn || journalRecoveryRequired ||
+     pendingPulses!=1U || pendingReady || pendingTarget!="target-01" ||
+     pendingNonce!="nonce12345678" || saveCalls!=1 || !lastCoin) return 36;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_STAYS_INHIBITED_PASS\\n";
+  fakeNow=(uint32_t)pulseEnd; loop();
+  if(pollIntakeSuspended || !relayOn || !ledOn || pendingPulses!=1U ||
+     saveCalls!=1 || journalRecoveryRequired) return 37;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_RELEASES_ONLY_AFTER_IDLE_PASS\\n";
 
   // An ISR edge can arrive after the pre-release snapshot but during the first
   // GPIO writes that re-enable the acceptor. It must be reconciled before the
