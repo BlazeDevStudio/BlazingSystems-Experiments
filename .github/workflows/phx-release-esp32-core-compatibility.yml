@@ -105,6 +105,41 @@ jobs:
           test "$installed_core" = "${{ matrix.esp32_core }}"
           arduino-cli core list
 
+      - name: Verify pinned ESP32 compile-time date/time source and SOURCE_DATE_EPOCH
+        shell: bash
+        run: |
+          set -euo pipefail
+          core_root="$HOME/.arduino15/packages/esp32/hardware/esp32/${{ matrix.esp32_core }}"
+          toolchain_root="$HOME/.arduino15/packages/esp32/tools/esp-x32"
+          mapfile -t toolchain_versions < <(
+            find "$toolchain_root" -mindepth 1 -maxdepth 1 -type d -print | sort
+          )
+          if [ "${#toolchain_versions[@]}" -ne 1 ]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: expected one esp-x32 package, found %s\\n' "${#toolchain_versions[@]}" >&2
+            exit 1
+          fi
+          toolchain_version="${toolchain_versions[0]##*/}"
+          case "${{ matrix.esp32_core }}:$toolchain_version" in
+            "3.3.13:2610"|"4.0.0:2512") ;;
+            *)
+              printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: unexpected core/toolchain pair core=%s esp-x32=%s\\n' "${{ matrix.esp32_core }}" "$toolchain_version" >&2
+              exit 1
+              ;;
+          esac
+          compiler_binary="${toolchain_versions[0]}/bin/xtensa-esp32-elf-gcc"
+          test -x "$compiler_binary"
+          source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"
+          if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: invalid pinned source commit timestamp\\n' >&2
+            exit 1
+          fi
+          python3 .github/scripts/test_verify_esp32_source_date_epoch.py
+          python3 .github/scripts/verify_esp32_source_date_epoch.py \\
+            --compiler "$compiler_binary" \\
+            --core-root "$core_root" \\
+            --core-version "${{ matrix.esp32_core }}" \\
+            --source-date-epoch "$source_date_epoch"
+
       - name: Test release-owned ESP32 ELF section inspector
         run: |
           python3 .github/scripts/test_inspect_esp32_elf_sections.py
@@ -120,6 +155,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"
+          if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: invalid pinned source commit timestamp\\n' >&2
+            exit 1
+          fi
+          export SOURCE_DATE_EPOCH="$source_date_epoch"
+          export LC_ALL=C
+          export TZ=UTC
+          printf 'PHX-ESP32-SOURCE-DATE-EPOCH-APPLIED: source=%s epoch=%s locale=%s tz=%s\\n' "$EXPECTED_SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$LC_ALL" "$TZ"
           output_root="$RUNNER_TEMP/phx-esp32-${{ matrix.esp32_core }}"
           build_dir="$output_root/build"
           first_output_dir="$output_root/first"
