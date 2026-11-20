@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T19:52:00Z  
+**Updated:** 2026-11-20T20:02:48Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -217,3 +217,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 ## PHX-MASTER UTC19 post-checkpoint #327 head/CI supersession — 2026-11-20T19:52Z
 
 Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test head 1a631567eb0c14c12a114f592685f44cc414466f. Focused quarantine/relay PASS; exact-head Full fails at QA's positive poll-signature fixture, while 14/14 target/Android build jobs pass and downstream gates skip. See the updated UTC19 report for exact run links. The Master track remains coordination-only; no hardware source or migration changes.
+
+
+## Latest exact-head reconciliation — 2026-11-20 UTC20
+
+- [UTC20 Rental firmware baseline, role CI and COE #26 audit](PHX_MASTER_UTC20_20261120_RENTAL328_FIRMWARE_BASELINE_AND_LIVE_ROLE_CI_AUDIT.md).
+- Master branch at audit start: be7a4e8e6fbacfd26e60fb6fc09a0322a2f84c8b; PR #288 OPEN/DRAFT, base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. One coordination report added; no subsystem source paths changed.
+- RENTAL #328 inherits ESP32 sketch blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d from #289; current HARDWARE #327 source blob is ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7. #328 API21/API23 and APK identity pass, but shared build fails at CORE handover freshness and the stale Mbed TLS 4 include.
+- HARDWARE #327 focused quarantine/relay PASS; Full #44805905622 FAIL at QA-owned positive poll-signature fixture. RELEASE #291 Full and ESP32 compatibility PASS with production jobs skipped; Windows FAIL at PISONET-owned $buildWorkflow.
+- COE #26 remains FROZEN: complete trees 2,445 vs 286; board-local Python labs 25 vs 0; firmware/test blobs differ; NOTICE/Hardware license scope incomplete; five destination workflows queued.
+- No subsystem source or destination file changed; ownership manifest unchanged; no migration, merge, release or physical test. PRODUCTION NO-GO.
