@@ -918,3 +918,14 @@ The existing `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf96017
 - COE #48 is not part of COE #26. No source blob, license, test, workflow or file was copied/moved/rebased/cherry-picked into #26. The current #26 head remains `b382d233ff06c8791b1028bed3c617cc7b670d12`; five unique workflows are queued with zero jobs. The unchanged route manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER destination null.
 
 This is a coordination-only ownership/provenance correction, not a route change, migration authorization or release decision.
+
+
+
+
+## COE #48 Stage 5 Remote CS — separate candidate, no migration route (2026-11-20 UTC00)
+
+COE PR #48 at `8286548e395366f2332830025fed00ceebdfb24a` changes 14 paths, all under `Hardware/esp8266/BlazePisonetUniversal/staging/` plus its scoped workflow. Its changed-file list contains no `Pisowifi/` backend path. It is based on Stage 4.2 PR #47 at `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597`, not integration PR #26. No route exists for it in `OWNERSHIP_ROUTES.json`; do not copy, cherry-pick, rename or stage it into #26.
+
+The Stage 5 `REMOTE_CS_BLAZEPWIFI_BRIDGE_CONTRACT.md` (blob `1dc0f709167862d543086449d895dd669f49f32d`) explicitly states that the backend bridge is required and not implemented. The current #26 Vendo source blob is `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`; the current #26 API source blob is `fabbd6fb28a34c162fb40403aec2a40d6fe1a65b`; the V1 schema blob is `8d0f8553ae53a0b22cb874de833aa21ebc52695e`. These are different wire contracts, not interchangeable files. The bridge requires a durable customer/session/target mapping, stable idempotency nonce, signed backend receipt verification, exact ESP ACK, expiry/reboot reconciliation and default-deny on unknown state.
+
+The PR author declares JuanFi Apache-2.0 material is reference-only and no code/protocol was imported; the 14-path diff shows no third-party source import or license-file change. This declaration is not a legal license audit. Obtain PHX-HARDWARE and PHX-PISONET review-scope ACK/DECLINE plus PHX-CORE's receipt-contract authority before proposing a route. Preserve the original source and all current #26 staging unchanged.

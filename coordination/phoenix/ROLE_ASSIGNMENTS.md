@@ -1463,3 +1463,20 @@ COE #48 head `b72ca86a141329b4b401f5d790cfb04a58423331`, based on #47 `1c10f7421
 ### Cleanup and release state
 
 Issue #266 remains OPEN. The Master cleanup checkbox stays unchecked because the full duplicate/dead-code inventory is incomplete; no mass move/deletion was performed. COE #26 remains five queued unique workflows / zero jobs. The private v11 registry/newer corrections remain unavailable. Production remains NO-GO.
+
+
+
+
+## 2026-11-20 UTC00 — owner head and next-action refresh
+
+This is a coordination snapshot only; no role branch ownership is changed.
+
+- **PHX-CORE:** retain sole authority for financial receipt, controller admission and durable exactly-once semantics. Current Experiments #252 head `c82705f2...`; COE receipt-vector candidate #45 head `9d76a134...`. The two supporting case/shell runs pass, but a dedicated receipt-vector workflow is not evidenced. Publish the canonical event-bound receipt contract before any Remote CS adapter accepts paid events. The separate CORE continuation remains owner of CORE implementation; Master did not start competing CORE work.
+- **PHX-RENTAL:** #289 head `68928774...`; two exact-head CI workflows pass. No Rental ownership changes.
+- **PHX-PISONET:** #255 head `d01fd164...`; exact-head Windows CI pass. Own the unset `$buildWorkflow` correction in the PISONET test, then ask RELEASE to rerun. Separately ACK/DECLINE review of a proposed COE #48 backend-adapter design; do not assume ownership of its Hardware firmware files.
+- **PHX-HARDWARE:** #327 head `1d461f2c...`, parent #326 `58c558fb...`; latest test-only runner-dedup source/test commit `3258e54b...`. Focused quarantine and relay/output pass; Full still fails at QA's Missing poll signature check. Refresh the stale #327 PR body to current head/CI. Separately ACK/DECLINE review of COE #48's ESP firmware/journal/electrical fault paths.
+- **PHX-QA:** #290 head `5c29d159...` pass; #292 head `75a3f66d...` has no exact-head run. Replace the stale positive poll-signature assertion with source-linked default-deny regression and independently rerun #327 Full. Preserve independent QA ownership.
+- **PHX-RELEASE:** #291 head `2bec5c94...`; Windows run fails because `$buildWorkflow` is unset in PISONET-owned `negative-selftest.ps1`; ESP32 compatibility and BlazePwifi jobs pass. Rerun Windows after PISONET fixes its own test.
+- **PHX-MASTER:** own only `coordination/phoenix/**`, architecture/interface contracts, issue/PR coordination and migration provenance. Keep COE #48 UNASSIGNED / AUDIT-ONLY until explicit owner acknowledgements; no product source edits.
+
+COE #26 remains frozen pending per-file source/destination blob, mode, license, import/dependency, test-identity and exact destination-CI verification. The global #266 cleanup checklist remains open.

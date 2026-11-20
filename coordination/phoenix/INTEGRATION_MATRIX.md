@@ -2206,3 +2206,23 @@ All statuses are scoped to the listed exact refs/runs. No subsystem source was e
 | COE #44 | `582fd5d5e83e36b36546ac28534740298ba94af4` | Shared [44390136309](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136309) and case [44390136296](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136296) PASS; sandbox [44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) FAIL; not site-wide authority |
 
 All results are scoped to the listed exact refs. Green scoped jobs do not establish a combined COE #26 build, source parity, physical acceptance or production readiness. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No files were copied, moved, rebased, cherry-picked or staged.
+
+
+
+
+## Live exact-head matrix — 2026-11-20 UTC00
+
+| Role / candidate | Exact head | Current exact-head CI disposition |
+|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| PHX-RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| PHX-HARDWARE #327 | `1d461f2c5fad1ea411ab89bab8d1a1f4e73dce1c` | [44648324666](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324666) and [44648324424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324424) PASS; [44648324417](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44648324417) FAIL at QA-owned Missing poll signature check |
+| PHX-QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head run returned |
+| PHX-RELEASE #291 | `2bec5c94b80cc9c3e605ed13bcd001375fa4a6b8` | Windows [44645669562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669562) FAIL (`$buildWorkflow` unset); ESP32 [44645669471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669471) PASS; BlazePwifi [44645669512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669512) PASS |
+| COE Stage 4.2 #47 | `1c10f7421dfaa87fcb2ce89d4a8b2d22422d1597` | Case [44620464517](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464517) and Stage4.2 [44620464547](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464547) PASS; shared [44620464623](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44620464623) FAIL (ESP32 missing mbedTLS header) |
+| COE Stage 5 #48 | `8286548e395366f2332830025fed00ceebdfb24a` | Stage5 [44643670696](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670696) 4/4 PASS; case [44643670679](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670679) PASS; shared [44643670685](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670685) FAIL (ESP32 missing mbedTLS header) |
+| COE CORE receipt vectors #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Case [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) and shell [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) PASS; no dedicated exact-head receipt-vector workflow returned |
+
+COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; all five unique workflows are queued with zero jobs. #35 shared/sandbox remain failed; #44 sandbox remains failed and does not establish site-wide ULA authority. Green scoped jobs do not establish combined destination CI, source parity, physical acceptance or production readiness.
