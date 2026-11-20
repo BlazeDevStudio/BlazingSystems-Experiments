@@ -334,6 +334,7 @@ PARITY_SIGNATURES = (
     "bool pollJsonTopLevelTrue(",
     "bool validSha256Hex(",
     "bool coinPostDispositionVerified(",
+    "void handleCoinPostResponse(",
     "bool acceptPollResponse(",
 )
 
@@ -449,7 +450,7 @@ def verify_board_safety_parity():
         if board_polarity_guard_problem(polarity_mutated) is None:
             raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
-    print("BOARD_SHARED_SAFETY_PARITY_PASS 21/21 functions byte-identical")
+    print("BOARD_SHARED_SAFETY_PARITY_PASS 22/22 functions byte-identical")
     print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open coin disposition")

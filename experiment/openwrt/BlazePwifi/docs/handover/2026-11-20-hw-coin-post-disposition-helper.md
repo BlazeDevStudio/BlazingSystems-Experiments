@@ -40,3 +40,8 @@ The first push/PR workflow run at commit `2418166ee37c08d5ba668f3f247aa494c0abeb
 - The same job's actual-loop harness, `poll_loop_blocking_inhibit_lab.py`, compiles the extracted production `loop()` and needed the newly extracted `handleCoinPostResponse()` definition included after its fake backend stubs.
 
 This follow-up corrects both harness integrations and re-runs the exact-source workflow. The failed run is retained as failure evidence; it is not relabeled PASS. The separate relay/output job result is being reconciled independently. No production money, hardware or release gate is claimed.
+
+
+## Second exact-head CI result and correction
+
+Quarantine PR run [#44657262663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657262663), job `136026443808`, passed the poll-response lab on both boards (11/11 response cases, 13/13 strict-root JSON cases, 4/4 root-ACK cases, 4/4 real-verifier default-deny cases) and passed the new source-helper ordering checks. It then failed in the existing `pending_attempt_marker_lab.py` because that lab still required `journalRecoveryRequired=true` to appear inside `loop()`; the branch was intentionally moved into `handleCoinPostResponse()`. This follow-up updates that lab to verify the delegation and helper guard, and adds the new helper to the ESP32/ESP8266 byte-parity list (22 shared functions). The exact loop-compilation harness was also updated in the preceding follow-up to include the source-extracted helper after its fake backend stubs. The failed run remains recorded as FAIL; a fresh exact-head rerun is pending.

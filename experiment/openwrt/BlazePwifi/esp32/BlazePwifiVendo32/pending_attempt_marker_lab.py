@@ -276,8 +276,15 @@ for board,path in BOARDS:
         raise SystemExit(f"{board}: previous attempt is not denied by POST gate")
     if loop.count('post("coin"')!=1 or loop.find("markPendingPostAttempt()")<0 or loop.find("markPendingPostAttempt()")>loop.find('post("coin"'):
         raise SystemExit(f"{board}: marker is not before the only coin POST call")
-    if "journalRecoveryRequired=true;" not in loop[loop.find('post("coin"'):]:
-        raise SystemExit(f"{board}: ambiguous POST outcome is not fail-closed")
+    coin_post=loop.find('String r=post("coin"')
+    if coin_post < 0 or "handleCoinPostResponse(r);" not in loop[coin_post:]:
+        raise SystemExit(f"{board}: coin POST does not delegate to disposition helper")
+    handler=extract(src,"void handleCoinPostResponse(const String &response){")
+    auth_guard=handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
+    clear_pending=handler.find("clearPending();")
+    quarantine=handler.find("quarantinePending(response);")
+    if "journalRecoveryRequired=true;" not in handler or auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
+        raise SystemExit(f"{board}: ambiguous POST outcome is not fail-closed in disposition helper")
     magic=re.search(r"(?:static\s+)?const uint32_t PENDING_MAGIC\s*=\s*(0x[0-9A-Fa-f]+)",src)
     if not magic: raise SystemExit(f"{board}: missing pending magic")
     values={
