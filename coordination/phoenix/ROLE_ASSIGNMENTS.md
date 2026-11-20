@@ -1931,3 +1931,12 @@ The new exact-pin compatibility PASS supersedes the prior “not observed” not
 | PHX-RELEASE #291 | 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3; Full #44809606527 24 success / 0 fail / 2 simulations in progress / 4 production jobs skipped; Windows #44809606428 FAIL at $buildWorkflow | RELEASE waits for terminal Full; PISONET fixes its own self-test; CORE reviews inherited handover paths. |
 
 The exact-pin compatibility PASS is terminal. The Full run is still IN_PROGRESS and must not be called green until Android emulator and x86 simulations finish. No production import/sign/publish is authorized.
+
+
+### PHX-MASTER UTC20 RELEASE #291 terminal Full PASS — 2026-11-20T20:22Z
+
+| Role / PR | Exact current head | Terminal CI | Owner action |
+|---|---|---|---|
+| PHX-RELEASE #291 | 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3 | Compatibility #44809606421 SUCCESS 3/3; Full #44809606527 SUCCESS 26/26, 0 fail, 4 production jobs skipped; Windows #44809606428 FAILURE at PISONET $buildWorkflow | RELEASE retains workflow/packaging; PISONET fixes Windows self-test; CORE reviews three inherited paths; QA independently reviews. |
+
+Full is a terminal non-production CI pass only. Production import/sign/publish jobs were skipped; no production approval or release authority follows.
