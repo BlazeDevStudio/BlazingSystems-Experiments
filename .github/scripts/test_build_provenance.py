@@ -90,6 +90,23 @@ def fake_run(command, **kwargs):
             ),
             stderr="",
         )
+    if args[:3] == ["arduino-cli", "compile", "--show-properties=expanded"]:
+        compiler_path = Path(sys.executable).resolve()
+        return SimpleNamespace(
+            returncode=0,
+            stdout=(
+                f"compiler.path={compiler_path.parent}{os.sep}\\n"
+                f"compiler.c.cmd={compiler_path.name}\\n"
+                f"compiler.cpp.cmd={compiler_path.name}\\n"
+            ),
+            stderr="",
+        )
+    if len(args) == 2 and args[1] == "--version" and Path(args[0]).resolve() == Path(sys.executable).resolve():
+        return SimpleNamespace(
+            returncode=0,
+            stdout="GNU test compiler 12.2.0\\n",
+            stderr="",
+        )
     if args == ["zstd", "--version"]:
         return SimpleNamespace(returncode=0, stdout="*** Zstandard CLI v1.5.6 ***\n", stderr="")
     if args == ["curl", "--version"]:
@@ -168,7 +185,64 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertEqual(result["toolchain"]["arduino_cli_version"], "1.6.0")
         self.assertEqual(result["toolchain"]["board_core"], "esp8266:esp8266@3.1.2")
         self.assertEqual(result["toolchain"]["fqbn"], "esp8266:esp8266:nodemcuv2")
+        self.assertEqual(result["toolchain"]["compiler_version"], "GNU test compiler 12.2.0")
+        self.assertEqual(result["toolchain"]["compiler_c_version"], "GNU test compiler 12.2.0")
+        self.assertEqual(result["toolchain"]["compiler_c_binary"], Path(sys.executable).resolve().name)
+        self.assertEqual(result["toolchain"]["compiler_cpp_binary"], Path(sys.executable).resolve().name)
+        self.assertEqual(
+            result["toolchain"]["compiler_version_source"],
+            "arduino-cli compile --show-properties=expanded and compiler --version",
+        )
         self.assertTrue(any(x["path"].endswith("BlazePwifiVendo.ino") for x in result["source"]["paths"]))
+
+    def test_arduino_provenance_rejects_missing_cpp_compiler_property(self):
+        self.arduino_fixture()
+        args = provenance.build_args(
+            kind="esp8266",
+            target="esp8266",
+            artifact_dir=self.artifact,
+            core_package="esp8266:esp8266",
+            core_version="3.1.2",
+            fqbn="esp8266:esp8266:nodemcuv2",
+            sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+        )
+        original_run = provenance._run
+
+        def missing_cpp_properties(command, **kwargs):
+            values = [str(part) for part in command]
+            if values[:3] == ["arduino-cli", "compile", "--show-properties=expanded"]:
+                compiler_path = Path(sys.executable).resolve()
+                return (
+                    f"compiler.path={compiler_path.parent}{os.sep}\\n"
+                    f"compiler.c.cmd={compiler_path.name}\\n"
+                )
+            return original_run(command, **kwargs)
+
+        with patch.object(provenance, "_run", side_effect=missing_cpp_properties):
+            with self.assertRaisesRegex(provenance.ProvenanceError, "compiler.cpp.cmd"):
+                provenance.write_provenance(args, env=self.env)
+
+    def test_arduino_provenance_reuses_compile_library_search_paths(self):
+        workflow = (
+            provenance.ROOT / ".github/workflows/blazepwifi-build.yml"
+        ).read_text(encoding="utf-8")
+        cases = (
+            (
+                "Record exact-source ESP8266 artifact provenance",
+                "--libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries",
+            ),
+            (
+                "Record exact-source ESP32 artifact provenance",
+                "--libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries",
+            ),
+        )
+        for step_name, expected in cases:
+            with self.subTest(step=step_name):
+                marker = f"- name: {step_name}"
+                start = workflow.index(marker)
+                next_step = workflow.find("\\n      - ", start + len(marker))
+                block = workflow[start:next_step if next_step >= 0 else len(workflow)]
+                self.assertIn(expected, block)
 
     def test_corrupt_existing_checksums_fail_without_mutating_artifact(self):
         self.openwrt_fixture()
