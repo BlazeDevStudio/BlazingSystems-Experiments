@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T20:22:04Z  
+**Updated:** 2026-11-20T21:34:31Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -274,3 +274,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - HARDWARE #327 Full fails at QA's positive poll fixture; RENTAL #328 shared build fails at CORE handover freshness and inherited Mbed TLS 4 header; RELEASE #291 Full/compatibility pass with production jobs skipped, Windows fails at PISONET-owned `$buildWorkflow`.
 - COE #26 remains FROZEN with five queued workflows / zero jobs and unresolved source/test/license/NOTICE/import parity. Private v11 registry/newer corrections and effective branch protection remain unverified.
 - No subsystem source or COE destination changes, ownership transfer, migration, merge, release, flash, signing, secret provisioning, real-payment operation or physical acceptance. **PRODUCTION NO-GO.**
+
+
+## Latest live exact-head reconciliation — 2026-11-20 UTC21
+
+- [UTC21 COE #35 atomic manifest publication, role CI and COE #26 exact-source provenance audit](PHX_MASTER_UTC21_20261120_COE35_ATOMIC_MANIFEST_COE26_EXACT_SOURCE_AND_ROLE_CI_AUDIT.md).
+- Master audit-start head `dff949b079d465f0f45b8dda2a2ac7efffd7b2d5`; PR #288 OPEN/DRAFT against main `f4e8a891...`, 137 existing paths all under `coordination/phoenix/`.
+- COE #35 current head `580855b6...`: 120 packaging/tool tests PASS / 2 skips; all-profile gate fails closed because approved site-scoped ULA /48 authority is missing; mandatory sandbox preflight 14/14 PASS but Bubblewrap unavailable; case-collision PASS.
+- HARDWARE #327 current docs/source heads `e03dfda4...` / `96e725e9...`; focused quarantine/relay PASS; Full FAIL at QA-owned positive poll-signature fixture. RELEASE #291 Full/compatibility PASS with production jobs skipped; Windows FAIL at PISONET-owned `$buildWorkflow`. RENTAL #328 Android checks PASS; shared build FAIL.
+- COE #26 remains frozen. Exact #327/#26 trees are 2,445 vs 286 entries; 25 vs 0 board-local Python labs; 47 vs 19 routed test files (1 identical / 3 different / 43 missing); three vs one Hardware workflows; firmware blobs differ. Pisowifi MIT LICENSE matches, but root NOTICE is absent at destination.
+- The routing manifest remains `e4db324...`, `DRAFT_REVIEW_ONLY`, Master target null. Private v11/newer registry corrections remain inaccessible. Full Master suite NOT RUN. **PRODUCTION NO-GO.**
