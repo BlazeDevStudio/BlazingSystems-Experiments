@@ -16,11 +16,11 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-HARDWARE_SOURCE_SHA = "369007bcbc684a0923a586e991f3aa0667cda105"
+HARDWARE_SOURCE_SHA = "dc02efea6590045155bf50f16fdd2d3924f6b415"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "1458f32881d3b340f1101dd0215618b54c1b688b"
+HARDWARE_SKETCH_BLOB = "849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
