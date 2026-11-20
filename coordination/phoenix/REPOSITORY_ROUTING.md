@@ -1064,3 +1064,12 @@ The active child remains #323 → #326 → #327. HARDWARE owns firmware and boar
 ### COE #26 destination hold
 
 COE #26 remains FROZEN. Its current Pisowifi SOURCE_INTAKE/MIGRATION_MAP do not cover Hardware. Current source/destination sketch blobs and test identities differ; board-local Python labs and three scoped workflows are absent at destination; root NOTICE and Hardware license/notice scope are unresolved. OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route promotion or file movement.
+
+## PHX-MASTER UTC19 exact routing and ownership hold — 2026-11-20T19:35Z
+
+- HARDWARE #327 is now at 1a631567eb0c14c12a114f592685f44cc414466f; relay passed, quarantine/build are still running, and no current-head Full result is available. The prior f2fddc Full failure is historical; QA still owns the positive poll-fixture correction.
+- RELEASE #291's 26-path diff remains 21 RELEASE, three CORE handover/ledger/state, and two PISONET ReleaseSigning test files. CORE and PISONET must review and approve their own paths.
+- RENTAL #328 has six Rental-owned paths. Its shared build failure is inherited: CORE owns stale PROJECT_HANDOVER.md freshness; Hardware/Release own the Mbed TLS 4 firmware/toolchain mismatch. Rental must not edit Hardware or CORE handover files.
+- COE #26 remains FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12. The source tree has 25 board-local Python labs/helpers and three scoped workflows; destination Hardware has zero Python identities and one generic workflow. Firmware/test blobs, behavior and notice scope differ. No destination action is authorized.
+- OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route promotion, copy, move, overwrite, cherry-pick, rebase or staging.
+- CORE remains with the separate Blaze Production Continuation owner; Master performs coordination only.

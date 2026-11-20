@@ -1,0 +1,89 @@
+name: PHX-HARDWARE Relay Output Polarity LAB
+on:
+  push:
+    branches:
+      - "phoenix/hardware-poll-fault-dual-store-20261118"
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
+      - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+  pull_request:
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/relay_output_polarity_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
+      - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-output-polarity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Compile exact board output functions and reject injected regressions
+        run: |
+          set -euo pipefail
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/relay_output_polarity_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py
+      - name: Verify OFF latch is preloaded before output enable
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py
+      - name: Compile parent poll inhibit drain-window lab and reject timing regressions
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
+      - name: Verify fault latch inhibits outputs before secondary-store and LittleFS persistence
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
+      - name: Compile parent pulse-capture lab and reject edge/persistence regressions
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
+      - name: Report parent poll-intake labs absent on this exact SHA
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py') == '' || hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') == '' }}
+        run: |
+          echo "PARENT_POLL_INTAKE_LABS=NOT_PRESENT_ON_THIS_SHA"
+          echo "NO_PARENT_POLL_INTAKE_CI_CLAIM=1"
+      - name: Check monotonic poll-window fixture timeline (child stack only)
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py
+      - name: Compile exact-source poll response and pulse-window guards (child stack only)
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') != '' }}
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py
+      - name: Report child poll-window suite absence on this exact SHA
+        if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') == '' }}
+        run: |
+          echo "CHILD_POLL_WINDOW_TESTS=NOT_PRESENT_ON_THIS_SHA"
+          echo "NO_CHILD_POLL_WINDOW_CI_CLAIM=1"
+      - name: Classify evidence without hardware promotion
+        run: |
+          echo "SIMULATED_ONLY=1"
+          echo "PHYSICAL_RELAY_POLARITY_VERIFIED=0"
+          echo "PHYSICAL_POWER_CUT_VERIFIED=0"
+          echo "FINANCIAL_PRODUCTION_AUTHORIZED=0"
+
+  esp32-boot-polarity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify literal head
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Compile exact ESP32 boot-polarity gate and reject unsafe mutations
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py
+      - name: Classify evidence without hardware promotion
+        run: |
+          echo "SIMULATED_ONLY=1"
+          echo "PHYSICAL_RELAY_POLARITY_VERIFIED=0"
+          echo "PHYSICAL_POWER_CUT_VERIFIED=0"
+          echo "FINANCIAL_PRODUCTION_AUTHORIZED=0"

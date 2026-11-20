@@ -2746,3 +2746,26 @@ OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, s
 - The docs commit is a direct child of the source/test head and changes only `.github/PHX_RELEASE_HANDOVER.md`. The accumulated 26-path PR diff still contains 21 RELEASE, three CORE, and two PISONET paths. No owner review transfer is implied.
 
 **Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration. PR #288 remains DRAFT. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC19 exact-head integration and migration supersession — 2026-11-20T19:35Z
+
+### Current source and destination refs
+
+- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; current development blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- Current HARDWARE #327 head 1a631567eb0c14c12a114f592685f44cc414466f (tree complete, 2,444 entries); current COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12 (tree complete, 286 entries); COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+- Source board-local Python labs/helpers 25; destination Hardware Python labs/helpers 0. Source scoped Hardware workflows 3; destination generic Hardware workflow 1.
+- Source/destination ESP32, ESP8266 and hardening-test blobs differ. Pisowifi LICENSE is byte-identical; root NOTICE and Hardware license/notice scope are incomplete.
+- Five COE #26 workflows remain QUEUED / zero jobs.
+
+### Current exact-head CI
+
+- HARDWARE #327 current head: relay #44805083239 PASS; quarantine #44805083039 IN PROGRESS; BlazePwifi build #44805083043 IN PROGRESS. No current-head Full result yet. Previous docs-head Full #44795789137 failed at the QA-owned positive poll-signature fixture.
+- RELEASE #291: BlazePwifi build #44799798801 PASS; ESP32 compatibility #44799798721 PASS on source label 76eca0915943 and unchanged sketch blob ae0da8e2; Windows #44799798699 FAIL at PISONET-owned $buildWorkflow.
+- RENTAL #328: APK identity #44782114384 PASS; API21/API23 smoke #44782114393 PASS; shared build #44782114390 FAIL at CORE handover freshness and stale ESP32 Mbed TLS 4 include.
+- CORE #252, RENTAL #240/#287/#289, PISONET #255 and QA #290 retain the scoped PASS runs recorded in ROLE_ASSIGNMENTS. QA #292 has no PR-triggered run.
+
+### Migration disposition
+
+COE #26 stays FROZEN. The destination sketches still default to sigOk=true with verification only when the local key is non-empty, call applyRemoteConfig from register/poll, may format LittleFS after mount failure, clear pending coin state after best-effort quarantine append, and expose a network quarantine-clear handler that deletes the log and returns 200. Current #327 source is deny-only, preserves pending evidence on failed append, disables format-on-mount-failure and returns 403 for quarantine deletion. These are exact source inspections, not physical test results.
+
+OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No move, copy, overwrite, cherry-pick, rebase, staging or route promotion.

@@ -1478,3 +1478,15 @@ The latest RELEASE handover update changes the exact #291 interpretation: source
 The exact source/destination tree recount corrects the prior board-local Python-lab count from 33 to **25** (9 ESP32 + 16 ESP8266); the wider BlazePwifi subtree has 41 Python files, with 16 in Android/simulation/tests/tools. COE Hardware still has zero Python files, divergent ESP32/ESP8266 and hardening-test blobs, matching Pisowifi MIT license, and missing root NOTICE. COE #26 remains frozen with five queued workflows and zero jobs.
 
 No subsystem source, ownership manifest, route, destination file, payment state, signer, release artifact or hardware was changed. Full Master suite NOT RUN; no Master Actions run returned. Private v11 registry/newer corrections remain inaccessible; older Library snapshots and the 2026-10-26 manifest/ledger are not canonical substitutes. Cleanup #266 remains OPEN, 0/7 complete. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC19 live blockers and evidence classification — 2026-11-20T19:35Z
+
+- **HARDWARE #327:** current head 1a631567eb0c14c12a114f592685f44cc414466f. Relay PASS; quarantine and BlazePwifi build in progress; no current-head Full result. Prior docs-head Full failure at QA's positive poll-signature fixture remains historical and owner-routed to QA.
+- **RELEASE #291:** build and pinned ESP32 compatibility PASS; Windows FAIL because PISONET-owned negative-selftest.ps1 reads uninitialized $buildWorkflow. Release publisher skipped.
+- **RENTAL #328:** APK identity and emulator smoke PASS; shared build FAILS at CORE-owned PROJECT_HANDOVER freshness and an inherited ESP32 sketch with unconditional mbedtls/sha256.h, incompatible with ESP32 core 4.0.0. Current #327 source has a guarded Mbed TLS 3/4 implementation; Hardware/Release own baseline/toolchain reconciliation.
+- **COE #26:** exact recursive-tree and blob audit confirms incomplete Hardware imports, 25 source Python labs vs zero destination identities, divergent firmware/test blobs, missing Hardware/root notice scope, keyless response-signature bypass, format-on-mount-failure, unverified quarantine append before pending clear and unauthenticated quarantine deletion. Candidate remains FROZEN.
+- **Cleanup #266:** OPEN, seven role checkboxes, zero checked. Master cleanup inventory remains incomplete.
+- **Private registry:** v11 and newer corrections not found in accessible Library; no Google Drive connector is exposed; older snapshots were not substituted.
+- **Execution:** hosted role CI and exact GitHub tree/source inspection were reviewed. Full Master Python suite NOT RUN because the container could not resolve github.com for an authenticated checkout. No physical tests or production operations were performed.
+
+Next: QA repairs the deny-only fixture; Hardware completes current #327 runs; CORE refreshes its own handover; Hardware/Release reconcile the #328 firmware baseline; PISONET fixes its own self-test; repository administrator verifies protection; registry custodian restores v11 access. **PRODUCTION NO-GO.**

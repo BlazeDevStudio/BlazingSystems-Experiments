@@ -1858,3 +1858,26 @@ This exact-head supersession corrects the prior UTC18 #291 status and records th
 ### RELEASE #291 cross-owner path hold
 
 The accumulated 26-path diff remains 21 RELEASE-owned paths, three CORE-owned product handover paths, and two PISONET-owned SoftTimer test paths. The latest docs commit `33704246` is a child of source/test head `7382f22d` and changes only `.github/PHX_RELEASE_HANDOVER.md`; this does not remove the inherited path-ownership hold or transfer review authority.
+
+## PHX-MASTER UTC19 live role-head / CI supersession — 2026-11-20T19:35Z
+
+This section supersedes earlier current-head pins without changing any subsystem ownership or branch.
+
+| Role | Live PR / exact head | CI disposition and owner action |
+|---|---|---|
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped PASS. Separate Blaze Production Continuation retains CORE. |
+| PHX-RENTAL | #240 a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #287 a4fffd01c8fb1818c32a53522e0590c1dc8a77cd; #289 68928774d0d7cf65adb26bc6b54199a3159d066c; #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | #240 runs #40910311141/#40910311159 PASS; #287 #43754089203 PASS; #289 #43653329229/#43653329235 PASS. #328 APK identity #44782114384 and API21/API23 smoke #44782114393 PASS; shared build #44782114390 FAILS on CORE handover freshness and stale Mbed TLS 4 firmware baseline. Rental owns only its six changed paths. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 scoped PASS. Owns its negative-selftest.ps1 correction. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 scoped PASS; #292 no PR-triggered run. QA owns negative/default-deny poll fixture replacement. |
+| PHX-HARDWARE | #327 1a631567eb0c14c12a114f592685f44cc414466f, base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Relay #44805083239 PASS; quarantine #44805083039 and BlazePwifi build #44805083043 IN PROGRESS. Previous head f2fddc Full #44795789137 failed at QA fixture; not a current-head Full result. Firmware and board labs remain Hardware-owned. |
+| PHX-RELEASE | #291 bcb71b4c797215c0980677b40a1e91860fd13f49, source/test parent 05d7b1efeb40820e5800553f96d678666d08bac2, base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Build #44799798801 PASS; ESP32 compatibility #44799798721 PASS on sketch blob ae0da8e2 / source label 76eca0915943; Windows #44799798699 FAILS at PISONET-owned $buildWorkflow. Accumulated 26-path diff: 21 RELEASE, 3 CORE, 2 PISONET; each owner reviews its own paths. |
+
+### Cross-owner routing
+
+- CORE owns experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md, docs/handover/CHANGE_LEDGER.md and docs/handover/CURRENT_STATE.md. The #328 handover gate must be coordinated with CORE, not edited by Rental or Master.
+- HARDWARE owns ESP32/ESP8266 firmware. #328's inherited ESP32 blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d is behind current #327 blob ae0da8e2 and fails Mbed TLS 4; Hardware/Release reconcile the accepted firmware/toolchain pin.
+- QA owns the stale positive poll-signature fixture; do not add a positive poll path to firmware.
+- PISONET owns its unset $buildWorkflow test failure.
+- RELEASE owns only its release workflow/package paths and must obtain CORE/PISONET review for inherited files.
+
+Master did not edit any subsystem source branch. COE #26 remains FROZEN; the routing manifest is unchanged.
