@@ -1546,3 +1546,53 @@ Only two RELEASE-owned source/test files changed for this task:
 5. Registry custodian restores authorized read-only access to canonical v11.
 
 No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER implementation was modified. No merge, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC14 — reject Windows drive-qualified SHA256SUMS paths
+
+**Date:** 2026-11-20 UTC14  
+**PR:** #291 — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base #242:** `734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Source/test commit:** `0db99526477dd81f94d3f446165f90fc90defdbe`
+
+### Defect
+
+The SHA256SUMS normalizer already rejected POSIX absolute paths, traversal, repeated separators, backslashes and dot-segment aliases. It still accepted drive-qualified strings such as `C:/Windows/System32/kernel32.dll`, `C:relative/payload.bin` and `z:/payload.bin`, because `PurePosixPath` does not treat Windows drive syntax as absolute.
+
+A manifest consumed by Windows tooling could reinterpret these names as drive-absolute or drive-relative paths. This is a cross-platform manifest portability and path-boundary defect, not a claim that the current Linux descriptor-relative verifier escaped its pinned artifact root.
+
+### Test-first evidence
+
+- Test commit [`41feea83`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/41feea83e5d9510236abaa80d311abba686896d7) adds three drive-prefix negative cases.
+- Expected RED: [push Actions #44752458273](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752458273), CI-0701 job `136343546813`. The provenance suite ran 24 tests: 21 passed and exactly the three new drive-prefix cases failed because `ProvenanceError` was not raised. The Full workflow failed at this intended test; downstream jobs were skipped. This is the reproduced regression, not a product-build failure.
+
+### Correction
+
+- Implementation commit [`0db99526`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0db99526477dd81f94d3f446165f90fc90defdbe) rejects a leading ASCII drive designator (`^[A-Za-z]:`) after the permitted single leading `./` normalization and before `PurePosixPath` construction.
+- No artifact payload, digest algorithm, source pin, toolchain, signer, publisher permission or production gate changed.
+- Only RELEASE-owned source/test paths were changed for this defect: `.github/scripts/test_build_provenance.py` and `.github/scripts/write_build_provenance.py`.
+
+### Exact-source verification
+
+- [Push/full run #44752661476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661476): CI-0701 job `136344233077` COMPLETED SUCCESS. Exact-source release provenance suite: **24/24 PASS**, including the three new Windows drive-prefix rejection cases; toolchain pin guard PASS. At this handover update the overall Full workflow remains IN_PROGRESS: validation job `136344431673` and several target builds/simulations are still running. ESP8266, Orange Pi PC, Orange Pi Zero3 and Orange Pi Zero target jobs have completed SUCCESS. Do not claim overall Full SUCCESS yet.
+- [ESP32 compatibility #44752661483](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661483): both core jobs are IN_PROGRESS; no terminal result claimed.
+- [Windows release #44752661501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44752661501): handover PASS; build-windows FAIL at the PISONET-owned `negative-selftest.ps1` with `The variable '$buildWorkflow' cannot be retrieved because it has not been set.`; publisher SKIPPED. PHX-PISONET owns this correction; no PISONET path was changed.
+
+### Current governance and provenance
+
+- MASTER #288 head `962e1179aae8f49551f151bf4721e1524f690c38`; base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; all 128 changed paths are under `coordination/phoenix/`. The current `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`; the PHX-RELEASE workflow route is `reimplementation-review`, not a copy/move command.
+- Experiments #242 remains OPEN/DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 remains OPEN/DRAFT/UNMERGED. Its accumulated 26-path diff still includes pre-existing CORE handover paths and PISONET test paths. No such path was changed in UTC14. No independent PR #291 review is submitted; MASTER must resolve ownership contamination before integration.
+- COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT, with five queued workflows and zero executed jobs. COE #31 remains parent `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`; #44 `582fd5d5e83e36b36546ac28534740298ba94af4` is based on an older #35 head and is not reconciled.
+- COE #31 sandbox run [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) installed Bubblewrap but failed the unprivileged UID-map probe: `bwrap: setting up uid map: Permission denied`, exit 125. Child #35 [#44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) fails closed because Bubblewrap is absent (exit 125); child #44 [#44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) also fails closed because Bubblewrap is absent. No unsandboxed fallback was introduced.
+- The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not present in a complete recursive Library metadata listing of 1,422 entries. No older registry was substituted; no private registry content or identifiers were copied to GitHub.
+
+### Next owner actions
+
+1. PHX-RELEASE refreshes Full run #44752661476 and compatibility #44752661483 to terminal states; do not rerun the completed provenance test suite unnecessarily.
+2. PHX-QA independently reviews the cross-platform manifest-path guard.
+3. PHX-PISONET fixes `$buildWorkflow` in its own negative self-test.
+4. PHX-MASTER reconciles the inherited CORE/PISONET paths in #291 and confirms the review-only workflow reimplementation route.
+5. COE integration/PHX-INFRA provide an authorized bubblewrap-capable unprivileged user-namespace runner; CORE/MASTER must establish site-scoped ULA authority before the COE packager can progress.
+
+No merge, signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
