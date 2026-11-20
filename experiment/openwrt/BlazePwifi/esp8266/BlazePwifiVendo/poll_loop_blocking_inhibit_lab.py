@@ -644,10 +644,27 @@ TIMING_MAIN = MAIN.replace(
 
 
 RELEASE_EDGE_MAIN = r"""
+void resetReleaseEdgeState(){
+  fakeNow=2000; pulseStart=-1; pulseEnd=-1;
+  coinEdgeSequence=0; lastHandledCoinEdgeSequence=0;
+  interruptAttached=true; attachedPin=4; attachedMode=FALLING; attachedIsr=coinEdgeISR;
+  relayOn=false; ledOn=false; relayLevelHigh=false; ledLevelHigh=false;
+  pollCalls=0; pollIntakeSuspended=false; journalRecoveryRequired=false;
+  pendingReady=false; pendingPulses=0; pendingPostAttempted=false; fsReady=true;
+  outputPolarityKnown=true; pinConfigSafe=true; controllerEnabled=true;
+  coinEnabled=true; relayEnabled=true; ledEnabled=true; insertMode=true;
+  runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
+  runCoinPin=4; runRelayPin=26; runLedPin=2; activeTarget="target-01";
+  pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
+  pollReleaseRelayEnergizedBeforeLatch=false; pollReleaseRelayClearedBeforeLatch=false;
+  injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
+}
 int main(){
+  // This isolated output-gate build does not use the poll-drain hook.
+  (void)injectAfterDrainEdge;
   // Isolate the output gate with a previously valid positive local state.
   // The poll response itself remains default-deny in the production sketch.
-  resetState();
+  resetReleaseEdgeState();
   pollIntakeSuspended=true;
   applyOutputs();
   pollIntakeSuspended=false;
@@ -658,9 +675,9 @@ int main(){
      pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
      relayOn || ledOn || journalRecoveryRequired ||
      coinEdgeSequence==lastHandledCoinEdgeSequence) return 52;
-  std::cout<<"POLL_RELEASE_LED_WRITE_ISR_EDGE_BLOCKS_RELAY_PASS\\n";
+  std::cout<<"POLL_RELEASE_LED_WRITE_ISR_EDGE_BLOCKS_RELAY_PASS\n";
 
-  resetState();
+  resetReleaseEdgeState();
   pollIntakeSuspended=true;
   applyOutputs();
   pollIntakeSuspended=false;
@@ -671,7 +688,7 @@ int main(){
      !pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
      relayOn || ledOn || journalRecoveryRequired ||
      coinEdgeSequence==lastHandledCoinEdgeSequence) return 53;
-  std::cout<<"POLL_RELEASE_RELAY_WRITE_ISR_EDGE_DEASSERTED_PASS\\n";
+  std::cout<<"POLL_RELEASE_RELAY_WRITE_ISR_EDGE_DEASSERTED_PASS\n";
   return 0;
 }
 """
