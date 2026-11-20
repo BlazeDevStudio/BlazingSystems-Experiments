@@ -10,28 +10,23 @@ NOT real-flash or power-cut evidence.
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_block, extract_function
+
 SKETCHES = [
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
 ]
 
 def extract(src: str, signature: str) -> str:
-    start = src.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing {signature}")
-    brace = src.find("{", start)
-    level = 0
-    for pos in range(brace, len(src)):
-        if src[pos] == "{":
-            level += 1
-        elif src[pos] == "}":
-            level -= 1
-            if level == 0:
-                return src[start:pos+1]
-    raise RuntimeError(f"unclosed {signature}")
+    if signature.startswith("struct "):
+        return extract_block(src, signature)
+    name = signature.split("(", 1)[0].split()[-1]
+    return extract_function(src, name)
 
 
 def verify_lexical_extractor_fixture():
