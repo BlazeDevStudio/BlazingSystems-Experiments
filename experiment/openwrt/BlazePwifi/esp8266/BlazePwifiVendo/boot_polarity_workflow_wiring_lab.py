@@ -38,10 +38,16 @@ def assert_no_nested_config_runner(coin_pulse_source: str) -> None:
 
 
 def assert_no_nested_poll_loop_runner(coin_pulse_source: str) -> None:
-    require(
-        "poll_loop_blocking_inhibit_lab.py" not in coin_pulse_source,
-        "coin-pulse lab must not rerun the workflow-owned poll-loop lab",
+    forbidden_code = (
+        'Path(__file__).with_name("poll_loop_blocking_inhibit_lab.py")',
+        "subprocess.run([sys.executable, str(poll_loop_lab)], check=True)",
+        "POLL_LOOP_BLOCKING_INHIBIT_LAB=START",
     )
+    for fragment in forbidden_code:
+        require(
+            fragment not in coin_pulse_source,
+            "coin-pulse lab must not launch the workflow-owned poll-loop lab",
+        )
 
 
 def main() -> None:
@@ -75,9 +81,15 @@ def main() -> None:
     else:
         raise AssertionError("nested config-read lab mutation was not rejected")
 
+    comment_only_reference = (
+        "# The workflow owns poll_loop_blocking_inhibit_lab.py as a separate step.\\n"
+    )
+    assert_no_nested_poll_loop_runner(comment_only_reference)
+
     injected_poll_duplicate = (
         coin_pulse_source
-        + '\nsubprocess.run(["python3", "poll_loop_blocking_inhibit_lab.py"], check=True)\n'
+        + '\\npoll_loop_lab = Path(__file__).with_name("poll_loop_blocking_inhibit_lab.py")\\n'
+        + "subprocess.run([sys.executable, str(poll_loop_lab)], check=True)\\n"
     )
     try:
         assert_no_nested_poll_loop_runner(injected_poll_duplicate)
