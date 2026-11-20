@@ -1506,3 +1506,12 @@ Current #327 docs head advanced to 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - No subsystem source, route manifest, COE destination, financial state, signer, release artifact or hardware changed. No merge, migration, flash or production operation.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## PHX-MASTER UTC20 RELEASE #291 post-pin CI supersession — 2026-11-20T20:16Z
+
+RELEASE #291 advanced to docs head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf, source/workflow fix 5188d1a1cfb5f96462a5ec24941fe35530944f68 and test guard 5c5001d43e173463024c3c790bead406fa8c90c3. The compatibility workflow now pins HARDWARE #327 source/test 1a631567eb0c14c12a114f592685f44cc414466f and sketch blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7.
+
+At exact current head, compatibility #44809606421 has provenance PASS but both core legs still IN_PROGRESS; Full #44809606527 has validation/target jobs started and no terminal result; Windows #44809606428 FAILS in PISONET-owned negative-selftest.ps1 because $buildWorkflow is unset. Previous compatibility PASS #44799798721 is historical at the old source pin.
+
+The accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET paths. No owner transfer. Master records the updated state only; RELEASE/PISONET/CORE retain their own fixes and reviews. PR #288 remains draft; COE #26 remains frozen; production remains NO-GO.
