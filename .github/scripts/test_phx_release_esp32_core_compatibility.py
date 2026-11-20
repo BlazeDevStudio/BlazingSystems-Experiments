@@ -392,7 +392,7 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
     expect_classification(
         "invalid ESP app descriptor magic is not classified as ELF-SHA-only",
         synthetic_esp32_image(elf_sha_a),
-        synthetic_esp32_image(elf_sha_b, app_magic=0x12345678),
+        synthetic_esp32_image(elf_sha_a, app_magic=0x12345678),
         "UNCLASSIFIED_IMAGE_DIFF",
         ("difference_ranges=['32-35']",),
     )
