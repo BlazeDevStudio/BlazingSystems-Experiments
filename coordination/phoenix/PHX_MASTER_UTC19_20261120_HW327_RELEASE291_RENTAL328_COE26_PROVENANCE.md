@@ -102,3 +102,14 @@ These are static source findings, not a claim of an observed customer or physica
 8. Registry custodian and repository administrator: restore authorized v11/newer-correction access and independently verify effective branch protection.
 
 **PRODUCTION NO-GO** remains mandatory until an independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates have independently verified evidence.
+
+## PHX-MASTER UTC19 post-checkpoint HARDWARE #327 exact-head supersession — 2026-11-20T19:52Z
+
+- Current #327 PR/docs head: 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test head: 1a631567eb0c14c12a114f592685f44cc414466f; base #326: 58c558fb6a237935214621adc3dee65a10fe1a51.
+- Exact current-head quarantine #44805905655 PASS; relay/output #44805905517 PASS; Full BlazePwifi build #44805905622 FAILS at QA-owned “Missing poll signature check” in the ESP8266 sketch.
+- All 14/14 firmware target + Android build jobs passed; validation failure skipped simulations, update bundle, signing and publishing. This is hosted CI evidence, not physical acceptance.
+- The prior #327 head 1a631567's build run #44805083043 was cancelled after the docs-head update; do not report it as a current terminal pass/fail. Current PR metadata and current-head run #44805905622 supersede it.
+- Source sketch blobs remain ESP32 ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7 and ESP8266 a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa; hardening fixture remains 41211b2c110ab409f6d9d1812ef12fda73b13211. QA owns the positive marker fixture correction; HARDWARE retains firmware and lab ownership.
+- Current #327 docs-head tree is complete at 2,445 entries; its source/test tree at 1a631567 is complete at 2,444 entries. The 25 board-local Python labs and exact source/destination COE parity findings are unchanged.
+
+This is a role-head/CI supersession only. No Hardware source, owner branch, migration route, or destination file was modified by PHX-MASTER.

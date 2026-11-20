@@ -1490,3 +1490,7 @@ No subsystem source, ownership manifest, route, destination file, payment state,
 - **Execution:** hosted role CI and exact GitHub tree/source inspection were reviewed. Full Master Python suite NOT RUN because the container could not resolve github.com for an authenticated checkout. No physical tests or production operations were performed.
 
 Next: QA repairs the deny-only fixture; Hardware completes current #327 runs; CORE refreshes its own handover; Hardware/Release reconcile the #328 firmware baseline; PISONET fixes its own self-test; repository administrator verifies protection; registry custodian restores v11 access. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC19 post-checkpoint HARDWARE head correction — 2026-11-20T19:52Z
+
+Current #327 docs head advanced to 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test remains 1a631567eb0c14c12a114f592685f44cc414466f. Focused quarantine and relay pass; exact-head Full fails at QA's Missing poll signature check. All 14 target/Android build jobs pass; downstream simulations/update/sign/publish are skipped. The previous 1a631567 build run was cancelled after the docs-head update. QA owns the fixture; no firmware change by Master.

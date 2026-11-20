@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T19:35:00Z  
+**Updated:** 2026-11-20T19:52:00Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -213,3 +213,7 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 is bcb71b4c797215c0980677b40a1e91860fd13f49; Full BlazePwifi build and exact pinned ESP32 compatibility pass, Windows fails in PISONET-owned $buildWorkflow self-test.
 - RENTAL #328 is 0e0da62acd47c6a1ce287f8a30fc700d603fa070; APK identity and API21/API23 smoke pass, shared build fails at CORE-owned handover freshness and stale Mbed TLS 4 firmware baseline.
 - COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12. Exact source/destination Hardware blobs, 25-vs-0 Python lab import, license/NOTICE scope and deny-only behavior remain unaccepted. OWNERSHIP_ROUTES.json is unchanged; no migration. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC19 post-checkpoint #327 head/CI supersession — 2026-11-20T19:52Z
+
+Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test head 1a631567eb0c14c12a114f592685f44cc414466f. Focused quarantine/relay PASS; exact-head Full fails at QA's positive poll-signature fixture, while 14/14 target/Android build jobs pass and downstream gates skip. See the updated UTC19 report for exact run links. The Master track remains coordination-only; no hardware source or migration changes.

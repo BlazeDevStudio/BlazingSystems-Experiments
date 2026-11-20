@@ -2769,3 +2769,7 @@ OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, s
 COE #26 stays FROZEN. The destination sketches still default to sigOk=true with verification only when the local key is non-empty, call applyRemoteConfig from register/poll, may format LittleFS after mount failure, clear pending coin state after best-effort quarantine append, and expose a network quarantine-clear handler that deletes the log and returns 200. Current #327 source is deny-only, preserves pending evidence on failed append, disables format-on-mount-failure and returns 403 for quarantine deletion. These are exact source inspections, not physical test results.
 
 OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER destination null. No move, copy, overwrite, cherry-pick, rebase, staging or route promotion.
+
+## PHX-MASTER UTC19 current HARDWARE #327 docs-head/CI supersession — 2026-11-20T19:52Z
+
+HARDWARE #327 docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39 / source-test 1a631567eb0c14c12a114f592685f44cc414466f. Exact current-head quarantine #44805905655 and relay #44805905517 PASS. Full #44805905622 fails validation at the inherited QA-owned Missing poll signature check; 14/14 target/Android builds pass and downstream gates are skipped. Previous head run #44805083043 was cancelled after the docs-head update. Current source/destination COE findings remain unchanged; #26 remains frozen.

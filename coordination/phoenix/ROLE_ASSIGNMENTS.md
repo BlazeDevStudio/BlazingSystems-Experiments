@@ -1881,3 +1881,11 @@ This section supersedes earlier current-head pins without changing any subsystem
 - RELEASE owns only its release workflow/package paths and must obtain CORE/PISONET review for inherited files.
 
 Master did not edit any subsystem source branch. COE #26 remains FROZEN; the routing manifest is unchanged.
+
+### PHX-HARDWARE #327 current docs-head supersession — 2026-11-20T19:52Z
+
+- PR #327 docs/head: 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test: 1a631567eb0c14c12a114f592685f44cc414466f; base #326: 58c558fb6a237935214621adc3dee65a10fe1a51.
+- Quarantine #44805905655 PASS; relay/output #44805905517 PASS; Full #44805905622 FAIL at QA-owned Missing poll signature check.
+- All 14/14 firmware target + Android jobs pass; simulations, update bundle, signing and publishing are skipped after validation failure.
+- Previous source/test-head build run #44805083043 was cancelled after the docs-head update; current PR metadata and #44805905622 are authoritative.
+- QA owns negative/default-deny fixture correction; HARDWARE retains source/lab ownership. Master does not change firmware.

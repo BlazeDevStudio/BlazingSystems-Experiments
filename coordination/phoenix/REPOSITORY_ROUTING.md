@@ -1073,3 +1073,7 @@ COE #26 remains FROZEN. Its current Pisowifi SOURCE_INTAKE/MIGRATION_MAP do not 
 - COE #26 remains FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12. The source tree has 25 board-local Python labs/helpers and three scoped workflows; destination Hardware has zero Python identities and one generic workflow. Firmware/test blobs, behavior and notice scope differ. No destination action is authorized.
 - OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route promotion, copy, move, overwrite, cherry-pick, rebase or staging.
 - CORE remains with the separate Blaze Production Continuation owner; Master performs coordination only.
+
+## PHX-MASTER UTC19 #327 docs-head routing supersession — 2026-11-20T19:52Z
+
+Current HARDWARE #327 docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39, source/test 1a631567eb0c14c12a114f592685f44cc414466f. Quarantine #44805905655 and relay #44805905517 PASS; Full #44805905622 fails only at QA-owned positive poll-signature fixture after 14/14 target/Android builds pass. QA owns fixture correction; HARDWARE owns source; no Master source edit.
