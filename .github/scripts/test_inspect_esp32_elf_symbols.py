@@ -74,8 +74,11 @@ class ElfSymbolParserTests(unittest.TestCase):
         result = map_address(self.sections, self.symbols, 0x3F400130)
         self.assertEqual(result["status"], "NEAREST_ONLY")
         self.assertEqual(result["containing_symbols"], [])
-        self.assertEqual(result["nearest_preceding"][0]["name"], "rodata_table")
-        self.assertEqual(result["nearest_preceding"][0]["distance"], 0x20)
+        self.assertEqual(
+            {item["name"] for item in result["nearest_preceding"]},
+            {"rodata_table", "rodata_alias"},
+        )
+        self.assertEqual({item["distance"] for item in result["nearest_preceding"]}, {0x20})
 
     def test_exact_next_symbol_is_contained(self) -> None:
         result = map_address(self.sections, self.symbols, 0x3F400140)
