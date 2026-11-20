@@ -134,7 +134,7 @@ def inspect_application_image(output_dir: str | Path, sketch_name: str) -> tuple
         if before_path.st_size <= 0:
             raise ValueError("application image must not be empty")
 
-        file_flags = os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0)
+        file_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW") | getattr(os, "O_CLOEXEC", 0)
         descriptor = os.open(candidate_name, file_flags, dir_fd=root_fd)
         try:
             before_read = os.fstat(descriptor)
