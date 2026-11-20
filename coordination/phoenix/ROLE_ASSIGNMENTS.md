@@ -1889,3 +1889,18 @@ Master did not edit any subsystem source branch. COE #26 remains FROZEN; the rou
 - All 14/14 firmware target + Android jobs pass; simulations, update bundle, signing and publishing are skipped after validation failure.
 - Previous source/test-head build run #44805083043 was cancelled after the docs-head update; current PR metadata and #44805905622 are authoritative.
 - QA owns negative/default-deny fixture correction; HARDWARE retains source/lab ownership. Master does not change firmware.
+
+
+### PHX-MASTER UTC20 live role/CI supersession — 2026-11-20T20:02Z
+
+| Role / PR | Exact current head(s) | Exact CI disposition | Ownership / next action |
+|---|---|---|---|
+| PHX-HARDWARE #327 | Docs 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; source/test 1a631567eb0c14c12a114f592685f44cc414466f; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44805905655 PASS; relay #44805905517 PASS; Full #44805905622 FAIL at QA-owned Missing poll signature check; 14/14 target/Android jobs pass | HARDWARE retains firmware/labs; QA replaces stale positive fixture with negative/default-deny tests. |
+| PHX-RELEASE #291 | Docs bcb71b4c797215c0980677b40a1e91860fd13f49; source/test 05d7b1efeb40820e5800553f96d678666d08bac2; base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Full #44799798801 PASS with production import/sign/publish skipped; compatibility #44799798721 PASS 3/3 on sketch blob ae0da8e2; Windows #44799798699 FAIL at PISONET $buildWorkflow | RELEASE owns workflow/packaging; CORE reviews three handover paths; PISONET fixes/reviews two SoftTimer tests. |
+| PHX-RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070; base #289 68928774d0d7cf65adb26bc6b54199a3159d066c | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL at CORE handover freshness and ESP32 Mbed TLS 4 missing header | RENTAL owns six Android/APK paths only; do not edit inherited firmware or CORE handover. |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped PASS | Separate CORE continuation retains all CORE source/handover ownership. |
+| PHX-RENTAL #240 / #287 / #289 | a7d113fb8ae3f0c5e838e64d31cae7a154e37b56 / a4fffd01c8fb1818c32a53522e0590c1dc8a77cd / 68928774d0d7cf65adb26bc6b54199a3159d066c | Existing scoped runs pass | RENTAL retains source ownership. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 scoped PASS | PISONET retains SoftTimer ownership. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 scoped PASS; #292 no PR-triggered run | QA retains independent verification and native acceptance. |
+
+#328's six-file diff contains only Rental Android/APK paths; its ESP32 sketch is inherited from #289, not changed by Rental. Current #327's guarded Mbed TLS 3/4 sketch is a different blob. The fix must be coordinated by HARDWARE/RELEASE; CORE owns handover freshness. No ownership transfer or Master source edit.
