@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-MODULE = Path(__file__).resolve().parents[1] / "tools" / "verify_apk_contract.py"
+MODULE = Path(__file__).resolve().parents[2] / "tools" / "verify_apk_contract.py"
 spec = importlib.util.spec_from_file_location("verify_apk_contract", MODULE)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
