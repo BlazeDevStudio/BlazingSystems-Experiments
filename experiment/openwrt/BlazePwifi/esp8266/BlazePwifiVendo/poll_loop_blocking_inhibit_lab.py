@@ -126,8 +126,11 @@ static bool injectDuringDrainAbort=false;
 static bool injectDrainAbortWithoutIsr=false;
 static bool injectDrainAbortPulseEndsBeforeSample=false;
 static bool injectDuringPollRelease=false;
+static bool injectDuringPollReleaseAtRelayWrite=false;
 static bool pollReleaseEdgeInjected=false;
 static bool pollReleaseEdgeSawRelayOff=false;
+static bool pollReleaseRelayEnergizedBeforeLatch=false;
+static bool pollReleaseRelayClearedBeforeLatch=false;
 static int drainAbortReadCount=0;
 static bool drainAbortInjected=false;
 static bool drainAbortSawRelayOn=false;
@@ -194,7 +197,9 @@ int digitalRead(int) {
   return active?HIGH:LOW;
 }
 void digitalWrite(int pin,int level) {
-  if(injectDuringPollRelease && pollCalls==1 && !pollIntakeSuspended &&
+  const bool injectAtLed=injectDuringPollRelease && pin==runLedPin;
+  const bool injectAtRelay=injectDuringPollReleaseAtRelayWrite && pin==runRelayPin;
+  if((injectAtLed || injectAtRelay) && pollCalls==1 && !pollIntakeSuspended &&
      !journalRecoveryRequired && !pollReleaseEdgeInjected){
     pollReleaseEdgeInjected=true;
     pollReleaseEdgeSawRelayOff=!relayOn;
@@ -206,6 +211,10 @@ void digitalWrite(int pin,int level) {
   if(pin==runRelayPin) {
     relayLevelHigh=(level==HIGH);
     relayOn=(level==(runRelayActiveHigh?HIGH:LOW));
+    if(pollReleaseEdgeInjected && !journalRecoveryRequired){
+      if(relayOn) pollReleaseRelayEnergizedBeforeLatch=true;
+      else pollReleaseRelayClearedBeforeLatch=true;
+    }
   }
   if(pin==runLedPin) {
     ledLevelHigh=(level==HIGH);
@@ -296,7 +305,10 @@ void resetState(){
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectDuringHttpEdgeCount=1; injectTimedPollPulse=false; timedPulseIsrInjected=false;
   injectAfterDrainEdge=false; injectDuringDrainAbort=false;
-  injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
+  injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false;
+  injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
+  pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
+  pollReleaseRelayEnergizedBeforeLatch=false; pollReleaseRelayClearedBeforeLatch=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
@@ -473,8 +485,9 @@ int main(){
   // GPIO writes that re-enable the acceptor. It must be reconciled before the
   // next ordinary sample can turn that in-flight edge into a new pending coin.
   resetState(); injectDuringPollRelease=true; loop();
-  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff || pollCalls!=1 ||
-     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
+     pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
+     pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
      relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
      pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
      markerOpenSawRelayOn || markerOpenSawLedOn) return 29;
@@ -482,6 +495,17 @@ int main(){
   if(releaseMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      releaseMarker.find("pulses=1")==std::string::npos) return 30;
   std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
+
+  // If the edge lands inside the relay GPIO write itself, outputs must be
+  // deasserted before fault persistence begins, not only by the later sample.
+  resetState(); injectDuringPollReleaseAtRelayWrite=true; loop();
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff ||
+     !pollReleaseRelayEnergizedBeforeLatch || !pollReleaseRelayClearedBeforeLatch ||
+     pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
+     pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 52;
+  std::cout<<"POLL_RELEASE_RELAY_WRITE_EDGE_DEASSERTED_BEFORE_LATCH_PASS\\n";
 
   // GPIO sees a pulse during drain without an ISR delta. Capture and persist
   // it while the poll inhibit stays asserted; release only after the line is idle.
