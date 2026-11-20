@@ -179,6 +179,7 @@ jobs:
             "$objdump_path" -h "$first_elf" > "$first_output_dir/elf-sections.txt" || return 1
             "$objdump_path" -h "$second_elf" > "$second_output_dir/elf-sections.txt" || return 1
             "$nm_path" --format=posix --print-size --numeric-sort --defined-only "$first_elf" > "$first_output_dir/elf-symbols.txt" || return 1
+            awk 'NR == 1 { first_kind = ($1 ~ /^(0[xX])?[0-9a-fA-F]+$/ ? "HEX" : "NAME"); printf "PHX-ESP32-ELF-NM-SHAPE: fields=%d first=%s token2=%s token3=%s token4=%s\\n", NF, first_kind, $2, $3, $4; exit }' "$first_output_dir/elf-symbols.txt"
             "$nm_path" --format=posix --print-size --numeric-sort --defined-only "$second_elf" > "$second_output_dir/elf-symbols.txt" || return 1
 
             local -a addresses=(
