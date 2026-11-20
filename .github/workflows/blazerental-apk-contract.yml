@@ -8,6 +8,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/verify_apk_contract.py'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/validation/**'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_APK_COMPATIBILITY.md'
+  push:
+    branches: ['phoenix/rental-apk-contract-audit-20261121']
   workflow_dispatch:
 
 permissions:
