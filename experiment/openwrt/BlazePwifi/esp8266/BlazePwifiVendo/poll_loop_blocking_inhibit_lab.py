@@ -688,6 +688,30 @@ int main(){
 """
 
 
+ACTIVE_LOW_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  runCoinActiveLow=true;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  injectDrainAbortWithoutIsr=true;
+  injectDrainAbortPulseEndsBeforeSample=true;
+  loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine ||
+     pendingPulses!=0U || saveCalls!=0 ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 58;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 58;
+  std::cout<<"POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
+  return 0;
+}
+"""
+
+
 TIMING_MAIN = MAIN.replace(
     "int main(){",
     """int main(){
@@ -1015,6 +1039,28 @@ for board,path in BOARDS.items():
         board, 57, "active-high-pulse-misread-as-idle"
     )
     print(f"{board} MUTATION_REJECTED active-high-pulse-misread-as-idle expected_exit=57")
+    # The active-low counterpart isolates the same missed-sample failure path.
+    missed_sample_low_output = compile_and_run(
+        assemble(main_source=ACTIVE_LOW_MISSED_SAMPLE_MAIN),
+        board, 0, "active-low-pulse-ended-before-sample"
+    )
+    if "POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS" not in missed_sample_low_output:
+        raise AssertionError(f"{board}: active-low missed-sample marker missing")
+    print(f"{board} POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_PASS")
+
+    active_low_idle_fail_open = idle.replace(
+        "return runCoinActiveLow?raw:!raw;",
+        "return runCoinActiveLow?true:!raw;",
+        1,
+    )
+    if active_low_idle_fail_open == idle:
+        raise AssertionError(f"{board}: active-low coin-line idle mutation anchor missing")
+    compile_and_run(
+        assemble(idle_source=active_low_idle_fail_open,
+                 main_source=ACTIVE_LOW_MISSED_SAMPLE_MAIN),
+        board, 58, "active-low-pulse-misread-as-idle"
+    )
+    print(f"{board} MUTATION_REJECTED active-low-pulse-misread-as-idle expected_exit=58")
     release_on_abort = drain_abort.replace(
         "if(!coinLineIdle()) return;",
         "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",

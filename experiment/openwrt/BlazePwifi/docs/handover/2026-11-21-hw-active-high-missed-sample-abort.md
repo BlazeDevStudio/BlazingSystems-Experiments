@@ -62,3 +62,14 @@ This is a source-extracted host simulation. It is not a physical coin-slot, elec
 ## Next action
 
 PHX-QA should replace the stale positive poll-signature assertion with source-exact negative/default-deny tests until CORE publishes the authenticated response contract. PHX-MASTER should reconcile exact #323 → #326 → #327 heads in the canonical assignment and integration matrix. Keep Full validation, physical acceptance and production gates separate.
+
+
+## UTC22 follow-up — active-low missed-sample failure injection
+
+The full poll-loop suite already contained a positive active-low pulse-ended-before-sample case, but only the dedicated active-high scenario had a polarity-specific fail-open mutation. This left the active-low idle mapping without an isolated sensitivity check for the same P0 ingress path.
+
+Added a dedicated active-low scenario using the extracted production `loop()`, drain, `coinLineIdle()`, fault-latch and output helpers. It requires no HTTP poll, no fabricated pending coin, a durable `COIN_INGRESS_UNRESOLVED pulses=1` marker, and relay/LED OFF before either persistence writer is entered.
+
+The paired failure injection changes the active-low idle mapping to always report idle. The test must reject that mutation with expected exit `58`. The same positive and negative cases run against both ESP8266 and ESP32 source extraction.
+
+**Scope:** test-only in `poll_loop_blocking_inhibit_lab.py`; no production `.ino`, GPIO, receipt contract, finance, QA-owned fixture, or release workflow changed. Exact-head Actions evidence is pending at the source/test commit; this note does not claim a pass before those jobs complete.
