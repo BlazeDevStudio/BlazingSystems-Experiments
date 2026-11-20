@@ -31,6 +31,8 @@ class ElfSectionByteComparisonTests(unittest.TestCase):
         self.second_sections = parse_objdump_sections(SECOND_OBJDUMP)
         self.first_elf = bytearray(0x80)
         self.second_elf = bytearray(0x80)
+        self.first_elf[0x10:0x18] = b"12345678"
+        self.second_elf[0x30:0x38] = b"12345678"
         self.first_elf[0x20:0x28] = b"ABCDEFGH"
         self.second_elf[0x40:0x48] = b"ABCDEFGH"
 
@@ -42,6 +44,8 @@ class ElfSectionByteComparisonTests(unittest.TestCase):
         self.assertEqual(result["status"], "IDENTICAL")
         self.assertEqual(result["differing_bytes"], 0)
         self.assertEqual(result["difference_ranges"], [])
+        self.assertEqual(result["first_file_offset"], 0x20)
+        self.assertEqual(result["second_file_offset"], 0x40)
 
     def test_reports_exact_ranges_for_different_section_content(self) -> None:
         self.second_elf[0x40:0x48] = b"ABxDEFGy"
@@ -53,8 +57,33 @@ class ElfSectionByteComparisonTests(unittest.TestCase):
         self.assertEqual(result["differing_bytes"], 2)
         self.assertEqual(
             result["difference_ranges"],
-            [{"start": 2, "end": 2}, {"start": 7, "end": 7}],
+            [
+                {
+                    "start": 2, "end": 2,
+                    "first_elf_offset": 0x22, "second_elf_offset": 0x42,
+                    "first_bytes_prefix": "43", "second_bytes_prefix": "78",
+                    "bytes_prefix_truncated": False,
+                },
+                {
+                    "start": 7, "end": 7,
+                    "first_elf_offset": 0x27, "second_elf_offset": 0x47,
+                    "first_bytes_prefix": "48", "second_bytes_prefix": "79",
+                    "bytes_prefix_truncated": False,
+                },
+            ],
         )
+
+    def test_reports_app_descriptor_section_separately(self) -> None:
+        self.second_elf[0x34] = ord("x")
+        result = compare_section_bytes(
+            bytes(self.first_elf), bytes(self.second_elf),
+            self.first_sections, self.second_sections, ".flash.appdesc",
+        )
+        self.assertEqual(result["status"], "DIFFERENT")
+        self.assertEqual(result["differing_bytes"], 1)
+        self.assertEqual(result["difference_ranges"][0]["start"], 4)
+        self.assertEqual(result["first_file_offset"], 0x10)
+        self.assertEqual(result["second_file_offset"], 0x30)
 
     def test_rejects_missing_section(self) -> None:
         with self.assertRaises(ValueError):
@@ -92,6 +121,6 @@ if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(ElfSectionByteComparisonTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if result.wasSuccessful():
-        print("PHX-ESP32-ELF-SECTION-COMPARE-TESTS-PASS: 6 synthetic cases")
+        print("PHX-ESP32-ELF-SECTION-COMPARE-TESTS-PASS: 7 synthetic cases")
         raise SystemExit(0)
     raise SystemExit(1)

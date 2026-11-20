@@ -222,6 +222,13 @@ jobs:
             printf 'PHX-ESP32-ELF-SYMBOL-MAP: core=%s nm=%s section=.flash.rodata\n' "${{ matrix.esp32_core }}" "$nm_path"
             python3 .github/scripts/inspect_esp32_elf_symbols.py --nm-output "$first_output_dir/elf-symbols.txt" --objdump-output "$first_output_dir/elf-sections.txt" --section ".flash.rodata" "${symbol_addresses[@]}" || return 1
             python3 .github/scripts/inspect_esp32_elf_symbols.py --nm-output "$second_output_dir/elf-symbols.txt" --objdump-output "$second_output_dir/elf-sections.txt" --section ".flash.rodata" "${symbol_addresses[@]}" || return 1
+            python3 .github/scripts/compare_esp32_elf_sections.py \
+              --first-elf "$first_elf" \
+              --second-elf "$second_elf" \
+              --first-objdump "$first_output_dir/elf-sections.txt" \
+              --second-objdump "$second_output_dir/elf-sections.txt" \
+              --section ".flash.appdesc" \
+              --section ".flash.rodata" || return 1
           }
 
           mapping_status=0
