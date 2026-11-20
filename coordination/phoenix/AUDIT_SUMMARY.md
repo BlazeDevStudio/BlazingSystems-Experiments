@@ -1469,3 +1469,12 @@ The terminal #291 exact-head readback supersedes the earlier in-progress labels:
 **Next owner actions:** QA replaces the positive poll-signature fixture with source-linked negative/default-deny tests for both boards; PISONET fixes its own unset $buildWorkflow self-test; RELEASE coordinates CORE/PISONET review of its accumulated paths and continues its compiler-provenance audit; registry custodian provides authorized v11/manifest/ledger access; repository administrator verifies effective protected branch admission.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20
+
+The latest RELEASE handover update changes the exact #291 interpretation: source/test head `7382f22d` has a successful Full build (26 pass, four production jobs skipped), but its compatibility PASS is pinned to Hardware source `dc02efea6590`, not current #327 source/test `d4f7df4e`. The later docs-head Full run `44793107634` is CANCELLED (25 success, one x86 simulation cancelled, four production jobs skipped); docs-head compatibility passes and Windows still fails in PISONET-owned `negative-selftest.ps1` at unset `$buildWorkflow`. Do not report the docs-head Full run as green.
+
+The exact source/destination tree recount corrects the prior board-local Python-lab count from 33 to **25** (9 ESP32 + 16 ESP8266); the wider BlazePwifi subtree has 41 Python files, with 16 in Android/simulation/tests/tools. COE Hardware still has zero Python files, divergent ESP32/ESP8266 and hardening-test blobs, matching Pisowifi MIT license, and missing root NOTICE. COE #26 remains frozen with five queued workflows and zero jobs.
+
+No subsystem source, ownership manifest, route, destination file, payment state, signer, release artifact or hardware was changed. Full Master suite NOT RUN; no Master Actions run returned. Private v11 registry/newer corrections remain inaccessible; older Library snapshots and the 2026-10-26 manifest/ledger are not canonical substitutes. Cleanup #266 remains OPEN, 0/7 complete. **PRODUCTION NO-GO.**

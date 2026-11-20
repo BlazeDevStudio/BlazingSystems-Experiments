@@ -67,3 +67,39 @@
 5. Keep COE #26 frozen until exact source/test/license/notice/owner/CI acceptance.
 
 **PRODUCTION NO-GO:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20T18:47:14.764Z
+
+This is a same-hour correction to the existing Master checkpoint, not a second role lock. The existing issue #172 comment `7047484051` will be updated in place. The branch parent before this coordination-only update is `3f4596adbebcccfc225de05ca46483fa231b32dc`; PR #288 remains OPEN / DRAFT / UNMERGED, with 130 changed paths, all under `coordination/phoenix/`. `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, 11 routes, and PHX-MASTER target null. No PR-triggered Master workflow runs were returned for the parent head; the full Master Python suite was not run.
+
+### RELEASE #291: exact terminal results
+
+- Current PR docs head: `3370424619098eeae8ddd0190857f4a98f4f26da`; source/test head: `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`; base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Source/test Full [#44791692676](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676): terminal SUCCESS, 26 jobs passed, zero failed, four production import/sign/publish jobs skipped.
+- Source/test compatibility [#44791692471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692471): SUCCESS, 3/3 jobs. Both ESP32 matrix job labels identify Hardware source `dc02efea6590`, not current #327 source/test `d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1`; this is not current-source compatibility acceptance.
+- Source/test Windows [#44791692826](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692826): FAILURE in PISONET-owned `negative-selftest.ps1`; exact log: `The variable '$buildWorkflow' cannot be retrieved because it has not been set.` Publisher skipped.
+- Docs-head Full [#44793107634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44793107634): terminal CANCELLED, 25 successful jobs, one cancelled `v04_x86_simulation`, four production jobs skipped. Do not label this docs-head run PASS.
+- Docs-head compatibility [#44793107259](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44793107259): SUCCESS, 3/3, still pinned to `dc02efea6590`.
+- Docs-head Windows [#44793107347](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44793107347): FAILURE at the same PISONET-owned `$buildWorkflow` variable. The docs commit `33704246` is a direct child of `7382f22d` and changes only `.github/PHX_RELEASE_HANDOVER.md`.
+- The accumulated PR #291 diff remains 26 paths: 21 RELEASE, three CORE handover, two PISONET test paths. Latest docs-only change does not resolve inherited cross-owner review requirements.
+
+### Corrected COE #26 exact-tree import count
+
+- Source #327 tree `d46355267f991cfaae68fc37fa5f6e176fa1c269`: 2,443 entries, complete.
+- Destination #26 tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`: 286 entries, complete.
+- ESP32/ESP8266 source board directories contain 36 files, including **25** Python labs/helpers (9 ESP32, 16 ESP8266), versus four destination Hardware files and zero Python files. The earlier 33-board-local-Python figure is superseded; the wider BlazePwifi subtree has 41 Python files, 16 of which belong to Android, simulation, tests, or tools.
+- ESP8266 blobs: source `a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa`, destination `c8be98f72596681e36a3ad1f8939bf8046c96887`. ESP32 blobs: source `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`, destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. Hardening test blobs: source `41211b2c110ab409f6d9d1812ef12fda73b13211`, destination `f921c56cecc19cab1989507b9b4ade1f45dac54e`. All differ.
+- Pisowifi LICENSE blobs match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE exists at `f6d92cd21465312be5993631fe26977219be0fb9` and destination root NOTICE is absent. Hardware-specific license/notice scope remains unresolved.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. No migration staged or proposed.
+
+### Other live gates
+
+- HARDWARE #327 docs head `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`, source/test `d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1`: quarantine #44786785385 and relay #44786785413 PASS; Full #44786785416 FAIL at QA-owned `Missing poll signature check`. Firmware remains deny-only.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859` comparison-only; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Cleanup #266 remains OPEN, 0/7 complete. Effective protected-branch enforcement remains unverified.
+- Canonical private registry v11/newer corrections were not found in Library; older v3-v7 and 2026-10-26 artifact-manifest/sync-ledger snapshots are historical and were not substituted. The exposed tools provide no authorized Google Drive connector for the canonical private files. No Drive artifact was created.
+
+**Next:** PISONET fixes its own Windows self-test; QA replaces the positive poll fixture with negative/default-deny tests; RELEASE aligns or explicitly labels its Hardware compatibility source pin and obtains CORE/PISONET reviews; COE integration owner supplies Hardware-specific per-file provenance and destination CI; registry custodian restores v11 access; repository administrator verifies branch protection.
+
+No subsystem source, route manifest, destination file, financial state, signer, release artifact or hardware was changed. No merge, migration, flash, secret provisioning, real-payment operation or physical test occurred. **PRODUCTION NO-GO.**

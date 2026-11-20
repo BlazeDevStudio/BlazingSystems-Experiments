@@ -197,3 +197,11 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 current docs head `1b42e70544f142ca2fa54878638abb2c090235ca`; Full 26/0/4 skipped, compatibility PASS, Windows FAIL in PISONET-owned self-test. RELEASE UTC18 source audit is IN_PROGRESS.
 - New report: [PHX_MASTER_UTC18_20261120_EXACT_HEAD_ROLE_CI_AND_COE26_PROVENANCE.md](PHX_MASTER_UTC18_20261120_EXACT_HEAD_ROLE_CI_AND_COE26_PROVENANCE.md).
 - Private Drive v11 registry and newer corrections remain NOT_ACCESSIBLE; no older snapshot substituted. Master suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20
+
+- [Live role/CI and COE #26 revalidation report](coordination/phoenix/PHX_MASTER_UTC18_20261120_EXACT_HEAD_ROLE_CI_AND_COE26_PROVENANCE.md)
+- Master base head before this coordination-only update: `3f4596adbebcccfc225de05ca46483fa231b32dc`; PR #288 remains OPEN / DRAFT / UNMERGED and all existing paths remain under `coordination/phoenix/`.
+- RELEASE #291 current docs head `3370424619098eeae8ddd0190857f4a98f4f26da`, source/test head `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`; docs-head Full is CANCELLED, compatibility PASS is pinned to historical Hardware source `dc02efea6590`, Windows FAIL remains PISONET-owned.
+- COE #26 remains FROZEN; exact-tree review confirms firmware/test blob divergence and incomplete Hardware import. PRODUCTION NO-GO.

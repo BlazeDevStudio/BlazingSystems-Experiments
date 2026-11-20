@@ -1841,3 +1841,20 @@ This table supersedes earlier current-state pins only for the exact PRs listed. 
 ### Cross-owner hold — RELEASE #291
 
 The current 26-path accumulated #291 diff contains 21 RELEASE paths, three CORE-owned product handover paths (PROJECT_HANDOVER.md, CHANGE_LEDGER.md, CURRENT_STATE.md), and two PISONET-owned SoftTimer tests (PublisherMockCli.ps1, negative-selftest.ps1). The exact Windows failure is in PISONET's negative-selftest.ps1. CORE and PISONET must review their own files; RELEASE retains its own workflow/provenance scope. No ownership transfer occurred.
+
+
+## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20
+
+This exact-head supersession corrects the prior UTC18 #291 status and records the current Hardware import count. It changes no owner boundary.
+
+| Role / PR | Exact current head(s) | Exact CI / status | Owner-only next action |
+|---|---|---|---|
+| PHX-MASTER #288 | Parent `3f4596adbebcccfc225de05ca46483fa231b32dc`; this commit is coordination-only | No PR-triggered Master workflow runs returned for the parent head; full Master Python suite NOT RUN | Keep ownership limited to `coordination/phoenix/`; leave route manifest unchanged. |
+| PHX-HARDWARE #327 | Docs `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`; source/test `d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1` | Quarantine #44786785385 PASS; relay #44786785413 PASS; Full #44786785416 FAIL at QA-owned `Missing poll signature check` | Preserve deny-only firmware and #323 → #326 → #327 ancestry; QA owns fixture correction. |
+| PHX-RELEASE #291 | Docs `3370424619098eeae8ddd0190857f4a98f4f26da`; source/test `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89` | Source/test Full #44791692676 SUCCESS (26 pass / 0 fail / 4 production jobs skipped); compatibility #44791692471 SUCCESS (3/3) but both ESP32 legs are labeled source `dc02efea6590`, not current #327 source/test; Windows #44791692826 FAIL. Docs-head Full #44793107634 CANCELLED (25 success / 1 cancelled / 4 skipped); docs-head compatibility #44793107259 SUCCESS; docs-head Windows #44793107347 FAIL. | Keep comparator fail-closed; reconcile compatibility source pin against current Hardware source or label it historical; obtain CORE/PISONET review of inherited paths. |
+| PHX-PISONET #255 / QA #290, #292 | Existing owner heads unchanged in this read | #255 and #290 retain prior scoped results; #292 has no new exact-head run observed | PISONET fixes its own `$buildWorkflow` negative self-test; QA replaces positive poll fixture with negative/default-deny tests. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`, base main `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Five workflows QUEUED / zero jobs | Keep FROZEN pending exact-source, test, license/NOTICE, owner and destination-CI acceptance. |
+
+### RELEASE #291 cross-owner path hold
+
+The accumulated 26-path diff remains 21 RELEASE-owned paths, three CORE-owned product handover paths, and two PISONET-owned SoftTimer test paths. The latest docs commit `33704246` is a child of source/test head `7382f22d` and changes only `.github/PHX_RELEASE_HANDOVER.md`; this does not remove the inherited path-ownership hold or transfer review authority.

@@ -2725,3 +2725,24 @@ The current source sketches do not contain the old positive response_sig / |poll
 OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, status DRAFT_REVIEW_ONLY, 11 routes, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, PHX-MASTER route target null. This manifest is not a copy/move instruction.
 
 **Disposition: COE #26 FROZEN.** No copy, move, overwrite, cherry-pick, rebase, staging, route promotion, or migration. Require per-file exact blob+mode provenance, source/destination test identity, license/notice review, owner approval, and destination CI at one pinned candidate SHA before any route proposal.
+
+
+## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20
+
+### Exact source/destination tree revalidation
+
+- Experiments HARDWARE #327 docs head `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`: recursive tree `d46355267f991cfaae68fc37fa5f6e176fa1c269`, 2,443 entries, not truncated.
+- COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: recursive tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`, 286 entries, not truncated.
+- Source ESP32/ESP8266 board directories contain 36 files, including **25** Python labs/helpers (9 ESP32, 16 ESP8266); destination Hardware contains four files and **zero** Python files. The earlier 33-board-local-Python count is superseded: 16 additional Python files in the wider BlazePwifi subtree belong to Android, simulation, tests, or tools, not the board directories. Total Python files under the wider BlazePwifi subtree: 41.
+- ESP8266 sketch blobs differ: source `a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa`, destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- ESP32 sketch blobs differ: source `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`, destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- Hardening test identities differ: source `41211b2c110ab409f6d9d1812ef12fda73b13211`, destination `f921c56cecc19cab1989507b9b4ade1f45dac54e`.
+- Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9` while destination root NOTICE is absent. Hardware-specific license/notice applicability remains unresolved.
+
+### RELEASE #291 terminal CI supersession
+
+- Source/test head `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`: Full #44791692676 SUCCESS (26 jobs passed, zero failed, four production import/sign/publish jobs skipped); compatibility #44791692471 SUCCESS (3/3) but pinned to Hardware source `dc02efea6590`, not current #327 source/test `d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1`; Windows #44791692826 FAIL at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset.
+- Docs head `3370424619098eeae8ddd0190857f4a98f4f26da`: Full #44793107634 CANCELLED (25 successful, one cancelled x86 simulation, four production jobs skipped); compatibility #44793107259 SUCCESS; Windows #44793107347 FAIL at the same PISONET-owned variable.
+- The docs commit is a direct child of the source/test head and changes only `.github/PHX_RELEASE_HANDOVER.md`. The accumulated 26-path PR diff still contains 21 RELEASE, three CORE, and two PISONET paths. No owner review transfer is implied.
+
+**Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration. PR #288 remains DRAFT. **PRODUCTION NO-GO.**
