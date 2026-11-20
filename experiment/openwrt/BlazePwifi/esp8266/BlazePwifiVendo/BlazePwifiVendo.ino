@@ -993,7 +993,6 @@ bool quarantineCoinIngressTransition(){
   const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
   const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
   const bool lineIdle=coinLineIdle();
-  if(lineIdle && unhandledEdges==0U) return true;
   if(journalRecoveryRequired){
     lastHandledCoinEdgeSequence=observedEdgeSequence;
     lastCoin=!lineIdle;
@@ -1001,6 +1000,7 @@ bool quarantineCoinIngressTransition(){
     applyOutputs();
     return false;
   }
+  if(lineIdle && unhandledEdges==0U) return true;
   if(pendingPulses>0U) pendingReady=true;
   lastHandledCoinEdgeSequence=observedEdgeSequence;
   lastCoin=!lineIdle;
