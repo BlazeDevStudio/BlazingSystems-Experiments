@@ -571,6 +571,29 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse(hasattr(provenance, "_verify_checksum_manifest"))
 
 
+    def test_checksum_manifest_rejects_noncanonical_path_aliases(self):
+        digest = "a" * 64
+        canonical = f"{digest}  ./nested/payload.bin\\n".encode("utf-8")
+        self.assertEqual(
+            provenance._parse_checksum_text(canonical, "SHA256SUMS"),
+            {"nested/payload.bin": digest},
+        )
+
+        for name in (
+            "nested/./payload.bin",
+            "nested//payload.bin",
+            "nested/",
+            "././nested/payload.bin",
+        ):
+            with self.subTest(name=name):
+                raw = f"{digest}  {name}\\n".encode("utf-8")
+                with self.assertRaisesRegex(
+                    provenance.ProvenanceError,
+                    "unsafe checksum path",
+                ):
+                    provenance._parse_checksum_text(raw, "SHA256SUMS")
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
