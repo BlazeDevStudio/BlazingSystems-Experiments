@@ -584,6 +584,7 @@ for board,path in BOARDS.items():
     latch_fault=extract_function(source, "latchPollPulseFault")
     init_store=extract_function(source, "initPendingStore")
     sample=extract_function(source, "sampleCoinPulseEdge")
+    drain_abort=extract_function(source, "handlePollDrainAbortAfterSample")
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
     handle=extract_function(source, "handleCoinPostResponse")
 
@@ -591,11 +592,11 @@ for board,path in BOARDS.items():
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
-                 handle_source=handle):
+                 handle_source=handle,drain_abort_source=drain_abort):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
                 quiet_source+begin_source+configure_source+accept_source+write_fault_source+
-                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+loop_source+main_source)
+                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     edge_hook = begin.replace(
@@ -608,15 +609,15 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
-    release_on_abort = begin.replace(
-        "return coinLineQuietAfterInhibit();",
-        "if(coinLineQuietAfterInhibit()) return true;\n  pollIntakeSuspended=false;\n  applyOutputs();\n  return false;",
+    release_on_abort = drain_abort.replace(
+        "if(!coinLineIdle()) return;",
+        "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",
         1,
     )
-    if release_on_abort == begin:
+    if release_on_abort == drain_abort:
         raise AssertionError(f"{board}: drain-abort release mutation anchor missing")
-    compile_and_run(assemble(begin_source=release_on_abort),board,25,"release-before-drain-abort-reconciliation")
-    print(f"{board} MUTATION_REJECTED release-before-drain-abort-reconciliation")
+    compile_and_run(assemble(drain_abort_source=release_on_abort),board,34,"release-while-active-drain-line")
+    print(f"{board} MUTATION_REJECTED release-while-active-drain-line")
     pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
     poll_call = loop.find('String r=post("poll")')
     if pre_poll_guard < 0 or poll_call < 0 or pre_poll_guard > poll_call:

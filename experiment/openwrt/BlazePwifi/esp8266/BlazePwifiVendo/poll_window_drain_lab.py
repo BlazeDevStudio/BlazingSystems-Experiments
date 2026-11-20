@@ -29,7 +29,7 @@ static constexpr int LOW=0, HIGH=1;
 static bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
 bool outputPolarityKnown=true;
 static uint8_t pendingPulses=0;
-static bool runCoinActiveLow=true, pollIntakeSuspended=false;
+static bool runCoinActiveLow=true, pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false;
 static int runCoinPin=4, runRelayPin=5, runLedPin=2;
 static bool pinConfigSafe=true, controllerEnabled=true, coinEnabled=true, insertMode=true;
 static bool ledEnabled=true, relayEnabled=true, runRelayActiveHigh=true, runLedActiveHigh=true;
@@ -50,7 +50,7 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
                     bool expectPoll,uint32_t expectedElapsed,uint32_t startAt=0){
   fakeNow=startAt; pulseStart=start; pulseEnd=end; runDebounceMs=debounce;
   fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
-  pollIntakeSuspended=false; relayOn=true; ledOn=true;
+  pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; relayOn=true; ledOn=true;
   const uint32_t started=fakeNow;
   const bool opened=beginPollWindow();
   const uint32_t elapsed=(uint32_t)(fakeNow-started);

@@ -70,7 +70,7 @@ const uint32_t MAGIC=0x42505733;
 
 bool insertMode=false;
 bool lastCoin=false;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool outputPolarityKnown=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=false;
@@ -1003,16 +1003,22 @@ bool reconcileUnobservedCoinEdges(){
 // Observe a full debounce-width quiet interval after disabling intake.
 // A pulse at any point cancels polling and returns to normal journal handling.
 bool coinLineQuietAfterInhibit(){
+  pollDrainAbortedOnActiveLine=false;
   const uint32_t started=millis();
   // Drain the supported 30–100 ms coin pulse train before blocking HTTP.
   // Preserve a larger configured debounce interval; never shorten it.
   const uint32_t pulseTrainQuietMs=250UL;
   const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
   while(millis()-started<quietMs){
-    if(!coinLineIdle()) return false;
+    if(!coinLineIdle()){
+      pollDrainAbortedOnActiveLine=true;
+      return false;
+    }
     delay(1);
   }
-  return coinLineIdle();
+  const bool idle=coinLineIdle();
+  if(!idle) pollDrainAbortedOnActiveLine=true;
+  return idle;
 }
 
 // Close the check-to-inhibit race: after the first idle check, disable intake,
@@ -1795,6 +1801,31 @@ void setup(){
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
 }
 
+void handlePollDrainAbortAfterSample(){
+  if(!pollDrainAbortedOnActiveLine) return;
+  if(journalRecoveryRequired){
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    return;
+  }
+  if(pendingPulses==0U){
+    // The drain saw a pulse but the ordinary sample could not durably queue it.
+    latchPollPulseFault(1U);
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    lastPoll=millis();
+    return;
+  }
+  // A captured pulse keeps intake inhibited until the input line is idle.
+  if(!coinLineIdle()) return;
+  pollDrainAbortedOnActiveLine=false;
+  pollIntakeSuspended=false;
+  applyOutputs();
+  lastPoll=millis();
+}
+
 void loop(){
   web.handleClient();
 
@@ -1838,11 +1869,7 @@ void loop(){
         }
         applyOutputs();
         lastPoll=millis();
-      } else if(pollIntakeSuspended){
-        // GPIO saw an active coin line, but the ISR sequence did not advance.
-        // Treat the pulse as unresolved ingress; never re-enable the acceptor
-        // after a drain abort whose edge cannot be tied to a durable event.
-        latchPollPulseFault(1U);
+      } else if(pollIntakeSuspended && !pollDrainAbortedOnActiveLine && coinLineIdle()){
         pollIntakeSuspended=false;
         applyOutputs();
         lastPoll=millis();
@@ -1858,6 +1885,8 @@ void loop(){
     lastSend=0;
     applyOutputs();
   }
+
+  handlePollDrainAbortAfterSample();
 
   if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
     if(!markPendingPostAttempt()){

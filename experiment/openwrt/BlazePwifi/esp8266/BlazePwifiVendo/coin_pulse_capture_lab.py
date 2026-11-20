@@ -38,7 +38,7 @@ static bool pulseEnabled=false;
 static bool fsReady=true,journalRecoveryRequired=false,pendingReady=false;
 static bool outputPolarityKnown=true;
 static bool insertMode=true,lastCoin=false;
-static bool runCoinActiveLow=true,pollIntakeSuspended=false;
+static bool runCoinActiveLow=true,pollIntakeSuspended=false,pollDrainAbortedOnActiveLine=false;
 static bool pinConfigSafe=true,controllerEnabled=true,coinEnabled=true;
 static bool ledEnabled=true,relayEnabled=true;
 static bool runRelayActiveHigh=true,runLedActiveHigh=true;
@@ -99,7 +99,7 @@ static void resetState(uint32_t now=0,bool activeLow=true){
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
   fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
   insertMode=true;lastCoin=false;runCoinActiveLow=activeLow;
-  pollIntakeSuspended=false;pinConfigSafe=true;controllerEnabled=true;coinEnabled=true;
+  pollIntakeSuspended=false;pollDrainAbortedOnActiveLine=false;pinConfigSafe=true;controllerEnabled=true;coinEnabled=true;
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;
   pendingPulses=0;pendingNonce.clear();pendingTarget.clear();activeTarget="target-01";
   relayOn=true;ledOn=true;saveCalls=0;nonceCalls=0;saveResult=true;
@@ -121,24 +121,27 @@ static bool runDrainCapture(const char*name,uint32_t startAt,uint32_t pulseAt,
   runDebounceMs=debounce;lastEdge=priorEdge;
   pulseEnabled=true;pulseStart=pulseAt;pulseEnd=pulseUntil;
   if(beginPollWindow()) return fail(name,"poll unexpectedly started");
-  // This helper-only case has no ISR edge; model the loop releasing the
-  // temporary inhibit only after confirming the edge sequence is unchanged.
-  if(pollIntakeSuspended){ pollIntakeSuspended=false; applyOutputs(); }
-  if(pollIntakeSuspended || !relayOn || !ledOn)
-    return fail(name,"no-edge abort did not release for normal sampling");
+  if(!pollIntakeSuspended || !pollDrainAbortedOnActiveLine || relayOn || ledOn)
+    return fail(name,"drain abort did not retain inhibit for active line");
   const int raw=digitalRead(runCoinPin);
   const bool active=runCoinActiveLow?(raw==LOW):(raw==HIGH);
   if(!active) return fail(name,"drain abort did not leave an active pulse sample");
   sampleCoinPulseEdge(active);
+  handlePollDrainAbortAfterSample();
   if(pendingPulses!=1 || saveCalls!=1 || nonceCalls!=1 ||
-     pendingNonce!="nonce-1" || pendingTarget!=activeTarget || lastEdge!=fakeNow)
-    return fail(name,"first post-abort sample was not durably queued");
+     pendingNonce!="nonce-1" || pendingTarget!=activeTarget || lastEdge!=fakeNow ||
+     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine || relayOn || ledOn)
+    return fail(name,"first post-abort sample was not durably queued under inhibit");
   sampleCoinPulseEdge(active);
   fakeNow+=static_cast<uint32_t>(runDebounceMs)+1U;
   sampleCoinPulseEdge(active);
   if(pendingPulses!=1 || saveCalls!=1)
     return fail(name,"sustained high level was counted as another pulse");
+  pulseEnabled=false;
   sampleCoinPulseEdge(false);
+  handlePollDrainAbortAfterSample();
+  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn)
+    return fail(name,"drain abort inhibit did not release after line became idle");
   fakeNow+=static_cast<uint32_t>(runDebounceMs)+1U;
   sampleCoinPulseEdge(true);
   if(pendingPulses!=2 || saveCalls!=2 || nonceCalls!=1 ||
@@ -392,6 +395,7 @@ SIGNATURES = (
     "bool beginPollWindow(){",
     "void latchPollPulseFault(uint32_t pulseEdges){",
     "void sampleCoinPulseEdge(bool active){",
+    "void handlePollDrainAbortAfterSample(){",
 )
 
 FUNCTION_NAMES = (
@@ -402,6 +406,7 @@ FUNCTION_NAMES = (
     "beginPollWindow",
     "latchPollPulseFault",
     "sampleCoinPulseEdge",
+    "handlePollDrainAbortAfterSample",
 )
 
 def compile_and_run(functions):
