@@ -2650,3 +2650,37 @@ Source workflows: `phx-hardware-poll-edge-latch.yml`, `phx-hardware-quarantine-b
 
 **Disposition:** #26 remains FROZEN. No exact firmware identity, imported board-lab identity, workflow parity, complete notice scope, or destination CI acceptance is established. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion, or migration was performed.
 
+## PHX-MASTER UTC15 exact-head source/destination and CI supersession — 2026-11-20 (2026-11-20T15:52:44Z)
+
+### Repository and candidate refs
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Current HARDWARE source candidate #327 docs head `a2f2d42b1e65ceb0e60ae79517a0edc1d38a0d5d`, source/test `53243577ca145e90efa40eeadb536f1737933f6f`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` contains 3 tree entries; COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed paths, 286 tree entries, five workflows QUEUED / zero jobs.
+- Both recursive trees are complete: Experiments #327 has 2,441 entries; COE #26 has 286. No truncation was reported.
+
+### Hardware import provenance
+
+| Item | Experiments source #327 | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | `a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| Python labs/helpers in ESP32/ESP8266/tests | 33 files | 0 under `Hardware/` | Incomplete |
+| Hardware subtree files | Board source plus labs and handover dependencies | 4 files total (README, two sketches, one shell test) | Not import-complete |
+| Scoped Hardware workflows | 3: poll-edge-latch, quarantine-byte-readback, relay-output-polarity | 1 generic `hardware-ci.yml` | No workflow/test identity parity |
+| Hardening fixture | `v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` | `Hardware/tests/test_firmware_hardening.sh` blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different test identities |
+
+### License and notice scope
+
+- Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match exactly at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; COE root `NOTICE.md` is absent.
+- No separate Hardware-specific LICENSE/NOTICE file was found in the source Hardware directories; COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are also absent. This leaves the Hardware notice/license scope unresolved; the sibling Pisowifi MIT match is not a Hardware license decision.
+
+### Current exact-head CI
+
+- HARDWARE #327: relay [#44765919343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919343) PASS; quarantine [#44765919179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919179) PASS; Full [#44765919275](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919275) FAIL in `tests/controllers.sh` at inherited `Missing poll signature check`. The validation job fails; successful firmware/platform builds do not clear it. Downstream simulation/update/sign/publish jobs are skipped.
+- RELEASE #291: Full [#44761157724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157724) completed 26 PASS / 0 FAIL / 4 production import/sign/publish jobs SKIPPED. Windows [#44761157744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157744) fails at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. Compatibility [#44761157699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157699) passed both ESP32 core jobs, but those logs identify source `dc02efea6590`, not the latest source/test commit `60ee0d25`.
+- CORE #252 run [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; RENTAL #240/#287/#289 scoped runs PASS; PISONET #255 [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; QA #290 [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; QA #292 has no PR-triggered run.
+- COE #35: case guard PASS, ImageBuilder sandbox FAIL, Shared Hardware FAIL. #44: case guard PASS, ImageBuilder sandbox FAIL, Shared Hardware PASS. #49: Stage 5.1 PASS, case guard PASS, Shared Hardware FAIL. #48: Stage 5 PASS, case guard PASS, Shared Hardware FAIL. #47: Stage 4.2 PASS, case guard PASS, Shared Hardware FAIL. #45: Pisowifi shell suite and case guard PASS. These remain separate drafts and do not validate #26.
+
+**Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration.

@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T12:39:46Z  
+**Updated:** 2026-11-20T15:52:44Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -171,3 +171,16 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 docs head `fbe1ca6183aa37fadf125b0e8c07a884e80789be`, source/test `0db99526477dd81f94d3f446165f90fc90defdbe`: ESP32 compatibility passes both pinned cores; Full #44753364967 terminates with 26 success / 0 failure / 4 production jobs skipped; Windows #44753364863 fails in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset.
 - COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. Exact recursive trees: 2,440 source entries vs 286 destination; 25 source board-local Python labs vs zero destination Hardware Python files; three source Hardware workflows vs one generic destination workflow; both firmware blobs differ; notice scope remains incomplete.
 - New architecture review gate: §6.55, poll admission fixture and COE migration parity. Private v11 registry/newer corrections remain NOT ACCESSIBLE; no older snapshot substituted. Master suite NOT RUN because local clone DNS failed. **PRODUCTION NO-GO.**
+
+## Latest live exact-head supersession — 2026-11-20 UTC15 (2026-11-20T15:52:44Z)
+
+- Experiments default branch: `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- Active Phoenix development/audit foundation: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5` remains separate.
+- Master: `phoenix/master-coordination@13c671fa727c8f02d846358c1cd011aec0e67ea9`; [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) remains OPEN/DRAFT against main, 129 changed paths, all under `coordination/phoenix/`.
+- COE: `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; [integration PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed paths, five workflows QUEUED / zero jobs.
+- HARDWARE [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327): docs head `a2f2d42b1e65ceb0e60ae79517a0edc1d38a0d5d`, source/test `53243577ca145e90efa40eeadb536f1737933f6f`, base #326 `58c558fb6a237935214621adc3dee65a10fe1a51`. Focused relay/quarantine runs [#44765919343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919343) and [#44765919179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919179) PASS; Full [#44765919275](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44765919275) FAILS at QA-owned `Missing poll signature check`.
+- RELEASE [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291): docs head `9b18cb93aeaae23e184b888788f14a8f15752cdd`, source/test `60ee0d25bde9aba36f472f33c72149c45f5c3d08`. Exact docs-head Full build [#44761157724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157724) passed 26 jobs with four production import/sign/publish jobs skipped; Windows [#44761157744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157744) fails in PISONET-owned `negative-selftest.ps1`. Compatibility [#44761157699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157699) passed, but its logs identify source `dc02efea6590`, not the latest `60ee0d25` test commit.
+- COE #26 source/destination comparison remains blocking: complete trees 2,441 vs 286 entries; both firmware blobs differ; 33 source Python labs/helpers under ESP32/ESP8266/tests vs zero destination Hardware Python files; three scoped source Hardware workflows vs one generic destination workflow; root NOTICE absent at destination. The BlazePwifi MIT license matches `Pisowifi/LICENSE`; that does not settle Hardware notice scope.
+- The private Drive v11 registry and newer corrections are not exposed through the available connector/Library surface. No older snapshot was substituted and no new Drive artifact was created. Master cleanup issue #266 remains OPEN with all seven role checkboxes unchecked. Full Master Python suite NOT RUN; this is source/tree/CI inspection, not a Master-suite pass.
+
+**Standing gate:** no merge, route promotion, migration, release, signing, secret provisioning, flash, real payment operation or physical test. **PRODUCTION NO-GO** remains mandatory.

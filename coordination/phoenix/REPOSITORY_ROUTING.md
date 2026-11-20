@@ -1037,3 +1037,14 @@ The current 26-path #291 diff contains 21 RELEASE paths, three CORE-owned produc
 
 `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891...`, destination candidate PR #26 `b382d233...`, and PHX-MASTER target `null`. The manifest is not a copy/move instruction. Exact source/destination blobs, licenses, import completeness, test identities, and destination CI must be independently accepted before any per-file route proposal. No route promotion or migration was performed.
 
+## PHX-MASTER UTC15 exact route and migration hold — 2026-11-20
+
+The live machine-readable route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, and PHX-MASTER target `null`. It is not a copy/move instruction.
+
+At current HARDWARE #327 docs head `a2f2d42b1e65ceb0e60ae79517a0edc1d38a0d5d`, the complete source tree has 2,441 entries. COE #26 has 286 complete entries and 205 changed paths. Source and destination firmware blobs differ for both ESP8266 (`a1f12edc...` vs `c8be98f7...`) and ESP32 (`ae0da8e2...` vs `3cc7ec54...`). The source board/test paths contain 33 Python labs/helpers; COE `Hardware/` contains four files total and no Python. Source has three scoped PHX-HARDWARE workflows; destination has only generic `hardware-ci.yml`. The source hardening fixture blob `41211b2c...` differs from destination `f921c56c...`.
+
+The source BlazePwifi MIT license blob `1ee55b94...` matches destination `Pisowifi/LICENSE`. Source root `NOTICE.md` exists, but COE root NOTICE is absent. No dedicated Hardware-specific LICENSE/NOTICE was found in the source board folders; destination `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent, so Hardware notice/license scope remains unresolved. Do not infer Hardware coverage from the sibling Pisowifi license.
+
+RELEASE #291's accumulated 26-path diff contains 21 RELEASE paths, three CORE-owned handover files and two PISONET-owned SoftTimer tests. The current Windows failure is in the PISONET-owned `negative-selftest.ps1`; only the respective owners may approve their files. Separate COE candidates #35/#44/#47/#48/#49/#45 remain independent drafts and do not become #26 acceptance or route authority.
+
+**Disposition:** keep #26 FROZEN. No source/target copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration. Require exact per-file blob+mode provenance, owner approvals, license/notice review, test identity mapping, and destination CI at one pinned candidate SHA before any proposal.
