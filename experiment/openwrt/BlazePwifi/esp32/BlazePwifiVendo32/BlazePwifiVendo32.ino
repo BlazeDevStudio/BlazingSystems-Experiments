@@ -1516,6 +1516,35 @@ bool coinPostDispositionVerified(const String &response,const String &nonce,
   return false;
 }
 
+void handleCoinPostResponse(const String &response){
+  // Keep the response disposition gate separate from the network loop so the
+  // exact decision path can be compiled and failure-injected on both boards.
+  if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
+    applyOutputs();
+    return;
+  }
+  if(pollJsonTopLevelTrue(response,"ok")){
+    if(reconcileUnobservedCoinEdges()) clearPending();
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else if(response.indexOf("coin window expired")>=0 ||
+            response.indexOf("coin target mismatch")>=0 ||
+            response.indexOf("no active coin window")>=0 ||
+            response.indexOf("another vendo selected")>=0){
+    quarantinePending(response);
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else {
+    // An authenticated but malformed/unknown disposition remains ambiguous.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  }
+}
+
 bool acceptPollResponse(const String &response){
   // MASTER ARCHITECTURE_CONTRACTS §6.3: the current response_sig expression is
   // a derived candidate, not an approved poll authorization contract. CORE has
@@ -1725,27 +1754,8 @@ void loop(){
       lastSend=millis();
       if(!reconcileUnobservedCoinEdges()){
         applyOutputs();
-      } else if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
-        applyOutputs();
-      } else if(pollJsonTopLevelTrue(r,"ok")){
-        if(reconcileUnobservedCoinEdges()) clearPending();
-        if(!reconcileUnobservedCoinEdges()) applyOutputs();
-        applyOutputs();
-      } else if(r.indexOf("coin window expired")>=0 ||
-                r.indexOf("coin target mismatch")>=0 ||
-                r.indexOf("no active coin window")>=0 ||
-                r.indexOf("another vendo selected")>=0){
-        quarantinePending(r);
-        if(!reconcileUnobservedCoinEdges()) applyOutputs();
-        applyOutputs();
       } else {
-        // An authenticated but malformed/unknown disposition remains ambiguous.
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
-        if(!reconcileUnobservedCoinEdges()) applyOutputs();
-        applyOutputs();
+        handleCoinPostResponse(r);
       }
     }
   }

@@ -270,21 +270,30 @@ for board,path in BOARDS.items():
             failed.append(board)
         else:
             coin_branch = loop[coin_post:]
-            auth_guard = coin_branch.find("if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses))")
-            coin_success = coin_branch.find('if(pollJsonTopLevelTrue(r,"ok"))')
-            clear_pending = coin_branch.find("clearPending();")
-            quarantine = coin_branch.find("quarantinePending(r);")
-            if auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
-                print(board, "COIN_POST_DISPOSITION RED: no authenticated-disposition deny guard before journal disposition")
+            handler_call = coin_branch.find("handleCoinPostResponse(r);")
+            if handler_call < 0:
+                print(board, "COIN_POST_DISPOSITION RED: loop does not delegate to source-extracted disposition helper")
                 failed.append(board)
-            elif coin_success < auth_guard or clear_pending < coin_success:
-                print(board, "COIN_POST_DISPOSITION RED: positive ACK path is not ordered after the deny guard")
-                failed.append(board)
-            elif coin_branch.find("r.indexOf(", 0, clear_pending) >= 0:
-                print(board, "COIN_POST_DISPOSITION RED: substring-based success check remains before clearPending")
+            elif "clearPending();" in coin_branch or "quarantinePending(" in coin_branch:
+                print(board, "COIN_POST_DISPOSITION RED: loop retains inline journal disposition bypass")
                 failed.append(board)
             else:
-                print(board, "COIN_POST_DISPOSITION PASS: unauthenticated response denied before clear/quarantine")
+                handler = extract(source, "void handleCoinPostResponse(const String &response){")
+                auth_guard = handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
+                coin_success = handler.find('if(pollJsonTopLevelTrue(response,"ok"))')
+                clear_pending = handler.find("clearPending();")
+                quarantine = handler.find("quarantinePending(response);")
+                if auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
+                    print(board, "COIN_POST_DISPOSITION RED: no authenticated-disposition deny guard before journal disposition")
+                    failed.append(board)
+                elif coin_success < auth_guard or clear_pending < coin_success:
+                    print(board, "COIN_POST_DISPOSITION RED: positive ACK path is not ordered after the deny guard")
+                    failed.append(board)
+                elif handler.find("response.indexOf(", 0, clear_pending) >= 0:
+                    print(board, "COIN_POST_DISPOSITION RED: substring-based success check remains before clearPending")
+                    failed.append(board)
+                else:
+                    print(board, "COIN_POST_DISPOSITION PASS: source-extracted helper gates clear/quarantine")
 if failed: sys.exit("poll-response fail-closed lab failed: "+",".join(failed))
 print("PHYSICAL_COIN_ACCEPTOR_VERIFIED=0")
 print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
