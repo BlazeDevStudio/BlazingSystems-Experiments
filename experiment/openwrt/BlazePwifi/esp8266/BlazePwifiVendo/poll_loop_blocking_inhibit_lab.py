@@ -326,7 +326,7 @@ int main(){
   ledOn=true;
   const bool idleFaultAccepted=quarantineCoinIngressTransition();
   if(idleFaultAccepted || !journalRecoveryRequired || relayOn || ledOn || lastCoin) return 48;
-  std::cout<<"POLL_INGRESS_PRIOR_JOURNAL_FAULT_IDLE_LINE_DENY_PASS\\n";
+  std::cout<<"POLL_INGRESS_PRIOR_JOURNAL_FAULT_IDLE_LINE_DENY_PASS\n";
 
   // A normal blocked poll remains inhibited and default-deny when no edge occurs.
   resetState(); loop();
@@ -628,7 +628,7 @@ for board,path in BOARDS.items():
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     idle_fault_shortcut = quarantine.replace(
         "  if(journalRecoveryRequired){",
-        "  if(lineIdle && unhandledEdges==0U) return true;\\n  if(journalRecoveryRequired){",
+        "  if(lineIdle && unhandledEdges==0U) return true;\n  if(journalRecoveryRequired){",
         1,
     )
     if idle_fault_shortcut == quarantine:
