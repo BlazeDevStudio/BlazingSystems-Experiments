@@ -6,9 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[5]
 WORKFLOW = ROOT / ".github" / "workflows" / "phx-hardware-quarantine-byte-readback.yml"
-COIN_PULSE_LAB = (
-    Path(__file__).resolve().parent / "coin_pulse_capture_lab.py"
-)
+COIN_PULSE_LAB = Path(__file__).resolve().parent / "coin_pulse_capture_lab.py"
 SELF_COMMAND = (
     "python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
     "boot_polarity_workflow_wiring_lab.py"
@@ -20,6 +18,10 @@ BOOT_POLARITY_COMMAND = (
 CONFIG_READ_FAILURE_COMMAND = (
     "python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
     "config_load_read_failure_lab.py"
+)
+POLL_LOOP_COMMAND = (
+    "python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
+    "poll_loop_blocking_inhibit_lab.py"
 )
 
 
@@ -35,6 +37,13 @@ def assert_no_nested_config_runner(coin_pulse_source: str) -> None:
     )
 
 
+def assert_no_nested_poll_loop_runner(coin_pulse_source: str) -> None:
+    require(
+        "poll_loop_blocking_inhibit_lab.py" not in coin_pulse_source,
+        "coin-pulse lab must not rerun the workflow-owned poll-loop lab",
+    )
+
+
 def main() -> None:
     require(WORKFLOW.is_file(), "hardware quarantine workflow is missing")
     require(COIN_PULSE_LAB.is_file(), "coin-pulse lab is missing")
@@ -46,22 +55,36 @@ def main() -> None:
         (SELF_COMMAND, "workflow-wiring guard"),
         (BOOT_POLARITY_COMMAND, "ESP8266 boot-polarity lab"),
         (CONFIG_READ_FAILURE_COMMAND, "ESP8266 config-read failure lab"),
+        (POLL_LOOP_COMMAND, "poll-loop blocking-inhibit lab"),
     ):
         matches = [line for line in lines if command in line]
         require(len(matches) == 1, f"{label} must be invoked exactly once")
         require(not matches[0].lstrip().startswith("#"), f"{label} invocation is commented out")
 
     assert_no_nested_config_runner(coin_pulse_source)
-    injected_duplicate = (
+    assert_no_nested_poll_loop_runner(coin_pulse_source)
+
+    injected_config_duplicate = (
         coin_pulse_source
         + '\nsubprocess.run([sys.executable, "config_load_read_failure_lab.py"], check=True)\n'
     )
     try:
-        assert_no_nested_config_runner(injected_duplicate)
+        assert_no_nested_config_runner(injected_config_duplicate)
     except AssertionError:
         print("MUTATION_REJECTED nested-config-read-lab-runner")
     else:
         raise AssertionError("nested config-read lab mutation was not rejected")
+
+    injected_poll_duplicate = (
+        coin_pulse_source
+        + '\nsubprocess.run(["python3", "poll_loop_blocking_inhibit_lab.py"], check=True)\n'
+    )
+    try:
+        assert_no_nested_poll_loop_runner(injected_poll_duplicate)
+    except AssertionError:
+        print("MUTATION_REJECTED nested-poll-loop-lab-runner")
+    else:
+        raise AssertionError("nested poll-loop lab mutation was not rejected")
 
     require("set -euo pipefail" in workflow,
             "multi-lab quarantine step must fail fast")
@@ -77,6 +100,8 @@ def main() -> None:
     print("ESP8266_BOOT_POLARITY_WORKFLOW_WIRING=PASS")
     print("ESP8266_CONFIG_READ_FAILURE_WORKFLOW_WIRING=PASS")
     print("ESP8266_CONFIG_READ_FAILURE_RUN_ONCE=PASS")
+    print("POLL_LOOP_BLOCKING_INHIBIT_WORKFLOW_WIRING=PASS")
+    print("POLL_LOOP_BLOCKING_INHIBIT_RUN_ONCE=PASS")
 
 
 if __name__ == "__main__":
