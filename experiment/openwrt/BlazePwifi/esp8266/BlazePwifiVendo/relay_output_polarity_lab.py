@@ -38,7 +38,32 @@ def extract(source, name):
             depth -= 1
             if depth == 0:
                 return source[match.start():pos + 1]
-    raise RuntimeError("unbalanced production function: " + name)
+def verify_lexical_extractor_regression():
+    cases = (
+        ("ordinary string", '  const char *value = "}";'),
+        ("C++ raw string", '  const char *value = R"tag(} )tag";'),
+        ("line comment", "  // }"),
+        ("block comment", "  /* } */"),
+    )
+    failures = []
+    for label, statement in cases:
+        fixture = (
+            "void target(){\n"
+            + statement
+            + "\n  return;\n}\nvoid after(){ return; }\n"
+        )
+        extracted = extract(fixture, "target")
+        if "return;" not in extracted or "void after()" in extracted:
+            failures.append(label)
+    if failures:
+        raise SystemExit(
+            "RELAY_OUTPUT_EXTRACTOR_FAIL: non-code brace truncated target(): "
+            + ", ".join(failures)
+        )
+    print("RELAY_OUTPUT_LEXICAL_EXTRACTOR_PASS 4/4")
+
+
+verify_lexical_extractor_regression()
 
 
 STUBS = r"""
