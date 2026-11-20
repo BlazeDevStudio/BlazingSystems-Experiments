@@ -6,14 +6,28 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <mbedtls/version.h>
+
+// This lab uses the legacy SHA-256 API. Fail with a clear diagnostic before
+// including legacy headers on unsupported or unversioned Mbed TLS targets.
+#if !defined(MBEDTLS_VERSION_MAJOR)
+#error "ControllerAuthV1Lab requires an explicit Mbed TLS major version."
+#elif MBEDTLS_VERSION_MAJOR < 2 || MBEDTLS_VERSION_MAJOR >= 4
+#error "ControllerAuthV1Lab supports Mbed TLS 2.x/3.x only; Mbed TLS 4 requires a separately reviewed PSA Crypto adapter."
+#endif
+
 #include <mbedtls/md.h>
 #include <mbedtls/sha256.h>
 
 namespace phx_controller_auth_v1 {
 
 inline bool hex64(const char *p) {
-  if (!p || strlen(p) != 64) return false;
-  for (unsigned i=0;i<64;i++)
+  if (!p) return false;
+  size_t length=0;
+  // Bound malformed input to 65 bytes (64 hex characters plus terminator).
+  while(length<65 && p[length]!='\0') ++length;
+  if(length!=64) return false;
+  for (size_t i=0;i<64;i++)
     if (!((p[i]>='0'&&p[i]<='9')||(p[i]>='a'&&p[i]<='f'))) return false;
   return true;
 }

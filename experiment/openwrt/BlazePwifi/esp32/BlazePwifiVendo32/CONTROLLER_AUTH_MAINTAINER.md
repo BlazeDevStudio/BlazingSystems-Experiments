@@ -2,9 +2,13 @@
 
 **Scope:** PHX-HARDWARE / [draft PR #254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254) (stacked on fail-closed [PR #239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239)). This is **LAB ONLY** and is not wired into the Vendo .ino application intake path. Neither a valid HMAC nor a digest match admits coins or energizes a relay.
 
+## Mbed TLS compatibility boundary
+
+`ControllerAuthV1Lab.h` intentionally supports Mbed TLS major versions 2 and 3 only because it calls the legacy `mbedtls_sha256_*` API. It now emits a compile-time error for an unknown major or Mbed TLS 4 before including the legacy SHA-256 header. The current ESP32 Arduino core 4.0.0 path uses Mbed TLS 4, so this lab header must not be integrated there; a PSA Crypto adapter is a separate, reviewed hardware change. The focused native workflow currently compiles against Ubuntu `libmbedtls-dev` 2.28.8, which is host-header evidence, not an ESP32 core compatibility build.
+
 ## Code reading order
 
-1. `hex64` rejects missing, non-lowercase or non-64-character digest strings (wire validation here is bounded; the upstream string pointer must be valid).
+1. `hex64` rejects missing, non-lowercase or non-64-character digest strings after scanning at most 65 bytes; callers must still pass a readable C-string buffer.
 2. `equal_fixed` compares exactly the requested byte length without a value-dependent early return.
 3. `encode_sha256_hex` renders exactly 32 bytes in canonical lowercase hexadecimal, shared by both SHA256 and HMAC validation so decoding/debugging is not maintained twice.
 4. `matches_policy_digest` verifies **the original serialized policy bytes**, including whitespace and field order; callers must not reserialize JSON before hashing.
