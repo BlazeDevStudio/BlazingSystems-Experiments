@@ -357,6 +357,12 @@ static bool runIngressTransitionCases(){
      backupCalls!=0 || markerCalls!=0)
     return fail("boot-idle-control","idle line with no unhandled ISR edge was quarantined");
 
+  resetState();
+  journalRecoveryRequired=true;
+  if(quarantineCoinIngressTransition() || !journalRecoveryRequired ||
+     backupCalls!=0 || markerCalls!=0 || relayOn || ledOn)
+    return fail("prior-journal-fault","an existing journal fault was reported as a safe ingress transition");
+
   resetState(50U);
   insertMode=false;
   activeTarget.clear();
