@@ -1,3 +1,29 @@
+<!-- PHX-HW-20261120-MBEDTLS4-RESULT:START -->
+> **PHX-HARDWARE UTC04 terminal Full result — PR #254 docs head `82e436dd77c5c62e838fd5dc2bbb789458f60201`; PRODUCTION NO-GO.**
+> Exact Full [#44673076995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673076995) completed **FAILURE**. Validation job `136078545528` PASS, including mandatory handover freshness, controller protocol parity and the full source/host validation suite. ESP8266 job `136078545345` PASS. ESP32 job `136078545445` FAIL: Arduino core `esp32:esp32@4.0.0` cannot find `mbedtls/sha256.h` included at line 6 of the inherited `BlazePwifiVendo32.ino`. Other platform builds and v0.4 simulations completed PASS; ESP32 simulation, signing and publishing remained skipped. This is not a Full pass.
+> The failure is in the inherited application sketch, not the new non-actuating `ControllerAuthV1Lab.h` guard. The helper still rejects Mbed TLS 4; it does not implement PSA Crypto and is not included by the sketch.
+> Current separate Hardware candidate #327 head `bcd7757663ae6c1227b4fed65ad8a9674a35bd31` contains an ESP32 Mbed TLS selector (PSA Crypto on major 4, legacy API on major 3) and its exact Full run [#44671436863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44671436863) has ESP32 job `136073095730` PASS, but validation job `136073095789` FAILS at the QA-owned stale positive `Missing poll signature check`. #327 is referenced by the Master architecture audit but remains absent from the current active-PR table in `ROLE_ASSIGNMENTS.md`; no cherry-pick or stack change was made.
+> **Coordination required:** PHX-MASTER must reconcile #239/#254/#283 with #327 and update the canonical active stack. PHX-RELEASE owns exact Arduino core pinning/reproducibility; PHX-HARDWARE owns any approved PSA firmware port; PHX-QA owns the stale positive poll fixture and independent version-matrix tests; PHX-CORE owns shared response/receipt contracts. No workflow, application sketch, test-owned path, API, finance, key, or COE source was edited in this task.
+> No hardware, live money, flashing, migration, signing, deployment or release was performed.
+<!-- PHX-HW-20261120-MBEDTLS4-RESULT:END -->
+
+<!-- PHX-HW-20261120-MBEDTLS4-BOUNDARY:START -->
+> **PHX-HARDWARE / ControllerAuthV1Lab compatibility fence — 2026-11-20 UTC04 — DRAFT #254 / Phase A DENY / PRODUCTION NO-GO.**
+> Source commit [`66aa3f13f4cc0c5a89fafa76328a900969ff3563`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/66aa3f13f4cc0c5a89fafa76328a900969ff3563) on `phoenix/hardware-core252-deny-consumer-20261030`, stacked on #239 at `d83b715b116185107737fef721c2eece8feebf39`. The lab header now bounds `hex64` scanning to 65 bytes and rejects unknown/Mbed TLS 4 majors before legacy SHA-256 includes; the maintainer guide documents the Mbed TLS 2.x/3.x-only boundary. No application intake, GPIO, relay, coin, wire format, CORE API, keys or financial state changed.
+> Focused [#44672761914](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44672761914), job `136077345950`: **SUCCESS**, actual header compiled against Ubuntu `libmbedtls-dev 2.28.8`; 5/5 synthetic deny cases PASS. Local ASan failure-injection: Mbed TLS 3 stub allowlist + bounded 65-byte `hex64` cases 4/4 PASS; synthetic Mbed TLS 4 include fixture rejected with the intended compile-time diagnostic. These local checks are SIMULATED, not target compilation.
+> Full [#44672762223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44672762223) validation job `136077426038`: **FAILED** at the mandatory handover freshness gate because source/workflow changes were newer than `PROJECT_HANDOVER.md` (last checkpoint `4054fbccd9b2a4ad0e5fe7cfca5a27aa629eed84`). Target build jobs were still running at the checkpoint; no Full PASS is claimed. Re-run after this documentation successor.
+> This is a compatibility guard for a non-actuating lab primitive, not an Mbed TLS 4 PSA implementation. The helper remains unwired and Phase A coin/relay admission remains DENY. No physical hardware, signer/witness, customer data, live money, flashing, migration, signing or release action was performed.
+> Narrow handover: [2026-11-20-hw-controller-auth-mbedtls-major-guard.md](docs/handover/2026-11-20-hw-controller-auth-mbedtls-major-guard.md).
+<!-- PHX-HW-20261120-MBEDTLS4-BOUNDARY:END -->
+
+<!-- PHX-HW-20261115-CLEANUP-CI:START -->
+> **PHX-HARDWARE / LAB CLEANUP — 2026-11-15 Asia/Manila — PRODUCTION/HARDWARE NO-GO.**
+> Repo `BlazeDevStudio/BlazingSystems-Experiments`, DRAFT [PR #254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254) (stacked on DRAFT #239) source commit [`3692ddf889470da8a002e9a16bf0ac2f37f1a9d0`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3692ddf889470da8a002e9a16bf0ac2f37f1a9d0) changed only the ESP32 non-actuating lab authentication header and a maintainer guide. Centralized canonical lowercase SHA256/HMAC hex rendering into `encode_sha256_hex`, removed unused `stdio.h`, documented strict parser/cold-reboot witness prerequisites; no ESP application, relay, hardware, financial or money-admission behavior modified. Coin/relay remain Phase A DENY. Code review still required.
+> **Exact source CI:** [Focused native run #43632185889](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632185889), job `132561036351`, **COMPLETED SUCCESS** with compiled real header and mbedTLS, **5/5 synthetic checks PASS** and Phase A deny guard PASS. [Full BlazePwifi run #43632185933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632185933) **COMPLETED FAILURE** at validate job `132561072221` mandatory handover freshness gate: both source/header and new maintainer guide post-dated all three canonical handovers; ESP32 and ESP8266 Arduino jobs themselves SUCCESS, other build jobs success; downstream validations skipped. This is now a genuine after-source documentation checkpoint, not suppression/modification of gate. Re-run full CI on this docs-only successor exact head; do not claim GREEN in advance.
+> **Cross-branch review:** parallel [DRAFT #283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283) modifies both ESP sketches against `main`, not the fail-closed #239/#254 stack. [Audit comment](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283#issuecomment-6883020442) shows unconditional pending-event clearing after unsuccessful LittleFS quarantine append and `response_sig` expectations incompatible with current backend register/poll; require CORE/QA/MASTER producer-consumer contract and storage failure injection. No cross-branch merge undertaken.
+> **NEXT:** verify fresh exact-head handover-gated Full validation; request independent QA of #254 and #283; preserve fail-closed behavior, protected antirollback, reversible migration, physical #34 power-cut/soak, ledger #31/#32 and witness #43 release NO-GO.
+<!-- PHX-HW-20261115-CLEANUP-CI:END -->
+
 <!-- PHX-HW-CI-20261029:START -->
 > **PHX-HARDWARE PHASE A / SOFTWARE VALIDATED / HARDWARE & PRODUCTION NO-GO — 2026-10-29.** Isolated [DRAFT #239](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/239), exact source/test/workflow head `b97a1d7a3fbc70337d148f546f5fb79cb900567f` stacked on DRAFT #193 / #179, NOT merged into shared development `6d4c9b487af4d768c4d7627654d119417fcc6e00`. [Full GitHub Actions #40814977888](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40814977888) **COMPLETED SUCCESS** (all jobs), including mandatory handover, Arduino ESP8266 **SUCCESS**, Arduino ESP32 **SUCCESS**, original #179 poll source-extracted tests **2/2 PASS**, target-output host controls **14/14 PASS per board**, reconfiguration/config-admission host controls **17/17 PASS per board**, v0.4 ESP simulated binary audit ESP8266 & ESP32 **SUCCESS**, where job logs explicitly report `phase_a_denied` with the compiled endpoint optimized out. [Native #40814977612](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40814977612) **COMPLETED SUCCESS**.
 > **Artifact provenance (exact source head):** ESP8266 package ID `12872550155` SHA256 `789a9f23664df26581ecc21c05a70bbdccde715d179049ab82b8373021225275` size 2,131,778 bytes; ESP32 package ID `12871644251` SHA256 `983286f2873ac7f0c518f25551b5f581b1dceaeccd3f0f3d80e1bd126a79e784` size 14,197,826 bytes. GitHub upload ZIP digests are not physical flash proof. Existing historical red runs were corrected, not erased.
@@ -655,3 +681,59 @@ Member and rental code now fail closed on corrupt, noncanonical, overflowing pai
 From live development HEAD, create an isolated #31 work branch. Inspect the **existing** `tests/v060_member_receipt_failure_repro.sh`, `member.sh` paid mutation/transfer, and `tools/v060_journal_authority_native.c`; do not repeat established RED fixtures. Implement a bounded, crash-recoverable single authoritative paid-member balance+receipt journal with durable event deduplication and failure-injection for ACK-lost/partial writes. Keep #43/#34 and v0.6 migration blocked. Append verified evidence to the ledger and update the short CURRENT_STATE, not another megabyte-long root document.
 
 **Copy to new chat:** @GitHub CONTINUE `BlazingSystems/BlazingSystems-Experiments` Full BlazePwifi draft PR #30. Read `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`; check live HEAD. P0-0710 source `e0229927` Full #38076579117 PASS. P0 #31/#32/#34/#43 open; VERSION=0.5.3, no production v0.6.0. Next #31 integrated member money+receipt durability. No Codex, no Standalone Rental edits.
+
+## PHX-HW-J 2026-10-30 — focused native C++ firmware header contract (LAB / NO-GO)
+- Draft PR #254 from #239; synthetic actual C++ header test `tests/v060_controller_auth_header_native.cpp` commit `2e7b9a87055bc1ea0f61f6926b871027104a9d5f`; focused mbedTLS GitHub Actions workflow `.github/workflows/phx-hw-controller-auth-focused.yml` commit `7686fa21f537351a5167b13449eb97feeaeb877f`. Checks real `ControllerAuthV1Lab.h` signed DENY positive, corrupt signature, different device/nonce, invalid signature/key and raw policy digest mismatch. CORE PR #252 wire canonical unchanged; Phase A no admission. Exact-head run `40911692725` initially QUEUED, never claim green without checking. No native wire parser, protected reboot highwater, keys, physical trials, flashing, merge or production authority.
+
+## 2026-11-17 UTC04 — PHX-HARDWARE exact-head cleanup verification and handover-gate correction
+
+**Scope:** DRAFT PR #254, stacked on DRAFT #239. This entry supersedes the prior instruction to re-run Full on the 2026-11-14 docs-only successor.
+
+### Verified successful source/validation head
+
+The source cleanup commit is `3692ddf889470da8a002e9a16bf0ac2f37f1a9d0`. Its docs-only successor `16de37a7f3a86e1ec7dbc424b6b2f43227421eee` changed only the three canonical handovers; compare confirms no firmware/header/test source changes.
+
+- Focused [#43633345474](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345474), job `132564650975`, **SUCCESS** at exact SHA `16de37a`. The actual ESP32 lab header compiled with mbedTLS; 5/5 synthetic DENY cases passed (signed-but-denied, tampered signature, wrong device, wrong nonce, invalid signature/empty key).
+- Full [#43633345561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633345561), **COMPLETED SUCCESS** at exact SHA `16de37a`. Validation `132564700241`, ESP32 `132564700182`, ESP8266 `132564700146`, Android, all returned target build jobs, the v0.4 simulation matrix and update bundle succeeded. Signing and publication jobs were skipped.
+
+### Subsequent handover-gate RED retained
+
+This UTC04 activation updated the hardware maintainer guide and added a narrow verification handover in commit `877d3ea19e466f03e098fce552922188049cce62`. The ensuing exact-head Full run [#44019660976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44019660976) failed validation job `133825903970` at the mandatory handover freshness gate because `PROJECT_HANDOVER.md` still predated those two hardware-owned documentation files. This is a documentation freshness failure, not a reported ESP target compilation failure. It is preserved, not waived.
+
+The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md` after the guide and narrow handover so the same gate can be re-run without bypass. Exact-head Full validation remains pending until the next run completes.
+
+**Classification:** the non-actuating header cleanup and its 5/5 native synthetic tests are **CI VERIFIED** at `16de37a`; this is not application integration or hardware acceptance. No protected key/witness, physical coin/relay, electrical pulse, 150 power-cut, 30-device soak, production signing, release or deployment evidence is created by these host/CI checks. Phase A remains DENY.
+
+<!-- PHX-HW-LENGTH-AWARE-SPANS-20261120:START -->
+## 2026-11-20 UTC05 — ControllerAuthV1Lab parser-span memory-safety correction
+
+**Scope:** PHX-HARDWARE-owned non-actuating ESP32 lab helper under DRAFT #254. No application sketch, CORE producer, wire contract, coin admission, GPIO, relay, finance, signer, or shared schema changed.
+
+### Test-first evidence
+- Sanitizer workflow wiring commit: `6cf18b913a72090df728f7030ef07c41aae95c1e`.
+- Test-first RED commit: `26fae74219c505e5c9119ca4ca33de0eac039183`.
+- Exact focused run [#44682886902](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44682886902), job `136110238848`: **FAILED AS EXPECTED**. UBSan/AddressSanitizer reported a stack-buffer-overflow at `ControllerAuthV1Lab.h:28`, reading byte 65 while validating a parser-owned 64-byte non-NUL-terminated digest span. The failure is retained as RED evidence.
+
+### Implementation
+- Source/test/maintainer-guide commit: `45f5c27db23e423acaf94d2522634536d734b4d2`.
+- `hex64` now requires an explicit byte length and validates exactly 64 lowercase-hex bytes without scanning for a terminator.
+- `matches_policy_digest` now receives the digest length.
+- `verify_mac` now receives both canonical-message length and signature length; it no longer calls `strlen` on parser-owned canonical input.
+- Native tests cover exact 64-byte nonterminated digest spans, short/long/uppercase/null inputs, raw nonterminated canonical/signature spans, tampered signature, wrong device/nonce, empty key, digest mismatch, and deterministic lowercase digest rendering.
+- Focused compile now enables AddressSanitizer and UndefinedBehaviorSanitizer.
+- Both `may_admit_coin_even_if_mac_valid()` and `may_energize_relay_even_if_mac_valid()` remain hard-coded `false`.
+
+### Current CI at documentation checkpoint
+- Exact-source focused run [#44683172568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172568): **IN PROGRESS**.
+- Full BlazePwifi runs [#44683172700](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172700) and [#44683165768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683165768): **PENDING**. No Full PASS is claimed.
+
+**Classification:** test-first RED is CI-observed; implementation is awaiting exact-head focused CI. This remains LAB ONLY / NOT HARDWARE ACCEPTED / PRODUCTION NO-GO. No physical hardware, coin acceptor, live money, flashing, migration, signing, merge, or deployment was performed.
+<!-- PHX-HW-LENGTH-AWARE-SPANS-20261120:END -->
+
+### UTC05 exact-head follow-up — canonical handover freshness successor
+
+- Narrow handover successor: `b541db182c2bba9d7b8cec17147e4d9cf0050577`.
+- Focused exact-source [run 44683293103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683293103), job `136111544480`: **SUCCESS** at source/docs anchor `9657280284ef8490f8c87408e2825fb071fc5da3`; ASan/UBSan enabled; all 5 synthetic header cases and Phase A deny guard passed.
+- Full [run 44683292995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683292995), validation job `136112096462`: **FAILED** the mandatory handover freshness gate because the canonical handovers had been committed before the narrow handover file. ESP8266 target job `136112096417` passed; other target/Android jobs were still running at the last read. This is not Full PASS and not a source/test failure.
+- The three canonical handovers are now updated **after** the narrow handover to make the next exact-head freshness evaluation meaningful. No firmware source or runtime behavior changed in this documentation successor.
+- Status: focused header **CI VERIFIED**; Full build **NOT VERIFIED**; hardware **NOT TESTED**; production **NO-GO**.
