@@ -2061,3 +2061,19 @@ The handover commit triggered three PR workflows:
 - Windows run [#44835556028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556028): handover job `136630933002` **FAILURE** at the same CORE-owned freshness gate; Windows build and publisher were **SKIPPED**. This is not a PISONET source/self-test result.
 
 This docs-head readback supersedes the prior statement that no workflow run had yet surfaced for the new pin. It does not convert the pending compatibility matrix or failed Full validation into a pass.
+
+
+### Terminal CI reconciliation — run `44835556075`
+
+The Full run [#44835556075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556075) is now terminal **FAILURE** at documentation head `d9521cd94e50456cc24bfc5b8443586837089411`:
+
+- CI-0701 docs-only PR sync proof: **SUCCESS**. Release static tests, including `PHX-RELEASE-ESP32-COMPAT-PASS`, completed successfully.
+- Mandatory `validate`: **FAILURE** at the CORE-owned handover freshness gate described above.
+- `firmware_optional (orangepi_pc2)`: **SUCCESS**.
+- Android, ESP32, ESP8266, x86_64, Ruijie and the other Orange Pi target jobs: **CANCELLED** after the validation failure.
+- Update bundle / browser simulation: **SKIPPED**.
+- Remaining simulations, sign handoff and publisher/candidate/release jobs: **CANCELLED or SKIPPED**; none is release approval.
+
+Compatibility run [#44835556027](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556027) remains **PENDING with no jobs returned**. No ESP32 core 3.3.13/4.0.0 compile or reproducibility result at source pin `83c20c9d...` is available. Windows run [#44835556028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556028) remains handover **FAILURE**, with build and publisher **SKIPPED**.
+
+The docs-only handover successor below this reconciliation has not yet produced new Actions evidence; do not transfer the preceding run conclusions to that later SHA. This is a CI/control-plane limitation, not permission to bypass the CORE gate.
