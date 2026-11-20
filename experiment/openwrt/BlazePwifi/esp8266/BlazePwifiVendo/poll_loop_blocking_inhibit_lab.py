@@ -638,7 +638,7 @@ RACE_MAIN = MAIN.replace(
 )
 
 
-ACTIVE_HIGH_RACE_MAIN = r"""
+ACTIVE_HIGH_RACE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
 int main(){
   resetState();
   runCoinActiveLow=false;
