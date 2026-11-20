@@ -824,3 +824,54 @@ This section supersedes the earlier "not yet reached" observation for the exact 
 5. PHX-MASTER retains the #291 reimplementation-review route and reconciles mixed-owner paths before any merge.
 
 No merge, signer use, tag, publication, hardware flash, financial migration or customer deployment occurred. Physical 150-power-cut acceptance and the 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC00 — refresh exact-source ESP32 compatibility to live HARDWARE #327 (2026-11-20T00Z)
+
+**Disposition:** stale release pin corrected; exact-source two-core compile matrix PASS; docs-head static revalidation queued by this handover commit; application-image digest selection remains a separate follow-up. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Exact source identity
+
+- Experiments PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base PR #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 parent before this handover update: `4e7bd4e5a406646bc648419ca4d0cadc62c129cc`.
+- Live HARDWARE PR #327 docs/PR head: `38a1a29bfd163ca1226b2a431f49b8f4911eed48`.
+- Exact HARDWARE source/test commit pinned by the release matrix: `9ef753a38226fcdf56b0903680a5110348027110`. The current #327 head is one documentation-only commit beyond this source/test commit.
+- ESP32 sketch path: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`; exact Git blob at the pinned source commit: `33081c5094ffdd19d935fc888d52ae01ff23325b`.
+- Previous release pin `06c1cdaa...` / sketch blob `a59c986f...` was stale after the namespace-open fail-closed HARDWARE change. The earlier old-source matrix run [#44644738582](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44644738582) completed SUCCESS, but only against the old pin and is not current-source qualification.
+
+### Test-first correction
+
+- Test commit [`9e2b2360`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9e2b236015c6ce788fce115fd114108b3797d068) changed the static compatibility contract to require the current HARDWARE source SHA and sketch blob.
+- Expected RED: push [#44644738607](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44644738607), CI-0701 job `135984324453`: action pins, concurrency checks, 23 provenance tests and 8 Arduino archive-verifier tests passed; the exact ESP32 compatibility contract failed specifically because the workflow still contained the old source SHA/blob. This was the intended stale-pin reproduction, not a compiler failure.
+- Workflow correction [`4e7bd4e5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4e7bd4e5a406646bc648419ca4d0cadc62c129cc) updates the job label, exact checkout ref, `EXPECTED_SOURCE_SHA`, and `EXPECTED_SKETCH_BLOB` to `9ef753a...` / `33081c...`. Only release-owned workflow/test paths were changed; no HARDWARE source was edited.
+
+### Exact-source matrix
+
+[Compatibility push run #44644854479](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44644854479): **OVERALL SUCCESS**, both matrix jobs completed SUCCESS.
+
+- Both jobs verified source commit `9ef753a38226fcdf56b0903680a5110348027110` and sketch blob `33081c5094ffdd19d935fc888d52ae01ff23325b`.
+- Both verified Arduino CLI archive size `20,111,675`, archive SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`, and installed CLI SHA-256 `5897b56f5eac106e60c902d6444f2923e918885aaeb119fc4b44ff9db5003ba8`.
+- ESP32 core 3.3.13 job `135985553120`: **SUCCESS**; program storage `1,043,720` bytes (79%); globals `49,960` bytes (15%).
+- ESP32 core 4.0.0 job `135985553045`: **SUCCESS**; program storage `1,097,721` bytes (83%); globals `52,576` bytes (16%).
+
+**Artifact-digest limitation discovered:** the workflow currently hashes the first `*.bin` returned by `find ... -print -quit` and does not log the selected filename. The marker digest is therefore not yet proven to identify the sketch application image; it must not be copied into a release `SHA256SUMS` or described as the app firmware digest. The two marker hashes matched earlier first-found values despite different sketch source blobs, reinforcing that this selection needs a separate release-owned follow-up: select the exact expected application `.ino.bin`, require exactly one candidate, and log path, size and SHA-256. That follow-up was not changed in this activation.
+
+### Cross-repository / owner status
+
+- MASTER PR #288 head `52cb1a68f256c3f50969e5b23ccc1f57a3bf2782`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`. The release route to COE `.github/workflows/pisowifi-ci.yml` is `reimplementation-review`; no workflow migration or COE source copy is authorized.
+- COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five sampled workflows remain QUEUED with no jobs returned.
+- COE parent release packager #31 remains `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; its sandbox run [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) installed Bubblewrap and passed host preflight, but the unprivileged namespace probe failed with `bwrap: setting up uid map: Permission denied`, exit 125; sandbox packaging tests were skipped.
+- COE child #35 remains `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`; profile admission remains fail-closed without approved site-scoped RFC 4193 ULA authority, and sandbox evidence is not accepted.
+- Canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced by exact-name Library search; results only included older v3–v7 snapshots. No older snapshot was substituted and no private contents or identifiers were copied to GitHub.
+- Existing PR #291 includes pre-existing CORE/PISONET-owned paths. This activation touched only `.github/scripts/test_phx_release_esp32_core_compatibility.py`, `.github/workflows/phx-release-esp32-core-compatibility.yml`, and this release-owned handover.
+
+### Next actions
+
+1. Reconcile the docs-head CI triggered by this handover commit; record CI-0701 and compatibility matrix outcomes separately.
+2. PHX-QA independently reviews the exact-source two-core compile evidence; it remains hosted CI evidence, not physical-board acceptance.
+3. PHX-RELEASE's next bounded task should address unambiguous application-image selection and digest provenance.
+4. PHX-HARDWARE/MASTER notify RELEASE if #327 advances beyond `38a1a29...`; refresh the source/test pin before claiming later-source qualification.
+5. PHX-PISONET owns the current Windows negative-selftest failure (`$buildWorkflow` uninitialized); RELEASE must not modify PISONET files.
+6. PHX-INFRA/CORE/MASTER/COE integration retain the sandbox, ULA, migration and ownership blockers.
+
+No merge, signer use, tag, publication, hardware flash, payment migration or customer deployment occurred. The protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
