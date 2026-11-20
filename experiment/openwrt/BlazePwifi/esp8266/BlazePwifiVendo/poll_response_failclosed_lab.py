@@ -75,6 +75,11 @@ struct Config {
 String lastSentNonce="nonce-123";
 String activeTarget="old-target";
 bool insertMode=true, fsReady=true, journalRecoveryRequired=false;
+// This parser/disposition lab starts with no pending ISR edge. The dedicated
+// poll-loop lab injects asynchronous edges through the extracted ISR path.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool outputPolarityKnown=true;
 bool pendingReady=false, pollIntakeSuspended=true;
 bool pinConfigSafe=true;
