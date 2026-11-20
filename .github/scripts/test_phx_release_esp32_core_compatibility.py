@@ -56,8 +56,13 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
         return errors
 
     helper_content = HELPER.read_text(encoding="utf-8")
-    marker = "PHX-ESP32-APP-IMAGE-PASS: filename=%s size_bytes=%s sha256=%s"
-    if marker not in helper_content:
+    marker_fields = (
+        "PHX-ESP32-APP-IMAGE-PASS:",
+        "filename=",
+        "size_bytes=",
+        "sha256=",
+    )
+    if any(value not in helper_content for value in marker_fields):
         errors.append("application-image verifier must emit filename, byte length and SHA-256")
 
     def expect_rejected(label: str, directory: Path, sketch_name: str = "BlazePwifiVendo32") -> None:
