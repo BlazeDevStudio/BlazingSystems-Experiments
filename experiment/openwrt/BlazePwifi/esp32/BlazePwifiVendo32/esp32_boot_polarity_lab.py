@@ -164,6 +164,8 @@ def main() -> None:
             "pinMode(runRelayPin,INPUT)" in configure and
             "pinMode(runLedPin,INPUT)" in configure,
             "unknown local polarity must leave relay and LED as INPUT")
+    require("quarantineCoinIngressTransition();" in configure,
+            "pin attachment must quarantine active or unobserved coin ingress")
     require("if(!outputPolarityKnown) return;" in apply_outputs,
             "applyOutputs must not drive unknown-polarity outputs")
     require("outputPolarityKnown" in can_poll and
@@ -197,6 +199,13 @@ def main() -> None:
             "canStartPoll",
             "canAttemptCoinPost",
         )
+    )
+    # This harness isolates local output-polarity ordering. The exact ingress
+    # helper is compiled and failure-injected by coin_pulse_capture_lab.py.
+    functions = functions.replace(
+        configure,
+        "bool quarantineCoinIngressTransition(){ return true; }\\n" + configure,
+        1,
     )
 
     cpp = r"""
