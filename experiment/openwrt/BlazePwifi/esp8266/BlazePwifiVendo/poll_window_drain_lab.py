@@ -27,6 +27,11 @@ static uint16_t runDebounceMs=40;
 static int pulseStart=-1, pulseEnd=-1;
 static constexpr int LOW=0, HIGH=1;
 static bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
+// This drain-window lab exercises timing, not ISR delivery; keep the new
+// output-gate sequence dependency idle. Poll-loop labs inject real ISR edges.
+static volatile uint32_t coinEdgeSequence=0;
+static uint32_t lastHandledCoinEdgeSequence=0;
+static uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool outputPolarityKnown=true;
 static uint8_t pendingPulses=0;
 static bool runCoinActiveLow=true, pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false;
@@ -50,6 +55,7 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
                     bool expectPoll,uint32_t expectedElapsed,uint32_t startAt=0){
   fakeNow=startAt; pulseStart=start; pulseEnd=end; runDebounceMs=debounce;
   fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
+  coinEdgeSequence=0; lastHandledCoinEdgeSequence=0;
   pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; relayOn=true; ledOn=true;
   const uint32_t started=fakeNow;
   const bool opened=beginPollWindow();
