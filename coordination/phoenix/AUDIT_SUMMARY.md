@@ -1515,3 +1515,12 @@ RELEASE #291 advanced to docs head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf, sou
 At exact current head, compatibility #44809606421 has provenance PASS but both core legs still IN_PROGRESS; Full #44809606527 has validation/target jobs started and no terminal result; Windows #44809606428 FAILS in PISONET-owned negative-selftest.ps1 because $buildWorkflow is unset. Previous compatibility PASS #44799798721 is historical at the old source pin.
 
 The accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET paths. No owner transfer. Master records the updated state only; RELEASE/PISONET/CORE retain their own fixes and reviews. PR #288 remains draft; COE #26 remains frozen; production remains NO-GO.
+
+
+## PHX-MASTER UTC20 RELEASE #291 new-pin compatibility terminal refresh — 2026-11-20T20:19Z
+
+The exact current #291 compatibility run #44809606421 is now terminal SUCCESS, 3/3 jobs: provenance plus ESP32 core 3.3.13 and 4.0.0 at HARDWARE source/test 1a631567eb0c and sketch blob ae0da8e2. This supersedes the earlier “exact-head CI not observed” note and the old-pin compatibility baseline.
+
+Full #44809606527 remains IN_PROGRESS. Validation, firmware target and Android jobs pass; update bundle and ESP simulations pass; browser, Android emulator, x86 and board simulations continue. Production sign/publish jobs are skipped. Windows #44809606428 remains FAILED at PISONET-owned $buildWorkflow; publisher skipped.
+
+RELEASE #291 remains OPEN/DRAFT with 26 paths (21 RELEASE / 3 CORE / 2 PISONET). No ownership transfer. Master records evidence only; no merge or release. Production remains NO-GO.
