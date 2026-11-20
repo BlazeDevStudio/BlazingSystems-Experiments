@@ -13,11 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
 HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
-HARDWARE_SOURCE_SHA = "9ef753a38226fcdf56b0903680a5110348027110"
+REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
+HARDWARE_SOURCE_SHA = "a2b7903b4009fd7182247e11a7d2954a79cb9bbd"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "33081c5094ffdd19d935fc888d52ae01ff23325b"
+HARDWARE_SKETCH_BLOB = "1a4b8fba8df210201ae77f23bfef55674abfb59e"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -149,6 +150,171 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
     return errors
 
 
+
+def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
+    errors: list[str] = []
+    if not REPRODUCIBLE_HELPER.is_file():
+        return ["missing release-owned ESP32 reproducible-build verifier"]
+
+    spec = importlib.util.spec_from_file_location("verify_esp32_reproducible_build", REPRODUCIBLE_HELPER)
+    if spec is None or spec.loader is None:
+        return ["cannot load ESP32 reproducible-build verifier"]
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        return [f"ESP32 reproducible-build verifier cannot be imported: {exc}"]
+
+    expected_name = "BlazePwifiVendo32.ino.bin"
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-identical-") as temporary:
+        root = Path(temporary)
+        first_dir = root / "first"
+        second_dir = root / "second"
+        first_dir.mkdir()
+        second_dir.mkdir()
+        payload = b"same-source-same-toolchain-deterministic-image"
+        first = first_dir / expected_name
+        second = second_dir / expected_name
+        first.write_bytes(payload)
+        second.write_bytes(payload)
+        try:
+            filename, size, digest = module.compare_application_images(
+                first, second, "BlazePwifiVendo32"
+            )
+            if filename != expected_name:
+                errors.append(f"reproducibility verifier returned unexpected filename: {filename}")
+            if size != len(payload):
+                errors.append(f"reproducibility verifier returned wrong byte length: {size}")
+            if digest != hashlib.sha256(payload).hexdigest():
+                errors.append("reproducibility verifier returned an incorrect matching-image digest")
+        except Exception as exc:
+            errors.append(f"reproducibility verifier rejected identical images: {exc}")
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-different-bytes-") as temporary:
+        root = Path(temporary)
+        first = root / "first" / expected_name
+        second = root / "second" / expected_name
+        first.parent.mkdir()
+        second.parent.mkdir()
+        first.write_bytes(b"same-length-A")
+        second.write_bytes(b"same-length-B")
+        try:
+            module.compare_application_images(first, second, "BlazePwifiVendo32")
+        except ValueError as exc:
+            if "first_differences=" not in str(exc) or "sha256" not in str(exc):
+                errors.append("different-byte rejection must report both SHA-256 values and first differing offsets")
+        except Exception as exc:
+            errors.append(f"different-byte case raised an unexpected exception: {exc}")
+        else:
+            errors.append("reproducibility verifier accepted different same-length application images")
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-size-mismatch-") as temporary:
+        root = Path(temporary)
+        first = root / "first" / expected_name
+        second = root / "second" / expected_name
+        first.parent.mkdir()
+        second.parent.mkdir()
+        first.write_bytes(b"short")
+        second.write_bytes(b"longer")
+        try:
+            module.compare_application_images(first, second, "BlazePwifiVendo32")
+        except ValueError:
+            pass
+        except Exception as exc:
+            errors.append(f"size-mismatch case raised an unexpected exception: {exc}")
+        else:
+            errors.append("reproducibility verifier accepted different image lengths")
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-symlink-") as temporary:
+        root = Path(temporary)
+        first = root / "first" / expected_name
+        second = root / "second" / expected_name
+        first.parent.mkdir()
+        second.parent.mkdir()
+        outside = root / "outside.bin"
+        outside.write_bytes(b"outside-image")
+        first.symlink_to(outside)
+        second.write_bytes(b"outside-image")
+        try:
+            module.compare_application_images(first, second, "BlazePwifiVendo32")
+        except (OSError, ValueError):
+            pass
+        except Exception as exc:
+            errors.append(f"symlink case raised an unexpected exception: {exc}")
+        else:
+            errors.append("reproducibility verifier accepted a symlinked image")
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-hardlink-") as temporary:
+        root = Path(temporary)
+        first = root / "first" / expected_name
+        second = root / "second" / expected_name
+        first.parent.mkdir()
+        second.parent.mkdir()
+        cached = root / "cached.bin"
+        cached.write_bytes(b"hard-linked-image")
+        try:
+            os.link(cached, first)
+        except (OSError, NotImplementedError) as exc:
+            errors.append(f"test environment cannot create hard-link negative control: {exc}")
+        else:
+            second.write_bytes(b"hard-linked-image")
+            try:
+                module.compare_application_images(first, second, "BlazePwifiVendo32")
+            except (OSError, ValueError):
+                pass
+            except Exception as exc:
+                errors.append(f"hard-link case raised an unexpected exception: {exc}")
+            else:
+                errors.append("reproducibility verifier accepted a hard-linked image")
+
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-wrong-name-") as temporary:
+        root = Path(temporary)
+        first = root / "first" / "wrong.bin"
+        second = root / "second" / expected_name
+        first.parent.mkdir()
+        second.parent.mkdir()
+        first.write_bytes(b"same")
+        second.write_bytes(b"same")
+        try:
+            module.compare_application_images(first, second, "BlazePwifiVendo32")
+        except (OSError, ValueError):
+            pass
+        except Exception as exc:
+            errors.append(f"wrong-name case raised an unexpected exception: {exc}")
+        else:
+            errors.append("reproducibility verifier accepted an incorrectly named application image")
+
+    compile_prefix = 'arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir"'
+    if workflow_content.count(compile_prefix) != 2:
+        errors.append("compatibility workflow must perform exactly two clean builds with the same build path")
+    if workflow_content.count('--output-dir "$first_output_dir"') != 1:
+        errors.append("compatibility workflow must preserve the first build in its own output directory")
+    if workflow_content.count('--output-dir "$second_output_dir"') != 1:
+        errors.append("compatibility workflow must preserve the second build in its own output directory")
+    if workflow_content.count('"$sketch_dir"') != 2:
+        errors.append("both reproducibility builds must compile the same exact sketch directory")
+    if workflow_content.count("python3 .github/scripts/verify_esp32_application_image.py") != 2:
+        errors.append("both build outputs must pass the exact application-image verifier")
+    compare_invocation = (
+        'python3 .github/scripts/verify_esp32_reproducible_build.py '
+        '--first "$first_output_dir/BlazePwifiVendo32.ino.bin" '
+        '--second "$second_output_dir/BlazePwifiVendo32.ino.bin" '
+        '--sketch-name "BlazePwifiVendo32"'
+    )
+    if workflow_content.count(compare_invocation) != 1:
+        errors.append("compatibility workflow must compare the two exact sketch application images once")
+    if workflow_content.count('".github/scripts/verify_esp32_reproducible_build.py"') != 2:
+        errors.append("reproducibility helper must be included in both workflow path filters")
+
+    if errors:
+        return errors
+    print(
+        "PHX-ESP32-REPRODUCIBILITY-TESTS-PASS: identical, changed bytes, "
+        "size mismatch, symlink, hard-link, wrong filename and two-clean-build workflow"
+    )
+    return errors
+
 def main() -> int:
     if not WORKFLOW.is_file():
         return fail("missing exact-source ESP32 core compatibility workflow")
@@ -186,6 +352,12 @@ def main() -> int:
     if application_errors:
         for error in application_errors:
             print(f"PHX-RELEASE-ESP32-APP-IMAGE-RED: {error}", file=sys.stderr)
+        return 1
+
+    reproducibility_errors = check_reproducible_build_verifier(content)
+    if reproducibility_errors:
+        for error in reproducibility_errors:
+            print(f"PHX-RELEASE-ESP32-REPRODUCIBILITY-RED: {error}", file=sys.stderr)
         return 1
 
     pin_guard_path = ROOT / ".github/scripts/test_release_artifact_action_pins.py"
