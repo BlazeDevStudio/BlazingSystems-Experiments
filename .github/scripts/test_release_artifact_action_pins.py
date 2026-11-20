@@ -110,7 +110,7 @@ def check_arduino_core_version_assertions(content: str) -> list[str]:
 
         required = (
             ('core_list="$(arduino-cli core list)"', "capture the installed core list"),
-            (f'''awk '$1 == "{package}" {{print $2}}' ''', "select the installed package version"),
+            (f"""awk '$1 == "{package}" {{print $2}}'""", "select the installed package version"),
             (f'if [ "$installed_core_versions" != "{version}" ]; then', "compare the resolved version"),
             (f"RELEASE-TOOLCHAIN-RED: expected {package}@{version}", "fail closed on version mismatch"),
             (f"RELEASE-TOOLCHAIN-CORE-PASS: {package}@{version}", "emit the verified core identity"),
