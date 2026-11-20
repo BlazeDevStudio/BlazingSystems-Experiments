@@ -135,18 +135,35 @@ jobs:
           preserve_elf "$second_output_dir"
 
           run_elf_mapping() {
-            local -a objdump_candidates=()
-            mapfile -t objdump_candidates < <(
-              find "$HOME/.arduino15/packages/esp32/tools" -type f \
-                \( -name 'xtensa-esp-elf-objdump' -o -name 'xtensa-esp32-elf-objdump' \) \
-                -perm /111 -print | sort
-            )
-            if [ "${#objdump_candidates[@]}" -ne 1 ]; then
-              printf 'PHX-ESP32-ELF-MAP-RED: expected exactly one pinned Xtensa objdump, found %s\n' "${#objdump_candidates[@]}" >&2
+            local build_properties
+            build_properties="$(arduino-cli compile --show-properties --fqbn esp32:esp32:esp32 "$sketch_dir")" || return 1
+            local compiler_path
+            local compiler_command
+            local objdump_name
+            compiler_path="$(printf '%s\n' "$build_properties" | sed -n 's/^compiler.path=//p' | tail -n 1)"
+            compiler_command="$(printf '%s\n' "$build_properties" | sed -n 's/^compiler.c.cmd=//p' | tail -n 1)"
+            compiler_command="${compiler_command%% *}"
+            if [ -z "$compiler_path" ] || [ -z "$compiler_command" ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: Arduino build properties omitted compiler.path or compiler.c.cmd\n' >&2
               return 1
             fi
 
-            local objdump_path="${objdump_candidates[0]}"
+            case "$(basename "$compiler_command")" in
+              xtensa-esp-elf-gcc) objdump_name="xtensa-esp-elf-objdump" ;;
+              xtensa-esp32-elf-gcc) objdump_name="xtensa-esp32-elf-objdump" ;;
+              *)
+                printf 'PHX-ESP32-ELF-MAP-RED: unsupported Xtensa compiler command %s\n' "$compiler_command" >&2
+                return 1
+                ;;
+            esac
+
+            compiler_path="${compiler_path%/}"
+            local compiler_binary="$compiler_path/$(basename "$compiler_command")"
+            local objdump_path="$compiler_path/$objdump_name"
+            if [ ! -x "$compiler_binary" ] || [ ! -x "$objdump_path" ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: toolchain sibling missing compiler=%s objdump=%s\n' "$compiler_binary" "$objdump_path" >&2
+              return 1
+            fi
             local first_elf="$first_output_dir/BlazePwifiVendo32.ino.elf"
             local second_elf="$second_output_dir/BlazePwifiVendo32.ino.elf"
             "$objdump_path" -h "$first_elf" > "$first_output_dir/elf-sections.txt" || return 1
