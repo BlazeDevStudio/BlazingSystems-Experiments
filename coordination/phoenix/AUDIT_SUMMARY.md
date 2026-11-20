@@ -1550,3 +1550,18 @@ The terminal Full result is hosted non-production CI only. PR #291 remains draft
 - No subsystem source, manifest, destination, financial state, signer, hardware, or release artifact changed. No migration, merge, flash, signing, real-payment operation or physical test.
 
 **PRODUCTION NO-GO** remains unchanged.
+
+
+## PHX-MASTER UTC21 live blockers and exact evidence — 2026-11-20T21:34Z
+
+- Master PR #288 audit-start head `dff949b079d465f0f45b8dda2a2ac7efffd7b2d5`, OPEN/DRAFT/UNMERGED against main `f4e8a891...`; 137 existing paths all under coordination/phoenix. No Master PR-triggered workflow run or submitted review.
+- COE child #35 at `580855b6...`: 120 packaging/tool tests PASS / 2 skips; 10/10 appliance profiles correctly fail closed because site-scoped ULA /48 authority is missing; sandbox host preflight 14/14 PASS but Bubblewrap is unavailable; case-collision guard PASS. No firmware artifact, real ImageBuilder build or review.
+- HARDWARE #327 docs/source heads `e03dfda4...` / `96e725e9...`: focused quarantine/relay PASS; Full fails at QA-owned positive poll-signature assertion. QA must change the fixture, not firmware admission.
+- RELEASE #291 compatibility 3/3 and Full 26/26 PASS with four production jobs skipped; Windows fails in PISONET-owned `$buildWorkflow`. Cross-owner review remains 21 RELEASE / 3 CORE / 2 PISONET paths.
+- RENTAL #328 Android identity/API21/API23 PASS; shared build fails at CORE-owned handover freshness and inherited firmware/toolchain mismatch.
+- COE #26 remains frozen: complete #327/#26 trees 2,445 vs 286; 25 vs 0 board-local Python labs; 47 vs 19 routed test files (1 identical / 3 different / 43 missing); three vs one Hardware workflows; firmware blobs differ; root NOTICE absent at destination. Five workflows queued / zero jobs.
+- Routing manifest unchanged at `e4db324...`, source_ref main `f4e8a891...`, target #26 `b382d233...`, status DRAFT_REVIEW_ONLY, Master target null. No migration or route promotion.
+- Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. Branch-protection endpoint returns 403 and rulesets are empty; effective organization-level protection remains unverified.
+- 11/11 static source/tree assertions PASS. Full Master Python suite NOT RUN because local GitHub DNS/checkout failed. No physical hardware, power-cut, soak, financial, signer, flash or production tests.
+
+**Production remains NO-GO.** Required independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
