@@ -95,16 +95,16 @@ def fake_run(command, **kwargs):
         return SimpleNamespace(
             returncode=0,
             stdout=(
-                f"compiler.path={compiler_path.parent}{os.sep}\\n"
-                f"compiler.c.cmd={compiler_path.name}\\n"
-                f"compiler.cpp.cmd={compiler_path.name}\\n"
+                f"compiler.path={compiler_path.parent}{os.sep}\n"
+                f"compiler.c.cmd={compiler_path.name}\n"
+                f"compiler.cpp.cmd={compiler_path.name}\n"
             ),
             stderr="",
         )
     if len(args) == 2 and args[1] == "--version" and Path(args[0]).resolve() == Path(sys.executable).resolve():
         return SimpleNamespace(
             returncode=0,
-            stdout="GNU test compiler 12.2.0\\n",
+            stdout="GNU test compiler 12.2.0\n",
             stderr="",
         )
     if args == ["zstd", "--version"]:
@@ -213,8 +213,8 @@ class BuildProvenanceTests(unittest.TestCase):
             if values[:3] == ["arduino-cli", "compile", "--show-properties=expanded"]:
                 compiler_path = Path(sys.executable).resolve()
                 return (
-                    f"compiler.path={compiler_path.parent}{os.sep}\\n"
-                    f"compiler.c.cmd={compiler_path.name}\\n"
+                    f"compiler.path={compiler_path.parent}{os.sep}\n"
+                    f"compiler.c.cmd={compiler_path.name}\n"
                 )
             return original_run(command, **kwargs)
 
@@ -240,7 +240,7 @@ class BuildProvenanceTests(unittest.TestCase):
             with self.subTest(step=step_name):
                 marker = f"- name: {step_name}"
                 start = workflow.index(marker)
-                next_step = workflow.find("\\n      - ", start + len(marker))
+                next_step = workflow.find("\n      - ", start + len(marker))
                 block = workflow[start:next_step if next_step >= 0 else len(workflow)]
                 self.assertIn(expected, block)
 
