@@ -414,6 +414,20 @@ int main(){
      markerOpenSawRelayOn || markerOpenSawLedOn) return 28;
   std::cout<<"POLL_ABORTED_DRAIN_ISR_EDGE_ACTIVE_HIGH_PASS\\n";
 
+  // An ISR edge can arrive after the pre-release snapshot but during the first
+  // GPIO writes that re-enable the acceptor. It must be reconciled before the
+  // next ordinary sample can turn that in-flight edge into a new pending coin.
+  resetState(); injectDuringPollRelease=true; loop();
+  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff || pollCalls!=1 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
+     pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 29;
+  const std::string releaseMarker=LittleFS.files["/pollpulse.fault"];
+  if(releaseMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     releaseMarker.find("pulses=1")==std::string::npos) return 30;
+  std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
+
   // GPIO sees a pulse during drain without an ISR delta. Capture and persist
   // it while the poll inhibit stays asserted; release only after the line is idle.
   resetState(); injectDrainAbortWithoutIsr=true; loop();
@@ -457,20 +471,6 @@ int main(){
   if(missedSampleMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      missedSampleMarker.find("pulses=1")==std::string::npos) return 41;
   std::cout<<"POLL_ABORT_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
-
-  // An ISR edge can arrive after the pre-release snapshot but during the first
-  // GPIO writes that re-enable the acceptor. It must be reconciled before the
-  // next ordinary sample can turn that in-flight edge into a new pending coin.
-  resetState(); injectDuringPollRelease=true; loop();
-  if(!pollReleaseEdgeInjected || !pollReleaseEdgeSawRelayOff || pollCalls!=1 ||
-     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
-     relayOn || ledOn || insertMode || !activeTarget.empty() || pendingPulses!=0 ||
-     pollIntakeSuspended || backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 29;
-  const std::string releaseMarker=LittleFS.files["/pollpulse.fault"];
-  if(releaseMarker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     releaseMarker.find("pulses=1")==std::string::npos) return 30;
-  std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
 
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
