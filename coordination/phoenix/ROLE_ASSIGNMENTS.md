@@ -1516,3 +1516,17 @@ PHX-MASTER owns coordination/phoenix, interface contracts and migration provenan
 
 - HARDWARE #327 remains at `a2b7903b4009fd7182247e11a7d2954a79cb9bbd`. Quarantine [44657641425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641425) and relay [44657641548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641548) PASS. Full BlazePwifi [44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) FAILS at QA-owned `Missing poll signature check`; firmware targets compile. QA must repair its fixture, not ask Hardware to restore positive poll admission.
 - RELEASE #291 remains at `7d51c438469fdfd0412377cc1da17c2a83efb26c`. Windows [44656994686](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994686) FAILS because PISONET-owned `$buildWorkflow` is unset; ESP32 [44656994754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994754) and BlazePwifi [44656994849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994849) PASS. Publisher skipped.
+
+## Live owner-head correction — 2026-11-20 UTC02
+
+| Role | Current source PR / exact head | Scope status |
+|---|---|---|
+| PHX-MASTER | #288 `b6dd2dc3...` at audit start | `coordination/phoenix/` only; no runtime destination |
+| PHX-CORE | #252 `c82705f2...` | Separate active CORE automation retains implementation; Master does not edit it |
+| PHX-RENTAL | #289 `68928774...` (parent #240 `a7d113fb...`; #287 `a4fffd01...`) | Rental source ownership unchanged |
+| PHX-PISONET | #255 `d01fd164...` | Windows SoftTimer source ownership unchanged; owns `$buildWorkflow` self-test correction |
+| PHX-HARDWARE | #327 `a2b7903b...` | Firmware source ownership unchanged; acknowledged COE #49 audit only and declined implementation ownership |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | Independent test ownership; #292 remains DRAFT with no PR Actions run |
+| PHX-RELEASE | #291 `734ac932...` | Release workflow/packaging only; owns reproducibility and publisher pipeline follow-up |
+
+COE #49 `aeb8ff11...` remains UNASSIGNED/AUDIT-ONLY for its adapter/backend changes. No role reassignment or cross-repo source ownership transfer was made. The separate COE integration owner must keep #26 frozen until per-file provenance and destination CI are complete.
