@@ -1798,3 +1798,67 @@ This is a handover-only continuation of the existing UTC17 role lock and checkpo
 Next actions: PHX-PISONET fixes its own $buildWorkflow negative self-test; PHX-MASTER resolves #291 inherited CORE/PISONET path ownership; PHX-QA submits independent exact-SHA review; PHX-INFRA provides an approved namespace-capable COE sandbox runner; REGISTRY-CUSTODIAN restores authorized v11 provenance access. Refresh the new handover-head Actions triggered by this documentation update before claiming their terminal state.
 
 No merge, real-key signing, tag, publication, hardware flash, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. PRODUCTION NO-GO.
+
+## PHX-RELEASE UTC18 — OpenWrt upstream toolchain reference
+
+Role lock: [Issue #172 comment 7047140251](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7047140251). This section records one additive RELEASE-owned provenance task on PR #291. It does not authorize integration or publication.
+
+### Exact source identity and commits
+
+- PR #291 source/test head: `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`.
+- PR #291 base / PR #242 head: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Test-first commit: [742b6d72](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/742b6d72214ff28938cbdce7d724621e5a8961ca).
+- Implementation commit: [7382f22d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231).
+
+Only `.github/scripts/test_build_provenance.py` and `.github/scripts/write_build_provenance.py` changed in the source/test task. The change is additive provenance metadata; it does not change firmware build inputs, package selection, binary bytes, or release authorization.
+
+### Provenance behavior
+
+OpenWrt ImageBuilder packages upstream prebuilt kernel/package content and does not invoke the target compiler. Accordingly, `toolchain.compiler_version` remains `null`; the implementation does not falsely claim a compiler ran in this workflow.
+
+A separate `toolchain.upstream_toolchain` object now records the unique target toolchain archive declaration from the exact OpenWrt target `sha256sums` file:
+
+- archive filename and declared SHA-256;
+- GCC version and musl ABI suffix parsed from the archive name;
+- SHA-256 of the checksum catalog bytes used;
+- explicit `archive_downloaded=false`, `archive_sha256_verified=false`, and `compiler_invoked=false`;
+- explicit note that the detached checksum-catalog signature is not verified by this workflow.
+
+Missing, ambiguous, malformed, or invalid-digest toolchain entries fail closed. Both `musl` and `musl_eabi` names are covered.
+
+### Test-first and exact-source CI
+
+- Expected RED: [Full run #44791495927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791495927). 32 tests ran; exactly the three new tests failed because the upstream reference/helper did not yet exist. The other 29 passed. This was the intended regression signal.
+- GREEN compatibility: [run #44791692471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692471) completed SUCCESS, 3/3 jobs: 32-test release provenance suite, ESP32 core 3.3.13, and ESP32 core 4.0.0.
+- Exact-source Full: [run #44791692676](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676) completed SUCCESS, 26 successful jobs, zero failed, four skipped. All 11 required/optional OpenWrt firmware target jobs passed, including provenance generation; validation, ESP8266, ESP32, Android, update bundle and all v0.4 simulations passed. Production APK import, prerelease publication, production signing handoff and release publication were skipped.
+- Windows: [run #44791692826](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692826) completed FAILURE in the PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset; publisher skipped. RELEASE did not modify PISONET files.
+
+### Artifact-level provenance inspection
+
+The exact-source Full run's hosted CI preview artifacts were downloaded and inspected without publishing them. Every listed SHA256SUMS entry matched its archived file:
+
+- [Ruijie artifact](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676/artifacts/14656063966): `ramips/mt7621`, GCC 14.3.0, `musl`, 5/5 entries matched.
+- [Orange Pi Zero 3 artifact](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676/artifacts/14657700792): `sunxi/cortexa53`, GCC 14.3.0, `musl`, 5/5 matched.
+- [Orange Pi One artifact](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676/artifacts/14657985588): `sunxi/cortexa7`, GCC 14.3.0, `musl_eabi`, 5/5 matched.
+- [x86_64 artifact](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44791692676/artifacts/14657836071): `x86/64`, GCC 14.3.0, `musl`, 6/6 matched.
+
+These are synthetic/hosted-CI preview artifacts. The upstream toolchain archives themselves were not downloaded or executed; their SHA values are declarations from the checksum catalog, not byte-level verification of those archives. No physical hardware or production acceptance is implied.
+
+### Ownership and integration holds
+
+- MASTER #288 current head at audit: `cf134056e7a2bef95c6a2b0727cad81e46e4de8a`. Its route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null and the PHX-RELEASE workflow route remains `reimplementation-review`. No migration/copy/merge performed.
+- PR #291 remains OPEN / DRAFT / UNMERGED with 26 accumulated changed paths: 21 RELEASE paths, three inherited CORE paths and two inherited PISONET paths. No independent submitted review is present. CORE and PISONET owners must review their own inherited paths; their presence in the diff is not an ownership transfer.
+- COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`, frozen draft; five workflows queued with zero jobs.
+- COE #31 remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. [Sandbox run #44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) installed Bubblewrap but failed the mandatory unprivileged UID-map preflight with `Permission denied`, exit 125. Shared Contracts CI and case-collision guard passed; sandbox packaging regressions were skipped.
+- COE #35 current child head remains `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`; its shared-contract and case-collision jobs passed, while its mandatory sandbox job failed. It is not a route promotion or acceptance for #26.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced by exact-name/variant Library search. Older v6/v7 snapshots were not substituted; no private contents or identifiers were copied to GitHub.
+
+### Next owner actions
+
+1. PHX-QA: independently review the additive OpenWrt toolchain-provenance schema and exact-source artifact checks.
+2. PHX-MASTER: resolve PR #291 inherited CORE/PISONET path contamination before integration.
+3. PHX-PISONET: fix its own unset `$buildWorkflow` negative self-test.
+4. PHX-INFRA: provide an approved namespace-capable runner for COE #31/#35 sandbox acceptance; no unsandboxed fallback.
+5. REGISTRY-CUSTODIAN: restore authorized access to canonical v11 provenance.
+
+No merge, real-key signing, tag, publication, hardware flashing, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
