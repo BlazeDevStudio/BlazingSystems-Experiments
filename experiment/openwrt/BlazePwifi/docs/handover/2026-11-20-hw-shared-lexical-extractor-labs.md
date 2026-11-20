@@ -35,7 +35,7 @@ All runs below checked out source/test SHA `726981b49fb415fd10b764cbb8c386a00fcd
 - Quarantine/readback push [run #44697304673](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697304673), job `136157030226`: **SUCCESS**. Logs include `PENDING_ATTEMPT_MARKER_PASS 28/28` for each board (56/56 total), `COIN_POST_GATE_PASS 10/10` per board, `COIN_POST_DISPOSITION_DISPATCH_PASS 7/7` per board, and rejection of the event-bound-authentication bypass mutation (exit 11). Poll-window and existing safety mutation suites also passed.
 - Quarantine/readback PR [run #44697312845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697312845), job `136157056717`: **SUCCESS**.
 - Relay/output polarity PR [run #44697312882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697312882): jobs `136157056494` and `136157056676` **SUCCESS**.
-- Full BlazePwifi PR [run #44697312866](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697312866): validation job `136157057324` **FAILED** at the QA-owned controller parity assertion `Missing poll signature check`. This hardware change did not invent a positive signature or weaken default-deny. Other target jobs were still running at the time this handover was written; no Full PASS is claimed.
+- Full BlazePwifi PR [run #44697312866](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44697312866): validation job `136157057324` **FAILED** at the QA-owned controller parity assertion `Missing poll signature check`. All 13 firmware/platform target jobs completed **SUCCESS** on this exact SHA, including ESP8266, ESP32, Ruijie, Orange Pi Zero 3, and x86-64. Android was cancelled; downstream simulations, update bundle, candidate gate, signing handoff, and publishers were cancelled or skipped after validation failure. This hardware change did not invent a positive signature or weaken default-deny. No Full PASS is claimed.
 
 ## Evidence classification and blockers
 
@@ -79,6 +79,6 @@ The private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through
     "Private v11 Drive registry unavailable through exposed connector"
   ],
   "next_action": "PHX-QA repairs the stale poll-signature fixture with source-exact default-deny tests; PHX-MASTER refreshes the canonical #327 head; PHX-HARDWARE revalidates the stack before the next owned change.",
-  "updated_utc": "2026-11-20T07:47:42.104Z"
+  "updated_utc": "2026-11-20T07:48:50.378Z"
 }
 ```
