@@ -114,3 +114,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - RELEASE #291 current head f1126706... passes non-production Full build/simulation but fails strict two-core reproducibility and the PISONET-owned negative self-test.
 - COE #26 remains frozen at b382d233..., five workflows queued / zero jobs. A fresh exact #327/#26 recursive-tree comparison found different firmware blobs, 24 source board-local Python lab files versus zero destination Hardware Python files, three source workflows versus one generic destination workflow, and incomplete destination notice scope.
 - Private v11 registry/newer corrections remain inaccessible; no older registry substituted. Master suite NOT RUN because local Git DNS failed. **PRODUCTION NO-GO.**
+
+
+## Latest live exact-head supersession — 2026-11-20 UTC11
+
+- [PHX-MASTER UTC11 exact owner-head CI and COE #26 tree provenance audit](PHX_MASTER_UTC11_20261120_ROLE_CI_COE26_TREE_PROVENANCE_AND_RELEASE_FAILURES.md).
+- Audit start: #288 / phoenix/master-coordination at 1c9eba9d8af0fdf8eef04e239c4f31516743c30f; base main f4e8a891...; PR OPEN/DRAFT. The UTC11 update remains coordination-only.
+- HARDWARE #327 head 89442ce...: focused quarantine/relay PASS; Full FAIL at QA-owned Missing poll signature check.
+- RELEASE #291 head b883662...: Windows FAIL at PISONET-owned $buildWorkflow; compatibility FAIL at missing verify_esp32_source_date_epoch import; Full CANCELLED.
+- COE #26 remains frozen at b382d233..., five queued workflows / zero jobs. Exact #327/#26 tree comparison confirms differing firmware blobs, 25 source Python labs vs zero destination Hardware Python files, three source workflows vs one generic workflow, and incomplete notice scope.
+- Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. Master Python suite NOT RUN because local Git clone failed DNS. **PRODUCTION NO-GO.**

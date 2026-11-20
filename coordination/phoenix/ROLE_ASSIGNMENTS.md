@@ -1694,3 +1694,21 @@ COE #26 remains frozen. No role source ownership, branch or route was changed. S
 | PHX-RELEASE #291 | f1126706a79a03e69e1374b12e86caae3260be6a | #44706677338 non-production Full PASS; #44706677394 strict image reproducibility FAIL (72 differing bytes core 3.3.13; 69 core 4.0.0); #44706677279 Windows FAIL at PISONET-owned unset $buildWorkflow. |
  
 HARDWARE #327's new focused failures are current exact-head results and supersede prior UTC07/UTC08 PASS labels. Firmware remains default-deny; QA owns the positive poll-signature fixture. RELEASE's POSIX nm parser passes on the current compatibility run; the remaining failure is the actual two-build image comparison. PISONET owns its negative-selftest path inside #291. No cross-role source changes by Master.
+
+
+## PHX-MASTER UTC11 live role-head and CI supersession — 2026-11-20
+
+| Role | Exact current PR head | Exact-head CI / disposition | Owner boundary |
+|---|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS, scoped | Separate active CORE continuation retains source ownership. |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | #43653329229 and #43653329235 PASS, scoped | Native Device Owner acceptance remains absent. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 PASS, scoped | PISONET owns its two paths inside RELEASE #291. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 PASS without NativeComInterfaceHandleLab; #292 has no exact-head run | QA owns poll-signature fixture and independent/native acceptance. |
+| PHX-HARDWARE #327 | 89442ce681df965b16c80f73055236a0d842fe0c; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | #44722725391 quarantine PASS; #44722725315 relay/output PASS; #44722725399 Full FAIL at Missing poll signature check | Firmware stays default-deny; QA owns the stale positive fixture. |
+| PHX-RELEASE #291 | b883662b4faebe05973c9a8bf7ff7ac54d978496 | #44724653086 Windows FAIL at PISONET negative-selftest; #44724652962 compatibility FAIL at missing verify_esp32_source_date_epoch import; #44724653108 Full CANCELLED | RELEASE owns ELF/import tests and workflow; PISONET owns SoftTimer negative-selftest. |
+
+The #291 current exact-head result supersedes earlier #291 labels: the compatibility workflow now fails before the current two-core image comparison because the test module cannot be imported; the Full run is cancelled, not green. The prior image-difference result is not cleared and needs a new exact-head comparison after the import fix.
+
+## PHX-MASTER UTC11 ownership hold
+
+The current #291 changed-file list includes experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/PublisherMockCli.ps1 and negative-selftest.ps1. These remain PISONET-owned paths. PHX-MASTER did not edit them, assign them to RELEASE, or create a competing worker.

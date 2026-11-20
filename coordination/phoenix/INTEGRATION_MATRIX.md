@@ -2536,3 +2536,29 @@ Experiments HARDWARE #327 head 8246afb3d65c5af631dba35d45ef68e114269287 has tree
 The 24 source Python lab/helper files have no destination Hardware Python identities; COE #26 contains one generic shell test. The three source workflows are phx-hardware-poll-edge-latch.yml, phx-hardware-quarantine-byte-readback.yml and phx-hardware-relay-output-polarity.yml; none is present as an exact destination workflow. No migration or staging.
 
 COE #35 head 7b9706d... remains blocked by absent bubblewrap and missing approved site ULA /48. COE #49 head aeb8ff11... passes Stage 5.1/case checks but fails ESP32 shared compilation on missing mbedtls/sha256.h; PHX-HARDWARE declined implementation ownership. Neither #35 nor #49 has a route in OWNERSHIP_ROUTES.json. COE #26 remains frozen with five queued workflows / zero jobs.
+
+
+## PHX-MASTER UTC11 — exact current source/destination and CI supersession
+
+Source: Experiments HARDWARE #327 head 89442ce681df965b16c80f73055236a0d842fe0c, tree 50caee5c635b7e2289afb1fe7ec9dcf6e7105ed1. Destination: COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12, tree 8a7d4cf81d7227118b876c1138dd2da12345fefa. Both recursive trees are complete: 2,435 source entries and 286 destination entries.
+
+| Item | Source #327 | Destination #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | 3ff575f5cd879c021407849578854b74a2d460bd | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different blob |
+| ESP32 sketch | 849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different blob |
+| Board-local Python labs/helpers | 25 | 0 | No exact destination test identity |
+| Hardware tests | 25 Python source labs | 1 generic shell test f921c56cecc19cab1989507b9b4ade1f45dac54e | Not equivalent |
+| Scoped workflows | 3 PHX Hardware workflows | 1 generic hardware-ci.yml fe79adbdb3745a22c5ef6d1f0c87c868b7785793 | Not workflow parity |
+| MIT license | source LICENSE 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE same blob | Sibling match only |
+| NOTICE | source root NOTICE f6d92cd21465312be5993631fe26977219be0fb9 | absent | Destination notice missing |
+| Hardware license scope | no separate Hardware license in source | Hardware/LICENSE and Hardware/NOTICE.md absent | Unresolved |
+
+COE #26 remains OPEN/DRAFT, five workflows QUEUED / zero jobs, and FROZEN. COE #35/#48/#49 remain separate candidates with no route in the manifest. No copy, move, overwrite, rebase, cherry-pick, staging or route promotion is proposed.
+
+### Current exact-head owner CI
+
+- HARDWARE #327: focused quarantine and relay/output PASS; Full FAIL at QA-owned Missing poll signature check.
+- RELEASE #291: Windows FAIL in PISONET-owned negative-selftest.ps1; ESP32 compatibility FAILs both core legs at missing verify_esp32_source_date_epoch import; Full run CANCELLED. No current-head reproducibility pass.
+- CORE #252, RENTAL #289 and PISONET #255 scoped runs remain PASS; QA #290 is scoped PASS, while #292 has no exact-head run.
+
+No migration acceptance is established.

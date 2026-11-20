@@ -992,3 +992,12 @@ At exact #327 source / #26 destination trees, ESP8266 and ESP32 sketch blobs dif
 Separate cross-role scope hold: #291's 22-path diff includes PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`. The current failure is an unset `$buildWorkflow` at line 115. PISONET must own/approve the correction; Master will not modify it. RELEASE retains its workflow/ELF tooling scope.
 
 COE #49 remains separate and audit-only; no route exists for it. The private v11 registry/newer corrections remain inaccessible. No migration proposed.
+
+
+## PHX-MASTER UTC11 — cross-role path hold and COE destination freeze
+
+Current RELEASE #291 head b883662b4faebe05973c9a8bf7ff7ac54d978496 still contains two PISONET-owned paths: experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/PublisherMockCli.ps1 and negative-selftest.ps1. The current Windows failure is the uninitialized $buildWorkflow in negative-selftest.ps1. PISONET must own/approve the fix; PHX-MASTER and PHX-RELEASE do not edit or absorb those paths.
+
+Current #327/#26 exact tree comparison is recorded in INTEGRATION_MATRIX.md and the UTC11 audit report. Firmware blobs differ; 25 source board-local Python labs have no exact destination Hardware Python identities; three source Hardware workflows do not exist as exact destination workflows; root NOTICE is absent and Hardware license/notice scope remains unresolved. COE #26 has five queued workflows / zero jobs.
+
+OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. COE #48 and #49 are separate stacked candidates with no route; #49 remains audit-only after HARDWARE declined implementation ownership. No copy, move, rebase, cherry-pick, staging, route promotion or migration is proposed.
