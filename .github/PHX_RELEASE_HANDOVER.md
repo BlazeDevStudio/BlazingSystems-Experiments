@@ -1946,3 +1946,39 @@ PHX-QA: independently review the source-pin test and exact-source compatibility 
 7. REGISTRY-CUSTODIAN: restore authorized v11 provenance access.
 
 No merge, real-key signing, tag, publication, hardware flashing, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC20 — refresh ESP32 compatibility source/test pin to current HARDWARE #327
+
+**Status:** RELEASE source/test change committed; exact-head GitHub Actions evidence not yet returned by the connected workflow-run/status reads. PR #291 remains OPEN / DRAFT / UNMERGED. PRODUCTION NO-GO.
+
+### Live source identity
+
+- Experiments PR #291 branch: `phoenix/release-publisher-isolation-20261115`.
+- Base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PHX-HARDWARE PR #327 current docs head: `4d651e918f71de2e69d1f3bcfe627c4f944c9c39`.
+- PHX-HARDWARE #327 current source/test head: `1a631567eb0c14c12a114f592685f44cc414466f` (confirmed by the current UTC19 Hardware handover and MASTER ownership addendum).
+- Exact ESP32 sketch path: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`.
+- Exact current sketch blob: `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`.
+
+The previous release workflow and static test still pinned Hardware commit `76eca09159433d490ac4f49d059001dbf2171b13`. GitHub compare confirms the intervening four commits to current source/test HEAD changed only the ESP8266 poll-loop lab and a Hardware handover; the ESP32 sketch blob remains unchanged. This is a provenance refresh to the current owner source/test revision, not a firmware behavior change.
+
+### Test/source commits
+
+- Test/static contract update: [`5c5001d43e173463024c3c790bead406fa8c90c3`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5c5001d43e173463024c3c790bead406fa8c90c3) updates the exact HARDWARE #327 source/test constant and stale comment in `.github/scripts/test_phx_release_esp32_core_compatibility.py`.
+- Workflow correction: [`5188d1a1cfb5f96462a5ec24941fe35530944f68`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5188d1a1cfb5f96462a5ec24941fe35530944f68) updates the job label, checkout ref and `EXPECTED_SOURCE_SHA` in `.github/workflows/phx-release-esp32-core-compatibility.yml` to the current source/test SHA. The exact sketch blob assertion is unchanged.
+- Changed source/test paths: only the release-owned compatibility test and workflow.
+
+### CI observation and limitation
+
+The prior exact-source compatibility run [#44799798721](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44799798721) completed SUCCESS at the previous pin. It is baseline evidence only and does not verify the new pin.
+
+After test commit `5c5001d` and workflow fix `5188d1a`, the connected GitHub workflow-run lookup returned no runs for those commits and the combined commit-status lookup returned no checks. Therefore no expected RED, new-pin GREEN, or exact-head compatibility success is claimed yet. Re-query Actions on the next activation; if the path-filtered PR/push workflow did not start, PHX-RELEASE must report the trigger gap rather than infer a pass.
+
+### Ownership / rollback / next action
+
+Only RELEASE-owned workflow/test files were changed. No HARDWARE sketch, CORE, RENTAL, PISONET, QA, MASTER, shared API, network, or financial file was modified. Rollback is limited to reverting the two RELEASE commits on this draft branch; retain the prior Hardware source history and sketch blob identity.
+
+Next: inspect exact-head compatibility PR/push runs at the updated source pin; require both ESP32 3.3.13 and 4.0.0 jobs plus provenance to pass before calling the pin verified. PHX-QA should independently review the current source identity and two-core reproducibility evidence; PHX-HARDWARE/MASTER should keep #327 source/test and ownership references current.
+
+No signing, release tagging, publication, hardware flash, payment migration or customer deployment. Physical 150 power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
