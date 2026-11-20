@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "blaze.phx-release.build-provenance/v1"
 HEX_SHA = re.compile(r"^[0-9a-f]{64}$")
 GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+PROVENANCE_COMMAND_TIMEOUT_SECONDS = 120
 
 
 class ProvenanceError(RuntimeError):
@@ -51,14 +52,21 @@ def build_args(
 
 
 def _run(command: list[str], *, cwd: Path = ROOT) -> str:
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            timeout=PROVENANCE_COMMAND_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ProvenanceError(
+            "command timed out after "
+            f"{PROVENANCE_COMMAND_TIMEOUT_SECONDS}s: {' '.join(command)}"
+        ) from exc
     if completed.returncode != 0:
         detail = (completed.stderr or completed.stdout or "").strip()
         raise ProvenanceError(
