@@ -2244,3 +2244,25 @@ COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; all five unique w
 | COE #35 | `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b` | Case [44617783021](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617783021) PASS; sandbox [44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) FAIL; shared [44617782050](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617782050) FAIL |
 
 COE #26 remains frozen. COE #48 is separate and UNASSIGNED/AUDIT-ONLY; BLZCS1 is incompatible with #26 `/cgi-bin/vendo` and no durable-credit adapter exists. Scoped CI does not establish migration or production acceptance. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC01 scheduled 2026-11-20T01:37:37Z — live exact-head matrix
+
+| Role / PR | Exact head | Exact-head CI at capture |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229), [43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS |
+| HARDWARE #327 | `a2b7903b4009fd7182247e11a7d2954a79cb9bbd` | [44657641548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641548) and [44657641425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641425) IN PROGRESS; [44657641509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44657641509) QUEUED |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head run |
+| RELEASE #291 | `7d51c438469fdfd0412377cc1da17c2a83efb26c` | Windows [44656994686](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994686) FAIL; ESP32 [44656994754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994754) PASS; BlazePwifi [44656994849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44656994849) QUEUED |
+
+| COE candidate | Exact head / base | CI / disposition |
+|---|---|---|
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243` | Structure-only baseline |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued / zero jobs; frozen |
+| COE #48 | `8286548e395366f2332830025fed00ceebdfb24a` | Separate Stage 5 LAB; no route |
+| COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` on #48 | Stage 5.1 16/16 mock tests PASS; ESP8266 compile/package PASS; shared ESP32 compile FAIL under core 4.0.0; audit-only, not #26 |
+
+COE #49 runs: [44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873), [44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992), [44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922).

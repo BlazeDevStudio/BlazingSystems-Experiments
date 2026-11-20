@@ -1497,3 +1497,16 @@ Coordination only; no ownership changes.
 - **Repository administrator / registry custodian:** verify branch protection / restore authorized private v11 and newer corrections.
 
 Global cleanup-first inventory in #266 remains OPEN. No subsystem source, migration staging, route or release authority changed.
+
+
+## PHX-MASTER UTC01 scheduled 2026-11-20T01:37:37Z — ownership boundary refresh
+
+- CORE #252 remains `c82705f2...`; the CORE owner retains the existing financial/backend authority. Master requests review of the pre-mutation target-kind/signed-time contract only; no CORE source changed.
+- RENTAL #289 remains `68928774...`; no rental source changed.
+- PISONET #255 remains `d01fd164...`; COE #49 sidecar review is requested but NOT assigned without explicit owner ACK.
+- HARDWARE #327 remains on its owner branch, base #326 `58c558fb...`, current head `a2b7903b...`; exact-head relay/quarantine runs are in progress and BlazePwifi build is queued at capture. COE #49 firmware review is requested but NOT assigned without explicit owner ACK.
+- QA #290 `5c29d159...` and QA #292 `75a3f66d...`; #292 has no exact-head run. QA owns independent negative tests for target-kind mutation ordering and clock/expiry behavior.
+- RELEASE #291 remains `7d51c438...`; Windows exact-head run fails at PISONET-owned `$buildWorkflow` unset, ESP32 passes, BlazePwifi is queued. RELEASE owns its workflow only.
+- COE #49 `aeb8ff11...` is **UNASSIGNED / AUDIT-ONLY**, a separate child of COE #48, not #26.
+
+PHX-MASTER owns coordination/phoenix, interface contracts and migration provenance only.

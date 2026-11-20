@@ -929,3 +929,10 @@ COE PR #48 at `8286548e395366f2332830025fed00ceebdfb24a` changes 14 paths, all u
 The Stage 5 `REMOTE_CS_BLAZEPWIFI_BRIDGE_CONTRACT.md` (blob `1dc0f709167862d543086449d895dd669f49f32d`) explicitly states that the backend bridge is required and not implemented. The current #26 Vendo source blob is `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`; the current #26 API source blob is `fabbd6fb28a34c162fb40403aec2a40d6fe1a65b`; the V1 schema blob is `8d0f8553ae53a0b22cb874de833aa21ebc52695e`. These are different wire contracts, not interchangeable files. The bridge requires a durable customer/session/target mapping, stable idempotency nonce, signed backend receipt verification, exact ESP ACK, expiry/reboot reconciliation and default-deny on unknown state.
 
 The PR author declares JuanFi Apache-2.0 material is reference-only and no code/protocol was imported; the 14-path diff shows no third-party source import or license-file change. This declaration is not a legal license audit. Obtain PHX-HARDWARE and PHX-PISONET review-scope ACK/DECLINE plus PHX-CORE's receipt-contract authority before proposing a route. Preserve the original source and all current #26 staging unchanged.
+
+
+## COE #49 Stage 5.1 — separate, unassigned candidate (2026-11-20 UTC01)
+
+COE #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` is stacked on #48 `8286548e395366f2332830025fed00ceebdfb24a`; it is not based on COE main or #26. Its 7-path diff contains Hardware staging/runtime/docs/tests/tools and the scoped workflow, with no `Pisowifi/` backend change. `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route exists for #48 or #49.
+
+Do not copy, move, rebase, cherry-pick or stage #49 into #26. Require explicit PHX-HARDWARE and PHX-PISONET scope ACK/DECLINE, PHX-CORE approval of the backend target-kind/server-time interface, independent QA of the real backend mutation path, exact destination CI and licence/import provenance before any route proposal.

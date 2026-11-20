@@ -1248,3 +1248,10 @@ Issue #266 remains OPEN and Master cleanup remains unchecked; one hardware-owned
 Master refreshed exact role PR heads and CI in [the UTC01 audit](PHX_MASTER_UTC01_20261120_ROLE_CI_COE26_RELEASE_NEGATIVE_CONTROL_AUDIT.md). At audit start PR #288 was OPEN/DRAFT at `71cdfad0...` against `main@f4e8a891...`, with 113 changed paths, all under `coordination/phoenix/`. Current role heads: CORE #252 `c82705f2...`; RENTAL #289 `68928774...`; PISONET #255 `d01fd164...`; HARDWARE #327 `1d461f2c...`; QA #290 `5c29d159...`; QA #292 `75a3f66d...`; RELEASE #291 `6fdb5e2b...`. HARDWARE focused quarantine/relay pass, but Full fails at QA-owned `Missing poll signature check`. RELEASE ESP32/BlazePwifi pass, but Windows fails at PISONET-owned `$buildWorkflow` unset; publisher skipped. QA #292 has no exact-head run.
 
 COE #26 remains `b382d233...` with five queued workflows / zero jobs. COE #48 is a separate unassigned Stage 5 candidate; scoped CI passes but shared ESP32/Contracts CI fails. No migration staging occurred. Private registry v11/newer corrections remain unavailable; older snapshots were not substituted. No Master suite or Actions run was executed. **PRODUCTION NO-GO.**
+
+
+---
+
+PHX-MASTER UTC01 scheduled 2026-11-20T01:37:37Z — COE #49 Stage 5.1 audit
+
+The exact source/CI findings are recorded in [PHX_MASTER_UTC01_20261120_COE49_STAGE5_1_TARGET_KIND_AND_CLOCK_AUDIT.md](PHX_MASTER_UTC01_20261120_COE49_STAGE5_1_TARGET_KIND_AND_CLOCK_AUDIT.md). COE #49 `aeb8ff11...` is stacked on #48, not #26. Source inspection found the adapter sends `coin` before rejecting `rental:true`, while the backend calls `bp_rental_apply_coin` and updates rental progress before returning that flag. The adapter also uses local wall-clock expiry and returns ACTIVE for an existing session before recalculating remaining TTL. Its 16 mock/SQLite tests pass but do not prove the real backend rental path is mutation-free. #49 shared CI still fails ESP32 compilation under core 4.0.0; #26 remains five queued workflows / zero jobs. No route, source migration or ownership transfer was made. **PRODUCTION NO-GO.**
