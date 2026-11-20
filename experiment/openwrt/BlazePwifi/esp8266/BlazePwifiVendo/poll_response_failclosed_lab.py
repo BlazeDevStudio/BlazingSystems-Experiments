@@ -8,6 +8,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from firmware_lab_source import extract_function as _extract_function
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -16,17 +18,10 @@ BOARDS = {
 }
 
 def extract(source, name):
-    match = re.search(r"\b(?:void|bool|uint16_t)\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
-    assert match, f"missing production function: {name}"
-    depth = 0
-    for pos in range(match.end() - 1, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():pos + 1]
-    raise AssertionError(f"unbalanced production function: {name}")
+    try:
+        return _extract_function(source, name)
+    except RuntimeError as exc:
+        raise AssertionError(str(exc)) from exc
 
 
 def verify_lexical_extractor():
