@@ -2,8 +2,10 @@
 """PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift, post-finalization and ISR-unobserved edge safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
-coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(), and
-sampleCoinPulseEdge() from both ESP sketches. Only the two persistence backends
+coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(),
+quarantineCoinIngressTransition(), and sampleCoinPulseEdge() from both ESP sketches.
+It also checks that pin reconfiguration does not silently advance the ISR baseline.
+Only the two persistence backends
 are fault-injected. The failed-save path checks all four dual-store outcomes,
 the unresolved pulse identity, and logical relay/LED OFF before either store is
 called. The companion dual-store lab separately extracts the real persistence
@@ -349,6 +351,53 @@ static bool runSingleObservedEdge(){
     return fail("single-observed-edge","sustained active level duplicated an already handled ISR edge");
   return true;
 }
+static bool runIngressTransitionCases(){
+  resetState();
+  if(!quarantineCoinIngressTransition() || journalRecoveryRequired ||
+     backupCalls!=0 || markerCalls!=0)
+    return fail("boot-idle-control","idle line with no unhandled ISR edge was quarantined");
+
+  resetState(50U);
+  insertMode=false;
+  activeTarget.clear();
+  pulseEnabled=true;pulseStart=0U;pulseEnd=100U;
+  if(quarantineCoinIngressTransition())
+    return fail("boot-active-line","active line at pin-configuration completion was accepted");
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     !lastCoin || relayOn || ledOn || backupCalls!=1 || markerCalls!=1 ||
+     backupEdges!=1U || markerEdges!=1U)
+    return fail("boot-active-line","active line was not persisted as unresolved with outputs OFF");
+
+  resetState();
+  coinEdgeSequence=2U;
+  if(quarantineCoinIngressTransition())
+    return fail("reconfigure-unhandled-edges","unhandled ISR edges after pin attachment were ignored");
+  if(lastHandledCoinEdgeSequence!=2U || backupEdges!=2U || markerEdges!=2U)
+    return fail("reconfigure-unhandled-edges","edge multiplicity or handled baseline was not preserved");
+
+  resetState();
+  coinEdgeSequence=1U;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  if(quarantineCoinIngressTransition())
+    return fail("reconfigure-counter-wrap","wrapped ISR sequence was accepted as idle");
+  if(lastHandledCoinEdgeSequence!=1U || backupEdges!=3U || markerEdges!=3U)
+    return fail("reconfigure-counter-wrap","unsigned edge delta did not preserve three wrapped edges");
+
+  resetState(50U);
+  pendingPulses=4U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  activeTarget="target-01";
+  pulseEnabled=true;pulseStart=0U;pulseEnd=100U;
+  if(quarantineCoinIngressTransition())
+    return fail("reconfigure-pending-event","active ingress with an existing pending batch was accepted");
+  if(pendingPulses!=4U || pendingNonce!="nonce-existing" ||
+     pendingTarget!="target-01" || !pendingReady || backupEdges!=5U ||
+     markerEdges!=5U || relayOn || ledOn)
+    return fail("reconfigure-pending-event","existing pending identity was not preserved and denied");
+  return true;
+}
+
 int main(){
   int passed=0;
   if(!runDrainCapture("delayed-100ms-active-low",0U,100U,130U,0U,40U,true)) return 1;
@@ -382,7 +431,9 @@ int main(){
   ++passed;
   if(!runSingleObservedEdge()) return 15;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/15 top-level scenarios\n";
+  if(!runIngressTransitionCases()) return 16;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/16 top-level scenarios\n";
   return 0;
 }
 '''
@@ -394,6 +445,7 @@ SIGNATURES = (
     "bool coinLineQuietAfterInhibit(){",
     "bool beginPollWindow(){",
     "void latchPollPulseFault(uint32_t pulseEdges){",
+    "bool quarantineCoinIngressTransition(){",
     "void sampleCoinPulseEdge(bool active){",
     "void handlePollDrainAbortAfterSample(){",
 )
@@ -405,6 +457,7 @@ FUNCTION_NAMES = (
     "coinLineQuietAfterInhibit",
     "beginPollWindow",
     "latchPollPulseFault",
+    "quarantineCoinIngressTransition",
     "sampleCoinPulseEdge",
     "handlePollDrainAbortAfterSample",
 )
@@ -498,6 +551,12 @@ def verify_shared_extractor():
 
 
 
+def verify_configure_runtime_pins_preserves_edge_baseline(source):
+    body = extract_function(source, "configureRuntimePins")
+    if "lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();" in body:
+        raise RuntimeError("configureRuntimePins discards unhandled ISR edge baseline after attaching the coin ISR")
+
+
 def main():
     verify_shared_extractor()
     mutations = (
@@ -527,7 +586,16 @@ def main():
          "  applyOutputs();\n  const bool backupPersisted",
          "  const bool backupPersisted",
          "storage attempt occurred before outputs were logically OFF"),
-        # Keep sampledSingleEdge referenced so -Werror tests the runtime deny path, not an unused-variable compile error.
+                 ("missing-ingress-transition-quarantine", "bool quarantineCoinIngressTransition(){",
+          "if(lineIdle && unhandledEdges==0U) return true;", "if(true) return true;",
+          "active line at pin-configuration completion was accepted"),
+         ("missing-transition-edge-ack", "bool quarantineCoinIngressTransition(){",
+          "lastHandledCoinEdgeSequence=observedEdgeSequence;", "",
+          "edge multiplicity or handled baseline was not preserved"),
+         ("missing-pending-event-ready", "bool quarantineCoinIngressTransition(){",
+          "if(pendingPulses>0U) pendingReady=true;", "",
+          "existing pending identity was not preserved and denied"),
+         # Keep sampledSingleEdge referenced so -Werror tests the runtime deny path, not an unused-variable compile error.
         ("missing-isr-edge-reconciliation", "void sampleCoinPulseEdge(bool active){",
          "if(unseenEdges>0U && !sampledSingleEdge){", "if(false && !sampledSingleEdge){",
          "late coin POST pulse was not fail-closed"),
@@ -539,15 +607,16 @@ def main():
     for board, sketch in BOARDS:
         try:
             source = sketch.read_text(encoding="utf-8")
+            verify_configure_runtime_pins_preserves_edge_baseline(source)
             functions = [extract_function(source, name) for name in FUNCTION_NAMES]
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 15/15" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 16/16" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_COIN_PULSE_CAPTURE_PASS 15/15")
+            print(f"{board}_COIN_PULSE_CAPTURE_PASS 16/16")
             for name, signature, old, new, expected in mutations:
                 index = SIGNATURES.index(signature)
                 if old not in functions[index]:
