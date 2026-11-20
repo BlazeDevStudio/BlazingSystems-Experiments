@@ -703,3 +703,29 @@ This UTC04 activation updated the hardware maintainer guide and added a narrow v
 The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md` after the guide and narrow handover so the same gate can be re-run without bypass. Exact-head Full validation remains pending until the next run completes.
 
 **Classification:** the non-actuating header cleanup and its 5/5 native synthetic tests are **CI VERIFIED** at `16de37a`; this is not application integration or hardware acceptance. No protected key/witness, physical coin/relay, electrical pulse, 150 power-cut, 30-device soak, production signing, release or deployment evidence is created by these host/CI checks. Phase A remains DENY.
+
+<!-- PHX-HW-LENGTH-AWARE-SPANS-20261120:START -->
+## 2026-11-20 UTC05 — ControllerAuthV1Lab parser-span memory-safety correction
+
+**Scope:** PHX-HARDWARE-owned non-actuating ESP32 lab helper under DRAFT #254. No application sketch, CORE producer, wire contract, coin admission, GPIO, relay, finance, signer, or shared schema changed.
+
+### Test-first evidence
+- Sanitizer workflow wiring commit: `6cf18b913a72090df728f7030ef07c41aae95c1e`.
+- Test-first RED commit: `26fae74219c505e5c9119ca4ca33de0eac039183`.
+- Exact focused run [#44682886902](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44682886902), job `136110238848`: **FAILED AS EXPECTED**. UBSan/AddressSanitizer reported a stack-buffer-overflow at `ControllerAuthV1Lab.h:28`, reading byte 65 while validating a parser-owned 64-byte non-NUL-terminated digest span. The failure is retained as RED evidence.
+
+### Implementation
+- Source/test/maintainer-guide commit: `45f5c27db23e423acaf94d2522634536d734b4d2`.
+- `hex64` now requires an explicit byte length and validates exactly 64 lowercase-hex bytes without scanning for a terminator.
+- `matches_policy_digest` now receives the digest length.
+- `verify_mac` now receives both canonical-message length and signature length; it no longer calls `strlen` on parser-owned canonical input.
+- Native tests cover exact 64-byte nonterminated digest spans, short/long/uppercase/null inputs, raw nonterminated canonical/signature spans, tampered signature, wrong device/nonce, empty key, digest mismatch, and deterministic lowercase digest rendering.
+- Focused compile now enables AddressSanitizer and UndefinedBehaviorSanitizer.
+- Both `may_admit_coin_even_if_mac_valid()` and `may_energize_relay_even_if_mac_valid()` remain hard-coded `false`.
+
+### Current CI at documentation checkpoint
+- Exact-source focused run [#44683172568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172568): **IN PROGRESS**.
+- Full BlazePwifi runs [#44683172700](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683172700) and [#44683165768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683165768): **PENDING**. No Full PASS is claimed.
+
+**Classification:** test-first RED is CI-observed; implementation is awaiting exact-head focused CI. This remains LAB ONLY / NOT HARDWARE ACCEPTED / PRODUCTION NO-GO. No physical hardware, coin acceptor, live money, flashing, migration, signing, merge, or deployment was performed.
+<!-- PHX-HW-LENGTH-AWARE-SPANS-20261120:END -->
