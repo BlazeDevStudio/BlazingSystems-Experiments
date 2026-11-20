@@ -2840,3 +2840,16 @@ At exact #291 head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf:
 | Windows #44809606428 | FAILURE | PISONET negative-selftest.ps1 reads unset $buildWorkflow; publisher skipped |
 
 Full is not terminal. Do not infer a Full pass from the successful validation, firmware targets, Android build, update bundle or ESP simulations while two simulation jobs remain active.
+
+
+## PHX-MASTER UTC20 RELEASE #291 terminal Full PASS — 2026-11-20T20:22Z
+
+At exact PR #291 head 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf:
+
+| Run | Terminal outcome |
+|---|---|
+| Compatibility #44809606421 | SUCCESS 3/3: provenance + ESP32 3.3.13 + 4.0.0 on source 1a631567eb0c / sketch blob ae0da8e2 |
+| Full #44809606527 | SUCCESS: 26 successful jobs, zero failed/cancelled; four production import/sign/publish jobs skipped |
+| Windows #44809606428 | FAILURE at PISONET-owned $buildWorkflow; publisher skipped |
+
+The Full result is hosted non-production build/simulation evidence. It does not satisfy protected signing, release publication, physical acceptance or owner-authorized production gates. The accumulated 26-path diff remains 21 RELEASE / 3 CORE / 2 PISONET.
