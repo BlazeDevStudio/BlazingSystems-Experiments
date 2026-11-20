@@ -17,11 +17,12 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-HARDWARE_SOURCE_SHA = "dc02efea6590045155bf50f16fdd2d3924f6b415"
+# Exact latest PHX-HARDWARE #327 source/test commit; the PR head adds only a handover.
+HARDWARE_SOURCE_SHA = "d4f7df4e8d286fcc52bbb4a38af9aa9aff4ad3c1"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e"
+HARDWARE_SKETCH_BLOB = "ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -710,6 +711,7 @@ def main() -> int:
         HARDWARE_SOURCE_SHA,
         HARDWARE_SKETCH_PATH,
         HARDWARE_SKETCH_BLOB,
+        f'/ source {HARDWARE_SOURCE_SHA[:12]}"',
         'esp32_core: ["3.3.13", "4.0.0"]',
         'arduino-cli core install "esp32:esp32@\u0024{{ matrix.esp32_core }}"',
         "arduino-cli compile --clean --fqbn esp32:esp32:esp32",
