@@ -645,6 +645,67 @@ def _parse_build_manifest(path: Path) -> dict[str, str]:
     return fields
 
 
+def _openwrt_toolchain_reference(
+    official_sums: dict[str, str],
+    *,
+    version: str,
+    openwrt_target: str,
+    checksum_catalog_sha256: str,
+) -> dict[str, Any]:
+    """Record the upstream target toolchain reference without claiming it ran here."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*(?:/[A-Za-z0-9][A-Za-z0-9_-]*)*", openwrt_target):
+        raise ProvenanceError(f"invalid OpenWrt target for toolchain reference: {openwrt_target!r}")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+~-]*", version):
+        raise ProvenanceError(f"invalid OpenWrt version for toolchain reference: {version!r}")
+    if not HEX_SHA.fullmatch(checksum_catalog_sha256):
+        raise ProvenanceError("OpenWrt checksum catalog SHA-256 is invalid")
+
+    target_slug = openwrt_target.replace("/", "-")
+    prefix = f"openwrt-toolchain-{version}-{target_slug}_gcc-"
+    suffix = ".Linux-x86_64.tar.zst"
+    matches = [
+        (name, digest)
+        for name, digest in official_sums.items()
+        if name.startswith(prefix) and name.endswith(suffix)
+    ]
+    if len(matches) != 1:
+        raise ProvenanceError(
+            "expected exactly one OpenWrt target toolchain archive in official sha256sums; "
+            f"found {len(matches)} for {openwrt_target}"
+        )
+
+    archive, digest = matches[0]
+    pattern = re.compile(
+        rf"^openwrt-toolchain-{re.escape(version)}-{re.escape(target_slug)}"
+        r"_gcc-(?P<gcc_version>[0-9][0-9A-Za-z.+-]*)"
+        r"_(?P<libc_abi>musl(?:_[A-Za-z0-9]+)?)"
+        r"\.Linux-x86_64\.tar\.zst$"
+    )
+    match = pattern.fullmatch(archive)
+    if not match:
+        raise ProvenanceError(
+            f"OpenWrt toolchain archive name is not a supported GCC/musl reference: {archive}"
+        )
+    if not HEX_SHA.fullmatch(digest):
+        raise ProvenanceError(
+            f"OpenWrt toolchain archive has an invalid SHA-256 catalog entry: {archive}"
+        )
+
+    return {
+        "archive": archive,
+        "sha256": digest,
+        "gcc_version": match.group("gcc_version"),
+        "libc_abi": match.group("libc_abi"),
+        "checksum_catalog_sha256": checksum_catalog_sha256,
+        "checksum_catalog_source": (
+            "OpenWrt target release sha256sums; detached signature not verified by this workflow"
+        ),
+        "archive_downloaded": False,
+        "archive_sha256_verified": False,
+        "compiler_invoked": False,
+    }
+
+
 def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[str]]:
     fields = _parse_build_manifest(Path(args.artifact_dir) / "BUILD-MANIFEST.txt")
     if fields["Target"] != args.target:
@@ -675,13 +736,22 @@ def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
     version = fields["OpenWrt version"]
     if not archive.name.startswith(f"openwrt-imagebuilder-{version}-"):
         raise ProvenanceError("ImageBuilder archive version does not match BUILD-MANIFEST.txt")
-    official_sums = _parse_checksum_text(_read_regular(workdir / "sha256sums"), "ImageBuilder sha256sums")
+    checksum_catalog_bytes = _read_regular(workdir / "sha256sums")
+    official_sums = _parse_checksum_text(checksum_catalog_bytes, "ImageBuilder sha256sums")
+    checksum_catalog_sha256 = hashlib.sha256(checksum_catalog_bytes).hexdigest()
     archive_name = archive.name
     if archive_name not in official_sums:
         raise ProvenanceError("official OpenWrt sha256sums does not contain the selected archive")
     archive_sha, _ = _hash_regular(archive)
     if official_sums[archive_name] != archive_sha:
         raise ProvenanceError("ImageBuilder archive does not match the official OpenWrt sha256sums entry")
+
+    upstream_toolchain = _openwrt_toolchain_reference(
+        official_sums,
+        version=version,
+        openwrt_target=fields["OpenWrt target"],
+        checksum_catalog_sha256=checksum_catalog_sha256,
+    )
 
     host_tools = {}
     for name, command in (
@@ -702,7 +772,11 @@ def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         "capability": fields["Capability"],
         "host_tools": host_tools,
         "compiler_version": None,
-        "compiler_version_note": "not separately emitted by the current ImageBuilder build script",
+        "compiler_version_note": (
+            "ImageBuilder does not invoke the target compiler; the upstream GCC toolchain "
+            "is referenced separately and was not downloaded or executed by this workflow"
+        ),
+        "upstream_toolchain": upstream_toolchain,
     }
     source_paths = [
         "experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh",
