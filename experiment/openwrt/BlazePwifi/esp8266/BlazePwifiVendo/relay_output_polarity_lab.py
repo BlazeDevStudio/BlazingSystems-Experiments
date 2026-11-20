@@ -43,6 +43,7 @@ def extract(source, name):
 
 STUBS = r"""
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
@@ -68,6 +69,11 @@ bool fsReady = true;
 bool journalRecoveryRequired = false;
 bool pendingReady = false;
 bool pollIntakeSuspended = false;
+// This polarity lab has no ISR injection; keep the source edge guard idle.
+// Poll-loop labs separately inject edges at the GPIO write boundaries.
+volatile uint32_t coinEdgeSequence = 0;
+uint32_t lastHandledCoinEdgeSequence = 0;
+uint32_t snapshotCoinEdgeSequence() { return coinEdgeSequence; }
 bool outputPolarityKnown = true; // unrelated output tests model a validated local profile
 bool runRelayActiveHigh = true;
 bool runLedActiveHigh = true;
@@ -90,6 +96,8 @@ void resetState() {
   journalRecoveryRequired = false;
   pendingReady = false;
   pollIntakeSuspended = false;
+  coinEdgeSequence = 0;
+  lastHandledCoinEdgeSequence = 0;
   outputPolarityKnown = true;
   runRelayActiveHigh = true;
   runLedActiveHigh = true;
