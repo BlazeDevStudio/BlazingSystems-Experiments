@@ -1902,3 +1902,47 @@ This is a narrow RELEASE-owned source/test/workflow correction on existing draft
 
 PHX-QA: independently review the source-pin test and exact-source compatibility run. PHX-MASTER: confirm the #327 source/test pin is the intended release qualification reference and continue resolving inherited #291 ownership paths. PHX-HARDWARE retains ownership of firmware source. No merge, signing, release tag, publication, hardware flash, payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
 
+
+
+## PHX-RELEASE UTC19 — exact HARDWARE #327 compatibility pin and terminal CI reconciliation
+
+**2026-11-20T19:04Z.** This is a narrow handover update on the existing RELEASE branch. The source/test correction below was already committed at the current branch head before this activation; it was independently re-read and verified here, not duplicated.
+
+### Exact source identity
+
+- Experiments PR #291 remains OPEN / DRAFT / UNMERGED at `05d7b1efeb40820e5800553f96d678666d08bac2`, base PR #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PHX-HARDWARE PR #327 is OPEN / DRAFT at docs head `f2fddc18b30e64f12071d3566c8505001dd31a74`; its current source/test head is `76eca09159433d490ac4f49d059001dbf2171b13`.
+- The exact ESP32 sketch path `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino` has blob `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7` at both the source/test and docs heads. The compatibility matrix now checks that source SHA and blob, and labels both matrix jobs `source 76eca0915943`.
+
+### Test-first source-pin correction
+
+- Test commit [cbe4db5c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/cbe4db5c5561304529d8b91f93ccbca3b2eaa528) updates the expected PHX-HARDWARE source/test SHA and sketch blob.
+- Expected RED: [PR compatibility run #44796631608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44796631608) and [push compatibility run #44796618882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44796618882). Both provenance jobs passed; both core legs failed at the intended source/workflow contract assertion because the workflow still named the previous `d4f7df4e8d28` source. This was a stale-pin regression, not a compiler or firmware failure.
+- Workflow correction [05d7b1ef](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/05d7b1efeb40820e5800553f96d678666d08bac2) updates the exact checkout ref, expected source SHA, sketch blob and matrix source label.
+
+### Exact-head CI at PR #291 head `05d7b1ef`
+
+- ESP32 compatibility [run #44796887718](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44796887718): **SUCCESS, 3/3 jobs** — provenance suite, ESP32 core 3.3.13 and ESP32 core 4.0.0.
+- BlazePwifi Full [run #44796887595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44796887595): **SUCCESS, 26 jobs passed, 0 failed, 4 skipped**. The skipped jobs were production import/sign/publish gates; no production release was performed.
+- Windows SoftTimer [run #44796887617](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44796887617): **FAILURE**. Handover and package-parity passed; build-windows failed at the PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. Publisher skipped. No PISONET file was changed by RELEASE.
+
+### Ownership and admission blockers
+
+- PR #291 remains a 26-path accumulated diff with inherited CORE and PISONET paths; no independent submitted PR review is present. This activation changed no source/test path.
+- MASTER PR #288 is OPEN / DRAFT at `c4827bafa2e36802e76c85ec5b958be594ba8ae0`. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; PHX-RELEASE's route remains `reimplementation-review`. No cross-repository migration or merge is authorized.
+- Experiments `main` currently reports `protected=false`. The SoftTimer signing and write-privileged publisher conditions already require `github.ref_protected == true` plus `SOFTTIMER_RELEASE_APPROVED == 'true'`; these gates therefore remain closed on the inspected unprotected branch. Repository administrator must configure and independently verify branch protection / required checks before any publisher path can be considered.
+- COE integration PR #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five queued workflows and zero executed jobs.
+- COE release-packager PR #31 remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Mandatory Bubblewrap sandbox run [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) failed closed at unprivileged UID-map setup; shared/firmware [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) and case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) passed only their scoped checks. The invalid `fd00:db8:blaze::/48` placeholder still lacks site-scoped network authority; RELEASE must not invent a replacement prefix.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced by the authorized Library search. Older v6/v7 snapshots were not substituted; no private contents or identifiers were copied to GitHub.
+
+### Next owner actions
+
+1. PHX-QA: independently review test/source SHA `cbe4db5c` / `05d7b1ef` and exact compatibility run #44796887718.
+2. PHX-MASTER: resolve the inherited CORE/PISONET ownership paths in #291 and confirm the release reimplementation route.
+3. Repository administrator: establish protected-main required checks / review and verify `github.ref_protected` from live branch metadata.
+4. PHX-PISONET: fix the unset `$buildWorkflow` in its own negative self-test.
+5. PHX-INFRA: provide an approved ephemeral no-secret runner with unprivileged user namespaces for COE #31; no privileged or unsandboxed fallback.
+6. PHX-MASTER / network authority: define the site-scoped ULA contract before RELEASE changes packager output.
+7. REGISTRY-CUSTODIAN: restore authorized v11 provenance access.
+
+No merge, real-key signing, tag, publication, hardware flashing, real payment migration or customer deployment. Physical 150-power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
