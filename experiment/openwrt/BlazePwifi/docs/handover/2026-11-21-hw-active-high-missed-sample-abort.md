@@ -50,7 +50,7 @@ Full build [run #44823079422](https://github.com/BlazeDevStudio/BlazingSystems-E
 
 `Missing poll signature check`
 
-The current main register/poll producer does not emit the approved controller `response_sig`. Other target/Android jobs were still running when this handover was updated; no overall Full-matrix pass is claimed. Do not weaken default-deny or invent a signature to satisfy the stale assertion.
+The current main register/poll producer does not emit the approved controller `response_sig`. In Full run #44823079422, 11 of 14 target/Android jobs completed successfully; ESP32, x86_64 and Android were cancelled after the validation failure. No overall Full-matrix pass is claimed. Do not weaken default-deny or invent a signature to satisfy the stale assertion.
 
 ## Evidence boundary
 
