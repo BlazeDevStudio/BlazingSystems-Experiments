@@ -1772,3 +1772,35 @@ At #291 exact head `dcb905333c8963fb139eeeefa72471738c874fb8`:
 - Full run CI-0701 job executed 24 `test_build_provenance.py` tests successfully, including the non-canonical checksum path regression test. The `dcb90533...` path-normalizer fix has hosted test evidence; it does not make #291 release-ready.
 
 PISONET retains the negative-selftest path. The three CORE product handover paths in the 26-path #291 diff remain CORE-owned. No Master source edit or ownership transfer.
+## PHX-MASTER UTC14 live owner / stack / CI supersession — 2026-11-20
+
+The following exact heads supersede earlier UTC13 and older rows; all PRs remain OPEN/DRAFT unless explicitly stated otherwise.
+
+| Role | Current PR / exact head | Exact-head CI evidence | Ownership / next action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS, scoped | Separate CORE continuation retains implementation ownership; Master did not start competing work. |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) SUCCESS, scoped | Rental retains source ownership. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS, scoped | PISONET retains SoftTimer ownership, including both paths inside #291. |
+| PHX-HARDWARE | #327 docs `a2388aedc611e831f339a87555450bd5554fa781`; source/test `dc9af45eaa33713713473cfa1ea8ab051769286f` | [Relay #44756633455](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756633455) PASS; [Quarantine #44756634091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756634091) PASS; [Full #44756633635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756633635) FAIL at validation | HARDWARE owns firmware and host labs; QA owns the inherited positive poll-signature fixture. Keep firmware deny-only. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS, scoped; #292 no exact-head run | QA must replace the stale positive poll fixture with source-linked negative/default-deny assertions; native COM lab remains uninvoked. |
+| PHX-RELEASE | #291 docs `fbe1ca6183aa37fadf125b0e8c07a884e80789be`; source/test `0db99526477dd81f94d3f446165f90fc90defdbe` | [Compatibility #44753364998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364998) PASS, both cores; [Full #44753364967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364967) 26 success / 0 failed / 4 skipped; [Windows #44753364863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364863) FAIL | RELEASE owns release workflow/tooling; PISONET owns the failing SoftTimer self-test; CORE owns the three product handover files in the accumulated diff. |
+
+### Active HARDWARE stack ancestry — exact parent refs
+
+| PR | Head | Base PR / base SHA |
+|---|---|---|
+| #322 | `50d93e0de3d682550b6f02fb43484e76ad9c7e08` | prior #320 head `b2b41a3d6ce7887b9624137c966f58462895d3fa` |
+| #323 | `988904e8bcd058b62a9fac4aa6319a9b7c5b2470` | #322 head `50d93e0de3d682550b6f02fb43484e76ad9c7e08` |
+| #326 | `58c558fb6a237935214621adc3dee65a10fe1a51` | #323 head `988904e8bcd058b62a9fac4aa6319a9b7c5b2470` |
+| #327 | `a2388aedc611e831f339a87555450bd5554fa781` | #326 head `58c558fb6a237935214621adc3dee65a10fe1a51` |
+
+The #327 source/test commit is `dc9af45eaa33713713473cfa1ea8ab051769286f`; the later docs head does not authorize a stack retarget. No rebase, force-push, merge, or parent replacement was performed.
+
+### #327 poll-fixture failure — owner split
+
+The exact source fixture `experiment/openwrt/BlazePwifi/tests/v05_firmware_hardening_test.sh` is blob `41211b2c110ab409f6d9d1812ef12fda73b13211`. It requires `response_sig` and literal `|poll|` in both sketches. Current firmware intentionally keeps positive poll admission dormant; Full #44756633635 fails at `Missing poll signature check` in the ESP8266 sketch. QA must replace the positive marker assertion with negative/default-deny tests. HARDWARE must not add a synthetic positive signature path or relax firmware deny behavior.
+
+### #291 accumulated diff — explicit cross-role path hold
+
+The 26-path #291 diff contains 21 RELEASE paths, three CORE-owned product handover paths, and two PISONET-owned SoftTimer test paths. CORE paths: `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`, `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`. PISONET paths: `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/PublisherMockCli.ps1` and `negative-selftest.ps1`. The current Windows failure is the unset `$buildWorkflow` in PISONET's `negative-selftest.ps1`; PISONET owns its correction and CORE owns its handover files. No ownership transfer occurred.
+

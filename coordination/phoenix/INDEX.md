@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current Remote CS review gate is §6.55. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current Remote CS review gate is §6.54; current poll-fixture / COE parity gate is §6.55. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -161,3 +161,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - #291 head `dcb90533...`: ESP32 compatibility #44746554825 PASS on both cores; Full #44746554633 CANCELLED at Android emulator after non-production build/simulation jobs passed; Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1` (`$buildWorkflow` unset).
 - The Full CI-0701 job passed 24 build-provenance tests, including the checksum path-alias regression. Production import/sign/publish remained skipped.
 - #291 remains OPEN/DRAFT; PISONET and CORE retain their cross-role paths. No release or migration authorization.
+
+## Latest exact-head audit — 2026-11-20 UTC14
+
+- [PHX-MASTER UTC14 exact-head, terminal-CI and COE provenance report](PHX_MASTER_UTC14_20261120_EXACT_HEAD_HW327_RELEASE291_COE26_PROVENANCE.md).
+- Experiments refs: `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; comparison-only `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Master PR #288 start head `962e1179aae8f49551f151bf4721e1524f690c38`, OPEN/DRAFT, 128 paths, all under `coordination/phoenix/`; route manifest unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`.
+- HARDWARE stack #322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 docs head `a2388aed...` (source/test `dc9af45e...`). Focused relay/quarantine pass; Full #44756633635 fails at QA-owned legacy positive poll-signature fixture.
+- RELEASE #291 docs head `fbe1ca6183aa37fadf125b0e8c07a884e80789be`, source/test `0db99526477dd81f94d3f446165f90fc90defdbe`: ESP32 compatibility passes both pinned cores; Full #44753364967 terminates with 26 success / 0 failure / 4 production jobs skipped; Windows #44753364863 fails in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset.
+- COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. Exact recursive trees: 2,440 source entries vs 286 destination; 25 source board-local Python labs vs zero destination Hardware Python files; three source Hardware workflows vs one generic destination workflow; both firmware blobs differ; notice scope remains incomplete.
+- New architecture review gate: §6.55, poll admission fixture and COE migration parity. Private v11 registry/newer corrections remain NOT ACCESSIBLE; no older snapshot substituted. Master suite NOT RUN because local clone DNS failed. **PRODUCTION NO-GO.**

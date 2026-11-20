@@ -1101,3 +1101,16 @@ At the exact head, handover_gate.sh blob d175106a9c534ca17a35f9f49082b70ea27e77d
 At current #327 source and COE #26 destination heads, the two board sketch blobs differ; 25 source board-local Python labs have no destination Hardware Python identities; three source PHX-HARDWARE workflows do not have exact destination equivalents; and root NOTICE / Hardware license-notice scope is incomplete. The sibling Pisowifi MIT license blob match is not a Hardware subtree license decision. COE #26 remains frozen with five queued workflows and zero jobs. No migration is approved.
 
 This section records an exact-head review gate only. It is not physical acceptance, financial authorization, release approval or permission to migrate.
+## 6.55 Poll admission fixture and migration-parity gate — 2026-11-20 UTC14
+
+### 6.55.1 The inherited positive marker is not an approved wire contract
+
+At current HARDWARE #327 source/test commit `dc9af45eaa33713713473cfa1ea8ab051769286f` and docs/PR head `a2388aedc611e831f339a87555450bd5554fa781`, the exact docs-head Full run [#44756633635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756633635) fails at the inherited `Missing poll signature check` assertion in the ESP8266 sketch. The fixture blob `41211b2c110ab409f6d9d1812ef12fda73b13211` requires both `response_sig` and literal `|poll|` presence. Current firmware intentionally keeps positive poll admission dormant; those string markers are not a signed response-envelope contract and must not be added to satisfy a stale fixture.
+
+**Owner split:** PHX-QA owns replacing the positive marker assertion with source-linked negative/default-deny tests for both boards. PHX-HARDWARE owns firmware and its source-extracted labs. Preserve default-deny; do not add a synthetic signature producer, relax admission, or authorize coin intake. Focused host CI is simulated evidence only; physical acceptance remains NOT TESTED.
+
+### 6.55.2 COE destination acceptance is independent of sibling license presence
+
+At source tree #327 `a2388aedc611e831f339a87555450bd5554fa781` and destination PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, both recursive trees are complete. The source has 25 board-local Python labs and three scoped Hardware workflows; the destination has zero Hardware Python labs and one generic workflow. Both ESP8266/ESP32 sketch blobs differ. The source BlazePwifi MIT license matches destination `Pisowifi/LICENSE`, but source root NOTICE and destination Hardware-specific LICENSE/NOTICE files are absent. These facts do not establish test equivalence, import completeness, or Hardware license/notice scope.
+
+No migration, copy, move, overwrite, rebase, cherry-pick, staging, or route promotion is authorized by this review.

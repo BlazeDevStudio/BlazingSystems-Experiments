@@ -1021,3 +1021,19 @@ COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`,
 ## PHX-MASTER UTC13 terminal RELEASE CI and owner-path correction
 
 #291 at `dcb905333c8963fb139eeeefa72471738c874fb8`: compatibility #44746554825 PASS on both ESP32 cores; Full #44746554633 CANCELLED at Android emulator with production import/sign/publish skipped; Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. The Full CI-0701 job passed all 24 build-provenance tests, including the new checksum path-alias regression. PISONET still owns the failing test path; CORE still owns the three product handover paths in #291. No ownership transfer or Master source change.
+## PHX-MASTER UTC14 routing and migration holds — 2026-11-20
+
+### RELEASE #291 accumulated cross-role paths
+
+The current 26-path #291 diff contains 21 RELEASE paths, three CORE-owned product-handover paths (`PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md`), and two PISONET-owned SoftTimer tests (`PublisherMockCli.ps1`, `negative-selftest.ps1`). The current Windows failure is the unset `$buildWorkflow` in PISONET's `negative-selftest.ps1`. RELEASE retains its workflow/tooling scope; PISONET and CORE must review and approve their own files. Presence in the accumulated diff is not an ownership transfer. Master edited none of these paths.
+
+### COE candidate ownership
+
+- COE #48 remains **UNASSIGNED / AUDIT-ONLY** pending an explicit owner scope ACK; its Stage 5 and case-guard CI pass, but Shared Hardware CI fails. No PHX role is silently assigned.
+- COE #49 remains **AUDIT-ONLY / NO ROUTE TO #26** after PHX-HARDWARE declined implementation ownership. Its Stage 5.1 and case-guard CI pass, but Shared Hardware CI fails.
+- COE #31/#35 ImageBuilder sandbox failures are not waived by passing case or Hardware jobs. Missing Bubblewrap/site-scoped ULA authority remains an infrastructure/ownership gate, not permission to bypass sandboxing.
+
+### Route-manifest invariants
+
+`OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891...`, destination candidate PR #26 `b382d233...`, and PHX-MASTER target `null`. The manifest is not a copy/move instruction. Exact source/destination blobs, licenses, import completeness, test identities, and destination CI must be independently accepted before any per-file route proposal. No route promotion or migration was performed.
+

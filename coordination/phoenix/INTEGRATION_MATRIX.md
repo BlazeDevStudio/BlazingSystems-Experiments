@@ -2619,3 +2619,34 @@ COE #26 remains five workflows QUEUED / zero jobs. No copy, move, overwrite, reb
 ## PHX-MASTER UTC13 terminal RELEASE CI update — 2026-11-20
 
 At #291 head `dcb905333c8963fb139eeeefa72471738c874fb8`, compatibility #44746554825 passed both pinned ESP32 core legs. Full #44746554633 was cancelled at Android emulator after firmware, Android compile, validation, update bundle and other simulation jobs passed; production import/sign/publish remained skipped. Windows #44746554630 failed in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset. The Full run's CI-0701 job executed all 24 build-provenance tests successfully, including the checksum path-alias regression. This is scoped hosted test evidence, not release acceptance.
+## PHX-MASTER UTC14 exact source/destination and CI supersession — 2026-11-20
+
+Source: Experiments HARDWARE #327 docs/PR head `a2388aedc611e831f339a87555450bd5554fa781`, source/test commit `dc9af45eaa33713713473cfa1ea8ab051769286f`. Destination: COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive trees are complete and not truncated.
+
+| Measure | Experiments #327 source | COE #26 destination | Result |
+|---|---:|---:|---|
+| Recursive tree entries | 2,440 | 286 | Different scope |
+| Board-local Python lab/helper files | 25 | 0 | No destination Hardware Python test identities |
+| Scoped Hardware workflows | 3 | 1 generic `hardware-ci.yml` | Not workflow parity |
+| ESP8266 sketch blob | `a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different |
+| ESP32 sketch blob | `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different |
+| Source hardening fixture | `v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` | `Hardware/tests/test_firmware_hardening.sh` blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different test identity |
+| BlazePwifi MIT license | `1ee55b94183417be977ca287cd7391f9a6f7e721` | `Pisowifi/LICENSE` same blob | Sibling match only |
+| Source root NOTICE | `f6d92cd21465312be5993631fe26977219be0fb9` | root NOTICE absent | Missing |
+| Hardware-specific license/notice | — | `Hardware/LICENSE` and `Hardware/NOTICE.md` absent | Scope unresolved |
+
+Source workflows: `phx-hardware-poll-edge-latch.yml`, `phx-hardware-quarantine-byte-readback.yml`, and `phx-hardware-relay-output-polarity.yml`. Destination has only generic `hardware-ci.yml`; it does not establish equivalent invocation or test identity.
+
+### Exact-head CI
+
+- HARDWARE #327: relay [#44756633455](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756633455) PASS; quarantine [#44756634091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756634091) PASS; Full [#44756633635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44756633635) FAIL at validation, `Missing poll signature check`. All 14 firmware/platform target and Android jobs passed; simulations, update bundle, signing and publishing were skipped after validation failed.
+- RELEASE #291: compatibility [#44753364998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364998) PASS on ESP32 core 3.3.13 and 4.0.0; Full [#44753364967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364967) SUCCESS for non-production build/simulation (26 success, 0 failure, 4 production jobs skipped); Windows [#44753364863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364863) FAIL in PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset.
+- COE #26: five workflows QUEUED / zero jobs. No destination CI acceptance.
+- COE #31: ImageBuilder sandbox FAIL; Hardware/shared CI PASS; case guard PASS.
+- COE #35: ImageBuilder sandbox FAIL; Hardware/shared CI FAIL; case guard PASS.
+- COE #48: Stage 5 PASS; Hardware/shared CI FAIL; case guard PASS; no PHX role route.
+- COE #49: Stage 5.1 PASS; Hardware/shared CI FAIL; case guard PASS; PHX-HARDWARE declined implementation ownership, so #49 remains audit-only.
+- COE #45: Pisowifi shell suite and case guard PASS; this does not authorize promotion.
+
+**Disposition:** #26 remains FROZEN. No exact firmware identity, imported board-lab identity, workflow parity, complete notice scope, or destination CI acceptance is established. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion, or migration was performed.
+
