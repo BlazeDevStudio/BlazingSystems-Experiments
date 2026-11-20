@@ -622,31 +622,6 @@ class BuildProvenanceTests(unittest.TestCase):
                         f"nested{character}payload.bin"
                     )
 
-    def test_checksum_manifest_rejects_line_boundary_characters(self):
-        invalid_characters = (
-            "\\",
-            "\n",
-            "\r",
-            "\x00",
-            "\v",
-            "\f",
-            "\x1c",
-            "\x1d",
-            "\x1e",
-            "\x85",
-            "\u2028",
-            "\u2029",
-        )
-        for character in invalid_characters:
-            with self.subTest(character=repr(character)):
-                with self.assertRaisesRegex(
-                    provenance.ProvenanceError,
-                    "unsafe checksum path",
-                ):
-                    provenance._normalize_checksum_path(
-                        f"nested{character}payload.bin"
-                    )
-
 
 
 if __name__ == "__main__":
