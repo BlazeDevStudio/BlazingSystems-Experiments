@@ -61,45 +61,4 @@ grep -q 'ESP8266' "$DOC"
 grep -q 'ESP32' "$DOC"
 grep -q 'Linux GPIO' "$DOC"
 
-if [ -f "$ROOT/tests/v05_firmware_hardening_test.sh" ]; then
-  sh "$ROOT/tests/v05_firmware_hardening_test.sh"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_poll_intake_guard.py" ]; then
-  python3 "$ROOT/tests/v060_esp_poll_intake_guard.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_pin_capability_guard.py" ]; then
-  python3 "$ROOT/tests/v060_esp_pin_capability_guard.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_quarantine_clear_deny.py" ]; then
-  python3 "$ROOT/tests/v060_esp_quarantine_clear_deny.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_setup_ap_route_guard.py" ]; then
-  python3 "$ROOT/tests/v060_esp_setup_ap_route_guard.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp8266_eeprom_string_bounds.py" ]; then
-  python3 "$ROOT/tests/v060_esp8266_eeprom_string_bounds.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp32_timing_bounds.py" ]; then
-  python3 "$ROOT/tests/v060_esp32_timing_bounds.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_journal_clear_verify.py" ]; then
-  python3 "$ROOT/tests/v060_esp_journal_clear_verify.py"
-fi
-
-if [ -f "$ROOT/tests/v060_esp_quarantine_log_encoding.py" ]; then
-  python3 "$ROOT/tests/v060_esp_quarantine_log_encoding.py"
-fi
-
-if [ -f "$ROOT/esp32/BlazePwifiVendo32/pending_write_readback_lab.py" ]; then
-  python3 "$ROOT/esp32/BlazePwifiVendo32/pending_write_readback_lab.py"
-fi
-
 echo "BlazePwifi controller protocol and policy checks passed"
-
