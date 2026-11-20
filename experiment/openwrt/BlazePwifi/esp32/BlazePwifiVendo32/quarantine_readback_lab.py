@@ -307,6 +307,23 @@ def extract(src: str, signature: str) -> str:
                 return src[pos:i + 1]
     raise RuntimeError(f"Unbalanced source: {signature}")
 
+def verify_lexical_extractor():
+    fixture = (
+        'String lexicalProbe(){\n'
+        '  const char *ordinary = "}";\n'
+        '  const char *raw = R"tag({ })tag";\n'
+        '  /* } */\n'
+        '  return ordinary;\n'
+        '}'
+    )
+    if extract(fixture, "String lexicalProbe(") != fixture:
+        raise SystemExit(
+            "PHX-HARDWARE: source extractor truncated a C++ literal/comment fixture"
+        )
+
+
+verify_lexical_extractor()
+
 
 # These helpers define the pending-event/quarantine safety boundary. They are
 # intentionally byte-identical across ESP32 and ESP8266 so board drift cannot
