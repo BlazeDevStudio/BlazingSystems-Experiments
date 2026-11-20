@@ -24,11 +24,11 @@ _EXPECTED_CORE_BLOBS = {
     },
 }
 _DATE_DECLARATION = re.compile(
-    r'^\\s*const\\s+char\\s+phx_compile_date\\[\\]\\s*=\\s*"([^"]*)"\\s*;\\s*$',
+    r'^\s*const\s+char\s+phx_compile_date\[\]\s*=\s*"([^"]*)"\s*;\s*$',
     re.MULTILINE,
 )
 _TIME_DECLARATION = re.compile(
-    r'^\\s*const\\s+char\\s+phx_compile_time\\[\\]\\s*=\\s*"([^"]*)"\\s*;\\s*$',
+    r'^\s*const\s+char\s+phx_compile_time\[\]\s*=\s*"([^"]*)"\s*;\s*$',
     re.MULTILINE,
 )
 
@@ -55,7 +55,7 @@ def expected_compile_metadata(epoch: int) -> dict[str, str]:
 
 
 def _git_blob_sha1(data: bytes) -> str:
-    header = f"blob {len(data)}\\0".encode("ascii")
+    header = f"blob {len(data)}\0".encode("ascii")
     return hashlib.sha1(header + data).hexdigest()
 
 
@@ -138,8 +138,8 @@ def _probe_compiler(compiler: Path, epoch: int) -> dict[str, str]:
     with tempfile.TemporaryDirectory(prefix="phx-source-date-epoch-") as temporary:
         source = Path(temporary) / "source_date_epoch_probe.c"
         source.write_text(
-            "const char phx_compile_date[] = __DATE__;\\n"
-            "const char phx_compile_time[] = __TIME__;\\n",
+            "const char phx_compile_date[] = __DATE__;\n"
+            "const char phx_compile_time[] = __TIME__;\n",
             encoding="ascii",
         )
         environment = os.environ.copy()
