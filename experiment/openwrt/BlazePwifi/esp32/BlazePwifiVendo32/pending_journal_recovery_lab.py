@@ -33,6 +33,25 @@ def extract(src: str, signature: str) -> str:
                 return src[start:pos+1]
     raise RuntimeError(f"unclosed {signature}")
 
+
+def verify_lexical_extractor_fixture():
+    probes = (
+        ("ordinary string", 'void target() { const char *brace = "}"; int retained = 1; }\nvoid next() { return; }\n'),
+        ("raw string", 'void target() { const char *raw = R"tag(})tag"; int retained = 1; }\nvoid next() { return; }\n'),
+        ("line comment", 'void target() { // }\n int retained = 1; }\nvoid next() { return; }\n'),
+        ("block comment", 'void target() { /* } */ int retained = 1; }\nvoid next() { return; }\n'),
+    )
+    for label, probe in probes:
+        body = extract(probe, "void target()")
+        if "int retained = 1;" not in body or "void next" in body:
+            raise RuntimeError(
+                f"PENDING_JOURNAL_EXTRACTOR_FAIL: {label} brace truncated target()"
+            )
+    print("PENDING_JOURNAL_LEXICAL_EXTRACTOR_PASS 4/4")
+
+
+verify_lexical_extractor_fixture()
+
 CPP = r'''
 #include <algorithm>
 #include <cstddef>
