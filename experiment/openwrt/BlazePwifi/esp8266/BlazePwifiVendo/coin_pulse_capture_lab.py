@@ -602,7 +602,8 @@ def main():
           "  if(pendingPulses>0U) pendingReady=true;\n  lastCoin=!lineIdle;",
           "edge multiplicity or handled baseline was not preserved"),
          ("missing-pending-event-ready", "bool quarantineCoinIngressTransition(){",
-          "if(pendingPulses>0U) pendingReady=true;", "",
+          "  if(pendingPulses>0U) pendingReady=true;\n  lastHandledCoinEdgeSequence=observedEdgeSequence;\n  lastCoin=!lineIdle;",
+          "  lastHandledCoinEdgeSequence=observedEdgeSequence;\n  lastCoin=!lineIdle;",
           "existing pending identity was not preserved and denied"),
          # Keep sampledSingleEdge referenced so -Werror tests the runtime deny path, not an unused-variable compile error.
         ("missing-isr-edge-reconciliation", "void sampleCoinPulseEdge(bool active){",
