@@ -14,49 +14,13 @@ import re
 import subprocess
 import tempfile
 
+from firmware_lab_source import extract_function as extract
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
 )
-
-
-def extract(source: str, name: str) -> str:
-    match = re.search(r"\bvoid\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
-    if not match:
-        raise RuntimeError(f"missing production function: {name}")
-    depth = 0
-    for index in range(match.end() - 1, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():index + 1]
-    raise RuntimeError(f"unbalanced production function: {name}")
-
-
-def verify_extractor_ignores_non_code_braces() -> None:
-    """A brace in a C++ literal/comment must not truncate a production function."""
-    fixture = r"""
-void target() {
-  const char *quoted = "}";
-  const char *raw = R"tag({ raw })tag";
-  // }
-  /* } */
-  const char *after = "still inside";
-}
-void following() {}
-"""
-    extracted = extract(fixture, "target")
-    if 'const char *after = "still inside";' not in extracted:
-        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: non-code brace truncated target()")
-    if "void following()" in extracted:
-        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: extractor crossed into following()")
-    print("OUTPUT_EXTRACTOR_LEXICAL_FIXTURE_PASS")
-
-
-verify_extractor_ignores_non_code_braces()
 
 
 CPP = r'''
