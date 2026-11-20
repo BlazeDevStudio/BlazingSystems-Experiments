@@ -473,13 +473,13 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp8266:esp8266@3.1.2
           core_list="$(arduino-cli core list)"
-          printf '%s\\n' "$core_list"
-          installed_core_versions="$(printf '%s\\n' "$core_list" | awk '$1 == "esp8266:esp8266" {print $2}')"
+          printf '%s\n' "$core_list"
+          installed_core_versions="$(printf '%s\n' "$core_list" | awk '$1 == "esp8266:esp8266" {print $2}')"
           if [ "$installed_core_versions" != "3.1.2" ]; then
-            printf 'RELEASE-TOOLCHAIN-RED: expected esp8266:esp8266@3.1.2, got: %s\\n' "$installed_core_versions" >&2
+            printf 'RELEASE-TOOLCHAIN-RED: expected esp8266:esp8266@3.1.2, got: %s\n' "$installed_core_versions" >&2
             exit 1
           fi
-          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp8266:esp8266@3.1.2\\n'
+          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp8266:esp8266@3.1.2\n'
       - name: Compile BlazePwifi Vendo
         run: |
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp8266 experiment/openwrt/BlazePwifi/dist/esp8266
@@ -545,13 +545,13 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@3.3.13
           core_list="$(arduino-cli core list)"
-          printf '%s\\n' "$core_list"
-          installed_core_versions="$(printf '%s\\n' "$core_list" | awk '$1 == "esp32:esp32" {print $2}')"
+          printf '%s\n' "$core_list"
+          installed_core_versions="$(printf '%s\n' "$core_list" | awk '$1 == "esp32:esp32" {print $2}')"
           if [ "$installed_core_versions" != "3.3.13" ]; then
-            printf 'RELEASE-TOOLCHAIN-RED: expected esp32:esp32@3.3.13, got: %s\\n' "$installed_core_versions" >&2
+            printf 'RELEASE-TOOLCHAIN-RED: expected esp32:esp32@3.3.13, got: %s\n' "$installed_core_versions" >&2
             exit 1
           fi
-          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp32:esp32@3.3.13\\n'
+          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp32:esp32@3.3.13\n'
       - name: Compile BlazePwifi Vendo ESP32
         run: |
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 experiment/openwrt/BlazePwifi/dist/esp32
