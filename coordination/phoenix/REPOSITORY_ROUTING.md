@@ -936,3 +936,12 @@ The PR author declares JuanFi Apache-2.0 material is reference-only and no code/
 COE #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` is stacked on #48 `8286548e395366f2332830025fed00ceebdfb24a`; it is not based on COE main or #26. Its 7-path diff contains Hardware staging/runtime/docs/tests/tools and the scoped workflow, with no `Pisowifi/` backend change. `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route exists for #48 or #49.
 
 Do not copy, move, rebase, cherry-pick or stage #49 into #26. Require explicit PHX-HARDWARE and PHX-PISONET scope ACK/DECLINE, PHX-CORE approval of the backend target-kind/server-time interface, independent QA of the real backend mutation path, exact destination CI and licence/import provenance before any route proposal.
+
+
+## Live COE candidate separation — 2026-11-20 UTC02
+
+COE integration PR #26 remains the only manifest-pinned destination candidate (`b382d233ff06c8791b1028bed3c617cc7b670d12`), OPEN/DRAFT, with 205 changed paths and five queued workflows / zero jobs. `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; PHX-MASTER target is `null`.
+
+COE #49 (`aeb8ff11b2f5db9a5f86280ab62ab988245f3919`) is a separate Stage 5.1 adapter candidate stacked on #48, not on #26 and not on COE main. PHX-HARDWARE's review is explicitly audit-only; it declined implementation ownership. Do not copy, cherry-pick, rebase or fold #49 into #26 based on shared product naming.
+
+Before any future migration proposal, compare every selected source/destination blob and file mode at exact SHAs, license/provenance, imports and dependency closure, test identity/fixtures, behavior and rollback, then obtain owner and independent QA review plus completed destination CI. Current #26 queued workflows provide no destination acceptance; the private v11 registry and newer corrections remain BLOCKED. No move is proposed by this refresh.
