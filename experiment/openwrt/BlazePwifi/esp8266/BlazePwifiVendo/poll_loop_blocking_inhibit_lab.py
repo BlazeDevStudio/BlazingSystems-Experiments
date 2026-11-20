@@ -598,6 +598,7 @@ for board,path in BOARDS.items():
     write_fault=extract_function(source, "writePollPulseFaultMarker")
     load_fault=extract_function(source, "loadPollPulseFaultLatch")
     latch_fault=extract_function(source, "latchPollPulseFault")
+    quarantine=extract_function(source, "quarantineCoinIngressTransition")
     init_store=extract_function(source, "initPendingStore")
     sample=extract_function(source, "sampleCoinPulseEdge")
     drain_abort=extract_function(source, "handlePollDrainAbortAfterSample")
@@ -606,13 +607,13 @@ for board,path in BOARDS.items():
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
-                 load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
+                 load_fault_source=load_fault,latch_fault_source=latch_fault,quarantine_source=quarantine,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
         return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
-                quiet_source+begin_source+configure_source+accept_source+write_fault_source+
-                load_fault_source+latch_fault_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
+                quiet_source+begin_source+write_fault_source+
+                load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
     edge_hook = begin.replace(
