@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T20:02:48Z  
+**Updated:** 2026-11-20T20:16:04Z  
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -227,3 +227,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - HARDWARE #327 focused quarantine/relay PASS; Full #44805905622 FAIL at QA-owned positive poll-signature fixture. RELEASE #291 Full and ESP32 compatibility PASS with production jobs skipped; Windows FAIL at PISONET-owned $buildWorkflow.
 - COE #26 remains FROZEN: complete trees 2,445 vs 286; board-local Python labs 25 vs 0; firmware/test blobs differ; NOTICE/Hardware license scope incomplete; five destination workflows queued.
 - No subsystem source or destination file changed; ownership manifest unchanged; no migration, merge, release or physical test. PRODUCTION NO-GO.
+
+
+## UTC20 post-RELEASE pin-refresh supersession — 2026-11-20T20:16Z
+
+- [RELEASE #291 post-pin CI supersession](PHX_MASTER_UTC20_20261120_RELEASE291_POST_PIN_CI_SUPERSESSION.md).
+- RELEASE #291 advanced to 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow fix 5188d1a1cfb5f96462a5ec24941fe35530944f68; test guard 5c5001d43e173463024c3c790bead406fa8c90c3.
+- The new compatibility run #44809606421 has provenance PASS and both ESP32 core legs IN_PROGRESS; Full #44809606527 is queued/in progress; Windows #44809606428 fails at PISONET-owned $buildWorkflow.
+- Prior compatibility PASS #44799798721 is historical at the old source pin, not proof of the new pin. No exact-head compatibility or Full PASS is claimed yet.
+- The accumulated #291 diff remains 21 RELEASE / 3 CORE / 2 PISONET paths. No ownership transfer or source edit by Master.
+- PR #288 remains at e45ed9f555817b7ab24e699d7e5ba9788bc31fea; all Master changes remain under coordination/phoenix/. COE #26 remains frozen; PRODUCTION NO-GO.
