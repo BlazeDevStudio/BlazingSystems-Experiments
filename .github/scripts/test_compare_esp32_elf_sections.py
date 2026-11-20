@@ -204,6 +204,6 @@ if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(ElfSectionByteComparisonTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if result.wasSuccessful():
-        print("PHX-ESP32-ELF-SECTION-COMPARE-TESTS-PASS: 7 synthetic cases")
+        print(f"PHX-ESP32-ELF-SECTION-COMPARE-TESTS-PASS: {result.testsRun} synthetic cases")
         raise SystemExit(0)
     raise SystemExit(1)
