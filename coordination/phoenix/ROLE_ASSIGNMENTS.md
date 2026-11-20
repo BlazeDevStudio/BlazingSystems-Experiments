@@ -1976,3 +1976,27 @@ COE #35's source commits are test-first failed-sort regression `9655317f...`, at
 The current #327 source/test candidate is not the manifest's pinned source ref: `OWNERSHIP_ROUTES.json` remains `source_ref=f4e8a891...`, `destination_candidate_sha=b382d233...`, `DRAFT_REVIEW_ONLY`, Master target null. This route map does not authorize copying from #327 or any other branch.
 
 No cross-role source edit, reassignment, merge, route promotion or migration was performed by Master.
+
+
+## PHX-MASTER UTC22 live role-head / stack / CI supersession — 2026-11-20T22:34Z
+
+This section supersedes UTC21 role pins only. It does not change ownership, merge authority or route authorization.
+
+| Role / PR | Exact current head / base | Exact CI disposition | Owner action |
+|---|---|---|---|
+| PHX-MASTER #288 | Audit-start `6c1edfe001695bad55e701295799422f17f0fea1`; base main `f4e8a891...` | OPEN / DRAFT / UNMERGED; 138 paths, all coordination/phoenix | Master owns coordination/phoenix only. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 scoped PASS | Separate Blaze Production Continuation retains CORE. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070`, base #289 `68928774...` | APK/API21/API23 PASS; shared #44782114390 FAIL at CORE freshness and ESP32 Mbed TLS header | Rental owns six Android/APK paths only. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 scoped PASS | PISONET retains SoftTimer/self-test ownership. |
+| PHX-HARDWARE #327 | Docs/PR `427bca9f32e5527181ca8d27fccb03887f272dfa`; source/test `af8e0e1e70e17ce70be77ec46b2ffbe738a16df2`; base #326 `58c558fb...` | Quarantine #44828750699 PASS; relay #44828750648 PASS; Full #44828750581 FAIL at QA-owned `Missing poll signature check` | QA replaces positive fixture with negative/default-deny checks; Hardware retains firmware/lab ownership. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 #43633486963 scoped PASS; #292 no PR-triggered run | QA owns poll fixture and independent verification. |
+| PHX-RELEASE #291 | Docs/PR `3344297fca7a4cefed71cccdec96bbbb7ff1bca4`; source/test `4c0dcc732c9123f61cbb17c6899006757d5d8a09` | Compatibility #44829497810 PASS 3/3; Full #44829497792 and Windows #44829497735 FAIL at CORE handover freshness | CORE refreshes handover; Release owns workflow; inherited paths require owner review. |
+| COE RELEASE #35 | `580855b6a45a6d3cf506a6aa9320bc4782efc246`, base #31 `59ed44d0...` | Shared #44820473859 fails after 120 packaging/tool tests PASS / 2 skip due missing ULA /48; sandbox #44820473769 fails because Bubblewrap is absent; case guard #44820473809 PASS | Site-prefix authority and sandbox runner remain blockers. |
+
+### HARDWARE stack ancestry
+
+`#320@b2b41a3d` → `#322@50d93e0d` → `#323@988904e8` → `#326@58c558fb` → `#327@427bca9f`. #321 at `4c54d629...` is a sibling from shared base `fce915c1...`, not a parent. #327's docs head is one documentation-only commit above source/test anchor `af8e0e1...`. Focused quarantine/relay passes do not clear Full validation.
+
+#254 at `84c442a4...` is a separate candidate: focused header #44683629378 PASS, Full #44683629491 FAIL on missing Mbed TLS header under ESP32 core 4.0.0. #283 at `830c3553...` remains a separate candidate with quarantine/full CI PASS. #239 is older and separate. No branch was rebased, merged or force-pushed by Master.
+
+COE #26 remains frozen at `b382d233...` with five queued workflows / zero jobs. Manifest remains DRAFT_REVIEW_ONLY, source ref main `f4e8a891...`, destination #26, Master target null. No ownership transfer or migration occurred.

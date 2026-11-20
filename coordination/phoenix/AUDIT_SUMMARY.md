@@ -1565,3 +1565,14 @@ The terminal Full result is hosted non-production CI only. PR #291 remains draft
 - 11/11 static source/tree assertions PASS. Full Master Python suite NOT RUN because local GitHub DNS/checkout failed. No physical hardware, power-cut, soak, financial, signer, flash or production tests.
 
 **Production remains NO-GO.** Required independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+
+## 2026-11-20 UTC22 — live role-head, Hardware stack and COE staging revalidation
+
+Experiments main is `f4e8a891...`; active v0.6 development is `2fbd2475...`; legacy v0.5.3 development is `aad3aade...`; COE main is `a6513ab...`. Master #288 remains OPEN/DRAFT at audit-start `6c1edfe001695bad55e701295799422f17f0fea1`, base main, 138 changed paths all within coordination/phoenix. Cleanup #266 remains OPEN, 0/7 checkboxes; Master cleanup remains unchecked.
+
+HARDWARE stack is #320 → #322 → #323 → #326 → #327 with exact base/head continuity. #327 focused quarantine/relay PASS, Full FAIL at QA-owned positive poll-signature assertion. RELEASE #291 compatibility PASS 3/3, Full and Windows FAIL at CORE handover freshness. RENTAL #328 Android checks PASS, shared build FAIL at CORE freshness and inherited ESP32 Mbed TLS header. COE #35 blocked by site ULA authority and missing Bubblewrap. COE #26 remains frozen.
+
+Exact #327→#26 tree review: 16 ESP32 source files vs 1 destination; 20 ESP8266 source files vs 1 destination; no identical firmware sketches; 47 source QA test files vs 19 destination tests (1 identical, 3 divergent, 43 source-only, 15 destination-only); 3 source Hardware workflows vs 1 generic destination workflow; root NOTICE/Hardware notice scope unresolved. Manifest remains DRAFT_REVIEW_ONLY, Master target null. No copy/move/route promotion occurred.
+
+Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is exposed and exact-title Library search did not return v11; no older registry was substituted. Full Master Python suite NOT RUN because runtime DNS could not resolve github.com. No physical tests or production operations were performed. **PRODUCTION NO-GO.**

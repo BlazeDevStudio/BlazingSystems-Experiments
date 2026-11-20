@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T21:34:31Z  
+**Updated:** 2026-11-20T22:34:16Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -284,3 +284,11 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - HARDWARE #327 current docs/source heads `e03dfda4...` / `96e725e9...`; focused quarantine/relay PASS; Full FAIL at QA-owned positive poll-signature fixture. RELEASE #291 Full/compatibility PASS with production jobs skipped; Windows FAIL at PISONET-owned `$buildWorkflow`. RENTAL #328 Android checks PASS; shared build FAIL.
 - COE #26 remains frozen. Exact #327/#26 trees are 2,445 vs 286 entries; 25 vs 0 board-local Python labs; 47 vs 19 routed test files (1 identical / 3 different / 43 missing); three vs one Hardware workflows; firmware blobs differ. Pisowifi MIT LICENSE matches, but root NOTICE is absent at destination.
 - The routing manifest remains `e4db324...`, `DRAFT_REVIEW_ONLY`, Master target null. Private v11/newer registry corrections remain inaccessible. Full Master suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+## Latest exact-head reconciliation — 2026-11-20 UTC22
+
+- [PHX_MASTER_UTC22_20261120_HW327_STACK_RELEASE291_RENTAL328_AND_COE26_EXACT_HEAD_REVALIDATION.md](PHX_MASTER_UTC22_20261120_HW327_STACK_RELEASE291_RENTAL328_AND_COE26_EXACT_HEAD_REVALIDATION.md) — exact Hardware stack ancestry and #327 CI, corrected #291 current CORE-owned handover failure, #328 and COE #35 CI, and exact COE #26 tree/blob/license/test/workflow provenance.
+- Master audit-start head `6c1edfe001695bad55e701295799422f17f0fea1`; main `f4e8a891...`; active v0.6 development `2fbd2475...`; COE main `a6513ab...`.
+- #327 focused quarantine/relay PASS; Full FAIL at QA-owned poll-signature fixture. #291 compatibility PASS 3/3, Full/Windows FAIL at CORE handover freshness. #328 shared build fails at CORE freshness and inherited ESP32 Mbed TLS header.
+- COE #26 remains frozen at `b382d233...`, five queued workflows / zero jobs; manifest remains DRAFT_REVIEW_ONLY and Master target null. Private v11/newer corrections and full Master suite remain blocked.

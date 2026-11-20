@@ -2909,3 +2909,27 @@ COE #26 remains OPEN / DRAFT / FROZEN with five workflows QUEUED / zero jobs and
 - RENTAL #328 APK/API21/API23 PASS; shared build FAIL. See [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390).
 
 No readiness tier is promoted. Production remains NO-GO.
+
+
+## PHX-MASTER UTC22 exact-head role CI and migration revalidation — 2026-11-20T22:34Z
+
+| PR | Current head | Exact-head evidence | Gate disposition |
+|---|---|---|---|
+| HARDWARE #327 | `427bca9f32e5527181ca8d27fccb03887f272dfa` | [Quarantine #44828750699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44828750699) PASS; [Relay #44828750648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44828750648) PASS; [Full #44828750581](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44828750581) FAIL at `Missing poll signature check` | QA fixture stale; firmware remains deny-only. |
+| RELEASE #291 | `3344297fca7a4cefed71cccdec96bbbb7ff1bca4` | [Compatibility #44829497810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497810) PASS 3/3; [Full #44829497792](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497792) FAIL at CORE handover freshness; [Windows #44829497735](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44829497735) FAIL at same gate | Windows build/publisher skipped; prior PISONET variable failure is not current exact-head failing step. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [APK #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; [API21/API23 #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [shared #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL at CORE freshness and ESP32 Mbed TLS header | Android-only evidence; inherited firmware baseline not accepted. |
+| COE RELEASE #35 | `580855b6a45a6d3cf506a6aa9320bc4782efc246` | [Shared #44820473859](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473859) FAIL after 120 packaging/tool tests PASS / 2 skip, all 10 profiles fail on missing approved ULA /48; [Sandbox #44820473769](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473769) FAIL on missing Bubblewrap after 14 host tests; [Case #44820473809](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44820473809) PASS | Separate Release child, not integration acceptance for #26. |
+
+### Exact COE #26 migration comparison
+
+Recursive trees: Experiments #327 head `427bca9...` = 2,448 entries; COE #26 `b382d233...` = 286 entries. Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, source ref main `f4e8a891...`, destination #26, Master target null.
+
+| Route | Source files | Destination files | Same blob+mode | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 → Hardware/esp32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 → Hardware/esp8266 | 20 | 1 | 0 | 1 | 19 | 0 |
+| QA tests → Pisowifi/tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+Source ESP32 sketch `ae0da8e2...` differs from destination `3cc7ec54...`; ESP8266 `a1f12edc...` differs from `c8be98f7...`. Three source Hardware workflows are not equivalent to one generic destination Hardware workflow. The source BlazePwifi LICENSE matches COE `Pisowifi/LICENSE`; source root NOTICE is absent at COE root and no Hardware-local LICENSE/NOTICE was found. Notice applicability remains unresolved, not a legal conclusion.
+
+COE #26 remains OPEN/DRAFT/FROZEN with five queued workflows / zero jobs. No file copy, move, overwrite, rebase, route promotion or merge is authorized. Full Master suite NOT RUN because GitHub DNS blocked checkout; private Drive v11/newer corrections unavailable; production remains NO-GO.
