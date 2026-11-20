@@ -39,6 +39,11 @@ bool pendingReady=false;
 bool journalRecoveryRequired=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
+// The mount lab tests persistence admission, not asynchronous ISR delivery.
+// Keep the new applyOutputs() edge-snapshot dependency idle in this fixture.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 std::string activeTarget="target-01";
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;
@@ -59,6 +64,7 @@ int main(){
     LittleFS=FakeLittleFS{};
     LittleFS.faultMarkerExists=(scenario==7);
     fsReady=false;pendingReady=false;journalRecoveryRequired=false;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     activeTarget="target-01";
     insertMode=true;controllerEnabled=true;coinEnabled=true;
     relayEnabled=true;ledEnabled=true;
