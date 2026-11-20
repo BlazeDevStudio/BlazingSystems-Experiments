@@ -107,10 +107,86 @@ jobs:
           sketch_dir="hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
           mkdir -p "$output_root" "$build_dir" "$first_output_dir" "$second_output_dir"
 
+          preserve_elf() {
+            local output_dir="$1"
+            local destination="$output_dir/BlazePwifiVendo32.ino.elf"
+            local source=""
+            source="$(find "$build_dir" -type f -name 'BlazePwifiVendo32.ino.elf' -print -quit)"
+            if [ -z "$source" ]; then
+              source="$(find "$output_dir" -type f -name 'BlazePwifiVendo32.ino.elf' -print -quit)"
+            fi
+            if [ -z "$source" ]; then
+              printf 'PHX-ESP32-ELF-RED: expected build ELF was not found in %s or %s\n' "$build_dir" "$output_dir" >&2
+              return 1
+            fi
+            if [ "$source" != "$destination" ]; then
+              cp -- "$source" "$destination"
+            fi
+            test -s "$destination"
+            printf 'PHX-ESP32-ELF-PRESERVED: %s\n' "$destination"
+          }
+
           arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$first_output_dir" "$sketch_dir"
           python3 .github/scripts/verify_esp32_application_image.py --output-dir "$first_output_dir" --sketch-name "BlazePwifiVendo32"
+          preserve_elf "$first_output_dir"
 
           arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$second_output_dir" "$sketch_dir"
           python3 .github/scripts/verify_esp32_application_image.py --output-dir "$second_output_dir" --sketch-name "BlazePwifiVendo32"
+          preserve_elf "$second_output_dir"
 
+          run_elf_mapping() {
+            local -a objdump_candidates=()
+            mapfile -t objdump_candidates < <(
+              find "$HOME/.arduino15/packages/esp32/tools" -type f \
+                \( -name 'xtensa-esp-elf-objdump' -o -name 'xtensa-esp32-elf-objdump' \) \
+                -perm /111 -print | sort
+            )
+            if [ "${#objdump_candidates[@]}" -ne 1 ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: expected exactly one pinned Xtensa objdump, found %s\n' "${#objdump_candidates[@]}" >&2
+              return 1
+            fi
+
+            local objdump_path="${objdump_candidates[0]}"
+            local first_elf="$first_output_dir/BlazePwifiVendo32.ino.elf"
+            local second_elf="$second_output_dir/BlazePwifiVendo32.ino.elf"
+            "$objdump_path" -h "$first_elf" > "$first_output_dir/elf-sections.txt" || return 1
+            "$objdump_path" -h "$second_elf" > "$second_output_dir/elf-sections.txt" || return 1
+
+            local -a addresses=(
+              --address app_elf_sha_first=0x3f4000b0
+              --address app_elf_sha_last=0x3f4000cf
+            )
+            if [ "${{ matrix.esp32_core }}" = "3.3.13" ]; then
+              addresses+=(
+                --address segment0_diff_9668=0x3f4025c4
+                --address segment0_diff_9670=0x3f4025c6
+                --address segment0_diff_9671=0x3f4025c7
+              )
+            else
+              addresses+=(
+                --address segment0_diff_9716=0x3f4025f4
+                --address segment0_diff_9717=0x3f4025f5
+              )
+            fi
+
+            printf 'PHX-ESP32-ELF-SECTION-MAP: core=%s objdump=%s\n' "${{ matrix.esp32_core }}" "$objdump_path"
+            python3 .github/scripts/inspect_esp32_elf_sections.py --objdump-output "$first_output_dir/elf-sections.txt" "${addresses[@]}" || return 1
+            python3 .github/scripts/inspect_esp32_elf_sections.py --objdump-output "$second_output_dir/elf-sections.txt" "${addresses[@]}" || return 1
+          }
+
+          mapping_status=0
+          set +e
+          run_elf_mapping
+          mapping_status=$?
+          set -e
+
+          comparison_status=0
+          set +e
           python3 .github/scripts/verify_esp32_reproducible_build.py --first "$first_output_dir/BlazePwifiVendo32.ino.bin" --second "$second_output_dir/BlazePwifiVendo32.ino.bin" --sketch-name "BlazePwifiVendo32"
+          comparison_status=$?
+          set -e
+
+          if [ "$mapping_status" -ne 0 ]; then
+            exit "$mapping_status"
+          fi
+          exit "$comparison_status"
