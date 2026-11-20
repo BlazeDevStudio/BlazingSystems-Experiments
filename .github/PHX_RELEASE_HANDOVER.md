@@ -1115,3 +1115,15 @@ The app descriptor parser therefore explains the stable offset-176 field, but th
 **Next PHX-RELEASE action:** inspect the small in-image ranges (9716-9717 on core 4.0.0; 9670-9671 on core 3.3.13) and the trailing 33-byte image region without publishing raw binaries; correlate them with the actual ESP image/ELF section map before changing any build flags. Preserve the fail-closed comparator until a source-grounded deterministic correction passes both cores.
 
 No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval and physical 150 power-cut / 30-device 24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+
+### UTC03 post-checkpoint exact-run readback — 2026-11-20T03:27Z
+
+This follow-up supersedes only the earlier "in progress at last read" status for the two source/test-head full BlazePwifi runs; it does not change the compatibility matrix result.
+
+- Exact source/test-head push full build [#44667029029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667029029), HEAD 773e3acbbb0f76cca01d8204485019d4026de792: **COMPLETED SUCCESS**. Job counts: 26 SUCCESS, 0 FAILURE, 4 SKIPPED. The four skipped jobs are signed-APK import, production sign handoff, release publishing and prerelease publishing. The 26 successes include CI-0701, all 131 validation steps, all 14 target jobs, Android, update bundle and all v0.4 simulations. This is hosted CI/simulation evidence only.
+- Exact source/test-head PR full build [#44667034403](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034403), same HEAD: **CANCELLED** after a successor push. Job counts: 24 SUCCESS, 0 FAILURE, 4 SKIPPED, 2 CANCELLED. The cancelled jobs were v0.4 x86 and Android-emulator simulations. Do not call this PR run a terminal green result.
+- Exact source/test-head compatibility PR [#44667034127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667034127) and push [#44667029116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667029116) both completed FAILURE because both ESP32 core legs failed byte-for-byte reproducibility. This remains the controlling release-integrity result; a green broader build does not override it.
+- New documentation-head workflows after handover commit 0c7293af: compatibility [#44667764065](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764065) IN_PROGRESS; Windows [#44667764212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764212) IN_PROGRESS after handover PASS; BlazePwifi [#44667764115](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764115) IN_PROGRESS with docs-head CI-0701 job 136061249189 PASS and remaining target/validation jobs queued at last read. No docs-head terminal outcome is claimed.
+
+No new runtime, firmware, shared-interface, PISONET or hardware source change was made in this follow-up.
