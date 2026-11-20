@@ -1904,3 +1904,12 @@ Master did not edit any subsystem source branch. COE #26 remains FROZEN; the rou
 | PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 #43633486963 scoped PASS; #292 no PR-triggered run | QA retains independent verification and native acceptance. |
 
 #328's six-file diff contains only Rental Android/APK paths; its ESP32 sketch is inherited from #289, not changed by Rental. Current #327's guarded Mbed TLS 3/4 sketch is a different blob. The fix must be coordinated by HARDWARE/RELEASE; CORE owns handover freshness. No ownership transfer or Master source edit.
+
+
+### PHX-MASTER UTC20 RELEASE #291 post-pin CI supersession — 2026-11-20T20:16Z
+
+| Role / PR | Exact current head(s) | Exact CI disposition | Ownership / next action |
+|---|---|---|---|
+| PHX-RELEASE #291 | Docs 4f6d2371cafa2d7e80f1aa3e37e9744ad6b01ddf; source/workflow 5188d1a1cfb5f96462a5ec24941fe35530944f68; test 5c5001d43e173463024c3c790bead406fa8c90c3; base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Compatibility #44809606421 IN_PROGRESS (provenance job 136542675863 PASS; both ESP32 core jobs in progress); Full #44809606527 queued/in progress; Windows #44809606428 FAIL at PISONET-owned $buildWorkflow | RELEASE owns the three new compatibility test/workflow/handover paths; PISONET owns negative-selftest.ps1; CORE owns three inherited handover paths. No ownership transfer. |
+
+The new test/workflow pin is exact: HARDWARE #327 source/test 1a631567eb0c14c12a114f592685f44cc414466f and ESP32 sketch blob ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7. The previous compatibility PASS #44799798721 was at the old 76eca091 pin and is historical only. Do not claim new-pin compatibility or Full success until exact-head runs are terminal.
