@@ -1496,3 +1496,53 @@ No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER, firmware, or product handover pa
 4. PHX-RELEASE refreshes the two in-progress full-build runs before deciding whether any additional release-source change is needed; do not repeat the completed path-safety or two-core reproducibility tests.
 
 **Production remains NO-GO.** No merge, signing, release tag, publication, hardware flash, payment migration, or customer deployment occurred.
+
+
+## PHX-RELEASE UTC13 — canonical SHA256SUMS path admission
+
+**Date:** 2026-11-20 UTC13  
+**PR:** #291 — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base #242:** `734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Source/test HEAD:** `dcb905333c8963fb139eeeefa72471738c874fb8`
+
+### Defect and bounded correction
+
+`.github/scripts/write_build_provenance.py` checked `PurePosixPath.parts` for empty and dot components after constructing a `PurePosixPath`. That constructor normalizes interior `.` components, repeated separators and trailing separators before the check. The checksum parser therefore accepted multiple textual names that collapse to one canonical artifact path.
+
+The normalizer now checks the raw slash-separated components before constructing `PurePosixPath`. It rejects interior dot components, empty components/repeated separators, trailing separators and repeated leading dot prefixes. One leading `./` remains accepted for normal `sha256sum` compatibility. No artifact bytes, hashes, build inputs, source pins or production gates were changed.
+
+Only two RELEASE-owned source/test files changed for this task:
+- `.github/scripts/test_build_provenance.py`
+- `.github/scripts/write_build_provenance.py`
+
+### Test-first history, including test-authoring correction
+
+- Initial test commit [`cfd301f1`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/cfd301f1eecdfe9417c3f8949cf22f5bae6ef740) had an over-escaped newline fixture. [Run #44746263315](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746263315) failed at the malformed fixture (`nested/payload.bin\\n`) before exercising the intended path assertions. This is recorded as a test-authoring error, not defect evidence.
+- Fixture correction [`e112839f`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e112839fbd9cad3adeaa7c5a6cb3801abb3d4baa) used an actual newline escape. Expected RED [PR run #44746430882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746430882) and push [#44746421472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746421472) then failed exactly at the four non-canonical path subcases: `nested/./payload.bin`, `nested//payload.bin`, `nested/`, and `././nested/payload.bin`. The canonical leading-`./` positive case and the other 23 tests passed.
+- Source correction [`dcb90533`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dcb905333c8963fb139eeeefa72471738c874fb8) validates raw path components before path-object normalization.
+
+### Exact-source GitHub Actions
+
+- Push/full run [#44746545580](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746545580): CI-0701 completed SUCCESS. The release provenance step reports 24 tests PASS, including the new canonical-path regression. At the latest inspection, validation, Android build, ESP32, ESP8266, all OpenWrt target builds and update bundle were PASS; 24 of 30 jobs were successful, four production import/sign/publish jobs were SKIPPED, and two simulations remained IN_PROGRESS (Android emulator and x86 QEMU). The overall run had no terminal conclusion; do not call the Full run SUCCESS.
+- PR compatibility [#44746554825](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746554825): SUCCESS; ESP32 core 3.3.13 and 4.0.0 both passed exact HARDWARE source/sketch verification, pinned toolchain checks, ELF inspection and two-clean-build reproducibility.
+- Windows [#44746554630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44746554630): handover PASS; package parity and synthetic package self-test PASS; PISONET-owned `negative-selftest.ps1` fails because `$buildWorkflow` is unset; publisher SKIPPED. PHX-PISONET owns this correction. No PISONET file was changed.
+
+### Live governance and cross-repository provenance
+
+- MASTER PR #288 head `52b7c023ea414e2df504e943425a9d0957c8c2d9`; `coordination/phoenix/OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`. PHX-RELEASE route is `.github/workflows/blazepwifi-build.yml` → COE `.github/workflows/pisowifi-ci.yml`, kind `reimplementation-review`. No workflow migration/copy/merge occurred.
+- Experiments #242 remains OPEN / DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 remains OPEN / DRAFT / UNMERGED at `dcb905333c8963fb139eeeefa72471738c874fb8`.
+- The accumulated #291 diff still contains pre-existing non-RELEASE paths: CORE `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md`, and PISONET `PublisherMockCli.ps1` / `negative-selftest.ps1`. They were not changed or rehomed by PHX-RELEASE; MASTER must reconcile ownership before integration. No independent PR #291 review was present at the live review read.
+- COE integration #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`; eight push/PR workflows remain QUEUED with zero executed jobs.
+- COE #31 remains parent `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; mandatory sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) installed Bubblewrap but failed at unprivileged UID-map setup (`Permission denied`, exit 1). COE #35 head `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`; sandbox [#44617781877](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44617781877) fails closed because Bubblewrap is not installed; shared/hardware CI also fails. COE #44 head `582fd5d5e83e36b36546ac28534740298ba94af4`; its sandbox [#44390136327](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44390136327) also fails closed because Bubblewrap is not installed, while its shared CI and case-collision guard pass. #44 is based on older #35 head `1a5be48d2845781b0b07bad39a37f8440cea4d4f`, not current #35 `7b9706d8`; do not infer it is reconciled or integrated.
+- The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not present in the complete recursive Library listing (1,422 entries). No older registry snapshot was substituted; no private file contents were copied to GitHub.
+
+### Next actions and limits
+
+1. PHX-RELEASE refreshes the two in-progress full-build simulations and the latest PR-triggered full run before reporting a terminal Full result.
+2. PHX-PISONET fixes its own `$buildWorkflow` negative-self-test variable.
+3. PHX-MASTER reconciles #291's accumulated CORE/PISONET path contamination and confirms the review-only migration route.
+4. PHX-QA independently reviews release manifest path admission and exact-source evidence.
+5. Registry custodian restores authorized read-only access to canonical v11.
+
+No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER implementation was modified. No merge, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
