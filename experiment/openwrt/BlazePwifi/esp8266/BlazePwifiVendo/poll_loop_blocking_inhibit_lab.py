@@ -663,6 +663,31 @@ int main(){
 """
 
 
+ACTIVE_LOW_RACE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  runCoinActiveLow=true;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  coinEdgeSequence=0xFFFFFFFEUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  injectAfterDrainEdgeCount=2;
+  injectAfterDrainEdge=true;
+  loop();
+  if(attachedMode!=FALLING || pollCalls!=0 || pollStartAt!=0 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pendingPulses!=0U ||
+     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
+     lastPoll+2!=fakeNow) return 59;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=2")==std::string::npos) return 59;
+  std::cout<<"POLL_POST_DRAIN_ACTIVE_LOW_MULTI_EDGE_ROLLOVER_DENY_PASS\\n";
+  return 0;
+}
+"""
+
+
 
 ACTIVE_HIGH_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
 int main(){
@@ -1015,6 +1040,22 @@ for board,path in BOARDS.items():
         board,56,"active-high-post-drain-edge-polarity"
     )
     print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
+
+    # The active-low counterpart uses the real FALLING ISR across the same wrap race.
+    compile_and_run(assemble(begin_source=edge_hook,main_source=ACTIVE_LOW_RACE_MAIN),
+                    board,0,"active-low-post-drain-multi-edge-rollover")
+    print(f"{board} POLL_POST_DRAIN_ACTIVE_LOW_MULTI_EDGE_ROLLOVER_PASS")
+    active_low_wrong_edge = configure.replace(
+        "runCoinActiveLow?FALLING:RISING",
+        "runCoinActiveLow?RISING:RISING",
+    )
+    if active_low_wrong_edge == configure:
+        raise AssertionError(f"{board}: active-low ISR polarity mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=active_low_wrong_edge,begin_source=edge_hook,main_source=ACTIVE_LOW_RACE_MAIN),
+        board,59,"active-low-post-drain-edge-polarity"
+    )
+    print(f"{board} MUTATION_REJECTED active-low-post-drain-edge-polarity expected_exit=59")
 
     # A high-polarity pulse can disappear after the drain read but before the
     # ordinary loop sample. Preserve the unresolved event instead of polling.
