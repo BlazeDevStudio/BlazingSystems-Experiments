@@ -1745,3 +1745,20 @@ PR #291's current 26-path diff still includes PISONET-owned PublisherMockCli.ps1
 PR #327's current Full failure is the legacy positive poll-signature fixture. QA must replace it with negative/default-deny tests; HARDWARE must not add a synthetic positive signature path.
 
 COE #26 remains five queued workflows / zero jobs and frozen. COE candidates #28/#29/#30/#31/#32/#35/#45/#48/#49 remain separate; none is promoted into #26 or the route manifest.
+
+
+## PHX-MASTER UTC13 live owner-head / CI supersession — 2026-11-20
+
+| Role | Current PR / exact head | Exact-head evidence | Ownership boundary |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 SUCCESS, scoped | Separate active CORE continuation retains implementation ownership. |
+| PHX-RENTAL | #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | #43653329229 and #43653329235 SUCCESS | Rental retains source ownership. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 SUCCESS, scoped | PISONET retains SoftTimer ownership. |
+| PHX-HARDWARE | #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9` | #44683629378 focused PASS; #44683629491 Full FAIL (ESP32 compile and handover freshness) | Separate draft; not the active #327 child. |
+| PHX-HARDWARE | #327 `85c54fea5136da182b173c4d89900b22cf61d2b5`, base #326 `58c558fb6a237935214621adc3dee65a10fe1a51` | #44742512534 relay PASS; #44742512577 quarantine PASS; #44742512729 Full FAIL at QA-owned Missing poll signature check | HARDWARE retains firmware; QA owns the stale positive fixture. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 #43633486963 scoped PASS without NativeComInterfaceHandleLab; #292 no exact-head run | QA retains independent verification/native acceptance. |
+| PHX-RELEASE | #291 `dcb905333c8963fb139eeeefa72471738c874fb8` | Windows #44746554630 FAIL at PISONET negative-selftest; compatibility #44746554825 and Full #44746554633 IN_PROGRESS | RELEASE owns its tooling/workflows; CORE/PISONET retain their own paths. |
+
+### #291 cross-role path hold
+
+The live 26-path #291 diff contains three CORE product-handover files (`PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md`) and two PISONET SoftTimer tests (`PublisherMockCli.ps1`, `negative-selftest.ps1`). The current Windows run fails because `$buildWorkflow` is unset in the PISONET-owned negative self-test. These paths remain owner-controlled; no transfer or Master edit occurred. The previous-head checksum test failure is superseded by Release commit `dcb90533...`; exact-head compatibility/Full runs remain in progress and no pass is claimed.

@@ -2591,3 +2591,27 @@ OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_RE
 The current #327 source tree at e759f703... is complete (2,436 entries); COE #26 at b382d233... is complete (286 entries). ESP8266 source/destination blobs 3ff575f5... / c8be98f7... differ; ESP32 blobs 849a2c63... / 3cc7ec54... differ. Source contains 25 board-local Python labs/helpers, destination contains zero Hardware Python labs and one generic shell test. Source has three PHX-HARDWARE workflows; destination has one generic hardware-ci.yml. Source root NOTICE blob f6d92cd2... is absent from COE; source BlazePwifi LICENSE and destination Pisowifi/LICENSE share blob 1ee55b94..., but Hardware license/notice scope remains unresolved.
 
 No exact test identity, full workflow parity, complete import, or destination acceptance is established. No file move/copy/staging/overwrite, cherry-pick, rebase, or route promotion is authorized.
+
+
+## PHX-MASTER UTC13 — fresh exact #327 / COE #26 tree and test-identity comparison
+
+Source Experiments HARDWARE #327 is pinned at `85c54fea5136da182b173c4d89900b22cf61d2b5`; destination COE #26 is pinned at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive trees were complete and not truncated: 2,438 source entries versus 286 destination entries.
+
+| Item | Source #327 | Destination #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | `3ff575f5cd879c021407849578854b74a2d460bd` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different |
+| ESP32 sketch | `849a2c63d75bbbcda58e1a0a7fc55e7c047ea26e` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different |
+| Board-local Python lab/helper files | 24 | 0 | No imported test identity |
+| Hardware workflows | 3 scoped PHX-HARDWARE workflows | 1 generic `hardware-ci.yml` | Not workflow parity |
+| Hardware test | Source-extracted Python labs | `Hardware/tests/test_firmware_hardening.sh` blob `f921c56c...` | Not equivalent |
+
+The source BlazePwifi MIT LICENSE blob `1ee55b94...` matches destination `Pisowifi/LICENSE`, but source repository-root NOTICE blob `f6d92cd2...` is absent from COE #26; root NOTICE, Hardware/LICENSE and Hardware/NOTICE.md are missing at the destination. The sibling Pisowifi license does not establish Hardware subtree notice scope.
+
+COE #26 remains five workflows QUEUED / zero jobs. No copy, move, overwrite, rebase, cherry-pick, staging or route promotion is authorized. `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+### Current role CI supersession
+
+- HARDWARE #327 focused quarantine/relay runs #44742512577 / #44742512534 PASS; Full #44742512729 FAIL at QA-owned Missing poll signature check.
+- RELEASE #291 current head `dcb90533...`: Windows #44746554630 FAIL at PISONET-owned `negative-selftest.ps1`; compatibility #44746554825 and Full #44746554633 remain IN_PROGRESS.
+- CORE #252, RENTAL #289 and PISONET #255 retain scoped PASS only. QA #290 is scoped PASS without native COM lab invocation; #292 has no exact-head run.
+- COE #26 has five queued workflows and zero jobs; no combined destination acceptance.

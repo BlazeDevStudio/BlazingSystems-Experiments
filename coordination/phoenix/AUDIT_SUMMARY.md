@@ -1408,3 +1408,18 @@ The most important live correction is that RELEASE #291 has recovered its two-co
 COE #26 remains frozen. Fresh complete-tree comparison shows 2,436 source entries versus 286 destination entries, differing ESP8266/ESP32 sketch blobs, 25 source board-local Python labs versus zero destination Hardware Python files, three source Hardware workflows versus one generic destination workflow, and incomplete NOTICE/Hardware license scope. No migration staging was performed.
 
 The private v11 registry and newer corrections remain unavailable; no older snapshot was substituted. Effective branch protection remains unverified (branch metadata protected=false, rulesets empty, classic protection read 403). Issue #266 remains OPEN and Master cleanup remains incomplete. Full Master Python suite NOT RUN due GitHub DNS failure. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC13 live readiness supersession — 2026-11-20
+
+Master PR #288 starts this audit at `52b7c023ea414e2df504e943425a9d0957c8c2d9`, OPEN/DRAFT against `main@f4e8a891...`, with 127 existing changed paths all under `coordination/phoenix/`. The route manifest remains unchanged at `e4db324...`, DRAFT_REVIEW_ONLY, Master target null.
+
+- HARDWARE #327 current head `85c54fea...`: focused quarantine/relay PASS; Full FAIL at QA-owned Missing poll signature check. Keep firmware deny-only.
+- RELEASE #291 current head `dcb90533...`: Windows FAIL at PISONET-owned `negative-selftest.ps1` because `$buildWorkflow` is unset; compatibility and Full remain in progress. The 26-path diff also includes three CORE product handover files and two PISONET test files; no ownership transfer.
+- COE #26 remains frozen, five queued workflows / zero jobs. Fresh exact tree comparison: 2,438 source entries vs 286 destination; firmware blobs differ; 24 source board-local Python lab/helper files vs zero destination Hardware Python files; three scoped source workflows vs one generic destination workflow; root NOTICE and Hardware license/notice scope incomplete. No migration.
+- CORE #252, RENTAL #289 and PISONET #255 scoped runs pass; QA #290 scoped run passes without native COM lab; QA #292 has no exact-head run. HARDWARE #254 remains a separate draft with focused PASS and Full FAIL.
+- Private v11 registry/newer corrections remain inaccessible; only older v3-v7 snapshots and older artifact-manifest/sync-ledger records surfaced. No older snapshot substituted and no private contents published.
+- Effective branch protection remains unverified: main/Master branch metadata protected=false, rulesets empty, classic protection endpoint 403.
+- Master Python suite NOT RUN; no exact-head PR #288 workflow run. Remote subsystem CI readbacks are not physical or production acceptance. Issue #266 remains OPEN and Master cleanup remains incomplete.
+
+**Next:** QA repairs the deny-only poll fixture; PISONET owns its SoftTimer self-test; RELEASE completes exact-head runs and keeps non-Release paths owner-approved; COE #26 remains frozen; registry custodian and repository administrator provide missing storage/governance evidence. **PRODUCTION NO-GO.**

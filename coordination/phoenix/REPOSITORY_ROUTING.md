@@ -1008,3 +1008,12 @@ OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_RE
 The live owner heads and exact CI are recorded in the UTC12 audit report and ROLE_ASSIGNMENTS.md. The current HARDWARE #327 and RELEASE #291 findings do not change source ownership: QA owns the stale positive poll fixture; HARDWARE owns firmware; RELEASE owns its release workflow/tooling and must refresh the canonical handover after its latest workflow change; PISONET owns PublisherMockCli.ps1 and negative-selftest.ps1 even though they appear in the broader #291 diff. CORE remains with its separate continuation.
 
 COE #26 remains OPEN/DRAFT/FROZEN. Current source/destination firmware blobs differ, source board-local labs/workflows are not imported with equivalent identities, and root NOTICE / Hardware license-notice scope is incomplete. The sibling Pisowifi MIT license match is not proof of Hardware subtree scope. Keep OWNERSHIP_ROUTES.json unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No move, copy, staging, overwrite, cherry-pick, rebase or route promotion.
+
+
+## PHX-MASTER UTC13 — cross-role diff and destination routing hold
+
+Current RELEASE #291 head is `dcb905333c8963fb139eeeefa72471738c874fb8`. Its 26-path diff contains three CORE product handover paths (`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, `docs/handover/CHANGE_LEDGER.md`, `docs/handover/CURRENT_STATE.md`) and two PISONET-owned SoftTimer paths (`PublisherMockCli.ps1`, `negative-selftest.ps1`). The current Windows run #44746554630 fails in the PISONET negative self-test because `$buildWorkflow` is unset. CORE/PISONET must review and approve their own files; this audit does not transfer them to RELEASE.
+
+COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows QUEUED / zero jobs. Exact #327/#26 tree comparison confirms different ESP32/ESP8266 blobs, 24 source board-local Python lab/helper files with zero destination Hardware Python identities, three source Hardware workflows versus one generic destination workflow, and incomplete root NOTICE / Hardware license-notice scope.
+
+`OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration is proposed.

@@ -145,3 +145,13 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 - COE #26 remains frozen at b382d233..., five queued workflows / zero jobs. Complete trees: 2,436 source entries and 286 destination entries; firmware blobs differ, 25 source Python labs have no destination Hardware Python identity, three source Hardware workflows have only one generic destination workflow, and root NOTICE / Hardware license-notice scope is incomplete.
 - Ownership manifest remains e4db324..., DRAFT_REVIEW_ONLY, PHX-MASTER target null. No source migration or subsystem edit.
 - Private v11 registry/newer corrections remain unavailable; no older snapshot substituted. Full Master Python suite NOT RUN because GitHub DNS failed. **PRODUCTION NO-GO.**
+
+
+## Latest live exact-head supersession — 2026-11-20 UTC13
+
+- [PHX-MASTER UTC13 exact owner-head, CI and COE #26 provenance audit](PHX_MASTER_UTC13_20261120_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE.md).
+- Master #288 audit-start head `52b7c023...`, OPEN/DRAFT against main `f4e8a891...`; 127 existing changed paths all under `coordination/phoenix/`.
+- HARDWARE #327 `85c54fea...`: focused quarantine/relay PASS; Full FAIL at QA-owned Missing poll signature check.
+- RELEASE #291 `dcb90533...`: Windows FAIL at PISONET-owned `negative-selftest.ps1`; compatibility and Full remain IN_PROGRESS. The accumulated #291 diff includes three CORE and two PISONET paths requiring those owners' review.
+- COE #26 remains frozen with five queued workflows / zero jobs. Fresh exact trees: 2,438 source entries vs 286 destination; board sketches differ; 24 source Python lab/helper files have zero destination Hardware Python identities; three source workflows are not represented by the one generic destination workflow; root NOTICE / Hardware license scope unresolved.
+- Private v11 registry/newer corrections inaccessible; no older snapshot substituted. Effective branch protection unverified. Master suite NOT RUN. **PRODUCTION NO-GO.**
