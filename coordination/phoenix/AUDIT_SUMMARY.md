@@ -1270,3 +1270,8 @@ Current owner PR/CI snapshot: CORE #252 `c82705f2...` PASS [#42698139210](https:
 COE #49 remains separate audit-only at `aeb8ff11...`; Stage 5.1's five jobs pass, but shared ESP32 core 4.0.0 compilation fails because `mbedtls/sha256.h` is unavailable [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922). The owner audit identifies unsigned current-main router replies, missing signed server-time/target-kind, expiry-floor ordering before ACTIVE, and a mocked rental test that does not prove real backend non-mutation. Hardware explicitly declined implementation ownership.
 
 The Master-owned validator blob `3a6d0ca...` enforces one exact registered role or `ALL`. A local extracted-function recipient harness passed 4/4; the full Master suite and Master Actions were not run. Private registry v11/newer corrections remain inaccessible; v7 was not substituted. No migration or subsystem source edits occurred. Production remains NO-GO.
+
+
+## Private storage-control correction — 2026-11-20 UTC02
+
+Per repository `AGENTS.md`, the Library's root `BLAZE_PROJECT_REGISTRY.json` and `BLAZE_SYNC_LEDGER.json` were read, but both are historical snapshots dated 2026-10-26; versioned v3–v7 registry snapshots are also older than the requested canonical v11. `BLAZE_ARTIFACT_MANIFEST.json` was not found, and no Google Drive connector is exposed. None of these older records was substituted for v11/newer corrections; no private IDs or contents were published and no storage mutation was attempted. Registry verification remains BLOCKED.
