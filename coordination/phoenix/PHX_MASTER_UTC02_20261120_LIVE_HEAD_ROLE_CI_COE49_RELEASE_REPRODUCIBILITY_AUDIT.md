@@ -105,3 +105,8 @@ Audit started from `b6dd2dc3a81bd51ce82f60efaf06b5b7d236d23c`. The following Mas
 - Repository routing: `c88bbc71e63eb82e7b3c1d85950e4c3f68c891bc`.
 
 Immediately before this final report update, PR #288 remote head readback was `c88bbc71e63eb82e7b3c1d85950e4c3f68c891bc`. The final report update is the last commit in this run; the exact final branch/PR head is confirmed by the follow-up PR readback and BLAZE-COMMS/1 checkpoint.
+
+
+## 10. Additional AGENTS storage-control readback
+
+Repository `AGENTS.md` requires checking the private project registry, artifact manifest and sync ledger before storage changes. The Library exposes an older root `BLAZE_PROJECT_REGISTRY.json` and `BLAZE_SYNC_LEDGER.json`, both dated `2026-10-26`, plus versioned registry snapshots v3–v7. These are stale historical snapshots, not the requested canonical v11 or newer corrections. `BLAZE_ARTIFACT_MANIFEST.json` was not located. No Drive connector is exposed, no upload or storage mutation was attempted, and no private IDs or registry contents were copied into GitHub. Canonical v11/newer-correction verification remains BLOCKED.
