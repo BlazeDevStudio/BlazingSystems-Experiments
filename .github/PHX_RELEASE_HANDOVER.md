@@ -1612,3 +1612,42 @@ This addendum supersedes the earlier UTC14 observation that Full run #4475266147
 - Handover-head runs triggered by commit `67da5dfc88dc481e39c69cb836f73d6860330aaa`: Full [#44753134011](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753134011) has CI-0701 SUCCESS and validation/targets still IN_PROGRESS; compatibility [#44753133883](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753133883) pending; Windows [#44753134031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753134031) running. These are not terminal passes.
 
 The SHA256SUMS drive-prefix defect is fixed at the source/test head and its exact provenance suite is green. Full-build and ESP32 compatibility acceptance remain pending until terminal documentation-head results. Do not duplicate the completed test or source correction.
+
+
+## PHX-RELEASE UTC15 — reject checksum path line-boundary characters
+
+**Date:** 2026-11-20 UTC15  
+**PR:** #291 — OPEN / DRAFT / UNMERGED  
+**Branch:** \`phoenix/release-publisher-isolation-20261115\`  
+**Base #242:** \`734b89d9e7792247e8376335c3f3685500ab3f89\`  
+**Starting PR head:** \`2db8b2cb65dc1e755b92e26364a6918d05b2da5f\`  
+**Final source/test head:** \`60ee0d25bde9aba36f472f33c72149c45f5c3d08\`
+
+### Defect and correction
+
+The checksum path normalizer accepted POSIX filenames containing vertical tab, form feed, U+001C–U+001E, NEL, U+2028 and U+2029. Python \`str.splitlines()\` treats those characters as record boundaries when parsing the generated SHA256SUMS text. A single filesystem path could therefore be split into multiple textual records, making generated manifests ambiguous and non-round-trippable.
+
+The normalizer now rejects those eight line-boundary characters in addition to the existing backslash, LF, CR and NUL exclusions. Canonical paths and the intentional single leading \`./\` remain supported. No digest algorithm, artifact bytes, build inputs, source pins, signer, publisher permission or production gate changed.
+
+### Test-first and source history
+
+- Test commit [\`91b8fcea\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/91b8fcea7392b0f22f1af1faf05376f4897152f0) initially placed the new method after the test runner; it was not executable as a test. This is a test-authoring error, not RED evidence.
+- Intermediate test-layout corrections [\`602f9ae5\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/602f9ae5debe37ad71f20b2e13f6dbec492b2a9a) and [\`946c89ff\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/946c89ffad11648dc9a422de99d5108ca0dee4e5) left one correctly placed test method inside \`BuildProvenanceTests\`; exact readback confirms one method occurrence.
+- Initial source commit [\`4935647a\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4935647a3d69e1d89bf72f99954fabed059afec7) over-escaped the Python string literals and did not preserve the prior one-backslash/LF/CR/NUL exclusions. It is superseded by the corrected source commit below; do not treat it as accepted.
+- Final source correction [\`60ee0d25\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/60ee0d25bde9aba36f472f33c72149c45f5c3d08) uses actual Python escape literals for all 12 forbidden characters. Exact GitHub readback confirms the source block and test method placement.
+
+### Verification limits
+
+- A local focused Python reproduction of the exact normalizer logic passed: canonical leading \`./\` accepted; 12 forbidden characters rejected; seven previously guarded path-alias/drive cases rejected. This is a bounded local reproduction, **not** execution of the full repository suite.
+- \`fetch_commit_workflow_runs\` for final source/test SHA \`60ee0d25bde9aba36f472f33c72149c45f5c3d08\` returned zero PR-triggered runs. The connected GitHub actions surface does not expose workflow dispatch; therefore no exact-source GitHub Actions RED or GREEN is claimed for this change.
+- Prior baseline at PR head \`2db8b2cb65dc1e755b92e26364a6918d05b2da5f\`: Full BlazePwifi [\#44757444298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44757444298) SUCCESS (26 successful jobs; four production import/sign/publish jobs skipped); ESP32 compatibility [\#44757444336](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44757444336) SUCCESS (both core legs); Windows [\#44757444435](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44757444435) FAILURE in PISONET-owned \`negative-selftest.ps1\`, publisher SKIPPED. These runs predate the UTC15 source change and are not evidence for the new code.
+
+### Governance and next action
+
+- MASTER #288 current head at the opening audit: \`13c671fa727c8f02d846358c1cd011aec0e67ea9\`; route manifest blob \`e4db324315a1b3543fec17a148fbf960170fcb29\` remains \`DRAFT_REVIEW_ONLY\`. Release workflow migration is \`reimplementation-review\`; no migration/copy/merge occurred.
+- Cleanup-first #266 remains a coordination checklist; release scope is limited to build/version/manifest/signing configuration.
+- PR #291 still accumulates inherited CORE and PISONET paths. PHX-MASTER must reconcile ownership before integration; PHX-QA must independently review this new manifest guard.
+- COE #26 remains frozen with five queued workflows and zero executed jobs. COE #31 sandbox fails at unprivileged UID-map setup; #35 sandbox fails closed because Bubblewrap is unavailable; #44 sandbox likewise fails closed and remains ancestry-diverged from #35. No unsandboxed fallback or arbitrary site ULA was introduced.
+- Canonical private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` was not surfaced by exact-name Library search. The November 9 checkpoint and v6/v7 snapshots are historical provenance only; none was substituted and no private contents were copied to GitHub.
+
+Next: obtain an authorized exact-head Actions run (or owner-provided CI result) for source/test SHA \`60ee0d25...\`, then have PHX-QA independently review. Keep #291 draft. No merge, signing, tag, publication, hardware flash, payment migration or customer deployment. **PRODUCTION NO-GO.**
