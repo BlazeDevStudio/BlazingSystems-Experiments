@@ -1174,3 +1174,67 @@ No current-source reproducibility pass is claimed until both pending matrix legs
 Read terminal outcomes of #44673130966/#44673124219 at exact source/test SHA `55b07821`. If both compile but reproducibility still fails, preserve the failure and continue byte/ELF-section diagnosis on the new exact HARDWARE source. PHX-QA independently reviews the release pin and compatibility evidence; PHX-MASTER retains migration and release-gate authority.
 
 No merge, signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC05 — ESP32 segment-aware reproducibility diagnostics (2026-11-20T05Z)
+
+**Role lock:** PHX-RELEASE/2026-11-20T05Z.  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** phoenix/release-publisher-isolation-20261115.  
+**Base:** #242 at 734b89d9e7792247e8376335c3f3685500ab3f89.  
+**Exact source/test HEAD:** a7ad93d4a55292a3e281a6fe2d9ba46543a23070 (the following handover commit is documentation-only).
+
+### Bounded RELEASE-owned change
+
+The strict two-clean-build comparator previously reported differing byte ranges but did not map those ranges to ESP image segments or the image footer. Added a read-only ESP image layout parser and segment-aware difference descriptions to .github/scripts/verify_esp32_reproducible_build.py.
+
+- Test-first commit [4ca429b3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4ca429b3a4517de1436652ea9438715e1d0b0228) adds synthetic two-segment image cases for the observed offsets, a second segment, checksum byte and appended SHA.
+- Implementation commit [a7ad93d4](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a7ad93d4a55292a3e281a6fe2d9ba46543a23070) reports segment file ranges, load addresses, segment-relative offsets, checksum offset and optional appended SHA range.
+- The comparator remains byte-for-byte and fail-closed. No hash field is normalized, no build flag is changed, and no binary is uploaded.
+- The test-only commit did not return a separate pre-fix RED Actions run; do not claim an observed RED. Final exact-head CI did execute the added tests successfully.
+
+The parser follows Espressif's documented 24-byte image header, 8-byte segment headers, padded checksum byte and optional appended 32-byte SHA. References: [ESP-IDF App Image Format](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html) and [esptool Firmware Image Format](https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/firmware-image-format.html).
+
+### Exact upstream source and core matrix
+
+- HARDWARE #327 current branch/docs head: b6304208d65548a9cfe371504badf03ae3e15dcf; exact source/test head: 2f89326d5b555ffdb2bfaba0a404483d665aa614.
+- ESP32 firmware source commit pinned by RELEASE: 369007bcbc684a0923a586e991f3aa0667cda105; sketch blob: 1458f32881d3b340f1101dd0215618b54c1b688b.
+- A live compare from 369007b to current #327 head is eight commits ahead; changed paths are the Hardware quarantine workflow, ESP8266 poll-loop labs and Hardware handovers. The ESP32 sketch blob remains unchanged. The existing pin is still the exact ESP32 firmware-source commit; it was not blindly refreshed to a documentation-only head.
+- Main BlazePwifi build core pins remain ESP8266 3.1.2 and ESP32 3.3.13; CI guard enforces both. The separate ESP32 compatibility probe tests 3.3.13 and 4.0.0. 4.0.0 is a compatibility probe, not an approved production release target.
+
+### Exact-source Actions
+
+- Release guard suite: [BlazePwifi build #44680793729](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44680793729), CI-0701 job 136103425511: **PASS**. Logs show PHX-ESP32-REPRODUCIBILITY-TESTS-PASS, PHX-RELEASE-ESP32-COMPAT-PASS and RELEASE-TOOLCHAIN-PASS (ESP8266 3.1.2 / ESP32 3.3.13).
+- Main build run #44680793729: validation and all 14 target/platform jobs **PASS**; update bundle and ESP simulations observed **PASS**. At the last read Android emulator and x86 simulation were still in progress, so the overall run was not yet terminal. Production signing/import/publish jobs were skipped.
+- Strict compatibility: [#44680793567](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44680793567) **FAILED CLOSED on both cores** after both independent compiles and exact application-image admission succeeded.
+
+Core 4.0.0, job 136103828979:
+- Image size: 1,098,176 bytes for each build.
+- SHA-256: f2d09a65d61977a1b7347595d22ba6d8478bb7701f4c83316ba08b0291c4b0df vs 28de82f40333bf7efd0d23ca21fe7cef8ffd0d615cbb8f872c4b7a336719ca8e.
+- 67 differing bytes: 176-207, 9716-9717, 1098143-1098175.
+- The non-descriptor drift is in segment 0, load address 0x3f400020, segment-relative offsets 9684-9685.
+- Six segments were parsed. Checksum offset 1098143; appended SHA 1098144-1098175.
+
+Core 3.3.13, job 136103829429:
+- Image size: 1,044,096 bytes for each build.
+- SHA-256: fe0d13a41a4b9095f6d718edc96db0033658f1d99992ccdd251d921e9933f8b3 vs 6f5926336794e44484be1bb9bc08546b703c75effd908205305888cf43332217.
+- 71 differing bytes: 176-207, 9668-9668, 9670-9671, 761836-761838, 1044063-1044095.
+- Non-descriptor drift: segment 0 at load address 0x3f400020, segment-relative offsets 9636 and 9638-9639; segment 3 at load address 0x400d0020, segment-relative offsets 565196-565198.
+- Six segments were parsed. Checksum offset 1044063; appended SHA 1044064-1044095.
+
+The 32-byte app_elf_sha256 field and final checksum+appended-SHA footer change along with the underlying image. They are not accepted as independent root causes. The persistent non-descriptor segment bytes are the next diagnostic target. No root cause is claimed.
+
+### Other exact-head CI and owner routing
+
+- Windows [#44680793680](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44680793680): handover **PASS**; Windows build **FAIL** at negative-selftest.ps1 because $buildWorkflow is uninitialized; publisher **SKIPPED**. This is PISONET-owned; no PISONET file changed.
+- MASTER #288 current branch head: 2a2f6bf0926676250aed007c1a001605173bb6c0. OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY; BlazePwifi build workflow route is reimplementation-review. No migration.
+- COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12: five workflows remain queued, zero jobs executed.
+- COE #31 head 59ed44d0b911e176f1a95b9cf5585ef811ffd31b: shared validation and case-collision jobs pass; mandatory Bubblewrap sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) fails closed at bwrap: setting up uid map: Permission denied (exit 125). No unsandboxed fallback.
+- #242 base remains 734b89d9e7792247e8376335c3f3685500ab3f89; #266 cleanup-first remains open. No inherited CORE, RENTAL, PISONET, HARDWARE, QA or MASTER files changed in this activation.
+- Private Drive registry v11 was not found after full Library pagination. Older v3–v7 snapshots were not substituted. The owner prompt 06_RELEASE_ENGINEERING(1).txt is present and was read; no private registry contents were copied or published.
+
+### Next owner action
+
+At the next activation, preserve or print the first and second .elf outputs before the second clean build overwrites the build directory, then compare ELF files and use the pinned Xtensa objdump -h section table to map the non-descriptor segment offsets to exact ELF sections. Keep the current byte comparator fail-closed. Do not apply timestamp, linker or hash-normalization workarounds until the changing section/field is identified.
+
+No merge, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
