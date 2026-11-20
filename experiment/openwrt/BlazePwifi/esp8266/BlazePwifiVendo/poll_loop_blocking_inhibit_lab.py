@@ -663,6 +663,31 @@ int main(){
 """
 
 
+
+ACTIVE_HIGH_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  runCoinActiveLow=false;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  injectDrainAbortWithoutIsr=true;
+  injectDrainAbortPulseEndsBeforeSample=true;
+  loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine ||
+     pendingPulses!=0U || saveCalls!=0 ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 57;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 57;
+  std::cout<<"POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
+  return 0;
+}
+"""
+
+
 TIMING_MAIN = MAIN.replace(
     "int main(){",
     """int main(){
@@ -869,13 +894,13 @@ for board,path in BOARDS.items():
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
     handle=extract_function(source, "handleCoinPostResponse")
 
-    def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
+    def assemble(loop_source=loop,output_source=output,idle_source=idle,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
+        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle_source+can_start+
                 quiet_source+begin_source+write_fault_source+
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
@@ -965,6 +990,30 @@ for board,path in BOARDS.items():
         board,56,"active-high-post-drain-edge-polarity"
     )
     print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
+
+    # A high-polarity pulse can disappear after the drain read but before the
+    # ordinary loop sample. Preserve the unresolved event instead of polling.
+    missed_sample_output = compile_and_run(
+        assemble(main_source=ACTIVE_HIGH_MISSED_SAMPLE_MAIN),
+        board, 0, "active-high-pulse-ended-before-sample"
+    )
+    if "POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS" not in missed_sample_output:
+        raise AssertionError(f"{board}: active-high missed-sample marker missing")
+    print(f"{board} POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_PASS")
+
+    active_high_idle_fail_open = idle.replace(
+        "return runCoinActiveLow?raw:!raw;",
+        "return runCoinActiveLow?raw:true;",
+        1,
+    )
+    if active_high_idle_fail_open == idle:
+        raise AssertionError(f"{board}: active-high coin-line idle mutation anchor missing")
+    compile_and_run(
+        assemble(idle_source=active_high_idle_fail_open,
+                 main_source=ACTIVE_HIGH_MISSED_SAMPLE_MAIN),
+        board, 57, "active-high-pulse-misread-as-idle"
+    )
+    print(f"{board} MUTATION_REJECTED active-high-pulse-misread-as-idle expected_exit=57")
     release_on_abort = drain_abort.replace(
         "if(!coinLineIdle()) return;",
         "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",
