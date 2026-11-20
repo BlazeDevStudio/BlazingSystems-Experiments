@@ -945,7 +945,7 @@ for board,path in BOARDS.items():
     # Active-high wiring must attach RISING; the post-drain hook now invokes the actual extracted ISR.
     active_high_wrong_edge = configure.replace(
         "runCoinActiveLow?FALLING:RISING",
-        "runCoinActiveLow?RISING:FALLING",
+        "runCoinActiveLow?FALLING:FALLING",
     )
     if active_high_wrong_edge == configure:
         raise AssertionError(f"{board}: active-high ISR polarity mutation anchor missing")
