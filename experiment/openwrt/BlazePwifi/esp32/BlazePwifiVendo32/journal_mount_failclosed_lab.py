@@ -118,6 +118,30 @@ def extract(src: str, token: str) -> str:
                 return src[start:i+1]
     raise RuntimeError(f"Unclosed firmware function {token}")
 
+
+def verify_lexical_extractor_regression():
+    cases = (
+        ("ordinary string", '  const char *value = "}";'),
+        ("C++ raw string", '  const char *value = R"tag({ } )tag";'),
+        ("line comment", "  // }"),
+        ("block comment", "  /* } { */"),
+    )
+    for label, statement in cases:
+        fixture = (
+            "bool target(){\n"
+            + statement
+            + "\n  return true;\n}\nbool after(){ return false; }\n"
+        )
+        extracted = extract(fixture, "bool target(){")
+        if "return true;" not in extracted or "bool after()" in extracted:
+            raise SystemExit(
+                f"JOURNAL_MOUNT_EXTRACTOR_FAIL: {label} brace truncated target()"
+            )
+    print("JOURNAL_MOUNT_LEXICAL_EXTRACTOR_PASS 4/4")
+
+
+verify_lexical_extractor_regression()
+
 for board, path in BOARDS:
     real = path.read_text(encoding="utf-8")
     setup = extract(real, "void setup(){")
