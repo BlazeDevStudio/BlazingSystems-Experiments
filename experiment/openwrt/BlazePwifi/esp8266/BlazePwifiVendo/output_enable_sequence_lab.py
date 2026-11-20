@@ -61,6 +61,8 @@ bool runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=false;
 bool outputPolarityKnown=true, pinConfigSafe=true, insertMode=true;
 std::string activeTarget="target";
 @@WRITE_LOGICAL@@
+// This lab isolates output ordering; exact ingress behavior has its own source lab.
+bool quarantineCoinIngressTransition(){ return true; }
 @@CONFIGURE@@
 static constexpr bool HAS_LOCAL_POLARITY_GUARD=@@HAS_LOCAL_POLARITY_GUARD@@;
 
@@ -206,6 +208,8 @@ for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
     write_logical = extract(source, "writeLogical")
     configure = extract(source, "configureRuntimePins")
+    if "quarantineCoinIngressTransition();" not in configure:
+        raise RuntimeError(f"{board}: runtime pin attachment must quarantine coin ingress")
     has_local_polarity_guard = "outputPolarityKnown" in configure
     build_and_run(board, write_logical, configure, expect_pass=True,
                   has_local_polarity_guard=has_local_polarity_guard)
