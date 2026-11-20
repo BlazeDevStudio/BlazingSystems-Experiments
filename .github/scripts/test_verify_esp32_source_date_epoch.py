@@ -42,11 +42,11 @@ class Esp32SourceDateEpochTests(unittest.TestCase):
             esp32 = core_root / "cores" / "esp32"
             esp32.mkdir(parents=True)
             (esp32 / "chip-debug-report.cpp").write_text(
-                'chip_report_printf("Compile Date/Time: %s %s\\n", __DATE__, __TIME__);\\n',
+                'chip_report_printf("Compile Date/Time: %s %s\\n", __DATE__, __TIME__);\n',
                 encoding="utf-8",
             )
             (esp32 / "main.cpp").write_text(
-                "void loopTask() { printBeforeSetupInfo(); }\\n",
+                "void loopTask() { printBeforeSetupInfo(); }\n",
                 encoding="utf-8",
             )
             result = inspect_core_time_source(core_root)
@@ -60,11 +60,11 @@ class Esp32SourceDateEpochTests(unittest.TestCase):
             esp32 = core_root / "cores" / "esp32"
             esp32.mkdir(parents=True)
             (esp32 / "chip-debug-report.cpp").write_text(
-                'chip_report_printf("Compile Date: %s\\n", __DATE__);\\n',
+                'chip_report_printf("Compile Date: %s\\n", __DATE__);\n',
                 encoding="utf-8",
             )
             (esp32 / "main.cpp").write_text(
-                "void loopTask() { printBeforeSetupInfo(); }\\n",
+                "void loopTask() { printBeforeSetupInfo(); }\n",
                 encoding="utf-8",
             )
             with self.assertRaises(ValueError):
@@ -72,8 +72,8 @@ class Esp32SourceDateEpochTests(unittest.TestCase):
 
     def test_parses_only_the_two_named_macro_values(self) -> None:
         output = (
-            'const char phx_compile_date[] = "Jan  1 2000";\\n'
-            'const char phx_compile_time[] = "00:00:00";\\n'
+            'const char phx_compile_date[] = "Jan  1 2000";\n'
+            'const char phx_compile_time[] = "00:00:00";\n'
         )
         self.assertEqual(
             parse_macro_output(output),
@@ -82,12 +82,12 @@ class Esp32SourceDateEpochTests(unittest.TestCase):
 
     def test_rejects_missing_or_duplicate_macro_output(self) -> None:
         with self.assertRaises(ValueError):
-            parse_macro_output('const char phx_compile_date[] = "Jan  1 2000";\\n')
+            parse_macro_output('const char phx_compile_date[] = "Jan  1 2000";\n')
         with self.assertRaises(ValueError):
             parse_macro_output(
-                'const char phx_compile_date[] = "Jan  1 2000";\\n'
-                'const char phx_compile_date[] = "Jan  1 2000";\\n'
-                'const char phx_compile_time[] = "00:00:00";\\n'
+                'const char phx_compile_date[] = "Jan  1 2000";\n'
+                'const char phx_compile_date[] = "Jan  1 2000";\n'
+                'const char phx_compile_time[] = "00:00:00";\n'
             )
 
 
