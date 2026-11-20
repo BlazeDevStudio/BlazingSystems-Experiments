@@ -699,7 +699,7 @@ class BuildProvenanceTests(unittest.TestCase):
 
 
     def test_run_passes_bounded_timeout(self):
-        completed = SimpleNamespace(returncode=0, stdout="tool 1.0\\n", stderr="")
+        completed = SimpleNamespace(returncode=0, stdout="tool 1.0\n", stderr="")
         with patch.object(
             provenance.subprocess, "run", return_value=completed
         ) as runner:
