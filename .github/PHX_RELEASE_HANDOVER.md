@@ -875,3 +875,50 @@ No merge, signer use, tag, publication, hardware flash, financial migration or c
 6. PHX-INFRA/CORE/MASTER/COE integration retain the sandbox, ULA, migration and ownership blockers.
 
 No merge, signer use, tag, publication, hardware flash, payment migration or customer deployment occurred. The protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC01 — exact ESP32 application-image identity and digest admission (2026-11-20T01Z)
+
+**Disposition:** the compatibility matrix no longer hashes an arbitrary first-found `.bin`. It now selects exactly one named sketch application image, rejects ambiguous/unsafe candidates, and emits the selected filename, byte length and SHA-256. Focused CI, both ESP32 core builds and the broader BlazePwifi CI workflow completed successfully on the pre-handover source head. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Scope and exact source
+
+- Experiments PR #291: branch `phoenix/release-publisher-isolation-20261115`, base PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Source/test head before this handover append: `6a7e5c585bdbf86b1443e670b47af10e8391ef55`.
+- Current PHX-HARDWARE PR #327 head at final refresh: `1d461f2c5fad1ea411ab89bab8d1a1f4e73dce1c`.
+- The compatibility workflow still pins HARDWARE commit `9ef753a38226fcdf56b0903680a5110348027110` and sketch blob `33081c5094ffdd19d935fc888d52ae01ff23325b`. A live compare from that commit to #327 head is four commits ahead and lists only two handover documents plus two ESP8266 files; the ESP32 sketch blob remains identical. This matrix therefore proves the same ESP32 sketch blob and current ESP32 subtree content, but it does **not** claim checkout of the latest overall #327 HEAD. A future pin refresh is a separate bounded task and must preserve exact source/blob assertions.
+
+### Test-first history and implementation
+
+- Test-only commit [`5ab58fab`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5ab58fab1806aea4eab931944c0434120b0b842a) added negative/positive controls before the helper existed. Expected RED: [BlazePwifi run #44652840061](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44652840061), CI-0701 job `136011724024`, failed because the helper was absent and the workflow still selected the first arbitrary `*.bin`; immutable action pins, concurrency guards and 23 provenance tests passed.
+- Helper commit [`8d5d75b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8d5d75b408604b8be261af815b402d14b6dd6588) added `.github/scripts/verify_esp32_application_image.py`. It requires exactly one top-level `*.ino.bin`, the exact `BlazePwifiVendo32.ino.bin` filename, a non-empty regular file, link count one, no symlinked output directory, and stable file identity while streaming SHA-256.
+- Workflow commit [`f8d29787`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f8d2978726618e1c85412b6a51317b8fde86bfe6) first wired the helper but contained a source-authoring mistake that left escaped `\u0024` text instead of GitHub matrix expressions. CI-0701 run [#44653135382](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653135382) correctly failed its static workflow contract. Corrected in [`154a64db`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/154a64dbd3ea6637b2723225ac9d768cadaec92a).
+- The next CI-0701 run [#44653228258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653228258) found a test assertion that expected the marker to appear as one literal source string, while the helper assembled it from adjacent strings. This was a test-harness assertion defect, corrected in [`b83f8dbf`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b83f8dbf543f9a8f3212791bdb1b99f60e2b2c44).
+- Workflow path filters were updated to include the helper itself in [`6a7e5c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6a7e5c585bdbf86b1443e670b47af10e8391ef55), so future helper-only changes trigger compatibility validation.
+
+### Exact-source verification at `6a7e5c5`
+
+- Focused CI-0701 in [BlazePwifi run #44653465446](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653465446), job `136013811877`: **PASS**. Action pin guards, provenance suite, Arduino archive verifier, exact-source compatibility contract and new app-image synthetic controls passed.
+- New synthetic controls: valid exact image with unrelated bootloader/partition `.bin` files; missing image; wrong sketch name; multiple `.ino.bin` candidates; empty image; symlinked image; hard-linked image; and symlinked output directory. All passed; marker: `PHX-ESP32-APP-IMAGE-TESTS-PASS`.
+- Exact compatibility workflow [run #44653465461](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653465461): **2/2 jobs PASS**.
+  - Core 3.3.13, job `136013844074`: selected `BlazePwifiVendo32.ino.bin`, `1,043,872` bytes, SHA-256 `9fba7a8126505359ff5fe3f424f43e509b3e57152b83a183a138110c6bf96c2e`.
+  - Core 4.0.0, job `136013843742`: selected `BlazePwifiVendo32.ino.bin`, `1,097,872` bytes, SHA-256 `9cdfbd5191cf4ce30325ba0497f66c136ae391c00271c22bd492a608fa1dec94`.
+- The broader BlazePwifi workflow [run #44653465446](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653465446) completed **SUCCESS: 26 successful jobs, 4 intentionally skipped**. The skipped jobs were production import, production signing handoff, release publishing and prerelease publishing. This is hosted CI/simulation evidence only.
+- Windows run [#44653465426](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44653465426): handover PASS; PISONET-owned `build-windows` FAILED because `$buildWorkflow` is uninitialized in `negative-selftest.ps1`; publisher SKIPPED. PHX-RELEASE changed no PISONET files.
+
+### Live ownership and cross-repository status
+
+- MASTER PR #288 is now `1bd30098d961b6dd2f0e971423ae8e4d36407f9b`, OPEN/DRAFT. Its `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with MASTER target null and RELEASE's COE workflow route `reimplementation-review`.
+- COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`; MASTER's UTC01 checkpoint freezes migration staging. Five unique workflows remain queued with zero jobs returned.
+- COE release-packager #31 remains `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Its shared/contracts and ESP32/ESP8266 compile jobs plus case-collision guard pass, but the mandatory sandbox fails closed: Bubblewrap exists, yet unprivileged user-namespace setup is denied (`bwrap: setting up uid map: Permission denied`, exit 125).
+- Canonical private Drive registry v11 and newer corrections remain unavailable through the authorized Library/Drive surface. Older v3–v7 snapshots were not substituted; no private identifiers or contents were copied to GitHub.
+- PR #291 still contains pre-existing foreign CORE/PISONET paths. This activation changed only RELEASE-owned scripts, compatibility workflow and this RELEASE handover. No other role's handover or implementation was edited.
+
+### Next owner actions
+
+1. **PHX-QA:** independently review the exact application-image selector, symlink/hard-link defenses, byte-count/hash evidence and two-core matrix.
+2. **PHX-MASTER / PHX-HARDWARE:** decide whether the matrix must pin the latest overall #327 HEAD `1d461f2...`; if yes, refresh the exact commit/blob contract in a separate task. Current ESP32 sketch blob is unchanged, but the current workflow does not checkout the latest overall PR head.
+3. **PHX-PISONET:** fix its own uninitialized `$buildWorkflow` negative self-test; RELEASE reruns Windows after the owner correction.
+4. **PHX-INFRA / COE integration / MASTER:** resolve the Bubblewrap namespace capability and keep COE #26 frozen until MASTER explicitly reopens it and provenance plus destination CI are accepted.
+
+No merge, signing, release tag, publication, hardware flash, financial migration or customer deployment occurred. Independent protected signer/freshness witness, durable accounting and migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. **PRODUCTION NO-GO.**
