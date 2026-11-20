@@ -1,0 +1,38 @@
+name: PHX BlazeRental APK identity gate (host-only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/blazerental-apk-contract.yml'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/verify_apk_contract.py'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/validation/**'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_APK_COMPATIBILITY.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk-contract-host-tests:
+    name: Host APK contract negative regressions (no emulator/signing)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Run fail-closed pure-Python contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+          python3 --version
+          python3 -m unittest discover \
+            -s experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/validation \
+            -p 'test_*.py' -v
+      - name: Explicit scope note
+        run: |
+          echo 'Host tests only: APK verification, installation, emulator, Device Owner, and physical devices NOT EXECUTED'
