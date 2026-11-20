@@ -20,7 +20,7 @@ jobs:
       - name: Compile actual firmware header and execute adversarial cases
         run: |
           set -eu
-          g++ -std=c++17 -Wall -Wextra -Werror -O2 experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp -o /tmp/phx-hw-auth-test -lmbedtls -lmbedcrypto -lmbedx509
+          g++ -std=c++17 -Wall -Wextra -Werror -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp -o /tmp/phx-hw-auth-test -lmbedtls -lmbedcrypto -lmbedx509
           /tmp/phx-hw-auth-test
       - name: Phase A admission remains denied
         run: |
