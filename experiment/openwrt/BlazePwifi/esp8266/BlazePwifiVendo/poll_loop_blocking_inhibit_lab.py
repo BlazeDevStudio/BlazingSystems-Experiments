@@ -122,6 +122,7 @@ static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
 static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
+unsigned injectAfterDrainEdgeCount=1;
 static bool injectDuringDrainAbort=false;
 static bool injectDrainAbortWithoutIsr=false;
 static bool injectDrainAbortPulseEndsBeforeSample=false;
@@ -304,7 +305,7 @@ void resetState(){
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
   injectDuringHttp=false; injectDuringHttpEdgeCount=1; injectTimedPollPulse=false; timedPulseIsrInjected=false;
-  injectAfterDrainEdge=false; injectDuringDrainAbort=false;
+  injectAfterDrainEdge=false; injectAfterDrainEdgeCount=1; injectDuringDrainAbort=false;
   injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false;
   injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
   pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
@@ -614,6 +615,22 @@ RACE_MAIN = MAIN.replace(
     "  const std::string prePollMarker=LittleFS.files[\"/pollpulse.fault\"];\n"
     "  if(prePollMarker.find(\"COIN_INGRESS_UNRESOLVED\")==std::string::npos ||\n"
     "     prePollMarker.find(\"pulses=1\")==std::string::npos) return 24;\n\n"
+    "  // Two ISR edges after the final quiet sample must retain modulo count across wrap.\n"
+    "  resetState();\n"
+    "  coinEdgeSequence=0xFFFFFFFEUL;\n"
+    "  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;\n"
+    "  injectAfterDrainEdgeCount=2;\n"
+    "  injectAfterDrainEdge=true;\n"
+    "  loop();\n"
+    "  if(pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||\n"
+    "     !LittleFS.exists(\"/pollpulse.fault\") || relayOn || ledOn ||\n"
+    "     insertMode || !activeTarget.empty() || pollIntakeSuspended ||\n"
+    "     pendingPulses!=0 || coinEdgeSequence!=0U ||\n"
+    "     lastHandledCoinEdgeSequence!=0U || lastPoll+2!=fakeNow) return 54;\n"
+    "  const std::string wrappedPrePollMarker=LittleFS.files[\"/pollpulse.fault\"];\n"
+    "  if(wrappedPrePollMarker.find(\"COIN_INGRESS_UNRESOLVED\")==std::string::npos ||\n"
+    "     wrappedPrePollMarker.find(\"pulses=2\")==std::string::npos) return 55;\n"
+    "  std::cout<<\"POLL_POST_DRAIN_MULTI_EDGE_ROLLOVER_DENY_PASS\\\\n\";\n\n"
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
     1,
 )
@@ -893,6 +910,18 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
+    single_post_drain_edge_loop = loop.replace(
+        "latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);",
+        "latchPollPulseFault(1U);",
+        1,
+    )
+    if single_post_drain_edge_loop == loop:
+        raise AssertionError(f"{board}: post-drain exact-edge-count mutation anchor missing")
+    compile_and_run(
+        assemble(loop_source=single_post_drain_edge_loop,begin_source=edge_hook,main_source=RACE_MAIN),
+        board,55,"single-edge-post-drain-count"
+    )
+    print(f"{board} MUTATION_REJECTED single-edge-post-drain-count expected_exit=55")
     release_on_abort = drain_abort.replace(
         "if(!coinLineIdle()) return;",
         "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",
