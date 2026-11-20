@@ -27,7 +27,7 @@ CPP = r'''#include <cstdint>
 #include <iostream>
 #include <string>
 using String=std::string;
-static uint32_t fakeNow=0;
+static uint32_t fakeNow=0, lastPoll=0;
 static volatile uint32_t coinEdgeSequence=0;
 static uint32_t lastHandledCoinEdgeSequence=0;
 uint32_t snapshotCoinEdgeSequence(){return coinEdgeSequence;}
@@ -94,7 +94,7 @@ bool writePollPulseFaultMarker(uint32_t edges){
 @@FUNCTIONS@@
 
 static void resetState(uint32_t now=0,bool activeLow=true){
-  fakeNow=now;runDebounceMs=40;lastEdge=0;
+  fakeNow=now;lastPoll=0;runDebounceMs=40;lastEdge=0;
   coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
   fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
