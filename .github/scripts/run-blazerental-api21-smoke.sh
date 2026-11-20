@@ -25,7 +25,7 @@ python3 "$TARGET/tools/verify_apk_contract.py" "$apk" --mode debug \
   > rental-api21-evidence/apk-contract.json
 
 timeout 90s adb install -r "$apk" | tee rental-api21-evidence/install.txt
-grep -Eq '^Success$' rental-api21-evidence/install.txt
+tr -d '\r' < rental-api21-evidence/install.txt | grep -Fxq 'Success'
 timeout 20s adb shell pm path com.blazesystems.blazerental.debug \
   | tee rental-api21-evidence/installed-package.txt
 grep -q '^package:' rental-api21-evidence/installed-package.txt
