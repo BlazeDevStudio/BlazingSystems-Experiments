@@ -1127,3 +1127,50 @@ This follow-up supersedes only the earlier "in progress at last read" status for
 - New documentation-head workflows after handover commit 0c7293af: compatibility [#44667764065](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764065) IN_PROGRESS; Windows [#44667764212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764212) IN_PROGRESS after handover PASS; BlazePwifi [#44667764115](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667764115) IN_PROGRESS with docs-head CI-0701 job 136061249189 PASS and remaining target/validation jobs queued at last read. No docs-head terminal outcome is claimed.
 
 No new runtime, firmware, shared-interface, PISONET or hardware source change was made in this follow-up.
+
+
+### PHX-RELEASE UTC04 — refresh stale ESP32 compatibility source pin (2026-11-20T04Z)
+
+**Role lock:** PHX-RELEASE / 2026-11-20T04Z. **PR #291:** OPEN / DRAFT / UNMERGED. **Production:** NO-GO.
+
+#### Exact upstream source identity
+
+- MASTER #288: `965d786ec0b0f00e04ccef27182228f1f2f869f0`; route manifest remains `DRAFT_REVIEW_ONLY`.
+- Experiments #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Experiments #291 branch: `phoenix/release-publisher-isolation-20261115`; base #242; pre-change head `d0ac4dba3bdd04e3f16ee2b3d3bd44d47a5f203c`.
+- HARDWARE #327 current docs/PR head: `bcd7757663ae6c1227b4fed65ad8a9674a35bd31`. Its latest firmware source commit on that branch is `369007bcbc684a0923a586e991f3aa0667cda105` (`fix(hardware): hold poll-drain inhibit through pulse sampling`), which changes the ESP32 and ESP8266 sketches plus hardware-owned labs.
+- Exact ESP32 sketch Git blob at source commit `369007b`: `1458f32881d3b340f1101dd0215618b54c1b688b`.
+
+#### Test-first release-owned correction
+
+The compatibility workflow still pinned HARDWARE `a2b7903b4009fd7182247e11a7d2954a79cb9bbd` / sketch blob `1a4b8fba8df210201ae77f23bfef55674abfb59e`. The current #327 firmware sketch had advanced; old compatibility results therefore did not qualify the current candidate.
+
+- Test-first commit [`873adbb6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/873adbb6e8dec2b248fb9acaa08711ffe7488600) updates only the release-owned static contract to require exact source `369007b` and sketch blob `1458f328`.
+- Expected RED [push run #44673015632](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673015632), CI-0701 job `136078171421`: **FAIL as expected** at `RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract`; log explicitly reports both new expected values missing from the still-old workflow. Action-pin, concurrency, provenance and Arduino archive-verifier steps passed before the intended failure; downstream target jobs were skipped.
+- Workflow correction [`55b07821`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/55b0782107f37dae28e2a27ddbae32008920f2b4) changes only the release-owned compatibility workflow's source checkout ref, independent expected source SHA, sketch blob pin and source label. Read-only permissions, immutable action pins, two-core matrix and fail-closed reproducibility comparison remain unchanged.
+- Exact current source/test workflow HEAD: `55b0782107f37dae28e2a27ddbae32008920f2b4`.
+
+#### Exact-head CI status at handover
+
+- Compatibility PR [#44673130966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673130966): PENDING.
+- Compatibility push [#44673124219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673124219): PENDING.
+- BlazePwifi full PR [#44673131079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673131079): QUEUED; CI-0701 job `136078552460` PASS, target/validation jobs QUEUED.
+- Windows PR [#44673130939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673130939): IN_PROGRESS; not a RELEASE source change.
+- Previous old-pin compatibility run [#44670365345](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44670365345) failed both ESP32 cores at byte-for-byte reproducibility comparison after compilation. It is historical evidence for the old source pin only, not a result for current #327 source `369007b`.
+- Previous broader full build [#44670365371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44670365371) completed with successful validation/target/simulation jobs and production sign/publish jobs skipped. It does not override strict compatibility failure and is not production evidence.
+
+No current-source reproducibility pass is claimed until both pending matrix legs complete. Preserve the comparator; do not normalize embedded hashes or change compiler/linker flags without identifying the source of byte drift.
+
+#### Ownership / external blockers
+
+- MASTER #288's `OWNERSHIP_ROUTES.json` routes `.github/workflows/blazepwifi-build.yml` to COE `.github/workflows/pisowifi-ci.yml` as `reimplementation-review`; manifest is `DRAFT_REVIEW_ONLY`. No workflow copy/migration performed.
+- COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`: five PR workflows remain queued, zero jobs executed.
+- COE #31 head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 head `7b9706d898fb5f36c6ed96504aefd04dc59bdc1b`. #31 shared/case guards passed, mandatory Bubblewrap sandbox failed closed on runner namespace setup; no unsandboxed fallback. No current #35 head Actions run was returned.
+- #266 still requires cleanup-first ownership discipline; its RELEASE task is limited to build/version/manifest/signing configuration in #242. No broad move/deletion or teammate handover rewrite.
+- Canonical private Drive registry v11 was not surfaced by exact-title/content search or the bounded Library listing. Older v3–v7 snapshots were not substituted; no private contents or identifiers copied to GitHub.
+
+#### Next action
+
+Read terminal outcomes of #44673130966/#44673124219 at exact source/test SHA `55b07821`. If both compile but reproducibility still fails, preserve the failure and continue byte/ELF-section diagnosis on the new exact HARDWARE source. PHX-QA independently reviews the release pin and compatibility evidence; PHX-MASTER retains migration and release-gate authority.
+
+No merge, signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
