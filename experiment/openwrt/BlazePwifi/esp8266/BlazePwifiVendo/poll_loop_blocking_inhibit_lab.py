@@ -117,6 +117,7 @@ void observeBackupWrite(){ backupWriteSawRelayOn=relayOn; backupWriteSawLedOn=le
 void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
 static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
+static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
 static bool allowCoinPost=false, injectDuringCoinPost=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
@@ -179,6 +180,12 @@ int digitalRead(int) {
       drainAbortSawRelayOn=relayOn;
       return runCoinActiveLow?LOW:HIGH;
     }
+  }
+  if(injectTimedPollPulse && !timedPulseIsrInjected && pulseStart>=0 &&
+     fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd){
+    timedPulseIsrInjected=true;
+    if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+       attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
   }
   const bool active=pulseStart>=0 &&
     fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
@@ -284,7 +291,8 @@ void resetState(){
   fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
   relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
   markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
-  injectDuringHttp=false; injectAfterDrainEdge=false; injectDuringDrainAbort=false;
+  injectDuringHttp=false; injectTimedPollPulse=false; timedPulseIsrInjected=false;
+  injectAfterDrainEdge=false; injectDuringDrainAbort=false;
   injectDrainAbortWithoutIsr=false; injectDrainAbortPulseEndsBeforeSample=false; injectDuringPollRelease=false; pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
@@ -562,6 +570,28 @@ RACE_MAIN = MAIN.replace(
 )
 
 
+TIMING_MAIN = r"""
+int main(){
+  resetState();
+  fakeNow=1501U;
+  pulseStart=1600;
+  pulseEnd=1680;
+  injectTimedPollPulse=true;
+  loop();
+  if(!timedPulseIsrInjected || pollCalls!=0 || pollStartAt!=0 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pendingPulses!=0U || pollIntakeSuspended ||
+     pollDrainAbortedOnActiveLine) return 47;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 49;
+  std::cout<<"PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS\n";
+  return 0;
+}
+"""
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
         cpp=Path(folder)/"poll_loop.cpp"
@@ -626,6 +656,21 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
+                                 "issue-177-original-1501-1600-1680-timing")
+    if "PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS" not in timing_output:
+        raise AssertionError(f"{board}: exact #177 timing marker missing")
+    print(f"{board} PHX_177_ORIGINAL_1501_1600_1680_TIMING_PASS")
+    unsafe_timing_loop=loop.replace(
+        "const bool pollWindowReady=beginPollWindow();",
+        "const bool pollWindowReady=true;",
+        1,
+    )
+    if unsafe_timing_loop==loop:
+        raise AssertionError(f"{board}: #177 pre-poll inhibit mutation anchor missing")
+    compile_and_run(assemble(loop_source=unsafe_timing_loop,main_source=TIMING_MAIN),
+                    board,47,"issue-177-missing-prepoll-inhibit")
+    print(f"{board} MUTATION_REJECTED issue-177-missing-prepoll-inhibit expected_exit=47")
     idle_fault_shortcut = quarantine.replace(
         "  if(journalRecoveryRequired){",
         "  if(lineIdle && unhandledEdges==0U) return true;\n  if(journalRecoveryRequired){",
