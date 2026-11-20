@@ -473,6 +473,20 @@ jobs:
           if ($httpStatuses.Count -ne 1 -or $httpStatuses[0].Groups[1].Value -ne '404') {
             throw "Release lookup failed without an unambiguous HTTP 404 (exit $lookupExit); refusing publication"
           }
+
+          # A missing Release object does not prove that the Git tag itself is
+          # absent. gh release create may reuse an existing tag; never attach a
+          # new release to an unreviewed or differently-targeted ref.
+          $tagLookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$releaseTag" 2>&1 | Out-String
+          $tagLookupExit = $LASTEXITCODE
+          if ($tagLookupExit -eq 0) {
+            throw "Git tag $releaseTag already exists. Refusing to reuse or retarget it; select an approved new version."
+          }
+          $tagHttpStatuses = @([regex]::Matches($tagLookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\s|$)'))
+          if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '404') {
+            throw "Git tag lookup failed without an unambiguous HTTP 404 (exit $tagLookupExit); refusing publication"
+          }
+
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
           $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
