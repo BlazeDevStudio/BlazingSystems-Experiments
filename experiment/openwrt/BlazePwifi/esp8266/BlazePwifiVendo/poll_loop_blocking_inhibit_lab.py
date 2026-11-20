@@ -903,7 +903,7 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED journal-fault-idle-line-shortcut")
     edge_hook = begin.replace(
         "return coinLineQuietAfterInhibit();",
-        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; } return false;",
+        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ for(unsigned edge=0; edge<injectAfterDrainEdgeCount; ++edge) coinEdgeSequence++; injectAfterDrainEdge=false; } return true; } return false;",
         1,
     )
     if edge_hook == begin:
