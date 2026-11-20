@@ -102,6 +102,164 @@ def _read_esp_app_elf_sha256(descriptor: int) -> str | None:
     return app_elf_sha.hex()
 
 
+
+ESP_IMAGE_MAX_SEGMENTS = 16
+
+
+def _read_esp_image_layout(descriptor: int, image_size: int) -> dict | None:
+    """Parse ESP image segment boundaries and optional checksum/SHA trailer."""
+    header = _read_at(descriptor, ESP_IMAGE_HEADER_SIZE, 0)
+    if (
+        len(header) != ESP_IMAGE_HEADER_SIZE
+        or header[0] != ESP_IMAGE_HEADER_MAGIC
+        or not 1 <= header[1] <= ESP_IMAGE_MAX_SEGMENTS
+        or header[23] not in (0, 1)
+    ):
+        return None
+
+    segment_count = header[1]
+    hash_appended = header[23]
+    cursor = ESP_IMAGE_HEADER_SIZE
+    segments: list[dict[str, int]] = []
+    for index in range(segment_count):
+        segment_header = _read_at(descriptor, ESP_IMAGE_SEGMENT_HEADER_SIZE, cursor)
+        if len(segment_header) != ESP_IMAGE_SEGMENT_HEADER_SIZE:
+            return None
+        load_addr = int.from_bytes(segment_header[0:4], "little")
+        data_len = int.from_bytes(segment_header[4:8], "little")
+        data_start = cursor + ESP_IMAGE_SEGMENT_HEADER_SIZE
+        data_end = data_start + data_len
+        if data_end > image_size:
+            return None
+        segments.append(
+            {
+                "index": index,
+                "header_start": cursor,
+                "header_end": cursor + ESP_IMAGE_SEGMENT_HEADER_SIZE - 1,
+                "data_start": data_start,
+                "data_end": data_end,
+                "load_addr": load_addr,
+                "data_len": data_len,
+            }
+        )
+        cursor = data_end
+
+    # ESP image checksum occupies the last byte of the next 16-byte block.
+    # If segment data ends on a 16-byte boundary, a full padding block is used.
+    checksum_offset = ((cursor // 16) + 1) * 16 - 1
+    if checksum_offset >= image_size:
+        return None
+
+    appended_sha256: tuple[int, int] | None = None
+    trailer_start = checksum_offset + 1
+    if hash_appended:
+        sha_end_exclusive = trailer_start + 32
+        if sha_end_exclusive > image_size:
+            return None
+        appended_sha256 = (trailer_start, sha_end_exclusive - 1)
+        trailer_start = sha_end_exclusive
+
+    return {
+        "segments": segments,
+        "segments_end": cursor,
+        "checksum_offset": checksum_offset,
+        "hash_appended": hash_appended,
+        "appended_sha256": appended_sha256,
+        "trailer_start": trailer_start,
+        "image_size": image_size,
+    }
+
+
+def _format_esp_image_layout(layout: dict | None) -> str:
+    if layout is None:
+        return "unparsed"
+    segments = []
+    for segment in layout["segments"]:
+        if segment["data_len"]:
+            data_range = f'{segment["data_start"]}-{segment["data_end"] - 1}'
+        else:
+            data_range = "empty"
+        segments.append(
+            f'{segment["index"]}:header={segment["header_start"]}-{segment["header_end"]},'
+            f'data={data_range},load_addr=0x{segment["load_addr"]:08x},'
+            f'size={segment["data_len"]}'
+        )
+    appended = layout["appended_sha256"]
+    appended_range = "none" if appended is None else f"{appended[0]}-{appended[1]}"
+    trailing_bytes = layout["image_size"] - layout["trailer_start"]
+    return (
+        f'segments=[{";".join(segments)}] '
+        f'checksum_offset={layout["checksum_offset"]} '
+        f'hash_appended={layout["hash_appended"]} '
+        f'appended_sha256={appended_range} trailing_bytes={trailing_bytes}'
+    )
+
+
+def _format_difference_regions(
+    ranges: list[tuple[int, int]],
+    layout: dict | None,
+) -> list[str]:
+    if layout is None:
+        return ["unparsed"]
+
+    described: list[str] = []
+    for start, end in ranges:
+        labels: list[str] = []
+
+        def add_overlap(label: str, region_start: int, region_end: int) -> None:
+            overlap_start = max(start, region_start)
+            overlap_end = min(end, region_end)
+            if overlap_start <= overlap_end:
+                labels.append(label)
+
+        add_overlap("image_header", 0, ESP_IMAGE_HEADER_SIZE - 1)
+        for segment in layout["segments"]:
+            add_overlap(
+                f'segment[{segment["index"]}]_header',
+                segment["header_start"],
+                segment["header_end"],
+            )
+            if segment["data_len"]:
+                overlap_start = max(start, segment["data_start"])
+                overlap_end = min(end, segment["data_end"] - 1)
+                if overlap_start <= overlap_end:
+                    offset_start = overlap_start - segment["data_start"]
+                    offset_end = overlap_end - segment["data_start"]
+                    segment_offset = (
+                        str(offset_start)
+                        if offset_start == offset_end
+                        else f"{offset_start}-{offset_end}"
+                    )
+                    labels.append(
+                        f'segment[{segment["index"]}]_data('
+                        f'load_addr=0x{segment["load_addr"]:08x},'
+                        f'segment_offset={segment_offset})'
+                    )
+
+        if start <= ESP_APP_DESC_APP_ELF_SHA256_OFFSET + ESP_APP_DESC_APP_ELF_SHA256_SIZE - 1:
+            if end >= ESP_APP_DESC_APP_ELF_SHA256_OFFSET:
+                labels.append("app_desc.app_elf_sha256")
+
+        padding_start = layout["segments_end"]
+        padding_end = layout["checksum_offset"] - 1
+        if padding_start <= padding_end:
+            add_overlap("segment_padding", padding_start, padding_end)
+        add_overlap("image_checksum", layout["checksum_offset"], layout["checksum_offset"])
+
+        appended = layout["appended_sha256"]
+        if appended is not None:
+            add_overlap("appended_sha256", appended[0], appended[1])
+
+        trailer_start = layout["trailer_start"]
+        if trailer_start < layout["image_size"]:
+            add_overlap("signature_or_unknown_trailer", trailer_start, layout["image_size"] - 1)
+
+        if not labels:
+            labels.append("unmapped")
+        described.append(f"{start}-{end}:{'|'.join(labels)}")
+    return described
+
+
 def compare_application_images(
     first_image: str | Path,
     second_image: str | Path,
@@ -171,6 +329,12 @@ def compare_application_images(
 
             first_app_elf_sha = _read_esp_app_elf_sha256(first_fd)
             second_app_elf_sha = _read_esp_app_elf_sha256(second_fd)
+            first_layout = _read_esp_image_layout(first_fd, first_size)
+            second_layout = _read_esp_image_layout(second_fd, second_size)
+            first_layout_summary = _format_esp_image_layout(first_layout)
+            second_layout_summary = _format_esp_image_layout(second_layout)
+            first_difference_regions = _format_difference_regions(difference_ranges, first_layout)
+            second_difference_regions = _format_difference_regions(difference_ranges, second_layout)
             _verify_stable(first_path, first_fd, first_before)
             _verify_stable(second_path, second_fd, second_before)
 
@@ -210,7 +374,11 @@ def compare_application_images(
                     f"differing_bytes={differing_bytes} "
                     f"difference_range_count={difference_range_count} "
                     f"difference_ranges={formatted_ranges} "
-                    f"first_differences={first_differences[:16]}"
+                    f"first_differences={first_differences[:16]} "
+                    f"image_layout_first={first_layout_summary} "
+                    f"image_layout_second={second_layout_summary} "
+                    f"difference_regions_first={first_difference_regions} "
+                    f"difference_regions_second={second_difference_regions}"
                     f"{app_sha_detail}"
                 )
 
