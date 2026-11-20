@@ -1122,3 +1122,13 @@ At HARDWARE #327 docs/PR head `a2f2d42b1e65ceb0e60ae79517a0edc1d38a0d5d` and sou
 Those string markers are not a signed response-envelope contract. The current producer does not emit `response_sig` for the register/poll/coin response bodies, and the firmware remains deliberately deny-only for positive poll admission until CORE defines the versioned envelope and key binding, HARDWARE implements the approved consumer, and QA verifies same-SHA golden vectors. Do not add synthetic positive markers, loosen verification, clear pending evidence, or enable coin/relay admission to make this fixture green.
 
 **Owner split:** PHX-QA owns replacing the inherited positive string-presence check with source-linked negative/default-deny tests for both ESP8266 and ESP32. The tests must demonstrate that missing/unverified responses cannot enable admission, clear pending ingress evidence, authorize coin disposition, or energize outputs. PHX-HARDWARE retains firmware and source-extracted lab ownership. Focused CI is simulated/hosted evidence only; no physical board acceptance is implied.
+
+
+
+## 6.57 Current source deny-only poll contract is not equivalent to COE #26 Hardware — 2026-11-20 UTC18
+
+At Experiments HARDWARE #327 docs head `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`, the current ESP8266/ESP32 source no longer carries the legacy positive response_sig / |poll| signature-marker implementation. The COE #26 destination sketches still contain that older response_sig extraction and positive poll-signature calculation. Their Git blobs differ on both boards, and the source/destination hardening fixtures also differ.
+
+The inherited source fixture still greps for response_sig, |register| and |poll|. Its Full CI failure is a test-contract mismatch, not permission to re-enable positive admission. PHX-QA owns replacing those string-presence checks with source-linked negative/default-deny tests for both boards. PHX-HARDWARE retains firmware ownership. No synthetic positive marker, weaker verification, pending-evidence clear, coin disposition, or relay-enable path is authorized.
+
+COE #26 remains frozen until a versioned authenticated response/receipt contract is approved by CORE, implemented by HARDWARE, independently verified by QA at the same source SHA, and mapped to exact destination blobs, tests, licenses/notices and CI. No interface compatibility is asserted by tree similarity or historical signature code.

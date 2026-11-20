@@ -1452,3 +1452,20 @@ The terminal #291 exact-head readback supersedes the earlier in-progress labels:
 - **Execution:** Master source/tree/metadata assertions were performed, but the full repository Master Python suite was NOT RUN because an authenticated checkout is unavailable and local Git DNS resolution failed. These checks are not a Master-suite or CI pass.
 
 **Next:** QA repairs the poll fixture; PISONET fixes its own self-test; RELEASE obtains CORE/PISONET review of inherited paths; repository administrator verifies effective protected-branch admission; registry custodian provides authorized v11/manifest/ledger access. **PRODUCTION NO-GO.**
+
+
+
+## PHX-MASTER UTC18 — live blockers and evidence classification (2026-11-20T18:06:08Z)
+
+- HARDWARE #327: focused quarantine and relay/output CI PASS; Full validation FAILS at the QA-owned positive poll-signature fixture. Host CI/simulation only; physical acceptance NOT TESTED.
+- RELEASE #291: exact-head Full build PASS (26 jobs), but four production import/sign/publish jobs are SKIPPED; exact-head Windows FAILS in PISONET-owned negative-selftest.ps1. RELEASE's UTC18 compiler-provenance audit is already IN_PROGRESS.
+- COE #26: exact source/destination trees are complete but Hardware firmware blobs, tests, board-local Python labs and workflows do not match; existing SOURCE_INTAKE/MIGRATION_MAP are PisoWiFi-only. Keep frozen.
+- CORE #252, RENTAL #240/#287/#289, PISONET #255, QA #267/#290 and RELEASE #242 retain the scoped CI observations recorded in ROLE_ASSIGNMENTS.md; no subsystem source was modified by Master.
+- Cleanup issue #266 remains OPEN with 0/7 role checkboxes complete. The Master cleanup checkbox remains intentionally unchecked; no broad cleanup/deletion claim is made.
+- Canonical private Drive registry v11, current artifact manifest and sync ledger remain NOT_ACCESSIBLE through the exposed connector surface. Library search found older registry snapshots and a checkpoint that references v11, but none is a substitute. No Drive artifact/folder was created.
+- Effective protected-branch enforcement remains UNVERIFIED. Do not treat API branch metadata or empty ruleset results as proof of organization-level enforcement.
+- Full Master Python suite NOT RUN because no authenticated local checkout is available. This run performed GitHub source/tree/metadata and Actions-log inspection plus bounded static consistency assertions; those are not a Master-suite pass.
+
+**Next owner actions:** QA replaces the positive poll-signature fixture with source-linked negative/default-deny tests for both boards; PISONET fixes its own unset $buildWorkflow self-test; RELEASE coordinates CORE/PISONET review of its accumulated paths and continues its compiler-provenance audit; registry custodian provides authorized v11/manifest/ledger access; repository administrator verifies effective protected branch admission.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.

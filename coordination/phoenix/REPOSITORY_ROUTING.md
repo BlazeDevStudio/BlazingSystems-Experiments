@@ -1048,3 +1048,19 @@ The source BlazePwifi MIT license blob `1ee55b94...` matches destination `Pisowi
 RELEASE #291's accumulated 26-path diff contains 21 RELEASE paths, three CORE-owned handover files and two PISONET-owned SoftTimer tests. The current Windows failure is in the PISONET-owned `negative-selftest.ps1`; only the respective owners may approve their files. Separate COE candidates #35/#44/#47/#48/#49/#45 remain independent drafts and do not become #26 acceptance or route authority.
 
 **Disposition:** keep #26 FROZEN. No source/target copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration. Require exact per-file blob+mode provenance, owner approvals, license/notice review, test identity mapping, and destination CI at one pinned candidate SHA before any proposal.
+
+
+
+## PHX-MASTER UTC18 routing and migration holds — 2026-11-20 (2026-11-20T18:06:08Z)
+
+### RELEASE #291 inherited path ownership
+
+Current #291 accumulated diff: 26 paths — 21 RELEASE, three CORE-owned handover paths, two PISONET-owned SoftTimer test paths. PISONET owns negative-selftest.ps1 and PublisherMockCli.ps1; CORE owns PROJECT_HANDOVER.md, CHANGE_LEDGER.md and CURRENT_STATE.md. RELEASE owns its workflow and provenance tools. The current Windows failure is the unset $buildWorkflow in the PISONET-owned test. RELEASE's UTC18 source audit is already IN_PROGRESS; Master will not duplicate or edit its files.
+
+### HARDWARE #327 / QA fixture split
+
+The active child remains #323 → #326 → #327. HARDWARE owns firmware and board-local labs. QA owns the inherited positive poll-signature fixture that conflicts with the current deny-only source. Do not change firmware to satisfy the obsolete assertion; QA must replace it with source-linked negative/default-deny checks.
+
+### COE #26 destination hold
+
+COE #26 remains FROZEN. Its current Pisowifi SOURCE_INTAKE/MIGRATION_MAP do not cover Hardware. Current source/destination sketch blobs and test identities differ; board-local Python labs and three scoped workflows are absent at destination; root NOTICE and Hardware license/notice scope are unresolved. OWNERSHIP_ROUTES.json remains unchanged, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route promotion or file movement.

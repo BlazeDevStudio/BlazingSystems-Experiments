@@ -2684,3 +2684,44 @@ Source workflows: `phx-hardware-poll-edge-latch.yml`, `phx-hardware-quarantine-b
 - COE #35: case guard PASS, ImageBuilder sandbox FAIL, Shared Hardware FAIL. #44: case guard PASS, ImageBuilder sandbox FAIL, Shared Hardware PASS. #49: Stage 5.1 PASS, case guard PASS, Shared Hardware FAIL. #48: Stage 5 PASS, case guard PASS, Shared Hardware FAIL. #47: Stage 4.2 PASS, case guard PASS, Shared Hardware FAIL. #45: Pisowifi shell suite and case guard PASS. These remain separate drafts and do not validate #26.
 
 **Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or migration.
+
+
+
+## PHX-MASTER UTC18 exact-source / destination staging revalidation — 2026-11-20 (2026-11-20T18:06:08Z)
+
+### Pinned trees
+
+- Current source candidate: Experiments HARDWARE #327 docs/PR head `9bef8c1e7dcbde9e8987f14a1a874de1d7d11514`; recursive tree `d46355267f991cfaae68fc37fa5f6e176fa1c269`, 2,443 entries, not truncated.
+- Destination candidate: COE #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`; recursive tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`, 286 entries, not truncated.
+- COE #26 remains OPEN / DRAFT; five workflows QUEUED / zero jobs.
+
+### Hardware subtree import parity
+
+| Item | Experiments #327 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | `a1f12edc3d0a2ce93641c3ae2ef1e0e258dbbdaa` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| Board source files | 36 under ESP32/ESP8266 | 4 under Hardware | Incomplete |
+| Python board/test labs/helpers | 33 | 0 | Not imported |
+| Scoped Hardware workflows | 3 (poll-edge-latch, quarantine-byte-readback, relay-output-polarity) | 1 generic hardware-ci.yml | No workflow parity |
+| Hardening test | source blob `41211b2c110ab409f6d9d1812ef12fda73b13211` | destination blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different test identities |
+
+The current source sketches do not contain the old positive response_sig / |poll| signature markers. Both destination sketches still contain response_sig extraction and positive |poll| expected-signature logic. The inherited source hardening fixture also still asserts those positive markers, which is why #327 Full fails. The destination is not behavior-equivalent to the current deny-only source candidate.
+
+### License / notice scope
+
+- Source BlazePwifi LICENSE and destination Pisowifi/LICENSE both have blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root NOTICE.md exists at `f6d92cd21465312be5993631fe26977219be0fb9`; COE root NOTICE.md is absent.
+- No Hardware-specific LICENSE/NOTICE was found in the source board folders; destination Hardware/LICENSE and Hardware/NOTICE.md are absent. The sibling Pisowifi MIT match does not establish Hardware license/notice scope.
+
+### Existing COE intake is PisoWiFi-only
+
+- COE Pisowifi/SOURCE_INTAKE.json blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema 8, pins source Experiments commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, project root experiment/openwrt/BlazePwifi, destination root Pisowifi/.
+- It records 61 original rootfs files, 61 recovered, 47 byte-identical, 14 locally derived, zero unrecovered, and two unchanged original tests. It does not provide Hardware firmware/lab provenance.
+- COE Pisowifi/MIGRATION_MAP.md blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` begins NO-GO FOR SHOP INSTALL and scopes the mapped work to Pisowifi/. It is not a Hardware migration map.
+
+### Route authority
+
+OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, status DRAFT_REVIEW_ONLY, 11 routes, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, PHX-MASTER route target null. This manifest is not a copy/move instruction.
+
+**Disposition: COE #26 FROZEN.** No copy, move, overwrite, cherry-pick, rebase, staging, route promotion, or migration. Require per-file exact blob+mode provenance, source/destination test identity, license/notice review, owner approval, and destination CI at one pinned candidate SHA before any route proposal.
