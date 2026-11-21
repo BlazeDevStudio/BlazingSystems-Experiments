@@ -2154,3 +2154,24 @@ This section supersedes earlier role-head rows where they conflict; historical a
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; remains FROZEN. |
 
 Master did not modify subsystem source or transfer any role ownership.
+
+
+## PHX-MASTER UTC06 live role/CI reconciliation — 2026-11-21T06:00Z
+
+This live snapshot supersedes older role-head rows above only for the exact refs below. It does not transfer ownership. All CI statements are scoped to the listed commit and workflow run.
+
+| Role / PR | Exact current ref | Exact-head CI / disposition | Next owner action |
+|---|---|---|---|
+| PHX-MASTER #288 | phoenix/master-coordination at audit parent 6fd4d40b; base main f4e8a891 | OPEN / DRAFT / UNMERGED; 147 paths before this UTC06 update, all coordination/phoenix; no PR-triggered CI | Master owns coordination/phoenix only; this audit adds one report and updates existing coordination files. |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 SUCCESS, scoped only | CORE implementation remains with the separate Blaze Production Continuation owner. |
+| PHX-RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070; base #289 68928774d0d7cf65adb26bc6b54199a3159d066c | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL: canonical handover freshness and ESP32 core 4.0.0 cannot find mbedtls/sha256.h | Rental owns Android/APK paths; CORE owns canonical handover; Hardware/Release own firmware/toolchain baseline. |
+| PHX-RENTAL supporting drafts | #240 a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #287 a4fffd01c8fb1818c32a53522e0590c1dc8a77cd; #289 68928774d0d7cf65adb26bc6b54199a3159d066c | #240 build/native runs #40910311159/#40910311141 PASS; #287 #43754089203 PASS; #289 #43653329229/#43653329235 PASS. These do not override #328's current shared-build failure. | Keep each branch with its Rental owner; no Master source edits. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 SUCCESS, scoped; physical USB-RS232/PnP/race acceptance NOT TESTED | Pisonet owns native COM and physical serial acceptance. |
+| PHX-HARDWARE #327 | docs/PR head a873042c2a59a2197e4b4457c18dc75da12a0d02; source/test 3292d2a1e207da4241189952eec0e97255a48475; base #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44873105133 PASS; Relay/output #44873105198 PASS; Full #44873105141 FAIL at QA-owned Missing poll signature check after 15/15 target/platform jobs PASS; downstream simulation/sign/publish jobs skipped | Hardware retains deny-only source; QA replaces the obsolete positive fixture only after CORE publishes the authenticated poll/receipt contract. |
+| PHX-QA #267 / #279 / #290 / #292 | #267 ff5367990c2d27b8ebbb822ee208251af0c890e2; #279 8f476ef05893193325ef3d1f65a35e144ae7a568; #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #267 #41452247439 SUCCESS; #279 no PR-triggered runs; #290 #43633486963 SUCCESS but native COM lab not invoked; #292 no PR-triggered runs and retains historical base b1ca02e2087f3b1a7169ceab9c34e52646e700df | QA owns native/recipient regressions; replay #292 on current Master and obtain exact-head CI. |
+| PHX-RELEASE #291 | f06ac4df2f61b9c39a03a6ff6009b32948b94778; base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Compatibility #44862405800 PASS 3/3, but only for pinned Hardware 268ca9b / ESP32 blob 09c02d; Full #44862406950 FAIL at handover freshness; Windows #44862405809 FAIL at handover freshness, build/publisher skipped | Release must re-pin and rerun compatibility against current Hardware source/test 3292d2a; do not call the old pin current. |
+| COE RELEASE #35 | 9a20f90b7abc9dced9f545733d59801d746bf088 | Case-collision #44870760313 PASS; profile #44870760442 FAIL for all 10 profiles because approved site-scoped RFC 4193 ULA /48 is missing; sandbox #44870760338 FAIL exit 125 because Bubblewrap is absent | Site/network authority supplies the real approved /48; runner owner supplies trusted pre-provisioned Bubblewrap. No invented prefix or unsandboxed fallback. |
+| COE RELEASE #44 | 582fd5d5e83e36b36546ac28534740298ba94af4 | Case-collision #44390136296 PASS; shared/profile #44390136309 PASS; sandbox #44390136327 FAIL | This separate installation-identity candidate is not approval of the required site-scoped ULA /48. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12; base main a6513ab4412b4c014eee2863e45cbe32d06cb243 | OPEN / DRAFT / FROZEN; five candidate workflows QUEUED / zero jobs | Keep frozen pending exact source/test/license/NOTICE parity and destination CI. |
+
+CORE implementation and canonical product handover remain outside Master ownership. PR membership, a passing scoped job, or a documentation-only head does not transfer source ownership or release authority.

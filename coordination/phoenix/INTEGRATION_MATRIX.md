@@ -3118,3 +3118,34 @@ These COE #35 results were re-read from runs tied to the exact PR head. The fail
 **COE #35:** current head `9a20f90...`; 122 host tests pass before ten ULA-profile failures; Bubblewrap sandbox fails closed. Site authority and runner prerequisites remain owner actions.
 
 No source move, copy, staging, route promotion, rebase, cherry-pick or destination edit is authorized.
+
+
+## UTC06 exact-source integration and migration reconciliation — 2026-11-21T06:00Z
+
+**Current refs:** Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; active v0.6 development blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859; legacy v0.5.3 development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master parent 6fd4d40b979ed0eac87794a7d8cf3d50d904b514; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+### HARDWARE source and RELEASE pin
+
+HARDWARE #327 source/test is now 3292d2a1e207da4241189952eec0e97255a48475; docs/PR head is a873042c2a59a2197e4b4457c18dc75da12a0d02. The source/test-to-docs comparison is 5 commits ahead / 0 behind and adds only the zero-pending quarantine handover document after the tested source tree.
+
+The new Hardware fix makes a zero-pulse RAM state paired with a durable one-shot attempt marker a contradiction: latch journal recovery required, log operator reconciliation, deny, and do not append or clear. Focused current-head Quarantine #44873105133 and Relay/output #44873105198 PASS. Full #44873105141 fails the QA-owned Missing poll signature check; 15/15 target/platform jobs pass but downstream jobs are skipped. All of this is simulated/source-extracted CI, not physical acceptance.
+
+**The UTC05 15/15 ESP32 subtree parity statement is superseded for the current Hardware tip.** RELEASE #291 still pins Hardware 268ca9bde6d3710b418134ffd328060250fad42f and sketch blob 09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79. Current #327 source/test 3292d2a1... is 11 commits ahead and modifies both ESP32 and ESP8266 sketches plus the quarantine test/lab sources. Current ESP32 sketch blob is 7ffb7b534c7163678726902946a17b04992950a0, not the old pin. Therefore #44862405800 remains valid only for the old immutable pin; it does not qualify the current #327 tip. RELEASE must refresh its source SHA/blob pin and rerun the 3.3.13/4.0.0 matrix and reproducibility checks.
+
+### COE #26 exact recursive tree comparison
+
+Source is Experiments HARDWARE #327 PR head a873042c..., tree dffd123ba73018d0303eb10f8d22c34422c85790, 2,463 entries / 1,884 blobs, truncated=false. Destination is COE #26 b382d233..., tree 8a7d4cf81d7227118b876c1138dd2da12345fefa, 286 entries / 207 blobs, truncated=false.
+
+| Routed path | Source files | Destination files | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 → Hardware/esp32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 → Hardware/esp8266 | 26 | 1 | 0 | 1 | 25 | 0 |
+| QA tests → Pisowifi/tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+Current ESP32 sketch source blob 7ffb7b534c7163678726902946a17b04992950a0 differs from COE blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. Current ESP8266 source blob c2aa71963eaa0288721f0bb13cff771aaaabc42f differs from COE blob c8be98f72596681e36a3ad1f8939bf8046c96887.
+
+Additional exact-tree findings: 30 board-local Python labs/helpers in source vs zero in destination Hardware; three scoped phx-hardware-*.yml source workflows vs one generic destination hardware-ci.yml. The source Pisowifi LICENSE and COE Pisowifi LICENSE are identical (1ee55b94183417be977ca287cd7391f9a6f7e721); source root NOTICE exists (f6d92cd21465312be5993631fe26977219be0fb9) but COE root NOTICE and Hardware-specific LICENSE/NOTICE are absent. This does not settle Hardware license/NOTICE applicability.
+
+The destination firmware is materially older: source has durable attempt-marker and journal-recovery state; the COE ESP8266/ESP32 copies do not contain the same state, and the destination retains older format-on-mount-failure and unconditional quarantine-clear behavior. Static source inspection only; no runtime/customer incident is claimed.
+
+The exact routing manifest remains OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. COE #26 remains FROZEN. No staging, copying, moving, overwriting, cherry-picking, rebasing, or route promotion is authorized.

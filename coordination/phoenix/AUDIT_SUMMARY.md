@@ -1687,3 +1687,20 @@ Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is
 - Cleanup #266 remains OPEN / 0/7.
 
 Production remains NO-GO. Master did not touch CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source paths.
+
+
+## PHX-MASTER UTC06 — current exact-source disposition (2026-11-21T06:00Z)
+
+**Overall:** BLOCKED / PR #288 OPEN-DRAFT / COE #26 FROZEN / PRODUCTION NO-GO.
+
+- HARDWARE #327's latest source/test commit 3292d2a1... fixes a contradictory zero-pulse RAM state when a durable coin POST attempt marker remains. The safe result is deny + journalRecoveryRequired + operator reconciliation, with no quarantine append or pending clear. Current docs head a873042c... has focused Quarantine #44873105133 and Relay #44873105198 PASS; Full #44873105141 fails the QA-owned Missing poll signature check after 15/15 target/platform builds pass.
+- RELEASE #291's 3/3 compatibility pass #44862405800 is pinned to older Hardware 268ca9b... / ESP32 sketch blob 09c02d.... Current Hardware source/test 3292d2a... is 11 commits ahead and changes the ESP32 sketch blob to 7ffb7b53... and the ESP8266 sketch as well. The prior UTC05 15/15 subtree parity no longer applies to the current tip. RELEASE must re-pin and rerun.
+- COE #26 exact trees are complete but materially divergent: source 2,463 entries / 1,884 blobs vs destination 286 / 207; ESP32 16/1 (0 identical), ESP8266 26/1 (0 identical), QA 47/19 (1 identical, 3 divergent, 43 source-only, 15 destination-only). Thirty board-local Python labs and two board firmware histories are not imported; three scoped source workflows collapse to one generic destination workflow. Pisowifi LICENSE matches, root NOTICE is missing, Hardware-specific license scope unresolved.
+- COE #35 current head 9a20f90...: site ULA /48 absent for all ten appliance profiles; trusted runner lacks Bubblewrap. Both gates fail closed. COE #26 stays frozen.
+- RENTAL #328 APK identity and API21/API23 smoke pass; shared build fails both canonical handover freshness and ESP32 core 4.0.0 Mbed TLS header resolution. CORE retains its own source/handover ownership.
+- Current Experiments main, v0.6 development, legacy v0.5.3 development, Master branch, and COE main all report classic branch protection disabled / required status-check enforcement off. Organization-level ruleset enforcement was not independently verified.
+- Cleanup issue #266 remains OPEN, 0/7 checked; Master cleanup inventory is not complete.
+- Private Drive registry v11 and newer corrections were not found in the authorized Library search; no Google Drive connector is exposed. No older registry was substituted and no Drive artifact was created.
+- Local exact-head clone failed because github.com DNS could not resolve; the full Master Python suite was NOT RUN. Master exact-head Actions inventory returned no runs.
+
+**Next actions:** QA updates the positive poll-signature fixture only after CORE publishes the authenticated response/receipt contract; RELEASE re-pins and reruns current Hardware source compatibility; CORE refreshes canonical handover under its separate owner; site authority supplies the real approved ULA /48; runner owner supplies trusted pre-provisioned Bubblewrap; keep COE #26 frozen pending per-file provenance, test, license/NOTICE and destination CI acceptance.

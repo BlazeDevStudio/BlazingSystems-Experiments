@@ -1240,3 +1240,31 @@ HARDWARE #327's normalized ESP8266/ESP32 helper-parity lab now covers 17 shared 
 **Exact evidence:** HARDWARE #327 source/test `c5cb17bfa35ea24615f53097b936c49ebe5f0104`; PR/docs head `efb10354a71c392de8c72b6e73ff7616158cd675`; focused runs #44863161774, #44863167396, #44863167432, #44863539280, #44863539382; Full #44863539439 fails QA's positive poll-signature assertion. RELEASE #291 compatibility #44862405800 passes 3/3 on pin `268ca9b...`.
 
 This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, migration approval, or production release.
+
+
+## 6.65 Zero-pulse RAM state with a durable POST-attempt marker is a financial disposition contradiction — 2026-11-21 UTC06
+
+A pending coin event is not safely absent merely because the in-memory pulse counter is zero. If the durable one-shot POST-attempt marker still represents a nonzero event, the RAM and durable state disagree and must be treated as unresolved financial evidence.
+
+1. On both ESP8266 and ESP32, if pendingPulses == 0 while a valid /pending.attempt marker remains, latch journalRecoveryRequired=true, emit an operator-reconciliation diagnostic, deny further admission, and return without appending a quarantine record or clearing pending/attempt evidence.
+2. Do not use a zero-pulse fast path to infer “nothing to quarantine” when a durable attempt marker exists. The marker is evidence that a POST may already have been dispatched; silently clearing it could destroy replay/reconciliation evidence.
+3. The test-first RED must demonstrate that the inconsistent state is detected and no clear/append occurs. The source fix must be tested on both board implementations and preserve the default-deny poll contract.
+4. This invariant does not establish crash-atomic financial state, server receipt authority, electrical behavior, or physical power-cut durability. The current evidence is source-extracted simulation plus focused hosted CI only.
+5. HARDWARE owns firmware and lab implementation; QA owns the inherited positive poll-signature fixture; CORE owns the authenticated poll/receipt contract. Master records the cross-role invariant and does not modify those source paths.
+
+**Exact evidence:** HARDWARE #327 test-only RED 8b7311b28a4e35ddac1bd9208df40eb6f9721bb2, run #44872068887; source fix 3292d2a1e207da4241189952eec0e97255a48475; source/test focused Quarantine #44872148862 (36/36) and Relay #44872148854 PASS; current docs head a873042c2a59a2197e4b4457c18dc75da12a0d02, Quarantine #44873105133 PASS, Relay/output #44873105198 PASS. Full #44873105141 fails at QA-owned Missing poll signature check after 15/15 target/platform jobs pass; downstream jobs are skipped.
+
+**Disposition:** SIMULATED / FOCUSED CI VERIFIED. PHYSICAL ACCEPTANCE: NOT TESTED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO.
+
+## 6.66 Release compatibility pins must follow the current firmware source identity — 2026-11-21 UTC06
+
+A compatibility PASS is bound to the immutable source SHA and compiled file blob in the workflow. It cannot be promoted to current-branch qualification after the Hardware source changes.
+
+1. Record the Release PR head, Hardware source/test SHA, exact board sketch blob, core/toolchain versions, workflow run/job IDs, and docs-only handover head separately.
+2. Recompare the compiled sketch and build inputs whenever the Hardware source/test branch advances. A changed sketch blob requires a new exact-source compatibility run; do not reuse an earlier PASS as current-tip evidence.
+3. Preserve the old run as valid evidence for its old immutable pin, but label it historical and scope-limited.
+4. Do not edit RELEASE-owned workflow/test paths from Master. RELEASE owns its pin and compatibility workflow; HARDWARE owns the sketch; QA independently reviews the result.
+
+**Exact example:** RELEASE #291 current head f06ac4df2f61b9c39a03a6ff6009b32948b94778 pins Hardware 268ca9bde6d3710b418134ffd328060250fad42f and ESP32 blob 09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79 (test blob e6d1308ad8be08405da74dbd8dd8a1e47b63842f, workflow blob 3597b451887e1b612ddea3d383093bba734bbc0d). Current HARDWARE #327 source/test 3292d2a1e207da4241189952eec0e97255a48475 is 11 commits ahead / 0 behind and modifies both board sketches. Current ESP32 sketch blob is 7ffb7b534c7163678726902946a17b04992950a0, not the pinned blob. Compatibility run #44862405800 remains a 3/3 PASS for the old pin only; it does not qualify the current #327 tip. RELEASE must refresh the pin and rerun ESP32 cores 3.3.13 and 4.0.0 plus reproducibility/image identity checks.
+
+This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, migration approval, or production release.

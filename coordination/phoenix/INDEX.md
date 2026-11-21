@@ -367,3 +367,10 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 ## 2026-11-21 UTC05 — live source and migration audit
 
 - [UTC05 exact-head, Release ESP32 subtree parity, and COE #26 tree audit](PHX_MASTER_UTC05_20261121_RELEASE_PIN_PARITY_AND_COE26_EXACT_TREE_AUDIT.md) records current role heads, exact CI, the 15/15 ESP32 compile-directory identity, and the frozen COE #26 source/destination blob, test, workflow, and license comparison. Production remains NO-GO.
+
+
+## PHX-MASTER UTC06 — 2026-11-21
+
+- [Exact Hardware quarantine-state correction, RELEASE pin invalidation, and COE #26 tree audit](PHX_MASTER_UTC06_20261121_HW327_ZERO_PENDING_QUARANTINE_COE26_EXACT_TREE_ROLE_CI_AUDIT.md) — records HARDWARE #327 source/test 3292d2a1 / docs head a873042c, focused Quarantine/Relay PASS and Full poll-signature fixture failure; supersedes the UTC05 current-tip ESP32 parity claim because RELEASE #291 still pins older Hardware 268ca9b / sketch blob 09c02d.
+- Complete exact-tree comparison: Experiments source 2,463 entries / 1,884 blobs vs COE #26 destination 286 / 207; ESP32 16/1, ESP8266 26/1, QA tests 47/19; 30 source board-local Python labs absent; NOTICE/license scope unresolved.
+- COE #26 remains FROZEN; COE #35 remains blocked by missing approved site ULA /48 and trusted Bubblewrap; Production remains NO-GO.
