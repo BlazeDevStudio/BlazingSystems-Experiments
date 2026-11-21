@@ -256,7 +256,7 @@ int main(){
         LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
         "single pending.bak candidate permits marker");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/28 source-extracted cases; physical power cuts NOT TESTED\n";
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/29 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
@@ -299,4 +299,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 29/29 source-extracted cases per board (58/58 total) PASS; actual flash NOT TESTED")
