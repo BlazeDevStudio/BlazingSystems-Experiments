@@ -1566,39 +1566,55 @@ bool clearPending(){
 static const size_t QUARANTINE_MAX_BYTES=32768;
 
 String quarantineLogField(const String &value,size_t maxLen){
-  String out;
-  out.reserve(maxLen);
-  size_t i=0;
-  for(;i<value.length();++i){
+  // Measure the complete encoded size first. If truncation is required, reserve
+  // the suffix before appending atoms so an escape sequence is never split.
+  size_t encodedLength=0;
+  bool truncated=false;
+  for(size_t i=0;i<value.length();++i){
     const unsigned char c=(unsigned char)value[i];
-    const char *escaped=nullptr;
-    if(c=='\\') escaped="\\\\";
-    else if(c=='\r') escaped="\\r";
-    else if(c=='\n') escaped="\\n";
-    else if(c=='\t') escaped="\\t";
+    size_t atomLength=1;
+    if(c=='\\\\' || c=='\\r' || c=='\\n' || c=='\\t') atomLength=2;
     else if(c==' ' && i+8<=value.length() &&
             ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
               value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
              (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
               value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
-      escaped="\\x20";
+      atomLength=4;
+    if(atomLength>maxLen-encodedLength){
+      truncated=true;
+      break;
+    }
+    encodedLength+=atomLength;
+  }
+
+  const size_t contentLimit=(truncated && maxLen>=3)?maxLen-3:maxLen;
+  String out;
+  out.reserve(maxLen);
+  for(size_t i=0;i<value.length();++i){
+    const unsigned char c=(unsigned char)value[i];
+    const char *escaped=nullptr;
+    if(c=='\\\\') escaped="\\\\\\\\";
+    else if(c=='\\r') escaped="\\\\r";
+    else if(c=='\\n') escaped="\\\\n";
+    else if(c=='\\t') escaped="\\\\t";
+    else if(c==' ' && i+8<=value.length() &&
+            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
+              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
+             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
+              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
+      escaped="\\\\x20";
     if(escaped){
       const size_t escapedLength=strlen(escaped);
-      if(out.length()+escapedLength>maxLen) break;
+      if(out.length()+escapedLength>contentLimit) break;
       out+=escaped;
     } else {
-      if(out.length()+1>maxLen) break;
+      if(out.length()+1>contentLimit) break;
       out+=(c<0x20 || c==0x7f)?'?':(char)c;
     }
   }
-  if(i<value.length() && maxLen>=3){
-    while(out.length()+3>maxLen) out.remove(out.length()-1);
-    out+="...";
-  }
+  if(truncated && maxLen>=3) out+="...";
   return out;
-}
-
-bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
+}bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
   const size_t length=value.length();
   if(length<minLength || length>maxLength) return false;
   for(size_t i=0;i<length;++i){
