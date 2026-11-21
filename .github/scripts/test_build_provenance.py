@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -148,12 +149,18 @@ class BuildProvenanceTests(unittest.TestCase):
         )
         return work
 
-    def arduino_fixture(self):
-        (self.artifact / "source").mkdir()
-        (self.artifact / "source" / "BlazePwifiVendo.ino").write_text(
-            "void setup() {}\\nvoid loop() {}\\n", encoding="utf-8"
-        )
-        (self.artifact / "BlazePwifiVendo.ino.bin").write_bytes(b"synthetic-not-firmware")
+    def arduino_fixture(self, target="esp8266"):
+        project = provenance.ROOT / "experiment/openwrt/BlazePwifi"
+        sketch_name = "BlazePwifiVendo" if target == "esp8266" else "BlazePwifiVendo32"
+        sketch_root = project / target / sketch_name
+        staged_source = self.artifact / "source"
+        staged_source.mkdir()
+        shutil.copytree(sketch_root, staged_source / sketch_name)
+        shutil.copytree(project / "esp" / "libraries", staged_source / "libraries")
+        shutil.copyfile(project / "esp" / "REBUILD.md", staged_source / "README.md")
+        sketch_file = sketch_root / f"{sketch_name}.ino"
+        shutil.copyfile(sketch_file, self.artifact / f"{sketch_name}.ino")
+        (self.artifact / f"{sketch_name}.ino.bin").write_bytes(b"synthetic-not-firmware")
         write_checksums(self.artifact)
 
     def test_openwrt_manifest_records_exact_source_and_archive_digest(self):
@@ -255,6 +262,7 @@ class BuildProvenanceTests(unittest.TestCase):
             core_version="3.1.2",
             fqbn="esp8266:esp8266:nodemcuv2",
             sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
         )
         result = provenance.write_provenance(args, env=self.env)
         self.assertEqual(result["toolchain"]["arduino_cli_version"], "1.6.0")
@@ -280,6 +288,7 @@ class BuildProvenanceTests(unittest.TestCase):
             core_version="3.1.2",
             fqbn="esp8266:esp8266:nodemcuv2",
             sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
         )
         original_run = provenance._run
 
@@ -403,6 +412,7 @@ class BuildProvenanceTests(unittest.TestCase):
             core_package="esp8266:esp8266", core_version="3.1.3",
             fqbn="esp8266:esp8266:nodemcuv2",
             sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
         )
         with self.assertRaises(provenance.ProvenanceError):
             provenance.write_provenance(args, env=self.env)
@@ -791,6 +801,90 @@ class BuildProvenanceTests(unittest.TestCase):
                 "command timed out after 120s",
             ):
                 provenance._run(["tool", "--version"])
+
+
+    def test_arduino_provenance_records_all_staged_compile_inputs_by_git_blob(self):
+        self.arduino_fixture()
+        args = provenance.build_args(
+            kind="esp8266",
+            target="esp8266",
+            artifact_dir=self.artifact,
+            core_package="esp8266:esp8266",
+            core_version="3.1.2",
+            fqbn="esp8266:esp8266:nodemcuv2",
+            sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
+        )
+        result = provenance.write_provenance(args, env=self.env)
+        paths = {entry["path"] for entry in result["source"]["paths"]}
+        required = {
+            "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            "experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/library.properties",
+            "experiment/openwrt/BlazePwifi/esp/libraries/BlazePendingSequence/src/v060_pending_sequence.h",
+            "experiment/openwrt/BlazePwifi/esp/REBUILD.md",
+            "experiment/openwrt/BlazePwifi/tools/package-vendo-source.py",
+        }
+        self.assertTrue(required.issubset(paths), f"missing exact Git source blobs: {sorted(required - paths)}")
+        self.assertTrue(result["toolchain"]["source_tree"]["staged_copy_verified"])
+        self.assertGreaterEqual(result["toolchain"]["source_tree"]["library_file_count"], 2)
+
+    def test_arduino_provenance_rejects_staged_sketch_tree_drift_before_manifest(self):
+        self.arduino_fixture()
+        staged = self.artifact / "source" / "BlazePwifiVendo" / "BlazePwifiVendo.ino"
+        staged.write_bytes(staged.read_bytes() + b"\\n// staged-only change\\n")
+        write_checksums(self.artifact)
+        checksum_path = self.artifact / "SHA256SUMS"
+        before = checksum_path.read_bytes()
+        args = provenance.build_args(
+            kind="esp8266",
+            target="esp8266",
+            artifact_dir=self.artifact,
+            core_package="esp8266:esp8266",
+            core_version="3.1.2",
+            fqbn="esp8266:esp8266:nodemcuv2",
+            sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
+        )
+        with self.assertRaisesRegex(
+            provenance.ProvenanceError,
+            "staged Arduino sketch tree differs from exact source",
+        ):
+            provenance.write_provenance(args, env=self.env)
+        self.assertEqual(checksum_path.read_bytes(), before)
+        self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
+
+    def test_arduino_provenance_rejects_staged_library_tree_drift_before_manifest(self):
+        self.arduino_fixture()
+        staged = (
+            self.artifact
+            / "source"
+            / "libraries"
+            / "BlazePendingSequence"
+            / "src"
+            / "v060_pending_sequence.h"
+        )
+        staged.write_bytes(staged.read_bytes() + b"\\n// staged-only change\\n")
+        write_checksums(self.artifact)
+        checksum_path = self.artifact / "SHA256SUMS"
+        before = checksum_path.read_bytes()
+        args = provenance.build_args(
+            kind="esp8266",
+            target="esp8266",
+            artifact_dir=self.artifact,
+            core_package="esp8266:esp8266",
+            core_version="3.1.2",
+            fqbn="esp8266:esp8266:nodemcuv2",
+            sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
+        )
+        with self.assertRaisesRegex(
+            provenance.ProvenanceError,
+            "staged Arduino library tree differs from exact source",
+        ):
+            provenance.write_provenance(args, env=self.env)
+        self.assertEqual(checksum_path.read_bytes(), before)
+        self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
+
 
 
 if __name__ == "__main__":
