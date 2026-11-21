@@ -127,11 +127,11 @@ An intermediate commit `abdc677e95f16bbae16c8e40df90bb6cd6eba549` failed the foc
 
 ### Full integration at the same source/test SHA
 
-- Push run [#44948192001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44948192001), exact SHA `7e008ea74ef154446e273f7d25423ea07be28d70`.
+- Push run [#44948192001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44948192001), exact SHA `7e008ea74ef154446e273f7d25423ea07be28d70`: **completed FAILURE**.
 - Validation job `136980131013`: **FAILURE** at inherited QA-owned `Missing poll signature check` in the ESP8266 sketch.
-- All 13 firmware target jobs completed **SUCCESS**, including ESP8266, ESP32, x86_64, Orange Pi Zero 3, and Ruijie.
-- Android job `136980130866` was still building the BlazeRental APK at the last read; overall run was still in progress. Downstream signed import, update bundle and simulation jobs were skipped after validation failure.
-- The PR-triggered Full run `#44948196547` remained queued at the last read.
+- All 13 firmware target jobs **and** Android job `136980130866` completed **SUCCESS** (14/14 build jobs), including ESP8266, ESP32, x86_64, Orange Pi Zero 3, Ruijie and the BlazeRental Android build.
+- Downstream signed import, update bundle, simulation, production sign handoff, prerelease/release publication and candidate gates were **SKIPPED** after validation failure.
+- PR-triggered Full run `#44948196547` was **CANCELLED**; the push run above is the completed exact-head Full result.
 
 No signature was invented and no QA-owned assertion was modified. The current main producer still lacks the approved authenticated controller register/poll response contract. Keep firmware default-deny until PHX-CORE publishes canonical bytes/golden vectors and PHX-QA owns the corresponding assertion update.
 
