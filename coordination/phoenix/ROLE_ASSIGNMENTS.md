@@ -2341,7 +2341,7 @@ CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain outside P
 | QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows PASS; #292 has no PR CI. QA owns the inherited positive poll-signature fixture and current-base replay. |
 | HARDWARE | #327/#329/#330/#331/#332/#333 exact heads in INTEGRATION_MATRIX | Preserve branch ancestry. #333 focused quarantine passes; Full fails at QA-owned `Missing poll signature check`. Rerun after CORE/QA contract resolution. |
 | RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897` | Compatibility 3/3 PASS; Full validation and Windows handover FAIL. Refresh release-owned handover and rerun. |
-| COE RELEASE | #35 `c39905cd18af13b3938c00af803e243cb03b8edc` | Case collision PASS; site ULA /48 and Bubblewrap gates block. COE #48/#49 ESP32 compile fails at missing Mbed TLS header. |
+| COE RELEASE | #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; #35 `c39905cd18af13b3938c00af803e243cb03b8edc`; #48 `8286548e395366f2332830025fed00ceebdfb24a`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #31 sandbox FAIL; #35 ten profiles fail closed without approved site ULA /48 and Bubblewrap is absent; #48/#49 ESP32 compile fails on missing Mbed TLS header. Owner actions remain with COE RELEASE / HARDWARE.
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued / zero jobs. FROZEN; no migration or destination edit. |
 
 CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain outside PHX-MASTER ownership.
