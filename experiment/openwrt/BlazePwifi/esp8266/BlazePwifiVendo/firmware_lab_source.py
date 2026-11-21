@@ -44,6 +44,37 @@ def _comment_delimiter_end(
     return None
 
 
+def _raw_string_literal_end(source: str, index: int):
+    """Return the end of a C++ raw string, including any encoding prefix.
+
+    C++ permits R, u8R, uR, UR and LR string-literal prefixes. The prefix is
+    part of the literal and must be masked with its body so quotes, braces and
+    comment markers inside the raw text never become source syntax.
+    """
+    if index and (source[index - 1].isalnum() or source[index - 1] == "_"):
+        return None
+
+    prefixes = ('u8R"', 'uR"', 'UR"', 'LR"', 'R"')
+    prefix = next((item for item in prefixes if source.startswith(item, index)), None)
+    if prefix is None:
+        return None
+
+    delimiter_start = index + len(prefix)
+    paren = source.find("(", delimiter_start)
+    if paren < 0 or paren - delimiter_start > 16:
+        return None
+
+    delimiter = source[delimiter_start:paren]
+    if any(ch.isspace() or ch in "\\()" for ch in delimiter):
+        return None
+
+    terminator = ")" + delimiter + '"'
+    end = source.find(terminator, paren + 1)
+    if end < 0:
+        raise RuntimeError("unterminated C/C++ raw string")
+    return end + len(terminator)
+
+
 def mask_non_code(source: str) -> str:
     """Blank comments and literals while preserving offsets and line breaks."""
     masked = list(source)
@@ -93,20 +124,11 @@ def mask_non_code(source: str) -> str:
             blank(start, index)
             continue
 
-        if source.startswith('R"', index):
-            delimiter_start = index + 2
-            paren = source.find("(", delimiter_start)
-            if paren != -1 and paren - delimiter_start <= 16:
-                delimiter = source[delimiter_start:paren]
-                if not any(ch.isspace() or ch in "\\()" for ch in delimiter):
-                    terminator = ")" + delimiter + '"'
-                    end = source.find(terminator, paren + 1)
-                    if end < 0:
-                        raise RuntimeError("unterminated C/C++ raw string")
-                    end += len(terminator)
-                    blank(index, end)
-                    index = end
-                    continue
+        raw_end = _raw_string_literal_end(source, index)
+        if raw_end is not None:
+            blank(index, raw_end)
+            index = raw_end
+            continue
 
         if source[index] in ('"', "'"):
             quote = source[index]
