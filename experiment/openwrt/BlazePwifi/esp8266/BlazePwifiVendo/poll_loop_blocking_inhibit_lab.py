@@ -65,6 +65,25 @@ POLL_SAFETY_PARITY = (
 )
 
 
+REQUIRED_COIN_AUTHORITY_PARITY = (
+    "acceptPollResponse",
+    "coinPostDispositionVerified",
+    "canAttemptCoinPost",
+    "markPendingPostAttempt",
+    "pendingAttemptMarkerMatches",
+    "clearPending",
+)
+missing_coin_authority_helpers = [
+    name for name in REQUIRED_COIN_AUTHORITY_PARITY
+    if name not in POLL_SAFETY_PARITY
+]
+if missing_coin_authority_helpers:
+    raise SystemExit(
+        "POLL_COIN_AUTHORITY_PARITY_REQUIRED_HELPERS_MISSING: "
+        + ", ".join(missing_coin_authority_helpers)
+    )
+
+
 def poll_safety_helpers():
     helpers = {}
     for board, path in BOARDS.items():
