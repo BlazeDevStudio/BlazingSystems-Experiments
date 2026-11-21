@@ -62,6 +62,13 @@ POLL_SAFETY_PARITY = (
     "quarantineCoinIngressTransition",
     "handlePollDrainAbortAfterSample",
     "reconcileUnobservedCoinEdges",
+    # Shared trust, receipt and pending-evidence authority must not drift by board.
+    "acceptPollResponse",
+    "coinPostDispositionVerified",
+    "canAttemptCoinPost",
+    "markPendingPostAttempt",
+    "pendingAttemptMarkerMatches",
+    "clearPending",
 )
 
 
@@ -142,6 +149,32 @@ def verify_poll_safety_board_parity():
         "POLL_SAFETY_BOARD_PARITY_MUTATION_REJECTED "
         "ESP32_applyOutputs_journal_fault_guard"
     )
+
+    # Each one-board fail-open mutation must be caught by the shared-helper
+    # parity contract before the board-specific labs proceed.
+    authority_mutations = (
+        ("acceptPollResponse", "insertMode=false;", "insertMode=true;"),
+        ("coinPostDispositionVerified", "return false;", "return true;"),
+        ("canAttemptCoinPost", "outputPolarityKnown && ", ""),
+        ("markPendingPostAttempt", 'if(LittleFS.exists("/pending.attempt")){', "if(false){"),
+        ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
+        ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
+    )
+    for name, anchor, replacement in authority_mutations:
+        mutated = {
+            board: dict(board_helpers)
+            for board, board_helpers in helpers.items()
+        }
+        body = mutated["ESP32"][name]
+        if anchor not in body:
+            raise AssertionError(f"ESP32 {name} parity mutation anchor missing")
+        mutated["ESP32"][name] = body.replace(anchor, replacement, 1)
+        mismatches = poll_safety_parity_mismatches(mutated)
+        if name not in mismatches:
+            raise SystemExit(
+                f"POLL_COIN_AUTHORITY_PARITY_MUTATION_SURVIVED: ESP32 {name}"
+            )
+        print(f"POLL_COIN_AUTHORITY_PARITY_MUTATION_REJECTED ESP32_{name}")
 
 
 verify_poll_safety_board_parity()
