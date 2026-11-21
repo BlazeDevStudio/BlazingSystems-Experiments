@@ -2328,3 +2328,20 @@ HARDWARE graph: #327 → #329 (separate child) and #327 → #330 → (#331, #332
 | COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued, zero jobs. Frozen; no destination promotion. |
 
 CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain outside PHX-MASTER ownership.
+
+
+
+## UTC16 live owner/CI refresh — 2026-11-21T16:39Z
+
+| Role | Current exact refs | Evidence and next owner action |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build and #45 scoped CI PASS. CORE retains its source ownership; publish authenticated poll/receipt contract and current handover. |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070`; #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | #328 APK identity/API smoke PASS; ESP32 build and validate FAIL. Resolve Mbed TLS 4.0.0 header and handover freshness in RENTAL-owned paths. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; COE #28/#30/#32 heads recorded in INTEGRATION_MATRIX | Scoped CI PASS; native COM/PnP acceptance NOT TESTED. |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows PASS; #292 has no PR CI. QA owns the inherited positive poll-signature fixture and current-base replay. |
+| HARDWARE | #327/#329/#330/#331/#332/#333 exact heads in INTEGRATION_MATRIX | Preserve branch ancestry. #333 focused quarantine passes; Full fails at QA-owned `Missing poll signature check`. Rerun after CORE/QA contract resolution. |
+| RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897` | Compatibility 3/3 PASS; Full validation and Windows handover FAIL. Refresh release-owned handover and rerun. |
+| COE RELEASE | #35 `c39905cd18af13b3938c00af803e243cb03b8edc` | Case collision PASS; site ULA /48 and Bubblewrap gates block. COE #48/#49 ESP32 compile fails at missing Mbed TLS header. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued / zero jobs. FROZEN; no migration or destination edit. |
+
+CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain outside PHX-MASTER ownership.
