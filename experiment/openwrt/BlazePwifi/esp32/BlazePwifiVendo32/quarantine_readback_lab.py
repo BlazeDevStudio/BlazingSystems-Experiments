@@ -573,12 +573,12 @@ def verify_board_safety_parity():
     # A one-board quarantine escape mapping drift must be rejected before parity ships.
     field_escape_signature = "const char* quarantineLogFieldEscapeAt("
     field_escape = helpers["ESP8266"][field_escape_signature]
-    escape_anchor = 'return "\\x20";'
+    escape_anchor = 'return "\\\\x20";'
     if field_escape.count(escape_anchor) != 1:
         raise SystemExit("PHX-HARDWARE: quarantine escape mapping mutation anchor is not unique")
     mutated_field_escape = {board: dict(functions) for board, functions in helpers.items()}
     mutated_field_escape["ESP8266"][field_escape_signature] = field_escape.replace(
-        escape_anchor, 'return "\\x21";', 1
+        escape_anchor, 'return "\\\\x21";', 1
     )
     if not board_parity_mismatches(mutated_field_escape):
         raise SystemExit("PHX-HARDWARE: quarantine escape mapping drift was not detected")
