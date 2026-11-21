@@ -22,30 +22,32 @@ TEMPLATE=r'''
 #include <cstdint>
 #include <iostream>
 bool fsReady=false, journalRecoveryRequired=false, pendingReady=false, pendingPostAttempted=false;
-bool outputPolarityKnown=true;
+bool outputPolarityKnown=true, pinConfigSafe=true;
 uint8_t pendingPulses=0;
 @@FUNCTION@@
 struct Case{
-  bool fs, recovery, ready;
+  bool fs, recovery, ready, pinSafe;
   uint8_t pulses;
   bool expected;
 };
 int main(){
   const Case cases[]={
-    {true,false,true,3,true},
-    {true,false,true,1,true},
-    {true,false,true,20,true},
-    {true,false,false,3,false},
-    {false,false,true,3,false},
-    {true,true,true,3,false},
-    {true,false,true,0,false},
-    {false,true,true,3,false},
-    {false,false,false,0,false},
+    {true,false,true,true,3,true},
+    {true,false,true,true,1,true},
+    {true,false,true,true,20,true},
+    {true,false,false,true,3,false},
+    {false,false,true,true,3,false},
+    {true,true,true,true,3,false},
+    {true,false,true,true,0,false},
+    {false,true,true,true,3,false},
+    {false,false,false,true,0,false},
+    {true,false,true,false,3,false},
   };
   for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i){
     fsReady=cases[i].fs;
     journalRecoveryRequired=cases[i].recovery;
     pendingReady=cases[i].ready;
+    pinConfigSafe=cases[i].pinSafe;
     pendingPulses=cases[i].pulses;
     const bool actual=canAttemptCoinPost();
     if(actual!=cases[i].expected){
@@ -54,12 +56,13 @@ int main(){
     }
   }
   pendingPostAttempted=true;
+  pinConfigSafe=true;
   fsReady=true; journalRecoveryRequired=false; pendingReady=true; pendingPulses=3;
   if(canAttemptCoinPost()){
     std::cerr<<"COIN_POST_GATE_FAIL attempt marker must block dispatch\\n";
     return 2;
   }
-  std::cout<<"COIN_POST_GATE_PASS 10/10 exact helper scenarios, not hardware evidence\n";
+  std::cout<<"COIN_POST_GATE_PASS 11/11 exact helper scenarios, not hardware evidence\n";
   return 0;
 }
 '''

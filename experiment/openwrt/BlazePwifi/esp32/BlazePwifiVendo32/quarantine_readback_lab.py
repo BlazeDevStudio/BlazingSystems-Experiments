@@ -377,10 +377,10 @@ def board_parity_mismatches(helpers):
 def board_polarity_guard_problem(helpers):
     esp8266 = helpers["ESP8266"][POLARITY_SIGNATURE]
     esp32 = helpers["ESP32"][POLARITY_SIGNATURE]
-    if "outputPolarityKnown && fsReady" not in esp8266:
-        return "ESP8266 local output-polarity admission guard is missing"
-    if "outputPolarityKnown && fsReady" not in esp32:
-        return "ESP32 local output-polarity admission guard is missing"
+    if "outputPolarityKnown && pinConfigSafe && fsReady" not in esp8266:
+        return "ESP8266 local polarity/GPIO admission guard is missing"
+    if "outputPolarityKnown && pinConfigSafe && fsReady" not in esp32:
+        return "ESP32 local polarity/GPIO admission guard is missing"
     normalized_esp8266 = " ".join(esp8266.split())
     normalized_esp32 = " ".join(esp32.split())
     if normalized_esp8266 != normalized_esp32:
