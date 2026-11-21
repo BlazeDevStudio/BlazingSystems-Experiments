@@ -396,13 +396,56 @@ void connectSta(){
   }
 }
 
-void clearPending(){
-  pendingPulses=0; pendingReady=false; pendingNonce=""; pendingTarget=""; lastSend=0;
-  if(fsReady){
-    LittleFS.remove("/pending.dat");
-    LittleFS.remove("/pending.new");
-    LittleFS.remove("/pending.bak");
+bool clearPending(){
+  if(!fsReady || pendingPulses==0 || pendingPulses>20 ||
+     pendingNonce.length()<8 || pendingNonce.length()>16 ||
+     pendingTarget.length()<8 || pendingTarget.length()>32){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: pending clear preconditions are invalid; event retained and intake disabled.");
+    return false;
   }
+
+  const char *paths[]={"/pending.dat","/pending.new","/pending.bak"};
+  const char *candidatePath=nullptr;
+  unsigned candidateCount=0;
+  for(const char *path:paths){
+    if(LittleFS.exists(path)){
+      candidatePath=path;
+      ++candidateCount;
+    }
+  }
+  if(candidateCount!=1 || !candidatePath){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: exactly one pending journal is required before quarantine clear; preserving all candidates.");
+    return false;
+  }
+
+  PendingRecord durable{};
+  if(!readPendingFile(candidatePath,durable) ||
+     durable.pulses!=pendingPulses ||
+     strcmp(durable.nonce,pendingNonce.c_str())!=0 ||
+     strcmp(durable.target,pendingTarget.c_str())!=0){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: pending journal does not match the quarantined RAM event; preserving evidence.");
+    return false;
+  }
+
+  if(!LittleFS.remove(candidatePath) || LittleFS.exists(candidatePath)){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: pending journal deletion was not verified; preserving RAM event and disabling intake.");
+    return false;
+  }
+
+  pendingPulses=0;
+  pendingReady=false;
+  pendingNonce="";
+  pendingTarget="";
+  lastSend=0;
+  return true;
 }
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
@@ -492,8 +535,7 @@ bool quarantinePending(const String &reason){
     return false;
   }
   Serial.println("QUARANTINE: uncredited coin event preserved in flash: "+reason);
-  clearPending();
-  return true;
+  return clearPending();
 }
 
 void setup(){
