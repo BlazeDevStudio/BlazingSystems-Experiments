@@ -1226,3 +1226,12 @@ All compared recursive trees are complete: Experiments main 2,340 entries / 1,76
 At current Hardware #333, ESP32 has 16 source files vs one divergent destination sketch; ESP8266 has 34 vs one divergent sketch; QA has 47 source tests vs 19 destination tests (one identical, three divergent, 43 source-only, 15 destination-only); OpenWrt library has six identical, nine divergent and five destination-only blobs; Vendo CGI is divergent. Three scoped PHX-HARDWARE workflows are represented by one generic COE Hardware workflow.
 
 BlazePwifi LICENSE and Pisowifi LICENSE are identical; source root NOTICE is absent from COE root; COE Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved. COE #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
+
+
+## UTC15 exact route provenance refresh — 2026-11-21
+
+Manifest e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY with 11 routes. PHX-MASTER owns coordination/phoenix/ only and has target null. Source is Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; destination candidate is COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12 on COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+Hardware #333 exact source tree has 2,478 entries / 1,899 blobs; COE #26 has 286 entries / 207 blobs. Firmware, QA, OpenWrt library and Vendo comparisons remain non-equivalent. License applicability to the COE Hardware route requires owner/legal review. Five destination workflows are queued with zero jobs.
+
+Do not stage, copy, move, overwrite, rebase, cherry-pick or promote any route until exact source blobs, license scope, import completeness, test identities and destination CI are accepted by owners and QA.
