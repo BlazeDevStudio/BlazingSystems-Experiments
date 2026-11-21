@@ -37,7 +37,7 @@ Both ESP8266 and ESP32 `quarantinePending()` now treat a missing pending event a
 The fix is deliberately local to the two Hardware-owned sketches. It does not alter the receipt contract, server API, persistence format, controller signature scheme, credit/ledger authority, or QA-owned assertions.
 
 - Firmware fix commit: `3292d2a1e207da4241189952eec0e97255a48475`
-- Exact post-fix CI: pending at handover creation; final result is recorded in the PHX-HARDWARE UTC05 BLAZE-COMMS checkpoint.
+- Exact post-fix CI: the source/test SHA passed the focused quarantine/readback and relay/output workflows; exact run/job evidence follows.
 
 ## Exact post-fix CI evidence
 
@@ -46,6 +46,10 @@ Source/test SHA: `3292d2a1e207da4241189952eec0e97255a48475`.
 - Quarantine/readback [run #44872148862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872148862), job `136748836404`: PASS. Exact log marker `SOURCE_QUARANTINE_PASS 36/36 scenarios (physical power cut NOT tested)`. The same job also passed the ESP8266 config-read recovery lab, both-board poll-drain pulse-capture lab (17/17 per board with fail-open mutations rejected), and ESP8266 boot-polarity lab.
 - Relay/output [run #44872148854](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872148854), jobs `136748836217` and `136748836417`: PASS. Exact logs retain 11/11 poll-response fail-closed cases, 13/13 strict root JSON cases, 4/4 coin POST root-status cases, 4/4 coin-disposition default-deny cases, and both-board poll-window / output-polarity mutation rejection.
 - Full BlazePwifi build [run #44872148863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872148863), validation job `136748899166`: FAIL at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. The target-build matrix and downstream simulations/publication/signing jobs were cancelled or skipped; no target-build pass is claimed for this new source SHA.
+
+- Docs-head quarantine/readback [run #44872202794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872202794), job `136749005366`: PASS on docs-only head `2bb29f783ecaf34a85657a2f4908b90bdafa1a47`, with the same `SOURCE_QUARANTINE_PASS 36/36` marker.
+- Docs-head relay/output [run #44872202836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872202836), jobs `136749005528` and `136749005721`: PASS on the same docs-only head.
+- Docs-head Full build [run #44872202781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872202781), validation job `136749067462`: FAIL at the same QA-owned controller protocol/signature assertion; target builds and downstream release jobs were cancelled or skipped.
 
 The source/test commit is therefore **focused CI VERIFIED only**. The Full integration gate remains failed, and no physical acceptance is inferred.
 
