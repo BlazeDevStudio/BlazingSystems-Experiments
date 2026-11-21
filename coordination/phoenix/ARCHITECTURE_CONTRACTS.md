@@ -1332,3 +1332,14 @@ This is hosted unit/profile/path-gate evidence only. It does not prove actual us
 Top-level level-two 6.x headings contain five legacy duplicate numbers: 6.9 (lines 278, 404), 6.10 (305, 413), 6.11 (317, 426), 6.25 (542, 572), and 6.38 (782, 794). Nested 6.x.y headings are excluded. Explicit non-heading references to §6.9 in this file point to the first ULA installation-identity contract at line 278. No body references to the other four duplicate numbers were found in this file. Cross-document references are not fully audited, so no renumbering was attempted.
 
 A regression test now rejects additional top-level collisions outside the reviewed legacy set {6.9, 6.10, 6.11, 6.25, 6.38}. Existing collisions are not claimed fixed.
+
+
+## 6.70 Host-lab module extraction is byte-preserving, not hardware acceptance — 2026-11-21 UTC19
+
+PHX-HARDWARE PR #336 is a cleanup-only child of PR #335. Parent #335 documentation head is `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; child #336 head is `741068c7804b83897f5deab5afc7739457532427`. The child changes only the ESP32 quarantine host-lab runner and its adjacent C++17 template module. It does not change either production firmware sketch.
+
+A source-level exact-blob readback compared the raw C++ string embedded in the parent runner (`3723bc38e80bab5a458812162f48051356dc235b`) with the new module (`9e94b69adff78ac5b45076c1de362f93a8df568e`): both strings are 17,937 characters and compare exactly equal. The child runner (`f952b1ce98682e3c8618c3ce4216b90a034b378c`) imports `CPP` from `quarantine_readback_lab_cpp.py`. This proves the template bytes were relocated unchanged; it does not prove the entire runner is behaviorally identical or that hardware is accepted.
+
+Exact-head Quarantine CI [#44943004243](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004243) completed SUCCESS. Its source-extracted host logs report 72/72 quarantine scenarios PASS, while explicitly recording `SIMULATED_ONLY=1`, `PHYSICAL_COIN_ACCEPTOR_VERIFIED=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`. Exact-head Full [#44943004250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004250) completed FAILURE at Controller protocol parity / `Missing poll signature check`; all 14 firmware/platform targets and Android completed SUCCESS, while downstream simulation, signing and publishing jobs were skipped.
+
+**Classification:** human-debuggability cleanup and source-extracted CI only. HARDWARE ACCEPTED: NO. Physical coin, relay, flash, power-cut and 24-hour soak evidence remain NOT TESTED. Preserve the firmware default-deny contract; PHX-CORE owns the authenticated producer contract and PHX-QA owns the independent fixture. No migration, merge, release or hardware action is authorized.

@@ -2407,3 +2407,20 @@ This dated snapshot supersedes older PR-head pins above for current work; it doe
 | PHX-RELEASE | Experiments #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `756f7b38e302b958166d7006d1e98a86bb273303` | #291 compatibility PASS, Full/Windows handover gates FAIL; COE #35 Bubblewrap and site-ULA gates remain blocked. Refresh owned handover and obtain trusted runner/site authority. |
 
 COE #48/#49 remain separate Stage 5/5.1 candidates; both stage/case checks pass but shared ESP32 compile fails at missing `mbedtls/sha256.h`. COE #26 remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source scopes remain with their named owners.
+
+
+## Live role ownership pins — 2026-11-21 UTC19 (same-hour supersession)
+
+| Role | Current owner PR(s) | Scope / next owner action |
+|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination`; live head `2d117d47404d2b67762a21d25ab3caadaf432580` at audit start | Coordination/phoenix only. Preserve existing draft; no subsystem source edits. |
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Separate CORE owner retains ledger/backend and authenticated poll/receipt contract. No Master takeover or parallel worker. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | RENTAL resolves Mbed TLS compile and owner handover freshness; Android/API smoke passes do not clear firmware build. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | PISONET retains native COM transport; Windows synthetic CI is not physical adapter acceptance. |
+| PHX-HARDWARE | #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; cleanup child #336 `741068c7804b83897f5deab5afc7739457532427` | Keep child ancestry; source-extracted quarantine harness cleanup is verified; Full remains blocked by QA-owned poll fixture. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | QA replaces stale positive poll-signature fixture only after CORE publishes approved contract; run exact-head native COM lab and current-base replay. |
+| PHX-RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `5eb240ec8b67e491e126b47242e76d823bce6e07` | RELEASE refreshes canonical handover, obtains trusted Bubblewrap runner and approved site ULA /48; no signing/publishing. |
+| COE Stage 5 owners | COE #48 `8286548e395366f2332830025fed00ceebdfb24a`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Hardware/COE owners resolve ESP32 Mbed TLS toolchain compatibility and keep router bridge default read-only. |
+| COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Reconcile exact per-file imports, test identity, license/NOTICE scope and queued CI before any migration proposal. |
+
+The #172 issue body still carries an older Master pin (`962e1179...`) and older role snapshots; the live branch ref and PR #288 head are the authoritative current values. #266 remains OPEN and the MASTER cleanup checkbox stays unchecked because the broader duplicate/dead-code inventory is incomplete. No ownership reassignment is made here.

@@ -81,3 +81,45 @@ The routing manifest remains `DRAFT_REVIEW_ONLY`; PHX-MASTER destination is null
 7. Keep COE #26 frozen until per-file provenance, licenses, test identity, import completeness and exact-head CI are independently accepted.
 
 **No subsystem source changes, merge, release, signer provisioning, hardware flash, real-payment operation, physical test or production approval occurred. PRODUCTION NO-GO.**
+
+
+## Same-hour UTC19 live supersession — 2026-11-21T20:05:40.766Z
+
+This update replaces neither history nor ownership. It extends the existing UTC19 audit in place so the role/hour lock remains deduplicated.
+
+### Exact live refs and control-plane drift
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; legacy v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Master branch and PR #288 both resolve to `2d117d47404d2b67762a21d25ab3caadaf432580`; PR remains OPEN / DRAFT / UNMERGED. The #172 body still says `962e1179...`, so that body pin is stale. #266 remains OPEN; MASTER cleanup remains unchecked.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN, five workflows queued and zero jobs.
+- `OWNERSHIP_ROUTES.json` remains `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, 11 routes, PHX-MASTER destination null.
+
+### New HARDWARE #336 cleanup evidence
+
+- #336 is a one-commit child of #335, preserving parent `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; child head `741068c7804b83897f5deab5afc7739457532427`.
+- The only two tree changes are `quarantine_readback_lab.py` and new `quarantine_readback_lab_cpp.py`. Old runner blob `3723bc38e80bab5a458812162f48051356dc235b`; new runner `f952b1ce98682e3c8618c3ce4216b90a034b378c`; new module `9e94b69adff78ac5b45076c1de362f93a8df568e`.
+- Independently extracted raw C++ string: 17,937 chars in both old and new locations; exact string equality TRUE. The new runner imports `CPP` from the adjacent module.
+- Quarantine [#44943004243](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004243) SUCCESS, 72/72 source-extracted host scenarios; logs explicitly mark simulation-only and physical coin/relay/power-cut acceptance as zero.
+- Full [#44943004250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004250) terminal FAILURE at `Missing poll signature check`; 14 firmware/platform target jobs and Android succeeded, downstream simulation/signing/publishing skipped. This is a QA/CORE contract dependency, not a reason to weaken firmware default-deny.
+
+### Exact COE #26 tree and license/test provenance
+
+- #336 source tree: 2,472 entries / 1,893 blobs. COE #26: 286 entries / 207 blobs.
+- Route comparisons: CORE OpenWrt 15/20 (6 identical, 9 divergent, 5 destination-only); CORE CGI 1/1 divergent; RENTAL Android 983/8 (no relative-path match); Rental standalone 31/19 (2 divergent, 29 source-only, 17 destination-only); Rental server 7/4 (1 divergent); PISONET 32/47 (13 identical, 11 divergent, 8 source-only, 23 destination-only); Hardware ESP32 17/1 and ESP8266 28/1 (one divergent firmware file in each route); QA 47/19 (1 identical, 3 divergent, 43 source-only, 15 destination-only); release workflow 1/1 divergent.
+- ESP32 firmware source `53b27aa80fa4a91aabac71de57f550a8eef2cb61` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `71160ac8ebd5163b19a56d6c9e229a5429975fc8` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- Source Hardware has 33 Python lab/helper files and 47 QA files; COE Hardware has zero Python equivalents and its QA route has 19 files. Only 1 QA blob is identical; 3 divergent, 43 source-only, 15 destination-only.
+- `experiment/openwrt/BlazePwifi/LICENSE` equals `Pisowifi/LICENSE` at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent at COE root; COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent. Broad Rental parent route remains manual-file-mapping-required and copy-disabled.
+- No staging, copy, move, overwrite, rebase, cherry-pick or destination edit. Migration remains FROZEN.
+
+### Current owner/CI blockers
+
+- CORE #252 scoped build PASS; COE #45 overlay/case PASS. CORE remains separately owned.
+- RENTAL #328 APK identity and API21/API23 PASS; shared build FAIL at handover freshness and missing `mbedtls/sha256.h`.
+- PISONET #255 Windows CI PASS; native COM/physical acceptance NOT TESTED.
+- QA #290 Windows CI PASS but does not invoke the new native COM lab; QA #292 has no PR-triggered run and stale base.
+- RELEASE #291 ESP32 compatibility PASS only for an older immutable Hardware pin; Full and Windows fail handover freshness.
+- COE #35: 151 unit tests PASS / 2 intentional skips, then 10/10 site-ULA profile gates fail closed; Bubblewrap absent, sandbox exit 125. COE #48/#49 Stage and case checks pass but shared ESP32 compile fails on Mbed TLS header.
+- Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections are not accessible through the exposed connector. Older Library snapshots were not substituted and no private contents were published.
+- Full Master Python unittest suite was not run: no authenticated full checkout was available and the container could not resolve GitHub. This is separate from the exact GitHub Actions results above.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.

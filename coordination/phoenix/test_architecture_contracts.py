@@ -138,5 +138,22 @@ class PollResponseArchitectureTests(unittest.TestCase):
             "Reviewed legacy collision inventory changed; re-review historical references before changing the allowlist.",
         )
 
+
+    def test_hardware_quarantine_harness_extraction_is_byte_preserving_but_simulated_only(self):
+        section = DOC[DOC.index("## 6.70 Host-lab module extraction is byte-preserving, not hardware acceptance"):]
+        for required in (
+            "17,937 characters and compare exactly equal",
+            "Quarantine CI [#44943004243]",
+            "72/72 quarantine scenarios PASS",
+            "Full [#44943004250]",
+            "Missing poll signature check",
+            "PHYSICAL_COIN_ACCEPTOR_VERIFIED=0",
+            "PHYSICAL_RELAY_ACCEPTANCE=0",
+            "PHYSICAL_POWER_CUT_ACCEPTANCE=0",
+            "HARDWARE ACCEPTED: NO",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
 if __name__ == "__main__":
     unittest.main()

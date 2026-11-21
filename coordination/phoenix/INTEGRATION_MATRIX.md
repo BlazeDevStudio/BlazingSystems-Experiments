@@ -3469,3 +3469,41 @@ This refresh supersedes the earlier UTC18 owner pins for the exact refs below. I
 Recursive trees are complete: Experiments main 2,340 entries / 1,764 blobs; current HARDWARE #335 tree 2,471 / 1,892; COE #26 286 / 207. #335 contains 32 ESP32/ESP8266 Python lab/helper files absent from COE Hardware. The #335 source tree has 47 entries under the BlazePwifi test root; COE Hardware has one test file. Source/destination sketch blobs diverge: ESP32 `53b27aa80fa4a91aabac71de57f550a8eef2cb61` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 `71160ac8ebd5163b19a56d6c9e229a5429975fc8` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source QA fixture `41211b2c110ab409f6d9d1812ef12fda73b13211` differs from destination test `f921c56cecc19cab1989507b9b4ade1f45dac54e`; both retain positive signature/poll assertions and are not accepted parity for the deny-only contract.
 
 Source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE exists but destination root NOTICE and Hardware-specific LICENSE/NOTICE are absent. Owner/legal review remains required. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, Master target null. No staging or destination write. **COE #26 FROZEN; PRODUCTION NO-GO.**
+
+
+## Live exact-head reconciliation — 2026-11-21 UTC19 (same-hour supersession)
+
+**Observed refs:** Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; legacy `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; comparison `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `phoenix/master-coordination@2d117d47404d2b67762a21d25ab3caadaf432580` at audit start; COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Issue #172 body still lists Master `962e1179...`; the live branch ref and PR #288 head both resolved to `2d117d47...`, so the issue-body pin is stale and is not treated as a branch ref.
+
+| Owner | Exact PR head | Exact-head CI and disposition |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS (scoped); COE #45 overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case guard [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS. CORE ownership remains separate. |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) and API21/API23 [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL at handover freshness and ESP32 `mbedtls/sha256.h` compile. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS (scoped); native COM/physical adapter acceptance NOT TESTED. |
+| HARDWARE | #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; cleanup child #336 `741068c7804b83897f5deab5afc7739457532427` | #336 Quarantine [#44943004243](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004243) PASS (72/72 source-extracted scenarios); Full [#44943004250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44943004250) FAIL at `Missing poll signature check`; physical acceptance NOT TESTED. #336 preserves the embedded C++ template exactly (17,937/17,937 characters). |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS but does not invoke the new native COM lab; #292 has no PR-triggered run and retains stale base `b1ca02e...`. |
+| RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897` | ESP32 compatibility [#44894604453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604453) PASS 3/3 on its immutable older Hardware pin; Full [#44894604464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604464) and Windows [#44894604466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604466) FAIL at mandatory handover freshness. |
+| COE RELEASE | #35 `5eb240ec8b67e491e126b47242e76d823bce6e07` | Case [#44941299106](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44941299106) PASS; shared [#44941298951](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44941298951) ran 151 tests PASS / 2 intentional skips, then 10/10 appliance profiles failed closed without approved site ULA /48; sandbox [#44941298871](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44941298871) FAIL exit 125 because Bubblewrap is absent. |
+| COE Stage 5 | #48 `8286548e395366f2332830025fed00ceebdfb24a`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #48 Stage/case PASS, shared [#44643670685](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670685) FAIL at ESP32 Mbed TLS header; #49 Stage/case PASS, shared [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL at the same missing header. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows remain QUEUED with zero jobs; no combined integration acceptance. |
+
+### Exact migration provenance refresh — #336 versus COE #26
+
+Recursive source tree #336: 2,472 entries / 1,893 blobs. COE #26: 286 entries / 207 blobs. The current route comparison remains non-copy-ready:
+
+| Route | Source | Destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone | 31 | 19 | 0 | 2 | 29 | 17 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 17 | 1 | 0 | 1 | 16 | 0 |
+| HARDWARE ESP8266 | 28 | 1 | 0 | 1 | 27 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+Source firmware blobs remain different from COE #26: ESP32 `53b27aa80fa4a91aabac71de57f550a8eef2cb61` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 `71160ac8ebd5163b19a56d6c9e229a5429975fc8` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source Hardware subtree contains 33 Python lab/helper files; COE Hardware contains zero Python equivalents. Source QA tree has 47 files versus 19 destination files (1 identical, 3 divergent, 43 source-only, 15 destination-only). Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical (`1ee55b94183417be977ca287cd7391f9a6f7e721`); source root `NOTICE.md` (`f6d92cd21465312be5993631fe26977219be0fb9`) is absent at COE root, and `Hardware/LICENSE` / `Hardware/NOTICE.md` are absent. The broad RENTAL parent route remains `manual-file-mapping-required`, `copy_permitted:false`.
+
+`OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, 11 routes, PHX-MASTER target null. No copy, move, stage, cherry-pick, overwrite, rebase or destination edit was performed. Private Drive v11/newer corrections remain inaccessible through the exposed connector; older Library snapshots were not substituted. **PRODUCTION NO-GO.**
