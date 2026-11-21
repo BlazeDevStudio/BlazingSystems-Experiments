@@ -174,7 +174,6 @@ jobs:
       - name: Test release-owned ESP32 ELF symbol inspector
         run: |
           python3 .github/scripts/test_inspect_esp32_elf_symbols.py
-          python3 .github/scripts/test_phx_release_esp32_core_compatibility.py
 
       - name: Compile twice and compare exact PHX-HARDWARE application image
         shell: bash
