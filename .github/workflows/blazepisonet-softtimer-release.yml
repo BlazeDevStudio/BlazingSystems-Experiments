@@ -5,19 +5,21 @@ on:
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/workflows/blazepwifi-build.yml'
   push:
     branches: [main]
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/workflows/blazepwifi-build.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: blazepisonet-softtimer-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PROJECT_DIR: experiment/windows/BlazePisonet-SoftTimer
@@ -27,10 +29,11 @@ jobs:
   handover:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Verify shared BlazePwifi and SoftTimer handover freshness
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Verify stale and partial handovers are rejected
@@ -39,13 +42,18 @@ jobs:
   build-windows:
     needs: handover
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      future_release_eligible: ${{ steps.release_version_gate.outputs.future_release_eligible }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: '8.0.425'
 
@@ -56,12 +64,16 @@ jobs:
           {
             "sdk": {
               "version": "8.0.425",
-              "rollForward": "latestPatch"
+              "rollForward": "disable"
             }
           }
           '@ | Set-Content -Encoding utf8 global.json
-          dotnet --version
+          $sdkVersion = (dotnet --version).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($sdkVersion -ne '8.0.425') {
+            throw "Pinned .NET SDK mismatch: expected 8.0.425, selected $sdkVersion"
+          }
+          Write-Output "RELEASE-DOTNET-SDK-PASS: $sdkVersion"
 
 
       - name: RELEASE-PARITY reject altered installed and archive members in isolated fixtures
@@ -74,6 +86,12 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: RELEASE-PUBLISHER-MOCK execute complete publication command path without credentials
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/PublisherMockCli.ps1"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Verify local build stops after each failed dotnet command
@@ -176,7 +194,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign portable executables before NSIS
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -239,7 +257,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign native Setup after metadata verification
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -354,7 +372,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: RELEASE-SIGN verify final signed packages before upload
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           SOFTTIMER_SIGNER_CERT_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
@@ -374,19 +392,58 @@ jobs:
           & "$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1" @params
 
       - name: Upload validated release candidates
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
           path: |
             release/BlazePisonet-SoftTimer-Setup-v${{ env.VERSION }}.exe
             BlazePisonet-SoftTimer-v${{ env.VERSION }}-portable-win-x64.zip
             SHA256SUMS
+            out/bundle/BlazePisonet.SoftTimer.exe
+            out/bundle/BlazePisonet.SoftTimer.Watchdog.exe
           if-no-files-found: error
 
+      # This step runs only after parity and unsigned/real-signature controls.
+      # 'env' is unavailable in jobs.<id>.if: export the result via needs.
+      - name: RELEASE-ADMISSION prevent frozen version from spawning privileged job
+        id: release_version_gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:VERSION -eq '0.4.0') {
+            "future_release_eligible=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Output 'RELEASE-ADMISSION: frozen v0.4.0 is not eligible for a write-token publisher'
+          } elseif ($env:VERSION -match '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            "future_release_eligible=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Output 'RELEASE-ADMISSION: future version eligible for separately approved publisher, not production accepted'
+          } else {
+            throw 'RELEASE-ADMISSION: invalid version, no publisher authorization'
+          }
+
+  # A PR/build checkout never receives a writable repository token.
+  # The sole write scope is a separate approved main-push publication job.
+  publish-release:
+    needs: build-windows
+    # Job-level if cannot reference env.VERSION. Only the already validated
+    # build job may prove a non-frozen future candidate before granting write.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && needs.build-windows.outputs.future_release_eligible == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
+      # The downloaded final artifact must be re-admitted using the owner-pinned
+      # DER cert SHA256, trusted timestamp, version, source SHA and ZIP bytes.
       - name: Publish GitHub Release
         # Never mutate the frozen v0.4.0 release from later development code.
         # A version/tag bump and explicit new candidate are mandatory first.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected == true && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -403,12 +460,40 @@ jobs:
           if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {
             throw "Version-specific release notes missing: $releaseNotes"
           }
-          if (gh release view $releaseTag *> $null) {
+          # A generic gh release view failure is NOT proof of a missing release:
+          # token, transport, rate-limit and server errors must fail closed.
+          $lookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/releases/tags/$releaseTag" 2>&1 | Out-String
+          $lookupExit = $LASTEXITCODE
+          if ($lookupExit -eq 0) {
             throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
           }
+          # Accept exactly one HTTP response status. Multiple status lines (proxy,
+          # redirect or ambiguous transport output) cannot establish tag absence.
+          $httpStatuses = @([regex]::Matches($lookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\s|$)'))
+          if ($httpStatuses.Count -ne 1 -or $httpStatuses[0].Groups[1].Value -ne '404') {
+            throw "Release lookup failed without an unambiguous HTTP 404 (exit $lookupExit); refusing publication"
+          }
+
+          # A missing Release object does not prove that the Git tag itself is
+          # absent. gh release create may reuse an existing tag; never attach a
+          # new release to an unreviewed or differently-targeted ref.
+          $tagLookupOutput = gh api -i "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$releaseTag" 2>&1 | Out-String
+          $tagLookupExit = $LASTEXITCODE
+          if ($tagLookupExit -eq 0) {
+            throw "Git tag $releaseTag already exists. Refusing to reuse or retarget it; select an approved new version."
+          }
+          $tagHttpStatuses = @([regex]::Matches($tagLookupOutput, '(?m)^HTTP/[0-9.]+ ([0-9]{3})(?:\s|$)'))
+          if ($tagHttpStatuses.Count -ne 1 -or $tagHttpStatuses[0].Groups[1].Value -ne '404') {
+            throw "Git tag lookup failed without an unambiguous HTTP 404 (exit $tagLookupExit); refusing publication"
+          }
+
           # Re-admit the FINAL shipped bytes in the publisher step, even if
           # a prior signing job was skipped, and fail closed on any mismatch.
           $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
+          # The GitHub API just returned a confirmed HTTP 404 for a missing release.
+          # Clear that EXPECTED stale status so only this verifier can deny publish.
+          $global:LASTEXITCODE = 0
           & $gate -Mode Verify -InputPaths @($setup,'out/bundle/BlazePisonet.SoftTimer.exe','out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -PinnedCertSha256 "$env:SOFTTIMER_SIGNER_CERT_SHA256" -PortableZipPath $zip -Sha256SumsPath 'SHA256SUMS' -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
+          if ($LASTEXITCODE -ne 0) { throw "Publisher final artifact verification failed (exit $LASTEXITCODE); refusing release" }
           gh release create $releaseTag $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file $releaseNotes --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

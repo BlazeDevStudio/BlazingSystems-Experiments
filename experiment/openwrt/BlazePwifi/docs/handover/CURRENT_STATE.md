@@ -1,3 +1,36 @@
+PHX-RELEASE UTC23 FINAL — Node24 action runtime migration verified at exact PR #291 source/test HEAD `4d36160ccffb7bee34aa713bc896be33e355646d`. Workflow source commit: `070e3f6e54f5da1d2c217a48fe172a339a5bc106`; test/hand-over correction: `4d36160ccffb7bee34aa713bc896be33e355646d`. Exact-head [Windows Actions #44199068618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199068618) SUCCESS: handover SUCCESS, build-windows SUCCESS, write-privileged publisher SKIPPED. The Node24 pin regression, package parity, publisher negative/mock controls, .NET restore/build, PAY-0717/0718/0719/0720 lab checks, NSIS metadata, unsigned-Setup denial, install/uninstall smoke, portable ZIP membership, SHA256SUMS parity, artifact upload and frozen-v0.4.0 publisher admission all passed. No Node.js 20 deprecation warning appeared in the final job log. Upload-artifact v7.0.2 executed successfully; preview artifact ID `14379669398`, 264,827,662 bytes, provider digest `sha256:c3203949297d3b3ef405f02e342a25a00801408cf53e7486197d28057a8ea65f`. This digest is provider metadata; artifact bytes were not independently downloaded. Download-artifact v8.0.2 is statically pinned and its upstream Node24 metadata was verified, but it was not executed because the privileged publisher job is correctly skipped for PR validation. Signing steps were skipped.
+NEXT: independent PHX-QA review of action pins and publisher boundary; PHX-MASTER review of release workflow reimplementation/ownership route. PR remains OPEN/DRAFT/UNMERGED. No signing, tag, release, merge, hardware, financial or customer action. PRODUCTION NO-GO.
+
+PHX-RELEASE UTC23 exact-source follow-up: [run #44198759075](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198759075) at source `070e3f6e54f5da1d2c217a48fe172a339a5bc106` completed FAILURE after handover PASS, PackageParity PASS and the new Node24 immutable action-pin guard PASS. It then failed at a second publisher assertion that still hard-coded the old download-artifact v4 SHA; this was a stale test expectation, not an action download/runtime or publisher execution failure. Publisher and subsequent build steps were skipped.
+PHX-RELEASE UTC23 test maintenance: the publisher's download-artifact presence check now derives its SHA from the same `requiredActionPins` table used by the immutable pin guard, removing the duplicated old SHA. Exact-head Windows retest pending.
+
+PHX-RELEASE UTC23 (2026-11-17): Test-first Node24 action-pin RED verified at [Windows run #44198332958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44198332958), exact test commit `bffb1d7840df6ea2d87c5e23eaca0ef2592ec026`. Handover and package-parity checks passed; release-concurrency check passed; the action-pin assertion failed as expected at `actions/checkout v7.0.1: expected 3, found 0` while the workflow still used the old v4.2.2 commit. Publisher and later build steps were skipped.
+PHX-RELEASE UTC23 (2026-11-17): Replaced the six Node.js 20 action invocations in existing draft #291 with upstream immutable Node.js 24 commits: checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1` x3; setup-dotnet v6.1.0 `0f4a354dd5547a28c70b7853dbd95d5b67886e73`; upload-artifact v7.0.2 `cf430e030ddbb5b0abf93d22962f4752f3646cd9`; download-artifact v8.0.2 `9000827ccba6bdab643e8b6fd33ac0654aef8333`. Each upstream tag ref was resolved to its commit and each exact commit's `action.yml` was read back with `runs.using: node24`. The source change is co-committed with this handover checkpoint; exact source SHA and CI result will be added after Actions completes. PR publisher/signing remain skipped. No release authorization changed.
+
+PHX-RELEASE UTC23 (2026-11-17): Test-first Node24 action-runtime migration on existing draft PR #291. Upstream tag refs and action.yml were read back: checkout v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`, setup-dotnet v6.1.0 `0f4a354dd5547a28c70b7853dbd95d5b67886e73`, upload-artifact v7.0.2 `cf430e030ddbb5b0abf93d22962f4752f3646cd9`, download-artifact v8.0.2 `9000827ccba6bdab643e8b6fd33ac0654aef8333`; all four upstream action.yml files declare `runs.using: node24`. The negative self-test now expects these six immutable invocations; workflow still has prior Node20 pins at this test-first checkpoint. Exact-head RED pending. No signing, publisher, tag or release action.
+
+PHX-RELEASE UTC08 2026-11-15: Draft #291 test-only commit `fac240d0b1431039b357c77fd06773edccf01221` executes the publisher's actual extracted HTTP lookup decision with nine synthetic CLI/status cases (404, existing, 401, 403, 500, transport, mixed, duplicate 404, successful-CLI 404). No `gh` invocation or release creation in tests. Source-exact CI pending; independent QA/MASTER review required. Prior source-exact run #43675841061 PASS (handover/build), publisher SKIPPED. Rollback: revert test commit and these handover entries. PRODUCTION NO-GO; no real signing, publishing, merging or hardware acceptance.
+
+> **PHX-RELEASE / 2026-11-15 03 UTC / draft PR #291: Release lookup now denies ambiguous multiple HTTP response status lines; only one HTTP 404 can indicate an absent tag. Test-first `876df0a367edaac4cdbe5a4c1352fa5ac613246e`, implementation `e089baab648699210e7137079dfac2dae49f0b60`. Exact-head Windows CI pending; static regression only, no live publisher or signed-positive proof. No merge, signing, publication or hardware action. PRODUCTION NO-GO.**
+
+> **PHX-RELEASE-LOOKUP-404 / 2026-11-15 00 UTC / DRAFT NO-GO.** Release PR #291 now requires an explicit GitHub API HTTP 404 before treating a release as absent; authentication, rate-limit and transport errors deny publication. Code/test HEAD `956a25c2468d3242f3e41a475c9e54ed6447af6e`. [CI #43656843767](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43656843767) **FAILED handover freshness**, Windows skipped; not a code-validation pass. Ledger was updated first, and this synchronized handover corrects that omission. Exact-head CI and QA/MASTER review pending; no signing, merge, publication, financial or hardware action. **PRODUCTION NO-GO**.
+
+> **PHX-RELEASE-PUBLISHER-VERIFY-EXIT-20261115 / NATIVE CI VERIFIED / PRODUCTION NO-GO.** [Draft release PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) code exact SHA `084e1cb97d8c42e63a7b5cdcf4fd9e8e6c3a4e26` passed [Windows GitHub Actions #43644158976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43644158976): handover `132598082244` SUCCESS; Windows `132598121493` SUCCESS; privileged publisher `132599506785` SKIPPED. Native regression marker `RELEASE-PUBLISHER: missing-tag status cleared before verify, nonzero verifier blocks publish PASS` confirms static readback/order of the newly fixed `gh release view` -> reset -> Verify -> error rejection -> release-create pipeline; no signer-positive execution. Setup native install/uninstall, checksum ZIP 7/7, compiled version probe and unsigned denial passed. Unsigned preview artifact ID `14133547021`, provider SHA256 `59f7cf65bae561ca285c7dc1f274d3e5bc7b5d9aa7d2920d82d682d5ce48a600` not independently downloaded. Previous source-only false-RED #43641527073 from out-of-date handovers preserved in ledger. **NEXT:** QA+MASTER review; no actual production signer, release, customer money, device flash or hardware/witness acceptance. This docs-only sync is NOT new code validation.
+
+> **PHX-RELEASE-PUBLISHER-VERIFY-EXIT-20261115 / TESTS PENDING / RELEASE BLOCKED.** Source `8eafe0d6d93bb10815c791c56643437137c6f28c` and test `86271ae3ba72bb66592eddfb944c892386c6c49d` in [draft PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) correct stale nonzero `LASTEXITCODE` from expected `gh release view` tag absence and require reset before final `Release-Authenticode.ps1` plus fail-closed verifier nonzero guard before release. Earlier [run #43641527073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43641527073) on `864f019994cd863841edb3256d38a0066a776568` failed **only mandatory handover freshness**; no Windows publisher executed. Original successful signed-negative/installer run #43635551178 applies to prior source only. No signer positive or live publication. This record is being updated after implementation, prior handover history preserved. **NEXT:** check exact-head Actions, correct measured RED, request QA+MASTER review, leave money/physical/witness gates NO-GO.
+
+> **PHX-RELEASE-PUBLISHER-ELIGIBILITY-20261115 / NATIVE WINDOWS CI GREEN / UNSIGNED PREVIEW ONLY.** [Draft PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) exact source `510d07a6dce5d6ed6ed6431711de9ceffdcc8e2d` checked out in [Windows run #43635551178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43635551178), completed SUCCESS: handover and build-windows PASS, publisher job SKIPPED. Native logs explicitly show `RELEASE-ADMISSION: frozen v0.4.0 is not eligible for a write-token publisher`; new eligibility/tokens tests PASS, packaged build/install/ZIP/checksum and hypothetical v0.4.1 metadata tests PASS. Earlier negative-test false REDs runs 43634551310 and 43634771409 are retained in ledger with exact causes/repairs; final workflow source `febe36084f0ec68367337b7afda52f436a95e35d`, test `9b3c2ac0affcc8a9b2ec23430eb69dee14554540`. Unsigned preview artifact `14130316851`, outer SHA256 `e67438cf27edf7e4e57a4868fa8c9e4983b485f365170acd391654d207c3edb8` provider-reported; not independently downloaded. No real signer/approved publication, finance/witness/migration/physical acceptance; PRODUCTION NO-GO. This doc sync after tested SHA is not new code testing. **NEXT:** independent QA+MASTER review, signer-positive future authorization and target/hardware gates, no merge/release.
+
+> **PHX-RELEASE-PUBLISHER-ELIGIBILITY-20261115 / SECOND CI RED WAS TEST BOUNDARY; CORRECTED TEST PENDING.** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) workflow source `febe36084f0ec68367337b7afda52f436a95e35d` keeps frozen v0.4.0 release publisher job entirely ineligible. At [Windows run #43634771409](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43634771409) exact checkout `6e2ea0d81b00a4cc29c74c53871bb7ac64d32804`, handover/early parity/RELEASE-ELIGIBILITY and RELEASE-TOKEN controls PASS; negative test failed later because it treated the new frozen-version admission step as part of the artifact upload template, matching a legitimate v0.4.0 literal. Narrow test fix `9b3c2ac0affcc8a9b2ec23430eb69dee14554540` limits upload assertions to its actual step. Native full Windows build and job-output proof still NOT VERIFIED for corrected source. No code/finance/firmware money operations, signing or release. NEXT: exact-head retest; independently review true future signed-positive publisher and MASTER/QA gates. Rollback: isolated unmerged draft.
+
+> **PHX-RELEASE-PUBLISHER-ELIGIBILITY-20261115 / FIRST CI RED IN TEST, REPAIR COMMITTED, RETEST PENDING.** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) workflow `febe36084f0ec68367337b7afda52f436a95e35d` adds job-level needs output that prevents frozen v0.4.0 and invalid versions from starting a `contents: write` publisher. [First Windows run #43634551310](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43634551310) at `8ccd10150dbd37db19e008e9c01a80d1bf8f0718`: handover PASS, early package-parity PASS, regression FALSE POSITIVE failed at line 108 due reading explanatory YAML comment containing `env.VERSION`, build-windows FAILURE, publisher SKIPPED. Test-only fix `102d1be196d04fec91e2fcff77ef13613b5a7b30` narrows match to the actual job if-line; native retest NOT RUN. Earlier source signed-positive tests not performed; v0.4.0 frozen, no production or money/hardware operations. **NEXT:** exact-head CI rerun, inspect release negative selftest + build/package, log failures/success, request QA+MASTER review. Rollback isolated draft unmerged.
+
+> **PHX-RELEASE-PUBLISHER-ELIGIBILITY-20261115 / COMMITTED, EXACT-HEAD CI PENDING.** PHX-RELEASE draft [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) stacked on #242. Workflow `febe36084f0ec68367337b7afda52f436a95e35d` and test `938a5eba110c0efd604d5269a5fab85b2f1e1920` enforce build-proven `future_release_eligible` after packaging: frozen `VERSION: 0.4.0` or invalid versions prevent the entire `contents: write` publisher JOB (not merely step), using `needs.build-windows.outputs` because job-level GitHub Actions `if` cannot use `env`. Original signing, installer and byte parity remain. **Native Windows/Actions CI NOT YET RUN on this new source**; prior #43632749864 green applies only to earlier source. No real signing/publisher, production or hardware/financial work. Rollback: leave draft unmerged. **NEXT:** run exact-head native Windows CI, fix measured RED, QA+MASTER review and resolve money/witness/physical gates before release.
+
+> **PHX-RELEASE-PUBLISHER-ELIGIBILITY-20261115 / IN PROGRESS / P1 authority minimization.** Existing PHX-RELEASE [draft #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), literal baseline HEAD `7a388bdc9a3c9b1218878ea0dd56c37a87f3c0ae`, parent #242 unchanged. Narrow release-only cleanup: add build-validated, fail-closed non-frozen version output to GitHub Actions `build-windows`; gate `publish-release` **job** (not merely the publish step) on this output so fixed `VERSION: 0.4.0` CI cannot start any job with `contents: write`. Native negative selftest must assert job-output provenance, frozen/invalid version refusal and scope. Expected: old behavior is privilege over-allocation on approved main v0.4.0; new behavior leaves publisher skipped for frozen build while future signed path remains reserved for explicit authorization. **SOURCE CHANGE NOT YET COMMITTED, CI NOT RUN.** Rollback: revert this branch's bounded workflow/test changes, leave draft unmerged. **NEXT:** implement only release workflow/test; run exact-head Windows Actions, keep all skipped/signed/physical caveats.
+
+> **PHX-RELEASE-PUBLISHER-ISOLATION-20261115 / SOURCE-EXACT WINDOWS CI GREEN / UNSIGNED ONLY.** Stacked [draft #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) on existing PHX-RELEASE #242. After first handover-heading RED run `43632635404`, corrected exact-head [Windows run 43632749864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43632749864) checked out `668532746a11f0a3102de47eacfece9a4b2cac94` and completed **SUCCESS**: handover `132562764206` PASS, native Windows `132562813175` PASS, release publisher `132563970641` **SKIPPED** as intended. Native logs confirm `RELEASE-TOKEN` read-only PR/build vs owner-approved write publisher, signing-negative refusal, compiled hypothetical future version, NSIS Unicode U+00A9, hosted install/uninstall, exact installed App/Watchdog parity, portable ZIP 7/7 and SHA256SUMS PASS. Artifact ID `14128438126`, 264813238 bytes, provider-reported ZIP sha256 `505a1f02512ec8c3cb8a5ab48379184f132d045992e04c4557608f946b5b0b9b`: **unsigned preview**, not independently downloaded. Workflow source `84511da1834a972e32e3307de09fdb038f5eada2`, corrected negative script `54c42eae803f3d6cde3402b9553df1a5ae926756` unchanged since tested SHA. V0.4.0 frozen; actual signed positive, publication, payment/hardware acceptance and merge **NO-GO**. Subsequent handover-only checkpoint does not imply new source compilation. **NEXT:** independent QA+MASTER review of token/runner boundary and signed-positive path; reconcile FULL-vs-LIGHT control plane before integration, do not publish or migrate live funds.
+
 > **PHX-RELEASE-PARITY-20261029-F / SOURCE-EXACT WINDOWS CI GREEN / UNSIGNED ONLY.** [Draft PR #242](https://github.com/BlazingSystems/BlazingSystems-Experiments/pull/242) literal **tested** HEAD `253accaa1287c64c199a08a6d37b2a3de360ba6a`; [Windows run #40882009358](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40882009358) **COMPLETED SUCCESS**, handover job `123475695578`, native build `123475800657`. Original RED run [#40881593049](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40881593049) stays recorded: PowerShell StrictMode empty-array Count failed in early synthetic test, no real package tested; minimal test-only fix `28fb588f4b14ddeb32d6df1952e75c7ee9dac4dd` passed rerun. Real logs: `PACKAGE-PARITY installed App+Watchdog SHA256/length equals staged build payloads` on hosted runner **before executing installed app**, `PACKAGE-PARITY portable ZIP exact 7/7 approved files, SHA256SUMS Setup+ZIP and App+Watchdog parity PASS`; synthetic mutated installed EXE/portable EXE, checksum error, rogue+duplicate ZIP entries refused. Hypothetical nonshippable v0.4.1 metadata probe and real frozen v0.4.0 native Setup Unicode U+00A9 PASS, hosted installer/startup/uninstall cleanup PASS; **signing, final signed-positive gate and GitHub Release publication SKIPPED**, no real signer. New GitHub Actions **unsigned preview** artifact ID [`12901565817`](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40882009358/artifacts/12901565817), GitHub provider-reported ZIP `166708728` bytes, SHA256 `44ddeb1bdbc5bf090db84cc368d03a057cf23ab3783c7f5c99febed066041bdd`; not independently downloaded or Drive-uploaded. **Older separate supervisor-retained unsigned preview** stays Drive ID `12XFYF9NKxTiUpKNDzbMJnSauuESy5ATl`, folder `1gWHF6c8qexztfUEirHUPM56LeT_C8pvv`, from run `40813380867` original artifact `12871910460`, `166710462` bytes, SHA256 `a8a834d3e0c9d6643516f1e66660f13d7bb41cc39235132ee6ff218e5ead075e` — **NOT the latest**. No private Drive transfers by RELEASE. MASTER-selected PR242 DER SHA256 signer policy and review/no-merge constraints preserved; no new keys, customer device, production release or payments. Source commits `0276360046cb25fe9892f214c27e8db5d3a3dcee` parity script, `d8759e5f21775d4dc6e72afc08f2a51fea569620` workflow, `28fb588f4b14ddeb32d6df1952e75c7ee9dac4dd` StrictMode fix. **NEXT:** independent QA/source review and signer-custody integration coordination, not release; physical payment/witness/serial/ESP P0 acceptance pending. Following commits are handover-only, new source CI not claimed.
 
 > **PHX-RELEASE-PARITY-20261029-F / NATIVE NEGATIVE-TEST RED RETAINED, SOURCE FIX PENDING RETEST.** Literal [Windows run #40881593049](https://github.com/BlazingSystems/BlazingSystems-Experiments/actions/runs/40881593049), HEAD `23643f0157587ccff228e9bd912c1e355cbd43e5`: mandatory handover SUCCESS, Windows job **FAILURE** at new early synthetic `RELEASE-PARITY reject altered installed and archive members in isolated fixtures`. Actual log `PACKAGE-PARITY installed App+Watchdog SHA256/length equals staged build payloads` then `The property 'Count' cannot be found on this object`; failure occurred in PowerShell `Set-StrictMode Latest` for empty `Where-Object` path-segment pipeline, **before native .NET/NSIS build**. This is NOT a verified product parity mismatch. Narrow test-only source fix `28fb588f4b14ddeb32d6df1952e75c7ee9dac4dd` wraps ZIP path-segment filter in `@(...)` before `.Count`, retaining traversal refusal, all seven-member hash/manifest assertions, signing refusal, approval, Unicode gate, v0.4.0 frozen version. **Corrected native CI still pending**, do not claim PASS. Older private unsigned archive custody remains Drive ID `12XFYF9NKxTiUpKNDzbMJnSauuESy5ATl` run `40813380867` artifact `12871910460`, not latest. NEXT: rerun literal-head Windows early synthetic positive/negative controls, then actual installed/ZIP gates and artifact, preserve failures and report new results. Production NO-GO.
@@ -668,3 +701,469 @@
 > **COIN-20261021 LOGO REVIEW FAILURE — 2026-10-21 Asia/Manila, UNCOMMITTED:** Independent review reproduced a valid APK URL containing the literal branding marker being rewritten into image data because logo substitution ran after user URL insertion. New logo source is not accepted yet. Add URL-preservation RED and move logo substitution before inserting user-controlled values, then recheck all setup tests. Original three fixes at `b9d988a0df1570445ac2820f83e91e4f5891e98f` are exact-HEAD verified: Full #39492236306 and #39492187314, Windows #39492236189 all completed success. Owner additionally authorized R281 standalone tests; SSH read-only board query confirms Notion R281/OpenWrt 24.10.8. Browser inspection of `/rental` is blocked by the router's untrusted certificate; no warning bypass, config change, firmware write or paid operation performed. Credentials are not recorded in repository evidence. NEXT: repair proven logo interpolation bug, finish read-only installed-source inventory, push synchronized source and run fresh CI.
 
 > **COIN-20261021 OWNER ZIP SOURCE — IN PROGRESS, 2026-10-21 Asia/Manila:** Owner identified `branding/Logo-V2/Logo-V2-Branding-Package.zip` as the asset source. Use its exact `Logo-V2/ASSETS/logo-on-dark-from-board.png` (278x175, SHA-256 `c4e61f370a1a9541722f4fcee522cec8d20c3c9e2917fc1a32286f4870193690`; archive SHA-256 `8cd0d32f8023e7d8259a268f9bdbb6c7b3dfdf55d7ba2a205fd39f800bfa22b9`) instead of the larger original board. Keep bytes unchanged, display logo panel through viewport excluding packaged caption/white stripe, embed PNG offline and retain valid marker-containing URLs. Prior local logo source `977ec3fd90cf83ee589e82671c181ca41ed463c9` is superseded by this explicit source instruction and is not CI-proven. NEXT: switch to ZIP asset, rerun setup/branding tests, synchronize all handovers before push. R281 permission also permits isolated temporary entropy routine smoke tests in RAM only; installed service and persistent configuration remain untouched, no power-cut or release acceptance implied.
+
+> **PHX-RELEASE 2026-11-15 UTC04 — exact-head CI regression repair, PREVIEW ONLY:** [Windows run #43670916379](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43670916379) at `e0c22304fca117795f4bf92b00a01da6bf2415e3`: handover PASS, build-windows FAIL in `negative-selftest.ps1:179` because static assertion expected obsolete literal `HTTP/[0-9.]+ 404`, whereas workflow correctly parses status and checks `Groups[1].Value -ne '404'`; publisher SKIPPED. Narrow test-only commit [`60b849ca`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/60b849ca838340b6f2a4f11280a74263d35aa69a) aligns assertion with actual fail-closed status comparison. No publisher behavior changed; new exact-head native CI pending. QA/MASTER review required; NO-GO, no signing, publishing, merge or hardware acceptance. Rollback: revert test-only commit and these three documentation checkpoints on draft #291.
+
+
+### PHX-RELEASE 2026-11-15 UTC15 — mocked publisher execution, CI pending
+Release-only commits `87ba8b8d3d75c9cf5545b99f86a6896a278418b0` (new credential-free `PublisherMockCli.ps1`) and `d3756448e05f1cf3b4e1a381b2f387fb767194e1` (Windows workflow step) exercise the *literal publisher run block* with function-scoped fake `gh` and fake signature verifier. Nine synthetic outcomes assert no release creation for 401/403/500, transport, ambiguous/duplicate status, existing tag or failed final verification; one mock-positive 404+verifier-success checks the path reaches **only the fake** `gh release create`. No network, signer, tag or release mutation. **CI not yet verified at these commits; do not mark PASS.** Review any exact-head failures before claiming acceptance. Draft only, QA/MASTER review required; protected signer/witness, durable finance, approved binaries, 150 physical power cuts and 30-device 24h soak remain PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-15 UTC18 — exact-head handover RED; mock test NOT RUN
+At source `c53c4677ad55575e95ade6cd47c62bd1bdcb1355`, [Windows Actions #43740125754](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43740125754) completed FAILURE: `handover` FAIL, `build-windows` SKIPPED, `publish-release` SKIPPED. Actual gate log says `PublisherMockCli.ps1` was newer than canonical `CURRENT_STATE.md` (last checkpoint `f737c5dd9bb8a231bb4865a201975371a360f249`). Earlier docs-only correction did not update all three canonical records. This documentation checkpoint does not assert that the mock CLI works. NEXT: confirm all three handover freshness gates PASS on exact new HEAD, then inspect Windows mock-CLI test results and repair measured source defects only. Production NO-GO; no signer, release, merge, hardware or finance action.
+
+> **PHX-RELEASE 2026-11-17 UTC13 — publisher interruption regression committed, RED expected:** the release-signing negative suite now requires workflow cancellation only for pull requests. The current workflow still has unconditional `cancel-in-progress: true`, so exact-head Windows CI is expected to fail at `RELEASE-CONCURRENCY` until the minimal workflow correction is applied. Scope is PR #291 release workflow/test only; no signing, tag, release, merge, deployment, finance, or hardware action. Production remains NO-GO.
+
+> **PHX-RELEASE 2026-11-17 UTC21 — publisher cancellation RED reproduced, minimal fix committed; exact-head GREEN pending:** regression commit `83c7cae54d2a5c156e0961afa6fde4ec0c3fb8c4` triggered [Windows run #44180327868](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44180327868): handover SUCCESS, `build-windows` failed exactly at `negative-selftest.ps1:67` with `publisher-capable runs must be non-cancellable`; later build steps and `publish-release` did not run. The workflow now sets `cancel-in-progress` only when `github.event_name == 'pull_request'`, preserving PR deduplication while preventing push/manual publication-capable runs from being interrupted mid-release. New exact-head CI is pending. No signing, tag, release, merge, deployment, finance, or hardware action. Production remains NO-GO.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pinning, test-first
+
+- Scope: PR #291 release workflow and credential-free release negative tests; no application/runtime PISONET behavior, signing keys, publisher execution, tags, or releases.
+- PR #291 branch phoenix/release-publisher-isolation-20261115 is stacked on PR #242 head 734b89d9e7792247e8376335c3f3685500ab3f89. Before this work, PR #291 head was 0d990afce562de1b81ef6b9daed112fab7c6c85b.
+- Test-only commit ef12c037caea0abf0fcf9dd75a6dacc8efd26579 introduced a regression requiring six external Actions references to use full 40-hex commit SHAs and the four expected action commits. The first insertion was incomplete; exact run #44188100487 stopped in handover job 134409903714 before the Windows test ran because PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md were stale. build-windows and publish-release were skipped. This was not an expected action-pin RED and not a test result.
+- Follow-up test correction and this synchronized handover checkpoint make the PowerShell assertion syntactically complete. The next exact-head run must pass the freshness gate and then reject the still-floating @v4 references. No action source pin has been changed yet.
+- PR validation must continue to skip the write-privileged publish-release job. No merge, tag, signature, publication, customer deployment, payment migration, or hardware operation occurred. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE UTC22 — action-pin regression parser correction
+
+- Exact-head run #44188856124 checked out 777248fa2e3cde1b1146837552e630b467b4684f. The handover job 134412557331 passed and PackageParity self-test passed, but build-windows job 134412684859 failed at negative-selftest.ps1 line 300 with an unexpected closing parenthesis. The action-pin assertion did not execute; this is an authoring/fixture failure, not the expected mutable-tag RED.
+- Corrective test-only commit 0620e018138aec1fd3de818d39d0af015e11b4be removes the orphaned duplicate tail left by the initial test insertion. It does not change the release workflow or publisher.
+- All three canonical handovers must be advanced after this correction before the next exact-head run. No action pin has changed yet; no signing, tag, publication, merge, financial migration, or hardware operation occurred. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pin regression parser correction
+
+- Existing PR #291 branch `phoenix/release-publisher-isolation-20261115`, starting HEAD `507740dff594d110c28f73cb946544b2831fde17`; base remains PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Exact-head Windows run [#44189232857](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44189232857) had handover PASS and PackageParity PASS, then failed in `negative-selftest.ps1` at the external-action count assertion: the parser counted one `uses:` property but missed YAML list-item `- uses:` entries. This was a test-parser defect; the intended immutable-reference assertion did not run.
+- This test-only checkpoint corrects the parser and line validators to accept both YAML forms. The workflow remains unchanged and still has six mutable `@v4` references, so the next exact-head Windows run should reach the expected RED at the first mutable reference.
+- No signing, publisher execution, tag, release, merge, finance, hardware or deployment action. PR #291 remains draft/unmerged; PRODUCTION NO-GO.
+
+## NEXT EXACT ACTION
+Correct the release workflow's six mutable action references to the independently read-back full commit SHAs in the negative test, synchronize all three canonical handovers, then require exact-head Windows CI with the publisher skipped.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pins committed
+
+- PR #291 branch `phoenix/release-publisher-isolation-20261115` is stacked on #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. Test-only parser correction `37f4d3f76ce40f74a0b762abadc18a22f52c35c5` made the action-reference guard recognize both YAML `- uses:` and `uses:` properties.
+- Exact test-first RED: [Windows run #44191802009](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44191802009): handover PASS; PackageParity SELFTEST PASS; concurrency regression PASS; the action-pin guard then rejected mutable `actions/checkout@v4` at `negative-selftest.ps1:79`. The publisher job was SKIPPED. This is the expected mutable-reference RED, not a package/build failure.
+- This source checkpoint pins all six external action uses to verified upstream tag commit SHAs: checkout v4.2.2 `11bd71901bbe5b1630ceea73d27597364c9af683` (3 uses), setup-dotnet v4.3.1 `67a3573c9a986a3f9c594539f4ab511d57bb3ce9`, upload-artifact v4.6.2 `ea165f8d65b6e75b540449e92b4886f43607fa02`, and download-artifact v4.3.0 `d3f86a106a0bac45b974a628896c90dbdf5c8093`. The checkout expected pin was corrected from an untagged commit to the exact v4.2.2 tag target.
+- Exact-head Windows verification is required next; PR validation must keep `publish-release` skipped. No signing, tag, release creation, merge, finance, hardware or deployment action. PRODUCTION NO-GO.
+
+## NEXT EXACT ACTION
+Verify this exact source head on Windows: immutable action pin guard, all existing release-negative controls, package parity, build and handover. Confirm the write-privileged publisher remains skipped for the PR. After terminal results, record the exact run and commit in all three canonical handovers.
+
+
+## PHX-RELEASE 2026-11-17 UTC22 — immutable Actions pins exact-source CI verified
+
+- Test-only YAML action-reference parser correction: `37f4d3f76ce40f74a0b762abadc18a22f52c35c5`. Source/test head: `4129a012ec18b7b390cc668b110dae7691a7ec73`. Exact-source [Windows run #44192255895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192255895) COMPLETED SUCCESS: handover PASS; build-windows PASS; `publish-release` SKIPPED.
+- Windows logs explicitly confirm `RELEASE-ACTIONS: all external actions pinned to verified immutable commit SHAs PASS`, `RELEASE-CONCURRENCY ... PASS`, nine synthetic publisher HTTP/CLI lookup decisions PASS with no publication, and the missing-tag/verifier nonzero guard PASS. PackageParity, native unsigned-Setup denial, Unicode copyright, native install/uninstall, portable ZIP exact 7/7 membership, SHA256SUMS, warnings-as-errors builds, PAY-0717/0718/0719/0720 lab checks and frozen-version admission all passed.
+- Both real signing steps were SKIPPED on the PR. The only artifact is unsigned CI preview [artifact 14378575285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44192255895/artifacts/14378575285), 264,824,347 bytes, provider-reported outer SHA256 `8b00389133a306b5063613d9115e72febe7332f90122ca0a33d21a4b7f607791`; not independently downloaded. It is not a GitHub Release or production package.
+- GitHub runner emitted a Node.js 20 deprecation warning for the pinned actions (runner forced Node 24); all action steps completed successfully. Revisit compatible newer action majors in a separate reviewed task, not by floating tags.
+- No signer, tag, release creation, merge, deployment, finance or hardware action. PR #291 remains OPEN/DRAFT/UNMERGED; PRODUCTION NO-GO.
+
+## NEXT EXACT ACTION
+Obtain independent PHX-QA review of the immutable-action pin guard and PHX-MASTER review of the #291 release-workflow reimplementation route. Keep the PR draft. Any Node runtime modernization must be a separately tested, immutable-pin change; do not restore floating action tags.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — checkout credential persistence regression (test-first)
+
+- Release-owned child PR #291 branch `phoenix/release-publisher-isolation-20261115`; source/test head at this checkpoint: `ea18bf04d6704adfdf8a259ec863ba79ecf8675f`.
+- Added a regression to `tests/ReleaseSigning/negative-selftest.ps1`: all three `actions/checkout` steps (handover, Windows build, isolated publisher) must set `persist-credentials: false`. Current workflow has the setting only on the publisher checkout; the two read-only PR/build checkouts omit it. This avoids leaving the read-only GitHub token in local Git configuration while PR-controlled project scripts execute.
+- Test authoring commits: `dad525c061eecce0c946d4f5f4e5045cf8d4f772` (initial insertion), `99eb8dbee71994ba085009d2d14fc9b023db0351` (assertion syntax correction), and `ea18bf04d6704adfdf8a259ec863ba79ecf8675f` (duplicate-comment cleanup). The initial insertion was malformed and corrected before acceptance; it is not counted as a valid test result.
+- Exact PR run [#44264925208](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44264925208) **FAILED at the mandatory handover freshness gate**, before the Windows test job. The gate reported these source/test changes newer than the canonical handovers. This is not the expected regression RED; no Windows test/build result is claimed and the privileged publisher job was skipped.
+- Existing workflow action metadata was independently read at the exact pinned commits: checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2 and download-artifact v8.0.2 all declare `runs.using: node24`. The prior Windows run [#44199987756](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44199987756) passed handover/build; the publisher job was skipped.
+- Next: synchronize the three canonical handovers, rerun the exact test head to obtain the intended RED at the new checkout-credential assertion, then add `persist-credentials: false` to the two unprivileged checkouts and rerun Windows CI. Keep the privileged publisher skipped on PR validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — regression fixture syntax correction
+
+- The first exact-head run after synchronizing the handovers, [#44265207630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265207630), passed the mandatory handover gate and package-parity selftest, then **FAILED at PowerShell parse time** in `negative-selftest.ps1:323` with `Unexpected token ')'`. The new checkout-credential assertion was not reached; this is a test-authoring error, not the expected regression RED or a product failure.
+- Corrected the release-owned test file by removing the duplicated trailing fragment. Corrected test-only commit: `c10bf9ee2a64dbe985ab95e6250df7e4a776b5ce`. No workflow/source behavior changed.
+- Next exact-head run must pass the handover gate and package-parity selftest, then reach the new assertion requiring all three checkout steps to use `persist-credentials: false`. Only after the expected RED is confirmed will the two read-only checkout steps be changed.
+- Existing PR remains draft; publisher/signing stay skipped. No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — checkout credentials fail-closed correction
+
+- Test-first regression is in `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1`; source/test head before workflow correction: `3673fc3227aa7650903651677885e6678806c126`.
+- Expected RED: [Windows run #44265603270](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265603270). Handover gate PASS; PackageParity selftest PASS; the new `RELEASE-SIGN test fail-closed negative controls` step failed exactly at line 109: `Every release workflow checkout must set persist-credentials: false`. This confirms two read-only PR/build checkout steps lacked the setting. The publisher job was skipped. Earlier run #44265207630 was a test-authoring ParserError at line 323 and is not counted as the expected RED.
+- Workflow correction commit: `2837f64a8d7a484fa4c87466e293169f23259afc`. Added `persist-credentials: false` to the handover and Windows build checkouts. The separate publisher checkout already had it. No checkout ref, action pin, token permission, job boundary, signer condition, version gate, artifact content or publish condition changed.
+- All three canonical handovers are synchronized in this docs-only commit sequence. Next: exact-head Windows CI must pass handover freshness, all release negative controls, native build/install/uninstall, package parity and checksums; the write-privileged publisher job must remain SKIPPED on PR validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — all checkout credentials disabled
+
+- Exact test-first RED [#44265884161](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265884161): handover freshness PASS; package-parity selftest PASS; `RELEASE-SIGN test fail-closed negative controls` failed at line 109 because the second (Windows build) checkout still used the default persisted read token. The first correction had updated only the handover checkout; publisher remained separately skipped. This is the expected remaining failure, not a compile or package failure.
+- First workflow correction `2837f64a8d7a484fa4c87466e293169f23259afc` disabled credential persistence on the handover checkout. Second workflow correction `a27cb084589358f3bf72f368a41e7cd6692af3ac` disables it on the Windows build checkout. The publisher checkout already had `persist-credentials: false`.
+- Exact workflow readback now finds three immutable checkout steps and confirms all three set `persist-credentials: false`; workflow-level `contents: read`, publisher-only `contents: write`, exact PR-head checkout refs and immutable Node24 action pins are unchanged.
+- The earlier [#44265207630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265207630) failure was a PowerShell parser error in the newly added test fixture and is not counted as a regression result. Test syntax was corrected before the two valid expected-RED runs.
+- Next: verify this exact source/test head through the synchronized handover gate, release-negative controls, native Windows build/install/uninstall, package parity, SHA256SUMS and artifact upload. The privileged publisher must remain SKIPPED on PR validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE 2026-11-18 UTC08 — exact-head CI disposition
+
+- Release source/test commit: `a27cb084589358f3bf72f368a41e7cd6692af3ac`; current PR #291 docs/head before this addendum: `3e804be9cd71f7fbead026868afcacb537210927`.
+- Final exact-head run [#44266198058](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44266198058): handover job PASS; Windows build attempt 1 passed checkout, .NET setup, PackageParity selftest, the new checkout-credential regression, publisher mock, build-local exit-code tests, PAY-0717/0718 lab checks, restore, warnings-as-errors build, PAY-0719/0720 probes, timer simulation and self-contained EXE publish. The job then **FAILED at Install NSIS compiler** because Chocolatey V2 feed returned HTTP 503 Service Unavailable for NSIS 3.13.0; no NSIS executable was installed. Consequently native Setup, install/uninstall, portable ZIP/checksum parity and artifact upload were SKIPPED. Signing steps and the write-privileged publisher job remained SKIPPED on the PR.
+- A failed-jobs-only retry of run #44266198058 is in progress. At last read the retried Windows job had again reached the NSIS installation step; no terminal retry result is claimed yet. This is a hosted package-feed dependency failure, not a checkout-credential regression failure.
+- Exact workflow readback confirms all three immutable checkout steps set `persist-credentials: false`; workflow token remains `contents: read`, and `contents: write` exists only in the separately gated publisher job. Expected RED [#44265603270](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265603270) reproduced the missing second checkout setting at line 109; final test step passed in the later run before NSIS.
+- Next owner action: resolve/retry the transient Chocolatey NSIS feed dependency, then complete native Setup, install/uninstall, ZIP membership/SHA256SUMS and artifact-upload checks. Obtain independent PHX-QA and PHX-MASTER review; keep PR draft and publisher skipped.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE UTC08 follow-up — NSIS feed retry disposition
+
+- Existing Experiments PR #291 remains OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`; base `draft/softtimer-future-release-signing-pipeline-20261029@734b89d9e7792247e8376335c3f3685500ab3f89`. Source/test HEAD: `a27cb084589358f3bf72f368a41e7cd6692af3ac`. Docs HEAD before this follow-up: `7d5eee0169405da51ed8476299b193e9a078237b`.
+- The checkout-credential regression was test-first. Expected RED runs [#44265603270](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265603270) and [#44265884161](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265884161) both passed the handover gate and failed only at the new assertion `Every release workflow checkout must set persist-credentials: false` (line 109); the Windows build checkout still logged `persist-credentials: true`. The earlier [#44265207630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44265207630) PowerShell parser error is excluded from expected-RED evidence.
+- Workflow correction commits: [`2837f64a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2837f64a8d7a484fa4c87466e293169f23259afc) disables persisted credentials on the handover checkout; [`a27cb084`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a27cb084589358f3bf72f368a41e7cd6692af3ac) disables them on the Windows build checkout. The publisher checkout was already disabled. Current workflow readback confirms all three immutable checkout steps set `persist-credentials: false`; workflow token remains `contents: read`, with `contents: write` isolated to the separately gated publisher job.
+- Source-head run [#44266151715](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44266151715) failed at the synchronized handover freshness gate; Windows build and publisher were skipped, so it is not a source-validation pass.
+- Current docs-head run [#44267185904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44267185904): handover PASS. Windows build passed checkout-credential regression, package-parity selftest, publisher mock (nine synthetic command-path cases; no real `gh` publication), build-local exit checks, PAY-0717/0718 and PAY-0719/0720 lab probes, .NET restore/build, timer self-check and self-contained EXE publish. It then FAILED at `Install NSIS compiler`: Chocolatey V2 feed returned HTTP 504 for NSIS 3.13.0. A failed-jobs-only retry of this same run also failed at NSIS installation with HTTP 504. Native Setup build, install/uninstall, portable ZIP/SHA256SUMS parity and artifact upload were SKIPPED. `publish-release` remained SKIPPED on PR validation.
+- This is a hosted package-feed dependency failure, not a checkout-credential regression failure. No unverified alternate installer, checksum bypass, signer or publisher fallback was introduced.
+- Next owner action: release-infrastructure/package owner restores Chocolatey V2 feed availability or supplies an owner-approved immutable NSIS installer mirror with independently verified SHA256 and license provenance; then rerun the exact PR head through Setup, install/uninstall, ZIP/checksum and artifact-upload checks. PHX-QA and PHX-MASTER independent reviews remain required.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — final exact docs-head Windows CI GREEN
+
+- Exact docs-head [run #44269469055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44269469055) at `b812c40e6a000cbedfc0789d9e62107b1b6f637a`: **SUCCESS**. Handover freshness PASS; `build-windows` PASS; write-privileged `publish-release` JOB SKIPPED.
+- The all-checkout `persist-credentials: false` regression passed. Package-parity installed App/Watchdog byte-length and SHA256 checks passed. Nine synthetic publisher command-path fixtures passed with `gh` mocked; no real GitHub Release command ran. Workflow permissions remained read-only for PR/build, with write scope isolated to the separately gated publisher.
+- Windows validation passed: .NET restore and warnings-as-errors builds; PAY-0717/0718/0719/0720 lab probes; timer self-check; self-contained EXE publish; NSIS 3.13 installation; future-version metadata probe; native Setup build; exact Unicode owner metadata; unsigned Setup rejection; Setup install/uninstall; portable package creation; exact 7/7 ZIP membership; SHA256SUMS and App/Watchdog parity; artifact upload; frozen-v0.4.0 publisher admission denied.
+- CI preview artifact: ID `14411163977`, provider-reported size `264802560` bytes, provider-reported SHA256 `7274b9f9eb38afbb7e01ccc321dad3e65d2ef5d77aaee7278e21c479372706b1`. Artifact bytes were not independently downloaded. This is an **unsigned CI preview**, not an approved production binary.
+- Signing steps were SKIPPED and `publish-release` was SKIPPED as required for PR validation. The frozen `0.4.0` candidate did not qualify for a write-token publisher. Earlier #44267185904 attempts failed at the Chocolatey V2 feed with HTTP 504; this later exact docs-head run supersedes that transient feed failure for this validation.
+- No signing, tag, publication, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC11 — protected-ref signing and publisher admission guard
+
+- Existing draft PR: [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), branch `phoenix/release-publisher-isolation-20261115`, base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Test-first commit [`fbaf89e5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fbaf89e5b99398b6e43be52385e28de7bb8f51ca) adds a negative self-test requiring all five release-approval conditions (portable signing, Setup signing, final package verification, publisher job and publish step) to require `github.ref_protected == true`. The owner approval variable alone is not treated as branch-protection evidence.
+- Exact test-head Windows run [#44295524044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44295524044) stopped at the mandatory handover-freshness gate because these shared records were older than the new test commit. The new protected-ref assertion was not reached; this is not yet expected-RED evidence.
+- Live main-branch governance audit is recorded in [issue #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-6977089867). The repository rulesets API returned an empty list; direct branch-protection read returned 403 to this integration. The prior read-only audit reports main as unprotected. A repository administrator must configure and independently verify protection/required checks.
+- Next exact action: update only the existing Phoenix release workflow's signing and publisher job/step guards with `github.ref_protected == true`, rerun the Windows PR workflow, and verify that all signing/publisher jobs remain skipped on PR validation.
+- No PFX secret use, real signing, publisher execution, tag, release, merge, payment migration, hardware flashing or customer deployment occurred. This remains synthetic CI only. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC11 — protected-ref signer and publisher guard verified at source head
+
+- Test-first regression: [`fbaf89e5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fbaf89e5b99398b6e43be52385e28de7bb8f51ca). It requires `github.ref_protected == true` on all five approval-gated paths: portable signing, native Setup signing, final package verification, the write-token publisher job and the publish step.
+- Exact docs-head Windows run [#44295839833](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44295839833): handover PASS; PackageParity PASS; negative signing self-test failed exactly at the first unprotected release-approval guard; publisher job SKIPPED. This is the expected RED. No signing or publication ran.
+- Workflow correction: [`15c61b68`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/15c61b68e9171ec467749a0a4dff1f8ef10e1463) adds `github.ref_protected == true` to all five signer/publisher conditions. The exact source/test HEAD is `15c61b68e9171ec467749a0a4dff1f8ef10e1463`.
+- The immediate source-head run [#44296114933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296114933) stopped at the required handover-freshness gate because this workflow commit was newer than the shared handovers. It did not reach Windows tests; this is not counted as a product/test failure or pass.
+- Live main branch is `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, `protected=false`, with an empty repository rulesets list. Direct branch-protection endpoint access is denied to this integration, but the branch API's `protected` field and rulesets read are explicit. The new guard therefore keeps every signing and publisher path disabled until a repository administrator configures protection and required checks.
+- Next: exact docs-head Windows CI after this handover update; independent PHX-QA/PHX-MASTER review; administrator verification of main protection. No real key use, signing, tag, release, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC11 — exact-head Windows packaging result
+
+- Exact docs/source/test HEAD `18f61977ba374b90d4002887bce29cb7921bee78`: [Windows Actions #44296238509](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44296238509) **SUCCESS**. Handover freshness and stale/partial-handover regressions PASS; the protected-ref admission negative self-test PASS; .NET restore/build with warnings as errors, PAY-0717/0718/0719/0720 lab checks, timer simulation, self-contained EXE publish, NSIS install, native Setup compile, Unicode metadata, unsigned-Setup rejection, Setup install/uninstall, portable ZIP/SHA256SUMS parity and artifact upload all PASS.
+- The three signing steps were **SKIPPED** and the write-token `publish-release` job was **SKIPPED** on PR validation. The nine publisher CLI fixtures were synthetic/mock-only; no real GitHub Release command ran.
+- Unsigned CI preview artifact: ID `14423482708`, provider-reported size `264815660` bytes, provider-reported SHA256 `239852edb38beb978bca5c2ce8e0f6970722834e801671c0fdb4619ade65c283`. Artifact bytes were not independently downloaded. This is not an approved production binary.
+- Main remains `protected=false` and the repository rulesets list is empty. The new `github.ref_protected == true` guard keeps all five signing/publisher paths disabled until an administrator configures protection and required checks.
+- No real signing, tag, release, merge, payment migration, hardware flashing or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — docs-head CI evidence (draft only)
+
+- Exact draft PR #291 documentation head `ed3565395bd70c4de696e49a84f0bb454efebc8b` completed [Windows Actions #44328674893](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44328674893) successfully: the handover and build-windows jobs passed; `publish-release` was skipped.
+- This validates the bounded documentation-head CI path only. It neither reconciles the recorded historical `CHANGE_LEDGER.md` provenance discrepancy nor supplies independent PHX-MASTER/PHX-QA approval, protected release admission, signer/freshness witness, durable finance/migration, or physical acceptance.
+- PR #291 remains open, draft and unmerged. No signing, release creation, tag, publication, flash, deployment or payment migration occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC21 — pin observed ESP board cores in the shared build workflow
+
+- Existing release branch/PR: #291, `phoenix/release-publisher-isolation-20261115`; source/test head `89bb876e751cb14567f367d294a25f399a5f0393`, stacked on #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- `.github/workflows/blazepwifi-build.yml` now pins ESP8266 `3.1.2` and ESP32 `3.3.13`; a release-CI guard checks the exact install blocks and the workflow records `arduino-cli core list`.
+- Expected RED: [#44400058670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400058670). Fix: [`89bb876e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/89bb876e751cb14567f367d294a25f399a5f0393).
+- Exact-source push [#44400319512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400319512) and PR [#44400332118](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44400332118): pin guard PASS; ESP8266/ESP32 compile and artifact upload PASS; all other OpenWrt targets and Android PASS.
+- Both runs completed FAILURE only because `validate` stopped at mandatory handover freshness before this docs refresh. Remaining validation tests did not run; simulations, candidate gate, signing and publishing were skipped. No full validation or release acceptance is claimed.
+- MASTER route manifest remains DRAFT_REVIEW_ONLY; COE target `.github/workflows/pisowifi-ci.yml` was not changed. Historical CHANGE_LEDGER provenance discrepancy remains under MASTER/QA review.
+- Next exact action: inspect the docs-head PR-triggered Actions after this refresh, then record any QA-owned validation result without weakening its gate. Production remains NO-GO.
+
+
+## PHX-RELEASE UTC21 — shared build checkout credential regression
+
+- Base #291 head: `4e05350d9a3d65446770e97ced88200eecc27979`; test-only commit: [`851af2c5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/851af2c59759e94581fc444a4b2b8b2a2359da23).
+- The release-owned shared build workflow has 20 checkout steps using mutable `@v4` refs without `persist-credentials: false`. The new negative self-test checks every checkout against the existing verified immutable v7.0.1 pin and credential-persistence requirement.
+- Expected RED is pending exact-head Windows PR CI. Source workflow is intentionally unchanged until the regression is observed.
+- Next: record exact RED, then update the shared workflow and path trigger in one reversible source correction. No production operation is authorized.
+
+
+## PHX-RELEASE UTC22 — shared build action/credential hardening source head (blocked CI)
+
+- Exact draft PR #291 source head `c5f96cd3aa95a4b73c3437362208f13549a5015f` contains the existing-owner's narrow checkout/action-pin and credential-persistence correction plus its regression coverage. This handover entry records provenance only; it does not endorse unrun source behavior.
+- Exact Windows run [#44414528967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414528967) and shared-build run [#44414529001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44414529001) stopped at the mandatory handover-freshness gate before the source validation/build paths. The Windows publisher and shared production sign/publish jobs were skipped.
+- Refreshing this handover is intentionally additive and should unblock the next exact-head CI observation. PR #291 remains draft and unmerged; independent review, protected admission/signer, durable finance/migration and physical acceptance are still absent. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC23 — action-pin guard source refinement (blocked CI)
+
+- Exact draft PR #291 source head `e23a004fe4b5fcce2145d73b65e06f133d74310d` refines the existing shared-build action-pin guard/workflow correction. This entry is provenance only; the source change is not validated by the blocked workflows below.
+- Exact Windows [#44419768450](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768450) and shared-build [#44419768453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44419768453) runs failed at mandatory handover freshness before their build/validation paths; signing and publisher paths were skipped.
+- This additive refresh enables fresh exact-head CI only. PR #291 remains draft/unmerged; independent review and all production gates remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC00 — action-pin guard coverage extension (blocked CI)
+
+- Exact draft PR #291 source head `fc2e55e447c6627afc89f38a9412bb5c517de991` extends the existing action-pin guard/workflow coverage. Its implementation remains unvalidated by the blocked workflows.
+- Exact Windows [#44427424289](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44427424289) and shared-build [#44427424398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44427424398) runs failed only at mandatory handover freshness before build/validation. Signing and publisher paths were skipped.
+- This additive handover record enables fresh exact-head CI and does not authorize release promotion. PR #291 stays draft/unmerged; all production gates remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC01 — action-pin coverage exact-head CI evidence
+
+- Exact draft PR #291 head `26e138acf2fbbb8890103fa1cfe2469e8efdd6ba`: shared build [#44432976878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44432976878) completed SUCCESS. The validated scope includes handover freshness, shared build validation, ESP8266/ESP32 and Android jobs; production import/sign/publish jobs were skipped.
+- Parallel Windows run [#44432976880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44432976880) passed handover but failed at `RELEASE-SIGN test fail-closed negative controls`; its publisher job was skipped. That expected negative result is not a release or package acceptance.
+- PR #291 remains open/draft/unmerged with no independent reviews. Protected release admission/signer, durable finance/migration and physical acceptance remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — Arduino archive-verifier source head (blocked CI)
+
+- Exact draft PR #291 source head `63f9952ce783a007546b09daa5ea4847f32fb505` adds the existing release-owner's Arduino CLI archive-verifier guard, test coverage and release handover. This entry records provenance only; the source work was not reached by the blocked workflows.
+- Exact Windows [#44458671016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671016) and shared-build [#44458671105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44458671105) runs failed at mandatory handover freshness before validation/build. Signing and publisher jobs were skipped.
+- This additive record enables fresh exact-head CI only. PR #291 remains draft/unmerged, with all production gates unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC06 — ESP32 core compatibility source head (CI in progress)
+
+- Exact draft PR #291 source head `7688cb25019b1045dd8f88ad335fe7fe0b5835cf` adds the existing release-owner's ESP32 core compatibility workflow and regression guard. This entry preserves provenance only.
+- Windows [#44474715157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715157) and shared-build [#44474715174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715174) hit mandatory handover freshness before their relevant validation paths; publisher/signing remain skipped. The independent compatibility run [#44474715198](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44474715198) has its ESP32 4.0.0 leg successful while the 3.3.13 leg remains in progress and is not credited.
+- This additive refresh enables fresh exact-head CI. PR #291 stays draft/unmerged; all production gates remain unresolved. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC07 — build provenance source head (blocked CI)
+
+- Exact draft PR #291 source head `ac9dd772f4413e5e3439884b069615c99a175c49` adds the existing release-owner's build-provenance generator, tests and workflow integration. This record preserves source provenance only; the new build-provenance code has not been reached by the blocked workflows.
+- Exact Windows [#44482543291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543291) and shared-build [#44482543530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543530) runs failed at mandatory handover freshness before build/validation; signer and publisher jobs were skipped.
+- The independent ESP32 compatibility run [#44482543394](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44482543394) completed SUCCESS for both declared core legs (3.3.13 and 4.0.0), scoped only. This does not establish release acceptance.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged and **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — build provenance refinement source head (blocked CI)
+
+- Exact draft PR #291 source head `d498afbf2aa0e60fc1b1d0471328f5e6eb8e597c` refines the existing release-owner build-provenance generator, tests and workflow integration. This entry is provenance only; its source changes were not reached by the blocked workflows.
+- Exact Windows [#44487146268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146268) and shared build [#44487146258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146258) runs failed at mandatory handover freshness before validation/build; signing and publisher paths were skipped.
+- ESP32 compatibility [#44487146336](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44487146336) completed SUCCESS for both scoped core legs 3.3.13 and 4.0.0. This is not release acceptance.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC09 — provenance/concurrency refinement source head (CI active)
+
+- Exact draft PR #291 source head `cd545fe527c3b52ad251528706f744e9a5672241` refines existing build-provenance code and adds release workflow concurrency regression coverage. This note preserves provenance only.
+- Windows [#44499994885](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994885) failed at mandatory handover freshness before build validation; publisher and signing paths were skipped. Shared build [#44499994944](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994944) and ESP32 compatibility [#44499994683](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44499994683) are active and not credited.
+- This additive refresh enables fresh exact-head CI. PR #291 remains draft/unmerged; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC10 — supersession audit: provenance source reached terminal CI
+
+- Supersedes the earlier `cd545fe527c3b52ad251528706f744e9a5672241` active-CI record: compatible branch source/test head `ffe4ea8f5eabe23628827e186ebb3f92c9cfcaaf` was already implemented by another release worker; this entry independently records the outcome without duplicating its code changes.
+- Exact source/test [BlazePwifi build #44503860587](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44503860587) completed SUCCESS: provenance 19/19, validation 133/133, firmware targets and nine simulations passed. Its signing and publisher paths were skipped; any artifacts remain unsigned CI previews only.
+- Exact current docs-head [BlazePwifi build #44504561884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561884) and [ESP32 core compatibility #44504561996](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561996) completed SUCCESS; the compatibility legs are pinned to Hardware source `0e5514adb008`, not current Hardware #327.
+- [Windows release #44504561855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44504561855) reached the intended fail-closed negative signing control, so publisher/build-package steps were skipped. This is not production acceptance.
+- PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO** remains until MASTER, independent QA, protected signer, durable finance/migration, and physical acceptance gates are independently satisfied.
+
+
+## PHX-RELEASE UTC11 — supersession audit: exact-head freshness gate blocked
+
+- Compatible branch head `1ec8dde1b188be310b5daf38d21c26ed812b0361` already contains another release worker's provenance, concurrency, and Windows handover-workflow refinements; this record verifies the outcome without duplicating implementation.
+- Exact [BlazePwifi build #44517814515](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814515) failed only at the mandatory handover freshness gate. The independent firmware/Android/ESP target jobs shown by that run completed, while validation-dependent simulations, release publication, signing handoff, and preview publication were skipped.
+- Exact [Windows release #44517814407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814407) likewise failed at shared BlazePwifi/SoftTimer handover freshness; build and publish jobs were skipped. [ESP32 compatibility #44517814450](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44517814450) completed both scoped core legs against historical Hardware source `0e5514adb008`, not current Hardware #327.
+- This additive checkpoint supplies a fresh exact-head documentation baseline; no signed, publishable, or deployable artifact is asserted. PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC12 — supersession audit: workflow refinement remains freshness-blocked
+
+- Compatible branch head `189ecaca6b35d52c25bd0fdaa5639828bf105731` already includes another release worker's SoftTimer workflow and concurrency-test refinement. PHX-RELEASE preserved the implementation and independently recorded exact-head results.
+- [BlazePwifi build #44523786634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786634) failed at mandatory handover freshness. Target compilation jobs completed, but validation-dependent simulations and every signing/publication path were skipped.
+- [Windows release #44523786593](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786593) likewise failed at shared handover freshness before any build/publish job. [ESP32 compatibility #44523786487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44523786487) completed its two scoped historical-source legs (`0e5514adb008`) only.
+- This checkpoint establishes a fresh handover baseline; it neither signs nor publishes an artifact and does not represent production acceptance. PR #291 remains draft/unmerged with no independent review. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — supersession audit: freshness baseline restored, signer negative remains closed
+
+- Compatible branch head `10b2de74f108cb6ae70d34a83b3599cf5038b687` already contains another release worker's handover and ESP32 compatibility workflow refinement. This record is an independent evidence checkpoint, not a duplicate implementation.
+- Exact [BlazePwifi build #44532306202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306202) completed SUCCESS for its scoped CI jobs, including mandatory handover freshness, validation, target builds, update bundle, and simulations. `production_sign_handoff`, prerelease, and release publication jobs were skipped.
+- Exact [Windows release #44532306579](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306579) passed shared handover freshness, then correctly failed `RELEASE-SIGN test fail-closed negative controls`; all publisher and package-build follow-ons were skipped. No signing occurred.
+- Exact [ESP32 compatibility #44532306237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44532306237) completed both scoped core legs against source `984ea8ff65a9`; this is compatibility evidence only, not flash or physical acceptance.
+- PR #291 remains draft/unmerged with no independent review. No CI preview is production-ready. **PRODUCTION NO-GO** remains until all independent MASTER, QA, protected-signer, durable finance/migration, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC14 — terminal docs-head CI audit
+
+- Exact documentation checkpoint head `4e3d954a89835fff54463d456c278eeb5f70b056` was independently verified after the prior source evidence record.
+- [BlazePwifi build #44538815114](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815114) completed SUCCESS for scoped validation, target builds, update bundle, and simulations; `production_sign_handoff` and both publication jobs were skipped.
+- [Windows release #44538815094](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815094) passed handover validation and then stopped at `RELEASE-SIGN test fail-closed negative controls`; package/publisher follow-ons were skipped. [ESP32 compatibility #44538815283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44538815283) completed both scoped legs against Hardware source `984ea8ff65a9`.
+- This is terminal CI evidence only. It does not sign, publish, flash, deploy, or establish physical/production acceptance. PR #291 is still draft/unmerged with no independent review; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC15 — supersession audit: provenance generator refinement
+
+- Compatible branch head `97d500445d7a9bb6b3cf4b968b27e8dd9e046967` already contains another release worker's build-provenance generator and regression-test refinement. The implementation was preserved; this entry records independently observed results.
+- Exact [BlazePwifi build #44555775939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775939) completed SUCCESS for scoped validation, target builds, update bundle, and simulations. Production signer and publication jobs were skipped.
+- Exact [Windows release #44555775954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775954) passed handover validation then correctly stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on ran. [ESP32 compatibility #44555775998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44555775998) completed both scoped historical-source legs (`984ea8ff65a9`).
+- This is evidence only: no artifact has been signed, published, flashed, deployed, or designated production-ready. PR #291 remains draft/unmerged with no independent review; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — supersession audit: incremental provenance refinement
+
+- Compatible branch head `9b39a4432f6c87ba005eae0e414a501842f10e62` already contains incremental build-provenance generator/test changes from another release worker. This checkpoint intentionally preserves that implementation and records independent evidence only.
+- Exact [BlazePwifi build #44565010341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010341) completed SUCCESS for scoped validation, builds, update bundle, and simulations; signer handoff and all publication jobs were skipped.
+- Exact [Windows release #44565010212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010212) passed handover validation and then stopped at `RELEASE-SIGN test fail-closed negative controls`; no package/publisher follow-on executed. [ESP32 compatibility #44565010064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44565010064) completed scoped compatibility against historical Hardware source `984ea8ff65a9` only.
+- No signing, publishing, flashing, deployment, secret handling, or production designation occurred. PR #291 remains draft/unmerged and independently unreviewed; **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC17 — supersession audit: provenance cleanup
+
+- Compatible head `110f89985703e5685b193e4398492d3a16b26cdd` already contains another release worker's provenance cleanup; no implementation was duplicated.
+- [Build #44578334060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334060) completed scoped CI successfully; signer handoff and publication jobs were skipped. [Windows #44578334600](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334600) stopped at the intended fail-closed signing-negative control; publisher skipped. [ESP32 #44578334052](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44578334052) is scoped compatibility only.
+- PR #291 remains draft/unmerged and unreviewed. No production claim or release action occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC19 — supersession audit: freshness fail-closed
+
+- Compatible head `fae5cf41b2cf6e46c450bb5ee79942b63b56d3a4` already contains release concurrency/workflow refinements. This entry preserves the implementation and records exact-head evidence.
+- [Build #44598882048](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882048) failed at mandatory handover freshness; [Windows #44598882092](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44598882092) likewise failed shared freshness. No signing or publisher step ran. ESP32 compatibility #44598882022 remains scoped only.
+- PR #291 is draft/unmerged with no independent review. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC20 — supersession audit: concurrency regression refinement
+
+- Compatible head `d4f082d6086c52f022b01670a33288d7c432154b` already includes another release worker's concurrency regression refinement; no implementation was duplicated.
+- [Build #44608732774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732774) completed scoped CI successfully. [Windows #44608732573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44608732573) reached the intended fail-closed signing-negative control; its publisher path was skipped. ESP32 compatibility #44608732329 is scoped only.
+- PR #291 remains draft/unmerged with no independent review. No signing, publication, deployment, flash, or production claim occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC21 — supersession audit: concurrency coverage update
+
+- Compatible head `66f622fe2ba727e7a37e9431aebfeb5d3782e23a` already includes another release worker's concurrency coverage update; no workflow implementation was duplicated.
+- [Build #44626386217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386217) completed scoped CI successfully. [Windows #44626386129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44626386129) stopped at the intended fail-closed signing-negative control; publishing was skipped. ESP32 compatibility #44626386215 is scoped only.
+- PR #291 remains draft/unmerged and unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC23 — supersession audit: ESP32 workflow compatibility refinement
+
+- Compatible head `e04a059c9c336413184e342aaa5e4fbb9cac7750` already includes another release worker's ESP32 compatibility workflow/test refinement. No implementation was duplicated.
+- [Build #44636720621](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720621) completed scoped CI successfully; [ESP32 #44636720463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720463) completed scoped compatibility. [Windows #44636720536](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44636720536) remains fail-closed at signing controls; publishing was skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC00 — supersession audit: ESP32 contract refinement
+
+- Compatible head `2bec5c94b80cc9c3e605ed13bcd001375fa4a6b8` already includes another release worker's ESP32 compatibility contract refinement; no implementation was duplicated.
+- [Build #44645669512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669512) and [ESP32 compatibility #44645669471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669471) completed scoped CI successfully. [Windows #44645669562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44645669562) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC01 — supersession audit: ESP32 application-image verification
+
+- Compatible head `a27a1fc50b7448503cd0970a11106fbc67605ac5` already includes another release worker's ESP32 application-image verifier and compatibility refinement; no implementation was duplicated.
+- [Build #44654506263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506263) and [ESP32 compatibility #44654506216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506216) completed scoped CI successfully. [Windows #44654506207](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44654506207) remains fail-closed at signing-negative controls; publishing was skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC02 — supersession audit: ESP32 reproducibility check is fail-closed
+
+- Compatible head `734ac932839428c6822397e61b4aa7eaab0c6984` already includes another release worker's reproducible ESP32 application-image verifier. This entry records independent exact-head evidence; no implementation was duplicated.
+- [BlazePwifi build #44660004702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004702) completed scoped CI successfully. Both [ESP32 compatibility #44660004710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004710) legs failed at `Compile twice and compare exact PHX-HARDWARE application image` for exact Hardware source `a2b7903b4009`; this is a useful reproducibility gate failure, not acceptance.
+- [Windows #44660004663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44660004663) remains fail-closed at signing-negative controls; publisher skipped. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC03 — supersession audit: ESP32 reproducibility diagnostics
+
+- Compatible head `29a41a47b0b64a2caf568fc257c6e5ce3b370805` already includes another release worker's reproducibility diagnostics refinement. No implementation was duplicated.
+- [Build #44667921035](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667921035) completed scoped CI successfully. Both [ESP32 #44667920801](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44667920801) legs remain fail-closed at `Compile twice and compare exact PHX-HARDWARE application image` for Hardware source `a2b7903b4009`; therefore they do not constitute compatibility acceptance. Windows #44667920737 remains fail-closed at signing controls.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — supersession audit: exact-core matrix refinement
+
+- Compatible head `c4fdf2dec5473dc37b4dbfb20f33e1f97f793b46` already contains another release worker's exact-core matrix refinement. No implementation was duplicated.
+- [Build #44673292595](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292595) completed scoped CI successfully, including the handover freshness and release-toolchain contracts. [ESP32 #44673292516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673292516) remains fail-closed; it is not compatibility acceptance. [Windows #44673293276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673293276) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC05 — supersession audit: reproducibility diagnostic expansion
+
+- Compatible head `8d0c975816569849118c95637078cc29509ef3a0` already includes another release worker's reproducibility diagnostic expansion. No implementation was duplicated.
+- [Build #44681557828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557828) completed scoped CI successfully. Both exact-core legs in [ESP32 #44681557945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557945) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44681557650](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44681557650) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC06 — live audit: ELF-section diagnostic matrix
+
+- Compatible head `6668ad282f88db6aec607de06b84e9abddda2b0c` already includes another release worker's ELF-section diagnostic matrix expansion. No implementation was duplicated.
+- At audit time, [ESP32 #44690910313](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44690910313) was still in progress and [Build #44690910319](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44690910319) was queued; no result is accepted. [Windows #44690910244](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44690910244) reached its fail-closed signing-negative result.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC07 — supersession audit: ELF-symbol diagnostic refinement
+
+- Compatible head `e6e9a7f42ac2a551509a1e70e95fc5be449830b5` already contains another release worker's ELF-symbol diagnostic refinement. No implementation was duplicated.
+- [Build #44696502456](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502456) completed scoped CI successfully. Both exact-core legs in [ESP32 #44696502510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502510) fail closed at `Test release-owned ESP32 ELF symbol inspector` for source `369007bcbc68`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44696502324](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44696502324) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC08 — supersession audit: ELF-symbol correction exposes reproducibility gate
+
+- Compatible head `e6538892ea91aa864f78f88524dcc3f576b7e17a` already includes another release worker's ELF-symbol diagnostic correction. No implementation was duplicated.
+- [Build #44702796235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796235) completed scoped CI successfully. Both exact-core legs in [ESP32 #44702796127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796127) now reach and fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this remains diagnostic failure evidence, not compatibility acceptance. [Windows #44702796072](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44702796072) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC09 — supersession audit: ELF-section comparison diagnostics
+
+- Compatible head `2f06930fe8744fb7196094deecf5fda65b72fd07` already includes another release worker's ELF-section comparison diagnostics. No implementation was duplicated.
+- [Build #44712211371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211371) completed scoped CI successfully. Both exact-core legs in [ESP32 #44712211209](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211209) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for source `369007bcbc68`; this remains diagnostic failure evidence, not compatibility acceptance. [Windows #44712211221](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44712211221) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC10 — supersession audit: current-source ELF comparison diagnostics
+
+- Compatible head `c3728216ac3431fd05c03ca45b3d4f4c1d075850` already includes another release worker's current-source ELF comparison diagnostics. No implementation was duplicated.
+- [Build #44722116304](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722116304) completed scoped CI successfully. Both exact-core legs in [ESP32 #44722115957](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115957) fail closed at `Compile twice and compare exact PHX-HARDWARE application image` for newer hardware source `dc02efea6590`; this is diagnostic failure evidence, not compatibility acceptance. [Windows #44722115932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44722115932) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC11 — supersession audit: source-date reproducibility controls
+
+- Compatible head `dcc8fb4075cd520679370bff14d9270dc2abb293` already includes another release worker's source-date reproducibility controls. No implementation was duplicated.
+- Both exact-core legs in [ESP32 #44729973423](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973423) completed successfully for hardware source `dc02efea6590`; this is scoped CI evidence only and is not compatibility, signing, hardware, or production acceptance. At audit time [Build #44729973486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973486) remained in progress. [Windows #44729973431](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44729973431) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC12 — supersession audit: release-artifact action-pin coverage
+
+- Compatible head `d497ee71f1d84d9fd0ca22dd1127a53d62515642` already includes another release worker's release-artifact action-pin coverage. No implementation was duplicated.
+- [ESP32 #44736348774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348774) completed both exact-core legs successfully for source `dc02efea6590`; this is scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Build #44736348760](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348760) and [Windows #44736348781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44736348781) fail closed at mandatory handover freshness after the source-only update; this entry supplies the required canonical handover evidence. Publisher paths remained skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — supersession audit: provenance image-verification refinement
+
+- Compatible head `5e36576b8b2cb71a207725a1662890fc2b124494` already includes another release worker's provenance and image-verification refinement. No implementation was duplicated.
+- Both exact-core legs in [ESP32 #44747503779](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503779) completed successfully for hardware source `dc02efea6590`; this is scoped CI evidence only and is not compatibility, signing, hardware, or production acceptance. At audit time [Build #44747503919](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747503919) remained in progress. [Windows #44747504010](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44747504010) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC14 — supersession audit: provenance manifest hardening
+
+- Compatible head `fbe1ca6183aa37fadf125b0e8c07a884e80789be` already includes another release worker's provenance-manifest hardening. No implementation was duplicated.
+- [Build #44753364967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364967) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44753364998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364998) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44753364863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44753364863) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC15 — supersession audit: provenance record robustness
+
+- Compatible head `9b18cb93aeaae23e184b888788f14a8f15752cdd` already includes another release worker's provenance-record robustness refinement. No implementation was duplicated.
+- [Build #44761157724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157724) completed scoped CI successfully, including validation, Android, and ESP32 build jobs; production signing and publishing jobs remained skipped. Both exact-core legs in [ESP32 #44761157699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157699) completed successfully for source `dc02efea6590`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #44761157744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44761157744) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — supersession audit: provenance-contract expansion
+
+- Compatible head `6d0a6b6f6054054ef7a250b0b1876da96f207257` already includes another release worker's provenance-contract expansion. No implementation was duplicated.
+- [ESP32 #44773516988](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516988) completed both exact-core legs and the release-artifact provenance regression suite successfully for source `dc02efea6590`; this is scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Build #44773516927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516927) and [Windows #44773516826](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44773516826) fail closed at mandatory handover freshness after the source-only update; this entry supplies the required canonical handover evidence. Publisher paths remained skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
