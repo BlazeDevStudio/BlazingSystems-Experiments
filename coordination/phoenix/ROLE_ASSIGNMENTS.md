@@ -2470,7 +2470,7 @@ This append-only snapshot supersedes older role-head pins above for this audit h
 | Role | Exact owner PR head(s) | Exact-head CI / disposition |
 |---|---|---|
 | CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build #42698139210 SUCCESS; #45 overlay #44295049727 and case guard #44295049903 SUCCESS, scoped. CORE source remains with its separate owner. |
-| RENTAL | Experiments #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 #44782114393 SUCCESS; build #44782114390 FAILS at missing `mbedtls/sha256.h`; inherited validation also fails at positive poll-signature fixture. |
+| RENTAL | Experiments #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 #44782114393 SUCCESS; build #44782114390 FAILS at missing `mbedtls/sha256.h`; validation also fails because the canonical PROJECT_HANDOVER.md is older than source/workflow changes (checkpoint 468adc8129ea311e13f4c5c63eb6bb01ca67ecb0). |
 | PISONET | Experiments #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 SUCCESS; native COM/adapter acceptance NOT TESTED. |
 | HARDWARE | #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; #336 `8ebe2e45622a82060a010691bbaa3f0abac72452` | #336 Quarantine #44948630552 PASS; Full #44948630626 FAILS at QA-owned Missing poll signature check after 14/14 target/Android builds pass. Preserve default-deny. |
 | QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS, scoped; #292 has no PR-triggered runs and stale base. |
