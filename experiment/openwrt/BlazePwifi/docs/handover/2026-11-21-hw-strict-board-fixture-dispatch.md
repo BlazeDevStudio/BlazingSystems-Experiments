@@ -38,6 +38,7 @@ Fix SHA: `ded516fc0234b380c1daefacad3d6e2268f2f10b`.
 ## Integration status and limits
 
 - Full build: [run #44877478258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44877478258). Validation job `136765324807` FAILED at the existing QA-owned `Missing poll signature check`. This task does not alter or bypass that contract.
+  The run terminated CANCELLED after validation failed: 13/14 target/platform jobs completed SUCCESS; Android was CANCELLED; downstream simulation, update-bundle, signing and publication jobs were SKIPPED. Do not count the cancelled Android job as a build pass.
 - The focused lab models NVS/EEPROM APIs. It does not emulate flash physics, electrical behavior, real power loss, or an independent physical witness.
 - This result is **SIMULATED + CI VERIFIED** for the host lab only. Physical hardware acceptance remains **NOT TESTED**.
 - No merge, physical flash, production migration, live-money operation, signing, release tag, deployment, or cutover was performed.
