@@ -48,7 +48,7 @@ Source/test SHA: \`aae180c7465266be58716b75d92760392132fb1a\`.
 - The two compiled C++17 semantic fixtures return the expected distinct exit codes 1 and 7.
 - Existing source-extracted board parity and failure-injection labs continue to run on both ESP8266 and ESP32.
 
-Full BlazePwifi push [run #44921024377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44921024377), same source/test SHA: validation job \`136896865204\` **FAILED** at the inherited QA-owned \`Missing poll signature check\`. All 14 target/platform plus Android build jobs completed **SUCCESS**; downstream simulation, signed import, update, signing, candidate and publication jobs were skipped. This does not clear the Full integration gate.
+Full BlazePwifi push [run #44921024377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44921024377), same source/test SHA: validation job \`136896865204\` **FAILED** at the inherited QA-owned \`Missing poll signature check\`. At last check, 13/14 build jobs (including Android) had completed **SUCCESS** and the Android job was still running; no complete build-matrix pass is claimed. Downstream simulation, signed import, update, signing, candidate and publication jobs were skipped. This does not clear the Full integration gate.
 
 ## Scope and classification
 
@@ -67,3 +67,13 @@ Full BlazePwifi push [run #44921024377](https://github.com/BlazeDevStudio/Blazin
 3. PHX-HARDWARE preserves the current default-deny behavior and revalidates the live stack before any further source work.
 
 No merge, rebase, retarget, force-push, flash, production migration, signing, release tag, deployment or cutover was performed.
+
+## UTC15 documentation-head rerun and evidence correction
+
+The docs-only PR head \`14de8c6c1ef228b5ad896529dc29711823beff3b\` was independently rechecked:
+
+- Quarantine [run #44921330037](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44921330037), job \`136897790219\`: **SUCCESS**; normalizer 14/14, C++17 preprocessor semantics 2/2, board helper parity 23/23, quarantine helper parity 6/6.
+- Relay/output [run #44921330033](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44921330033), job \`136897790046\`: **SUCCESS**; normalizer 14/14 and C++17 preprocessor semantics 2/2. ESP32 boot-polarity job \`136897790340\`: **SUCCESS**.
+- Full PR [run #44921330050](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44921330050), validation job \`136897790401\`: **FAILED** at inherited QA-owned \`Missing poll signature check\`. At last check 13/14 build jobs were successful and the ESP32 job remained in progress; no complete target-matrix result is claimed.
+
+This update corrects the prior progress wording; the source/test SHA remains \`aae180c7465266be58716b75d92760392132fb1a\`. The current commit is documentation-only.
