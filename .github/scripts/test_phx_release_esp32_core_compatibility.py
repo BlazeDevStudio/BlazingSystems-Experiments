@@ -18,12 +18,12 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-# Exact current PHX-HARDWARE #327 source/test commit; the docs head adds only handover records.
-HARDWARE_SOURCE_SHA = "177312434b60509638427cec79bf2d4e11d89d97"
+# Exact live PHX-HARDWARE #327 PR head; pin the complete immutable source/test snapshot.
+HARDWARE_SOURCE_SHA = "2d10db5db8ad95f15abf335f25cbbbb2d02c7fae"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7"
+HARDWARE_SKETCH_BLOB = "142e1ac098aef2844f7d553771720871ee51d5e9"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -717,7 +717,7 @@ def check_current_source_handover_anchor() -> list[str]:
 
     section = handover.split(marker, 1)[1].split("\n## ", 1)[0]
     required = (
-        f"HARDWARE #327 source/test SHA: `{HARDWARE_SOURCE_SHA}`",
+        f"HARDWARE #327 exact PR head SHA: `{HARDWARE_SOURCE_SHA}`",
         f"ESP32 sketch Git blob SHA: `{HARDWARE_SKETCH_BLOB}`",
     )
     missing = [value for value in required if value not in section]
