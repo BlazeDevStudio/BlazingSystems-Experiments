@@ -124,10 +124,19 @@ if missing_quarantine_helpers:
 
 
 def normalize_cpp_function_body(body):
-    """Collapse code whitespace without changing C++ literal or comment bytes."""
+    """Normalize ordinary C++ code whitespace without erasing directive boundaries.
+
+    String/character/raw-string literals and comments remain content-sensitive.
+    A preprocessor directive is copied as a logical line (including any
+    backslash-newline continuation); only its physical line endings are
+    canonicalized. This intentionally prefers a false mismatch over a false
+    equivalence when directive formatting differs.
+    """
     output = []
     pending_space = False
     i = 0
+    line_start = True
+    preprocessor_line = False
 
     def flush_space():
         nonlocal pending_space
@@ -135,12 +144,53 @@ def normalize_cpp_function_body(body):
             output.append(" ")
         pending_space = False
 
+    def newline_end(index):
+        if body[index] == "\r" and index + 1 < len(body) and body[index + 1] == "\n":
+            return index + 2
+        return index + 1
+
     raw_prefixes = ("u8R\"", "uR\"", "UR\"", "LR\"", "R\"")
     while i < len(body):
         ch = body[i]
 
-        if ch.isspace():
-            pending_space = True
+        # Preserve preprocessor text through the end of its logical line.
+        # Backslash-newline continues the directive and is kept verbatim
+        # except that CRLF/CR are canonicalized to LF.
+        if preprocessor_line:
+            if ch in "\r\n":
+                end = newline_end(i)
+                spliced = i > 0 and body[i - 1] == "\\"
+                output.append("\n")
+                i = end
+                if spliced:
+                    continue
+                preprocessor_line = False
+                line_start = True
+                pending_space = False
+                continue
+            output.append(ch)
+            i += 1
+            continue
+
+        if ch in "\r\n":
+            end = newline_end(i)
+            spliced = i > 0 and body[i - 1] == "\\"
+            if spliced:
+                # Phase-2 line splicing removes the backslash and newline
+                # before ordinary C++ tokenization.
+                if output and output[-1] == "\\":
+                    output.pop()
+                i = end
+                continue
+            if output and output[-1] != "\n":
+                pending_space = True
+            line_start = True
+            i = end
+            continue
+
+        if ch in " \t\v\f":
+            if not line_start:
+                pending_space = True
             i += 1
             continue
 
@@ -162,27 +212,26 @@ def normalize_cpp_function_body(body):
             output.append(body[i:end])
             i = end
             pending_space = False
+            line_start = False
             continue
 
         if body.startswith("//", i):
             start = i
+            if line_start:
+                pending_space = False
             cursor = i + 2
             while cursor < len(body):
                 if body[cursor] not in "\r\n":
                     cursor += 1
                     continue
-                newline_end = cursor + 1
-                if body[cursor] == "\r" and newline_end < len(body) and body[newline_end] == "\n":
-                    newline_end += 1
-                # C++ phase 2 splices backslash-newline before // comment parsing.
-                # Keep every continued physical line inside the comment token.
+                newline_end_index = newline_end(cursor)
                 if cursor > start and body[cursor - 1] == "\\":
-                    cursor = newline_end
+                    cursor = newline_end_index
                     continue
                 break
             end = cursor
             comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] != " ":
+            if output and output[-1] != " " and not line_start:
                 output.append(" ")
             output.append(comment)
             i = end
@@ -190,19 +239,35 @@ def normalize_cpp_function_body(body):
             continue
 
         if body.startswith("/*", i):
+            if line_start:
+                pending_space = False
             end = body.find("*/", i + 2)
             if end < 0:
                 raise ValueError("unterminated C++ block comment")
             end += 2
             comment = body[i:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] != " ":
+            if output and output[-1] != " " and not line_start:
                 output.append(" ")
             output.append(comment)
+            if "\n" in comment:
+                line_start = True
             i = end
             pending_space = True
             continue
 
-        if ch in ("\"", "'"):
+        if ch == "#" and line_start:
+            # Keep a physical line boundary before the directive. Ordinary
+            # code newlines are otherwise collapsed to a single space.
+            pending_space = False
+            if output and output[-1] != "\n":
+                output.append("\n")
+            output.append("#")
+            preprocessor_line = True
+            line_start = False
+            i += 1
+            continue
+
+        if ch in ('"', "'"):
             flush_space()
             quote = ch
             literal_start = i
@@ -221,19 +286,25 @@ def normalize_cpp_function_body(body):
                 raise ValueError("unterminated C++ quoted literal")
             output.append(body[literal_start:i])
             pending_space = False
+            line_start = False
             continue
 
         flush_space()
         output.append(ch)
         i += 1
         pending_space = False
+        line_start = False
 
     return "".join(output)
-
 
 def verify_cpp_parity_normalizer():
     cases = (
         ("formatting-only", 'void f() { return "pending event"; }', 'void f()  {\n  return   "pending event";  }', True),
+        ("preprocessor-directive-newline-boundary", 'void f() {\n#define PHX_VALUE 1\nint value = PHX_VALUE;\n}', 'void f() {\n#define PHX_VALUE 1 int value = PHX_VALUE;\n}', False),
+
+        ("preprocessor-directive-indentation", 'void f() {\n   #define PHX_VALUE 1\nint value = PHX_VALUE;\n}', 'void f() {\n#define PHX_VALUE 1\nint value = PHX_VALUE;\n}', True),
+        ("preprocessor-directive-crlf", 'void f() {\r\n#define PHX_VALUE 1\r\nint value = PHX_VALUE;\r\n}', 'void f() {\n#define PHX_VALUE 1\nint value = PHX_VALUE;\n}', True),
+        ("preprocessor-directive-continuation-crlf", 'void f() {\n#define PHX_VALUE 1 \\\r\n+ 2\nint value = PHX_VALUE;\n}', 'void f() {\n#define PHX_VALUE 1 \\\n+ 2\nint value = PHX_VALUE;\n}', True),
         ("string-literal-whitespace", 'void f(){ return "pending event"; }', 'void f(){ return "pending  event"; }', False),
         ("character-literal-whitespace", "void f(){ char c=' '; }", r"void f(){ char c='\t'; }", False),
         ("comment-content", "void f(){ /* durable record */ return true; }", "void f(){ /*durable record*/ return true; }", False),
@@ -252,6 +323,27 @@ def verify_cpp_parity_normalizer():
 
 
 verify_cpp_parity_normalizer()
+
+
+def verify_preprocessor_directive_semantics():
+    # The RED fixture compares two valid programs whose preprocessor line
+    # boundary changes the compiled result (1 vs 7). Compile and execute both
+    # so the parity regression is tied to real C++ preprocessing semantics.
+    left = r"""int main() {
+#define PHX_VALUE 1
+int value = PHX_VALUE;
+return value;
+}"""
+    right = r"""int main() {
+#define PHX_VALUE 1 int value = PHX_VALUE;
+return 7;
+}"""
+    compile_and_run(left, "CPP17-preprocessor-left", expected=1, label="preprocessor-left")
+    compile_and_run(right, "CPP17-preprocessor-right", expected=7, label="preprocessor-right")
+    print("POLL_SAFETY_CPP_PREPROCESSOR_SEMANTICS_PASS 2/2")
+
+
+verify_preprocessor_directive_semantics()
 
 
 def poll_safety_helpers():
