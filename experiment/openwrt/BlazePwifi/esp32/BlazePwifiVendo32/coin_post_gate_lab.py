@@ -26,28 +26,31 @@ bool outputPolarityKnown=true, pinConfigSafe=true;
 uint8_t pendingPulses=0;
 @@FUNCTION@@
 struct Case{
-  bool fs, recovery, ready, pinSafe;
+  bool fs, recovery, ready, pinSafe, polarityKnown;
   uint8_t pulses;
   bool expected;
 };
 int main(){
   const Case cases[]={
-    {true,false,true,true,3,true},
-    {true,false,true,true,1,true},
-    {true,false,true,true,20,true},
-    {true,false,false,true,3,false},
-    {false,false,true,true,3,false},
-    {true,true,true,true,3,false},
-    {true,false,true,true,0,false},
-    {false,true,true,true,3,false},
-    {false,false,false,true,0,false},
-    {true,false,true,false,3,false},
+    {true,false,true,true,true,3,true},
+    {true,false,true,true,true,1,true},
+    {true,false,true,true,true,20,true},
+    {true,false,false,true,true,3,false},
+    {false,false,true,true,true,3,false},
+    {true,true,true,true,true,3,false},
+    {true,false,true,true,true,0,false},
+    {false,true,true,true,true,3,false},
+    {false,false,false,true,true,0,false},
+    {true,false,true,false,true,3,false},
+    // Unknown output polarity must deny coin dispatch even with a valid journal and pin map.
+    {true,false,true,true,false,3,false},
   };
   for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i){
     fsReady=cases[i].fs;
     journalRecoveryRequired=cases[i].recovery;
     pendingReady=cases[i].ready;
     pinConfigSafe=cases[i].pinSafe;
+    outputPolarityKnown=cases[i].polarityKnown;
     pendingPulses=cases[i].pulses;
     const bool actual=canAttemptCoinPost();
     if(actual!=cases[i].expected){
@@ -55,6 +58,7 @@ int main(){
       return 1;
     }
   }
+  outputPolarityKnown=true;
   pendingPostAttempted=true;
   pinConfigSafe=true;
   fsReady=true; journalRecoveryRequired=false; pendingReady=true; pendingPulses=3;
@@ -62,14 +66,14 @@ int main(){
     std::cerr<<"COIN_POST_GATE_FAIL attempt marker must block dispatch\\n";
     return 2;
   }
-  std::cout<<"COIN_POST_GATE_PASS 11/11 exact helper scenarios, not hardware evidence\n";
+  std::cout<<"COIN_POST_GATE_PASS 12/12 exact helper scenarios, not hardware evidence\n";
   return 0;
 }
 '''
 for board,path in BOARDS:
     source=path.read_text(encoding="utf-8")
     func=extract_function(source,"canAttemptCoinPost")
-    if "fsReady" not in func or "!journalRecoveryRequired" not in func or "pendingReady" not in func or "pendingPulses>0" not in func:
+    if "outputPolarityKnown" not in func or "pinConfigSafe" not in func or "fsReady" not in func or "!journalRecoveryRequired" not in func or "!pendingPostAttempted" not in func or "pendingReady" not in func or "pendingPulses>0" not in func:
         raise SystemExit(f"{board}: missing required pending dispatch condition")
     loop=extract_function(source,"loop")
     if "if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED" not in loop:
@@ -90,6 +94,26 @@ for board,path in BOARDS:
                         str(sourcepath),"-o",str(outputpath)],check=True)
         subprocess.run([str(outputpath)],check=True)
     print(f"{board}: actual canAttemptCoinPost() compiled and tested")
+
+    # Failure-inject removal of the polarity-known guard. The new case above
+    # must reject this mutant before any coin POST could be attempted.
+    mutated = func.replace("outputPolarityKnown && ", "", 1)
+    if mutated == func:
+        raise SystemExit(f"{board}: output-polarity guard mutation anchor missing")
+    mutant_code = TEMPLATE.replace("@@FUNCTION@@", mutated)
+    with tempfile.TemporaryDirectory(prefix="phx-post-gate-mutant-") as tmp:
+        sourcepath = Path(tmp) / "gate-mutant.cpp"
+        outputpath = Path(tmp) / "gate-mutant"
+        sourcepath.write_text(mutant_code, encoding="utf-8")
+        subprocess.run(["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2",
+                        str(sourcepath), "-o", str(outputpath)], check=True)
+        mutant = subprocess.run([str(outputpath)], capture_output=True, text=True, timeout=10)
+        if mutant.returncode != 1:
+            raise SystemExit(
+                f"{board}: remove-output-polarity-guard mutation survived; "
+                f"exit={mutant.returncode}; stdout={mutant.stdout}; stderr={mutant.stderr}"
+            )
+    print(f"{board}: MUTATION_REJECTED remove-output-polarity-guard (exit=1)")
 DISPATCH_TEMPLATE = r'''
 #include <cstdint>
 #include <iostream>
@@ -198,4 +222,4 @@ for board, path in BOARDS:
         )
     print(f"{board}: MUTATION_REJECTED bypass-event-bound-authentication (exit=11)")
 
-print("PHX-HARDWARE: 20/20 coin POST gate + 14/14 disposition dispatch cases PASS; actual money NOT TESTED")
+print("PHX-HARDWARE: 24/24 coin POST gate + 14/14 disposition dispatch cases PASS; actual money NOT TESTED")
