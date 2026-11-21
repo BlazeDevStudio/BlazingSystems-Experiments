@@ -1,0 +1,21 @@
+{
+  "protocol": "BLAZE-COMMS/1",
+  "message_id": "PHX-EXAMPLE-NONEXECUTING",
+  "from": "PHX-MASTER",
+  "to": "ALL",
+  "type": "ASSIGN",
+  "priority": "P0",
+  "task_id": "#172",
+  "branch": "phoenix/master-coordination",
+  "base_sha": null,
+  "scope": [
+    "coordination/phoenix/"
+  ],
+  "status": "QUEUED",
+  "evidence": [],
+  "blockers": [
+    "Production NO-GO"
+  ],
+  "next_action": "Read live control plane and verify current SHA before any work",
+  "updated_utc": "2026-11-15T00:00:00Z"
+}
