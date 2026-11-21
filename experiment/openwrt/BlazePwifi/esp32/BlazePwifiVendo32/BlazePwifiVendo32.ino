@@ -614,7 +614,8 @@ String quarantineLogField(const String &value,size_t maxLen){
   }
   if(truncated && maxLen>=3) out+="...";
   return out;
-}bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
+}
+bool quarantineLogTokenValid(const String &value,size_t minLength,size_t maxLength){
   const size_t length=value.length();
   if(length<minLength || length>maxLength) return false;
   for(size_t i=0;i<length;++i){
