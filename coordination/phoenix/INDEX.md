@@ -380,3 +380,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - [COE #35 manifest-durability and role/CI reconciliation](PHX_MASTER_UTC06_20261121_COE35_MANIFEST_DURABILITY_ROLE_CI_RECONCILIATION.md) — exact source/test 3f4028ae..., docs head 93bab4c..., 124 packaging tests PASS / 2 intentional skips, profile ULA gate FAIL closed, case-collision PASS, mandatory Bubblewrap sandbox FAIL closed. Records the requested second-fsync failure-injection test and separate COE Intercon #46–#49 chain.
 - Current Master parent was d203c82...; the updated Master branch remains draft-only. Route manifest e4db324... is unchanged, DRAFT_REVIEW_ONLY, Master target null. COE #26 remains frozen; no migration staging or copy.
 - Architecture §6.67 now defines checksum-manifest file/directory durability ordering and the independent failure-injection boundary. Production remains NO-GO.
+
+
+## Latest PHX-MASTER audit — UTC08, 2026-11-21
+
+- [Exact-head role CI and COE #26 provenance audit](PHX_MASTER_UTC08_20261121_HW327_LIVE_EXACT_HEAD_COE26_PROVENANCE_AUDIT.md)
+- Master branch parent: `32711a3b2545b937267d15136e99008bdfa6b98d`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- Current HARDWARE #327 head: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`; current RELEASE #291 head: `f685ec977704f2381027d96edf65a41ba0c3d458`; COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- §6.67 evidence updated: second pre-cleanup directory-fsync failure injection is now covered and passes in COE #35's exact-head test suite; site ULA and Bubblewrap blockers remain.
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO.

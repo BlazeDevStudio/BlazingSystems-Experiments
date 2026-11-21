@@ -1174,3 +1174,13 @@ The manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170f
 Exact source/destination review is recorded in [the UTC05 audit](PHX_MASTER_UTC05_20261121_RELEASE_PIN_PARITY_AND_COE26_EXACT_TREE_AUDIT.md): current firmware and hardening-test blobs differ; 30 source board-local Python labs and three scoped workflows are not imported as equivalent Hardware identities; source root NOTICE has no COE root counterpart; Hardware-specific license/notice scope remains unresolved. The Pisowifi LICENSE blob matches exactly but does not by itself settle Hardware subtree licensing.
 
 **Disposition:** no copy, move, overwrite, rebase, cherry-pick, staging, route promotion or destination edit. Keep COE #26 FROZEN pending per-file owner review, exact test identity, license/import provenance and destination CI on the exact candidate SHA.
+
+
+## PHX-MASTER UTC08 live exact-head reconciliation — 2026-11-21T08:47Z — current routing and migration disposition
+
+- Source/default: Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6 development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Active Hardware review source: #327 `a2d690b511524f8c710813fe4b4fc06cd52de3a8`. COE destination default: `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; destination review #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- `OWNERSHIP_ROUTES.json` is unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`; status `DRAFT_REVIEW_ONLY`; PHX-MASTER destination remains `null`.
+- Current exact-tree comparison is recorded in `INTEGRATION_MATRIX.md` and the UTC08 audit report. The source tree has 2,468 entries and the COE #26 destination 286; firmware, QA tests, board-local labs, workflows, and NOTICE/license scope remain non-equivalent.
+- RELEASE #291's current ESP32 pin is now source-grounded: pinned source `5909e6238bc98f76075d910cf2fd09803cbdae99` and sketch blob `7ffb7b534c7163678726902946a17b04992950a0`; the current #327 ESP32 subtree matches 16/16 blobs. This is compatibility evidence, not migration authority.
+- No destination staging, source copying, moving, overwrite, branch rewrite, cherry-pick, route promotion, or migration was performed. COE #26 stays FROZEN pending owner-reviewed exact-source, license, import, test-identity, and destination CI acceptance.

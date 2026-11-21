@@ -2193,3 +2193,23 @@ This table supersedes earlier exact-head rows only for the refs listed. It recor
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | OPEN / DRAFT / FROZEN; five workflows QUEUED / zero jobs | Keep frozen pending exact per-file source/test/license/NOTICE parity, imports and destination CI. |
 
 CORE implementation remains with its separate owner. No subsystem source path, destination path, role branch, or routing-manifest ownership was changed by Master.
+
+
+## PHX-MASTER UTC08 live exact-head reconciliation — 2026-11-21T08:47Z
+
+This live refresh supersedes earlier head/CI rows only for the exact refs below. Ownership remains unchanged; this is a coordination-only audit.
+
+| Owner / PR | Exact live head | Exact CI evidence | Disposition / next owner |
+|---|---|---|---|
+| PHX-MASTER #288 | parent `32711a3b2545b937267d15136e99008bdfa6b98d`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | 149 existing changed paths, all under `coordination/phoenix/`; no Master Actions run | This UTC08 update adds one audit report and coordination-document refresh only |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS (scoped) | CORE remains separately owned; no Master implementation |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL at CORE handover freshness and ESP32 compile (`mbedtls/sha256.h` missing under ESP32 core 4.0.0) | CORE owns handover; HARDWARE/RENTAL own target/toolchain remediation |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS (scoped) | Native COM/PnP acceptance remains NOT TESTED |
+| PHX-HARDWARE #327 | `a2d690b511524f8c710813fe4b4fc06cd52de3a8`; base `58c558fb6a237935214621adc3dee65a10fe1a51` | Quarantine #44886128587 PASS; Relay #44886128521 FAIL at stale timeline-guard fixture lookup; Full #44886128556 FAIL at `Missing poll signature check` after 15/15 target/platform jobs PASS | HARDWARE must retarget the timeline guard to the extracted fixture module; QA/CORE own the poll-signature contract/fixture |
+| PHX-QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS (scoped); native COM lab not invoked | Independent native acceptance remains pending |
+| PHX-QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered CI; historical base is stale | QA to replay against current Master and attach exact-head evidence |
+| PHX-RELEASE #291 | `f685ec977704f2381027d96edf65a41ba0c3d458` | ESP32 compatibility #44885560847 PASS 3/3 (provenance + core 3.3.13 + 4.0.0); Full #44885560885 FAIL at mandatory handover freshness; Windows #44885560811 FAIL at shared handover freshness; publisher skipped | Release pin is now exact for the ESP32 compile subtree (16/16 files identical to current #327 head); CORE handover freshness remains blocking |
+| COE PHX-RELEASE #35 | docs head `d28271a35776543bf558c90e3a117957829ee61c`; source/test commit `d5a2d727727d7019cf3b4ad60503a4fb821d69d1` | #44879927378: 125 tests PASS / 2 intentional skips, including pre-cleanup directory-fsync failure injection; 10/10 profile admission fails closed for missing approved ULA /48. Case-collision #44879927411 PASS. Sandbox #44879927380 fails closed because Bubblewrap is absent (exit 125) | Prior Master second-fsync test-coverage request is RESOLVED at unit-test level; site authority and trusted runner remain blockers |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`; base `a6513ab4412b4c014eee2863e45cbe32d06cb243` | 205 changed paths; five workflows queued, zero jobs | FROZEN; no destination staging or promotion |
+
+CORE implementation remains out of Master scope. No CORE source or branch was modified.

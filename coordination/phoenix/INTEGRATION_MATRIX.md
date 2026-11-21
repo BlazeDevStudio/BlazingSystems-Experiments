@@ -3170,3 +3170,29 @@ COE PRs #46 → #47 → #48 → #49 are separate OPEN/DRAFT Intercon branches, n
 COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12. The prior complete, untruncated exact-tree comparison remains applicable because current HARDWARE #327 docs head a873042c2a59a2197e4b4457c18dc75da12a0d02 and COE #26 b382d233 are unchanged: source 2,463 entries / 1,884 blobs versus destination 286 / 207; ESP32 16/1, ESP8266 26/1, QA 47/19; 30 source board-local Python labs absent at destination; root NOTICE and Hardware-specific license scope unresolved. This activation did not rerun the recursive tree walk. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
 
 The ownership manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null.
+
+
+## PHX-MASTER UTC08 live exact-head reconciliation — 2026-11-21T08:47Z — exact source/destination tree comparison
+
+The comparison is read-only and uses active HARDWARE #327 source head `a2d690b511524f8c710813fe4b4fc06cd52de3a8`, not the routing manifest's `main` source ref, against COE integration PR #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- Source tree: `21389895661460cdce9e18360461aaffed432ac2`, 2,468 entries, not truncated.
+- Destination tree: `8a7d4cf81d7227118b876c1138dd2da12345fefa`, 286 entries, not truncated.
+
+| Routed subtree | Source blobs | Destination blobs | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 28 | 1 | 0 | 1 | 27 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+Exact identities:
+- ESP32 sketch: source `7ffb7b534c7163678726902946a17b04992950a0`; destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 sketch: source `c2aa71963eaa0288721f0bb13cff771aaaabc42f`; destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- The only identical QA test is `portal.sh`. Divergent pairs are `config.sh`, `integration.sh`, and `security.sh`; 43 source tests have no destination counterpart and 15 destination tests have no source counterpart.
+- Source board-local Python labs: 27; destination Hardware Python labs: 0.
+- Source Hardware workflows: three scoped workflows (`phx-hardware-poll-edge-latch.yml`, `phx-hardware-quarantine-byte-readback.yml`, `phx-hardware-relay-output-polarity.yml`); destination: one generic `hardware-ci.yml`.
+- `experiment/openwrt/BlazePwifi/LICENSE` and `Pisowifi/LICENSE` are byte-identical blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` is blob `f6d92cd21465312be5993631fe26977219be0fb9`; destination root NOTICE and `Hardware/LICENSE` / `Hardware/NOTICE.md` are absent.
+
+RELEASE #291 now pins Hardware source `5909e6238bc98f76075d910cf2fd09803cbdae99` and ESP32 sketch blob `7ffb7b534c7163678726902946a17b04992950a0`. Its ESP32 source subtree is 16/16 identical to current #327 head `a2d690b...`; compatibility #44885560847 is PASS 3/3. This validates only the pinned ESP32 compile subtree, not the ESP8266 subtree, whole repository, COE migration, or physical acceptance.
+
+The route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination `null`. No staging, copying, moving, overwriting, rebasing, cherry-picking, or route promotion occurred.

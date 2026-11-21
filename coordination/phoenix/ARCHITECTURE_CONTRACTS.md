@@ -1282,3 +1282,10 @@ A generated appliance release manifest is not complete merely because a same-dir
 Exact reviewed implementation: CoinOperatedEcosystem PR #35 source/test commit 3f4028aec38f922e197fa25bd54bf31cdd4c31cd, docs head 93bab4c97e2a487a3223dc209c5be8fbbc609b5c. Current exact-head packaging tests pass 124 tests with two intentional skips; the profile gate and mandatory sandbox remain fail-closed. Master does not own or modify the RELEASE packager or its tests.
 
 This contract grants no merge, signer, publication, hardware flash, payment operation, migration, or production release authority.
+
+
+### UTC08 exact-head evidence update — 2026-11-21T08:47Z
+
+The previously requested second pre-cleanup directory-fsync failure injection is now present in COE RELEASE #35 source/test commit `d5a2d727727d7019cf3b4ad60503a4fb821d69d1` (`test_generated_wrapper_keeps_temporary_manifests_when_precleanup_directory_sync_fails`). Current docs head is `d28271a35776543bf558c90e3a117957829ee61c`. Exact-head validation run [#44879927378](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44879927378), job `136772755043`, reports **125 tests PASS / 2 intentional skips** and the second-directory-fsync failure test passes. This resolves the earlier Master test-coverage request at the hosted unit-test level.
+
+The same run then correctly fails all 10 appliance profile admissions because no approved site-scoped RFC 4193 ULA /48 has been supplied. Case-collision [#44879927411](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44879927411) passes. Mandatory sandbox [#44879927380](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44879927380), job `136772754810`, passes host preflight but fails closed because Bubblewrap is absent (exit 125); namespace and packaging tests are skipped. This does not prove storage-controller power-loss durability, real power-cut behavior, or actual ImageBuilder namespace execution. RELEASE retains source/test ownership; PRODUCTION NO-GO remains.
