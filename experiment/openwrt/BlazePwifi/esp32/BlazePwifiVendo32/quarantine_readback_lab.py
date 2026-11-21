@@ -137,6 +137,38 @@ struct FakeLittleFS {
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
+String legacyQuarantineLogField(const String &value,size_t maxLen){
+  String out;
+  out.reserve(maxLen);
+  size_t i=0;
+  for(;i<value.length();++i){
+    const unsigned char c=(unsigned char)value[i];
+    const char *escaped=nullptr;
+    if(c=='\\') escaped="\\\\";
+    else if(c=='\r') escaped="\\r";
+    else if(c=='\n') escaped="\\n";
+    else if(c=='\t') escaped="\\t";
+    else if(c==' ' && i+8<=value.length() &&
+            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
+              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
+             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
+              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
+      escaped="\\x20";
+    if(escaped){
+      const size_t escapedLength=strlen(escaped);
+      if(out.length()+escapedLength>maxLen) break;
+      out+=escaped;
+    } else {
+      if(out.length()+1>maxLen) break;
+      out+=(c<0x20 || c==0x7f)?'?':(char)c;
+    }
+  }
+  if(i<value.length() && maxLen>=3){
+    while(out.length()+3>maxLen) out.remove(out.length()-1);
+    out+="...";
+  }
+  return out;
+}
 int main(){
   String boundaryValue(124,'A');
   boundaryValue += " REASON=tail";
@@ -216,6 +248,27 @@ int main(){
     }
   }
   std::cout<<"QUARANTINE_ESCAPE_LIMIT_SWEEP_PASS 161/161 board=BOARD_NAME"<<std::endl;
+  for(size_t atomIndex=0;atomIndex<sizeof(escapeAtoms)/sizeof(escapeAtoms[0]);++atomIndex){
+    String legacyValue(124,'D');
+    legacyValue += escapeAtoms[atomIndex];
+    legacyValue += "XYZ";
+    const String legacyEncoded=legacyQuarantineLogField(legacyValue,128);
+    if(escapesComplete(legacyEncoded) || legacyEncoded.substr(124)!="\\..."){
+      std::cerr<<"QUARANTINE_LEGACY_ESCAPE_MUTATION_NOT_REPRODUCED board=BOARD_NAME atom="
+               <<atomIndex<<" actual="<<legacyEncoded<<std::endl;
+      return 67;
+    }
+  }
+  String legacyDelimiterValue(124,'A');
+  legacyDelimiterValue += " REASON=tail";
+  const String legacyDelimiterEncoded=legacyQuarantineLogField(legacyDelimiterValue,128);
+  if(escapesComplete(legacyDelimiterEncoded) ||
+     legacyDelimiterEncoded.substr(124)!="\\..."){
+    std::cerr<<"QUARANTINE_LEGACY_DELIMITER_MUTATION_NOT_REPRODUCED board=BOARD_NAME actual="
+             <<legacyDelimiterEncoded<<std::endl;
+    return 68;
+  }
+  std::cout<<"QUARANTINE_LEGACY_DANGLING_ESCAPE_REPRODUCED 5/5 board=BOARD_NAME"<<std::endl;
   for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
