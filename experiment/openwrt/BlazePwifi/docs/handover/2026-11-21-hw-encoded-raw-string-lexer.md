@@ -41,7 +41,7 @@ This is a source-tool correctness defect affecting multiple source-extracted hos
 **Full validation is not green**
 
 - BlazePwifi build PR [run 44868064906](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44868064906), validation job \`136736190277\`: FAIL at the inherited QA-owned \`Missing poll signature check\` in \`experiment/openwrt/BlazePwifi/tests/controllers.sh\`.
-- At handover time, all 13 firmware-target jobs had completed PASS; Android was still running. The run was not yet terminal.
+- Terminal status: all 13 firmware-target jobs plus Android completed PASS (14/14). The validation job remained FAIL at the QA-owned assertion; downstream production-import, update-bundle and simulation jobs were skipped.
 - Downstream production-import, update-bundle and simulation jobs were skipped after validation failed.
 
 ## Scope and ownership
