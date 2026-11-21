@@ -240,20 +240,20 @@ static void reset(){
   snapshotCalls=faultCalls=clearCalls=quarantineCalls=outputCalls=0;
 }
 int main(){
-  // Control: no edge during durable pending clear; both snapshots remain clean.
-  reset();
-  handleCoinPostResponse(String("{\"ok\":true}"));
-  if(clearCalls!=1 || snapshotCalls!=2 || faultCalls!=0 ||
-     journalRecoveryRequired || outputCalls!=1 || outputsOff) return 31;
-
   // Inject an ISR edge while clearPending() performs its filesystem work.
-  // The second source-extracted reconciliation snapshot must latch it.
+  // This is first so the no-second-snapshot mutation fails on this race itself.
   reset();
   injectEdgeDuringClear=true;
   handleCoinPostResponse(String("{\"ok\":true}"));
   if(clearCalls!=1 || snapshotCalls!=2 || faultCalls!=1 ||
      faultPulseCount!=1 || !journalRecoveryRequired || !outputsOff ||
      outputCalls!=2 || pendingPulses!=0) return 32;
+
+  // Control: no edge during durable pending clear; both snapshots remain clean.
+  reset();
+  handleCoinPostResponse(String("{\"ok\":true}"));
+  if(clearCalls!=1 || snapshotCalls!=2 || faultCalls!=0 ||
+     journalRecoveryRequired || outputCalls!=1 || outputsOff) return 31;
 
   // An edge already present before the first snapshot blocks clear entirely.
   reset();
