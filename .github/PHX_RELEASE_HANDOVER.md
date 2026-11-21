@@ -2289,3 +2289,18 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - Exact-source compatibility matrix: [#44889250435](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889250435) — SUCCESS (3/3 jobs).
 - Push exact-source compatibility matrix: [#44889243395](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889243395) — SUCCESS (3/3 jobs).
 - **Evidence boundary: hosted CI only.** The application images are CI-generated, not approved production binaries; no physical hardware acceptance is implied.
+
+
+---
+
+## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
+
+- After the current source anchor was committed at [`f24edd05`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f24edd05dca30eba7f6dc5bacfda5346e73dde0f), exact-head push Full run [#44889720882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889720882) completed **FAILURE**.
+- RELEASE-owned CI-0701 job `136802704253` **PASS**. It emitted `PHX-RELEASE-HANDOVER-ANCHOR-PASS` and `PHX-RELEASE-ESP32-COMPAT-PASS`; the source/test SHA, docs/PR head, sketch blob, exact-source matrix run and hosted-CI-only boundary all matched.
+- The separate `validate` job `136802759067` **FAILED** at the CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate: source/workflow changes are newer than the live project handover; last recorded checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`.
+- All 14 target/Android build jobs in that push run completed **SUCCESS** (ESP8266, ESP32, Android, 11 OpenWrt target/optional jobs). This is hosted CI build evidence only; it does not override the failed mandatory validation gate.
+- Update bundle, simulations, candidate gate, production sign handoff, prerelease/release publication and lab-preview publication were **SKIPPED** after validation failure.
+- Windows PR run [#44889725426](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889725426) also failed at the same CORE-owned handover gate; Windows build and publisher were skipped. The PISONET negative self-test was not reached.
+- **Next owner:** PHX-CORE must update its own `PROJECT_HANDOVER.md` / freshness records at the exact live source head, then MASTER should re-evaluate Full validation. RELEASE did not edit or bypass CORE records.
+
+The release-owned exact-source matrix and handover-anchor checks are verified. Full integration remains blocked outside RELEASE ownership. **PRODUCTION NO-GO.**
