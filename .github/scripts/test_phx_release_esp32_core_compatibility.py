@@ -19,13 +19,13 @@ REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 # Exact live PHX-HARDWARE #327 source/test and PR head; the latest handover/doc head is recorded separately.
-HARDWARE_SOURCE_SHA = "a2d690b511524f8c710813fe4b4fc06cd52de3a8"
-HARDWARE_DOCS_HEAD_SHA = "3ec69716bab4d2d33ad2d95abd480f50a5cd1d32"
+HARDWARE_SOURCE_SHA = "3110a42886bb595e28ba7ddeac16a51c2b86bd1c"
+HARDWARE_DOCS_HEAD_SHA = "827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
 HARDWARE_SKETCH_BLOB = "7ffb7b534c7163678726902946a17b04992950a0"
-HARDWARE_PR_HEAD_SHA = "a2d690b511524f8c710813fe4b4fc06cd52de3a8"
+HARDWARE_PR_HEAD_SHA = "827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
