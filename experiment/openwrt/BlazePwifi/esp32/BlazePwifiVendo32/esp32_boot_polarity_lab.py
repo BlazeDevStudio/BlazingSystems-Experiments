@@ -125,8 +125,37 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+
+def verify_boot_output_before_littlefs(source: str) -> None:
+    setup = extract_function(source, "setup")
+    calls = (
+        "loadConfig()",
+        "initPollFaultBackupStore()",
+        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin)",
+        "initPendingStore()",
+    )
+    positions = [setup.find(call) for call in calls]
+    require(all(position >= 0 for position in positions),
+            "setup must load config and fault backup before safe GPIO, then mount LittleFS")
+    require(positions == sorted(positions),
+            "relay/LED GPIO OFF configuration must precede LittleFS mount")
+
+    # Deliberately reintroduce the unsafe ordering; the source guard must reject it.
+    unsafe = setup.replace(
+        calls[2],
+        "initPendingStore();\\n  " + calls[2],
+        1,
+    )
+    require(unsafe != setup, "boot-order failure-injection anchor was not unique")
+    unsafe_positions = [unsafe.find(call) for call in calls]
+    require(not (unsafe_positions[0] < unsafe_positions[1] <
+                 unsafe_positions[2] < unsafe_positions[3]),
+            "unsafe LittleFS-before-GPIO mutation was not rejected")
+
+
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
+    verify_boot_output_before_littlefs(source)
 
     # These assertions intentionally fail on the pre-gate ESP32 source.
     for token, message in (

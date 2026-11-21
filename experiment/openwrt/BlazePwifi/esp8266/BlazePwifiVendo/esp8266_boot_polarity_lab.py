@@ -81,8 +81,37 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+
+def verify_boot_output_before_littlefs(source: str) -> None:
+    setups = extract_functions(source, "setup")
+    require(len(setups) == 1, "expected exactly one production setup function")
+    setup = setups[0]
+    calls = (
+        "loadCfg()",
+        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin)",
+        "initPendingStore()",
+    )
+    positions = [setup.find(call) for call in calls]
+    require(all(position >= 0 for position in positions),
+            "setup must load local config, configure safe GPIO, then mount LittleFS")
+    require(positions == sorted(positions),
+            "relay/LED GPIO OFF configuration must precede LittleFS mount")
+
+    # Deliberately reintroduce the unsafe ordering; the source guard must reject it.
+    unsafe = setup.replace(
+        calls[1],
+        "initPendingStore();\\n  " + calls[1],
+        1,
+    )
+    require(unsafe != setup, "boot-order failure-injection anchor was not unique")
+    unsafe_positions = [unsafe.find(call) for call in calls]
+    require(not (unsafe_positions[0] < unsafe_positions[1] < unsafe_positions[2]),
+            "unsafe LittleFS-before-GPIO mutation was not rejected")
+
+
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
+    verify_boot_output_before_littlefs(source)
 
     # These checks intentionally fail on the pre-implementation source.
     for token, message in (
