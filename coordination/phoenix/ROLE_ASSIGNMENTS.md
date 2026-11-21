@@ -2479,3 +2479,20 @@ This append-only snapshot supersedes older role-head pins above for this audit h
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; no combined acceptance. |
 
 Master test suite NOT RUN; no Master PR Actions. Private registry access unavailable. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC22 live owner/CI refresh — 2026-11-21T22:40Z
+
+This append-only snapshot supersedes the UTC21 pins above. It is not a source-ownership transfer.
+
+| Role | Exact owner PR head(s) | Exact-head CI / disposition |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build #42698139210 PASS (scoped); #45 overlay #44295049727 and case guard #44295049903 PASS. CORE source untouched. |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 #44782114393 PASS; build #44782114390 fails at missing `mbedtls/sha256.h`; handover freshness also fails at checkpoint `468adc8129ea311e13f4c5c63eb6bb01ca67ecb0`. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM/adapter acceptance NOT TESTED. |
+| HARDWARE | #336 `8ebe2e45622a82060a010691bbaa3f0abac72452`; child #337 `378fc605673b43d34e6bb43642c8405e31f43840` | #337 Quarantine #44953589911 and Relay #44953590249 PASS; Full #44953590026 fails at QA-owned Missing poll signature check. #336 Full #44948630626 has the same inherited failure. |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS (scoped); #292 has no PR-triggered run and stale base. |
+| RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `0d6b9edce4caff16df64c15fedbd11e4640dfdde` | #291 ESP32 compatibility #44894604453 PASS; Full #44894604464 and Windows handover #44894604466 FAIL. COE #35 case guard #44956193792 PASS; shared #44956193759 fails all ten profiles for missing site ULA /48 after 154 tests / 2 skips; sandbox #44956193651 exits 125 after 31 host tests because Bubblewrap is absent. |
+| COE Stage 5 | #48 `8286548e395366f2332830025fed00ceebdfb24a`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage/case checks PASS; shared ESP32 compile #44643670685 / #44646341922 fails at missing `mbedtls/sha256.h`. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; no combined acceptance. |
+
+Master scope remains `coordination/phoenix/**`; no subsystem branch edits. Production remains NO-GO.

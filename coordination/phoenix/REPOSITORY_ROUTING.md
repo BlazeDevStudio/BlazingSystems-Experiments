@@ -1308,3 +1308,13 @@ The current Master PR #288 head is `1f89b4f45f94682581e66f3f11b5709253a79174`. C
 ## PHX-MASTER UTC21 exact-tree revalidation — 2026-11-21T21:39Z
 
 The current manifest baseline `Experiments/main@f4e8a891...`, the separate owner candidate `HARDWARE #336@8ebe2e45622a82060a010691bbaa3f0abac72452`, and destination candidate `COE #26@b382d233...` were compared as complete recursive trees (`truncated=false`). Baseline route counts and current Hardware/QA candidate counts are recorded in [the UTC21 audit](PHX_MASTER_UTC21_20261121_LIVE_ROLE_CI_COE26_EXACT_TREE_REVALIDATION.md). The 34 Hardware candidate Python lab/helper files have no destination Hardware Python equivalents; board sketch blobs differ; NOTICE and Hardware license/NOTICE scope is incomplete. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route is copy-ready; no file was staged or moved.
+
+## UTC22 exact source/destination provenance refresh — 2026-11-21T22:40Z
+
+The routing manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, 11 routes, PHX-MASTER target `null`.
+
+Current exact trees: source main 2,340 entries / 1,764 blobs; HARDWARE #337 candidate 2,476 / 1,897; COE #26 286 / 207. The complete baseline route table and current #337 Hardware/QA candidate comparison are in [the UTC22 audit](PHX_MASTER_UTC22_20261121_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_AND_MASTER_EXECUTION_BLOCKER.md).
+
+The #337 candidate has 35 Python host-lab/helper files across ESP32/ESP8266 and COE Hardware has zero Python equivalents. ESP32 sketch source `53b27aa80fa4a91aabac71de57f550a8eef2cb61` differs from COE `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `71160ac8ebd5163b19a56d6c9e229a5429975fc8` differs from COE `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE root; COE Hardware LICENSE and NOTICE are absent.
+
+No route is copy-ready. No copy, move, staging, overwrite, rebase, cherry-pick, route promotion or COE destination edit occurred. COE #26 remains FROZEN.
