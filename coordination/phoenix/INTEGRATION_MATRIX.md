@@ -3507,3 +3507,40 @@ Recursive source tree #336: 2,472 entries / 1,893 blobs. COE #26: 286 entries / 
 Source firmware blobs remain different from COE #26: ESP32 `53b27aa80fa4a91aabac71de57f550a8eef2cb61` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 `71160ac8ebd5163b19a56d6c9e229a5429975fc8` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source Hardware subtree contains 33 Python lab/helper files; COE Hardware contains zero Python equivalents. Source QA tree has 47 files versus 19 destination files (1 identical, 3 divergent, 43 source-only, 15 destination-only). Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical (`1ee55b94183417be977ca287cd7391f9a6f7e721`); source root `NOTICE.md` (`f6d92cd21465312be5993631fe26977219be0fb9`) is absent at COE root, and `Hardware/LICENSE` / `Hardware/NOTICE.md` are absent. The broad RENTAL parent route remains `manual-file-mapping-required`, `copy_permitted:false`.
 
 `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, 11 routes, PHX-MASTER target null. No copy, move, stage, cherry-pick, overwrite, rebase or destination edit was performed. Private Drive v11/newer corrections remain inaccessible through the exposed connector; older Library snapshots were not substituted. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC20 — exact-head integration and migration matrix
+
+**Audit-start refs:** Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; legacy v0.5.3 development aad3aade72c1156eecba1fed30907c6d0283b2c5; v0.6 audit-foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master 46cbcd0eac6312d029fd8904e20d362db7dca7db; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Owner | Exact PR head(s) | CI disposition |
+|---|---|---|
+| CORE | #252 c82705f2...; COE #45 9d76a134... | Scoped build/overlay/case PASS. |
+| RENTAL | #328 0e0da62... | APK/API smoke PASS; full build FAIL: mbedtls/sha256.h missing and handover freshness gate fails. |
+| PISONET | #255 d01fd164...; COE #28/#30/#32 | Scoped Windows synthetic CI PASS; physical/native COM acceptance NOT TESTED. |
+| HARDWARE | #239 d83b715...; #254 84c442a...; #283 88581ee...; #327 827fa75...; #329 41efc1d...; #335 d09b0c9...; #336 000d4e6... | Current #336 Quarantine #44943506271 PASS; Full #44943506269 FAIL at Missing poll signature check. All target/Android builds pass; downstream signing/release skipped. Focused host/source-extracted only. |
+| QA | #290 5c29d...; #292 75a3f66... | #290 Windows PASS; #292 no PR-triggered runs, stale base. |
+| RELEASE | #291 42797e2...; COE #35 5eb240e... | Compatibility PASS; Full/Windows handover FAIL; COE profiles and sandbox remain fail-closed. |
+| COE Stage 5 | #48 8286548...; #49 aeb8ff1... | Stage/case PASS; ESP32 shared compile FAIL on missing Mbed TLS header. |
+| COE integration | #26 b382d233... | Five workflows queued, zero jobs; no integration acceptance. |
+
+### Manifest baseline route comparison — Experiments main to COE #26
+
+| Route | Source | Destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE runtime | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone | 31 | 19 | 0 | 2 | 29 | 17 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+### Current HARDWARE #336 owner-candidate comparison — not the manifest baseline
+
+#336 current PR head 000d4e6804c451991e1cf81ec97d1b2d7ed6b526 (source/test commit 741068c7804b83897f5deab5afc7739457532427): ESP32 17 source files / 1 destination file (16 source-only, 1 divergent); ESP8266 28 / 1 (27 source-only, 1 divergent); 33 Python host-lab/helper files absent from COE Hardware. QA route on this candidate is 47 / 19 (1 identical, 3 divergent, 43 source-only, 15 destination-only). Exact source/destination firmware sketch blobs and LICENSE/NOTICE findings are recorded in the UTC20 report.
+
+The manifest remains DRAFT_REVIEW_ONLY, 11 routes, PHX-MASTER destination null. No migration staging or destination write occurred. COE #26 remains FROZEN.

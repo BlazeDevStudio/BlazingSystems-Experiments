@@ -1943,3 +1943,16 @@ See [UTC19 exact-head audit](PHX_MASTER_UTC19_20261121_EXACT_ROLE_CI_COE26_PROVE
 - Exact source/destination tree, firmware blob, QA test, LICENSE and NOTICE comparisons remain divergent/incomplete; no migration staging or destination write.
 - Full Master unittest suite NOT RUN; no Master PR-triggered CI. Private v11 registry/newer corrections and Drive connector remain unavailable; effective branch protection UNKNOWN; cleanup #266 OPEN with Master inventory incomplete.
 - **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## PHX-MASTER UTC20 live reconciliation — 2026-11-21
+
+Master audit-start HEAD 46cbcd0eac6312d029fd8904e20d362db7dca7db; PR #288 OPEN/DRAFT/UNMERGED against main f4e8a891.... Current v0.5.3 development is aad3aade... and v0.6 audit-foundation is 2fbd2475.... COE main remains a6513ab4... and integration #26 remains b382d233....
+
+The current exact role/CI table is appended in ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. The highest-risk current failure is HARDWARE #336 Full validation #44943506269 at the QA-owned Missing poll signature check after 14/14 target/Android builds pass; its focused Quarantine run #44943506271 is source-extracted/simulated only. RENTAL #328 fails ESP32 compilation at missing mbedtls/sha256.h and handover freshness. RELEASE #291 Full/Windows fail handover freshness. COE #35 fails closed for missing site ULA /48 and absent Bubblewrap. COE #48/#49 ESP32 compile fails on the same Mbed TLS header. COE #26 has five queued workflows and zero jobs.
+
+Fresh recursive tree audit separates manifest baseline main@f4e8 from owner candidate HARDWARE #336@000d4e. Source/destination sketch blobs diverge; 33 Python host-lab files and substantial QA test coverage are absent from COE Hardware/Pisowifi. LICENSE matches, but NOTICE/Hardware license scope is incomplete. No migration or destination edit occurred.
+
+Issues #31, #32, #34, #43 and #177 remain OPEN; #266 remains OPEN with 0/7 tracks checked. Private Drive v11 and newer corrections are unavailable through the exposed connector; the Nov9 Library checkpoint is not a replacement. Master unittest suite NOT RUN because authenticated clone failed with GitHub DNS resolution. No Master PR Actions were returned.
+
+**PRODUCTION NO-GO.** Do not merge, release, sign, flash, provision secrets, operate real payments or claim physical acceptance.

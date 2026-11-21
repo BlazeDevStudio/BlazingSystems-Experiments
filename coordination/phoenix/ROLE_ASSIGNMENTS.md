@@ -2424,3 +2424,22 @@ COE #48/#49 remain separate Stage 5/5.1 candidates; both stage/case checks pass 
 | COE integration owner | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Reconcile exact per-file imports, test identity, license/NOTICE scope and queued CI before any migration proposal. |
 
 The #172 issue body still carries an older Master pin (`962e1179...`) and older role snapshots; the live branch ref and PR #288 head are the authoritative current values. #266 remains OPEN and the MASTER cleanup checkbox stays unchecked because the broader duplicate/dead-code inventory is incomplete. No ownership reassignment is made here.
+
+
+## Live role ownership pins — 2026-11-21 UTC20
+
+This snapshot supersedes earlier role-head pins only for the exact refs below. It does not transfer source ownership.
+
+| Role | Current owner PR heads | Exact CI / disposition / next action |
+|---|---|---|
+| PHX-MASTER | #288 phoenix/master-coordination at audit-start 46cbcd0eac6312d029fd8904e20d362db7dca7db; base main f4e8a891... | Coordination/phoenix only. Master unittest suite NOT RUN because authenticated clone failed DNS. Keep PR #288 OPEN/DRAFT/UNMERGED. |
+| PHX-CORE | Experiments #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #252 build #42698139210 PASS; COE #45 overlay/case #44295049727/#44295049903 PASS. CORE retains finance/poll contract. Issues #31/#32 remain OPEN. |
+| PHX-RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity/API21/API23 #44782114384/#44782114393 PASS; build #44782114390 FAIL at missing mbedtls/sha256.h and handover freshness. RENTAL owns repair. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09; COE #28 b21b04617d38a177260258de2d56b24382822117, #30 4897348d94a0cf7884ecd53244bfcd59e7bf2fbc, #32 29b6fe08b10688182d981a66745f482758bd6630 | #255 and COE #28/#30/#32 scoped Windows synthetic runs PASS. Native COM and physical adapter acceptance NOT TESTED. |
+| PHX-HARDWARE | #239 d83b715b116185107737fef721c2eece8feebf39; #254 84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9; #283 88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d; #327 827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8; #329 41efc1ddf4a101d7d1cb4428dcea2662ade6936e; #330 1a1e5e25834748fbba95d6253eb668f29b6c82f8; #331 33a32ef092f22718cbda141baee75b54323986ff; #332 9f1d9ebf9c7256da2e8eace4bc0be510f6566daa; #333 e93d178bbe3fcf6a7ba7f3a049f996de10727750; #334 46dadb2414dfff76b34e78fd88b50b88ffe553ae; #335 d09b0c9dafad8dbbcda5723d8094f4975c14a274; #336 000d4e6804c451991e1cf81ec97d1b2d7ed6b526 | #239 native/build PASS; #254 focused PASS/full build FAIL; #283 quarantine append PASS/full build FAIL. #336 is child of #335; source/test 741068c7804b83897f5deab5afc7739457532427, docs head 000d4e6804c451991e1cf81ec97d1b2d7ed6b526. Current-head Quarantine #44943506271 PASS; Full #44943506269 FAIL at Missing poll signature check. Preserve all stack ancestry; QA/CORE own the dependency. Physical acceptance NOT TESTED. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS but does not invoke native COM lab. #292 has no PR-triggered run and stale base b1ca02e...; QA owns the poll fixture. |
+| PHX-RELEASE | #291 42797e2f3d65c30a1070caf49c93aebec149d897; COE #35 5eb240ec8b67e491e126b47242e76d823bce6e07 | #291 compatibility PASS; Full/Windows fail handover freshness. COE #35 case PASS, profiles fail without site ULA /48, sandbox exits 125 without Bubblewrap. RELEASE owns its handover/runner. |
+| COE Stage 5 | #48 8286548e395366f2332830025fed00ceebdfb24a; #49 aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage/case PASS; shared ESP32 compile fails on mbedtls/sha256.h. Keep separate draft candidates. |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED, zero jobs. Keep FROZEN pending per-file provenance, tests, license/NOTICE and exact-head CI. |
+
+The active Hardware stack remains owner-controlled: #329 is based on #327; #334 and #335 are based on #329; #336 is based on #335. The parallel #330 branch is based on #327, #331/#332 on #330, and #333 on #332. Do not rebase, retarget, merge or collapse these stacks from Master.

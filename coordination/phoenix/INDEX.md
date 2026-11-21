@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T19:07:56Z
+**Updated:** 2026-11-21T20:10:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -476,3 +476,12 @@ COE RELEASE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972. New exact-
 - Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6 audit/development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `cbe37870e30f6f469f76f7d421dcf9103187228b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
 - Current owner PR heads and CI are recorded in the UTC19 report and the appended ROLE_ASSIGNMENTS / INTEGRATION_MATRIX snapshots. No subsystem source was changed.
 - COE #26 remains FROZEN; private registry v11/newer corrections remain inaccessible; Master unittest suite NOT RUN; Production NO-GO.
+
+
+## Latest exact-head audit — 2026-11-21 UTC20
+
+- [PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md](coordination/phoenix/PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) — re-reads current Master/default/development refs, role PRs and exact-head CI; separates manifest baseline main@f4e8 from current HARDWARE #336 candidate@000d4e; records COE #26 exact blobs, license/NOTICE and test-import gaps.
+- Master audit-start HEAD: 46cbcd0eac6312d029fd8904e20d362db7dca7db; PR #288 remains OPEN/DRAFT/UNMERGED against main f4e8a891....
+- Current HARDWARE #336 docs head 000d4e6804c451991e1cf81ec97d1b2d7ed6b526; source/test commit 741068c7804b83897f5deab5afc7739457532427; current-head Quarantine #44943506271 PASS (source-extracted), Full #44943506269 FAIL at Missing poll signature check.
+- COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows queued / zero jobs. No migration.
+- Master Python suite NOT RUN because authenticated clone failed GitHub DNS; private Drive v11/newer corrections unavailable, no older snapshot substituted. PRODUCTION NO-GO.
