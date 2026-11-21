@@ -75,6 +75,13 @@ POLL_SAFETY_PARITY = (
     "markPendingPostAttempt",
     "pendingAttemptMarkerMatches",
     "clearPending",
+    # Quarantine persistence/cleanup is shared safety policy, not board-specific.
+    "quarantineLogTokenValid",
+    "quarantineLogField",
+    "quarantineLogRecordValid",
+    "inspectQuarantineLog",
+    "appendQuarantineRecord",
+    "quarantinePending",
 )
 
 
@@ -94,6 +101,25 @@ if missing_coin_authority_helpers:
     raise SystemExit(
         "POLL_COIN_AUTHORITY_PARITY_REQUIRED_HELPERS_MISSING: "
         + ", ".join(missing_coin_authority_helpers)
+    )
+
+
+REQUIRED_QUARANTINE_PARITY = (
+    "quarantineLogTokenValid",
+    "quarantineLogField",
+    "quarantineLogRecordValid",
+    "inspectQuarantineLog",
+    "appendQuarantineRecord",
+    "quarantinePending",
+)
+missing_quarantine_helpers = [
+    name for name in REQUIRED_QUARANTINE_PARITY
+    if name not in POLL_SAFETY_PARITY
+]
+if missing_quarantine_helpers:
+    raise SystemExit(
+        "POLL_QUARANTINE_PARITY_REQUIRED_HELPERS_MISSING: "
+        + ", ".join(missing_quarantine_helpers)
     )
 
 
@@ -131,6 +157,10 @@ def verify_poll_safety_board_parity():
     print(
         f"POLL_SAFETY_BOARD_PARITY_PASS {len(POLL_SAFETY_PARITY)}/"
         f"{len(POLL_SAFETY_PARITY)} normalized helpers"
+    )
+    print(
+        f"POLL_QUARANTINE_HELPER_BOARD_PARITY_PASS "
+        f"{len(REQUIRED_QUARANTINE_PARITY)}/{len(REQUIRED_QUARANTINE_PARITY)}"
     )
 
     # Failure-inject a fail-open ESP32 drift in the persistent-fault output
@@ -181,6 +211,28 @@ def verify_poll_safety_board_parity():
                 f"POLL_COIN_AUTHORITY_PARITY_MUTATION_SURVIVED: ESP32 {name}"
             )
         print(f"POLL_COIN_AUTHORITY_PARITY_MUTATION_REJECTED ESP32_{name}")
+
+    # Quarantine write/readback and pending cleanup must remain fail-closed on
+    # both boards. These mutations model bypassing the durable append guards.
+    quarantine_mutations = (
+        ("appendQuarantineRecord", "if(written!=(size_t)len){", "if(false){"),
+        ("quarantinePending", "if(!appendQuarantineRecord(reason)){", "if(false){"),
+    )
+    for name, anchor, replacement in quarantine_mutations:
+        mutated = {
+            board: dict(board_helpers)
+            for board, board_helpers in helpers.items()
+        }
+        body = mutated["ESP32"][name]
+        if anchor not in body:
+            raise AssertionError(f"ESP32 {name} quarantine mutation anchor missing")
+        mutated["ESP32"][name] = body.replace(anchor, replacement, 1)
+        mismatches = poll_safety_parity_mismatches(mutated)
+        if name not in mismatches:
+            raise SystemExit(
+                f"POLL_QUARANTINE_PARITY_MUTATION_SURVIVED: ESP32 {name}"
+            )
+        print(f"POLL_QUARANTINE_PARITY_MUTATION_REJECTED ESP32_{name}")
 
 
 def verify_drain_abort_polarity_fixture_is_shared():
