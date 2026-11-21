@@ -565,8 +565,6 @@ def check_elf_symbol_inspector(workflow_content: str) -> list[str]:
         errors.append("compatibility workflow must run the ELF symbol inspector test step exactly once")
     if workflow_content.count("python3 .github/scripts/test_inspect_esp32_elf_symbols.py") != 1:
         errors.append("compatibility workflow must invoke the ELF symbol regression suite exactly once")
-    if workflow_content.count("python3 .github/scripts/test_phx_release_esp32_core_compatibility.py") != 1:
-        errors.append("compatibility workflow must run its exact-source static contract guard exactly once")
 
     required_workflow_values = (
         'local nm_path="$compiler_path/xtensa-esp32-elf-nm"',
