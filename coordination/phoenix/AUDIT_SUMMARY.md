@@ -1623,3 +1623,12 @@ Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is
 - **No merge, migration, signing, release, secret provisioning, flash, payment operation, physical test or owner-branch edit occurred.
 
 **Production remains NO-GO** pending independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
+
+
+## UTC01 terminal RELEASE #291 CI refresh — 2026-11-21T01:48Z
+
+- RELEASE #291 remains at d04b5be6f177606c62f9b17a9499554275afce83.
+- Compatibility #44851462501 completed PASS 3/3 (provenance suite plus ESP32 core 4.0.0 and 3.3.13 on source/test 177312434...).
+- Full build #44851462517 completed FAIL at Mandatory handover freshness; target/Android builds passed and downstream simulations, signing and publication were skipped.
+- Windows #44851462474 completed FAIL at shared handover freshness; Windows build and publisher were skipped.
+- This supersedes the initial UTC01 queued status. PHX-MASTER did not edit RELEASE files or alter the PHX-RELEASE role lock.

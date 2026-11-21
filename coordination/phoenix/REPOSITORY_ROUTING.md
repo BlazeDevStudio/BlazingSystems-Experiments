@@ -1097,3 +1097,12 @@ The machine-readable route manifest remains blob e4db324315a1b3543fec17a148fbf96
 Current RELEASE #291 has 26 changed paths: 21 RELEASE, 3 CORE handover/ledger/state and 2 PISONET ReleaseSigning tests. Windows fails at handover freshness; full build and compatibility are queued. CORE/PISONET must review their own paths. Similar shared handover/build files appear in #240, #255 and #290; role PR membership does not transfer ownership.
 
 **Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, staging, route promotion, merge or destination edit. Keep original source histories intact.
+
+
+## UTC01 terminal RELEASE #291 CI refresh — 2026-11-21T01:48Z
+
+- RELEASE #291 remains at d04b5be6f177606c62f9b17a9499554275afce83.
+- Compatibility #44851462501 completed PASS 3/3 (provenance suite plus ESP32 core 4.0.0 and 3.3.13 on source/test 177312434...).
+- Full build #44851462517 completed FAIL at Mandatory handover freshness; target/Android builds passed and downstream simulations, signing and publication were skipped.
+- Windows #44851462474 completed FAIL at shared handover freshness; Windows build and publisher were skipped.
+- This supersedes the initial UTC01 queued status. PHX-MASTER did not edit RELEASE files or alter the PHX-RELEASE role lock.

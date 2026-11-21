@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T01:42:28Z
+**Updated:** 2026-11-21T01:48:42Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -320,3 +320,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - HARDWARE #327 focused quarantine/relay PASS; Full fails at QA-owned positive poll-signature fixture. RELEASE #291 has a live new head and an active PHX-RELEASE UTC01 lock; Master did not touch it.
 - COE #26 remains frozen: 2,453 source vs 286 destination tree entries, 28 vs 0 board-local Python labs, divergent firmware/test blobs, incomplete QA test identities, source NOTICE absent at destination and five queued workflows / zero jobs.
 - Private v11/newer corrections remain inaccessible; branch protection UNKNOWN; local Master Python suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+## UTC01 terminal RELEASE #291 CI refresh — 2026-11-21T01:48Z
+
+- RELEASE #291 remains at d04b5be6f177606c62f9b17a9499554275afce83.
+- Compatibility #44851462501 completed PASS 3/3 (provenance suite plus ESP32 core 4.0.0 and 3.3.13 on source/test 177312434...).
+- Full build #44851462517 completed FAIL at Mandatory handover freshness; target/Android builds passed and downstream simulations, signing and publication were skipped.
+- Windows #44851462474 completed FAIL at shared handover freshness; Windows build and publisher were skipped.
+- This supersedes the initial UTC01 queued status. PHX-MASTER did not edit RELEASE files or alter the PHX-RELEASE role lock.
