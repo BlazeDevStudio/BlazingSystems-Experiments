@@ -2108,3 +2108,30 @@ This snapshot supersedes the UTC01 current-head pins only; historical checkpoint
 - RELEASE #291: compatibility #44855121706 SUCCESS 3/3 for exact Hardware source/test `2d10db5...`; Full/Windows #44855121644 fails CORE handover freshness; CI-0701 #44855121676 fails because Release handover has not yet recorded the newly completed 3/3 run.
 - COE #26: five queued workflow runs, zero jobs. No destination acceptance.
 
+
+
+## PHX-MASTER UTC04 live role/head reconciliation — 2026-11-21T04:02Z
+
+This append-only snapshot supersedes the UTC02 active-head pins below; earlier checkpoints remain historical. The live role owner remains unchanged.
+
+| Repository / role | Exact live ref | Current evidence / boundary |
+|---|---|---|
+| Experiments default | `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | Default branch; branch metadata `protected=false`. |
+| Experiments development | `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` | Current v0.6 development candidate. Legacy v0.5.3 branch remains `aad3aade72c1156eecba1fed30907c6d0283b2c5`. |
+| PHX-MASTER #288 | `phoenix/master-coordination@8517d6850589bb213ca1bb2b65882381ff9307ad` | OPEN / DRAFT / UNMERGED; base main; 144 changed paths at audit start, all `coordination/phoenix/`. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | CORE implementation not touched. The owner-specified separate production continuation remains authoritative; no competing CORE work. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL (handover freshness / inherited Mbed TLS 4 header). |
+| PHX-RENTAL #240 / #287 / #289 | `a7d113fb...` / `a4fffd01...` / `68928774...` | #240 native status-auth instrumentation and build runs #40910311141/#40910311159 PASS; #287 entropy contract #43754089203 PASS. No Rental source edits by Master. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Scoped Windows CI #42462978704 PASS; physical USB-RS232 acceptance remains NOT TESTED. |
+| PHX-HARDWARE #327 | PR/docs head `efb10354a71c392de8c72b6e73ff7616158cd675`; source/test `c5cb17bfa35ea24615f53097b936c49ebe5f0104`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51` | Focused current-source quarantine/relay PASS; Full #44863539439 fails QA-owned `Missing poll signature check` after 14/14 target+Android jobs pass. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows run #43633486963 PASS, but native COM lab not invoked; #292 has no PR-triggered CI and remains based on historical Master base `b1ca02e...`. |
+| PHX-RELEASE #291 | `f06ac4df2f61b9c39a03a6ff6009b32948b94778`, base #242 `734b89d9e7792247e8376335c3f3685500ab3f89` | Compatibility #44862405800 PASS 3/3 on immutable Hardware pin `268ca9b...`; Full #44862406950 fails the QA poll-signature assertion; Windows #44862405809 fails CORE-owned handover freshness. |
+| COE main / #26 | `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Main remains structure-only; #26 OPEN / DRAFT / FROZEN, 205 changed files, five workflows QUEUED / zero jobs. |
+
+### #177 ownership clarification
+
+Issue #177 was updated at 2026-11-21T03:57:44Z. Its original `PHX-L-VERIFY` marker is now explicitly retained only as historical task-origin metadata; the current full-team implementation owner is **PHX-HARDWARE**, with PHX-QA retaining independent test ownership. This resolves the previous routing ambiguity without parallel Light/Full assignments or source ownership changes.
+
+### Routing authority
+
+`coordination/phoenix/OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination `null`. No subsystem branch, route, or source ownership changed.

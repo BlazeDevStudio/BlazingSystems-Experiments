@@ -1224,3 +1224,19 @@ This contract grants no source ownership, route promotion, merge, signing, hardw
 
 **Evidence tier:** SIMULATED / FOCUSED CI VERIFIED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO. PHX-HARDWARE owns implementation; PHX-QA owns the stale positive fixture; PHX-MASTER records the cross-role gate only.
 
+
+
+## 6.64 Coin-authority board parity is a test-coverage guard, not admission authority — 2026-11-21 UTC04
+
+HARDWARE #327's normalized ESP8266/ESP32 helper-parity lab now covers 17 shared helpers and injects six ESP32-only fail-open mutations. This is useful source/test coverage, but parity is not proof of authenticated controller authority or durable financial behavior.
+
+1. A parity PASS is bound to the exact Hardware source/test commit and exact helper blobs. Record the source/test SHA, both sketch blobs, the parity-lab blob, focused workflow/job IDs, and any docs-only PR head separately.
+2. A normalized source-parity comparison establishes only the declared helper equivalence and the injected mutation cases. It does not prove electrical pulse capture, relay behavior, LittleFS durability, power-cut recovery, replay safety, signer identity, anti-rollback freshness, or hardware acceptance.
+3. The current helper set includes `acceptPollResponse`, `coinPostDispositionVerified`, `canAttemptCoinPost`, `markPendingPostAttempt`, `pendingAttemptMarkerMatches`, and `clearPending`. The six ESP32-only mutations must remain rejected. Do not turn a parity helper into a positive admission path.
+4. Poll and coin admission remain default-deny until CORE publishes the approved authenticated register/poll response and event-bound receipt contract with golden vectors, and QA independently verifies source-linked negative/default-deny behavior. The inherited positive `Missing poll signature check` assertion is not permission to invent a signature or weaken firmware denial.
+5. Release compatibility remains pinned-source evidence. At the UTC04 audit, RELEASE #291 compiles Hardware pin `268ca9b...`; current #327 source/test `c5cb17b...` is three commits ahead. ESP32 and ESP8266 sketch blobs remain identical, but the host poll-lab blob changed. Preserve the old compile qualification for the exact unchanged firmware blob; cite current-source focused CI separately and do not claim the old compile tested the new lab.
+6. COE #26 remains frozen until source/destination blobs, complete test import, license/NOTICE scope, exact-head destination CI, and independent QA are accepted. A source parity PASS does not authorize migration.
+
+**Exact evidence:** HARDWARE #327 source/test `c5cb17bfa35ea24615f53097b936c49ebe5f0104`; PR/docs head `efb10354a71c392de8c72b6e73ff7616158cd675`; focused runs #44863161774, #44863167396, #44863167432, #44863539280, #44863539382; Full #44863539439 fails QA's positive poll-signature assertion. RELEASE #291 compatibility #44862405800 passes 3/3 on pin `268ca9b...`.
+
+This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, migration approval, or production release.

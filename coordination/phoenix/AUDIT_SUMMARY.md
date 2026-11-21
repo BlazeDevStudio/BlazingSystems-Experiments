@@ -1657,3 +1657,19 @@ Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
 
+
+
+## PHX-MASTER UTC04 audit summary — 2026-11-21T04:02Z
+
+- Experiments main `f4e8a891...`; v0.6 development `2fbd2475...`; legacy v0.5.3 development `aad3aade...`; Master branch / PR #288 audit-start head `8517d685...`.
+- COE main `a6513ab...`; COE #26 `b382d233...`, OPEN / DRAFT / FROZEN, five queued workflows / zero jobs.
+- HARDWARE #327 current source/test `c5cb17b...` adds 17-helper board parity and six fail-open mutation checks. Focused CI passes; Full fails only at QA-owned `Missing poll signature check` after 14/14 target+Android jobs pass.
+- RELEASE #291 compatibility #44862405800 passes 3/3 on immutable Hardware source pin `268ca9b...`; both firmware sketch blobs are unchanged at current Hardware source/test `c5cb17b...`, but the host-lab changed. Full #44862406950 fails the QA fixture; Windows #44862405809 fails CORE handover freshness.
+- #177's 2026-11-21T03:57Z clarification resolves the old PHX-L-VERIFY marker as historical task origin; PHX-HARDWARE is the current implementation owner, QA the independent test owner.
+- COE #26 exact routes remain incomplete: ESP32 16/1 (0 identical), ESP8266 24/1 (0 identical), QA 47/19 (1 identical, 3 divergent, 43 source-only, 15 destination-only); 29 source board-local Python labs / 0 destination Hardware labs. Pisowifi LICENSE matches; source root NOTICE absent at destination; Hardware-specific scope unresolved.
+- Cleanup #266 OPEN, 0/7 checked. Current Master coordination tree has 144 files (133 Markdown, 3 JSON, 8 Python), 144 unique blobs / 0 duplicate blob groups. Architecture contract has 62 numbered §6 headings with five duplicate IDs: 6.9, 6.10, 6.11, 6.25, 6.38. No renumbering or mass deletion was performed; inbound references have not been fully inventoried.
+- Private Drive registry v11 and newer corrections remain inaccessible; no Google Drive connector is exposed and Library search did not return the canonical file. No older registry was substituted or private data published.
+- Branch metadata reports `protected=false`; effective organization-level protection remains unverified. Full Master Python suite NOT RUN; Master-specific CI absent; local GitHub checkout unavailable due DNS. Hosted worker CI is real, but source/tree assertions are not code tests.
+- No subsystem source, destination tree, ownership manifest, financial state, secret, release, or hardware was changed.
+
+**PRODUCTION NO-GO** pending independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates.

@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T01:48:42Z
+**Updated:** 2026-11-21T04:02:05Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; boot-time output-safe ordering is §6.63; coin-authority board parity scope is §6.64; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -345,3 +345,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Manifest `e4db324...` remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. No migration, copy, move, rebase, cherry-pick or route promotion.
 - Private v11 registry/newer corrections inaccessible; Master suite NOT RUN; branch protection not verified. **PRODUCTION NO-GO.**
 
+
+
+## UTC04 live exact reconciliation — 2026-11-21T04:02Z
+
+- [UTC04 audit](PHX_MASTER_UTC04_20261121_COIN_AUTHORITY_PARITY_RELEASE_PIN_AND_COE26_TREE_AUDIT.md) records current role heads, the #177 ownership clarification, Hardware #327 parity CI, Release #291's immutable source pin, exact COE #26 trees, and cleanup inventory.
+- Live refs: Experiments main `f4e8a891...`; v0.6 development `2fbd2475...`; legacy v0.5.3 `aad3aade...`; Master parent `8517d685...`; COE main `a6513ab...`; COE #26 `b382d233...`.
+- Current Hardware #327 source/test `c5cb17b...` / docs head `efb10354...`; Release #291 pin `268ca9b...`. ESP32/ESP8266 sketch blobs are unchanged; host poll-lab blob differs. Focused Hardware CI passes; Full remains blocked by QA's positive poll-signature assertion.
+- COE #26 remains FROZEN: current recursive route counts ESP32 16/1, ESP8266 24/1, QA 47/19; 29 source board-local Python labs vs zero destination Hardware labs; five queued workflows / zero jobs.
+- Cleanup-first inventory at this Master head: 144 coordination files, 144 unique blobs, zero duplicate blob groups; architecture §6 headings have five duplicate IDs (6.9, 6.10, 6.11, 6.25, 6.38). No mass renumbering or deletion; references remain to be inventoried.
+- Private Drive v11/newer corrections inaccessible; no older registry substituted. Full Master suite NOT RUN. Production remains NO-GO.

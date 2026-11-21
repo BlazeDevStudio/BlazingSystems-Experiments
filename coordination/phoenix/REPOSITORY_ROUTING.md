@@ -1148,3 +1148,20 @@ The broad standalone-rental route remains `manual-file-mapping-required` and `co
 
 COE #26 has five queued workflows and zero jobs. No staging, copy, move, overwrite, cherry-pick, rebase, route promotion or destination edit occurred.
 
+
+
+## UTC04 exact-source destination revalidation — 2026-11-21T04:02Z
+
+Source: Experiments HARDWARE #327 source/test `c5cb17bfa35ea24615f53097b936c49ebe5f0104`; destination: COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Recursive Git trees are complete and untruncated (source 2,459 entries; destination 286).
+
+| Route | Source | Destination | Exact blobs | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| Hardware ESP32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| Hardware ESP8266 | 24 | 1 | 0 | 1 | 23 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+29 source board-local Python lab/helper files have no equivalent in destination Hardware. The current ESP32 sketch source blob `09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79` differs from destination `3cc7ec54...`; ESP8266 source `dbb289f8d2cb8eedd72742b45dfeb518a4a7afa5` differs from destination `c8be98f7...`. The source and destination hardening tests differ and retain incompatible positive response/register/poll assertions.
+
+Pisowifi LICENSE matches exactly at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root NOTICE `f6d92cd...` has no COE root counterpart; Hardware-specific license/NOTICE applicability remains unresolved.
+
+COE #26 workflows #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 remain QUEUED with zero jobs. The route manifest is unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. **No migration staging or copy is authorized or performed.**

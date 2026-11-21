@@ -3047,3 +3047,49 @@ Cross-owner review required for #240, #255, #290 and #291. Cleanup #266 remains 
 
 Physical/hardware acceptance, independent QA, protected signing/anti-rollback, durable financial state and production gates remain NO-GO.
 
+
+
+## PHX-MASTER UTC04 exact-source integration matrix — 2026-11-21T04:02Z
+
+### HARDWARE #327 / RELEASE #291 source identity
+
+HARDWARE #327 is OPEN / DRAFT / UNMERGED at docs/PR head `efb10354a71c392de8c72b6e73ff7616158cd675`; source/test commit `c5cb17bfa35ea24615f53097b936c49ebe5f0104`; base #326 `58c558fb6a237935214621adc3dee65a10fe1a51`.
+
+The current Hardware-owned poll-loop lab now checks 17 normalized shared ESP8266/ESP32 helpers and rejects six ESP32-only fail-open mutations (poll acceptance, coin disposition, known-polarity gate, one-shot marker, marker identity, and pending-clear gate). This is test coverage/parity evidence; it does not create a positive poll/coin admission contract.
+
+- Expected RED: #44863040495.
+- Exact-source GREEN: Quarantine push #44863161774, Quarantine PR #44863167396, Relay/output PR #44863167432.
+- Current docs-head focused: Quarantine #44863539280 PASS; Relay/output #44863539382 PASS.
+- Full docs-head #44863539439: validation fails at the inherited QA-owned `Missing poll signature check`; all 14/14 firmware-target + Android jobs pass; 12 downstream simulation/update/signing/candidate/publication jobs are skipped.
+- The exact log reports the missing poll signature in the ESP8266 sketch. Firmware remains default-deny; do not add an invented signature or weaken the fixture.
+
+### RELEASE #291 compatibility pin
+
+RELEASE #291 current head `f06ac4df2f61b9c39a03a6ff6009b32948b94778` runs compatibility #44862405800, 3/3 PASS:
+- ESP32 core 4.0.0 job 136719044384 PASS.
+- Provenance suite job 136719044536 PASS.
+- ESP32 core 3.3.13 job 136719044591 PASS.
+
+The workflow's immutable Hardware source pin is `268ca9bde6d3710b418134ffd328060250fad42f`, ESP32 sketch blob `09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79`. Current Hardware source/test `c5cb17b...` is 3 commits ahead / 0 behind. Exact recursive trees show both ESP32 and ESP8266 sketch blobs unchanged (`09c02d...` and `dbb289...`), while the poll-loop host-lab blob changed (`0612d8...` → `cecaeb...`). The prior compile remains valid for the unchanged compiled sketch, but it does not test the new host-lab module. Current focused CI is the evidence for that harness.
+
+- RELEASE Full #44862406950: validation fails at the same QA-owned poll-signature assertion; 14/14 target+Android jobs pass and downstream gates are skipped.
+- RELEASE Windows #44862405809: CORE-owned handover gate fails because `PROJECT_HANDOVER.md` is stale after `.github/workflows/blazepisonet-softtimer-release.yml`; last recorded checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`; Windows build and publisher skipped.
+- Next RELEASE action: refresh its own source/test handover anchor to the current Hardware source/test SHA and unchanged sketch blobs, then rerun CI-0701. Do not claim the old compatibility run tested the new host-lab.
+
+### COE #26 exact recursive destination comparison
+
+All trees were complete (`truncated=false`): Hardware source/test `c5cb17b...` 2,459 entries; Release pin `268ca9b...` 2,458; COE #26 destination `b382d233...` 286.
+
+| Route | Source files | Destination files | Identical | Different | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 24 | 1 | 0 | 1 | 23 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+There are 29 source board-local Python lab/helper files and zero equivalent files in destination Hardware. The current ESP32 sketch blob `09c02d...` differs from COE `3cc7ec54...`; current ESP8266 sketch `dbb289f8...` differs from COE `c8be98f7...`. The source hardening test and destination hardening test remain divergent and contain positive marker assertions inconsistent with the current deny-only contract.
+
+Pisowifi LICENSE is byte-identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root NOTICE `f6d92cd...` has no COE root counterpart. Hardware-specific license/NOTICE applicability remains unresolved; this is not a legal conclusion.
+
+COE #26 current workflows: #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 are all QUEUED with zero jobs. No destination acceptance exists.
+
+**Migration disposition:** #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, staging, route promotion, or merge.
