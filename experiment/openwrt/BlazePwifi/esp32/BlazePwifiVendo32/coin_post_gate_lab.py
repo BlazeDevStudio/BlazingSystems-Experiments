@@ -180,6 +180,94 @@ int main() {
   return 0;
 }
 '''
+CLEAR_RACE_TEMPLATE = r'''
+#include <cstdint>
+#include <iostream>
+#include <string>
+struct String : std::string {
+  using std::string::string;
+  String(const std::string &value):std::string(value){}
+  int indexOf(const char *needle) const {
+    const auto pos=find(needle);
+    return pos==npos?-1:static_cast<int>(pos);
+  }
+};
+bool journalRecoveryRequired=false, pendingReady=false;
+uint8_t pendingPulses=3;
+String pendingNonce("nonce12345678"), pendingTarget("target12345678");
+bool verifierResult=true, rootOk=true, injectEdgeDuringClear=false, outputsOff=false;
+uint32_t coinEdgeSequence=0, lastHandledCoinEdgeSequence=0, faultPulseCount=0;
+unsigned snapshotCalls=0, faultCalls=0, clearCalls=0, quarantineCalls=0, outputCalls=0;
+struct SerialStub {
+  template<class T> void println(const T&) const {}
+} Serial;
+bool coinPostDispositionVerified(const String&,const String&,const String&,uint8_t){
+  return verifierResult;
+}
+bool pollJsonTopLevelTrue(const String&,const char *key){
+  return key && std::string(key)=="ok" && rootOk;
+}
+uint32_t snapshotCoinEdgeSequence(){ ++snapshotCalls; return coinEdgeSequence; }
+void latchPollPulseFault(uint32_t pulseEdges){
+  ++faultCalls;
+  faultPulseCount+=pulseEdges;
+  journalRecoveryRequired=true;
+}
+bool clearPending(){
+  ++clearCalls;
+  pendingPulses=0;
+  pendingReady=false;
+  if(injectEdgeDuringClear) ++coinEdgeSequence;
+  return true;
+}
+bool quarantinePending(const String&){ ++quarantineCalls; return true; }
+void applyOutputs(){ ++outputCalls; outputsOff=journalRecoveryRequired; }
+@@RECONCILE@@
+@@FUNCTION@@
+static void reset(){
+  journalRecoveryRequired=false;
+  pendingReady=false;
+  pendingPulses=3;
+  pendingNonce=String("nonce12345678");
+  pendingTarget=String("target12345678");
+  verifierResult=true;
+  rootOk=true;
+  injectEdgeDuringClear=false;
+  outputsOff=false;
+  coinEdgeSequence=0;
+  lastHandledCoinEdgeSequence=0;
+  faultPulseCount=0;
+  snapshotCalls=faultCalls=clearCalls=quarantineCalls=outputCalls=0;
+}
+int main(){
+  // Control: no edge during durable pending clear; both snapshots remain clean.
+  reset();
+  handleCoinPostResponse(String("{\"ok\":true}"));
+  if(clearCalls!=1 || snapshotCalls!=2 || faultCalls!=0 ||
+     journalRecoveryRequired || outputCalls!=1 || outputsOff) return 31;
+
+  // Inject an ISR edge while clearPending() performs its filesystem work.
+  // The second source-extracted reconciliation snapshot must latch it.
+  reset();
+  injectEdgeDuringClear=true;
+  handleCoinPostResponse(String("{\"ok\":true}"));
+  if(clearCalls!=1 || snapshotCalls!=2 || faultCalls!=1 ||
+     faultPulseCount!=1 || !journalRecoveryRequired || !outputsOff ||
+     outputCalls!=2 || pendingPulses!=0) return 32;
+
+  // An edge already present before the first snapshot blocks clear entirely.
+  reset();
+  coinEdgeSequence=1U;
+  handleCoinPostResponse(String("{\"ok\":true}"));
+  if(clearCalls!=0 || snapshotCalls!=2 || faultCalls!=1 ||
+     faultPulseCount!=4 || !journalRecoveryRequired || !pendingReady ||
+     pendingPulses!=3 || outputCalls!=1 || !outputsOff) return 33;
+
+  std::cout<<"POST_CLEAR_ISR_RECHECK_PASS 3/3; simulated source boundary only\n";
+  return 0;
+}
+'''
+
 GUARD = '''  if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses)){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
@@ -221,5 +309,52 @@ for board, path in BOARDS:
             f"exit={mutant.returncode}; stdout={mutant.stdout}; stderr={mutant.stderr}"
         )
     print(f"{board}: MUTATION_REJECTED bypass-event-bound-authentication (exit=11)")
+
+    # Compile the real edge-reconciliation helper with the real disposition handler.
+    # Inject an ISR edge during clearPending() and require the post-clear snapshot
+    # to latch a durable-deny decision before the handler returns.
+    reconcile = extract_function(source, "reconcileUnobservedCoinEdges")
+    if "snapshotCoinEdgeSequence()" not in reconcile or "latchPollPulseFault(" not in reconcile:
+        raise SystemExit(f"{board}: source reconciliation helper lost its edge/fault boundary")
+
+    def compile_clear_race(function_source, label):
+        code = CLEAR_RACE_TEMPLATE.replace("@@RECONCILE@@", reconcile).replace(
+            "@@FUNCTION@@", function_source
+        )
+        with tempfile.TemporaryDirectory(prefix="phx-post-clear-race-") as tmp:
+            cpp = Path(tmp) / "race.cpp"
+            binary = Path(tmp) / "race"
+            cpp.write_text(code, encoding="utf-8")
+            built = subprocess.run(
+                ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+                 "-O2", str(cpp), "-o", str(binary)],
+                capture_output=True, text=True, timeout=30
+            )
+            if built.returncode:
+                raise RuntimeError(f"{board} {label} compile failed:\n{built.stderr[-3000:]}")
+            return subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
+
+    race = compile_clear_race(helper, "post-clear-isr-recheck")
+    if race.returncode:
+        raise SystemExit(
+            f"{board}: post-clear ISR race failed exit={race.returncode}: "
+            f"stdout={race.stdout}; stderr={race.stderr}"
+        )
+    print(f"{board}: {race.stdout.strip()}")
+
+    recheck = "if(!reconcileUnobservedCoinEdges()) applyOutputs();"
+    mutated_race_handler = helper.replace(
+        recheck, "// injected mutation: omit the post-clear ISR snapshot", 1
+    )
+    if mutated_race_handler == helper:
+        raise SystemExit(f"{board}: post-clear reconciliation mutation anchor missing")
+    mutant_race = compile_clear_race(mutated_race_handler, "removed-post-clear-recheck")
+    if mutant_race.returncode != 32:
+        raise SystemExit(
+            f"{board}: removed post-clear ISR recheck mutation survived; "
+            f"exit={mutant_race.returncode}; stdout={mutant_race.stdout}; stderr={mutant_race.stderr}"
+        )
+    print(f"{board}: MUTATION_REJECTED remove-post-clear-isr-recheck (exit=32)")
+
 
 print("PHX-HARDWARE: 24/24 coin POST gate + 14/14 disposition dispatch cases PASS; actual money NOT TESTED")
