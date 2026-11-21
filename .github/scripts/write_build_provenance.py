@@ -785,8 +785,217 @@ def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
     return toolchain, source_paths
 
 
+def _git_tree_blobs(relative_root: str) -> dict[str, str]:
+    """Return every regular blob beneath a source directory in exact HEAD."""
+    root = _normalize_checksum_path(relative_root)
+    output = _run(
+        ["git", "ls-tree", "-r", "-z", "--full-tree", "HEAD", "--", root]
+    )
+    entries: dict[str, str] = {}
+    for record in output.split("\0"):
+        if not record:
+            continue
+        metadata, separator, raw_path = record.partition("\t")
+        fields = metadata.split()
+        if not separator or len(fields) != 3:
+            raise ProvenanceError(f"malformed Git tree entry beneath {root}")
+        mode, object_type, blob = fields
+        path = _normalize_checksum_path(raw_path)
+        if object_type != "blob" or mode not in ("100644", "100755"):
+            raise ProvenanceError(
+                f"non-regular or symlinked Arduino source entry is not admitted: {path}"
+            )
+        if not GIT_SHA.fullmatch(blob):
+            raise ProvenanceError(f"invalid Git blob identity for {path}")
+        if not path.startswith(root + "/"):
+            raise ProvenanceError(f"Git tree path escaped expected source root: {path}")
+        if path in entries:
+            raise ProvenanceError(f"duplicate Git tree path: {path}")
+        entries[path] = blob
+    if not entries:
+        raise ProvenanceError(f"exact Git source tree is empty: {root}")
+    return dict(sorted(entries.items()))
+
+
+def _inventory_directory(path: Path, label: str) -> dict[str, dict[str, Any]]:
+    """Inventory one directory using a pinned no-follow descriptor."""
+    absolute, directory_fd = _open_directory(path, label)
+    try:
+        inventory = _inventory_at(directory_fd)
+        _verify_directory_identity(absolute, directory_fd, label)
+        return inventory
+    finally:
+        os.close(directory_fd)
+
+
+def _tree_file_set(root: str, inventory: dict[str, dict[str, Any]]) -> set[str]:
+    return {f"{root}/{relative}" for relative in inventory}
+
+
+def _require_matching_tree(
+    label: str,
+    source: dict[str, dict[str, Any]],
+    staged: dict[str, dict[str, Any]],
+) -> None:
+    if source == staged:
+        return
+    source_names = set(source)
+    staged_names = set(staged)
+    missing = sorted(source_names - staged_names)
+    extra = sorted(staged_names - source_names)
+    changed = sorted(
+        name
+        for name in source_names & staged_names
+        if source[name] != staged[name]
+    )
+    raise ProvenanceError(
+        f"staged Arduino {label} tree differs from exact source; "
+        f"missing={missing}, extra={extra}, changed={changed}"
+    )
+
+
+def _arduino_source_bundle(
+    args: argparse.Namespace, sketch: str
+) -> tuple[list[str], dict[str, Any]]:
+    """Verify the complete staged compile bundle and enumerate its Git inputs."""
+    kind = args.kind
+    if args.target != kind:
+        raise ProvenanceError(
+            f"Arduino target {args.target!r} does not match artifact kind {kind!r}"
+        )
+
+    sketch_path = PurePosixPath(sketch)
+    board_root = PurePosixPath("experiment/openwrt/BlazePwifi") / kind
+    if sketch_path.parent.parent != board_root:
+        raise ProvenanceError(
+            f"Arduino sketch is outside the expected {kind} source tree: {sketch}"
+        )
+    sketch_name = sketch_path.parent.name
+    if sketch_path.name != f"{sketch_name}.ino":
+        raise ProvenanceError(
+            f"Arduino sketch filename must match its project directory: {sketch}"
+        )
+
+    sketch_root = sketch_path.parent.as_posix()
+    library_root = "experiment/openwrt/BlazePwifi/esp/libraries"
+    rebuild_path = "experiment/openwrt/BlazePwifi/esp/REBUILD.md"
+    package_script = "experiment/openwrt/BlazePwifi/tools/package-vendo-source.py"
+
+    artifact_root = Path(args.artifact_dir)
+    staged_source_root = artifact_root / "source"
+    expected_libraries = staged_source_root / "libraries"
+    supplied_libraries = getattr(args, "libraries", None)
+    if not supplied_libraries:
+        raise ProvenanceError("Arduino provenance requires the staged local library path")
+    if Path(os.path.abspath(supplied_libraries)) != Path(
+        os.path.abspath(expected_libraries)
+    ):
+        raise ProvenanceError(
+            "Arduino --libraries path must be the exact staged source/libraries directory"
+        )
+
+    staged_root, staged_root_fd = _open_directory(
+        staged_source_root, "staged Arduino source root"
+    )
+    try:
+        expected_entries = sorted((sketch_name, "README.md", "libraries"))
+        observed_entries = sorted(os.listdir(staged_root_fd))
+        if observed_entries != expected_entries:
+            raise ProvenanceError(
+                "staged Arduino source root has unexpected entries; "
+                f"expected={expected_entries}, observed={observed_entries}"
+            )
+        _verify_directory_identity(
+            staged_root, staged_root_fd, "staged Arduino source root"
+        )
+    finally:
+        os.close(staged_root_fd)
+
+    source_sketch_tree = _inventory_directory(
+        ROOT / sketch_root, "exact Arduino sketch source"
+    )
+    staged_sketch_tree = _inventory_directory(
+        staged_root / sketch_name, "staged Arduino sketch"
+    )
+    _require_matching_tree("sketch", source_sketch_tree, staged_sketch_tree)
+
+    source_library_tree = _inventory_directory(
+        ROOT / library_root, "exact Arduino local libraries"
+    )
+    staged_library_tree = _inventory_directory(
+        expected_libraries, "staged Arduino local libraries"
+    )
+    _require_matching_tree("library", source_library_tree, staged_library_tree)
+
+    sketch_git_tree = _git_tree_blobs(sketch_root)
+    library_git_tree = _git_tree_blobs(library_root)
+    if set(sketch_git_tree) != _tree_file_set(sketch_root, source_sketch_tree):
+        missing = sorted(
+            set(sketch_git_tree) - _tree_file_set(sketch_root, source_sketch_tree)
+        )
+        extra = sorted(
+            _tree_file_set(sketch_root, source_sketch_tree) - set(sketch_git_tree)
+        )
+        raise ProvenanceError(
+            f"Arduino sketch worktree does not match exact HEAD tree; "
+            f"missing={missing}, extra={extra}"
+        )
+    if set(library_git_tree) != _tree_file_set(library_root, source_library_tree):
+        missing = sorted(
+            set(library_git_tree) - _tree_file_set(library_root, source_library_tree)
+        )
+        extra = sorted(
+            _tree_file_set(library_root, source_library_tree) - set(library_git_tree)
+        )
+        raise ProvenanceError(
+            f"Arduino library worktree does not match exact HEAD tree; "
+            f"missing={missing}, extra={extra}"
+        )
+
+    source_readme = _read_regular(ROOT / rebuild_path)
+    staged_readme = _read_regular(staged_root / "README.md")
+    if staged_readme != source_readme:
+        raise ProvenanceError(
+            "staged Arduino rebuild README differs from exact source"
+        )
+
+    source_sketch = _read_regular(ROOT / sketch)
+    compatibility_sketch = _read_regular(artifact_root / f"{sketch_name}.ino")
+    if compatibility_sketch != source_sketch:
+        raise ProvenanceError(
+            "top-level Arduino sketch compatibility copy differs from exact source"
+        )
+
+    source_paths = {
+        sketch,
+        package_script,
+        rebuild_path,
+        *(
+            f"{sketch_root}/{relative}"
+            for relative in source_sketch_tree
+        ),
+        *(
+            f"{library_root}/{relative}"
+            for relative in source_library_tree
+        ),
+    }
+    source_tree = {
+        "staged_copy_verified": True,
+        "sketch_root": sketch_root,
+        "sketch_file_count": len(source_sketch_tree),
+        "library_root": library_root,
+        "library_file_count": len(source_library_tree),
+        "rebuild_instructions_path": rebuild_path,
+        "rebuild_instructions_sha256": hashlib.sha256(source_readme).hexdigest(),
+        "compatibility_sketch_sha256": hashlib.sha256(source_sketch).hexdigest(),
+        "package_script_path": package_script,
+        "git_tree_membership_verified": True,
+    }
+    return sorted(source_paths), source_tree
+
+
 def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[str]]:
-    required = ("core_package", "core_version", "fqbn", "sketch")
+    required = ("core_package", "core_version", "fqbn", "sketch", "libraries")
     missing = [name for name in required if not getattr(args, name, None)]
     if missing:
         raise ProvenanceError(f"Arduino provenance arguments missing: {', '.join(missing)}")
@@ -808,6 +1017,7 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
     sketch = _normalize_checksum_path(args.sketch)
     sketch_path = ROOT / sketch
     _hash_regular(sketch_path)
+    source_paths, source_tree = _arduino_source_bundle(args, sketch)
 
     # Capture the compiler selected by the exact FQBN, core and local library
     # search path used by the preceding build. --show-properties is read-only:
@@ -818,11 +1028,10 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         "--show-properties=expanded",
         "--fqbn",
         args.fqbn,
+        "--libraries",
+        str(args.libraries),
+        sketch,
     ]
-    libraries = getattr(args, "libraries", None)
-    if libraries:
-        properties_command.extend(["--libraries", str(libraries)])
-    properties_command.append(sketch)
     properties_output = _run(properties_command)
 
     required_properties = ("compiler.path", "compiler.c.cmd", "compiler.cpp.cmd")
@@ -906,13 +1115,9 @@ def _arduino_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         "compiler_c_binary": compiler_c_binary,
         "compiler_cpp_binary": compiler_cpp_binary,
         "compiler_version_source": "arduino-cli compile --show-properties=expanded and compiler --version",
+        "source_tree": source_tree,
     }
-    source_paths = [
-        sketch,
-        "experiment/openwrt/BlazePwifi/tools/package-vendo-source.py",
-    ]
     return toolchain, source_paths
-
 
 def _create_temp_file_at(directory_fd: int, prefix: str) -> tuple[int, str]:
     """Create a private temporary file relative to the pinned artifact directory."""
