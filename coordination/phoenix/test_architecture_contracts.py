@@ -125,7 +125,7 @@ class PollResponseArchitectureTests(unittest.TestCase):
 
         counts = {}
         for line in DOC.splitlines():
-            match = re.match(r"^##\\s+(?:§\\s*)?(6\\.\\d+)\\b", line)
+            match = re.match(r"^##\s+(?:§\s*)?(6\.\d+)\b", line)
             if match:
                 number = match.group(1)
                 counts[number] = counts.get(number, 0) + 1
