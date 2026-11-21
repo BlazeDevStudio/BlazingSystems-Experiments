@@ -125,14 +125,14 @@ def verify_cpp_parity_normalizer():
         ("line-comment-splice-boundary", "void f(){ // pending \\\n return false;\n}", "void f(){ // pending\n return false;\n}", False),
         ("line-comment-crlf-normalization", "void f(){ // pending \\\r\n event text\r\n return true; }", "void f(){ // pending \\\n event text\n return true; }", True),
         ("preprocessor-directive-line-boundary",
-         'void f(){\\n#if defined(ESP32)\\n return true;\\n#endif\\n}',
-         'void f(){ #if defined(ESP32)\\n return true;\\n#endif\\n}', False),
+         'void f(){\n#if defined(ESP32)\n return true;\n#endif\n}',
+         'void f(){ #if defined(ESP32)\n return true;\n#endif\n}', False),
         ("preprocessor-directive-leading-whitespace",
-         'void f(){\\n#if defined(ESP32)\\n return true;\\n#endif\\n}',
-         'void f(){\\n    #if defined(ESP32)\\n return true;\\n#endif\\n}', True),
+         'void f(){\n#if defined(ESP32)\n return true;\n#endif\n}',
+         'void f(){\n    #if defined(ESP32)\n return true;\n#endif\n}', True),
         ("preprocessor-directive-crlf-normalization",
-         '#if FEATURE\\r\\nint value;\\r\\n#endif\\r\\n',
-         '#if FEATURE\\nint value;\\n#endif\\n', True),
+         '#if FEATURE\r\nint value;\r\n#endif\r\n',
+         '#if FEATURE\nint value;\n#endif\n', True),
     )
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
