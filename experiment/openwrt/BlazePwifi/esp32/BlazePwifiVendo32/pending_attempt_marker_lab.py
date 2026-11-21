@@ -82,7 +82,7 @@ struct FakeSerial{template<class T>void println(const T&){} } Serial;
 @@STRUCT@@
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
-bool outputPolarityKnown=true;
+bool outputPolarityKnown=true, pinConfigSafe=true;
 uint8_t pendingPulses=0;
 uint32_t lastSend=0;
 String pendingNonce,pendingTarget;
@@ -103,7 +103,7 @@ void store(const char*p,const PendingRecord&r){
   LittleFS.files[p]=std::vector<uint8_t>(b,b+sizeof(r));
 }
 void reboot(){
-  fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;
+  fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;pinConfigSafe=true;
   pendingPulses=0;lastSend=0;pendingNonce.clear();pendingTarget.clear();
 }
 #define CHECK(c,n) do{if(!(c)){std::cerr<<"ATTEMPT_MARKER_FAIL "<<n<<"\n";return 1;}++passed;}while(0)
@@ -111,6 +111,10 @@ int main(){
   int passed=0;
   LittleFS=FakeLittleFS{};reboot();loadPending();
   CHECK(!pendingReady&&!journalRecoveryRequired&&!canAttemptCoinPost(),"empty journal");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  pinConfigSafe=false;
+  CHECK(pendingReady&&!canAttemptCoinPost(),"unsafe GPIO map blocks pending dispatch");
 
   LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
   CHECK(pendingReady&&!journalRecoveryRequired&&canAttemptCoinPost(),"unattempted pending eligible");
