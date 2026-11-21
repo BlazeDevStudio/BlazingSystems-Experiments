@@ -230,6 +230,7 @@ def verify_cpp_parity_normalizer():
         ("raw-string-literal-whitespace", 'void f(){ auto s=R"tag(pending event)tag"; }', 'void f(){ auto s=R"tag(pending  event)tag"; }', False),
         ("escaped-quote", r'void f(){ const char *s="quote: \" pending"; }', r'void f(){ const char *s="quote: pending"; }', False),
         ("line-comment-content", "void f(){ // pending event\n return true; }", "void f(){ // pending  event\n return true; }", False),
+        ("line-comment-backslash-newline-content", "void f(){ // pending \\\n event  text\n return true; }", "void f(){ // pending \\\n event text\n return true; }", False),
     )
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
