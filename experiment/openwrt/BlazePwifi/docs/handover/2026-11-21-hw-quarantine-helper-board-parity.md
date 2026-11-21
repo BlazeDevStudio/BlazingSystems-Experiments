@@ -97,3 +97,48 @@ Only this Hardware-owned host-lab comparator and this handover changed. No produ
 2. PHX-CORE publish the approved authenticated register/poll and event-bound receipt contract with canonical bytes and golden vectors.
 3. PHX-MASTER reconcile the stale #327 pointer in \`ROLE_ASSIGNMENTS.md\` against the current #327/#329 heads and the newer integration matrix.
 4. PHX-HARDWARE keep this comparator host-only; no positive admission or quarantine callsite is authorized by this change.
+
+
+## UTC14 follow-up — preserve C++ phase-2 line-spliced comments
+
+**Date:** 2026-11-21 UTC14  
+**Role:** PHX-HARDWARE  
+**Tasks:** cleanup-first #266 / hardware host-lab parity  
+**PR:** #329 OPEN / DRAFT / UNMERGED  
+**Branch:** \`phoenix/hardware-quarantine-parity-20261121\`  
+**Parent #327:** \`827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8\`
+
+### Proven normalizer defect
+
+The C++ parity normalizer ended a \`//\` comment at the first physical newline even when the preceding backslash causes C++ translation phase 2 to splice that newline. Text on the continued physical line was therefore normalized as ordinary code whitespace. A pair of helpers differing only in whitespace inside a continued comment incorrectly compared equal.
+
+### Test-first correction
+
+- RED test commit: \`09dd3148d9b967f4842a3bb330255519d1706ed5\`.
+- Quarantine RED [run #44916156009](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44916156009), job \`136882087534\`: expected \`POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: line-comment-backslash-newline-content\`.
+- Relay/output RED [run #44916156044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44916156044), job \`136882087767\`: same expected failure.
+- Fix/source-test commit: \`f25c43f89b331132127587b534952346d47793d7\`.
+
+The normalizer now keeps all backslash-continued physical lines inside the line-comment token, preserves their comment text, and normalizes CRLF/CR to LF within that comment. Added cases cover changed continuation-line whitespace, the splice boundary, and CRLF normalization.
+
+### Exact-source GREEN evidence — \`f25c43f89b331132127587b534952346d47793d7\`
+
+- Quarantine [run #44916319781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44916319781), job \`136882585657\`: **SUCCESS**. \`POLL_SAFETY_CPP_PARITY_NORMALIZER_PASS 10/10\`; \`POLL_SAFETY_BOARD_PARITY_PASS 23/23\`; quarantine-helper parity \`6/6\`; both fail-open quarantine mutations rejected.
+- Relay/output [run #44916319886](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44916319886), job \`136882586065\`: **SUCCESS**. The same 10/10 normalizer and 23/23 board parity markers; ESP32 boot-polarity job \`136882585844\`: **SUCCESS**.
+- Full BlazePwifi [run #44916319784](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44916319784), validation job \`136882657766\`: **FAILURE** at inherited QA-owned \`Missing poll signature check\` in \`tests/controllers.sh\`. All 14 target/platform + Android jobs completed **SUCCESS**; downstream simulations, update, signing, candidate and publication jobs were skipped. No Full integration pass is claimed.
+
+### Scope and classification
+
+Only the Hardware-owned host-lab normalizer and this narrow handover changed. No production \`.ino\`, controller API, finance, witness, QA-owned test, Release workflow, COE destination or migration state changed. Coin/poll admission remains default-deny.
+
+- **SIMULATED:** source-text lexer/parity cases and mutation rejection.
+- **CI VERIFIED:** focused Quarantine and Relay/output workflows on the exact source/test SHA above.
+- **Full integration:** FAILED at the independent poll-signature assertion.
+- **HARDWARE ACCEPTED:** NO; physical coin/relay/electrical behavior, flash durability, 150 power cuts and 30-device/24-hour soak remain NOT TESTED.
+- **PRODUCTION READY:** NO-GO.
+
+### Next exact actions
+
+1. PHX-QA independently review the continued-line-comment cases and retain negative/default-deny checks.
+2. PHX-MASTER refresh the canonical role assignment/matrix to include the current #329 child head without changing the #327 → #330 → #332 → #333 chain.
+3. PHX-HARDWARE keep this lexer/parity check host-only; no coin admission or quarantine callsite is authorized by this cleanup.
