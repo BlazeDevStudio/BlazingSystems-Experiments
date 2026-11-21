@@ -715,17 +715,17 @@ def check_current_source_handover_anchor() -> list[str]:
     if handover.count(marker) != 1:
         return ["handover must contain exactly one machine-checked current source anchor section"]
 
-    section = handover.split(marker, 1)[1].split("\\n## ", 1)[0]
+    section = handover.split(marker, 1)[1].split("\n## ", 1)[0]
     required = (
-        f"HARDWARE #327 source/test SHA: \`{HARDWARE_SOURCE_SHA}\`",
-        f"ESP32 sketch Git blob SHA: \`{HARDWARE_SKETCH_BLOB}\`",
+        f"HARDWARE #327 source/test SHA: `{HARDWARE_SOURCE_SHA}`",
+        f"ESP32 sketch Git blob SHA: `{HARDWARE_SKETCH_BLOB}`",
     )
     missing = [value for value in required if value not in section]
     if missing:
         errors.append("handover current source anchor is missing exact source identity: " + ", ".join(missing))
 
     matrix_evidence = re.search(
-        r"(?m)^- Exact-source compatibility matrix: \[#\\d+\\]\\(https://github\\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\\d+\\) — SUCCESS \\(3/3 jobs\\)$",
+        r"(?m)^- Exact-source compatibility matrix: \[#\d+\]\(https://github\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\d+\) — SUCCESS \(3/3 jobs\)$",
         section,
     )
     if matrix_evidence is None:
