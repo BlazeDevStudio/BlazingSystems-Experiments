@@ -37,6 +37,7 @@ static uint32_t lastEdge=0;
 static uint32_t pulseStart=0,pulseEnd=0;
 static bool pulseEnabled=false;
 static bool fsReady=true,journalRecoveryRequired=false,pendingReady=false;
+static bool pendingPostAttempted=false;
 static bool outputPolarityKnown=true;
 static bool insertMode=true,lastCoin=false;
 static bool runCoinActiveLow=true,pollIntakeSuspended=false,pollDrainAbortedOnActiveLine=false;
@@ -98,7 +99,7 @@ static void resetState(uint32_t now=0,bool activeLow=true){
   fakeNow=now;lastPoll=0;runDebounceMs=40;lastEdge=0;
   coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
   pulseStart=0;pulseEnd=0;pulseEnabled=false;
-  fsReady=true;journalRecoveryRequired=false;pendingReady=false;outputPolarityKnown=true;
+  fsReady=true;journalRecoveryRequired=false;pendingReady=false;pendingPostAttempted=false;outputPolarityKnown=true;
   insertMode=true;lastCoin=false;runCoinActiveLow=activeLow;
   pollIntakeSuspended=false;pollDrainAbortedOnActiveLine=false;pinConfigSafe=true;controllerEnabled=true;coinEnabled=true;
   ledEnabled=true;relayEnabled=true;runRelayActiveHigh=true;runLedActiveHigh=true;
@@ -216,6 +217,30 @@ static bool runDeniedGates(){
   }
   return true;
 }
+static bool runInvalidPinConfig(){
+  // An unsafe GPIO map must never turn a sampled fallback-pin edge into a coin event.
+  resetState(141U);
+  pinConfigSafe=false;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
+    return fail("unsafe-pin-sample","unsafe pin mapping did not latch unresolved ingress");
+  if(pendingPulses!=0 || saveCalls!=0 || nonceCalls!=0)
+    return fail("unsafe-pin-sample","unsafe pin mapping was assigned to a coin batch");
+  if(backupCalls!=1 || markerCalls!=1 || backupEdges!=1U || markerEdges!=1U)
+    return fail("unsafe-pin-sample","unsafe pin mapping did not persist one unresolved edge");
+  if(!backupSawRelayOff || !backupSawLedOff || !markerSawRelayOff || !markerSawLedOff)
+    return fail("unsafe-pin-sample","fault persistence began before outputs were OFF");
+
+  // Even an older pending batch must not be dispatched while the pin map is unsafe.
+  resetState();
+  pinConfigSafe=false;
+  pendingReady=true;
+  pendingPulses=1U;
+  if(canAttemptCoinPost())
+    return fail("unsafe-pin-post-gate","coin POST remained eligible with an unsafe pin mapping");
+  return true;
+}
+
 static bool runPulseLimitBoundary(){
   resetState(141U);
   lastEdge=100U;
@@ -422,6 +447,8 @@ int main(){
   ++passed;
   if(!runDeniedGates()) return 8;
   ++passed;
+  if(!runInvalidPinConfig()) return 17;
+  ++passed;
   if(!runPulseLimitBoundary()) return 9;
   ++passed;
   if(!runUnrepresentablePulseCases()) return 10;
@@ -438,7 +465,7 @@ int main(){
   ++passed;
   if(!runIngressTransitionCases()) return 16;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/16 top-level scenarios\n";
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/17 top-level scenarios\n";
   return 0;
 }
 '''
@@ -446,6 +473,7 @@ int main(){
 SIGNATURES = (
     "bool coinLineIdle(){",
     "bool canStartPoll(){",
+    "bool canAttemptCoinPost(){",
     "void applyOutputs(){",
     "bool coinLineQuietAfterInhibit(){",
     "bool beginPollWindow(){",
@@ -458,6 +486,7 @@ SIGNATURES = (
 FUNCTION_NAMES = (
     "coinLineIdle",
     "canStartPoll",
+    "canAttemptCoinPost",
     "applyOutputs",
     "coinLineQuietAfterInhibit",
     "beginPollWindow",
@@ -622,7 +651,7 @@ def main():
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 16/16" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 17/17" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
             print(f"{board}_COIN_PULSE_CAPTURE_PASS 16/16")
