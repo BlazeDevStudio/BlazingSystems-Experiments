@@ -33,7 +33,7 @@ static bool fsReady=true;
 static bool journalRecoveryRequired=false;
 // Mirrors the production one-shot gate state used by canAttemptCoinPost().
 static bool pendingPostAttempted=false;
-bool outputPolarityKnown=true;
+bool outputPolarityKnown=true, pinConfigSafe=true;
 static bool attemptMarkerExists=true, attemptMarkerValid=true;
 static uint8_t pendingPulses=4;
 static bool pendingReady=true;
