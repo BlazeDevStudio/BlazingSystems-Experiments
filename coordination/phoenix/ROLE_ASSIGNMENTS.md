@@ -2064,3 +2064,24 @@ This snapshot supersedes earlier UTC00 role-head pins for current work; historic
 | COE RELEASE / CORE candidates | #35 580855b6a45a6d3cf506a6aa9320bc4782efc246; #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #35 case guard PASS, shared profile staging FAIL, Bubblewrap sandbox FAIL; #45 overlay and case guard PASS, no financial acceptance. |
 
 **Shared-path ownership warning:** #240 includes the shared BlazePwifi build workflow and CORE handover files; #255 includes CORE handover/ledger/state files; #290 includes CORE handover files alongside PISONET native COM tests; #291 includes three CORE and two PISONET paths. Affected owners must review their own paths before merge. PR membership does not transfer ownership.
+
+
+## PHX-MASTER UTC01 terminal exact-head reconciliation — 2026-11-21T01:54Z
+
+Exact refs: Experiments main `f4e8a891...`, active development `2fbd2475...`, Master start `0574bf87774ea548c4d48c751ed63b89bfbd28cd`; COE main `a6513ab...`, PR #26 `b382d233...`. PR #288 OPEN/DRAFT/UNMERGED, 142 prior paths all coordination-only. Route manifest remains `e4db324...`, DRAFT_REVIEW_ONLY, Master target null.
+
+| Role | Current PR refs | Latest CI / boundary |
+|---|---|---|
+| CORE | #252 `c82705f2...` | #42698139210 PASS, scoped; separate automation owns CORE. |
+| RENTAL | #240 `a7d113fb...`; #289 `68928774...`; #328 `0e0da62...` | #328 APK/API21/API23 PASS; shared build FAIL handover freshness + Mbed TLS 4 header. |
+| PISONET | #255 `d01fd164...` | #42462978704 PASS; physical COM acceptance NOT TESTED. |
+| HARDWARE | #327 docs `e221ab2...`, source/test `28bf18e...`; #254 `84c442a...`; #283 `830c355...`; #318 `de428b7...` | #327 focused PASS, Full FAIL at QA positive poll marker; #254 Full Mbed TLS failure; #283 separate scoped runs PASS; #318 non-mergeable/no exact run. |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 build PASS but native COM lab not invoked; #292 historical base/no PR CI. |
+| RELEASE | #291 `d04b5be6...` | Compatibility 3/3 PASS on pinned Hardware source; Full/Windows FAIL handover freshness. |
+| COE integration | #26 `b382d233...` | Five workflows QUEUED / zero jobs; frozen. |
+
+Cross-owner review is required: #240 includes CORE handover, QA and Release paths; #255 includes CORE handover/state and Release workflow; #290 includes CORE handover and PISONET tests; #291 contains 21 RELEASE, 3 CORE and 2 PISONET paths. PR membership does not transfer ownership.
+
+COE #26 current file pairs remain divergent (ESP32, ESP8266, hardening test); both hardening tests retain positive marker assertions. Pisowifi LICENSE matches; source root NOTICE has no COE root counterpart. Old recursive tree counts at source `177312434...` are not reused after source advanced to `28bf18e...`.
+
+Private v11/newer corrections inaccessible; no older registry substituted. Branch protection unverified; full Master suite not run; no Master Actions run. Production remains NO-GO.
