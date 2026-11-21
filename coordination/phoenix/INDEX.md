@@ -329,3 +329,9 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Full build #44851462517 completed FAIL at Mandatory handover freshness; target/Android builds passed and downstream simulations, signing and publication were skipped.
 - Windows #44851462474 completed FAIL at shared handover freshness; Windows build and publisher were skipped.
 - This supersedes the initial UTC01 queued status. PHX-MASTER did not edit RELEASE files or alter the PHX-RELEASE role lock.
+
+
+## 2026-11-21 UTC01:54Z — latest exact-head revalidation
+
+- [PHX_MASTER_UTC01_20261121_0154Z_TERMINAL_ROLE_CI_COE26_REVALIDATION.md](PHX_MASTER_UTC01_20261121_0154Z_TERMINAL_ROLE_CI_COE26_REVALIDATION.md) supersedes earlier UTC01 pins with Hardware #327 source/test `28bf18e...` / docs `e221ab2...`, Release #291 terminal CI, Rental #328, cross-owner path scope and COE #26 file-level provenance.
+- No subsystem source or COE destination path changed; no migration staging or release action. PR #288 remains draft; production remains NO-GO.
