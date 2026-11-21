@@ -1,6 +1,6 @@
 # PHX-HARDWARE handover — poll-loop fixture runtime/scenario split
 
-**Updated:** 2026-11-21T00:42:35.615Z  
+**Updated:** 2026-11-21T00:43:43.084Z  
 **Role:** PHX-HARDWARE  
 **Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
 **PR:** [#327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/327) — OPEN / DRAFT / UNMERGED  
@@ -42,7 +42,7 @@ These are host/fake-I/O SIMULATED tests, not physical electrical acceptance.
 
 - Full PR build [run #44845327084](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44845327084), validation job `136663496550`: **FAILURE** at the QA-owned `Missing poll signature check` in `experiment/openwrt/BlazePwifi/tests/controllers.sh`.
 - The companion Full push [run #44845321368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44845321368) has the same validation failure (job `136663474782`). At the last poll, 13 firmware target jobs had completed SUCCESS and Android was still running; no overall Full workflow pass is claimed.
-- The Full PR target matrix was still running when this handover was written. No final matrix result is claimed.
+- Subsequent final job polling completed the Full PR run: 12 target jobs completed SUCCESS (ESP32, ESP8266, x86_64, Orange Pi Zero 3/One/PC/PC+, Zero/Zero 2/Zero 2W/One+, and PC2); Ruijie and Android were CANCELLED after validation failed. The companion Full push run completed 13 firmware-target jobs SUCCESS; Android was CANCELLED after the same validation failure. No overall Full workflow pass is claimed.
 - Signed APK import, update bundle and V04 simulation gates were skipped after validation failed.
 
 The assertion is QA-owned and expects a positive poll signature that the current main register/poll producer does not emit. Firmware remains default-deny. No QA assertion, shared API or response contract was changed.
