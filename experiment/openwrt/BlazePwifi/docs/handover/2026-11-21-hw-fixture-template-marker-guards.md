@@ -44,7 +44,7 @@ Only the Hardware-owned dual-store fixture composer and its existing Hardware-ow
 
 - Full BlazePwifi run: [#44896623789](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44896623789).
 - Validation job `136823614537`: **FAILURE** at the existing QA-owned `Missing poll signature check` in `experiment/openwrt/BlazePwifi/tests/controllers.sh`. This task does not change or weaken that assertion and does not invent a positive poll signature.
-- At this handover snapshot, 13/14 target/platform jobs had completed successfully and x86-64 was still in progress. No full-workflow success is claimed.
+- All 14/14 target/platform jobs (ESP8266, ESP32, Android, x86-64, Ruijie and Orange Pi profiles) completed SUCCESS. Validation still failed at the QA-owned poll-signature assertion; downstream simulation, update, signing and publication jobs were SKIPPED. No full-workflow success is claimed.
 
 ## Classification and limits
 
