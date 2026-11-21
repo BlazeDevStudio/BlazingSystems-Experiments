@@ -2390,3 +2390,20 @@ Separate active role automations visible during this activation: PHX-RELEASE and
 ### UTC18 post-checkpoint COE RELEASE owner-head update — 2026-11-21T18:21Z
 
 COE #35 current head is 732ba66626d267b9b85c80b251722a3f710f2972 (9 RELEASE-owned paths), superseding the earlier 7fd3d968... snapshot. Sandbox #44935047125 confirms trusted Bubblewrap ownership/UID-map preflight cases pass but exits 125 because Bubblewrap is absent. Shared #44935047159 confirms duplicate-JSON-object-key profile rejection passes, while all ten profiles still fail closed without an approved site-scoped ULA /48; compile jobs skip. Case-collision #44935047185 passes. No Master or COE source changes were made by PHX-MASTER.
+
+
+## UTC19 live exact owner snapshot — 2026-11-21T19:07:56Z
+
+This dated snapshot supersedes older PR-head pins above for current work; it does not transfer ownership.
+
+| Role | Current owner PR / exact head | Current evidence / next owner action |
+|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination` audit-start `cbe37870e30f6f469f76f7d421dcf9103187228b` | Owns `coordination/phoenix/` only. No Master PR-triggered CI. Full local coordination unittest suite NOT RUN. |
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build and COE #45 scoped overlay/case checks PASS. Separate CORE owner retains all implementation; publish approved authenticated poll/receipt contract. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK/API smoke PASS; ESP32 build fails missing `mbedtls/sha256.h`; handover freshness fails. Refresh canonical handover after owner source correction. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic CI PASS; native COM/PnP acceptance remains NOT TESTED. COE #28/#30 scoped CI PASS. |
+| PHX-HARDWARE | #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274` | Focused Quarantine/Relay PASS; Full fails at inherited QA positive poll-signature fixture. Preserve deny-only firmware; QA/CORE own fixture/contract resolution. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96`; COE #32 `29b6fe08b10688182d981a66745f482758bd6630` | #290 Windows and COE #32 synthetic CI PASS; #292 has no PR-triggered run. Replace stale positive poll fixture with source-linked negative/default-deny tests. |
+| PHX-RELEASE | Experiments #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `756f7b38e302b958166d7006d1e98a86bb273303` | #291 compatibility PASS, Full/Windows handover gates FAIL; COE #35 Bubblewrap and site-ULA gates remain blocked. Refresh owned handover and obtain trusted runner/site authority. |
+
+COE #48/#49 remain separate Stage 5/5.1 candidates; both stage/case checks pass but shared ESP32 compile fails at missing `mbedtls/sha256.h`. COE #26 remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source scopes remain with their named owners.
