@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/phx-release-esp32-core-compatibility.yml"
+HANDOVER = ROOT / ".github/PHX_RELEASE_HANDOVER.md"
 HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
@@ -702,6 +703,42 @@ def check_source_date_epoch_wiring(workflow_content: str) -> list[str]:
         print("PHX-ESP32-SOURCE-DATE-EPOCH-WIRING-PASS: pinned commit epoch, compiler probe, C/UTC environment and both clean builds; 3 unsafe mutations rejected")
     return errors
 
+
+def check_current_source_handover_anchor() -> list[str]:
+    """Keep the current HARDWARE source/blob and exact matrix evidence in the RELEASE handover."""
+    errors: list[str] = []
+    if not HANDOVER.is_file():
+        return ["missing RELEASE handover for the current HARDWARE source anchor"]
+
+    handover = HANDOVER.read_text(encoding="utf-8")
+    marker = "## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)"
+    if handover.count(marker) != 1:
+        return ["handover must contain exactly one machine-checked current source anchor section"]
+
+    section = handover.split(marker, 1)[1].split("\\n## ", 1)[0]
+    required = (
+        f"HARDWARE #327 source/test SHA: \`{HARDWARE_SOURCE_SHA}\`",
+        f"ESP32 sketch Git blob SHA: \`{HARDWARE_SKETCH_BLOB}\`",
+    )
+    missing = [value for value in required if value not in section]
+    if missing:
+        errors.append("handover current source anchor is missing exact source identity: " + ", ".join(missing))
+
+    matrix_evidence = re.search(
+        r"(?m)^- Exact-source compatibility matrix: \[#\\d+\\]\\(https://github\\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\\d+\\) — SUCCESS \\(3/3 jobs\\)$",
+        section,
+    )
+    if matrix_evidence is None:
+        errors.append("handover current source anchor must record one exact-source 3/3 compatibility Actions run")
+
+    if "Evidence boundary: hosted CI only" not in section:
+        errors.append("handover current source anchor must distinguish hosted CI from physical hardware acceptance")
+
+    if not errors:
+        print("PHX-RELEASE-HANDOVER-ANCHOR-PASS: exact HARDWARE source, sketch blob, matrix run and CI-only boundary")
+    return errors
+
+
 def main() -> int:
     if not WORKFLOW.is_file():
         return fail("missing exact-source ESP32 core compatibility workflow")
@@ -808,6 +845,12 @@ def main() -> int:
     present = [value for value in forbidden if value in content]
     if present:
         return fail("compatibility workflow must remain read-only/build-only: " + ", ".join(present))
+
+    handover_errors = check_current_source_handover_anchor()
+    if handover_errors:
+        for error in handover_errors:
+            print(f"PHX-RELEASE-HANDOVER-ANCHOR-RED: {error}", file=sys.stderr)
+        return 1
 
     print(
         "PHX-RELEASE-ESP32-COMPAT-PASS: exact hardware source, sketch blob, "
