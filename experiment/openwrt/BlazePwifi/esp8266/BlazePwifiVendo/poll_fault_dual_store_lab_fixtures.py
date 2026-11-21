@@ -31,6 +31,7 @@ _BOARD_NAME_COUNT = 9
 
 def _render_main(board: str, spec: dict) -> str:
     required_keys = {
+        "backend",
         "nvs_write_before_commit_assert",
         "commit_fail_before_persistence_setup",
         "commit_fail_before_persistence_clear",
@@ -43,7 +44,9 @@ def _render_main(board: str, spec: dict) -> str:
     }
     missing_keys = sorted(required_keys.difference(spec))
     if missing_keys:
-        raise ValueError(f"{board} fixture backend is missing required values: {', '.join(missing_keys)}")
+        raise ValueError(
+            f"{board} fixture backend is missing required values: {', '.join(missing_keys)}"
+        )
 
     replacements = {
         "NVS_WRITE_BEFORE_COMMIT_ASSERT": spec["nvs_write_before_commit_assert"],
@@ -60,5 +63,60 @@ def _render_main(board: str, spec: dict) -> str:
         "NO_MARKER_RESET": spec["no_marker"],
     }
 
+    main = MAIN
+    for marker, expected_count in _TEMPLATE_MARKER_COUNTS.items():
+        actual_count = main.count(marker)
+        if actual_count != expected_count:
+            raise ValueError(
+                f"fixture template marker {marker!r} expected {expected_count} "
+                f"occurrence(s), found {actual_count}"
+            )
+        main = main.replace(marker, replacements[marker])
+
+    board_count = main.count("BOARD_NAME")
+    if board_count != _BOARD_NAME_COUNT:
+        raise ValueError(
+            f"fixture template marker 'BOARD_NAME' expected {_BOARD_NAME_COUNT} "
+            f"occurrence(s), found {board_count}"
+        )
+    main = main.replace("BOARD_NAME", board)
+
+    unresolved = [marker for marker in _TEMPLATE_MARKER_COUNTS if marker in main]
+    if unresolved:
+        raise ValueError(f"unresolved fixture template markers: {', '.join(unresolved)}")
+    return main
+
+
+def harness(board: str, source: str) -> str:
+    if board not in ("ESP32", "ESP8266"):
+        raise ValueError(f"unsupported board fixture: {board!r}; expected ESP32 or ESP8266")
+    record = extract_block(source, "struct PollFaultRecord") + ";"
+    helper_names = [
+        "pollFaultRecordChecksum",
+        "makePollFaultRecord",
+        "validPollFaultRecord",
+        "pollFaultBackupPresentOrCorrupt",
+        "writePollFaultBackup",
+        "loadPollPulseFaultLatch",
+        "latchPollPulseFault",
+    ]
+    if board == "ESP32":
+        helper_names.append("initPollFaultBackupStore")
+        spec = esp32_backend()
+    else:
+        helper_names[3:3] = [
+            "readFullEepromImage",
+            "restoreEepromRamImage",
+            "refreshVerifiedEepromImage",
+            "readPollFaultBackupFlash",
+        ]
+        spec = esp8266_backend()
+    helpers = "\n".join(extract_function(source, name) for name in helper_names)
+    consts = constants(source, (
+        "POLL_FAULT_RECORD_MAGIC",
+        "POLL_FAULT_RECORD_VERSION",
+        "POLL_FAULT_EEPROM_OFFSET",
+        "POLL_FAULT_EEPROM_BYTES",
+    ))
     main = _render_main(board, spec)
     return "\n".join([PRELUDE, record, consts, spec["backend"], helpers, main])
