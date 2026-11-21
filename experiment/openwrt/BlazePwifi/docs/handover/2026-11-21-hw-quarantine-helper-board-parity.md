@@ -52,3 +52,48 @@ The parity checks do not establish a working positive authenticated poll/receipt
 4. **PHX-HARDWARE:** revalidate the entire live stack before the next owned change.
 
 No merge, rebase, retarget, force-push, flash, production migration, signing, release tag, deployment or cutover was performed.
+
+
+## UTC13 follow-up — preserve C++ literal/comment bytes in board parity
+
+**Date:** 2026-11-21 UTC13  
+**Role:** PHX-HARDWARE  
+**PR:** #329 OPEN / DRAFT / UNMERGED  
+**Parent #327 HEAD:** \`827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8\`  
+**Source/test SHA:** \`79c6f635499ef552a8a93b93a53d1326bb66ba24\`
+
+### Proven test-harness defect
+
+The parity comparator used \`" ".join(body.split())\`. Python \`split()\` collapses whitespace inside C++ string, character and raw-string literals, as well as comments. For helpers that validate quarantine tokens or serialized fields, two behaviorally different board implementations could therefore compare equal when a literal contained different internal spaces.
+
+### Test-first reproduction and correction
+
+- Test-first commit: \`fc97671ace034e88e394eb84f1934a4044f723d4\`.
+- Expected RED Quarantine: [run #44910833783](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44910833783), job \`136866089643\`, failed with \`POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: string-literal-whitespace\`.
+- Expected RED Relay: [run #44910833864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44910833864), job \`136866089878\`, same intentional failure.
+- Fix commit: \`79c6f635499ef552a8a93b93a53d1326bb66ba24\`.
+
+The replacement normalizer collapses formatting whitespace only in C++ code. It preserves standard string/character literal bytes, C++ raw-string contents and comment text; handles escaped quotes/backslashes and raw-string delimiters; and normalizes line endings only inside comments. Seven self-tests cover formatting-only whitespace, string/character/raw-string whitespace, escaped quotes, block-comment content and line-comment content.
+
+### Exact-source GREEN evidence — \`79c6f635499ef552a8a93b93a53d1326bb66ba24\`
+
+- Quarantine [run #44910997142](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44910997142), job \`136866580637\`: **SUCCESS**. Logs: \`POLL_SAFETY_CPP_PARITY_NORMALIZER_PASS 7/7\`, \`POLL_SAFETY_BOARD_PARITY_PASS 23/23\`, \`POLL_QUARANTINE_HELPER_BOARD_PARITY_PASS 6/6\`, source quarantine 36/36 and pending-journal 16/16.
+- Relay/output [run #44910997165](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44910997165), job \`136866580683\`: **SUCCESS**. Same normalizer/parity markers; ESP32 boot-polarity job \`136866580774\`: **SUCCESS**.
+- Full BlazePwifi push [run #44910991618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44910991618): **FAILURE** at validation job \`136866637165\`, inherited QA-owned \`Missing poll signature check\` in \`tests/controllers.sh\`. All 14 target/platform jobs completed **SUCCESS** (including ESP8266, ESP32, Android, x86-64, Ruijie and Orange Pi variants). Downstream simulation, signed import, update, signing and publication jobs were skipped. No Full integration pass is claimed.
+
+### Scope and classification
+
+Only this Hardware-owned host-lab comparator and this handover changed. No production \`.ino\`, controller contract, finance, witness, QA-owned test, Release workflow or COE destination changed. Coin/poll admission remains default-deny.
+
+- **SIMULATED:** source-text parity normalization and mutation/self-test coverage.
+- **CI VERIFIED:** focused Quarantine and Relay/output workflows on the exact source/test SHA above.
+- **Full integration:** FAILED at the separate CORE/QA authenticated poll-contract gate.
+- **HARDWARE ACCEPTED:** NO. Physical coin/relay/electrical behavior, LittleFS power-cut durability, 150 power cuts and 30-device/24-hour soak remain NOT TESTED.
+- **PRODUCTION READY:** NO-GO.
+
+### Next exact actions
+
+1. PHX-QA independently review this normalizer and retain negative/default-deny assertions.
+2. PHX-CORE publish the approved authenticated register/poll and event-bound receipt contract with canonical bytes and golden vectors.
+3. PHX-MASTER reconcile the stale #327 pointer in \`ROLE_ASSIGNMENTS.md\` against the current #327/#329 heads and the newer integration matrix.
+4. PHX-HARDWARE keep this comparator host-only; no positive admission or quarantine callsite is authorized by this change.
