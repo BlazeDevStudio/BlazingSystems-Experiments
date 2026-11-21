@@ -6,6 +6,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_commit_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_deny_lab.py'
       - '.github/workflows/phx-hw-quarantine-append-readback.yml'
   workflow_dispatch:
 permissions:
@@ -24,3 +25,5 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py
       - name: Compile and run source-extracted clear/commit failure injection
         run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_commit_lab.py
+      - name: Compile and run source-extracted quarantine-clear denial regression
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_deny_lab.py
