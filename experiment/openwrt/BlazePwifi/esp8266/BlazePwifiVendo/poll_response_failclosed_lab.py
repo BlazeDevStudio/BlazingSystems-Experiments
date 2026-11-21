@@ -10,6 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from firmware_lab_source import extract_function as _extract_function
 
+import poll_response_failclosed_lab_structure_guard  # noqa: F401
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
     "ESP8266": ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
