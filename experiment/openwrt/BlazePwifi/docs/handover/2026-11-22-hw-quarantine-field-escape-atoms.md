@@ -113,3 +113,13 @@ Source/test SHA: 182d6393dbeeb342395f06477b54ff30dada2f1b
 - Full [#44932261738](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932261738), validation job 136931318092: FAILURE at the inherited QA-owned Missing poll signature check. All 13 firmware target jobs passed; Android was still running at the last read. Downstream update/simulation/signing/release steps were skipped. No Full integration PASS is claimed.
 
 Classification remains SIMULATED / focused CI VERIFIED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO. The source cleanup does not resolve #177 physical pulse/relay acceptance or the CORE-owned authenticated register/poll contract.
+
+
+## Final exact-head completion — Full matrix readback
+
+A later job read completed both Full runs. The earlier "Android still running" note above is superseded by this final readback:
+
+- Source/test Full [#44932261738](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932261738): **14/14 firmware-target + Android jobs SUCCESS**; validation job 136931318092 **FAILED** at the inherited QA-owned Missing poll signature check. All downstream update-bundle, simulation, signing, candidate and publication jobs were skipped.
+- Final docs-head Full [#44932620569](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932620569): **14/14 firmware-target + Android jobs SUCCESS**; validation job 136932344293 **FAILED** at the same inherited Missing poll signature check. All downstream release/signing/candidate jobs were skipped.
+
+Thus the target build matrix is CI VERIFIED at both heads, but Full integration remains FAILED. No controller signature was invented and no QA-owned assertion was weakened.
