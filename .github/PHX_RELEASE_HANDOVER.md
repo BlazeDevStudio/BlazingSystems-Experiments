@@ -2115,3 +2115,22 @@ The prior RELEASE compatibility run [#44835998901](https://github.com/BlazeDevSt
 No firmware, hardware source, CORE/PISONET/QA/MASTER path, shared API, network prefix, signing permission or publisher permission changed. No migration, merge, real signing, tag, publication, hardware flash, financial operation or customer deployment occurred.
 
 **Next:** refresh #44842737605 to terminal state; require both ESP32 core 3.3.13 and 4.0.0 compile/image-reproducibility jobs plus provenance tests to pass at source `0f365dada...`. Then verify the final docs-head workflow run. PHX-CORE/MASTER must independently resolve the handover freshness gate; PHX-QA owns the stale positive poll-signature fixture. Keep PR #291 draft and PRODUCTION NO-GO.
+
+
+### UTC00 terminal exact-source CI reconciliation — 2026-11-21T00:20Z
+
+The prior in-progress observation above is superseded by exact PR run [#44842737605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737605), which completed **SUCCESS / 3 of 3 jobs** at workflow source head `5ccf617a43412dabeb11d101c67bd3affc0db471` and HARDWARE source/test pin `0f365dada855368ea3fdfb522768892cf23cc7ea`.
+
+- Release artifact provenance regression suite: **PASS** — 32 build-provenance tests, 8 Arduino CLI archive-verifier tests, and immutable-action pin checks (52 invocations in the main build workflow, 4 in this compatibility workflow, 6 in the Windows release workflow).
+- ESP32 core 3.3.13: **PASS** — exact source/sketch checkout, Arduino CLI 1.6.0 archive-byte verification, core/toolchain pin, SOURCE_DATE_EPOCH probes, ELF section/symbol checks, and two clean application builds. Application image: 1,044,432 bytes, SHA-256 `55a6a570790e2a734eb10e56b5bbc4017df2ba8f01651bf3c53bf1992c88200a`; reproducibility comparison reported identical builds.
+- ESP32 core 4.0.0: **PASS** — same exact source/sketch and provenance checks, toolchain `esp-x32=2512`, SOURCE_DATE_EPOCH probes, ELF section/symbol checks, and two clean application builds. Application image: 1,098,528 bytes, SHA-256 `8e2f3bd7c4e13b1bf60b04a1f0e35e09f06d7403d0033d087e14fe6499f3e79b`; reproducibility comparison reported identical builds.
+- Both jobs verified sketch blob `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7` at HARDWARE source `0f365dada...`. The new release pin is therefore exact for the current #327 source/test revision.
+- Expected RED [#44842687440](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842687440) remains an intentional test-first failure: both matrix jobs stopped at the new static assertion because the workflow still held the old source pin; the provenance suite passed. The source/workflow correction then produced the 3/3 GREEN result above.
+
+The duplicate push matrix [#44842731023](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842731023) was still running at this reconciliation and is not required to qualify the PR run.
+
+The Full build [#44842737568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737568) is now terminal **CANCELLED** after mandatory validation failed at the CORE-owned freshness gate. Exact diagnostic: `source/workflow changes newer than experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`; last recorded checkpoint remains `adcae8141e673dc2147fcad50521ef3a23084d71`. ESP8266 and several optional Orange Pi jobs passed; ESP32, Android and several other target jobs were cancelled; downstream simulations/signing/publishing were cancelled or skipped. This is not a Full build pass.
+
+Windows run [#44842737623](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737623) terminal **FAILURE** at the same CORE-owned handover freshness gate; Windows build and publisher were skipped. This is not a PISONET negative-self-test result.
+
+The exact-source compatibility matrix is hosted CI evidence for the pinned source and two Arduino cores. It does not clear the independent CORE handover gate, QA poll-signature assertion, signer/freshness-witness requirements, financial migration, or physical acceptance. No production binary was signed or published; no hardware was flashed.
