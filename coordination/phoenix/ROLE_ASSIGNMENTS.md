@@ -2385,3 +2385,8 @@ PHX-MASTER re-read live role PR metadata and exact-head Actions. The table recor
 
 Separate active role automations visible during this activation: PHX-RELEASE and PHX-HARDWARE. The named separate CORE continuation was not surfaced in the active list; Master nevertheless performed no CORE implementation and did not start a competing CORE worker.
 
+
+
+### UTC18 post-checkpoint COE RELEASE owner-head update — 2026-11-21T18:21Z
+
+COE #35 current head is 732ba66626d267b9b85c80b251722a3f710f2972 (9 RELEASE-owned paths), superseding the earlier 7fd3d968... snapshot. Sandbox #44935047125 confirms trusted Bubblewrap ownership/UID-map preflight cases pass but exits 125 because Bubblewrap is absent. Shared #44935047159 confirms duplicate-JSON-object-key profile rejection passes, while all ten profiles still fail closed without an approved site-scoped ULA /48; compile jobs skip. Case-collision #44935047185 passes. No Master or COE source changes were made by PHX-MASTER.

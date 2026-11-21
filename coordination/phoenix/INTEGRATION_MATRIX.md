@@ -3438,3 +3438,8 @@ Master starting HEAD: 0fd192b09da50c33b9c49aac43982fc629c55706; PR #288 OPEN/DRA
 | Master #288 | 0fd192b09da50c33b9c49aac43982fc629c55706 | No PR-triggered Master run returned. |
 
 Master added a strict duplicate-key JSON loader in the coordination validator; focused isolated Python harness 5/5 PASS. Full repository unittest suite NOT RUN. See PHX_MASTER_UTC18_20261121_STRICT_JSON_DUPLICATE_KEY_GUARD_COE26_EXACT_ROUTE_CI_AUDIT.md. Production remains NO-GO.
+
+
+## UTC18 post-checkpoint COE RELEASE #35 head refresh — 2026-11-21T18:21Z
+
+COE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972 (9 release-owned paths). Exact-head runs: sandbox #44935047125 FAILS because Bubblewrap is still absent (exit 125), although trusted-path preflight tests for non-root ownership and UID-map denial pass; shared #44935047159 FAILS closed on all ten appliance profiles because approved site ULA /48 is still unset, while duplicate-JSON-object-key profile rejection passes; case-collision #44935047185 PASS. ESP32/ESP8266 compile jobs are skipped. This update supersedes the earlier 7fd3d968... COE #35 snapshot. COE #26 remains unchanged/FROZEN. No Master or COE source changes were made by this follow-up.

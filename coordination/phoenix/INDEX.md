@@ -463,3 +463,8 @@ HARDWARE #335 current HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, source/te
 - Re-read current role PR heads and exact CI. #335 Full remains blocked by poll-signature fixture; #328 ESP32 build missing mbedtls/sha256.h; #291 handover freshness fails; COE #35 ULA/Bubblewrap gates fail; #48/#49 ESP32 builds fail.
 - Exact source-main/COE #26 route comparison remains non-equivalent; source NOTICE and Hardware license/NOTICE scope unresolved. COE #26 FROZEN.
 - Private v11 registry/newer corrections inaccessible; effective branch protection UNKNOWN; cleanup #266 remains 0/7. PRODUCTION NO-GO.
+
+
+### UTC18 post-checkpoint owner refresh — 2026-11-21T18:21Z
+
+COE RELEASE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972. New exact-head sandbox preflight tests pass for non-root-owned Bubblewrap and UID-map denial, but the runner still lacks Bubblewrap (exit 125). Shared validation now also passes duplicate JSON object-key profile rejection, but all ten appliance profiles still fail closed without approved site ULA /48; compile jobs skip. Case-collision passes. See the UTC18 Master audit report for run links. COE #26 is unchanged and FROZEN.

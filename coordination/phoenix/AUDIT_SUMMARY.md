@@ -1921,3 +1921,14 @@ See [UTC18 audit report](PHX_MASTER_UTC18_20261121_STRICT_JSON_DUPLICATE_KEY_GUA
 - Source root NOTICE is absent from COE; the source BlazePwifi LICENSE and destination Pisowifi LICENSE match, but Hardware license/NOTICE scope remains unresolved. No staging or destination writes.
 - #335 Full fails at inherited poll-signature fixture; #328 ESP32 build fails on missing mbedtls/sha256.h; #291 Full/Windows handover gates fail; COE #35 ULA/Bubblewrap gates fail; #48/#49 ESP32 compile fails; #26 has five queued workflows and zero jobs.
 - Private v11 registry/newer corrections remain inaccessible; effective branch protection remains UNKNOWN; cleanup #266 remains 0/7; PRODUCTION NO-GO.
+
+
+### Post-checkpoint COE RELEASE #35 exact-head refresh — 2026-11-21T18:21Z
+
+The separate PHX-RELEASE owner advanced COE #35 after the first UTC18 snapshot. Current PR #35 head is 732ba66626d267b9b85c80b251722a3f710f2972 (9 changed paths, all release-owned); this supersedes the earlier 7fd3d968... snapshot for current-state reporting.
+
+- Sandbox run [#44935047125](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047125): new trusted-Bubblewrap preflight tests for non-root ownership and UID-map denial pass; the runner still has no Bubblewrap, so the job exits 125 and release sandbox admission remains blocked.
+- Shared run [#44935047159](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047159): duplicate-JSON-object-key profile test passes, along with the profile path/symlink tests; all ten appliance profiles still fail closed because no approved site-scoped RFC 4193 ULA /48 exists. ESP32/ESP8266 compile jobs are skipped.
+- Case-collision [#44935047185](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047185): PASS.
+- This is separate RELEASE-owned COE work. PHX-MASTER did not edit COE source or take ownership. COE #26 remains at b382d233... with five queued workflows / zero jobs.
+

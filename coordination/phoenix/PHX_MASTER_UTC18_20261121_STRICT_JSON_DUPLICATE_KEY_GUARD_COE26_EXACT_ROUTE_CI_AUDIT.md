@@ -109,3 +109,14 @@ CORE source ownership remains with its separate owner. No parallel CORE worker o
 PRODUCTION NO-GO. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
 
 No merge, release, signing, secret provisioning, hardware flash, real-payment operation or physical test was performed.
+
+
+### Post-checkpoint COE RELEASE #35 exact-head refresh — 2026-11-21T18:21Z
+
+The separate PHX-RELEASE owner advanced COE #35 after the first UTC18 snapshot. Current PR #35 head is 732ba66626d267b9b85c80b251722a3f710f2972 (9 changed paths, all release-owned); this supersedes the earlier 7fd3d968... snapshot for current-state reporting.
+
+- Sandbox run [#44935047125](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047125): new trusted-Bubblewrap preflight tests for non-root ownership and UID-map denial pass; the runner still has no Bubblewrap, so the job exits 125 and release sandbox admission remains blocked.
+- Shared run [#44935047159](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047159): duplicate-JSON-object-key profile test passes, along with the profile path/symlink tests; all ten appliance profiles still fail closed because no approved site-scoped RFC 4193 ULA /48 exists. ESP32/ESP8266 compile jobs are skipped.
+- Case-collision [#44935047185](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047185): PASS.
+- This is separate RELEASE-owned COE work. PHX-MASTER did not edit COE source or take ownership. COE #26 remains at b382d233... with five queued workflows / zero jobs.
+
