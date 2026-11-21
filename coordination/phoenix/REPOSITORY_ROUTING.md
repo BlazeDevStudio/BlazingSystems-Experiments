@@ -1318,3 +1318,14 @@ Current exact trees: source main 2,340 entries / 1,764 blobs; HARDWARE #337 cand
 The #337 candidate has 35 Python host-lab/helper files across ESP32/ESP8266 and COE Hardware has zero Python equivalents. ESP32 sketch source `53b27aa80fa4a91aabac71de57f550a8eef2cb61` differs from COE `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `71160ac8ebd5163b19a56d6c9e229a5429975fc8` differs from COE `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE root; COE Hardware LICENSE and NOTICE are absent.
 
 No route is copy-ready. No copy, move, staging, overwrite, rebase, cherry-pick, route promotion or COE destination edit occurred. COE #26 remains FROZEN.
+
+## UTC23 owner-candidate routing revalidation — 2026-11-21T23:33:33Z
+
+- `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source is `coordination/phoenix/`, target `null`, kind `coordination-only`.
+- Current Hardware candidate #338 is a cleanup-only child of #337: parent #337 head `378fc605673b43d34e6bb43642c8405e31f43840`; #338 source/test `237169157dffc0843767d3be8ddbf57580fee33f`; final head `1a6a7cacf95722a78330d70de057e858143520f2`. Three code paths are inside the existing Hardware ESP8266 route; the handover is outside the runtime route. No firmware sketch or financial behavior changed.
+- Exact current owner-candidate tree comparison to COE #26 is recorded in `INTEGRATION_MATRIX.md` UTC23 section: 2,478 source entries vs 286 destination entries, with only 13 identical files across the ten non-MASTER routes; QA test identity and Hardware helper import completeness remain insufficient.
+- Source BlazePwifi LICENSE equals destination Pisowifi/LICENSE, but source root NOTICE is absent from COE root and COE Hardware route-local LICENSE/NOTICE is absent. This is not a complete license/NOTICE migration clearance.
+- The manifest baseline source_ref remains Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; do not substitute #338 candidate blobs into the baseline or infer permission from the candidate tree.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued / zero jobs. No destination staging, copy, move, overwrite, rebase, cherry-pick, merge or route promotion occurred.
+
+Private Drive registry v11/newer corrections remain unavailable, so no new migration artifact or folder was created. Human next action: registry custodian restores authorized private v11 access, then owners provide exact file-level import/test/license approvals before any staging proposal.

@@ -3580,3 +3580,31 @@ No subsystem source was edited. No migration staging, copy, move, rebase, cherry
 - COE #35 current head `0d6b9edce4caff16df64c15fedbd11e4640dfdde`: case guard [44956193792](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44956193792) PASS; shared [44956193759](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44956193759) runs 154 tests / 2 skips then all ten profiles fail closed for missing site ULA /48; sandbox [44956193651](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44956193651) runs 31/31 host tests then exits 125 because Bubblewrap is absent.
 - COE #48/#49 stage/case checks pass, but shared ESP32 compilation [44643670685](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44643670685) / [44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) fails at missing `mbedtls/sha256.h`. COE #26 remains five queued workflows / zero jobs.
 - Full Master suite NOT RUN; no Master PR-triggered Actions. The GitHub clone attempt failed DNS before checkout. CI on owner PRs is not a substitute for the Master suite. Production remains NO-GO.
+
+## UTC23 exact owner-candidate tree and COE #26 route provenance — 2026-11-21T23:33:33Z
+
+This is a **current owner-candidate** comparison, not a replacement for the manifest baseline. Source is Experiments Hardware child PR #338 at `1a6a7cacf95722a78330d70de057e858143520f2`; destination is COE integration PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive Git trees were complete (`truncated=false`): source tree 2,478 entries; destination tree 286 entries. Counts below compare exact relative paths, Git blob SHA and mode.
+
+| Route | Source files | Destination files | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE runtime | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone (manual map only) | 31 | 19 | 0 | 2 | 29 | 17 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 18 | 1 | 0 | 1 | 17 | 0 |
+| HARDWARE ESP8266 | 30 | 1 | 0 | 1 | 29 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+### Exact #338 delta and license/NOTICE checks
+
+- #338 is a child of #337; source/test SHA `237169157dffc0843767d3be8ddbf57580fee33f`, final PR head `1a6a7cacf95722a78330d70de057e858143520f2`.
+- The new `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_normalizer.py` is source-only at blob `d9c7879f2bbd07a9ca7b2be439d1e2f332392c21` (mode 100644); no equivalent exists under COE `Hardware/esp8266/`. It is a host-test helper, not production firmware. The other two #338 code paths are the existing runner and parity helper under the same Hardware ESP8266 route; the handover is outside the runtime route.
+- Source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte/mode-identical: blob `1ee55b94183417be977ca287cd7391f9a6f7e721`, mode 100644.
+- Source root `NOTICE.md` exists at blob `f6d92cd21465312be5993631fe26977219be0fb9`; COE root has no `NOTICE.md`. COE `Hardware/` also has no route-local LICENSE/NOTICE. Vendor qrcode/tailadmin license and tailadmin NOTICE blobs match at their existing relative paths.
+- QA test identity is incomplete: only 1 of 47 source tests is identical, 3 diverge, 43 are source-only, and 15 destination-only files exist. The new #338 normalizer is not a QA-route file and has no destination counterpart.
+- Manifest baseline remains Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` to COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; this #338 candidate comparison must not silently rewrite the pinned source_ref.
+
+**Disposition: FROZEN / NO MIGRATION.** No staging, copy, move, overwrite, cherry-pick, rebase, destination edit or route promotion occurred. #26's five workflows remain queued with zero jobs; no combined import/test/CI acceptance exists.
