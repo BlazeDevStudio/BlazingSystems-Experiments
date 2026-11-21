@@ -1743,3 +1743,47 @@ Current exact-head review found one Hardware test-harness regression, one QA/COR
 ## UTC10 post-owner finalization — 2026-11-21T10:38Z
 
 The current owner readback supersedes the earlier in-progress #291 status: RELEASE #291 now has 44 host provenance/archive-verifier tests PASS and an exact docs-head ESP32 compatibility run 3/3 PASS. Full and Windows remain blocked at the CORE-owned `PROJECT_HANDOVER.md` freshness gate, not by a current PISONET test failure. The current #327/#329/#330 Full runs remain blocked at QA-owned `Missing poll signature check`; focused Hardware labs are scoped CI only. RENTAL #328 retains the independent missing Mbed TLS 4.0.0 header failure. COE #26 remains frozen with five queued workflows/zero jobs; COE #35 remains blocked by missing approved ULA /48 and unavailable Bubblewrap. Cleanup #266 remains 0/7. Private v11 registry/newer corrections remain inaccessible; no older snapshot was substituted. No source, destination, payment, signer, secret or hardware action occurred. Production remains NO-GO.
+
+
+## PHX-MASTER UTC11 live exact-head audit
+
+**Timestamp:** 2026-11-21T11:57:53.717Z. **Master parent:** 940fe4f1ec3816dd2ac60468303b0454835d496c. Strict NO CODEX.
+
+### Authoritative refs and scope
+
+Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; active v0.6 development 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master parent 940fe4f1ec3816dd2ac60468303b0454835d496c; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12. PR #288 is OPEN/DRAFT/UNMERGED, base main, 151 changed paths all under coordination/phoenix; no Master Actions run.
+
+OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, source ref main f4e8..., destination COE #26 b382..., PHX-MASTER target null. All 11 routes parsed; manifest unchanged.
+
+### New cross-role finding
+
+HARDWARE #332 proves a source-extracted post-clear ISR recheck regression in a test-enabled C++17 harness. It injects an ISR edge while clearPending performs filesystem work, requires the second sequence snapshot to latch the fault before output restoration, and rejects removal of the second check (exit 32). Exact focused run #44898340322 passed. Production coin disposition still returns false on both boards and poll admission remains default-deny; this test does not authorize positive admission or a real payment.
+
+Full failures across #327/#329/#330/#331/#332 converge on QA-owned v05_firmware_hardening_test.sh expecting positive response_sig/register/poll markers that current firmware intentionally refuses until CORE publishes the authenticated wire/receipt contract. QA must replace the stale positive fixture with default-deny assertions and add positive vectors only after CORE publishes the approved contract and golden vectors. CORE remains with its separate automation owner.
+
+### Release and handover freshness
+
+RELEASE #291 compatibility #44894604453 passes 3/3 for its exact ESP32 pin; Full #44894604464 and Windows #44894604466 fail the CORE-owned handover freshness gate. RENTAL #328 shared build #44782114390 fails the same gate and ESP32 core 4.0.0 compilation because mbedtls/sha256.h is missing. The canonical PROJECT_HANDOVER.md and CURRENT_STATE.md latest checkpoint is 2026-11-13. CORE owns refresh; Master did not edit the handover.
+
+### Cleanup-first coordination inventory
+
+At Master parent 940fe..., coordination/phoenix contains 151 files: 140 Markdown, 3 JSON, 8 Python. All 151 blob SHAs are unique; no duplicate blob groups. ARCHITECTURE_CONTRACTS.md has 66 major numbered sections and four duplicate major IDs: §6.9 (lines 278, 404), §6.10 (305, 413), §6.11 (317, 426), §6.25 (542, 572). No renumbering was performed because inbound references and consumers are not fully inventoried. Cleanup issue #266 remains OPEN, 0/7; the Master checkbox remains intentionally unchecked because repository-wide duplicate/dead-code inventory is incomplete.
+
+### Governance and execution limits
+
+The classic main branch protection endpoint returned 403 and repository rulesets returned an empty array; effective organization-level protection remains UNKNOWN. Local git ls-remote failed because github.com DNS could not resolve, so the full Master Python suite was NOT RUN. GitHub API tree/blob and static manifest checks are not a substitute for repository tests or CI.
+
+The private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not available through the exposed connector surface or Library search. Older v3-v7 snapshots were not substituted. No Drive artifact or new folder was created.
+
+### Production disposition
+
+PRODUCTION NO-GO. No merge, release, signing, secret provisioning, firmware flash, real payment operation, migration, physical test, or approval occurred. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, effective protection evidence, and owner-authorized release gates remain mandatory.
+
+### Exact next owner actions
+
+1. PHX-QA replaces the inherited positive poll-signature fixture with source-linked default-deny assertions; positive vectors only after CORE publishes the approved authenticated register/poll and event-bound receipt contract.
+2. PHX-CORE, under its separate owner, refreshes canonical handover and publishes the approved contract/golden vectors. No competing CORE worker.
+3. PHX-HARDWARE keeps #329/#330/#331/#332 drafts separate until owner-reviewed integration; no merge or rebase.
+4. PHX-RELEASE refreshes only its own exact-source pins and reruns Full/Windows after CORE handover freshness is restored.
+5. Site authority supplies the actual approved ULA /48; Infrastructure supplies trusted Bubblewrap.
+6. Keep COE #26 frozen pending exact-source, license/NOTICE, test identity/import, and destination CI acceptance.

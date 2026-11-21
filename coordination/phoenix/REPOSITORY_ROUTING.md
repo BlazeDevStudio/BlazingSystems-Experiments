@@ -1198,3 +1198,21 @@ RELEASE #291 remains owner-controlled. Its 26-path diff contains 21 Release path
 RELEASE #291 current PR/docs head is `42797e2f3d65c30a1070caf49c93aebec149d897`, source/test anchor `1851f1d06648beed70695528f2799d57154a69237`. Its 26-path diff has 21 Release-owned paths, three CORE-owned handover paths and two PISONET-owned test paths. The exact compatibility run #44894604453 passes 3/3, including 36 provenance tests and 8 archive-verifier tests; Full #44894604464 and Windows #44894604466 remain blocked at CORE-owned handover freshness. The RELEASE route remains `reimplementation-review`; this evidence does not authorize copying Release workflows or any other route into COE #26.
 
 The destination manifest remains unchanged, DRAFT_REVIEW_ONLY, Master target null. No migration staging or file movement was performed.
+
+
+## PHX-MASTER UTC11 exact candidate and route disposition — 2026-11-21T11:57:53.717Z
+
+OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, source ref Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b, destination COE PR #26 b382d233ff06c8791b1028bed3c617cc7b670d12, PHX-MASTER target null.
+
+The read-only source candidate is HARDWARE #332 head 9f1d9ebf9c7256da2e8eace4bc0be510f6566daa. This snapshot includes #327 and #330 but not sibling #329 or #331. COE destination is #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. Recursive trees are complete: source 2,474 entries / 1,895 blobs; destination 286 / 207.
+
+- ESP32: 16 source / 1 destination; same relative path 1, identical blobs 0, divergent 1, source-only 15.
+- ESP8266: 31 source / 1 destination; same relative path 1, identical blobs 0, divergent 1, source-only 30.
+- QA tests: 47 source / 19 destination; 4 same relative paths, 1 identical, 3 divergent, 43 source-only, 15 destination-only.
+- Board-local Python labs/helpers: 35 source / 0 destination Hardware.
+- Hardware workflows: three scoped source workflows / one generic destination workflow.
+- Source ESP32 sketch blob 7ffb7b534c7163678726902946a17b04992950a0 differs from destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422.
+- Source ESP8266 sketch blob c2aa71963eaa0288721f0bb13cff771aaaabc42f differs from destination c8be98f72596681e36a3ad1f8939bf8046c96887.
+- BlazePwifi LICENSE and Pisowifi LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root; Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved.
+
+COE #26 still has five queued workflows and zero jobs. No staging, copying, moving, overwriting, cherry-picking, rebasing, route promotion, or destination edit occurred. Keep FROZEN until exact per-file owner review, license/NOTICE scope, test identity/import completeness, and exact-head destination CI are independently accepted.

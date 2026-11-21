@@ -2257,3 +2257,24 @@ This supersedes only the stale RELEASE #291 status in the preceding UTC10 table.
 - **COE integration:** #26 remains frozen at `b382d233...`, five queued workflows / zero jobs.
 
 The current RELEASE failure is the CORE-owned `PROJECT_HANDOVER.md` freshness gate. The prior PISONET `$buildWorkflow` issue is not the current Windows blocker because the PISONET test job is skipped before execution.
+
+
+## PHX-MASTER UTC11 live exact-head owner refresh — 2026-11-21T11:57:53.717Z
+
+This append-only snapshot supersedes only the exact owner/CI rows below. No source ownership or release authority changes.
+
+| Owner | Current open draft / exact head | Exact hosted evidence | Boundary / next action |
+|---|---|---|---|
+| PHX-MASTER | #288 parent 940fe4f1ec3816dd2ac60468303b0454835d496c; base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b | 151 changed paths, all under coordination/phoenix; no Master Actions | Existing coordination documents only; remain draft/unmerged. |
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped) | Separate Blaze Production Continuation owns CORE; canonical handover freshness remains a CORE-owned blocker. |
+| PHX-RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL at handover freshness and ESP32 missing mbedtls/sha256.h | RENTAL owns Android/server source; CORE owns handover; target/toolchain owner resolves Mbed TLS. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS (scoped) | Native COM/PnP acceptance NOT TESTED. |
+| PHX-HARDWARE | #327 827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8; #329 29c7f61a6f28f48efa8fdeaec5aba8524bc7c213; #330 1a1e5e25834748fbba95d6253eb668f29b6c82f8; #331 33a32ef092f22718cbda141baee75b54323986ff; #332 9f1d9ebf9c7256da2e8eace4bc0be510f6566daa | #327 Quarantine/Relay PASS, Full #44887859147 FAIL; #329 Quarantine/Relay PASS, Full #44892233150 FAIL; #330 Quarantine #44893767890 PASS, Full #44893767929 FAIL; #331 Quarantine #44896951119 PASS, Full #44896951163 FAIL; #332 focused ISR #44898340322 PASS, Quarantine #44898547339 PASS, Full #44898547404 FAIL | #329 is sibling of #330 from #327; #331 and #332 are siblings from #330. Keep drafts separate. QA owns inherited positive poll fixture; HARDWARE owns firmware/labs. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS (scoped); #292 no PR-triggered CI | Native COM not invoked. QA updates positive poll fixture only after CORE publishes approved authenticated response/receipt contract. |
+| PHX-RELEASE | #291 42797e2f3d65c30a1070caf49c93aebec149d897 | ESP32 compatibility #44894604453 PASS 3/3; Full #44894604464 and Windows #44894604466 FAIL at CORE handover freshness | 26-path diff crosses 21 RELEASE, 3 CORE handover, 2 PISONET test paths; owners retain paths. |
+| COE PHX-RELEASE | #35 24ca7f7000fb8626e3e517935dd6ec6f375d0998 | #44898825775: 127 tests PASS / 2 skips, then 10/10 profile failures for missing approved site ULA /48; #44898825782 case-collision PASS; #44898825787 sandbox FAIL closed, Bubblewrap absent, exit 125 | Site authority supplies actual ULA /48; Infrastructure supplies trusted Bubblewrap. |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Five workflows QUEUED / zero jobs | FROZEN; no staging or destination edits. |
+
+Hardware branch graph: #327 → #330 → (#331, #332), with #329 a separate child of #327. The #332 tree used for migration comparison includes #327 and #330 but excludes sibling #329 and #331; there is no single combined Hardware candidate head.
+
+The canonical BlazePwifi PROJECT_HANDOVER.md starts with a 2026-11-13 checkpoint and CURRENT_STATE.md latest top checkpoint is 2026-11-13; active #291 and #328 CI fail handover freshness. CORE owns refresh. Master did not edit the handover.

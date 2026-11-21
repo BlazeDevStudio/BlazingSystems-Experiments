@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T06:35:21Z
+**Updated:** 2026-11-21T11:57:53.717Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; boot-time output-safe ordering is §6.63; coin-authority board parity scope is §6.64; zero-pulse durable-attempt contradiction is §6.65; immutable release pin qualification is §6.66; checksum-manifest publication durability is §6.67; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; boot-time output-safe ordering is §6.63; coin-authority board parity scope is §6.64; zero-pulse durable-attempt contradiction is §6.65; immutable release pin qualification is §6.66; checksum-manifest publication durability is §6.67; Arduino staged-source provenance is §6.68; post-clear ISR sequence recheck is §6.69; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -395,3 +395,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - [Hardware stack, RELEASE #291 provenance, and manifest-source exact-tree audit](PHX_MASTER_UTC10_20261121_HARDWARE_STACK_RELEASE_PROVENANCE_AND_MANIFEST_SOURCE_AUDIT.md).
 - Reconciles active #322→#323→#326→#327 and sibling #329/#330 drafts; RELEASE #291's three provenance failures and cross-owner paths; exact Experiments main vs active #327 vs COE #26 trees; role CI and governance/access blockers.
 - COE #26 remains FROZEN; route manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master target null. Private v11/newer registry access remains blocked. Cleanup #266 remains 0/7. Master suite NOT RUN. PRODUCTION NO-GO.
+
+
+## Latest PHX-MASTER audit — UTC11, 2026-11-21
+
+- [UTC11 live exact-head, Hardware stack, post-clear ISR contract, COE #26 tree and cleanup inventory](AUDIT_SUMMARY.md#phx-master-utc11-live-exact-head-audit).
+- Current Master parent 940fe4f1ec3816dd2ac60468303b0454835d496c; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; active v0.6 development 2fbd2475e9f54878c316fa7cea2f228386b0e859; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+- HARDWARE #327/#329/#330/#331/#332 are separate stacked/sibling drafts; Full failures converge on inherited QA positive poll-signature fixture while firmware remains default-deny.
+- Exact COE #26 comparison: source #332 2,474 entries / 1,895 blobs vs destination 286 / 207; 35 board-local Python labs and three scoped Hardware workflows absent; firmware/test blobs diverge; NOTICE/license scope unresolved.
+- Coordination folder: 151 files, 151 unique blob SHAs, no duplicates. Architecture heading collisions remain §6.9, §6.10, §6.11, §6.25; no renumbering.
+- COE #26 remains FROZEN; private v11 registry inaccessible; cleanup #266 OPEN / 0/7; Master suite NOT RUN; PRODUCTION NO-GO.

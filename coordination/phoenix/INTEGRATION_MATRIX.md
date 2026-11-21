@@ -3243,3 +3243,52 @@ The unchanged manifest `OWNERSHIP_ROUTES.json` is `e4db324315a1b3543fec17a148fbf
 COE main `a6513ab...`; #26 `b382d233...` remains OPEN / DRAFT / FROZEN with five queued workflows / zero jobs. COE #35 remains at docs `d28271a...` / source-test `d5a2d72...`: 125 packaging tests PASS / 2 skips, ten profile admissions fail closed without approved site ULA /48, case-collision PASS, mandatory Bubblewrap sandbox FAIL closed. The manifest is still `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
 
 The prior complete tree/blob/license/test comparison is still tied to exact unchanged source/destination refs; it was not rerun in this post-owner readback. No migration staging, copy, move, overwrite, or route promotion occurred. Source NOTICE/Hardware license scope, divergent firmware and QA test identities, missing board-local labs, and destination CI remain unresolved.
+
+
+## PHX-MASTER UTC11 exact-head integration refresh — 2026-11-21T11:57:53.717Z
+
+### HARDWARE stack and QA contract
+
+| Candidate | Exact PR head | Parent | Focused evidence | Full integration |
+|---|---|---|---|---|
+| #327 | 827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8 | #326 58c558fb6a237935214621adc3dee65a10fe1a51 | Quarantine #44887859017 PASS; Relay #44887858993 PASS | #44887859147 FAIL at QA-owned Missing poll signature check |
+| #329 | 29c7f61a6f28f48efa8fdeaec5aba8524bc7c213 | child of #327 | Quarantine #44892233094 PASS; Relay #44892233067 PASS | #44892233150 FAIL at same inherited QA fixture |
+| #330 | 1a1e5e25834748fbba95d6253eb668f29b6c82f8 | child of #327; source/test 5133def2a358b6c3c0f0d18f31b9a483018a3a60 | Quarantine #44893767890 PASS | #44893767929 FAIL at same fixture |
+| #331 | 33a32ef092f22718cbda141baee75b54323986ff | child of #330; source/test e455869bfe3f95fe8770b0977a8bb9f599406740 | Quarantine #44896951119 PASS | #44896951163 FAIL at same fixture |
+| #332 | 9f1d9ebf9c7256da2e8eace4bc0be510f6566daa | child of #330; source/test 8b5b99e08297ba85bda1e665818161ee8d8859f6 | Focused C++17 ISR lab #44898340322 PASS; Quarantine #44898547339 PASS | #44898547404 FAIL at same fixture |
+
+The #332 source-extracted C++17 lab covers no-edge, pre-existing-edge, and ISR-edge-during-clear cases on both boards. Its mutation removing the post-clear ISR recheck is rejected with exit 32. This is hosted source-extracted simulation only, not GPIO timing, LittleFS crash durability, relay acceptance, or physical power-cut evidence.
+
+The Full failure log at #44898547404 job 136829388055 reports Missing poll signature check in the ESP8266 sketch. QA-owned fixture blob 41211b2c110ab409f6d9d1812ef12fda73b13211 still asserts positive response_sig/register/poll markers. Both current firmware sketches keep coinPostDispositionVerified false and acceptPollResponse false until CORE publishes an approved authenticated register/poll and event-bound receipt contract. This is an inherited positive-fixture mismatch, not permission to invent a signature or weaken default-deny firmware.
+
+### Other role gates
+
+- CORE #252 build #42698139210 PASS (scoped); separate owner retains implementation.
+- RENTAL #328 APK identity #44782114384 PASS and API21/API23 #44782114393 PASS; shared build #44782114390 fails handover freshness and ESP32 compilation due missing mbedtls/sha256.h.
+- PISONET #255 Windows #42462978704 PASS (scoped); native COM/PnP acceptance not run.
+- QA #290 Windows #43633486963 PASS (scoped); native COM lab not invoked. QA #292 has no PR-triggered CI.
+- RELEASE #291 compatibility #44894604453 PASS 3/3 for its exact ESP32 pin; Full #44894604464 and Windows #44894604466 fail CORE-owned handover freshness. Its 26-file diff comprises 21 RELEASE, 3 CORE handover, 2 PISONET test paths.
+- COE RELEASE #35 run #44898825775 reports 127 tests PASS / 2 intentional skips, then all 10 appliance profiles fail closed without an approved site-scoped RFC 4193 ULA /48. Case-collision #44898825782 PASS. Mandatory sandbox #44898825787 fails closed because Bubblewrap is absent (exit 125).
+- COE #26 remains OPEN/DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs.
+
+### Exact COE #26 source/destination comparison
+
+Read-only recursive tree comparison uses HARDWARE #332 head 9f1d9ebf9c7256da2e8eace4bc0be510f6566daa as one explicit candidate snapshot (includes #327 and #330; excludes sibling #329 and #331) against COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12. Both trees are complete and not truncated.
+
+| Metric | Experiments #332 candidate | COE #26 destination |
+|---|---:|---:|
+| Tree entries / blobs | 2,474 / 1,895 | 286 / 207 |
+| ESP32 blobs | 16 | 1 |
+| ESP8266 blobs | 31 | 1 |
+| QA test blobs | 47 | 19 |
+| Board-local Python labs/helpers | 35 | 0 |
+| Hardware-specific workflows | 3 | 1 generic hardware-ci.yml |
+
+- ESP32: one same relative path, zero identical blobs, one divergent blob, 15 source-only.
+- ESP8266: one same relative path, zero identical blobs, one divergent blob, 30 source-only.
+- QA tests: four same relative paths; one identical, three divergent, 43 source-only, 15 destination-only.
+- ESP32 sketch source 7ffb7b534c7163678726902946a17b04992950a0 differs from destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422.
+- ESP8266 sketch source c2aa71963eaa0288721f0bb13cff771aaaabc42f differs from destination c8be98f72596681e36a3ad1f8939bf8046c96887.
+- BlazePwifi LICENSE and COE Pisowifi LICENSE are byte-identical blob 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE blob f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root; Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved.
+
+The comparison is evidence of non-equivalence, not migration staging. COE #26 stays FROZEN. No copy, move, overwrite, cherry-pick, rebase, route promotion, or destination edit occurred.
