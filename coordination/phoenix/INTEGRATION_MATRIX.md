@@ -3093,3 +3093,15 @@ Pisowifi LICENSE is byte-identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`
 COE #26 current workflows: #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 are all QUEUED with zero jobs. No destination acceptance exists.
 
 **Migration disposition:** #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, staging, route promotion, or merge.
+
+
+## PHX-MASTER UTC04 follow-up — COE RELEASE #35 exact-head CI (2026-11-21T04:37Z)
+
+| Area | Exact ref / evidence | Tier | Gate / owner action |
+|---|---|---|---|
+| COE RELEASE #35 case-collision | Head `07d1a49f7cc91ce2d41704529659829f0c6d4918`; run [#44865120090](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44865120090) | CI VERIFIED, scoped PASS | Case-collision only; not firmware or release acceptance. |
+| COE RELEASE #35 appliance profiles | Run [#44865120037](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44865120037), job `136726964415` | BLOCKED / FAIL-CLOSED | All 10 profiles fail because approved site-scoped RFC 4193 ULA /48 authority is absent; firmware compile jobs skipped. Site/network authority must supply the real approved prefix. |
+| COE RELEASE #35 sandbox | Run [#44865120057](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44865120057), job `136726964507` | BLOCKED / FAIL-CLOSED | Preflight tests pass, but trusted-path Bubblewrap is absent; namespace and packaging tests skipped, exit 125. Runner owner must supply approved bwrap and verify unprivileged namespace; no privileged install or fallback. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | FROZEN / NOT ACCEPTED | Five queued workflows / zero jobs; no staging or migration. |
+
+These COE #35 results were re-read from runs tied to the exact PR head. The failing prerequisites are correctly fail-closed; do not bypass them or invent a site prefix. See `PHX_MASTER_UTC04_20261121_COE35_CURRENT_HEAD_CI_GATE_REFRESH.md` for the complete role/CI and governance reconciliation.
