@@ -17,6 +17,8 @@ def constants(source: str, names):
     return "\n".join(selected)
 
 def harness(board: str, source: str) -> str:
+    if board not in ("ESP32", "ESP8266"):
+        raise ValueError(f"unsupported board fixture: {board!r}; expected ESP32 or ESP8266")
     record = extract_block(source, "struct PollFaultRecord") + ";"
     helper_names = [
         "pollFaultRecordChecksum",
