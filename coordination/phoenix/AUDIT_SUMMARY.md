@@ -1812,3 +1812,13 @@ COE #35 source/test `e1934fcb...`, docs head `9d6fa641...`: 133 tests PASS / 2 s
 - Exact #333-to-#26 route comparison confirms firmware divergence, incomplete QA import, six identical and nine divergent OpenWrt library blobs, missing root NOTICE and missing Hardware LICENSE/NOTICE. COE #26 remains FROZEN.
 - Cleanup at audit start: 152 coordination files / 152 unique blobs / zero duplicate groups; 68 top-level architecture headings and five duplicate IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion; cleanup #266 remains OPEN / 7 unchecked.
 - Manifest assertions 10/10 PASS. Master exact-head Actions: no runs; full Master Python suite NOT RUN. Private Drive v11/newer corrections unavailable; no older snapshot substituted. Effective branch protection not evidenced. PRODUCTION NO-GO.
+
+## UTC15 Master exact-head refresh — 2026-11-21
+
+Master/PR #288 start d02335240eb8cdc7f7e671beb53f721ffd13247c on main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. Active v0.6 development is 2fbd2475e9f54878c316fa7cea2f228386b0e859; legacy v0.5.3 development is aad3aade72c1156eecba1fed30907c6d0283b2c5. COE main is a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 is b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+PR #288 started with 153 changed paths, all under coordination/phoenix/. This update adds one Master report and updates Master-only docs/test. Manifest e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY, 11 routes, Master destination null.
+
+Blockers: Hardware Full fails at QA-owned Missing poll signature check; Rental ESP32 compile lacks mbedtls/sha256.h and handover is stale; Release #291 Full/Windows fail handover freshness; COE #35 needs approved ULA /48 and Bubblewrap; COE #26 workflows are queued; private v11 registry and effective branch protection are not evidenced; cleanup #266 remains OPEN, 0/7.
+
+Five legacy duplicate top-level section numbers remain; a regression guard now rejects additional unreviewed collisions. No renumbering.

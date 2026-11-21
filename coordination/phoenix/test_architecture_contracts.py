@@ -101,5 +101,23 @@ class PollResponseArchitectureTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, section)
 
+    def test_no_unreviewed_top_level_section_number_collisions(self):
+        import re
+
+        counts = {}
+        for line in DOC.splitlines():
+            match = re.match(r"^##\s+(?:§\s*)?(6\.\d+)\b", line)
+            if match:
+                number = match.group(1)
+                counts[number] = counts.get(number, 0) + 1
+
+        collisions = {number for number, count in counts.items() if count > 1}
+        reviewed_legacy_collisions = {"6.9", "6.10", "6.11", "6.25", "6.38"}
+        unexpected = collisions - reviewed_legacy_collisions
+        self.assertFalse(
+            unexpected,
+            f"Unreviewed top-level architecture section-number collision(s): {sorted(unexpected)}",
+        )
+
 if __name__ == "__main__":
     unittest.main()

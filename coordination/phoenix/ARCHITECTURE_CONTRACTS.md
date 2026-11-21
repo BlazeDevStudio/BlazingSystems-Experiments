@@ -1326,3 +1326,9 @@ This is hosted filesystem/path-mode test evidence only. No actual namespace or I
 Current COE RELEASE #35 PR head is `a533ec7b3f8080eb7f3780ba59d4bb411906f503`. Exact-head shared validation [#44913144724](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44913144724) ran 139 tests with two intentional skips and emitted `PHX-MANIFEST-DURABILITY-PASS`; the subsequent ten appliance-profile checks correctly fail closed because no approved site-scoped RFC 4193 ULA /48 is available. Sandbox [#44913145098](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44913145098) passed 23 host tests, then exited 125 because Bubblewrap is absent; case-collision [#44913145084](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44913145084) passes.
 
 This is hosted unit/profile/path-gate evidence only. It does not prove actual user-namespace/ImageBuilder execution, storage-controller power-loss behavior, physical power-cut acceptance, or release readiness. RELEASE owns implementation; site authority and Infrastructure own the missing prerequisites. PRODUCTION remains NO-GO.
+
+## Architecture heading-number audit — 2026-11-21 UTC15
+
+Top-level level-two 6.x headings contain five legacy duplicate numbers: 6.9 (lines 278, 404), 6.10 (305, 413), 6.11 (317, 426), 6.25 (542, 572), and 6.38 (782, 794). Nested 6.x.y headings are excluded. Explicit non-heading references to §6.9 in this file point to the first ULA installation-identity contract at line 278. No body references to the other four duplicate numbers were found in this file. Cross-document references are not fully audited, so no renumbering was attempted.
+
+A regression test now rejects additional top-level collisions outside the reviewed legacy set {6.9, 6.10, 6.11, 6.25, 6.38}. Existing collisions are not claimed fixed.

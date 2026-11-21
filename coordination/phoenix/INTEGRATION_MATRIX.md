@@ -3355,3 +3355,17 @@ Current refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.
 Source has three scoped PHX-HARDWARE workflows; destination has one generic Hardware workflow. BlazePwifi/Pisowifi LICENSE blobs match; source root NOTICE and COE Hardware-specific LICENSE/NOTICE are not aligned. COE #26 remains FROZEN and no staging/copy/move/overwrite/route promotion occurred.
 
 **Production remains STRICT NO-GO.**
+
+## UTC15 exact-source provenance refresh — 2026-11-21
+
+Source Hardware #333: e93d178bbe3fcf6a7ba7f3a049f996de10727750, tree c255374b6e9ff9885605fefe07f37ef7915dffa6 (2,478 entries / 1,899 blobs). Destination COE #26: b382d233ff06c8791b1028bed3c617cc7b670d12, tree 8a7d4cf81d7227118b876c1138dd2da12345fefa (286 entries / 207 blobs). Both trees are complete.
+
+| Route | Source | Destination | Same | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 34 | 1 | 0 | 1 | 33 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| OpenWrt library | 15 | 20 | 6 | 9 | 0 | 5 |
+| Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+
+There are 38 Hardware-local Python labs in source and zero under COE Hardware. Three source PHX hardware workflows map to generic hardware-ci.yml and pisowifi-ci.yml. BlazePwifi/LICENSE and COE Pisowifi/LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721; vendor TailAdmin NOTICE matches at f0425bbbe34c1227311098173b1eae0c3e2a807b. COE has no root LICENSE or Hardware/LICENSE/NOTICE; license applicability to the Hardware route requires owner/legal review. Five COE #26 workflows are queued with zero jobs. No staging or migration occurred.
