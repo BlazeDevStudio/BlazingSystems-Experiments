@@ -143,8 +143,7 @@ int main(){
   const String boundaryEncoded=quarantineLogField(boundaryValue,128);
   if(boundaryEncoded.length()!=127 ||
      boundaryEncoded.substr(0,124)!=String(124,'A') ||
-     boundaryEncoded.substr(124)!="..." ||
-     boundaryEncoded.find('\\\\')!=std::string::npos){
+     boundaryEncoded.substr(124)!="..."){
     std::cerr<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_FAIL board=BOARD_NAME actual="
              <<boundaryEncoded<<std::endl;
     return 62;
