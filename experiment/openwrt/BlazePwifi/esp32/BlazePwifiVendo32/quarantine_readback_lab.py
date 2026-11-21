@@ -130,6 +130,7 @@ struct FakeLittleFS {
 } LittleFS;
 
 @@SOURCE_COIN_POST_GATE@@
+@@SOURCE_FIELD_ESCAPE@@
 @@SOURCE_ENCODE@@
 @@SOURCE_TOKEN_VALID@@
 @@SOURCE_RECORD_VALID@@
@@ -458,6 +459,7 @@ PARITY_SIGNATURES = (
     "bool markPendingPostAttempt(",
     "bool pendingAttemptMarkerMatches()",
     "bool clearPending(",
+    "const char* quarantineLogFieldEscapeAt(",
     "String quarantineLogField(",
     "bool quarantineLogTokenValid(",
     "bool quarantineLogRecordValid(",
@@ -568,6 +570,19 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated_parser):
         raise SystemExit("PHX-HARDWARE: permissive poll-parser mutation was not detected")
 
+    # A one-board quarantine escape mapping drift must be rejected before parity ships.
+    field_escape_signature = "const char* quarantineLogFieldEscapeAt("
+    field_escape = helpers["ESP8266"][field_escape_signature]
+    escape_anchor = 'return "\\x20";'
+    if field_escape.count(escape_anchor) != 1:
+        raise SystemExit("PHX-HARDWARE: quarantine escape mapping mutation anchor is not unique")
+    mutated_field_escape = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_field_escape["ESP8266"][field_escape_signature] = field_escape.replace(
+        escape_anchor, 'return "\\x21";', 1
+    )
+    if not board_parity_mismatches(mutated_field_escape):
+        raise SystemExit("PHX-HARDWARE: quarantine escape mapping drift was not detected")
+
     # acceptPollResponse is deliberately deny-only until CORE/QA approve a contract.
     admission_signature = "bool acceptPollResponse("
     admission = helpers["ESP8266"][admission_signature]
@@ -591,12 +606,13 @@ def verify_board_safety_parity():
         if board_polarity_guard_problem(polarity_mutated) is None:
             raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
-    print("BOARD_SHARED_SAFETY_PARITY_PASS 22/22 functions byte-identical")
+    print("BOARD_SHARED_SAFETY_PARITY_PASS 23/23 functions byte-identical")
     print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open coin disposition")
     print("BOARD_PARITY_MUTATION_REJECTED permissive poll status parser")
     print("BOARD_PARITY_MUTATION_REJECTED positive poll response admission")
+    print("BOARD_PARITY_MUTATION_REJECTED quarantine escape-atom mapping drift")
     print("ESP32_AND_ESP8266_POLARITY_MUTATIONS_REJECTED removed local gate")
 
 
@@ -606,6 +622,7 @@ for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
     actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
     actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
+    actual = actual.replace("@@SOURCE_FIELD_ESCAPE@@", extract(source, "const char* quarantineLogFieldEscapeAt("))
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_TOKEN_VALID@@", extract(source, "bool quarantineLogTokenValid("))
     actual = actual.replace("@@SOURCE_RECORD_VALID@@", extract(source, "bool quarantineLogRecordValid("))
