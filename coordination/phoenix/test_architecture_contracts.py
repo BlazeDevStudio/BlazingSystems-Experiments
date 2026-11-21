@@ -119,5 +119,24 @@ class PollResponseArchitectureTests(unittest.TestCase):
             f"Unreviewed top-level architecture section-number collision(s): {sorted(unexpected)}",
         )
 
+
+    def test_reviewed_legacy_section_collisions_are_exactly_two_each(self):
+        import re
+
+        counts = {}
+        for line in DOC.splitlines():
+            match = re.match(r"^##\\s+(?:§\\s*)?(6\\.\\d+)\\b", line)
+            if match:
+                number = match.group(1)
+                counts[number] = counts.get(number, 0) + 1
+
+        expected = {"6.9": 2, "6.10": 2, "6.11": 2, "6.25": 2, "6.38": 2}
+        actual = {number: count for number, count in counts.items() if count > 1}
+        self.assertEqual(
+            actual,
+            expected,
+            "Reviewed legacy collision inventory changed; re-review historical references before changing the allowlist.",
+        )
+
 if __name__ == "__main__":
     unittest.main()
