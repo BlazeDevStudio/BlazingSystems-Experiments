@@ -18,13 +18,14 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-# Exact PHX-HARDWARE #327 source/test commit; the current docs head is recorded separately.
-HARDWARE_SOURCE_SHA = "5909e6238bc98f76075d910cf2fd09803cbdae99"
-HARDWARE_DOCS_HEAD_SHA = "2ff7a072919cac879a23bdd38c5fd78ecb5edb5c"
+# Exact live PHX-HARDWARE #327 source/test and PR head; the latest handover/doc head is recorded separately.
+HARDWARE_SOURCE_SHA = "a2d690b511524f8c710813fe4b4fc06cd52de3a8"
+HARDWARE_DOCS_HEAD_SHA = "3ec69716bab4d2d33ad2d95abd480f50a5cd1d32"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
 HARDWARE_SKETCH_BLOB = "7ffb7b534c7163678726902946a17b04992950a0"
+HARDWARE_PR_HEAD_SHA = "a2d690b511524f8c710813fe4b4fc06cd52de3a8"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -718,6 +719,7 @@ def check_current_source_handover_anchor() -> list[str]:
     required = (
         f"HARDWARE #327 source/test SHA: `{HARDWARE_SOURCE_SHA}`",
         f"HARDWARE #327 docs HEAD: `{HARDWARE_DOCS_HEAD_SHA}`",
+        f"HARDWARE #327 PR HEAD: `{HARDWARE_PR_HEAD_SHA}`",
         f"ESP32 sketch Git blob SHA: `{HARDWARE_SKETCH_BLOB}`",
     )
     missing = [value for value in required if value not in section]
