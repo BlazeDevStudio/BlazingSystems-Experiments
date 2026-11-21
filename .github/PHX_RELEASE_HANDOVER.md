@@ -2201,14 +2201,49 @@ Rollback is limited to reverting RELEASE-owned commits `154852e1`, `3e477ddb` an
 
 ---
 
+## PHX-RELEASE UTC08 — refresh ESP32 matrix to live HARDWARE #327 head
+
+**Disposition:** the release-owned compatibility matrix is now pinned to the exact live HARDWARE #327 PR/source-test head. Test-first stale-pin detection, workflow correction, and both-core exact-source CI are complete. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Exact provenance
+
+- Experiments PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Test-first pin commit: [`fe641671`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fe6416719b8f33f08e51e46240048e86b4bf7273).
+- Workflow correction: [`8deb8921`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8deb8921fefcc4d686eee9aabdba097326213768).
+- HARDWARE #327 current PR/source-test head: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
+- Latest HARDWARE handover/docs commit: `3ec69716bab4d2d33ad2d95abd480f50a5cd1d32`; it is 9 commits behind the current PR head.
+- Exact ESP32 sketch path: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`.
+- Exact sketch Git blob at the current #327 head: `7ffb7b534c7163678726902946a17b04992950a0`.
+- The previous RELEASE pin `5909e6238bc98f76075d910cf2fd09803cbdae99` is superseded. Compare to current #327 head: 11 commits ahead / 0 behind. The intervening Hardware changes are host-lab fixture/runner work and handover additions; the ESP32 sketch blob is unchanged. The current matrix nevertheless checks out and names the latest exact repository commit, then independently verifies the sketch blob.
+
+### Test-first and exact-source CI
+
+- Expected stale-pin RED: [BlazePwifi Full run #44886613107](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886613107), CI-0701 job `136793151152`, failed at `RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract` because the workflow still contained the old source SHA and old job label. The 10 concurrency, 32 provenance and 8 Arduino CLI archive-verifier tests passed first.
+- The compatibility matrix automatically triggered on test-only commit [#44886613097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886613097) and passed 3/3 against the **old** `5909e623` pin. It is explicitly superseded and is not current-source evidence.
+- Exact-current-source compatibility matrix: [#44886736741](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886736741) — **SUCCESS, 3/3 jobs**.
+  - Provenance job `136793908648`: PASS.
+  - ESP32 core 3.3.13 job `136793908401`: PASS; exact source/blob verified; two clean builds identical. Application image 1,044,592 bytes; SHA-256 `882ca2d0a647997933553aef719c75de60d039661c36b24201ef07c49f7eb077`.
+  - ESP32 core 4.0.0 job `136793908589`: PASS; exact source/blob verified; two clean builds identical. Application image 1,098,688 bytes; SHA-256 `4b65389caa31ca271e5df11fcec7e5f69af60d46e378ff07f1d509056a085cc8`.
+  - Both cores verified the pinned Arduino CLI 1.6.0 archive (20,111,675 bytes; SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`) and used the exact HARDWARE commit/blob above.
+- Full BlazePwifi run [#44886736853](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886736853) failed at CI-0701's RELEASE handover-anchor assertion because this handover update had not yet been committed. Downstream validation/build/release jobs were skipped; this is an expected intermediate documentation-freshness failure.
+- Windows run [#44886736768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886736768) failed at the CORE-owned `PROJECT_HANDOVER.md` freshness gate; Windows build and publisher were skipped.
+
+### Ownership and evidence boundary
+
+Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in scope. No HARDWARE source, QA assertion, CORE handover, PISONET test, shared API, financial state, signer, or MASTER coordination file was changed. PR #291 retains inherited CORE/PISONET paths; independent QA/MASTER reviews remain absent. Workflow migration remains `reimplementation-review` / `DRAFT_REVIEW_ONLY`.
+
+**Evidence boundary: hosted CI only.** These are reproducible CI application images, not approved production binaries or physical board acceptance. No flash, electrical test, coin-ingress test, 150 power cuts, 30-device/24-hour soak, signing, publication, payment migration or customer deployment occurred.
+
+---
+
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. Older anchors above are historical and superseded.
 
-- HARDWARE #327 docs HEAD: `2ff7a072919cac879a23bdd38c5fd78ecb5edb5c`.
-- HARDWARE #327 source/test SHA: `5909e6238bc98f76075d910cf2fd09803cbdae99`.
-- Previous RELEASE pin (superseded): `268ca9bde6d3710b418134ffd328060250fad42f`.
-- Previous ESP32 sketch blob (superseded): `09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79`.
+- HARDWARE #327 docs HEAD: `3ec69716bab4d2d33ad2d95abd480f50a5cd1d32`.
+- HARDWARE #327 source/test SHA: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
+- HARDWARE #327 PR HEAD: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
+- Previous RELEASE pin (superseded): `5909e6238bc98f76075d910cf2fd09803cbdae99`.
 - ESP32 sketch Git blob SHA: `7ffb7b534c7163678726902946a17b04992950a0`.
-- Exact-source compatibility matrix: [#44884967976](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44884967976) — SUCCESS (3/3 jobs).
+- Exact-source compatibility matrix: [#44886736741](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886736741) — SUCCESS (3/3 jobs).
 - **Evidence boundary: hosted CI only.** The application images are CI-generated, not approved production binaries; no physical hardware acceptance is implied.
