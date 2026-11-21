@@ -86,9 +86,9 @@ jobs:
       matrix:
         esp32_core: ["3.3.13", "4.0.0"]
     env:
-      EXPECTED_SOURCE_SHA: "2d10db5db8ad95f15abf335f25cbbbb2d02c7fae"
+      EXPECTED_SOURCE_SHA: "69a21b9ed6ebe490750f625e053b77166fc131df"
       EXPECTED_SKETCH_PATH: "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
-      EXPECTED_SKETCH_BLOB: "142e1ac098aef2844f7d553771720871ee51d5e9"
+      EXPECTED_SKETCH_BLOB: "09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79"
     steps:
       - name: Checkout release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -99,7 +99,7 @@ jobs:
       - name: Checkout exact PHX-HARDWARE source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 2d10db5db8ad95f15abf335f25cbbbb2d02c7fae
+          ref: 69a21b9ed6ebe490750f625e053b77166fc131df
           path: hardware-source
           persist-credentials: false
           fetch-depth: 1
