@@ -1889,3 +1889,6 @@ No copy, move, overwrite, cherry-pick, rebase, staging, or destination edit occu
 ### Next exact action
 
 Run `python3 -m unittest discover -s coordination/phoenix -p 'test_architecture_contracts.py' -v` on the final PR #288 HEAD and attach the actual output. QA must then correct the stale positive poll-signature fixture only after CORE publishes the approved authenticated register/poll and event-bound receipt contract.
+
+
+COE RELEASE #31 exact head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared contracts #44222517238 and case-collision #44222517258 PASS; ImageBuilder sandbox #44222517263 FAIL. COE #48/#49 exact heads are `8286548e395366f2332830025fed00ceebdfb24a` and `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`; their stage workflows pass, but ESP32 compile jobs #44643670685/#44646341922 fail at missing `mbedtls/sha256.h`.
