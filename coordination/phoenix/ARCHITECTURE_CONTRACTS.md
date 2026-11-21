@@ -1193,3 +1193,19 @@ A release PR can check out its own branch for release tooling and a separate pin
 **Exact example — RELEASE #291 / HARDWARE #327:** PR #291 docs head `88d8e326e0b19bed8a157fb88aa0a3a9524d90a9` runs a compatibility workflow whose external checkout is HARDWARE #327 source/test `83c20c9d59bcdf6c24e2112f3396b90847b5bde0` and ESP32 sketch blob `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`. Run [#44835998901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835998901) completed 3/3: ESP32 core 3.3.13 and 4.0.0 reproducibility jobs plus the 32-test provenance suite. The Release branch's own inherited ESP32 sketch is a different blob, `29f1125d52ff474a0d028ad41f7af201be1f0f9d`; the compatibility workflow does not compile that local blob. Release #291 Full and Windows still fail at handover freshness, so this scoped qualification is not a release approval.
 
 This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, or production approval.
+
+
+## 6.62 Immutable pinned-source qualification vs current branch-tip claims — 2026-11-21 UTC00
+
+A reproducible build against an immutable source SHA remains evidence for that exact source commit and exact compiled file blob. A later branch advance does not automatically invalidate the compiled artifact identity, but it does change what can truthfully be called the **current** source/test revision.
+
+1. Record the qualified source commit, current source/test commit, compiled file path/blob, build dependencies, toolchain, workflow/job IDs, and consumer PR/docs head separately.
+2. If the branch advances, compare the exact changed paths and compiled/dependency blobs. If the compiled file and all build inputs are byte-identical, preserve the earlier result as a qualification of the pinned snapshot; do not relabel it as a build of the new tip.
+3. A host-lab/test-harness-only change does not invalidate a firmware compile for an unchanged firmware blob, but the earlier run does not test the new harness. Re-run focused lab tests at the new source/test SHA.
+4. Re-run the compatibility build when a compiled source file, include, generated input, build script, compiler configuration, or other build dependency changes. Do not require an unrelated documentation-only rebuild.
+5. PR descriptions and handovers must not use “current head” for a stale pin. Show both the immutable qualified pin and the live branch source/test SHA, with the exact blob comparison.
+6. Attribute a failing wrapper accurately: when `tests/controllers.sh` invokes `tests/v05_firmware_hardening_test.sh`, report the nested test file as the failing assertion owner, not the wrapper itself.
+
+**Exact example — #291 / #327:** Release compatibility run #44843256993 qualifies Hardware commit `0f365dada...` and ESP32 sketch blob `ae0da8e2...`. Current #327 source/test `177312434...` is two commits ahead with only the handover and host-lab fixture split; the same 71,103-byte sketch blob is verified at both commits. The earlier compile remains valid for that blob, but does not test the new lab fixture modules. Current #327 focused lab CI must be cited separately.
+
+This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, or production approval.

@@ -301,3 +301,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - HARDWARE #327 focused quarantine/relay PASS; Full #44831844300 fails at QA-owned positive poll-signature assertion. RENTAL #328 Android identity/API21/API23 PASS; shared build #44782114390 fails at handover freshness and inherited Mbed TLS 4 header.
 - COE #26 remains frozen; exact ESP32, ESP8266 and hardening-test blobs differ; Pisowifi LICENSE matches; root NOTICE.md is absent at destination; five workflows queued / zero jobs. Manifest remains DRAFT_REVIEW_ONLY, Master target null.
 - Private v11/newer corrections remain inaccessible; no Drive operations or migration occurred. Full Master Python suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+## Latest exact-head reconciliation — 2026-11-21 UTC00
+
+- [PHX_MASTER_UTC00_20261121_HW327_FIXTURE_PIN_COE26_EXACT_TREE_AND_ROLE_CI_AUDIT.md](PHX_MASTER_UTC00_20261121_HW327_FIXTURE_PIN_COE26_EXACT_TREE_AND_ROLE_CI_AUDIT.md) — current #327 source/test/docs heads, exact #291 compatibility-pin scope, owner CI, and refreshed COE #26 source/test/licence/tree provenance.
+- Master #288 remains `21551fedaf94...`, OPEN / DRAFT / UNMERGED; 140 changed paths are coordination-only.
+- #327 current docs `cb362dc...` / source-test `177312434...`; focused CI PASS, Full validation FAIL at QA-owned nested positive fixture.
+- #291 compatibility PASS remains scoped to exact pinned ESP32 blob `ae0da8e...`; Full/Windows remain blocked at handover freshness.
+- COE #26 remains frozen; 2,453 vs 286 tree entries, 28 vs 0 board-local Python labs, 47 vs 19 routed tests, firmware/test blobs diverge, root NOTICE absent, 8 queued runs / zero jobs.
+- Private v11/newer corrections remain inaccessible; full Master Python suite NOT RUN. **PRODUCTION NO-GO.**

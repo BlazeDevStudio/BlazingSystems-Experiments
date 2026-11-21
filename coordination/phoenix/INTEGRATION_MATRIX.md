@@ -2973,3 +2973,15 @@ Source candidate: Experiments HARDWARE #327 `83c20c9d59bcdf6c24e2112f3396b90847b
 COE #26 has 205 changed paths and five workflows QUEUED / zero jobs. Routing manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, Master target `null`. No copy, move, overwrite, rebase, cherry-pick, route promotion or migration staging occurred.
 
 Release #291's compatibility workflow deliberately checks out Hardware source `83c20c9...` separately; the Release branch's inherited local ESP32 sketch blob is `29f1125d52ff474a0d028ad41f7af201be1f0f9d`. The compatibility PASS therefore applies to the separately pinned Hardware blob `ae0da8e...`, not to that different inherited local blob. This distinction must remain visible in any future release/migration claim.
+
+
+## PHX-MASTER UTC00 live role/CI reconciliation — 2026-11-21 — current exact-source integration evidence
+
+- RELEASE #291 compatibility [#44843256993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44843256993) is 3/3 PASS for exact pinned Hardware commit `0f365dada...` / ESP32 sketch blob `ae0da8e2...`. Current Hardware source/test advanced to `177312434...` through a host-lab-only fixture split; the ESP32 sketch blob is identical at both commits. This preserves the old pinned-blob qualification but does not test the newest host-lab source/test revision.
+- HARDWARE #327 focused Quarantine/Relay at source/test `177312434...` PASS. Full [#44845752341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44845752341) validation FAILS at the nested QA-owned positive poll-signature fixture; all 14 target/Android jobs pass, downstream gates skip.
+- RELEASE #291 Full/Windows fail at the canonical handover freshness gate after `.github/workflows/blazepisonet-softtimer-release.yml`; RENTAL #328 shared build fails at the same freshness gate and inherited ESP32 core-4.0.0 `mbedtls/sha256.h` absence.
+- COE #26 exact recursive trees: Experiments source `177312434...` = 2,453 entries; destination `b382d233...` = 286 entries. Source board-local Python labs 28 vs destination 0; source QA tests 47 vs destination 19 (4 same paths, 1 identical blob, 3 divergent, 43 source-only, 15 destination-only).
+- Firmware blobs differ: ESP32 `ae0da8e2...` vs `3cc7ec54...`; ESP8266 `a1f12edc...` vs `c8be98f7...`. Hardening test source `41211b2c...` vs destination `f921c56c...`; both contain positive signature/poll assertions conflicting with deny-only.
+- Source Pisowifi LICENSE and destination `Pisowifi/LICENSE` match exactly `1ee55b94...`; source root NOTICE `f6d92cd2...` is absent at destination root. Notice scope remains unresolved.
+- Three source PHX-HARDWARE workflows vs one generic destination `hardware-ci.yml`; COE #26 has 8 queued runs across 5 distinct workflows and zero jobs.
+- No copy, move, staging, cherry-pick, rebase, route promotion, or merge. Manifest `e4db324...` remains `DRAFT_REVIEW_ONLY`, Master target null.

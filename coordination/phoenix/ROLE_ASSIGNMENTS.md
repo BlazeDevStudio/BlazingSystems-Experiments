@@ -2028,3 +2028,21 @@ COE #26 remains frozen at `b382d233...` with five queued workflows / zero jobs. 
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / FROZEN; five workflows queued / zero jobs | Keep frozen until exact-source/test/license/NOTICE and destination CI acceptance. |
 
 The separate CORE automation remains the sole CORE implementation owner. No worker path was changed by PHX-MASTER.
+
+
+## PHX-MASTER UTC00 live role/CI reconciliation — 2026-11-21 — supersedes earlier role-head snapshots
+
+| Role / PR | Exact live refs | Current CI / status | Next owner action |
+|---|---|---|---|
+| PHX-MASTER #288 | `phoenix/master-coordination@21551fedaf945eab26702aebf02da2e6b3ea07e9`; base main `f4e8a891...` | OPEN / DRAFT / UNMERGED; 140 paths, all coordination/phoenix; no PR CI/review | Master owns coordination/phoenix only. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Core lab #42698124709 and build #42698139210 PASS | Separate Blaze Production Continuation retains CORE. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070`, base #289 `68928774...` | APK/API21/API23 PASS; shared #44782114390 FAIL at handover freshness + Mbed TLS 4 header | Rental keeps Android/APK scope; handover/toolchain owners resolve inherited gates. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Native COM lab #42462975460 and Windows #42462978704 PASS | Physical USB-RS232/PnP/race acceptance remains with PISONET. |
+| PHX-HARDWARE #327 | docs `cb362dc46521cd78fe1696cbbb1af7e246d90148`; source/test `177312434b60509638427cec79bf2d4e11d89d97`; base #326 `58c558fb...` | Focused #44845326974 / #44845327017 PASS; Full #44845752341 validation FAIL, 14 target/Android jobs PASS, downstream skipped | QA fixes nested positive fixture; Hardware refreshes PR description. |
+| PHX-QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 Windows build PASS but native lab not invoked; #292 has zero PR runs and historical base `b1ca02e...` | QA replays #292 on current Master and verifies native negative tests. |
+| PHX-RELEASE #291 | docs `35d5a221...`; workflow/test `5ccf617a...`; base #242 `734b89d9...`; external Hardware pin `0f365dada...` / sketch `ae0da8e2...` | Compatibility #44843256993 PASS 3/3; Full #44843257000 and Windows #44843256960 FAIL at canonical handover freshness | Preserve exact pinned-blob scope; handover owner refreshes record. |
+| COE RELEASE #35 / #44 | `580855b6...` / `582fd5d5...` | #35 ULA / Bubblewrap blockers; #44 shared/case checks PASS, sandbox Bubblewrap FAIL | Obtain site ULA authority and Bubblewrap-capable runner. |
+| COE CORE #45 | `9d76a134...` | Overlay shell and case guard PASS; no financial acceptance | CORE/QA retain review and activation authority. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / FROZEN; 8 queued runs / 5 workflows / zero jobs | Keep frozen pending exact provenance and destination CI. |
+
+HARDWARE stack: #320 `b2b41a3d...` → #322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 `cb362dc...`. #327 latest source/test commit is `177312434...`; current handover blob `c4698202...`. Earlier rows above are historical, not current pins.
