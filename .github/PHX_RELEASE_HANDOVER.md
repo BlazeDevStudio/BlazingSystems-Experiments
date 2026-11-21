@@ -2321,3 +2321,52 @@ The documentation-only final handover head `c0faaac74071b7aa367494d6d15804d555de
 These are hosted CI build/matrix results only. They do not override the failed mandatory freshness gate or establish approved production binaries, physical hardware acceptance, financial migration or production readiness. **PRODUCTION NO-GO.**
 
 Next exact owner task remains PHX-CORE updating its own project handover and checkpoint at the live source head; MASTER must review that owner update before any Full acceptance retry.
+
+
+## 2026-11-21 UTC10 — exact Arduino compile-input provenance
+
+PHX-RELEASE completed the scoped #172/#266/#291 provenance task on the existing draft branch. The manifest now binds every tracked file beneath the selected Arduino sketch directory and \`esp/libraries\` to exact \`HEAD\` Git blob identities, rejects untracked/missing/symlink/non-regular tree entries, verifies the staged sketch/library copies against source, verifies staged \`source/README.md\` against \`esp/REBUILD.md\`, and verifies the top-level compatibility \`.ino\` copy. The \`package-vendo-source.py\` staging script and rebuild instructions are also included in \`source.paths\`.
+
+Arduino CLI creates a \`build/\` directory inside the staged sketch directory for ESP32 compiler intermediates. A test-first follow-up reproduced that behavior. Those files are descriptor-inventoried and remain in the artifact payload/checksum manifest, but are excluded from compile-source Git inputs. The \`build/\` path is reserved and cannot be used by tracked source. This preserves exact compile-input provenance without treating generated intermediates as source files.
+
+### Exact source commits
+
+- Initial test-first compile-input coverage: [e2628df](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e2628dfedbd4220c7885c0b2b0e060b808ca25b0).
+- Test fixture uses the actual Git tree listing: [6857bff](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6857bff9a2c9a979cc5a679bbc7f13af1d963fd9).
+- Initial tree/blob and staged-copy implementation: [4fe4c6c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4fe4c6cac786a8a47b783ea3928b43beb8d8ab5a).
+- Generated compiler-output regression (expected RED): [507070d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/507070db13780745f46468355ab204ace6538ff0).
+- Final generated-output separation fix: [1851f1d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1851f1d06648beed70695528f2799d57154a69237).
+
+Only RELEASE-owned \`.github/scripts/write_build_provenance.py\` and \`.github/scripts/test_build_provenance.py\` were changed for source/test work. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER implementation was changed.
+
+### Exact-source CI evidence and failures
+
+- Initial compile-input RED: [#44892584693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44892584693) reproduced the missing library/README blobs and staged-copy drift checks.
+- Intermediate Full run [#44893713330](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44893713330): CI-0701 PASS; ESP8266 provenance PASS; ESP32 provenance failed because compiler-generated \`source/<sketch>/build/\` files were initially treated as source; CORE \`PROJECT_HANDOVER.md\` freshness validation failed. The other completed target jobs passed; downstream simulations/sign/publish were skipped.
+- Generated-output test-first RED: [#44894090286](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894090286), provenance regression suite failed only at the new expected \`build/\`-output case. Both independent ESP32 core compatibility compile jobs passed.
+- Final exact-source regression suite: [#44894176436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894176436), **36 tests passed**. The separate 3.3.13 and 4.0.0 compatibility compile jobs were still in progress at this handover update and are not counted as passes here.
+- Final exact-source Full run: [#44894176401](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894176401). CI-0701 PASS; ESP32 and ESP8266 compile plus provenance PASS; Android and all 11 OpenWrt target jobs PASS. The overall run remains failed because the independent CORE-owned handover gate reports source/workflow changes newer than \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\`, last checkpoint \`adcae8141e673dc2147fcad50521ef3a23084d71\`. Simulations, candidate gate, signing and publication were skipped.
+- Windows exact-source run [#44894176371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894176371): shared project-handover gate failed; Windows build and publisher skipped.
+
+The CI-generated ESP32/ESP8266 artifacts and synthetic fixture tests are not approved production binaries or physical acceptance evidence.
+
+### Live ownership and integration snapshot
+
+- PR #291 branch \`phoenix/release-publisher-isolation-20261115\`, source/test HEAD \`1851f1d06648beed70695528f2799d57154a69237\`, base #242 \`734b89d9e7792247e8376335c3f3685500ab3f89\`; PR remains OPEN/DRAFT/UNMERGED with zero independent submitted reviews. Its 26 accumulated changed paths remain mixed-owner (21 RELEASE / 3 CORE / 2 PISONET); this task changed only the two RELEASE-owned provenance files.
+- MASTER #288 live head \`783c97ce997b6bfd0706f4d11e1b97fff588140e\`; ownership manifest \`e4db324315a1b3543fec17a148fbf960170fcb29\` remains \`DRAFT_REVIEW_ONLY\`. The RELEASE route \`.github/workflows/blazepwifi-build.yml\` → \`.github/workflows/pisowifi-ci.yml\` remains \`reimplementation-review\`; no migration authorization.
+- COE #26 remains frozen at \`b382d233ff06c8791b1028bed3c617cc7b670d12\` with five queued workflows and zero executed jobs.
+- COE parent #31 remains draft at \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`; child #35 remains draft at \`d28271a35776543bf558c90e3a117957829ee61c\`. The #35 packaging suite last passed 125 tests, while all ten profile admissions still fail closed without approved site-scoped ULA /48 authority and its mandatory sandbox remains blocked by Bubblewrap availability.
+- #242 remains draft at \`734b89d9e7792247e8376335c3f3685500ab3f89\`; its Windows build evidence does not authorize signing.
+- The #172 embedded control-plane snapshot still lists an older #291 head (\`bcb71b4c...\`); MASTER should reconcile its own index against this live source/test head.
+- Cleanup-first issue #266 remains 0/7 checked; this bounded RELEASE task is not evidence that the broader seven-role cleanup is complete.
+- Canonical private Drive registry v11 was not surfaced by authorized Library search; historical snapshots were not substituted and no private contents were copied to GitHub.
+
+### Next owner actions
+
+1. PHX-CORE / PHX-MASTER: update the CORE-owned \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\` from the exact current source/workflow state and checkpoint; do not bypass its freshness gate.
+2. PHX-QA and PHX-MASTER: independently review the exact #291 source/test diff and mixed-owner routing before any integration decision.
+3. PHX-INFRA: provide an authorized disposable Bubblewrap runner with working unprivileged namespaces for COE #31/#35.
+4. MASTER: reconcile the stale #172 PR-head index and preserve the \`reimplementation-review\` route.
+5. Registry custodian: restore authorized access to canonical private Drive registry v11.
+
+No merge, signer operation, real-key signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO remains in force.**
