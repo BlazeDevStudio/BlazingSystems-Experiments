@@ -27,7 +27,7 @@
 | HARDWARE #327 | docs cb362dc46521cd78fe1696cbbb1af7e246d90148; source/test 177312434b60509638427cec79bf2d4e11d89d97 | Quarantine #44845752434 and relay #44845752319 PASS; Full #44845752341 FAILS at Controller protocol parity / nested Missing poll signature check. All 14 target/Android jobs PASS; downstream gates skipped. The docs head is two commits ahead of source/test with only the handover added. |
 | HARDWARE #318 | de428b7a3e15854804f09935a36a6afeb67d8cbe | No exact-head run; PR mergeable=false. |
 | QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 scoped Windows run #43633486963 PASS; #292 has no current-head PR run and is based on historical Master b1ca02e..., not current fcbef56. |
-| RELEASE #291 | d04b5be6f177606c62f9b17a9499554275afce83 | Windows #44851462474 FAILS at canonical handover freshness; full build #44851462517 and compatibility #44851462501 QUEUED. 26 changed paths: 21 RELEASE, 3 CORE and 2 PISONET. |
+| RELEASE #291 | d04b5be6f177606c62f9b17a9499554275afce83 | Windows #44851462474 FAILS at canonical handover freshness; compatibility #44851462501 PASS 3/3; full build #44851462517 FAIL at mandatory handover freshness, target/Android builds pass, downstream simulations/signing/publishing skipped. 26 changed paths: 21 RELEASE, 3 CORE and 2 PISONET. |
 | COE RELEASE #35 | 580855b6a45a6d3cf506a6aa9320bc4782efc246 | Case guard #44820473809 PASS; shared profile staging #44820473859 FAIL; Bubblewrap sandbox #44820473769 FAILS closed because Bubblewrap is unavailable. |
 | COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Pisowifi overlay #44295049727 and case guard #44295049903 PASS; no financial acceptance. |
 
@@ -78,3 +78,10 @@ The complete recursive source tree at HARDWARE #327 source/test SHA 177312434...
 6. Registry custodian: restore authorized access to private v11 and newer corrections.
 
 **PRODUCTION NO-GO** remains mandatory: independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates.
+### Post-audit terminal run refresh — 2026-11-21T01:48Z
+
+- RELEASE #291 head remains d04b5be6f177606c62f9b17a9499554275afce83.
+- Compatibility run #44851462501 is now terminal SUCCESS: provenance suite plus ESP32 core 4.0.0 and 3.3.13 jobs all passed on source/test pin 177312434....
+- Full build #44851462517 is now terminal FAILURE at Mandatory handover freshness. ESP32, ESP8266, Android and firmware target jobs passed; update bundle, simulations, candidate, signing and publication were skipped after validation failed.
+- Windows run #44851462474 remains FAILURE at Verify shared BlazePwifi and SoftTimer handover freshness; build-windows and publish-release were skipped.
+- This supersedes only the queued/in-progress statuses recorded at the initial UTC01 audit read. No RELEASE source or handover file was changed by PHX-MASTER.

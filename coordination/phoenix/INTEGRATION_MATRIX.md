@@ -2999,7 +2999,7 @@ Release #291's compatibility workflow deliberately checks out Hardware source `8
 | PISONET #255 | d01fd164... | Windows release #42462978704 PASS; physical USB-RS232 acceptance NOT TESTED. |
 | HARDWARE #327 | docs cb362dc... / source-test 177312434... | Quarantine #44845752434 and relay #44845752319 PASS; Full #44845752341 FAILS at QA-owned positive poll-signature assertion. All 14 target/Android jobs PASS; downstream gates skipped. |
 | QA #290 / #292 | 5c29d159... / 75a3f66d... | #290 scoped Windows CI PASS; #292 no current-head run, stale Master base b1ca02e.... |
-| RELEASE #291 | d04b5be6... | Windows #44851462474 FAILS at handover freshness; full build #44851462517 and compatibility #44851462501 QUEUED. |
+| RELEASE #291 | d04b5be6... | Windows #44851462474 FAILS at handover freshness; compatibility #44851462501 completed PASS 3/3; full build #44851462517 completed FAIL at mandatory handover freshness, with target/Android builds passing and downstream simulations/signing/publishing skipped. |
 | COE #35 / #45 | 580855b6... / 9d76a134... | #35 case guard PASS, shared/sandbox FAIL; #45 overlay/case PASS, no financial acceptance. |
 
 ### COE #26 exact destination comparison
