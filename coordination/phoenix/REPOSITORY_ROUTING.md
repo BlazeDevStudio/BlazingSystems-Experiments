@@ -1192,3 +1192,9 @@ The active Hardware source stack is #322 `50d93e0d...` → #323 `988904e8...` �
 The machine manifest remains `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, COE destination candidate PR #26 `b382d233...`, status DRAFT_REVIEW_ONLY, PHX-MASTER target null. The active Hardware PR tree is not the manifest source ref. No route promotion or migration is authorized.
 
 RELEASE #291 remains owner-controlled. Its 26-path diff contains 21 Release paths, three CORE handover paths and two PISONET test paths; Master will not edit or assume those files. COE #26 remains FROZEN pending per-file blob/test/license/NOTICE provenance and terminal destination CI.
+
+## UTC10 post-owner finalization — 2026-11-21T10:38Z
+
+RELEASE #291 current PR/docs head is `42797e2f3d65c30a1070caf49c93aebec149d897`, source/test anchor `1851f1d06648beed70695528f2799d57154a69237`. Its 26-path diff has 21 Release-owned paths, three CORE-owned handover paths and two PISONET-owned test paths. The exact compatibility run #44894604453 passes 3/3, including 36 provenance tests and 8 archive-verifier tests; Full #44894604464 and Windows #44894604466 remain blocked at CORE-owned handover freshness. The RELEASE route remains `reimplementation-review`; this evidence does not authorize copying Release workflows or any other route into COE #26.
+
+The destination manifest remains unchanged, DRAFT_REVIEW_ONLY, Master target null. No migration staging or file movement was performed.

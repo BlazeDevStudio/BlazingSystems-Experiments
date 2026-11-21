@@ -3227,3 +3227,19 @@ ESP32 16/1 (0 identical, 1 divergent, 15 source-only); ESP8266 28/1 (0 identical
 `BlazePwifi/LICENSE` and `Pisowifi/LICENSE` are identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE; `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent. The Pisowifi license does not prove Hardware subtree license/notice scope.
 
 The unchanged manifest `OWNERSHIP_ROUTES.json` is `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination PR #26, PHX-MASTER target null. COE #26 has five queued workflows and zero jobs. Keep it FROZEN; no copy, move, overwrite, staging, cherry-pick, rebase, route promotion or destination edit.
+
+## UTC10 post-owner finalization — 2026-11-21T10:38Z
+
+### Exact current owner evidence — post-owner CI terminal readback
+
+**RELEASE #291** is now source/test-verified for the complete declared Arduino input tree at source/test `1851f1d06648beed70695528f2799d57154a69237`, PR/docs HEAD `42797e2f3d65c30a1070caf49c93aebec149d897`. Compatibility [#44894604453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604453) is terminal 3/3 SUCCESS: 36 provenance tests + 8 archive-verifier tests pass, both ESP32 core legs pass, action-pin checks pass. Full [#44894604464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604464) and Windows [#44894604466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604466) fail at the CORE-owned project-handover freshness gate; Full target/Android jobs pass but simulations/signing/publication skip; Windows build/publisher skip. The 26-path Release diff still crosses 3 CORE handover and 2 PISONET test paths; those owners retain them.
+
+**HARDWARE** remains #322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 docs `827fa75...` / source-test `3110a428...`. #327 Quarantine/Relay pass, Full fails at QA-owned poll-signature fixture. #329 `29c7f61...` / source-test `aaf1a0e...` is a sibling child: Quarantine/Relay pass, Full fails. #330 `1a1e5e...` / source-test `5133def2...` is the other sibling: Quarantine pass, Full fails; no exact docs-head Relay run was returned. No rebase/retarget/merge.
+
+**RENTAL** #328 `0e0da62...` remains stacked on #289 `68928774...`; APK identity and API21/API23 smoke pass, while Full is blocked by CORE handover freshness and ESP32 core 4.0.0 missing `mbedtls/sha256.h`.
+
+### Frozen destination and release gates
+
+COE main `a6513ab...`; #26 `b382d233...` remains OPEN / DRAFT / FROZEN with five queued workflows / zero jobs. COE #35 remains at docs `d28271a...` / source-test `d5a2d72...`: 125 packaging tests PASS / 2 skips, ten profile admissions fail closed without approved site ULA /48, case-collision PASS, mandatory Bubblewrap sandbox FAIL closed. The manifest is still `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+The prior complete tree/blob/license/test comparison is still tied to exact unchanged source/destination refs; it was not rerun in this post-owner readback. No migration staging, copy, move, overwrite, or route promotion occurred. Source NOTICE/Hardware license scope, divergent firmware and QA test identities, missing board-local labs, and destination CI remain unresolved.

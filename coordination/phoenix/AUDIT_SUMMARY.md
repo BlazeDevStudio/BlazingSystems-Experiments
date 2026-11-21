@@ -1739,3 +1739,7 @@ Current exact-head review found one Hardware test-harness regression, one QA/COR
 **Cleanup:** issue #266 remains OPEN, 0/7; Master duplicate/dead-code inventory incomplete.
 
 **PRODUCTION NO-GO:** independent protected signer/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+## UTC10 post-owner finalization — 2026-11-21T10:38Z
+
+The current owner readback supersedes the earlier in-progress #291 status: RELEASE #291 now has 44 host provenance/archive-verifier tests PASS and an exact docs-head ESP32 compatibility run 3/3 PASS. Full and Windows remain blocked at the CORE-owned `PROJECT_HANDOVER.md` freshness gate, not by a current PISONET test failure. The current #327/#329/#330 Full runs remain blocked at QA-owned `Missing poll signature check`; focused Hardware labs are scoped CI only. RENTAL #328 retains the independent missing Mbed TLS 4.0.0 header failure. COE #26 remains frozen with five queued workflows/zero jobs; COE #35 remains blocked by missing approved ULA /48 and unavailable Bubblewrap. Cleanup #266 remains 0/7. Private v11 registry/newer corrections remain inaccessible; no older snapshot was substituted. No source, destination, payment, signer, secret or hardware action occurred. Production remains NO-GO.

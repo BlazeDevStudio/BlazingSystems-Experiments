@@ -2242,3 +2242,18 @@ The 26-path #291 diff contains 21 RELEASE paths, three CORE-owned handover paths
 ### Cleanup and integration
 
 Cleanup issue #266 remains OPEN, 0/7; Master cleanup inventory is incomplete. Route manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master destination null. COE #26 remains frozen pending exact source/test/license/NOTICE/import/CI acceptance. Private Drive v11/newer corrections remain inaccessible; no older registry substituted. Production remains NO-GO.
+
+## UTC10 post-owner finalization — 2026-11-21T10:38Z
+
+This supersedes only the stale RELEASE #291 status in the preceding UTC10 table. Role paths and ownership remain unchanged.
+
+- **CORE:** #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; run #42698139210 PASS (scoped). Separate CORE continuation owns its source and handover; Master made no CORE edits.
+- **RENTAL:** #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`; child #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070`. APK identity/API21/API23 smoke PASS; shared Full fails at CORE handover freshness and ESP32 core 4.0.0 missing `mbedtls/sha256.h`.
+- **PISONET:** #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; #42462978704 PASS (scoped); native COM/PnP NOT TESTED.
+- **HARDWARE:** active #322→#323→#326→#327 stack is unchanged. #327 focused Quarantine/Relay PASS, Full FAIL at QA-owned poll-signature fixture. #329/#330 are sibling children of #327; #329 Quarantine/Relay PASS and Full FAIL; #330 Quarantine PASS and Full FAIL; no Relay result returned at #330 docs head. Physical acceptance NOT TESTED.
+- **QA:** #290 `5c29d159...` Windows CI PASS, native COM not invoked; #292 `75a3f66d...` has no PR-triggered CI.
+- **RELEASE:** #291 docs HEAD `42797e2f3d65c30a1070caf49c93aebec149d897`, source/test `1851f1d06648beed70695528f2799d57154a69237`. Compatibility #44894604453 is 3/3 PASS, including 36 provenance + 8 archive-verifier host tests; Full #44894604464 and Windows #44894604466 fail at CORE-owned handover freshness. PR diff remains 26 paths: 21 Release, 3 CORE handover, 2 PISONET tests. No ownership transfer.
+- **COE RELEASE:** #35 docs `d28271a...`, source/test `d5a2d72...`; 125 tests PASS / 2 skips, ULA profile gate blocked, Bubblewrap sandbox unavailable, case-collision PASS.
+- **COE integration:** #26 remains frozen at `b382d233...`, five queued workflows / zero jobs.
+
+The current RELEASE failure is the CORE-owned `PROJECT_HANDOVER.md` freshness gate. The prior PISONET `$buildWorkflow` issue is not the current Windows blocker because the PISONET test job is skipped before execution.
