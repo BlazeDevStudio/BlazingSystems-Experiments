@@ -183,7 +183,26 @@ def verify_poll_safety_board_parity():
         print(f"POLL_COIN_AUTHORITY_PARITY_MUTATION_REJECTED ESP32_{name}")
 
 
+def verify_drain_abort_polarity_fixture_is_shared():
+    helper = "int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFailureCode,"
+    if MAIN.count(helper) != 1:
+        raise SystemExit(
+            "POLL_DRAIN_ABORT_POLARITY_BUILDER_MISSING: expected one shared C++ helper"
+        )
+    calls = (
+        "runDrainAbortWithoutIsr(true, 34, 35,",
+        "runDrainAbortWithoutIsr(false, 36, 37,",
+    )
+    for call in calls:
+        if MAIN.count(call) != 1:
+            raise SystemExit(
+                "POLL_DRAIN_ABORT_POLARITY_BUILDER_CALL_MISSING: " + call
+            )
+    print("POLL_DRAIN_ABORT_POLARITY_BUILDER_PASS 2/2")
+
+
 verify_poll_safety_board_parity()
+verify_drain_abort_polarity_fixture_is_shared()
 
 
 for board,path in BOARDS.items():
