@@ -151,6 +151,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
     require(not (unsafe_positions[0] < unsafe_positions[1] <
                  unsafe_positions[2] < unsafe_positions[3]),
             "unsafe LittleFS-before-GPIO mutation was not rejected")
+    print("GPIO_OFF_BEFORE_LITTLEFS_MOUNT_PASS board=ESP32")
 
 
 def main() -> None:

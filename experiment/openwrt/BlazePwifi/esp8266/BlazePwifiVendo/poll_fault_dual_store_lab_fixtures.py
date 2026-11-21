@@ -336,7 +336,7 @@ int main(){
   fsReady=true;
   rebootStorage();
   assertBootDenied();
-  std::cout << "PRE_LITTLEFS_SECONDARY_BACKUP_REBOOT_DENY_PASS board=BOARD_NAME\\n";
+  std::cout << "PRE_LITTLEFS_SECONDARY_BACKUP_REBOOT_DENY_PASS board=BOARD_NAME" << std::endl;
 
   // An NVS lookup error must not make an existing sticky marker appear absent.
   NVS_READ_ERROR_SCENARIO
