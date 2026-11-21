@@ -123,6 +123,31 @@ if missing_quarantine_helpers:
     )
 
 
+def normalize_cpp_function_body(body):
+    # Test-first extraction of the previous behavior; the regression below
+    # demonstrates why generic split() is unsafe for C++ literals/comments.
+    return " ".join(body.split())
+
+
+def verify_cpp_parity_normalizer():
+    cases = (
+        ("formatting-only", 'void f() { return "pending event"; }', 'void f()  {\n  return   "pending event";  }', True),
+        ("string-literal-whitespace", 'void f(){ return "pending event"; }', 'void f(){ return "pending  event"; }', False),
+        ("character-literal-whitespace", "void f(){ char c=' '; }", r"void f(){ char c='\\t'; }", False),
+        ("comment-content", "void f(){ /* durable record */ return true; }", "void f(){ /*durable record*/ return true; }", False),
+        ("raw-string-literal-whitespace", 'void f(){ auto s=R"tag(pending event)tag"; }', 'void f(){ auto s=R"tag(pending  event)tag"; }', False),
+        ("escaped-quote", r'void f(){ const char *s="quote: \\" pending"; }', r'void f(){ const char *s="quote: pending"; }', False),
+        ("line-comment-content", "void f(){ // pending event\\n return true; }", "void f(){ // pending  event\\n return true; }", False),
+    )
+    for label, left, right, expected_equal in cases:
+        actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
+        if actual_equal != expected_equal:
+            raise SystemExit(f"POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: {label}")
+    print(f"POLL_SAFETY_CPP_PARITY_NORMALIZER_PASS {len(cases)}/{len(cases)}")
+
+
+verify_cpp_parity_normalizer()
+
 def poll_safety_helpers():
     helpers = {}
     for board, path in BOARDS.items():
@@ -134,7 +159,7 @@ def poll_safety_helpers():
                 raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
             # Ignore formatting-only changes; comments and executable tokens remain
             # part of the comparison so safety intent cannot drift silently.
-            helpers[board][name] = " ".join(body.split())
+            helpers[board][name] = normalize_cpp_function_body(body)
     return helpers
 
 
