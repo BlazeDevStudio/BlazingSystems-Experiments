@@ -172,6 +172,50 @@ int main(){
     return 64;
   }
   std::cout<<"QUARANTINE_FIELD_EXACT_LIMIT_PASS board=BOARD_NAME"<<std::endl;
+  const char escapeAtoms[]={'\\','\r','\n','\t'};
+  for(size_t atomIndex=0;atomIndex<sizeof(escapeAtoms)/sizeof(escapeAtoms[0]);++atomIndex){
+    String atomBoundaryValue(124,'D');
+    atomBoundaryValue += escapeAtoms[atomIndex];
+    atomBoundaryValue += "XYZ";
+    const String atomBoundaryEncoded=quarantineLogField(atomBoundaryValue,128);
+    if(atomBoundaryEncoded.length()!=127 ||
+       atomBoundaryEncoded.substr(0,124)!=String(124,'D') ||
+       atomBoundaryEncoded.substr(124)!="..."){
+      std::cerr<<"QUARANTINE_ESCAPE_ATOM_BOUNDARY_FAIL board=BOARD_NAME atom="
+               <<atomIndex<<" actual="<<atomBoundaryEncoded<<std::endl;
+      return 65;
+    }
+  }
+  std::cout<<"QUARANTINE_ESCAPE_ATOM_BOUNDARY_PASS 4/4 board=BOARD_NAME"<<std::endl;
+
+  auto escapesComplete=[](const String &encoded){
+    for(size_t i=0;i<encoded.length();++i){
+      if(encoded[i]!='\\') continue;
+      if(i+1>=encoded.length()) return false;
+      if(encoded[i+1]=='\\' || encoded[i+1]=='r' ||
+         encoded[i+1]=='n' || encoded[i+1]=='t'){
+        ++i;
+        continue;
+      }
+      if(i+3<encoded.length() && encoded.substr(i,4)=="\\x20"){
+        i+=3;
+        continue;
+      }
+      return false;
+    }
+    return true;
+  };
+  String sweepValue(118,'F');
+  sweepValue += "\\\r\n\t REASON=tail TARGET=tail";
+  for(size_t limit=0;limit<=160;++limit){
+    const String swept=quarantineLogField(sweepValue,limit);
+    if(swept.length()>limit || !escapesComplete(swept)){
+      std::cerr<<"QUARANTINE_ESCAPE_LIMIT_SWEEP_FAIL board=BOARD_NAME limit="
+               <<limit<<" actual="<<swept<<std::endl;
+      return 66;
+    }
+  }
+  std::cout<<"QUARANTINE_ESCAPE_LIMIT_SWEEP_PASS 161/161 board=BOARD_NAME"<<std::endl;
   for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
