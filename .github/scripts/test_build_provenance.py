@@ -891,6 +891,40 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
 
 
+    def test_arduino_provenance_excludes_compiler_generated_build_outputs_from_source_blobs(self):
+        self.arduino_fixture()
+        generated = (
+            self.artifact
+            / "source"
+            / "BlazePwifiVendo"
+            / "build"
+            / "esp32.esp32.esp32"
+            / "compiled-output.bin"
+        )
+        generated.parent.mkdir(parents=True)
+        generated.write_bytes(b"synthetic compiler output, not source")
+        write_checksums(self.artifact)
+        args = provenance.build_args(
+            kind="esp8266",
+            target="esp8266",
+            artifact_dir=self.artifact,
+            core_package="esp8266:esp8266",
+            core_version="3.1.2",
+            fqbn="esp8266:esp8266:nodemcuv2",
+            sketch="experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+            libraries=self.artifact / "source" / "libraries",
+        )
+        result = provenance.write_provenance(args, env=self.env)
+        paths = {entry["path"] for entry in result["source"]["paths"]}
+        self.assertNotIn(
+            "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/build/esp32.esp32.esp32/compiled-output.bin",
+            paths,
+        )
+        source_tree = result["toolchain"]["source_tree"]
+        self.assertTrue(source_tree["staged_copy_verified"])
+        self.assertEqual(source_tree["generated_build_output_file_count"], 1)
+
+
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
