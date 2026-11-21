@@ -946,7 +946,7 @@ String post(const String& action,const String& pulses="0",const String& target="
 
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return outputPolarityKnown && fsReady && !journalRecoveryRequired &&
+  return outputPolarityKnown && pinConfigSafe && fsReady && !journalRecoveryRequired &&
          !pendingPostAttempted && pendingReady && pendingPulses>0;
 }
 
@@ -1093,9 +1093,14 @@ void sampleCoinPulseEdge(bool active){
   }
   if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
      millis()-lastEdge>runDebounceMs){
-    // A pulse after the pending batch is closed cannot be appended or safely
-    // assigned to a new event. Preserve the old identity and quarantine it.
-    if(pendingReady){
+    if(!pinConfigSafe){
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse observed with unsafe GPIO mapping; operator reconciliation required.");
+    } else if(pendingReady){
+      // A pulse after the pending batch is closed cannot be appended or safely
+      // assigned to a new event. Preserve the old identity and quarantine it.
       latchPollPulseFault((uint32_t)pendingPulses+1U);
       pendingReady=true;
       applyOutputs();

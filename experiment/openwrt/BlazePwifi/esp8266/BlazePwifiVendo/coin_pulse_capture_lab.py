@@ -640,6 +640,14 @@ def main():
         ("multiple-isr-edges-accepted-as-one", "void sampleCoinPulseEdge(bool active){",
          "unseenEdges==1U", "unseenEdges<=3U",
          "multiple ISR edges were not quarantined"),
+        ("missing-unsafe-pin-sample-deny", "void sampleCoinPulseEdge(bool active){",
+         "if(!pinConfigSafe){\n      latchPollPulseFault((uint32_t)pendingPulses+1U);",
+         "if(false){\n      latchPollPulseFault((uint32_t)pendingPulses+1U);",
+         "unsafe pin mapping did not latch unresolved ingress"),
+        ("missing-unsafe-pin-post-gate", "bool canAttemptCoinPost(){",
+         "outputPolarityKnown && pinConfigSafe && fsReady",
+         "outputPolarityKnown && fsReady",
+         "coin POST remained eligible with an unsafe pin mapping"),
     )
     failures = []
     for board, sketch in BOARDS:
