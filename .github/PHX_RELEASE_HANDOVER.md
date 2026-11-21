@@ -2077,3 +2077,41 @@ The Full run [#44835556075](https://github.com/BlazeDevStudio/BlazingSystems-Exp
 Compatibility run [#44835556027](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556027) remains **PENDING with no jobs returned**. No ESP32 core 3.3.13/4.0.0 compile or reproducibility result at source pin `83c20c9d...` is available. Windows run [#44835556028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835556028) remains handover **FAILURE**, with build and publisher **SKIPPED**.
 
 The docs-only handover successor below this reconciliation has not yet produced new Actions evidence; do not transfer the preceding run conclusions to that later SHA. This is a CI/control-plane limitation, not permission to bypass the CORE gate.
+
+
+## PHX-RELEASE UTC00 — HARDWARE #327 exact-source compatibility pin refresh (2026-11-21)
+
+**Disposition at handover commit:** source/test pin and workflow checkout refreshed; exact-source two-core matrix is RUNNING, not yet terminal. PR #291 remains OPEN / DRAFT / UNMERGED. PRODUCTION NO-GO.
+
+### Source identity and reason
+
+The compatibility workflow had been pinned to HARDWARE #327 source/test `83c20c9d59bcdf6c24e2112f3396b90847b5bde0`. The live HARDWARE #327 source/test commit advanced to `0f365dada855368ea3fdfb522768892cf23cc7ea`, with docs/PR head `8b8f53f2c0aaf62b20f98a81efea7dff1407e35d`.
+
+The ESP32 sketch blob at the new source/test commit, the new docs head, and the prior pinned commit is identical: `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`. The refresh preserves the exact source/test identity while confirming the sketch bytes did not change. No HARDWARE file was modified.
+
+### RELEASE-owned commits
+
+- Test-first source contract: [a50a2a745dde3056f85418a874b513243fcf4285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a50a2a745dde3056f85418a874b513243fcf4285), only `.github/scripts/test_phx_release_esp32_core_compatibility.py`.
+- Workflow correction: [5ccf617a43412dabeb11d101c67bd3affc0db471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5ccf617a43412dabeb11d101c67bd3affc0db471), only `.github/workflows/phx-release-esp32-core-compatibility.yml`.
+- This handover commit changes only `.github/PHX_RELEASE_HANDOVER.md`.
+
+The workflow now labels the matrix with source `0f365dada855`, sets `EXPECTED_SOURCE_SHA` to the exact current source/test SHA, and checks out that exact commit. The test constant and workflow source contract agree.
+
+### Test-first and exact-source Actions
+
+- Expected RED at test-only head [#44842687440](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842687440): both ESP32 core jobs failed at the intended static source-contract assertion, reporting that the workflow was missing the new `0f365dada...` source and label values. The provenance regression job passed. Both firmware compile steps were skipped because the static contract failed first.
+- Push RED [#44842681067](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842681067): core 3.3.13 failed at the same intended assertion; core 4.0.0 was still running at the last read. This push run is not used as the primary PR acceptance result.
+- Exact-source PR matrix at workflow commit [#44842737605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737605): **IN PROGRESS** at handover time. Both core jobs passed release-tooling checkout, exact HARDWARE source checkout, exact sketch-blob verification, pinned Arduino CLI setup and archive-byte verification; both were installing their requested ESP32 core versions. The provenance regression job was still running. No compile or reproducibility PASS is claimed until the jobs terminate.
+- Exact-source push matrix [#44842731023](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842731023): PENDING at handover time; no jobs returned.
+- Full PR run [#44842737568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737568): mandatory validation already FAILED at the CORE-owned handover freshness gate; several target builds were still running and downstream release gates were skipped. This is not a Full build pass.
+- Windows run [#44842737623](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737623): handover freshness FAILED; Windows build and publisher SKIPPED.
+
+### Independent upstream evidence and limits
+
+HARDWARE #327 Full PR [#44838938315](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44838938315) at its current docs head failed validation at QA-owned `Missing poll signature check`; all 14 target/Android build jobs passed. That focused hardware compile evidence is separate from the RELEASE two-core matrix and does not establish the new release matrix.
+
+The prior RELEASE compatibility run [#44835998901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44835998901) passed 3/3 at the old `83c20c9...` source pin; it is retained as historical baseline only, not evidence for the new source.
+
+No firmware, hardware source, CORE/PISONET/QA/MASTER path, shared API, network prefix, signing permission or publisher permission changed. No migration, merge, real signing, tag, publication, hardware flash, financial operation or customer deployment occurred.
+
+**Next:** refresh #44842737605 to terminal state; require both ESP32 core 3.3.13 and 4.0.0 compile/image-reproducibility jobs plus provenance tests to pass at source `0f365dada...`. Then verify the final docs-head workflow run. PHX-CORE/MASTER must independently resolve the handover freshness gate; PHX-QA owns the stale positive poll-signature fixture. Keep PR #291 draft and PRODUCTION NO-GO.
