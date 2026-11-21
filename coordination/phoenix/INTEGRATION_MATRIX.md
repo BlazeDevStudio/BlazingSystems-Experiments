@@ -2,7 +2,7 @@
 
 **Protocol Specification:** BLAZE-COMMS/1  
 **Master Auditor:** `PHX-MASTER`  
-**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-21 UTC12  
+**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-21 UTC19  
 **Overall Commercial / Production Status:** **STRICT NO-GO**
 
 ---
@@ -3443,3 +3443,29 @@ Master added a strict duplicate-key JSON loader in the coordination validator; f
 ## UTC18 post-checkpoint COE RELEASE #35 head refresh — 2026-11-21T18:21Z
 
 COE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972 (9 release-owned paths). Exact-head runs: sandbox #44935047125 FAILS because Bubblewrap is still absent (exit 125), although trusted-path preflight tests for non-root ownership and UID-map denial pass; shared #44935047159 FAILS closed on all ten appliance profiles because approved site ULA /48 is still unset, while duplicate-JSON-object-key profile rejection passes; case-collision #44935047185 PASS. ESP32/ESP8266 compile jobs are skipped. This update supersedes the earlier 7fd3d968... COE #35 snapshot. COE #26 remains unchanged/FROZEN. No Master or COE source changes were made by this follow-up.
+
+
+## UTC19 live exact-head and migration-provenance refresh — 2026-11-21T19:07:56Z
+
+This refresh supersedes the earlier UTC18 owner pins for the exact refs below. It is an audit-only coordination update; no source ownership or migration authorization changes.
+
+| Role / PR | Exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) build PASS; implementation remains with separate CORE owner. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) and API smoke [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAILS at Mbed TLS 4 header and stale handover freshness. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM/PnP acceptance NOT TESTED. |
+| HARDWARE #335 | `d09b0c9dafad8dbbcda5723d8094f4975c14a274` | Quarantine [#44932969401](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932969401) and Relay [#44932969391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932969391) PASS; Full [#44932969438](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932969438) FAILS at inherited QA-owned `Missing poll signature check`; 14 target/Android jobs pass, downstream gates skip. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no PR-triggered run returned. |
+| RELEASE #291 | `42797e2f3d65c30a1070caf49c93aebec149d897` | ESP32 compatibility [#44894604453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604453) PASS; Full [#44894604464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604464) and Windows [#44894604466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604466) FAIL at mandatory handover freshness. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case collision [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS, scoped. |
+| COE PISONET/QA #28/#30/#32 | `b21b04617d38a177260258de2d56b24382822117` / `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc` / `29b6fe08b10688182d981a66745f482758bd6630` | Windows synthetic [#43632393888](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43632393888), [#43653415598](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43653415598), [#43653540607](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43653540607) PASS; not combined acceptance. |
+| COE RELEASE #35 | `756f7b38e302b958166d7006d1e98a86bb273303` | Sandbox [#44935351368](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935351368) FAILS closed (Bubblewrap absent, exit 125); case [#44935351391](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935351391) PASS; shared [#44935351403](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935351403) fails closed on all ten profiles without approved site ULA /48. |
+| COE Stage 5 #48 / #49 | `8286548e395366f2332830025fed00ceebdfb24a` / `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage/case runs #44643670696/#44643670679 and #44646341873/#44646341992 PASS; shared runs #44643670685/#44646341922 FAIL ESP32 compile at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+| Master #288 | audit-start `cbe37870e30f6f469f76f7d421dcf9103187228b` | No PR-triggered Master run returned. |
+
+### COE #26 exact source/destination gate
+
+Recursive trees are complete: Experiments main 2,340 entries / 1,764 blobs; current HARDWARE #335 tree 2,471 / 1,892; COE #26 286 / 207. #335 contains 32 ESP32/ESP8266 Python lab/helper files absent from COE Hardware. The #335 source tree has 47 entries under the BlazePwifi test root; COE Hardware has one test file. Source/destination sketch blobs diverge: ESP32 `53b27aa80fa4a91aabac71de57f550a8eef2cb61` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 `71160ac8ebd5163b19a56d6c9e229a5429975fc8` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source QA fixture `41211b2c110ab409f6d9d1812ef12fda73b13211` differs from destination test `f921c56cecc19cab1989507b9b4ade1f45dac54e`; both retain positive signature/poll assertions and are not accepted parity for the deny-only contract.
+
+Source BlazePwifi LICENSE and destination Pisowifi LICENSE match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE exists but destination root NOTICE and Hardware-specific LICENSE/NOTICE are absent. Owner/legal review remains required. `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, Master target null. No staging or destination write. **COE #26 FROZEN; PRODUCTION NO-GO.**
