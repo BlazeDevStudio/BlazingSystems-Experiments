@@ -725,7 +725,7 @@ def check_current_source_handover_anchor() -> list[str]:
         errors.append("handover current source anchor is missing exact source identity: " + ", ".join(missing))
 
     matrix_evidence = re.search(
-        r"(?m)^- Exact-source compatibility matrix: \[#\d+\]\(https://github\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\d+\) — SUCCESS \(3/3 jobs\)$",
+        r"(?m)^- Exact-source compatibility matrix: \[#\d+\]\(https://github\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\d+\) — SUCCESS \(3/3 jobs\)\.?$",
         section,
     )
     if matrix_evidence is None:
