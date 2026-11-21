@@ -18,8 +18,9 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-# Exact live PHX-HARDWARE #327 PR head; pin the complete immutable source/test snapshot.
+# Exact PHX-HARDWARE #327 source/test commit; the current docs head is recorded separately.
 HARDWARE_SOURCE_SHA = "2d10db5db8ad95f15abf335f25cbbbb2d02c7fae"
+HARDWARE_DOCS_HEAD_SHA = "1db9855aadb1aeeab797c9e298a850546b66037f"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
@@ -717,7 +718,8 @@ def check_current_source_handover_anchor() -> list[str]:
 
     section = handover.split(marker, 1)[1].split("\n## ", 1)[0]
     required = (
-        f"HARDWARE #327 exact PR head SHA: `{HARDWARE_SOURCE_SHA}`",
+        f"HARDWARE #327 source/test SHA: `{HARDWARE_SOURCE_SHA}`",
+        f"HARDWARE #327 docs HEAD: `{HARDWARE_DOCS_HEAD_SHA}`",
         f"ESP32 sketch Git blob SHA: `{HARDWARE_SKETCH_BLOB}`",
     )
     missing = [value for value in required if value not in section]
@@ -776,6 +778,10 @@ def main() -> int:
         return fail("workflow must independently assert the exact sketch Git blob")
     if content.count("persist-credentials: false") != 3:
         return fail("all three release-tooling/hardware checkouts must disable persisted credentials")
+
+    handover_gate_command = "python3 .github/scripts/test_phx_release_esp32_core_compatibility.py"
+    if handover_gate_command in content:
+        return fail("compatibility matrix must not gate its own source qualification on a successful handover matrix; CI-0701 owns the handover gate")
 
     application_errors = check_application_image_verifier(content)
     if application_errors:
