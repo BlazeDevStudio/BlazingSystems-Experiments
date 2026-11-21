@@ -2046,3 +2046,21 @@ The separate CORE automation remains the sole CORE implementation owner. No work
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / FROZEN; 8 queued runs / 5 workflows / zero jobs | Keep frozen pending exact provenance and destination CI. |
 
 HARDWARE stack: #320 `b2b41a3d...` → #322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 `cb362dc...`. #327 latest source/test commit is `177312434...`; current handover blob `c4698202...`. Earlier rows above are historical, not current pins.
+
+
+## PHX-MASTER UTC01 live exact-head role/CI reconciliation — 2026-11-21T01:42Z
+
+This snapshot supersedes earlier UTC00 role-head pins for current work; historical rows remain historical. Ownership is unchanged. CORE implementation remains with the separate Blaze Production Continuation automation.
+
+| Role | Current exact PR head(s) | Exact-head CI / current boundary |
+|---|---|---|
+| PHX-CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS, scoped; separate CORE automation owns implementation. |
+| PHX-RENTAL | #240 a7d113fb8ae3f0c5e838e64d31cae7a154e37b56; #289 68928774d0d7cf65adb26bc6b54199a3159d066c; #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | #240 and #289 native-auth/build pairs PASS; #328 APK identity and API21/API23 PASS, shared build #44782114390 FAIL at handover freshness and missing Mbed TLS 4 header. |
+| PHX-PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS, scoped; physical COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #326 58c558fb6a237935214621adc3dee65a10fe1a51; #327 cb362dc46521cd78fe1696cbbb1af7e246d90148; #318 de428b7a3e15854804f09935a36a6afeb67d8cbe | #327 focused quarantine/relay PASS; Full FAIL at QA-owned nested positive poll-signature assertion. #326 focused PASS / Full FAIL; #318 no exact-head run and mergeable=false. #327 source/test is 177312434...; docs head is two commits ahead with only the handover added. |
+| PHX-QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 scoped Windows CI PASS. #292 has no exact-head run and historical Master base b1ca02e..., not current fcbef56c6ff683e47892b109202292349ff8ee53; QA must replay/rebase and run CI. |
+| PHX-RELEASE | #291 d04b5be6f177606c62f9b17a9499554275afce83, base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Windows #44851462474 FAIL at handover freshness; full build #44851462517 and compatibility #44851462501 QUEUED. Its 26 paths are 21 RELEASE, 3 CORE and 2 PISONET; owner review required. PHX-RELEASE UTC01 lock #7054953313 is active; Master did not edit it. |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN/DRAFT/FROZEN; five workflows QUEUED, zero jobs. |
+| COE RELEASE / CORE candidates | #35 580855b6a45a6d3cf506a6aa9320bc4782efc246; #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #35 case guard PASS, shared profile staging FAIL, Bubblewrap sandbox FAIL; #45 overlay and case guard PASS, no financial acceptance. |
+
+**Shared-path ownership warning:** #240 includes the shared BlazePwifi build workflow and CORE handover files; #255 includes CORE handover/ledger/state files; #290 includes CORE handover files alongside PISONET native COM tests; #291 includes three CORE and two PISONET paths. Affected owners must review their own paths before merge. PR membership does not transfer ownership.

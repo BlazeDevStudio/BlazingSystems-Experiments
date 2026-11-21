@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-20T23:38:20Z
+**Updated:** 2026-11-21T01:42:28Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -311,3 +311,12 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - #291 compatibility PASS remains scoped to exact pinned ESP32 blob `ae0da8e...`; Full/Windows remain blocked at handover freshness.
 - COE #26 remains frozen; 2,453 vs 286 tree entries, 28 vs 0 board-local Python labs, 47 vs 19 routed tests, firmware/test blobs diverge, root NOTICE absent, 8 queued runs / zero jobs.
 - Private v11/newer corrections remain inaccessible; full Master Python suite NOT RUN. **PRODUCTION NO-GO.**
+
+
+## Latest exact-head reconciliation — 2026-11-21 UTC01:42
+
+- [PHX_MASTER_UTC01_20261121_LIVE_ROLE_CI_COE26_BLOB_SCOPE_REVALIDATION.md](PHX_MASTER_UTC01_20261121_LIVE_ROLE_CI_COE26_BLOB_SCOPE_REVALIDATION.md) — live role PR/CI, cross-role path ownership, exact COE #26 tree/blob/license/test comparison and current governance/access blockers.
+- Master #288 current branch/PR head at audit start: fcbef56c6ff683e47892b109202292349ff8ee53; base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; existing paths are coordination-only. Routing manifest remains DRAFT_REVIEW_ONLY with Master target null.
+- HARDWARE #327 focused quarantine/relay PASS; Full fails at QA-owned positive poll-signature fixture. RELEASE #291 has a live new head and an active PHX-RELEASE UTC01 lock; Master did not touch it.
+- COE #26 remains frozen: 2,453 source vs 286 destination tree entries, 28 vs 0 board-local Python labs, divergent firmware/test blobs, incomplete QA test identities, source NOTICE absent at destination and five queued workflows / zero jobs.
+- Private v11/newer corrections remain inaccessible; branch protection UNKNOWN; local Master Python suite NOT RUN. **PRODUCTION NO-GO.**

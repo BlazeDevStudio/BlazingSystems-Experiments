@@ -2985,3 +2985,34 @@ Release #291's compatibility workflow deliberately checks out Hardware source `8
 - Source Pisowifi LICENSE and destination `Pisowifi/LICENSE` match exactly `1ee55b94...`; source root NOTICE `f6d92cd2...` is absent at destination root. Notice scope remains unresolved.
 - Three source PHX-HARDWARE workflows vs one generic destination `hardware-ci.yml`; COE #26 has 8 queued runs across 5 distinct workflows and zero jobs.
 - No copy, move, staging, cherry-pick, rebase, route promotion, or merge. Manifest `e4db324...` remains `DRAFT_REVIEW_ONLY`, Master target null.
+
+
+## PHX-MASTER UTC01 exact-head role CI and COE #26 provenance — 2026-11-21T01:42Z
+
+**Current refs:** Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; active development 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master fcbef56c6ff683e47892b109202292349ff8ee53; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243. PR #288 remains OPEN/DRAFT/UNMERGED. Cleanup #266 remains OPEN, 0/7.
+
+| Role / PR | Exact head | Exact-head result |
+|---|---|---|
+| CORE #252 | c82705f2... | Build #42698139210 PASS, scoped; separate automation owns CORE. |
+| RENTAL #240 / #289 | a7d113fb... / 68928774... | Native-auth and build pairs PASS, scoped. |
+| RENTAL #328 | 0e0da62... | APK identity and API21/API23 PASS; shared build #44782114390 FAILS at handover freshness and missing mbedtls/sha256.h. |
+| PISONET #255 | d01fd164... | Windows release #42462978704 PASS; physical USB-RS232 acceptance NOT TESTED. |
+| HARDWARE #327 | docs cb362dc... / source-test 177312434... | Quarantine #44845752434 and relay #44845752319 PASS; Full #44845752341 FAILS at QA-owned positive poll-signature assertion. All 14 target/Android jobs PASS; downstream gates skipped. |
+| QA #290 / #292 | 5c29d159... / 75a3f66d... | #290 scoped Windows CI PASS; #292 no current-head run, stale Master base b1ca02e.... |
+| RELEASE #291 | d04b5be6... | Windows #44851462474 FAILS at handover freshness; full build #44851462517 and compatibility #44851462501 QUEUED. |
+| COE #35 / #45 | 580855b6... / 9d76a134... | #35 case guard PASS, shared/sandbox FAIL; #45 overlay/case PASS, no financial acceptance. |
+
+### COE #26 exact destination comparison
+
+Source tree at HARDWARE #327 source/test 177312434...: 2,453 entries. Destination #26 tree b382d233...: 286 entries. Both recursive API trees are complete.
+
+- Board-local Python labs/helpers: 28 source, 0 destination.
+- Source PHX-HARDWARE workflows: 3; destination generic Hardware workflow: 1.
+- ESP32: 16 source / 1 destination; 0 identical, 1 divergent same-path, 15 source-only.
+- ESP8266: 23 source / 1 destination; 0 identical, 1 divergent, 22 source-only.
+- QA tests: 47 source / 19 destination; 1 identical, 3 divergent, 43 source-only, 15 destination-only.
+- ESP32 sketch blobs ae0da8e2... vs 3cc7ec54...; ESP8266 a1f12edc... vs c8be98f7...; hardening test 41211b2c... vs f921c56c....
+- Pisowifi MIT LICENSE is byte-identical at 1ee55b94...; source root NOTICE f6d92cd2... is absent at destination root; Hardware notice/license scope unresolved.
+- Five COE #26 workflow runs are QUEUED and zero jobs exist. The PR description's all-five-modules-unified and 95% readiness claims are unsupported by the exact tree and CI.
+
+**Migration decision:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or merge. OWNERSHIP_ROUTES.json remains e4db324..., DRAFT_REVIEW_ONLY, Master target null.

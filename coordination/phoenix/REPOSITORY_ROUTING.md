@@ -1077,3 +1077,23 @@ COE #26 remains FROZEN. Its current Pisowifi SOURCE_INTAKE/MIGRATION_MAP do not 
 ## PHX-MASTER UTC19 #327 docs-head routing supersession — 2026-11-20T19:52Z
 
 Current HARDWARE #327 docs head 4d651e918f71de2e69d1f3bcfe627c4f944c9c39, source/test 1a631567eb0c14c12a114f592685f44cc414466f. Quarantine #44805905655 and relay #44805905517 PASS; Full #44805905622 fails only at QA-owned positive poll-signature fixture after 14/14 target/Android builds pass. QA owns fixture correction; HARDWARE owns source; no Master source edit.
+
+
+## PHX-MASTER UTC01 exact route/provenance revalidation — 2026-11-21T01:42Z
+
+The machine-readable route manifest remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. It is a review map, not a copy/move command.
+
+### Current COE #26 file and test parity
+
+- Source HARDWARE #327 source/test tree 177312434...: 2,453 entries; destination PR #26 tree b382d233...: 286 entries. Both recursive trees are complete.
+- 28 board-local Python labs/helpers exist in source; COE Hardware has zero Python test identities and one generic hardware-ci workflow versus three source Hardware workflows.
+- ESP32 source/destination sketch blobs ae0da8e2... / 3cc7ec54...; ESP8266 a1f12edc... / c8be98f7...; hardening-test 41211b2c... / f921c56c.... None are byte-identical.
+- Routed QA tests: 47 source / 19 destination; 1 identical, 3 divergent, 43 source-only, 15 destination-only.
+- Source BlazePwifi MIT LICENSE matches destination Pisowifi/LICENSE at 1ee55b94...; source root NOTICE exists at f6d92cd2... but destination root NOTICE is absent. Hardware-specific license/notice scope is unresolved.
+- COE #26 has five queued workflows and zero jobs. Its PR description claims all five modules are unified and 95% software release readiness; exact tree, test imports and CI do not support those claims.
+
+### Cross-role paths requiring owner approval
+
+Current RELEASE #291 has 26 changed paths: 21 RELEASE, 3 CORE handover/ledger/state and 2 PISONET ReleaseSigning tests. Windows fails at handover freshness; full build and compatibility are queued. CORE/PISONET must review their own paths. Similar shared handover/build files appear in #240, #255 and #290; role PR membership does not transfer ownership.
+
+**Disposition:** COE #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, staging, route promotion, merge or destination edit. Keep original source histories intact.
