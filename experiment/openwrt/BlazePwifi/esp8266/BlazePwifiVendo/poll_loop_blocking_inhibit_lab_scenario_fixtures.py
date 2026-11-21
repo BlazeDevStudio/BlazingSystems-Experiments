@@ -228,12 +228,12 @@ int main(){
   // One shared scenario body keeps active-low and active-high capture/hold/release
   // assertions identical while retaining distinct failure codes and log markers.
   const int activeLowDrainResult=runDrainAbortWithoutIsr(
-      true,34,35,
+      true, 34, 35,
       "POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_CAPTURED_HELD_PASS",
       "POLL_ABORT_ACTIVE_LINE_RELEASES_AFTER_IDLE_PASS");
   if(activeLowDrainResult!=0) return activeLowDrainResult;
   const int activeHighDrainResult=runDrainAbortWithoutIsr(
-      false,36,37,
+      false, 36, 37,
       "POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_CAPTURED_HELD_PASS",
       "POLL_ABORT_ACTIVE_HIGH_RELEASES_AFTER_IDLE_PASS");
   if(activeHighDrainResult!=0) return activeHighDrainResult;
