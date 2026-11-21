@@ -1932,3 +1932,14 @@ The separate PHX-RELEASE owner advanced COE #35 after the first UTC18 snapshot. 
 - Case-collision [#44935047185](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44935047185): PASS.
 - This is separate RELEASE-owned COE work. PHX-MASTER did not edit COE source or take ownership. COE #26 remains at b382d233... with five queued workflows / zero jobs.
 
+
+
+## PHX-MASTER UTC19 — exact role/CI and COE #26 provenance refresh — 2026-11-21T19:07:56Z
+
+See [UTC19 exact-head audit](PHX_MASTER_UTC19_20261121_EXACT_ROLE_CI_COE26_PROVENANCE_AND_MASTER_TEST_BLOCKER.md).
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6 audit/development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master audit-start `cbe37870e30f6f469f76f7d421dcf9103187228b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- #335 focused Quarantine/Relay PASS, Full fails at inherited QA-owned poll-signature fixture. #328 Mbed TLS compile and handover gates fail. #291 Full/Windows handover gates fail. COE #35 lacks Bubblewrap and approved site ULA /48; #48/#49 ESP32 compile fails. #26 remains five queued workflows / zero jobs.
+- Exact source/destination tree, firmware blob, QA test, LICENSE and NOTICE comparisons remain divergent/incomplete; no migration staging or destination write.
+- Full Master unittest suite NOT RUN; no Master PR-triggered CI. Private v11 registry/newer corrections and Drive connector remain unavailable; effective branch protection UNKNOWN; cleanup #266 OPEN with Master inventory incomplete.
+- **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
