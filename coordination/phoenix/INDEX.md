@@ -416,3 +416,10 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - COE #35 exact head has 133 packaging tests PASS / 2 skips, but ten profiles fail closed without the approved ULA /48; sandbox host preflight is 18/18 but Bubblewrap is absent. COE #26 remains frozen with five queued workflows / zero jobs.
 - UTC12 cleanup-first exact inventory: 151 files / 151 unique blobs before this report; 68 top-level architecture headings with five duplicated IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion.
 - Private v11 Drive registry/newer corrections remain unavailable; cleanup #266 remains 0/7; full Master Python suite NOT RUN; production NO-GO.
+
+## Latest PHX-MASTER audit — UTC14, 2026-11-21
+
+- [UTC14 live exact-head, role-CI, COE #26 route-provenance and Master-gate audit](PHX_MASTER_UTC14_20261121_LIVE_HEAD_ROLE_CI_COE26_ROUTE_PROVENANCE_AND_MASTER_GATE_AUDIT.md).
+- Reconciles current Experiments main/development/Master refs, COE main/#26, current role PR heads and exact CI, and the #327→#329/#330→#331/#332→#333 Hardware branch graph.
+- Exact recursive trees are complete; route comparison confirms firmware divergence, QA import gaps, divergent OpenWrt library blobs, and unresolved NOTICE/license scope. COE #26 remains FROZEN.
+- Master manifest checks 10/10 PASS; no Master Actions and full Master Python suite NOT RUN. Private v11/newer Drive registry remains unavailable. Cleanup #266 remains 7 unchecked. PRODUCTION NO-GO.

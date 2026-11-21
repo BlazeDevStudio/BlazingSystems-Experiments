@@ -1802,3 +1802,13 @@ COE #35 source/test `e1934fcb...`, docs head `9d6fa641...`: 133 tests PASS / 2 s
 **Cleanup correction:** exact level-aware parsing finds 151 coordination files / 151 unique blobs before this audit; 68 top-level architecture headings and five duplicate IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion. Cleanup #266 remains OPEN / 0/7.
 
 **Testing/access:** custom Master static assertions 7/7 PASS; full Master Python suite NOT RUN because GitHub DNS resolution failed for ordinary Git. Master Actions: no runs. Branch protection remains UNKNOWN (classic endpoint 403; rulesets empty). Private Drive v11 registry/newer corrections remain unavailable; older snapshots were not substituted. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC14 live exact-head audit — 2026-11-21T14:36Z
+
+- [UTC14 exact-head, role-CI, COE #26 route-provenance and Master-gate report](PHX_MASTER_UTC14_20261121_LIVE_HEAD_ROLE_CI_COE26_ROUTE_PROVENANCE_AND_MASTER_GATE_AUDIT.md).
+- Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit `2fbd2475...`; Master `2fdad5acb3dfa8e9c170721b87fd5524061eb577`; COE main `a6513ab...`; COE #26 `b382d233...`.
+- Manifest `e4db324...` remains DRAFT_REVIEW_ONLY, 11 routes, Master target null; ten static ownership assertions PASS.
+- Exact current Hardware graph and role CI are recorded in the report. #333 Full fails at the inherited QA poll-signature fixture after 14 target/platform jobs pass. RELEASE #291 Full/Windows fail handover freshness. COE #35 passes 139 tests / 2 skips but all ten profiles fail closed for missing approved ULA /48; Bubblewrap is absent.
+- Exact #333-to-#26 route comparison confirms firmware divergence, incomplete QA import, six identical and nine divergent OpenWrt library blobs, missing root NOTICE and missing Hardware LICENSE/NOTICE. COE #26 remains FROZEN.
+- Cleanup at audit start: 152 coordination files / 152 unique blobs / zero duplicate groups; 68 top-level architecture headings and five duplicate IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion; cleanup #266 remains OPEN / 7 unchecked.
+- Manifest assertions 10/10 PASS. Master exact-head Actions: no runs; full Master Python suite NOT RUN. Private Drive v11/newer corrections unavailable; no older snapshot substituted. Effective branch protection not evidenced. PRODUCTION NO-GO.

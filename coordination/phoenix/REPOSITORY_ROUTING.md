@@ -1216,3 +1216,13 @@ The read-only source candidate is HARDWARE #332 head 9f1d9ebf9c7256da2e8eace4bc0
 - BlazePwifi LICENSE and Pisowifi LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root; Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved.
 
 COE #26 still has five queued workflows and zero jobs. No staging, copying, moving, overwriting, cherry-picking, rebasing, route promotion, or destination edit occurred. Keep FROZEN until exact per-file owner review, license/NOTICE scope, test identity/import completeness, and exact-head destination CI are independently accepted.
+
+## UTC14 exact source/target provenance revalidation — 2026-11-21T14:36Z
+
+The routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Ten exact manifest/ownership assertions pass.
+
+All compared recursive trees are complete: Experiments main 2,340 entries / 1,764 blobs; active v0.6 audit 2,392 / 1,846; Hardware #333 2,478 / 1,899; COE main 3 / 2; COE #26 286 / 207. The full per-route source/destination path and blob comparison is recorded in the UTC14 audit report.
+
+At current Hardware #333, ESP32 has 16 source files vs one divergent destination sketch; ESP8266 has 34 vs one divergent sketch; QA has 47 source tests vs 19 destination tests (one identical, three divergent, 43 source-only, 15 destination-only); OpenWrt library has six identical, nine divergent and five destination-only blobs; Vendo CGI is divergent. Three scoped PHX-HARDWARE workflows are represented by one generic COE Hardware workflow.
+
+BlazePwifi LICENSE and Pisowifi LICENSE are identical; source root NOTICE is absent from COE root; COE Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved. COE #26 remains FROZEN. No copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.

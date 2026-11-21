@@ -3329,3 +3329,29 @@ The ownership manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAF
 - RELEASE #291 ESP32 compatibility is 3/3 PASS for its immutable pin only; Full/Windows fail the handover freshness gate.
 - RENTAL #328 APK/API smoke passes; shared build fails handover freshness and ESP32 core 4.0.0 cannot find `mbedtls/sha256.h`.
 - COE #35 packaging/tool tests are 133 PASS / 2 skips; all ten profiles fail closed for missing approved site ULA /48. Sandbox host preflight is 18/18, but Bubblewrap is absent (exit 125); case-collision passes.
+
+## UTC14 exact-head integration and migration gate refresh — 2026-11-21T14:36Z
+
+Current refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit/development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `2fdad5acb3dfa8e9c170721b87fd5524061eb577`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- CORE #252 build passes; COE #45 receipt candidate tests pass. Neither result authorizes contract adoption or finance migration.
+- RENTAL #328 APK/API smoke passes; shared build fails. #287/#289 scoped checks pass.
+- PISONET #255 Windows and COE #28/#30/#32 scoped CI pass; physical/native COM acceptance is absent.
+- QA #290 Windows passes. QA #292 has no PR-triggered CI and is based on Master `b1ca02e...`, behind current Master `2fdad5acb3dfa8e9c170721b87fd5524061eb577`.
+- HARDWARE #327/#329/#330/#331/#332/#333 focused Quarantine/Relay jobs pass where present; every Full run listed in the UTC14 report fails at the inherited QA `Missing poll signature check`. #333's 14 target/platform jobs succeeded before the validation job failed; downstream stress/import/simulation/signing/publishing jobs were skipped.
+- RELEASE #291 ESP32 compatibility is 3/3 PASS for its immutable pin only. Full/Windows fail the canonical PROJECT_HANDOVER freshness gate; the Windows log identifies a newer PISONET release workflow.
+- COE #35 has 139 unit/packaging tests PASS / 2 skips, then all ten appliance profiles fail closed for missing approved site ULA /48. Sandbox unit tests pass but execution stops with Bubblewrap missing / exit 125. COE #26 remains five queued workflows / zero jobs.
+
+### Exact COE #26 route comparison
+
+| Route | Main source | #333 source | COE #26 destination | #333 identical | #333 divergent | #333 source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 | 3 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 3 | 34 | 1 | 0 | 1 | 33 | 0 |
+| QA tests | 38 | 47 | 19 | 1 | 3 | 43 | 15 |
+| OpenWrt library | 15 | 15 | 20 | 6 | 9 | 0 | 5 |
+| Vendo CGI | 1 | 1 | 1 | 0 | 1 | 0 | 0 |
+
+Source has three scoped PHX-HARDWARE workflows; destination has one generic Hardware workflow. BlazePwifi/Pisowifi LICENSE blobs match; source root NOTICE and COE Hardware-specific LICENSE/NOTICE are not aligned. COE #26 remains FROZEN and no staging/copy/move/overwrite/route promotion occurred.
+
+**Production remains STRICT NO-GO.**

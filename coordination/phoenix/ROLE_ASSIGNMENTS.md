@@ -2296,3 +2296,20 @@ This exact-head table supersedes older live-status rows below; historical audit 
 | COE integration | #26 `b382d233...` | Five queued workflows / zero jobs | FROZEN; no migration or destination edits. |
 
 HARDWARE stack: #327 → #330 → (#331, #332) → #333, with #329 a separate child of #327. CORE remains with its separate hourly owner. No role source branch was modified by Master.
+
+## PHX-MASTER UTC14 live owner and CI refresh — 2026-11-21T14:36Z
+
+This section supersedes earlier live-status rows; historical checkpoints and owner decisions remain preserved.
+
+| Owner | Current exact refs | Current exact-head evidence | Next owner action |
+|---|---|---|---|
+| CORE | Experiments #252 `c82705f2...`; COE #45 `9d76a134...` | #252 build #42698139210 PASS; COE #45 runs #44295049727/#44295049903 PASS | CORE retains the separate automation/ownership boundary; publish authenticated poll/receipt contract and refresh handover. |
+| RENTAL | #328 `0e0da62a...`; #289 `68928774...`; #287 `a4fffd01...` | #328 APK/API smoke PASS, shared build FAIL; #289 two scoped runs PASS; #287 scoped run PASS | Resolve handover freshness and ESP32 core 4.0.0 Mbed TLS header under owner scope. |
+| PISONET | #255 `d01fd164...`; COE #28/#30/#32 | #255 Windows and COE #28/#30/#32 scoped CI PASS | Native COM/PnP acceptance remains NOT TESTED. |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows PASS; #292 has no PR-triggered runs and base `b1ca02e...` is behind Master `2fdad5ac...` | QA owns current-base replay and default-deny poll fixture correction after CORE contract publication. |
+| HARDWARE | #327 `827fa75...`; #329 `fb1cd5f...`; #330 `1a1e5e2...`; #331 `33a32ef...`; #332 `9f1d9eb...`; #333 `e93d178...` | Focused Quarantine/Relay results pass on scoped heads; Full validation fails at inherited QA `Missing poll signature check` | Preserve branch ancestry; do not rebase/merge; rerun Full only after CORE/QA contract resolution. |
+| RELEASE | #291 `42797e2f...` | ESP32 compatibility 3/3 PASS; Full/Windows fail mandatory PROJECT_HANDOVER freshness | CORE/PISONET/RELEASE reconcile their own cross-path handover evidence. |
+| COE RELEASE | #35 `a533ec7b...`; #44 `582fd5d5...` | #35 139 tests PASS / 2 skips, 10/10 profiles fail closed without site ULA, sandbox exit 125 without Bubblewrap; #44 Hardware/Shared CI passes but sandbox fails | Site authority supplies ULA /48; Infrastructure supplies trusted Bubblewrap. |
+| COE integration | #26 `b382d233...` | Five workflows queued / zero jobs | FROZEN; no migration or destination edits. |
+
+HARDWARE graph: #327 → #329 (separate child) and #327 → #330 → (#331, #332) → #333. The #327 base remains #326; #326 remains based on #323; #323 remains based on #322. CORE remains with its separate active owner; Master did not start a competing worker or edit CORE files.
