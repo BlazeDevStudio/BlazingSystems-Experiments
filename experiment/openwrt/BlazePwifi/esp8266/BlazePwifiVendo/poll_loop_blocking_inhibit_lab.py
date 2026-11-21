@@ -124,20 +124,112 @@ if missing_quarantine_helpers:
 
 
 def normalize_cpp_function_body(body):
-    # Test-first extraction of the previous behavior; the regression below
-    # demonstrates why generic split() is unsafe for C++ literals/comments.
-    return " ".join(body.split())
+    """Collapse code whitespace without changing C++ literal or comment bytes."""
+    output = []
+    pending_space = False
+    i = 0
+
+    def flush_space():
+        nonlocal pending_space
+        if pending_space and output and output[-1] != " ":
+            output.append(" ")
+        pending_space = False
+
+    raw_prefixes = ("u8R\"", "uR\"", "UR\"", "LR\"", "R\"")
+    while i < len(body):
+        ch = body[i]
+
+        if ch.isspace():
+            pending_space = True
+            i += 1
+            continue
+
+        raw_prefix = next((prefix for prefix in raw_prefixes if body.startswith(prefix, i)), None)
+        if raw_prefix is not None:
+            flush_space()
+            quote_index = i + len(raw_prefix) - 1
+            open_paren = body.find("(", quote_index + 1)
+            if open_paren < 0:
+                raise ValueError("unterminated C++ raw-string delimiter")
+            delimiter = body[quote_index + 1:open_paren]
+            if len(delimiter) > 16 or any(c.isspace() or c in "()\\" for c in delimiter):
+                raise ValueError("invalid C++ raw-string delimiter")
+            terminator = ")" + delimiter + '"'
+            close = body.find(terminator, open_paren + 1)
+            if close < 0:
+                raise ValueError("unterminated C++ raw string")
+            end = close + len(terminator)
+            output.append(body[i:end])
+            i = end
+            pending_space = False
+            continue
+
+        if body.startswith("//", i):
+            start = i
+            newline = body.find("\n", i + 2)
+            if newline < 0:
+                end = len(body)
+                i = end
+            else:
+                end = newline - 1 if newline > i and body[newline - 1] == "\r" else newline
+                i = newline + 1
+            if output and output[-1] != " ":
+                output.append(" ")
+            output.append(body[start:end])
+            pending_space = True
+            continue
+
+        if body.startswith("/*", i):
+            end = body.find("*/", i + 2)
+            if end < 0:
+                raise ValueError("unterminated C++ block comment")
+            end += 2
+            comment = body[i:end].replace("\r\n", "\n").replace("\r", "\n")
+            if output and output[-1] != " ":
+                output.append(" ")
+            output.append(comment)
+            i = end
+            pending_space = True
+            continue
+
+        if ch in ("\"", "'"):
+            flush_space()
+            quote = ch
+            literal_start = i
+            i += 1
+            while i < len(body):
+                if body[i] == "\\":
+                    if i + 1 >= len(body):
+                        raise ValueError("unterminated C++ escape sequence")
+                    i += 2
+                elif body[i] == quote:
+                    i += 1
+                    break
+                else:
+                    i += 1
+            else:
+                raise ValueError("unterminated C++ quoted literal")
+            output.append(body[literal_start:i])
+            pending_space = False
+            continue
+
+        flush_space()
+        output.append(ch)
+        i += 1
+        pending_space = False
+
+    return "".join(output)
 
 
 def verify_cpp_parity_normalizer():
     cases = (
         ("formatting-only", 'void f() { return "pending event"; }', 'void f()  {\n  return   "pending event";  }', True),
         ("string-literal-whitespace", 'void f(){ return "pending event"; }', 'void f(){ return "pending  event"; }', False),
-        ("character-literal-whitespace", "void f(){ char c=' '; }", r"void f(){ char c='\\t'; }", False),
+        ("character-literal-whitespace", "void f(){ char c=' '; }", r"void f(){ char c='\t'; }", False),
         ("comment-content", "void f(){ /* durable record */ return true; }", "void f(){ /*durable record*/ return true; }", False),
         ("raw-string-literal-whitespace", 'void f(){ auto s=R"tag(pending event)tag"; }', 'void f(){ auto s=R"tag(pending  event)tag"; }', False),
-        ("escaped-quote", r'void f(){ const char *s="quote: \\" pending"; }', r'void f(){ const char *s="quote: pending"; }', False),
-        ("line-comment-content", "void f(){ // pending event\\n return true; }", "void f(){ // pending  event\\n return true; }", False),
+        ("escaped-quote", r'void f(){ const char *s="quote: \" pending"; }', r'void f(){ const char *s="quote: pending"; }', False),
+        ("line-comment-content", "void f(){ // pending event\n return true; }", "void f(){ // pending  event\n return true; }", False),
     )
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
@@ -148,6 +240,7 @@ def verify_cpp_parity_normalizer():
 
 verify_cpp_parity_normalizer()
 
+
 def poll_safety_helpers():
     helpers = {}
     for board, path in BOARDS.items():
@@ -157,8 +250,7 @@ def poll_safety_helpers():
             body = extract_function(source, name)
             if not body:
                 raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
-            # Ignore formatting-only changes; comments and executable tokens remain
-            # part of the comparison so safety intent cannot drift silently.
+            # Normalize code whitespace only; preserve literal and comment bytes.
             helpers[board][name] = normalize_cpp_function_body(body)
     return helpers
 
