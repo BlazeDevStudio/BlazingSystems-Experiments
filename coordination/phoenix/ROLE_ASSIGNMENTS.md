@@ -2356,10 +2356,15 @@ See [UTC17 audit report](coordination/phoenix/PHX_MASTER_UTC17_20261121_EXACT_HE
 | RENTAL | #240 `a7d113fb8ae3f0c5e838e64d31cae7a154e37b56`; #287 `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd`; #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`; #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #240/#287/#289 scoped CI passes. #328 APK/API passes; ESP32 build fails on missing Mbed TLS header and mandatory handover freshness fails. RENTAL owns both corrections. |
 | PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; COE #28 `b21b04617d38a177260258de2d56b24382822117`; #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`; #32 `29b6fe08b10688182d981a66745f482758bd6630` | Scoped CI passes; native COM/PnP acceptance NOT TESTED. |
 | QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows passes; #292 has no PR-triggered runs. QA owns positive poll-signature fixture correction after CORE contract. |
-| HARDWARE | #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae`; #335 `7a4da71b800aef50557342176c8b584b98a23aae`; separate #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750` | Preserve stack ancestry. #335 focused Quarantine/Relay PASS; Full fails at inherited `Missing poll signature check`. Physical acceptance NOT TESTED. |
+| HARDWARE | #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae`; #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; separate #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750` | Preserve stack ancestry. #335 focused Quarantine/Relay PASS; Full fails at inherited `Missing poll signature check`. Physical acceptance NOT TESTED. |
 | RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; #35 `7fd3d96833ed535b9f3d2c1922663cb9a864fd5e` | #291 compatibility passes; Full/Windows handover freshness fails. #35 sandbox lacks Bubblewrap and all ten profiles fail closed without approved ULA /48. |
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued / zero jobs. FROZEN; no promotion. |
 
 HARDWARE stack: #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08` → #323 `988904e8bcd058b62a9fac4aa6319a9b7c5b2470` → #326 `58c558fb6a237935214621adc3dee65a10fe1a51` → #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e` is a separate child of #327, with #334/#335 sibling children; separate #327 → #330 `1a1e5e25834748fbba95d6253eb668f29b6c82f8` → (#331 `33a32ef092f22718cbda141baee75b54323986ff`, #332 `9f1d9ebf9c7256da2e8eace4bc0be510f6566daa`) → #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750`.
 
 CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source paths remain outside PHX-MASTER ownership.
+
+
+### UTC17 post-checkpoint #335 exact-head / CI refresh — 2026-11-21T18:01Z
+
+#335 source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`; Quarantine #44932969401 and Relay #44932969391 PASS; Full #44932969438 has 14 target/Android jobs SUCCESS, validation FAIL at inherited `Missing poll signature check`, downstream simulation/signing/publishing SKIPPED. QA/CORE contract ownership and default-deny behavior remain unchanged.

@@ -1903,3 +1903,8 @@ COE RELEASE #31 exact head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared co
 - Hardware #335 focused Quarantine/Relay CI passes, but Full fails at the inherited positive poll-signature fixture. QA owns fixture correction; CORE owns authenticated contract. COE #35 lacks Bubblewrap and approved site ULA /48; RENTAL and RELEASE handover/build blockers remain.
 - Ten architecture assertions PASS in a source-exact JavaScript harness; Python unittest NOT RUN; Master Actions none.
 - Private Drive v11/newer corrections remain unavailable; cleanup #266 remains 0/7; branch protection unverified. COE #26 FROZEN. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC17 follow-up — current HARDWARE #335 head re-read, 2026-11-21T18:01Z
+
+HARDWARE #335 advanced to `d09b0c9dafad8dbbcda5723d8094f4975c14a274` (source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`) after the first Master snapshot. Current Quarantine #44932969401 and Relay #44932969391 pass; Full #44932969438 has 14 target/Android jobs success but validation fails at inherited `Missing poll signature check`; downstream gates skip. Current source ESP32/ESP8266 blobs `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8` remain divergent from COE #26. QA/CORE ownership and COE #26 FROZEN disposition are unchanged.

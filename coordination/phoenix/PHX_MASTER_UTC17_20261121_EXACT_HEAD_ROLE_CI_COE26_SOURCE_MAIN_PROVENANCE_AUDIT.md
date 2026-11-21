@@ -29,7 +29,7 @@ At audit start, PR #288 had **154 changed paths**, all under `coordination/phoen
 | RENTAL | #240 `a7d113fb8ae3f0c5e838e64d31cae7a154e37b56`; #287 `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd`; #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`; #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #240/#287/#289 scoped runs PASS. #328 APK identity #44782114384 and API smoke #44782114393 PASS; build #44782114390 FAILS on missing `mbedtls/sha256.h`; mandatory handover freshness also fails. |
 | PISONET | Experiments #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; COE #28 `b21b04617d38a177260258de2d56b24382822117`, #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`, #32 `29b6fe08b10688182d981a66745f482758bd6630` | Scoped Windows/synthetic CI passes (#42462978704, #43632393888, #43653415598, #43653540607). Native COM/PnP acceptance NOT TESTED. |
 | QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 has no PR-triggered runs. QA owns the inherited positive poll-signature fixture and exact-base replay. |
-| HARDWARE | #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae`; #335 `7a4da71b800aef50557342176c8b584b98a23aae`; separate #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750` | #335 Quarantine #44928924423 and Relay #44928924437 PASS; Full #44928924442 FAILS at `Missing poll signature check`. #333 Quarantine #44901170202 PASS; Full #44901170215 FAILS at the same inherited fixture. #329/#334 focused Quarantine/Relay runs pass; their Full builds fail at the inherited validation. These are host/CI checks, not hardware acceptance. |
+| HARDWARE | #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae`; #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; separate #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750` | #335 Quarantine #44932969401 and Relay #44932969391 PASS; Full #44932969438 FAILS at `Missing poll signature check`. #333 Quarantine #44901170202 PASS; Full #44901170215 FAILS at the same inherited fixture. #329/#334 focused Quarantine/Relay runs pass; their Full builds fail at the inherited validation. These are host/CI checks, not hardware acceptance. |
 | RELEASE | Experiments #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; COE #35 `7fd3d96833ed535b9f3d2c1922663cb9a864fd5e` | #291 compatibility #44894604453 PASS; Full #44894604464 and Windows #44894604466 FAIL at handover freshness. #35 case-collision #44929601674 PASS; sandbox #44929601611 FAILS because Bubblewrap is absent; shared #44929601659 FAILS all ten profiles closed because no approved site-scoped ULA /48 exists. |
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows remain QUEUED with zero jobs. Candidate stays FROZEN. |
 
@@ -38,7 +38,7 @@ At audit start, PR #288 had **154 changed paths**, all under `coordination/phoen
 Exact live ancestry remains non-overlapping:
 
 - #322 `50d93e0de3d682550b6f02fb43484e76ad9c7e08` → #323 `988904e8bcd058b62a9fac4aa6319a9b7c5b2470` → #326 `58c558fb6a237935214621adc3dee65a10fe1a51` → #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`.
-- #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e` is a separate child of #327; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae` and #335 `7a4da71b800aef50557342176c8b584b98a23aae` are sibling children of #329.
+- #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e` is a separate child of #327; #334 `46dadb2414dfff76b34e78fd88b50b88ffe553ae` and #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274` are sibling children of #329.
 - Another line is #327 → #330 `1a1e5e25834748fbba95d6253eb668f29b6c82f8` → (#331 `33a32ef092f22718cbda141baee75b54323986ff`, #332 `9f1d9ebf9c7256da2e8eace4bc0be510f6566daa`) → #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750`.
 
 No rebase, retarget, consolidation or owner-branch write was made.
@@ -65,7 +65,7 @@ The RENTAL Android counts are a path-mapping inventory, not a claim that every s
 
 The active Hardware #335 tree has 2,471 entries; separate #333 has 2,478. #335 is an unmerged owner branch and is not a replacement for the manifest's Experiments-main source ref.
 
-At #335 HEAD `7a4da71b800aef50557342176c8b584b98a23aae`, ESP32 sketch blob `a2c767be512ebb47ae93190ab045c2659c3426b3` and ESP8266 blob `098a46f698fd672595a9c0cc62b640ac41d84959` differ from COE #26 blobs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` and `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+At #335 HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, ESP32 sketch blob `53b27aa80fa4a91aabac71de57f550a8eef2cb61` and ESP8266 blob `71160ac8ebd5163b19a56d6c9e229a5429975fc8` differ from COE #26 blobs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` and `c8be98f72596681e36a3ad1f8939bf8046c96887`.
 
 Source QA fixture `experiment/openwrt/BlazePwifi/tests/v05_firmware_hardening_test.sh` at #335 tree is blob `41211b2c110ab409f6d9d1812ef12fda73b13211` (6,782 bytes). COE #26 `Hardware/tests/test_firmware_hardening.sh` is blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` (4,118 bytes). They are not identical; both still require `response_sig` and literal `|poll|`. The inherited positive fixture conflicts with the current deny-only contract and causes Full validation failure. QA owns fixture correction after CORE publishes the approved authenticated register/poll and event-bound receipt contract. Do not add a positive firmware admission path to make CI green.
 
@@ -105,3 +105,14 @@ No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or desti
 ## 6. Safety / side-effect record
 
 No subsystem source branch was edited. No CORE worker was started. No destination file was changed. No migration, merge, release, signing, secret provisioning, firmware flash, real-payment action, physical test or release approval occurred.
+
+
+### UTC17 post-checkpoint #335 exact-head re-read — 2026-11-21T18:01Z
+
+HARDWARE's UTC17 role-lock comment was updated in place after the first Master snapshot. Current #335 remains OPEN / DRAFT / UNMERGED at PR/docs HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`, base #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`. Its complete tree remains 2,471 entries and the four changed paths are Hardware-owned.
+
+Current ESP32 sketch blob `53b27aa80fa4a91aabac71de57f550a8eef2cb61`; ESP8266 sketch blob `71160ac8ebd5163b19a56d6c9e229a5429975fc8`. COE #26 destination blobs remain `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` and `c8be98f72596681e36a3ad1f8939bf8046c96887`, both divergent. Source QA fixture remains `41211b2c110ab409f6d9d1812ef12fda73b13211`; COE test remains `f921c56cecc19cab1989507b9b4ade1f45dac54e`; both still require `response_sig` and `|poll|` and are not identical.
+
+Exact current-head focused CI: Quarantine #44932969401 PASS; Relay #44932969391 PASS; ESP32 boot polarity job 136933413202 PASS. Full #44932969438: all 14 target/Android jobs completed SUCCESS, validation job 136933414227 FAIL at inherited `Missing poll signature check`, downstream simulation/signing/publishing jobs SKIPPED. Focused logs retain `SIMULATED_ONLY=1` and `PHYSICAL_POWER_CUT_VERIFIED=0`. No physical hardware acceptance is implied.
+
+This update does not change the manifest source ref (Experiments main), COE #26, route counts, license blobs or migration disposition. No staging, copy, move, rebase, cherry-pick, overwrite or destination edit occurred.
