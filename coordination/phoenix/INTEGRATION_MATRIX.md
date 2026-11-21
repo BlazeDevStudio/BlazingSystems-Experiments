@@ -3369,3 +3369,24 @@ Source Hardware #333: e93d178bbe3fcf6a7ba7f3a049f996de10727750, tree c255374b6e9
 | Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
 
 There are 38 Hardware-local Python labs in source and zero under COE Hardware. Three source PHX hardware workflows map to generic hardware-ci.yml and pisowifi-ci.yml. BlazePwifi/LICENSE and COE Pisowifi/LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721; vendor TailAdmin NOTICE matches at f0425bbbe34c1227311098173b1eae0c3e2a807b. COE has no root LICENSE or Hardware/LICENSE/NOTICE; license applicability to the Hardware route requires owner/legal review. Five COE #26 workflows are queued with zero jobs. No staging or migration occurred.
+
+
+
+## PHX-MASTER UTC16 exact-head and CI refresh — 2026-11-21T16:39Z
+
+Audit-start refs: Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.6 development `6d4c9b487af4d768c4d7627654d119417fcc6e00` (live base of PR #242); Master `7b4688dc989f17707f722f85f739b2b31c962eb9`; COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Owner | Exact PR head(s) | Exact-head CI disposition |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build #42698139210 PASS; #45 overlay/case-collision #44295049727/#44295049903 PASS. CORE source remains owner-only. |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070`; #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | #328 APK identity #44782114384 and API21/23 #44782114393 PASS; build #44782114390 FAIL (ESP32 Mbed TLS header) and validate job fails. #289 two scoped runs PASS. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; COE #28 `b21b04617d38a177260258de2d56b24382822117`, #30 `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc`, #32 `29b6fe08b10688182d981a66745f482758bd6630` | #255 Windows #42462978704 PASS; COE synthetic Windows #43632393888/#43653415598/#43653540607 PASS. Native COM/PnP acceptance NOT TESTED. |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 has no PR-triggered runs. |
+| HARDWARE | #327 `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`; #329 `41efc1ddf4a101d7d1cb4428dcea2662ade6936e`; #330 `1a1e5e25834748fbba95d6253eb668f29b6c82f8`; #331 `33a32ef092f22718cbda141baee75b54323986ff`; #332 `9f1d9ebf9c7256da2e8eace4bc0be510f6566daa`; #333 `e93d178bbe3fcf6a7ba7f3a049f996de10727750` | #329 relay/quarantine focused runs #44916752219/#44916752192 PASS; #333 quarantine #44901170202 PASS. #333 Full #44901170215 FAILS at inherited `Missing poll signature check`; 14 platform/Android build jobs pass before validation failure. Preserve stack ancestry. |
+| RELEASE | #291 `42797e2f3d65c30a1070caf49c93aebec149d897` | ESP32 compatibility #44894604453 PASS 3/3; Full #44894604464 validation FAIL; Windows #44894604466 handover FAIL. |
+| COE RELEASE | #35 `c39905cd18af13b3938c00af803e243cb03b8edc` | Case-collision #44923800617 PASS; shared contracts #44923800690 FAIL because all 10 profiles require an approved site-scoped RFC 4193 ULA /48; sandbox #44923800694 FAIL because Bubblewrap is unavailable. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued (#43096752609, #43096752632, #43096752800, #43096752563, #43096752557), zero jobs. FROZEN. |
+
+COE #48/#49 stage 5/5.1 workflows pass, but their shared Hardware CI fails ESP32 compilation at `mbedtls/sha256.h: No such file or directory` (#44643670685, #44646341922). These are not destination acceptance.
+
+No Master Actions runs exist for the current Master head. Full Master Python unittest suite remains NOT RUN.
