@@ -9,8 +9,7 @@ from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
     MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
-    ACTIVE_HIGH_MISSED_SAMPLE_MAIN,
-    ACTIVE_LOW_MISSED_SAMPLE_MAIN,
+    missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
 )
@@ -21,8 +20,7 @@ __all__ = [
     "MAIN",
     "RACE_MAIN",
     "post_drain_rollover_main",
-    "ACTIVE_HIGH_MISSED_SAMPLE_MAIN",
-    "ACTIVE_LOW_MISSED_SAMPLE_MAIN",
+    "missed_sample_main",
     "TIMING_MAIN",
     "RELEASE_EDGE_MAIN",
 ]
