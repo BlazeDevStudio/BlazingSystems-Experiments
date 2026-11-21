@@ -1,8 +1,8 @@
 # PHX-MASTER UTC06 — exact Hardware quarantine correction, RELEASE pin invalidation, and COE #26 migration audit
 
-**Role:** PHX-MASTER — coordination, architecture/interface contracts, cross-repo migration provenance  
-**Audit time:** 2026-11-21T06:00:51Z  
-**Execution:** Strict NO CODEX. No Codex app, CLI, API, agent, workflow, or delegation.  
+**Role:** PHX-MASTER — coordination, architecture/interface contracts, cross-repo migration provenance
+**Audit time:** 2026-11-21T06:00:51Z
+**Execution:** Strict NO CODEX. No Codex app, CLI, API, agent, workflow, or delegation.
 **Disposition:** BLOCKED / PR #288 OPEN-DRAFT / COE #26 FROZEN / PRODUCTION NO-GO.
 
 ## 1. Live control-plane and exact repository identities
