@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-21 UTC11  
 **Task:** cleanup-first #266 / hardware pulse safety #177  
-**PR:** pending creation as a DRAFT child of #332  
+**PR:** [#333 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/333), child of #332  
 **Branch:** `phoenix/hardware-poll-scenario-modules-20261121-utc11`  
 **Base:** #332 at `9f1d9ebf9c7256da2e8eace4bc0be510f6566daa`  
 **Source/test head before this handover:** `5dfc00eeffa2575be329a46f941c61186205948f`
