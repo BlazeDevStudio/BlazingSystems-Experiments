@@ -1247,3 +1247,9 @@ At unchanged Hardware #333 / COE #26 refs, the prior complete tree counts remain
 No root COE `NOTICE.md` or `Hardware/LICENSE` was found at #26; the prior full-tree audit also found no Hardware NOTICE. Owner/legal review is required before Hardware route acceptance. Five COE #26 workflows remain queued with zero jobs.
 
 No staging, copying, moving, overwriting, rebasing, cherry-picking, route promotion or destination write occurred. Keep #26 FROZEN until each owner accepts exact source blobs, license/NOTICE scope, complete test imports/identities and exact-head destination CI.
+
+## UTC17 live exact source-main / COE #26 route review — 2026-11-21T17:41Z
+
+The canonical manifest remains `DRAFT_REVIEW_ONLY`, 11 routes, PHX-MASTER `coordination/phoenix/` → null. Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` trees are complete. File-level comparisons are recorded in [the UTC17 report](coordination/phoenix/PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) and INTEGRATION_MATRIX.md.
+
+Key blockers: source/target firmware blobs diverge; QA fixture imports are incomplete and test identities diverge; Android/Rental/Pisonet routes have substantial path-only and divergent files; source root NOTICE is absent from COE; Hardware license/NOTICE applicability needs owner/legal review; five destination workflows are queued with zero jobs. Active Hardware #335/#333 branches are separate unmerged lines, not a unified migration source. No staging, copy, move, overwrite, rebase, cherry-pick or route promotion is authorized by this audit.

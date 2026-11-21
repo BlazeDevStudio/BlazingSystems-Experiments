@@ -3390,3 +3390,23 @@ Audit-start refs: Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v
 COE #48/#49 stage 5/5.1 workflows pass, but their shared Hardware CI fails ESP32 compilation at `mbedtls/sha256.h: No such file or directory` (#44643670685, #44646341922). These are not destination acceptance.
 
 No Master Actions runs exist for the current Master head. Full Master Python unittest suite remains NOT RUN.
+
+## UTC17 exact source-main → COE #26 provenance — 2026-11-21T17:41Z
+
+Manifest `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, 11 routes, source Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; PHX-MASTER destination remains null. Complete recursive trees: Experiments main 2,340 entries / 1,764 blobs; COE #26 286 entries / 207 blobs.
+
+| Route | Source | Destination | Same | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android path | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE build workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The active Hardware #335 candidate is an unmerged child of #329, not a replacement for the Experiments-main manifest source; #333 remains a separate line. At #335 exact head, firmware sketch blobs differ from COE #26; source QA fixture blob `41211b2c110ab409f6d9d1812ef12fda73b13211` differs from COE `Hardware/tests/test_firmware_hardening.sh` blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`. Both retain positive response-signature/poll assertions and are not an accepted test-identity match for the current deny-only contract.
+
+BlazePwifi/Pisowifi LICENSE and vendor qrcode/TailAdmin license/NOTICE blobs match; source root NOTICE is missing from COE root; COE Hardware-specific LICENSE/NOTICE are absent. Five #26 workflows remain queued with zero jobs. No copy/move/staging/rebase/cherry-pick/overwrite/route promotion/destination edit occurred. Keep #26 FROZEN.

@@ -1892,3 +1892,14 @@ Run `python3 -m unittest discover -s coordination/phoenix -p 'test_architecture_
 
 
 COE RELEASE #31 exact head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared contracts #44222517238 and case-collision #44222517258 PASS; ImageBuilder sandbox #44222517263 FAIL. COE #48/#49 exact heads are `8286548e395366f2332830025fed00ceebdfb24a` and `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`; their stage workflows pass, but ESP32 compile jobs #44643670685/#44646341922 fail at missing `mbedtls/sha256.h`.
+
+## PHX-MASTER UTC17 live exact-head / role-CI / COE #26 provenance — 2026-11-21
+
+- [UTC17 exact-head, role-CI and COE #26 source-main provenance report](coordination/phoenix/PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md).
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Master #288 audit-start HEAD `8cc44fdf748fb7ba2ab44e665b0556c836be6351`; 154 existing changed paths all Master-owned; no Master Actions run.
+- Source-main / COE #26 recursive trees: 2,340/286 entries, both complete. File-level route comparison confirms divergent/source-only/destination-only paths, divergent firmware and QA test blobs, and incomplete Android/Pisonet/Rental mappings.
+- Exact BlazePwifi/Pisowifi LICENSE and vendor license/NOTICE blobs match; source root NOTICE is absent at COE root; Hardware license/NOTICE scope remains unresolved.
+- Hardware #335 focused Quarantine/Relay CI passes, but Full fails at the inherited positive poll-signature fixture. QA owns fixture correction; CORE owns authenticated contract. COE #35 lacks Bubblewrap and approved site ULA /48; RENTAL and RELEASE handover/build blockers remain.
+- Ten architecture assertions PASS in a source-exact JavaScript harness; Python unittest NOT RUN; Master Actions none.
+- Private Drive v11/newer corrections remain unavailable; cleanup #266 remains 0/7; branch protection unverified. COE #26 FROZEN. **PRODUCTION NO-GO.**
