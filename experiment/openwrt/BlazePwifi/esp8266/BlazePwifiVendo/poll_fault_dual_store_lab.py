@@ -246,6 +246,34 @@ bool selected(int value) {
 
 
 
+
+def test_fixture_template_markers_fail_closed():
+    import poll_fault_dual_store_lab_fixtures as fixture_module
+
+    source = ESP32.read_text(encoding="utf-8")
+    original = fixture_module.MAIN
+    mutations = (
+        ("missing", original.replace("NO_MARKER_RESET", "", 1)),
+        ("duplicate", original.replace("NO_MARKER_RESET", "NO_MARKER_RESET NO_MARKER_RESET", 1)),
+    )
+    try:
+        for mutation, mutated_main in mutations:
+            fixture_module.MAIN = mutated_main
+            try:
+                fixture_module.harness("ESP32", source)
+            except ValueError as exc:
+                if "NO_MARKER_RESET" not in str(exc):
+                    raise AssertionError(
+                        f"{mutation} marker error must identify NO_MARKER_RESET"
+                    ) from exc
+            else:
+                raise AssertionError(
+                    f"fixture composition accepted a {mutation} NO_MARKER_RESET marker"
+                )
+    finally:
+        fixture_module.MAIN = original
+    print("POLL_FAULT_FIXTURE_MARKER_CONTRACT_PASS")
+
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness(board, source)
@@ -327,6 +355,7 @@ def run_esp32_precommit_persistence_mutation(path: Path):
 
 
 if __name__ == "__main__":
+    test_fixture_template_markers_fail_closed()
     test_external_cwd_invocation()
     test_repo_root_requires_both_board_sentinels()
     test_extractors()

@@ -12,6 +12,81 @@ from poll_fault_dual_store_lab_fixtures_esp8266 import backend as esp8266_backen
 __all__ = ["constants", "harness"]
 
 
+_TEMPLATE_MARKER_COUNTS = {
+    "NVS_WRITE_BEFORE_COMMIT_ASSERT": 1,
+    "COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP": 1,
+    "COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR": 1,
+    "NVS_READ_ERROR_SCENARIO": 1,
+    "RAW_FLASH_READ_ERROR_SCENARIO": 1,
+    "READ_FAIL_SETUP": 1,
+    "READ_FAIL_CLEAR": 1,
+    "WRITE_FAIL_SETUP": 3,
+    "WRITE_FAIL_CLEAR": 2,
+    "AMBIGUOUS_COMMIT_SETUP": 2,
+    "AMBIGUOUS_COMMIT_CLEAR": 2,
+    "NO_MARKER_RESET": 1,
+}
+_BOARD_NAME_COUNT = 9
+
+
+def _render_main(board: str, spec: dict) -> str:
+    required_keys = {
+        "backend",
+        "nvs_write_before_commit_assert",
+        "commit_fail_before_persistence_setup",
+        "commit_fail_before_persistence_clear",
+        "nvs_read_error",
+        "fail_read",
+        "clear_fail",
+        "fail_write",
+        "ambiguous_commit_setup",
+        "no_marker",
+    }
+    missing_keys = sorted(required_keys.difference(spec))
+    if missing_keys:
+        raise ValueError(
+            f"{board} fixture backend is missing required values: {', '.join(missing_keys)}"
+        )
+
+    replacements = {
+        "NVS_WRITE_BEFORE_COMMIT_ASSERT": spec["nvs_write_before_commit_assert"],
+        "COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP": spec["commit_fail_before_persistence_setup"],
+        "COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR": spec["commit_fail_before_persistence_clear"],
+        "NVS_READ_ERROR_SCENARIO": spec["nvs_read_error"],
+        "RAW_FLASH_READ_ERROR_SCENARIO": RAW_FLASH_READ_ERROR if board == "ESP8266" else "",
+        "READ_FAIL_SETUP": spec["fail_read"],
+        "READ_FAIL_CLEAR": spec["clear_fail"],
+        "WRITE_FAIL_SETUP": spec["fail_write"],
+        "WRITE_FAIL_CLEAR": spec["clear_fail"],
+        "AMBIGUOUS_COMMIT_SETUP": spec["ambiguous_commit_setup"],
+        "AMBIGUOUS_COMMIT_CLEAR": spec["clear_fail"],
+        "NO_MARKER_RESET": spec["no_marker"],
+    }
+
+    main = MAIN
+    for marker, expected_count in _TEMPLATE_MARKER_COUNTS.items():
+        actual_count = main.count(marker)
+        if actual_count != expected_count:
+            raise ValueError(
+                f"fixture template marker {marker!r} expected {expected_count} "
+                f"occurrence(s), found {actual_count}"
+            )
+        main = main.replace(marker, replacements[marker])
+
+    board_count = main.count("BOARD_NAME")
+    if board_count != _BOARD_NAME_COUNT:
+        raise ValueError(
+            f"fixture template marker 'BOARD_NAME' expected {_BOARD_NAME_COUNT} "
+            f"occurrence(s), found {board_count}"
+        )
+    main = main.replace("BOARD_NAME", board)
+
+    unresolved = [marker for marker in _TEMPLATE_MARKER_COUNTS if marker in main]
+    if unresolved:
+        raise ValueError(f"unresolved fixture template markers: {', '.join(unresolved)}")
+    return main
+
+
 def harness(board: str, source: str) -> str:
     if board not in ("ESP32", "ESP8266"):
         raise ValueError(f"unsupported board fixture: {board!r}; expected ESP32 or ESP8266")
@@ -43,15 +118,5 @@ def harness(board: str, source: str) -> str:
         "POLL_FAULT_EEPROM_OFFSET",
         "POLL_FAULT_EEPROM_BYTES",
     ))
-    main = MAIN
-    main = main.replace("NVS_WRITE_BEFORE_COMMIT_ASSERT", spec["nvs_write_before_commit_assert"])
-    main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_SETUP", spec["commit_fail_before_persistence_setup"])
-    main = main.replace("COMMIT_FAIL_BEFORE_PERSISTENCE_CLEAR", spec["commit_fail_before_persistence_clear"])
-    main = main.replace("NVS_READ_ERROR_SCENARIO", spec["nvs_read_error"])
-    main = main.replace("RAW_FLASH_READ_ERROR_SCENARIO", RAW_FLASH_READ_ERROR if board == "ESP8266" else "")
-    main = main.replace("READ_FAIL_SETUP", spec["fail_read"]).replace("READ_FAIL_CLEAR", spec["clear_fail"])
-    main = main.replace("WRITE_FAIL_SETUP", spec["fail_write"]).replace("WRITE_FAIL_CLEAR", spec["clear_fail"])
-    main = main.replace("AMBIGUOUS_COMMIT_SETUP", spec["ambiguous_commit_setup"]).replace("AMBIGUOUS_COMMIT_CLEAR", spec["clear_fail"])
-    main = main.replace("NO_MARKER_RESET", spec["no_marker"])
-    main = main.replace("BOARD_NAME", board)
+    main = _render_main(board, spec)
     return "\n".join([PRELUDE, record, consts, spec["backend"], helpers, main])
