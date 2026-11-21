@@ -85,10 +85,8 @@ struct FakeSerial {
 } Serial;
 bool clearPending(){
   ++clearCalls;
-  if(!clearAllowed){journalRecoveryRequired=true; return false;}
-  pendingPulses=0; pendingReady=false;
-  pendingPostAttempted=false;
-  attemptMarkerExists=false;
+  pendingPulses=0;
+  pendingReady=false;
   return true;
 }
 struct FakeDisk {
