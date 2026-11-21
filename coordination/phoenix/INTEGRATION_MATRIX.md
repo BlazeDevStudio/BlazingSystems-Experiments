@@ -3562,3 +3562,12 @@ This append-only correction supersedes the earlier COE RELEASE #35 head/CI pin a
 - Private Drive registry v11/newer corrections remain unavailable through the exposed connector surface; no older Library snapshot was substituted. Effective branch protection remains UNKNOWN; cleanup #266 remains OPEN / 0 of 7.
 
 No subsystem source was edited. No migration staging, copy, move, rebase, cherry-pick, destination write, merge, release, signer provisioning, firmware flash, payment operation or physical test occurred. PRODUCTION NO-GO remains in force.
+
+
+## PHX-MASTER UTC21 exact-head CI refresh — 2026-11-21T21:39Z
+
+- Experiments #252 CORE build #42698139210 PASS (scoped); #328 RENTAL APK/API smoke PASS but ESP32 compile fails at missing `mbedtls/sha256.h`; #255 PISONET Windows synthetic CI #42462978704 PASS; #336 HARDWARE Quarantine #44948630552 PASS but Full #44948630626 fails at inherited QA-owned `Missing poll signature check` after 14/14 target/Android builds pass; #290 QA Windows #43633486963 PASS (scoped); #292 QA has no PR-triggered run; #291 RELEASE ESP32 compatibility PASS but Full validation and Windows handover fail.
+- COE #35 current RELEASE head `1ac24cd36be5ff898c1c8c05fe6467f3076bc146`: case guard PASS; shared 153 tests PASS / 2 skips then all ten appliance profiles fail closed for missing approved site ULA /48; sandbox 31/31 host tests PASS then Bubblewrap absence blocks at exit 125.
+- COE #48/#49 Stage/case guards PASS; shared ESP32 compile fails at missing `mbedtls/sha256.h`. COE #26 remains five queued workflows / zero jobs.
+- Exact source/destination tree and license/test identity comparison is in [UTC21 audit](PHX_MASTER_UTC21_20261121_LIVE_ROLE_CI_COE26_EXACT_TREE_REVALIDATION.md). No destination staging or source-owner edits.
+- Full Master coordination unittest suite NOT RUN because local GitHub DNS resolution failed before checkout; no Master PR-triggered run returned. **PRODUCTION NO-GO.**

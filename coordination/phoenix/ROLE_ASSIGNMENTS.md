@@ -2461,3 +2461,21 @@ This append-only correction supersedes the earlier COE RELEASE #35 head/CI pin a
 - Private Drive registry v11/newer corrections remain unavailable through the exposed connector surface; no older Library snapshot was substituted. Effective branch protection remains UNKNOWN; cleanup #266 remains OPEN / 0 of 7.
 
 No subsystem source was edited. No migration staging, copy, move, rebase, cherry-pick, destination write, merge, release, signer provisioning, firmware flash, payment operation or physical test occurred. PRODUCTION NO-GO remains in force.
+
+
+## PHX-MASTER UTC21 live exact owner/CI refresh — 2026-11-21T21:39Z
+
+This append-only snapshot supersedes older role-head pins above for this audit hour. It is coordination evidence only; it does not transfer subsystem ownership.
+
+| Role | Exact owner PR head(s) | Exact-head CI / disposition |
+|---|---|---|
+| CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`; COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #252 build #42698139210 SUCCESS; #45 overlay #44295049727 and case guard #44295049903 SUCCESS, scoped. CORE source remains with its separate owner. |
+| RENTAL | Experiments #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 #44782114393 SUCCESS; build #44782114390 FAILS at missing `mbedtls/sha256.h`; inherited validation also fails at positive poll-signature fixture. |
+| PISONET | Experiments #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 SUCCESS; native COM/adapter acceptance NOT TESTED. |
+| HARDWARE | #335 `d09b0c9dafad8dbbcda5723d8094f4975c14a274`; #336 `8ebe2e45622a82060a010691bbaa3f0abac72452` | #336 Quarantine #44948630552 PASS; Full #44948630626 FAILS at QA-owned Missing poll signature check after 14/14 target/Android builds pass. Preserve default-deny. |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS, scoped; #292 has no PR-triggered runs and stale base. |
+| RELEASE | Experiments #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `1ac24cd36be5ff898c1c8c05fe6467f3076bc146` | #291 ESP32 compatibility PASS; Full validation and Windows handover fail. COE #35 case guard PASS; shared contracts fail closed for missing site ULA /48; sandbox fails closed for absent Bubblewrap after 31 host tests pass. |
+| COE Stage 5 | #48 `8286548e395366f2332830025fed00ceebdfb24a`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage/case checks PASS; shared ESP32 compile fails at missing `mbedtls/sha256.h`. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; no combined acceptance. |
+
+Master test suite NOT RUN; no Master PR Actions. Private registry access unavailable. PRODUCTION NO-GO.

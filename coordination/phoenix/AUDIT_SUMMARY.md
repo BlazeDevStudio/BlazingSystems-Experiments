@@ -1974,3 +1974,13 @@ This append-only correction supersedes the earlier COE RELEASE #35 head/CI pin a
 - Private Drive registry v11/newer corrections remain unavailable through the exposed connector surface; no older Library snapshot was substituted. Effective branch protection remains UNKNOWN; cleanup #266 remains OPEN / 0 of 7.
 
 No subsystem source was edited. No migration staging, copy, move, rebase, cherry-pick, destination write, merge, release, signer provisioning, firmware flash, payment operation or physical test occurred. PRODUCTION NO-GO remains in force.
+
+
+## PHX-MASTER UTC21 live reconciliation — 2026-11-21T21:39Z
+
+See [UTC21 exact-head role/CI and COE #26 tree audit](PHX_MASTER_UTC21_20261121_LIVE_ROLE_CI_COE26_EXACT_TREE_REVALIDATION.md).
+
+- Final audit-start Master HEAD `60ad84bbd20e20b44d7fdc53c612695308278ab3`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.6 audit/development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- COE #35 advanced to `1ac24cd36be5ff898c1c8c05fe6467f3076bc146`: 153 shared tests pass but all ten profiles fail closed without site ULA /48; 31 sandbox host tests pass but Bubblewrap is absent (exit 125). HARDWARE #336 is `8ebe2e45622a82060a010691bbaa3f0abac72452`: focused Quarantine passes, Full fails at inherited QA poll-signature fixture. RENTAL #328 Mbed TLS compile fails; RELEASE #291 handover fails.
+- Recursive trees complete: source main 2,340 entries / 1,764 blobs; Hardware #336 candidate 2,474 / 1,895; COE #26 286 / 207. Hardware #336 has 34 Python lab/helper files and zero destination Hardware Python equivalents; ESP32/ESP8266 sketch blobs diverge. Source root NOTICE.md and Hardware-specific license/notice scope are absent from COE #26. No migration staging.
+- Full Master suite NOT RUN; private Drive registry/newer corrections unavailable; branch protection UNKNOWN; cleanup #266 OPEN 0/7. **PRODUCTION NO-GO.**
