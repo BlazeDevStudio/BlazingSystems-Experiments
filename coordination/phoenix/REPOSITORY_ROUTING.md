@@ -1278,3 +1278,12 @@ The broad RENTAL standalone profile route is manual-file-mapping-required and wa
 Source BlazePwifi LICENSE and destination Pisowifi/LICENSE have identical blob SHA 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE.md blob f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root. COE #26 has no Hardware/LICENSE or Hardware/NOTICE.md. Owner/legal review is required to establish Hardware subtree license/NOTICE applicability. Five COE #26 workflows remain queued with zero jobs.
 
 No copy, move, staging, overwrite, rebase, cherry-pick, route promotion or destination edit occurred. Keep #26 FROZEN.
+
+
+## UTC19 exact routing and staging hold — 2026-11-21T19:07:56Z
+
+The machine-readable route manifest remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. PHX-MASTER remains coordination-only with target `null`.
+
+Current HARDWARE #335 candidate `d09b0c9dafad8dbbcda5723d8094f4975c14a274` is not equivalent to COE #26: ESP32/ESP8266 sketch blobs diverge, 32 source board-local Python lab/helper files have no destination equivalents, source QA test blob differs from the single destination Hardware test, and root/Hardware NOTICE/LICENSE scope is incomplete. The source BlazePwifi LICENSE and destination Pisowifi LICENSE match byte-for-byte. COE #26 has five queued workflows and zero jobs. No copy, move, staging, rebase, cherry-pick, overwrite, route promotion or destination edit is authorized or performed.
+
+See [UTC19 exact provenance report](PHX_MASTER_UTC19_20261121_EXACT_ROLE_CI_COE26_PROVENANCE_AND_MASTER_TEST_BLOCKER.md). Any future move requires exact per-file blob and license review, test-identity mapping, owner approval and destination CI at the exact candidate SHA.
