@@ -138,6 +138,18 @@ struct FakeLittleFS {
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
 int main(){
+  String boundaryValue(124,'A');
+  boundaryValue += " REASON=tail";
+  const String boundaryEncoded=quarantineLogField(boundaryValue,128);
+  if(boundaryEncoded.length()!=127 ||
+     boundaryEncoded.substr(0,124)!=String(124,'A') ||
+     boundaryEncoded.substr(124)!="..." ||
+     boundaryEncoded.find('\\\\')!=std::string::npos){
+    std::cerr<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_FAIL board=BOARD_NAME actual="
+             <<boundaryEncoded<<std::endl;
+    return 62;
+  }
+  std::cout<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_PASS board=BOARD_NAME"<<std::endl;
   for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
