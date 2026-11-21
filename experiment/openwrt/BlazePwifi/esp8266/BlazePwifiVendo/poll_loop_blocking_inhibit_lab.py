@@ -11,6 +11,9 @@ import subprocess
 import tempfile
 
 from firmware_lab_source import extract_function
+from firmware_lab_source_lab import run_source_extractor_regressions
+
+run_source_extractor_regressions()
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
