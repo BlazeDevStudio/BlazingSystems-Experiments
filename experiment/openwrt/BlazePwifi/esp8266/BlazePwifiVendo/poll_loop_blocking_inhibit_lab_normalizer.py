@@ -22,6 +22,17 @@ def normalize_cpp_function_body(body):
             return position + 2
         return position + 1
 
+    def has_unspliced_newline(text):
+        cursor = 0
+        while cursor < len(text):
+            if text[cursor] == "\\" and cursor + 1 < len(text) and text[cursor + 1] == "\n":
+                cursor += 2
+                continue
+            if text[cursor] == "\n":
+                return True
+            cursor += 1
+        return False
+
     raw_prefixes = ("u8R\"", "uR\"", "UR\"", "LR\"", "R\"")
     while i < len(body):
         ch = body[i]
@@ -85,7 +96,7 @@ def normalize_cpp_function_body(body):
             if output and output[-1] not in (" ", "\n"):
                 output.append(" ")
             output.append(comment)
-            if "\n" in comment or "\r" in comment:
+            if has_unspliced_newline(comment):
                 line_has_token = False
             i = end
             pending_space = True
