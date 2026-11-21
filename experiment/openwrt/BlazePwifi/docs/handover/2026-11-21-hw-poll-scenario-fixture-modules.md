@@ -5,7 +5,8 @@
 **PR:** [#333 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/333), child of #332  
 **Branch:** `phoenix/hardware-poll-scenario-modules-20261121-utc11`  
 **Base:** #332 at `9f1d9ebf9c7256da2e8eace4bc0be510f6566daa`  
-**Source/test head before this handover:** `5dfc00eeffa2575be329a46f941c61186205948f`
+**Source/test commit:** `5dfc00eeffa2575be329a46f941c61186205948f`  
+**PR docs head before this evidence update:** `9230a0c7591fa89eccd9d14b168b275d0a771422`
 
 ## Why
 
@@ -28,7 +29,9 @@ No production `.ino`, GPIO, poll/receipt contract, finance, signer, witness, QA-
 
 - Source/test commit: `5dfc00eeffa2575be329a46f941c61186205948f`.
 - Payload preservation: 6/6 exact string comparisons PASS.
-- Focused GitHub Actions: PENDING; do not classify as CI VERIFIED until an exact-head job completes.
+- Exact-head Quarantine Byte Readback [run #44900894666](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44900894666), job `136836358747`, on PR head `9230a0c7591fa89eccd9d14b168b275d0a771422`: **SUCCESS**. Both ESP8266 and ESP32 blocking-poll suites ran; original 1501/1600/1680 timing case, edge/drain/rollover/release-window cases and negative mutations completed. `POLL_LOOP_BLOCKING_INHIBIT_WORKFLOW_WIRING=PASS` and `POLL_LOOP_BLOCKING_INHIBIT_RUN_ONCE=PASS`.
+- Full BlazePwifi PR [run #44900894655](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44900894655), validation job `136836359201`: **FAILURE** at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 14 target/platform jobs completed SUCCESS (ESP32, ESP8266, x86_64, Ruijie, Orange Pi variants and Android); production import, update bundle, v0.4 simulations, sign handoff, candidate and publication jobs were SKIPPED.
+- Push Full run #44900891736 had no jobs at last read; no result is claimed for it.
 - Full BlazePwifi integration: known blocker is the inherited QA-owned `Missing poll signature check`; this refactor does not add a signature or weaken default-deny.
 - Physical coin/relay/power behavior: NOT TESTED.
 
