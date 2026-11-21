@@ -1106,3 +1106,12 @@ Current RELEASE #291 has 26 changed paths: 21 RELEASE, 3 CORE handover/ledger/st
 - Full build #44851462517 completed FAIL at Mandatory handover freshness; target/Android builds passed and downstream simulations, signing and publication were skipped.
 - Windows #44851462474 completed FAIL at shared handover freshness; Windows build and publisher were skipped.
 - This supersedes the initial UTC01 queued status. PHX-MASTER did not edit RELEASE files or alter the PHX-RELEASE role lock.
+
+
+## UTC01 destination revalidation — 2026-11-21T01:54Z
+
+COE #26 remains the only destination candidate and is FROZEN at `b382d233...`; main is `a6513ab...`. Manifest `e4db324...` remains DRAFT_REVIEW_ONLY with PHX-MASTER target `null`. No move is proposed.
+
+Current file-level comparison: source/test `28bf18e...` ESP32 blob `ae0da8e...` vs COE `3cc7ec54...`; ESP8266 `a1f12edc...` vs `c8be98f...`; hardening test `41211b2...` vs `f921c56...`. Both tests retain positive response/register/poll marker assertions. Pisowifi LICENSE matches at `1ee55b...`; Experiments root NOTICE `f6d92c...` is absent at COE root; `Hardware/LICENSE` is absent at the checked destination path. License/NOTICE scope remains unresolved; no legal conclusion.
+
+The prior recursive tree count was measured at source/test `177312434...`; Hardware has advanced to `28bf18e...`, so the old count is superseded and not repeated without a fresh recursive inventory. Five COE workflows remain queued / zero jobs. No staging, copy, move, overwrite, cherry-pick, rebase or route promotion occurred.
