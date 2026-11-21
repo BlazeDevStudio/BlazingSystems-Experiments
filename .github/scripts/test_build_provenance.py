@@ -5,12 +5,15 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+
+_REAL_SUBPROCESS_RUN = subprocess.run
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -73,6 +76,8 @@ def build_manifest(root: Path, target: str = "ruijie", paid: str = "0") -> None:
 
 def fake_run(command, **kwargs):
     args = [str(part) for part in command]
+    if args[:4] == ["git", "ls-tree", "-r", "-z"]:
+        return _REAL_SUBPROCESS_RUN(command, **kwargs)
     if args[:3] == ["git", "rev-parse", "HEAD"]:
         return SimpleNamespace(returncode=0, stdout=SOURCE_SHA + "\n", stderr="")
     if args[:2] == ["git", "rev-parse"] and len(args) == 3 and args[2].startswith("HEAD:"):
