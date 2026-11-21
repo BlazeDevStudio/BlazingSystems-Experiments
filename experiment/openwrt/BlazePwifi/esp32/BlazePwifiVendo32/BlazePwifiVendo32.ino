@@ -1724,7 +1724,6 @@ void connectSta(){
 void setup(){
   Serial.begin(115200); loadConfig();
   initPollFaultBackupStore();
-  initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
     pinConfigSafe=false;
@@ -1733,7 +1732,10 @@ void setup(){
   }
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
+  // NVS fault backup is ready; deassert outputs and attach the coin ISR before
+  // LittleFS mount so an early ingress can still persist to the secondary store.
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  initPendingStore();
   setupPortal(); connectSta();
 }
 

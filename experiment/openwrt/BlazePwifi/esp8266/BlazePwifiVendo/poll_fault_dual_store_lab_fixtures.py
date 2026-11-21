@@ -276,6 +276,7 @@ void applyOutputs(){
 bool writePollPulseFaultMarker(uint32_t pulseEdges){
   (void)pulseEdges;
   if(!outputsInhibited) persistenceBeforeOutputInhibit=true;
+  if(!fsReady) return false;
   if(fsMarkerWriteResult) LittleFS.marker=true;
   return fsMarkerWriteResult;
 }
@@ -321,6 +322,21 @@ int main(){
   assert(pollFaultBackupPresentOrCorrupt());
   rebootStorage();
   assertBootDenied();
+
+  // Boot-time GPIO quarantine runs before LittleFS mount. The secondary
+  // EEPROM/NVS marker must still survive and deny after the filesystem comes up.
+  resetStorage();
+  resetRuntime();
+  fsReady=false;
+  LittleFS.marker=false;
+  latchPollPulseFault(8);
+  assert(journalRecoveryRequired && !insertMode && outputsInhibited);
+  assert(pollFaultBackupPresentOrCorrupt());
+  assert(!LittleFS.marker);
+  fsReady=true;
+  rebootStorage();
+  assertBootDenied();
+  std::cout << "PRE_LITTLEFS_SECONDARY_BACKUP_REBOOT_DENY_PASS board=BOARD_NAME\\n";
 
   // An NVS lookup error must not make an existing sticky marker appear absent.
   NVS_READ_ERROR_SCENARIO

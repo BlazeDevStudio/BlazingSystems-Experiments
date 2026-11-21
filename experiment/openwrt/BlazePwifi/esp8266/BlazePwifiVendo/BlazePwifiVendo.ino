@@ -1829,7 +1829,7 @@ bool quarantinePending(const String &reason){
 }
 
 void setup(){
-  Serial.begin(115200); loadCfg(); initPendingStore();
+  Serial.begin(115200); loadCfg();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
     pinConfigSafe=false;
@@ -1839,7 +1839,11 @@ void setup(){
     runCoinPin=4;runLedPin=14;runRelayPin=5;
     Serial.println("CRITICAL: stored GPIO assignment unsafe; outputs remain INPUT until corrected.");
   }
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
+  // loadCfg() has verified the EEPROM fault backup. Deassert outputs and attach
+  // the coin ISR before LittleFS mount; early ingress falls back to EEPROM.
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  initPendingStore();
+  setupPortal();connectSta();
 }
 
 void handlePollDrainAbortAfterSample(){

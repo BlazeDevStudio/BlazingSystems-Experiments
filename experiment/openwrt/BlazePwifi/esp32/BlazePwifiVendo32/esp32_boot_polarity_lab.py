@@ -143,7 +143,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
     # Deliberately reintroduce the unsafe ordering; the source guard must reject it.
     unsafe = setup.replace(
         calls[2],
-        "initPendingStore();\\n  " + calls[2],
+        "initPendingStore();\n  " + calls[2],
         1,
     )
     require(unsafe != setup, "boot-order failure-injection anchor was not unique")
