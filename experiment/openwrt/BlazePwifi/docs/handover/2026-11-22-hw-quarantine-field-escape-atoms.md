@@ -88,3 +88,28 @@ The CI explicitly reports \`SIMULATED_ONLY=1\` and \`PHYSICAL_POWER_CUT_VERIFIED
 5. **PHX-HARDWARE:** keep coin admission default-deny; do not wire quarantine lifecycle or positive poll handling without approved cross-role contracts.
 
 No physical flashing, device reset, live money, production migration, signing, release tagging, deployment or cutover was performed.
+
+
+## UTC17 follow-up — centralize quarantine escape-atom classification
+
+A cleanup audit found the backslash, CR, LF, TAB, and REASON=/TARGET= delimiter escape classifier duplicated in both passes of quarantineLogField(): one copy measured encoded length and another emitted the bytes. A future edit to only one copy could make the size calculation disagree with output and reintroduce a split or malformed quarantine field.
+
+The behavior-preserving cleanup:
+
+- Adds static const char* quarantineLogFieldEscapeAt(const String&, size_t) to both ESP32 and ESP8266 sketches.
+- Routes both the measurement pass and output pass through the same helper.
+- Keeps the helper byte-identical across boards.
+- Adds the extracted helper to the board-parity lab and raises the checked shared-helper count to 23/23.
+- Adds failure injection that changes only ESP8266's \x20 delimiter mapping to \x21; the parity guard rejects that drift.
+
+No encoded output, truncation limit, suffix policy, journal schema, controller contract, finance path, GPIO/relay behavior, or coin admission changed.
+
+### Exact-source verification
+
+Source/test SHA: 182d6393dbeeb342395f06477b54ff30dada2f1b
+
+- Quarantine [#44932261678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932261678), job 136931241526: SUCCESS. Exact extracted C++ compile passed; 23/23 shared helper parity; escape-mapping drift mutation rejected; 4/4 boundary cases, 161/161 length sweep, 5/5 legacy dangling-escape controls, 36/36 quarantine scenarios per board, 72/72 combined scenarios.
+- Relay/output [#44932261680](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932261680), job 136931241682: SUCCESS. ESP32 boot-polarity job 136931241425: SUCCESS.
+- Full [#44932261738](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44932261738), validation job 136931318092: FAILURE at the inherited QA-owned Missing poll signature check. All 13 firmware target jobs passed; Android was still running at the last read. Downstream update/simulation/signing/release steps were skipped. No Full integration PASS is claimed.
+
+Classification remains SIMULATED / focused CI VERIFIED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO. The source cleanup does not resolve #177 physical pulse/relay acceptance or the CORE-owned authenticated register/poll contract.
