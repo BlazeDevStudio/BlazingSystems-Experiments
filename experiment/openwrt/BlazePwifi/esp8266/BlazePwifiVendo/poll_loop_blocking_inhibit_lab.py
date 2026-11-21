@@ -189,12 +189,13 @@ def verify_drain_abort_polarity_fixture_is_shared():
         raise SystemExit(
             "POLL_DRAIN_ABORT_POLARITY_BUILDER_MISSING: expected one shared C++ helper"
         )
+    normalized_main = " ".join(MAIN.split())
     calls = (
-        "runDrainAbortWithoutIsr(true, 34, 35,",
-        "runDrainAbortWithoutIsr(false, 36, 37,",
+        "runDrainAbortWithoutIsr( true, 34, 35,",
+        "runDrainAbortWithoutIsr( false, 36, 37,",
     )
     for call in calls:
-        if MAIN.count(call) != 1:
+        if normalized_main.count(call) != 1:
             raise SystemExit(
                 "POLL_DRAIN_ABORT_POLARITY_BUILDER_CALL_MISSING: " + call
             )
