@@ -565,36 +565,53 @@ bool clearPending(){
 
 static const size_t QUARANTINE_MAX_BYTES=32768;
 
+static const char* quarantineLogFieldEscapeAt(const String &value,size_t index){
+  if(index>=value.length()) return nullptr;
+  const unsigned char c=(unsigned char)value[index];
+  if(c=='\\') return "\\\\";
+  if(c=='\r') return "\\r";
+  if(c=='\n') return "\\n";
+  if(c=='\t') return "\\t";
+  if(c==' ' && value.length()-index>=8 &&
+     ((value[index+1]=='R' && value[index+2]=='E' && value[index+3]=='A' &&
+       value[index+4]=='S' && value[index+5]=='O' && value[index+6]=='N' && value[index+7]=='=') ||
+      (value[index+1]=='T' && value[index+2]=='A' && value[index+3]=='R' &&
+       value[index+4]=='G' && value[index+5]=='E' && value[index+6]=='T' && value[index+7]=='=')))
+    return "\\x20";
+  return nullptr;
+}
+
 String quarantineLogField(const String &value,size_t maxLen){
+  // Keep escape classification in one small helper so measurement and output
+  // cannot drift apart when a field encoding rule changes.
+  size_t encodedLength=0;
+  bool truncated=false;
+  for(size_t i=0;i<value.length();++i){
+    const char *escaped=quarantineLogFieldEscapeAt(value,i);
+    const size_t atomLength=escaped?strlen(escaped):1;
+    if(atomLength>maxLen-encodedLength){
+      truncated=true;
+      break;
+    }
+    encodedLength+=atomLength;
+  }
+
+  const size_t contentLimit=(truncated && maxLen>=3)?maxLen-3:maxLen;
   String out;
   out.reserve(maxLen);
-  size_t i=0;
-  for(;i<value.length();++i){
+  for(size_t i=0;i<value.length();++i){
     const unsigned char c=(unsigned char)value[i];
-    const char *escaped=nullptr;
-    if(c=='\\') escaped="\\\\";
-    else if(c=='\r') escaped="\\r";
-    else if(c=='\n') escaped="\\n";
-    else if(c=='\t') escaped="\\t";
-    else if(c==' ' && i+8<=value.length() &&
-            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
-              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
-             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
-              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
-      escaped="\\x20";
+    const char *escaped=quarantineLogFieldEscapeAt(value,i);
     if(escaped){
       const size_t escapedLength=strlen(escaped);
-      if(out.length()+escapedLength>maxLen) break;
+      if(out.length()+escapedLength>contentLimit) break;
       out+=escaped;
     } else {
-      if(out.length()+1>maxLen) break;
+      if(out.length()+1>contentLimit) break;
       out+=(c<0x20 || c==0x7f)?'?':(char)c;
     }
   }
-  if(i<value.length() && maxLen>=3){
-    while(out.length()+3>maxLen) out.remove(out.length()-1);
-    out+="...";
-  }
+  if(truncated && maxLen>=3) out+="...";
   return out;
 }
 

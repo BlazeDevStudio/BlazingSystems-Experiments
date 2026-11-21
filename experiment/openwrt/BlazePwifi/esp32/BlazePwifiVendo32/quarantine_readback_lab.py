@@ -130,6 +130,7 @@ struct FakeLittleFS {
 } LittleFS;
 
 @@SOURCE_COIN_POST_GATE@@
+@@SOURCE_FIELD_ESCAPE@@
 @@SOURCE_ENCODE@@
 @@SOURCE_TOKEN_VALID@@
 @@SOURCE_RECORD_VALID@@
@@ -137,7 +138,138 @@ struct FakeLittleFS {
 @@SOURCE_INSPECT@@
 @@SOURCE_APPEND@@
 @@SOURCE_QUARANTINE@@
+String legacyQuarantineLogField(const String &value,size_t maxLen){
+  String out;
+  out.reserve(maxLen);
+  size_t i=0;
+  for(;i<value.length();++i){
+    const unsigned char c=(unsigned char)value[i];
+    const char *escaped=nullptr;
+    if(c=='\\') escaped="\\\\";
+    else if(c=='\r') escaped="\\r";
+    else if(c=='\n') escaped="\\n";
+    else if(c=='\t') escaped="\\t";
+    else if(c==' ' && i+8<=value.length() &&
+            ((value[i+1]=='R' && value[i+2]=='E' && value[i+3]=='A' &&
+              value[i+4]=='S' && value[i+5]=='O' && value[i+6]=='N' && value[i+7]=='=') ||
+             (value[i+1]=='T' && value[i+2]=='A' && value[i+3]=='R' &&
+              value[i+4]=='G' && value[i+5]=='E' && value[i+6]=='T' && value[i+7]=='=')))
+      escaped="\\x20";
+    if(escaped){
+      const size_t escapedLength=strlen(escaped);
+      if(out.length()+escapedLength>maxLen) break;
+      out+=escaped;
+    } else {
+      if(out.length()+1>maxLen) break;
+      out+=(c<0x20 || c==0x7f)?'?':(char)c;
+    }
+  }
+  if(i<value.length() && maxLen>=3){
+    while(out.length()+3>maxLen) out.remove(out.length()-1);
+    out+="...";
+  }
+  return out;
+}
 int main(){
+  String boundaryValue(124,'A');
+  boundaryValue += " REASON=tail";
+  const String boundaryEncoded=quarantineLogField(boundaryValue,128);
+  if(boundaryEncoded.length()!=127 ||
+     boundaryEncoded.substr(0,124)!=String(124,'A') ||
+     boundaryEncoded.substr(124)!="..."){
+    std::cerr<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_FAIL board=BOARD_NAME actual="
+             <<boundaryEncoded<<std::endl;
+    return 62;
+  }
+  std::cout<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_PASS board=BOARD_NAME"<<std::endl;
+
+  String targetBoundaryValue(124,'B');
+  targetBoundaryValue += " TARGET=tail";
+  const String targetBoundaryEncoded=quarantineLogField(targetBoundaryValue,128);
+  if(targetBoundaryEncoded.length()!=127 ||
+     targetBoundaryEncoded.substr(0,124)!=String(124,'B') ||
+     targetBoundaryEncoded.substr(124)!="..."){
+    std::cerr<<"QUARANTINE_TARGET_ESCAPE_BOUNDARY_FAIL board=BOARD_NAME actual="
+             <<targetBoundaryEncoded<<std::endl;
+    return 63;
+  }
+  std::cout<<"QUARANTINE_TARGET_ESCAPE_BOUNDARY_PASS board=BOARD_NAME"<<std::endl;
+
+  String exactBoundaryValue(117,'C');
+  exactBoundaryValue += " REASON=";
+  const String exactBoundaryEncoded=quarantineLogField(exactBoundaryValue,128);
+  if(exactBoundaryEncoded.length()!=128 ||
+     exactBoundaryEncoded.substr(121)!="REASON="){
+    std::cerr<<"QUARANTINE_FIELD_EXACT_LIMIT_FAIL board=BOARD_NAME actual="
+             <<exactBoundaryEncoded<<std::endl;
+    return 64;
+  }
+  std::cout<<"QUARANTINE_FIELD_EXACT_LIMIT_PASS board=BOARD_NAME"<<std::endl;
+  const char escapeAtoms[]={'\\','\r','\n','\t'};
+  for(size_t atomIndex=0;atomIndex<sizeof(escapeAtoms)/sizeof(escapeAtoms[0]);++atomIndex){
+    String atomBoundaryValue(124,'D');
+    atomBoundaryValue += escapeAtoms[atomIndex];
+    atomBoundaryValue += "XYZ";
+    const String atomBoundaryEncoded=quarantineLogField(atomBoundaryValue,128);
+    if(atomBoundaryEncoded.length()!=127 ||
+       atomBoundaryEncoded.substr(0,124)!=String(124,'D') ||
+       atomBoundaryEncoded.substr(124)!="..."){
+      std::cerr<<"QUARANTINE_ESCAPE_ATOM_BOUNDARY_FAIL board=BOARD_NAME atom="
+               <<atomIndex<<" actual="<<atomBoundaryEncoded<<std::endl;
+      return 65;
+    }
+  }
+  std::cout<<"QUARANTINE_ESCAPE_ATOM_BOUNDARY_PASS 4/4 board=BOARD_NAME"<<std::endl;
+
+  auto escapesComplete=[](const String &encoded){
+    for(size_t i=0;i<encoded.length();++i){
+      if(encoded[i]!='\\') continue;
+      if(i+1>=encoded.length()) return false;
+      if(encoded[i+1]=='\\' || encoded[i+1]=='r' ||
+         encoded[i+1]=='n' || encoded[i+1]=='t'){
+        ++i;
+        continue;
+      }
+      if(i+3<encoded.length() && encoded.substr(i,4)=="\\x20"){
+        i+=3;
+        continue;
+      }
+      return false;
+    }
+    return true;
+  };
+  String sweepValue(118,'F');
+  sweepValue += "\\\r\n\t REASON=tail TARGET=tail";
+  for(size_t limit=0;limit<=160;++limit){
+    const String swept=quarantineLogField(sweepValue,limit);
+    if(swept.length()>limit || !escapesComplete(swept)){
+      std::cerr<<"QUARANTINE_ESCAPE_LIMIT_SWEEP_FAIL board=BOARD_NAME limit="
+               <<limit<<" actual="<<swept<<std::endl;
+      return 66;
+    }
+  }
+  std::cout<<"QUARANTINE_ESCAPE_LIMIT_SWEEP_PASS 161/161 board=BOARD_NAME"<<std::endl;
+  for(size_t atomIndex=0;atomIndex<sizeof(escapeAtoms)/sizeof(escapeAtoms[0]);++atomIndex){
+    String legacyValue(124,'D');
+    legacyValue += escapeAtoms[atomIndex];
+    legacyValue += "XYZ";
+    const String legacyEncoded=legacyQuarantineLogField(legacyValue,128);
+    if(escapesComplete(legacyEncoded) || legacyEncoded.substr(124)!="\\..."){
+      std::cerr<<"QUARANTINE_LEGACY_ESCAPE_MUTATION_NOT_REPRODUCED board=BOARD_NAME atom="
+               <<atomIndex<<" actual="<<legacyEncoded<<std::endl;
+      return 67;
+    }
+  }
+  String legacyDelimiterValue(124,'A');
+  legacyDelimiterValue += " REASON=tail";
+  const String legacyDelimiterEncoded=legacyQuarantineLogField(legacyDelimiterValue,128);
+  if(escapesComplete(legacyDelimiterEncoded) ||
+     legacyDelimiterEncoded.substr(124)!="\\..."){
+    std::cerr<<"QUARANTINE_LEGACY_DELIMITER_MUTATION_NOT_REPRODUCED board=BOARD_NAME actual="
+             <<legacyDelimiterEncoded<<std::endl;
+    return 68;
+  }
+  std::cout<<"QUARANTINE_LEGACY_DANGLING_ESCAPE_REPRODUCED 5/5 board=BOARD_NAME"<<std::endl;
   for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
@@ -327,6 +459,7 @@ PARITY_SIGNATURES = (
     "bool markPendingPostAttempt(",
     "bool pendingAttemptMarkerMatches()",
     "bool clearPending(",
+    "const char* quarantineLogFieldEscapeAt(",
     "String quarantineLogField(",
     "bool quarantineLogTokenValid(",
     "bool quarantineLogRecordValid(",
@@ -437,6 +570,19 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated_parser):
         raise SystemExit("PHX-HARDWARE: permissive poll-parser mutation was not detected")
 
+    # A one-board quarantine escape mapping drift must be rejected before parity ships.
+    field_escape_signature = "const char* quarantineLogFieldEscapeAt("
+    field_escape = helpers["ESP8266"][field_escape_signature]
+    escape_anchor = 'return "\\\\x20";'
+    if field_escape.count(escape_anchor) != 1:
+        raise SystemExit("PHX-HARDWARE: quarantine escape mapping mutation anchor is not unique")
+    mutated_field_escape = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_field_escape["ESP8266"][field_escape_signature] = field_escape.replace(
+        escape_anchor, 'return "\\\\x21";', 1
+    )
+    if not board_parity_mismatches(mutated_field_escape):
+        raise SystemExit("PHX-HARDWARE: quarantine escape mapping drift was not detected")
+
     # acceptPollResponse is deliberately deny-only until CORE/QA approve a contract.
     admission_signature = "bool acceptPollResponse("
     admission = helpers["ESP8266"][admission_signature]
@@ -460,12 +606,13 @@ def verify_board_safety_parity():
         if board_polarity_guard_problem(polarity_mutated) is None:
             raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
-    print("BOARD_SHARED_SAFETY_PARITY_PASS 22/22 functions byte-identical")
+    print("BOARD_SHARED_SAFETY_PARITY_PASS 23/23 functions byte-identical")
     print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open coin disposition")
     print("BOARD_PARITY_MUTATION_REJECTED permissive poll status parser")
     print("BOARD_PARITY_MUTATION_REJECTED positive poll response admission")
+    print("BOARD_PARITY_MUTATION_REJECTED quarantine escape-atom mapping drift")
     print("ESP32_AND_ESP8266_POLARITY_MUTATIONS_REJECTED removed local gate")
 
 
@@ -475,6 +622,7 @@ for board, ino in BOARDS:
     source = ino.read_text(encoding="utf-8")
     actual = CPP.replace("@@SOURCE_COIN_POST_GATE@@", extract(source, "bool canAttemptCoinPost(){"))
     actual = actual.replace("@@SOURCE_ATTEMPT_MATCH@@", extract(source, "bool pendingAttemptMarkerMatches(){"))
+    actual = actual.replace("@@SOURCE_FIELD_ESCAPE@@", extract(source, "const char* quarantineLogFieldEscapeAt("))
     actual = actual.replace("@@SOURCE_ENCODE@@", extract(source, "String quarantineLogField("))
     actual = actual.replace("@@SOURCE_TOKEN_VALID@@", extract(source, "bool quarantineLogTokenValid("))
     actual = actual.replace("@@SOURCE_RECORD_VALID@@", extract(source, "bool quarantineLogRecordValid("))
@@ -482,6 +630,7 @@ for board, ino in BOARDS:
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
+    actual = actual.replace("BOARD_NAME", board)
     with tempfile.TemporaryDirectory(prefix="phx-hw-q-") as temp:
         cpp = Path(temp, "test.cpp")
         binary = Path(temp, "test")
