@@ -1298,3 +1298,8 @@ Do not substitute a role PR tree for that source_ref. The manifest-baseline tree
 Source BlazePwifi LICENSE and destination Pisowifi LICENSE match at 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root; COE Hardware/LICENSE and Hardware/NOTICE.md are absent. The broad Rental standalone route remains manual-file-mapping-required and copy_permitted=false.
 
 COE #26 still has five queued workflows and zero jobs. No per-file migration is approved. Preserve source histories and do not stage, copy, move, cherry-pick, overwrite, rebase, or edit the destination. Full exact route counts and CI are in PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md.
+
+
+## UTC20 post-commit owner-head correction — 2026-11-21T20:39:23Z
+
+The current Master PR #288 head is `1f89b4f45f94682581e66f3f11b5709253a79174`. COE RELEASE #35 advanced to `d08e7850bc8afd3dcccf137b4fbbbb28ea4482fd`; its case-collision guard passes, 152 shared-contract tests pass before all ten profiles fail closed for the missing approved site ULA /48, and 31 sandbox tests pass before the trusted Bubblewrap check blocks with exit 125. These are RELEASE-owned failures, not Master implementation tasks. COE #26 remains frozen with five queued workflows / zero jobs. The manifest remains DRAFT_REVIEW_ONLY with Master destination null; exact source/destination blob, test-import and NOTICE/license gaps remain unresolved. No route promotion, staging, copy, move, rebase, cherry-pick, overwrite or COE destination edit is authorized or performed.

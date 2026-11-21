@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T20:10:12Z
+**Updated:** 2026-11-21T20:39:23Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -485,3 +485,12 @@ COE RELEASE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972. New exact-
 - Current HARDWARE #336 docs head 000d4e6804c451991e1cf81ec97d1b2d7ed6b526; source/test commit 741068c7804b83897f5deab5afc7739457532427; current-head Quarantine #44943506271 PASS (source-extracted), Full #44943506269 FAIL at Missing poll signature check.
 - COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows queued / zero jobs. No migration.
 - Master Python suite NOT RUN because authenticated clone failed GitHub DNS; private Drive v11/newer corrections unavailable, no older snapshot substituted. PRODUCTION NO-GO.
+
+
+## UTC20 post-commit revalidation — 2026-11-21T20:39:23Z
+
+- Current Master branch / PR #288 head: `1f89b4f45f94682581e66f3f11b5709253a79174`; PR remains OPEN / DRAFT / UNMERGED, base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 158 changed paths all under `coordination/phoenix/`.
+- [UTC20 exact-head report](PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) now includes the post-commit COE RELEASE #35 head/CI correction to `d08e7850bc8afd3dcccf137b4fbbbb28ea4482fd` and the final Master branch readback.
+- COE #35 exact-head case guard passes; 152 shared-contract tests pass but all 10 profiles fail closed without the approved site ULA /48; 31 sandbox tests pass but Bubblewrap is absent and the sandbox exits 125.
+- COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, five workflows queued / zero jobs. Exact blob, import, test and license/NOTICE gaps remain; no migration.
+- Full Master unittest suite NOT RUN; local GitHub clone DNS failed. Private Drive v11/newer corrections unavailable; effective branch protection UNKNOWN; cleanup #266 OPEN / 0 of 7. PRODUCTION NO-GO.
