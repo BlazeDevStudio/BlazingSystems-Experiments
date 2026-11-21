@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T11:57:53.717Z
+**Updated:** 2026-11-21T12:38:02Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -405,3 +405,14 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Exact COE #26 comparison: source #332 2,474 entries / 1,895 blobs vs destination 286 / 207; 35 board-local Python labs and three scoped Hardware workflows absent; firmware/test blobs diverge; NOTICE/license scope unresolved.
 - Coordination folder: 151 files, 151 unique blob SHAs, no duplicates. Architecture heading collisions remain §6.9, §6.10, §6.11, §6.25; no renumbering.
 - COE #26 remains FROZEN; private v11 registry inaccessible; cleanup #266 OPEN / 0/7; Master suite NOT RUN; PRODUCTION NO-GO.
+
+
+## Latest PHX-MASTER audit — UTC12, 2026-11-21
+
+- [UTC12 live exact-head, role-CI, COE #26 provenance and cleanup audit](PHX_MASTER_UTC12_20261121_LIVE_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_CLEANUP_AUDIT.md).
+- Audit-start refs: Experiments main `f4e8a891...`; active v0.6 development `2fbd2475...`; Master `2afd58e...`; COE main `a6513ab...`; COE #26 `b382d233...`.
+- PR #288 was OPEN/DRAFT with 151 Master-only paths; the current audit adds one report and refreshes five existing coordination documents. No subsystem path is included.
+- HARDWARE #327/#333 focused CI passes but Full remains blocked at the inherited QA poll-signature fixture. RELEASE #291 compatibility remains pin-scoped; Full/Windows handover freshness fails. RENTAL #328 has handover and Mbed TLS 4.0.0 blockers.
+- COE #35 exact head has 133 packaging tests PASS / 2 skips, but ten profiles fail closed without the approved ULA /48; sandbox host preflight is 18/18 but Bubblewrap is absent. COE #26 remains frozen with five queued workflows / zero jobs.
+- UTC12 cleanup-first exact inventory: 151 files / 151 unique blobs before this report; 68 top-level architecture headings with five duplicated IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion.
+- Private v11 Drive registry/newer corrections remain unavailable; cleanup #266 remains 0/7; full Master Python suite NOT RUN; production NO-GO.

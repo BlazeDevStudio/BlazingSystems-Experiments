@@ -1311,3 +1311,12 @@ When an approved event-bound coin POST disposition eventually allows the positiv
 6. HARDWARE owns firmware and labs; QA owns independent fixture review; CORE owns the authenticated contract. Master records this cross-role invariant and does not modify subsystem source paths.
 
 This contract grants no source ownership, route promotion, merge, signer, publication, hardware flash, payment operation, migration, or production release authority.
+
+
+### UTC12 evidence update for §6.67 — 2026-11-21T12:38Z
+
+COE RELEASE #35 now adds a stricter Bubblewrap executable trust check alongside the manifest durability contract. The host preflight and runtime runner reject a final-component symlink, setuid/setgid bits, and group/world-writable mode bits; ordinary executable mode 0755 remains accepted. This is path/mode validation only and does not pin Bubblewrap binary contents, prove directory ownership, or establish trusted-directory immutability.
+
+Exact COE #35 source/test head `e1934fcb42f493ac0929490884045d54ad3a035e`, docs head `9d6fa64113243981efcc4b5c7af098a5c4bb94c8`. Shared validation [#44903155982](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44903155982) reports 133 tests PASS / 2 intentional skips and the manifest durability marker, then correctly fails all ten profile admissions without an approved site ULA /48. Sandbox [#44903155993](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44903155993) passes 18 host preflight tests but fails closed because Bubblewrap is absent (exit 125); case-collision [#44903155996](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44903155996) passes.
+
+This is hosted filesystem/path-mode test evidence only. No actual namespace or ImageBuilder execution, storage-controller power-loss proof, physical power-cut acceptance, or release authorization is established. RELEASE owns the implementation; PHX-MASTER records the cross-role gate only.

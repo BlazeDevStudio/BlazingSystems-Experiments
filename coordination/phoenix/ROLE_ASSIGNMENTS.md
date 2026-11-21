@@ -2278,3 +2278,21 @@ This append-only snapshot supersedes only the exact owner/CI rows below. No sour
 Hardware branch graph: #327 → #330 → (#331, #332), with #329 a separate child of #327. The #332 tree used for migration comparison includes #327 and #330 but excludes sibling #329 and #331; there is no single combined Hardware candidate head.
 
 The canonical BlazePwifi PROJECT_HANDOVER.md starts with a 2026-11-13 checkpoint and CURRENT_STATE.md latest top checkpoint is 2026-11-13; active #291 and #328 CI fail handover freshness. CORE owns refresh. Master did not edit the handover.
+
+
+## PHX-MASTER UTC12 live owner and CI refresh — 2026-11-21T12:38Z
+
+This exact-head table supersedes older live-status rows below; historical audit entries remain preserved.
+
+| Owner | Current exact PR head(s) | Current hosted evidence | Next owner action |
+|---|---|---|---|
+| CORE | Experiments #252 `c82705f2...`; COE #45 `9d76a134...` | #252 build #42698139210 PASS; COE #45 overlay and case-collision runs #44295049727 / #44295049903 PASS | CORE's separate owner retains source and authenticated receipt contract. |
+| RENTAL | #328 `0e0da62a...` | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL at handover freshness and ESP32 Mbed TLS 4.0.0 header | Refresh canonical handover under its owner; resolve missing header. |
+| PISONET | #255 `d01fd164...` | Windows #42462978704 PASS | Native COM/PnP acceptance remains untested. |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows #43633486963 PASS; #292 no PR-triggered runs and base `b1ca02e...` is behind Master `2afd58e...` | QA owns fixture correction and any replay/rebase. |
+| HARDWARE | #327 `827fa75...`; #333 `e93d178...` | #327 Quarantine/Relay PASS, Full #44887859147 FAIL; #333 Quarantine #44901170202 PASS, Full #44901170215 FAIL at `Missing poll signature check` | Preserve #329/#330/#331/#332/#333 stack boundaries; wait for CORE/QA contract. |
+| RELEASE | #291 `42797e2f...` | ESP32 compatibility #44894604453 PASS 3/3 for its immutable pin; Full #44894604464 and Windows #44894604466 FAIL at handover freshness | Refresh handover evidence; review 3 CORE and 2 Pisonet paths in the 26-path diff with their owners. |
+| COE RELEASE | #35 docs `9d6fa641...`, source/test `e1934fcb...` | Shared #44903155982: 133 PASS / 2 skips, ten ULA admissions FAIL CLOSED; sandbox #44903155993: 18/18 host tests PASS then Bubblewrap missing; case collision #44903155996 PASS | Site authority supplies ULA /48; Infrastructure supplies trusted Bubblewrap; QA reviews exact source/test SHA. |
+| COE integration | #26 `b382d233...` | Five queued workflows / zero jobs | FROZEN; no migration or destination edits. |
+
+HARDWARE stack: #327 → #330 → (#331, #332) → #333, with #329 a separate child of #327. CORE remains with its separate hourly owner. No role source branch was modified by Master.

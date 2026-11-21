@@ -2,7 +2,7 @@
 
 **Protocol Specification:** BLAZE-COMMS/1  
 **Master Auditor:** `PHX-MASTER`  
-**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-15  
+**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-21 UTC12  
 **Overall Commercial / Production Status:** **STRICT NO-GO**
 
 ---
@@ -3292,3 +3292,40 @@ Read-only recursive tree comparison uses HARDWARE #332 head 9f1d9ebf9c7256da2e8e
 - BlazePwifi LICENSE and COE Pisowifi LICENSE are byte-identical blob 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE blob f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root; Hardware/LICENSE and Hardware/NOTICE.md are absent. Hardware-specific license/NOTICE scope remains unresolved.
 
 The comparison is evidence of non-equivalence, not migration staging. COE #26 stays FROZEN. No copy, move, overwrite, cherry-pick, rebase, route promotion, or destination edit occurred.
+
+
+## UTC12 exact-head integration and migration reconciliation — 2026-11-21T12:38Z
+
+### Exact trees
+
+| Ref | Entries | Blobs | Complete |
+|---|---:|---:|---|
+| Experiments main `f4e8a891...` | 2,340 | 1,764 | Yes |
+| Active v0.6 development `2fbd2475...` | 2,392 | 1,846 | Yes |
+| HARDWARE #327 `827fa75...` | 2,469 | 1,890 | Yes |
+| HARDWARE #333 `e93d178...` | 2,478 | 1,899 | Yes |
+| COE main `a6513ab...` | 3 | 2 | Yes |
+| COE #26 `b382d233...` | 286 | 207 | Yes |
+
+The manifest still names Experiments main as its source ref. Active Hardware implementation and lab work is on separate owner PR branches; do not silently treat those branches as the manifest source SHA.
+
+### Exact HARDWARE #327 → COE #26 route comparison
+
+| Route | Source | Destination | Same paths | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 28 | 1 | 1 | 0 | 1 | 27 | 0 |
+| QA tests | 47 | 19 | 4 | 1 | 3 | 43 | 15 |
+
+ESP32 sketch blobs `7ffb7b53...` vs `3cc7ec54...` and ESP8266 blobs `c2aa7196...` vs `c8be98f7...` are divergent. Board-local Python labs/helpers are 32 at #327 and 38 at #333, versus zero under COE #26 Hardware. Source has three scoped Hardware workflows; destination has one generic Hardware workflow.
+
+BlazePwifi LICENSE and COE Pisowifi LICENSE are identical blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root NOTICE blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE root; Hardware/LICENSE and Hardware/NOTICE.md are absent. License/NOTICE scope remains unresolved.
+
+The ownership manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. COE #26 remains FROZEN with five queued workflows and zero jobs. No staging, copy, move, overwrite, rebase, cherry-pick or route promotion occurred.
+
+### Exact current CI blockers
+
+- HARDWARE #327/#333 focused labs pass; Full fails at QA-owned `Missing poll signature check`. No positive admission is authorized before CORE's approved authenticated contract and QA golden vectors.
+- RELEASE #291 ESP32 compatibility is 3/3 PASS for its immutable pin only; Full/Windows fail the handover freshness gate.
+- RENTAL #328 APK/API smoke passes; shared build fails handover freshness and ESP32 core 4.0.0 cannot find `mbedtls/sha256.h`.
+- COE #35 packaging/tool tests are 133 PASS / 2 skips; all ten profiles fail closed for missing approved site ULA /48. Sandbox host preflight is 18/18, but Bubblewrap is absent (exit 125); case-collision passes.

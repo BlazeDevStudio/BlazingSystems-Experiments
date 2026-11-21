@@ -6,7 +6,7 @@
 **Cleanup Gate Issue:** [#266 — [PHX] Code-cleanup-first gate](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)  
 **Primary Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
 **Current HEAD (main):** `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`  
-**Active BlazePwifi Development Ref:** `origin/blazepwifi-v0.6.0-audit-foundation@2fbd24754d924f7e26210f44383a1b3be28eeef9`  
+**Active BlazePwifi Development Ref:** `origin/blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
 **Coordination Ref:** `phoenix/master-coordination`  
 
 ---
@@ -1787,3 +1787,18 @@ PRODUCTION NO-GO. No merge, release, signing, secret provisioning, firmware flas
 4. PHX-RELEASE refreshes only its own exact-source pins and reruns Full/Windows after CORE handover freshness is restored.
 5. Site authority supplies the actual approved ULA /48; Infrastructure supplies trusted Bubblewrap.
 6. Keep COE #26 frozen pending exact-source, license/NOTICE, test identity/import, and destination CI acceptance.
+
+
+## PHX-MASTER UTC12 live exact-head audit — 2026-11-21T12:38Z
+
+Current refs: Experiments main `f4e8a891...`; active v0.6 development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master parent `2afd58e153cbdff22f3a78a4ae4fdca5cdcc6348`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 is OPEN/DRAFT/UNMERGED, 151 changed paths all under `coordination/phoenix/`; #26 is OPEN/DRAFT/FROZEN at `b382d233...`.
+
+HARDWARE #333 exact docs head `e93d178...` / source-test `5dfc00ee...` passes its focused Quarantine workflow; Full fails at the inherited QA `Missing poll signature check` after 14 platform jobs pass. #327 has focused Quarantine/Relay passes and the same Full blocker. The #329/#330/#331/#332/#333 branch stack remains owner-separated.
+
+RELEASE #291 compatibility is 3/3 PASS for its pinned source only; Full/Windows fail the mandatory handover freshness gate. The 26-path diff contains 21 Release, 3 CORE handover and 2 Pisonet test paths. RENTAL #328's APK/API checks pass, but its shared build fails handover freshness and the ESP32 core 4.0.0 Mbed TLS header lookup.
+
+COE #35 source/test `e1934fcb...`, docs head `9d6fa641...`: 133 tests PASS / 2 skips; ten profiles fail closed for absent approved ULA /48; sandbox host preflight 18/18 PASS then Bubblewrap unavailable / exit 125; case-collision PASS. COE #26 exact trees and test/license identities remain divergent and no jobs have run.
+
+**Cleanup correction:** exact level-aware parsing finds 151 coordination files / 151 unique blobs before this audit; 68 top-level architecture headings and five duplicate IDs (§6.9, §6.10, §6.11, §6.25, §6.38). No renumbering or deletion. Cleanup #266 remains OPEN / 0/7.
+
+**Testing/access:** custom Master static assertions 7/7 PASS; full Master Python suite NOT RUN because GitHub DNS resolution failed for ordinary Git. Master Actions: no runs. Branch protection remains UNKNOWN (classic endpoint 403; rulesets empty). Private Drive v11 registry/newer corrections remain unavailable; older snapshots were not substituted. PRODUCTION NO-GO.
