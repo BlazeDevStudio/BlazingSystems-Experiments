@@ -3415,3 +3415,26 @@ BlazePwifi/Pisowifi LICENSE and vendor qrcode/TailAdmin license/NOTICE blobs mat
 ### UTC17 post-checkpoint HARDWARE #335 head refresh — 2026-11-21T18:01Z
 
 #335 current HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`; ESP32/ESP8266 blobs `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8`, both divergent from COE #26 destination blobs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` / `c8be98f72596681e36a3ad1f8939bf8046c96887`. Source QA fixture blob `41211b2c110ab409f6d9d1812ef12fda73b13211` remains non-identical to COE test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`; both retain positive response-signature/poll assertions. Quarantine #44932969401 and Relay #44932969391 PASS; Full #44932969438 fails at inherited `Missing poll signature check` after 14 target/Android jobs pass. No migration or destination edit.
+
+
+## UTC18 live exact-head and CI refresh — 2026-11-21T18:08Z
+
+Master starting HEAD: 0fd192b09da50c33b9c49aac43982fc629c55706; PR #288 OPEN/DRAFT, 155 paths all under coordination/phoenix/. Current source main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; v0.5.3 development aad3aade72c1156eecba1fed30907c6d0283b2c5; v0.6 audit/development 2fbd2475e9f54878c316fa7cea2f228386b0e859; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Role / PR | Exact head | Exact-head CI / current state |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS. CORE remains separate-owner only. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS; native COM/PnP acceptance NOT TESTED. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered run returned. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; build #44782114390 FAIL at missing mbedtls/sha256.h; validate also FAIL. |
+| HARDWARE #335 | d09b0c9dafad8dbbcda5723d8094f4975c14a274 | Quarantine #44932969401 PASS; Relay #44932969391 PASS; Full #44932969438 FAIL at Missing poll signature check; 14 target/Android jobs pass, downstream gates skip. |
+| RELEASE #291 | 42797e2f3d65c30a1070caf49c93aebec149d897 | ESP32 compatibility #44894604453 PASS; Full #44894604464 and Windows #44894604466 FAIL at stale PROJECT_HANDOVER.md freshness gate (checkpoint adcae814...). |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay #44295049727 PASS; case collision #44295049903 PASS. |
+| COE RELEASE #35 | 7fd3d96833ed535b9f3d2c1922663cb9a864fd5e | Case #44929601674 PASS; sandbox #44929601611 FAIL (Bubblewrap absent, exit 125); shared #44929601659 FAIL (10 profiles lack approved site ULA /48). |
+| COE Stage 5 #48 | 8286548e395366f2332830025fed00ceebdfb24a | Stage #44643670696 PASS; case #44643670679 PASS; shared #44643670685 FAIL (ESP32 missing mbedtls/sha256.h). |
+| COE Stage 5.1 #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage #44646341873 PASS; case #44646341992 PASS; shared #44646341922 FAIL (ESP32 missing mbedtls/sha256.h). |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued, zero jobs. FROZEN. |
+| Master #288 | 0fd192b09da50c33b9c49aac43982fc629c55706 | No PR-triggered Master run returned. |
+
+Master added a strict duplicate-key JSON loader in the coordination validator; focused isolated Python harness 5/5 PASS. Full repository unittest suite NOT RUN. See PHX_MASTER_UTC18_20261121_STRICT_JSON_DUPLICATE_KEY_GUARD_COE26_EXACT_ROUTE_CI_AUDIT.md. Production remains NO-GO.

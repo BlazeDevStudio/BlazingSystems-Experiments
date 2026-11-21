@@ -1253,3 +1253,28 @@ No staging, copying, moving, overwriting, rebasing, cherry-picking, route promot
 The canonical manifest remains `DRAFT_REVIEW_ONLY`, 11 routes, PHX-MASTER `coordination/phoenix/` → null. Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` trees are complete. File-level comparisons are recorded in [the UTC17 report](coordination/phoenix/PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) and INTEGRATION_MATRIX.md.
 
 Key blockers: source/target firmware blobs diverge; QA fixture imports are incomplete and test identities diverge; Android/Rental/Pisonet routes have substantial path-only and divergent files; source root NOTICE is absent from COE; Hardware license/NOTICE applicability needs owner/legal review; five destination workflows are queued with zero jobs. Active Hardware #335/#333 branches are separate unmerged lines, not a unified migration source. No staging, copy, move, overwrite, rebase, cherry-pick or route promotion is authorized by this audit.
+
+
+## UTC18 exact source-main → COE #26 route comparison — 2026-11-21T18:08Z
+
+Manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY, 11 routes, source ref f4e8a891aed8af86d5fd315d28750a0ac3a7372b, destination candidate #26 b382d233ff06c8791b1028bed3c617cc7b670d12; PHX-MASTER target remains null.
+
+Complete recursive trees: Experiments main 2,340 entries / 1,764 blobs; COE #26 286 entries / 207 blobs. Both tree responses were not truncated.
+
+| Route | Source files | Destination files | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET SoftTimer | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The broad RENTAL standalone profile route is manual-file-mapping-required and was excluded from recursive-copy counts. No path was staged.
+
+Source BlazePwifi LICENSE and destination Pisowifi/LICENSE have identical blob SHA 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE.md blob f6d92cd21465312be5993631fe26977219be0fb9 is absent from COE root. COE #26 has no Hardware/LICENSE or Hardware/NOTICE.md. Owner/legal review is required to establish Hardware subtree license/NOTICE applicability. Five COE #26 workflows remain queued with zero jobs.
+
+No copy, move, staging, overwrite, rebase, cherry-pick, route promotion or destination edit occurred. Keep #26 FROZEN.

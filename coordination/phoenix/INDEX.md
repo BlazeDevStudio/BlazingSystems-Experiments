@@ -453,3 +453,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 ### UTC17 post-checkpoint owner-head refresh — 2026-11-21T18:01Z
 
 HARDWARE #335 current HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`; focused Quarantine/Relay pass, Full #44932969438 still fails at inherited QA poll-signature fixture after 14 target/Android jobs pass. See UTC17 audit report's post-checkpoint re-read section. PRODUCTION NO-GO.
+
+
+## Latest PHX-MASTER UTC18 — 2026-11-21
+
+- [UTC18 strict JSON duplicate-key guard, exact role/CI and COE #26 route provenance audit](PHX_MASTER_UTC18_20261121_STRICT_JSON_DUPLICATE_KEY_GUARD_COE26_EXACT_ROUTE_CI_AUDIT.md).
+- Added strict duplicate-key JSON parsing to the coordination validator and regression tests for top-level, nested, escaped duplicate keys and repeated array values.
+- Focused isolated Python parser harness: 5/5 PASS; full repository unittest suite NOT RUN; Master PR #288 has no PR-triggered Actions run.
+- Re-read current role PR heads and exact CI. #335 Full remains blocked by poll-signature fixture; #328 ESP32 build missing mbedtls/sha256.h; #291 handover freshness fails; COE #35 ULA/Bubblewrap gates fail; #48/#49 ESP32 builds fail.
+- Exact source-main/COE #26 route comparison remains non-equivalent; source NOTICE and Hardware license/NOTICE scope unresolved. COE #26 FROZEN.
+- Private v11 registry/newer corrections inaccessible; effective branch protection UNKNOWN; cleanup #266 remains 0/7. PRODUCTION NO-GO.

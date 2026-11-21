@@ -1908,3 +1908,16 @@ COE RELEASE #31 exact head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared co
 ## PHX-MASTER UTC17 follow-up — current HARDWARE #335 head re-read, 2026-11-21T18:01Z
 
 HARDWARE #335 advanced to `d09b0c9dafad8dbbcda5723d8094f4975c14a274` (source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`) after the first Master snapshot. Current Quarantine #44932969401 and Relay #44932969391 pass; Full #44932969438 has 14 target/Android jobs success but validation fails at inherited `Missing poll signature check`; downstream gates skip. Current source ESP32/ESP8266 blobs `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8` remain divergent from COE #26. QA/CORE ownership and COE #26 FROZEN disposition are unchanged.
+
+
+## PHX-MASTER UTC18 — strict JSON duplicate-key guard and exact COE #26 route audit
+
+See [UTC18 audit report](PHX_MASTER_UTC18_20261121_STRICT_JSON_DUPLICATE_KEY_GUARD_COE26_EXACT_ROUTE_CI_AUDIT.md).
+
+- Added strict JSON object-key uniqueness to verify_coordination.py; both canonical coordination JSON fixtures now reject duplicate decoded keys at any nesting level. Added top-level, nested, escape-equivalent and repeated-array regression cases.
+- Focused isolated Python harness: 5/5 PASS; full repository unittest suite NOT RUN; no Master PR-triggered Actions run returned.
+- Live refs: Experiments main f4e8a891..., v0.5.3 development aad3aade..., v0.6 audit/development 2fbd2475..., COE main a6513ab..., COE #26 b382d233....
+- Exact recursive trees: source main 2,340 entries / 1,764 blobs; COE #26 286 entries / 207 blobs. QA route is 38 source / 19 destination tests (1 identical, 3 divergent, 34 source-only, 15 destination-only). Other routes remain substantially divergent or incomplete; broad Rental route remains manual-file-mapping-only.
+- Source root NOTICE is absent from COE; the source BlazePwifi LICENSE and destination Pisowifi LICENSE match, but Hardware license/NOTICE scope remains unresolved. No staging or destination writes.
+- #335 Full fails at inherited poll-signature fixture; #328 ESP32 build fails on missing mbedtls/sha256.h; #291 Full/Windows handover gates fail; COE #35 ULA/Bubblewrap gates fail; #48/#49 ESP32 compile fails; #26 has five queued workflows and zero jobs.
+- Private v11 registry/newer corrections remain inaccessible; effective branch protection remains UNKNOWN; cleanup #266 remains 0/7; PRODUCTION NO-GO.

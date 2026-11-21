@@ -2368,3 +2368,20 @@ CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source paths remain outside PHX-
 ### UTC17 post-checkpoint #335 exact-head / CI refresh — 2026-11-21T18:01Z
 
 #335 source/test SHA `182d6393dbeeb342395f06477b54ff30dada2f1b`; Quarantine #44932969401 and Relay #44932969391 PASS; Full #44932969438 has 14 target/Android jobs SUCCESS, validation FAIL at inherited `Missing poll signature check`, downstream simulation/signing/publishing SKIPPED. QA/CORE contract ownership and default-deny behavior remain unchanged.
+
+
+## UTC18 exact owner-head and CI refresh — 2026-11-21T18:08Z
+
+PHX-MASTER re-read live role PR metadata and exact-head Actions. The table records evidence only; ownership is unchanged.
+
+| Owner | Current exact PR head(s) | Evidence and next owner action |
+|---|---|---|
+| CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4; COE #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #252 build #42698139210 PASS; #45 overlay/case #44295049727/#44295049903 PASS. Publish approved authenticated poll/receipt contract; no Master source edits. |
+| RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK/API smoke pass; ESP32 build #44782114390 fails at missing mbedtls/sha256.h; validate fails. RENTAL owns build and handover corrections. |
+| PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS. Native COM/PnP acceptance NOT TESTED. |
+| QA | #290 5c29d15994cee1279058f1eca12f2a3180704292; #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 no PR-triggered run. QA owns the positive poll-signature fixture correction after CORE contract. |
+| HARDWARE | #335 d09b0c9dafad8dbbcda5723d8094f4975c14a274 | Quarantine/Relay #44932969401/#44932969391 PASS; Full #44932969438 fails at inherited Missing poll signature check after 14 target/Android jobs pass. Preserve stack; physical acceptance NOT TESTED. |
+| RELEASE | #291 42797e2f3d65c30a1070caf49c93aebec149d897 | ESP32 compatibility #44894604453 PASS; Full/Windows #44894604464/#44894604466 fail because source/workflow changes post-date PROJECT_HANDOVER.md checkpoint adcae814.... RELEASE owns refresh. |
+
+Separate active role automations visible during this activation: PHX-RELEASE and PHX-HARDWARE. The named separate CORE continuation was not surfaced in the active list; Master nevertheless performed no CORE implementation and did not start a competing CORE worker.
+

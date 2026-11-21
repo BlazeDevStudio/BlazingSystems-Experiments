@@ -32,6 +32,21 @@ REQUIRED_KEYS = frozenset({
 TYPES = frozenset({"ASSIGN", "ACK", "PROGRESS", "BLOCKER", "REQUEST_REVIEW", "DONE", "DECISION"})
 STATUSES = frozenset({"QUEUED", "IN_PROGRESS", "BLOCKED", "PR_READY", "VERIFIED", "MERGED"})
 
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Build JSON objects without silently accepting duplicate decoded keys."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key!r}")
+        result[key] = value
+    return result
+
+
+def load_json_strict(text: str) -> object:
+    """Parse JSON and reject duplicate keys at every object depth."""
+    return json.loads(text, object_pairs_hook=_unique_object)
+
+
 
 def safe_repo_path(value: object) -> bool:
     """Reject traversal, absolute paths and ambiguous Windows separators."""
@@ -219,8 +234,8 @@ def run_checks() -> list[str]:
     if errors:
         return errors
     try:
-        manifest = json.loads((HERE / "OWNERSHIP_ROUTES.json").read_text(encoding="utf-8"))
-        example = json.loads((HERE / "COMMUNICATION_EXAMPLE.json").read_text(encoding="utf-8"))
+        manifest = load_json_strict((HERE / "OWNERSHIP_ROUTES.json").read_text(encoding="utf-8"))
+        example = load_json_strict((HERE / "COMMUNICATION_EXAMPLE.json").read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         return ["Invalid JSON fixture: " + str(exc)]
     errors.extend(validate_routes(manifest, REPO_ROOT))

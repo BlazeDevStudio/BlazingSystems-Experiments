@@ -4,19 +4,18 @@
 Run: python3 -m unittest discover -s coordination/phoenix -p 'test_verify_coordination.py' -v
 """
 import copy
-import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from verify_coordination import HERE, REPO_ROOT, safe_repo_path, validate_envelope, validate_routes
+from verify_coordination import HERE, REPO_ROOT, load_json_strict, safe_repo_path, validate_envelope, validate_routes
 
 
 class CoordinationContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.routes = json.loads((HERE / "OWNERSHIP_ROUTES.json").read_text(encoding="utf-8"))
-        cls.example = json.loads((HERE / "COMMUNICATION_EXAMPLE.json").read_text(encoding="utf-8"))
+        cls.routes = load_json_strict((HERE / "OWNERSHIP_ROUTES.json").read_text(encoding="utf-8"))
+        cls.example = load_json_strict((HERE / "COMMUNICATION_EXAMPLE.json").read_text(encoding="utf-8"))
 
     def test_real_routes_pass_static_validation(self):
         self.assertEqual(validate_routes(self.routes, REPO_ROOT), [])
@@ -121,6 +120,22 @@ class CoordinationContractTests(unittest.TestCase):
         modified["routes"][4]["target"] = "Rental/android/"
         errors = validate_routes(modified, REPO_ROOT)
         self.assertTrue(any("Duplicate destination claim" in e for e in errors))
+
+    def test_duplicate_json_keys_fail_closed_at_every_object_depth(self):
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key: 'status'"):
+            load_json_strict('{"status":"DRAFT_REVIEW_ONLY","status":"APPROVED"}')
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key: 'target'"):
+            load_json_strict('{"routes":[{"target":null,"target":"Pisowifi/"}]}')
+
+    def test_duplicate_json_keys_are_compared_after_escape_decoding(self):
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key: 'status'"):
+            load_json_strict('{"status":1,"\\u0073tatus":2}')
+
+    def test_repeated_array_values_are_not_duplicate_object_keys(self):
+        self.assertEqual(
+            load_json_strict('{"roles":["PHX-QA","PHX-QA"]}'),
+            {"roles": ["PHX-QA", "PHX-QA"]},
+        )
 
     def test_example_protocol_passes(self):
         self.assertEqual(validate_envelope(self.example), [])
